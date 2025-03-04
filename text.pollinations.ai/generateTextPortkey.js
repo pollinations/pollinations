@@ -80,6 +80,7 @@ const MODEL_MAPPING = {
     'llamalight': '@cf/meta/llama-3.1-8b-instruct',
     'deepseek-r1': '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
     'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
+    'phi': 'phi-4-instruct'
 };
 
 // Default system prompts for different models
@@ -89,7 +90,8 @@ const SYSTEM_PROMPTS = {
     'llama': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
     'llamalight': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
     'deepseek-r1': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
-    'llamaguard': 'You are a content moderation assistant. Your task is to analyze the input and identify any harmful, unsafe, or inappropriate content.'
+    'llamaguard': 'You are a content moderation assistant. Your task is to analyze the input and identify any harmful, unsafe, or inappropriate content.',
+    'phi': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.'
 };
 
 // Default options
@@ -112,76 +114,104 @@ const baseAzureConfig = {
     retry: '3',
 };
 
+// Base configuration for Cloudflare models
+const baseCloudflareConfig = {
+    provider: 'openai',
+    'custom-host': `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
+    authKey: process.env.CLOUDFLARE_AUTH_TOKEN,
+};
+
+/**
+ * Creates an Azure model configuration
+ * @param {string} apiKey - Azure API key
+ * @param {string} endpoint - Azure endpoint
+ * @param {string} modelName - Model name to use if not extracted from endpoint
+ * @returns {Object} - Azure model configuration
+ */
+function createAzureModelConfig(apiKey, endpoint, modelName) {
+    const deploymentId = extractDeploymentName(endpoint) || modelName;
+    return {
+        ...baseAzureConfig,
+        'azure-api-key': apiKey,
+        'azure-resource-name': extractResourceName(endpoint),
+        'azure-deployment-id': deploymentId,
+        'azure-api-version': extractApiVersion(endpoint),
+        'azure-model-name': deploymentId,
+        authKey: apiKey, // For Authorization header
+    };
+}
+
+/**
+ * Creates a Cloudflare model configuration
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - Cloudflare model configuration
+ */
+function createCloudflareModelConfig(additionalConfig = {}) {
+    return {
+        ...baseCloudflareConfig,
+        ...additionalConfig
+    };
+}
+
 // Unified flat Portkey configuration for all providers and models
 export const portkeyConfig = {
     // Azure OpenAI model configurations
-    'gpt-4o-mini': {
-        ...baseAzureConfig,
-        'azure-api-key': process.env.AZURE_OPENAI_API_KEY,
-        'azure-resource-name': extractResourceName(process.env.AZURE_OPENAI_ENDPOINT),
-        'azure-deployment-id': 'gpt-4o-mini',
-        'azure-api-version': extractApiVersion(process.env.AZURE_OPENAI_ENDPOINT),
-        'azure-model-name':  'gpt-4o-mini',
-        authKey: process.env.AZURE_OPENAI_API_KEY, // For Authorization header
-    },
-    'gpt-4o': {
-        ...baseAzureConfig,
-        'azure-api-key': process.env.AZURE_OPENAI_LARGE_API_KEY,
-        'azure-resource-name': extractResourceName(process.env.AZURE_OPENAI_LARGE_ENDPOINT),
-        'azure-deployment-id': 'gpt-4o',
-        'azure-api-version': extractApiVersion(process.env.AZURE_OPENAI_LARGE_ENDPOINT),
-        'azure-model-name': 'gpt-4o',
-        authKey: process.env.AZURE_OPENAI_LARGE_API_KEY, // For Authorization header
-    },
-    'o1-mini': {
-        ...baseAzureConfig,
-        'azure-api-key': process.env.AZURE_O1MINI_API_KEY,
-        'azure-resource-name': extractResourceName(process.env.AZURE_O1MINI_ENDPOINT),
-        'azure-deployment-id': extractDeploymentName(process.env.AZURE_O1MINI_ENDPOINT) || 'o1-mini',
-        'azure-api-version': extractApiVersion(process.env.AZURE_O1MINI_ENDPOINT),
-        'azure-model-name': extractDeploymentName(process.env.AZURE_O1MINI_ENDPOINT) || 'o1-mini',
-        authKey: process.env.AZURE_O1MINI_API_KEY, // For Authorization header
-    },
+    'gpt-4o-mini': createAzureModelConfig(
+        process.env.AZURE_OPENAI_API_KEY,
+        process.env.AZURE_OPENAI_ENDPOINT,
+        'gpt-4o-mini'
+    ),
+    'gpt-4o': createAzureModelConfig(
+        process.env.AZURE_OPENAI_LARGE_API_KEY,
+        process.env.AZURE_OPENAI_LARGE_ENDPOINT,
+        'gpt-4o'
+    ),
+    'o1-mini': createAzureModelConfig(
+        process.env.AZURE_O1MINI_API_KEY,
+        process.env.AZURE_O1MINI_ENDPOINT,
+        'o1-mini'
+    ),
     // Cloudflare model configurations
-    '@cf/meta/llama-3.3-70b-instruct-fp8-fast': { 
+    '@cf/meta/llama-3.3-70b-instruct-fp8-fast': createCloudflareModelConfig(),
+    '@cf/meta/llama-3.1-8b-instruct': createCloudflareModelConfig(),
+    '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b': createCloudflareModelConfig(),
+    '@hf/thebloke/llamaguard-7b-awq': createCloudflareModelConfig(),
+    'phi-4-instruct': {
         provider: 'openai',
-        'custom-host': `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
-        authKey: process.env.CLOUDFLARE_AUTH_TOKEN,
-    },
-    // Add other Cloudflare models directly
-    '@cf/meta/llama-3.1-8b-instruct': {
-        provider: 'openai',
-        'custom-host': `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
-        authKey: process.env.CLOUDFLARE_AUTH_TOKEN,
-    },
-    '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b': {
-        provider: 'openai',
-        'custom-host': `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
-        authKey: process.env.CLOUDFLARE_AUTH_TOKEN
-    },
-    '@hf/thebloke/llamaguard-7b-awq': {
-        provider: 'openai',
-        'custom-host': `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
-        authKey: process.env.CLOUDFLARE_AUTH_TOKEN
+        'custom-host': process.env.OPENAI_PHI4_ENDPOINT,
+        authKey: process.env.OPENAI_PHI4_API_KEY
     }
 };
 
-// Log the configuration
-log('Azure configuration:');
-const azureModels = Object.entries(portkeyConfig).filter(([_, config]) => config.provider === 'azure-openai');
-for (const [model, config] of azureModels) {
-    log(`Model ${model}:`, JSON.stringify(config, null, 2));
+/**
+ * Log configuration for a specific provider
+ * @param {string} providerName - Name of the provider
+ * @param {Function} filterFn - Function to filter models by provider
+ * @param {Function} sanitizeFn - Optional function to sanitize sensitive data
+ */
+function logProviderConfig(providerName, filterFn, sanitizeFn = config => config) {
+    log(`${providerName} configuration:`);
+    const models = Object.entries(portkeyConfig).filter(filterFn);
+    for (const [model, config] of models) {
+        log(`Model ${model}:`, JSON.stringify(sanitizeFn(config), null, 2));
+    }
 }
 
-log('Cloudflare configuration:');
-const cloudflareModels = Object.entries(portkeyConfig).filter(([_, config]) => config.provider === 'openai');
-for (const [model, config] of cloudflareModels) {
-    log(`Model ${model}:`, JSON.stringify({
+// Log Azure configuration
+logProviderConfig(
+    'Azure', 
+    ([_, config]) => config.provider === 'azure-openai'
+);
+
+// Log Cloudflare configuration
+logProviderConfig(
+    'Cloudflare', 
+    ([_, config]) => config.provider === 'openai',
+    config => ({
         ...config,
-        'cloudflare-account-id': config['cloudflare-account-id'] ? '***' : undefined,
-        'cloudflare-auth-token': config['cloudflare-auth-token'] ? '***' : undefined
-    }, null, 2));
-}
+        authKey: config.authKey ? '***' : undefined
+    })
+);
 
 function countMessageCharacters(messages) {
     return messages.reduce((total, message) => {
@@ -198,6 +228,34 @@ function countMessageCharacters(messages) {
         }
         return total;
     }, 0);
+}
+
+/**
+ * Generate Portkey headers from a configuration object
+ * @param {Object} config - Model configuration object
+ * @returns {Object} - Headers object with x-portkey prefixes
+ */
+function generatePortkeyHeaders(config) {
+    if (!config) {
+        errorLog('No configuration provided for header generation');
+        throw new Error('No configuration provided for header generation');
+    }
+    
+    // Generate headers by prefixing config properties with 'x-portkey-'
+    const headers = {};
+    for (const [key, value] of Object.entries(config)) {
+        // Skip special properties that aren't headers
+        if (key === 'removeSeed' || key === 'authKey') continue;
+        
+        headers[`x-portkey-${key}`] = value;
+    }
+
+    // Add Authorization header if needed
+    if (config.authKey) {
+        headers['Authorization'] = `Bearer ${config.authKey}`;
+    }
+    
+    return headers;
 }
 
 /**
@@ -242,23 +300,12 @@ export const generateTextPortkey = createOpenAICompatibleClient({
 
             log('Processing request for model:', modelName, 'with provider:', config.provider);
 
-            // Generate headers by prefixing config properties with 'x-portkey-'
-            const additionalHeaders = {};
-            for (const [key, value] of Object.entries(config)) {
-                // Skip special properties that aren't headers
-                if (key === 'removeSeed' || key === 'authKey') continue;
-                
-                additionalHeaders[`x-portkey-${key}`] = value;
-            }
-
-            // Add Authorization header if needed
-            if (config.authKey) {
-                additionalHeaders['Authorization'] = `Bearer ${config.authKey}`;
-            }
+            // Generate headers
+            const additionalHeaders = generatePortkeyHeaders(config);
+            log('Added provider-specific headers:', JSON.stringify(additionalHeaders, null, 2));
             
             // Set the headers as a property on the request object that will be used by genericOpenAIClient
             requestBody._additionalHeaders = additionalHeaders;
-            log('Added provider-specific headers:', JSON.stringify(requestBody._additionalHeaders, null, 2));
             
             return requestBody;
         } catch (error) {

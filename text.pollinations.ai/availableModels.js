@@ -242,6 +242,14 @@ export const availableModels = [
         description: 'Llama (Scaleway)',
         baseModel: true,
         handler: (messages, options) => generateTextScaleway(messages, {...options, model: 'llama'})
+    },
+    {
+        name: 'phi',
+        type: 'chat',
+        censored: true,
+        description: 'Phi-4 Multimodal Instruct',
+        baseModel: true,
+        handler: (messages, options) => generateTextPortkey(messages, options)
     }
 ];
 

@@ -1,0 +1,693 @@
+{
+  "schema_version": "1.0.0",
+  "metadata": {
+    "name": "Pollinations.AI API",
+    "description": "Free and open-source API for text and image generation with no signups or API keys required",
+    "logo": "https://pollinations.ai/favicon-32x32.png",
+    "contact_url": "https://discord.gg/k9F7SyTgqn",
+    "legal_info_url": "https://github.com/pollinations/pollinations/blob/master/LICENSE"
+  },
+  "openapi": {
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Pollinations.AI API",
+      "description": "Free and open-source API for text and image generation with no signups or API keys required",
+      "version": "1.0.0",
+      "contact": {
+        "name": "Pollinations.AI",
+        "url": "https://pollinations.ai",
+        "email": ""
+      },
+      "license": {
+        "name": "MIT",
+        "url": "https://github.com/pollinations/pollinations/blob/master/LICENSE"
+      }
+    },
+    "servers": [
+      {
+        "url": "https://image.pollinations.ai",
+        "description": "Image Generation API"
+      },
+      {
+        "url": "https://text.pollinations.ai",
+        "description": "Text Generation API"
+      }
+    ],
+    "paths": {
+      "/prompt/{prompt}": {
+        "get": {
+          "summary": "Generate an image from a text prompt",
+          "description": "Creates an image based on the provided text description",
+          "operationId": "generateImage",
+          "tags": ["Image Generation"],
+          "parameters": [
+            {
+              "name": "prompt",
+              "in": "path",
+              "description": "Text description of the image to generate",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "model",
+              "in": "query",
+              "description": "Model to use for generation",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "default": "flux"
+              }
+            },
+            {
+              "name": "seed",
+              "in": "query",
+              "description": "Seed for reproducible results",
+              "required": false,
+              "schema": {
+                "type": "integer"
+              }
+            },
+            {
+              "name": "width",
+              "in": "query",
+              "description": "Width of the generated image",
+              "required": false,
+              "schema": {
+                "type": "integer",
+                "default": 1024
+              }
+            },
+            {
+              "name": "height",
+              "in": "query",
+              "description": "Height of the generated image",
+              "required": false,
+              "schema": {
+                "type": "integer",
+                "default": 1024
+              }
+            },
+            {
+              "name": "nologo",
+              "in": "query",
+              "description": "Set to 'true' to turn off the rendering of the logo",
+              "required": false,
+              "schema": {
+                "type": "boolean",
+                "default": false
+              }
+            },
+            {
+              "name": "private",
+              "in": "query",
+              "description": "Set to 'true' to prevent the image from appearing in the public feed",
+              "required": false,
+              "schema": {
+                "type": "boolean",
+                "default": false
+              }
+            },
+            {
+              "name": "enhance",
+              "in": "query",
+              "description": "Set to 'true' to turn on prompt enhancing (passes prompts through an LLM to add detail)",
+              "required": false,
+              "schema": {
+                "type": "boolean",
+                "default": false
+              }
+            },
+            {
+              "name": "safe",
+              "in": "query",
+              "description": "Set to 'true' to enable strict NSFW content filtering",
+              "required": false,
+              "schema": {
+                "type": "boolean",
+                "default": false
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Generated image",
+              "content": {
+                "image/*": {
+                  "schema": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad request"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/models": {
+        "get": {
+          "summary": "List available models",
+          "description": "Returns a list of available models for image or text generation",
+          "operationId": "listModels",
+          "tags": ["Models"],
+          "responses": {
+            "200": {
+              "description": "List of available models",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/{prompt}": {
+        "get": {
+          "summary": "Generate text from a prompt",
+          "description": "Creates text based on the provided prompt",
+          "operationId": "generateText",
+          "tags": ["Text Generation"],
+          "parameters": [
+            {
+              "name": "prompt",
+              "in": "path",
+              "description": "Text prompt for the AI to respond to",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "model",
+              "in": "query",
+              "description": "Model to use for text generation",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "default": "openai"
+              }
+            },
+            {
+              "name": "seed",
+              "in": "query",
+              "description": "Seed for reproducible results",
+              "required": false,
+              "schema": {
+                "type": "integer"
+              }
+            },
+            {
+              "name": "json",
+              "in": "query",
+              "description": "Set to 'true' to receive response in JSON format",
+              "required": false,
+              "schema": {
+                "type": "boolean",
+                "default": false
+              }
+            },
+            {
+              "name": "system",
+              "in": "query",
+              "description": "System prompt to set the behavior of the AI",
+              "required": false,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "private",
+              "in": "query",
+              "description": "Set to 'true' to prevent the response from appearing in the public feed",
+              "required": false,
+              "schema": {
+                "type": "boolean",
+                "default": false
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Generated text",
+              "content": {
+                "text/plain": {
+                  "schema": {
+                    "type": "string"
+                  }
+                },
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad request"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/": {
+        "post": {
+          "summary": "Generate text from a prompt (POST)",
+          "description": "Creates text based on the provided messages",
+          "operationId": "generateTextPost",
+          "tags": ["Text Generation"],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["messages"],
+                  "properties": {
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": ["role", "content"],
+                        "properties": {
+                          "role": {
+                            "type": "string",
+                            "enum": ["system", "user", "assistant"]
+                          },
+                          "content": {
+                            "oneOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "enum": ["text", "image_url"]
+                                    },
+                                    "text": {
+                                      "type": "string"
+                                    },
+                                    "image_url": {
+                                      "type": "object",
+                                      "properties": {
+                                        "url": {
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "model": {
+                      "type": "string",
+                      "default": "openai"
+                    },
+                    "seed": {
+                      "type": "integer"
+                    },
+                    "jsonMode": {
+                      "type": "boolean",
+                      "default": false
+                    },
+                    "private": {
+                      "type": "boolean",
+                      "default": false
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Generated text",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "response": {
+                        "type": "string"
+                      },
+                      "model": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad request"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/openai": {
+        "post": {
+          "summary": "OpenAI-compatible API endpoint",
+          "description": "Provides an OpenAI-compatible interface for text generation",
+          "operationId": "openaiCompatible",
+          "tags": ["Text Generation"],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["messages"],
+                  "properties": {
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": ["role", "content"],
+                        "properties": {
+                          "role": {
+                            "type": "string",
+                            "enum": ["system", "user", "assistant"]
+                          },
+                          "content": {
+                            "oneOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "enum": ["text", "image_url"]
+                                    },
+                                    "text": {
+                                      "type": "string"
+                                    },
+                                    "image_url": {
+                                      "type": "object",
+                                      "properties": {
+                                        "url": {
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "model": {
+                      "type": "string",
+                      "default": "openai"
+                    },
+                    "temperature": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 2,
+                      "default": 1
+                    },
+                    "max_tokens": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "OpenAI-style response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "object": {
+                        "type": "string"
+                      },
+                      "created": {
+                        "type": "integer"
+                      },
+                      "model": {
+                        "type": "string"
+                      },
+                      "choices": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "message": {
+                              "type": "object",
+                              "properties": {
+                                "role": {
+                                  "type": "string"
+                                },
+                                "content": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "finish_reason": {
+                              "type": "string"
+                            },
+                            "index": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      },
+                      "usage": {
+                        "type": "object",
+                        "properties": {
+                          "prompt_tokens": {
+                            "type": "integer"
+                          },
+                          "completion_tokens": {
+                            "type": "integer"
+                          },
+                          "total_tokens": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad request"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/feed": {
+        "get": {
+          "summary": "Get a feed of generated content",
+          "description": "Returns a Server-Sent Events (SSE) stream of user-generated content",
+          "operationId": "getFeed",
+          "tags": ["Feed"],
+          "responses": {
+            "200": {
+              "description": "SSE stream of generated content",
+              "content": {
+                "text/event-stream": {
+                  "schema": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "Message": {
+          "type": "object",
+          "required": ["role", "content"],
+          "properties": {
+            "role": {
+              "type": "string",
+              "enum": ["system", "user", "assistant"]
+            },
+            "content": {
+              "type": "string"
+            }
+          }
+        },
+        "ImageGenerationParams": {
+          "type": "object",
+          "properties": {
+            "prompt": {
+              "type": "string",
+              "description": "Text description of the image to generate"
+            },
+            "model": {
+              "type": "string",
+              "description": "Model to use for generation"
+            },
+            "seed": {
+              "type": "integer",
+              "description": "Seed for reproducible results"
+            },
+            "width": {
+              "type": "integer",
+              "description": "Width of the generated image",
+              "default": 1024
+            },
+            "height": {
+              "type": "integer",
+              "description": "Height of the generated image",
+              "default": 1024
+            },
+            "nologo": {
+              "type": "boolean",
+              "description": "Turn off the rendering of the logo",
+              "default": false
+            },
+            "private": {
+              "type": "boolean",
+              "description": "Prevent the image from appearing in the public feed",
+              "default": false
+            },
+            "enhance": {
+              "type": "boolean",
+              "description": "Turn on prompt enhancing",
+              "default": false
+            },
+            "safe": {
+              "type": "boolean",
+              "description": "Enable strict NSFW content filtering",
+              "default": false
+            }
+          }
+        },
+        "TextGenerationParams": {
+          "type": "object",
+          "properties": {
+            "messages": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Message"
+              }
+            },
+            "model": {
+              "type": "string",
+              "description": "Model to use for text generation",
+              "default": "openai"
+            },
+            "seed": {
+              "type": "integer",
+              "description": "Seed for reproducible results"
+            },
+            "jsonMode": {
+              "type": "boolean",
+              "description": "Forces the response to be valid JSON",
+              "default": false
+            },
+            "private": {
+              "type": "boolean",
+              "description": "Prevents response from appearing in public feed",
+              "default": false
+            }
+          }
+        }
+      }
+    }
+  },
+  "auth": {
+    "type": "none",
+    "instructions": "No authentication required. All endpoints are freely accessible."
+  },
+  "examples": [
+    {
+      "name": "Generate an image",
+      "description": "Generate an image of a sunset over the ocean",
+      "request": {
+        "url": "https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?width=1280&height=720&seed=42"
+      }
+    },
+    {
+      "name": "Generate text",
+      "description": "Generate text about artificial intelligence",
+      "request": {
+        "url": "https://text.pollinations.ai/What%20is%20artificial%20intelligence?model=mistral&seed=42"
+      }
+    },
+    {
+      "name": "Generate text with system prompt",
+      "description": "Generate text with a custom system prompt",
+      "request": {
+        "url": "https://text.pollinations.ai/What%20is%20artificial%20intelligence?system=You%20are%20a%20helpful%20AI%20assistant"
+      }
+    },
+    {
+      "name": "Generate text with POST request",
+      "description": "Generate text using a POST request with messages",
+      "request": {
+        "method": "POST",
+        "url": "https://text.pollinations.ai/",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "messages": [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "What is artificial intelligence?"}
+          ],
+          "model": "mistral",
+          "seed": 42
+        }
+      }
+    }
+  ]
+}

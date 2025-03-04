@@ -404,6 +404,13 @@ export const projects = {
   ],
   tutorials: [
     {
+      name: "🆕 Chinese DeepSeek Tutorial",
+      url: "https://linux.do/t/topic/447840/235",
+      description: "A tutorial showing how to make DeepSeek AI support image generation by leveraging Pollinations.ai's API.",
+      author: "https://linux.do/u/isinry",
+      submissionDate: "2025-03-04",
+    },
+    {
       name: "Artistic Styles Book",
       url: "https://proyectodescartes.org/iCartesiLibri/materiales_didacticos/Libro_Estilos/index.html",
       description: "An interactive book showcasing 90+ artistic styles.",

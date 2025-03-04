@@ -46,7 +46,7 @@ export const availableModels = [
         description: 'OpenAI GPT-4o-mini',
         baseModel: true,
         vision: true,
-        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai'})
+        handler: generateTextPortkey
     },
     {
         name: 'openai-large',
@@ -55,7 +55,7 @@ export const availableModels = [
         description: 'OpenAI GPT-4o',
         baseModel: true,
         vision: true,
-        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai-large'})
+        handler: generateTextPortkey
     },
     {
         name: 'openai-reasoning',
@@ -64,7 +64,7 @@ export const availableModels = [
         description: 'OpenAI o1-mini',
         baseModel: true,
         reasoning: true,
-        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai-reasoning'})
+        handler: generateTextPortkey  
     },
     {
         name: 'qwen-coder',
@@ -80,7 +80,7 @@ export const availableModels = [
         censored: false,
         description: 'Llama 3.3 70B',
         baseModel: true,
-        handler: (messages, options) => generateTextPortkey(messages, options)
+        handler: generateTextPortkey
     },
     {
         name: 'mistral',
@@ -96,7 +96,7 @@ export const availableModels = [
         censored: false,
         description: 'Unity with Mistral Large by Unity AI Lab',
         baseModel: false,
-        handler: (messages, options) => unityMistralLarge(messages, options)
+        handler: unityMistralLarge
     },
     {
         name: 'midijourney',
@@ -104,7 +104,7 @@ export const availableModels = [
         censored: true,
         description: 'Midijourney musical transformer',
         baseModel: false,
-        handler: (messages, options) => midijourney(messages, options)
+        handler: midijourney
     },
     {
         name: 'rtist',
@@ -112,7 +112,7 @@ export const availableModels = [
         censored: true,
         description: 'Rtist image generator by @bqrio',
         baseModel: false,
-        handler: (messages, options) => rtist(messages, options)
+        handler: rtist
     },
     {
         name: 'searchgpt',
@@ -120,7 +120,7 @@ export const availableModels = [
         censored: true,
         description: 'SearchGPT with realtime news and web search',
         baseModel: false,
-        handler: (messages, options) => generateTextSearch(messages, options)
+        handler: generateTextSearch
     },
     {
         name: 'evil',
@@ -128,7 +128,7 @@ export const availableModels = [
         censored: false,
         description: 'Evil Mode - Experimental',
         baseModel: false,
-        handler: (messages, options) => evilCommandR(messages, options)
+        handler: evilCommandR
     },
     {
         name: 'deepseek',
@@ -154,7 +154,7 @@ export const availableModels = [
         baseModel: true,
         reasoning: true,
         provider: 'cloudflare',
-        handler: (messages, options) => generateTextCloudflare(messages, options)
+        handler: generateTextCloudflare
     },
     {
         name: 'deepseek-reasoner',
@@ -164,7 +164,7 @@ export const availableModels = [
         baseModel: true,
         reasoning: true,
         provider: 'deepseek',
-        handler: (messages, options) => generateDeepseek(messages, { ...options, model: 'deepseek-reasoner' })
+        handler: generateDeepseek
     },
     {
         name: 'llamalight',
@@ -172,7 +172,7 @@ export const availableModels = [
         censored: false,
         description: 'Llama 3.1 8B Instruct',
         baseModel: true,
-        handler: (messages, options) => generateTextCloudflare(messages, options)
+        handler: generateTextPortkey
     },
     {
         name: 'llamaguard',
@@ -181,7 +181,7 @@ export const availableModels = [
         description: 'Llamaguard 7B AWQ',
         baseModel: false,
         provider: 'cloudflare',
-        handler: (messages, options) => generateTextCloudflare(messages, options)
+        handler: generateTextCloudflare
     },
     {
         name: 'gemini',
@@ -217,7 +217,7 @@ export const availableModels = [
         baseModel: false,
         provider: 'modal.com',
         censored: false,
-        handler: (messages, options) => hypnosisTracy(messages, options)
+        handler: hypnosisTracy
     },
     {
         name: 'sur',
@@ -225,7 +225,7 @@ export const availableModels = [
         censored: true,
         description: 'Sur AI Assistant',
         baseModel: false,
-        handler: (messages, options) => surOpenai(messages, options)
+        handler: surOpenai
     },
     {
         name: 'sur-mistral',
@@ -233,7 +233,7 @@ export const availableModels = [
         censored: true,
         description: 'Sur AI Assistant (Mistral)',
         baseModel: false,
-        handler: (messages, options) => surMistral(messages, options)
+        handler: surMistral
     },
     {
         name: 'llama-scaleway',
@@ -249,7 +249,25 @@ export const availableModels = [
         censored: true,
         description: 'Phi-4 Multimodal Instruct',
         baseModel: true,
-        handler: (messages, options) => generateTextPortkey(messages, options)
+        handler: generateTextPortkey
+    },
+    // {
+    //     model: 'openai-audio',
+    //     type: 'chat',
+    //     censored: true,
+    //     description: 'OpenAI GPT-4o-mini-audio',
+    //     baseModel: true,
+    //     audio: true,
+    //     handler: generateTextPortkey
+    // },
+    {
+        name: 'openai-audio',
+        type: 'chat',
+        censored: true,
+        description: 'OpenAI GPT-4o-audio-preview',
+        baseModel: true,
+        audio: true,
+        handler: generateTextPortkey
     }
 ];
 

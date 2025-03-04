@@ -256,7 +256,7 @@ async function handleRequest(req, res, requestData) {
             cached: false,
             responseLength: responseText?.length,
             streamMode: requestData.stream,
-            plainTextMode: requestData.plaintTextResponse,
+            plainTextMode: req.method === 'GET',
             ...tokenUsage
         });
 
@@ -264,7 +264,7 @@ async function handleRequest(req, res, requestData) {
             log('Sending streaming response with sendAsOpenAIStream');
             sendAsOpenAIStream(res, completion, req);
         } else {
-            if (requestData.plaintTextResponse) {
+            if (req.method === 'GET') {
                 sendContentResponse(res, completion);
             } else {
                 sendOpenAIResponse(res, completion);
@@ -468,12 +468,12 @@ export async function processRequest(req, res, requestData) {
             cached: true,
             responseLength: cachedResponse?.choices?.[0]?.message?.content?.length,
             streamMode: false,
-            plainTextMode: requestData.plaintTextResponse,
+            plainTextMode: req.method === 'GET',
             cacheKey: cacheKey,
             ...cachedTokenUsage
         });
 
-        if (requestData.plaintTextResponse) {
+        if (req.method === 'GET') {
             sendContentResponse(res, cachedResponse);
         } else {
             sendOpenAIResponse(res, cachedResponse);
@@ -529,7 +529,7 @@ export async function processRequest(req, res, requestData) {
 }
 
 // Helper function to check if a model is an audio model and add necessary parameters
-function prepareRequestParameters(requestParams, plaintTextResponse) {
+function prepareRequestParameters(requestParams) {
     const modelConfig = availableModels.find(m => 
         m.name === requestParams.model || m.model === requestParams.model
     );
@@ -539,8 +539,7 @@ function prepareRequestParameters(requestParams, plaintTextResponse) {
     
     // Create the final parameters object
     const finalParams = {
-        ...requestParams,
-        plaintTextResponse: plaintTextResponse
+        ...requestParams
     };
     
     // Add audio parameters if it's an audio model
@@ -559,7 +558,7 @@ app.post('/', async (req, res) => {
     }
 
     const requestParams = getRequestData(req, true);
-    const finalRequestParams = prepareRequestParameters(requestParams, true);
+    const finalRequestParams = prepareRequestParameters(requestParams);
     
     try {
         await processRequest(req, res, finalRequestParams);
@@ -730,11 +729,7 @@ export default app;
 // GET request handler (catch-all)
 app.get('/*', async (req, res) => {
     const requestData = getRequestData(req);
-    
-    // For GET requests, we always want plain text response for non-streaming requests
-    const plaintTextResponse = requestData.stream ? false : true;
-    
-    const finalRequestData = prepareRequestParameters(requestData, plaintTextResponse);
+    const finalRequestData = prepareRequestParameters(requestData);
     
     try {
         // For streaming requests, handle them with the same code paths as POST requests

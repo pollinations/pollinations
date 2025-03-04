@@ -365,9 +365,30 @@ export function sendOpenAIResponse(res, completion) {
 }
 
 export function sendContentResponse(res, completion) {
+    // Handle the case where the completion is already a string or simple object
+    if (typeof completion === 'string') {
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        return res.send(completion);
+    }
+    
     // Only handle OpenAI-style responses (with choices array)
-    if (completion.choices && completion.choices[0] && completion.choices[0].message) {
+    if (completion.choices && completion.choices[0]) {
         const message = completion.choices[0].message;
+        
+        // If message is a string, send it directly
+        if (typeof message === 'string') {
+            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            return res.send(message);
+        }
+        
+        // If message is not an object, convert to string
+        if (!message || typeof message !== 'object') {
+            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            return res.send(String(message));
+        }
         
         // If the message contains audio, send the audio data as binary
         if (message.audio && message.audio.data) {
@@ -376,28 +397,28 @@ export function sendContentResponse(res, completion) {
             
             // Convert base64 data to binary
             const audioBuffer = Buffer.from(message.audio.data, 'base64');
-            res.send(audioBuffer);
+            return res.send(audioBuffer);
         }
-        // If there's other non-text content, return the message as JSON
-        else if (Object.keys(message).filter(key => key !== 'content').length > 0) {
-            res.setHeader('Content-Type', 'application/json; charset=utf-8');
-            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-            res.json(message);
-        } 
         // For simple text responses, return just the content as plain text
-        else {
+        // This is the most common case and should be prioritized
+        else if (message.content) {
             res.setHeader('Content-Type', 'text/plain; charset=utf-8');
             res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-            res.send(message.content);
+            return res.send(message.content);
+        }
+        // If there's other non-text content, return the message as JSON
+        else if (Object.keys(message).length > 0) {
+            res.setHeader('Content-Type', 'application/json; charset=utf-8');
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            return res.json(message);
         }
     }
     // Fallback for any other response structure
     else {
         errorLog('Unrecognized completion format:', JSON.stringify(completion));
-        res.send('Response format not recognized');
+        return res.send('Response format not recognized');
     }
 }
-
 
 // Helper function to process requests with queueing and caching logic
 export async function processRequest(req, res, requestData) {
@@ -709,7 +730,11 @@ export default app;
 // GET request handler (catch-all)
 app.get('/*', async (req, res) => {
     const requestData = getRequestData(req);
-    const finalRequestData = prepareRequestParameters(requestData, !requestData.stream);
+    
+    // For GET requests, we always want plain text response for non-streaming requests
+    const plaintTextResponse = requestData.stream ? false : true;
+    
+    const finalRequestData = prepareRequestParameters(requestData, plaintTextResponse);
     
     try {
         // For streaming requests, handle them with the same code paths as POST requests

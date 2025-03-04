@@ -93,36 +93,7 @@ export function createOpenAICompatibleClient(config) {
             const finalRequestBody = transformRequest
                 ? transformRequest(cleanedRequestBody)
                 : cleanedRequestBody;
-            
-            // Doe-check for any null values that might have been reintroduced
-            if (providerName === 'Cloudflare') {
-                // For Cloudflare, we need to be extra careful about null values
-                log(`[${requestId}] Double-checking for null values in Cloudflare request`);
-                
-                // Remove any null values that might have been reintroduced
-                Object.keys(finalRequestBody).forEach(key => {
-                    if (finalRequestBody[key] === null) {
-                        log(`[${requestId}] Removing null value for key ${key} in final Cloudflare request`);
-                        delete finalRequestBody[key];
-                    }
-                });
-                
-                // Also check for null values in nested objects
-                if (finalRequestBody.response_format && typeof finalRequestBody.response_format === 'object') {
-                    Object.keys(finalRequestBody.response_format).forEach(key => {
-                        if (finalRequestBody.response_format[key] === null) {
-                            log(`[${requestId}] Removing null value for key ${key} in response_format`);
-                            delete finalRequestBody.response_format[key];
-                        }
-                    });
-                    
-                    // If response_format is empty after cleaning, remove it
-                    if (Object.keys(finalRequestBody.response_format).length === 0) {
-                        log(`[${requestId}] Removing empty response_format object`);
-                        delete finalRequestBody.response_format;
-                    }
-                }
-            }
+    
 
             log(`[${requestId}] Sending request to ${providerName} API`, {
                 timestamp: new Date().toISOString(),
@@ -153,6 +124,9 @@ export function createOpenAICompatibleClient(config) {
 
             log(`[${requestId}] Request headers:`, headers);
 
+            log(`[${requestId}] Sending request to ${providerName} API at ${endpointUrl}`);
+
+            log(`[${requestId}] Request body:`, JSON.stringify(finalRequestBody, null, 2));
             // Make API request
             const response = await fetch(endpointUrl, {
                 method: "POST",

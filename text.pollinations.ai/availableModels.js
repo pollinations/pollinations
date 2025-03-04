@@ -80,7 +80,7 @@ export const availableModels = [
         censored: false,
         description: 'Llama 3.3 70B',
         baseModel: true,
-        handler: (messages, options) => generateTextCloudflare(messages, { ...options, model: 'llama' })
+        handler: (messages, options) => generateTextPortkey(messages, options)
     },
     {
         name: 'mistral',

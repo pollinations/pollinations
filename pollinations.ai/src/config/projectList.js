@@ -364,6 +364,14 @@ export const projects = {
   ],
   sdkLibraries: [
     {
+      name: "🆕 ComfyUI-Pollinations",
+      url: "https://github.com/1038lab/ComfyUI-Pollinations",
+      description: "A custom node for ComfyUI that utilizes the Pollinations API to generate images and text based on user prompts, supporting multiple image and text generation models.",
+      author: "https://github.com/1038lab/",
+      repo: "https://github.com/1038lab/ComfyUI-Pollinations",
+      submissionDate: "2025-03-04",
+    },
+    {
       name: "pollinations NPM Module",
       url: "https://www.npmjs.com/package/pollinations",
       description: "A Node.js package for accessing all Pollinations features.",

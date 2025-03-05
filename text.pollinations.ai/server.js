@@ -561,7 +561,7 @@ function prepareRequestParameters(requestParams) {
         finalParams.modalities = ["text", "audio"];
         finalParams.audio = { 
             voice: voice, 
-            format: "mp3" 
+            format: requestParams.stream ? "pcm16" : "mp3" 
         };
     }
     

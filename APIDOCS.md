@@ -243,11 +243,125 @@ generateText();
 <img src="https://image.pollinations.ai/prompt/Modern%20minimalist%20logo" alt="AI-generated logo">
 ```
 
+## Model Context Protocol (MCP) Interface
+
+Our image generation service supports the [Model Context Protocol](https://modelcontextprotocol.io), providing a standardized way for AI systems to interact with our service.
+
+### MCP Endpoints
+
+- SSE Connection: `GET https://image.pollinations.ai/mcp/sse`
+- Message Endpoint: `POST https://image.pollinations.ai/mcp/messages`
+
+### Available Resources
+
+#### Models List
+```javascript
+// List available models
+const models = await client.readResource("models://list");
+```
+
+Returns information about available models and their capabilities.
+
+#### Model Capabilities
+```javascript
+// Get capabilities for a specific model
+const capabilities = await client.readResource("capabilities://flux");
+```
+
+Returns detailed information about a model's features and limitations.
+
+### Available Tools
+
+#### generate-image
+Generate images using any available model.
+
+Parameters:
+- prompt* (string): Text description of the image to generate
+- model (string, optional): Model to use for generation
+- seed (integer, optional): Random seed for reproducibility
+- width (integer, optional): Output image width
+- height (integer, optional): Output image height
+- nologo (boolean, optional): Disable logo watermark
+- private (boolean, optional): Keep image private
+- enhance (boolean, optional): Enable image enhancement
+- safe (boolean, optional): Enable safety filters
+- format (string, optional): Output format ('jpeg' or 'png')
+
+```javascript
+// Generate an image
+const result = await client.callTool({
+  name: "generate-image",
+  arguments: {
+    prompt: "A beautiful sunset over mountains",
+    model: "flux",
+    width: 1024,
+    height: 1024,
+    format: "jpeg"
+  }
+});
+```
+
+### Prompt Templates
+
+#### create-image
+Helper template for constructing image generation prompts.
+
+Parameters:
+- description* (string): Main description of what to generate
+- style (string, optional): Visual style to apply
+- mood (string, optional): Emotional mood or atmosphere
+- details (string, optional): Additional specifications
+
+```javascript
+// Use prompt template
+const prompt = await client.getPrompt("create-image", {
+  description: "A serene mountain landscape",
+  style: "oil painting",
+  mood: "peaceful",
+  details: "morning mist, golden sunlight"
+});
+```
+
+### Example Usage
+
+```javascript
+import { Client } from "@modelcontextprotocol/sdk/client";
+
+// Create MCP client
+const client = new Client({
+  name: "example-client",
+  version: "1.0.0"
+});
+
+// Connect to Pollinations MCP server
+await client.connect("https://image.pollinations.ai/mcp");
+
+// List available models
+const models = await client.readResource("models://list");
+console.log("Available models:", models);
+
+// Generate an image
+const result = await client.callTool({
+  name: "generate-image",
+  arguments: {
+    prompt: "A beautiful sunset over mountains",
+    model: "flux",
+    width: 1024,
+    height: 1024
+  }
+});
+
+// Access the generated image
+const imageData = result.content[0].data; // Base64 encoded image
+const metadata = JSON.parse(result.content[1].text); // Generation metadata
+```
+
 ## Integration Examples
 
 - Web Design: Use AI-generated images for dynamic content
 - E-learning: Generate custom illustrations for concepts
 - Chatbots: Enhance responses with relevant images
 - Social Media: Create engaging visual content on-the-fly
+- AI Systems: Integrate through the Model Context Protocol
 
 For more examples and community projects, visit our [GitHub repository](https://github.com/pollinations/pollinations).

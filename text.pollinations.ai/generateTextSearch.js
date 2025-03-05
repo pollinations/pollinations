@@ -9,7 +9,7 @@ const log = debug('pollinations:search');
 const errorLog = debug('pollinations:search:error');
 
 // Define default search tools
-const defaultSearchTools = [searchToolDefinition, scrapeToolDefinition];
+const defaultSearchTools = [searchToolDefinition]; // Temporarily removed scrapeToolDefinition
 
 /**
  * Generates text with search capabilities using OpenAI's function calling
@@ -42,7 +42,7 @@ export async function generateTextSearch(messages, options = {}) {
             const searchOptions = {
                 ...options,
                 model: 'openai-large',
-                tools: defaultSearchTools,
+                tools: defaultSearchTools, // Using only search tool
                 tool_choice: 'auto',
                 parallel_tool_calls: false // Disable parallel tool calls
             };
@@ -67,7 +67,7 @@ export async function generateTextSearch(messages, options = {}) {
         const searchOptions = {
             ...options,
             model: options.model || 'openai-large',
-            tools: options.tools || defaultSearchTools,
+            tools: defaultSearchTools, // Using only search tool
             tool_choice: options.tool_choice || 'auto',
             parallel_tool_calls: false // Disable parallel tool calls
         };

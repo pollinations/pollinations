@@ -381,45 +381,13 @@ while (true) {
 }
 ```
 
-### Function Calling
+### Function Calling (Coming Soon)
 
-The Text Generation API supports function calling capabilities with compatible models. This allows the model to call functions that you define.
+Function calling capabilities will be available soon, allowing models to call functions that you define. This feature is currently under development.
 
-Function calling follows the OpenAI API specification. For more details, see the [OpenAI Function Calling Guide](https://platform.openai.com/docs/guides/function-calling).
+When implemented, function calling will follow the OpenAI API specification. For more details on how this will work, see the [OpenAI Function Calling Guide](https://platform.openai.com/docs/guides/function-calling).
 
-Example:
-```javascript
-const response = await fetch('https://text.pollinations.ai/openai', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    messages: [{ role: 'user', content: 'What's the weather like in San Francisco?' }],
-    model: 'openai',
-    tools: [
-      {
-        type: 'function',
-        function: {
-          name: 'get_weather',
-          description: 'Get the current weather in a location',
-          parameters: {
-            type: 'object',
-            properties: {
-              location: {
-                type: 'string',
-                description: 'The city and state, e.g. San Francisco, CA'
-              }
-            },
-            required: ['location']
-          }
-        }
-      }
-    ]
-  })
-});
-
-const data = await response.json();
-console.log(data);
-```
+Stay tuned for updates on this feature!
 
 ## Technical Details
 

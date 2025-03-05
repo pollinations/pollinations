@@ -6,10 +6,6 @@ dotenv.config();
 
 const BING_SEARCH_ENDPOINT = 'https://api.bing.microsoft.com/v7.0/search';
 const BING_API_KEY = process.env.BING_API_KEY;
-const BING_API_KEY_2 = process.env.BING_API_KEY_2;
-
-// Counter to alternate between API keys
-let requestCounter = 0;
 
 // Add timeout constant
 const SEARCH_TIMEOUT = 20000; // 10 seconds timeout for search
@@ -46,15 +42,10 @@ export async function performWebSearch({ query, num_results = 20 }) {
     try {
         log("Starting web search with query: '%s', requesting %d results", query, num_results);
         
-        // Alternate between API keys
-        const currentApiKey = requestCounter % 2 === 0 ? BING_API_KEY : BING_API_KEY_2;
-        requestCounter++;
-        log("Using API key %d for this request", requestCounter % 2 === 1 ? 1 : 2);
-        
         perfLog("Initiating Bing API request at %d ms", performance.now() - startTime);
         const response = await axios.get(BING_SEARCH_ENDPOINT, {
             params: { q: query, count: num_results },
-            headers: { "Ocp-Apim-Subscription-Key": currentApiKey },
+            headers: { "Ocp-Apim-Subscription-Key": BING_API_KEY },
             timeout: SEARCH_TIMEOUT
         });
         perfLog("Bing API response received after %d ms", performance.now() - startTime);

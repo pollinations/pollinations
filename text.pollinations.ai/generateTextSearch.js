@@ -34,7 +34,7 @@ export async function generateTextSearch(messages, options = {}) {
             if (!hasSystemMessage) {
                 updatedMessages.unshift({ 
                     role: 'system', 
-                    content: 'You are Polly, Pollinations.AI helpful search assistant. You can search the web for old and current information.' 
+                    content: `You are Polly, Pollinations.AI helpful search assistant. You can search the web for old and current information. Today's date is ${new Date().toLocaleDateString()}.`
                 });
             }
             
@@ -43,7 +43,8 @@ export async function generateTextSearch(messages, options = {}) {
                 ...options,
                 model: options.model || 'openai-large',
                 tools: options.tools || defaultSearchTools,
-                tool_choice: options.tool_choice || 'auto'
+                tool_choice: options.tool_choice || 'auto',
+                parallel_tool_calls: false // Disable parallel tool calls
             };
             
             // Pass the properly configured request to generateText for streaming
@@ -56,7 +57,7 @@ export async function generateTextSearch(messages, options = {}) {
             messages = [
                 { 
                     role: 'system', 
-                    content: 'You are Polly, Pollinations.AI helpful search assistant. You can search the web for old and current information.' 
+                    content: `You are Polly, Pollinations.AI helpful search assistant. You can search the web for old and current information. Today's date is ${new Date().toLocaleDateString()}.` 
                 }, 
                 ...messages
             ];
@@ -67,7 +68,8 @@ export async function generateTextSearch(messages, options = {}) {
             ...options,
             model: options.model || 'openai-large',
             tools: options.tools || defaultSearchTools,
-            tool_choice: options.tool_choice || 'auto'
+            tool_choice: options.tool_choice || 'auto',
+            parallel_tool_calls: false // Disable parallel tool calls
         };
         
         // Call the vanilla OpenAI function
@@ -148,17 +150,13 @@ async function processSearchToolCalls(completion, messages, options) {
             // Make a follow-up call with the tool results
             log('Making follow-up call with tool results');
             const followUpOptions = {
-                // Create a new options object without tools to prevent another tool call
-                model: options.model,
-                jsonMode: options.jsonMode,
-                seed: options.seed,
-                temperature: options.temperature,
-                response_format: options.jsonMode ? { type: 'json_object' } : undefined,
-                max_tokens: options.max_tokens || 4096
+                // Keep all options from original call
+                ...options,
+                // Ensure reasonable max tokens
+                max_tokens: options.max_tokens || 4096,
+                // Ensure response format is maintained
+                response_format: options.jsonMode ? { type: 'json_object' } : undefined
             };
-            
-            // Don't include tools in the follow-up call to ensure we get content
-            // This prevents an infinite loop of tool calls
             
             return await generateTextPortkey(updatedMessages, followUpOptions);
         }

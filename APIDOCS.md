@@ -29,7 +29,7 @@ OpenAI Compatible: `POST https://text.pollinations.ai/openai`
 Generate Audio: Use the `openai-audio` model
 - GET: `https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}`
 - POST Body: messages*, model (set to "openai-audio"), voice (optional)
-- Supported voices: "alloy", "echo", "fable", "onyx", "nova", "shimmer", "coral", "verse", "ballad", "ash", "sage", "amuch", "aster", "brook", "clover", "dan", "elan", "marilyn", "meadow" (default: "alloy")
+- Supported voices: See the list of available voices at `https://text.pollinations.ai/models` (default: "alloy")
 - Return: Audio file (MP3 format, Content-Type: audio/mpeg)
 
 List Models: `GET https://text.pollinations.ai/models`
@@ -177,7 +177,7 @@ https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voic
 **Parameters:**
 - model: Must be set to "openai-audio"
 - voice: (Optional) Voice to use for audio generation
-  - Supported values: "alloy", "echo", "fable", "onyx", "nova", "shimmer", "coral", "verse", "ballad", "ash", "sage", "amuch", "aster", "brook", "clover", "dan", "elan", "marilyn", "meadow"
+  - Supported values: See the list of available voices at `https://text.pollinations.ai/models`
   - Default: "alloy"
 
 **Return:** Audio file in MP3 format (Content-Type: audio/mpeg)

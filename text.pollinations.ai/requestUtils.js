@@ -53,7 +53,7 @@ export function getRequestData(req) {
     const stream = data.stream || false; 
     
     // Extract voice parameter for audio models
-    const voice = data.voice || null;
+    const voice = data.voice || "alloy";
 
     const messages = data.messages || [{ role: 'user', content: req.params[0] }];
     if (systemPrompt) {

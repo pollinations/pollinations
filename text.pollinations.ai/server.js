@@ -206,22 +206,26 @@ async function handleRequest(req, res, requestData) {
         
         // Process referral links if there's content in the response
         if (completion.choices?.[0]?.message?.content) {
-            try {
-                let processedContent = completion.choices[0].message.content;
-                
-                // First check for NSFW content in entire conversation
-                processedContent = await processNSFWReferralLinks({
-                    messages: requestData.messages,
-                    responseContent: processedContent
-                }, req);
-                
-                // Then process regular referral links
-                // processedContent = await processReferralLinks(processedContent, req);
-                
-                completion.choices[0].message.content = processedContent;
-            } catch (error) {
-                errorLog('Error processing referral links:', error);
-                // Continue with original content if referral processing fails
+            // Check if this is an audio response - if so, skip content processing
+            const isAudioResponse = completion.choices?.[0]?.message?.audio !== undefined;
+            
+            if (!isAudioResponse) {
+                try {
+                    let processedContent = completion.choices[0].message.content;
+                    
+                    // First check for NSFW content in entire conversation
+                    processedContent = await processNSFWReferralLinks({
+                        messages: requestData.messages,
+                        responseContent: processedContent
+                    }, req);
+                    
+                    // Then process regular referral links
+                    // processedContent = await processReferralLinks(processedContent, req);
+                    
+                    completion.choices[0].message.content = processedContent;
+                } catch (error) {
+                    errorLog('Error processing content:', error);
+                }
             }
         }
 

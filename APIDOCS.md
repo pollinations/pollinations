@@ -24,6 +24,13 @@ OpenAI Compatible: `POST https://text.pollinations.ai/openai`
 - Body: Follows OpenAI ChatGPT API format
 - Return: OpenAI-style response
 
+### Audio Generation API
+
+Generate Audio: Use the `openai-audio` model
+- POST Body: messages*, model (set to "openai-audio"), voice (optional)
+- Supported voices: "alloy", "echo", "fable", "onyx", "nova", "shimmer" (default: "alloy")
+- Return: Audio file
+
 List Models: `GET https://text.pollinations.ai/models`
 
 ## Feed Endpoints
@@ -157,6 +164,28 @@ Example message format with image:
 }
 ```
 
+#### Audio Generation
+The `openai-audio` model supports text-to-speech conversion:
+
+```json
+{
+  "messages": [
+    {"role": "user", "content": "Your text to convert to audio"}
+  ],
+  "model": "openai-audio",
+  "voice": "alloy"
+}
+```
+
+**Parameters:**
+- messages: Array containing the text to convert to speech
+- model: Must be set to "openai-audio"
+- voice: (Optional) Voice to use for audio generation
+  - Supported values: "alloy", "echo", "fable", "onyx", "nova", "shimmer"
+  - Default: "alloy"
+
+**Return:** Audio file in MP3 format
+
 #### Example Usage (GET)
 
 ```
@@ -237,6 +266,36 @@ async function generateText() {
 generateText();
 ```
 
+### JavaScript (Audio Generation)
+
+```javascript
+const fetch = require('node-fetch');
+const fs = require('fs');
+
+async function generateAudio() {
+  const response = await fetch('https://text.pollinations.ai/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messages: [
+        { role: 'user', content: 'Welcome to Pollinations, where creativity blooms!' }
+      ],
+      model: 'openai-audio',
+      voice: 'nova'  // Optional: 'alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'
+    }),
+  });
+
+  // Save the audio file
+  const buffer = await response.buffer();
+  fs.writeFileSync('generated_audio.mp3', buffer);
+  console.log('Audio generated and saved!');
+}
+
+generateAudio();
+```
+
 ### HTML (Image Embedding)
 
 ```html
@@ -247,7 +306,17 @@ generateText();
 
 - Web Design: Use AI-generated images for dynamic content
 - E-learning: Generate custom illustrations for concepts
-- Chatbots: Enhance responses with relevant images
-- Social Media: Create engaging visual content on-the-fly
+- Chatbots: Enhance responses with relevant images and audio
+- Social Media: Create engaging visual and audio content on-the-fly
+- Podcasts: Generate professional voiceovers with different voice options
+- Accessibility: Convert text content to audio for improved accessibility
 
 For more examples and community projects, visit our [GitHub repository](https://github.com/pollinations/pollinations).
+
+## Streaming and Function Calling
+
+The Text Generation API supports streaming responses and function calling capabilities. For detailed documentation on these features, please refer to our [GitHub repository](https://github.com/pollinations/pollinations) or the examples in our codebase.
+
+## Acknowledgements
+
+Special thanks to Reverand Dr. Tolerant for their invaluable contributions to the Pollinations community.

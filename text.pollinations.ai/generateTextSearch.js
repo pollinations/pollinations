@@ -41,9 +41,9 @@ export async function generateTextSearch(messages, options = {}) {
             // Configure search options for streaming
             const searchOptions = {
                 ...options,
-                model: options.model || 'openai-large',
-                tools: options.tools || defaultSearchTools,
-                tool_choice: options.tool_choice || 'auto',
+                model: 'openai-large',
+                tools: defaultSearchTools,
+                tool_choice: 'auto',
                 parallel_tool_calls: false // Disable parallel tool calls
             };
             

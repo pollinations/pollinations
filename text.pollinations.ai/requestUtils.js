@@ -55,6 +55,10 @@ export function getRequestData(req) {
     // Extract voice parameter for audio models
     const voice = data.voice || "alloy";
 
+    // Extract audio parameters
+    const modalities = data.modalities;
+    const audio = data.audio;
+
     // Extract tools and tool_choice for function calling
     const tools = data.tools || undefined;
     const tool_choice = data.tool_choice || undefined;
@@ -77,6 +81,8 @@ export function getRequestData(req) {
         isPrivate,
         voice,
         tools,
-        tool_choice
+        tool_choice,
+        modalities,
+        audio
     };
 }

@@ -215,6 +215,11 @@ export function cleanNullAndUndefined(obj) {
   const removedProps = [];
   
   Object.keys(cleaned).forEach(key => {
+    // Never clean modalities or audio properties
+    if (key === 'modalities' || key === 'audio') {
+      return;
+    }
+
     if (cleaned[key] === undefined || cleaned[key] === null) {
       removedProps.push(`${key}: ${cleaned[key] === null ? 'null' : 'undefined'}`);
       log(`Removing property ${key} with ${cleaned[key] === null ? 'null' : 'undefined'} value`);

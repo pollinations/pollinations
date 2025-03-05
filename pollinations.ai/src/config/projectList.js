@@ -364,6 +364,14 @@ export const projects = {
   ],
   sdkLibraries: [
     {
+      name: "🆕 ComfyUI-Pollinations",
+      url: "https://github.com/1038lab/ComfyUI-Pollinations",
+      description: "A custom node for ComfyUI that utilizes the Pollinations API to generate images and text based on user prompts, supporting multiple image and text generation models.",
+      author: "https://github.com/1038lab/",
+      repo: "https://github.com/1038lab/ComfyUI-Pollinations",
+      submissionDate: "2025-03-04",
+    },
+    {
       name: "pollinations NPM Module",
       url: "https://www.npmjs.com/package/pollinations",
       description: "A Node.js package for accessing all Pollinations features.",
@@ -395,6 +403,13 @@ export const projects = {
     },
   ],
   tutorials: [
+    {
+      name: "🆕 Chinese DeepSeek Tutorial",
+      url: "https://linux.do/t/topic/447840/235",
+      description: "A tutorial showing how to make DeepSeek AI support image generation by leveraging Pollinations.ai's API.",
+      author: "https://linux.do/u/isinry",
+      submissionDate: "2025-03-04",
+    },
     {
       name: "Artistic Styles Book",
       url: "https://proyectodescartes.org/iCartesiLibri/materiales_didacticos/Libro_Estilos/index.html",

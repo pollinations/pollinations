@@ -4,6 +4,7 @@
 
 ## 🆕 Latest News
 
+- **🎵 Audio Generation** - New text-to-speech and speech-to-text capabilities are now available! Try the `openai-audio` model on [text.pollinations.ai](https://text.pollinations.ai/).
 - **[Pollinations.DIY](https://pollinations.diy)** - Our newest product! A browser-based development environment for building AI-powered applications with Pollinations services.
 - **New Models** - Gemini 2.0 Flash and Gemini 2.0 Flash Thinking models are now available on [text.pollinations.ai/models](https://text.pollinations.ai/models)!
 - **MentatBot** - Our autonomous AI coding assistant implements new features directly from GitHub issues! Simply [create an issue](https://github.com/pollinations/pollinations/issues/new) describing what you'd like to see.
@@ -24,6 +25,7 @@ We're excited to announce MentatBot, the autonomous AI coding assistant that imp
 - 🆓 **_Free to use_**
 - 🔒 **Simplicity and privacy:** No logins, no keys, no data stored
 - 🖼️ **Embed like any normal image or text**
+- 🎵 **Audio generation:** Text-to-speech and speech-to-text capabilities
 - 🌍 Over **50,000 active users** and > **_20 million images generated per month_**
 - 🤝 Used by various **open-source LLMs**, **bots**, and **communities**
 - 🎣 **_Easy-to-use React hooks_** ([React Hooks Examples](https://react-hooks.pollinations.ai/))
@@ -49,6 +51,11 @@ We're excited to announce MentatBot, the autonomous AI coding assistant that imp
 
 1. Visit [https://text.pollinations.ai](https://text.pollinations.ai)
 2. Start chatting with the AI
+
+### Audio Generation
+
+1. Use the `openai-audio` model with our API
+2. Generate speech from text or transcribe audio to text
 
 For more advanced usage, check out our [API documentation](APIDOCS.md).
 
@@ -92,6 +99,12 @@ Python code to download the generated image:
 To generate text, use this URL:
 
     https://text.pollinations.ai/What%20is%20artificial%20intelligence?
+
+### Audio Generation
+
+To generate audio from text, use this URL:
+
+    https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=nova
 
 ## 🛠️ Integration
 

@@ -81,7 +81,9 @@ export function createOpenAICompatibleClient(config) {
                 max_tokens: normalizedOptions.maxTokens,
                 response_format: normalizedOptions.jsonMode ? { type: 'json_object' } : undefined,
                 tools: normalizedOptions.tools,
-                tool_choice: normalizedOptions.tool_choice
+                tool_choice: normalizedOptions.tool_choice,
+                modalities: normalizedOptions.modalities,
+                audio: normalizedOptions.audio,
             };
 
             // Clean undefined and null values

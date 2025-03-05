@@ -177,7 +177,8 @@ async function handleRequest(req, res, requestData) {
                 hasError: !!completion.error,
             });
         } else {
-            log("Completion: %O", completion);
+
+            log("Completion: %s", JSON.stringify(completion, null, 2));
         }
         
         // Ensure completion has the request ID
@@ -205,22 +206,26 @@ async function handleRequest(req, res, requestData) {
         
         // Process referral links if there's content in the response
         if (completion.choices?.[0]?.message?.content) {
-            try {
-                let processedContent = completion.choices[0].message.content;
-                
-                // First check for NSFW content in entire conversation
-                processedContent = await processNSFWReferralLinks({
-                    messages: requestData.messages,
-                    responseContent: processedContent
-                }, req);
-                
-                // Then process regular referral links
-                // processedContent = await processReferralLinks(processedContent, req);
-                
-                completion.choices[0].message.content = processedContent;
-            } catch (error) {
-                errorLog('Error processing referral links:', error);
-                // Continue with original content if referral processing fails
+            // Check if this is an audio response - if so, skip content processing
+            const isAudioResponse = completion.choices?.[0]?.message?.audio !== undefined;
+            
+            if (!isAudioResponse) {
+                try {
+                    let processedContent = completion.choices[0].message.content;
+                    
+                    // First check for NSFW content in entire conversation
+                    processedContent = await processNSFWReferralLinks({
+                        messages: requestData.messages,
+                        responseContent: processedContent
+                    }, req);
+                    
+                    // Then process regular referral links
+                    // processedContent = await processReferralLinks(processedContent, req);
+                    
+                    completion.choices[0].message.content = processedContent;
+                } catch (error) {
+                    errorLog('Error processing content:', error);
+                }
             }
         }
 
@@ -255,7 +260,7 @@ async function handleRequest(req, res, requestData) {
             cached: false,
             responseLength: responseText?.length,
             streamMode: requestData.stream,
-            plainTextMode: requestData.plaintTextResponse,
+            plainTextMode: req.method === 'GET',
             ...tokenUsage
         });
 
@@ -263,7 +268,7 @@ async function handleRequest(req, res, requestData) {
             log('Sending streaming response with sendAsOpenAIStream');
             sendAsOpenAIStream(res, completion, req);
         } else {
-            if (requestData.plaintTextResponse) {
+            if (req.method === 'GET') {
                 sendContentResponse(res, completion);
             } else {
                 sendOpenAIResponse(res, completion);
@@ -348,34 +353,76 @@ export function sendOpenAIResponse(res, completion) {
         return;
     }
     
-    // Otherwise, format as OpenAI response
+    // Set appropriate headers
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    
+    // Follow thin proxy approach - pass through the response as-is
+    // Only add required fields if they're missing
     const response = {
+        ...completion,
         id: completion.id || generatePollinationsId(),
-        object: "chat.completion",
-        created: completion.created || Date.now(),
-        model: completion.model,
-        choices: completion.choices,
-        usage: completion.usage,
+        object: completion.object || "chat.completion",
+        created: completion.created || Date.now()
     };
-
+    
     res.json(response);
 }
 
 export function sendContentResponse(res, completion) {
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    // Handle the case where the completion is already a string or simple object
+    if (typeof completion === 'string') {
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        return res.send(completion);
+    }
     
     // Only handle OpenAI-style responses (with choices array)
-    if (completion.choices && completion.choices[0] && completion.choices[0].message) {
-        res.send(completion.choices[0].message.content);
+    if (completion.choices && completion.choices[0]) {
+        const message = completion.choices[0].message;
+        
+        // If message is a string, send it directly
+        if (typeof message === 'string') {
+            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            return res.send(message);
+        }
+        
+        // If message is not an object, convert to string
+        if (!message || typeof message !== 'object') {
+            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            return res.send(String(message));
+        }
+        
+        // If the message contains audio, send the audio data as binary
+        if (message.audio && message.audio.data) {
+            res.setHeader('Content-Type', 'audio/mpeg');
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            
+            // Convert base64 data to binary
+            const audioBuffer = Buffer.from(message.audio.data, 'base64');
+            return res.send(audioBuffer);
+        }
+        // For simple text responses, return just the content as plain text
+        // This is the most common case and should be prioritized
+        else if (message.content) {
+            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            return res.send(message.content);
+        }
+        // If there's other non-text content, return the message as JSON
+        else if (Object.keys(message).length > 0) {
+            res.setHeader('Content-Type', 'application/json; charset=utf-8');
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            return res.json(message);
+        }
     }
     // Fallback for any other response structure
     else {
         errorLog('Unrecognized completion format:', JSON.stringify(completion));
-        res.send('Response format not recognized');
+        return res.send('Response format not recognized');
     }
 }
-
 
 // Helper function to process requests with queueing and caching logic
 export async function processRequest(req, res, requestData) {
@@ -425,12 +472,12 @@ export async function processRequest(req, res, requestData) {
             cached: true,
             responseLength: cachedResponse?.choices?.[0]?.message?.content?.length,
             streamMode: false,
-            plainTextMode: requestData.plaintTextResponse,
+            plainTextMode: req.method === 'GET',
             cacheKey: cacheKey,
             ...cachedTokenUsage
         });
 
-        if (requestData.plaintTextResponse) {
+        if (req.method === 'GET') {
             sendContentResponse(res, cachedResponse);
         } else {
             sendOpenAIResponse(res, cachedResponse);
@@ -485,15 +532,46 @@ export async function processRequest(req, res, requestData) {
     }
 }
 
-// POST request handler
+// Helper function to check if a model is an audio model and add necessary parameters
+function prepareRequestParameters(requestParams) {
+    const modelConfig = availableModels.find(m => 
+        m.name === requestParams.model || m.model === requestParams.model
+    );
+    const isAudioModel = modelConfig && modelConfig.audio === true;
+    
+    log('Is audio model:', isAudioModel);
+    
+    // Create the final parameters object
+    const finalParams = {
+        ...requestParams
+    };
+    
+    // Add audio parameters if it's an audio model
+    if (isAudioModel) {
+        // Get the voice parameter from the request or use "alloy" as default
+        const voice = requestParams.voice || "alloy";
+        log('Adding audio parameters for audio model:', requestParams.model, 'with voice:', voice);
+        
+        finalParams.modalities = ["text", "audio"];
+        finalParams.audio = { 
+            voice: voice, 
+            format: "mp3" 
+        };
+    }
+    
+    return finalParams;
+}
+
 app.post('/', async (req, res) => {
     if (!req.body.messages || !Array.isArray(req.body.messages)) {
         return res.status(400).json({ error: 'Invalid messages array' });
     }
 
     const requestParams = getRequestData(req, true);
+    const finalRequestParams = prepareRequestParameters(requestParams);
+    
     try {
-        await processRequest(req, res, {...requestParams, plaintTextResponse: true});
+        await processRequest(req, res, finalRequestParams);
     } catch (error) {
         sendErrorResponse(res, req, error, requestParams);
     }
@@ -525,7 +603,6 @@ app.post('/openai*', async (req, res) => {
     } catch (error) {
         sendErrorResponse(res, req, error, requestParams);
     }
-
 })
 
 function sendAsOpenAIStream(res, completion, req = null) {
@@ -662,10 +739,12 @@ export default app;
 // GET request handler (catch-all)
 app.get('/*', async (req, res) => {
     const requestData = getRequestData(req);
+    const finalRequestData = prepareRequestParameters(requestData);
+    
     try {
         // For streaming requests, handle them with the same code paths as POST requests
         // This ensures consistent handling of streaming for both GET and POST
-        await processRequest(req, res, {...requestData, plaintTextResponse: !requestData.stream});
+        await processRequest(req, res, finalRequestData);
     } catch (error) {
         errorLog('Error in catch-all GET handler: %s', error.message);
         sendErrorResponse(res, req, error, requestData);

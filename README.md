@@ -4,7 +4,7 @@
 
 ## 🆕 Latest News
 
-- **🎵 Audio Generation** - New text-to-speech and speech-to-text capabilities are now available! Try the `openai-audio` model on [text.pollinations.ai](https://text.pollinations.ai/).
+- **🎵 Audio Generation** - New text-to-speech and speech-to-text capabilities are now available! Try the `openai-audio` model - see our [API documentation](APIDOCS.md#audio-generation-api) for details.
 - **[Pollinations.DIY](https://pollinations.diy)** - Our newest product! A browser-based development environment for building AI-powered applications with Pollinations services.
 - **New Models** - Gemini 2.0 Flash and Gemini 2.0 Flash Thinking models are now available on [text.pollinations.ai/models](https://text.pollinations.ai/models)!
 - **MentatBot** - Our autonomous AI coding assistant implements new features directly from GitHub issues! Simply [create an issue](https://github.com/pollinations/pollinations/issues/new) describing what you'd like to see.

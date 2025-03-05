@@ -104,6 +104,15 @@ Parameters: model, seed, json, system
    - Update documentation
    - Add appropriate error handling
 
+4. API Documentation Guidelines:
+   - Keep documentation strictly technical and user-focused
+   - Avoid marketing language or promotional content
+   - Link to dynamic endpoints (like /models) rather than hardcoding lists that may change
+   - Don't include internal implementation details or environment variables
+   - Focus on endpoints, parameters, and response formats
+   - For new features, document both simplified endpoints and OpenAI-compatible endpoints
+   - Include minimal, clear code examples that demonstrate basic usage
+
 ## Important Context
 
 Pollinations.AI is:

@@ -245,7 +245,7 @@ async function generateAudio() {
   // Simple GET request for text-to-speech
   const text = "Welcome to Pollinations, where creativity blooms!";
   const voice = "nova"; // Optional voice parameter
-  const url = `https://text.pollinations.ai/${encodeURIComponent(text)}?model=openai-audio&voice=${voice}`;
+  const url = "https://text.pollinations.ai/" + encodeURIComponent(text) + "?model=openai-audio&voice=" + voice;
   
   const response = await fetch(url);
   

@@ -16,6 +16,9 @@ Generate (GET): \`GET https://text.pollinations.ai/{prompt}\`
 ### Text Generation (Advanced)
 Generate (POST): \`POST https://text.pollinations.ai/\`
 
+### Audio Generation
+Generate Audio: \`GET https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}\`
+
 ### OpenAI Compatible Endpoint
 OpenAI Compatible: \`POST https://text.pollinations.ai/openai\`
 
@@ -236,6 +239,23 @@ async function generatePrivateText() {
 }
 
 generatePrivateText();
+
+// Example 3: Audio Generation (Text-to-Speech)
+async function generateAudio() {
+  // Simple GET request for text-to-speech
+  const text = "Welcome to Pollinations, where creativity blooms!";
+  const voice = "nova"; // Optional voice parameter
+  const url = "https://text.pollinations.ai/" + encodeURIComponent(text) + "?model=openai-audio&voice=" + voice;
+  
+  const response = await fetch(url);
+  
+  // Save the audio file
+  const buffer = await response.buffer();
+  fs.writeFileSync('generated_audio.mp3', buffer);
+  console.log('Audio generated and saved!');
+}
+
+generateAudio();
 `,
     language: "javascript"
   },
@@ -324,6 +344,22 @@ eventSource.onmessage = function(event) {
   console.log('New text generated:', textData);
 };
 \`\`\`
+`,
+    language: "markdown"
+  },
+  audio: {
+    code: () => `
+## Audio Generation
+
+### Text-to-Speech
+
+The simplest way to generate audio from text:
+
+\`\`\`
+https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=nova
+\`\`\`
+
+Our audio features follow the OpenAI audio API specification. For more details and advanced usage, see the [OpenAI Audio Guide](https://platform.openai.com/docs/guides/audio).
 `,
     language: "markdown"
   }

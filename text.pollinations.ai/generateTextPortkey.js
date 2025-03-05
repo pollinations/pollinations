@@ -75,12 +75,15 @@ const MODEL_MAPPING = {
     'openai': 'gpt-4o-mini',       // Maps to portkeyConfig['gpt-4o-mini']
     'openai-large': 'gpt-4o',      // Maps to portkeyConfig['gpt-4o']
     'openai-reasoning': 'o1-mini', // Maps to portkeyConfig['o1-mini'],
+    // 'openai-audio': 'gpt-4o-mini-audio-preview',
+    'openai-audio': 'gpt-4o-audio-preview',
     // Cloudflare models
     'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
     'llamalight': '@cf/meta/llama-3.1-8b-instruct',
     'deepseek-r1': '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
     'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
-    'phi': 'phi-4-instruct'
+    'phi': 'phi-4-instruct',
+
 };
 
 // Default system prompts for different models
@@ -170,6 +173,16 @@ export const portkeyConfig = {
         process.env.AZURE_O1MINI_API_KEY,
         process.env.AZURE_O1MINI_ENDPOINT,
         'o1-mini'
+    ),
+    'gpt-4o-mini-audio-preview': createAzureModelConfig(
+        process.env.AZURE_OPENAI_AUDIO_API_KEY,
+        process.env.AZURE_OPENAI_AUDIO_ENDPOINT,
+        'gpt-4o-mini-audio-preview'
+    ),
+    'gpt-4o-audio-preview': createAzureModelConfig(
+        process.env.AZURE_OPENAI_AUDIO_LARGE_API_KEY,
+        process.env.AZURE_OPENAI_AUDIO_LARGE_ENDPOINT,
+        'gpt-4o-audio-preview'
     ),
     // Cloudflare model configurations
     '@cf/meta/llama-3.3-70b-instruct-fp8-fast': createCloudflareModelConfig(),

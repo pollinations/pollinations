@@ -51,6 +51,9 @@ export function getRequestData(req) {
     const isImagePollinationsReferrer = WHITELISTED_DOMAINS.some(domain => referrer.toLowerCase().includes(domain));
     const isRobloxReferrer = referrer.toLowerCase().includes('roblox') || referrer.toLowerCase().includes('gacha11211');
     const stream = data.stream || false; 
+    
+    // Extract voice parameter for audio models
+    const voice = data.voice || "alloy";
 
     const messages = data.messages || [{ role: 'user', content: req.params[0] }];
     if (systemPrompt) {
@@ -67,6 +70,7 @@ export function getRequestData(req) {
         isRobloxReferrer,
         referrer,
         stream,
-        isPrivate
+        isPrivate,
+        voice
     };
 }

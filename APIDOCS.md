@@ -27,9 +27,10 @@ OpenAI Compatible: `POST https://text.pollinations.ai/openai`
 ### Audio Generation API
 
 Generate Audio: Use the `openai-audio` model
+- GET: `https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}`
 - POST Body: messages*, model (set to "openai-audio"), voice (optional)
 - Supported voices: "alloy", "echo", "fable", "onyx", "nova", "shimmer" (default: "alloy")
-- Return: Audio file
+- Return: Audio file (MP3 format, Content-Type: audio/mpeg)
 
 List Models: `GET https://text.pollinations.ai/models`
 
@@ -164,7 +165,9 @@ Example message format with image:
 }
 ```
 
-#### Audio Generation
+#### Audio Capabilities
+
+##### Text-to-Speech
 The `openai-audio` model supports text-to-speech conversion:
 
 ```json
@@ -184,7 +187,37 @@ The `openai-audio` model supports text-to-speech conversion:
   - Supported values: "alloy", "echo", "fable", "onyx", "nova", "shimmer"
   - Default: "alloy"
 
-**Return:** Audio file in MP3 format
+**Return:** Audio file in MP3 format (Content-Type: audio/mpeg)
+
+You can also use the GET endpoint for simple text-to-speech:
+```
+https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=nova
+```
+
+##### Speech-to-Text
+You can use the same multimodal capabilities that support images to transcribe audio. Simply include an audio file in your request:
+
+```json
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {"type": "text", "text": "Transcribe this audio I attached"},
+        {
+          "type": "audio_url",
+          "audio_url": {
+            "url": "https://example.com/audio.mp3"
+          }
+        }
+      ]
+    }
+  ],
+  "model": "openai-audio"
+}
+```
+
+**Note:** Speech-to-text follows the OpenAI audio API specification. For more details, see the [OpenAI Audio Guide](https://platform.openai.com/docs/guides/audio).
 
 #### Example Usage (GET)
 
@@ -313,9 +346,102 @@ generateAudio();
 
 For more examples and community projects, visit our [GitHub repository](https://github.com/pollinations/pollinations).
 
-## Streaming and Function Calling
+## Advanced Features
 
-The Text Generation API supports streaming responses and function calling capabilities. For detailed documentation on these features, please refer to our [GitHub repository](https://github.com/pollinations/pollinations) or the examples in our codebase.
+### Streaming Responses
+
+The Text Generation API supports streaming responses using Server-Sent Events (SSE). This allows you to receive the generated text as it's being produced, rather than waiting for the complete response.
+
+To use streaming:
+- Add `stream=true` to your request parameters
+- Process the SSE stream in your client code
+
+Example with fetch:
+```javascript
+const response = await fetch('https://text.pollinations.ai/', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    messages: [{ role: 'user', content: 'Write a story about a robot' }],
+    model: 'openai',
+    stream: true
+  })
+});
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  
+  const chunk = decoder.decode(value);
+  // Process the SSE chunk
+  console.log(chunk);
+}
+```
+
+### Function Calling
+
+The Text Generation API supports function calling capabilities with compatible models. This allows the model to call functions that you define.
+
+Function calling follows the OpenAI API specification. For more details, see the [OpenAI Function Calling Guide](https://platform.openai.com/docs/guides/function-calling).
+
+Example:
+```javascript
+const response = await fetch('https://text.pollinations.ai/openai', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    messages: [{ role: 'user', content: 'What's the weather like in San Francisco?' }],
+    model: 'openai',
+    tools: [
+      {
+        type: 'function',
+        function: {
+          name: 'get_weather',
+          description: 'Get the current weather in a location',
+          parameters: {
+            type: 'object',
+            properties: {
+              location: {
+                type: 'string',
+                description: 'The city and state, e.g. San Francisco, CA'
+              }
+            },
+            required: ['location']
+          }
+        }
+      }
+    ]
+  })
+});
+
+const data = await response.json();
+console.log(data);
+```
+
+## Technical Details
+
+### Response Formats
+
+- **Text Models**: 
+  - GET requests return plain text
+  - POST requests to the root path (/) return plain text
+  - POST requests to other endpoints (like /openai) return JSON in OpenAI format
+
+- **Audio Models**:
+  - Return binary audio data with Content-Type: audio/mpeg
+  - No content processing is applied to audio responses
+
+### Environment Variables
+
+The audio features require the following environment variables (for service operators):
+
+- `AZURE_OPENAI_AUDIO_API_KEY`
+- `AZURE_OPENAI_AUDIO_ENDPOINT`
+- `AZURE_OPENAI_AUDIO_LARGE_API_KEY`
+- `AZURE_OPENAI_AUDIO_LARGE_ENDPOINT`
 
 ## Acknowledgements
 

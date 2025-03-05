@@ -298,14 +298,7 @@ generateAudio();
 
 ## Integration Examples
 
-- Web Design: Use AI-generated images for dynamic content
-- E-learning: Generate custom illustrations for concepts
-- Chatbots: Enhance responses with relevant images and audio
-- Social Media: Create engaging visual and audio content on-the-fly
-- Podcasts: Generate professional voiceovers with different voice options
-- Accessibility: Convert text content to audio for improved accessibility
-
-For more examples and community projects, visit our [GitHub repository](https://github.com/pollinations/pollinations).
+For examples and community projects, visit our [GitHub repository](https://github.com/pollinations/pollinations).
 
 ## Advanced Features
 
@@ -360,17 +353,8 @@ Stay tuned for updates on this feature!
   - POST requests to other endpoints (like /openai) return JSON in OpenAI format
 
 - **Audio Models**:
-  - Return binary audio data with Content-Type: audio/mpeg
-  - No content processing is applied to audio responses
-
-### Environment Variables
-
-The audio features require the following environment variables (for service operators):
-
-- `AZURE_OPENAI_AUDIO_API_KEY`
-- `AZURE_OPENAI_AUDIO_ENDPOINT`
-- `AZURE_OPENAI_AUDIO_LARGE_API_KEY`
-- `AZURE_OPENAI_AUDIO_LARGE_ENDPOINT`
+  - When using the simplified endpoint (GET or POST to /), return binary audio data with Content-Type: audio/mpeg
+  - When using the OpenAI-compatible endpoint (/openai), follow the OpenAI API specification
 
 ## Acknowledgements
 

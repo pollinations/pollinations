@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Test non-streaming audio generation using the openai-audio model
-curl -X POST "https://text.pollinations.ai/openai/chat/completions" \
+curl -X POST "http://localhost:16385/openai/chat/completions" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "openai-audio",
@@ -13,10 +13,9 @@ curl -X POST "https://text.pollinations.ai/openai/chat/completions" \
     "messages": [
       {
         "role": "user",
-        "content": "Say the following: Hello, this is a test of the audio generation without streaming. The format should be mp3."
+        "content": "Say just: hello"
       }
     ]
-  }' \
-  --output test_audio_non_streaming.mp3
+  }'
 
 echo "Audio saved to test_audio_non_streaming.mp3"

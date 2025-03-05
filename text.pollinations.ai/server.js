@@ -574,6 +574,10 @@ function prepareRequestParameters(requestParams) {
             // If audio object exists but format is not specified
             finalParams.audio.format = requestParams.stream ? "pcm16" : "mp3";
         }
+
+        // Ensure these parameters are preserved in the final request
+        requestParams.modalities = finalParams.modalities;
+        requestParams.audio = finalParams.audio;
     }
     
     return finalParams;

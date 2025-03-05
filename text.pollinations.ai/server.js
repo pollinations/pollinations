@@ -270,6 +270,9 @@ async function handleRequest(req, res, requestData) {
         } else {
             if (req.method === 'GET') {
                 sendContentResponse(res, completion);
+            } else if (req.path === '/') {
+                // For POST requests to the root path, also send plain text
+                sendContentResponse(res, completion);
             } else {
                 sendOpenAIResponse(res, completion);
             }
@@ -478,6 +481,9 @@ export async function processRequest(req, res, requestData) {
         });
 
         if (req.method === 'GET') {
+            sendContentResponse(res, cachedResponse);
+        } else if (req.path === '/') {
+            // For POST requests to the root path, also send plain text
             sendContentResponse(res, cachedResponse);
         } else {
             sendOpenAIResponse(res, cachedResponse);

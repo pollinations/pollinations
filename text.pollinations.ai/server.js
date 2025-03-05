@@ -555,14 +555,25 @@ function prepareRequestParameters(requestParams) {
     // Add audio parameters if it's an audio model
     if (isAudioModel) {
         // Get the voice parameter from the request or use "alloy" as default
-        const voice = requestParams.voice || "alloy";
+        const voice = requestParams.voice || requestParams.audio?.voice || "alloy";
         log('Adding audio parameters for audio model:', requestParams.model, 'with voice:', voice);
         
-        finalParams.modalities = ["text", "audio"];
-        finalParams.audio = { 
-            voice: voice, 
-            format: requestParams.stream ? "pcm16" : "mp3" 
-        };
+        // Only add modalities and audio if not already provided in the request
+        if (!finalParams.modalities) {
+            finalParams.modalities = ["text", "audio"];
+        }
+        
+        // If audio format is already specified in the request, use that
+        // Otherwise, use pcm16 for streaming and mp3 for non-streaming
+        if (!finalParams.audio) {
+            finalParams.audio = { 
+                voice: voice,
+                format: requestParams.stream ? "pcm16" : "mp3" 
+            };
+        } else if (!finalParams.audio.format) {
+            // If audio object exists but format is not specified
+            finalParams.audio.format = requestParams.stream ? "pcm16" : "mp3";
+        }
     }
     
     return finalParams;

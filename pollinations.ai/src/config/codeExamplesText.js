@@ -242,20 +242,13 @@ generatePrivateText();
 
 // Example 3: Audio Generation (Text-to-Speech)
 async function generateAudio() {
-  const response = await fetch('https://text.pollinations.ai/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      messages: [
-        { role: 'user', content: 'Welcome to Pollinations, where creativity blooms!' }
-      ],
-      model: 'openai-audio',
-      voice: 'nova'  // Options: 'alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'
-    }),
-  });
-
+  // Simple GET request for text-to-speech
+  const text = "Welcome to Pollinations, where creativity blooms!";
+  const voice = "nova"; // Optional voice parameter
+  const url = `https://text.pollinations.ai/${encodeURIComponent(text)}?model=openai-audio&voice=${voice}`;
+  
+  const response = await fetch(url);
+  
   // Save the audio file
   const buffer = await response.buffer();
   fs.writeFileSync('generated_audio.mp3', buffer);
@@ -356,108 +349,17 @@ eventSource.onmessage = function(event) {
   },
   audio: {
     code: () => `
-## Audio Generation Examples
+## Audio Generation
 
 ### Text-to-Speech
 
-#### Simple GET Request
+The simplest way to generate audio from text:
+
 \`\`\`
 https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=nova
 \`\`\`
 
-#### Node.js Example
-\`\`\`javascript
-import fs from 'fs';
-import fetch from 'node-fetch';
-
-async function generateAudio() {
-  const response = await fetch('https://text.pollinations.ai/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      messages: [
-        { role: 'user', content: 'Welcome to Pollinations, where creativity blooms!' }
-      ],
-      model: 'openai-audio',
-      voice: 'nova'  // Options: 'alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'
-    }),
-  });
-
-  // Save the audio file
-  const buffer = await response.buffer();
-  fs.writeFileSync('generated_audio.mp3', buffer);
-  console.log('Audio generated and saved!');
-}
-
-generateAudio();
-\`\`\`
-
-#### Python Example
-\`\`\`python
-import requests
-
-def generate_audio(text, voice='alloy'):
-    url = f"https://text.pollinations.ai/{text}?model=openai-audio&voice={voice}"
-    response = requests.get(url)
-    
-    with open('generated_audio.mp3', 'wb') as file:
-        file.write(response.content)
-    
-    print('Audio generated and saved!')
-
-# Generate audio with default voice
-generate_audio('Welcome to Pollinations')
-
-# Generate audio with specific voice
-generate_audio('Welcome to Pollinations', voice='nova')
-\`\`\`
-
-### Speech-to-Text
-
-\`\`\`javascript
-import fs from 'fs';
-import fetch from 'node-fetch';
-
-async function transcribeAudio() {
-  // Read audio file and convert to base64
-  const audioFile = fs.readFileSync('audio_to_transcribe.mp3');
-  const base64Audio = audioFile.toString('base64');
-  
-  const response = await fetch('https://text.pollinations.ai/openai', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: 'Transcribe this audio I attached'
-            },
-            {
-              type: 'audio_url',
-              audio_url: {
-                url: \`data:audio/mp3;base64,\${base64Audio}\`
-              }
-            }
-          ]
-        }
-      ],
-      model: 'openai-audio'
-    }),
-  });
-  
-  const data = await response.json();
-  console.log('Transcription:', data.choices[0].message.content);
-}
-
-transcribeAudio();
-\`\`\`
+Our audio features follow the OpenAI audio API specification. For more details and advanced usage, see the [OpenAI Audio Guide](https://platform.openai.com/docs/guides/audio).
 `,
     language: "markdown"
   }

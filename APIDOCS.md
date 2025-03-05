@@ -168,20 +168,13 @@ Example message format with image:
 #### Audio Capabilities
 
 ##### Text-to-Speech
-The `openai-audio` model supports text-to-speech conversion:
+The `openai-audio` model supports text-to-speech conversion. The simplest way to use it is with a GET request:
 
-```json
-{
-  "messages": [
-    {"role": "user", "content": "Your text to convert to audio"}
-  ],
-  "model": "openai-audio",
-  "voice": "alloy"
-}
+```
+https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=nova
 ```
 
 **Parameters:**
-- messages: Array containing the text to convert to speech
 - model: Must be set to "openai-audio"
 - voice: (Optional) Voice to use for audio generation
   - Supported values: "alloy", "echo", "fable", "onyx", "nova", "shimmer", "coral", "verse", "ballad", "ash", "sage", "amuch", "aster", "brook", "clover", "dan", "elan", "marilyn", "meadow"
@@ -189,35 +182,10 @@ The `openai-audio` model supports text-to-speech conversion:
 
 **Return:** Audio file in MP3 format (Content-Type: audio/mpeg)
 
-You can also use the GET endpoint for simple text-to-speech:
-```
-https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=nova
-```
-
 ##### Speech-to-Text
-You can use the same multimodal capabilities that support images to transcribe audio. Simply include an audio file in your request:
+Speech-to-text capabilities are also available through the `openai-audio` model.
 
-```json
-{
-  "messages": [
-    {
-      "role": "user",
-      "content": [
-        {"type": "text", "text": "Transcribe this audio I attached"},
-        {
-          "type": "audio_url",
-          "audio_url": {
-            "url": "https://example.com/audio.mp3"
-          }
-        }
-      ]
-    }
-  ],
-  "model": "openai-audio"
-}
-```
-
-**Note:** Speech-to-text follows the OpenAI audio API specification. For more details, see the [OpenAI Audio Guide](https://platform.openai.com/docs/guides/audio).
+**Note:** Our audio features follow the OpenAI audio API specification. For more details and advanced usage, see the [OpenAI Audio Guide](https://platform.openai.com/docs/guides/audio).
 
 #### Example Usage (GET)
 
@@ -306,20 +274,13 @@ const fetch = require('node-fetch');
 const fs = require('fs');
 
 async function generateAudio() {
-  const response = await fetch('https://text.pollinations.ai/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      messages: [
-        { role: 'user', content: 'Welcome to Pollinations, where creativity blooms!' }
-      ],
-      model: 'openai-audio',
-      voice: 'nova'  // Optional: See supported voices in documentation
-    }),
-  });
-
+  // Simple GET request for text-to-speech
+  const text = "Welcome to Pollinations, where creativity blooms!";
+  const voice = "nova"; // Optional voice parameter
+  const url = `https://text.pollinations.ai/${encodeURIComponent(text)}?model=openai-audio&voice=${voice}`;
+  
+  const response = await fetch(url);
+  
   // Save the audio file
   const buffer = await response.buffer();
   fs.writeFileSync('generated_audio.mp3', buffer);

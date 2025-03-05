@@ -16,6 +16,9 @@ Generate (GET): \`GET https://text.pollinations.ai/{prompt}\`
 ### Text Generation (Advanced)
 Generate (POST): \`POST https://text.pollinations.ai/\`
 
+### Audio Generation
+Generate Audio: \`GET https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}\`
+
 ### OpenAI Compatible Endpoint
 OpenAI Compatible: \`POST https://text.pollinations.ai/openai\`
 
@@ -236,6 +239,30 @@ async function generatePrivateText() {
 }
 
 generatePrivateText();
+
+// Example 3: Audio Generation (Text-to-Speech)
+async function generateAudio() {
+  const response = await fetch('https://text.pollinations.ai/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messages: [
+        { role: 'user', content: 'Welcome to Pollinations, where creativity blooms!' }
+      ],
+      model: 'openai-audio',
+      voice: 'nova'  // Options: 'alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'
+    }),
+  });
+
+  // Save the audio file
+  const buffer = await response.buffer();
+  fs.writeFileSync('generated_audio.mp3', buffer);
+  console.log('Audio generated and saved!');
+}
+
+generateAudio();
 `,
     language: "javascript"
   },
@@ -323,6 +350,113 @@ eventSource.onmessage = function(event) {
   const textData = JSON.parse(event.data);
   console.log('New text generated:', textData);
 };
+\`\`\`
+`,
+    language: "markdown"
+  },
+  audio: {
+    code: () => `
+## Audio Generation Examples
+
+### Text-to-Speech
+
+#### Simple GET Request
+\`\`\`
+https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=nova
+\`\`\`
+
+#### Node.js Example
+\`\`\`javascript
+import fs from 'fs';
+import fetch from 'node-fetch';
+
+async function generateAudio() {
+  const response = await fetch('https://text.pollinations.ai/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messages: [
+        { role: 'user', content: 'Welcome to Pollinations, where creativity blooms!' }
+      ],
+      model: 'openai-audio',
+      voice: 'nova'  // Options: 'alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'
+    }),
+  });
+
+  // Save the audio file
+  const buffer = await response.buffer();
+  fs.writeFileSync('generated_audio.mp3', buffer);
+  console.log('Audio generated and saved!');
+}
+
+generateAudio();
+\`\`\`
+
+#### Python Example
+\`\`\`python
+import requests
+
+def generate_audio(text, voice='alloy'):
+    url = f"https://text.pollinations.ai/{text}?model=openai-audio&voice={voice}"
+    response = requests.get(url)
+    
+    with open('generated_audio.mp3', 'wb') as file:
+        file.write(response.content)
+    
+    print('Audio generated and saved!')
+
+# Generate audio with default voice
+generate_audio('Welcome to Pollinations')
+
+# Generate audio with specific voice
+generate_audio('Welcome to Pollinations', voice='nova')
+\`\`\`
+
+### Speech-to-Text
+
+\`\`\`javascript
+import fs from 'fs';
+import fetch from 'node-fetch';
+
+async function transcribeAudio() {
+  // Read audio file and convert to base64
+  const audioFile = fs.readFileSync('audio_to_transcribe.mp3');
+  const base64Audio = audioFile.toString('base64');
+  
+  const response = await fetch('https://text.pollinations.ai/openai', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: 'Transcribe this audio I attached'
+            },
+            {
+              type: 'audio_url',
+              audio_url: {
+                url: \`data:audio/mp3;base64,\${base64Audio}\`
+              }
+            }
+          ]
+        }
+      ],
+      model: 'openai-audio'
+    }),
+  });
+  
+  const data = await response.json();
+  console.log('Transcription:', data.choices[0].message.content);
+}
+
+transcribeAudio();
 \`\`\`
 `,
     language: "markdown"

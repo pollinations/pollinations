@@ -55,6 +55,10 @@ export function getRequestData(req) {
     // Extract voice parameter for audio models
     const voice = data.voice || "alloy";
 
+    // Extract tools and tool_choice for function calling
+    const tools = data.tools || undefined;
+    const tool_choice = data.tool_choice || undefined;
+
     const messages = data.messages || [{ role: 'user', content: req.params[0] }];
     if (systemPrompt) {
         messages.unshift({ role: 'system', content: systemPrompt });
@@ -71,6 +75,8 @@ export function getRequestData(req) {
         referrer,
         stream,
         isPrivate,
-        voice
+        voice,
+        tools,
+        tool_choice
     };
 }

@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect } from "react"
 import { Colors, Fonts, SectionBG } from "../config/global"
 import { GeneralButton } from "../components/GeneralButton"
 import {
@@ -48,6 +48,30 @@ const handleEmailButtonClick = (e) => {
 const Hero = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
+  
+  useEffect(() => {
+    // Load Ko-fi widget script
+    const script = document.createElement('script');
+    script.src = 'https://storage.ko-fi.com/cdn/scripts/overlay-widget.js';
+    script.async = true;
+    script.onload = () => {
+      // Initialize Ko-fi widget after script is loaded
+      window.kofiWidgetOverlay.draw('pollinationsai', {
+        'type': 'floating-chat',
+        'floating-chat.donateButton.text': 'Tip Us',
+        'floating-chat.donateButton.background-color': '#d9534f',
+        'floating-chat.donateButton.text-color': '#fff'
+      });
+    };
+    document.body.appendChild(script);
+    
+    // Cleanup function to remove the script when component unmounts
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []); // Empty dependency array means this effect runs once on mount
   return (
     <SectionContainer backgroundConfig={SectionBG.hero}>
       {/* <SvgArtGenerator width="1920px" height="100px"></SvgArtGenerator> */}

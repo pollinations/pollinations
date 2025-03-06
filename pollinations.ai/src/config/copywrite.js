@@ -24,9 +24,9 @@ export const HERO_GITHUB_LINK = "README.md"
 export const HERO_DISCORD_LINK = "Join on Discord"
 
 export const NEWS_TITLE = 
-  "Last update! " + newsList.split("\n")[0];
+  "**Last update**" + newsList.split("\n")[0];
 
-export const NEWS_LIST =newsList
+export const NEWS_LIST = newsList.split("\n").slice(1).join("\n")
 
 export const IMAGE_FEED_SUBTITLE =
   "Real-time feed of our image API endpoint"

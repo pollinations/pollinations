@@ -1,7 +1,7 @@
 import test from 'ava';
-import { generateText as generateTextOpenai } from '../generateTextOpenai.js';
-import generateTextHuggingface from '../generateTextHuggingface.js';
+import { generateTextPortkey as generateTextOpenai } from '../generateTextPortkey.js';
 import { generateTextScaleway } from '../generateTextScaleway.js';
+import { generateDeepseek } from '../generateDeepseek.js';
 
 // Increase timeout for all tests
 test.beforeEach(t => {
@@ -67,16 +67,14 @@ test('generateTextOpenai should handle jsonMode', async t => {
 });
 
 test('generateTextOpenai should handle long messages', async t => {
-    try {
-        const longContent = 'a'.repeat(260000);
-        const messages = [{ role: 'user', content: longContent }];
-        const error = await t.throwsAsync(async () => {
-            await generateTextOpenai(messages, {});
-        });
-        t.truthy(error.message.includes('Input text exceeds maximum length'), 'Should throw an error for long messages');
-    } catch (error) {
-        t.fail(error.message);
-    }
+    const longContent = 'a'.repeat(600000);
+    const messages = [{ role: 'user', content: longContent }];
+    
+    const error = await t.throwsAsync(async () => {
+        await generateTextOpenai(messages, {});
+    });
+    
+    t.truthy(error.message.includes('Input text exceeds maximum length'), 'Should throw an error for long messages');
 });
 
 test('generateTextOpenai should handle search tool', async t => {
@@ -197,58 +195,6 @@ test('generateTextOpenai should handle jsonMode with existing system message', a
     }
 });
 
-// Huggingface Tests
-test('generateTextHuggingface should handle basic text generation', async t => {
-    try {
-        const messages = [{ role: 'user', content: 'Hello' }];
-        const response = await generateTextHuggingface(messages, {});
-        t.truthy(response, 'Response should not be empty');
-    } catch (error) {
-        t.fail(error.message);
-    }
-});
-
-test('generateTextHuggingface should handle system messages', async t => {
-    try {
-        const messages = [
-            { role: 'system', content: 'You are a helpful assistant' },
-            { role: 'user', content: 'Hello' }
-        ];
-        const response = await generateTextHuggingface(messages, {});
-        t.truthy(response, 'Response should not be empty');
-    } catch (error) {
-        t.fail(error.message);
-    }
-});
-
-test('generateTextHuggingface should handle empty messages', async t => {
-    try {
-        await generateTextHuggingface([], {});
-        t.fail('Should have thrown error for empty messages');
-    } catch (error) {
-        t.truthy(error, 'Should throw an error for empty messages');
-    }
-});
-
-test('generateTextHuggingface should handle invalid messages format', async t => {
-    try {
-        await generateTextHuggingface([{ invalid: 'format' }], {});
-        t.fail('Should have thrown error for invalid message format');
-    } catch (error) {
-        t.truthy(error, 'Should throw an error for invalid message format');
-    }
-});
-
-test('generateTextHuggingface should handle jsonMode', async t => {
-    try {
-        const messages = [{ role: 'user', content: 'Hello' }];
-        const response = await generateTextHuggingface(messages, { jsonMode: true });
-        t.pass();
-    } catch (error) {
-        t.fail(error.message);
-    }
-});
-
 // Scaleway Tests
 test('generateTextScaleway should handle basic text generation', async t => {
     try {
@@ -328,6 +274,112 @@ test('generateTextScaleway should use default model when invalid model specified
         const messages = [{ role: 'user', content: 'Hello' }];
         const response = await generateTextScaleway(messages, { model: 'invalid-model' });
         t.truthy(response, 'Response should not be empty');
+    } catch (error) {
+        t.fail(error.message);
+    }
+});
+
+// DeepSeek Tests
+test('generateDeepseek should handle basic text generation', async t => {
+    try {
+        const messages = [{ role: 'user', content: 'Hello' }];
+        const response = await generateDeepseek(messages, {});
+        t.truthy(response, 'Response should not be empty');
+    } catch (error) {
+        t.fail(error.message);
+    }
+});
+
+test('generateDeepseek should handle system messages', async t => {
+    try {
+        const messages = [
+            { role: 'system', content: 'You are a helpful assistant' },
+            { role: 'user', content: 'Hello' }
+        ];
+        const response = await generateDeepseek(messages, {});
+        t.truthy(response, 'Response should not be empty');
+    } catch (error) {
+        t.fail(error.message);
+    }
+});
+
+test('generateDeepseek should handle temperature parameter', async t => {
+    try {
+        const messages = [{ role: 'user', content: 'Hello' }];
+        const response = await generateDeepseek(messages, { temperature: 0.7 });
+        t.truthy(response, 'Response should not be empty');
+    } catch (error) {
+        t.fail(error.message);
+    }
+});
+
+test('generateDeepseek should handle jsonMode', async t => {
+    try {
+        const messages = [{ role: 'user', content: 'Hello' }];
+        const response = await generateDeepseek(messages, { jsonMode: true });
+        t.truthy(response, 'Response should not be empty');
+    } catch (error) {
+        t.fail(error.message);
+    }
+});
+
+test('generateDeepseek should handle coder model', async t => {
+    try {
+        const messages = [{ role: 'user', content: 'Write a simple hello world in Python' }];
+        const response = await generateDeepseek(messages, { model: 'deepseek-coder' });
+        t.truthy(response, 'Response should not be empty');
+    } catch (error) {
+        t.fail(error.message);
+    }
+});
+
+test('generateDeepseek should handle seed parameter', async t => {
+    try {
+        const messages = [{ role: 'user', content: 'Hello' }];
+        const response = await generateDeepseek(messages, { seed: 42 });
+        t.truthy(response, 'Response should not be empty');
+    } catch (error) {
+        t.fail(error.message);
+    }
+});
+
+test('generateDeepseek should handle tools', async t => {
+    try {
+        const messages = [{ role: 'user', content: 'What is the weather in London?' }];
+        const tools = [
+            {
+                type: 'function',
+                function: {
+                    name: 'get_weather',
+                    description: 'Get the current weather in a given location',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            location: {
+                                type: 'string',
+                                description: 'The city and state, e.g. San Francisco, CA'
+                            }
+                        },
+                        required: ['location']
+                    }
+                }
+            }
+        ];
+        const response = await generateDeepseek(messages, { tools, tool_choice: 'auto' });
+        t.truthy(response, 'Response should not be empty');
+    } catch (error) {
+        t.fail(error.message);
+    }
+});
+
+test('generateDeepseek should handle jsonMode with existing system message', async t => {
+    try {
+        const messages = [
+            { role: 'system', content: 'Be helpful' },
+            { role: 'user', content: 'Hello' }
+        ];
+        await generateDeepseek(messages, { jsonMode: true });
+        t.pass();
     } catch (error) {
         t.fail(error.message);
     }

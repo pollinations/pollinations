@@ -102,6 +102,13 @@ export const projects = {
   ],
   creativeApps: [
     {
+      name: "🆕 Musify - AI Enhanced Music Streaming",
+      url: "https://musify-sd.vercel.app/",
+      description: "Musify is your AI-powered music buddy, making your jam sessions smarter and more fun. It is powered by pollinations api, it offers a slick and intuitive music experience with features like AI Music Assistant, Voice Commands, AI Playlist Creator, and Responsive Design.",
+      author: "@Sugamdeol",
+      submissionDate: "2025-02-27",
+    },
+    {
       name: "🆕 image1gen",
       url: "https://image1gen.streamlit.app/",
       description: "Website to easily create images via pollinations.ai API.",
@@ -141,9 +148,10 @@ export const projects = {
       name: "[AI] Character RP (Roblox)",
       url: "https://www.roblox.com/games/108463136689847/AI-Character-RP",
       description: "A popular Roblox game for AI character roleplay.",
-      author: "@user113 (Roblox: [Profile](https://www.roblox.com/users/5810708209))",
+      author: "[user113](https://www.roblox.com/users/5810708209)",
     },
     {
+      
       name: "MIDIjourney",
       url: "https://github.com/korus-labs/MIDIjourney",
       description: "An AI-powered plugin for Ableton Live that turns text descriptions into music.",
@@ -304,6 +312,13 @@ export const projects = {
   ],
   socialBots: [
     {
+      name: "🆕 Gacha",
+      url: "https://shapes.inc/gacha-gachu/public",
+      description: "A versatile AI chat-bot and image generator powered by Pollinations.AI, featuring web search, image generation with model selection, and character-aware image generation through !webgen command.",
+      author: "@_dr_misterio_",
+      submissionDate: "2025-02-24",
+    },
+    {
       name: "🆕 One Word",
       url: "https://t.me/OdnoSlovoBot",
       description: "A Telegram bot for a word-matching game where players try to write the same word simultaneously, featuring image generation from game words using Pollinations.AI.",
@@ -349,6 +364,14 @@ export const projects = {
   ],
   sdkLibraries: [
     {
+      name: "🆕 ComfyUI-Pollinations",
+      url: "https://github.com/1038lab/ComfyUI-Pollinations",
+      description: "A custom node for ComfyUI that utilizes the Pollinations API to generate images and text based on user prompts, supporting multiple image and text generation models.",
+      author: "https://github.com/1038lab/",
+      repo: "https://github.com/1038lab/ComfyUI-Pollinations",
+      submissionDate: "2025-03-04",
+    },
+    {
       name: "pollinations NPM Module",
       url: "https://www.npmjs.com/package/pollinations",
       description: "A Node.js package for accessing all Pollinations features.",
@@ -380,6 +403,13 @@ export const projects = {
     },
   ],
   tutorials: [
+    {
+      name: "🆕 Chinese DeepSeek Tutorial",
+      url: "https://linux.do/t/topic/447840/235",
+      description: "A tutorial showing how to make DeepSeek AI support image generation by leveraging Pollinations.ai's API.",
+      author: "https://linux.do/u/isinry",
+      submissionDate: "2025-03-04",
+    },
     {
       name: "Artistic Styles Book",
       url: "https://proyectodescartes.org/iCartesiLibri/materiales_didacticos/Libro_Estilos/index.html",

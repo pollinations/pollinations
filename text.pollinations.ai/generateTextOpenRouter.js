@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
-import fetch from 'node-fetch';
 import debug from 'debug';
+import { createOpenAICompatibleClient } from './genericOpenAIClient.js';
 
 dotenv.config();
 
@@ -18,97 +18,49 @@ const MODEL_MAPPING = {
     'llamalight': 'meta-llama/llama-3-8b-chat'
 };
 
-export async function generateTextOpenRouter(messages, options) {
-    const startTime = Date.now();
-    const requestId = Math.random().toString(36).substring(7);
-    
-    log(`[${requestId}] Starting text generation request`, {
-        timestamp: new Date().toISOString(),
-        messageCount: messages.length,
-        options
-    });
+// Default system prompts for different models
+const SYSTEM_PROMPTS = {
+    'claude-email': 'You are Claude, a helpful AI assistant created by Anthropic. You excel at drafting professional emails and communications.',
+    'deepseek': 'You are DeepSeek, a helpful AI assistant. You provide accurate and thoughtful responses.',
+    'qwen': 'You are Qwen, a helpful AI assistant developed by Alibaba Cloud. You provide accurate and thoughtful responses.',
+    'qwen-coder': 'You are Qwen, an expert coding assistant with deep knowledge of programming languages, software architecture, and best practices.',
+    'llama': 'You are Llama, a helpful AI assistant developed by Meta. You provide accurate and thoughtful responses.',
+    'mistral': 'You are Mistral, a helpful AI assistant. You provide accurate and thoughtful responses.',
+    'mistral-large': 'You are Mistral Large, a powerful AI assistant. You provide accurate, detailed, and thoughtful responses.',
+    'llamalight': 'You are Llama, a helpful AI assistant developed by Meta. You provide accurate and thoughtful responses.'
+};
 
-    try {
-        const modelName = MODEL_MAPPING[options.model] || MODEL_MAPPING['deepseek'];
-        
-        const requestBody = {
-            model: modelName,
-            messages,
-            response_format: options.jsonMode ? { type: 'json_object' } : undefined,
-            max_tokens: 4096,
-            // temperature: options.temperature,
-            // top_p: options.top_p,
-            // seed: options.seed,
-            tools: options.tools,
-            tool_choice: options.tool_choice
-        };
+// Default options
+const DEFAULT_OPTIONS = {
+    model: 'deepseek',
+    temperature: 0.7,
+    maxTokens: 4096,
+    jsonMode: false
+};
 
-        log(`[${requestId}] Sending request to OpenRouter API`, {
-            timestamp: new Date().toISOString(),
-            model: requestBody.model,
-            maxTokens: requestBody.max_tokens,
-            temperature: requestBody.temperature
-        });
-        log('messages', messages);
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-                "HTTP-Referer": "https://pollinations.ai",
-                "X-Title": "Pollinations.AI",
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(requestBody)
-        });
-
-        log(`[${requestId}] Received response from OpenRouter API`, {
-            timestamp: new Date().toISOString(),
-            status: response.status,
-            statusText: response.statusText,
-            headers: Object.fromEntries(response.headers)
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            log(`[${requestId}] OpenRouter API error`, {
-                timestamp: new Date().toISOString(),
-                status: response.status,
-                statusText: response.statusText,
-                error: errorData || 'Failed to parse error response'
-            });
-            
-            return {
-                error: {
-                    message: errorData?.error?.message || `OpenRouter API error: ${response.status} ${response.statusText}`,
-                    code: response.status,
-                    metadata: {
-                        raw: errorData,
-                        provider_name: 'OpenRouter'
-                    }
-                }
-            };
+/**
+ * Generates text using OpenRouter API (gateway to multiple models)
+ * @param {Array} messages - Array of message objects
+ * @param {Object} options - Options for text generation
+ * @returns {Object} - OpenAI-compatible response
+ */
+export const generateTextOpenRouter = createOpenAICompatibleClient({
+    endpoint: 'https://openrouter.ai/api/v1/chat/completions',
+    authHeaderName: 'Authorization',
+    authHeaderValue: () => {
+        if (!process.env.OPENROUTER_API_KEY) {
+            return null;
         }
-
-        const data = await response.json();
-        const completionTime = Date.now() - startTime;
-
-        log(`[${requestId}] Successfully generated text`, {
-            timestamp: new Date().toISOString(),
-            completionTimeMs: completionTime,
-            modelUsed: data.model,
-            promptTokens: data.usage?.prompt_tokens,
-            completionTokens: data.usage?.completion_tokens,
-            totalTokens: data.usage?.total_tokens
-        });
-
-        return data;
-    } catch (error) {
-        log(`[${requestId}] Error in text generation`, {
-            timestamp: new Date().toISOString(),
-            error: error.message,
-            stack: error.stack,
-            completionTimeMs: Date.now() - startTime
-        });
-        throw error;
+        return `Bearer ${process.env.OPENROUTER_API_KEY}`;
+    },
+    modelMapping: MODEL_MAPPING,
+    systemPrompts: SYSTEM_PROMPTS,
+    defaultOptions: DEFAULT_OPTIONS,
+    providerName: 'OpenRouter',
+    
+    // Add additional headers specific to OpenRouter
+    additionalHeaders: {
+        'HTTP-Referer': 'https://pollinations.ai',
+        'X-Title': 'Pollinations.AI'
     }
-}
+});

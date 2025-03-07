@@ -136,10 +136,10 @@ export const availableModels = [
         handler: handlers.deepseek
     },
     {
-        name: 'claude-hybridspace',
+        name: 'claude',
         type: 'chat',
         censored: true,
-        description: 'Claude Hybridspace',
+        description: 'Claude 3.5 Haiku',
         baseModel: true,
         handler: (messages, options) => generateTextOpenRouter(messages, {...options, model: "anthropic/claude-3.5-haiku-20241022"})
     },
@@ -164,6 +164,16 @@ export const availableModels = [
         handler: generateDeepseek
     },
     {
+        name: 'deepseek-r1-llama',
+        type: 'chat',
+        censored: true,
+        description: 'DeepSeek R1 - Llama 70B',
+        baseModel: true,
+        reasoning: true,
+        provider: 'scaleway',
+        handler: generateTextPortkey
+    },
+    {
         name: 'llamalight',
         type: 'chat',
         censored: false,
@@ -180,24 +190,24 @@ export const availableModels = [
         provider: 'cloudflare',
         handler: generateTextPortkey
     },
-    {
-        name: 'gemini',
-        type: 'chat',
-        censored: true,
-        description: 'Gemini 2.0 Flash',
-        baseModel: true,
-        provider: 'google',
-        handler: handlers.gemini
-    },
-    {
-        name: 'gemini-thinking',
-        type: 'chat',
-        censored: true,
-        description: 'Gemini 2.0 Flash Thinking',
-        baseModel: true,
-        provider: 'google',
-        handler: handlers.gemini
-    },
+    // {
+    //     name: 'gemini',
+    //     type: 'chat',
+    //     censored: true,
+    //     description: 'Gemini 2.0 Flash',
+    //     baseModel: true,
+    //     provider: 'google',
+    //     handler: handlers.gemini
+    // },
+    // {
+    //     name: 'gemini-thinking',
+    //     type: 'chat',
+    //     censored: true,
+    //     description: 'Gemini 2.0 Flash Thinking',
+    //     baseModel: true,
+    //     provider: 'google',
+    //     handler: handlers.gemini
+    // },
     {
         name: 'hormoz',
         type: 'chat',

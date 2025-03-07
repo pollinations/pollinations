@@ -88,6 +88,7 @@ const MODEL_MAPPING = {
     'mistral': 'mistral-nemo-instruct-2407',
     'llama-scaleway': 'llama-3.3-70b-instruct',
     'llamalight-scaleway': 'llama-3.1-8b-instruct',
+    'deepseek-r1-llama': 'deepseek-r1-distill-llama-70b',
 };
 
 // Unrestricted prompt for Scaleway models
@@ -108,7 +109,8 @@ const SYSTEM_PROMPTS = {
     'mistral': unrestrictedPrompt,
     'llama-scaleway': unrestrictedPrompt,
     'llamalight-scaleway': unrestrictedPrompt,
-    'qwen-coder': `You are an expert coding assistant with deep knowledge of programming languages, software architecture, and best practices. Your purpose is to help users write high-quality, efficient, and maintainable code. You provide clear explanations, suggest improvements, and help debug issues while following industry best practices.`
+    'qwen-coder': `You are an expert coding assistant with deep knowledge of programming languages, software architecture, and best practices. Your purpose is to help users write high-quality, efficient, and maintainable code. You provide clear explanations, suggest improvements, and help debug issues while following industry best practices.`,
+    'deepseek-r1-distill-llama-70b': unrestrictedPrompt
 };
 
 // Default options
@@ -231,7 +233,8 @@ export const portkeyConfig = {
     'qwen2.5-coder-32b-instruct': createScalewayModelConfig(),
     'mistral-nemo-instruct-2407': createScalewayModelConfig(),
     'llama-3.3-70b-instruct': createScalewayModelConfig(),
-    'llama-3.1-8b-instruct': createScalewayModelConfig()
+    'llama-3.1-8b-instruct': createScalewayModelConfig(),
+    'deepseek-r1-distill-llama-70b': createScalewayModelConfig(),
 };
 
 /**

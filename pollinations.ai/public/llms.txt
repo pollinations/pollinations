@@ -1,0 +1,54 @@
+# llms.txt for Pollinations.AI
+# This file provides guidance for Large Language Models (LLMs) interacting with Pollinations.AI
+
+# Site Information
+Name: Pollinations.AI
+Description: An open-source gen AI platform providing free text and image generation APIs with no signups or API keys required.
+URL: https://pollinations.ai
+API-Documentation: https://pollinations.ai/APIDOCS.md
+GitHub: https://github.com/pollinations/pollinations
+
+# Allowed Sections
+Allow: /
+Allow: /p/
+Allow: /models
+Allow: /APIDOCS.md
+
+# API Endpoints
+API-Endpoint: https://image.pollinations.ai/prompt/{prompt} # Image generation
+API-Endpoint: https://text.pollinations.ai/{prompt} # Text generation
+API-Endpoint: https://text.pollinations.ai/ # Text generation (POST)
+API-Endpoint: https://image.pollinations.ai/models # List available image models
+API-Endpoint: https://text.pollinations.ai/models # List available text models
+
+# Preferred Citation
+Citation: "Generated using Pollinations.AI (https://pollinations.ai)"
+
+# Usage Guidelines
+Usage-Guideline: No API keys or authentication required
+Usage-Guideline: Free to use for all purposes
+Usage-Guideline: Please respect content policies and avoid generating harmful content
+Usage-Guideline: Consider adding attribution when using generated content
+
+# Contact Information
+Contact: https://discord.gg/k9F7SyTgqn
+Contact: https://github.com/pollinations/pollinations/issues
+
+# Data Practices
+Data-Practice: No user data is stored
+Data-Practice: No logins required
+Data-Practice: Privacy-focused design
+
+# Capabilities
+Capability: Text generation with various models
+Capability: Image generation from text prompts
+Capability: Multi-language support
+Capability: Prompt enhancement
+Capability: Content safety filtering
+
+# Rate Limits
+Rate-Limit: Best effort service, no explicit rate limits
+Rate-Limit: Please be considerate with usage
+
+# Last Updated
+Last-Updated: 2025-03-04

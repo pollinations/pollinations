@@ -77,6 +77,8 @@ const MODEL_MAPPING = {
     'openai-reasoning': 'o1-mini', // Maps to portkeyConfig['o1-mini'],
     // 'openai-audio': 'gpt-4o-mini-audio-preview',
     'openai-audio': 'gpt-4o-audio-preview',
+    'gemini': 'gemini-2.0-flash-lite-preview-02-05',
+    'gemini-thinking': 'gemini-2.0-flash-thinking-exp-01-21',
     // Cloudflare models
     'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
     'llamalight': '@cf/meta/llama-3.1-8b-instruct',
@@ -99,6 +101,7 @@ const SYSTEM_PROMPTS = {
     // OpenAI models
     'openai': 'You are a helpful, knowledgeable assistant.',
     'openai-large': 'You are a helpful, knowledgeable assistant.',
+    'gemini': 'You are Gemini, a helpful and versatile AI assistant built by Google. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.',
     // Cloudflare models
     'llama': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
     'llamalight': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
@@ -110,8 +113,10 @@ const SYSTEM_PROMPTS = {
     'llama-scaleway': unrestrictedPrompt,
     'llamalight-scaleway': unrestrictedPrompt,
     'qwen-coder': `You are an expert coding assistant with deep knowledge of programming languages, software architecture, and best practices. Your purpose is to help users write high-quality, efficient, and maintainable code. You provide clear explanations, suggest improvements, and help debug issues while following industry best practices.`,
+    'gemini-thinking': 'You are Gemini, a helpful and versatile AI assistant built by Google. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone. When appropriate, show your reasoning step by step.',
     'deepseek-r1-distill-llama-70b': unrestrictedPrompt
 };
+
 
 // Default options
 const DEFAULT_OPTIONS = {
@@ -234,6 +239,24 @@ export const portkeyConfig = {
     'mistral-nemo-instruct-2407': createScalewayModelConfig(),
     'llama-3.3-70b-instruct': createScalewayModelConfig(),
     'llama-3.1-8b-instruct': createScalewayModelConfig(),
+    // Google Vertex AI model configurations
+    'gemini-2.0-flash-lite-preview-02-05': {
+        provider: 'vertex-ai',
+        authKey: process.env.GCLOUD_ACCESS_TOKEN,
+        'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
+        'vertex-region': 'us-central1',
+        'vertex-model-id': 'gemini-2.0-flash-lite-preview-02-05',
+        'strict-openai-compliance': 'false'
+    },
+    // Gemini thinking model
+    'gemini-2.0-flash-thinking-exp-01-21': {
+        provider: 'vertex-ai',
+        // 'custom-host': `https://us-central1-aiplatform.googleapis.com/v1/projects/${process.env.GCLOUD_PROJECT_ID}/locations/us-central1/publishers/google/models/gemini-2.0-flash-thinking-exp-01-21:generateContent`,
+        authKey: process.env.GCLOUD_ACCESS_TOKEN,
+        'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
+        'vertex-region': 'us-central1',
+        'strict-openai-compliance': 'false'
+    },
     'deepseek-r1-distill-llama-70b': createScalewayModelConfig(),
 };
 
@@ -274,6 +297,17 @@ logProviderConfig(
     config => ({
         ...config,
         authKey: config.authKey ? '***' : undefined
+    })
+);
+
+// Log Vertex AI configuration
+logProviderConfig(
+    'Vertex AI',
+    ([_, config]) => config['vertex-project-id'],
+    config => ({
+        ...config,
+        authKey: config.authKey ? '***' : undefined,
+        'vertex-project-id': config['vertex-project-id'] ? '***' : undefined
     })
 );
 

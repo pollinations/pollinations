@@ -1,8 +1,5 @@
 // Import all handler functions
-import { generateTextScaleway } from './generateTextScaleway.js';
 import { generateDeepseek } from './generateDeepseek.js';
-import { generateTextCloudflare } from './generateTextCloudflare.js';
-import { generateTextGemini } from './generateTextGemini.js';
 import { generateTextSearch } from './generateTextSearch.js';
 import { generateTextOpenRouter } from './generateTextOpenRouter.js';
 import { generateTextModal } from './generateTextModal.js';
@@ -19,20 +16,18 @@ import hypnosisTracyPrompt from './personas/hypnosisTracy.js';
 
 // Create wrapped models
 const surOpenai = wrapModelWithContext(surSystemPrompt, generateTextPortkey, "openai");
-const surMistral = wrapModelWithContext(surSystemPrompt, generateTextScaleway, "mistral");
+const surMistral = wrapModelWithContext(surSystemPrompt, generateTextPortkey, "mistral");
 const hypnosisTracy = wrapModelWithContext(hypnosisTracyPrompt, generateTextPortkey, "openai-large");
-const unityMistralLarge = wrapModelWithContext(unityPrompt, generateTextScaleway, "mistral");
+const unityMistralLarge = wrapModelWithContext(unityPrompt, generateTextPortkey, "mistral");
 const midijourney = wrapModelWithContext(midijourneyPrompt, generateTextPortkey, "openai-large");
 const rtist = wrapModelWithContext(rtistPrompt, generateTextPortkey, "openai-large");
-const evilCommandR = wrapModelWithContext(evilPrompt, generateTextScaleway, "mistral");
+const evilCommandR = wrapModelWithContext(evilPrompt, generateTextPortkey, "mistral");
 
 // Define model handlers
 const handlers = {
     openai: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai'}),
     deepseek: (messages, options) => generateDeepseek(messages, {...options, model: 'deepseek-chat'}),
-    mistral: (messages, options) => generateTextScaleway(messages, options),
-    cloudflare: (messages, options) => generateTextCloudflare(messages, options),
-    gemini: (messages, options) => generateTextGemini(messages, options),
+    mistral: (messages, options) => generateTextPortkey(messages, {...options, model: 'mistral'}),
     openRouter: (messages, options, model) => generateTextOpenRouter(messages, {...options, model}),
     modal: (messages, options) => generateTextModal(messages, options),
     portkey: (messages, options, model) => generateTextPortkey(messages, {...options, model})
@@ -72,7 +67,7 @@ export const availableModels = [
         censored: true,
         description: 'Qwen 2.5 Coder 32B',
         baseModel: true,
-        handler: (messages, options) => generateTextScaleway(messages, options)
+        handler: generateTextPortkey
     },
     {
         name: 'llama',
@@ -154,7 +149,7 @@ export const availableModels = [
         baseModel: true,
         reasoning: true,
         provider: 'cloudflare',
-        handler: generateTextCloudflare
+        handler: generateTextPortkey
     },
     {
         name: 'deepseek-reasoner',
@@ -165,6 +160,16 @@ export const availableModels = [
         reasoning: true,
         provider: 'deepseek',
         handler: generateDeepseek
+    },
+    {
+        name: 'deepseek-r1-llama',
+        type: 'chat',
+        censored: true,
+        description: 'DeepSeek R1 - Llama 70B',
+        baseModel: true,
+        reasoning: true,
+        provider: 'scaleway',
+        handler: generateTextPortkey
     },
     {
         name: 'llamalight',
@@ -181,26 +186,26 @@ export const availableModels = [
         description: 'Llamaguard 7B AWQ',
         baseModel: false,
         provider: 'cloudflare',
-        handler: generateTextCloudflare
+        handler: generateTextPortkey
     },
-    // {
-    //     name: 'gemini',
-    //     type: 'chat',
-    //     censored: true,
-    //     description: 'Gemini 2.0 Flash',
-    //     baseModel: true,
-    //     provider: 'google',
-    //     handler: handlers.gemini
-    // },
-    // {
-    //     name: 'gemini-thinking',
-    //     type: 'chat',
-    //     censored: true,
-    //     description: 'Gemini 2.0 Flash Thinking',
-    //     baseModel: true,
-    //     provider: 'google',
-    //     handler: handlers.gemini
-    // },
+    {
+        name: 'gemini',
+        type: 'chat',
+        censored: true,
+        description: 'Gemini 2.0 Flash',
+        baseModel: true,
+        provider: 'google',
+        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'gemini'})
+    },
+    {
+        name: 'gemini-thinking',
+        type: 'chat',
+        censored: true,
+        description: 'Gemini 2.0 Flash Thinking',
+        baseModel: true,
+        provider: 'google',
+        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'gemini-thinking'})
+    },
     {
         name: 'hormoz',
         type: 'chat',
@@ -241,7 +246,7 @@ export const availableModels = [
         censored: false,
         description: 'Llama (Scaleway)',
         baseModel: true,
-        handler: (messages, options) => generateTextScaleway(messages, {...options, model: 'llama'})
+        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'llama-scaleway'})
     },
     {
         name: 'phi',

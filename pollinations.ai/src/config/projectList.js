@@ -102,6 +102,20 @@ export const projects = {
   ],
   creativeApps: [
     {
+      name: "🆕 Herramientas IA",
+      url: "https://proyectodescartes.org/descartescms/herramientas-ia",
+      description: "Tools designed with Pollinations.AI and the DescartesJS editor, including tools from other Pollinations.AI community members.",
+      author: "@juanrivera126",
+      submissionDate: "2025-03-10",
+    },
+    {
+      name: "🆕 AvatarStudio",
+      url: "https://astudio-dcae4.web.app",
+      description: "A system for creating custom characters that uses the Pollinations API for totally free and unlimited image generation.",
+      author: "@nic-wq",
+      submissionDate: "2025-03-10",
+    },
+    {
       name: "🆕 Musify - AI Enhanced Music Streaming",
       url: "https://musify-sd.vercel.app/",
       description: "Musify is your AI-powered music buddy, making your jam sessions smarter and more fun. It is powered by pollinations api, it offers a slick and intuitive music experience with features like AI Music Assistant, Voice Commands, AI Playlist Creator, and Responsive Design.",

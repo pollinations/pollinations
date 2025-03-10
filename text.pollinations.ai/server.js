@@ -126,6 +126,16 @@ app.get('/', (req, res) => {
     res.redirect('https://sur.pollinations.ai');
 });
 
+// Serve crossdomain.xml for Flash connections
+app.get('/crossdomain.xml', (req, res) => {
+    res.setHeader('Content-Type', 'application/xml');
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">
+<cross-domain-policy>
+  <allow-access-from domain="*" secure="false"/>
+</cross-domain-policy>`);
+});
+
 app.set('trust proxy', true);
 
 // Queue setup per IP address

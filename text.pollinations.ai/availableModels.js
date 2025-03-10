@@ -1,6 +1,6 @@
 // Import all handler functions
 import { generateDeepseek } from './generateDeepseek.js';
-import { generateTextSearch } from './generateTextSearch.js'; 
+import { generateTextSearch } from './generateTextSearch.js';
 import { generateTextOpenRouter } from './generateTextOpenRouter.js';
 import { generateTextModal } from './generateTextModal.js';
 import { generateTextPortkey } from './generateTextPortkey.js';

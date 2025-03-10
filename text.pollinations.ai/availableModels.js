@@ -35,6 +35,19 @@ const handlers = {
     portkey: (messages, options, model) => generateTextPortkey(messages, {...options, model})
 };
 
+// List of models that are known to potentially be unavailable at times
+export const potentiallyUnavailableModels = [
+    'gemini', 
+    'gemini-thinking', 
+    'claude-hybridspace', 
+    'deepseek', 
+    'deepseek-reasoner', 
+    'llama'
+];
+
+// Store model availability status
+export const modelAvailability = new Map();
+
 export const availableModels = [
     {
         name: 'openai',
@@ -306,3 +319,58 @@ availableModels.forEach(model => {
         modelHandlers[model.name] = model.handler;
     }
 });
+
+/**
+ * Check if a model is currently available
+ * @param {string} modelName - The name of the model to check
+ * @returns {Promise<boolean>} - Promise resolving to true if model is available, false otherwise
+ */
+export async function checkModelAvailability(modelName) {
+    // Default to assuming the model is available
+    if (!potentiallyUnavailableModels.includes(modelName)) {
+        return true;
+    }
+    
+    // Check if we've recently checked this model's availability
+    const now = Date.now();
+    const cachedStatus = modelAvailability.get(modelName);
+    if (cachedStatus && (now - cachedStatus.timestamp < 60000)) { // Cache for 1 minute
+        return cachedStatus.available;
+    }
+    
+    try {
+        const model = findModelByName(modelName);
+        const handler = model.handler;
+        
+        // Make a minimal request to test availability
+        await handler([{ role: 'user', content: 'test' }], { 
+            model: modelName,
+            max_tokens: 5,
+            cache: false
+        });
+        
+        // If we get here without an error, the model is available
+        modelAvailability.set(modelName, { available: true, timestamp: now });
+        return true;
+    } catch (error) {
+        // If there's an error, the model is unavailable
+        modelAvailability.set(modelName, { available: false, timestamp: now });
+        return false;
+    }
+}
+
+/**
+ * Get all models with their current availability status
+ * @returns {Promise<Array>} - Promise resolving to array of models with availability status
+ */
+export async function getModelsWithAvailability() {
+    const modelsWithStatus = await Promise.all(availableModels.map(async (model) => {
+        const online = await checkModelAvailability(model.name);
+        return {
+            ...model,
+            online
+        };
+    }));
+    
+    return modelsWithStatus;
+}

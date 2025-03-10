@@ -555,7 +555,7 @@ function prepareRequestParameters(requestParams) {
     // Add audio parameters if it's an audio model
     if (isAudioModel) {
         // Get the voice parameter from the request or use "alloy" as default
-        const voice = requestParams.voice || requestParams.audio?.voice || "alloy";
+        const voice = requestParams.voice || requestParams.audio?.voice || "amuch";
         log('Adding audio parameters for audio model:', requestParams.model, 'with voice:', voice);
         
         // Only add modalities and audio if not already provided in the request

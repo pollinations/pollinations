@@ -335,13 +335,59 @@ while (true) {
 }
 ```
 
-### Function Calling (Coming Soon)
+### Function Calling
 
-Function calling capabilities will be available soon, allowing models to call functions that you define. This feature is currently under development.
+Function calling capabilities are now available for models that support this feature. This allows models to call functions that you define, enabling them to:
 
-When implemented, function calling will follow the OpenAI API specification. For more details on how this will work, see the [OpenAI Function Calling Guide](https://platform.openai.com/docs/guides/function-calling).
+- Retrieve real-time information
+- Perform calculations
+- Take actions based on user input
+- Interact with external systems
 
-Stay tuned for updates on this feature!
+Our implementation follows the OpenAI API specification for function calling. When using compatible models through our `/openai` endpoint, you can define tools and receive structured function calls from the model.
+
+For complete documentation on how to use this feature, please refer to the [OpenAI Function Calling Guide](https://platform.openai.com/docs/guides/function-calling).
+
+Basic example:
+
+```javascript
+const response = await fetch('https://text.pollinations.ai/openai', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    model: "openai",
+    messages: [
+      { role: "user", content: "What's the weather like in Boston?" }
+    ],
+    tools: [
+      {
+        type: "function",
+        function: {
+          name: "get_current_weather",
+          description: "Get the current weather in a given location",
+          parameters: {
+            type: "object",
+            properties: {
+              location: {
+                type: "string",
+                description: "The city and state, e.g. San Francisco, CA"
+              },
+              unit: {
+                type: "string",
+                enum: ["celsius", "fahrenheit"]
+              }
+            },
+            required: ["location"]
+          }
+        }
+      }
+    ]
+  })
+});
+
+const data = await response.json();
+console.log(data);
+```
 
 ## Technical Details
 

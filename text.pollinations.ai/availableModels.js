@@ -139,10 +139,10 @@ export const availableModels = [
         handler: handlers.deepseek
     },
     {
-        name: 'claude-hybridspace',
+        name: 'claude',
         type: 'chat',
         censored: true,
-        description: 'Claude Hybridspace',
+        description: 'Claude 3.5 Haiku',
         baseModel: true,
         handler: (messages, options) => generateTextOpenRouter(messages, {...options, model: "anthropic/claude-3.5-haiku-20241022"})
     },
@@ -183,24 +183,24 @@ export const availableModels = [
         provider: 'cloudflare',
         handler: generateTextCloudflare
     },
-    {
-        name: 'gemini',
-        type: 'chat',
-        censored: true,
-        description: 'Gemini 2.0 Flash',
-        baseModel: true,
-        provider: 'google',
-        handler: handlers.gemini
-    },
-    {
-        name: 'gemini-thinking',
-        type: 'chat',
-        censored: true,
-        description: 'Gemini 2.0 Flash Thinking',
-        baseModel: true,
-        provider: 'google',
-        handler: handlers.gemini
-    },
+    // {
+    //     name: 'gemini',
+    //     type: 'chat',
+    //     censored: true,
+    //     description: 'Gemini 2.0 Flash',
+    //     baseModel: true,
+    //     provider: 'google',
+    //     handler: handlers.gemini
+    // },
+    // {
+    //     name: 'gemini-thinking',
+    //     type: 'chat',
+    //     censored: true,
+    //     description: 'Gemini 2.0 Flash Thinking',
+    //     baseModel: true,
+    //     provider: 'google',
+    //     handler: handlers.gemini
+    // },
     {
         name: 'hormoz',
         type: 'chat',

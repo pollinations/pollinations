@@ -251,7 +251,6 @@ export const portkeyConfig = {
     // Gemini thinking model
     'gemini-2.0-flash-thinking-exp-01-21': {
         provider: 'vertex-ai',
-        // 'custom-host': `https://us-central1-aiplatform.googleapis.com/v1/projects/${process.env.GCLOUD_PROJECT_ID}/locations/us-central1/publishers/google/models/gemini-2.0-flash-thinking-exp-01-21:generateContent`,
         authKey: process.env.GCLOUD_ACCESS_TOKEN,
         'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
         'vertex-region': 'us-central1',

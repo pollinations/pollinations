@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { createOpenAICompatibleClient } from './genericOpenAIClient.js';
 import debug from 'debug';
+import { execSync } from 'child_process';
 
 dotenv.config();
 
@@ -8,6 +9,33 @@ const log = debug('pollinations:portkey');
 const errorLog = debug('pollinations:portkey:error');
 
 // Helper function to extract base URL from Azure endpoint
+
+// Global variable to store the Google Cloud access token
+let gcloudAccessToken = process.env.GCLOUD_ACCESS_TOKEN || '';
+
+/**
+ * Refreshes the Google Cloud access token by executing the gcloud CLI command
+ * @returns {string} The new access token
+ */
+function refreshGcloudAccessToken() {
+    try {
+        log('Refreshing Google Cloud access token');
+        const token = execSync('gcloud auth print-access-token').toString().trim();
+        gcloudAccessToken = token;
+        log('Successfully refreshed Google Cloud access token');
+        return token;
+    } catch (error) {
+        errorLog('Failed to refresh Google Cloud access token:', error);
+        return gcloudAccessToken; // Return the existing token if refresh fails
+    }
+}
+
+// Initial token refresh
+refreshGcloudAccessToken();
+
+// Set up a timer to refresh the token every 20 minutes (1200000 ms)
+setInterval(refreshGcloudAccessToken, 1200000);
+
 export function extractBaseUrl(endpoint) {
     if (!endpoint) return null;
     
@@ -242,7 +270,7 @@ export const portkeyConfig = {
     // Google Vertex AI model configurations
     'gemini-2.0-flash-lite-preview-02-05': {
         provider: 'vertex-ai',
-        authKey: process.env.GCLOUD_ACCESS_TOKEN,
+        authKey: () => gcloudAccessToken, // Use the refreshable token
         'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
         'vertex-region': 'us-central1',
         'vertex-model-id': 'gemini-2.0-flash-lite-preview-02-05',
@@ -251,7 +279,7 @@ export const portkeyConfig = {
     // Gemini thinking model
     'gemini-2.0-flash-thinking-exp-01-21': {
         provider: 'vertex-ai',
-        authKey: process.env.GCLOUD_ACCESS_TOKEN,
+        authKey: () => gcloudAccessToken, // Use the refreshable token
         'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
         'vertex-region': 'us-central1',
         'strict-openai-compliance': 'false'
@@ -349,7 +377,13 @@ function generatePortkeyHeaders(config) {
 
     // Add Authorization header if needed
     if (config.authKey) {
-        headers['Authorization'] = `Bearer ${config.authKey}`;
+        // Check if authKey is a function (for dynamic tokens)
+        if (typeof config.authKey === 'function') {
+            headers['Authorization'] = `Bearer ${config.authKey()}`;
+        } else {
+            // Regular string token
+            headers['Authorization'] = `Bearer ${config.authKey}`;
+        }
     }
     
     return headers;

@@ -149,8 +149,17 @@ export function getIp(req) {
 }
 
 // GET /models request handler
-app.get('/models', (req, res) => {
-    res.json(availableModels);
+app.get('/models', async (req, res) => {
+    try {
+        // Import getModelsWithAvailability from availableModels.js
+        const { getModelsWithAvailability } = await import('./availableModels.js');
+        const modelsWithAvailability = await getModelsWithAvailability();
+        res.json(modelsWithAvailability);
+    } catch (error) {
+        errorLog('Error fetching models with availability:', error);
+        // Fallback to sending just the models without availability info
+        res.json(availableModels);
+    }
 });
 
 setupFeedEndpoint(app);

@@ -143,8 +143,8 @@ const baseCloudflareConfig = {
     provider: 'openai',
     'custom-host': `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
     authKey: process.env.CLOUDFLARE_AUTH_TOKEN,
-    // Set default max_tokens to 2056 (increased from 256)
-    'default-max-tokens': 2056,
+    // Set default max_tokens to 8192 (increased from 256)
+    'default-max-tokens': 8192,
 };
 
 // Base configuration for Scaleway models
@@ -152,8 +152,8 @@ const baseScalewayConfig = {
     provider: 'openai',
     'custom-host': `${process.env.SCALEWAY_BASE_URL || 'https://api.scaleway.com/ai-apis/v1'}`,
     authKey: process.env.SCALEWAY_API_KEY,
-    // Set default max_tokens to 2056 (increased from default)
-    'default-max-tokens': 2056,
+    // Set default max_tokens to 8192 (increased from default)
+    'default-max-tokens': 8192,
 };
 
 /**

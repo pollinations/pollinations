@@ -104,7 +104,7 @@ Use the `openai-audio` model.
 | `voice`     | No       | Voice option for text-to-speech (e.g., "nova").                          |         | "nova"          |
 
 
-**Return:** Audio file in MP3 format (Content-Type: audio/mpeg)
+**Return:** Audio file (mp3)
 
 **Rate Limits:**
 
@@ -138,15 +138,16 @@ Use the `openai-audio` model.
 - **Text-To-Image** responses will show the Pollinations.AI logo
 - **Text-To-Text** responses will include a link to pollinations.ai
 
-**To eliminate the logo or link**: Add a referrer parameter to your API requests.
+**To eliminate the Logo or Link**: Add a referrer parameter to your API requests.
 
-- **Web apps**: No change needed - browsers already send referrer information (URL)
-- **Bots & backend apps**: You'll need to add this parameter to disable the logo/link - Please use the app name for the referrer value.
+- **Web Apps**: No change needed - browsers already send referrer information (URL)
+- **Bots & Backend Apps**: You'll need to add this parameter to disable the logo/link - Please use the app name for the referrer value.
 
 
 ### Whitelisting
 
-Projects can request to have their referrer whitelisted to bypass standard rate limits for enhanced API access. Whitelisted domains (including pollinations.ai subdomains) may receive priority queue access and reduced restrictions. [Submit a Domain Whitelisting Request](https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml)
+Projects can **request to have their referrer whitelisted** to bypass standard rate limits for enhanced API access. 
+Whitelisted domains (including pollinations.ai subdomains) may receive **priority queue** access and **reduced restrictions**. [Submit a Domain Whitelisting Request](https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml)
 
 ---
 

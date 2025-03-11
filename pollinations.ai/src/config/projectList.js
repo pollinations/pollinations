@@ -1,6 +1,11 @@
 // Project entries support an optional submissionDate field (format: "YYYY-MM-DD")
 // This field is automatically added for new submissions but may not be present in older entries
 // The date is not currently displayed in the UI but is recorded for future use
+// 
+// Projects in non-English languages should include:
+// - A country flag emoji in the name (e.g., 🇨🇳 for Chinese)
+// - A "language" field with the appropriate language code
+// - An English translation of the description in parentheses when possible
 
 export const projectCategories = [
   {
@@ -31,6 +36,14 @@ export const projectCategories = [
 
 export const projects = {
   llmIntegrations: [
+    {
+      name: "🆕 AI Unlimited Customizable Feature Module 🇨🇳",
+      url: "https://getquicker.net/Sharedaction?code=9ac738ed-a4b2-4ded-933c-08dd5f710a8b&fromMyShare=true",
+      description: "This project provides a free API interface supporting various text and image generation models, including OpenAI's GPT-4, Gemini 2.0, etc. Users can access these models without an API key to perform text generation, image generation, translation, text polishing, and more.",
+      author: "https://linux.do/u/s_s/summary",
+      submissionDate: "2025-03-10",
+      language: "zh-CN",
+    },
     {
       name: "🆕 PrivatePollenAI",
       url: "https://mmojocoder.github.io/PrivatePollenAI/chat.html",
@@ -101,6 +114,28 @@ export const projects = {
     },
   ],
   creativeApps: [
+    {
+      name: "🆕 AI儿童故事 🇨🇳",
+      url: "https://kidss.netlify.app/",
+      description: "基于此项目 构建有趣的孩子故事书应用演示 (Based on this project, build an interesting children's storybook application demo)",
+      author: "MZ",
+      submissionDate: "2025-03-10",
+      language: "zh-CN",
+    },
+    {
+      name: "🆕 Herramientas IA",
+      url: "https://proyectodescartes.org/descartescms/herramientas-ia",
+      description: "Tools designed with Pollinations.AI and the DescartesJS editor, including tools from other Pollinations.AI community members.",
+      author: "@juanrivera126",
+      submissionDate: "2025-03-10",
+    },
+    {
+      name: "🆕 AvatarStudio",
+      url: "https://astudio-dcae4.web.app",
+      description: "A system for creating custom characters that uses the Pollinations API for totally free and unlimited image generation.",
+      author: "@nic-wq",
+      submissionDate: "2025-03-10",
+    },
     {
       name: "🆕 Musify - AI Enhanced Music Streaming",
       url: "https://musify-sd.vercel.app/",
@@ -274,8 +309,8 @@ export const projects = {
       author: "rasit",
     },
     {
-      name: "Elixpo",
-      url: "https://circuit-overtime.github.io/Elixpo_ai_pollinations",
+      name: "Elixpo-Art",
+      url: "https://elixpoart.vercel.app",
       description: "A web interface for easy image generation with theme selection.",
       author: "Ayushman Bhattacharya",
     },

@@ -102,7 +102,7 @@ const MODEL_MAPPING = {
     // Azure OpenAI models
     'openai': 'gpt-4o-mini',       // Maps to portkeyConfig['gpt-4o-mini']
     'openai-large': 'gpt-4o',      // Maps to portkeyConfig['gpt-4o']
-    'openai-reasoning': 'o1-mini', // Maps to portkeyConfig['o1-mini'],
+    'openai-reasoning': 'o3-mini', // Maps to portkeyConfig['o1-mini'],
     // 'openai-audio': 'gpt-4o-mini-audio-preview',
     'openai-audio': 'gpt-4o-audio-preview',
     'gemini': 'gemini-2.0-flash-lite-preview-02-05',
@@ -267,6 +267,11 @@ export const portkeyConfig = {
         process.env.AZURE_O1MINI_API_KEY,
         process.env.AZURE_O1MINI_ENDPOINT,
         'o1-mini'
+    ),
+    'o3-mini': () => createAzureModelConfig(
+        process.env.AZURE_O1MINI_API_KEY,
+        process.env.AZURE_O1MINI_ENDPOINT,
+        'o3-mini'
     ),
     'gpt-4o-mini-audio-preview': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_AUDIO_API_KEY,

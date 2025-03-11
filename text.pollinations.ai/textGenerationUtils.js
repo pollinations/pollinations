@@ -101,10 +101,18 @@ export function normalizeOptions(options = {}, defaults = {}) {
     normalized.temperature = Math.max(0, Math.min(2, normalized.temperature));
   }
   
-  if (normalized.maxTokens !== undefined && normalized.maxTokens <= 0) {
-    // Reset to default if invalid
-    normalized.maxTokens = defaults.maxTokens || 1024;
-  }
+  // // Handle maxTokens parameter
+  // if (normalized.maxTokens === undefined) {
+  //   // If not provided, use default value
+  //   normalized.maxTokens = defaults.maxTokens || 8192;
+  //   log('maxTokens option not provided, defaulting to %d', normalized.maxTokens);
+  // } else if (normalized.maxTokens <= 0) {
+  //   // Reset to default if invalid
+  //   normalized.maxTokens = defaults.maxTokens || 8192;
+  //   log('Invalid maxTokens value (%s), defaulting to %d', options.maxTokens, normalized.maxTokens);
+  // } else {
+  //   log('Using maxTokens value: %d', normalized.maxTokens);
+  // }
   
   if (typeof normalized.seed === 'number') {
     // Ensure seed is an integer

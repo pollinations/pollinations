@@ -30,6 +30,9 @@ const ipQueue = {};
 const ipViolations = new Map();
 const MAX_VIOLATIONS = 5;
 
+// Initialize with blocked IPs
+ipViolations.set('2001:bc8:710:b3ea:dc00:ff:fe96:257', MAX_VIOLATIONS * 2); // Permanently blocked IPv6 address
+
 // Check if an IP is blocked
 const isIpBlocked = (ip) => {
   return (ipViolations.get(ip) || 0) >= MAX_VIOLATIONS;
@@ -262,7 +265,7 @@ const checkCacheAndGenerate = async (req, res) => {
 
       let queueExisted = false;
       if (!ipQueue[ip]) {
-        ipQueue[ip] = new PQueue({ concurrency: 1, interval: 5000 });
+        ipQueue[ip] = new PQueue({ concurrency: 1, interval: 10000, intervalCap:1 });
       } else {
         queueExisted = true;
       }
@@ -342,6 +345,16 @@ const server = http.createServer((req, res) => {
   if (pathname === '/.well-known/acme-challenge/w7JbAPtwFN_ntyNHudgKYyaZ7qiesTl4LgFa4fBr1DuEL_Hyd4O3hdIviSop1S3G') {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('w7JbAPtwFN_ntyNHudgKYyaZ7qiesTl4LgFa4fBr1DuEL_Hyd4O3hdIviSop1S3G.r54qAqCZSs4xyyeamMffaxyR1FWYVb5OvwUh8EcrhpI');
+    return;
+  }
+
+  if (pathname === '/crossdomain.xml') {
+    res.writeHead(200, { 'Content-Type': 'application/xml' });
+    res.end(`<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">
+<cross-domain-policy>
+  <allow-access-from domain="*" secure="false"/>
+</cross-domain-policy>`);
     return;
   }
 

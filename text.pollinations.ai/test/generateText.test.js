@@ -1,6 +1,7 @@
 import test from 'ava';
 import { generateTextPortkey as generateTextOpenai } from '../generateTextPortkey.js';
-import { generateTextScaleway } from '../generateTextScaleway.js';
+// Use the same Portkey implementation but with Scaleway models
+import { generateTextPortkey as generateTextScaleway } from '../generateTextPortkey.js';
 import { generateDeepseek } from '../generateDeepseek.js';
 
 // Increase timeout for all tests
@@ -226,10 +227,10 @@ test('generateTextScaleway should handle qwen-coder model', async t => {
     }
 });
 
-test('generateTextScaleway should handle llama model', async t => {
+test('generateTextScaleway should handle llama-scaleway model', async t => {
     try {
         const messages = [{ role: 'user', content: 'Hello' }];
-        const response = await generateTextScaleway(messages, { model: 'llama' });
+        const response = await generateTextScaleway(messages, { model: 'llama-scaleway' });
         t.truthy(response, 'Response should not be empty');
     } catch (error) {
         t.fail(error.message);

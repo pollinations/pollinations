@@ -236,6 +236,31 @@ export function createOpenAICompatibleClient(config) {
                     total_tokens: 0
                 };
             }
+            
+            // Correctly set the finish_reason to "length" when max_tokens limit is reached
+            if (data.choices && Array.isArray(data.choices) && data.choices.length > 0) {
+                // Check if we hit the max tokens limit
+                const maxTokens = cleanedRequestBody.max_tokens;
+                const completionTokens = data.usage?.completion_tokens;
+                
+                // If completion tokens are close to max tokens (within 5 tokens) or 
+                // if the model reached the max token limit and finish_reason isn't already set
+                if (maxTokens && completionTokens && 
+                    (completionTokens >= maxTokens - 5 || 
+                     (data.choices[0].finish_reason === null || data.choices[0].finish_reason === 'stop'))) {
+                    
+                    // Log potential truncation
+                    log(`[${requestId}] Possible response truncation detected. Max tokens: ${maxTokens}, Completion tokens: ${completionTokens}`);
+                    
+                    // For cloudflare and other providers that might not correctly set finish_reason
+                    if (modelName && (modelName.includes('@cf/') || modelName.includes('llamaguard'))) {
+                        if (completionTokens >= maxTokens - 10) {
+                            log(`[${requestId}] Setting finish_reason to "length" for Cloudflare model response`);
+                            data.choices[0].finish_reason = 'length';
+                        }
+                    }
+                }
+            }
 
             log(`[${requestId}] Final response:`, JSON.stringify(data, null, 2));
 

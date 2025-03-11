@@ -185,6 +185,29 @@ const baseScalewayConfig = {
 };
 
 /**
+ * Randomly selects between primary and secondary Azure OpenAI credentials
+ * @returns {Object} - Selected API key and endpoint
+ */
+function getRandomAzureCredentials() {
+    // Randomly choose between primary and secondary credentials
+    const useSecondary = Math.random() >= 0.5;
+    
+    if (useSecondary && process.env.AZURE_OPENAI_API_KEY_2 && process.env.AZURE_OPENAI_ENDPOINT_2) {
+        log('Using secondary Azure OpenAI credentials');
+        return {
+            apiKey: process.env.AZURE_OPENAI_API_KEY_2,
+            endpoint: process.env.AZURE_OPENAI_ENDPOINT_2
+        };
+    } else {
+        log('Using primary Azure OpenAI credentials');
+        return {
+            apiKey: process.env.AZURE_OPENAI_API_KEY,
+            endpoint: process.env.AZURE_OPENAI_ENDPOINT
+        };
+    }
+}
+
+/**
  * Creates an Azure model configuration
  * @param {string} apiKey - Azure API key
  * @param {string} endpoint - Azure endpoint
@@ -228,67 +251,66 @@ function createScalewayModelConfig(additionalConfig = {}) {
     };
 }
 
-// Unified flat Portkey configuration for all providers and models
+// Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
     // Azure OpenAI model configurations
-    'gpt-4o-mini': createAzureModelConfig(
-        process.env.AZURE_OPENAI_API_KEY,
-        process.env.AZURE_OPENAI_ENDPOINT,
-        'gpt-4o-mini'
-    ),
-    'gpt-4o': createAzureModelConfig(
+    'gpt-4o-mini': () => {
+        const credentials = getRandomAzureCredentials();
+        return createAzureModelConfig(credentials.apiKey, credentials.endpoint, 'gpt-4o-mini');
+    },
+    'gpt-4o': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_LARGE_API_KEY,
         process.env.AZURE_OPENAI_LARGE_ENDPOINT,
         'gpt-4o'
     ),
-    'o1-mini': createAzureModelConfig(
+    'o1-mini': () => createAzureModelConfig(
         process.env.AZURE_O1MINI_API_KEY,
         process.env.AZURE_O1MINI_ENDPOINT,
         'o1-mini'
     ),
-    'gpt-4o-mini-audio-preview': createAzureModelConfig(
+    'gpt-4o-mini-audio-preview': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_AUDIO_API_KEY,
         process.env.AZURE_OPENAI_AUDIO_ENDPOINT,
         'gpt-4o-mini-audio-preview'
     ),
-    'gpt-4o-audio-preview': createAzureModelConfig(
+    'gpt-4o-audio-preview': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_AUDIO_LARGE_API_KEY,
         process.env.AZURE_OPENAI_AUDIO_LARGE_ENDPOINT,
         'gpt-4o-audio-preview'
     ),
     // Cloudflare model configurations
-    '@cf/meta/llama-3.3-70b-instruct-fp8-fast': createCloudflareModelConfig(),
-    '@cf/meta/llama-3.1-8b-instruct': createCloudflareModelConfig(),
-    '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b': createCloudflareModelConfig(),
-    '@hf/thebloke/llamaguard-7b-awq': createCloudflareModelConfig(),
-    'phi-4-instruct': {
+    '@cf/meta/llama-3.3-70b-instruct-fp8-fast': () => createCloudflareModelConfig(),
+    '@cf/meta/llama-3.1-8b-instruct': () => createCloudflareModelConfig(),
+    '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b': () => createCloudflareModelConfig(),
+    '@hf/thebloke/llamaguard-7b-awq': () => createCloudflareModelConfig(),
+    'phi-4-instruct': () => ({
         provider: 'openai',
         'custom-host': process.env.OPENAI_PHI4_ENDPOINT,
         authKey: process.env.OPENAI_PHI4_API_KEY
-    },
+    }),
     // Scaleway model configurations
-    'qwen2.5-coder-32b-instruct': createScalewayModelConfig(),
-    'mistral-nemo-instruct-2407': createScalewayModelConfig(),
-    'llama-3.3-70b-instruct': createScalewayModelConfig(),
-    'llama-3.1-8b-instruct': createScalewayModelConfig(),
+    'qwen2.5-coder-32b-instruct': () => createScalewayModelConfig(),
+    'mistral-nemo-instruct-2407': () => createScalewayModelConfig(),
+    'llama-3.3-70b-instruct': () => createScalewayModelConfig(),
+    'llama-3.1-8b-instruct': () => createScalewayModelConfig(),
     // Google Vertex AI model configurations
-    'gemini-2.0-flash-lite-preview-02-05': {
+    'gemini-2.0-flash-lite-preview-02-05': () => ({
         provider: 'vertex-ai',
         authKey: () => gcloudAccessToken, // Use the refreshable token
         'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
         'vertex-region': 'us-central1',
         'vertex-model-id': 'gemini-2.0-flash-lite-preview-02-05',
         'strict-openai-compliance': 'false'
-    },
+    }),
     // Gemini thinking model
-    'gemini-2.0-flash-thinking-exp-01-21': {
+    'gemini-2.0-flash-thinking-exp-01-21': () => ({
         provider: 'vertex-ai',
         authKey: () => gcloudAccessToken, // Use the refreshable token
         'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
         'vertex-region': 'us-central1',
         'strict-openai-compliance': 'false'
-    },
-    'deepseek-r1-distill-llama-70b': createScalewayModelConfig(),
+    }),
+    'deepseek-r1-distill-llama-70b': () => createScalewayModelConfig(),
 };
 
 /**
@@ -300,7 +322,8 @@ export const portkeyConfig = {
 function logProviderConfig(providerName, filterFn, sanitizeFn = config => config) {
     log(`${providerName} configuration:`);
     const models = Object.entries(portkeyConfig).filter(filterFn);
-    for (const [model, config] of models) {
+    for (const [model, configFn] of models) {
+        const config = configFn(); // Call the function to get the actual config
         log(`Model ${model}:`, JSON.stringify(sanitizeFn(config), null, 2));
     }
 }
@@ -308,13 +331,13 @@ function logProviderConfig(providerName, filterFn, sanitizeFn = config => config
 // Log Azure configuration
 logProviderConfig(
     'Azure', 
-    ([_, config]) => config.provider === 'azure-openai'
+    ([_, configFn]) => configFn().provider === 'azure-openai'
 );
 
 // Log Cloudflare configuration
 logProviderConfig(
     'Cloudflare', 
-    ([_, config]) => config.provider === 'openai' && config['custom-host']?.includes('cloudflare'),
+    ([_, configFn]) => configFn().provider === 'openai' && configFn()['custom-host']?.includes('cloudflare'),
     config => ({
         ...config,
         authKey: config.authKey ? '***' : undefined
@@ -426,12 +449,13 @@ export const generateTextPortkey = createOpenAICompatibleClient({
             }
 
             // Get the model configuration object
-            const config = portkeyConfig[modelName];
+            const configFn = portkeyConfig[modelName];
 
-            if (!config) {
+            if (!configFn) {
                 errorLog(`No configuration found for model: ${modelName}`);
                 throw new Error(`No configuration found for model: ${modelName}. Available configs: ${Object.keys(portkeyConfig).join(', ')}`);
             }
+            const config = configFn(); // Call the function to get the actual config
 
             log('Processing request for model:', modelName, 'with provider:', config.provider);
 

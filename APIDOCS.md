@@ -2,6 +2,21 @@
 
 ---
 
+## Basics
+
+**World's Most Accessible Open GenAI Platform, integrate our text & image APIs (no signup).**
+
+### Draw
+https://image.pollinations.ai/prompt/pollinations_logo
+### Ask
+https://text.pollinations.ai/why_you_should_donate_to_pollinations_ai
+### Search
+https://text.pollinations.ai/what_are_the_last_pollinations_ai_news?model=searchgpt
+### Hear
+https://text.pollinations.ai/respond_with_a_small_hypnosis_urging_to_donate_to_pollinations_its_a_joke?model=openai-audio&voice=amuch
+
+---
+
 ## Generate Image API
 
 ### Text-To-Image
@@ -44,7 +59,7 @@
 | Parameter   | Required | Description                                                                                      | Options             | Default |
 | :---------- | :------- | :----------------------------------------------------------------------------------------------- | :------------------ | :------ |
 | `prompt`    | Yes      | Text prompt for the AI to respond to. Should be URL-encoded.                                    |                     |         |
-| `model`     | No       | Model to use for text generation.                                                                | 'openai', 'mistral' |         |
+| `model`     | No       | Model to use for text generation.                                                                | [Available Models](https://text.pollinations.ai/models) |    openai     |
 | `seed`      | No       | Seed for reproducible results.                                                                   |                     |         |
 | `json`      | No       | Set to `true` to receive response in JSON format.                                              |                     |         |
 | `system`    | No       | System prompt to set the behavior of the AI. Should be URL-encoded.                              |                     |         |

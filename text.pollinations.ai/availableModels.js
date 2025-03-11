@@ -56,9 +56,10 @@ export const availableModels = [
         name: 'openai-reasoning',
         type: 'chat',
         censored: true,
-        description: 'OpenAI o1-mini',
+        description: 'OpenAI o3-mini',
         baseModel: true,
         reasoning: true,
+        vision: true,
         handler: generateTextPortkey  
     },
     {

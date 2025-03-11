@@ -348,6 +348,16 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (pathname === '/crossdomain.xml') {
+    res.writeHead(200, { 'Content-Type': 'application/xml' });
+    res.end(`<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">
+<cross-domain-policy>
+  <allow-access-from domain="*" secure="false"/>
+</cross-domain-policy>`);
+    return;
+  }
+
   if (pathname === '/models') {
     res.writeHead(200, { 
       'Content-Type': 'application/json',

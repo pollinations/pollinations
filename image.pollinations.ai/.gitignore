@@ -12,3 +12,7 @@ steps.txt
 
 # Environment variables
 .env
+
+# Cloudflare tunnel credentials
+.cloudflared/*.json
+~/.cloudflared/*.json

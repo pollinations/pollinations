@@ -1,6 +1,5 @@
 // Import all handler functions
 import { generateDeepseek } from './generateDeepseek.js';
-import { generateTextGemini } from './generateTextGemini.js';
 import { generateTextSearch } from './generateTextSearch.js';
 import { generateTextOpenRouter } from './generateTextOpenRouter.js';
 import { generateTextModal } from './generateTextModal.js';
@@ -29,7 +28,6 @@ const handlers = {
     openai: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai'}),
     deepseek: (messages, options) => generateDeepseek(messages, {...options, model: 'deepseek-chat'}),
     mistral: (messages, options) => generateTextPortkey(messages, {...options, model: 'mistral'}),
-    gemini: (messages, options) => generateTextGemini(messages, options),
     openRouter: (messages, options, model) => generateTextOpenRouter(messages, {...options, model}),
     modal: (messages, options) => generateTextModal(messages, options),
     portkey: (messages, options, model) => generateTextPortkey(messages, {...options, model})
@@ -190,24 +188,24 @@ export const availableModels = [
         provider: 'cloudflare',
         handler: generateTextPortkey
     },
-    // {
-    //     name: 'gemini',
-    //     type: 'chat',
-    //     censored: true,
-    //     description: 'Gemini 2.0 Flash',
-    //     baseModel: true,
-    //     provider: 'google',
-    //     handler: handlers.gemini
-    // },
-    // {
-    //     name: 'gemini-thinking',
-    //     type: 'chat',
-    //     censored: true,
-    //     description: 'Gemini 2.0 Flash Thinking',
-    //     baseModel: true,
-    //     provider: 'google',
-    //     handler: handlers.gemini
-    // },
+    {
+        name: 'gemini',
+        type: 'chat',
+        censored: true,
+        description: 'Gemini 2.0 Flash',
+        baseModel: true,
+        provider: 'google',
+        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'gemini'})
+    },
+    {
+        name: 'gemini-thinking',
+        type: 'chat',
+        censored: true,
+        description: 'Gemini 2.0 Flash Thinking',
+        baseModel: true,
+        provider: 'google',
+        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'gemini-thinking'})
+    },
     {
         name: 'hormoz',
         type: 'chat',

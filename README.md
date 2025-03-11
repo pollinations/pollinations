@@ -181,6 +181,7 @@ Pollinations.AI is used in various projects, including:
 
 | Project | Description | Creator | Links |
 |---------|-------------|---------|-------|
+| 🆕 AI Unlimited Customizable Feature Module 🇨🇳 | This project provides a free API interface supporting various text and image generation models, including OpenAI's GPT-4, Gemini 2.0, etc. Users can access these models without an API key to perform text generation, image generation, translation, text polishing, and more | [S_S](https://linux.do/u/s_s/summary) | [Website](https://getquicker.net/Sharedaction?code=9ac738ed-a4b2-4ded-933c-08dd5f710a8b&fromMyShare=true) |
 | 🆕 PrivatePollenAI | A privacy-focused chat assistant app that securely stores data locally, integrates with PollinationAI for text and image generation, features a minimalistic UI, and allows users to choose models and write their own system instructions | [tenacious_humming_bird](https://discordapp.com/users/tenacious_humming_bird) | [Website](https://mmojocoder.github.io/PrivatePollenAI/chat.html), [GitHub](https://github.com/MMojoCoder/PrivatePollenAI) |
 | 🆕 Zelos AI image generator | It uses Pollinations for both prompt enhancing and image generation, it was a easy to make project due to pollinations services being easy to use | [Roblox Profile](https://www.roblox.com/users/4361935306/profile) | [Website](https://websim.ai/@ISWEARIAMNOTADDICTEDTOPILLOW/ai-image-prompt-generator) |
 | 🆕 urSapere AI | A state-of-the-art chatbot integrating multiple LLMs with advanced features including image generation, mathematical proficiency, and real-time web search | withthatway | [Website](https://ursapere.vercel.app) |
@@ -198,6 +199,9 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 AI儿童故事 🇨🇳 | 基于此项目 构建有趣的孩子故事书应用演示 (Based on this project, build an interesting children's storybook application demo) | MZ | [Website](https://kidss.netlify.app/) |
+| 🆕 Herramientas IA | Tools designed with Pollinations.AI and the DescartesJS editor, including tools from other Pollinations.AI community members | @juanrivera126 | [Website](https://proyectodescartes.org/descartescms/herramientas-ia) |
+| 🆕 AvatarStudio | A system for creating custom characters that uses the Pollinations API for totally free and unlimited image generation | @nic-wq | [Website](https://astudio-dcae4.web.app) |
 | 🆕 Musify - AI Enhanced Music Streaming | Musify is your AI-powered music buddy, making your jam sessions smarter and more fun. It is powered by pollinations api, it offers a slick and intuitive music experience with features like AI Music Assistant, Voice Commands, AI Playlist Creator, and Responsive Design. | @Sugamdeol | [Website](https://musify-sd.vercel.app/) |
 | 🆕 image1gen | Website to easily create images via pollinations.ai API | @oopshnik | [Website](https://image1gen.streamlit.app/), [GitHub](https://github.com/oopshnik/image1gen), [HuggingFace](https://huggingface.co/spaces/oopshnik/image_gen) |
 | 🆕 AI Image Generator | A web-based AI image generator powered by Pollinations.ai, featuring multi-model support, customizable parameters, and real-time preview | @hrisjeui | [Website](https://fvai.infinityfreeapp.com/my-apps/pollicb09.html), [GitHub](https://github.com/hrisjeui/Multi-text-image-model-pollinations) |

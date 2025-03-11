@@ -30,6 +30,9 @@ const ipQueue = {};
 const ipViolations = new Map();
 const MAX_VIOLATIONS = 5;
 
+// Initialize with blocked IPs
+ipViolations.set('2001:bc8:710:b3ea:dc00:ff:fe96:257', MAX_VIOLATIONS * 2); // Permanently blocked IPv6 address
+
 // Check if an IP is blocked
 const isIpBlocked = (ip) => {
   return (ipViolations.get(ip) || 0) >= MAX_VIOLATIONS;
@@ -262,7 +265,7 @@ const checkCacheAndGenerate = async (req, res) => {
 
       let queueExisted = false;
       if (!ipQueue[ip]) {
-        ipQueue[ip] = new PQueue({ concurrency: 1, interval: 5000 });
+        ipQueue[ip] = new PQueue({ concurrency: 1, interval: 10000, intervalCap:1 });
       } else {
         queueExisted = true;
       }

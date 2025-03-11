@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { createOpenAICompatibleClient } from './genericOpenAIClient.js';
 import debug from 'debug';
+import { execSync } from 'child_process';
 
 dotenv.config();
 
@@ -8,6 +9,33 @@ const log = debug('pollinations:portkey');
 const errorLog = debug('pollinations:portkey:error');
 
 // Helper function to extract base URL from Azure endpoint
+
+// Global variable to store the Google Cloud access token
+let gcloudAccessToken = process.env.GCLOUD_ACCESS_TOKEN || '';
+
+/**
+ * Refreshes the Google Cloud access token by executing the gcloud CLI command
+ * @returns {string} The new access token
+ */
+function refreshGcloudAccessToken() {
+    try {
+        log('Refreshing Google Cloud access token');
+        const token = execSync('gcloud auth print-access-token').toString().trim();
+        gcloudAccessToken = token;
+        log('Successfully refreshed Google Cloud access token');
+        return token;
+    } catch (error) {
+        errorLog('Failed to refresh Google Cloud access token:', error);
+        return gcloudAccessToken; // Return the existing token if refresh fails
+    }
+}
+
+// Initial token refresh
+refreshGcloudAccessToken();
+
+// Set up a timer to refresh the token every 20 minutes (1200000 ms)
+setInterval(refreshGcloudAccessToken, 1200000);
+
 export function extractBaseUrl(endpoint) {
     if (!endpoint) return null;
     
@@ -77,6 +105,8 @@ const MODEL_MAPPING = {
     'openai-reasoning': 'o1-mini', // Maps to portkeyConfig['o1-mini'],
     // 'openai-audio': 'gpt-4o-mini-audio-preview',
     'openai-audio': 'gpt-4o-audio-preview',
+    'gemini': 'gemini-2.0-flash-lite-preview-02-05',
+    'gemini-thinking': 'gemini-2.0-flash-thinking-exp-01-21',
     // Cloudflare models
     'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
     'llamalight': '@cf/meta/llama-3.1-8b-instruct',
@@ -99,6 +129,7 @@ const SYSTEM_PROMPTS = {
     // OpenAI models
     'openai': 'You are a helpful, knowledgeable assistant.',
     'openai-large': 'You are a helpful, knowledgeable assistant.',
+    'gemini': 'You are Gemini, a helpful and versatile AI assistant built by Google. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.',
     // Cloudflare models
     'llama': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
     'llamalight': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
@@ -110,8 +141,10 @@ const SYSTEM_PROMPTS = {
     'llama-scaleway': unrestrictedPrompt,
     'llamalight-scaleway': unrestrictedPrompt,
     'qwen-coder': `You are an expert coding assistant with deep knowledge of programming languages, software architecture, and best practices. Your purpose is to help users write high-quality, efficient, and maintainable code. You provide clear explanations, suggest improvements, and help debug issues while following industry best practices.`,
+    'gemini-thinking': 'You are Gemini, a helpful and versatile AI assistant built by Google. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone. When appropriate, show your reasoning step by step.',
     'deepseek-r1-distill-llama-70b': unrestrictedPrompt
 };
+
 
 // Default options
 const DEFAULT_OPTIONS = {
@@ -138,6 +171,8 @@ const baseCloudflareConfig = {
     provider: 'openai',
     'custom-host': `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
     authKey: process.env.CLOUDFLARE_AUTH_TOKEN,
+    // Set default max_tokens to 8192 (increased from 256)
+    'default-max-tokens': 8192,
 };
 
 // Base configuration for Scaleway models
@@ -145,7 +180,32 @@ const baseScalewayConfig = {
     provider: 'openai',
     'custom-host': `${process.env.SCALEWAY_BASE_URL || 'https://api.scaleway.com/ai-apis/v1'}`,
     authKey: process.env.SCALEWAY_API_KEY,
+    // Set default max_tokens to 8192 (increased from default)
+    'default-max-tokens': 8192,
 };
+
+/**
+ * Randomly selects between primary and secondary Azure OpenAI credentials
+ * @returns {Object} - Selected API key and endpoint
+ */
+function getRandomAzureCredentials() {
+    // Randomly choose between primary and secondary credentials
+    const useSecondary = Math.random() >= 0.5;
+    
+    if (useSecondary && process.env.AZURE_OPENAI_API_KEY_2 && process.env.AZURE_OPENAI_ENDPOINT_2) {
+        log('Using secondary Azure OpenAI credentials');
+        return {
+            apiKey: process.env.AZURE_OPENAI_API_KEY_2,
+            endpoint: process.env.AZURE_OPENAI_ENDPOINT_2
+        };
+    } else {
+        log('Using primary Azure OpenAI credentials');
+        return {
+            apiKey: process.env.AZURE_OPENAI_API_KEY,
+            endpoint: process.env.AZURE_OPENAI_ENDPOINT
+        };
+    }
+}
 
 /**
  * Creates an Azure model configuration
@@ -191,50 +251,66 @@ function createScalewayModelConfig(additionalConfig = {}) {
     };
 }
 
-// Unified flat Portkey configuration for all providers and models
+// Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
     // Azure OpenAI model configurations
-    'gpt-4o-mini': createAzureModelConfig(
-        process.env.AZURE_OPENAI_API_KEY,
-        process.env.AZURE_OPENAI_ENDPOINT,
-        'gpt-4o-mini'
-    ),
-    'gpt-4o': createAzureModelConfig(
+    'gpt-4o-mini': () => {
+        const credentials = getRandomAzureCredentials();
+        return createAzureModelConfig(credentials.apiKey, credentials.endpoint, 'gpt-4o-mini');
+    },
+    'gpt-4o': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_LARGE_API_KEY,
         process.env.AZURE_OPENAI_LARGE_ENDPOINT,
         'gpt-4o'
     ),
-    'o1-mini': createAzureModelConfig(
+    'o1-mini': () => createAzureModelConfig(
         process.env.AZURE_O1MINI_API_KEY,
         process.env.AZURE_O1MINI_ENDPOINT,
         'o1-mini'
     ),
-    'gpt-4o-mini-audio-preview': createAzureModelConfig(
+    'gpt-4o-mini-audio-preview': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_AUDIO_API_KEY,
         process.env.AZURE_OPENAI_AUDIO_ENDPOINT,
         'gpt-4o-mini-audio-preview'
     ),
-    'gpt-4o-audio-preview': createAzureModelConfig(
+    'gpt-4o-audio-preview': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_AUDIO_LARGE_API_KEY,
         process.env.AZURE_OPENAI_AUDIO_LARGE_ENDPOINT,
         'gpt-4o-audio-preview'
     ),
     // Cloudflare model configurations
-    '@cf/meta/llama-3.3-70b-instruct-fp8-fast': createCloudflareModelConfig(),
-    '@cf/meta/llama-3.1-8b-instruct': createCloudflareModelConfig(),
-    '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b': createCloudflareModelConfig(),
-    '@hf/thebloke/llamaguard-7b-awq': createCloudflareModelConfig(),
-    'phi-4-instruct': {
+    '@cf/meta/llama-3.3-70b-instruct-fp8-fast': () => createCloudflareModelConfig(),
+    '@cf/meta/llama-3.1-8b-instruct': () => createCloudflareModelConfig(),
+    '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b': () => createCloudflareModelConfig(),
+    '@hf/thebloke/llamaguard-7b-awq': () => createCloudflareModelConfig(),
+    'phi-4-instruct': () => ({
         provider: 'openai',
         'custom-host': process.env.OPENAI_PHI4_ENDPOINT,
         authKey: process.env.OPENAI_PHI4_API_KEY
-    },
+    }),
     // Scaleway model configurations
-    'qwen2.5-coder-32b-instruct': createScalewayModelConfig(),
-    'mistral-nemo-instruct-2407': createScalewayModelConfig(),
-    'llama-3.3-70b-instruct': createScalewayModelConfig(),
-    'llama-3.1-8b-instruct': createScalewayModelConfig(),
-    'deepseek-r1-distill-llama-70b': createScalewayModelConfig(),
+    'qwen2.5-coder-32b-instruct': () => createScalewayModelConfig(),
+    'mistral-nemo-instruct-2407': () => createScalewayModelConfig(),
+    'llama-3.3-70b-instruct': () => createScalewayModelConfig(),
+    'llama-3.1-8b-instruct': () => createScalewayModelConfig(),
+    // Google Vertex AI model configurations
+    'gemini-2.0-flash-lite-preview-02-05': () => ({
+        provider: 'vertex-ai',
+        authKey: () => gcloudAccessToken, // Use the refreshable token
+        'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
+        'vertex-region': 'us-central1',
+        'vertex-model-id': 'gemini-2.0-flash-lite-preview-02-05',
+        'strict-openai-compliance': 'false'
+    }),
+    // Gemini thinking model
+    'gemini-2.0-flash-thinking-exp-01-21': () => ({
+        provider: 'vertex-ai',
+        authKey: () => gcloudAccessToken, // Use the refreshable token
+        'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
+        'vertex-region': 'us-central1',
+        'strict-openai-compliance': 'false'
+    }),
+    'deepseek-r1-distill-llama-70b': () => createScalewayModelConfig(),
 };
 
 /**
@@ -246,7 +322,8 @@ export const portkeyConfig = {
 function logProviderConfig(providerName, filterFn, sanitizeFn = config => config) {
     log(`${providerName} configuration:`);
     const models = Object.entries(portkeyConfig).filter(filterFn);
-    for (const [model, config] of models) {
+    for (const [model, configFn] of models) {
+        const config = configFn(); // Call the function to get the actual config
         log(`Model ${model}:`, JSON.stringify(sanitizeFn(config), null, 2));
     }
 }
@@ -254,13 +331,13 @@ function logProviderConfig(providerName, filterFn, sanitizeFn = config => config
 // Log Azure configuration
 logProviderConfig(
     'Azure', 
-    ([_, config]) => config.provider === 'azure-openai'
+    ([_, configFn]) => configFn().provider === 'azure-openai'
 );
 
 // Log Cloudflare configuration
 logProviderConfig(
     'Cloudflare', 
-    ([_, config]) => config.provider === 'openai' && config['custom-host']?.includes('cloudflare'),
+    ([_, configFn]) => configFn().provider === 'openai' && configFn()['custom-host']?.includes('cloudflare'),
     config => ({
         ...config,
         authKey: config.authKey ? '***' : undefined
@@ -274,6 +351,17 @@ logProviderConfig(
     config => ({
         ...config,
         authKey: config.authKey ? '***' : undefined
+    })
+);
+
+// Log Vertex AI configuration
+logProviderConfig(
+    'Vertex AI',
+    ([_, config]) => config['vertex-project-id'],
+    config => ({
+        ...config,
+        authKey: config.authKey ? '***' : undefined,
+        'vertex-project-id': config['vertex-project-id'] ? '***' : undefined
     })
 );
 
@@ -316,7 +404,13 @@ function generatePortkeyHeaders(config) {
 
     // Add Authorization header if needed
     if (config.authKey) {
-        headers['Authorization'] = `Bearer ${config.authKey}`;
+        // Check if authKey is a function (for dynamic tokens)
+        if (typeof config.authKey === 'function') {
+            headers['Authorization'] = `Bearer ${config.authKey()}`;
+        } else {
+            // Regular string token
+            headers['Authorization'] = `Bearer ${config.authKey}`;
+        }
     }
     
     return headers;
@@ -355,12 +449,13 @@ export const generateTextPortkey = createOpenAICompatibleClient({
             }
 
             // Get the model configuration object
-            const config = portkeyConfig[modelName];
+            const configFn = portkeyConfig[modelName];
 
-            if (!config) {
+            if (!configFn) {
                 errorLog(`No configuration found for model: ${modelName}`);
                 throw new Error(`No configuration found for model: ${modelName}. Available configs: ${Object.keys(portkeyConfig).join(', ')}`);
             }
+            const config = configFn(); // Call the function to get the actual config
 
             log('Processing request for model:', modelName, 'with provider:', config.provider);
 
@@ -370,6 +465,20 @@ export const generateTextPortkey = createOpenAICompatibleClient({
             
             // Set the headers as a property on the request object that will be used by genericOpenAIClient
             requestBody._additionalHeaders = additionalHeaders;
+            
+            // For Cloudflare or large language models that need higher token limits,
+            // ensure max_tokens is set if not explicitly specified by the user
+            if (!requestBody.max_tokens && config['default-max-tokens']) {
+                log(`Setting max_tokens to default value: ${config['default-max-tokens']}`);
+                requestBody.max_tokens = config['default-max-tokens'];
+            }
+            
+            // Special handling for o1-mini model which requires max_completion_tokens instead of max_tokens
+            if (modelName === 'o1-mini' && requestBody.max_tokens) {
+                log(`Converting max_tokens to max_completion_tokens for o1-mini model`);
+                requestBody.max_completion_tokens = requestBody.max_tokens;
+                delete requestBody.max_tokens;
+            }
             
             return requestBody;
         } catch (error) {

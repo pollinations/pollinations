@@ -100,6 +100,92 @@ Docs: https://pollinations.ai/react-hooks
 https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?width=1280&height=720&seed=42
 ```
 
+#### Generation Status API
+
+The Generation Status API allows you to check the status of an image generation request. This is particularly useful when you need to:
+- Monitor the progress of an image generation
+- Ensure multiple systems work with the same image resource
+- Avoid race conditions when simultaneously displaying and downloading images
+
+**Endpoints:**
+
+1. Check by ID: `GET https://image.pollinations.ai/status?id={generationId}`
+   - The generationId is returned in the `X-Generation-Id` header of image generation responses
+
+2. Check by prompt and parameters: `GET https://image.pollinations.ai/status/{prompt}?width=1024&height=1024&seed=42&model=flux`
+   - Uses the same parameters as the image generation endpoint
+
+**Response Format:**
+```json
+{
+  "status": "in_progress|completed|failed",
+  "progress": {
+    "percent": 75,
+    "stage": "Generation",
+    "message": "Creating image..."
+  },
+  "startedAt": 1615482772000,
+  "elapsedMs": 2500,
+  "generationId": "prompt_params_hash",
+  "prompt": "Original prompt text",
+  "imageUrl": "https://image.pollinations.ai/prompt/...",  // Only in completed status
+  "error": "Error message if failed",                      // Only in failed status
+  "maturity": { "isMature": false, "isChild": false }      // Safety classifications
+}
+```
+
+**Example Usage:**
+
+```javascript
+// When making a UI request for an image:
+async function loadImage(prompt, params) {
+  try {
+    // Start a fetch but don't await it immediately
+    const imagePromise = fetch(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?` + 
+      new URLSearchParams(params));
+    
+    // Get the response headers to check generation ID
+    const response = await imagePromise;
+    const generationId = response.headers.get('X-Generation-Id');
+    
+    // Now the UI can display a loading indicator while checking status
+    const statusUrl = `https://image.pollinations.ai/status?id=${generationId}`;
+    
+    // The backend can use the same generationId to track and download the image
+    // ensuring both systems use the exact same image resource
+    return {
+      imageUrl: response.url,
+      generationId,
+      statusUrl,
+      imageBlob: await response.blob()
+    };
+  } catch (error) {
+    console.error("Error generating image:", error);
+  }
+}
+
+// Backend code for saving the same image:
+async function saveImageFromStatus(generationId) {
+  // Wait for generation to complete by polling status
+  let status = null;
+  do {
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+    const statusResponse = await fetch(`https://image.pollinations.ai/status?id=${generationId}`);
+    status = await statusResponse.json();
+  } while (status.status === 'in_progress');
+  
+  // Once complete, save the image
+  if (status.status === 'completed') {
+    const imageResponse = await fetch(status.imageUrl);
+    const imageBuffer = await imageResponse.arrayBuffer();
+    // Save imageBuffer to disk or database
+    return { success: true, path: `/saved/${generationId}.jpg` };
+  } else {
+    return { success: false, error: status.error };
+  }
+}
+```
+
 ### Text Generation API
 
 #### Generate (GET)

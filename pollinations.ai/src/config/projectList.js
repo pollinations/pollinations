@@ -1,6 +1,11 @@
 // Project entries support an optional submissionDate field (format: "YYYY-MM-DD")
 // This field is automatically added for new submissions but may not be present in older entries
 // The date is not currently displayed in the UI but is recorded for future use
+// 
+// Projects in non-English languages should include:
+// - A country flag emoji in the name (e.g., 🇨🇳 for Chinese)
+// - A "language" field with the appropriate language code
+// - An English translation of the description in parentheses when possible
 
 export const projectCategories = [
   {
@@ -109,6 +114,14 @@ export const projects = {
     },
   ],
   creativeApps: [
+    {
+      name: "🆕 AI儿童故事 🇨🇳",
+      url: "https://kidss.netlify.app/",
+      description: "基于此项目 构建有趣的孩子故事书应用演示 (Based on this project, build an interesting children's storybook application demo)",
+      author: "MZ",
+      submissionDate: "2025-03-10",
+      language: "zh-CN",
+    },
     {
       name: "🆕 Herramientas IA",
       url: "https://proyectodescartes.org/descartescms/herramientas-ia",

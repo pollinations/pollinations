@@ -473,6 +473,13 @@ export const generateTextPortkey = createOpenAICompatibleClient({
                 requestBody.max_tokens = config['default-max-tokens'];
             }
             
+            // Special handling for o1-mini model which requires max_completion_tokens instead of max_tokens
+            if (modelName === 'o1-mini' && requestBody.max_tokens) {
+                log(`Converting max_tokens to max_completion_tokens for o1-mini model`);
+                requestBody.max_completion_tokens = requestBody.max_tokens;
+                delete requestBody.max_tokens;
+            }
+            
             return requestBody;
         } catch (error) {
             errorLog('Error in request transformation:', error);

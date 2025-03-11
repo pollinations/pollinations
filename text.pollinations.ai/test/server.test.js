@@ -309,14 +309,15 @@ test('GET / should handle missing authentication code', async t => {
  * Purpose: Verify empty messages handling
  * 
  * Expected behavior:
- * 1. Empty messages should be rejected
+ * 1. Empty messages should now be handled normally as validation was removed
  */
 test('POST /openai should handle empty messages', async t => {
     const response = await request(app)
         .post('/openai?code=BeesKnees')
         .send({ messages: [] });
     
-    t.is(response.status, 400, 'Response status should be 400');
+    // Since validation was removed, we expect the request to proceed normally
+    t.is(response.status, 200, 'Response status should be 200');
 });
 
 /**
@@ -511,18 +512,36 @@ test('POST /v1/chat/completions should handle streaming requests', async t => {
 /**
  * Test: POST /v1/chat/completions with invalid messages
  * 
- * Purpose: Verify that the /v1/chat/completions endpoint properly handles invalid input
+ * Purpose: Verify that the /v1/chat/completions endpoint handles invalid input
  * 
  * Expected behavior:
- * 1. The response status should be 400 (Bad Request)
+ * 1. The response should still process the request since validation was removed
  */
-test('POST /v1/chat/completions should return 400 for invalid messages array', async t => {
+test('POST /v1/chat/completions with invalid messages format', async t => {
     const response = await request(app)
         .post('/v1/chat/completions')
         .send({ messages: 'invalid' });
     
-    t.is(response.status, 400, 'Response status should be 400');
-    t.true(response.body.error.includes('Invalid messages'), 'Response should indicate invalid messages');
+    // Since validation was removed, the request will proceed to processing
+    // The actual behavior will depend on how getRequestData handles this case
+    t.is(response.status, 200, 'Response status should be 200');
+});
+
+/**
+ * Test: POST /v1/chat/completions with empty messages
+ * 
+ * Purpose: Verify that the /v1/chat/completions endpoint handles empty messages array
+ * 
+ * Expected behavior:
+ * 1. The response should still process the request since validation was removed
+ */
+test('POST /v1/chat/completions with empty messages', async t => {
+    const response = await request(app)
+        .post('/v1/chat/completions')
+        .send({ messages: [] });
+    
+    // Since validation was removed, we expect the request to proceed normally
+    t.is(response.status, 200, 'Response status should be 200');
 });
 
 /**

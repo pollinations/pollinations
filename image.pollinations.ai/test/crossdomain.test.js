@@ -1,5 +1,5 @@
-import test from 'ava';
-import http from 'http';
+import { describe, it, expect } from 'vitest';
+import http from 'node:http';
 import { parse } from 'url';
 
 /**
@@ -19,19 +19,21 @@ import { parse } from 'url';
  * - Sets Content-Type to application/xml
  * - Returns XML with the correct cross-domain policy
  */
-test('image service should serve crossdomain.xml correctly', async t => {
-  // This test will use a mock response if the server isn't running locally
-  const response = await makeRequest('/crossdomain.xml');
-  
-  // Check status and content type
-  t.is(response.statusCode, 200);
-  t.true(response.headers['content-type'].includes('application/xml'));
-  
-  // Check content
-  t.true(response.body.includes('<?xml version="1.0" encoding="UTF-8"?>'));
-  t.true(response.body.includes('<cross-domain-policy>'));
-  t.true(response.body.includes('<allow-access-from domain="*" secure="false"/>'));
-  t.true(response.body.includes('</cross-domain-policy>'));
+describe('crossdomain.xml endpoint', () => {
+  it('should serve crossdomain.xml correctly', async () => {
+    // This test will use a mock response if the server isn't running locally
+    const response = await makeRequest('/crossdomain.xml');
+    
+    // Check status and content type
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['content-type']).toContain('application/xml');
+    
+    // Check content
+    expect(response.body).toContain('<?xml version="1.0" encoding="UTF-8"?>');
+    expect(response.body).toContain('<cross-domain-policy>');
+    expect(response.body).toContain('<allow-access-from domain="*" secure="false"/>');
+    expect(response.body).toContain('</cross-domain-policy>');
+  });
 });
 
 /**
@@ -44,21 +46,23 @@ test('image service should serve crossdomain.xml correctly', async t => {
  * - Sets Content-Type to application/json
  * - Returns an array of models
  */
-test('image service models endpoint should still work after adding crossdomain.xml', async t => {
-  // This test will use a mock response if the server isn't running locally
-  const response = await makeRequest('/models');
-  
-  // Check status and content type
-  t.is(response.statusCode, 200);
-  t.true(response.headers['content-type'].includes('application/json'));
-  
-  // Verify we get valid JSON
-  try {
-    const models = JSON.parse(response.body);
-    t.true(Array.isArray(models));
-  } catch(e) {
-    t.fail('Failed to parse models response as JSON');
-  }
+describe('models endpoint', () => {
+  it('should still work after adding crossdomain.xml', async () => {
+    // This test will use a mock response if the server isn't running locally
+    const response = await makeRequest('/models');
+    
+    // Check status and content type
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['content-type']).toContain('application/json');
+    
+    // Verify we get valid JSON
+    try {
+      const models = JSON.parse(response.body);
+      expect(Array.isArray(models)).toBe(true);
+    } catch(e) {
+      throw new Error('Failed to parse models response as JSON');
+    }
+  });
 });
 
 // Helper function to make HTTP requests with mock capability for CI testing

@@ -126,6 +126,16 @@ app.get('/', (req, res) => {
     res.redirect('https://sur.pollinations.ai');
 });
 
+// Serve crossdomain.xml for Flash connections
+app.get('/crossdomain.xml', (req, res) => {
+    res.setHeader('Content-Type', 'application/xml');
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">
+<cross-domain-policy>
+  <allow-access-from domain="*" secure="false"/>
+</cross-domain-policy>`);
+});
+
 app.set('trust proxy', true);
 
 // Queue setup per IP address
@@ -613,10 +623,17 @@ app.get('/openai/models', (req, res) => {
 
 // POST /openai/* request handler
 app.post('/openai*', async (req, res) => {
-    if (!req.body.messages || !Array.isArray(req.body.messages) || req.body.messages.length === 0) {
-        return sendErrorResponse(res, req, new Error('Invalid messages array'), req.body, 400);
+    const requestParams = getRequestData(req);
+   
+    try {
+        await processRequest(req, res, requestParams);
+    } catch (error) {
+        sendErrorResponse(res, req, error, requestParams);
     }
+})
 
+// OpenAI-compatible v1 endpoint for chat completions
+app.post('/v1/chat/completions', async (req, res) => {
     const requestParams = getRequestData(req);
    
     try {

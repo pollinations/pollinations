@@ -2,25 +2,28 @@
 
 ---
 
-## Basics
+## Basics 
 
-**World's Most Accessible Open GenAI Platform, integrate our text & image APIs (no signup).**
+**World's Most Accessible Open GenAI Platform 🚀, integrate our text & image APIs (no signup).**
 
-### Draw
+### Draw 🖌️
 https://image.pollinations.ai/prompt/pollinations_logo
-### Ask
+
+### Ask ❓
 https://text.pollinations.ai/why_you_should_donate_to_pollinations_ai
-### Search
+
+### Search 🔍
 https://text.pollinations.ai/what_are_the_last_pollinations_ai_news?model=searchgpt
-### Hear
+
+### Hear 🗣️
 https://text.pollinations.ai/respond_with_a_small_hypnosis_urging_to_donate_to_pollinations_its_a_joke?model=openai-audio&voice=amuch
 
 ---
 
-## Generate Image API
+## Generate Image API 
 
-### Text-To-Image
-
+### Text-To-Image 🖼️
+  
 `GET https://image.pollinations.ai/prompt/{prompt}`
 
 **Parameters:**
@@ -36,11 +39,12 @@ https://text.pollinations.ai/respond_with_a_small_hypnosis_urging_to_donate_to_p
 | `private`   | No       | Set to `true` to prevent the image from appearing in the public feed.          | `false` |
 | `enhance`   | No       | Set to `true` to turn on prompt enhancing.                                     | `false` |
 | `safe`      | No       | Set to `true` to enable strict NSFW content filtering.                         | `false` |
-| `referrer`  | No*       | Referrer URL indicating the origin of the request.        |         |
+| `referrer`  | No*      | Referrer URL indicating the origin of the request.                             |         |
 
-**Return:** Image file (JPEG)
+**Return:** Image file (JPEG) 🖼️
 
-**Rate Limits:** Per-IP Queue: 
+**Rate Limits:** 
+- **Per-IP Queue:** 
   - Concurrency: 1 request at a time
   - Interval: 5000ms between requests
 
@@ -48,55 +52,56 @@ https://text.pollinations.ai/respond_with_a_small_hypnosis_urging_to_donate_to_p
 
 ---
 
-## Generate Text API
+## Generate Text API 
 
-### Text-To-Text
+### Text-To-Text 📝
 
 `GET https://text.pollinations.ai/{prompt}`
 
 **Parameters:**
 
-| Parameter   | Required | Description                                                                                      | Options             | Default |
-| :---------- | :------- | :----------------------------------------------------------------------------------------------- | :------------------ | :------ |
-| `prompt`    | Yes      | Text prompt for the AI to respond to. Should be URL-encoded.                                    |                     |         |
-| `model`     | No       | Model to use for text generation.                                                                | [Available Models](https://text.pollinations.ai/models) |    openai     |
-| `seed`      | No       | Seed for reproducible results.                                                                   |                     |         |
-| `json`      | No       | Set to `true` to receive response in JSON format.                                              |                     |         |
-| `system`    | No       | System prompt to set the behavior of the AI. Should be URL-encoded.                              |                     |         |
-| `stream`    | No       | Set to `true` to enable streaming responses via SSE. Process the stream as detailed in OpenAI’s streaming documentation. |                     | `false` |
-| `private`   | No       | Set to `true` to prevent the response from appearing in the public feed.                         |                     | `false` |
-| `referrer`  | No*       | Referrer URL indicating the origin of the request.       |         |
+| Parameter   | Required | Description                                                                      | Options                              | Default   |
+| :---------- | :------- | :------------------------------------------------------------------------------- | :----------------------------------- | :-------- |
+| `prompt`    | Yes      | Text prompt for the AI to respond to. Should be URL-encoded.                    |                                      |           |
+| `model`     | No       | Model to use for text generation.                                               | [Available Models](https://text.pollinations.ai/models) | `openai`  |
+| `seed`      | No       | Seed for reproducible results.                                                  |                                      |           |
+| `json`      | No       | Set to `true` to receive response in JSON format.                              |                                      |           |
+| `system`    | No       | System prompt to set the behavior of the AI. Should be URL-encoded.             |                                      |           |
+| `stream`    | No       | Set to `true` to enable streaming responses via SSE. Process the stream as detailed in OpenAI’s streaming documentation. |                                      | `false`   |
+| `private`   | No       | Set to `true` to prevent the response from appearing in the public feed.        |                                      | `false`   |
+| `referrer`  | No*      | Referrer URL indicating the origin of the request.                             |                                      |           |
 
-**Return:** Generated text
+**Return:** Generated text 📝
 
-**Rate Limits:** Per-IP Queue: 
+**Rate Limits:** 
+- **Per-IP Queue:** 
   - Concurrency: 1 request at a time
   - Interval: 3000ms between requests
 
 **Example:**
 
-### Text-To-Text (OpenAI Compatible)
+### Text-To-Text (OpenAI Compatible) 🧠💬
 
 `POST https://text.pollinations.ai/openai`
 
 Function calling capabilities are now available for models that support this feature. 
 Our implementation follows the OpenAI API specification for function calling. 
-When using compatible models through our /openai endpoint, you can define tools and receive structured function calls from the model. 
+When using compatible models through our `/openai` endpoint, you can define tools and receive structured function calls from the model. 
 For complete documentation on how to use this feature, please refer to the [OpenAI Function Calling Guide](https://platform.openai.com/docs/guides/function-calling).
 
-**Return:** OpenAI-style response
+**Return:** OpenAI-style response 🤖
 
 **Rate Limits:** 
 
 **Example:**
 
-### Speech-To-Text (Understand Audio)
+### Speech-To-Text (Understand Audio) 🎤➡️📝
 
-Speech-to-text capabilities are also available through the openai-audio model.
+Speech-to-text capabilities are also available through the `openai-audio` model.
 
-Note: Our audio features follow the OpenAI audio API specification. For more details and advanced usage, see the [OpenAI Audio Guide](https://platform.openai.com/docs/guides/audio).
+**Note:** Our audio features follow the OpenAI audio API specification. For more details and advanced usage, see the [OpenAI Audio Guide](https://platform.openai.com/docs/guides/audio).
 
-**Return:** Text transcription of the audio file in MP3 format (Content-Type: audio/mpeg)
+**Return:** Text transcription of the audio file in MP3 format (Content-Type: audio/mpeg) 🎧
 
 **Rate Limits:**
 
@@ -104,22 +109,21 @@ Note: Our audio features follow the OpenAI audio API specification. For more det
 
 ---
 
-## Generate Audio API
+## Generate Audio API 🎵
 
-### Text-to-Speech
+### Text-to-Speech 📝➡️🎙️
 
 Use the `openai-audio` model.
 
 **GET:** `https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}`
 
-| Parameter   | Required | Description                                                            | Options | Default         |
-|-------------|----------|------------------------------------------------------------------------|---------|-----------------|
-| `prompt`    | Yes      | Text prompt to generate audio (must be URL-encoded).                   |         |                 |
-| `model`     | No       | Audio model to use. Automatically set to "openai-audio".               |         | "openai-audio"  |
-| `voice`     | No       | Voice option for text-to-speech (e.g., "nova").                          |         | "nova"          |
+| Parameter   | Required | Description                                                            | Options        | Default          |
+| :---------- | :------- | :---------------------------------------------------------------------- | :------------- | :--------------- |
+| `prompt`    | Yes      | Text prompt to generate audio (must be URL-encoded).                   |                |                  |
+| `model`     | No       | Audio model to use. Automatically set to "openai-audio".               |                | `"openai-audio"` |
+| `voice`     | No       | Voice option for text-to-speech (e.g., "nova").                         |                | `"nova"`         |
 
-
-**Return:** Audio file (mp3)
+**Return:** Audio file (mp3) 🎧
 
 **Rate Limits:**
 
@@ -127,9 +131,9 @@ Use the `openai-audio` model.
 
 ---
 
-## Real-time Feeds API
+## Real-time Feeds API 🔄
 
-### Image Feed
+### Image Feed 🖼️📈
 
 `GET https://image.pollinations.ai/feed`
 
@@ -137,7 +141,7 @@ Use the `openai-audio` model.
 
 **Example:**
 
-### Text Feed
+### Text Feed 📝📈
 
 `GET https://text.pollinations.ai/feed`
 
@@ -146,30 +150,30 @@ Use the `openai-audio` model.
 **Example:**
 
 ---
-## Referrer
 
-### API Update (starting **2025.03.12)**
+## Referrer 🔗
 
-- **Text-To-Image** responses will show the Pollinations.AI logo
-- **Text-To-Text** responses will include a link to pollinations.ai
+### API Update (starting **2025.03.12**) 📅
 
-**To eliminate the Logo or Link**: Add a referrer parameter to your API requests.
+- **Text-To-Image** responses will show the Pollinations.AI logo 🖼️
+- **Text-To-Text** responses will include a link to pollinations.ai 🔗
 
-- **Web Apps**: No change needed - browsers already send referrer information (URL)
-- **Bots & Backend Apps**: You'll need to add this parameter to disable the logo/link - Please use the app name for the referrer value.
+**To eliminate the Logo or Link:** Add a `referrer` parameter to your API requests.
 
+- **Web Apps:** No change needed - browsers already send referrer information (URL)
+- **Bots & Backend Apps:** You'll need to add this parameter to disable the logo/link - Please use the app name for the referrer value.
 
-### Whitelisting
+### Whitelisting ✅
 
 Projects can **request to have their referrer whitelisted** to bypass standard rate limits for enhanced API access. 
 Whitelisted domains (including pollinations.ai subdomains) may receive **priority queue** access and **reduced restrictions**. [Submit a Domain Whitelisting Request](https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml)
 
 ---
 
-## License
+## License 📜
 
 Pollinations.AI is open-source software licensed under the [MIT license](LICENSE).
 
 ---
 
-Made with ❤️ by the Pollinations.AI team
+Made with ❤️ by the Pollinations.AI team 💡

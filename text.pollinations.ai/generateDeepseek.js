@@ -13,7 +13,7 @@ const SYSTEM_PROMPTS = {
 const DEFAULT_MODEL = 'deepseek-chat';
 
 // Maximum token length for responses
-const MAX_TOKENS = 4096;
+const MAX_TOKENS = 8192;
 
 // API endpoint
 const API_ENDPOINT = 'https://api.deepseek.com/v1/chat/completions';

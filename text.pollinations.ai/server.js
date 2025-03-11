@@ -15,7 +15,6 @@ import { processNSFWReferralLinks } from './nsfwReferralLinks.js';
 import { getRequestData, getReferrer } from './requestUtils.js';
 
 const BANNED_PHRASES = [
-    "600-800 words"
 ];
 
 const WHITELISTED_DOMAINS = [
@@ -25,7 +24,8 @@ const WHITELISTED_DOMAINS = [
     'localhost',
     'pollinations.github.io',
     '127.0.0.1',
-    'nima'
+    'nima',
+    'ilovesquirrelsverymuch'
 ];
 
 const blockedIPs = new Set();
@@ -126,6 +126,16 @@ app.get('/', (req, res) => {
     res.redirect('https://sur.pollinations.ai');
 });
 
+// Serve crossdomain.xml for Flash connections
+app.get('/crossdomain.xml', (req, res) => {
+    res.setHeader('Content-Type', 'application/xml');
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">
+<cross-domain-policy>
+  <allow-access-from domain="*" secure="false"/>
+</cross-domain-policy>`);
+});
+
 app.set('trust proxy', true);
 
 // Queue setup per IP address
@@ -133,7 +143,7 @@ const queues = new Map();
 
 export function getQueue(ip) {
     if (!queues.has(ip)) {
-        queues.set(ip, new PQueue({ concurrency: 1, interval: 3000, intervalCap: 1 }));
+        queues.set(ip, new PQueue({ concurrency: 1, interval: 12000, intervalCap: 1 }));
     }
     return queues.get(ip);
 }
@@ -555,7 +565,7 @@ function prepareRequestParameters(requestParams) {
     // Add audio parameters if it's an audio model
     if (isAudioModel) {
         // Get the voice parameter from the request or use "alloy" as default
-        const voice = requestParams.voice || requestParams.audio?.voice || "alloy";
+        const voice = requestParams.voice || requestParams.audio?.voice || "amuch";
         log('Adding audio parameters for audio model:', requestParams.model, 'with voice:', voice);
         
         // Only add modalities and audio if not already provided in the request
@@ -613,10 +623,17 @@ app.get('/openai/models', (req, res) => {
 
 // POST /openai/* request handler
 app.post('/openai*', async (req, res) => {
-    if (!req.body.messages || !Array.isArray(req.body.messages) || req.body.messages.length === 0) {
-        return sendErrorResponse(res, req, new Error('Invalid messages array'), req.body, 400);
+    const requestParams = getRequestData(req);
+   
+    try {
+        await processRequest(req, res, requestParams);
+    } catch (error) {
+        sendErrorResponse(res, req, error, requestParams);
     }
+})
 
+// OpenAI-compatible v1 endpoint for chat completions
+app.post('/v1/chat/completions', async (req, res) => {
     const requestParams = getRequestData(req);
    
     try {

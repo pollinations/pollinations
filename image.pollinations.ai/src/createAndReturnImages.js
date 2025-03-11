@@ -11,6 +11,8 @@ const logPerf = debug('pollinations:perf');
 const logOps = debug('pollinations:ops');
 const logMeoow = debug('pollinations:meoow');
 
+const logCloudflare = debug('pollinations:cloudflare');
+
 import { writeExifMetadata } from './writeExifMetadata.js';
 import { sanitizeString } from './translateIfNecessary.js';
 import sharp from 'sharp';
@@ -273,55 +275,106 @@ function roundToMultipleOf8(n) {
 }
 
 /**
- * Calls the Cloudflare Flux API to generate images
+ * Common Cloudflare API configuration
+ * @returns {{accountId: string, apiToken: string}} Cloudflare credentials
+ */
+function getCloudflareCredentials() {
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+  return { accountId, apiToken };
+}
+
+/**
+ * Calls the Cloudflare AI API to generate images using the specified model
  * @param {string} prompt - The prompt for image generation
  * @param {Object} safeParams - The parameters for image generation
+ * @param {string} modelPath - The Cloudflare AI model path
+ * @param {Object} [additionalParams={}] - Additional parameters specific to the model
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
  */
-async function callCloudflareFlux(prompt, safeParams) {
-  const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
-  const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
-
-  if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN) {
+async function callCloudflareModel(prompt, safeParams, modelPath, additionalParams = {}) {
+  const { accountId, apiToken } = getCloudflareCredentials();
+  
+  if (!accountId || !apiToken) {
     throw new Error('Cloudflare credentials not configured');
   }
 
   // Limit prompt to 2048 characters
   const truncatedPrompt = prompt.slice(0, 2048);
 
-  const url = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-schnell`;
+  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/${modelPath}`;
+  logCloudflare(`Calling Cloudflare model: ${modelPath}`, url);
 
   // Round width and height to nearest multiple of 8
   const width = roundToMultipleOf8(safeParams.width || 1024);
   const height = roundToMultipleOf8(safeParams.height || 1024);
 
+  const requestBody = {
+    prompt: truncatedPrompt,
+    width: width,
+    height: height,
+    seed: safeParams.seed || Math.floor(Math.random() * 1000000),
+    ...additionalParams
+  };
+
   const response = await fetch(url, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
+      'Authorization': `Bearer ${apiToken}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({
-      prompt: truncatedPrompt,
-      width: width,
-      height: height,
-      seed: safeParams.seed || Math.floor(Math.random() * 1000000),
-      steps: 4
-    })
+    body: JSON.stringify(requestBody)
   });
 
-  const data = await response.json();
-
-  if (!data.success) {
-    throw new Error(data.errors?.[0]?.message || 'Cloudflare API request failed');
+  // Check if response is successful
+  if (!response.ok) {
+    const errorText = await response.text();
+    logError(`Cloudflare ${modelPath} API request failed, status:`, response.status, 'response:', errorText);
+    throw new Error(`Cloudflare ${modelPath} API request failed with status ${response.status}: ${errorText}`);
   }
 
-  if (!data.result?.image) {
-    throw new Error('No image in response');
-  }
+  // Check content type to determine how to handle the response
+  const contentType = response.headers.get('content-type');
+  let imageBuffer;
 
-  const imageBuffer = Buffer.from(data.result.image, 'base64');
+  if (contentType && contentType.includes('image/')) {
+    // Direct binary image response (typical for SDXL)
+    logCloudflare(`Received binary image from Cloudflare ${modelPath}`);
+    imageBuffer = await response.buffer();
+  } else {
+    // JSON response with base64 encoded image (typical for Flux)
+    const data = await response.json();
+    if (!data.success) {
+      logError(`Cloudflare ${modelPath} API request failed, full response:`, data);
+      throw new Error(data.errors?.[0]?.message || `Cloudflare ${modelPath} API request failed`);
+    }
+    if (!data.result?.image) {
+      throw new Error('No image in response');
+    }
+    imageBuffer = Buffer.from(data.result.image, 'base64');
+  }
+  
   return { buffer: imageBuffer, isMature: false, isChild: false };
+}
+
+/**
+ * Calls the Cloudflare Flux API to generate images
+ * @param {string} prompt - The prompt for image generation
+ * @param {Object} safeParams - The parameters for image generation
+ * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
+ */
+async function callCloudflareFlux(prompt, safeParams) {
+  return callCloudflareModel(prompt, safeParams, 'black-forest-labs/flux-1-schnell', { steps: 4 });
+}
+
+/**
+ * Calls the Cloudflare SDXL API to generate images
+ * @param {string} prompt - The prompt for image generation
+ * @param {Object} safeParams - The parameters for image generation
+ * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
+ */
+async function callCloudflareSDXL(prompt, safeParams) {
+  return callCloudflareModel(prompt, safeParams, 'bytedance/stable-diffusion-xl-lightning');
 }
 
 /**
@@ -396,8 +449,14 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
           if (progress) progress.updateBar(requestId, 30, 'Processing', 'Trying Cloudflare Flux...');
           bufferAndMaturity = await callCloudflareFlux(prompt, safeParams);
         } catch (error) {
-          logError('Cloudflare Flux failed, falling back to ComfyUI:', error.message);
-          // Fall through to ComfyUI
+          logError('Cloudflare Flux failed, trying SDXL:', error.message);
+          try {
+            if (progress) progress.updateBar(requestId, 35, 'Processing', 'Trying Cloudflare SDXL...');
+            bufferAndMaturity = await callCloudflareSDXL(prompt, safeParams);
+          } catch (sdxlError) {
+            logError('Cloudflare SDXL failed, falling back to ComfyUI:', sdxlError.message);
+            // Fall through to ComfyUI
+          }
         }
       }
       if (!bufferAndMaturity)

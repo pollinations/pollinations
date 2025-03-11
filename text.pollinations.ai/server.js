@@ -626,6 +626,21 @@ app.post('/openai*', async (req, res) => {
     }
 })
 
+// OpenAI-compatible v1 endpoint for chat completions
+app.post('/v1/chat/completions', async (req, res) => {
+    if (!req.body.messages || !Array.isArray(req.body.messages) || req.body.messages.length === 0) {
+        return sendErrorResponse(res, req, new Error('Invalid messages array'), req.body, 400);
+    }
+
+    const requestParams = getRequestData(req);
+   
+    try {
+        await processRequest(req, res, requestParams);
+    } catch (error) {
+        sendErrorResponse(res, req, error, requestParams);
+    }
+})
+
 function sendAsOpenAIStream(res, completion, req = null) {
     log('sendAsOpenAIStream called with completion type:', typeof completion);
 if (completion) {

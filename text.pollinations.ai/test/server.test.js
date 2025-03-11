@@ -458,6 +458,74 @@ test('GET /openai/models should return available models in OpenAI format', async
 });
 
 /**
+ * Test: POST /v1/chat/completions
+ * 
+ * Purpose: Verify that the /v1/chat/completions endpoint handles a valid request
+ * 
+ * Expected behavior:
+ * 1. The response status should be 200 (OK)
+ * 2. The response body should contain data in the OpenAI format
+ */
+test('POST /v1/chat/completions should handle a valid request', async t => {
+    try {
+        const response = await request(app)
+            .post('/v1/chat/completions')
+            .query({ code: 'BeesKnees' })
+            .send({ messages: [{ role: 'user', content: 'Hello' }] });
+        t.is(response.status, 200, 'Response status should be 200');
+        t.truthy(response.body, 'Response body should contain data');
+        t.truthy(response.body.choices, 'Response should have choices array');
+        t.truthy(response.body.choices[0].message, 'Response should have message in first choice');
+        t.truthy(response.body.choices[0].message.content, 'Response should have content in message');
+        t.truthy(response.body.id, 'Response should have an id');
+        t.is(response.body.object, 'chat.completion', 'Response object should be chat.completion');
+    } catch (error) {
+        t.fail(error.message);
+    }
+});
+
+/**
+ * Test: POST /v1/chat/completions with streaming
+ * 
+ * Purpose: Verify that the /v1/chat/completions endpoint handles streaming requests correctly
+ * 
+ * Expected behavior:
+ * 1. The response status should be 200 (OK)
+ * 2. The response should have correct headers for streaming
+ * 3. The response should contain properly formatted streaming data
+ */
+test('POST /v1/chat/completions should handle streaming requests', async t => {
+    const response = await request(app)
+        .post('/v1/chat/completions?code=BeesKnees')
+        .send({ 
+            messages: [{ role: 'user', content: 'Hello' }],
+            stream: true 
+        });
+    
+    t.is(response.status, 200, 'Response status should be 200');
+    t.is(response.headers['content-type'], 'text/event-stream; charset=utf-8', 'Content-Type should be text/event-stream');
+    t.is(response.headers['cache-control'], 'no-cache', 'Cache-Control should be no-cache');
+    t.is(response.headers['connection'], 'keep-alive', 'Connection should be keep-alive');
+});
+
+/**
+ * Test: POST /v1/chat/completions with invalid messages
+ * 
+ * Purpose: Verify that the /v1/chat/completions endpoint properly handles invalid input
+ * 
+ * Expected behavior:
+ * 1. The response status should be 400 (Bad Request)
+ */
+test('POST /v1/chat/completions should return 400 for invalid messages array', async t => {
+    const response = await request(app)
+        .post('/v1/chat/completions')
+        .send({ messages: 'invalid' });
+    
+    t.is(response.status, 400, 'Response status should be 400');
+    t.true(response.body.error.includes('Invalid messages'), 'Response should indicate invalid messages');
+});
+
+/**
  * Unit Tests for Helper Functions
  */
 

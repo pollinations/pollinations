@@ -3,89 +3,12 @@ import { createOpenAICompatibleClient } from './genericOpenAIClient.js';
 import debug from 'debug';
 import { execSync } from 'child_process';
 import googleCloudAuth from './auth/googleCloudAuth.js';
+import { extractApiVersion, extractDeploymentName, extractResourceName, generatePortkeyHeaders } from './portkeyUtils.js';
 
 dotenv.config();
 
-const log = debug('pollinations:portkey');
+export const log = debug('pollinations:portkey');
 const errorLog = debug('pollinations:portkey:error');
-
-// Helper function to extract base URL from Azure endpoint
-
-// Use the Google Cloud authentication module for access tokens
-
-/**
- * Refreshes the Google Cloud access token by executing the gcloud CLI command
- * @returns {string} The new access token
- */
-// Removed the refreshGcloudAccessToken function as it's now handled by googleCloudAuth module
-
-// Initial token refresh
-// Removed the initial token refresh as it's now handled by googleCloudAuth module
-
-// Set up a timer to refresh the token every 20 minutes (1200000 ms)
-// Removed the setInterval call as it's now handled by googleCloudAuth module
-
-export function extractBaseUrl(endpoint) {
-    if (!endpoint) return null;
-    
-    log('Extracting base URL from endpoint:', endpoint);
-    
-    // Extract the base URL (e.g., https://pollinations4490940554.openai.azure.com)
-    const match = endpoint.match(/(https:\/\/[^\/]+)/);
-    const result = match ? match[1] : endpoint;
-    log('Extracted base URL:', result);
-    
-    // Validate the extracted URL
-    if (!result || result === 'undefined' || result === undefined) {
-        errorLog('Invalid Azure OpenAI endpoint:', endpoint);
-        return null;
-    }
-    
-    return result;
-}
-
-// Helper function to extract resource name from Azure endpoint
-export function extractResourceName(endpoint) {
-    if (endpoint === undefined || endpoint === null) return null;
-    log('Extracting resource name from endpoint:', endpoint);
-    
-    // Extract resource name (e.g., pollinations4490940554 from https://pollinations4490940554.openai.azure.com)
-    const match = endpoint.match(/https:\/\/([^\.]+)\.openai\.azure\.com/);
-    const result = match ? match[1] : null;
-    log('Extracted resource name:', result);
-    
-    // If we can't extract the resource name, use a default value
-    if (!result || result === 'undefined' || result === undefined) {
-        log('Using default resource name: pollinations');
-        return 'pollinations';
-    }
-    
-    return result;
-}
-
-// Extract deployment names from endpoints
-export function extractDeploymentName(endpoint) {
-    if (!endpoint) return null;
-    log('Extracting deployment name from endpoint:', endpoint);
-    
-    // Extract deployment name (e.g., gpt-4o-mini from .../deployments/gpt-4o-mini/...)
-    const match = endpoint.match(/\/deployments\/([^\/]+)/);
-    log('Extracted deployment name:', match ? match[1] : null);
-    return match ? match[1] : null;
-}
-
-// Extract API version from endpoints
-export function extractApiVersion(endpoint) {
-    if (!endpoint) return process.env.OPENAI_API_VERSION || '2024-08-01-preview';
-    log('Extracting API version from endpoint:', endpoint);
-    
-    // Extract API version (e.g., 2024-08-01-preview from ...?api-version=2024-08-01-preview)
-    const match = endpoint.match(/api-version=([^&]+)/);
-    const version = match ? match[1] : process.env.OPENAI_API_VERSION || '2024-08-01-preview';
-    log('Extracted API version:', version);
-    return version;
-}
-
 
 // Model mapping for Portkey
 const MODEL_MAPPING = {
@@ -105,7 +28,7 @@ const MODEL_MAPPING = {
     'phi': 'phi-4-instruct',
     // Scaleway models
     'qwen-coder': 'qwen2.5-coder-32b-instruct',
-    'mistral': 'mistral-nemo-instruct-2407',
+    'mistral': 'mistral/mistral-small-24b-instruct-2501:fp8',  // Updated to use the new Mistral model
     'llama-scaleway': 'llama-3.3-70b-instruct',
     'llamalight-scaleway': 'llama-3.1-8b-instruct',
     'deepseek-r1-llama': 'deepseek-r1-distill-llama-70b',
@@ -171,6 +94,15 @@ const baseScalewayConfig = {
     'custom-host': `${process.env.SCALEWAY_BASE_URL || 'https://api.scaleway.com/ai-apis/v1'}`,
     authKey: process.env.SCALEWAY_API_KEY,
     // Set default max_tokens to 8192 (increased from default)
+    'default-max-tokens': 8192,
+};
+
+// Base configuration for Mistral Scaleway model
+const baseMistralConfig = {
+    provider: 'openai',
+    'custom-host': process.env.SCALEWAY_MISTRAL_BASE_URL,
+    authKey: process.env.SCALEWAY_MISTRAL_API_KEY,
+    // Set default max_tokens to 8192
     'default-max-tokens': 8192,
 };
 
@@ -241,6 +173,18 @@ function createScalewayModelConfig(additionalConfig = {}) {
     };
 }
 
+/**
+ * Creates a Mistral model configuration
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - Mistral model configuration
+ */
+function createMistralModelConfig(additionalConfig = {}) {
+    return {
+        ...baseMistralConfig,
+        ...additionalConfig
+    };
+}
+
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
     // Azure OpenAI model configurations
@@ -288,6 +232,9 @@ export const portkeyConfig = {
     'mistral-nemo-instruct-2407': () => createScalewayModelConfig(),
     'llama-3.3-70b-instruct': () => createScalewayModelConfig(),
     'llama-3.1-8b-instruct': () => createScalewayModelConfig(),
+    'deepseek-r1-distill-llama-70b': () => createScalewayModelConfig(),
+    // Mistral model configuration
+    'mistral/mistral-small-24b-instruct-2501:fp8': () => createMistralModelConfig(),
     // Google Vertex AI model configurations
     'gemini-2.0-flash-lite-preview-02-05': () => ({
         provider: 'vertex-ai',
@@ -304,7 +251,6 @@ export const portkeyConfig = {
         'vertex-region': 'us-central1',
         'strict-openai-compliance': 'false'
     }),
-    'deepseek-r1-distill-llama-70b': () => createScalewayModelConfig(),
 };
 
 /**
@@ -377,40 +323,6 @@ function countMessageCharacters(messages) {
 }
 
 /**
- * Generate Portkey headers from a configuration object
- * @param {Object} config - Model configuration object
- * @returns {Object} - Headers object with x-portkey prefixes
- */
-function generatePortkeyHeaders(config) {
-    if (!config) {
-        errorLog('No configuration provided for header generation');
-        throw new Error('No configuration provided for header generation');
-    }
-    
-    // Generate headers by prefixing config properties with 'x-portkey-'
-    const headers = {};
-    for (const [key, value] of Object.entries(config)) {
-        // Skip special properties that aren't headers
-        if (key === 'removeSeed' || key === 'authKey') continue;
-        
-        headers[`x-portkey-${key}`] = value;
-    }
-
-    // Add Authorization header if needed
-    if (config.authKey) {
-        // Check if authKey is a function (for dynamic tokens)
-        if (typeof config.authKey === 'function') {
-            headers['Authorization'] = `Bearer ${config.authKey()}`;
-        } else {
-            // Regular string token
-            headers['Authorization'] = `Bearer ${config.authKey}`;
-        }
-    }
-    
-    return headers;
-}
-
-/**
  * Generates text using a local Portkey gateway with Azure OpenAI models
  */
 export const generateTextPortkey = createOpenAICompatibleClient({
@@ -421,7 +333,7 @@ export const generateTextPortkey = createOpenAICompatibleClient({
     authHeaderName: 'Authorization',
     authHeaderValue: () => {
         // Use the actual Portkey API key from environment variables
-        return `Bearer ${process.env.PORTKEY_API_KEY || 'pk-123456789'}`;
+        return `Bearer ${process.env.PORTKEY_API_KEY}`;
     },
     
     // Additional headers will be dynamically set in transformRequest

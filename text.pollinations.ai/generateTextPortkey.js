@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import { createOpenAICompatibleClient } from './genericOpenAIClient.js';
 import debug from 'debug';
 import { execSync } from 'child_process';
-import googleCloudAuth from './googleCloudAuth.js';
+import googleCloudAuth from './auth/googleCloudAuth.js';
 
 dotenv.config();
 

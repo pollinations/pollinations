@@ -60,9 +60,9 @@ export const projects = {
       submissionDate: "2025-02-17",
     },
     {
-      name: "🆕 urSapere AI",
-      url: "https://ursapere.vercel.app",
-      description: "A state-of-the-art chatbot integrating multiple LLMs with advanced features including image generation, mathematical proficiency, and real-time web search.",
+      name: "🆕 MiReXa AI",
+      url: "https://mirexa.vercel.app",
+      description: "A state-of-the-art chatbot integrating multiple LLMs with advanced features including audio generation, image generation, mathematical proficiency, and real-time web search.",
       author: "@withthatway",
       submissionDate: "2025-02-07",
     },

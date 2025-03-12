@@ -254,14 +254,12 @@ async function handleRequest(req, res, requestData) {
         // Extract token usage data
         const tokenUsage = completion.usage || {};
         
-        // only send if not roblox, not private, and not from image pollinations
-        if (!shouldBypassDelay(req) && !requestData.isImagePollinationsReferrer &&  !requestData.isPrivate) {
-        // if (!requestData.isPrivate) {
-            sendToFeedListeners(responseText, {
-                ...requestData,
-                ...tokenUsage
-            }, getIp(req));
-        }
+        // Send all requests to feed listeners, including private ones
+        // The feed.js implementation will handle filtering for non-authenticated clients
+        sendToFeedListeners(responseText, {
+            ...requestData,
+            ...tokenUsage
+        }, getIp(req));
         
         // Track successful completion with token usage
         await sendToAnalytics(req, 'textGenerated', {

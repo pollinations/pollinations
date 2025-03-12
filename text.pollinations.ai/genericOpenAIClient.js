@@ -6,7 +6,8 @@ import {
     ensureSystemMessage,
     generateRequestId,
     cleanUndefined,
-    normalizeOptions
+    normalizeOptions,
+    convertSystemToUserMessages
 } from './textGenerationUtils.js';
 
 /**

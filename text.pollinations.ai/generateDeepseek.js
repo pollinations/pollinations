@@ -51,5 +51,6 @@ export const generateDeepseek = createOpenAICompatibleClient({
     modelMapping: MODEL_MAPPING,
     systemPrompts: SYSTEM_PROMPTS,
     defaultOptions: DEFAULT_OPTIONS,
-    providerName: 'DeepSeek'
+    providerName: 'DeepSeek',
+    supportsSystemMessages: false // DeepSeek doesn't support system messages
 });

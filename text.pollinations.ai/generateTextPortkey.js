@@ -339,6 +339,13 @@ export const generateTextPortkey = createOpenAICompatibleClient({
     // Additional headers will be dynamically set in transformRequest
     additionalHeaders: {},
     
+    // Models that don't support system messages will have system messages converted to user messages
+    // This decision is made based on the model being requested
+    supportsSystemMessages: (options) => {
+        // Check if it's a model that doesn't support system messages
+        return !['openai-reasoning', 'o3-mini', 'deepseek-reasoner'].includes(options.model);
+    },
+    
     // Transform request to add Azure-specific headers based on the model
     transformRequest: (requestBody) => {
         try {

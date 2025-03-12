@@ -30,6 +30,31 @@ export function validateAndNormalizeMessages(messages) {
 }
 
 /**
+ * Converts system messages to user messages for models that don't support system messages
+ * @param {Array} messages - Array of message objects
+ * @returns {Array} - Messages array with system messages converted to user messages
+ */
+export function convertSystemToUserMessages(messages) {
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return messages;
+  }
+  
+  log('Converting system messages to user messages');
+  
+  return messages.map(msg => {
+    if (msg.role === 'system') {
+      log('Converting system message to user message:', msg.content.substring(0, 50) + '...');
+      return {
+        ...msg,
+        role: 'user',
+        content: `System instruction: ${msg.content}`
+      };
+    }
+    return msg;
+  });
+}
+
+/**
  * Ensures a system message is present in the messages array
  * @param {Array} messages - Array of message objects
  * @param {Object} options - Options object

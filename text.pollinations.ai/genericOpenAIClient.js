@@ -6,7 +6,8 @@ import {
     ensureSystemMessage,
     generateRequestId,
     cleanUndefined,
-    normalizeOptions
+    normalizeOptions,
+    convertSystemToUserMessages
 } from './textGenerationUtils.js';
 
 /**
@@ -21,6 +22,8 @@ import {
  * @param {string} config.providerName - Name of the provider (for logging and errors)
  * @param {Function} config.formatResponse - Optional function to format the response
  * @param {Object} config.additionalHeaders - Optional additional headers to include in requests
+ * @param {boolean|Function} config.supportsSystemMessages - Whether the API supports system messages (default: true)
+ *                                                          Can be a function that receives options and returns boolean
  * @returns {Function} - Client function that handles API requests
  */
 export function createOpenAICompatibleClient(config) {
@@ -34,7 +37,8 @@ export function createOpenAICompatibleClient(config) {
         providerName = 'unknown',
         formatResponse = null,
         additionalHeaders = {},
-        transformRequest = null
+        transformRequest = null,
+        supportsSystemMessages = true
     } = config;
 
     const log = debug(`pollinations:${providerName.toLowerCase()}`);
@@ -67,14 +71,30 @@ export function createOpenAICompatibleClient(config) {
             // Validate and normalize messages
             const validatedMessages = validateAndNormalizeMessages(messages);
             
-            // Ensure system message is present if the model supports it
-            const defaultSystemPrompt = systemPrompts[modelKey] || null;
-            const messagesWithSystem = ensureSystemMessage(validatedMessages, normalizedOptions, defaultSystemPrompt);
+            // Determine if the model supports system messages
+            let supportsSystem = supportsSystemMessages;
+            if (typeof supportsSystemMessages === 'function') {
+                supportsSystem = supportsSystemMessages(normalizedOptions);
+            }
+            
+            // Process messages based on system message support
+            let processedMessages;
+            if (supportsSystem) {
+                // Ensure system message is present if the model supports it
+                const defaultSystemPrompt = systemPrompts[modelKey] || null;
+                processedMessages = ensureSystemMessage(validatedMessages, normalizedOptions, defaultSystemPrompt);
+            } else {
+                // For models that don't support system messages, convert them to user messages
+                log(`[${requestId}] Model ${modelName} doesn't support system messages, converting to user messages`);
+                const defaultSystemPrompt = systemPrompts[modelKey] || null;
+                const messagesWithSystem = ensureSystemMessage(validatedMessages, normalizedOptions, defaultSystemPrompt);
+                processedMessages = convertSystemToUserMessages(messagesWithSystem);
+            }
             
             // Build request body
             const requestBody = {
                 model: modelName,
-                messages: messagesWithSystem,
+                messages: processedMessages,
                 temperature: normalizedOptions.temperature,
                 stream: normalizedOptions.stream,
                 seed: normalizedOptions.seed,

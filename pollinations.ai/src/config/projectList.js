@@ -115,6 +115,14 @@ export const projects = {
   ],
   creativeApps: [
     {
+      name: "🆕 PromptPix (Android)",
+      url: "https://expo.dev/accounts/aminmusah/projects/image-generator/builds/ed32c5d0-83c0-416b-889f-e36b997dd706",
+      description: "An AI-powered image generation platform for Android designed to create stunning visuals from text prompts. Features dynamic image generation as users scroll, save to gallery, favorites, and a user-friendly interface.",
+      author: "https://discord.com/channels/@taylorsnupe",
+      repo: "https://github.com/AminMusah/ai-image-generator",
+      submissionDate: "2025-03-12",
+    },
+    {
       name: "🆕 AI儿童故事 🇨🇳",
       url: "https://kidss.netlify.app/",
       description: "基于此项目 构建有趣的孩子故事书应用演示 (Based on this project, build an interesting children's storybook application demo)",

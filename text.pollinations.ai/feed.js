@@ -34,73 +34,63 @@ function sendToFeedListeners(response, requestParams, ip) {
 }
 
 function setupFeedEndpoint(app) {
-    // Original feed endpoint (public requests only)
+    // Single feed endpoint with optional password parameter
     app.get('/feed', (req, res) => {
+        const providedPassword = req.query.password;
+        const isAuthenticated = providedPassword === FEED_PASSWORD;
+        
         res.writeHead(200, {
             'Content-Type': 'text/event-stream; charset=utf-8',
             'Cache-Control': 'no-cache',
             'Connection': 'keep-alive'
         });
 
-        // Add the client to a list of connected clients
+        // Generate client ID
         const clientId = Date.now();
-        connectedClients.set(clientId, (response, parameters, ip) => {
-            const eventData = {
-                response,
-                parameters,
-                // ip
-            };
-            // Properly encode the data for SSE
-            const encodedData = JSON.stringify(eventData)
-                .replace(/\n/g, '\\n')
-                .replace(/\r/g, '\\r');
-            res.write(`data: ${encodedData}\n\n`);
-        });
-
-        // Remove the client when they disconnect
-        req.on('close', () => {
-            connectedClients.delete(clientId);
-        });
-    });
-    
-    // Authenticated feed endpoint (all requests including private ones)
-    app.get('/feed/private', (req, res) => {
-        const providedPassword = req.query.password;
         
-        // Check if the password is correct
-        if (providedPassword !== FEED_PASSWORD) {
-            return res.status(401).json({ error: 'Unauthorized: Invalid password' });
+        if (isAuthenticated) {
+            // For authenticated clients - add to authenticated list and include private requests
+            log('Authenticated client connected, total:', authenticatedClients.size + 1);
+            
+            authenticatedClients.set(clientId, (response, parameters, ip) => {
+                const eventData = {
+                    response,
+                    parameters,
+                    ip, // Include IP for authenticated clients
+                    isPrivate: parameters.isPrivate === true
+                };
+                // Properly encode the data for SSE
+                const encodedData = JSON.stringify(eventData)
+                    .replace(/\n/g, '\\n')
+                    .replace(/\r/g, '\\r');
+                res.write(`data: ${encodedData}\n\n`);
+            });
+            
+            // Remove the client when they disconnect
+            req.on('close', () => {
+                authenticatedClients.delete(clientId);
+                log('Authenticated client disconnected, remaining:', authenticatedClients.size);
+            });
+        } else {
+            // For regular clients - add to regular list and exclude private requests
+            connectedClients.set(clientId, (response, parameters, ip) => {
+                const eventData = {
+                    response,
+                    parameters,
+                    // Don't include IP for non-authenticated clients
+                };
+                // Properly encode the data for SSE
+                const encodedData = JSON.stringify(eventData)
+                    .replace(/\n/g, '\\n')
+                    .replace(/\r/g, '\\r');
+                res.write(`data: ${encodedData}\n\n`);
+            });
+
+            // Remove the client when they disconnect
+            req.on('close', () => {
+                connectedClients.delete(clientId);
+            });
         }
-        
-        res.writeHead(200, {
-            'Content-Type': 'text/event-stream; charset=utf-8',
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Connection': 'keep-alive'
-        });
-
-        // Add client to authenticated clients list
-        const clientId = Date.now();
-        authenticatedClients.set(clientId, (response, parameters, ip) => {
-            const eventData = {
-                response,
-                parameters,
-                ip, // Include IP for authenticated clients
-                isPrivate: parameters.isPrivate === true
-            };
-            // Properly encode the data for SSE
-            const encodedData = JSON.stringify(eventData)
-                .replace(/\n/g, '\\n')
-                .replace(/\r/g, '\\r');
-            res.write(`data: ${encodedData}\n\n`);
-        });
-
-        // Remove the client when they disconnect
-        req.on('close', () => {
-            authenticatedClients.delete(clientId);
-            log('Authenticated client disconnected, remaining:', authenticatedClients.size);
-        });
-        
-        log('Authenticated client connected, total:', authenticatedClients.size);
     });
 }
 

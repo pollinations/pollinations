@@ -171,9 +171,9 @@ Object.entries(filters).forEach(([key, value]) => {
 // Determine which feed URL to use
 let feedURL = `${BASE_URL}/feed`;
 
-// If we want to include private messages and have a password, use the private feed
+// If we want to include private messages and have a password, add the password parameter
 if ((filters.includePrivate || filters.onlyPrivate) && filters.password) {
-    feedURL = `${BASE_URL}/feed/private?password=${encodeURIComponent(filters.password)}`;
+    feedURL = `${BASE_URL}/feed?password=${encodeURIComponent(filters.password)}`;
     log('Connecting to authenticated feed (including private messages)');
 } else if (filters.includePrivate || filters.onlyPrivate) {
     log('WARNING: You requested private messages but did not provide a password.');

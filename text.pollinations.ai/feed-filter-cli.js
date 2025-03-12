@@ -93,7 +93,7 @@ const startFeedListener = (options = {}) => {
         const password = options.password || process.env.FEED_PASSWORD;
         
         if (password) {
-            feedUrl = `${baseUrl}/feed/private?password=${encodeURIComponent(password)}`;
+            feedUrl = `${baseUrl}/feed?password=${encodeURIComponent(password)}`;
             log('Using authenticated feed (includes private messages)');
         } else {
             log('WARNING: Private messages requested but no password provided');

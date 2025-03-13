@@ -10,11 +10,17 @@ dotenv.config();
 const log = debug('pollinations:filter');
 debug.enable('pollinations:filter');
 
-// Stats for tracking message counts
+// Enhanced stats for tracking message counts and categorical properties
 const stats = {
     total: 0,
     private: 0,
-    public: 0
+    public: 0,
+    models: {},
+    referrers: {},
+    hasMarkdown: 0,
+    hasHtml: 0,
+    isRoblox: 0,
+    isImagePollinationsReferrer: 0
 };
 
 // Helper functions for content detection
@@ -46,6 +52,17 @@ const messagesToMarkdown = (messages) => {
     ).join('\n---\n\n');
 };
 
+// Helper function to increment counter for a category
+const incrementCategoryCount = (category, value) => {
+    if (!value) return;
+    
+    if (!stats[category][value]) {
+        stats[category][value] = 1;
+    } else {
+        stats[category][value]++;
+    }
+};
+
 // Filter function that checks if a message matches the criteria
 const matchesFilters = (data, options = {}) => {
     const { response, parameters, isPrivate } = data;
@@ -73,12 +90,55 @@ const matchesFilters = (data, options = {}) => {
     return true;
 };
 
+// Helper function to calculate percentage
+const calculatePercentage = (count, total) => {
+    if (total === 0) return '0.00%';
+    return ((count / total) * 100).toFixed(2) + '%';
+};
+
+// Helper function to sort object by values in descending order
+const sortObjectByValues = (obj) => {
+    return Object.entries(obj)
+        .sort((a, b) => b[1] - a[1])
+        .reduce((acc, [key, value]) => {
+            acc[key] = value;
+            return acc;
+        }, {});
+};
+
 // Print current stats
 const printStats = () => {
     log('\nStats:');
     log(`Total messages: ${stats.total}`);
-    log(`Public messages: ${stats.public}`);
-    log(`Private messages: ${stats.private}`);
+    log(`Public messages: ${stats.public} (${calculatePercentage(stats.public, stats.total)})`);
+    log(`Private messages: ${stats.private} (${calculatePercentage(stats.private, stats.total)})`);
+    
+    if (stats.hasMarkdown > 0 || stats.hasHtml > 0) {
+        log('\nContent Types:');
+        log(`Contains Markdown: ${stats.hasMarkdown} (${calculatePercentage(stats.hasMarkdown, stats.total)})`);
+        log(`Contains HTML: ${stats.hasHtml} (${calculatePercentage(stats.hasHtml, stats.total)})`);
+    }
+    
+    if (Object.keys(stats.models).length > 0) {
+        log('\nModels:');
+        const sortedModels = sortObjectByValues(stats.models);
+        Object.entries(sortedModels).forEach(([model, count]) => {
+            log(`${model}: ${count} (${calculatePercentage(count, stats.total)})`);
+        });
+    }
+    
+    if (Object.keys(stats.referrers).length > 0) {
+        log('\nReferrers:');
+        const sortedReferrers = sortObjectByValues(stats.referrers);
+        Object.entries(sortedReferrers).forEach(([referrer, count]) => {
+            log(`${referrer || 'none'}: ${count} (${calculatePercentage(count, stats.total)})`);
+        });
+    }
+    
+    log('\nSpecial Referrers:');
+    log(`Roblox: ${stats.isRoblox} (${calculatePercentage(stats.isRoblox, stats.total)})`);
+    log(`Image Pollinations: ${stats.isImagePollinationsReferrer} (${calculatePercentage(stats.isImagePollinationsReferrer, stats.total)})`);
+    
     log('-'.repeat(30));
 };
 
@@ -116,20 +176,56 @@ const startFeedListener = (options = {}) => {
                     stats.public++;
                 }
                 
-                // Add privacy indicator to the output
-                const privacyStatus = data.isPrivate ? '🔒 PRIVATE' : '🌐 PUBLIC';
+                // Track categorical properties
+                const { parameters, response } = data;
                 
-                console.log(`\n# ${privacyStatus} Message\n`);
-                console.log(`Referrer: ${data.parameters?.referrer || 'none'}`);
-                if (data.ip) console.log(`IP: ${data.ip}`);
-                console.log('\n# Response\n');
-                console.log(truncate(data.response));
-                console.log('\n# Messages\n');
-                console.log(messagesToMarkdown(data.parameters.messages));
-                console.log('\n-------------------\n');
+                // Track model usage
+                if (parameters?.model) {
+                    incrementCategoryCount('models', parameters.model);
+                }
                 
-                // Print stats every 10 messages
-                if (stats.total % 10 === 0) {
+                // Track referrers
+                incrementCategoryCount('referrers', parameters?.referrer);
+                
+                // Track content types
+                if (hasMarkdown(response)) {
+                    stats.hasMarkdown++;
+                }
+                if (hasHtml(response)) {
+                    stats.hasHtml++;
+                }
+                
+                // Track special referrers
+                if (parameters?.referrer && parameters.referrer.toLowerCase().includes('roblox')) {
+                    stats.isRoblox++;
+                }
+                if (parameters?.isImagePollinationsReferrer) {
+                    stats.isImagePollinationsReferrer++;
+                }
+                
+                // Only display content if not in count-only mode
+                if (!options.countOnly) {
+                    // Add privacy indicator to the output
+                    const privacyStatus = data.isPrivate ? '🔒 PRIVATE' : '🌐 PUBLIC';
+                    
+                    console.log(`\n# ${privacyStatus} Message\n`);
+                    console.log(`Referrer: ${data.parameters?.referrer || 'none'}`);
+                    if (data.ip) console.log(`IP: ${data.ip}`);
+                    console.log('\n# Response\n');
+                    console.log(truncate(data.response));
+                    console.log('\n# Messages\n');
+                    console.log(messagesToMarkdown(data.parameters.messages));
+                    console.log('\n-------------------\n');
+                }
+                
+                // Print stats based on mode
+                if (options.countOnly) {
+                    // In count-only mode, update stats more frequently
+                    if (stats.total % 5 === 0) {
+                        printStats();
+                    }
+                } else if (stats.total % 10 === 0) {
+                    // In normal mode, print stats every 10 messages
                     printStats();
                 }
             }
@@ -197,6 +293,9 @@ const parseArgs = () => {
             case '--base-url':
                 options.baseUrl = args[++i];
                 break;
+            case '--count-only':
+                options.countOnly = true;
+                break;
             case '--help':
                 console.log(`
 Usage: node feed-filter-cli.js [options]
@@ -212,6 +311,7 @@ Options:
   --only-public        Show only public messages
   --password <value>   Password for accessing private messages
   --base-url <url>     Base URL for API (default: https://text.pollinations.ai)
+  --count-only         Only display statistics, not individual messages
   --help               Show this help message
 
 Environment:

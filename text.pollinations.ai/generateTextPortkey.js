@@ -34,7 +34,9 @@ const MODEL_MAPPING = {
     'llamalight-scaleway': 'llama-3.1-8b-instruct',
     'deepseek-r1-llama': 'deepseek-r1-distill-llama-70b',
     // Modal models
-    'hormoz': 'Hormoz-8B'
+    'hormoz': 'Hormoz-8B',
+    // OpenRouter models
+    'claude': 'anthropic/claude-3.5-haiku-20241022'
 };
 
 // Unrestricted prompt for Scaleway models
@@ -60,7 +62,9 @@ const SYSTEM_PROMPTS = {
     'gemini-thinking': 'You are Gemini, a helpful and versatile AI assistant built by Google. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone. When appropriate, show your reasoning step by step.',
     'deepseek-r1-distill-llama-70b': unrestrictedPrompt,
     // Modal models
-    'hormoz': 'You are Hormoz, a helpful AI assistant created by Muhammadreza Haghiri. You provide accurate and thoughtful responses.'
+    'hormoz': 'You are Hormoz, a helpful AI assistant created by Muhammadreza Haghiri. You provide accurate and thoughtful responses.',
+    // OpenRouter models
+    'claude': 'You are Claude, a helpful AI assistant created by Anthropic. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.'
 };
 
 // Default options
@@ -115,6 +119,15 @@ const baseModalConfig = {
     provider: 'openai',
     'custom-host': 'https://pollinations--hormoz-serve.modal.run/v1',
     authKey: process.env.HORMOZ_MODAL_KEY,
+    // Set default max_tokens to 4096
+    'max-tokens': 4096,
+};
+
+// Base configuration for OpenRouter models
+const baseOpenRouterConfig = {
+    provider: 'openai',
+    'custom-host': 'https://openrouter.ai/api/v1',
+    authKey: process.env.OPENROUTER_API_KEY,
     // Set default max_tokens to 4096
     'max-tokens': 4096,
 };
@@ -210,6 +223,18 @@ function createModalModelConfig(additionalConfig = {}) {
     };
 }
 
+/**
+ * Creates an OpenRouter model configuration
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - OpenRouter model configuration
+ */
+function createOpenRouterModelConfig(additionalConfig = {}) {
+    return {
+        ...baseOpenRouterConfig,
+        ...additionalConfig
+    };
+}
+
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
     // Azure OpenAI model configurations
@@ -265,6 +290,11 @@ export const portkeyConfig = {
     'mistral/mistral-small-24b-instruct-2501:fp8': () => createMistralModelConfig(),
     // Modal model configurations
     'Hormoz-8B': () => createModalModelConfig(),
+    // OpenRouter model configurations
+    'anthropic/claude-3.5-haiku-20241022': () => createOpenRouterModelConfig({
+        'http-referer': 'https://pollinations.ai',
+        'x-title': 'Pollinations.AI'
+    }),
     // Google Vertex AI model configurations
     'gemini-2.0-flash-lite-preview-02-05': () => ({
         provider: 'vertex-ai',
@@ -328,6 +358,16 @@ logProviderConfig(
 logProviderConfig(
     'Modal',
     ([_, config]) => config.provider === 'openai' && config['custom-host']?.includes('modal.run'),
+    config => ({
+        ...config,
+        authKey: config.authKey ? '***' : undefined
+    })
+);
+
+// Log OpenRouter configuration
+logProviderConfig(
+    'OpenRouter',
+    ([_, config]) => config.provider === 'openai' && config['custom-host']?.includes('openrouter.ai'),
     config => ({
         ...config,
         authKey: config.authKey ? '***' : undefined

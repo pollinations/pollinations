@@ -4,6 +4,7 @@ import debug from 'debug';
 import { execSync } from 'child_process';
 import googleCloudAuth from './auth/googleCloudAuth.js';
 import { extractApiVersion, extractDeploymentName, extractResourceName, generatePortkeyHeaders } from './portkeyUtils.js';
+import { findModelByName } from './availableModels.js';
 
 dotenv.config();
 
@@ -379,11 +380,20 @@ export const generateTextPortkey = createOpenAICompatibleClient({
             // Set the headers as a property on the request object that will be used by genericOpenAIClient
             requestBody._additionalHeaders = additionalHeaders;
             
-            // For Cloudflare or large language models that need higher token limits,
-            // ensure max_tokens is set if not explicitly specified by the user
-            if (!requestBody.max_tokens && config['default-max-tokens']) {
-                log(`Setting max_tokens to default value: ${config['default-max-tokens']}`);
-                requestBody.max_tokens = config['default-max-tokens'];
+            // Check if the model has a specific maxTokens limit in availableModels.js
+            const modelConfig = findModelByName(options.model);
+            
+            // For models with specific token limits or those using defaults
+            if (!requestBody.max_tokens) {
+                if (modelConfig && modelConfig.maxTokens) {
+                    // Use model-specific maxTokens if defined
+                    log(`Setting max_tokens to model-specific value: ${modelConfig.maxTokens}`);
+                    requestBody.max_tokens = modelConfig.maxTokens;
+                } else if (config['default-max-tokens']) {
+                    // Fall back to provider default
+                    log(`Setting max_tokens to default value: ${config['default-max-tokens']}`);
+                    requestBody.max_tokens = config['default-max-tokens'];
+                }
             }
             
             // Special handling for o1-mini model which requires max_completion_tokens instead of max_tokens

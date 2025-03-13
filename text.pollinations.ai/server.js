@@ -143,7 +143,7 @@ const queues = new Map();
 
 export function getQueue(ip) {
     if (!queues.has(ip)) {
-        queues.set(ip, new PQueue({ concurrency: 1, interval: 12000, intervalCap: 1 }));
+        queues.set(ip, new PQueue({ concurrency: 1, interval: 6000, intervalCap: 1 }));
     }
     return queues.get(ip);
 }
@@ -158,6 +158,8 @@ export function getIp(req) {
                req.headers['cf-connecting-ip'] ||
                (req.socket ? req.socket.remoteAddress : null);
     
+    // console.log("Headers:", req.headers);
+
     if (!ip) return null;
     
     // Handle x-forwarded-for which can contain multiple IPs (client, proxy1, proxy2, ...)

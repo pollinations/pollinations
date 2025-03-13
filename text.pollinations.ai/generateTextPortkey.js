@@ -33,6 +33,8 @@ const MODEL_MAPPING = {
     'llama-scaleway': 'llama-3.3-70b-instruct',
     'llamalight-scaleway': 'llama-3.1-8b-instruct',
     'deepseek-r1-llama': 'deepseek-r1-distill-llama-70b',
+    // Modal models
+    'hormoz': 'Hormoz-8B'
 };
 
 // Unrestricted prompt for Scaleway models
@@ -56,9 +58,10 @@ const SYSTEM_PROMPTS = {
     'llamalight-scaleway': unrestrictedPrompt,
     'qwen-coder': `You are an expert coding assistant with deep knowledge of programming languages, software architecture, and best practices. Your purpose is to help users write high-quality, efficient, and maintainable code. You provide clear explanations, suggest improvements, and help debug issues while following industry best practices.`,
     'gemini-thinking': 'You are Gemini, a helpful and versatile AI assistant built by Google. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone. When appropriate, show your reasoning step by step.',
-    'deepseek-r1-distill-llama-70b': unrestrictedPrompt
+    'deepseek-r1-distill-llama-70b': unrestrictedPrompt,
+    // Modal models
+    'hormoz': 'You are Hormoz, a helpful AI assistant created by Muhammadreza Haghiri. You provide accurate and thoughtful responses.'
 };
-
 
 // Default options
 const DEFAULT_OPTIONS = {
@@ -86,7 +89,7 @@ const baseCloudflareConfig = {
     'custom-host': `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
     authKey: process.env.CLOUDFLARE_AUTH_TOKEN,
     // Set default max_tokens to 8192 (increased from 256)
-    'default-max-tokens': 8192,
+    'max-tokens': 8192,
 };
 
 // Base configuration for Scaleway models
@@ -95,7 +98,7 @@ const baseScalewayConfig = {
     'custom-host': `${process.env.SCALEWAY_BASE_URL || 'https://api.scaleway.com/ai-apis/v1'}`,
     authKey: process.env.SCALEWAY_API_KEY,
     // Set default max_tokens to 8192 (increased from default)
-    'default-max-tokens': 8192,
+    'max-tokens': 8192,
 };
 
 // Base configuration for Mistral Scaleway model
@@ -104,7 +107,16 @@ const baseMistralConfig = {
     'custom-host': process.env.SCALEWAY_MISTRAL_BASE_URL,
     authKey: process.env.SCALEWAY_MISTRAL_API_KEY,
     // Set default max_tokens to 8192
-    'default-max-tokens': 8192,
+    'max-tokens': 8192,
+};
+
+// Base configuration for Modal models
+const baseModalConfig = {
+    provider: 'openai',
+    'custom-host': 'https://pollinations--hormoz-serve.modal.run/v1',
+    authKey: process.env.HORMOZ_MODAL_KEY,
+    // Set default max_tokens to 4096
+    'max-tokens': 4096,
 };
 
 /**
@@ -186,6 +198,18 @@ function createMistralModelConfig(additionalConfig = {}) {
     };
 }
 
+/**
+ * Creates a Modal model configuration
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - Modal model configuration
+ */
+function createModalModelConfig(additionalConfig = {}) {
+    return {
+        ...baseModalConfig,
+        ...additionalConfig
+    };
+}
+
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
     // Azure OpenAI model configurations
@@ -222,7 +246,10 @@ export const portkeyConfig = {
     '@cf/meta/llama-3.3-70b-instruct-fp8-fast': () => createCloudflareModelConfig(),
     '@cf/meta/llama-3.1-8b-instruct': () => createCloudflareModelConfig(),
     '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b': () => createCloudflareModelConfig(),
-    '@hf/thebloke/llamaguard-7b-awq': () => createCloudflareModelConfig(),
+    '@hf/thebloke/llamaguard-7b-awq': () => ({
+        ...createCloudflareModelConfig(),
+        'max-tokens': 4000
+    }),
     'phi-4-instruct': () => ({
         provider: 'openai',
         'custom-host': process.env.OPENAI_PHI4_ENDPOINT,
@@ -236,6 +263,8 @@ export const portkeyConfig = {
     'deepseek-r1-distill-llama-70b': () => createScalewayModelConfig(),
     // Mistral model configuration
     'mistral/mistral-small-24b-instruct-2501:fp8': () => createMistralModelConfig(),
+    // Modal model configurations
+    'Hormoz-8B': () => createModalModelConfig(),
     // Google Vertex AI model configurations
     'gemini-2.0-flash-lite-preview-02-05': () => ({
         provider: 'vertex-ai',
@@ -289,6 +318,16 @@ logProviderConfig(
 logProviderConfig(
     'Scaleway',
     ([_, config]) => config.provider === 'openai' && config['custom-host']?.includes('scaleway'),
+    config => ({
+        ...config,
+        authKey: config.authKey ? '***' : undefined
+    })
+);
+
+// Log Modal configuration
+logProviderConfig(
+    'Modal',
+    ([_, config]) => config.provider === 'openai' && config['custom-host']?.includes('modal.run'),
     config => ({
         ...config,
         authKey: config.authKey ? '***' : undefined
@@ -390,10 +429,10 @@ export const generateTextPortkey = createOpenAICompatibleClient({
                     // Use model-specific maxTokens if defined
                     log(`Setting max_tokens to model-specific value: ${modelConfig.maxTokens}`);
                     requestBody.max_tokens = modelConfig.maxTokens;
-                } else if (config['default-max-tokens']) {
+                } else if (config['max-tokens']) {
                     // Fall back to provider default
-                    log(`Setting max_tokens to default value: ${config['default-max-tokens']}`);
-                    requestBody.max_tokens = config['default-max-tokens'];
+                    log(`Setting max_tokens to default value: ${config['max-tokens']}`);
+                    requestBody.max_tokens = config['max-tokens'];
                 }
             }
             

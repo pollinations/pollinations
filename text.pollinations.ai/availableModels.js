@@ -174,6 +174,7 @@ export const availableModels = [
         censored: false,
         description: 'Llama 3.1 8B Instruct',
         baseModel: true,
+        maxTokens: 7168, // Set reasonable limit for the 8B model
         handler: generateTextPortkey
     },
     {
@@ -183,6 +184,7 @@ export const availableModels = [
         description: 'Llamaguard 7B AWQ',
         baseModel: false,
         provider: 'cloudflare',
+        maxTokens: 4000, // Set max tokens below the model's context window of 4096
         handler: generateTextPortkey
     },
     {

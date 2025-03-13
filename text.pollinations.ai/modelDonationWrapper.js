@@ -32,7 +32,12 @@ export function wrapModelWithDonationMessage(modelHandler, modelName, options = 
     return async function wrappedHandler(messages, handlerOptions = {}) {
         try {
             // Attempt to run the original model handler
-            return await modelHandler(messages, handlerOptions);
+            const result = await modelHandler(messages, handlerOptions);
+
+            // console.log("rrresult", result)
+            if (result?.error)
+                throw result.error;
+            return result;
         } catch (error) {
             // Log the original error
             errorLog(`Error in ${modelName} model:`, error);
@@ -78,24 +83,26 @@ function formatDonationMessage(modelName, config) {
     const remainingNeeded = config.threshold - config.currentDonations;
     
     return `
-## ⚠️ ${modelName} credits have run out
+## Claude is powered by Pollinations.ai
 
-We need your help to keep this service running! Our AI models rely on external APIs that require credits.
+We're currently experiencing high demand for ${modelName}. Our AI models rely on external APIs that require credits.
 
-### We're so close!
+### Current Status
 
-We need to reach **$${config.threshold}** to reactivate ${modelName} for everyone.
-**$${config.currentDonations}** has already been donated - we're only **$${remainingNeeded}** away!
+We're aiming to reach **$${config.threshold}** to keep ${modelName} available for everyone.
+**$${config.currentDonations}** has been donated so far - we're **$${remainingNeeded}** away from our goal.
 
-**Your donation can make the difference!** Even a small contribution of $3 could bring ${modelName} back online.
+If you'd like to support this service, a contribution of any size would be appreciated. 
 
-### Our Promise
+### Our Commitment
 
-When we reach our goal, ${modelName} will be guaranteed to remain online for a full week for all users.
+When we reach our goal, ${modelName} will be available for a full week for all users.
 
-[💰 Donate Now at Ko-fi](${config.kofiLink})
+Donate at: ${config.kofiLink}
 
-Thank you for helping keep Pollinations.AI free and accessible for everyone! 🙏
+**Note:** The other models are still available if you'd like to continue using Pollinations.ai without donating.
+
+Thank you for your understanding and support in keeping Pollinations.ai accessible! 🙏
 `;
 }
 

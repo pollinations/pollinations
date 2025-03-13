@@ -17,10 +17,12 @@ import { handleRegisterEndpoint } from './availableServers.js';
 import debug from 'debug';
 import { createProgressTracker } from './progressBar.js';
 import { extractToken, isValidToken } from './config/tokens.js';
+import statusTracker from './generationStatusTracker.js';
 
 const logError = debug('pollinations:error');
 const logApi = debug('pollinations:api');
 const logAuth = debug('pollinations:auth');
+const logStatus = debug('pollinations:status');
 
 export let currentJobs = [];
 
@@ -71,7 +73,7 @@ const preMiddleware = async function (pathname, req, res) {
     return false;
   }
 
-  if (!pathname.startsWith("/prompt")) {
+  if (!pathname.startsWith("/prompt") && !pathname.startsWith("/status")) {
     res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       error: 'Not Found',
@@ -90,12 +92,16 @@ const preMiddleware = async function (pathname, req, res) {
  * @param {Object} params - The parameters object.
  * @returns {Promise<void>}
  */
-const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer, progress, requestId }) => {
+const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer, progress, requestId, trackingKey }) => {
   const ip = getIp(req);
   
   // Check if IP is blocked
   if (isIpBlocked(ip)) {
-    throw new Error(`Your IP ${ip} has been temporarily blocked due to multiple content violations`);
+    const error = new Error(`Your IP ${ip} has been temporarily blocked due to multiple content violations`);
+    if (trackingKey) {
+      statusTracker.failGeneration(trackingKey, error);
+    }
+    throw error;
   }
 
   try {
@@ -103,15 +109,29 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     
     // Prompt processing
     progress.updateBar(requestId, 20, 'Prompt', 'Normalizing...');
+    if (trackingKey) {
+      statusTracker.updateProgress(trackingKey, 20, 'Prompt', 'Normalizing prompt');
+    }
+    
     const { prompt, wasPimped } = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams);
     progress.updateBar(requestId, 30, 'Prompt', 'Normalized');
+    if (trackingKey) {
+      statusTracker.updateProgress(trackingKey, 30, 'Prompt', 'Prompt normalized');
+    }
     
     logApi("prompt", prompt);
     logApi("safeParams", safeParams);
 
     // Server selection and image generation
     progress.updateBar(requestId, 40, 'Server', 'Selecting optimal server...');
+    if (trackingKey) {
+      statusTracker.updateProgress(trackingKey, 40, 'Server', 'Selecting optimal server');
+    }
+    
     progress.updateBar(requestId, 50, 'Generation', 'Preparing...');
+    if (trackingKey) {
+      statusTracker.updateProgress(trackingKey, 50, 'Generation', 'Starting image generation');
+    }
     
     const { buffer, ...maturity } = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId);
 
@@ -123,6 +143,10 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "generating", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer });
 
     progress.updateBar(requestId, 95, 'Finalizing', 'Processing complete');
+    if (trackingKey) {
+      statusTracker.updateProgress(trackingKey, 90, 'Finalizing', 'Generation complete, processing image');
+    }
+    
     timingInfo.push({ step: 'Generation completed.', timestamp: Date.now() });
     sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "done", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer, maturity });
 
@@ -133,9 +157,15 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     if (maturity.isChild && maturity.isMature) {
       logApi("isChild and isMature, delaying response by 15 seconds");
       progress.updateBar(requestId, 85, 'Safety', 'Additional review...');
+      if (trackingKey) {
+        statusTracker.updateProgress(trackingKey, 85, 'Safety', 'Additional safety review');
+      }
       await sleep(3000);
     }
     progress.updateBar(requestId, 90, 'Safety', 'Check complete');
+    if (trackingKey) {
+      statusTracker.updateProgress(trackingKey, 95, 'Safety', 'Safety check complete');
+    }
 
     timingInfo.push({ step: 'Image returned', timestamp: Date.now() });
 
@@ -166,6 +196,11 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     progress.completeBar(requestId, 'Image generation complete');
     progress.stop();
     
+    // Update status tracker if tracking
+    if (trackingKey) {
+      statusTracker.completeGeneration(trackingKey, imageURL, buffer, maturity);
+    }
+    
     return { buffer, ...maturity };
   } catch (error) {
     // Check if this was a prohibited content error
@@ -173,7 +208,11 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
       const violations = incrementIpViolations(ip);
       if (violations >= MAX_VIOLATIONS) {
         await sleep(10000);
-        throw new Error(`Your IP ${ip} has been temporarily blocked due to multiple content violations`);
+        const blockError = new Error(`Your IP ${ip} has been temporarily blocked due to multiple content violations`);
+        if (trackingKey) {
+          statusTracker.failGeneration(trackingKey, blockError);
+        }
+        throw blockError;
       }
     }
     // Handle errors gracefully in progress bars
@@ -189,6 +228,11 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
       params: safeParams,
       referrer
     });
+    
+    // Update status tracker if tracking
+    if (trackingKey) {
+      statusTracker.failGeneration(trackingKey, error);
+    }
     
     throw error;
   }
@@ -228,6 +272,60 @@ const checkCacheAndGenerate = async (req, res) => {
   let timingInfo = [];  // Moved outside try block
   
   try {
+    // First check if this generation is already in progress or completed via status tracker
+    const trackingStatus = statusTracker.startGeneration(originalPrompt, safeParams, requestId);
+    const trackingKey = trackingStatus.key;
+    
+    if (trackingStatus.alreadyCompleted) {
+      logStatus(`Generation already completed for ${trackingKey}, returning cached result`);
+      const result = trackingStatus.result;
+      
+      // If there was an error in the previous generation, throw it
+      if (result.error) {
+        throw new Error(result.error.message || 'Error during previous generation attempt');
+      }
+      
+      // Return the already generated image
+      res.writeHead(200, {
+        'Content-Type': 'image/jpeg',
+        'Cache-Control': 'public, max-age=31536000, immutable',
+        'X-Generation-Status': 'cached',
+        'X-Generation-Id': trackingKey
+      });
+      res.write(result.imageBuffer);
+      res.end();
+      return;
+    }
+    
+    if (trackingStatus.alreadyInProgress) {
+      logStatus(`Generation already in progress for ${trackingKey}, waiting for completion`);
+      progress.updateBar(requestId, 30, 'Waiting', 'Generation already in progress');
+      
+      // Wait for the existing generation to complete
+      return new Promise((resolve, reject) => {
+        statusTracker.addWaitingClient(trackingKey, (result) => {
+          // Return the completed image
+          res.writeHead(200, {
+            'Content-Type': 'image/jpeg',
+            'Cache-Control': 'public, max-age=31536000, immutable',
+            'X-Generation-Status': 'shared',
+            'X-Generation-Id': trackingKey
+          });
+          res.write(result.imageBuffer);
+          res.end();
+          resolve();
+        }, (error) => {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            error: 'Generation Error',
+            message: error.message || 'Error during image generation',
+            generationId: trackingKey
+          }));
+          reject(error);
+        });
+      });
+    }
+    
     // Cache the generated image
     const bufferAndMaturity = await cacheImage(originalPrompt, safeParams, async () => {
       const ip = getIp(req);
@@ -245,7 +343,8 @@ const checkCacheAndGenerate = async (req, res) => {
           safeParams, 
           referrer,
           progress,
-          requestId 
+          requestId,
+          trackingKey  // Pass tracking key to imageGen
         });
         timingInfo.push({ step: 'End generating job', timestamp: Date.now() });
         return result;
@@ -260,6 +359,9 @@ const checkCacheAndGenerate = async (req, res) => {
         
         // Skip queue for valid tokens
         timingInfo.push({ step: 'Token authenticated - bypassing queue', timestamp: Date.now() });
+        if (trackingKey) {
+          statusTracker.updateProgress(trackingKey, 20, 'Priority', 'Token authenticated, bypassing queue');
+        }
         return generateImage();
       }
 
@@ -271,6 +373,9 @@ const checkCacheAndGenerate = async (req, res) => {
       }
 
       progress.updateBar(requestId, 20, 'Queueing', 'Checking cache');
+      if (trackingKey) {
+        statusTracker.updateProgress(trackingKey, 20, 'Queue', 'Request queued for processing');
+      }
 
       const result = await ipQueue[ip].add(async () => {
         if (queueExisted && countJobs() > 2) {
@@ -279,12 +384,21 @@ const checkCacheAndGenerate = async (req, res) => {
           const progressPercent = 30 + Math.floor((40 - queuePosition) / 40 * 20); // Maps position 40->30%, 0->50%
 
           progress.updateBar(requestId, progressPercent, 'Queueing', `Queue position: ${queuePosition}`);
+          if (trackingKey) {
+            statusTracker.updateProgress(trackingKey, progressPercent, 'Queue', `Position: ${queuePosition}`);
+          }
+          
           logApi("queueExisted", queueExisted, "for ip", ip, " sleeping a little", queueSize);
           
           if (queueSize >= 10) {
             progress.errorBar(requestId, 'Queue full');
             progress.stop();
-            throw new Error("queue full");
+            
+            const queueError = new Error("queue full");
+            if (trackingKey) {
+              statusTracker.failGeneration(trackingKey, queueError);
+            }
+            throw queueError;
           }
 
           progress.setQueued(queueSize);
@@ -303,10 +417,11 @@ const checkCacheAndGenerate = async (req, res) => {
       return result;
     });
 
-
     res.writeHead(200, {
       'Content-Type': 'image/jpeg',
       'Cache-Control': 'public, max-age=31536000, immutable',
+      'X-Generation-Status': 'new',
+      'X-Generation-Id': trackingKey
     });
     res.write(bufferAndMaturity.buffer);
     res.end();
@@ -331,6 +446,44 @@ const checkCacheAndGenerate = async (req, res) => {
         ...safeParams,
         referrer
       }
+    }));
+  }
+};
+
+/**
+ * Handles requests to the status endpoint
+ * @param {Object} req - The request object
+ * @param {Object} res - The response object
+ */
+const handleStatusRequest = (req, res) => {
+  const { query, pathname } = parse(req.url, true);
+  
+  // Extract generation ID or parameters
+  let statusResponse;
+  
+  // Handle status by generation ID
+  if (query.id) {
+    const generationId = query.id;
+    statusResponse = statusTracker.getStatus(generationId);
+  } 
+  // Handle status by prompt and parameters
+  else if (pathname.includes('/status/')) {
+    const promptPart = pathname.split('/status/')[1];
+    if (promptPart) {
+      const prompt = urldecode(promptPart);
+      const params = makeParamsSafe(query);
+      statusResponse = statusTracker.getStatusByPrompt(prompt, params);
+    }
+  }
+  
+  if (statusResponse) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(statusResponse));
+  } else {
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      error: 'Not Found',
+      message: 'No generation found with the specified ID or parameters'
     }));
   }
 };
@@ -377,6 +530,12 @@ const server = http.createServer((req, res) => {
       'Expires': '0'
     });
     handleRegisterEndpoint(req, res);
+    return;
+  }
+  
+  // Handle status endpoint requests
+  if (pathname.startsWith('/status')) {
+    handleStatusRequest(req, res);
     return;
   }
 

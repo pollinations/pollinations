@@ -1,8 +1,6 @@
 // Import all handler functions
 import { generateDeepseek } from './generateDeepseek.js';
 import { generateTextSearch } from './generateTextSearch.js';
-import { generateTextOpenRouter } from './generateTextOpenRouter.js';
-import { generateTextModal } from './generateTextModal.js';
 import { generateTextPortkey } from './generateTextPortkey.js';
 import wrapModelWithContext from './wrapModelWithContext.js';
 
@@ -28,8 +26,6 @@ const handlers = {
     openai: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai'}),
     deepseek: (messages, options) => generateDeepseek(messages, {...options, model: 'deepseek-chat'}),
     mistral: (messages, options) => generateTextPortkey(messages, {...options, model: 'mistral'}),
-    openRouter: (messages, options, model) => generateTextOpenRouter(messages, {...options, model}),
-    modal: (messages, options) => generateTextModal(messages, options),
     portkey: (messages, options, model) => generateTextPortkey(messages, {...options, model})
 };
 
@@ -140,7 +136,7 @@ export const availableModels = [
         censored: true,
         description: 'Claude 3.5 Haiku',
         baseModel: true,
-        handler: (messages, options) => generateTextOpenRouter(messages, {...options, model: "anthropic/claude-3.5-haiku-20241022"})
+        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'claude'})
     },
     {
         name: 'deepseek-r1',
@@ -213,18 +209,16 @@ export const availableModels = [
         name: 'hormoz',
         type: 'chat',
         description: 'Hormoz 8b by Muhammadreza Haghiri',
-        baseModel: false,
-        provider: 'modal.com',
-        censored: false,
-        handler: handlers.modal
+        baseModel: true,
+        provider: 'modal',
+        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'hormoz'})
     },
     {
         name: 'hypnosis-tracy',
         type: 'chat',
-        description: 'Hypnosis Tracy - Your Self-Help AI',
+        description: 'Hypnosis Tracy 7B - Self-help AI assistant',
         baseModel: false,
-        provider: 'modal.com',
-        censored: false,
+        provider: 'openai',
         handler: hypnosisTracy
     },
     {

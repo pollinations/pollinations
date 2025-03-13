@@ -381,7 +381,8 @@ export const generateTextPortkey = createOpenAICompatibleClient({
             requestBody._additionalHeaders = additionalHeaders;
             
             // Check if the model has a specific maxTokens limit in availableModels.js
-            const modelConfig = findModelByName(options.model);
+            // Use the model name from requestBody instead of options which isn't available here
+            const modelConfig = findModelByName(requestBody.model);
             
             // For models with specific token limits or those using defaults
             if (!requestBody.max_tokens) {

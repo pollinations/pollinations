@@ -143,7 +143,7 @@ const queues = new Map();
 
 export function getQueue(ip) {
     if (!queues.has(ip)) {
-        queues.set(ip, new PQueue({ concurrency: 1, interval: 12000, intervalCap: 1 }));
+        queues.set(ip, new PQueue({ concurrency: 1, interval: 6000, intervalCap: 1 }));
     }
     return queues.get(ip);
 }

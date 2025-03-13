@@ -3,6 +3,7 @@ import { generateDeepseek } from './generateDeepseek.js';
 import { generateTextSearch } from './generateTextSearch.js';
 import { generateTextPortkey } from './generateTextPortkey.js';
 import wrapModelWithContext from './wrapModelWithContext.js';
+import wrapModelWithDonationMessage from './modelDonationWrapper.js';
 
 // Import persona prompts
 import surSystemPrompt from './personas/sur.js';
@@ -136,7 +137,14 @@ export const availableModels = [
         censored: true,
         description: 'Claude 3.5 Haiku',
         baseModel: true,
-        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'claude'})
+        handler: wrapModelWithDonationMessage(
+            (messages, options) => generateTextPortkey(messages, {...options, model: 'claude'}),
+            'Claude 3.5 Haiku',
+            {
+                threshold: 50,
+                currentDonations: 47
+            }
+        )
     },
     {
         name: 'deepseek-r1',

@@ -20,8 +20,19 @@ const stats = {
     hasMarkdown: 0,
     hasHtml: 0,
     isRoblox: 0,
-    isImagePollinationsReferrer: 0
+    isImagePollinationsReferrer: 0,
+    tokens: {
+        total: 0,
+        byReferrer: {}
+    },
+    ips: {}
 };
+
+// Number of top IPs to track
+const TOP_IPS_COUNT = 5;
+
+// Number of top referrers to display
+const TOP_REFERRERS_COUNT = 10;
 
 // Helper functions for content detection
 const hasMarkdown = (text) => {
@@ -63,6 +74,85 @@ const incrementCategoryCount = (category, value) => {
     }
 };
 
+// Helper function to track tokens by referrer
+const trackTokensByReferrer = (referrer, tokenData) => {
+    if (!referrer) referrer = 'unknown';
+    
+    // Initialize referrer token tracking if not exists
+    if (!stats.tokens.byReferrer[referrer]) {
+        stats.tokens.byReferrer[referrer] = {
+            total: 0
+        };
+    }
+    
+    // Extract token counts from the data
+    const totalTokens = tokenData?.total_tokens || 0;
+    
+    // Update token counts
+    stats.tokens.total += totalTokens;
+    stats.tokens.byReferrer[referrer].total += totalTokens;
+};
+
+// Helper function to track IP addresses
+const trackIpAddress = (ip) => {
+    if (!ip) return;
+    
+    // Truncate IP for privacy (keep only first parts)
+    const truncatedIp = ip;
+    
+    if (!stats.ips[truncatedIp]) {
+        stats.ips[truncatedIp] = {
+            requests: 1,
+            tokens: 0
+        };
+    } else {
+        stats.ips[truncatedIp].requests++;
+    }
+};
+
+// Helper function to update IP token usage
+const updateIpTokenUsage = (ip, tokens) => {
+    if (!ip || !tokens) return;
+    
+    const truncatedIp = ip;
+    if (stats.ips[truncatedIp]) {
+        stats.ips[truncatedIp].tokens += tokens;
+    }
+};
+
+// Helper function to calculate percentage
+const calculatePercentage = (count, total) => {
+    if (total === 0) return '0.00%';
+    return ((count / total) * 100).toFixed(2) + '%';
+};
+
+// Helper function to sort object by values in descending order
+const sortObjectByValues = (obj) => {
+    return Object.entries(obj)
+        .sort((a, b) => b[1] - a[1])
+        .reduce((acc, [key, value]) => {
+            acc[key] = value;
+            return acc;
+        }, {});
+};
+
+// Helper function to get top N items from an object
+const getTopNItems = (obj, n, valueKey = null) => {
+    let entries = Object.entries(obj);
+    
+    // If valueKey is provided, sort by that specific property
+    if (valueKey) {
+        entries = entries.sort((a, b) => b[1][valueKey] - a[1][valueKey]);
+    } else {
+        entries = entries.sort((a, b) => b[1] - a[1]);
+    }
+    
+    return entries.slice(0, n).reduce((acc, [key, value]) => {
+        acc[key] = value;
+        return acc;
+    }, {});
+};
+
 // Filter function that checks if a message matches the criteria
 const matchesFilters = (data, options = {}) => {
     const { response, parameters, isPrivate } = data;
@@ -90,22 +180,6 @@ const matchesFilters = (data, options = {}) => {
     return true;
 };
 
-// Helper function to calculate percentage
-const calculatePercentage = (count, total) => {
-    if (total === 0) return '0.00%';
-    return ((count / total) * 100).toFixed(2) + '%';
-};
-
-// Helper function to sort object by values in descending order
-const sortObjectByValues = (obj) => {
-    return Object.entries(obj)
-        .sort((a, b) => b[1] - a[1])
-        .reduce((acc, [key, value]) => {
-            acc[key] = value;
-            return acc;
-        }, {});
-};
-
 // Print current stats
 const printStats = () => {
     log('\nStats:');
@@ -128,16 +202,49 @@ const printStats = () => {
     }
     
     if (Object.keys(stats.referrers).length > 0) {
-        log('\nReferrers:');
-        const sortedReferrers = sortObjectByValues(stats.referrers);
-        Object.entries(sortedReferrers).forEach(([referrer, count]) => {
+        log('\nTop Referrers:');
+        const topReferrers = getTopNItems(stats.referrers, TOP_REFERRERS_COUNT);
+        Object.entries(topReferrers).forEach(([referrer, count]) => {
             log(`${referrer || 'none'}: ${count} (${calculatePercentage(count, stats.total)})`);
         });
+        
+        // Show how many more referrers exist beyond the top ones
+        const totalReferrers = Object.keys(stats.referrers).length;
+        if (totalReferrers > TOP_REFERRERS_COUNT) {
+            log(`... and ${totalReferrers - TOP_REFERRERS_COUNT} more referrers`);
+        }
     }
     
     log('\nSpecial Referrers:');
     log(`Roblox: ${stats.isRoblox} (${calculatePercentage(stats.isRoblox, stats.total)})`);
     log(`Image Pollinations: ${stats.isImagePollinationsReferrer} (${calculatePercentage(stats.isImagePollinationsReferrer, stats.total)})`);
+    
+    // Print token statistics by referrer
+    if (stats.tokens.total > 0) {
+        log('\nToken Usage:');
+        log(`Total Tokens: ${stats.tokens.total.toLocaleString()}`);
+        
+        log('\nToken Usage by Referrer:');
+        const sortedReferrersByTokens = Object.entries(stats.tokens.byReferrer)
+            .sort((a, b) => b[1].total - a[1].total)
+            .reduce((acc, [key, value]) => {
+                acc[key] = value;
+                return acc;
+            }, {});
+            
+        Object.entries(sortedReferrersByTokens).forEach(([referrer, tokenData]) => {
+            log(`${referrer}: ${tokenData.total.toLocaleString()} tokens (${calculatePercentage(tokenData.total, stats.tokens.total)})`);
+        });
+    }
+    
+    // Print top IP statistics - only one list sorted by requests
+    if (Object.keys(stats.ips).length > 0) {
+        log('\nTop IP Addresses by Requests:');
+        const topIpsByRequests = getTopNItems(stats.ips, TOP_IPS_COUNT, 'requests');
+        Object.entries(topIpsByRequests).forEach(([ip, data]) => {
+            log(`${ip}: ${data.requests.toLocaleString()} requests, ${data.tokens.toLocaleString()} tokens`);
+        });
+    }
     
     log('-'.repeat(30));
 };
@@ -177,7 +284,7 @@ const startFeedListener = (options = {}) => {
                 }
                 
                 // Track categorical properties
-                const { parameters, response } = data;
+                const { parameters, response, ip } = data;
                 
                 // Track model usage
                 if (parameters?.model) {
@@ -203,6 +310,21 @@ const startFeedListener = (options = {}) => {
                     stats.isImagePollinationsReferrer++;
                 }
                 
+                // Track token usage by referrer
+                if (parameters) {
+                    trackTokensByReferrer(parameters.referrer, parameters);
+                }
+                
+                // Track IP address usage
+                if (ip) {
+                    trackIpAddress(ip);
+                    
+                    // Update token usage for this IP
+                    if (parameters?.total_tokens) {
+                        updateIpTokenUsage(ip, parameters.total_tokens);
+                    }
+                }
+                
                 // Only display content if not in count-only mode
                 if (!options.countOnly) {
                     // Add privacy indicator to the output
@@ -211,6 +333,12 @@ const startFeedListener = (options = {}) => {
                     console.log(`\n# ${privacyStatus} Message\n`);
                     console.log(`Referrer: ${data.parameters?.referrer || 'none'}`);
                     if (data.ip) console.log(`IP: ${data.ip}`);
+                    
+                    // Add token information if available
+                    if (data.parameters?.total_tokens) {
+                        console.log(`Tokens: ${data.parameters.total_tokens.toLocaleString()} total`);
+                    }
+                    
                     console.log('\n# Response\n');
                     console.log(truncate(data.response));
                     console.log('\n# Messages\n');

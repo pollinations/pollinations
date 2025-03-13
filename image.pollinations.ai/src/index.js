@@ -30,9 +30,6 @@ const ipQueue = {};
 const ipViolations = new Map();
 const MAX_VIOLATIONS = 5;
 
-// Initialize with blocked IPs
-ipViolations.set('2001:bc8:710:b3ea:dc00:ff:fe96:257', MAX_VIOLATIONS * 2); // Permanently blocked IPv6 address
-
 // Check if an IP is blocked
 const isIpBlocked = (ip) => {
   return (ipViolations.get(ip) || 0) >= MAX_VIOLATIONS;
@@ -109,6 +106,9 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     logApi("prompt", prompt);
     logApi("safeParams", safeParams);
 
+    // timingInfo.push({ step: 'Generation started.', timestamp: Date.now() });
+    // sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "generating", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer });
+
     // Server selection and image generation
     progress.updateBar(requestId, 40, 'Server', 'Selecting optimal server...');
     progress.updateBar(requestId, 50, 'Generation', 'Preparing...');
@@ -116,15 +116,9 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     const { buffer, ...maturity } = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId);
 
     progress.updateBar(requestId, 50, 'Generation', 'Starting generation');
-    
-    const concurrentRequests = countJobs(true);
-
-    timingInfo.push({ step: 'Generation started.', timestamp: Date.now() });
-    sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "generating", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer });
 
     progress.updateBar(requestId, 95, 'Finalizing', 'Processing complete');
     timingInfo.push({ step: 'Generation completed.', timestamp: Date.now() });
-    sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "done", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer, maturity });
 
     progress.updateBar(requestId, 100, 'Complete', 'Generation successful');
     progress.stop();
@@ -133,7 +127,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     if (maturity.isChild && maturity.isMature) {
       logApi("isChild and isMature, delaying response by 15 seconds");
       progress.updateBar(requestId, 85, 'Safety', 'Additional review...');
-      await sleep(3000);
+      await sleep(5000);
     }
     progress.updateBar(requestId, 90, 'Safety', 'Check complete');
 
@@ -143,8 +137,8 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
 
     // Cache and feed updates
     progress.updateBar(requestId, 95, 'Cache', 'Updating feed...');
-    if (!safeParams.nofeed) {
-      if (!(maturity.isChild && maturity.isMature)) {
+    // if (!safeParams.nofeed) {
+    //   if (!(maturity.isChild && maturity.isMature)) {
         sendToFeedListeners({
           ...safeParams,
           concurrentRequests: countFluxJobs(),
@@ -156,10 +150,13 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
           ip: getIp(req),
           status: "end_generating",
           referrer,
-          wasPimped
+          wasPimped,
+          nsfw: maturity.isChild || maturity.isMature,
+          private: safeParams.nofeed,
+          token: extractToken(req) && extractToken(req).slice(0, 2) + "..."
         }, { saveAsLastState: true });
-      }
-    }
+      // }
+    // }
     progress.updateBar(requestId, 100, 'Cache', 'Updated');
     
     // Complete main progress
@@ -234,7 +231,10 @@ const checkCacheAndGenerate = async (req, res) => {
 
       progress.updateBar(requestId, 10, 'Queueing', 'Request queued');
       timingInfo = [{ step: 'Request received and queued.', timestamp: Date.now() }];
-      sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip: getIp(req), status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer });
+      // sendToFeedListeners({ 
+      //   ...safeParams, 
+      //   prompt: originalPrompt, 
+      //   ip: getIp(req), status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer, token: extractToken(req) && extractToken(req).slice(0, 2) + "..." });
 
       const generateImage = async () => {
         timingInfo.push({ step: 'Start generating job', timestamp: Date.now() });

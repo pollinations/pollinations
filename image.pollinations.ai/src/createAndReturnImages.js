@@ -9,8 +9,6 @@ import { checkContent } from './llamaguard.js';
 const logError = debug('pollinations:error');
 const logPerf = debug('pollinations:perf');
 const logOps = debug('pollinations:ops');
-const logMeoow = debug('pollinations:meoow');
-
 const logCloudflare = debug('pollinations:cloudflare');
 
 import { writeExifMetadata } from './writeExifMetadata.js';
@@ -18,9 +16,6 @@ import { sanitizeString } from './translateIfNecessary.js';
 import sharp from 'sharp';
 import sleep from 'await-sleep';
 
-const MEOOW_SERVER_URL = 'https://api.airforce/imagine';
-const MEOOW_2_SERVER_URL = 'https://cablyai.com/v1/images/generations';
-const MEOOW_2_API_KEY = process.env.MEOOW_2_API_KEY;
 // const TURBO_SERVER_URL = 'http://54.91.176.109:5003/generate';
 let total_start_time = Date.now();
 let accumulated_fetch_duration = 0;
@@ -175,116 +170,6 @@ export const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
 };
 
 /**
- * Calls the Meoow API with the given parameters and returns image buffers.
- * @param {string} prompt - The prompt for the image generation.
- * @param {Object} safeParams - The safe parameters for the image generation.
- * @returns {Promise<{buffer: Buffer, [key: string]: any}>}
- */
-export async function callMeoow(prompt, safeParams) {
-  try {
-    const url = new URL(MEOOW_SERVER_URL);
-    prompt = sanitizeString(prompt);
-    // calculate a unique 4 digit seed for this prompt
-    // it should depend on the prompt text
-    const seedHack = prompt.split(' ').reduce((acc, word) => acc + word.charCodeAt(0), 0) % 10000;
-
-    url.searchParams.append('prompt', `#${seedHack} - ${prompt}`);
-
-    const closestRatio = calculateClosestAspectRatio(safeParams.width, safeParams.height);
-
-    url.searchParams.append('size', closestRatio);
-    url.searchParams.append('seed', safeParams.seed);
-    url.searchParams.append('model', safeParams.model);
-    logMeoow("calling meoow", url.toString(), "aspect ratio", closestRatio);
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const contentType = response.headers.get('content-type');
-    if (!response.ok || (contentType && contentType.includes('text'))) {
-      const errorText = await response.text();
-      throw new Error(`Server responded with ${response.status}: ${errorText}`);
-    }
-
-    const buffer = await response.buffer();
-    return { buffer: buffer, has_nsfw_concept: false, concept: null };
-
-  } catch (e) {
-    logError('Error in callMeoow:', e);
-    throw e;
-  }
-};
-
-/**
- * Calls the Meoow-2 API with the given parameters and returns image buffers.
- * @param {string} prompt - The prompt for the image generation.
- * @param {Object} safeParams - The safe parameters for the image generation.
- * @returns {Promise<{buffer: Buffer, [key: string]: any}>}
- */
-export async function callMeoow2(prompt, safeParams) {
-  try {
-    prompt = sanitizeString(prompt);
-    const body = {
-      prompt: prompt,
-      n: 1,
-      size: `${safeParams.width}x${safeParams.height}`,
-      response_format: 'url',
-      model: safeParams.model === 'flux-pro' ? 'flux-pro' : 'flux-1.1-pro',
-    };
-
-    logMeoow("calling meoow-2", body);
-    const response = await fetch(MEOOW_2_SERVER_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${MEOOW_2_API_KEY}`,
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Server responded with ${response.status}: ${errorText}`);
-    }
-
-    const jsonResponse = await response.json();
-    const imageUrl = jsonResponse.data[0].url;
-    await sleep(500);
-    // Fetch the image from the URL
-    const imageResponse = await fetch(imageUrl);
-    const buffer = await imageResponse.buffer();
-
-    return { buffer: buffer, has_nsfw_concept: false, concept: null };
-
-  } catch (e) {
-    logError('Error in callMeoow2:', e);
-    throw e;
-  }
-};
-
-/**
- * Rounds a number to the nearest multiple of 8
- * @param {number} n - Number to round
- * @returns {number} - Nearest multiple of 8
- */
-function roundToMultipleOf8(n) {
-  return Math.round(n / 8) * 8;
-}
-
-/**
- * Common Cloudflare API configuration
- * @returns {{accountId: string, apiToken: string}} Cloudflare credentials
- */
-function getCloudflareCredentials() {
-  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-  const apiToken = process.env.CLOUDFLARE_API_TOKEN;
-  return { accountId, apiToken };
-}
-
-/**
  * Calls the Cloudflare AI API to generate images using the specified model
  * @param {string} prompt - The prompt for image generation
  * @param {Object} safeParams - The parameters for image generation
@@ -378,6 +263,25 @@ async function callCloudflareSDXL(prompt, safeParams) {
 }
 
 /**
+ * Rounds a number to the nearest multiple of 8
+ * @param {number} n - Number to round
+ * @returns {number} - Nearest multiple of 8
+ */
+function roundToMultipleOf8(n) {
+  return Math.round(n / 8) * 8;
+}
+
+/**
+ * Common Cloudflare API configuration
+ * @returns {{accountId: string, apiToken: string}} Cloudflare credentials
+ */
+function getCloudflareCredentials() {
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+  return { accountId, apiToken };
+}
+
+/**
  * Calculates the closest aspect ratio from a list of predefined aspect ratios.
  * @param {number} width - The width of the image.
  * @param {number} height - The height of the image.
@@ -431,37 +335,28 @@ export async function convertToJpeg(buffer) {
  */
 export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests, originalPrompt, progress, requestId) {
   try {
-    const meoowModels = Object.keys(MODELS).filter(model => MODELS[model].type === 'meoow');
-    const meoow2Models = Object.keys(MODELS).filter(model => MODELS[model].type === 'meoow-2');
-    
     // Update generation progress
     if (progress) progress.updateBar(requestId, 60, 'Generation', 'Calling API...');
     let bufferAndMaturity;
 
-    if (meoowModels.includes(safeParams.model)) {
-      bufferAndMaturity = await callMeoow(prompt, safeParams);
-    } else if (meoow2Models.includes(safeParams.model)) {
-      bufferAndMaturity = await callMeoow2(prompt, safeParams);
-    } else {
-          // Try Cloudflare Flux first if model is 'flux'
-      if (safeParams.model === 'flux') {
+    // Try Cloudflare Flux first if model is 'flux'
+    if (safeParams.model === 'flux') {
+      try {
+        if (progress) progress.updateBar(requestId, 30, 'Processing', 'Trying Cloudflare Flux...');
+        bufferAndMaturity = await callCloudflareFlux(prompt, safeParams);
+      } catch (error) {
+        logError('Cloudflare Flux failed, trying SDXL:', error.message);
         try {
-          if (progress) progress.updateBar(requestId, 30, 'Processing', 'Trying Cloudflare Flux...');
-          bufferAndMaturity = await callCloudflareFlux(prompt, safeParams);
-        } catch (error) {
-          logError('Cloudflare Flux failed, trying SDXL:', error.message);
-          try {
-            if (progress) progress.updateBar(requestId, 35, 'Processing', 'Trying Cloudflare SDXL...');
-            bufferAndMaturity = await callCloudflareSDXL(prompt, safeParams);
-          } catch (sdxlError) {
-            logError('Cloudflare SDXL failed, falling back to ComfyUI:', sdxlError.message);
-            // Fall through to ComfyUI
-          }
+          if (progress) progress.updateBar(requestId, 35, 'Processing', 'Trying Cloudflare SDXL...');
+          bufferAndMaturity = await callCloudflareSDXL(prompt, safeParams);
+        } catch (sdxlError) {
+          logError('Cloudflare SDXL failed, falling back to ComfyUI:', sdxlError.message);
+          // Fall through to ComfyUI
         }
       }
-      if (!bufferAndMaturity)
-        bufferAndMaturity = await callComfyUI(prompt, safeParams, concurrentRequests);
     }
+    if (!bufferAndMaturity)
+      bufferAndMaturity = await callComfyUI(prompt, safeParams, concurrentRequests);
 
     if (progress) progress.updateBar(requestId, 70, 'Generation', 'API call complete');
     if (progress) progress.updateBar(requestId, 75, 'Processing', 'Checking safety...');
@@ -473,25 +368,25 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
     const concept = bufferAndMaturity?.concept;
     let isChild = bufferAndMaturity?.isChild || Object.values(concept?.special_scores || {})?.slice(1).some(score => score > -0.05);
 
-    // Check with LlamaGuard and override if necessary
-    try {
+    // // Check with LlamaGuard and override if necessary
+    // try {
 
-        const llamaguardResult = await checkContent(prompt);
+    //     const llamaguardResult = await checkContent(prompt);
         
-        // Override safety flags if LlamaGuard detects issues
-        if (llamaguardResult.isMature) {
-            isMature = true;
-            log('LlamaGuard detected mature content, overriding isMature to true');
-        }
+    //     // Override safety flags if LlamaGuard detects issues
+    //     if (llamaguardResult.isMature) {
+    //         isMature = true;
+    //         log('LlamaGuard detected mature content, overriding isMature to true');
+    //     }
         
-        if (llamaguardResult.isChild) {
-            isChild = true;
-            log('LlamaGuard detected child exploitation content, overriding isChild to true');
-        }
-    } catch (error) {
-        logError('LlamaGuard check failed:', error);
-        // Continue with original model classifications if LlamaGuard fails
-    }
+    //     if (llamaguardResult.isChild) {
+    //         isChild = true;
+    //         log('LlamaGuard detected child exploitation content, overriding isChild to true');
+    //     }
+    // } catch (error) {
+    //     logError('LlamaGuard check failed:', error);
+    //     // Continue with original model classifications if LlamaGuard fails
+    // }
 
     logError("isMature", isMature, "concepts", isChild);
 

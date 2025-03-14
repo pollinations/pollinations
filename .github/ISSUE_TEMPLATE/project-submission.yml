@@ -32,12 +32,14 @@ body:
       label: Project URL
       description: Link to your project (if public)
       placeholder: "https://example.com"
+    validations:
+      required: true
 
   - type: input
-    id: discord-username
+    id: contact-info
     attributes:
-      label: Discord Username or Social Profile Link
-      description: Provide your Discord username or a link to another social profile online
+      label: Contact Information
+      description: How can we reach you? (Discord username, GitHub username, email, or social profile link)
       placeholder: "e.g., @username or https://profile.example.com"
     validations:
       required: true
@@ -46,7 +48,7 @@ body:
     id: github-repo
     attributes:
       label: GitHub Repository URL
-      description: (Optional) Provide a link to your project's GitHub repository
+      description: Provide a link to your project's GitHub repository (if available)
       placeholder: "https://github.com/your-repo"
 
   - type: dropdown
@@ -70,15 +72,6 @@ body:
       label: Additional Information
       description: Any other details you'd like to share about your project?
       placeholder: "Screenshots, features, future plans..."
-
-  - type: input
-    id: contact
-    attributes:
-      label: Contact Information
-      description: How can we reach you if we have questions? (GitHub username, email, or Discord handle)
-      placeholder: "@username or email"
-    validations:
-      required: true
 
   - type: markdown
     attributes:

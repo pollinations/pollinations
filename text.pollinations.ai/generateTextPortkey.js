@@ -421,7 +421,7 @@ export const generateTextPortkey = createOpenAICompatibleClient({
     },
     
     // Transform request to add Azure-specific headers based on the model
-    transformRequest: (requestBody) => {
+    transformRequest: async (requestBody) => {
         try {
             // Get the model name from the request (already mapped by genericOpenAIClient)
             const modelName = requestBody.model; // This is already mapped by genericOpenAIClient
@@ -454,8 +454,8 @@ export const generateTextPortkey = createOpenAICompatibleClient({
 
             log('Processing request for model:', modelName, 'with provider:', config.provider);
 
-            // Generate headers
-            const additionalHeaders = generatePortkeyHeaders(config);
+            // Generate headers (now async call)
+            const additionalHeaders = await generatePortkeyHeaders(config);
             log('Added provider-specific headers:', JSON.stringify(additionalHeaders, null, 2));
             
             // Set the headers as a property on the request object that will be used by genericOpenAIClient

@@ -64,7 +64,7 @@ export const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
     logOps("concurrent requests", concurrentRequests, "safeParams", safeParams);
 
     // Linear scaling of steps between 6 (at concurrentRequests=2) and 1 (at concurrentRequests=36)
-    const steps = Math.max(1, Math.round(4 - ((concurrentRequests - 2) * (4 - 1)) / (10 - 2)));
+    const steps = Math.max(1, Math.round(4 - ((concurrentRequests - 2) * (3 - 1)) / (10 - 2)));
     logOps("calculated_steps", steps);
 
     prompt = sanitizeString(prompt);
@@ -346,13 +346,13 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
         bufferAndMaturity = await callCloudflareFlux(prompt, safeParams);
       } catch (error) {
         logError('Cloudflare Flux failed, trying SDXL:', error.message);
-        try {
-          if (progress) progress.updateBar(requestId, 35, 'Processing', 'Trying Cloudflare SDXL...');
-          bufferAndMaturity = await callCloudflareSDXL(prompt, safeParams);
-        } catch (sdxlError) {
-          logError('Cloudflare SDXL failed, falling back to ComfyUI:', sdxlError.message);
-          // Fall through to ComfyUI
-        }
+        // try {
+        //   if (progress) progress.updateBar(requestId, 35, 'Processing', 'Trying Cloudflare SDXL...');
+        //   bufferAndMaturity = await callCloudflareSDXL(prompt, safeParams);
+        // } catch (sdxlError) {
+        //   logError('Cloudflare SDXL failed, falling back to ComfyUI:', sdxlError.message);
+        //   // Fall through to ComfyUI
+        // }
       }
     }
     if (!bufferAndMaturity)

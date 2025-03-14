@@ -346,6 +346,12 @@ export const projects = {
       author: "Ayushman Bhattacharya",
     },
     {
+      name: "Elixpo-Art-Chrome-Extension",
+      url: "https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh",
+      description : "An easy GUI to select a text on the web and transform it into an image in one click with preferred style",
+      author : "Ayushman Bhattacharya"
+    },
+    {
       name: "Image Gen - Uncensored Edition",
       url: "https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2",
       description: "A powerful image generation assistant on HuggingChat.",
@@ -377,6 +383,13 @@ export const projects = {
     },
   ],
   socialBots: [
+    {
+      name: "Jackey",
+      url: "https://discord.com/oauth2/authorize?client_id=1214916249222643752",
+      description: "A Discord Bot that integrates with the pollination image generation api to generate images in various themes, numbers, ratios and models",
+      author: "@elixpo.asm",
+      submissionDate: "2025-03-15"
+    },
     {
       name: "🆕 Gacha",
       url: "https://shapes.inc/gacha-gachu/public",

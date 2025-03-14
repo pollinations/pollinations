@@ -115,6 +115,13 @@ export const projects = {
   ],
   creativeApps: [
     {
+      name: "🆕 StoryMagic: Interactive Kids Stories",
+      url: "https://storyai-wizard.vercel.app",
+      description: "An interactive web application designed to create engaging and customizable stories for children. Users can generate creative narratives with personalized settings, characters, and themes. The project leverages AI to enhance storytelling with text generation, dynamic visuals, and interactive features.",
+      author: "@_dr_misterio_",
+      submissionDate: "2025-03-14",
+    },
+    {
       name: "🆕 PromptPix (Android)",
       url: "https://expo.dev/accounts/aminmusah/projects/image-generator/builds/ed32c5d0-83c0-416b-889f-e36b997dd706",
       description: "An AI-powered image generation platform for Android designed to create stunning visuals from text prompts. Features dynamic image generation as users scroll, save to gallery, favorites, and a user-friendly interface.",

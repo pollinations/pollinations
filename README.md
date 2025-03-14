@@ -200,6 +200,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 StoryMagic: Interactive Kids Stories | An interactive web application designed to create engaging and customizable stories for children. Features AI-powered story generation, customizable themes, interactive elements, visual customization, web search integration, and a user-friendly interface | @_dr_misterio_ | [Website](https://storyai-wizard.vercel.app) |
 | 🆕 PromptPix (Android) | An AI-powered image generation platform for Android designed to create stunning visuals from text prompts. Features dynamic image generation as users scroll, save to gallery, favorites, and a user-friendly interface | @taylorsnupe | [Expo](https://expo.dev/accounts/aminmusah/projects/image-generator/builds/ed32c5d0-83c0-416b-889f-e36b997dd706), [GitHub](https://github.com/AminMusah/ai-image-generator) |
 | 🆕 AI儿童故事 🇨🇳 | 基于此项目 构建有趣的孩子故事书应用演示 (Based on this project, build an interesting children's storybook application demo) | MZ | [Website](https://kidss.netlify.app/) |
 | 🆕 Herramientas IA | Tools designed with Pollinations.AI and the DescartesJS editor, including tools from other Pollinations.AI community members | @juanrivera126 | [Website](https://proyectodescartes.org/descartescms/herramientas-ia) |

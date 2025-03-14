@@ -122,6 +122,13 @@ export const projects = {
       submissionDate: "2025-03-14",
     },
     {
+      name: "🆕 roastmyselfie.app",
+      url: "https://roastmyselfie.app",
+      description: "AI Personality Analyzer - Get roasted and psychoanalyzed.. just from one selfie! Dare to try?",
+      author: "@andres_11",
+      submissionDate: "2025-03-14",
+    },
+    {
       name: "🆕 StoryMagic: Interactive Kids Stories",
       url: "https://storyai-wizard.vercel.app",
       description: "An interactive web application designed to create engaging and customizable stories for children. Users can generate creative narratives with personalized settings, characters, and themes. The project leverages AI to enhance storytelling with text generation, dynamic visuals, and interactive features.",

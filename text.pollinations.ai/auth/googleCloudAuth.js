@@ -1,52 +1,48 @@
 import fetch from 'node-fetch';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import fs from 'fs/promises';
-import path from 'path';
+import debug from 'debug';
 
-const execAsync = promisify(exec);
-
-const log = console.log;
-const errorLog = console.error;
+const log = debug('pollinations:google-auth');
+const errorLog = debug('pollinations:google-auth:error');
 
 // Global variable to store the Google Cloud access token
 let gcloudAccessToken = '';
 let tokenExpiration = null;
 
 /**
- * Refreshes the Google Cloud access token using Application Default Credentials (ADC)
- * This supports multiple authentication methods:
- * 1. Attached service accounts (when running on Google Cloud)
- * 2. User credentials with service account impersonation
- * 3. Workload Identity Federation
- * 4. Service account keys (if allowed by organization policy)
- * 
+ * Refreshes the Google Cloud access token using a service account key file
  * @returns {Promise<string>} A promise that resolves to the access token
  */
 export async function refreshGcloudAccessToken() {
     try {
-        // First try to use the Google Cloud metadata server (works when running on Google Cloud)
-        const token = await tryMetadataServerAuth();
-        if (token) {
-            log('Successfully authenticated using the metadata server (attached service account)');
-            return token;
+        // Get the path to the service account key file
+        const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+        log('GOOGLE_APPLICATION_CREDENTIALS path:', credentialsPath);
+        
+        if (!credentialsPath) {
+            throw new Error('GOOGLE_APPLICATION_CREDENTIALS environment variable not set');
         }
 
-        // If not on Google Cloud, try Application Default Credentials
-        const adcToken = await tryApplicationDefaultCredentials();
-        if (adcToken) {
-            log('Successfully authenticated using Application Default Credentials');
-            return adcToken;
-        }
-
-        // Fallback to gcloud CLI as a last resort (requires manual login)
-        const gcloudToken = await tryGcloudCLI();
-        if (gcloudToken) {
-            log('Successfully authenticated using gcloud CLI');
-            return gcloudToken;
-        }
-
-        throw new Error('All authentication methods failed');
+        // Read and parse the service account key file
+        log('Reading service account key file...');
+        const keyFileContent = await fs.readFile(credentialsPath, 'utf8');
+        const keyData = JSON.parse(keyFileContent);
+        log('Service account key file loaded successfully');
+        log('Project ID:', keyData.project_id);
+        log('Client email:', keyData.client_email);
+        
+        // Generate a JWT token
+        log('Generating JWT token...');
+        const token = await generateJwtToken(keyData);
+        log('JWT token generated successfully');
+        
+        // Exchange the JWT token for an access token
+        log('Exchanging JWT for access token...');
+        const accessToken = await exchangeJwtForAccessToken(token);
+        log('Access token received successfully');
+        
+        log('Successfully authenticated using service account key');
+        return accessToken;
     } catch (error) {
         errorLog('Error refreshing Google Cloud access token:', error);
         throw error;
@@ -54,79 +50,87 @@ export async function refreshGcloudAccessToken() {
 }
 
 /**
- * Try to authenticate using the Google Cloud metadata server
- * This works when running on Google Cloud with an attached service account
+ * Generate a JWT token from service account credentials
+ * @param {Object} keyData - The parsed service account key data
+ * @returns {Promise<string>} - A promise that resolves to the JWT token
  */
-async function tryMetadataServerAuth() {
+async function generateJwtToken(keyData) {
     try {
-        const response = await fetch(
-            'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token',
-            {
-                headers: {
-                    'Metadata-Flavor': 'Google'
-                },
-                timeout: 3000 // Short timeout to quickly fall back if not on Google Cloud
-            }
-        );
-
-        if (response.ok) {
-            const data = await response.json();
-            return data.access_token;
-        }
-        return null;
-    } catch (error) {
-        log('Not running on Google Cloud or metadata server not accessible');
-        return null;
-    }
-}
-
-/**
- * Try to authenticate using Application Default Credentials
- * This works with user credentials, service account impersonation, and workload identity federation
- */
-async function tryApplicationDefaultCredentials() {
-    try {
-        // The Google Auth library automatically detects and uses ADC
-        // This is a simplified implementation that calls the tokeninfo endpoint
-        // In a production environment, you should use the official Google Auth library
+        // Import the jsonwebtoken library
+        log('Importing jsonwebtoken library...');
+        const jwt = (await import('jsonwebtoken')).default;
         
-        // Check if GOOGLE_APPLICATION_CREDENTIALS is set (for service account impersonation or workload identity)
-        const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-        if (!credentialsPath) {
-            log('GOOGLE_APPLICATION_CREDENTIALS environment variable not set');
-            return null;
-        }
-
-        // For demonstration purposes, we're checking if the file exists
-        // In a real implementation, you would use the Google Auth library
-        try {
-            await fs.access(credentialsPath);
-            log(`ADC credentials file found at ${credentialsPath}`);
-            
-            // In a real implementation, you would use the Google Auth library to get a token
-            // For now, we'll fall back to the gcloud CLI
-            return null;
-        } catch (error) {
-            log(`ADC credentials file not found at ${credentialsPath}`);
-            return null;
-        }
+        // Create the JWT header
+        const header = {
+            alg: 'RS256',
+            typ: 'JWT',
+            kid: keyData.private_key_id
+        };
+        log('JWT header created:', JSON.stringify(header));
+        
+        // Current time in seconds
+        const now = Math.floor(Date.now() / 1000);
+        
+        // Create the JWT payload
+        const payload = {
+            iss: keyData.client_email,
+            sub: keyData.client_email,
+            aud: 'https://oauth2.googleapis.com/token',
+            iat: now,
+            exp: now + 3600, // Token expires in 1 hour
+            scope: 'https://www.googleapis.com/auth/cloud-platform'
+        };
+        log('JWT payload created:', JSON.stringify(payload));
+        
+        // Sign the JWT with the private key
+        log('Signing JWT with private key...');
+        const signedJwt = jwt.sign(payload, keyData.private_key, { 
+            header: header,
+            algorithm: 'RS256'
+        });
+        log('JWT signed successfully');
+        
+        return signedJwt;
     } catch (error) {
-        log('Error using Application Default Credentials:', error.message);
-        return null;
+        log('Error generating JWT token:', error.message);
+        throw error;
     }
 }
 
 /**
- * Try to authenticate using the gcloud CLI
- * This requires manual login but works in development environments
+ * Exchange a JWT token for a Google Cloud access token
+ * @param {string} jwt - The JWT token
+ * @returns {Promise<string>} - A promise that resolves to the access token
  */
-async function tryGcloudCLI() {
+async function exchangeJwtForAccessToken(jwt) {
     try {
-        const { stdout } = await execAsync('gcloud auth print-access-token');
-        return stdout.trim();
+        // Make a request to the Google OAuth token endpoint
+        log('Making request to Google OAuth token endpoint...');
+        const response = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+                grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                assertion: jwt
+            })
+        });
+        
+        log('Response status:', response.status, response.statusText);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            log('Error response body:', errorText);
+            throw new Error(`Failed to exchange JWT for access token: ${response.status} ${response.statusText} - ${errorText}`);
+        }
+        
+        const data = await response.json();
+        log('Token response received with expires_in:', data.expires_in);
+        return data.access_token;
     } catch (error) {
-        log('Error using gcloud CLI:', error.message);
-        return null;
+        log('Error exchanging JWT for access token:', error.message);
+        throw error;
     }
 }
 
@@ -135,9 +139,15 @@ async function tryGcloudCLI() {
  * @returns {Promise<string>} The current access token
  */
 export async function getGcloudAccessToken() {
-    // Check if token is expired or not set
+    // If we don't have a token or it's expired, refresh it
     if (!gcloudAccessToken || !tokenExpiration || Date.now() >= tokenExpiration) {
-        return refreshGcloudAccessToken();
+        log('Token missing or expired, refreshing...');
+        gcloudAccessToken = await refreshGcloudAccessToken();
+        // Set expiration to 50 minutes from now (tokens typically last 60 minutes)
+        tokenExpiration = Date.now() + 50 * 60 * 1000;
+        log('Token refreshed, expires at:', new Date(tokenExpiration).toISOString());
+    } else {
+        log('Using existing token, expires at:', new Date(tokenExpiration).toISOString());
     }
     return gcloudAccessToken;
 }
@@ -147,27 +157,27 @@ export async function getGcloudAccessToken() {
  * Sets up a timer to refresh the token periodically
  */
 export function initGoogleCloudAuth() {
-    // Initial token refresh
-    refreshGcloudAccessToken().catch(err => {
-        errorLog('Initial token refresh failed:', err);
+    log('Initializing Google Cloud authentication...');
+    log('Environment variables:');
+    log('- GOOGLE_APPLICATION_CREDENTIALS:', process.env.GOOGLE_APPLICATION_CREDENTIALS);
+    log('- GCLOUD_PROJECT_ID:', process.env.GCLOUD_PROJECT_ID);
+    
+    // Refresh the token immediately
+    getGcloudAccessToken().catch(error => {
+        errorLog('Failed to initialize Google Cloud authentication:', error);
     });
-    
-    // Set up a timer to refresh the token every 50 minutes (3000000 ms)
-    // Service account tokens typically last 60 minutes, so refresh before expiration
-    const refreshInterval = setInterval(async () => {
-        try {
-            await refreshGcloudAccessToken();
-        } catch (err) {
-            errorLog('Scheduled token refresh failed:', err);
-        }
-    }, 3000000);
-    
-    log('Google Cloud authentication initialized with refresh interval of 50 minutes');
-    
+
+    // Set up a timer to refresh the token every 50 minutes
+    setInterval(() => {
+        log('Refreshing Google Cloud access token');
+        getGcloudAccessToken().catch(error => {
+            errorLog('Failed to refresh Google Cloud access token:', error);
+        });
+    }, 50 * 60 * 1000);
+
+    // Return the getGcloudAccessToken function for convenience
     return {
-        getToken: getGcloudAccessToken,
-        refreshToken: refreshGcloudAccessToken,
-        refreshInterval
+        getAccessToken: getGcloudAccessToken
     };
 }
 

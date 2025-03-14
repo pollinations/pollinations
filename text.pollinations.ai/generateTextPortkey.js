@@ -324,7 +324,7 @@ export const portkeyConfig = {
     // Google Vertex AI model configurations
     'gemini-2.0-flash-lite-preview-02-05': () => ({
         provider: 'vertex-ai',
-        authKey: googleCloudAuth.getToken, // Use the refreshable token
+        authKey: googleCloudAuth.getAccessToken, // Fix: use getAccessToken instead of getToken
         'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
         'vertex-region': 'us-central1',
         'vertex-model-id': 'gemini-2.0-flash-lite-preview-02-05',
@@ -332,7 +332,7 @@ export const portkeyConfig = {
     }),
     'gemini-2.0-flash-thinking-exp-01-21': () => ({
         provider: 'vertex-ai',
-        authKey: googleCloudAuth.getToken, // Use the refreshable token
+        authKey: googleCloudAuth.getAccessToken, // Fix: use getAccessToken instead of getToken
         'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
         'vertex-region': 'us-central1',
         'strict-openai-compliance': 'false'

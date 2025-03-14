@@ -290,7 +290,7 @@ export const availableModels = [
         description: 'OpenAI GPT-4o-audio-preview',
         baseModel: true,
         audio: true,
-        voices: ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer', 'coral', 'verse', 'ballad', 'ash', 'sage', 'amuch', 'aster', 'brook', 'clover', 'dan', 'elan', 'marilyn', 'meadow'],
+        voices: ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer', 'coral', 'verse', 'ballad', 'ash', 'sage', 'amuch', 'dan'],
         handler: generateTextPortkey
     }
 ];

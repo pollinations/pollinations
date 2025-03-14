@@ -1,13 +1,14 @@
 import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { z } from "zod";
 import { MODELS } from "./models.js";
 import { createAndReturnImageCached } from "./createAndReturnImages.js";
 import { makeParamsSafe } from "./makeParamsSafe.js";
 import debug from 'debug';
+import crypto from 'crypto';
 
 const logError = debug('pollinations:mcp:error');
 const logApi = debug('pollinations:api');
-
 // Create MCP server instance with detailed metadata
 const mcpServer = new McpServer({
   name: "Pollinations Image Generator",
@@ -169,22 +170,67 @@ mcpServer.prompt(
   }
 );
 
-/**
- * Handle Server-Sent Events (SSE) connection for MCP
- * @param {import('http').IncomingMessage} req - The request object
- * @param {import('http').ServerResponse} res - The response object
- */
+// Minimal dummy implementation of MCP server endpoints
 export const handleMcpSSE = (req, res) => {
-  logApi('MCP SSE connection established');
-  mcpServer.handleSSE(req, res);
+  console.log(`MCP SSE connection received - URL: ${req.url}`);
+  
+  // Set headers for SSE
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*'
+  });
+  
+  // Generate a session ID for the client to use
+  const sessionId = crypto.randomUUID();
+  
+  // Send the endpoint event with the message endpoint URL
+  res.write(`event: endpoint\n`);
+  res.write(`data: /mcp/messages?sessionId=${sessionId}\n\n`);
+  
+  // Send a dummy event to keep the connection alive
+  res.write(`event: message\n`);
+  res.write(`data: {"jsonrpc":"2.0","method":"notification","params":{"type":"status","status":"connected"}}\n\n`);
+  
+  // Handle connection close
+  req.on('close', () => {
+    console.log('SSE connection closed');
+  });
 };
 
-/**
- * Handle MCP message
- * @param {Object} message - The MCP message object
- * @param {import('http').ServerResponse} res - The response object
- */
-export const handleMcpMessage = (message, res) => {
-  logApi('MCP message received:', message.type);
-  mcpServer.handleMessage(message, res);
+// Handle MCP messages
+export const handleMcpMessage = (req, res) => {
+  let body = '';
+  req.on('data', (chunk) => {
+    body += chunk.toString();
+  });
+  
+  req.on('end', () => {
+    try {
+      const message = JSON.parse(body);
+      console.log('Received MCP message:', message);
+      
+      // Set CORS headers
+      res.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      });
+      
+      // For now, just acknowledge the message
+      res.end('Accepted');
+      
+      // In the future, we can add proper handling for different message types
+      // if (message.method === 'tool' && message.params.name === 'generate-image') {
+      //   // Handle image generation request
+      // }
+    } catch (e) {
+      console.error('Error parsing MCP message:', e);
+      res.writeHead(400, {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(JSON.stringify({ error: 'Invalid JSON' }));
+    }
+  });
 };

@@ -61,12 +61,17 @@ const setCORSHeaders = (res) => {
  * @returns {Promise<Object|boolean>}
  */
 const preMiddleware = async function (pathname, req, res) {
-  logApi("requestListener", req.url);
+  logApi("requestListener", pathname);
 
   if (pathname.startsWith("/feed")) {
     registerFeedListener(req, res);
     sendToAnalytics(req, "feedRequested", {});
     return false;
+  }
+
+  // Allow MCP endpoints to bypass the prompt check
+  if (pathname.startsWith("/mcp")) {
+    return true;
   }
 
   if (!pathname.startsWith("/prompt")) {
@@ -359,27 +364,36 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Handle MCP endpoints
+  // MCP (Model Context Protocol) endpoint handlers
   if (pathname === '/mcp/sse') {
+    debug('MCP SSE endpoint hit');
     handleMcpSSE(req, res);
     return;
   }
 
   if (pathname === '/mcp/messages') {
-    let body = '';
-    req.on('data', chunk => {
-      body += chunk.toString();
-    });
-    req.on('end', () => {
-      try {
-        const message = JSON.parse(body);
-        handleMcpMessage(message, res);
-      } catch (error) {
-        logError('Failed to parse MCP message:', error);
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Invalid JSON message' }));
-      }
-    });
+    if (req.method === 'OPTIONS') {
+      res.writeHead(200, {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '86400', // 24 hours
+      });
+      res.end();
+      return;
+    }
+
+    if (req.method === 'POST') {
+      debug('MCP messages endpoint hit');
+      handleMcpMessage(req, res);
+      return;
+    }
+
+    res.writeHead(405, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      error: 'Method Not Allowed',
+      message: 'Only POST requests are allowed for this endpoint',
+    }));
     return;
   }
 

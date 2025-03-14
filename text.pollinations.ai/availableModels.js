@@ -2,6 +2,7 @@
 import { generateDeepseek } from './generateDeepseek.js';
 import { generateTextSearch } from './generateTextSearch.js';
 import { generateTextPortkey } from './generateTextPortkey.js';
+import { generateTextPixtral } from './generateTextPixtral.js';
 import wrapModelWithContext from './wrapModelWithContext.js';
 import wrapModelWithDonationMessage from './modelDonationWrapper.js';
 
@@ -56,7 +57,7 @@ export const availableModels = [
         description: 'OpenAI o3-mini',
         baseModel: true,
         reasoning: true,
-        vision: true,
+        // vision: true,
         handler: generateTextPortkey  
     },
     {
@@ -196,6 +197,35 @@ export const availableModels = [
         handler: generateTextPortkey
     },
     {
+        name: 'phi',
+        type: 'chat',
+        censored: true,
+        description: 'Phi-4 Instruct',
+        baseModel: true,
+        provider: 'cloudflare',
+        handler: generateTextPortkey
+    },
+    {
+        name: 'llama-vision',
+        type: 'chat',
+        censored: false,
+        description: 'Llama 3.2 11B Vision',
+        baseModel: true,
+        provider: 'cloudflare',
+        vision: true,
+        handler: generateTextPortkey
+    },
+    {
+        name: 'pixtral',
+        type: 'chat',
+        censored: false,
+        description: 'Pixtral 12B',
+        baseModel: true,
+        provider: 'scaleway',
+        vision: true,
+        handler: generateTextPixtral
+    },
+    {
         name: 'gemini',
         type: 'chat',
         censored: true,
@@ -253,23 +283,6 @@ export const availableModels = [
         baseModel: true,
         handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'llama-scaleway'})
     },
-    {
-        name: 'phi',
-        type: 'chat',
-        censored: true,
-        description: 'Phi-4 Multimodal Instruct',
-        baseModel: true,
-        handler: generateTextPortkey
-    },
-    // {
-    //     model: 'openai-audio',
-    //     type: 'chat',
-    //     censored: true,
-    //     description: 'OpenAI GPT-4o-mini-audio',
-    //     baseModel: true,
-    //     audio: true,
-    //     handler: generateTextPortkey
-    // },
     {
         name: 'openai-audio',
         type: 'chat',

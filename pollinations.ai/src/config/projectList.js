@@ -457,6 +457,14 @@ export const projects = {
   ],
   sdkLibraries: [
     {
+      name: "🆕 Node.js Client Library",
+      url: "https://www.npmjs.com/package/pollinationsai",
+      description: "A TypeScript/Node.js client for accessing Pollinations AI services including image generation, text processing, and speech synthesis. Features full TypeScript typings, dual CJS/ESM module support, 100% test coverage and feed/streams support, builder pattern API and axios-based HTTP client implementation.",
+      author: "@fqueis",
+      repo: "https://github.com/fqueis/pollinationsai",
+      submissionDate: "2025-03-14",
+    },
+    {
       name: "🆕 ComfyUI-Pollinations",
       url: "https://github.com/1038lab/ComfyUI-Pollinations",
       description: "A custom node for ComfyUI that utilizes the Pollinations API to generate images and text based on user prompts, supporting multiple image and text generation models.",

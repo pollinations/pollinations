@@ -115,6 +115,13 @@ export const projects = {
   ],
   creativeApps: [
     {
+      name: "🆕 RoastMaster AI",
+      url: "https://roastmaster-ai.vercel.app/",
+      description: "An AI-powered roast generator that allows users to upload selfies for savage AI-generated roasts, enter text for brutal critiques, or engage in roast battles. Images are processed securely on the device, protecting user privacy.",
+      author: "@sugamdeol",
+      submissionDate: "2025-03-14",
+    },
+    {
       name: "🆕 StoryMagic: Interactive Kids Stories",
       url: "https://storyai-wizard.vercel.app",
       description: "An interactive web application designed to create engaging and customizable stories for children. Users can generate creative narratives with personalized settings, characters, and themes. The project leverages AI to enhance storytelling with text generation, dynamic visuals, and interactive features.",

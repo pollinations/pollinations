@@ -27,12 +27,14 @@ const MODEL_MAPPING = {
     'deepseek-r1': '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
     'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
     'phi': 'phi-4-instruct',
+    'llama-vision': '@cf/meta/llama-3.2-11b-vision-instruct',
     // Scaleway models
     'qwen-coder': 'qwen2.5-coder-32b-instruct',
     'mistral': 'mistral/mistral-small-24b-instruct-2501:fp8',  // Updated to use the new Mistral model
     'llama-scaleway': 'llama-3.3-70b-instruct',
     'llamalight-scaleway': 'llama-3.1-8b-instruct',
     'deepseek-r1-llama': 'deepseek-r1-distill-llama-70b',
+    'pixtral': 'pixtral-12b-2409',  // Pixtral model using Scaleway
     // Modal models
     'hormoz': 'Hormoz-8B',
     // OpenRouter models
@@ -54,6 +56,7 @@ const SYSTEM_PROMPTS = {
     'deepseek-r1': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
     'llamaguard': 'You are a content moderation assistant. Your task is to analyze the input and identify any harmful, unsafe, or inappropriate content.',
     'phi': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
+    'llama-vision': unrestrictedPrompt,
     // Scaleway models
     'mistral': unrestrictedPrompt,
     'llama-scaleway': unrestrictedPrompt,
@@ -61,6 +64,7 @@ const SYSTEM_PROMPTS = {
     'qwen-coder': `You are an expert coding assistant with deep knowledge of programming languages, software architecture, and best practices. Your purpose is to help users write high-quality, efficient, and maintainable code. You provide clear explanations, suggest improvements, and help debug issues while following industry best practices.`,
     'gemini-thinking': 'You are Gemini, a helpful and versatile AI assistant built by Google. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone. When appropriate, show your reasoning step by step.',
     'deepseek-r1-distill-llama-70b': unrestrictedPrompt,
+    'pixtral': unrestrictedPrompt,  // Pixtral model with unrestricted prompt
     // Modal models
     'hormoz': 'You are Hormoz, a helpful AI assistant created by Muhammadreza Haghiri. You provide accurate and thoughtful responses.',
     // OpenRouter models
@@ -102,6 +106,15 @@ const baseScalewayConfig = {
     'custom-host': `${process.env.SCALEWAY_BASE_URL || 'https://api.scaleway.com/ai-apis/v1'}`,
     authKey: process.env.SCALEWAY_API_KEY,
     // Set default max_tokens to 8192 (increased from default)
+    'max-tokens': 8192,
+};
+
+// Base configuration for Pixtral Scaleway model
+const basePixtralConfig = {
+    provider: 'openai',
+    'custom-host': process.env.SCALEWAY_PIXTRAL_BASE_URL,
+    authKey: process.env.SCALEWAY_PIXTRAL_API_KEY,
+    // Set default max_tokens to 8192
     'max-tokens': 8192,
 };
 
@@ -200,6 +213,18 @@ function createScalewayModelConfig(additionalConfig = {}) {
 }
 
 /**
+ * Creates a Pixtral model configuration
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - Pixtral model configuration
+ */
+function createPixtralModelConfig(additionalConfig = {}) {
+    return {
+        ...basePixtralConfig,
+        ...additionalConfig
+    };
+}
+
+/**
  * Creates a Mistral model configuration
  * @param {Object} additionalConfig - Additional configuration to merge with base config
  * @returns {Object} - Mistral model configuration
@@ -280,12 +305,13 @@ export const portkeyConfig = {
         'custom-host': process.env.OPENAI_PHI4_ENDPOINT,
         authKey: process.env.OPENAI_PHI4_API_KEY
     }),
+    '@cf/meta/llama-3.2-11b-vision-instruct': () => createCloudflareModelConfig(),
     // Scaleway model configurations
     'qwen2.5-coder-32b-instruct': () => createScalewayModelConfig(),
-    'mistral-nemo-instruct-2407': () => createScalewayModelConfig(),
     'llama-3.3-70b-instruct': () => createScalewayModelConfig(),
     'llama-3.1-8b-instruct': () => createScalewayModelConfig(),
     'deepseek-r1-distill-llama-70b': () => createScalewayModelConfig(),
+    'pixtral-12b-2409': () => createPixtralModelConfig(),
     // Mistral model configuration
     'mistral/mistral-small-24b-instruct-2501:fp8': () => createMistralModelConfig(),
     // Modal model configurations
@@ -313,6 +339,48 @@ export const portkeyConfig = {
     }),
 };
 
+// Function to handle Llama Vision license agreement
+async function agreeLlamaVisionLicense() {
+    try {
+        // Create a client to send the agreement message
+        const client = createOpenAICompatibleClient({
+            endpoint: () => process.env.PORTKEY_API_GATEWAY_URL || 'http://localhost:8000',
+            authHeaderName: 'Authorization',
+            authHeaderValue: () => `Bearer ${process.env.PORTKEY_API_KEY || 'dummy-key'}`,
+            additionalHeaders: {},
+            transformRequest: (requestBody) => {
+                return {
+                    ...requestBody,
+                    headers: {
+                        ...requestBody.headers,
+                        'x-portkey-provider': 'openai',
+                        'x-portkey-custom-host': `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
+                        'x-portkey-auth-key': process.env.CLOUDFLARE_AUTH_TOKEN
+                    }
+                };
+            }
+        });
+
+        // Send the agreement message
+        await client([{ role: 'user', content: 'agree' }], {
+            model: '@cf/meta/llama-3.2-11b-vision-instruct',
+            temperature: 0.7,
+            max_tokens: 10
+        });
+        
+        log('Successfully agreed to Llama Vision license terms');
+        return true;
+    } catch (error) {
+        errorLog('Failed to agree to Llama Vision license terms:', error);
+        return false;
+    }
+}
+
+// Try to agree to the license terms on startup
+agreeLlamaVisionLicense().catch(err => {
+    errorLog('Error during Llama Vision license agreement:', err);
+});
+
 /**
  * Log configuration for a specific provider
  * @param {string} providerName - Name of the provider
@@ -320,86 +388,12 @@ export const portkeyConfig = {
  * @param {Function} sanitizeFn - Optional function to sanitize sensitive data
  */
 function logProviderConfig(providerName, filterFn, sanitizeFn = config => config) {
-    log(`${providerName} configuration:`);
     const models = Object.entries(portkeyConfig).filter(filterFn);
-    for (const [model, configFn] of models) {
-        const config = configFn(); // Call the function to get the actual config
-        log(`Model ${model}:`, JSON.stringify(sanitizeFn(config), null, 2));
+    if (models.length > 0) {
+        const example = sanitizeFn(models[0][1]());
+        log(`${providerName} configuration example:`, JSON.stringify(example, null, 2));
+        log(`${providerName} models:`, models.map(([name]) => name).join(', '));
     }
-}
-
-// Log Azure configuration
-logProviderConfig(
-    'Azure', 
-    ([_, configFn]) => configFn().provider === 'azure-openai'
-);
-
-// Log Cloudflare configuration
-logProviderConfig(
-    'Cloudflare', 
-    ([_, configFn]) => configFn().provider === 'openai' && configFn()['custom-host']?.includes('cloudflare'),
-    config => ({
-        ...config,
-        authKey: config.authKey ? '***' : undefined
-    })
-);
-
-// Log Scaleway configuration
-logProviderConfig(
-    'Scaleway',
-    ([_, config]) => config.provider === 'openai' && config['custom-host']?.includes('scaleway'),
-    config => ({
-        ...config,
-        authKey: config.authKey ? '***' : undefined
-    })
-);
-
-// Log Modal configuration
-logProviderConfig(
-    'Modal',
-    ([_, config]) => config.provider === 'openai' && config['custom-host']?.includes('modal.run'),
-    config => ({
-        ...config,
-        authKey: config.authKey ? '***' : undefined
-    })
-);
-
-// Log OpenRouter configuration
-logProviderConfig(
-    'OpenRouter',
-    ([_, config]) => config.provider === 'openai' && config['custom-host']?.includes('openrouter.ai'),
-    config => ({
-        ...config,
-        authKey: config.authKey ? '***' : undefined
-    })
-);
-
-// Log Vertex AI configuration
-logProviderConfig(
-    'Vertex AI',
-    ([_, config]) => config['vertex-project-id'],
-    config => ({
-        ...config,
-        authKey: config.authKey ? '***' : undefined,
-        'vertex-project-id': config['vertex-project-id'] ? '***' : undefined
-    })
-);
-
-function countMessageCharacters(messages) {
-    return messages.reduce((total, message) => {
-        if (typeof message.content === 'string') {
-            return total + message.content.length;
-        }
-        if (Array.isArray(message.content)) {
-            return total + message.content.reduce((sum, part) => {
-                if (part.type === 'text') {
-                    return sum + part.text.length;
-                }
-                return sum;
-            }, 0);
-        }
-        return total;
-    }, 0);
 }
 
 /**
@@ -431,6 +425,14 @@ export const generateTextPortkey = createOpenAICompatibleClient({
         try {
             // Get the model name from the request (already mapped by genericOpenAIClient)
             const modelName = requestBody.model; // This is already mapped by genericOpenAIClient
+
+            // Special handling for Llama Vision model
+            if (modelName === '@cf/meta/llama-3.2-11b-vision-instruct') {
+                // Try to agree to license terms first
+                agreeLlamaVisionLicense().catch(err => {
+                    errorLog('Error during Llama Vision license agreement:', err);
+                });
+            }
 
             // Check character limit
             const MAX_CHARS = 512000;
@@ -496,3 +498,87 @@ export const generateTextPortkey = createOpenAICompatibleClient({
     defaultOptions: DEFAULT_OPTIONS,
     providerName: 'Portkey Gateway'
 });
+
+// Log Azure configuration
+logProviderConfig(
+    'Azure', 
+    ([_, configFn]) => configFn().provider === 'azure-openai'
+);
+
+// Log Cloudflare configuration
+logProviderConfig(
+    'Cloudflare', 
+    ([_, configFn]) => configFn().provider === 'openai' && configFn()['custom-host']?.includes('cloudflare'),
+    config => ({
+        ...config,
+        authKey: config.authKey ? '***' : undefined
+    })
+);
+
+// Log Scaleway configuration
+logProviderConfig(
+    'Scaleway',
+    ([_, configFn]) => configFn().provider === 'openai' && configFn()['custom-host']?.includes('scaleway'),
+    config => ({
+        ...config,
+        authKey: config.authKey ? '***' : undefined
+    })
+);
+
+// Log Pixtral configuration
+logProviderConfig(
+    'Pixtral',
+    ([name, _]) => name === 'pixtral-12b-2409',
+    config => ({
+        ...config,
+        authKey: config.authKey ? '***' : undefined
+    })
+);
+
+// Log Modal configuration
+logProviderConfig(
+    'Modal',
+    ([_, config]) => config.provider === 'openai' && config['custom-host']?.includes('modal.run'),
+    config => ({
+        ...config,
+        authKey: config.authKey ? '***' : undefined
+    })
+);
+
+// Log OpenRouter configuration
+logProviderConfig(
+    'OpenRouter',
+    ([_, config]) => config.provider === 'openai' && config['custom-host']?.includes('openrouter.ai'),
+    config => ({
+        ...config,
+        authKey: config.authKey ? '***' : undefined
+    })
+);
+
+// Log Vertex AI configuration
+logProviderConfig(
+    'Vertex AI',
+    ([_, config]) => config['vertex-project-id'],
+    config => ({
+        ...config,
+        authKey: config.authKey ? '***' : undefined,
+        'vertex-project-id': config['vertex-project-id'] ? '***' : undefined
+    })
+);
+
+function countMessageCharacters(messages) {
+    return messages.reduce((total, message) => {
+        if (typeof message.content === 'string') {
+            return total + message.content.length;
+        }
+        if (Array.isArray(message.content)) {
+            return total + message.content.reduce((sum, part) => {
+                if (part.type === 'text') {
+                    return sum + part.text.length;
+                }
+                return sum;
+            }, 0);
+        }
+        return total;
+    }, 0);
+}

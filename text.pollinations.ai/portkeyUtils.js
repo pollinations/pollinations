@@ -1,6 +1,6 @@
-
 import debug from 'debug';
 const log = debug('pollinations:portkey-utils');
+const errorLog = debug('pollinations:portkey-utils:error');
 
 /**
  * Refreshes the Google Cloud access token by executing the gcloud CLI command
@@ -55,7 +55,7 @@ export
  * @param {Object} config - Model configuration object
  * @returns {Object} - Headers object with x-portkey prefixes
  */
-function generatePortkeyHeaders(config) {
+async function generatePortkeyHeaders(config) {
     if (!config) {
         errorLog('No configuration provided for header generation');
         throw new Error('No configuration provided for header generation');
@@ -72,12 +72,23 @@ function generatePortkeyHeaders(config) {
 
     // Add Authorization header if needed
     if (config.authKey) {
-        // Check if authKey is a function (for dynamic tokens)
-        if (typeof config.authKey === 'function') {
-            headers['Authorization'] = `Bearer ${config.authKey()}`;
-        } else {
-            // Regular string token
-            headers['Authorization'] = `Bearer ${config.authKey}`;
+        try {
+            // Check if authKey is a function (for dynamic tokens)
+            if (typeof config.authKey === 'function') {
+                // Check if the function returns a Promise (async function)
+                const token = config.authKey();
+                if (token instanceof Promise) {
+                    headers['Authorization'] = `Bearer ${await token}`;
+                } else {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+            } else {
+                // Regular string token
+                headers['Authorization'] = `Bearer ${config.authKey}`;
+            }
+        } catch (error) {
+            errorLog('Error getting auth token:', error);
+            throw error;
         }
     }
     

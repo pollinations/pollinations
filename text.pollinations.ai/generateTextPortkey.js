@@ -324,7 +324,7 @@ export const portkeyConfig = {
     // Google Vertex AI model configurations
     'gemini-2.0-flash-lite-preview-02-05': () => ({
         provider: 'vertex-ai',
-        authKey: googleCloudAuth.getToken, // Use the refreshable token
+        authKey: googleCloudAuth.getAccessToken, // Fix: use getAccessToken instead of getToken
         'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
         'vertex-region': 'us-central1',
         'vertex-model-id': 'gemini-2.0-flash-lite-preview-02-05',
@@ -332,7 +332,7 @@ export const portkeyConfig = {
     }),
     'gemini-2.0-flash-thinking-exp-01-21': () => ({
         provider: 'vertex-ai',
-        authKey: googleCloudAuth.getToken, // Use the refreshable token
+        authKey: googleCloudAuth.getAccessToken, // Fix: use getAccessToken instead of getToken
         'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
         'vertex-region': 'us-central1',
         'strict-openai-compliance': 'false'
@@ -421,7 +421,7 @@ export const generateTextPortkey = createOpenAICompatibleClient({
     },
     
     // Transform request to add Azure-specific headers based on the model
-    transformRequest: (requestBody) => {
+    transformRequest: async (requestBody) => {
         try {
             // Get the model name from the request (already mapped by genericOpenAIClient)
             const modelName = requestBody.model; // This is already mapped by genericOpenAIClient
@@ -454,8 +454,8 @@ export const generateTextPortkey = createOpenAICompatibleClient({
 
             log('Processing request for model:', modelName, 'with provider:', config.provider);
 
-            // Generate headers
-            const additionalHeaders = generatePortkeyHeaders(config);
+            // Generate headers (now async call)
+            const additionalHeaders = await generatePortkeyHeaders(config);
             log('Added provider-specific headers:', JSON.stringify(additionalHeaders, null, 2));
             
             // Set the headers as a property on the request object that will be used by genericOpenAIClient

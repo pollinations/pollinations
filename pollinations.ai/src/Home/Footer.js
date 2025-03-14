@@ -18,19 +18,15 @@ const Footer = () => {
     e.preventDefault()
     navigator.clipboard.writeText("hello@pollinations.ai").then(() => {})
     trackEvent({
-      action: "Email_Link_Click",
-      category: "User_Interactions",
-      label: "Footer_Email_Link",
-      value: 1,
+      action: 'click_email',
+      category: 'footer',
     })
   }
 
   const handleTermsLinkClick = () => {
     trackEvent({
-      action: "Terms_Link_Click",
-      category: "User_Interactions",
-      label: "Footer_Terms_Link",
-      value: 1,
+      action: 'click_terms',
+      category: 'footer',
     })
   }
 
@@ -64,7 +60,7 @@ const Footer = () => {
             </StyledLink>
           </Box>
           <Box>
-            <SocialLinks gap="1em" />
+            <SocialLinks gap="1em" location="footer" />
           </Box>
         </Grid>
         <Grid
@@ -79,13 +75,17 @@ const Footer = () => {
         >
           <Box height="100%" sx={{ fontSize: "1.5em", fontFamily: Fonts.title }}>
             <StyledLink to="/terms" onClick={handleTermsLinkClick}>
-              <LLMTextManipulator
-                text={FOOTER_TERMS_CONDITIONS_LINK}
-                transforms={[noLink]}
-              />
+              <LLMTextManipulator text={FOOTER_TERMS_CONDITIONS_LINK} transforms={[noLink]} />
             </StyledLink>
           </Box>
-          <Box sx={{ fontSize: "1.2em", fontFamily: Fonts.title }}>
+          <Box
+            sx={{
+              fontSize: "1.2em",
+              fontFamily: Fonts.title,
+              width: "100%",
+              textAlign: isXs ? "center" : "right",
+            }}
+          >
             <LLMTextManipulator text={FOOTER_INFO} transforms={[noLink]} />
           </Box>
         </Grid>

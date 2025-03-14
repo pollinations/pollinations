@@ -63,10 +63,10 @@ export function useFeedLoader(onNewImage, setLastImage) {
 }
 
 function estimateGeneratedImages() {
-  const launchDate = 1737974161902;
+  const launchDate = 1738974161902;
   const now = Date.now();
   const differenceInSeconds = (now - launchDate) / 1000;
-  const imagesGeneratedSinceLaunch = Math.round(differenceInSeconds * 12);
+  const imagesGeneratedSinceLaunch = Math.round(differenceInSeconds * 23.78); // ~100,000 images per hour
 
   const imagesGeneratedCalculated = 117772000 + imagesGeneratedSinceLaunch;
   return imagesGeneratedCalculated;

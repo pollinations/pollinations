@@ -16,7 +16,9 @@ When handling project submission issues:
      url: "https://project-url.com",
      description: "Brief description of the project.",
      author: "@discord_username", // if available or alternatively a URL to a social media profile
-     repo: "https://github.com/repo-url" // if available
+     repo: "https://github.com/repo-url", // if available
+     submissionDate: "YYYY-MM-DD", // automatically added for new submissions
+     language: "zh-CN" // for non-English projects, include the language code
    }
    ```
 
@@ -29,6 +31,12 @@ When handling project submission issues:
    - Tutorials
 
 4. Add appropriate UTF-8 icons to titles where relevant (🤖 for bots, 🎨 for creative apps, etc.)
+
+5. For projects in non-English languages:
+   - Add a country flag emoji to the project name (e.g., 🇨🇳 for Chinese, 🇪🇸 for Spanish)
+   - Include the "language" field in the project entry with the appropriate language code
+   - Add an English translation of the description in parentheses when possible
+   - This helps users easily identify and filter projects by language
 
 ## Repository Structure
 
@@ -102,6 +110,15 @@ Parameters: model, seed, json, system
    - Maintain backward compatibility
    - Update documentation
    - Add appropriate error handling
+
+4. API Documentation Guidelines:
+   - Keep documentation strictly technical and user-focused
+   - Avoid marketing language or promotional content
+   - Link to dynamic endpoints (like /models) rather than hardcoding lists that may change
+   - Don't include internal implementation details or environment variables
+   - Focus on endpoints, parameters, and response formats
+   - For new features, document both simplified endpoints and OpenAI-compatible endpoints
+   - Include minimal, clear code examples that demonstrate basic usage
 
 ## Important Context
 

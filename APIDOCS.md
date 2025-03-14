@@ -13,7 +13,7 @@ List Models: `GET https://image.pollinations.ai/models`
 ### Text Generation API (Default model: 'openai')
 
 Generate (GET): `GET https://text.pollinations.ai/{prompt}`
-- Params: prompt*, model, seed, json, system
+- Params: prompt*, model, seed, json, system, private
 - Return: Generated text
 
 Generate (POST): `POST https://text.pollinations.ai/`
@@ -24,12 +24,37 @@ OpenAI Compatible: `POST https://text.pollinations.ai/openai`
 - Body: Follows OpenAI ChatGPT API format
 - Return: OpenAI-style response
 
+### Audio Generation API
+
+Generate Audio: Use the `openai-audio` model
+- GET: `https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}`
+- POST Body: messages*, model (set to "openai-audio"), voice (optional)
+- Supported voices: See the list of available voices at `https://text.pollinations.ai/models` (default: "alloy")
+- Return: Audio file (MP3 format, Content-Type: audio/mpeg)
+
 List Models: `GET https://text.pollinations.ai/models`
 
-### Feed Endpoints
+## Feed Endpoints
+- Image Feed: GET https://image.pollinations.ai/feed (SSE stream of user-generated images).
+- Example:
+    data: {
+    "width":1024,
+    "height":1024,
+    "seed":42,
+    "model":"flux",
+    "imageURL":"https://image.pollinations.ai/prompt/gleaming%20face%20n2xuqsan%2020250205141310",
+    "prompt":"A radiant visage illuminated by soft, ethereal light",
+    ...
+    }
 
-- Image Feed: `GET https://image.pollinations.ai/feed` - SSE stream of user-generated images.
-- Text Feed: `GET https://text.pollinations.ai/feed` - SSE stream of user-generated text.
+- Text Feed: GET https://text.pollinations.ai/feed (SSE stream of user-generated text)
+- Example:
+    data: {
+    "response": "Cherry Blossom Pink represents the beautiful spring in Tachikawa",
+    "model": "openai",
+    "messages": [openai messages array],
+    ...
+    }
 
 *\* required parameter*
 
@@ -86,6 +111,7 @@ https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean
 - seed: Seed for reproducible results.
 - json: Set to 'true' to receive response in JSON format.
 - system: System prompt to set the behavior of the AI. Should be URL-encoded.
+- private: Set to 'true' to prevent the response from appearing in the public feed. Default: false
 
 **Return:** Generated text
 
@@ -101,14 +127,22 @@ https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean
   ],
   "model": "openai",
   "seed": 42,
-  "jsonMode": true  // Optional: Forces the response to be valid JSON
+  "jsonMode": true,  // Optional: Forces the response to be valid JSON
+  "private": true    // Optional: Prevents response from appearing in public feed
 }
 ```
 
 **Return:** Generated text
 
 #### Vision Capabilities
-Our OpenAI-compatible models (gpt-4o-mini, gpt-4o) support analyzing images through the same API. You can pass images either as URLs or base64-encoded data in the messages. See the [OpenAI Vision Guide](https://platform.openai.com/docs/guides/vision) for detailed documentation.
+The following models support analyzing images through our API:
+- `openai`
+- `openai-large`
+- `claude-hybridspace`
+
+You can pass images either as URLs or base64-encoded data in the messages. See the [OpenAI Vision Guide](https://platform.openai.com/docs/guides/vision) for detailed documentation on the message format.
+
+Note: While we offer other models like Gemini, they currently do not support multimodal (image) inputs.
 
 Example message format with image:
 ```json
@@ -127,9 +161,31 @@ Example message format with image:
       ]
     }
   ],
-  "model": "gpt-4o-mini"
+  "model": "openai"
 }
 ```
+
+#### Audio Capabilities
+
+##### Text-to-Speech
+The `openai-audio` model supports text-to-speech conversion. The simplest way to use it is with a GET request:
+
+```
+https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=nova
+```
+
+**Parameters:**
+- model: Must be set to "openai-audio"
+- voice: (Optional) Voice to use for audio generation
+  - Supported values: See the list of available voices at `https://text.pollinations.ai/models`
+  - Default: "alloy"
+
+**Return:** Audio file in MP3 format (Content-Type: audio/mpeg)
+
+##### Speech-to-Text
+Speech-to-text capabilities are also available through the `openai-audio` model.
+
+**Note:** Our audio features follow the OpenAI audio API specification. For more details and advanced usage, see the [OpenAI Audio Guide](https://platform.openai.com/docs/guides/audio).
 
 #### Example Usage (GET)
 
@@ -174,7 +230,7 @@ def analyze_image(image_url):
                 ]
             }
         ],
-        "model": "gpt-4o-mini"
+        "model": "openai"
     })
     return response.json()
 
@@ -209,6 +265,29 @@ async function generateText() {
 }
 
 generateText();
+```
+
+### JavaScript (Audio Generation)
+
+```javascript
+const fetch = require('node-fetch');
+const fs = require('fs');
+
+async function generateAudio() {
+  // Simple GET request for text-to-speech
+  const text = "Welcome to Pollinations, where creativity blooms!";
+  const voice = "nova"; // Optional voice parameter
+  const url = `https://text.pollinations.ai/${encodeURIComponent(text)}?model=openai-audio&voice=${voice}`;
+  
+  const response = await fetch(url);
+  
+  // Save the audio file
+  const buffer = await response.buffer();
+  fs.writeFileSync('generated_audio.mp3', buffer);
+  console.log('Audio generated and saved!');
+}
+
+generateAudio();
 ```
 
 ### HTML (Image Embedding)
@@ -332,10 +411,110 @@ const metadata = JSON.parse(result.content[1].text); // Generation metadata
 
 ## Integration Examples
 
-- Web Design: Use AI-generated images for dynamic content
-- E-learning: Generate custom illustrations for concepts
-- Chatbots: Enhance responses with relevant images
-- Social Media: Create engaging visual content on-the-fly
-- AI Systems: Integrate through the Model Context Protocol
+For examples and community projects, visit our [GitHub repository](https://github.com/pollinations/pollinations).
 
-For more examples and community projects, visit our [GitHub repository](https://github.com/pollinations/pollinations).
+## Advanced Features
+
+### Streaming Responses
+
+The Text Generation API supports streaming responses using Server-Sent Events (SSE). This allows you to receive the generated text as it's being produced, rather than waiting for the complete response.
+
+To use streaming:
+- Add `stream=true` to your request parameters
+- Process the SSE stream in your client code
+
+Example with fetch:
+```javascript
+const response = await fetch('https://text.pollinations.ai/', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    messages: [{ role: 'user', content: 'Write a story about a robot' }],
+    model: 'openai',
+    stream: true
+  })
+});
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  
+  const chunk = decoder.decode(value);
+  // Process the SSE chunk
+  console.log(chunk);
+}
+```
+
+### Function Calling
+
+Function calling capabilities are now available for models that support this feature. This allows models to call functions that you define, enabling them to:
+
+- Retrieve real-time information
+- Perform calculations
+- Take actions based on user input
+- Interact with external systems
+
+Our implementation follows the OpenAI API specification for function calling. When using compatible models through our `/openai` endpoint, you can define tools and receive structured function calls from the model.
+
+For complete documentation on how to use this feature, please refer to the [OpenAI Function Calling Guide](https://platform.openai.com/docs/guides/function-calling).
+
+Basic example:
+
+```javascript
+const response = await fetch('https://text.pollinations.ai/openai', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    model: "openai",
+    messages: [
+      { role: "user", content: "What's the weather like in Boston?" }
+    ],
+    tools: [
+      {
+        type: "function",
+        function: {
+          name: "get_current_weather",
+          description: "Get the current weather in a given location",
+          parameters: {
+            type: "object",
+            properties: {
+              location: {
+                type: "string",
+                description: "The city and state, e.g. San Francisco, CA"
+              },
+              unit: {
+                type: "string",
+                enum: ["celsius", "fahrenheit"]
+              }
+            },
+            required: ["location"]
+          }
+        }
+      }
+    ]
+  })
+});
+
+const data = await response.json();
+console.log(data);
+```
+
+## Technical Details
+
+### Response Formats
+
+- **Text Models**: 
+  - GET requests return plain text
+  - POST requests to the root path (/) return plain text
+  - POST requests to other endpoints (like /openai) return JSON in OpenAI format
+
+- **Audio Models**:
+  - When using the simplified endpoint (GET or POST to /), return binary audio data with Content-Type: audio/mpeg
+  - When using the OpenAI-compatible endpoint (/openai), follow the OpenAI API specification
+
+## Acknowledgements
+
+Special thanks to Reverand Dr. Tolerant for their invaluable contributions to the Pollinations community.

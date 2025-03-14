@@ -14,9 +14,8 @@ export default function News() {
   const handleAccordionChange = (event, isExpanded) => {
     if (isExpanded) {
       trackEvent({
-        action: "Accordion_Open",
-        category: "User_Interactions",
-        label: "News_Accordion_Open",
+        action: 'click_accordion',
+        category: 'news',
       })
     }
   }
@@ -64,7 +63,7 @@ export default function News() {
             color={Colors.offwhite}
             style={{ fontSize: "1.2em", fontFamily: Fonts.title }}
             textAlign="left"
-            maxWidth="1000px"
+            maxWidth="90%"
           >
             <LLMTextManipulator text={NEWS_LIST} transforms={[rephrase, emojify]} />
           </SectionHeadlineStyle>

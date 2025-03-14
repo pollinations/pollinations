@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect } from "react"
 import { Colors, Fonts, SectionBG } from "../config/global"
 import { GeneralButton } from "../components/GeneralButton"
 import {
@@ -20,10 +20,8 @@ const handleDiscordButtonClick = (e) => {
   e.preventDefault()
   // Track the click event
   trackEvent({
-    action: "Discord_Click",
-    category: "User_Interactions",
-    label: "Hero_Discord_Button",
-    value: 1,
+    action: 'click_discord',
+    category: 'hero',
   })
   window.open("https://discord.gg/k9F7SyTgqn", "_blank")
 }
@@ -32,10 +30,8 @@ const handleGithubButtonClick = (e) => {
   e.preventDefault()
   // Track the click event
   trackEvent({
-    action: "Github_Click",
-    category: "User_Interactions",
-    label: "Hero_Github_Button",
-    value: 1,
+    action: 'click_github',
+    category: 'hero',
   })
   window.open("https://github.com/pollinations/pollinations", "_blank")
 }
@@ -44,16 +40,38 @@ const handleEmailButtonClick = (e) => {
   e.preventDefault()
   // Track the click event
   trackEvent({
-    action: "Email_Click",
-    category: "User_Interactions",
-    label: "Hero_Email_Button",
-    value: 1,
+    action: 'click_email',
+    category: 'hero',
   })
 }
 
 const Hero = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
+  
+  useEffect(() => {
+    // Load Ko-fi widget script
+    const script = document.createElement('script');
+    script.src = 'https://storage.ko-fi.com/cdn/scripts/overlay-widget.js';
+    script.async = true;
+    script.onload = () => {
+      // Initialize Ko-fi widget after script is loaded
+      window.kofiWidgetOverlay.draw('pollinationsai', {
+        'type': 'floating-chat',
+        'floating-chat.donateButton.text': 'Tip Us',
+        'floating-chat.donateButton.background-color': '#d9534f',
+        'floating-chat.donateButton.text-color': '#fff'
+      });
+    };
+    document.body.appendChild(script);
+    
+    // Cleanup function to remove the script when component unmounts
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []); // Empty dependency array means this effect runs once on mount
   return (
     <SectionContainer backgroundConfig={SectionBG.hero}>
       {/* <SvgArtGenerator width="1920px" height="100px"></SvgArtGenerator> */}

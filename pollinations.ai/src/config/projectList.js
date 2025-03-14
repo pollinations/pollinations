@@ -278,6 +278,14 @@ export const projects = {
   ],
   toolsInterfaces: [
     {
+      name: "🆕 Elixpo Art Chrome Extension",
+      url: "https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh",
+      description: "It uses the pollinations image endpoint to generate an image with `boltning` as the model in 4 types of aspect ratios and themes with prompt engineering thus transforming selected texts into art smoothly with a disposable GUI in web.",
+      author: "@elixpo.asm",
+      repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter/tree/main/Elixpo%20Chrome%20%20Extension",
+      submissionDate: "2025-03-14",
+    },
+    {
       name: "🆕 Pollinations Feed",
       url: "https://elixpoart.vercel.app/src/feed",
       description: "Builds a bentro grid UI which integrates with the pollinations realtime SSE feed to show case art generation, with virtual DOM update to reduce lag and optimization.",

@@ -113,7 +113,7 @@ export function createOpenAICompatibleClient(config) {
 
             // Apply custom request transformation if provided
             const finalRequestBody = transformRequest
-                ? transformRequest(cleanedRequestBody)
+                ? await transformRequest(cleanedRequestBody)
                 : cleanedRequestBody;
     
 
@@ -123,7 +123,7 @@ export function createOpenAICompatibleClient(config) {
                 maxTokens: cleanedRequestBody.max_tokens,
                 temperature: cleanedRequestBody.temperature
             });
-            
+
             log(`[${requestId}] Final request body:`, JSON.stringify(finalRequestBody, null, 2));
 
             // Determine the endpoint URL

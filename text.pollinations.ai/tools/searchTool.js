@@ -18,7 +18,7 @@ export const searchToolDefinition = {
     type: "function",
     function: {
         name: "web_search",
-        description: "Search the web for current information about a topic. Try to get as many results as possible (minimum 20, maximum 100).",
+        description: "Search the web for current information about a topic. Try to get as many results as possible (minimum 1, maximum 7).",
         parameters: {
             type: "object",
             properties: {
@@ -28,8 +28,8 @@ export const searchToolDefinition = {
                 },
                 num_results: {
                     type: "number",
-                    description: "Number of results to return (min 20, max 100)",
-                    default: 20
+                    description: "Number of results to return (min 1, max 7)",
+                    default: 3
                 }
             },
             required: ["query"]

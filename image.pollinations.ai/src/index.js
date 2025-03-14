@@ -106,6 +106,9 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     logApi("prompt", prompt);
     logApi("safeParams", safeParams);
 
+    // timingInfo.push({ step: 'Generation started.', timestamp: Date.now() });
+    // sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "generating", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer });
+
     // Server selection and image generation
     progress.updateBar(requestId, 40, 'Server', 'Selecting optimal server...');
     progress.updateBar(requestId, 50, 'Generation', 'Preparing...');
@@ -113,15 +116,9 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     const { buffer, ...maturity } = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId);
 
     progress.updateBar(requestId, 50, 'Generation', 'Starting generation');
-    
-    const concurrentRequests = countJobs(true);
-
-    timingInfo.push({ step: 'Generation started.', timestamp: Date.now() });
-    sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "generating", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer });
 
     progress.updateBar(requestId, 95, 'Finalizing', 'Processing complete');
     timingInfo.push({ step: 'Generation completed.', timestamp: Date.now() });
-    sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "done", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer, maturity });
 
     progress.updateBar(requestId, 100, 'Complete', 'Generation successful');
     progress.stop();
@@ -130,7 +127,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     if (maturity.isChild && maturity.isMature) {
       logApi("isChild and isMature, delaying response by 15 seconds");
       progress.updateBar(requestId, 85, 'Safety', 'Additional review...');
-      await sleep(8000);
+      await sleep(5000);
     }
     progress.updateBar(requestId, 90, 'Safety', 'Check complete');
 
@@ -140,8 +137,8 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
 
     // Cache and feed updates
     progress.updateBar(requestId, 95, 'Cache', 'Updating feed...');
-    if (!safeParams.nofeed) {
-      if (!(maturity.isChild && maturity.isMature)) {
+    // if (!safeParams.nofeed) {
+    //   if (!(maturity.isChild && maturity.isMature)) {
         sendToFeedListeners({
           ...safeParams,
           concurrentRequests: countFluxJobs(),
@@ -153,10 +150,13 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
           ip: getIp(req),
           status: "end_generating",
           referrer,
-          wasPimped
+          wasPimped,
+          nsfw: maturity.isChild || maturity.isMature,
+          private: safeParams.nofeed,
+          token: extractToken(req) && extractToken(req).slice(0, 2) + "..."
         }, { saveAsLastState: true });
-      }
-    }
+      // }
+    // }
     progress.updateBar(requestId, 100, 'Cache', 'Updated');
     
     // Complete main progress
@@ -231,7 +231,10 @@ const checkCacheAndGenerate = async (req, res) => {
 
       progress.updateBar(requestId, 10, 'Queueing', 'Request queued');
       timingInfo = [{ step: 'Request received and queued.', timestamp: Date.now() }];
-      sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip: getIp(req), status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer });
+      // sendToFeedListeners({ 
+      //   ...safeParams, 
+      //   prompt: originalPrompt, 
+      //   ip: getIp(req), status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer, token: extractToken(req) && extractToken(req).slice(0, 2) + "..." });
 
       const generateImage = async () => {
         timingInfo.push({ step: 'Start generating job', timestamp: Date.now() });
@@ -262,7 +265,7 @@ const checkCacheAndGenerate = async (req, res) => {
 
       let queueExisted = false;
       if (!ipQueue[ip]) {
-        ipQueue[ip] = new PQueue({ concurrency: 1, interval: 5000 });
+        ipQueue[ip] = new PQueue({ concurrency: 1, interval: 10000, intervalCap:1 });
       } else {
         queueExisted = true;
       }
@@ -336,7 +339,24 @@ const checkCacheAndGenerate = async (req, res) => {
 const server = http.createServer((req, res) => {
   setCORSHeaders(res);
 
-  const { pathname } = parse(req.url, true);
+  const parsedUrl = parse(req.url, true);
+  const pathname = parsedUrl.pathname;
+
+  if (pathname === '/.well-known/acme-challenge/w7JbAPtwFN_ntyNHudgKYyaZ7qiesTl4LgFa4fBr1DuEL_Hyd4O3hdIviSop1S3G') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('w7JbAPtwFN_ntyNHudgKYyaZ7qiesTl4LgFa4fBr1DuEL_Hyd4O3hdIviSop1S3G.r54qAqCZSs4xyyeamMffaxyR1FWYVb5OvwUh8EcrhpI');
+    return;
+  }
+
+  if (pathname === '/crossdomain.xml') {
+    res.writeHead(200, { 'Content-Type': 'application/xml' });
+    res.end(`<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">
+<cross-domain-policy>
+  <allow-access-from domain="*" secure="false"/>
+</cross-domain-policy>`);
+    return;
+  }
 
   if (pathname === '/models') {
     res.writeHead(200, { 

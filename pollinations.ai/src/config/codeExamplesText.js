@@ -16,6 +16,9 @@ Generate (GET): \`GET https://text.pollinations.ai/{prompt}\`
 ### Text Generation (Advanced)
 Generate (POST): \`POST https://text.pollinations.ai/\`
 
+### Audio Generation
+Generate Audio: \`GET https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}\`
+
 ### OpenAI Compatible Endpoint
 OpenAI Compatible: \`POST https://text.pollinations.ai/openai\`
 
@@ -186,7 +189,9 @@ reqwest = { version = "0.11", features =["blocking", "json"] }
   },
   nodejs: {
     code: ({ prompt, width, height, seed, model }) => `
-// Node.js code example for downloading an image
+// Node.js code examples for Pollinations.AI
+
+// Example 1: Image Generation
 
 import fs from 'fs';
 import fetch from 'node-fetch';
@@ -212,6 +217,45 @@ const model = '${model || "flux"}'; // Using 'flux' as default if model is not p
 const imageUrl = \`https://pollinations.ai/p/\${encodeURIComponent(prompt)}?width=\${width}&height=\${height}&seed=\${seed}&model=\${model}\`;
 
 downloadImage(imageUrl);
+
+// Example 2: Text Generation with Private Response
+async function generatePrivateText() {
+  const response = await fetch('https://text.pollinations.ai/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messages: [
+        { role: 'user', content: 'Generate a creative story' }
+      ],
+      model: 'openai',
+      private: true  // Response won't appear in public feed
+    })
+  });
+  
+  const data = await response.text();
+  console.log('Generated Text:', data);
+}
+
+generatePrivateText();
+
+// Example 3: Audio Generation (Text-to-Speech)
+async function generateAudio() {
+  // Simple GET request for text-to-speech
+  const text = "Welcome to Pollinations, where creativity blooms!";
+  const voice = "nova"; // Optional voice parameter
+  const url = "https://text.pollinations.ai/" + encodeURIComponent(text) + "?model=openai-audio&voice=" + voice;
+  
+  const response = await fetch(url);
+  
+  // Save the audio file
+  const buffer = await response.buffer();
+  fs.writeFileSync('generated_audio.mp3', buffer);
+  console.log('Audio generated and saved!');
+}
+
+generateAudio();
 `,
     language: "javascript"
   },
@@ -280,7 +324,7 @@ const eventSource = new EventSource('https://image.pollinations.ai/feed');
 
 eventSource.onmessage = function(event) {
   const imageData = JSON.parse(event.data);
-  console.log('New image generated:', imageData);
+  console.log('New image generated:', imageData.imageURL);
 };
 \`\`\`
 
@@ -300,6 +344,22 @@ eventSource.onmessage = function(event) {
   console.log('New text generated:', textData);
 };
 \`\`\`
+`,
+    language: "markdown"
+  },
+  audio: {
+    code: () => `
+## Audio Generation
+
+### Text-to-Speech
+
+The simplest way to generate audio from text:
+
+\`\`\`
+https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=nova
+\`\`\`
+
+Our audio features follow the OpenAI audio API specification. For more details and advanced usage, see the [OpenAI Audio Guide](https://platform.openai.com/docs/guides/audio).
 `,
     language: "markdown"
   }

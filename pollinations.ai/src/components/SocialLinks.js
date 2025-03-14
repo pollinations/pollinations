@@ -42,15 +42,14 @@ const StyledReactSVG = styled(ReactSVG, {
   },
 }))
 
-export const SocialLinks = ({ gap }) => {
+export const SocialLinks = ({ gap, location }) => {
   const [hoveredIndex, setHoveredIndex] = useState(null)
 
   const handleLinkClick = (platform) => {
     trackEvent({
-      action: `${platform}_Link_Click`,
-      category: 'User_Interactions',
-      label: `${platform}_Social_Link`,
-      value: 1,
+      action: `click_social_link`,
+      category: location,
+      value: platform,
     })
   }
 

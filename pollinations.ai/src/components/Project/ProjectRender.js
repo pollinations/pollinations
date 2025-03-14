@@ -25,10 +25,9 @@ const ProjectsRender = ({ classes }) => {
   const handleCategoryClick = (categoryKey) => {
     setSelectedCategory(categoryKey)
     trackEvent({
-      action: "Category_Select",
-      category: "User_Interactions",
-      label: `Category_${categoryKey}`,
-      value: 1,
+      action: "select_project_category",
+      category: "project",
+      value: categoryKey,
     })
   }
 
@@ -108,7 +107,7 @@ const ProjectsRender = ({ classes }) => {
                 >
                   <Grid
                     size={{ xs: 12, md: 4 }}
-                    marginBottom= {{xs: "0.5em", md: "0em"}}
+                    marginBottom={{ xs: "0.5em", md: "0em" }}
                     style={{
                       textAlign: "left",
                     }}
@@ -131,8 +130,50 @@ const ProjectsRender = ({ classes }) => {
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{ color: Colors.lime }}
+                              onClick={() =>
+                                trackEvent({
+                                  action: "click_project_author",
+                                  category: "project",
+                                  value: project.author,
+                                })
+                              }
                             >
                               {project.author}
+                            </Link>
+                          ) : project.author.startsWith("[") && project.author.includes("](") ? (
+                            (() => {
+                              const match = project.author.match(/^\[(.*?)\]\((.*?)\)$/);
+                              if (match) {
+                                const displayName = match[1];
+                                const userUrl = match[2];
+                                return (
+                                  <Link
+                                    href={userUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ color: Colors.lime }}
+                                    onClick={() =>
+                                      trackEvent({
+                                        action: "click_project_author",
+                                        category: "project",
+                                        value: displayName,
+                                      })
+                                    }
+                                  >
+                                    {displayName}
+                                  </Link>
+                                );
+                              }
+                              return project.author;
+                            })()
+                          ) : project.author.includes("http") ? (
+                            <Link
+                              href={project.author}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ color: Colors.lime }}
+                            >
+                              {project.author.split("/").pop()}
                             </Link>
                           ) : (
                             project.author
@@ -150,7 +191,10 @@ const ProjectsRender = ({ classes }) => {
                         fontFamily: Fonts.parameter,
                       }}
                     >
-                      <LLMTextManipulator text={project.description} transforms={[shortTechnical]} />
+                      <LLMTextManipulator
+                        text={project.description}
+                        transforms={[shortTechnical]}
+                      />
                     </span>
                     {project.repo && renderRepoLink(project.repo)}
                   </Grid>
@@ -167,10 +211,9 @@ const ProjectsRender = ({ classes }) => {
 const renderProjectLink = (project) => {
   const handleProjectLinkClick = () => {
     trackEvent({
-      action: "Project_Link_Click",
-      category: "User_Interactions",
-      label: `Project_${project.name}_Link`,
-      value: 1,
+      action: "click_project_title",
+      category: "project",
+      value: project.name,
     })
   }
 
@@ -201,15 +244,14 @@ const renderProjectLink = (project) => {
 const renderRepoLink = (repoUrl) => {
   const handleRepoLinkClick = () => {
     trackEvent({
-      action: "Repo_Link_Click",
-      category: "User_Interactions",
-      label: "Repo_Link",
-      value: 1,
+      action: "click_project_repo",
+      category: "project",
+      value: repoUrl,
     })
   }
 
   return (
-    <StyledLink
+    <Link
       href={repoUrl}
       target="_blank"
       rel="noopener noreferrer"
@@ -217,6 +259,7 @@ const renderRepoLink = (repoUrl) => {
       style={{
         color: Colors.lime,
         fontFamily: Fonts.parameter,
+        fontWeight: "bold",
         fontSize: "1em",
         display: "flex",
         alignItems: "center",
@@ -226,13 +269,16 @@ const renderRepoLink = (repoUrl) => {
         src={ICONS.github}
         beforeInjection={(svg) => {
           svg.setAttribute("fill", Colors.lime)
-          svg.setAttribute("style", "margin-right: 8px; background: transparent;")
-          svg.setAttribute("width", "15")
-          svg.setAttribute("height", "15")
+          svg.setAttribute(
+            "style",
+            "margin-right: 8px; background: transparent; vertical-align: middle;"
+          )
+          svg.setAttribute("width", "18")
+          svg.setAttribute("height", "18")
         }}
       />
-      GitHub
-    </StyledLink>
+      <span style={{ display: "flex", alignItems: "center", verticalAlign: "middle" }}>GITHUB</span>
+    </Link>
   )
 }
 

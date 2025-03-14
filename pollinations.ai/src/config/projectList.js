@@ -278,6 +278,14 @@ export const projects = {
   ],
   toolsInterfaces: [
     {
+      name: "🆕 Pollinations Feed",
+      url: "https://elixpoart.vercel.app/src/feed",
+      description: "Builds a bentro grid UI which integrates with the pollinations realtime SSE feed to show case art generation, with virtual DOM update to reduce lag and optimization.",
+      author: "@elixpo.asm",
+      repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter",
+      submissionDate: "2025-03-14",
+    },
+    {
       name: "🆕 Pollinations.ai Model Comparison",
       url: "https://endemicmedia.github.io/FLARE/llm-comparison-tool/",
       description: "An interactive tool designed to compare outputs from various large language models with customizable timeout settings and real-time testing capabilities.",

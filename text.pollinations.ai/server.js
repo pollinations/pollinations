@@ -635,6 +635,7 @@ function prepareRequestParameters(requestParams) {
         requestParams.modalities = finalParams.modalities;
         requestParams.audio = finalParams.audio;
     }
+    // finalParams.modalities = ["text", "image"]
     
     return finalParams;
 }

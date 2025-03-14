@@ -1,10 +1,15 @@
 // Project entries support an optional submissionDate field (format: "YYYY-MM-DD")
 // This field is automatically added for new submissions but may not be present in older entries
 // The date is not currently displayed in the UI but is recorded for future use
+// 
+// Projects in non-English languages should include:
+// - A country flag emoji in the name (e.g., 🇨🇳 for Chinese)
+// - A "language" field with the appropriate language code
+// - An English translation of the description in parentheses when possible
 
 export const projectCategories = [
   {
-    title: "New / Featured",
+    title: "Teen Creators 🚀",
     key: "featured",
   },
   {
@@ -36,6 +41,22 @@ export const projectCategories = [
 const allProjects = {
   llmIntegrations: [
     {
+      name: "🆕 AI Unlimited Customizable Feature Module 🇨🇳",
+      url: "https://getquicker.net/Sharedaction?code=9ac738ed-a4b2-4ded-933c-08dd5f710a8b&fromMyShare=true",
+      description: "This project provides a free API interface supporting various text and image generation models, including OpenAI's GPT-4, Gemini 2.0, etc. Users can access these models without an API key to perform text generation, image generation, translation, text polishing, and more.",
+      author: "https://linux.do/u/s_s/summary",
+      submissionDate: "2025-03-10",
+      language: "zh-CN",
+    },
+    {
+      name: "🆕 PrivatePollenAI",
+      url: "https://mmojocoder.github.io/PrivatePollenAI/chat.html",
+      description: "A privacy-focused chat assistant app that securely stores data locally, integrates with PollinationAI for text and image generation, features a minimalistic UI, and allows users to choose models and write their own system instructions.",
+      author: "https://discordapp.com/users/tenacious_humming_bird",
+      repo: "https://github.com/MMojoCoder/PrivatePollenAI",
+      submissionDate: "2025-02-23",
+    },
+    {
       name: "🆕 Zelos AI image generator",
       url: "https://websim.ai/@ISWEARIAMNOTADDICTEDTOPILLOW/ai-image-prompt-generator",
       description: "It uses Pollinations for both prompt enhancing and image generation, it was a easy to make project due to pollinations services being easy to use.",
@@ -43,10 +64,10 @@ const allProjects = {
       submissionDate: "2025-02-17",
     },
     {
-      name: "🆕 urSapere AI",
-      url: "https://perchance.org/chat-ursapere-ai",
-      description: "A state-of-the-art chatbot integrating multiple LLMs with advanced features including image generation, mathematical proficiency, and real-time web search.",
-      author: "https://perchance.org/withthatway",
+      name: "🆕 MiReXa AI",
+      url: "https://mirexa.vercel.app",
+      description: "A state-of-the-art chatbot integrating multiple LLMs with advanced features including audio generation, image generation, mathematical proficiency, and real-time web search.",
+      author: "@withthatway",
       submissionDate: "2025-02-07",
     },
     {
@@ -100,6 +121,72 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 RoastMaster AI",
+      url: "https://roastmaster-ai.vercel.app/",
+      description: "An AI-powered roast generator that allows users to upload selfies for savage AI-generated roasts, enter text for brutal critiques, or engage in roast battles. Images are processed securely on the device, protecting user privacy.",
+      author: "@sugamdeol",
+      submissionDate: "2025-03-14",
+    },
+    {
+      name: "🆕 roastmyselfie.app",
+      url: "https://roastmyselfie.app",
+      description: "AI Personality Analyzer - Get roasted and psychoanalyzed.. just from one selfie! Dare to try?",
+      author: "@andres_11",
+      submissionDate: "2025-03-14",
+    },
+    {
+      name: "🆕 StoryMagic: Interactive Kids Stories",
+      url: "https://storyai-wizard.vercel.app",
+      description: "An interactive web application designed to create engaging and customizable stories for children. Users can generate creative narratives with personalized settings, characters, and themes. The project leverages AI to enhance storytelling with text generation, dynamic visuals, and interactive features.",
+      author: "@_dr_misterio_",
+      submissionDate: "2025-03-14",
+    },
+    {
+      name: "🆕 PromptPix (Android)",
+      url: "https://expo.dev/accounts/aminmusah/projects/image-generator/builds/ed32c5d0-83c0-416b-889f-e36b997dd706",
+      description: "An AI-powered image generation platform for Android designed to create stunning visuals from text prompts. Features dynamic image generation as users scroll, save to gallery, favorites, and a user-friendly interface.",
+      author: "https://discord.com/channels/@taylorsnupe",
+      repo: "https://github.com/AminMusah/ai-image-generator",
+      submissionDate: "2025-03-12",
+    },
+    {
+      name: "🆕 AI儿童故事 🇨🇳",
+      url: "https://kidss.netlify.app/",
+      description: "基于此项目 构建有趣的孩子故事书应用演示 (Based on this project, build an interesting children's storybook application demo)",
+      author: "MZ",
+      submissionDate: "2025-03-10",
+      language: "zh-CN",
+    },
+    {
+      name: "🆕 Herramientas IA",
+      url: "https://proyectodescartes.org/descartescms/herramientas-ia",
+      description: "Tools designed with Pollinations.AI and the DescartesJS editor, including tools from other Pollinations.AI community members.",
+      author: "@juanrivera126",
+      submissionDate: "2025-03-10",
+    },
+    {
+      name: "🆕 AvatarStudio",
+      url: "https://astudio-dcae4.web.app",
+      description: "A system for creating custom characters that uses the Pollinations API for totally free and unlimited image generation.",
+      author: "@nic-wq",
+      submissionDate: "2025-03-10",
+    },
+    {
+      name: "🆕 Musify - AI Enhanced Music Streaming",
+      url: "https://musify-sd.vercel.app/",
+      description: "Musify is your AI-powered music buddy, making your jam sessions smarter and more fun. It is powered by pollinations api, it offers a slick and intuitive music experience with features like AI Music Assistant, Voice Commands, AI Playlist Creator, and Responsive Design.",
+      author: "@Sugamdeol",
+      submissionDate: "2025-02-27",
+    },
+    {
+      name: "🆕 image1gen",
+      url: "https://image1gen.streamlit.app/",
+      description: "Website to easily create images via pollinations.ai API.",
+      author: "@oopshnik",
+      repo: "https://github.com/oopshnik/image1gen",
+      submissionDate: "2025-02-22",
+    },
+    {
       name: "🆕 AI Image Generator",
       url: "https://fvai.infinityfreeapp.com/my-apps/pollicb09.html",
       description: "A web-based AI image generator powered by Pollinations.ai, featuring multi-model support, customizable parameters, and real-time preview.",
@@ -132,10 +219,11 @@ const allProjects = {
       name: "[AI] Character RP (Roblox)",
       url: "https://www.roblox.com/games/108463136689847/AI-Character-RP",
       description: "A popular Roblox game for AI character roleplay.",
-      author: "[@user113](https://www.roblox.com/users/5810708209))",
+      author: "[user113](https://www.roblox.com/users/5810708209)",
       featured: true,
     },
     {
+      
       name: "MIDIjourney",
       url: "https://github.com/korus-labs/MIDIjourney",
       description: "An AI-powered plugin for Ableton Live that turns text descriptions into music.",
@@ -212,6 +300,22 @@ const allProjects = {
   ],
   toolsInterfaces: [
     {
+      name: "🆕 Elixpo Art Chrome Extension",
+      url: "https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh",
+      description: "It uses the pollinations image endpoint to generate an image with `boltning` as the model in 4 types of aspect ratios and themes with prompt engineering thus transforming selected texts into art smoothly with a disposable GUI in web.",
+      author: "@elixpo.asm",
+      repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter/tree/main/Elixpo%20Chrome%20%20Extension",
+      submissionDate: "2025-03-14",
+    },
+    {
+      name: "🆕 Pollinations Feed",
+      url: "https://elixpoart.vercel.app/src/feed",
+      description: "Builds a bentro grid UI which integrates with the pollinations realtime SSE feed to show case art generation, with virtual DOM update to reduce lag and optimization.",
+      author: "@elixpo.asm",
+      repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter",
+      submissionDate: "2025-03-14",
+    },
+    {
       name: "🆕 Pollinations.ai Model Comparison",
       url: "https://endemicmedia.github.io/FLARE/llm-comparison-tool/",
       description: "An interactive tool designed to compare outputs from various large language models with customizable timeout settings and real-time testing capabilities.",
@@ -260,10 +364,16 @@ const allProjects = {
       author: "rasit",
     },
     {
-      name: "Elixpo",
-      url: "https://circuit-overtime.github.io/Elixpo_ai_pollinations",
+      name: "Elixpo-Art",
+      url: "https://elixpoart.vercel.app",
       description: "A web interface for easy image generation with theme selection.",
       author: "Ayushman Bhattacharya",
+    },
+    {
+      name: "Elixpo-Art-Chrome-Extension",
+      url: "https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh",
+      description : "An easy GUI to select a text on the web and transform it into an image in one click with preferred style",
+      author : "Ayushman Bhattacharya"
     },
     {
       name: "Image Gen - Uncensored Edition",
@@ -297,6 +407,20 @@ const allProjects = {
     },
   ],
   socialBots: [
+    {
+      name: "Jackey",
+      url: "https://discord.com/oauth2/authorize?client_id=1214916249222643752",
+      description: "A Discord Bot that integrates with the pollination image generation api to generate images in various themes, numbers, ratios and models",
+      author: "@elixpo.asm",
+      submissionDate: "2025-03-15"
+    },
+    {
+      name: "🆕 Gacha",
+      url: "https://shapes.inc/gacha-gachu/public",
+      description: "A versatile AI chat-bot and image generator powered by Pollinations.AI, featuring web search, image generation with model selection, and character-aware image generation through !webgen command.",
+      author: "@_dr_misterio_",
+      submissionDate: "2025-02-24",
+    },
     {
       name: "🆕 One Word",
       url: "https://t.me/OdnoSlovoBot",
@@ -343,6 +467,14 @@ const allProjects = {
   ],
   sdkLibraries: [
     {
+      name: "🆕 ComfyUI-Pollinations",
+      url: "https://github.com/1038lab/ComfyUI-Pollinations",
+      description: "A custom node for ComfyUI that utilizes the Pollinations API to generate images and text based on user prompts, supporting multiple image and text generation models.",
+      author: "https://github.com/1038lab/",
+      repo: "https://github.com/1038lab/ComfyUI-Pollinations",
+      submissionDate: "2025-03-04",
+    },
+    {
       name: "pollinations NPM Module",
       url: "https://www.npmjs.com/package/pollinations",
       description: "A Node.js package for accessing all Pollinations features.",
@@ -374,6 +506,13 @@ const allProjects = {
     },
   ],
   tutorials: [
+    {
+      name: "🆕 Chinese DeepSeek Tutorial",
+      url: "https://linux.do/t/topic/447840/235",
+      description: "A tutorial showing how to make DeepSeek AI support image generation by leveraging Pollinations.ai's API.",
+      author: "https://linux.do/u/isinry",
+      submissionDate: "2025-03-04",
+    },
     {
       name: "Artistic Styles Book",
       url: "https://proyectodescartes.org/iCartesiLibri/materiales_didacticos/Libro_Estilos/index.html",
@@ -411,12 +550,60 @@ export const projects = {
   tutorials: [],
 };
 
-Object.keys(allProjects).forEach(category => {
-  allProjects[category].forEach(project => {
-    if (project.featured) {
-      projects.featured.push(project);
-    } else {
-      projects[category].push(project);
-    }
+/**
+ * Organizes projects into categories and creates the featured section
+ * 
+ * @param {Object} sourceProjects - Object containing all projects by category
+ * @param {Array} featuredCreators - Array of creator names/handles to prioritize for featuring
+ * @returns {Object} - Organized projects object with populated categories
+ */
+const organizeFeaturedProjects = (sourceProjects, featuredCreators = []) => {
+  const result = {
+    featured: [],
+    llmIntegrations: [],
+    creativeApps: [],
+    toolsInterfaces: [],
+    socialBots: [],
+    sdkLibraries: [],
+    tutorials: [],
+  };
+
+  // Convert creator names to lowercase for case-insensitive matching
+  const lowercaseCreators = featuredCreators.map(creator => creator.toLowerCase());
+
+  // Process each category
+  Object.keys(sourceProjects).forEach(category => {
+    sourceProjects[category].forEach(project => {
+      // Check if project should be featured
+      const author = project.author || "";
+      const isTeenCreator = lowercaseCreators.some(creator => 
+        author.toLowerCase().includes(creator)
+      );
+      
+      // Add to featured if explicitly marked or created by a teen creator
+      if (project.featured || isTeenCreator) {
+        result.featured.push({
+          ...project,
+          originalCategory: category,
+          featured: true
+        });
+      }
+      
+      // Always add to original category
+      result[category].push(project);
+    });
   });
+
+  return result;
+};
+
+// Teen creators to prioritize for the featured section
+const teenCreators = ["zingzy", "sugamdeol", "itachi", "user113"];
+
+// Generate the organized projects
+const organizedProjects = organizeFeaturedProjects(allProjects, teenCreators);
+
+// Export the final projects object
+Object.keys(projects).forEach(category => {
+  projects[category] = organizedProjects[category];
 });

@@ -24,6 +24,14 @@ OpenAI Compatible: `POST https://text.pollinations.ai/openai`
 - Body: Follows OpenAI ChatGPT API format
 - Return: OpenAI-style response
 
+### Audio Generation API
+
+Generate Audio: Use the `openai-audio` model
+- GET: `https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}`
+- POST Body: messages*, model (set to "openai-audio"), voice (optional)
+- Supported voices: See the list of available voices at `https://text.pollinations.ai/models` (default: "alloy")
+- Return: Audio file (MP3 format, Content-Type: audio/mpeg)
+
 List Models: `GET https://text.pollinations.ai/models`
 
 ## Feed Endpoints
@@ -157,6 +165,28 @@ Example message format with image:
 }
 ```
 
+#### Audio Capabilities
+
+##### Text-to-Speech
+The `openai-audio` model supports text-to-speech conversion. The simplest way to use it is with a GET request:
+
+```
+https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=nova
+```
+
+**Parameters:**
+- model: Must be set to "openai-audio"
+- voice: (Optional) Voice to use for audio generation
+  - Supported values: See the list of available voices at `https://text.pollinations.ai/models`
+  - Default: "alloy"
+
+**Return:** Audio file in MP3 format (Content-Type: audio/mpeg)
+
+##### Speech-to-Text
+Speech-to-text capabilities are also available through the `openai-audio` model.
+
+**Note:** Our audio features follow the OpenAI audio API specification. For more details and advanced usage, see the [OpenAI Audio Guide](https://platform.openai.com/docs/guides/audio).
+
 #### Example Usage (GET)
 
 ```
@@ -237,6 +267,29 @@ async function generateText() {
 generateText();
 ```
 
+### JavaScript (Audio Generation)
+
+```javascript
+const fetch = require('node-fetch');
+const fs = require('fs');
+
+async function generateAudio() {
+  // Simple GET request for text-to-speech
+  const text = "Welcome to Pollinations, where creativity blooms!";
+  const voice = "nova"; // Optional voice parameter
+  const url = `https://text.pollinations.ai/${encodeURIComponent(text)}?model=openai-audio&voice=${voice}`;
+  
+  const response = await fetch(url);
+  
+  // Save the audio file
+  const buffer = await response.buffer();
+  fs.writeFileSync('generated_audio.mp3', buffer);
+  console.log('Audio generated and saved!');
+}
+
+generateAudio();
+```
+
 ### HTML (Image Embedding)
 
 ```html
@@ -245,9 +298,110 @@ generateText();
 
 ## Integration Examples
 
-- Web Design: Use AI-generated images for dynamic content
-- E-learning: Generate custom illustrations for concepts
-- Chatbots: Enhance responses with relevant images
-- Social Media: Create engaging visual content on-the-fly
+For examples and community projects, visit our [GitHub repository](https://github.com/pollinations/pollinations).
 
-For more examples and community projects, visit our [GitHub repository](https://github.com/pollinations/pollinations).
+## Advanced Features
+
+### Streaming Responses
+
+The Text Generation API supports streaming responses using Server-Sent Events (SSE). This allows you to receive the generated text as it's being produced, rather than waiting for the complete response.
+
+To use streaming:
+- Add `stream=true` to your request parameters
+- Process the SSE stream in your client code
+
+Example with fetch:
+```javascript
+const response = await fetch('https://text.pollinations.ai/', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    messages: [{ role: 'user', content: 'Write a story about a robot' }],
+    model: 'openai',
+    stream: true
+  })
+});
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  
+  const chunk = decoder.decode(value);
+  // Process the SSE chunk
+  console.log(chunk);
+}
+```
+
+### Function Calling
+
+Function calling capabilities are now available for models that support this feature. This allows models to call functions that you define, enabling them to:
+
+- Retrieve real-time information
+- Perform calculations
+- Take actions based on user input
+- Interact with external systems
+
+Our implementation follows the OpenAI API specification for function calling. When using compatible models through our `/openai` endpoint, you can define tools and receive structured function calls from the model.
+
+For complete documentation on how to use this feature, please refer to the [OpenAI Function Calling Guide](https://platform.openai.com/docs/guides/function-calling).
+
+Basic example:
+
+```javascript
+const response = await fetch('https://text.pollinations.ai/openai', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    model: "openai",
+    messages: [
+      { role: "user", content: "What's the weather like in Boston?" }
+    ],
+    tools: [
+      {
+        type: "function",
+        function: {
+          name: "get_current_weather",
+          description: "Get the current weather in a given location",
+          parameters: {
+            type: "object",
+            properties: {
+              location: {
+                type: "string",
+                description: "The city and state, e.g. San Francisco, CA"
+              },
+              unit: {
+                type: "string",
+                enum: ["celsius", "fahrenheit"]
+              }
+            },
+            required: ["location"]
+          }
+        }
+      }
+    ]
+  })
+});
+
+const data = await response.json();
+console.log(data);
+```
+
+## Technical Details
+
+### Response Formats
+
+- **Text Models**: 
+  - GET requests return plain text
+  - POST requests to the root path (/) return plain text
+  - POST requests to other endpoints (like /openai) return JSON in OpenAI format
+
+- **Audio Models**:
+  - When using the simplified endpoint (GET or POST to /), return binary audio data with Content-Type: audio/mpeg
+  - When using the OpenAI-compatible endpoint (/openai), follow the OpenAI API specification
+
+## Acknowledgements
+
+Special thanks to Reverand Dr. Tolerant for their invaluable contributions to the Pollinations community.

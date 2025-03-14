@@ -17,6 +17,34 @@ import { SectionSubContainer } from "../SectionContainer"
 import { ICONS } from "../../assets/icons/icons"
 import { trackEvent } from "../../config/analytics"
 
+/**
+ * Get background color for category button
+ * @param {string} categoryKey - Key of the category
+ * @param {string} selectedCategory - Currently selected category key
+ * @returns {string} - CSS color value
+ */
+const getButtonBackgroundColor = (categoryKey, selectedCategory) => {
+  if (selectedCategory !== categoryKey) {
+    return "transparent";
+  }
+  
+  return categoryKey === "featured" ? Colors.special : Colors.lime;
+};
+
+/**
+ * Get text color for category button
+ * @param {string} categoryKey - Key of the category
+ * @param {string} selectedCategory - Currently selected category key
+ * @returns {string} - CSS color value
+ */
+const getButtonTextColor = (categoryKey, selectedCategory) => {
+  if (selectedCategory === categoryKey) {
+    return categoryKey === "featured" ? Colors.offwhite : Colors.offblack;
+  }
+  
+  return categoryKey === "featured" ? Colors.special : Colors.lime;
+};
+
 const ProjectsRender = ({ classes }) => {
   const theme = useTheme()
   const PROJECT_LOGO_SIZE = useMediaQuery(theme.breakpoints.down("md")) ? 80 : 96
@@ -25,10 +53,9 @@ const ProjectsRender = ({ classes }) => {
   const handleCategoryClick = (categoryKey) => {
     setSelectedCategory(categoryKey)
     trackEvent({
-      action: "Category_Select",
-      category: "User_Interactions",
-      label: `Category_${categoryKey}`,
-      value: 1,
+      action: "select_project_category",
+      category: "project",
+      value: categoryKey,
     })
   }
 
@@ -58,22 +85,8 @@ const ProjectsRender = ({ classes }) => {
             <GeneralButton
               key={category.key}
               handleClick={() => handleCategoryClick(category.key)}
-              backgroundColor={
-                selectedCategory === category.key
-                  ? category.key === "featured"
-                    ? Colors.special
-                    : Colors.lime
-                  : "transparent"
-              }
-              textColor={
-                selectedCategory === category.key
-                  ? category.key === "featured"
-                    ? Colors.offwhite
-                    : Colors.offblack
-                  : category.key === "featured"
-                    ? Colors.special
-                    : Colors.lime
-              }
+              backgroundColor={getButtonBackgroundColor(category.key, selectedCategory)}
+              textColor={getButtonTextColor(category.key, selectedCategory)}
               fontSize="1.3rem"
               style={{
                 fontStyle: "normal",
@@ -145,9 +158,42 @@ const ProjectsRender = ({ classes }) => {
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{ color: Colors.lime }}
+                              onClick={() =>
+                                trackEvent({
+                                  action: "click_project_author",
+                                  category: "project",
+                                  value: project.author,
+                                })
+                              }
                             >
                               {project.author}
                             </Link>
+                          ) : project.author.startsWith("[") && project.author.includes("](") ? (
+                            (() => {
+                              const match = project.author.match(/^\[(.*?)\]\((.*?)\)$/);
+                              if (match) {
+                                const displayName = match[1];
+                                const userUrl = match[2];
+                                return (
+                                  <Link
+                                    href={userUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ color: Colors.lime }}
+                                    onClick={() =>
+                                      trackEvent({
+                                        action: "click_project_author",
+                                        category: "project",
+                                        value: displayName,
+                                      })
+                                    }
+                                  >
+                                    {displayName}
+                                  </Link>
+                                );
+                              }
+                              return project.author;
+                            })()
                           ) : project.author.includes("http") ? (
                             <Link
                               href={project.author}
@@ -193,10 +239,9 @@ const ProjectsRender = ({ classes }) => {
 const renderProjectLink = (project) => {
   const handleProjectLinkClick = () => {
     trackEvent({
-      action: "Project_Link_Click",
-      category: "User_Interactions",
-      label: `Project_${project.name}_Link`,
-      value: 1,
+      action: "click_project_title",
+      category: "project",
+      value: project.name,
     })
   }
 
@@ -227,15 +272,14 @@ const renderProjectLink = (project) => {
 const renderRepoLink = (repoUrl) => {
   const handleRepoLinkClick = () => {
     trackEvent({
-      action: "Repo_Link_Click",
-      category: "User_Interactions",
-      label: "Repo_Link",
-      value: 1,
+      action: "click_project_repo",
+      category: "project",
+      value: repoUrl,
     })
   }
 
   return (
-    <StyledLink
+    <Link
       href={repoUrl}
       target="_blank"
       rel="noopener noreferrer"
@@ -243,6 +287,7 @@ const renderRepoLink = (repoUrl) => {
       style={{
         color: Colors.lime,
         fontFamily: Fonts.parameter,
+        fontWeight: "bold",
         fontSize: "1em",
         display: "flex",
         alignItems: "center",
@@ -252,13 +297,16 @@ const renderRepoLink = (repoUrl) => {
         src={ICONS.github}
         beforeInjection={(svg) => {
           svg.setAttribute("fill", Colors.lime)
-          svg.setAttribute("style", "margin-right: 8px; background: transparent;")
-          svg.setAttribute("width", "15")
-          svg.setAttribute("height", "15")
+          svg.setAttribute(
+            "style",
+            "margin-right: 8px; background: transparent; vertical-align: middle;"
+          )
+          svg.setAttribute("width", "18")
+          svg.setAttribute("height", "18")
         }}
       />
-      GitHub
-    </StyledLink>
+      <span style={{ display: "flex", alignItems: "center", verticalAlign: "middle" }}>GITHUB</span>
+    </Link>
   )
 }
 

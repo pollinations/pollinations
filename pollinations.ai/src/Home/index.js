@@ -20,9 +20,9 @@ export default function Home() {
         <Hero />
         <News />
         <FeedImage />
+        <Projects />
         <Integration />
         <Discord />
-        <Projects />
         {/* <Team /> */}
         <Supporter />
       </Style>

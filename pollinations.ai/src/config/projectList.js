@@ -121,6 +121,13 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 CalcuBite AI",
+      url: "https://calcubite.vercel.app/",
+      description: "CalcuBite AI is a smart tool that analyzes food from images to provide calorie and nutrient details. Just take a photo, and it quickly gives you an estimate of your meal's nutritional value. It uses AI for accurate analysis, and if you run out of free scans, you can watch an ad to get more!",
+      author: "@sugamdeol",
+      submissionDate: "2025-03-15",
+    },
+    {
       name: "🆕 RoastMaster AI",
       url: "https://roastmaster-ai.vercel.app/",
       description: "An AI-powered roast generator that allows users to upload selfies for savage AI-generated roasts, enter text for brutal critiques, or engage in roast battles. Images are processed securely on the device, protecting user privacy.",

@@ -17,6 +17,34 @@ import { SectionSubContainer } from "../SectionContainer"
 import { ICONS } from "../../assets/icons/icons"
 import { trackEvent } from "../../config/analytics"
 
+/**
+ * Get background color for category button
+ * @param {string} categoryKey - Key of the category
+ * @param {string} selectedCategory - Currently selected category key
+ * @returns {string} - CSS color value
+ */
+const getButtonBackgroundColor = (categoryKey, selectedCategory) => {
+  if (selectedCategory !== categoryKey) {
+    return "transparent";
+  }
+  
+  return categoryKey === "featured" ? Colors.special : Colors.lime;
+};
+
+/**
+ * Get text color for category button
+ * @param {string} categoryKey - Key of the category
+ * @param {string} selectedCategory - Currently selected category key
+ * @returns {string} - CSS color value
+ */
+const getButtonTextColor = (categoryKey, selectedCategory) => {
+  if (selectedCategory === categoryKey) {
+    return categoryKey === "featured" ? Colors.offwhite : Colors.offblack;
+  }
+  
+  return categoryKey === "featured" ? Colors.special : Colors.lime;
+};
+
 const ProjectsRender = ({ classes }) => {
   const theme = useTheme()
   const PROJECT_LOGO_SIZE = useMediaQuery(theme.breakpoints.down("md")) ? 80 : 96
@@ -57,8 +85,8 @@ const ProjectsRender = ({ classes }) => {
             <GeneralButton
               key={category.key}
               handleClick={() => handleCategoryClick(category.key)}
-              backgroundColor={selectedCategory === category.key ? Colors.lime : "transparent"}
-              textColor={selectedCategory === category.key ? Colors.offblack : Colors.lime}
+              backgroundColor={getButtonBackgroundColor(category.key, selectedCategory)}
+              textColor={getButtonTextColor(category.key, selectedCategory)}
               fontSize="1.3rem"
               style={{
                 fontStyle: "normal",

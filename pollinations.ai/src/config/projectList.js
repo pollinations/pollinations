@@ -9,7 +9,7 @@
 
 export const projectCategories = [
   {
-    title: "Teen Creators 🚀",
+    title: "For Teens 🚀",
     key: "featured",
   },
   {
@@ -17,7 +17,7 @@ export const projectCategories = [
     key: "llmIntegrations",
   },
   {
-    title: "Creative & Interactive Applications",
+    title: "Creative Apps",
     key: "creativeApps",
   },
   {
@@ -571,6 +571,28 @@ const organizeFeaturedProjects = (sourceProjects, featuredCreators = []) => {
   // Convert creator names to lowercase for case-insensitive matching
   const lowercaseCreators = featuredCreators.map(creator => creator.toLowerCase());
 
+  // Projects that are specifically teen-friendly
+  const teenFriendlyProjects = [
+    "🆕 RoastMaster AI",
+    "🆕 roastmyselfie.app",
+    "🆕 StoryMagic: Interactive Kids Stories",
+    "🆕 PromptPix (Android)",
+    "🆕 AvatarStudio",
+    "🆕 Musify - AI Enhanced Music Streaming",
+    "[AI] Character RP (Roblox)",
+    "Infinite Tales",
+    "POLLIPAPER"
+  ];
+
+  // Projects to exclude from featured for teens
+  const excludeFromTeenFeatured = [
+    "LobeChat",
+    "Pal Chat",
+    "🆕 Pollinations.DIY",
+    "Pollinations.DIY",
+    "Polli API Dashboard"
+  ];
+
   // Process each category
   Object.keys(sourceProjects).forEach(category => {
     sourceProjects[category].forEach(project => {
@@ -580,8 +602,8 @@ const organizeFeaturedProjects = (sourceProjects, featuredCreators = []) => {
         author.toLowerCase().includes(creator)
       );
       
-      // Add to featured if explicitly marked or created by a teen creator
-      if (project.featured || isTeenCreator) {
+      // Add to featured if explicitly marked or created by a teen creator or is in teen-friendly list
+      if (project.featured || isTeenCreator || teenFriendlyProjects.includes(project.name)) {
         result.featured.push({
           ...project,
           originalCategory: category,
@@ -593,6 +615,9 @@ const organizeFeaturedProjects = (sourceProjects, featuredCreators = []) => {
       result[category].push(project);
     });
   });
+
+  // Remove projects that don't fit for teens from featured
+  result.featured = result.featured.filter(project => !excludeFromTeenFeatured.includes(project.name));
 
   return result;
 };

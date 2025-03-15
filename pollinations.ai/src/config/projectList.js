@@ -9,11 +9,15 @@
 
 export const projectCategories = [
   {
+    title: "For Teens 🚀",
+    key: "featured",
+  },
+  {
     title: "LLM Integrations",
     key: "llmIntegrations",
   },
   {
-    title: "Creative & Interactive Applications",
+    title: "Creative Apps",
     key: "creativeApps",
   },
   {
@@ -34,7 +38,7 @@ export const projectCategories = [
   },
 ];
 
-export const projects = {
+const allProjects = {
   llmIntegrations: [
     {
       name: "🆕 AI Unlimited Customizable Feature Module 🇨🇳",
@@ -77,11 +81,13 @@ export const projects = {
       url: "https://lobehub.com/plugins/pollinations-drawing",
       description: "An open-source, modern-design ChatGPT/LLMs UI/Framework with speech-synthesis, multi-modal, and extensible plugin system.",
       repo: "https://github.com/lobehub/lobe-chat",
+      featured: true,
     },
     {
       name: "Qwen-Agent",
       url: "https://github.com/QwenLM/Qwen-Agent",
       description: "A framework for developing agentic LLM applications.",
+      repo: "https://github.com/QwenLM/Qwen-Agent",
     },
     {
       name: "SillyTavern",
@@ -114,6 +120,27 @@ export const projects = {
     },
   ],
   creativeApps: [
+    {
+      name: "🆕 CalcuBite AI",
+      url: "https://calcubite.vercel.app/",
+      description: "CalcuBite AI is a smart tool that analyzes food from images to provide calorie and nutrient details. Just take a photo, and it quickly gives you an estimate of your meal's nutritional value. It uses AI for accurate analysis, and if you run out of free scans, you can watch an ad to get more!",
+      author: "@sugamdeol",
+      submissionDate: "2025-03-15",
+    },
+    {
+      name: "🆕 RoastMaster AI",
+      url: "https://roastmaster-ai.vercel.app/",
+      description: "An AI-powered roast generator that allows users to upload selfies for savage AI-generated roasts, enter text for brutal critiques, or engage in roast battles. Images are processed securely on the device, protecting user privacy.",
+      author: "@sugamdeol",
+      submissionDate: "2025-03-14",
+    },
+    {
+      name: "🆕 roastmyselfie.app",
+      url: "https://roastmyselfie.app",
+      description: "AI Personality Analyzer - Get roasted and psychoanalyzed.. just from one selfie! Dare to try?",
+      author: "@andres_11",
+      submissionDate: "2025-03-14",
+    },
     {
       name: "🆕 StoryMagic: Interactive Kids Stories",
       url: "https://storyai-wizard.vercel.app",
@@ -180,6 +207,7 @@ export const projects = {
       description: "An AI-driven tool that transforms text prompts using MidiJourney into MIDI-based melodies through browser oscillators.",
       author: "@brain.diver",
       repo: "https://github.com/rafabez/pollisonic_generator",
+      featured: true,
     },
     {
       name: "Abyss Ascending",
@@ -199,6 +227,7 @@ export const projects = {
       url: "https://www.roblox.com/games/108463136689847/AI-Character-RP",
       description: "A popular Roblox game for AI character roleplay.",
       author: "[user113](https://www.roblox.com/users/5810708209)",
+      featured: true,
     },
     {
       
@@ -278,6 +307,22 @@ export const projects = {
   ],
   toolsInterfaces: [
     {
+      name: "🆕 Elixpo Art Chrome Extension",
+      url: "https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh",
+      description: "It uses the pollinations image endpoint to generate an image with `boltning` as the model in 4 types of aspect ratios and themes with prompt engineering thus transforming selected texts into art smoothly with a disposable GUI in web.",
+      author: "@elixpo.asm",
+      repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter/tree/main/Elixpo%20Chrome%20%20Extension",
+      submissionDate: "2025-03-14",
+    },
+    {
+      name: "🆕 Pollinations Feed",
+      url: "https://elixpoart.vercel.app/src/feed",
+      description: "Builds a bentro grid UI which integrates with the pollinations realtime SSE feed to show case art generation, with virtual DOM update to reduce lag and optimization.",
+      author: "@elixpo.asm",
+      repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter",
+      submissionDate: "2025-03-14",
+    },
+    {
       name: "🆕 Pollinations.ai Model Comparison",
       url: "https://endemicmedia.github.io/FLARE/llm-comparison-tool/",
       description: "An interactive tool designed to compare outputs from various large language models with customizable timeout settings and real-time testing capabilities.",
@@ -298,12 +343,14 @@ export const projects = {
       description: "A browser-based coding environment based on bolt.diy, featuring integrated Pollinations AI services, visual code editing, and project management tools.",
       author: "@thomash_pollinations",
       repo: "https://github.com/pollinations/pollinations.diy",
+      featured: true,
     },
     {
       name: "Pal Chat",
       url: "https://apps.apple.com/us/app/pal-chat-ai-chat-client/id6447545085?platform=iphone",
       description: "An iOS app that integrates with all LLMs including Pollinations AI models in one unified simple interface.",
       author: "https://x.com/pallavmac",
+      featured: true,
     },
     {
       name: "Pollinator Android App",
@@ -427,6 +474,14 @@ export const projects = {
   ],
   sdkLibraries: [
     {
+      name: "🆕 Node.js Client Library",
+      url: "https://www.npmjs.com/package/pollinationsai",
+      description: "A TypeScript/Node.js client for accessing Pollinations AI services including image generation, text processing, and speech synthesis. Features full TypeScript typings, dual CJS/ESM module support, 100% test coverage and feed/streams support, builder pattern API and axios-based HTTP client implementation.",
+      author: "@fqueis",
+      repo: "https://github.com/fqueis/pollinationsai",
+      submissionDate: "2025-03-14",
+    },
+    {
       name: "🆕 ComfyUI-Pollinations",
       url: "https://github.com/1038lab/ComfyUI-Pollinations",
       description: "A custom node for ComfyUI that utilizes the Pollinations API to generate images and text based on user prompts, supporting multiple image and text generation models.",
@@ -499,3 +554,96 @@ export const projects = {
     },
   ],
 };
+
+export const projects = {
+  featured: [],
+  llmIntegrations: [],
+  creativeApps: [],
+  toolsInterfaces: [],
+  socialBots: [],
+  sdkLibraries: [],
+  tutorials: [],
+};
+
+/**
+ * Organizes projects into categories and creates the featured section
+ * 
+ * @param {Object} sourceProjects - Object containing all projects by category
+ * @param {Array} featuredCreators - Array of creator names/handles to prioritize for featuring
+ * @returns {Object} - Organized projects object with populated categories
+ */
+const organizeFeaturedProjects = (sourceProjects, featuredCreators = []) => {
+  const result = {
+    featured: [],
+    llmIntegrations: [],
+    creativeApps: [],
+    toolsInterfaces: [],
+    socialBots: [],
+    sdkLibraries: [],
+    tutorials: [],
+  };
+
+  // Convert creator names to lowercase for case-insensitive matching
+  const lowercaseCreators = featuredCreators.map(creator => creator.toLowerCase());
+
+  // Projects that are specifically teen-friendly
+  const teenFriendlyProjects = [
+    "🆕 RoastMaster AI",
+    "🆕 roastmyselfie.app",
+    "🆕 StoryMagic: Interactive Kids Stories",
+    "🆕 PromptPix (Android)",
+    "🆕 AvatarStudio",
+    "🆕 Musify - AI Enhanced Music Streaming",
+    "[AI] Character RP (Roblox)",
+    "Infinite Tales",
+    "POLLIPAPER"
+  ];
+
+  // Projects to exclude from featured for teens
+  const excludeFromTeenFeatured = [
+    "LobeChat",
+    "Pal Chat",
+    "🆕 Pollinations.DIY",
+    "Pollinations.DIY",
+    "Polli API Dashboard"
+  ];
+
+  // Process each category
+  Object.keys(sourceProjects).forEach(category => {
+    sourceProjects[category].forEach(project => {
+      // Check if project should be featured
+      const author = project.author || "";
+      const isTeenCreator = lowercaseCreators.some(creator => 
+        author.toLowerCase().includes(creator)
+      );
+      
+      // Add to featured if explicitly marked or created by a teen creator or is in teen-friendly list
+      if (project.featured || isTeenCreator || teenFriendlyProjects.includes(project.name)) {
+        result.featured.push({
+          ...project,
+          originalCategory: category,
+          featured: true
+        });
+      }
+      
+      // Always add to original category
+      result[category].push(project);
+    });
+  });
+
+  // Remove projects that don't fit for teens from featured
+  result.featured = result.featured.filter(project => !excludeFromTeenFeatured.includes(project.name));
+
+  return result;
+};
+
+// Teen creators to prioritize for the featured section
+const teenCreators = ["zingzy", "sugamdeol", "itachi", "user113"];
+
+// Generate the organized projects
+const organizedProjects = organizeFeaturedProjects(allProjects, teenCreators);
+
+// Export the final projects object
+Object.keys(projects).forEach(category => {
+  projects[category] = organizedProjects[category];
+});

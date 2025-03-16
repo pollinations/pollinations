@@ -1,6 +1,6 @@
 import { detectLanguage, sanitizeString, translateIfNecessary } from './translateIfNecessary.js';
 import { pimpPrompt } from './promptEnhancer.js';
-import fetch from 'node-fetch';
+import { isBadDomain, getOppositePrompt } from './badDomains.js';
 import debug from 'debug';
 
 const logPrompt = debug('pollinations:prompt');
@@ -8,85 +8,6 @@ const logPerf = debug('pollinations:perf');
 const logError = debug('pollinations:error');
 const logReferrer = debug('pollinations:referrer');
 const memoizedPrompts = new Map();
-
-// Whitelist of approved domains
-const WHITELISTED_DOMAINS = [
-  'pollinations',
-  'thot',
-  'ai-ministries.com',
-  'localhost',
-  'pollinations.github.io',
-  '127.0.0.1',
-  'nima',
-  'ilovesquirrelsverymuch'
-];
-
-/**
- * Check if a referrer domain is in the whitelist
- * @param {string} referrer - The referrer URL
- * @returns {boolean} - True if whitelisted, false otherwise
- */
-const isWhitelistedDomain = (referrer) => {
-  if (!referrer) return true; // No referrer is treated as whitelisted for backwards compatibility
-  return WHITELISTED_DOMAINS.some(domain => referrer.toLowerCase().includes(domain));
-};
-
-/**
- * Get the opposite/inverted prompt for non-whitelisted domains
- * @param {string} prompt - The original prompt
- * @param {number} seed - The seed for deterministic results
- * @returns {Promise<string>} - The transformed opposite prompt
- */
-const getOppositePrompt = async (prompt, seed) => {
-  try {
-    logPrompt("Getting opposite prompt for non-whitelisted domain", prompt);
-    const startTime = Date.now();
-    
-    const apiUrl = `https://text.pollinations.ai/`;
-    const body = JSON.stringify({
-      messages: [
-        {
-          role: "system",
-          content: "Transform the following image prompt into its **semantic opposite**, inverting key attributes like age, gender, clothing status, and subject matter. Return ONLY the transformed prompt, with no additional explanation or commentary."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      seed: seed,
-      model: "openai",
-      referrer: 'https://image.pollinations.ai'
-    });
-
-    const response = await Promise.race([
-      fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'referer': 'https://image.pollinations.ai'
-        },
-        body: body
-      }).then(res => {
-        if (res.status !== 200) {
-          throw new Error(`Error generating opposite prompt: ${res.status} - ${res.statusText}`);
-        }
-        return res.text();
-      }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 5000))
-    ]);
-
-    const endTime = Date.now();
-    logPerf(`Opposite prompt generation took ${endTime - startTime}ms`);
-    logPrompt(`Original: "${prompt}" → Opposite: "${response}"`);
-    
-    return response;
-  } catch (error) {
-    logError("Error generating opposite prompt:", error.message);
-    // If there's an error, return the original prompt
-    return prompt;
-  }
-};
 
 export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInfo, safeParams = {}) => {
   // if it is not a string make it a string
@@ -101,11 +22,11 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
                  req.headers?.['referrer'] || 
                  req.headers?.origin;
   
-  const isWhitelisted = isWhitelistedDomain(referrer);
-  logReferrer(`Referrer: ${referrer}, Whitelisted: ${isWhitelisted}`);
+  const isDomainBad = isBadDomain(referrer);
+  logReferrer(`Referrer: ${referrer}, Bad domain: ${isDomainBad}`);
 
-  // Create a unique cache key that includes the referrer whitelist status
-  const cacheKey = `${originalPrompt}_seed_${seed}_whitelist_${isWhitelisted}`;
+  // Create a unique cache key that includes the bad domain status
+  const cacheKey = `${originalPrompt}_seed_${seed}_baddomain_${isDomainBad}`;
   
   if (memoizedPrompts.has(cacheKey)) {
     return memoizedPrompts.get(cacheKey);
@@ -117,9 +38,9 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
   timingInfo.push({ step: 'Start prompt normalization and translation', timestamp: Date.now() });
   prompt = sanitizeString(prompt);
 
-  // Handle prompt based on referrer whitelist status
-  if (!isWhitelisted) {
-    // For non-whitelisted domains, transform to opposite prompt
+  // Handle prompt based on referrer domain status
+  if (isDomainBad) {
+    // For bad domains, transform to opposite prompt
     logPrompt("Bad domain detected, generating opposite prompt");
     timingInfo.push({ step: 'Bad domain detected, transforming to opposite prompt', timestamp: Date.now() });
     
@@ -132,7 +53,7 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
     return result;
   }
 
-  // Normal processing for whitelisted domains
+  // Normal processing for good domains
   // check from the request headers if the user most likely speaks english
   const englishLikely = req.headers["accept-language"]?.startsWith("en");
 

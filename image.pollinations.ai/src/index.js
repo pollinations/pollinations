@@ -151,7 +151,6 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
           status: "end_generating",
           referrer,
           wasPimped,
-          isOpposite: maturity.isOpposite,
           nsfw: maturity.isChild || maturity.isMature,
           private: safeParams.nofeed,
           token: extractToken(req) && extractToken(req).slice(0, 2) + "..."

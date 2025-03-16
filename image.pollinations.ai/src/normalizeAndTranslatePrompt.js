@@ -48,7 +48,7 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
     timingInfo.push({ step: 'Opposite prompt generated', timestamp: Date.now() });
     
     // Set the result in cache
-    const result = { prompt, wasPimped: false, isOpposite: true };
+    const result = { prompt, wasPimped: false };
     memoizedPrompts.set(cacheKey, result);
     return result;
   }

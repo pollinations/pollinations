@@ -100,8 +100,12 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     
     // Prompt processing
     progress.updateBar(requestId, 20, 'Prompt', 'Normalizing...');
-    const { prompt, wasPimped } = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams);
+    const { prompt, wasPimped, wasTransformedForBadDomain } = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams, referrer);
     progress.updateBar(requestId, 30, 'Prompt', 'Normalized');
+    
+    if (wasTransformedForBadDomain) {
+      logApi("prompt transformed for bad domain", prompt);
+    }
     
     logApi("prompt", prompt);
     logApi("safeParams", safeParams);
@@ -151,6 +155,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
           status: "end_generating",
           referrer,
           wasPimped,
+          wasTransformedForBadDomain,
           nsfw: maturity.isChild || maturity.isMature,
           private: safeParams.nofeed,
           token: extractToken(req) && extractToken(req).slice(0, 2) + "..."

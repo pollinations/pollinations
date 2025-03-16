@@ -121,6 +121,13 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 Jenny AI",
+      url: "https://jenny-two.vercel.app/",
+      description: "Jenny AI is an AI chatbot and character creation platform with tts and sst it also has image generation and vision ability which are powered by pollinations.",
+      author: "https://www.linkedin.com/in/pritam-roy-95185328a",
+      submissionDate: "2025-03-16",
+    },
+    {
       name: "🆕 CalcuBite AI",
       url: "https://calcubite.vercel.app/",
       description: "CalcuBite AI is a smart tool that analyzes food from images to provide calorie and nutrient details. Just take a photo, and it quickly gives you an estimate of your meal's nutritional value. It uses AI for accurate analysis, and if you run out of free scans, you can watch an ad to get more!",

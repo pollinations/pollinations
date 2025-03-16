@@ -411,7 +411,11 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
     // if (isChild && isMature) {
     //   throw new Error("Content is prohibited");
     // }
-    return { buffer: bufferWithLegend, isChild, isMature };
+    
+    // Get the isOpposite flag from normalizeAndTranslatePrompt result if available
+    const isOpposite = maturity.isOpposite || false;
+    
+    return { buffer: bufferWithLegend, isChild, isMature, isOpposite };
   } catch (error) {
     logError('Error in createAndReturnImageCached:', error);
     throw error;

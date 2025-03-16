@@ -27,9 +27,9 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
 
 
   // // Only set enhance=true if it's not explicitly set to false
-  if (enhance !== false && prompt.length < 100) {
-    enhance = true;
-  }
+  // if (enhance !== false && prompt.length < 100) {
+  //   enhance = true;
+  // }
 
 
   timingInfo.push({ step: 'Start prompt normalization and translation', timestamp: Date.now() });

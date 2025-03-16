@@ -26,6 +26,8 @@
     "eventsource": "^3.0.2",
     "express": "^4.20.0",
     "express-rate-limit": "^7.5.0",
+    "jsonwebtoken": "^9.0.2",
+    "node-fetch": "^3.3.2",
     "openai": "^4.58.2",
     "p-queue": "^8.0.1",
     "puppeteer": "^23.6.0",

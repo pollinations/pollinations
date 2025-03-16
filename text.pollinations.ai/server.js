@@ -15,7 +15,6 @@ import { processNSFWReferralLinks } from './nsfwReferralLinks.js';
 import { getRequestData, getReferrer } from './requestUtils.js';
 
 const BANNED_PHRASES = [
-    "600-800 words"
 ];
 
 const WHITELISTED_DOMAINS = [
@@ -25,7 +24,8 @@ const WHITELISTED_DOMAINS = [
     'localhost',
     'pollinations.github.io',
     '127.0.0.1',
-    'nima'
+    'nima',
+    'ilovesquirrelsverymuch'
 ];
 
 const blockedIPs = new Set();
@@ -126,6 +126,16 @@ app.get('/', (req, res) => {
     res.redirect('https://sur.pollinations.ai');
 });
 
+// Serve crossdomain.xml for Flash connections
+app.get('/crossdomain.xml', (req, res) => {
+    res.setHeader('Content-Type', 'application/xml');
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">
+<cross-domain-policy>
+  <allow-access-from domain="*" secure="false"/>
+</cross-domain-policy>`);
+});
+
 app.set('trust proxy', true);
 
 // Queue setup per IP address
@@ -133,19 +143,67 @@ const queues = new Map();
 
 export function getQueue(ip) {
     if (!queues.has(ip)) {
-        queues.set(ip, new PQueue({ concurrency: 1, interval: 3000, intervalCap: 1 }));
+        queues.set(ip, new PQueue({ concurrency: 1, interval: 6000, intervalCap: 1 }));
     }
     return queues.get(ip);
 }
 
 // Function to get IP address
 export function getIp(req) {
-    const ip = req.headers["x-bb-ip"] || req.headers["x-nf-client-connection-ip"] || req.headers["x-real-ip"] || req.headers['x-forwarded-for'] || req.headers['referer'] || req.socket.remoteAddress;
+    // Prioritize standard proxy headers and add cloudflare-specific headers
+    const ip = req.headers["x-bb-ip"] || 
+               req.headers["x-nf-client-connection-ip"] || 
+               req.headers["x-real-ip"] || 
+               req.headers['x-forwarded-for'] || 
+               req.headers['cf-connecting-ip'] ||
+               (req.socket ? req.socket.remoteAddress : null);
+    
+    // console.log("Headers:", req.headers);
+
     if (!ip) return null;
-    const ipSegments = ip.split('.').slice(0, 3).join('.');
-    // if (ipSegments === "128.116")
-    //     throw new Error('Pollinations cloud credits exceeded. Please try again later.');
-    return ipSegments;
+    
+    // Handle x-forwarded-for which can contain multiple IPs (client, proxy1, proxy2, ...)
+    // The client IP is typically the first one in the list
+    const cleanIp = ip.split(',')[0].trim();
+    
+    // Check if IPv4 or IPv6
+    if (cleanIp.includes(':')) {
+        // IPv6 address
+        // For IPv6, the first 4 segments (64 bits) typically identify the network
+        // This is usually the global routing prefix (48 bits) + subnet ID (16 bits)
+        // We'll take the first 4 segments to identify the network while preserving privacy
+        
+        // Handle special IPv6 formats like ::1 or 2001::
+        const segments = cleanIp.split(':');
+        let normalizedSegments = [];
+        
+        // Handle :: notation (compressed zeros)
+        if (cleanIp.includes('::')) {
+            const parts = cleanIp.split('::');
+            const leftPart = parts[0] ? parts[0].split(':') : [];
+            const rightPart = parts[1] ? parts[1].split(':') : [];
+            
+            // Calculate how many zero segments are represented by ::
+            const missingSegments = 8 - leftPart.length - rightPart.length;
+            
+            normalizedSegments = [
+                ...leftPart,
+                ...Array(missingSegments).fill('0'),
+                ...rightPart
+            ];
+        } else {
+            normalizedSegments = segments;
+        }
+        
+        // Take the first 4 segments (64 bits) which typically represent the network prefix
+        return normalizedSegments.slice(0, 4).join(':');
+    } else {
+        // IPv4 address - take first 3 segments as before
+        const ipv4Segments = cleanIp.split('.').slice(0, 3).join('.');
+        // if (ipv4Segments === "128.116")
+        //     throw new Error('Pollinations cloud credits exceeded. Please try again later.');
+        return ipv4Segments;
+    }
 }
 
 // GET /models request handler
@@ -244,14 +302,12 @@ async function handleRequest(req, res, requestData) {
         // Extract token usage data
         const tokenUsage = completion.usage || {};
         
-        // only send if not roblox, not private, and not from image pollinations
-        if (!shouldBypassDelay(req) && !requestData.isImagePollinationsReferrer &&  !requestData.isPrivate) {
-        // if (!requestData.isPrivate) {
-            sendToFeedListeners(responseText, {
-                ...requestData,
-                ...tokenUsage
-            }, getIp(req));
-        }
+        // Send all requests to feed listeners, including private ones
+        // The feed.js implementation will handle filtering for non-authenticated clients
+        sendToFeedListeners(responseText, {
+            ...requestData,
+            ...tokenUsage
+        }, getIp(req));
         
         // Track successful completion with token usage
         await sendToAnalytics(req, 'textGenerated', {
@@ -579,6 +635,7 @@ function prepareRequestParameters(requestParams) {
         requestParams.modalities = finalParams.modalities;
         requestParams.audio = finalParams.audio;
     }
+    // finalParams.modalities = ["text", "image"]
     
     return finalParams;
 }
@@ -613,10 +670,17 @@ app.get('/openai/models', (req, res) => {
 
 // POST /openai/* request handler
 app.post('/openai*', async (req, res) => {
-    if (!req.body.messages || !Array.isArray(req.body.messages) || req.body.messages.length === 0) {
-        return sendErrorResponse(res, req, new Error('Invalid messages array'), req.body, 400);
+    const requestParams = getRequestData(req);
+   
+    try {
+        await processRequest(req, res, requestParams);
+    } catch (error) {
+        sendErrorResponse(res, req, error, requestParams);
     }
+})
 
+// OpenAI-compatible v1 endpoint for chat completions
+app.post('/v1/chat/completions', async (req, res) => {
     const requestParams = getRequestData(req);
    
     try {

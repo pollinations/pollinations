@@ -1,10 +1,10 @@
 // Import all handler functions
 import { generateDeepseek } from './generateDeepseek.js';
 import { generateTextSearch } from './generateTextSearch.js';
-import { generateTextOpenRouter } from './generateTextOpenRouter.js';
-import { generateTextModal } from './generateTextModal.js';
 import { generateTextPortkey } from './generateTextPortkey.js';
+import { generateTextPixtral } from './generateTextPixtral.js';
 import wrapModelWithContext from './wrapModelWithContext.js';
+import wrapModelWithDonationMessage from './modelDonationWrapper.js';
 
 // Import persona prompts
 import surSystemPrompt from './personas/sur.js';
@@ -28,8 +28,6 @@ const handlers = {
     openai: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai'}),
     deepseek: (messages, options) => generateDeepseek(messages, {...options, model: 'deepseek-chat'}),
     mistral: (messages, options) => generateTextPortkey(messages, {...options, model: 'mistral'}),
-    openRouter: (messages, options, model) => generateTextOpenRouter(messages, {...options, model}),
-    modal: (messages, options) => generateTextModal(messages, options),
     portkey: (messages, options, model) => generateTextPortkey(messages, {...options, model})
 };
 
@@ -56,9 +54,10 @@ export const availableModels = [
         name: 'openai-reasoning',
         type: 'chat',
         censored: true,
-        description: 'OpenAI o1-mini',
+        description: 'OpenAI o3-mini',
         baseModel: true,
         reasoning: true,
+        // vision: true,
         handler: generateTextPortkey  
     },
     {
@@ -139,7 +138,14 @@ export const availableModels = [
         censored: true,
         description: 'Claude 3.5 Haiku',
         baseModel: true,
-        handler: (messages, options) => generateTextOpenRouter(messages, {...options, model: "anthropic/claude-3.5-haiku-20241022"})
+        handler: wrapModelWithDonationMessage(
+            (messages, options) => generateTextPortkey(messages, {...options, model: 'claude'}),
+            'Claude 3.5 Haiku',
+            {
+                threshold: 50,
+                currentDonations: 47
+            }
+        )
     },
     {
         name: 'deepseek-r1',
@@ -177,6 +183,7 @@ export const availableModels = [
         censored: false,
         description: 'Llama 3.1 8B Instruct',
         baseModel: true,
+        maxTokens: 7168, // Set reasonable limit for the 8B model
         handler: generateTextPortkey
     },
     {
@@ -186,7 +193,37 @@ export const availableModels = [
         description: 'Llamaguard 7B AWQ',
         baseModel: false,
         provider: 'cloudflare',
+        maxTokens: 4000, // Set max tokens below the model's context window of 4096
         handler: generateTextPortkey
+    },
+    {
+        name: 'phi',
+        type: 'chat',
+        censored: true,
+        description: 'Phi-4 Instruct',
+        baseModel: true,
+        provider: 'cloudflare',
+        handler: generateTextPortkey
+    },
+    {
+        name: 'llama-vision',
+        type: 'chat',
+        censored: false,
+        description: 'Llama 3.2 11B Vision',
+        baseModel: true,
+        provider: 'cloudflare',
+        vision: true,
+        handler: generateTextPortkey
+    },
+    {
+        name: 'pixtral',
+        type: 'chat',
+        censored: false,
+        description: 'Pixtral 12B',
+        baseModel: true,
+        provider: 'scaleway',
+        vision: true,
+        handler: generateTextPixtral
     },
     {
         name: 'gemini',
@@ -210,18 +247,16 @@ export const availableModels = [
         name: 'hormoz',
         type: 'chat',
         description: 'Hormoz 8b by Muhammadreza Haghiri',
-        baseModel: false,
-        provider: 'modal.com',
-        censored: false,
-        handler: handlers.modal
+        baseModel: true,
+        provider: 'modal',
+        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'hormoz'})
     },
     {
         name: 'hypnosis-tracy',
         type: 'chat',
-        description: 'Hypnosis Tracy - Your Self-Help AI',
+        description: 'Hypnosis Tracy 7B - Self-help AI assistant',
         baseModel: false,
-        provider: 'modal.com',
-        censored: false,
+        provider: 'openai',
         handler: hypnosisTracy
     },
     {
@@ -249,30 +284,13 @@ export const availableModels = [
         handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'llama-scaleway'})
     },
     {
-        name: 'phi',
-        type: 'chat',
-        censored: true,
-        description: 'Phi-4 Multimodal Instruct',
-        baseModel: true,
-        handler: generateTextPortkey
-    },
-    // {
-    //     model: 'openai-audio',
-    //     type: 'chat',
-    //     censored: true,
-    //     description: 'OpenAI GPT-4o-mini-audio',
-    //     baseModel: true,
-    //     audio: true,
-    //     handler: generateTextPortkey
-    // },
-    {
         name: 'openai-audio',
         type: 'chat',
         censored: true,
         description: 'OpenAI GPT-4o-audio-preview',
         baseModel: true,
         audio: true,
-        voices: ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer', 'coral', 'verse', 'ballad', 'ash', 'sage', 'amuch', 'aster', 'brook', 'clover', 'dan', 'elan', 'marilyn', 'meadow'],
+        voices: ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer', 'coral', 'verse', 'ballad', 'ash', 'sage', 'amuch', 'dan'],
         handler: generateTextPortkey
     }
 ];

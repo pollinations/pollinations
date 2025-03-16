@@ -30,6 +30,31 @@ export function validateAndNormalizeMessages(messages) {
 }
 
 /**
+ * Converts system messages to user messages for models that don't support system messages
+ * @param {Array} messages - Array of message objects
+ * @returns {Array} - Messages array with system messages converted to user messages
+ */
+export function convertSystemToUserMessages(messages) {
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return messages;
+  }
+  
+  log('Converting system messages to user messages');
+  
+  return messages.map(msg => {
+    if (msg.role === 'system') {
+      log('Converting system message to user message:', msg.content.substring(0, 50) + '...');
+      return {
+        ...msg,
+        role: 'user',
+        content: `System instruction: ${msg.content}`
+      };
+    }
+    return msg;
+  });
+}
+
+/**
  * Ensures a system message is present in the messages array
  * @param {Array} messages - Array of message objects
  * @param {Object} options - Options object
@@ -101,10 +126,18 @@ export function normalizeOptions(options = {}, defaults = {}) {
     normalized.temperature = Math.max(0, Math.min(2, normalized.temperature));
   }
   
-  if (normalized.maxTokens !== undefined && normalized.maxTokens <= 0) {
-    // Reset to default if invalid
-    normalized.maxTokens = defaults.maxTokens || 1024;
-  }
+  // // Handle maxTokens parameter
+  // if (normalized.maxTokens === undefined) {
+  //   // If not provided, use default value
+  //   normalized.maxTokens = defaults.maxTokens || 8192;
+  //   log('maxTokens option not provided, defaulting to %d', normalized.maxTokens);
+  // } else if (normalized.maxTokens <= 0) {
+  //   // Reset to default if invalid
+  //   normalized.maxTokens = defaults.maxTokens || 8192;
+  //   log('Invalid maxTokens value (%s), defaulting to %d', options.maxTokens, normalized.maxTokens);
+  // } else {
+  //   log('Using maxTokens value: %d', normalized.maxTokens);
+  // }
   
   if (typeof normalized.seed === 'number') {
     // Ensure seed is an integer

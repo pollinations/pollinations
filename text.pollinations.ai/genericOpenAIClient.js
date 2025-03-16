@@ -6,7 +6,8 @@ import {
     ensureSystemMessage,
     generateRequestId,
     cleanUndefined,
-    normalizeOptions
+    normalizeOptions,
+    convertSystemToUserMessages
 } from './textGenerationUtils.js';
 
 /**
@@ -21,6 +22,8 @@ import {
  * @param {string} config.providerName - Name of the provider (for logging and errors)
  * @param {Function} config.formatResponse - Optional function to format the response
  * @param {Object} config.additionalHeaders - Optional additional headers to include in requests
+ * @param {boolean|Function} config.supportsSystemMessages - Whether the API supports system messages (default: true)
+ *                                                          Can be a function that receives options and returns boolean
  * @returns {Function} - Client function that handles API requests
  */
 export function createOpenAICompatibleClient(config) {
@@ -34,7 +37,8 @@ export function createOpenAICompatibleClient(config) {
         providerName = 'unknown',
         formatResponse = null,
         additionalHeaders = {},
-        transformRequest = null
+        transformRequest = null,
+        supportsSystemMessages = true
     } = config;
 
     const log = debug(`pollinations:${providerName.toLowerCase()}`);
@@ -67,14 +71,30 @@ export function createOpenAICompatibleClient(config) {
             // Validate and normalize messages
             const validatedMessages = validateAndNormalizeMessages(messages);
             
-            // Ensure system message is present if the model supports it
-            const defaultSystemPrompt = systemPrompts[modelKey] || null;
-            const messagesWithSystem = ensureSystemMessage(validatedMessages, normalizedOptions, defaultSystemPrompt);
+            // Determine if the model supports system messages
+            let supportsSystem = supportsSystemMessages;
+            if (typeof supportsSystemMessages === 'function') {
+                supportsSystem = supportsSystemMessages(normalizedOptions);
+            }
+            
+            // Process messages based on system message support
+            let processedMessages;
+            if (supportsSystem) {
+                // Ensure system message is present if the model supports it
+                const defaultSystemPrompt = systemPrompts[modelKey] || null;
+                processedMessages = ensureSystemMessage(validatedMessages, normalizedOptions, defaultSystemPrompt);
+            } else {
+                // For models that don't support system messages, convert them to user messages
+                log(`[${requestId}] Model ${modelName} doesn't support system messages, converting to user messages`);
+                const defaultSystemPrompt = systemPrompts[modelKey] || null;
+                const messagesWithSystem = ensureSystemMessage(validatedMessages, normalizedOptions, defaultSystemPrompt);
+                processedMessages = convertSystemToUserMessages(messagesWithSystem);
+            }
             
             // Build request body
             const requestBody = {
                 model: modelName,
-                messages: messagesWithSystem,
+                messages: processedMessages,
                 temperature: normalizedOptions.temperature,
                 stream: normalizedOptions.stream,
                 seed: normalizedOptions.seed,
@@ -93,7 +113,7 @@ export function createOpenAICompatibleClient(config) {
 
             // Apply custom request transformation if provided
             const finalRequestBody = transformRequest
-                ? transformRequest(cleanedRequestBody)
+                ? await transformRequest(cleanedRequestBody)
                 : cleanedRequestBody;
     
 
@@ -103,7 +123,7 @@ export function createOpenAICompatibleClient(config) {
                 maxTokens: cleanedRequestBody.max_tokens,
                 temperature: cleanedRequestBody.temperature
             });
-            
+
             log(`[${requestId}] Final request body:`, JSON.stringify(finalRequestBody, null, 2));
 
             // Determine the endpoint URL
@@ -235,6 +255,31 @@ export function createOpenAICompatibleClient(config) {
                     completion_tokens: 0,
                     total_tokens: 0
                 };
+            }
+            
+            // Correctly set the finish_reason to "length" when max_tokens limit is reached
+            if (data.choices && Array.isArray(data.choices) && data.choices.length > 0) {
+                // Check if we hit the max tokens limit
+                const maxTokens = cleanedRequestBody.max_tokens;
+                const completionTokens = data.usage?.completion_tokens;
+                
+                // If completion tokens are close to max tokens (within 5 tokens) or 
+                // if the model reached the max token limit and finish_reason isn't already set
+                if (maxTokens && completionTokens && 
+                    (completionTokens >= maxTokens - 5 || 
+                     (data.choices[0].finish_reason === null || data.choices[0].finish_reason === 'stop'))) {
+                    
+                    // Log potential truncation
+                    log(`[${requestId}] Possible response truncation detected. Max tokens: ${maxTokens}, Completion tokens: ${completionTokens}`);
+                    
+                    // For cloudflare and other providers that might not correctly set finish_reason
+                    if (modelName && (modelName.includes('@cf/') || modelName.includes('llamaguard'))) {
+                        if (completionTokens >= maxTokens - 10) {
+                            log(`[${requestId}] Setting finish_reason to "length" for Cloudflare model response`);
+                            data.choices[0].finish_reason = 'length';
+                        }
+                    }
+                }
             }
 
             log(`[${requestId}] Final response:`, JSON.stringify(data, null, 2));

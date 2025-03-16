@@ -310,7 +310,7 @@ const allProjects = {
       name: "🆕 Elixpo Art Chrome Extension",
       url: "https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh",
       description: "It uses the pollinations image endpoint to generate an image with `boltning` as the model in 4 types of aspect ratios and themes with prompt engineering thus transforming selected texts into art smoothly with a disposable GUI in web.",
-      author: "@elixpo.asm",
+      author: "Ayushman Bhatacharya",
       repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter/tree/main/Elixpo%20Chrome%20%20Extension",
       submissionDate: "2025-03-14",
     },
@@ -318,7 +318,7 @@ const allProjects = {
       name: "🆕 Pollinations Feed",
       url: "https://elixpoart.vercel.app/src/feed",
       description: "Builds a bentro grid UI which integrates with the pollinations realtime SSE feed to show case art generation, with virtual DOM update to reduce lag and optimization.",
-      author: "@elixpo.asm",
+      author: "Ayushman Bhattacharya",
       repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter",
       submissionDate: "2025-03-14",
     },
@@ -375,12 +375,6 @@ const allProjects = {
       url: "https://elixpoart.vercel.app",
       description: "A web interface for easy image generation with theme selection.",
       author: "Ayushman Bhattacharya",
-    },
-    {
-      name: "Elixpo-Art-Chrome-Extension",
-      url: "https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh",
-      description : "An easy GUI to select a text on the web and transform it into an image in one click with preferred style",
-      author : "Ayushman Bhattacharya"
     },
     {
       name: "Image Gen - Uncensored Edition",

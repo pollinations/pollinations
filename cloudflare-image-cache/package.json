@@ -1,0 +1,19 @@
+{
+  "name": "pollinations-image-cache",
+  "version": "0.1.0",
+  "description": "Cloudflare Worker for caching Pollinations.ai images with text embedding similarity search",
+  "main": "worker.js",
+  "scripts": {
+    "start": "wrangler dev",
+    "deploy": "wrangler publish"
+  },
+  "author": "Pollinations.ai",
+  "license": "MIT",
+  "dependencies": {
+    "@cloudflare/ai": "^1.0.0",
+    "itty-router": "^4.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

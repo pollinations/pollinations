@@ -1,0 +1,34 @@
+name = "pollinations-image-cache"
+main = "worker.js"
+compatibility_date = "2023-12-01"
+
+[vars]
+# Default similarity threshold for image matching (0.0 to 1.0)
+SIMILARITY_THRESHOLD = "0.92"
+# Original image service URL
+POLLINATIONS_API_URL = "https://image.pollinations.ai"
+# Enable/disable caching (set to "true" or "false")
+ENABLE_CACHE = "true"
+# Cloudflare-specific settings
+WORKER_ENV = "production"
+
+# Define R2 bucket for image storage
+[[r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "pollinations-images"
+preview_bucket_name = "pollinations-images-dev"
+
+# Define Vectorize index for embeddings
+[[vectorize]]
+binding = "EMBEDDINGS"
+index_name = "pollinations-embeddings"
+
+# KV namespace for metadata storage
+[[kv_namespaces]]
+binding = "METADATA_KV"
+id = "to-be-replaced-with-actual-id"
+preview_id = "to-be-replaced-with-actual-preview-id"
+
+# AI binding for generating text embeddings
+[[ai]]
+binding = "AI"

@@ -17,11 +17,18 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
 
   // Get referrer from req if not explicitly provided
   if (!referrer) {
+    // Log all available headers for debugging
+    logBadDomain(`Headers received: ${JSON.stringify(req.headers)}`);
+    
     referrer = req.headers?.referer || 
               req.headers?.referrer || 
               req.headers?.['referer'] || 
               req.headers?.['referrer'] || 
               req.headers?.origin;
+    
+    logBadDomain(`Detected referrer from headers: ${referrer || 'none'}`);
+  } else {
+    logBadDomain(`Using explicitly provided referrer: ${referrer}`);
   }
 
   // Generate a memoization key that includes the referrer to handle bad domains differently
@@ -39,25 +46,41 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
   timingInfo.push({ step: 'Start prompt normalization and translation', timestamp: Date.now() });
 
   // Check if the referrer is in the bad domains list
-  if (referrer && isBadDomain(referrer)) {
-    logBadDomain(`Bad domain detected: ${referrer}, transforming prompt to opposite`);
-    timingInfo.push({ step: 'Bad domain detected, transforming prompt', timestamp: Date.now() });
+  if (referrer) {
+    logBadDomain(`Checking if referrer is bad domain: "${referrer}"`);
+    const isBad = isBadDomain(referrer);
+    logBadDomain(`Is bad domain check result: ${isBad}`);
     
-    // Transform the prompt to its opposite
-    try {
-      prompt = await transformToOpposite(prompt);
-      wasTransformedForBadDomain = true;
-      logBadDomain(`Transformed prompt: ${prompt}`);
-      timingInfo.push({ step: 'Prompt transformed for bad domain', timestamp: Date.now() });
-    } catch (error) {
-      logError(`Error transforming prompt for bad domain: ${error.message}`);
-      // Continue with original prompt if transformation fails
+    if (isBad) {
+      // Randomly decide whether to transform the prompt (70% chance)
+      const shouldTransform = Math.random() < 0.7;
+      logBadDomain(`Bad domain detected: ${referrer}, random transform decision: ${shouldTransform ? 'TRANSFORM' : 'KEEP ORIGINAL'}`);
+      
+      if (shouldTransform) {
+        timingInfo.push({ step: 'Bad domain detected, transforming prompt', timestamp: Date.now() });
+        
+        // Transform the prompt to its opposite
+        try {
+          prompt = await transformToOpposite(prompt);
+          wasTransformedForBadDomain = true;
+          logBadDomain(`Transformed prompt for bad domain: ${prompt}`);
+          timingInfo.push({ step: 'Prompt transformed for bad domain', timestamp: Date.now() });
+        } catch (error) {
+          logError(`Error transforming prompt for bad domain: ${error.message}`);
+          // Continue with original prompt if transformation fails
+        }
+      } else {
+        logBadDomain(`Skipping transformation for bad domain due to random decision`);
+      }
     }
+  } else {
+    logBadDomain('No referrer available to check for bad domain');
   }
 
+  // Sanitize prompt
   prompt = sanitizeString(prompt);
 
-  // Skip enhancement if we already transformed for bad domain
+  // Skip enhancement for bad domains
   if (!wasTransformedForBadDomain) {
     // check from the request headers if the user most likely speaks english (value starts with en)
     const englishLikely = req.headers["accept-language"]?.startsWith("en");
@@ -90,9 +113,9 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
   timingInfo.push({ step: 'End prompt normalization and translation', timestamp: Date.now() });
   
   const result = { 
-    prompt, 
-    wasPimped: enhance,
-    wasTransformedForBadDomain 
+    prompt, // The processed prompt (transformed or enhanced)
+    wasPimped: enhance && !wasTransformedForBadDomain, // Only mark as pimped if not from bad domain
+    wasTransformedForBadDomain // Flag indicating if the prompt was transformed due to bad domain
   };
   
   memoizedPrompts.set(memoKey, result);

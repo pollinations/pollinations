@@ -103,11 +103,16 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     const { prompt, wasPimped, wasTransformedForBadDomain } = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams, referrer);
     progress.updateBar(requestId, 30, 'Prompt', 'Normalized');
     
+    // For bad domains, log that we're using the transformed prompt
     if (wasTransformedForBadDomain) {
-      logApi("prompt transformed for bad domain", prompt);
+      logApi("prompt transformed for bad domain, using alternative:", prompt);
     }
     
-    logApi("prompt", prompt);
+    // For generation, use the transformed prompt when from bad domains, otherwise use the regular prompt
+    const generationPrompt = prompt;
+    
+    logApi("display prompt", prompt);
+    logApi("generation prompt", generationPrompt);
     logApi("safeParams", safeParams);
 
     // timingInfo.push({ step: 'Generation started.', timestamp: Date.now() });
@@ -117,7 +122,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     progress.updateBar(requestId, 40, 'Server', 'Selecting optimal server...');
     progress.updateBar(requestId, 50, 'Generation', 'Preparing...');
     
-    const { buffer, ...maturity } = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId);
+    const { buffer, ...maturity } = await createAndReturnImageCached(generationPrompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId, wasTransformedForBadDomain);
 
     progress.updateBar(requestId, 50, 'Generation', 'Starting generation');
 
@@ -147,6 +152,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
           ...safeParams,
           concurrentRequests: countFluxJobs(),
           imageURL,
+          // Always use the display prompt which will be original prompt for bad domains
           prompt,
           ...maturity,
           maturity,
@@ -154,8 +160,8 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
           ip: getIp(req),
           status: "end_generating",
           referrer,
+          // Use original wasPimped for normal domains, never for bad domains
           wasPimped,
-          wasTransformedForBadDomain,
           nsfw: maturity.isChild || maturity.isMature,
           private: safeParams.nofeed,
           token: extractToken(req) && extractToken(req).slice(0, 2) + "..."

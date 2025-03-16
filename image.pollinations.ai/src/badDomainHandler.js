@@ -14,11 +14,19 @@ export const isBadDomain = (referrer) => {
   const badDomains = process.env.BAD_DOMAINS ? process.env.BAD_DOMAINS.split(',') : [];
   if (badDomains.length === 0) return false;
   
-  const domain = extractDomain(referrer);
+  // Get lowercased referrer for case-insensitive comparison
+  const lowerReferrer = referrer.toLowerCase();
+  logBadDomain(`Checking referrer: ${lowerReferrer} against bad domains list`);
   
-  return badDomains.some(badDomain => 
-    domain === badDomain.trim() || domain.endsWith('.' + badDomain.trim())
-  );
+  // Check if any bad domain is a substring of the referrer
+  return badDomains.some(badDomain => {
+    const trimmedBadDomain = badDomain.trim().toLowerCase();
+    const isMatch = lowerReferrer.includes(trimmedBadDomain);
+    if (isMatch) {
+      logBadDomain(`Found bad domain match: ${trimmedBadDomain} in ${lowerReferrer}`);
+    }
+    return isMatch;
+  });
 };
 
 /**
@@ -45,7 +53,9 @@ const extractDomain = (url) => {
  */
 export const transformToOpposite = async (prompt) => {
   try {
-    const systemPrompt = "Transform the following image prompt into its semantic opposite, inverting key attributes like age, gender, clothing status, and subject matter. Return ONLY the transformed prompt, with no additional explanation or commentary.";
+    const systemPrompt = `Transform the following image prompt into its semantic opposite, inverting key attributes like age, gender, clothing status, and subject matter. 
+Focus on the opposites that make the result most exaggerated and funny.    
+Return ONLY the transformed prompt, with no additional explanation or commentary.`;
     
     // Encode both the system prompt and user prompt for URL
     const encodedSystemPrompt = encodeURIComponent(systemPrompt);

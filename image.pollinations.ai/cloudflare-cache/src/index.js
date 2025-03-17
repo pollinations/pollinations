@@ -1,5 +1,6 @@
 import { generateCacheKey, cacheResponse } from './cache-utils.js';
 import { proxyToOrigin } from './image-proxy.js';
+import { sendToAnalytics } from './analytics.js';
 
 /**
  * Cloudflare Worker for caching Pollinations images in R2
@@ -17,10 +18,38 @@ export default {
     
     console.log(`Request: ${request.method} ${url.pathname}`);
     
+    // Extract the prompt for analytics
+    const originalPrompt = url.pathname.startsWith('/prompt/')
+      ? decodeURIComponent(url.pathname.split('/prompt/')[1])
+      : '';
+    
+    // Process query parameters for analytics
+    const safeParams = {};
+    for (const [key, value] of url.searchParams.entries()) {
+      safeParams[key] = value;
+    }
+    
+    // Get referrer for analytics
+    const referrer = request.headers.get('referer') || 
+                    request.headers.get('referrer') || 
+                    '';
+    
     // Skip caching for certain paths or non-image requests
     if (url.searchParams.has('no-cache') || !url.pathname.startsWith('/prompt')) {
       console.log('Skipping cache for non-cacheable request');
       return await proxyToOrigin(request, env);
+    }
+    
+    // Send imageRequested analytics event
+    if (url.pathname.startsWith('/prompt/')) {
+      ctx.waitUntil(
+        sendToAnalytics(request, "imageRequested", {
+          originalPrompt,
+          safeParams,
+          referrer,
+          cacheStatus: 'pending'
+        }, env)
+      );
     }
     
     // Generate a cache key from the URL path and query parameters
@@ -33,6 +62,19 @@ export default {
       
       if (cachedImage) {
         console.log(`Cache hit for: ${cacheKey}`);
+        
+        // Send analytics for cache hit
+        if (url.pathname.startsWith('/prompt/')) {
+          ctx.waitUntil(
+            sendToAnalytics(request, "imageGenerated", {
+              originalPrompt,
+              safeParams,
+              referrer,
+              cacheStatus: 'hit'
+            }, env)
+          );
+        }
+        
         // Return the cached image with appropriate headers
         const cachedHeaders = new Headers();
         
@@ -81,10 +123,35 @@ export default {
       console.log('Caching successful image response');
       // Pass the original URL and request to the cacheResponse function
       ctx.waitUntil(cacheResponse(cacheKey, response.clone(), env, url.toString(), request));
+      
+      // Send analytics for cache miss but successful generation
+      if (url.pathname.startsWith('/prompt/')) {
+        ctx.waitUntil(
+          sendToAnalytics(request, "imageGenerated", {
+            originalPrompt,
+            safeParams,
+            referrer,
+            cacheStatus: 'miss'
+          }, env)
+        );
+      }
     } else {
       console.log('Not caching response - either not successful or not an image');
       console.log('Response status:', response.status);
       console.log('Content-Type:', response.headers.get('content-type'));
+      
+      // Send analytics for failed request
+      if (url.pathname.startsWith('/prompt/') && response.status !== 200) {
+        ctx.waitUntil(
+          sendToAnalytics(request, "imageGenerationFailed", {
+            originalPrompt,
+            safeParams,
+            referrer,
+            error: `HTTP ${response.status}: ${response.statusText}`,
+            cacheStatus: 'miss'
+          }, env)
+        );
+      }
     }
     
     // Add cache miss header to the response

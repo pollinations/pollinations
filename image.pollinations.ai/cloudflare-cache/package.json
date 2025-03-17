@@ -1,0 +1,22 @@
+{
+  "name": "pollinations-cloudflare-cache",
+  "version": "1.0.0",
+  "description": "Cloudflare R2 + CDN caching solution for Pollinations image service",
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "logs": "wrangler tail"
+  },
+  "keywords": [
+    "cloudflare",
+    "r2",
+    "cdn",
+    "caching",
+    "pollinations"
+  ],
+  "author": "Pollinations",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

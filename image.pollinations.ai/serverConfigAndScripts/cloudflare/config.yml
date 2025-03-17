@@ -4,4 +4,6 @@ credentials-file: /home/ubuntu/.cloudflared/0c0d5f66-3ead-47ff-ac86-fa9ce673fcea
 ingress:
   - hostname: image2.pollinations.ai
     service: http://localhost:16384
+  - hostname: image-origin.pollinations.ai
+    service: http://localhost:16384
   - service: http_status:404

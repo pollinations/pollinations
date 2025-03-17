@@ -9,7 +9,7 @@ bucket_name = "pollinations-images"
 
 # Environment variables
 [vars]
-ORIGIN_HOST = "image.pollinations.ai"
+ORIGIN_HOST = "image-origin.pollinations.ai"
 
 
 # wrangler.toml (wrangler v3.88.0^)

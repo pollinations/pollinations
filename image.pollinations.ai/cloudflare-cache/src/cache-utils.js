@@ -9,17 +9,6 @@
  * @returns {string} - The cache key
  */
 export function generateCacheKey(url) {
-  // According to the API docs, the prompt can be in the path or as a 'p' parameter
-  // First, check if the URL path contains the prompt (format: /prompt/{prompt})
-  const pathMatch = url.pathname.match(/^\/prompt\/(.+)$/);
-  const pathPrompt = pathMatch ? pathMatch[1] : '';
-  
-  // Also check for the 'p' parameter which is used in the API
-  const queryPrompt = url.searchParams.get('p') || '';
-  
-  // Use the prompt from either source
-  const prompt = pathPrompt || queryPrompt;
-  
   // Normalize the URL by sorting query parameters
   const normalizedUrl = new URL(url);
   const params = Array.from(normalizedUrl.searchParams.entries())

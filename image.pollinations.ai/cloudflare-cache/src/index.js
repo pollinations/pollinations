@@ -11,9 +11,6 @@ import { proxyToOrigin } from './image-proxy.js';
  */
 export default {
   async fetch(request, env, ctx) {
-    // Start timing the request
-    const startTime = Date.now();
-    
     // Immediately log request details
     const url = new URL(request.url);
     const clientIP = request.headers.get('cf-connecting-ip') || 'unknown';
@@ -24,53 +21,6 @@ export default {
     console.log(`Path: ${url.pathname}`);
     console.log(`Query parameters: ${url.search}`);
     console.log(`User-Agent: ${request.headers.get('user-agent')}`);
-    
-    // Debug mode - if the URL has a 'debug' parameter, return a dummy response
-    if (url.searchParams.has('debug')) {
-      console.log('Debug mode activated - returning dummy response');
-      const debugInfo = {
-        timestamp: timestamp,
-        clientIP: clientIP,
-        method: request.method,
-        path: url.pathname,
-        query: url.search,
-        headers: Object.fromEntries([...request.headers.entries()]),
-        cacheKey: generateCacheKey(url)
-      };
-      
-      return new Response(JSON.stringify(debugInfo, null, 2), {
-        headers: {
-          'content-type': 'application/json',
-          'access-control-allow-origin': '*',
-          'x-debug': 'true'
-        }
-      });
-    }
-    
-    // Debug URL mode - if the URL has a 'debugurl' parameter, return the origin URL that would be fetched
-    if (url.searchParams.has('debugurl')) {
-      console.log('Debug URL mode activated - returning origin URL');
-      const originUrl = new URL(url.toString());
-      originUrl.hostname = env.ORIGIN_HOST || 'image.pollinations.ai';
-      
-      // Remove the debugurl parameter
-      originUrl.searchParams.delete('debugurl');
-      
-      const response = {
-        originUrl: originUrl.toString(),
-        path: originUrl.pathname,
-        query: originUrl.search,
-        cacheKey: generateCacheKey(url)
-      };
-      
-      return new Response(JSON.stringify(response, null, 2), {
-        headers: {
-          'content-type': 'application/json',
-          'access-control-allow-origin': '*',
-          'x-debug': 'true'
-        }
-      });
-    }
     
     // Skip caching for certain paths or non-image requests
     if (url.searchParams.has('no-cache') || !url.pathname.startsWith('/prompt')) {
@@ -94,7 +44,6 @@ export default {
         cachedHeaders.set('content-type', cachedImage.httpMetadata?.contentType || 'image/jpeg');
         cachedHeaders.set('cache-control', 'public, max-age=31536000, immutable');
         cachedHeaders.set('x-cache', 'HIT');
-        cachedHeaders.set('x-cache-time', `${Date.now() - startTime}ms`);
         cachedHeaders.set('access-control-allow-origin', '*');
         cachedHeaders.set('access-control-allow-methods', 'GET, POST, OPTIONS');
         cachedHeaders.set('access-control-allow-headers', 'Content-Type');

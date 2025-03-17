@@ -7,12 +7,10 @@
  * Proxy a request to the original service
  * @param {Request} request - The original request
  * @param {Object} env - The environment object
+ * @param {string} originHost - The host to proxy the request to
  * @returns {Promise<Response>} - The response from the origin
  */
-export async function proxyToOrigin(request, env) {
-  // Start timing the request
-  const startTime = Date.now();
-  
+export async function proxyToOrigin(request, env, originHost) {
   // Log the original request details
   const clientIP = request.headers.get('cf-connecting-ip') || 'unknown';
   console.log('Proxying request from client IP:', clientIP);
@@ -20,7 +18,7 @@ export async function proxyToOrigin(request, env) {
   // Replace the hostname with the origin service
   const url = new URL(request.url);
   const originalUrl = url.toString();
-  url.hostname = env.ORIGIN_HOST || 'image.pollinations.ai';
+  url.hostname = originHost || env.ORIGIN_HOST || 'image.pollinations.ai';
   const targetUrl = url.toString();
   
   console.log(`Forwarding request from ${originalUrl} to ${targetUrl}`);
@@ -48,23 +46,16 @@ export async function proxyToOrigin(request, env) {
   
   // Forward the request to the origin - no transformation, just direct proxying
   console.log('Sending request to origin...');
-  const fetchStartTime = Date.now();
   try {
     // Simply wait for the origin without a timeout - following the thin proxy principle
     const response = await fetch(originRequest);
-    const fetchEndTime = Date.now();
-    console.log(`Origin response received in ${fetchEndTime - fetchStartTime}ms`);
+    console.log('Origin response received');
     
-    // Add timing information to the response headers
-    const responseHeaders = new Headers(response.headers);
-    responseHeaders.set('x-proxy-time', `${Date.now() - startTime}ms`);
-    responseHeaders.set('x-origin-time', `${fetchEndTime - fetchStartTime}ms`);
-    
-    // Create a new response with all the original headers plus our timing headers
+    // Create a new response with all the original headers
     return new Response(response.body, {
       status: response.status,
       statusText: response.statusText,
-      headers: responseHeaders,
+      headers: response.headers,
     });
   } catch (error) {
     console.error('Error proxying to origin:', error);
@@ -72,7 +63,6 @@ export async function proxyToOrigin(request, env) {
       status: 500,
       headers: {
         'content-type': 'application/json',
-        'x-proxy-time': `${Date.now() - startTime}ms`,
         'x-error': 'proxy_error'
       }
     });

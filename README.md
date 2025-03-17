@@ -150,10 +150,12 @@ graph LR
     
     R[AI Agents - Qwen, Sillytavern, ...] --> L1
     
-    L1[Image CDN] --> B
+    L1[Image CDN] --> CF[Cloudflare Worker with R2 Cache]
     L2[Text CDN] --> C
     
-    B[image.pollinations.ai - AWS EC2 CPU] --> F[Azure OpenAI - Prompt Enhancing]
+    CF --> B
+    
+    B[image-origin.pollinations.ai - AWS EC2 CPU] --> F[Azure OpenAI - Prompt Enhancing]
     B --> S[LlamaGuard - Safety Checker]
     B --> M[llmplayground.net - Custom FLUX models]
     F --> E[Translation Service - 1 GPU VM]
@@ -163,14 +165,14 @@ graph LR
     C --> SC[Scaleway API]
     C --> DS[Deepseek API]
     C --> G[Azure-hosted Serverless LLMs]
-    C --> CF[Cloudflare AI]
+    C --> CFM[Cloudflare AI]
     SC --> MI[Mistral Models]
     SC --> QW[Qwen Models]
     SC --> LL[Llama Models]
     DS --> DM[Deepseek Models]
     G --> H[OpenAI]
     G --> K[Claude]
-    CF --> CFM[Llama & Deepseek Models]
+    CFM --> CFL[Llama & Deepseek Models]
 ```
 
 ## Projects Using Pollinations.AI
@@ -186,7 +188,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 PrivatePollenAI | A privacy-focused chat assistant app that securely stores data locally, integrates with PollinationAI for text and image generation, features a minimalistic UI, and allows users to choose models and write their own system instructions | [tenacious_humming_bird](https://discordapp.com/users/tenacious_humming_bird) | [Website](https://mmojocoder.github.io/PrivatePollenAI/chat.html), [GitHub](https://github.com/MMojoCoder/PrivatePollenAI) |
 | 🆕 Zelos AI image generator | It uses Pollinations for both prompt enhancing and image generation, it was a easy to make project due to pollinations services being easy to use | [Roblox Profile](https://www.roblox.com/users/4361935306/profile) | [Website](https://websim.ai/@ISWEARIAMNOTADDICTEDTOPILLOW/ai-image-prompt-generator) |
 | 🆕 MiReXa AI | A state-of-the-art chatbot integrating multiple LLMs with advanced features including audio generation, image generation, mathematical proficiency, and real-time web search | withthatway | [Website](https://mirexa.vercel.app) |
-| Pollinations Chat | Pollinations' integrated AI for text and images, totally free and unlimited | @adrianoprogramer | [Website](https://websim.ai/@AdrianoDev1/pollinations-ai-assistant/4), [Instagram](https://www.instagram.com/adrianop_761?igsh=MmxwNnRsajVnZmMy) |
+| Pollinations Chat | Pollinations' integrated AI for text and images, totally free and unlimited | @adrianoprogramer | [Website](https://websim.ai/@AdrianoDev1/pollinations-ai-assistant/4), [Instagram](https://www.instagram.com/adrianop_761?igshid=MmxwNnRsajVnZmMy) |
 | LobeChat | An open-source, modern-design ChatGPT/LLMs UI/Framework with speech-synthesis, multi-modal, and extensible plugin system | - | [Website](https://lobehub.com/plugins/pollinations-drawing), [GitHub](https://github.com/lobehub/lobe-chat) |
 | Qwen-Agent | A framework for developing agentic LLM applications | - | [GitHub](https://github.com/QwenLM/Qwen-Agent) |
 | SillyTavern | An LLM frontend for power users. Pollinations permits it to generate images | - | [Docs](https://docs.sillytavern.app/extensions/stable-diffusion/), [GitHub](https://github.com/SillyTavern/SillyTavern) |
@@ -334,7 +336,7 @@ Our codebase is organized into several key folders, each serving a specific purp
 
 - [`pollinations.ai/`](./app/): The main React application for the Pollinations.ai website.
 
-- [`image.pollinations.ai/`](./image.pollinations.ai/): Backend service for image generation and caching.
+- [`image.pollinations.ai/`](./image.pollinations.ai/): Backend service for image generation and caching with Cloudflare Workers and R2 storage.
 
 - [`pollinations-react/`](./pollinations-react/): React component library for Pollinations.ai.
 

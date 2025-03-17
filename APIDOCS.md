@@ -290,6 +290,38 @@ async function generateAudio() {
 generateAudio();
 ```
 
+### Javascript (Audio Transcription)
+```javascript
+async function sendAudioToAPI(base64Audio) {
+    const apiUrl = "https://text.pollinations/openai";
+    const requestBody = {
+        model: "openai-audio",
+        messages: [
+            {
+                role: "user",
+                content: [
+                    { type: "text", text: "Transcribe this Recoding Excatly, word to word." },
+                    { type: "input_audio", input_audio: { data: base64Audio, format: "wav" } }
+                ]
+            }
+        ]
+    };
+
+    try {
+        const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestBody)
+        });
+        
+        const result = await response.json();
+        console.log("Transcript:", result);
+    } catch (error) {
+        console.error("Error:", error);
+    }
+}
+```
+
 ### HTML (Image Embedding)
 
 ```html

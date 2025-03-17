@@ -74,10 +74,87 @@ export async function cacheResponse(cacheKey, response, env, originalUrl, reques
     // Store the image in R2 using the cache key directly
     const imageBuffer = await response.arrayBuffer();
     
-    // Get client IP address from request
+    // Get client information from request
     const clientIp = request?.headers?.get('cf-connecting-ip') || 
                     request?.headers?.get('x-forwarded-for')?.split(',')[0] || 
                     'unknown';
+    
+    // Get additional client information
+    const userAgent = request?.headers?.get('user-agent') || '';
+    const referer = request?.headers?.get('referer') || request?.headers?.get('referrer') ||'';
+    const acceptLanguage = request?.headers?.get('accept-language') || '';
+    
+    // Get request-specific information
+    const method = request?.method || 'GET';
+    const requestTime = new Date().toISOString();
+    const requestId = request?.headers?.get('cf-ray') || '';  // Cloudflare Ray ID uniquely identifies the request
+    
+    // Helper function to sanitize and limit string length
+    const sanitizeValue = (value, maxLength = 256, key = null) => {
+      if (value === undefined || value === null) return undefined;
+      if (typeof value === 'string') return value.substring(0, maxLength);
+      if (Array.isArray(value)) {
+        return value.map(item => sanitizeValue(item, maxLength));
+      }
+      if (typeof value === 'object') {
+        // Special case for detectionIds - stringify it
+        if (key === 'detectionIds') {
+          try {
+            return JSON.stringify(value);
+          } catch (e) {
+            return undefined;
+          }
+        }
+        // Skip other objects
+        return undefined;
+      }
+      return value;
+    };
+    
+    // Filter CF data to exclude object values
+    const filterCfData = (cf) => {
+      if (!cf) return {};
+      
+      const filtered = {};
+      for (const [key, value] of Object.entries(cf)) {
+        // Skip botManagement as we'll handle it separately
+        if (key === 'botManagement') continue;
+        
+        // Only include non-object values or special cases
+        if (typeof value !== 'object' || value === null) {
+          filtered[key] = sanitizeValue(value, 256, key);
+        } else if (key === 'detectionIds') {
+          // Special case for detectionIds
+          try {
+            filtered[key] = JSON.stringify(value);
+          } catch (e) {
+            // Skip if can't stringify
+          }
+        }
+      }
+      return filtered;
+    };
+    
+    // Filter botManagement to exclude object values
+    const filterBotManagement = (botManagement) => {
+      if (!botManagement) return {};
+      
+      const filtered = {};
+      for (const [key, value] of Object.entries(botManagement)) {
+        // Only include non-object values except for detectionIds
+        if (typeof value !== 'object' || value === null) {
+          filtered[key] = sanitizeValue(value, 256, key);
+        } else if (key === 'detectionIds') {
+          // Special case for detectionIds
+          try {
+            filtered[key] = JSON.stringify(value);
+          } catch (e) {
+            // Skip if can't stringify
+          }
+        }
+      }
+      return filtered;
+    };
     
     // Create metadata object with content type and original URL
     const metadata = {
@@ -89,9 +166,26 @@ export async function cacheResponse(cacheKey, response, env, originalUrl, reques
         cacheControl: response.headers.get('cache-control')
       },
       customMetadata: {
+        // Essential metadata
         originalUrl: originalUrl || '',
         cachedAt: new Date().toISOString(),
-        clientIp: clientIp
+        clientIp: clientIp,
+        
+        // Client information (with length limits)
+        userAgent: userAgent.substring(0, 256), 
+        referer: referer.substring(0, 256),
+        acceptLanguage: acceptLanguage.substring(0, 64),
+        
+        // Request-specific information
+        method,
+        requestTime,
+        requestId,
+        
+        // Cloudflare information - spread filtered cf data
+        ...filterCfData(request?.cf),
+        
+        // Bot Management information if available
+        ...filterBotManagement(request?.cf?.botManagement)
       }
     };
     
@@ -102,10 +196,17 @@ export async function cacheResponse(cacheKey, response, env, originalUrl, reques
       }
     });
     
+    // Remove empty values from customMetadata to save space
+    Object.keys(metadata.customMetadata).forEach(key => {
+      if (!metadata.customMetadata[key]) {
+        delete metadata.customMetadata[key];
+      }
+    });
+    
     // Store the object with metadata
     await env.IMAGE_BUCKET.put(cacheKey, imageBuffer, metadata);
     
-    console.log(`Cached image for key ${cacheKey} from ${originalUrl || 'unknown source'} requested by ${clientIp}`);
+    console.log(`Cached image for key ${cacheKey}`);
     return true;
   } catch (error) {
     console.error('Error caching response:', error);

@@ -81,7 +81,7 @@ export async function cacheResponse(cacheKey, response, env, originalUrl, reques
     
     // Get additional client information
     const userAgent = request?.headers?.get('user-agent') || '';
-    const referer = request?.headers?.get('referer') || '';
+    const referer = request?.headers?.get('referer') || request?.headers?.get('referrer') ||'';
     const acceptLanguage = request?.headers?.get('accept-language') || '';
     
     // Get request-specific information
@@ -89,19 +89,72 @@ export async function cacheResponse(cacheKey, response, env, originalUrl, reques
     const requestTime = new Date().toISOString();
     const requestId = request?.headers?.get('cf-ray') || '';  // Cloudflare Ray ID uniquely identifies the request
     
-    // Get Cloudflare-specific information if available
-    const country = request?.cf?.country || '';
-    const city = request?.cf?.city || '';
-    const continent = request?.cf?.continent || '';
-    const timezone = request?.cf?.timezone || '';
-    const postalCode = request?.cf?.postalCode || '';
-    const region = request?.cf?.region || '';
-    const regionCode = request?.cf?.regionCode || '';
-    const colo = request?.cf?.colo || '';  // Cloudflare data center that handled the request
-    const asn = request?.cf?.asn || '';    // Autonomous System Number (network provider)
-    const tlsVersion = request?.cf?.tlsVersion || '';  // TLS version used for the connection
-    const tlsCipher = request?.cf?.tlsCipher || '';    // TLS cipher used for the connection
-    const httpProtocol = request?.cf?.httpProtocol || '';  // HTTP protocol version (HTTP/1.1, HTTP/2, etc.)
+    // Helper function to sanitize and limit string length
+    const sanitizeValue = (value, maxLength = 256, key = null) => {
+      if (value === undefined || value === null) return undefined;
+      if (typeof value === 'string') return value.substring(0, maxLength);
+      if (Array.isArray(value)) {
+        return value.map(item => sanitizeValue(item, maxLength));
+      }
+      if (typeof value === 'object') {
+        // Special case for detectionIds - stringify it
+        if (key === 'detectionIds') {
+          try {
+            return JSON.stringify(value);
+          } catch (e) {
+            return undefined;
+          }
+        }
+        // Skip other objects
+        return undefined;
+      }
+      return value;
+    };
+    
+    // Filter CF data to exclude object values
+    const filterCfData = (cf) => {
+      if (!cf) return {};
+      
+      const filtered = {};
+      for (const [key, value] of Object.entries(cf)) {
+        // Skip botManagement as we'll handle it separately
+        if (key === 'botManagement') continue;
+        
+        // Only include non-object values or special cases
+        if (typeof value !== 'object' || value === null) {
+          filtered[key] = sanitizeValue(value, 256, key);
+        } else if (key === 'detectionIds') {
+          // Special case for detectionIds
+          try {
+            filtered[key] = JSON.stringify(value);
+          } catch (e) {
+            // Skip if can't stringify
+          }
+        }
+      }
+      return filtered;
+    };
+    
+    // Filter botManagement to exclude object values
+    const filterBotManagement = (botManagement) => {
+      if (!botManagement) return {};
+      
+      const filtered = {};
+      for (const [key, value] of Object.entries(botManagement)) {
+        // Only include non-object values except for detectionIds
+        if (typeof value !== 'object' || value === null) {
+          filtered[key] = sanitizeValue(value, 256, key);
+        } else if (key === 'detectionIds') {
+          // Special case for detectionIds
+          try {
+            filtered[key] = JSON.stringify(value);
+          } catch (e) {
+            // Skip if can't stringify
+          }
+        }
+      }
+      return filtered;
+    };
     
     // Create metadata object with content type and original URL
     const metadata = {
@@ -128,19 +181,11 @@ export async function cacheResponse(cacheKey, response, env, originalUrl, reques
         requestTime,
         requestId,
         
-        // Cloudflare-specific information
-        country,
-        city,
-        continent,
-        timezone,
-        postalCode,
-        region,
-        regionCode,
-        colo,
-        asn,
-        tlsVersion,
-        tlsCipher,
-        httpProtocol
+        // Cloudflare information - spread filtered cf data
+        ...filterCfData(request?.cf),
+        
+        // Bot Management information if available
+        ...filterBotManagement(request?.cf?.botManagement)
       }
     };
     

@@ -74,10 +74,34 @@ export async function cacheResponse(cacheKey, response, env, originalUrl, reques
     // Store the image in R2 using the cache key directly
     const imageBuffer = await response.arrayBuffer();
     
-    // Get client IP address from request
+    // Get client information from request
     const clientIp = request?.headers?.get('cf-connecting-ip') || 
                     request?.headers?.get('x-forwarded-for')?.split(',')[0] || 
                     'unknown';
+    
+    // Get additional client information
+    const userAgent = request?.headers?.get('user-agent') || '';
+    const referer = request?.headers?.get('referer') || '';
+    const acceptLanguage = request?.headers?.get('accept-language') || '';
+    
+    // Get request-specific information
+    const method = request?.method || 'GET';
+    const requestTime = new Date().toISOString();
+    const requestId = request?.headers?.get('cf-ray') || '';  // Cloudflare Ray ID uniquely identifies the request
+    
+    // Get Cloudflare-specific information if available
+    const country = request?.cf?.country || '';
+    const city = request?.cf?.city || '';
+    const continent = request?.cf?.continent || '';
+    const timezone = request?.cf?.timezone || '';
+    const postalCode = request?.cf?.postalCode || '';
+    const region = request?.cf?.region || '';
+    const regionCode = request?.cf?.regionCode || '';
+    const colo = request?.cf?.colo || '';  // Cloudflare data center that handled the request
+    const asn = request?.cf?.asn || '';    // Autonomous System Number (network provider)
+    const tlsVersion = request?.cf?.tlsVersion || '';  // TLS version used for the connection
+    const tlsCipher = request?.cf?.tlsCipher || '';    // TLS cipher used for the connection
+    const httpProtocol = request?.cf?.httpProtocol || '';  // HTTP protocol version (HTTP/1.1, HTTP/2, etc.)
     
     // Create metadata object with content type and original URL
     const metadata = {
@@ -89,9 +113,34 @@ export async function cacheResponse(cacheKey, response, env, originalUrl, reques
         cacheControl: response.headers.get('cache-control')
       },
       customMetadata: {
+        // Essential metadata
         originalUrl: originalUrl || '',
         cachedAt: new Date().toISOString(),
-        clientIp: clientIp
+        clientIp: clientIp,
+        
+        // Client information (with length limits)
+        userAgent: userAgent.substring(0, 256), 
+        referer: referer.substring(0, 256),
+        acceptLanguage: acceptLanguage.substring(0, 64),
+        
+        // Request-specific information
+        method,
+        requestTime,
+        requestId,
+        
+        // Cloudflare-specific information
+        country,
+        city,
+        continent,
+        timezone,
+        postalCode,
+        region,
+        regionCode,
+        colo,
+        asn,
+        tlsVersion,
+        tlsCipher,
+        httpProtocol
       }
     };
     
@@ -102,10 +151,17 @@ export async function cacheResponse(cacheKey, response, env, originalUrl, reques
       }
     });
     
+    // Remove empty values from customMetadata to save space
+    Object.keys(metadata.customMetadata).forEach(key => {
+      if (!metadata.customMetadata[key]) {
+        delete metadata.customMetadata[key];
+      }
+    });
+    
     // Store the object with metadata
     await env.IMAGE_BUCKET.put(cacheKey, imageBuffer, metadata);
     
-    console.log(`Cached image for key ${cacheKey} from ${originalUrl || 'unknown source'} requested by ${clientIp}`);
+    console.log(`Cached image for key ${cacheKey}`);
     return true;
   } catch (error) {
     console.error('Error caching response:', error);

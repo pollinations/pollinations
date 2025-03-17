@@ -330,10 +330,16 @@ export async function convertToJpeg(buffer) {
 
 /**
  * Creates and returns images with optional logo and metadata, checking for NSFW content.
- * @param {{ jobs: Job[], safeParams: Object, concurrentRequests: number, ip: string }} params
- * @returns {Promise<Array<{ buffer: Buffer, isChild: boolean, isMature: boolean }>>}
+ * @param {string} prompt - The prompt for image generation.
+ * @param {Object} safeParams - Parameters for image generation.
+ * @param {number} concurrentRequests - Number of concurrent requests.
+ * @param {string} originalPrompt - The original prompt before any transformations.
+ * @param {Object} progress - Progress tracking object.
+ * @param {string} requestId - Request ID for progress tracking.
+ * @param {boolean} wasTransformedForBadDomain - Flag indicating if the prompt was transformed due to bad domain.
+ * @returns {Promise<{buffer: Buffer, isChild: boolean, isMature: boolean}>}
  */
-export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests, originalPrompt, progress, requestId) {
+export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests, originalPrompt, progress, requestId, wasTransformedForBadDomain = false) {
   try {
     // Update generation progress
     if (progress) progress.updateBar(requestId, 60, 'Generation', 'Calling API...');
@@ -405,7 +411,15 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
 
     if (progress) progress.updateBar(requestId, 90, 'Processing', 'Writing metadata...');
     const { buffer: _buffer, ...maturity } = bufferAndMaturity;
-    bufferWithLegend = await writeExifMetadata(bufferWithLegend, { prompt, originalPrompt, ...safeParams }, maturity);
+    
+    // Metadata preparation - handle bad domain transformation
+    // When a prompt was transformed due to bad domain, always use the original prompt in metadata
+    // This ensures clients never see the transformed prompt
+    const metadataObj = wasTransformedForBadDomain ? 
+      { ...safeParams, prompt: originalPrompt, originalPrompt } : 
+      { prompt, originalPrompt, ...safeParams };
+    
+    bufferWithLegend = await writeExifMetadata(bufferWithLegend, metadataObj, maturity);
 
     // if isChild is true and isMature is true throw a content is prohibited error
     // if (isChild && isMature) {

@@ -24,7 +24,7 @@ const MODEL_MAPPING = {
     // Cloudflare models
     'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
     'llamalight': '@cf/meta/llama-3.1-8b-instruct',
-    'deepseek-r1': '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
+    'deepseek-reasoning': '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
     'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
     'phi': 'phi-4-instruct',
     'llama-vision': '@cf/meta/llama-3.2-11b-vision-instruct',
@@ -33,7 +33,7 @@ const MODEL_MAPPING = {
     'mistral': 'mistral/mistral-small-24b-instruct-2501:fp8',  // Updated to use the new Mistral model
     'llama-scaleway': 'llama-3.3-70b-instruct',
     'llamalight-scaleway': 'llama-3.1-8b-instruct',
-    'deepseek-r1-llama': 'deepseek-r1-distill-llama-70b',
+    'deepseek-reasoning-large': 'deepseek-r1-distill-llama-70b',
     'pixtral': 'pixtral-12b-2409',  // Pixtral model using Scaleway
     // Modal models
     'hormoz': 'Hormoz-8B',
@@ -53,7 +53,8 @@ const SYSTEM_PROMPTS = {
     // Cloudflare models
     'llama': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
     'llamalight': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
-    'deepseek-r1': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
+    'deepseek-reasoning-large': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
+    'deepseek-reasoning': unrestrictedPrompt,
     'llamaguard': 'You are a content moderation assistant. Your task is to analyze the input and identify any harmful, unsafe, or inappropriate content.',
     'phi': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
     'llama-vision': unrestrictedPrompt,
@@ -63,7 +64,6 @@ const SYSTEM_PROMPTS = {
     'llamalight-scaleway': unrestrictedPrompt,
     'qwen-coder': `You are an expert coding assistant with deep knowledge of programming languages, software architecture, and best practices. Your purpose is to help users write high-quality, efficient, and maintainable code. You provide clear explanations, suggest improvements, and help debug issues while following industry best practices.`,
     'gemini-thinking': 'You are Gemini, a helpful and versatile AI assistant built by Google. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone. When appropriate, show your reasoning step by step.',
-    'deepseek-r1-distill-llama-70b': unrestrictedPrompt,
     'pixtral': unrestrictedPrompt,  // Pixtral model with unrestricted prompt
     // Modal models
     'hormoz': 'You are Hormoz, a helpful AI assistant created by Muhammadreza Haghiri. You provide accurate and thoughtful responses.',

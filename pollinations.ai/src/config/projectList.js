@@ -121,6 +121,13 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 Watch TV with neko (Roblox)",
+      url: "https://www.roblox.com/games/15087497266/UPD-Watch-TV-with-neko-AI",
+      description: "Roblox game where you can talk with AI catgirls 🐾 or just have fun, talking with other players in cozy rooms ⭐️",
+      author: "https://www.roblox.com/users/3857849039/profile/",
+      submissionDate: "2025-03-17",
+    },
+    {
       name: "🆕 Jenny AI",
       url: "https://jenny-two.vercel.app/",
       description: "Jenny AI is an AI chatbot and character creation platform with tts and sst it also has image generation and vision ability which are powered by pollinations.",

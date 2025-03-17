@@ -121,6 +121,13 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 PixPax",
+      url: "https://pixpal.chat",
+      description: "A user-friendly chatbot that lets you analyze images, remix existing images or create new images, all through simple chat.",
+      author: "@andreas_11",
+      submissionDate: "2025-03-17",
+    },
+    {
       name: "🆕 Watch TV with neko (Roblox)",
       url: "https://www.roblox.com/games/15087497266/UPD-Watch-TV-with-neko-AI",
       description: "Roblox game where you can talk with AI catgirls 🐾 or just have fun, talking with other players in cozy rooms ⭐️",

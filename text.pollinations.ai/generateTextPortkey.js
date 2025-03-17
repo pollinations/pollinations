@@ -74,7 +74,6 @@ const SYSTEM_PROMPTS = {
 // Default options
 const DEFAULT_OPTIONS = {
     model: 'openai',
-    temperature: 0.7,
     jsonMode: false
 };
 
@@ -124,6 +123,7 @@ const baseMistralConfig = {
     'custom-host': process.env.SCALEWAY_MISTRAL_BASE_URL,
     authKey: process.env.SCALEWAY_MISTRAL_API_KEY,
     // Set default max_tokens to 8192
+    temperature: 0.3,
     'max-tokens': 8192,
 };
 
@@ -339,48 +339,6 @@ export const portkeyConfig = {
     }),
 };
 
-// Function to handle Llama Vision license agreement
-async function agreeLlamaVisionLicense() {
-    try {
-        // Create a client to send the agreement message
-        const client = createOpenAICompatibleClient({
-            endpoint: () => process.env.PORTKEY_API_GATEWAY_URL || 'http://localhost:8000',
-            authHeaderName: 'Authorization',
-            authHeaderValue: () => `Bearer ${process.env.PORTKEY_API_KEY || 'dummy-key'}`,
-            additionalHeaders: {},
-            transformRequest: (requestBody) => {
-                return {
-                    ...requestBody,
-                    headers: {
-                        ...requestBody.headers,
-                        'x-portkey-provider': 'openai',
-                        'x-portkey-custom-host': `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
-                        'x-portkey-auth-key': process.env.CLOUDFLARE_AUTH_TOKEN
-                    }
-                };
-            }
-        });
-
-        // Send the agreement message
-        await client([{ role: 'user', content: 'agree' }], {
-            model: '@cf/meta/llama-3.2-11b-vision-instruct',
-            temperature: 0.7,
-            max_tokens: 10
-        });
-        
-        log('Successfully agreed to Llama Vision license terms');
-        return true;
-    } catch (error) {
-        errorLog('Failed to agree to Llama Vision license terms:', error);
-        return false;
-    }
-}
-
-// Try to agree to the license terms on startup
-agreeLlamaVisionLicense().catch(err => {
-    errorLog('Error during Llama Vision license agreement:', err);
-});
-
 /**
  * Log configuration for a specific provider
  * @param {string} providerName - Name of the provider
@@ -425,14 +383,6 @@ export const generateTextPortkey = createOpenAICompatibleClient({
         try {
             // Get the model name from the request (already mapped by genericOpenAIClient)
             const modelName = requestBody.model; // This is already mapped by genericOpenAIClient
-
-            // Special handling for Llama Vision model
-            if (modelName === '@cf/meta/llama-3.2-11b-vision-instruct') {
-                // Try to agree to license terms first
-                agreeLlamaVisionLicense().catch(err => {
-                    errorLog('Error during Llama Vision license agreement:', err);
-                });
-            }
 
             // Check character limit
             const MAX_CHARS = 512000;

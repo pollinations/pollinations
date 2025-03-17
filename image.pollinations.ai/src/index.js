@@ -108,15 +108,12 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
       logApi("prompt transformed for bad domain, using alternative:", prompt);
     }
     
-    // For generation, use the transformed prompt when from bad domains, otherwise use the regular prompt
+    // Use the processed prompt for generation
     const generationPrompt = prompt;
     
     logApi("display prompt", prompt);
     logApi("generation prompt", generationPrompt);
     logApi("safeParams", safeParams);
-
-    // timingInfo.push({ step: 'Generation started.', timestamp: Date.now() });
-    // sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "generating", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer });
 
     // Server selection and image generation
     progress.updateBar(requestId, 40, 'Server', 'Selecting optimal server...');

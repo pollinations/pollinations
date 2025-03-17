@@ -412,9 +412,9 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
     if (progress) progress.updateBar(requestId, 90, 'Processing', 'Writing metadata...');
     const { buffer: _buffer, ...maturity } = bufferAndMaturity;
     
-    // Use the wasTransformedForBadDomain flag directly instead of comparing prompts
-    // If the prompt was transformed due to bad domain, force both prompt and originalPrompt to be the original
-    // Otherwise, use the standard behavior
+    // Metadata preparation - handle bad domain transformation
+    // When a prompt was transformed due to bad domain, always use the original prompt in metadata
+    // This ensures clients never see the transformed prompt
     const metadataObj = wasTransformedForBadDomain ? 
       { ...safeParams, prompt: originalPrompt, originalPrompt } : 
       { prompt, originalPrompt, ...safeParams };

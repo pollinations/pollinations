@@ -1,0 +1,10 @@
+flask
+torch
+torchvision
+numpy
+pillow
+requests
+basicsr
+realesrgan
+gunicorn
+werkzeug

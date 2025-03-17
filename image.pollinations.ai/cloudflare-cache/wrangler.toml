@@ -10,6 +10,9 @@ bucket_name = "pollinations-images"
 # Environment variables
 [vars]
 ORIGIN_HOST = "image-origin.pollinations.ai"
+# Google Analytics configuration - replace with actual values
+# GA_MEASUREMENT_ID = "G-XXXXXXXXXX"  # Uncomment and replace with your GA4 measurement ID
+# GA_API_SECRET = "XXXXXXXXXX"       # Uncomment and replace with your GA4 API secret
 
 # Increase limits for long-running operations
 # This requires a paid Workers Unbound plan

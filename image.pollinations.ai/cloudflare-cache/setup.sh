@@ -5,6 +5,7 @@
 # Colors for output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${GREEN}Setting up Cloudflare R2 + CDN for Pollinations...${NC}"
@@ -27,6 +28,32 @@ wrangler r2 bucket create $BUCKET_NAME
 # Install dependencies
 echo -e "${GREEN}Installing dependencies...${NC}"
 npm install
+
+# Setup analytics environment variables
+echo -e "${BLUE}Setting up Google Analytics for the worker...${NC}"
+echo -e "${YELLOW}Do you want to configure Google Analytics for the worker? (y/n)${NC}"
+read -r setup_analytics
+
+if [[ $setup_analytics =~ ^[Yy]$ ]]; then
+    echo -e "${BLUE}Enter your Google Analytics Measurement ID (e.g., G-XXXXXXXXXX):${NC}"
+    read -r ga_id
+    
+    echo -e "${BLUE}Enter your Google Analytics API Secret:${NC}"
+    read -r ga_secret
+    
+    # Update wrangler.toml file
+    sed -i "s/# GA_MEASUREMENT_ID = \"G-XXXXXXXXXX\"/GA_MEASUREMENT_ID = \"$ga_id\"/g" wrangler.toml
+    sed -i "s/# GA_API_SECRET = \"XXXXXXXXXX\"/GA_API_SECRET = \"$ga_secret\"/g" wrangler.toml
+    
+    echo -e "${GREEN}Google Analytics configuration added to wrangler.toml${NC}"
+    echo -e "${YELLOW}Note: For production, consider using Wrangler secrets instead:${NC}"
+    echo -e "${YELLOW}wrangler secret put GA_MEASUREMENT_ID${NC}"
+    echo -e "${YELLOW}wrangler secret put GA_API_SECRET${NC}"
+else
+    echo -e "${YELLOW}Skipping Google Analytics setup.${NC}"
+    echo -e "${YELLOW}Note: Analytics events won't be tracked without setting up the required variables.${NC}"
+    echo -e "${YELLOW}You can set them up later in the Cloudflare dashboard or in wrangler.toml.${NC}"
+fi
 
 # Deploy the worker
 echo -e "${GREEN}Deploying worker...${NC}"

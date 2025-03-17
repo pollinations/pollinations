@@ -3,6 +3,8 @@
  * This mirrors the sendToAnalytics functionality from the main image.pollinations.ai service
  */
 
+import { getClientIp } from './ip-utils.js';
+
 /**
  * Creates base metadata object used across different analytics events
  * @param {Request} request - The original request
@@ -13,9 +15,7 @@ const createAnalyticsMetadata = (request, params = {}) => {
   const { originalPrompt, safeParams, error } = params;
   
   // Get client information
-  const clientIP = request.headers.get('cf-connecting-ip') || 
-                  request.headers.get('x-forwarded-for')?.split(',')[0] || 
-                  'unknown';
+  const clientIP = getClientIp(request);
   
   const referrer = request.headers.get('referer') || 
                    request.headers.get('referrer') || 
@@ -84,9 +84,7 @@ export async function sendToAnalytics(request, name, params = {}, env) {
                      '';
     const userAgent = request.headers.get('user-agent') || '';
     const language = request.headers.get('accept-language') || '';
-    const clientIP = request.headers.get('cf-connecting-ip') || 
-                    request.headers.get('x-forwarded-for')?.split(',')[0] || 
-                    'unknown';
+    const clientIP = getClientIp(request);
     
     // Process query parameters into safeParams format
     const safeParams = {};
@@ -116,7 +114,7 @@ export async function sendToAnalytics(request, name, params = {}, env) {
       }]
     };
     
-    console.log('Sending payload to Google Analytics:', payload);
+    console.log(`[Analytics] Sending ${name} event to Google Analytics:`, payload);
     
     // Send to Google Analytics
     const response = await fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`, {
@@ -125,7 +123,20 @@ export async function sendToAnalytics(request, name, params = {}, env) {
     });
     
     const responseText = await response.text();
-    console.log('Response from Google Analytics:', responseText);
+    console.log(`[Analytics] Response from Google Analytics for ${name}:`, {
+      status: response.status,
+      statusText: response.statusText,
+      body: responseText || '(empty body)',
+      headers: Object.fromEntries(response.headers.entries())
+    });
+    
+    if (!response.ok) {
+      console.error(`[Analytics] Failed to send ${name} event to Google Analytics:`, {
+        status: response.status,
+        statusText: response.statusText,
+        body: responseText
+      });
+    }
     
     return response;
   } catch (error) {

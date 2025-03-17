@@ -89,12 +89,12 @@ If you need to modify the configuration:
 
 ## Required Environment Variables
 
-To ensure analytics work properly, you need to set these environment variables in your wrangler.toml file:
+To ensure analytics work properly, you need to set these environment variables:
 
 1. `GA_MEASUREMENT_ID` - Google Analytics 4 measurement ID
 2. `GA_API_SECRET` - Google Analytics 4 API secret
 
-You can set these in three ways:
+These variables are automatically configured during deployment through GitHub Actions using repository secrets. However, if you need to set them manually, you can use one of these methods:
 
 ### Option 1: Edit wrangler.toml directly
 Uncomment and set the values in the `[vars]` section of wrangler.toml:

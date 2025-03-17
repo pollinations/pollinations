@@ -1,6 +1,7 @@
 import { generateCacheKey, cacheResponse } from './cache-utils.js';
 import { proxyToOrigin } from './image-proxy.js';
 import { sendToAnalytics } from './analytics.js';
+import { getClientIp } from './ip-utils.js';
 
 /**
  * Cloudflare Worker for caching Pollinations images in R2
@@ -14,7 +15,7 @@ export default {
   async fetch(request, env, ctx) {
     // Get basic request details
     const url = new URL(request.url);
-    const clientIP = request.headers.get('cf-connecting-ip') || 'unknown';
+    const clientIP = getClientIp(request);
     
     console.log(`Request: ${request.method} ${url.pathname}`);
     
@@ -42,14 +43,17 @@ export default {
     
     // Send imageRequested analytics event
     if (url.pathname.startsWith('/prompt/')) {
-      ctx.waitUntil(
-        sendToAnalytics(request, "imageRequested", {
-          originalPrompt,
-          safeParams,
-          referrer,
-          cacheStatus: 'pending'
-        }, env)
-      );
+      const analyticsData = {
+        originalPrompt,
+        safeParams,
+        referrer,
+        cacheStatus: 'pending'
+      };
+      
+      ctx.waitUntil(Promise.all([
+        sendToAnalytics(request, "imageRequested", analyticsData, env),
+        sendToAnalytics(request, "imageRequestedProxy", analyticsData, env)
+      ]));
     }
     
     // Generate a cache key from the URL path and query parameters
@@ -65,14 +69,17 @@ export default {
         
         // Send analytics for cache hit
         if (url.pathname.startsWith('/prompt/')) {
-          ctx.waitUntil(
-            sendToAnalytics(request, "imageGenerated", {
-              originalPrompt,
-              safeParams,
-              referrer,
-              cacheStatus: 'hit'
-            }, env)
-          );
+          const analyticsData = {
+            originalPrompt,
+            safeParams,
+            referrer,
+            cacheStatus: 'hit'
+          };
+          
+          ctx.waitUntil(Promise.all([
+            sendToAnalytics(request, "imageGenerated", analyticsData, env),
+            sendToAnalytics(request, "imageGeneratedProxy", analyticsData, env)
+          ]));
         }
         
         // Return the cached image with appropriate headers
@@ -126,14 +133,17 @@ export default {
       
       // Send analytics for cache miss but successful generation
       if (url.pathname.startsWith('/prompt/')) {
-        ctx.waitUntil(
-          sendToAnalytics(request, "imageGenerated", {
-            originalPrompt,
-            safeParams,
-            referrer,
-            cacheStatus: 'miss'
-          }, env)
-        );
+        const analyticsData = {
+          originalPrompt,
+          safeParams,
+          referrer,
+          cacheStatus: 'miss'
+        };
+        
+        ctx.waitUntil(Promise.all([
+          sendToAnalytics(request, "imageGenerated", analyticsData, env),
+          sendToAnalytics(request, "imageGeneratedProxy", analyticsData, env)
+        ]));
       }
     } else {
       console.log('Not caching response - either not successful or not an image');
@@ -142,15 +152,18 @@ export default {
       
       // Send analytics for failed request
       if (url.pathname.startsWith('/prompt/') && response.status !== 200) {
-        ctx.waitUntil(
-          sendToAnalytics(request, "imageGenerationFailed", {
-            originalPrompt,
-            safeParams,
-            referrer,
-            error: `HTTP ${response.status}: ${response.statusText}`,
-            cacheStatus: 'miss'
-          }, env)
-        );
+        const analyticsData = {
+          originalPrompt,
+          safeParams,
+          referrer,
+          error: `HTTP ${response.status}: ${response.statusText}`,
+          cacheStatus: 'miss'
+        };
+        
+        ctx.waitUntil(Promise.all([
+          sendToAnalytics(request, "imageGenerationFailed", analyticsData, env),
+          sendToAnalytics(request, "imageGenerationFailedProxy", analyticsData, env)
+        ]));
       }
     }
     

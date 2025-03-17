@@ -123,6 +123,7 @@ const baseMistralConfig = {
     'custom-host': process.env.SCALEWAY_MISTRAL_BASE_URL,
     authKey: process.env.SCALEWAY_MISTRAL_API_KEY,
     // Set default max_tokens to 8192
+    temperature: 0.3,
     'max-tokens': 8192,
 };
 

@@ -28,116 +28,188 @@ const handlers = {
     openai: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai'}),
     deepseek: (messages, options) => generateDeepseek(messages, {...options, model: 'deepseek-chat'}),
     mistral: (messages, options) => generateTextPortkey(messages, {...options, model: 'mistral'}),
-    portkey: (messages, options, model) => generateTextPortkey(messages, {...options, model})
+    portkey: (messages, options, model) => generateTextPortkey(messages, {...options, model}),
+    openai: (messages, options) => generateTextPortkey(messages, { ...options, model: 'openai' }),
+    deepseek: (messages, options) => generateDeepseek(messages, { ...options, model: 'deepseek-chat' }),
+    mistral: (messages, options) => generateTextPortkey(messages, { ...options, model: 'mistral' }),
+    openRouter: (messages, options, model) => generateTextOpenRouter(messages, { ...options, model }),
+    modal: (messages, options) => generateTextModal(messages, options),
+    portkey: (messages, options, model) => generateTextPortkey(messages, { ...options, model })
 };
 
-export const availableModels = [
+// Define models first
+const models = [
     {
         name: 'openai',
-        type: 'chat',
-        censored: true,
         description: 'OpenAI GPT-4o-mini',
-        baseModel: true,
-        vision: true,
-        handler: generateTextPortkey
+        handler: generateTextPortkey,
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: true,
+        max_token: 1000,
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
         name: 'openai-large',
-        type: 'chat',
-        censored: true,
         description: 'OpenAI GPT-4o',
-        baseModel: true,
-        vision: true,
-        handler: generateTextPortkey
+        handler: generateTextPortkey,
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: true,
+        max_token: 1000,
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
         name: 'openai-reasoning',
-        type: 'chat',
-        censored: true,
         description: 'OpenAI o3-mini',
-        baseModel: true,
+        handler: generateTextPortkey,
+        details: "",
+        available: true,
         reasoning: true,
-        // vision: true,
-        handler: generateTextPortkey  
+        owned_by: "",
+        censored: true,
+        max_token: 1000,
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
         name: 'qwen-coder',
-        type: 'chat',
-        censored: true,
         description: 'Qwen 2.5 Coder 32B',
-        baseModel: true,
-        handler: generateTextPortkey
+        handler: generateTextPortkey,
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: true,
+        max_token: 128000,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
         name: 'llama',
-        type: 'chat',
-        censored: false,
         description: 'Llama 3.3 70B',
-        baseModel: true,
-        handler: generateTextPortkey
+        handler: generateTextPortkey,
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: false,
+        max_token: 1000,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
         name: 'mistral',
-        type: 'chat',
-        censored: false,
         description: 'Mistral Nemo',
-        baseModel: true,
-        handler: handlers.mistral
+        handler: handlers.mistral,
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: false,
+        max_token: 1000,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
         name: 'unity',
-        type: 'chat',
-        censored: false,
         description: 'Unity with Mistral Large by Unity AI Lab',
-        baseModel: false,
-        handler: unityMistralLarge
+        handler: unityMistralLarge,
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: false,
+        max_token: 1000,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
         name: 'midijourney',
-        type: 'chat',
-        censored: true,
         description: 'Midijourney musical transformer',
-        baseModel: false,
-        handler: midijourney
+        handler: midijourney,
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: true,
+        max_token: 1000,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
         name: 'rtist',
-        type: 'chat',
-        censored: true,
         description: 'Rtist image generator by @bqrio',
-        baseModel: false,
-        handler: rtist
+        handler: rtist,
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: true,
+        max_token: 1000,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
         name: 'searchgpt',
-        type: 'chat',
-        censored: true,
         description: 'SearchGPT with realtime news and web search',
-        baseModel: false,
-        handler: generateTextSearch
+        handler: generateTextSearch,
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: true,
+        max_token: 1000,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
         name: 'evil',
-        type: 'chat',
-        censored: false,
         description: 'Evil Mode - Experimental',
-        baseModel: false,
-        handler: evilCommandR
+        handler: evilCommandR,
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: false,
+        max_token: 1000,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
         name: 'deepseek',
-        type: 'chat',
-        censored: true,
         description: 'DeepSeek-V3',
-        baseModel: true,
-        handler: handlers.deepseek
+        handler: handlers.deepseek,
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: true,
+        max_token: 1000,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
         name: 'claude',
-        type: 'chat',
-        censored: true,
         description: 'Claude 3.5 Haiku',
-        baseModel: true,
         handler: wrapModelWithDonationMessage(
             (messages, options) => generateTextPortkey(messages, {...options, model: 'claude'}),
             'Claude 3.5 Haiku',
@@ -145,155 +217,257 @@ export const availableModels = [
                 threshold: 50,
                 currentDonations: 47
             }
-        )
+        ),
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: true,
+        max_token: 1000,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
         name: 'deepseek-r1',
-        type: 'chat',
-        censored: true,
         description: 'DeepSeek-R1 Distill Qwen 32B',
-        baseModel: true,
+        handler: generateTextPortkey,
+        details: "",
+        available: true,
         reasoning: true,
-        provider: 'cloudflare',
-        handler: generateTextPortkey
+        owned_by: 'cloudflare',
+        censored: true,
+        max_token: 1000,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
-        name: 'deepseek-reasoner',
-        type: 'chat',
-        censored: true,
+        name: 'deepseek-reasoning',
         description: 'DeepSeek R1 - Full',
-        baseModel: true,
+        handler: generateDeepseek,
+        details: "",
+        available: true,
         reasoning: true,
-        provider: 'deepseek',
-        handler: generateDeepseek
+        owned_by: 'deepseek',
+        censored: true,
+        max_token: 1000,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
         name: 'deepseek-r1-llama',
-        type: 'chat',
-        censored: true,
         description: 'DeepSeek R1 - Llama 70B',
-        baseModel: true,
+        handler: generateTextPortkey,
+        details: "",
+        available: true,
         reasoning: true,
-        provider: 'scaleway',
-        handler: generateTextPortkey
+        owned_by: 'scaleway',
+        censored: true,
+        max_token: 1000,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
         name: 'llamalight',
-        type: 'chat',
-        censored: false,
         description: 'Llama 3.1 8B Instruct',
-        baseModel: true,
-        maxTokens: 7168, // Set reasonable limit for the 8B model
-        handler: generateTextPortkey
+        handler: generateTextPortkey,
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: false,
+        max_token: 1000,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
         name: 'llamaguard',
-        type: 'safety',
-        censored: false,
         description: 'Llamaguard 7B AWQ',
-        baseModel: false,
-        provider: 'cloudflare',
-        maxTokens: 4000, // Set max tokens below the model's context window of 4096
-        handler: generateTextPortkey
+        handler: generateTextPortkey,
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: 'cloudflare',
+        censored: false,
+        max_token: 1000,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
         name: 'phi',
-        type: 'chat',
-        censored: true,
         description: 'Phi-4 Instruct',
-        baseModel: true,
-        provider: 'cloudflare',
-        handler: generateTextPortkey
+        handler: generateTextPortkey,
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: true,
+        max_token: 1000,
+        input_modalities: ["text"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
         name: 'llama-vision',
-        type: 'chat',
-        censored: false,
         description: 'Llama 3.2 11B Vision',
-        baseModel: true,
-        provider: 'cloudflare',
-        vision: true,
-        handler: generateTextPortkey
+        handler: generateTextPortkey,
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: false,
+        max_token: 1000,
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
         name: 'pixtral',
-        type: 'chat',
-        censored: false,
         description: 'Pixtral 12B',
-        baseModel: true,
-        provider: 'scaleway',
-        vision: true,
-        handler: generateTextPixtral
+        handler: generateTextPixtral,
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: false,
+        max_token: 1000,
+        input_modalities: ["text", "image"],
+        output_modalities: ["text"],
+        tools: false
     },
     {
         name: 'gemini',
-        type: 'chat',
-        censored: true,
         description: 'Gemini 2.0 Flash',
-        baseModel: true,
-        provider: 'google',
-        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'gemini'})
+        handler: (messages, options) =>
+            generateTextPortkey(messages, { ...options, model: 'gemini' }),
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: 'google',
+        censored: true,
+        max_token: 1000,
+        input_modalities: ["text", "image"],
+        output_modalities: ["audio", "text"],
+        tools: false
     },
     {
-        name: 'gemini-thinking',
-        type: 'chat',
-        censored: true,
+        name: 'gemini-reasoning',
         description: 'Gemini 2.0 Flash Thinking',
-        baseModel: true,
-        provider: 'google',
-        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'gemini-thinking'})
+        handler: (messages, options) =>
+            generateTextPortkey(messages, { ...options, model: 'gemini-thinking' }),
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: 'google',
+        censored: true,
+        max_token: 1000,
+        input_modalities: ["text", "image"],
+        output_modalities: ["audio", "text"],
+        tools: false
     },
     {
         name: 'hormoz',
-        type: 'chat',
         description: 'Hormoz 8b by Muhammadreza Haghiri',
-        baseModel: true,
-        provider: 'modal',
-        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'hormoz'})
+        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'hormoz'}),
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: false,
+        max_token: 1000,
+        input_modalities: ["text", "image"],
+        output_modalities: ["audio", "text"],
+        tools: false
     },
     {
         name: 'hypnosis-tracy',
-        type: 'chat',
         description: 'Hypnosis Tracy 7B - Self-help AI assistant',
-        baseModel: false,
-        provider: 'openai',
-        handler: hypnosisTracy
+        handler: hypnosisTracy,
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: 'modal.com',
+        censored: false,
+        max_token: 1000,
+        input_modalities: ["text", "image"],
+        output_modalities: ["audio", "text"],
+        tools: false
     },
     {
         name: 'sur',
-        type: 'chat',
-        censored: true,
         description: 'Sur AI Assistant',
-        baseModel: false,
-        handler: surOpenai
+        handler: surOpenai,
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: true,
+        max_token: 1000,
+        input_modalities: ["text", "image"],
+        output_modalities: ["audio", "text"],
+        tools: false
     },
     {
         name: 'sur-mistral',
-        type: 'chat',
-        censored: true,
         description: 'Sur AI Assistant (Mistral)',
-        baseModel: false,
-        handler: surMistral
+        handler: surMistral,
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: true,
+        max_token: 1000,
+        input_modalities: ["text", "image"],
+        output_modalities: ["audio", "text"],
+        tools: false
     },
     {
         name: 'llama-scaleway',
-        type: 'chat',
-        censored: false,
         description: 'Llama (Scaleway)',
-        baseModel: true,
-        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'llama-scaleway'})
+        handler: (messages, options) =>
+            generateTextPortkey(messages, { ...options, model: 'llama-scaleway' }),
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: false,
+        max_token: 1000,
+        input_modalities: ["text", "image"],
+        output_modalities: ["audio", "text"],
+        tools: false
     },
     {
         name: 'openai-audio',
-        type: 'chat',
-        censored: true,
         description: 'OpenAI GPT-4o-audio-preview',
-        baseModel: true,
-        audio: true,
         voices: ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer', 'coral', 'verse', 'ballad', 'ash', 'sage', 'amuch', 'dan'],
-        handler: generateTextPortkey
+        handler: generateTextPortkey,
+        details: "",
+        available: true,
+        reasoning: false,
+        owned_by: "",
+        censored: true,
+        max_token: 1000,
+        input_modalities: ["text", "image"],
+        output_modalities: ["audio", "text"],
+        tools: false
     }
 ];
+
+// Now export the processed models with proper functional approach
+export const availableModels = models.map(model => {
+    const inputs = model.input_modalities || model.input || [];
+    const outputs = model.output_modalities || model.output || [];
+    return {
+        ...model,
+        vision: inputs.includes("image"),
+        audio: outputs.includes("audio")
+    };
+});
 
 /**
  * Find a model by name
@@ -301,7 +475,7 @@ export const availableModels = [
  * @returns {Object|null} - The model object or null if not found
  */
 export function findModelByName(modelName) {
-    return availableModels.find(model => model.name === modelName) || 
+    return availableModels.find(model => model.name === modelName) ||
            availableModels.find(model => model.name === 'openai'); // Default to openai
 }
 

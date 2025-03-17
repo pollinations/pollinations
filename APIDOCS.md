@@ -291,35 +291,38 @@ generateAudio();
 ```
 
 ### Javascript (Audio Transcription)
-```javascript
-async function sendAudioToAPI(base64Audio) {
-    const apiUrl = "https://text.pollinations/openai";
-    const requestBody = {
-        model: "openai-audio",
-        messages: [
-            {
-                role: "user",
-                content: [
-                    { type: "text", text: "Transcribe this Recoding Excatly, word to word." },
-                    { type: "input_audio", input_audio: { data: base64Audio, format: "wav" } }
-                ]
-            }
-        ]
-    };
+```python
+import base64
+import requests
 
-    try {
-        const response = await fetch(apiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(requestBody)
-        });
-        
-        const result = await response.json();
-        console.log("Transcript:", result);
-    } catch (error) {
-        console.error("Error:", error);
+API_URL = "https://text.pollinations.ai/openai"
+
+def encode_audio_base64(file_path):
+    """ Reads an audio file and encodes it as base64. """
+    with open(file_path, "rb") as audio_file:
+        return base64.b64encode(audio_file.read()).decode("utf-8")
+
+def transcribe_audio(audio_file_path):
+    """ Encodes WAV audio and sends it for transcription. """
+    base64_audio = encode_audio_base64(audio_file_path)
+    
+    payload = {
+        "model": "openai-audio",
+        "messages": [
+            {"role": "user", "content": [
+                {"type": "text", "text": "Transcribe this audio exactly"},
+                {"type": "input_audio", "input_audio": {"data": base64_audio, "format": "wav"}}
+            ]}
+        ]
     }
-}
+
+    response = requests.post(API_URL, json=payload)
+    return response.json().get("choices", [{}])[0].get("message", {}).get("content", "No transcription found.") if response.ok else None
+
+# Example Usage
+audio_file_path = "<path to audio with .wav>"
+transcription = transcribe_audio(audio_file_path)
+print("\n🔊 Transcription:\n", transcription) if transcription else print("❌ Transcription failed.")
 ```
 
 ### HTML (Image Embedding)

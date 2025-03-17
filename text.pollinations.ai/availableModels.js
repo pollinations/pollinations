@@ -132,21 +132,21 @@ export const availableModels = [
         baseModel: true,
         handler: handlers.deepseek
     },
-    {
-        name: 'claude',
-        type: 'chat',
-        censored: true,
-        description: 'Claude 3.5 Haiku',
-        baseModel: true,
-        handler: wrapModelWithDonationMessage(
-            (messages, options) => generateTextPortkey(messages, {...options, model: 'claude'}),
-            'Claude 3.5 Haiku',
-            {
-                threshold: 50,
-                currentDonations: 47
-            }
-        )
-    },
+    // {
+    //     name: 'claude',
+    //     type: 'chat',
+    //     censored: true,
+    //     description: 'Claude 3.5 Haiku',
+    //     baseModel: true,
+    //     handler: wrapModelWithDonationMessage(
+    //         (messages, options) => generateTextPortkey(messages, {...options, model: 'claude'}),
+    //         'Claude 3.5 Haiku',
+    //         {
+    //             threshold: 50,
+    //             currentDonations: 47
+    //         }
+    //     )
+    // },
     {
         name: 'deepseek-r1',
         type: 'chat',

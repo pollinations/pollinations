@@ -1,0 +1,17 @@
+name = "pollinations-image-cache"
+main = "src/index.js"
+compatibility_date = "2023-05-18"
+
+# R2 bucket for image storage
+[[r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "pollinations-images"
+
+# Environment variables
+[vars]
+ORIGIN_HOST = "image.pollinations.ai"
+
+
+# wrangler.toml (wrangler v3.88.0^)
+[observability.logs]
+enabled = true

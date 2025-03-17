@@ -23,8 +23,41 @@ export function generateCacheKey(url) {
     }
   });
   
-  // Create a safe key by encoding the URL and ensuring the prompt is included
-  return encodeURIComponent(normalizedUrl.pathname + normalizedUrl.search);
+  // Get the full path with query parameters
+  const fullPath = normalizedUrl.pathname + normalizedUrl.search;
+  
+  // Create a hash of the full URL for uniqueness
+  const hash = createHash(fullPath);
+  
+  // Replace problematic characters in the path
+  const safePath = fullPath.replace(/[\/\s\?=&]/g, '_');
+  
+  // Combine path with hash, ensuring it fits within a safe limit (1000 bytes)
+  // Allow 10 chars for the hash and hyphen
+  const maxPathLength = 990;
+  const trimmedPath = safePath.length > maxPathLength 
+    ? safePath.substring(0, maxPathLength) 
+    : safePath;
+    
+  return `${trimmedPath}-${hash}`;
+}
+
+/**
+ * Create a simple hash of a string
+ * @param {string} str - The string to hash
+ * @returns {string} - The hashed string
+ */
+function createHash(str) {
+  // Simple hash function
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  
+  // Convert to hex string (8 characters should be sufficient)
+  return Math.abs(hash).toString(16).substring(0, 8);
 }
 
 /**
@@ -32,19 +65,29 @@ export function generateCacheKey(url) {
  * @param {string} cacheKey - The cache key
  * @param {Response} response - The response to cache
  * @param {Object} env - The environment object
+ * @param {string} originalUrl - The original URL that was requested
  * @returns {Promise<boolean>} - Whether the caching was successful
  */
-export async function cacheResponse(cacheKey, response, env) {
+export async function cacheResponse(cacheKey, response, env, originalUrl) {
   try {
     // Store the image in R2 using the cache key directly
     const imageBuffer = await response.arrayBuffer();
-    await env.IMAGE_BUCKET.put(cacheKey, imageBuffer, {
+    
+    // Create metadata object with content type and original URL
+    const metadata = {
       httpMetadata: {
         contentType: response.headers.get('content-type') || 'image/jpeg',
+      },
+      customMetadata: {
+        originalUrl: originalUrl || '',
+        cachedAt: new Date().toISOString()
       }
-    });
+    };
     
-    console.log(`Cached image for key ${cacheKey}`);
+    // Store the object with metadata
+    await env.IMAGE_BUCKET.put(cacheKey, imageBuffer, metadata);
+    
+    console.log(`Cached image for key ${cacheKey} from ${originalUrl || 'unknown source'}`);
     return true;
   } catch (error) {
     console.error('Error caching response:', error);

@@ -11,7 +11,14 @@ bucket_name = "pollinations-images"
 [vars]
 ORIGIN_HOST = "image-origin.pollinations.ai"
 
+# Increase limits for long-running operations
+# This requires a paid Workers Unbound plan
+[limits]
+cpu_ms = 30000  # 30 seconds CPU time (max for Workers Unbound)
 
-# wrangler.toml (wrangler v3.88.0^)
+# Configure logging
 [observability.logs]
 enabled = true
+
+# Note: The usage_model setting is deprecated and has been removed
+# Workers Unbound is now configured via account settings in the Cloudflare dashboard

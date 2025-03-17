@@ -11,16 +11,11 @@ import { proxyToOrigin } from './image-proxy.js';
  */
 export default {
   async fetch(request, env, ctx) {
-    // Immediately log request details
+    // Get basic request details
     const url = new URL(request.url);
     const clientIP = request.headers.get('cf-connecting-ip') || 'unknown';
-    const timestamp = new Date().toISOString();
     
-    console.log(`[${timestamp}] Request received: ${request.method} ${url.pathname}${url.search}`);
-    console.log(`Client IP: ${clientIP}`);
-    console.log(`Path: ${url.pathname}`);
-    console.log(`Query parameters: ${url.search}`);
-    console.log(`User-Agent: ${request.headers.get('user-agent')}`);
+    console.log(`Request: ${request.method} ${url.pathname}`);
     
     // Skip caching for certain paths or non-image requests
     if (url.searchParams.has('no-cache') || !url.pathname.startsWith('/prompt')) {
@@ -38,19 +33,6 @@ export default {
       
       if (cachedImage) {
         console.log(`Cache hit for: ${cacheKey}`);
-        
-        // Get the metadata from the cached image
-        const originalUrl = cachedImage.customMetadata?.originalUrl;
-        const cachedAt = cachedImage.customMetadata?.cachedAt;
-        const clientIp = cachedImage.customMetadata?.clientIp;
-        
-        if (originalUrl) {
-          console.log(`Original URL: ${originalUrl}`);
-        }
-        if (cachedAt && clientIp) {
-          console.log(`Cached at: ${cachedAt} by client IP: ${clientIp}`);
-        }
-        
         // Return the cached image with appropriate headers
         const cachedHeaders = new Headers();
         

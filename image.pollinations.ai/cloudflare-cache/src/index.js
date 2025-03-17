@@ -39,15 +39,41 @@ export default {
       if (cachedImage) {
         console.log(`Cache hit for: ${cacheKey}`);
         
-        // Get the original URL from metadata if available
+        // Get the metadata from the cached image
         const originalUrl = cachedImage.customMetadata?.originalUrl;
+        const cachedAt = cachedImage.customMetadata?.cachedAt;
+        const clientIp = cachedImage.customMetadata?.clientIp;
+        
         if (originalUrl) {
           console.log(`Original URL: ${originalUrl}`);
+        }
+        if (cachedAt && clientIp) {
+          console.log(`Cached at: ${cachedAt} by client IP: ${clientIp}`);
         }
         
         // Return the cached image with appropriate headers
         const cachedHeaders = new Headers();
-        cachedHeaders.set('content-type', cachedImage.httpMetadata?.contentType || 'image/jpeg');
+        
+        // Use the stored HTTP metadata if available
+        if (cachedImage.httpMetadata) {
+          if (cachedImage.httpMetadata.contentType) {
+            cachedHeaders.set('content-type', cachedImage.httpMetadata.contentType);
+          }
+          if (cachedImage.httpMetadata.contentEncoding) {
+            cachedHeaders.set('content-encoding', cachedImage.httpMetadata.contentEncoding);
+          }
+          if (cachedImage.httpMetadata.contentDisposition) {
+            cachedHeaders.set('content-disposition', cachedImage.httpMetadata.contentDisposition);
+          }
+          if (cachedImage.httpMetadata.contentLanguage) {
+            cachedHeaders.set('content-language', cachedImage.httpMetadata.contentLanguage);
+          }
+        } else {
+          // Fallback to default content type
+          cachedHeaders.set('content-type', 'image/jpeg');
+        }
+        
+        // Always set these headers for cache control and CORS
         cachedHeaders.set('cache-control', 'public, max-age=31536000, immutable');
         cachedHeaders.set('x-cache', 'HIT');
         cachedHeaders.set('access-control-allow-origin', '*');
@@ -71,8 +97,8 @@ export default {
     // Only cache successful image responses
     if (response.status === 200 && response.headers.get('content-type')?.includes('image/')) {
       console.log('Caching successful image response');
-      // Pass the original URL to the cacheResponse function
-      ctx.waitUntil(cacheResponse(cacheKey, response.clone(), env, url.toString()));
+      // Pass the original URL and request to the cacheResponse function
+      ctx.waitUntil(cacheResponse(cacheKey, response.clone(), env, url.toString(), request));
     } else {
       console.log('Not caching response - either not successful or not an image');
       console.log('Response status:', response.status);

@@ -66,28 +66,46 @@ function createHash(str) {
  * @param {Response} response - The response to cache
  * @param {Object} env - The environment object
  * @param {string} originalUrl - The original URL that was requested
+ * @param {Request} request - The original request object
  * @returns {Promise<boolean>} - Whether the caching was successful
  */
-export async function cacheResponse(cacheKey, response, env, originalUrl) {
+export async function cacheResponse(cacheKey, response, env, originalUrl, request) {
   try {
     // Store the image in R2 using the cache key directly
     const imageBuffer = await response.arrayBuffer();
+    
+    // Get client IP address from request
+    const clientIp = request?.headers?.get('cf-connecting-ip') || 
+                    request?.headers?.get('x-forwarded-for')?.split(',')[0] || 
+                    'unknown';
     
     // Create metadata object with content type and original URL
     const metadata = {
       httpMetadata: {
         contentType: response.headers.get('content-type') || 'image/jpeg',
+        contentEncoding: response.headers.get('content-encoding'),
+        contentDisposition: response.headers.get('content-disposition'),
+        contentLanguage: response.headers.get('content-language'),
+        cacheControl: response.headers.get('cache-control')
       },
       customMetadata: {
         originalUrl: originalUrl || '',
-        cachedAt: new Date().toISOString()
+        cachedAt: new Date().toISOString(),
+        clientIp: clientIp
       }
     };
+    
+    // Remove undefined values from httpMetadata
+    Object.keys(metadata.httpMetadata).forEach(key => {
+      if (metadata.httpMetadata[key] === undefined || metadata.httpMetadata[key] === null) {
+        delete metadata.httpMetadata[key];
+      }
+    });
     
     // Store the object with metadata
     await env.IMAGE_BUCKET.put(cacheKey, imageBuffer, metadata);
     
-    console.log(`Cached image for key ${cacheKey} from ${originalUrl || 'unknown source'}`);
+    console.log(`Cached image for key ${cacheKey} from ${originalUrl || 'unknown source'} requested by ${clientIp}`);
     return true;
   } catch (error) {
     console.error('Error caching response:', error);

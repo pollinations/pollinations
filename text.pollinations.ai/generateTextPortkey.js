@@ -30,7 +30,6 @@ const MODEL_MAPPING = {
     'llama-vision': '@cf/meta/llama-3.2-11b-vision-instruct',
     // Scaleway models
     'qwen-coder': 'qwen2.5-coder-32b-instruct',
-    'mistral': 'mistral/mistral-small-24b-instruct-2501:fp8',  // Updated to use the new Mistral model
     'llama-scaleway': 'llama-3.3-70b-instruct',
     'llamalight-scaleway': 'llama-3.1-8b-instruct',
     'deepseek-r1-llama': 'deepseek-r1-distill-llama-70b',
@@ -117,15 +116,15 @@ const basePixtralConfig = {
     'max-tokens': 8192,
 };
 
-// Base configuration for Mistral Scaleway model
-const baseMistralConfig = {
-    provider: 'openai',
-    'custom-host': process.env.SCALEWAY_MISTRAL_BASE_URL,
-    authKey: process.env.SCALEWAY_MISTRAL_API_KEY,
-    // Set default max_tokens to 8192
-    temperature: 0.3,
-    'max-tokens': 8192,
-};
+// Base configuration for Mistral models
+// const baseMistralConfig = {
+//     provider: 'openai',
+//     'custom-host': 'https://us-central1-aiplatform.googleapis.com/v1/projects/light-depot-447020-j3/locations/us-central1/publishers/mistralai/models/mistral-small-2503:rawPredict',
+//     authKey: 'ya29.a0AeXRPp7U9A_RPslgnlOewiYkh_Vp47W-pMxMEgiuIc6Mu8cUHL2D1OGXPgwy33nNyhpmjK6YQ_cXrEAMvo9K5mWluFCgXf1cb75JJUqpD96HAy7F5EvenivVW36wMhxVW1f3HFrJkfhJp2fecjP6AB0mOvPy7xbjHKxXoJt3ddlWDAaCgYKAcwSARMSFQHGX2Mii7TvS0ga21rSp5y3VNzUqQ0181',
+//     // Set default max_tokens to 8192
+//     temperature: 0.3,
+//     'max-tokens': 8192,
+// };
 
 // Base configuration for Modal models
 const baseModalConfig = {
@@ -144,6 +143,28 @@ const baseOpenRouterConfig = {
     // Set default max_tokens to 4096
     'max-tokens': 4096,
 };
+
+/**
+ * Creates a Vertex AI model configuration with OpenAI-compatible interface
+ * @param {string} modelId - The Vertex AI model ID
+ * @param {string} publisher - The publisher of the model (default: 'mistralai')
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - Vertex AI model configuration
+ */
+function createVertexAIModelConfig(modelId, publisher = 'mistralai', additionalConfig = {}) {
+    return {
+        provider: 'vertex-ai',
+        'vertex-project-id': process.env.GCLOUD_PROJECT_ID || 'light-depot-447020-j3',
+        'vertex-region': 'us-central1',
+        'vertex-model-id': modelId,
+        'vertex-publisher': publisher,
+        authKey: googleCloudAuth.getAccessToken,
+        'max-tokens': 8192,
+        'strict-openai-compliance': 'false',
+        'model-param-name': 'model',  // Add this to ensure the model parameter is passed correctly
+        ...additionalConfig
+    };
+}
 
 /**
  * Randomly selects between primary and secondary Azure OpenAI credentials
@@ -229,12 +250,12 @@ function createPixtralModelConfig(additionalConfig = {}) {
  * @param {Object} additionalConfig - Additional configuration to merge with base config
  * @returns {Object} - Mistral model configuration
  */
-function createMistralModelConfig(additionalConfig = {}) {
-    return {
-        ...baseMistralConfig,
-        ...additionalConfig
-    };
-}
+// function createMistralModelConfig(additionalConfig = {}) {
+//     return {
+//         ...baseMistralConfig,
+//         ...additionalConfig
+//     };
+// }
 
 /**
  * Creates a Modal model configuration
@@ -312,8 +333,6 @@ export const portkeyConfig = {
     'llama-3.1-8b-instruct': () => createScalewayModelConfig(),
     'deepseek-r1-distill-llama-70b': () => createScalewayModelConfig(),
     'pixtral-12b-2409': () => createPixtralModelConfig(),
-    // Mistral model configuration
-    'mistral/mistral-small-24b-instruct-2501:fp8': () => createMistralModelConfig(),
     // Modal model configurations
     'Hormoz-8B': () => createModalModelConfig(),
     // OpenRouter model configurations
@@ -322,21 +341,8 @@ export const portkeyConfig = {
         'x-title': 'Pollinations.AI'
     }),
     // Google Vertex AI model configurations
-    'gemini-2.0-flash-lite-preview-02-05': () => ({
-        provider: 'vertex-ai',
-        authKey: googleCloudAuth.getAccessToken, // Fix: use getAccessToken instead of getToken
-        'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
-        'vertex-region': 'us-central1',
-        'vertex-model-id': 'gemini-2.0-flash-lite-preview-02-05',
-        'strict-openai-compliance': 'false'
-    }),
-    'gemini-2.0-flash-thinking-exp-01-21': () => ({
-        provider: 'vertex-ai',
-        authKey: googleCloudAuth.getAccessToken, // Fix: use getAccessToken instead of getToken
-        'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
-        'vertex-region': 'us-central1',
-        'strict-openai-compliance': 'false'
-    }),
+    'gemini-2.0-flash-lite-preview-02-05': () => createVertexAIModelConfig('gemini-2.0-flash-lite-preview-02-05', 'google'),
+    'gemini-2.0-flash-thinking-exp-01-21': () => createVertexAIModelConfig('gemini-2.0-flash-thinking-exp-01-21', 'google'),
 };
 
 /**
@@ -404,6 +410,71 @@ export const generateTextPortkey = createOpenAICompatibleClient({
 
             log('Processing request for model:', modelName, 'with provider:', config.provider);
 
+            // Special handling for Vertex AI models
+            if (config.provider === 'vertex-ai') {
+                // Format the request for Vertex AI's rawPredict endpoint
+                const vertexAIRequestBody = {
+                    model: config['vertex-model-id'],
+                    messages: requestBody.messages.map(msg => {
+                        // Handle multimodal content
+                        if (Array.isArray(msg.content)) {
+                            return {
+                                role: msg.role,
+                                content: msg.content.map(item => {
+                                    if (item.type === 'text') {
+                                        return { type: 'text', text: item.text };
+                                    } else if (item.type === 'image_url') {
+                                        return {
+                                            type: 'image_url',
+                                            image_url: { url: item.image_url.url }
+                                        };
+                                    }
+                                    return item;
+                                })
+                            };
+                        }
+                        
+                        // Handle text-only content
+                        return {
+                            role: msg.role,
+                            content: [{ type: 'text', text: msg.content }]
+                        };
+                    }),
+                };
+
+                // Generate headers for Vertex AI
+                const additionalHeaders = {
+                    'Authorization': `Bearer ${await config.authKey()}`,
+                    'Content-Type': 'application/json',
+                    'x-portkey-provider': 'vertex-ai',
+                    'x-portkey-config': JSON.stringify({
+                        'vertex-project-id': config['vertex-project-id'],
+                        'vertex-region': config['vertex-region'],
+                        'vertex-model-id': config['vertex-model-id'],
+                        'vertex-publisher': config['vertex-publisher']
+                    })
+                };
+
+                // Set the endpoint URL for Vertex AI
+                const projectId = config['vertex-project-id'];
+                const region = config['vertex-region'];
+                const modelId = config['vertex-model-id'];
+                const publisher = config['vertex-publisher'];
+                
+                // Set the custom host for Vertex AI
+                const customHost = `https://${region}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${region}/publishers/${publisher}/models/${modelId}:rawPredict`;
+                additionalHeaders['x-portkey-custom-host'] = customHost;
+                
+                // Set the headers as a property on the request object
+                requestBody._additionalHeaders = additionalHeaders;
+                
+                // Log the Vertex AI request
+                log('Vertex AI request:', JSON.stringify(vertexAIRequestBody, null, 2));
+                log('Vertex AI endpoint:', customHost);
+                
+                return vertexAIRequestBody;
+            }
+
             // Generate headers (now async call)
             const additionalHeaders = await generatePortkeyHeaders(config);
             log('Added provider-specific headers:', JSON.stringify(additionalHeaders, null, 2));
@@ -449,72 +520,6 @@ export const generateTextPortkey = createOpenAICompatibleClient({
     providerName: 'Portkey Gateway'
 });
 
-// Log Azure configuration
-logProviderConfig(
-    'Azure', 
-    ([_, configFn]) => configFn().provider === 'azure-openai'
-);
-
-// Log Cloudflare configuration
-logProviderConfig(
-    'Cloudflare', 
-    ([_, configFn]) => configFn().provider === 'openai' && configFn()['custom-host']?.includes('cloudflare'),
-    config => ({
-        ...config,
-        authKey: config.authKey ? '***' : undefined
-    })
-);
-
-// Log Scaleway configuration
-logProviderConfig(
-    'Scaleway',
-    ([_, configFn]) => configFn().provider === 'openai' && configFn()['custom-host']?.includes('scaleway'),
-    config => ({
-        ...config,
-        authKey: config.authKey ? '***' : undefined
-    })
-);
-
-// Log Pixtral configuration
-logProviderConfig(
-    'Pixtral',
-    ([name, _]) => name === 'pixtral-12b-2409',
-    config => ({
-        ...config,
-        authKey: config.authKey ? '***' : undefined
-    })
-);
-
-// Log Modal configuration
-logProviderConfig(
-    'Modal',
-    ([_, config]) => config.provider === 'openai' && config['custom-host']?.includes('modal.run'),
-    config => ({
-        ...config,
-        authKey: config.authKey ? '***' : undefined
-    })
-);
-
-// Log OpenRouter configuration
-logProviderConfig(
-    'OpenRouter',
-    ([_, config]) => config.provider === 'openai' && config['custom-host']?.includes('openrouter.ai'),
-    config => ({
-        ...config,
-        authKey: config.authKey ? '***' : undefined
-    })
-);
-
-// Log Vertex AI configuration
-logProviderConfig(
-    'Vertex AI',
-    ([_, config]) => config['vertex-project-id'],
-    config => ({
-        ...config,
-        authKey: config.authKey ? '***' : undefined,
-        'vertex-project-id': config['vertex-project-id'] ? '***' : undefined
-    })
-);
 
 function countMessageCharacters(messages) {
     return messages.reduce((total, message) => {

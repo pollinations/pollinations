@@ -128,7 +128,7 @@ export function createOpenAICompatibleClient(config) {
 
             // Determine the endpoint URL
             const endpointUrl = typeof endpoint === 'function' 
-                ? endpoint(modelName) 
+                ? endpoint(modelName, normalizedOptions) 
                 : endpoint;
 
             // Prepare headers

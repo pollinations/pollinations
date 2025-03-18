@@ -30,7 +30,6 @@ const MODEL_MAPPING = {
     'llama-vision': '@cf/meta/llama-3.2-11b-vision-instruct',
     // Scaleway models
     'qwen-coder': 'qwen2.5-coder-32b-instruct',
-    'mistral': 'mistral-small-2503',  // Mistral model using Vertex AI OpenAI-compatible endpoint
     'llama-scaleway': 'llama-3.3-70b-instruct',
     'llamalight-scaleway': 'llama-3.1-8b-instruct',
     'deepseek-r1-llama': 'deepseek-r1-distill-llama-70b',
@@ -118,14 +117,14 @@ const basePixtralConfig = {
 };
 
 // Base configuration for Mistral models
-const baseMistralConfig = {
-    provider: 'openai',
-    'custom-host': 'https://us-central1-aiplatform.googleapis.com/v1/projects/light-depot-447020-j3/locations/us-central1/publishers/mistralai/models/mistral-small-2503:rawPredict',
-    authKey: googleCloudAuth.getAccessToken,
-    // Set default max_tokens to 8192
-    temperature: 0.3,
-    'max-tokens': 8192,
-};
+// const baseMistralConfig = {
+//     provider: 'openai',
+//     'custom-host': 'https://us-central1-aiplatform.googleapis.com/v1/projects/light-depot-447020-j3/locations/us-central1/publishers/mistralai/models/mistral-small-2503:rawPredict',
+//     authKey: 'ya29.a0AeXRPp7U9A_RPslgnlOewiYkh_Vp47W-pMxMEgiuIc6Mu8cUHL2D1OGXPgwy33nNyhpmjK6YQ_cXrEAMvo9K5mWluFCgXf1cb75JJUqpD96HAy7F5EvenivVW36wMhxVW1f3HFrJkfhJp2fecjP6AB0mOvPy7xbjHKxXoJt3ddlWDAaCgYKAcwSARMSFQHGX2Mii7TvS0ga21rSp5y3VNzUqQ0181',
+//     // Set default max_tokens to 8192
+//     temperature: 0.3,
+//     'max-tokens': 8192,
+// };
 
 // Base configuration for Modal models
 const baseModalConfig = {
@@ -251,12 +250,12 @@ function createPixtralModelConfig(additionalConfig = {}) {
  * @param {Object} additionalConfig - Additional configuration to merge with base config
  * @returns {Object} - Mistral model configuration
  */
-function createMistralModelConfig(additionalConfig = {}) {
-    return {
-        ...baseMistralConfig,
-        ...additionalConfig
-    };
-}
+// function createMistralModelConfig(additionalConfig = {}) {
+//     return {
+//         ...baseMistralConfig,
+//         ...additionalConfig
+//     };
+// }
 
 /**
  * Creates a Modal model configuration
@@ -334,8 +333,6 @@ export const portkeyConfig = {
     'llama-3.1-8b-instruct': () => createScalewayModelConfig(),
     'deepseek-r1-distill-llama-70b': () => createScalewayModelConfig(),
     'pixtral-12b-2409': () => createPixtralModelConfig(),
-    // Mistral model configuration
-    'mistral-small-2503': () => createMistralModelConfig(),
     // Modal model configurations
     'Hormoz-8B': () => createModalModelConfig(),
     // OpenRouter model configurations

@@ -3,6 +3,7 @@ import { generateDeepseek } from './generateDeepseek.js';
 import { generateTextSearch } from './generateTextSearch.js';
 import { generateTextPortkey } from './generateTextPortkey.js';
 import { generateTextPixtral } from './generateTextPixtral.js';
+import { generateTextMistral } from './generateTextMistral.js';
 import wrapModelWithContext from './wrapModelWithContext.js';
 import wrapModelWithDonationMessage from './modelDonationWrapper.js';
 
@@ -16,18 +17,18 @@ import hypnosisTracyPrompt from './personas/hypnosisTracy.js';
 
 // Create wrapped models
 const surOpenai = wrapModelWithContext(surSystemPrompt, generateTextPortkey, "openai");
-const surMistral = wrapModelWithContext(surSystemPrompt, generateTextPortkey, "mistral");
+const surMistral = wrapModelWithContext(surSystemPrompt, generateTextMistral, "mistral");
 const hypnosisTracy = wrapModelWithContext(hypnosisTracyPrompt, generateTextPortkey, "openai-large");
-const unityMistralLarge = wrapModelWithContext(unityPrompt, generateTextPortkey, "mistral");
+const unityMistralLarge = wrapModelWithContext(unityPrompt, generateTextMistral, "mistral");
 const midijourney = wrapModelWithContext(midijourneyPrompt, generateTextPortkey, "openai-large");
 const rtist = wrapModelWithContext(rtistPrompt, generateTextPortkey, "openai-large");
-const evilCommandR = wrapModelWithContext(evilPrompt, generateTextPortkey, "mistral");
+const evilCommandR = wrapModelWithContext(evilPrompt, generateTextMistral, "mistral");
 
 // Define model handlers
 const handlers = {
     openai: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai'}),
     deepseek: (messages, options) => generateDeepseek(messages, {...options, model: 'deepseek-chat'}),
-    mistral: (messages, options) => generateTextPortkey(messages, {...options, model: 'mistral'}),
+    mistral: (messages, options) => generateTextMistral(messages, {...options, model: 'mistral'}),
     portkey: (messages, options, model) => generateTextPortkey(messages, {...options, model})
 };
 

@@ -18,6 +18,10 @@ const DEFAULT_OPTIONS = {
     jsonMode: false
 };
 
+let MISTRAL_TOKEN;
+googleCloudAuth.getAccessToken().then(token => {
+    MISTRAL_TOKEN = token;
+});
 /**
  * Generates text using Mistral model via Google Vertex AI OpenAI-compatible API
  * This implementation bypasses the Portkey gateway for direct access
@@ -33,18 +37,9 @@ export const generateTextMistral = createOpenAICompatibleClient({
         return `${baseUrl}${suffix}`;
     },
     
-    // Auth header configuration - using a Promise to get a fresh token for each request
+    // Auth header configuration - using a direct string instead of a Promise
     authHeaderName: 'Authorization',
-    authHeaderValue: async () => {
-        try {
-            const token = await googleCloudAuth.getAccessToken();
-            log('Successfully obtained fresh access token');
-            return `Bearer ${token}`;
-        } catch (error) {
-            errorLog('Error getting access token:', error);
-            throw new Error('Failed to get access token for Mistral API');
-        }
-    },
+    authHeaderValue: () => `Bearer ${MISTRAL_TOKEN}`,
     
     // Additional headers
     additionalHeaders: {

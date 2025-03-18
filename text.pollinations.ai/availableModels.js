@@ -80,8 +80,9 @@ export const availableModels = [
         name: 'mistral',
         type: 'chat',
         censored: false,
-        description: 'Mistral Nemo',
+        description: 'Mistral Small 3.1 2503',
         baseModel: true,
+        vision: true,
         handler: handlers.mistral
     },
     {

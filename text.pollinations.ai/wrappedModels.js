@@ -11,6 +11,11 @@ import evilPrompt from "./personas/evil.js";
 import hypnosisTracyPrompt from "./personas/hypnosisTracy.js";
 
 
+export const surOpenai = wrapModelWithContext(
+  surSystemPrompt,
+  generateTextPortkey,
+  "openai-large"
+);
 
 export const surMistral = wrapModelWithContext(
   surSystemPrompt,

@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { createOpenAICompatibleClient } from './genericOpenAIClient.js';
 import debug from 'debug';
+import googleCloudAuth from './auth/googleCloudAuth.js';
 
 dotenv.config();
 
@@ -17,9 +18,10 @@ const DEFAULT_OPTIONS = {
     jsonMode: false
 };
 
-// Fixed token for now
-const MISTRAL_TOKEN = "ya29.a0AeXRPp7U9A_RPslgnlOewiYkh_Vp47W-pMxMEgiuIc6Mu8cUHL2D1OGXPgwy33nNyhpmjK6YQ_cXrEAMvo9K5mWluFCgXf1cb75JJUqpD96HAy7F5EvenivVW36wMhxVW1f3HFrJkfhJp2fecjP6AB0mOvPy7xbjHKxXoJt3ddlWDAaCgYKAcwSARMSFQHGX2Mii7TvS0ga21rSp5y3VNzUqQ0181";
-
+let MISTRAL_TOKEN;
+googleCloudAuth.getAccessToken().then(token => {
+    MISTRAL_TOKEN = token;
+});
 /**
  * Generates text using Mistral model via Google Vertex AI OpenAI-compatible API
  * This implementation bypasses the Portkey gateway for direct access

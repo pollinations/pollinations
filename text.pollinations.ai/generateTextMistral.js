@@ -52,6 +52,20 @@ export const generateTextMistral = createOpenAICompatibleClient({
         'mistral': 'mistral-small-2503'
     },
     
+    // Transform request to use random_seed instead of seed for Mistral
+    transformRequest: (requestBody) => {
+        const transformedBody = { ...requestBody };
+        
+        // If seed is present, rename it to random_seed
+        if (transformedBody.seed !== undefined) {
+            transformedBody.random_seed = transformedBody.seed;
+            delete transformedBody.seed;
+            log(`Transformed seed parameter to random_seed: ${transformedBody.random_seed}`);
+        }
+        
+        return transformedBody;
+    },
+    
     // System prompts
     systemPrompts: {
         'mistral': unrestrictedPrompt

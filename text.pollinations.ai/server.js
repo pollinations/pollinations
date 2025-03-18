@@ -98,29 +98,6 @@ app.use((req, res, next) => {
 // Remove the custom JSON parsing middleware and use the standard bodyParser
 app.use(bodyParser.json({ limit: '5mb' }));
 app.use(cors());
-
-// // Rate limiting setup
-// const limiter = rateLimit({
-//     windowMs: 60 * 1000, // 1 minute
-//     max: 200, // 40 requests per windowMs
-//     message: {
-//         error: {
-//             type: 'rate_limit_error',
-//             message: 'Rate limit exceeded. Maximum 40 requests per minute.',
-//             suggestion: 'Please wait before making more requests.'
-//         }
-//     },
-//     skip: (req) => {
-//         const requestData = getRequestData(req);
-//         return requestData.isRobloxReferrer;
-//     },
-//     // Use X-Forwarded-For header but validate it's from our trusted proxy
-//     trustProxy: false
-// });
-
-// Apply rate limiting to all routes
-// app.use(limiter);
-
 // New route handler for root path
 app.get('/', (req, res) => {
     res.redirect('https://sur.pollinations.ai');

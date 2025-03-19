@@ -21,20 +21,10 @@ dotenv.config();
 const BANNED_PHRASES = [
 ];
 
-// Read whitelisted domains from environment variable or use default list
+// Read whitelisted domains from environment variable
 const WHITELISTED_DOMAINS = process.env.WHITELISTED_DOMAINS 
     ? process.env.WHITELISTED_DOMAINS.split(',').map(domain => domain.trim())
-    : [
-        'pollinations',
-        'thot',
-        'ai-ministries.com',
-        'localhost',
-        'pollinations.github.io',
-        '127.0.0.1',
-        'nima',
-        'ilovesquirrelsverymuch',
-        'endemicmedia.github.io'
-    ];
+    : [];
 
 const blockedIPs = new Set();
 

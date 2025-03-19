@@ -50,10 +50,7 @@ export default {
         cacheStatus: 'pending'
       };
       
-      ctx.waitUntil(Promise.all([
-        sendToAnalytics(request, "imageRequested", analyticsData, env),
-        sendToAnalytics(request, "imageRequestedDummy", analyticsData, env)
-      ]));
+      ctx.waitUntil(sendToAnalytics(request, "imageRequested", analyticsData, env));
     }
     
     // Generate a cache key from the URL path and query parameters

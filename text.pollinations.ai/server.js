@@ -25,7 +25,8 @@ const WHITELISTED_DOMAINS = [
     'pollinations.github.io',
     '127.0.0.1',
     'nima',
-    'ilovesquirrelsverymuch'
+    'ilovesquirrelsverymuch',
+    'endemicmedia.github.io'
 ];
 
 const blockedIPs = new Set();

@@ -121,6 +121,13 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 Case Me 🇧🇷",
+      description: "O projeto consiste em uma vending machine que criará capinhas para celular personalizadas com fotos ou outras imagens e cores de escolha do cliente final. (A vending machine that creates customized phone cases with photos or other images and colors chosen by the end customer.)",
+      author: "anaboxmania@gmail.com",
+      submissionDate: "2025-03-19",
+      language: "pt-BR"
+    },
+    {
       name: "🆕 PixPax",
       url: "https://pixpal.chat",
       description: "A user-friendly chatbot that lets you analyze images, remix existing images or create new images, all through simple chat.",

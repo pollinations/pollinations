@@ -123,24 +123,44 @@ export async function sendToAnalytics(request, name, params = {}, env) {
     });
     
     const responseText = await response.text();
-    console.log(`[Analytics] Response from Google Analytics for ${name}:`, {
+    const logDetails = {
       status: response.status,
       statusText: response.statusText,
       body: responseText || '(empty body)',
-      headers: Object.fromEntries(response.headers.entries())
-    });
+      headers: Object.fromEntries(response.headers.entries()),
+      event: name,
+      hasCredentials: {
+        measurementId: !!measurementId,
+        apiSecret: !!apiSecret
+      }
+    };
     
     if (!response.ok) {
-      console.error(`[Analytics] Failed to send ${name} event to Google Analytics:`, {
-        status: response.status,
-        statusText: response.statusText,
-        body: responseText
-      });
+      console.error(`[Analytics Error] Failed to send ${name} event:`, logDetails);
+      
+      // Try the validation endpoint to get more detailed error info
+      try {
+        const validationResponse = await fetch(`https://www.google-analytics.com/debug/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+        
+        const validationResult = await validationResponse.json();
+        console.error(`[Analytics Debug] Validation response for failed ${name} event:`, validationResult);
+      } catch (validationError) {
+        console.error(`[Analytics Debug] Failed to get validation info for ${name}:`, validationError);
+      }
+    } else {
+      console.log(`[Analytics Success] Sent ${name} event:`, logDetails);
     }
     
     return response;
   } catch (error) {
-    console.error('Error sending analytics:', error);
+    console.error('[Analytics Error] Exception while sending analytics:', {
+      error: error.message,
+      stack: error.stack,
+      event: name
+    });
     return;
   }
 }

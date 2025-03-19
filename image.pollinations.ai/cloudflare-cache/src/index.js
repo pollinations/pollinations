@@ -52,7 +52,7 @@ export default {
       
       ctx.waitUntil(Promise.all([
         sendToAnalytics(request, "imageRequested", analyticsData, env),
-        sendToAnalytics(request, "imageRequestedProxy", analyticsData, env)
+        sendToAnalytics(request, "imageRequestedDummy", analyticsData, env)
       ]));
     }
     
@@ -76,10 +76,7 @@ export default {
             cacheStatus: 'hit'
           };
           
-          ctx.waitUntil(Promise.all([
-            sendToAnalytics(request, "imageGenerated", analyticsData, env),
-            sendToAnalytics(request, "imageGeneratedProxy", analyticsData, env)
-          ]));
+          // Don't send any analytics events for cache hits
         }
         
         // Return the cached image with appropriate headers
@@ -140,10 +137,7 @@ export default {
           cacheStatus: 'miss'
         };
         
-        ctx.waitUntil(Promise.all([
-          sendToAnalytics(request, "imageGenerated", analyticsData, env),
-          sendToAnalytics(request, "imageGeneratedProxy", analyticsData, env)
-        ]));
+        ctx.waitUntil(sendToAnalytics(request, "imageGenerated", analyticsData, env));
       }
     } else {
       console.log('Not caching response - either not successful or not an image');
@@ -160,10 +154,7 @@ export default {
           cacheStatus: 'miss'
         };
         
-        ctx.waitUntil(Promise.all([
-          sendToAnalytics(request, "imageGenerationFailed", analyticsData, env),
-          sendToAnalytics(request, "imageGenerationFailedProxy", analyticsData, env)
-        ]));
+        ctx.waitUntil(sendToAnalytics(request, "imageGenerationFailed", analyticsData, env));
       }
     }
     

@@ -10,9 +10,10 @@ bucket_name = "pollinations-images"
 # Environment variables
 [vars]
 ORIGIN_HOST = "image-origin.pollinations.ai"
-# Google Analytics configuration - replace with actual values
-# GA_MEASUREMENT_ID = "G-XXXXXXXXXX"  # Uncomment and replace with your GA4 measurement ID
-# GA_API_SECRET = "XXXXXXXXXX"       # Uncomment and replace with your GA4 API secret
+# Note: GA_MEASUREMENT_ID and GA_API_SECRET should be set using Wrangler's secret feature:
+# wrangler secret put GA_MEASUREMENT_ID
+# wrangler secret put GA_API_SECRET
+DEBUG_ANALYTICS = "false"  # Set to "true" to enable detailed analytics debugging
 
 # Increase limits for long-running operations
 # This requires a paid Workers Unbound plan

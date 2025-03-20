@@ -15,9 +15,25 @@ export default {
   async fetch(request, env, ctx) {
     // Get basic request details
     const url = new URL(request.url);
-    const clientIP = request.headers.get('cf-connecting-ip') || 'unknown';
+    const clientIP = getClientIp(request);
     
     console.log(`Request: ${request.method} ${url.pathname}`);
+    
+    // Extract the prompt for analytics
+    const originalPrompt = url.pathname.startsWith('/prompt/')
+      ? decodeURIComponent(url.pathname.split('/prompt/')[1])
+      : '';
+    
+    // Process query parameters for analytics
+    const safeParams = {};
+    for (const [key, value] of url.searchParams.entries()) {
+      safeParams[key] = value;
+    }
+    
+    // Get referrer for analytics
+    const referrer = request.headers.get('referer') || 
+                    request.headers.get('referrer') || 
+                    '';
     
     // Skip caching for certain paths or non-image requests
     if (url.searchParams.has('no-cache') || !url.pathname.startsWith('/prompt')) {
@@ -47,6 +63,19 @@ export default {
       
       if (cachedImage) {
         console.log(`Cache hit for: ${cacheKey}`);
+        
+        // Send analytics for cache hit
+        if (url.pathname.startsWith('/prompt/')) {
+          const analyticsData = {
+            originalPrompt,
+            safeParams,
+            referrer,
+            cacheStatus: 'hit'
+          };
+          
+          // Don't send any analytics events for cache hits
+        }
+        
         // Return the cached image with appropriate headers
         const cachedHeaders = new Headers();
         

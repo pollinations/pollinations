@@ -77,9 +77,7 @@ export async function cacheResponse(cacheKey, response, env, originalUrl, reques
     const imageBuffer = await response.arrayBuffer();
     
     // Get client information from request
-    const clientIp = request?.headers?.get('cf-connecting-ip') || 
-                    request?.headers?.get('x-forwarded-for')?.split(',')[0] || 
-                    'unknown';
+    const clientIp = getClientIp(request);
     
     // Get additional client information
     const userAgent = request?.headers?.get('user-agent') || '';

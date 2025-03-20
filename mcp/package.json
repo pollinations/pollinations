@@ -1,14 +1,15 @@
 {
-  "name": "pollinations-api-client",
+  "name": "pollinations-mcp",
   "version": "1.0.0",
-  "description": "A simple client for the Pollinations Image API",
+  "description": "A Model Context Protocol (MCP) server for the Pollinations Image API",
   "main": "src/index.js",
   "type": "module",
+  "bin": {
+    "pollinations-mcp": "./pollinations-mcp-server.js"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "demo": "node demo.js",
-    "logs": "ls -la ~/Library/Logs/Claude/ && (find ~/Library/Logs/Claude -type f -name \"*.log\" | xargs tail -f || echo \"No log files found\")",
-    "start-mcp": "node pollinations-mcp-server.js",
+    "test": "node test-mcp-client.js",
+    "start": "node pollinations-mcp-server.js",
     "install-claude-mcp": "node install-claude-mcp.js"
   },
   "keywords": [
@@ -16,11 +17,25 @@
     "api",
     "client",
     "image",
-    "generation"
+    "generation",
+    "mcp",
+    "claude",
+    "ai"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "Pollinations.AI",
+  "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.0.13"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pollinations/pollinations.git",
+    "directory": "mcp"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

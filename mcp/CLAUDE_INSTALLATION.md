@@ -20,9 +20,32 @@ npm install
 
 ### 2. Installation Options
 
-#### Option A: Automatic Installation (Recommended)
+#### Option A: Using NPX (Recommended)
 
-The easiest way to install the Pollinations MCP server in Claude Desktop is to use the provided installation script:
+The easiest way to install and run the Pollinations MCP server is using npx:
+
+```bash
+npx pollinations-mcp
+```
+
+When configuring Claude Desktop, use the following configuration:
+
+```json
+{
+  "mcpServers": {
+    "pollinations": {
+      "command": "npx",
+      "args": ["pollinations-mcp"],
+      "disabled": false,
+      "alwaysAllow": []
+    }
+  }
+}
+```
+
+#### Option B: Automatic Installation
+
+If you've cloned the repository, you can use the provided installation script:
 
 ```bash
 npm run install-claude-mcp
@@ -37,11 +60,13 @@ The script uses ES modules syntax and is compatible with the project's module sy
 
 ### 3. Make the MCP Server Executable
 
+If you've cloned the repository, make the server executable:
+
 ```bash
 chmod +x pollinations-mcp-server.js
 ```
 
-#### Option B: Manual Configuration
+#### Option C: Manual Configuration
 
 1. Open the Claude Desktop configuration file located at:
    - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
@@ -95,8 +120,43 @@ The MCP server provides the following tools to Claude:
        - `width` (number, optional): Width of the generated image
        - `height` (number, optional): Height of the generated image
 
-2. `listModels` - Lists available image generation models
+2. `generateImage` - Generates an image and returns the base64-encoded data
+   - Parameters:
+     - `prompt` (string): The text description of the image to generate
+     - `options` (object, optional):
+       - `model` (string, optional): Model name to use for generation
+       - `seed` (number, optional): Seed for reproducible results
+       - `width` (number, optional): Width of the generated image
+       - `height` (number, optional): Height of the generated image
+
+3. `listModels` - Lists available image generation models
    - No parameters
+
+## Usage Examples
+
+### Generating an Image URL
+
+```
+Generate an image URL of a sunset over the ocean using the Pollinations API.
+```
+
+Claude will use the `generateImageUrl` tool to create a URL that you can click on to view the generated image.
+
+### Generating an Inline Image
+
+```
+Generate an image of a cute cat playing with a ball of yarn and display it directly in this chat.
+```
+
+Claude will use the `generateImage` tool to create and display the image directly in the chat, without requiring you to click on a URL.
+
+### Listing Available Models
+
+```
+List the available image generation models from the Pollinations API.
+```
+
+Claude will use the `listModels` tool to show you the available models for image generation.
 
 ## Troubleshooting
 

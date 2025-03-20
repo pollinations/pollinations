@@ -34,6 +34,18 @@ Generate Audio: Use the `openai-audio` model
 
 List Models: `GET https://text.pollinations.ai/models`
 
+### MCP Server for AI Assistants
+
+Pollinations provides an MCP (Model Context Protocol) server that enables AI assistants like Claude to generate images directly.
+
+- Server Name: `pollinations-image-api`
+- Tools:
+  - `generateImageUrl`: Generate an image URL from a text prompt
+  - `generateImage`: Generate an image and return the base64-encoded data
+  - `listModels`: List available image generation models
+
+For installation and usage instructions, see the [MCP Server Documentation](./mcp/README.md).
+
 ## Feed Endpoints
 - Image Feed: GET https://image.pollinations.ai/feed (SSE stream of user-generated images).
 - Example:

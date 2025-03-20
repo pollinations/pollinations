@@ -1,6 +1,52 @@
-# Pollinations Image Cache with Cloudflare R2 + CDN
+# Pollinations Image Cache
 
-This directory contains a simple implementation of a caching layer for the Pollinations image generation service using Cloudflare R2 for storage and Cloudflare's global CDN for delivery.
+This Cloudflare Worker handles image caching and analytics for the Pollinations image service.
+
+## Configuration 
+
+The worker uses `wrangler.toml` for configuration, which contains sensitive information. For security reasons, this file is excluded from version control.
+
+### Setup Instructions
+
+1. Copy the example configuration file:
+   ```bash
+   cp wrangler.toml.example wrangler.toml
+   ```
+
+2. Edit `wrangler.toml` and add your credentials:
+   - Replace `your-account-id-here` with your Cloudflare account ID
+   - Update bucket names and other configuration as needed
+
+3. Set secrets using Wrangler:
+   ```bash
+   npx wrangler secret put GA_MEASUREMENT_ID
+   npx wrangler secret put GA_API_SECRET
+   ```
+
+4. Deploy the worker:
+   ```bash
+   npx wrangler deploy
+   ```
+
+### Important Security Notes
+
+- Never commit `wrangler.toml` with real credentials to version control
+- Use Cloudflare's secret management for sensitive values
+- The `.gitignore` file is configured to exclude `wrangler.toml`
+
+## Development
+
+To run the worker locally for development:
+
+```bash
+npx wrangler dev
+```
+
+To view logs from the deployed worker:
+
+```bash
+npx wrangler tail
+```
 
 ## Overview
 

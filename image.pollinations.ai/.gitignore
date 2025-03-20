@@ -16,3 +16,6 @@ steps.txt
 # Cloudflare tunnel credentials
 .cloudflared/*.json
 ~/.cloudflared/*.json
+
+# Cloudflare Worker configuration with sensitive info
+cloudflare-cache/wrangler.toml

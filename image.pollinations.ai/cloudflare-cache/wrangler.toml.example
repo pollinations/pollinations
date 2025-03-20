@@ -1,0 +1,28 @@
+name = "pollinations-image-cache"
+main = "src/index.js"
+compatibility_date = "2023-05-18"
+account_id = "your-account-id-here"  # Replace with your Cloudflare account ID
+
+# R2 bucket for image storage
+[[r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "your-bucket-name-here"  # Replace with your bucket name
+
+# Environment variables
+[vars]
+ORIGIN_HOST = "your-origin-host-here"  # Example: image-origin.yourdomain.com
+# Sensitive values should be set using Wrangler's secret feature:
+# wrangler secret put GA_MEASUREMENT_ID
+# wrangler secret put GA_API_SECRET
+DEBUG_ANALYTICS = "false"  # Set to "true" to enable detailed analytics debugging
+
+# Increase limits for long-running operations
+# This requires a paid Workers Unbound plan
+[limits]
+cpu_ms = 30000  # 30 seconds CPU time (max for Workers Unbound)
+
+# Configure logging
+[observability.logs]
+enabled = true
+
+# Note: Workers Unbound is now configured via account settings in the dashboard 

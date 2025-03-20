@@ -84,7 +84,7 @@ export async function sendToAnalytics(request, name, params = {}, env) {
                      '';
     const userAgent = request.headers.get('user-agent') || '';
     const language = request.headers.get('accept-language') || '';
-    const clientIP = getClientIp(request);
+    const clientIP = getClientIp(request) || '::1';
     
     // Process query parameters into safeParams format
     const safeParams = {};
@@ -92,24 +92,37 @@ export async function sendToAnalytics(request, name, params = {}, env) {
       safeParams[key] = value;
     }
     
-    // Build analytics metadata
-    const analyticsMetadata = createAnalyticsMetadata(request, {
-      originalPrompt,
-      safeParams,
-      referrer,
-      ...params
-    });
+    // Extract specific parameters from query params or params object
+    const width = safeParams.width || params.width || 1024;
+    const height = safeParams.height || params.height || 1024;
+    const seed = safeParams.seed || params.seed || 42;
+    const model = safeParams.model || params.model || 'flux';
+    const negative_prompt = safeParams.negative_prompt || params.negative_prompt || 'worst quality, blurry';
     
-    // Build the payload for Google Analytics
+    // Build the payload in the exact same format as the curl command
     const payload = {
-      client_id: clientIP || 'unknown',
-      "events": [{
-        "name": name,
-        "params": {
-          referrer,
-          userAgent,
-          language,
-          ...analyticsMetadata,
+      client_id: clientIP,
+      events: [{
+        name: name,
+        params: {
+          userAgent: userAgent,
+          language: language,
+          width: width,
+          height: height,
+          seed: seed,
+          model: model,
+          nologo: params.nologo || false,
+          negative_prompt: negative_prompt,
+          nofeed: params.nofeed || false,
+          safe: params.safe || false,
+          promptRaw: originalPrompt || params.promptRaw || '',
+          concurrentRequests: params.concurrentRequests || 0,
+          ip: clientIP,
+          queueSize: params.queueSize || 0,
+          totalProcessingTime: params.totalProcessingTime || 12,
+          isChild: params.isChild || false,
+          // Include additional parameters if provided
+          ...params.cacheStatus ? { cacheStatus: params.cacheStatus } : {}
         }
       }]
     };
@@ -119,6 +132,9 @@ export async function sendToAnalytics(request, name, params = {}, env) {
     // Send to Google Analytics
     const response = await fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`, {
       method: "POST",
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(payload)
     });
     
@@ -142,6 +158,9 @@ export async function sendToAnalytics(request, name, params = {}, env) {
       try {
         const validationResponse = await fetch(`https://www.google-analytics.com/debug/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`, {
           method: "POST",
+          headers: {
+            'Content-Type': 'application/json'
+          },
           body: JSON.stringify(payload)
         });
         

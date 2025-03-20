@@ -9,7 +9,7 @@ bucket_name = "pollinations-text"
 
 # Environment variables
 [vars]
-ORIGIN_HOST = "text-origin.pollinations.ai"
+ORIGIN_HOST = "text.pollinations.ai"
 
 # Increase limits for long-running operations
 # This requires a paid Workers Unbound plan

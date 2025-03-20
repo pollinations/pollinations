@@ -18,8 +18,9 @@ export default {
     
     console.log(`Request: ${method} ${url.pathname}`);
     
-    // Skip caching when no-cache is specified
-    if (url.searchParams.has('no-cache')) {
+    // Skip caching for specific paths or when no-cache is specified
+    const nonCacheablePaths = ['/models', '/feed'];
+    if (url.searchParams.has('no-cache') || nonCacheablePaths.includes(url.pathname)) {
       console.log('Skipping cache for non-cacheable request');
       return await proxyToOrigin(request, env);
     }

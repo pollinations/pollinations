@@ -18,16 +18,19 @@ export async function proxyToOrigin(request, env, originHost) {
   // Replace the hostname with the origin service
   const url = new URL(request.url);
   const originalUrl = url.toString();
-  url.hostname = originHost || env.ORIGIN_HOST || 'text.pollinations.ai';
-  const targetUrl = url.toString();
   
-  console.log(`Forwarding request from ${originalUrl} to ${targetUrl}`);
+  // Create a new URL with the origin host but keep the path and query
+  const targetUrl = new URL(`https://${originHost || env.ORIGIN_HOST}`);
+  targetUrl.pathname = url.pathname;
+  targetUrl.search = url.search;
+  
+  console.log(`Forwarding request from ${originalUrl} to ${targetUrl.toString()}`);
   
   // Create a new request to the origin - preserving all original headers
   const headers = new Headers(request.headers);
   
   // Add or modify headers to ensure proper forwarding
-  headers.set('host', url.hostname);
+  headers.set('host', targetUrl.hostname);
   
   // Forward the client IP address to the origin server
   if (clientIP) {
@@ -37,7 +40,7 @@ export async function proxyToOrigin(request, env, originHost) {
   }
   
   // Create a new request with the same method, headers, and body
-  const originRequest = new Request(url.toString(), {
+  const originRequest = new Request(targetUrl.toString(), {
     method: request.method,
     headers: headers,
     body: request.method !== 'GET' ? request.body : undefined,

@@ -27,6 +27,16 @@ jobs:
         run: npm ci
         working-directory: ./image.pollinations.ai/cloudflare-cache
       
+      # Configure secrets before deployment
+      - name: Configure Secrets
+        env:
+          GA_MEASUREMENT_ID: ${{ secrets.GA_MEASUREMENT_ID }}
+          GA_API_SECRET: ${{ secrets.GA_API_SECRET }}
+        run: |
+          echo "$GA_MEASUREMENT_ID" | wrangler secret put GA_MEASUREMENT_ID
+          echo "$GA_API_SECRET" | wrangler secret put GA_API_SECRET
+        working-directory: ./image.pollinations.ai/cloudflare-cache
+      
       - name: Publish to Cloudflare
         uses: cloudflare/wrangler-action@v3
         with:

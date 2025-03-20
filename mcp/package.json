@@ -1,0 +1,26 @@
+{
+  "name": "pollinations-api-client",
+  "version": "1.0.0",
+  "description": "A simple client for the Pollinations Image API",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "demo": "node demo.js",
+    "logs": "ls -la ~/Library/Logs/Claude/ && (find ~/Library/Logs/Claude -type f -name \"*.log\" | xargs tail -f || echo \"No log files found\")",
+    "start-mcp": "node pollinations-mcp-server.js",
+    "install-claude-mcp": "node install-claude-mcp.js"
+  },
+  "keywords": [
+    "pollinations",
+    "api",
+    "client",
+    "image",
+    "generation"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.0.13"
+  }
+}

@@ -3,6 +3,8 @@
  * Following the "thin proxy" design principle - keeping logic simple and minimal
  */
 
+import { getClientIp } from './ip-utils.js';
+
 /**
  * Generate a consistent cache key from URL
  * @param {URL} url - The URL object

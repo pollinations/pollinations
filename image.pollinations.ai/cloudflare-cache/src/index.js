@@ -1,5 +1,7 @@
 import { generateCacheKey, cacheResponse } from './cache-utils.js';
 import { proxyToOrigin } from './image-proxy.js';
+import { sendToAnalytics } from './analytics.js';
+import { getClientIp } from './ip-utils.js';
 
 /**
  * Cloudflare Worker for caching Pollinations images in R2
@@ -21,6 +23,18 @@ export default {
     if (url.searchParams.has('no-cache') || !url.pathname.startsWith('/prompt')) {
       console.log('Skipping cache for non-cacheable request');
       return await proxyToOrigin(request, env);
+    }
+    
+    // Send imageRequested analytics event
+    if (url.pathname.startsWith('/prompt/')) {
+      const analyticsData = {
+        originalPrompt,
+        safeParams,
+        referrer,
+        cacheStatus: 'pending'
+      };
+      
+      ctx.waitUntil(sendToAnalytics(request, "imageRequested", analyticsData, env));
     }
     
     // Generate a cache key from the URL path and query parameters
@@ -81,10 +95,35 @@ export default {
       console.log('Caching successful image response');
       // Pass the original URL and request to the cacheResponse function
       ctx.waitUntil(cacheResponse(cacheKey, response.clone(), env, url.toString(), request));
+      
+      // Send analytics for cache miss but successful generation
+      if (url.pathname.startsWith('/prompt/')) {
+        const analyticsData = {
+          originalPrompt,
+          safeParams,
+          referrer,
+          cacheStatus: 'miss'
+        };
+        
+        ctx.waitUntil(sendToAnalytics(request, "imageGenerated", analyticsData, env));
+      }
     } else {
       console.log('Not caching response - either not successful or not an image');
       console.log('Response status:', response.status);
       console.log('Content-Type:', response.headers.get('content-type'));
+      
+      // Send analytics for failed request
+      if (url.pathname.startsWith('/prompt/') && response.status !== 200) {
+        const analyticsData = {
+          originalPrompt,
+          safeParams,
+          referrer,
+          error: `HTTP ${response.status}: ${response.statusText}`,
+          cacheStatus: 'miss'
+        };
+        
+        ctx.waitUntil(sendToAnalytics(request, "imageGenerationFailed", analyticsData, env));
+      }
     }
     
     // Add cache miss header to the response

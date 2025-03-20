@@ -6,6 +6,7 @@ import debug from 'debug';
 import { promises as fs } from 'fs';
 import path from 'path';
 import PQueue from 'p-queue';
+import dotenv from 'dotenv';
 import { availableModels } from './availableModels.js';
 import { getHandler } from './availableModels.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
@@ -14,19 +15,16 @@ import { getFromCache, setInCache, createHashKey } from './cache.js';
 import { processNSFWReferralLinks } from './nsfwReferralLinks.js';
 import { getRequestData, getReferrer } from './requestUtils.js';
 
+// Load environment variables
+dotenv.config();
+
 const BANNED_PHRASES = [
 ];
 
-const WHITELISTED_DOMAINS = [
-    'pollinations',
-    'thot',
-    'ai-ministries.com',
-    'localhost',
-    'pollinations.github.io',
-    '127.0.0.1',
-    'nima',
-    'ilovesquirrelsverymuch'
-];
+// Read whitelisted domains from environment variable
+const WHITELISTED_DOMAINS = process.env.WHITELISTED_DOMAINS 
+    ? process.env.WHITELISTED_DOMAINS.split(',').map(domain => domain.trim())
+    : [];
 
 const blockedIPs = new Set();
 
@@ -98,29 +96,6 @@ app.use((req, res, next) => {
 // Remove the custom JSON parsing middleware and use the standard bodyParser
 app.use(bodyParser.json({ limit: '5mb' }));
 app.use(cors());
-
-// // Rate limiting setup
-// const limiter = rateLimit({
-//     windowMs: 60 * 1000, // 1 minute
-//     max: 200, // 40 requests per windowMs
-//     message: {
-//         error: {
-//             type: 'rate_limit_error',
-//             message: 'Rate limit exceeded. Maximum 40 requests per minute.',
-//             suggestion: 'Please wait before making more requests.'
-//         }
-//     },
-//     skip: (req) => {
-//         const requestData = getRequestData(req);
-//         return requestData.isRobloxReferrer;
-//     },
-//     // Use X-Forwarded-For header but validate it's from our trusted proxy
-//     trustProxy: false
-// });
-
-// Apply rate limiting to all routes
-// app.use(limiter);
-
 // New route handler for root path
 app.get('/', (req, res) => {
     res.redirect('https://sur.pollinations.ai');

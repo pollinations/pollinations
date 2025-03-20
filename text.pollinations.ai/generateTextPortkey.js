@@ -38,7 +38,10 @@ const MODEL_MAPPING = {
     // Modal models
     'hormoz': 'Hormoz-8B',
     // OpenRouter models
-    'claude': 'anthropic/claude-3.5-haiku-20241022'
+    'claude': 'anthropic/claude-3.5-haiku-20241022',
+    // Groq models
+    'qwen-qwq': 'qwen-qwq-32b',
+    'qwen-reasoning': 'qwen-qwq-32b'
 };
 
 // Unrestricted prompt for Scaleway models
@@ -68,7 +71,10 @@ const SYSTEM_PROMPTS = {
     // Modal models
     'hormoz': 'You are Hormoz, a helpful AI assistant created by Muhammadreza Haghiri. You provide accurate and thoughtful responses.',
     // OpenRouter models
-    'claude': 'You are Claude, a helpful AI assistant created by Anthropic. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.'
+    'claude': 'You are Claude, a helpful AI assistant created by Anthropic. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.',
+    // Groq models
+    'qwen-qwq': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
+    'qwen-reasoning': 'You are a reasoning-focused AI assistant specialized in mathematical reasoning, scientific analysis, and coding tasks. When appropriate, break down your thinking step by step to show your reasoning process. Always be helpful, respectful, and honest.'
 };
 
 // Default options
@@ -141,6 +147,15 @@ const baseOpenRouterConfig = {
     provider: 'openai',
     'custom-host': 'https://openrouter.ai/api/v1',
     authKey: process.env.OPENROUTER_API_KEY,
+    // Set default max_tokens to 4096
+    'max-tokens': 4096,
+};
+
+// Base configuration for Groq models
+const baseGroqConfig = {
+    provider: 'groq',
+    'custom-host': 'https://api.groq.com/openai/v1',
+    authKey: process.env.GROQ_API_KEY,
     // Set default max_tokens to 4096
     'max-tokens': 4096,
 };
@@ -260,6 +275,18 @@ function createOpenRouterModelConfig(additionalConfig = {}) {
     };
 }
 
+/**
+ * Creates a Groq model configuration
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - Groq model configuration
+ */
+function createGroqModelConfig(additionalConfig = {}) {
+    return {
+        ...baseGroqConfig,
+        ...additionalConfig
+    };
+}
+
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
     // Azure OpenAI model configurations
@@ -318,6 +345,10 @@ export const portkeyConfig = {
     'Hormoz-8B': () => createModalModelConfig(),
     // OpenRouter model configurations
     'anthropic/claude-3.5-haiku-20241022': () => createOpenRouterModelConfig({
+        'http-referer': 'https://pollinations.ai',
+        'x-title': 'Pollinations.AI'
+    }),
+    'qwen-qwq-32b': () => createGroqModelConfig({
         'http-referer': 'https://pollinations.ai',
         'x-title': 'Pollinations.AI'
     }),
@@ -499,6 +530,16 @@ logProviderConfig(
 logProviderConfig(
     'OpenRouter',
     ([_, config]) => config.provider === 'openai' && config['custom-host']?.includes('openrouter.ai'),
+    config => ({
+        ...config,
+        authKey: config.authKey ? '***' : undefined
+    })
+);
+
+// Log Groq configuration
+logProviderConfig(
+    'Groq',
+    ([_, config]) => config.provider === 'groq',
     config => ({
         ...config,
         authKey: config.authKey ? '***' : undefined

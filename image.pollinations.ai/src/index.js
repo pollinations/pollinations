@@ -3,7 +3,6 @@ import http from 'http';
 import { parse } from 'url';
 import PQueue from 'p-queue';
 import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
-import { sendToAnalytics } from './sendToAnalytics.js';
 import { createAndReturnImageCached } from './createAndReturnImages.js';
 import { makeParamsSafe } from './makeParamsSafe.js';
 import { cacheImage } from './cacheGeneratedImages.js';
@@ -64,7 +63,6 @@ const preMiddleware = async function (pathname, req, res) {
 
   if (pathname.startsWith("/feed")) {
     registerFeedListener(req, res);
-    sendToAnalytics(req, "feedRequested", {});
     return false;
   }
 
@@ -228,7 +226,7 @@ const checkCacheAndGenerate = async (req, res) => {
   const progress = createProgressTracker().startRequest(requestId);
   progress.updateBar(requestId, 0, 'Starting', 'Request received');
 
-  sendToAnalytics(req, "imageRequested", { req, originalPrompt, safeParams, referrer });
+  logApi("Request details:", { originalPrompt, safeParams, referrer });
 
   let timingInfo = [];  // Moved outside try block
   
@@ -319,8 +317,7 @@ const checkCacheAndGenerate = async (req, res) => {
     res.write(bufferAndMaturity.buffer);
     res.end();
 
-    // Send the same comprehensive metadata on success
-    sendToAnalytics(req, "imageGenerated", { req, originalPrompt, safeParams, referrer, bufferAndMaturity, timingInfo });
+    logApi("Generation complete:", { originalPrompt, safeParams, referrer });
 
   } catch (error) {
     logError("Error generating image:", error);

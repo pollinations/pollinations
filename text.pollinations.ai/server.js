@@ -6,6 +6,7 @@ import debug from 'debug';
 import { promises as fs } from 'fs';
 import path from 'path';
 import PQueue from 'p-queue';
+import dotenv from 'dotenv';
 import { availableModels } from './availableModels.js';
 import { getHandler } from './availableModels.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
@@ -14,19 +15,16 @@ import { getFromCache, setInCache, createHashKey } from './cache.js';
 import { processNSFWReferralLinks } from './nsfwReferralLinks.js';
 import { getRequestData, getReferrer } from './requestUtils.js';
 
+// Load environment variables
+dotenv.config();
+
 const BANNED_PHRASES = [
 ];
 
-const WHITELISTED_DOMAINS = [
-    'pollinations',
-    'thot',
-    'ai-ministries.com',
-    'localhost',
-    'pollinations.github.io',
-    '127.0.0.1',
-    'nima',
-    'ilovesquirrelsverymuch'
-];
+// Read whitelisted domains from environment variable
+const WHITELISTED_DOMAINS = process.env.WHITELISTED_DOMAINS 
+    ? process.env.WHITELISTED_DOMAINS.split(',').map(domain => domain.trim())
+    : [];
 
 const blockedIPs = new Set();
 

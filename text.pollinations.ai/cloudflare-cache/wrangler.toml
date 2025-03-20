@@ -11,6 +11,11 @@ bucket_name = "pollinations-text"
 [vars]
 ORIGIN_HOST = "text-origin.pollinations.ai"
 
+# Custom domain configuration
+routes = [
+  { pattern = "text.pollinations.ai", custom_domain = true }
+]
+
 # Increase limits for long-running operations
 # This requires a paid Workers Unbound plan
 [limits]

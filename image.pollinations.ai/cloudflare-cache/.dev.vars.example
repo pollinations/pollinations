@@ -1,9 +1,6 @@
 # Example of .dev.vars file for local development
-# Copy this file to .dev.vars and fill in the values
+# The deploy.sh script will create this file automatically from your .env file
 
-# Cloudflare Account ID (required)
-ACCOUNT_ID=your-account-id-here
-
-# Google Analytics Configuration (optional)
+# Google Analytics Configuration
 GA_MEASUREMENT_ID=G-XXXXXXXXXX
 GA_API_SECRET=your-ga-api-secret-here 

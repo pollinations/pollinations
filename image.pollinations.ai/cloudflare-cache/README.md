@@ -4,77 +4,42 @@ This Cloudflare Worker handles image caching and analytics for the Pollinations 
 
 ## Configuration 
 
-The worker uses `wrangler.toml` for configuration. Sensitive information is stored as secrets and not in the configuration file.
+The worker uses `wrangler.toml` for configuration and environment variables for sensitive data.
 
 ### Setup Instructions
 
-#### Option 1: Using the helper scripts (Recommended)
-
 1. Make sure your `.env` file is set up in the root directory with the following variables:
    ```
-   CLOUDFLARE_ACCOUNT_ID=your-account-id
    GA_MEASUREMENT_ID=your-ga-measurement-id
    GA_API_SECRET=your-ga-api-secret
    ```
 
-2. Run the setup script:
+2. Run the deployment script:
    ```bash
-   ./setup.sh
+   cd cloudflare-cache
+   ./deploy.sh
    ```
 
-   OR
-
-3. Run the individual scripts:
-   ```bash
-   # Configure secrets from .env
-   ./configure-env.sh
-   
-   # Deploy with secrets
-   ./deploy-with-secrets.sh
-   ```
-
-#### Option 2: Manual Setup
-
-1. Copy the example configuration file:
-   ```bash
-   cp wrangler.toml.example wrangler.toml
-   ```
-
-2. Set up secrets using Wrangler:
-   ```bash
-   # Set your Cloudflare account ID
-   wrangler secret put ACCOUNT_ID
-   
-   # Set Google Analytics secrets
-   wrangler secret put GA_MEASUREMENT_ID
-   wrangler secret put GA_API_SECRET
-   ```
-
-3. Deploy the worker:
-   ```bash
-   wrangler deploy
-   ```
+   This script will:
+   - Load your environment variables from .env
+   - Create the R2 bucket if it doesn't exist
+   - Create .dev.vars file for local development
+   - Deploy the worker
 
 ### Local Development
 
-For local development, you can use a `.dev.vars` file:
+For local development, you can use the `.dev.vars` file which will be automatically created by the `deploy.sh` script.
 
-1. Create a local environment file:
-   ```bash
-   cp .dev.vars.example .dev.vars
-   ```
-
-2. Edit `.dev.vars` and add your development values
-3. Run the worker locally:
-   ```bash
-   wrangler dev
-   ```
+Run the worker locally:
+```bash
+npm run dev
+```
 
 ### Important Security Notes
 
-- Never commit files with real credentials to version control
-- The `.gitignore` file is configured to exclude `wrangler.toml` and `.dev.vars`
-- Always use Cloudflare's secret management for sensitive values
+- The `.env` file should not be committed to version control
+- The `.gitignore` file is configured to exclude `.dev.vars`
+- Wrangler will automatically use environment variables from `.env` when deploying
 
 ## Development
 
@@ -97,51 +62,6 @@ The implementation follows the "thin proxy" design principle:
 - Direct forwarding of requests to the origin service when needed
 - Simple caching logic using URL paths and query parameters as keys
 - Analytics tracking to ensure all image requests are properly monitored
-
-## Quick Setup
-
-Run the setup script to create the R2 bucket and deploy the worker:
-
-```bash
-./setup.sh
-```
-
-This script will:
-1. Install Wrangler if needed
-2. Log in to Cloudflare (browser authentication)
-3. Create the R2 bucket if it doesn't exist
-4. Deploy the worker
-
-That's it! Your Cloudflare Worker will now cache images in R2 and serve them through Cloudflare's CDN.
-
-## Manual Setup (Alternative)
-
-If you prefer to set things up manually:
-
-1. Install Wrangler CLI:
-   ```
-   npm install -g wrangler
-   ```
-
-2. Login to Cloudflare:
-   ```
-   wrangler login
-   ```
-
-3. Create the R2 bucket:
-   ```
-   wrangler r2 bucket create pollinations-images
-   ```
-
-4. Install dependencies:
-   ```
-   npm install
-   ```
-
-5. Deploy the worker:
-   ```
-   npm run deploy
-   ```
 
 ## How It Works
 

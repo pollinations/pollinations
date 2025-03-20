@@ -1,8 +1,7 @@
 name = "pollinations-image-cache"
 main = "src/index.js"
 compatibility_date = "2023-05-18"
-# The account_id should be set as a secret using wrangler
-# wrangler secret put ACCOUNT_ID
+# The account_id will be automatically read from the CLOUDFLARE_ACCOUNT_ID environment variable
 
 # R2 bucket for image storage
 [[r2_buckets]]
@@ -12,9 +11,6 @@ bucket_name = "pollinations-images"
 # Environment variables
 [vars]
 ORIGIN_HOST = "image-origin.pollinations.ai"
-# Note: GA_MEASUREMENT_ID and GA_API_SECRET should be set using Wrangler's secret feature:
-# wrangler secret put GA_MEASUREMENT_ID
-# wrangler secret put GA_API_SECRET
 DEBUG_ANALYTICS = "false"  # Set to "true" to enable detailed analytics debugging
 
 # Increase limits for long-running operations
@@ -30,21 +26,17 @@ enabled = true
 # Workers Unbound is now configured via account settings in the Cloudflare dashboard
 
 # ===========================================
-# SECRETS SETUP INSTRUCTIONS
+# ENVIRONMENT SETUP INSTRUCTIONS
 # ===========================================
-# This configuration relies on secrets that should NOT be committed to the repository.
-# To set up your environment, run the following commands:
+# This configuration uses environment variables from the .env file.
+# Make sure your .env file in the root directory includes:
 #
-# Set the account ID:
-# wrangler secret put ACCOUNT_ID
+# GA_MEASUREMENT_ID=your-ga-measurement-id
+# GA_API_SECRET=your-ga-api-secret
+# CLOUDFLARE_ACCOUNT_ID=your-cloudflare-account-id
 #
-# Set the GA measurement ID and API secret for analytics:
-# wrangler secret put GA_MEASUREMENT_ID
-# wrangler secret put GA_API_SECRET
-#
-# Alternatively, use the provided setup scripts:
-# ./configure-env.sh
-# ./deploy-with-secrets.sh
+# The deploy.sh script will automatically create a .dev.vars file
+# for local development using these values.
 # ===========================================
 
 

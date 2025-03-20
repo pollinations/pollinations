@@ -54,6 +54,33 @@ If you prefer to set things up manually:
    npm run deploy
    ```
 
+## Tunnel Setup
+
+To set up the Cloudflare tunnels for both the main service and origin:
+
+1. For the main service:
+   ```bash
+   ./setup-cloudflare-tunnel.sh text pollinations.ai 16385
+   ```
+
+2. For the origin service:
+   ```bash
+   ./setup-cloudflare-tunnel.sh text-origin pollinations.ai 16385
+   ```
+
+This will:
+- Create tunnels for both domains
+- Configure systemd services to run the tunnels
+- Provide instructions for DNS setup
+
+The script handles:
+- Installing cloudflared if needed
+- Tunnel creation and configuration
+- Systemd service setup
+- Automatic restart on failure
+
+After running the script, follow the provided instructions to set up DNS records in Cloudflare.
+
 ## How It Works
 
 1. **Request Flow**:

@@ -4,35 +4,77 @@ This Cloudflare Worker handles image caching and analytics for the Pollinations 
 
 ## Configuration 
 
-The worker uses `wrangler.toml` for configuration, which contains sensitive information. For security reasons, this file is excluded from version control.
+The worker uses `wrangler.toml` for configuration. Sensitive information is stored as secrets and not in the configuration file.
 
 ### Setup Instructions
+
+#### Option 1: Using the helper scripts (Recommended)
+
+1. Make sure your `.env` file is set up in the root directory with the following variables:
+   ```
+   CLOUDFLARE_ACCOUNT_ID=your-account-id
+   GA_MEASUREMENT_ID=your-ga-measurement-id
+   GA_API_SECRET=your-ga-api-secret
+   ```
+
+2. Run the setup script:
+   ```bash
+   ./setup.sh
+   ```
+
+   OR
+
+3. Run the individual scripts:
+   ```bash
+   # Configure secrets from .env
+   ./configure-env.sh
+   
+   # Deploy with secrets
+   ./deploy-with-secrets.sh
+   ```
+
+#### Option 2: Manual Setup
 
 1. Copy the example configuration file:
    ```bash
    cp wrangler.toml.example wrangler.toml
    ```
 
-2. Edit `wrangler.toml` and add your credentials:
-   - Replace `your-account-id-here` with your Cloudflare account ID
-   - Update bucket names and other configuration as needed
-
-3. Set secrets using Wrangler:
+2. Set up secrets using Wrangler:
    ```bash
-   npx wrangler secret put GA_MEASUREMENT_ID
-   npx wrangler secret put GA_API_SECRET
+   # Set your Cloudflare account ID
+   wrangler secret put ACCOUNT_ID
+   
+   # Set Google Analytics secrets
+   wrangler secret put GA_MEASUREMENT_ID
+   wrangler secret put GA_API_SECRET
    ```
 
-4. Deploy the worker:
+3. Deploy the worker:
    ```bash
-   npx wrangler deploy
+   wrangler deploy
+   ```
+
+### Local Development
+
+For local development, you can use a `.dev.vars` file:
+
+1. Create a local environment file:
+   ```bash
+   cp .dev.vars.example .dev.vars
+   ```
+
+2. Edit `.dev.vars` and add your development values
+3. Run the worker locally:
+   ```bash
+   wrangler dev
    ```
 
 ### Important Security Notes
 
-- Never commit `wrangler.toml` with real credentials to version control
-- Use Cloudflare's secret management for sensitive values
-- The `.gitignore` file is configured to exclude `wrangler.toml`
+- Never commit files with real credentials to version control
+- The `.gitignore` file is configured to exclude `wrangler.toml` and `.dev.vars`
+- Always use Cloudflare's secret management for sensitive values
 
 ## Development
 

@@ -1,0 +1,9 @@
+# Example of .dev.vars file for local development
+# Copy this file to .dev.vars and fill in the values
+
+# Cloudflare Account ID (required)
+ACCOUNT_ID=your-account-id-here
+
+# Google Analytics Configuration (optional)
+GA_MEASUREMENT_ID=G-XXXXXXXXXX
+GA_API_SECRET=your-ga-api-secret-here 

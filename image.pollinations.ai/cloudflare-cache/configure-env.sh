@@ -23,6 +23,7 @@ echo -e "${BLUE}Configuring environment variables for Cloudflare worker...${NC}"
 # Try to get values from environment variables first, then fall back to .env file
 GA_ID=${GA_MEASUREMENT_ID:-$(read_from_env "GA_MEASUREMENT_ID")}
 GA_SECRET=${GA_API_SECRET:-$(read_from_env "GA_API_SECRET")}
+ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-$(read_from_env "CLOUDFLARE_ACCOUNT_ID")}
 
 # Check if we have the required values
 if [ -z "$GA_ID" ] || [ -z "$GA_SECRET" ]; then
@@ -38,13 +39,36 @@ if [ -z "$GA_ID" ] || [ -z "$GA_SECRET" ]; then
         read -r GA_SECRET
     else
         echo -e "${YELLOW}Skipping Google Analytics configuration.${NC}"
-        exit 0
+    fi
+fi
+
+# Check if we have the Cloudflare account ID
+if [ -z "$ACCOUNT_ID" ]; then
+    echo -e "${YELLOW}Warning: CLOUDFLARE_ACCOUNT_ID not found in environment or .env file${NC}"
+    echo -e "${YELLOW}Would you like to enter it manually? (y/n)${NC}"
+    read -r manual_entry
+    
+    if [[ $manual_entry =~ ^[Yy]$ ]]; then
+        echo -e "${BLUE}Enter your Cloudflare Account ID:${NC}"
+        read -r ACCOUNT_ID
+    else
+        echo -e "${YELLOW}Skipping Cloudflare Account ID configuration.${NC}"
     fi
 fi
 
 # Set secrets using wrangler
 echo -e "${GREEN}Setting secrets using wrangler...${NC}"
-echo "$GA_ID" | npx wrangler secret put GA_MEASUREMENT_ID
-echo "$GA_SECRET" | npx wrangler secret put GA_API_SECRET
+
+if [ -n "$GA_ID" ]; then
+    echo "$GA_ID" | npx wrangler secret put GA_MEASUREMENT_ID
+fi
+
+if [ -n "$GA_SECRET" ]; then
+    echo "$GA_SECRET" | npx wrangler secret put GA_API_SECRET
+fi
+
+if [ -n "$ACCOUNT_ID" ]; then
+    echo "$ACCOUNT_ID" | npx wrangler secret put ACCOUNT_ID
+fi
 
 echo -e "${GREEN}Environment variables configured as Cloudflare secrets${NC}"

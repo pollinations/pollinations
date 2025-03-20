@@ -1,6 +1,8 @@
 name = "pollinations-image-cache"
 main = "src/index.js"
 compatibility_date = "2023-05-18"
+# The account_id should be set as a secret using wrangler
+# wrangler secret put ACCOUNT_ID
 
 # R2 bucket for image storage
 [[r2_buckets]]
@@ -26,3 +28,23 @@ enabled = true
 
 # Note: The usage_model setting is deprecated and has been removed
 # Workers Unbound is now configured via account settings in the Cloudflare dashboard
+
+# ===========================================
+# SECRETS SETUP INSTRUCTIONS
+# ===========================================
+# This configuration relies on secrets that should NOT be committed to the repository.
+# To set up your environment, run the following commands:
+#
+# Set the account ID:
+# wrangler secret put ACCOUNT_ID
+#
+# Set the GA measurement ID and API secret for analytics:
+# wrangler secret put GA_MEASUREMENT_ID
+# wrangler secret put GA_API_SECRET
+#
+# Alternatively, use the provided setup scripts:
+# ./configure-env.sh
+# ./deploy-with-secrets.sh
+# ===========================================
+
+

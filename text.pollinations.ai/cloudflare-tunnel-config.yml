@@ -1,0 +1,7 @@
+tunnel: 9161e140-dce4-40c1-85c6-ab754690a50f
+credentials-file: ~/.cloudflared/9161e140-dce4-40c1-85c6-ab754690a50f.json
+
+ingress:
+  - hostname: text-origin.pollinations.ai
+    service: http://localhost:16385  # Assuming the text service runs on port 16385
+  - service: http_status:404

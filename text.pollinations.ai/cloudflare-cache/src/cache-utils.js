@@ -1,16 +1,15 @@
 /**
- * Utility functions for caching images in Cloudflare R2
+ * Utility functions for caching text responses in Cloudflare R2
  * Following the "thin proxy" design principle - keeping logic simple and minimal
  */
 
-import { getClientIp } from './ip-utils.js';
-
 /**
- * Generate a consistent cache key from URL
+ * Generate a consistent cache key from URL and request body
  * @param {URL} url - The URL object
+ * @param {Object} requestBody - The request body (for POST requests)
  * @returns {string} - The cache key
  */
-export function generateCacheKey(url) {
+export function generateCacheKey(url, requestBody = null) {
   // Normalize the URL by sorting query parameters
   const normalizedUrl = new URL(url);
   const params = Array.from(normalizedUrl.searchParams.entries())
@@ -20,7 +19,7 @@ export function generateCacheKey(url) {
   normalizedUrl.search = '';
   params.forEach(([key, value]) => {
     // Skip certain parameters that shouldn't affect caching
-    if (!['nofeed', 'no-cache'].includes(key)) {
+    if (!['nofeed', 'no-cache', 'stream'].includes(key)) {
       normalizedUrl.searchParams.append(key, value);
     }
   });
@@ -28,20 +27,42 @@ export function generateCacheKey(url) {
   // Get the full path with query parameters
   const fullPath = normalizedUrl.pathname + normalizedUrl.search;
   
+  // For POST requests, include relevant parts of the request body in the cache key
+  let bodyHash = '';
+  if (requestBody) {
+    try {
+      // Extract only the parts of the request body that affect the response
+      const relevantBodyParts = {
+        messages: requestBody.messages,
+        model: requestBody.model,
+        temperature: requestBody.temperature,
+        max_tokens: requestBody.max_tokens,
+        top_p: requestBody.top_p,
+        frequency_penalty: requestBody.frequency_penalty,
+        presence_penalty: requestBody.presence_penalty,
+      };
+      
+      // Create a hash of the relevant body parts
+      bodyHash = '-' + createHash(JSON.stringify(relevantBodyParts));
+    } catch (error) {
+      console.error('Error creating body hash:', error);
+    }
+  }
+  
   // Create a hash of the full URL for uniqueness
-  const hash = createHash(fullPath);
+  const urlHash = createHash(fullPath);
   
   // Replace problematic characters in the path
   const safePath = fullPath.replace(/[\/\s\?=&]/g, '_');
   
   // Combine path with hash, ensuring it fits within a safe limit (1000 bytes)
-  // Allow 10 chars for the hash and hyphen
-  const maxPathLength = 990;
+  // Allow 20 chars for the hash and hyphen
+  const maxPathLength = 980;
   const trimmedPath = safePath.length > maxPathLength 
     ? safePath.substring(0, maxPathLength) 
     : safePath;
     
-  return `${trimmedPath}-${hash}`;
+  return `${trimmedPath}-${urlHash}${bodyHash}`;
 }
 
 /**
@@ -73,11 +94,13 @@ function createHash(str) {
  */
 export async function cacheResponse(cacheKey, response, env, originalUrl, request) {
   try {
-    // Store the image in R2 using the cache key directly
-    const imageBuffer = await response.arrayBuffer();
+    // Store the text response in R2 using the cache key directly
+    const responseBuffer = await response.arrayBuffer();
     
     // Get client information from request
-    const clientIp = getClientIp(request);
+    const clientIp = request?.headers?.get('cf-connecting-ip') || 
+                   request?.headers?.get('x-forwarded-for')?.split(',')[0] || 
+                   'unknown';
     
     // Get additional client information
     const userAgent = request?.headers?.get('user-agent') || '';
@@ -159,11 +182,13 @@ export async function cacheResponse(cacheKey, response, env, originalUrl, reques
     // Create metadata object with content type and original URL
     const metadata = {
       httpMetadata: {
-        contentType: response.headers.get('content-type') || 'image/jpeg',
+        contentType: response.headers.get('content-type') || 'application/json; charset=utf-8',
         contentEncoding: response.headers.get('content-encoding'),
         contentDisposition: response.headers.get('content-disposition'),
         contentLanguage: response.headers.get('content-language'),
-        cacheControl: response.headers.get('cache-control')
+        cacheControl: response.headers.get('cache-control'),
+        // Store if this is a streaming response
+        isStreaming: response.headers.get('content-type')?.includes('text/event-stream') ? 'true' : 'false'
       },
       customMetadata: {
         // Essential metadata
@@ -204,9 +229,9 @@ export async function cacheResponse(cacheKey, response, env, originalUrl, reques
     });
     
     // Store the object with metadata
-    await env.IMAGE_BUCKET.put(cacheKey, imageBuffer, metadata);
+    await env.TEXT_BUCKET.put(cacheKey, responseBuffer, metadata);
     
-    console.log(`Cached image for key ${cacheKey}`);
+    console.log(`Cached text response for key ${cacheKey}`);
     return true;
   } catch (error) {
     console.error('Error caching response:', error);

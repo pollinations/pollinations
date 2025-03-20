@@ -1,9 +1,7 @@
 /**
- * Image proxy functionality for Cloudflare Worker
+ * Text proxy functionality for Cloudflare Worker
  * Following the "thin proxy" design principle - minimal processing, direct forwarding
  */
-
-import { getClientIp } from './ip-utils.js';
 
 /**
  * Proxy a request to the original service
@@ -14,35 +12,38 @@ import { getClientIp } from './ip-utils.js';
  */
 export async function proxyToOrigin(request, env, originHost) {
   // Log the original request details
-  const clientIP = getClientIp(request);
+  const clientIP = request.headers.get('cf-connecting-ip') || 'unknown';
   console.log('Proxying request from client IP:', clientIP);
   
   // Replace the hostname with the origin service
   const url = new URL(request.url);
   const originalUrl = url.toString();
-  url.hostname = originHost || env.ORIGIN_HOST || 'image.pollinations.ai';
-  const targetUrl = url.toString();
   
-  console.log(`Forwarding request from ${originalUrl} to ${targetUrl}`);
+  // Create a new URL with the origin host but keep the path and query
+  const targetUrl = new URL(`https://${originHost || env.ORIGIN_HOST}`);
+  targetUrl.pathname = url.pathname;
+  targetUrl.search = url.search;
+  
+  console.log(`Forwarding request from ${originalUrl} to ${targetUrl.toString()}`);
   
   // Create a new request to the origin - preserving all original headers
   const headers = new Headers(request.headers);
   
   // Add or modify headers to ensure proper forwarding
-  headers.set('host', url.hostname);
+  headers.set('host', targetUrl.hostname);
   
   // Forward the client IP address to the origin server
-  // These are the headers that the origin server checks in getIp.js
   if (clientIP) {
     headers.set('x-forwarded-for', clientIP);
     headers.set('x-real-ip', clientIP);
     headers.set('cf-connecting-ip', clientIP);
   }
   
-  const originRequest = new Request(url.toString(), {
+  // Create a new request with the same method, headers, and body
+  const originRequest = new Request(targetUrl.toString(), {
     method: request.method,
     headers: headers,
-    body: request.body,
+    body: request.method !== 'GET' ? request.body : undefined,
     redirect: 'follow',
   });
   

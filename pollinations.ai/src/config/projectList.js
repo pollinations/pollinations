@@ -52,7 +52,7 @@ const allProjects = {
       name: "🆕 PrivatePollenAI",
       url: "https://mmojocoder.github.io/PrivatePollenAI/chat.html",
       description: "A privacy-focused chat assistant app that securely stores data locally, integrates with PollinationAI for text and image generation, features a minimalistic UI, and allows users to choose models and write their own system instructions.",
-      author: "https://discordapp.com/users/tenacious_humming_bird",
+      author: "https://github.com/MMojoCoder",
       repo: "https://github.com/MMojoCoder/PrivatePollenAI",
       submissionDate: "2025-02-23",
     },
@@ -120,6 +120,13 @@ const allProjects = {
     },
   ],
   creativeApps: [
+    {
+      name: "🆕 Case Me 🇧🇷",
+      description: "O projeto consiste em uma vending machine que criará capinhas para celular personalizadas com fotos ou outras imagens e cores de escolha do cliente final. (A vending machine that creates customized phone cases with photos or other images and colors chosen by the end customer.)",
+      author: "anaboxmania@gmail.com",
+      submissionDate: "2025-03-19",
+      language: "pt-BR"
+    },
     {
       name: "🆕 PixPax",
       url: "https://pixpal.chat",

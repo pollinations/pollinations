@@ -3,7 +3,6 @@ import http from 'http';
 import { parse } from 'url';
 import PQueue from 'p-queue';
 import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
-import { sendToAnalytics } from './sendToAnalytics.js';
 import { createAndReturnImageCached } from './createAndReturnImages.js';
 import { makeParamsSafe } from './makeParamsSafe.js';
 import { cacheImage } from './cacheGeneratedImages.js';
@@ -64,7 +63,6 @@ const preMiddleware = async function (pathname, req, res) {
 
   if (pathname.startsWith("/feed")) {
     registerFeedListener(req, res);
-    sendToAnalytics(req, "feedRequested", {});
     return false;
   }
 
@@ -100,20 +98,26 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     
     // Prompt processing
     progress.updateBar(requestId, 20, 'Prompt', 'Normalizing...');
-    const { prompt, wasPimped } = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams);
+    const { prompt, wasPimped, wasTransformedForBadDomain } = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams, referrer);
     progress.updateBar(requestId, 30, 'Prompt', 'Normalized');
     
-    logApi("prompt", prompt);
+    // For bad domains, log that we're using the transformed prompt
+    if (wasTransformedForBadDomain) {
+      logApi("prompt transformed for bad domain, using alternative:", prompt);
+    }
+    
+    // Use the processed prompt for generation
+    const generationPrompt = prompt;
+    
+    logApi("display prompt", prompt);
+    logApi("generation prompt", generationPrompt);
     logApi("safeParams", safeParams);
-
-    // timingInfo.push({ step: 'Generation started.', timestamp: Date.now() });
-    // sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "generating", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer });
 
     // Server selection and image generation
     progress.updateBar(requestId, 40, 'Server', 'Selecting optimal server...');
     progress.updateBar(requestId, 50, 'Generation', 'Preparing...');
     
-    const { buffer, ...maturity } = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId);
+    const { buffer, ...maturity } = await createAndReturnImageCached(generationPrompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId, wasTransformedForBadDomain);
 
     progress.updateBar(requestId, 50, 'Generation', 'Starting generation');
 
@@ -143,6 +147,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
           ...safeParams,
           concurrentRequests: countFluxJobs(),
           imageURL,
+          // Always use the display prompt which will be original prompt for bad domains
           prompt,
           ...maturity,
           maturity,
@@ -150,6 +155,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
           ip: getIp(req),
           status: "end_generating",
           referrer,
+          // Use original wasPimped for normal domains, never for bad domains
           wasPimped,
           nsfw: maturity.isChild || maturity.isMature,
           private: safeParams.nofeed,
@@ -220,7 +226,7 @@ const checkCacheAndGenerate = async (req, res) => {
   const progress = createProgressTracker().startRequest(requestId);
   progress.updateBar(requestId, 0, 'Starting', 'Request received');
 
-  sendToAnalytics(req, "imageRequested", { req, originalPrompt, safeParams, referrer });
+  logApi("Request details:", { originalPrompt, safeParams, referrer });
 
   let timingInfo = [];  // Moved outside try block
   
@@ -281,14 +287,14 @@ const checkCacheAndGenerate = async (req, res) => {
           progress.updateBar(requestId, progressPercent, 'Queueing', `Queue position: ${queuePosition}`);
           logApi("queueExisted", queueExisted, "for ip", ip, " sleeping a little", queueSize);
           
-          if (queueSize >= 10) {
+          if (queueSize >= 8) {
             progress.errorBar(requestId, 'Queue full');
             progress.stop();
             throw new Error("queue full");
           }
 
           progress.setQueued(queueSize);
-          await sleep(500);
+          await sleep(100);
         }
         
         progress.setProcessing();
@@ -311,8 +317,7 @@ const checkCacheAndGenerate = async (req, res) => {
     res.write(bufferAndMaturity.buffer);
     res.end();
 
-    // Send the same comprehensive metadata on success
-    sendToAnalytics(req, "imageGenerated", { req, originalPrompt, safeParams, referrer, bufferAndMaturity, timingInfo });
+    logApi("Generation complete:", { originalPrompt, safeParams, referrer });
 
   } catch (error) {
     logError("Error generating image:", error);

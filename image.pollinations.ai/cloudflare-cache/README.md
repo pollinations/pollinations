@@ -12,23 +12,36 @@ The worker uses `wrangler.toml` for configuration and environment variables for 
    ```
    GA_MEASUREMENT_ID=your-ga-measurement-id
    GA_API_SECRET=your-ga-api-secret
+   CLOUDFLARE_ACCOUNT_ID=your-cloudflare-account-id
    ```
 
-2. Run the deployment script:
+2. Deploy the worker:
    ```bash
    cd cloudflare-cache
-   ./deploy.sh
+   npx wrangler login  # First time only, opens browser for authentication
+   npx wrangler deploy
    ```
 
-   This script will:
+   Alternatively, you can use the deployment script which will:
    - Load your environment variables from .env
    - Create the R2 bucket if it doesn't exist
    - Create .dev.vars file for local development
    - Deploy the worker
 
+   ```bash
+   cd cloudflare-cache
+   ./deploy.sh
+   ```
+
 ### Local Development
 
-For local development, you can use the `.dev.vars` file which will be automatically created by the `deploy.sh` script.
+For local development, you need a `.dev.vars` file which will be automatically created by the `deploy.sh` script, or you can create it manually:
+
+```bash
+# Create .dev.vars file manually
+echo "GA_MEASUREMENT_ID=your-ga-measurement-id" > .dev.vars
+echo "GA_API_SECRET=your-ga-api-secret" >> .dev.vars
+```
 
 Run the worker locally:
 ```bash
@@ -94,31 +107,3 @@ If you need to modify the configuration:
 1. Update the bucket name in `wrangler.toml`
 2. Modify the origin host in `wrangler.toml` if needed
 3. Adjust caching logic in `src/cache-utils.js` if necessary
-
-## Required Environment Variables
-
-To ensure analytics work properly, you need to set these environment variables:
-
-1. `GA_MEASUREMENT_ID` - Google Analytics 4 measurement ID
-2. `GA_API_SECRET` - Google Analytics 4 API secret
-
-These variables are automatically configured during deployment through GitHub Actions using repository secrets. However, if you need to set them manually, you can use one of these methods:
-
-### Option 1: Edit wrangler.toml directly
-Uncomment and set the values in the `[vars]` section of wrangler.toml:
-```toml
-[vars]
-GA_MEASUREMENT_ID = "G-XXXXXXXXXX"  # Replace with your GA4 measurement ID
-GA_API_SECRET = "XXXXXXXXXX"        # Replace with your GA4 API secret
-```
-
-### Option 2: Use Wrangler CLI
-```bash
-wrangler secret put GA_MEASUREMENT_ID
-wrangler secret put GA_API_SECRET
-```
-
-### Option 3: Set in Cloudflare Dashboard
-Go to Workers & Pages > pollinations-image-cache > Settings > Variables > Add variable
-
-These should be the same values used in the main image.pollinations.ai service to ensure consistent analytics tracking.

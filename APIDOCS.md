@@ -124,6 +124,7 @@ https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean
 - json: Set to 'true' to receive response in JSON format.
 - system: System prompt to set the behavior of the AI. Should be URL-encoded.
 - private: Set to 'true' to prevent the response from appearing in the public feed. Default: false
+- reasoning_effort: Set reasoning effort level for the 'openai-reasoning' (o3-mini) model. Options: 'low', 'medium', 'high'. Default: not specified.
 
 **Return:** Generated text
 
@@ -140,7 +141,8 @@ https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean
   "model": "openai",
   "seed": 42,
   "jsonMode": true,  // Optional: Forces the response to be valid JSON
-  "private": true    // Optional: Prevents response from appearing in public feed
+  "private": true,   // Optional: Prevents response from appearing in public feed
+  "reasoning_effort": "high"  // Optional: Sets reasoning effort for o3-mini model
 }
 ```
 

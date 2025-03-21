@@ -1,7 +1,7 @@
 {
   "name": "generative_image_url",
   "version": "1.0.0",
-  "description": "",
+  "description": "## Architecture",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -37,7 +37,7 @@
     "lodash.memoize": "^4.1.2",
     "memoize-fs": "^2.2.0",
     "mjpeg-server": "^0.3.1",
-    "node-fetch": "^2.6.7",
+    "node-fetch": "^2.7.0",
     "node-stream-zip": "^1.15.0",
     "npm": "^9.7.1",
     "p-queue": "^7.3.4",
@@ -54,5 +54,10 @@
     "express": "^4.21.2",
     "supertest": "^6.3.3",
     "vitest": "^1.6.0"
+  },
+  "directories": {
+    "doc": "docs",
+    "example": "examples",
+    "test": "test"
   }
 }

@@ -62,6 +62,9 @@ export function getRequestData(req) {
     // Extract tools and tool_choice for function calling
     const tools = data.tools || undefined;
     const tool_choice = data.tool_choice || undefined;
+    
+    // Extract reasoning_effort parameter for o3-mini model
+    const reasoning_effort = data.reasoning_effort || undefined;
 
     const messages = data.messages || [{ role: 'user', content: req.params[0] }];
     if (systemPrompt) {
@@ -83,6 +86,7 @@ export function getRequestData(req) {
         tools,
         tool_choice,
         modalities,
-        audio
+        audio,
+        reasoning_effort
     };
 }

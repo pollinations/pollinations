@@ -55,7 +55,7 @@ We're excited to announce MentatBot, the autonomous AI coding assistant that imp
 
 ### Audio Generation
 
-1. Use the `openai-audio` model with our API
+1. Use the `openai-audio` model with our API ([powered by OpenAI.fm](https://www.openai.fm/))
 2. Generate speech from text or transcribe audio to text
 
 ### MCP Server for AI Assistants

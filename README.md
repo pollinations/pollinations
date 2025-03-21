@@ -383,8 +383,4 @@ Pollinations.AI is open-source software licensed under the [MIT license](LICENSE
 
 ---
 
-![Alt](https://repobeats.axiom.co/api/embed/ee9f2146eb98410170a104dda91de48712a14072.svg "Repobeats analytics image")
-
----
-
 Made with ❤️ by the Pollinations.AI team

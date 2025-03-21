@@ -11,6 +11,8 @@ A Model Context Protocol (MCP) server for the Pollinations Image API that enable
 - Simple and lightweight
 - Compatible with the Model Context Protocol (MCP)
 
+![MCP Server Interface](https://github.com/user-attachments/assets/f0f8b3b5-f798-482b-a00c-ea931c706c93)
+
 ## Installation
 
 ### Local Installation

@@ -2,8 +2,8 @@
 
 ## 🆕 Latest News
 
-- **🤖 MCP Server** - New Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly! [Learn more](./mcp/README.md).  
-  [![MCP Server Interface](https://github.com/user-attachments/assets/7311a7df-6b6a-4da5-94f8-7d57baca0ba3)](./mcp/README.md)
+- **🤖 MCP Server** - New Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly! [Learn more](./model-context-protocol/README.md).  
+  [![MCP Server Interface](https://github.com/user-attachments/assets/7311a7df-6b6a-4da5-94f8-7d57baca0ba3)](./model-context-protocol/README.md)
 - **💲 Support Us** - You can now support us with our new **Tip Us** button. Optionally connect your Discord account to **Ko-Fi** to get premium Discord roles!
 - **🎵 Audio Generation** - New text-to-speech and speech-to-text capabilities are now available! Try the `openai-audio` model - see our [API documentation](APIDOCS.md#audio-generation-api) for details.
 - **[Pollinations.DIY](https://pollinations.diy)** - Our newest product! A browser-based development environment for building AI-powered applications with Pollinations services.
@@ -54,16 +54,16 @@ We're excited to announce MentatBot, the autonomous AI coding assistant that imp
 
 ### Audio Generation
 
-1. Use the `openai-audio` model with our API ([powered by OpenAI.fm](https://www.openai.fm/))
+1. Use the `openai-audio` model with our API ([explore voices at OpenAI.fm](https://www.openai.fm/))
 2. Generate speech from text or transcribe audio to text
 
 ### MCP Server for AI Assistants
 
-Our MCP (Model Context Protocol) server enables AI assistants like Claude to generate images directly. [Learn more](./mcp/README.md)
+Our MCP (Model Context Protocol) server enables AI assistants like Claude to generate images directly. [Learn more](./model-context-protocol/README.md)
 
 ```bash
 # Run with npx (no installation required)
-npx pollinations-mcp
+npx pollinations-model-context-protocol
 ```
 
 For more advanced usage, check out our [API documentation](APIDOCS.md).
@@ -357,7 +357,7 @@ Our codebase is organized into several key folders, each serving a specific purp
 
 - [`text.pollinations.ai/`](./text.pollinations.ai/): Backend service for text generation.
 
-- [`mcp/`](./mcp/): Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly.
+- [`model-context-protocol/`](./model-context-protocol/): Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly.
 
 This structure encompasses the frontend website, backend services for image and text generation, and integrations like the Discord bot and MCP server, providing a comprehensive framework for the Pollinations.AI platform.
 

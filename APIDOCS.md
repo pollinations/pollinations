@@ -26,7 +26,7 @@ OpenAI Compatible: `POST https://text.pollinations.ai/openai`
 
 ### Audio Generation API
 
-Generate Audio: Use the `openai-audio` model ([powered by OpenAI.fm](https://www.openai.fm/))
+Generate Audio: Use the `openai-audio` model ([explore voices at OpenAI.fm](https://www.openai.fm/))
 - GET: `https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}`
 - POST Body: messages*, model (set to "openai-audio"), voice (optional)
 - Supported voices: See the list of available voices at `https://text.pollinations.ai/models` (default: "alloy")
@@ -44,7 +44,7 @@ Pollinations provides an MCP (Model Context Protocol) server that enables AI ass
   - `generateImage`: Generate an image and return the base64-encoded data
   - `listModels`: List available image generation models
 
-For installation and usage instructions, see the [MCP Server Documentation](./mcp/README.md).
+For installation and usage instructions, see the [MCP Server Documentation](./model-context-protocol/README.md).
 
 ## Feed Endpoints
 - Image Feed: GET https://image.pollinations.ai/feed (SSE stream of user-generated images).
@@ -180,7 +180,7 @@ Example message format with image:
 #### Audio Capabilities
 
 ##### Text-to-Speech
-The `openai-audio` model supports text-to-speech conversion, powered by [OpenAI.fm](https://www.openai.fm/). The simplest way to use it is with a GET request:
+The `openai-audio` model supports text-to-speech conversion. [Explore voices at OpenAI.fm](https://www.openai.fm/). The simplest way to use it is with a GET request:
 
 ```
 https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=nova

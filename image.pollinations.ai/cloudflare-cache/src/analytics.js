@@ -92,37 +92,37 @@ export async function sendToAnalytics(request, name, params = {}, env) {
       safeParams[key] = value;
     }
     
-    // Extract specific parameters from query params or params object
-    const width = safeParams.width || params.width || 1024;
-    const height = safeParams.height || params.height || 1024;
-    const seed = safeParams.seed || params.seed || 42;
-    const model = safeParams.model || params.model || 'flux';
-    const negative_prompt = safeParams.negative_prompt || params.negative_prompt || 'worst quality, blurry';
-    
-    // Build the payload in the exact same format as the curl command
+    // Build the payload with default values and allow overrides from params
     const payload = {
       client_id: clientIP,
       events: [{
         name: name,
         params: {
-          userAgent: userAgent,
-          language: language,
-          width: width,
-          height: height,
-          seed: seed,
-          model: model,
-          nologo: params.nologo || false,
-          negative_prompt: negative_prompt,
-          nofeed: params.nofeed || false,
-          safe: params.safe || false,
-          promptRaw: originalPrompt || params.promptRaw || '',
-          concurrentRequests: params.concurrentRequests || 0,
+          // Base client information
+          userAgent,
+          language,
           ip: clientIP,
-          queueSize: params.queueSize || 0,
-          totalProcessingTime: params.totalProcessingTime || 12,
-          isChild: params.isChild || false,
-          // Include additional parameters if provided
-          ...params.cacheStatus ? { cacheStatus: params.cacheStatus } : {}
+          
+          // Default parameters
+          width: 1024,
+          height: 1024,
+          seed: 42,
+          model: 'flux',
+          negative_prompt: 'worst quality, blurry',
+          promptRaw: originalPrompt || '',
+          nologo: false,
+          nofeed: false,
+          safe: false,
+          concurrentRequests: 0,
+          queueSize: 0,
+          totalProcessingTime: 12,
+          isChild: false,
+          
+          // First override with URL query parameters
+          ...safeParams,
+          
+          // Then override with directly passed parameters (highest priority)
+          ...params
         }
       }]
     };

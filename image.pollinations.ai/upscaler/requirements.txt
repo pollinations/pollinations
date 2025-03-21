@@ -1,0 +1,7 @@
+modal
+torch
+numpy
+pillow
+requests
+basicsr
+realesrgan

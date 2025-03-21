@@ -92,41 +92,38 @@ export async function sendToAnalytics(request, name, params = {}, env) {
       safeParams[key] = value;
     }
     
-    // Create a base event params object with defaults
-    const eventParams = {
-      userAgent: userAgent,
-      language: language,
-      width: safeParams.width || params.width || 1024,
-      height: safeParams.height || params.height || 1024,
-      seed: safeParams.seed || params.seed || 42,
-      model: safeParams.model || params.model || 'flux',
-      nologo: params.nologo || false,
-      negative_prompt: safeParams.negative_prompt || params.negative_prompt || 'worst quality, blurry',
-      nofeed: params.nofeed || false,
-      safe: params.safe || false,
-      promptRaw: originalPrompt || params.promptRaw || '',
-      concurrentRequests: params.concurrentRequests || 0,
-      ip: clientIP,
-      queueSize: params.queueSize || 0,
-      totalProcessingTime: params.totalProcessingTime || 12,
-      isChild: params.isChild || false
-    };
-
-    // Add all additional parameters from params that aren't already included
-    // This allows flexible addition of new parameters while preserving the structure
-    Object.keys(params).forEach(key => {
-      // Only add if not already set and value is defined
-      if (eventParams[key] === undefined && params[key] !== undefined) {
-        eventParams[key] = params[key];
-      }
-    });
+    // Extract specific parameters from query params or params object
+    const width = safeParams.width || params.width || 1024;
+    const height = safeParams.height || params.height || 1024;
+    const seed = safeParams.seed || params.seed || 42;
+    const model = safeParams.model || params.model || 'flux';
+    const negative_prompt = safeParams.negative_prompt || params.negative_prompt || 'worst quality, blurry';
     
     // Build the payload in the exact same format as the curl command
     const payload = {
       client_id: clientIP,
       events: [{
         name: name,
-        params: eventParams
+        params: {
+          userAgent: userAgent,
+          language: language,
+          width: width,
+          height: height,
+          seed: seed,
+          model: model,
+          nologo: params.nologo || false,
+          negative_prompt: negative_prompt,
+          nofeed: params.nofeed || false,
+          safe: params.safe || false,
+          promptRaw: originalPrompt || params.promptRaw || '',
+          concurrentRequests: params.concurrentRequests || 0,
+          ip: clientIP,
+          queueSize: params.queueSize || 0,
+          totalProcessingTime: params.totalProcessingTime || 12,
+          isChild: params.isChild || false,
+          // Include additional parameters if provided
+          ...params.cacheStatus ? { cacheStatus: params.cacheStatus } : {}
+        }
       }]
     };
     

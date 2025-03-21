@@ -180,6 +180,16 @@ export const availableModels = [
         handler: generateTextPortkey
     },
     {
+        name: 'qwen-reasoning',
+        type: 'chat',
+        censored: true,
+        description: 'Qwen QWQ 32B - Advanced Reasoning',
+        baseModel: true,
+        reasoning: true,
+        provider: 'groq',
+        handler: generateTextPortkey
+    },
+    {
         name: 'llamalight',
         type: 'chat',
         censored: false,

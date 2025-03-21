@@ -107,3 +107,31 @@ If you need to modify the configuration:
 1. Update the bucket name in `wrangler.toml`
 2. Modify the origin host in `wrangler.toml` if needed
 3. Adjust caching logic in `src/cache-utils.js` if necessary
+
+## Required Environment Variables
+
+To ensure analytics work properly, you need to set these environment variables:
+
+1. `GA_MEASUREMENT_ID` - Google Analytics 4 measurement ID
+2. `GA_API_SECRET` - Google Analytics 4 API secret
+
+These variables are automatically configured during deployment through GitHub Actions using repository secrets. However, if you need to set them manually, you can use one of these methods:
+
+### Option 1: Edit wrangler.toml directly
+Uncomment and set the values in the `[vars]` section of wrangler.toml:
+```toml
+[vars]
+GA_MEASUREMENT_ID = "G-XXXXXXXXXX"  # Replace with your GA4 measurement ID
+GA_API_SECRET = "XXXXXXXXXX"        # Replace with your GA4 API secret
+```
+
+### Option 2: Use Wrangler CLI
+```bash
+wrangler secret put GA_MEASUREMENT_ID
+wrangler secret put GA_API_SECRET
+```
+
+### Option 3: Set in Cloudflare Dashboard
+Go to Workers & Pages > pollinations-image-cache > Settings > Variables > Add variable
+
+These should be the same values used in the main image.pollinations.ai service to ensure consistent analytics tracking.

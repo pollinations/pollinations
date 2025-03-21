@@ -26,13 +26,25 @@ OpenAI Compatible: `POST https://text.pollinations.ai/openai`
 
 ### Audio Generation API
 
-Generate Audio: Use the `openai-audio` model
+Generate Audio: Use the `openai-audio` model ([explore voices at OpenAI.fm](https://www.openai.fm/))
 - GET: `https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}`
 - POST Body: messages*, model (set to "openai-audio"), voice (optional)
 - Supported voices: See the list of available voices at `https://text.pollinations.ai/models` (default: "alloy")
 - Return: Audio file (MP3 format, Content-Type: audio/mpeg)
 
 List Models: `GET https://text.pollinations.ai/models`
+
+### MCP Server for AI Assistants
+
+Pollinations provides an MCP (Model Context Protocol) server that enables AI assistants like Claude to generate images directly.
+
+- Server Name: `pollinations-image-api`
+- Tools:
+  - `generateImageUrl`: Generate an image URL from a text prompt
+  - `generateImage`: Generate an image and return the base64-encoded data
+  - `listModels`: List available image generation models
+
+For installation and usage instructions, see the [MCP Server Documentation](./model-context-protocol/README.md).
 
 ## Feed Endpoints
 - Image Feed: GET https://image.pollinations.ai/feed (SSE stream of user-generated images).
@@ -168,7 +180,7 @@ Example message format with image:
 #### Audio Capabilities
 
 ##### Text-to-Speech
-The `openai-audio` model supports text-to-speech conversion. The simplest way to use it is with a GET request:
+The `openai-audio` model supports text-to-speech conversion. [Explore voices at OpenAI.fm](https://www.openai.fm/). The simplest way to use it is with a GET request:
 
 ```
 https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=nova
@@ -288,6 +300,41 @@ async function generateAudio() {
 }
 
 generateAudio();
+```
+
+### Javascript (Audio Transcription)
+```python
+import base64
+import requests
+
+API_URL = "https://text.pollinations.ai/openai"
+
+def encode_audio_base64(file_path):
+    """ Reads an audio file and encodes it as base64. """
+    with open(file_path, "rb") as audio_file:
+        return base64.b64encode(audio_file.read()).decode("utf-8")
+
+def transcribe_audio(audio_file_path):
+    """ Encodes WAV audio and sends it for transcription. """
+    base64_audio = encode_audio_base64(audio_file_path)
+    
+    payload = {
+        "model": "openai-audio",
+        "messages": [
+            {"role": "user", "content": [
+                {"type": "text", "text": "Transcribe this audio exactly"},
+                {"type": "input_audio", "input_audio": {"data": base64_audio, "format": "wav"}}
+            ]}
+        ]
+    }
+
+    response = requests.post(API_URL, json=payload)
+    return response.json().get("choices", [{}])[0].get("message", {}).get("content", "No transcription found.") if response.ok else None
+
+# Example Usage
+audio_file_path = "<path to audio with .wav>"
+transcription = transcribe_audio(audio_file_path)
+print("\n🔊 Transcription:\n", transcription) if transcription else print("❌ Transcription failed.")
 ```
 
 ### HTML (Image Embedding)

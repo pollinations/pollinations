@@ -1,9 +1,9 @@
 # [Pollinations.AI](https://pollinations.ai)
 
-*Your Engine for Personalized Synthetic Media*
-
 ## 🆕 Latest News
 
+- **🤖 MCP Server** - New Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly! [Learn more](./model-context-protocol/README.md).  
+  [![MCP Server Interface](https://github.com/user-attachments/assets/7311a7df-6b6a-4da5-94f8-7d57baca0ba3)](./model-context-protocol/README.md)
 - **💲 Support Us** - You can now support us with our new **Tip Us** button. Optionally connect your Discord account to **Ko-Fi** to get premium Discord roles!
 - **🎵 Audio Generation** - New text-to-speech and speech-to-text capabilities are now available! Try the `openai-audio` model - see our [API documentation](APIDOCS.md#audio-generation-api) for details.
 - **[Pollinations.DIY](https://pollinations.diy)** - Our newest product! A browser-based development environment for building AI-powered applications with Pollinations services.
@@ -54,8 +54,17 @@ We're excited to announce MentatBot, the autonomous AI coding assistant that imp
 
 ### Audio Generation
 
-1. Use the `openai-audio` model with our API
+1. Use the `openai-audio` model with our API ([explore voices at OpenAI.fm](https://www.openai.fm/))
 2. Generate speech from text or transcribe audio to text
+
+### MCP Server for AI Assistants
+
+Our MCP (Model Context Protocol) server enables AI assistants like Claude to generate images directly. [Learn more](./model-context-protocol/README.md)
+
+```bash
+# Run with npx (no installation required)
+npx pollinations-model-context-protocol
+```
 
 For more advanced usage, check out our [API documentation](APIDOCS.md).
 
@@ -150,6 +159,9 @@ graph LR
     
     R[AI Agents - Qwen, Sillytavern, ...] --> L1
     
+    AI[AI Assistants - Claude] --> MCP[MCP Server]
+    MCP --> L1
+    
     L1[Image CDN] --> CF[Cloudflare Worker with R2 Cache]
     L2[Text CDN] --> C
     
@@ -202,6 +214,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 Case Me 🇧🇷 | O projeto consiste em uma vending machine que criará capinhas para celular personalizadas com fotos ou outras imagens e cores de escolha do cliente final. (A vending machine that creates customized phone cases with photos or other images and colors chosen by the end customer.) | anaboxmania@gmail.com | - |
 | 🆕 PixPax | A user-friendly chatbot that lets you analyze images, remix existing images or create new images, all through simple chat. | @andreas_11 | [Website](https://pixpal.chat) |
 | 🆕 Watch TV with neko (Roblox) | Roblox game where you can talk with AI catgirls 🐾 or just have fun, talking with other players in cozy rooms ⭐️ | @mangofoxplay | [Roblox](https://www.roblox.com/games/15087497266/UPD-Watch-TV-with-neko-AI) |
 | 🆕 Jenny AI | An AI chatbot and character creation platform with tts and sst it also has image generation and vision ability which are powered by pollinations. | HiiiiiPritam | [Website](https://jenny-two.vercel.app/) |
@@ -318,7 +331,7 @@ We're committed to developing AI technology that serves humanity while respectin
 
 We believe in community-driven development. You can contribute to Pollinations.AI in several ways:
 
-1. **Coding Assistant**: The easiest way to contribute! Just [create a GitHub issue](https://github.com/pollinations/pollinations/issues/new) describing the feature you'd like to see implemented. The [MentatBot AI assistant](https://mentat.ai/) will analyze your request and implement it directly! No coding required - just describe what you want.
+1. **Coding Assistant**: The easiest way to contribute! Just [create a GitHub issue](https://github.com/pollinations/pollinations/issues/new) describing the feature you'd like to see implemented. The [MentatBot AI assistant](https://mentat.ai/) will analyze and implement it directly! No coding required - just describe what you want.
 
 2. **Project Submissions**: Have you built something with Pollinations.AI? [Use our project submission template](https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml) to share it with the community and get it featured in our README.
 
@@ -344,7 +357,9 @@ Our codebase is organized into several key folders, each serving a specific purp
 
 - [`text.pollinations.ai/`](./text.pollinations.ai/): Backend service for text generation.
 
-This structure encompasses the frontend website, backend services for image and text generation, and integrations like the Discord bot, providing a comprehensive framework for the Pollinations.AI platform.
+- [`model-context-protocol/`](./model-context-protocol/): Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly.
+
+This structure encompasses the frontend website, backend services for image and text generation, and integrations like the Discord bot and MCP server, providing a comprehensive framework for the Pollinations.AI platform.
 
 ## 🏢 Supported By
 
@@ -365,10 +380,6 @@ Pollinations.AI is proud to be supported by:
 ## 📜 License
 
 Pollinations.AI is open-source software licensed under the [MIT license](LICENSE).
-
----
-
-![Alt](https://repobeats.axiom.co/api/embed/ee9f2146eb98410170a104dda91de48712a14072.svg "Repobeats analytics image")
 
 ---
 

@@ -466,6 +466,12 @@ export const generateTextPortkey = createOpenAICompatibleClient({
                 delete requestBody.max_tokens;
             }
             
+            // Pass through reasoning_effort parameter for o3-mini model
+            if (modelName === 'o3-mini' && requestBody.reasoning_effort) {
+                log(`Passing through reasoning_effort: ${requestBody.reasoning_effort} for o3-mini model`);
+                // The parameter is already in the request body, so it will be passed through
+            }
+            
             return requestBody;
         } catch (error) {
             errorLog('Error in request transformation:', error);

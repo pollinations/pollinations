@@ -19,7 +19,8 @@ export function generateCacheKey(url, requestBody = null) {
   normalizedUrl.search = '';
   params.forEach(([key, value]) => {
     // Skip certain parameters that shouldn't affect caching
-    if (!['nofeed', 'no-cache', 'stream'].includes(key)) {
+    if (!['nofeed', 'no-cache'].includes(key)) {
+      // Include 'stream' parameter in the cache key to differentiate streaming and non-streaming requests
       normalizedUrl.searchParams.append(key, value);
     }
   });

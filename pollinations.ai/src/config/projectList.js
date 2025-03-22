@@ -551,6 +551,14 @@ const allProjects = {
   ],
   tutorials: [
     {
+      name: "🆕 Connect Pollinations with Open Web UI tutorial",
+      url: "https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI",
+      description: "How to add Pollinations AI Text Models to OpenWebUI for free access to top language models like GPT-4o, Mistral, Claude, and Gemini without signups or API keys.",
+      author: "@cloph-dsp",
+      repo: "https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI",
+      submissionDate: "2025-03-22",
+    },
+    {
       name: "🆕 Chinese DeepSeek Tutorial",
       url: "https://linux.do/t/topic/447840/235",
       description: "A tutorial showing how to make DeepSeek AI support image generation by leveraging Pollinations.ai's API.",

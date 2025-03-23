@@ -1,10 +1,9 @@
 # [Pollinations.AI](https://pollinations.ai)
 
-*Your Engine for Personalized Synthetic Media*
-
 ## 🆕 Latest News
 
-- **🤖 MCP Server** - New Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly! [Learn more](./mcp/README.md).
+- **🤖 MCP Server** - New Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly! [Learn more](./model-context-protocol/README.md).  
+  [![MCP Server Interface](https://github.com/user-attachments/assets/7311a7df-6b6a-4da5-94f8-7d57baca0ba3)](./model-context-protocol/README.md)
 - **💲 Support Us** - You can now support us with our new **Tip Us** button. Optionally connect your Discord account to **Ko-Fi** to get premium Discord roles!
 - **🎵 Audio Generation** - New text-to-speech and speech-to-text capabilities are now available! Try the `openai-audio` model - see our [API documentation](APIDOCS.md#audio-generation-api) for details.
 - **[Pollinations.DIY](https://pollinations.diy)** - Our newest product! A browser-based development environment for building AI-powered applications with Pollinations services.
@@ -55,16 +54,16 @@ We're excited to announce MentatBot, the autonomous AI coding assistant that imp
 
 ### Audio Generation
 
-1. Use the `openai-audio` model with our API
+1. Use the `openai-audio` model with our API ([explore voices at OpenAI.fm](https://www.openai.fm/))
 2. Generate speech from text or transcribe audio to text
 
 ### MCP Server for AI Assistants
 
-Our MCP (Model Context Protocol) server enables AI assistants like Claude to generate images directly. [Learn more](./mcp/README.md)
+Our MCP (Model Context Protocol) server enables AI assistants like Claude to generate images directly. [Learn more](./model-context-protocol/README.md)
 
 ```bash
 # Run with npx (no installation required)
-npx pollinations-mcp
+npx pollinations-model-context-protocol
 ```
 
 For more advanced usage, check out our [API documentation](APIDOCS.md).
@@ -196,6 +195,7 @@ Pollinations.AI is used in various projects, including:
 
 | Project | Description | Creator | Links |
 |---------|-------------|---------|-------|
+| 🆕 OkeyAI API Playground | Get OkeyMeta OkeyAI APIs for free to integrate OkeyMeta's LLM in your applications at no cost | @OkeyMeta | [Website](https://playground.okeymeta.com.ng) |
 | 🆕 AI Chat Assistant | A comprehensive AI Chat Assistant designed to provide users with an interactive chat interface that supports both text and image generation. Features multiple AI models (GPT-4o, Claude, Qwen-Coder, Llama, Mistral, etc.), image generation from text prompts, image-to-image processing, and a responsive UI with desktop and mobile support | @_dr_misterio_ | [Website](https://seed-ashy.vercel.app/) |
 | 🆕 AI Unlimited Customizable Feature Module 🇨🇳 | This project provides a free API interface supporting various text and image generation models, including OpenAI's GPT-4, Gemini 2.0, etc. Users can access these models without an API key to perform text generation, image generation, translation, text polishing, and more | [S_S](https://linux.do/u/s_s/summary) | [Website](https://getquicker.net/Sharedaction?code=9ac738ed-a4b2-4ded-933c-08dd5f710a8b&fromMyShare=true) |
 | 🆕 PrivatePollenAI | A privacy-focused chat assistant app that securely stores data locally, integrates with PollinationAI for text and image generation, features a minimalistic UI, and allows users to choose models and write their own system instructions | [tenacious_humming_bird](https://discordapp.com/users/tenacious_humming_bird) | [Website](https://mmojocoder.github.io/PrivatePollenAI/chat.html), [GitHub](https://github.com/MMojoCoder/PrivatePollenAI) |
@@ -296,6 +296,7 @@ Pollinations.AI is used in various projects, including:
 
 | Tutorial | Description | Creator | Links |
 |----------|-------------|---------|-------|
+| 🆕 Connect Pollinations with Open Web UI tutorial | How to add Pollinations AI Text Models to OpenWebUI for free access to top language models like GPT-4o, Mistral, Claude, and Gemini without signups or API keys | @cloph-dsp | [GitHub](https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI) |
 | 🆕 Chinese DeepSeek Tutorial | A tutorial showing how to make DeepSeek AI support image generation by leveraging Pollinations.ai's API | isinry | [Forum Post](https://linux.do/t/topic/447840/235), [Profile](https://linux.do/u/isinry) |
 | Artistic Styles Book | An interactive book showcasing 90+ artistic styles | Juan Gmo. Rivera | [HTML](https://proyectodescartes.org/iCartesiLibri/materiales_didacticos/Libro_Estilos/index.html), [PDF](https://proyectodescartes.org/iCartesiLibri/PDF/Libro_Estilos.pdf) |
 | Proyecto Descartes | Educational initiative integrating Pollinations AI into STEM | Juan Gmo. Rivera | [Website](https://proyectodescartes.org/revista/Numeros/Revista_8_2024/index.html) |
@@ -358,7 +359,7 @@ Our codebase is organized into several key folders, each serving a specific purp
 
 - [`text.pollinations.ai/`](./text.pollinations.ai/): Backend service for text generation.
 
-- [`mcp/`](./mcp/): Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly.
+- [`model-context-protocol/`](./model-context-protocol/): Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly.
 
 This structure encompasses the frontend website, backend services for image and text generation, and integrations like the Discord bot and MCP server, providing a comprehensive framework for the Pollinations.AI platform.
 
@@ -381,10 +382,6 @@ Pollinations.AI is proud to be supported by:
 ## 📜 License
 
 Pollinations.AI is open-source software licensed under the [MIT license](LICENSE).
-
----
-
-![Alt](https://repobeats.axiom.co/api/embed/ee9f2146eb98410170a104dda91de48712a14072.svg "Repobeats analytics image")
 
 ---
 

@@ -26,7 +26,7 @@ OpenAI Compatible: `POST https://text.pollinations.ai/openai`
 
 ### Audio Generation API
 
-Generate Audio: Use the `openai-audio` model
+Generate Audio: Use the `openai-audio` model ([explore voices at OpenAI.fm](https://www.openai.fm/))
 - GET: `https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}`
 - POST Body: messages*, model (set to "openai-audio"), voice (optional)
 - Supported voices: See the list of available voices at `https://text.pollinations.ai/models` (default: "alloy")
@@ -44,7 +44,7 @@ Pollinations provides an MCP (Model Context Protocol) server that enables AI ass
   - `generateImage`: Generate an image and return the base64-encoded data
   - `listModels`: List available image generation models
 
-For installation and usage instructions, see the [MCP Server Documentation](./mcp/README.md).
+For installation and usage instructions, see the [MCP Server Documentation](./model-context-protocol/README.md).
 
 ## Feed Endpoints
 - Image Feed: GET https://image.pollinations.ai/feed (SSE stream of user-generated images).
@@ -124,6 +124,7 @@ https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean
 - json: Set to 'true' to receive response in JSON format.
 - system: System prompt to set the behavior of the AI. Should be URL-encoded.
 - private: Set to 'true' to prevent the response from appearing in the public feed. Default: false
+- reasoning_effort: Set reasoning effort level for the 'openai-reasoning' (o3-mini) model. Options: 'low', 'medium', 'high'. Default: not specified.
 
 **Return:** Generated text
 
@@ -140,7 +141,8 @@ https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean
   "model": "openai",
   "seed": 42,
   "jsonMode": true,  // Optional: Forces the response to be valid JSON
-  "private": true    // Optional: Prevents response from appearing in public feed
+  "private": true,   // Optional: Prevents response from appearing in public feed
+  "reasoning_effort": "high"  // Optional: Sets reasoning effort for o3-mini model
 }
 ```
 
@@ -180,7 +182,7 @@ Example message format with image:
 #### Audio Capabilities
 
 ##### Text-to-Speech
-The `openai-audio` model supports text-to-speech conversion. The simplest way to use it is with a GET request:
+The `openai-audio` model supports text-to-speech conversion. [Explore voices at OpenAI.fm](https://www.openai.fm/). The simplest way to use it is with a GET request:
 
 ```
 https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=nova

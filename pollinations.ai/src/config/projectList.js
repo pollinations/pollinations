@@ -41,6 +41,13 @@ export const projectCategories = [
 const allProjects = {
   llmIntegrations: [
     {
+      name: "🆕 OkeyAI API Playground",
+      url: "https://playground.okeymeta.com.ng",
+      description: "Get OkeyMeta OkeyAI APIs for free to integrate OkeyMeta's LLM in your applications at no cost.",
+      author: "@OkeyMeta",
+      submissionDate: "2025-03-22",
+    },
+    {
       name: "🆕 AI Unlimited Customizable Feature Module 🇨🇳",
       url: "https://getquicker.net/Sharedaction?code=9ac738ed-a4b2-4ded-933c-08dd5f710a8b&fromMyShare=true",
       description: "This project provides a free API interface supporting various text and image generation models, including OpenAI's GPT-4, Gemini 2.0, etc. Users can access these models without an API key to perform text generation, image generation, translation, text polishing, and more.",
@@ -543,6 +550,14 @@ const allProjects = {
     },
   ],
   tutorials: [
+    {
+      name: "🆕 Connect Pollinations with Open Web UI tutorial",
+      url: "https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI",
+      description: "How to add Pollinations AI Text Models to OpenWebUI for free access to top language models like GPT-4o, Mistral, Claude, and Gemini without signups or API keys.",
+      author: "@cloph-dsp",
+      repo: "https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI",
+      submissionDate: "2025-03-22",
+    },
     {
       name: "🆕 Chinese DeepSeek Tutorial",
       url: "https://linux.do/t/topic/447840/235",

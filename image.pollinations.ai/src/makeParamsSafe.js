@@ -6,8 +6,16 @@ import { MODELS } from './models.js';
  * @returns {Object} - The sanitized parameters.
  */
 export const makeParamsSafe = ({ width = null, height = null, seed, model = "flux", enhance, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false, safe = false, private:isPrivate = false }) => {
-    // Sanitize boolean parameters
-    const sanitizeBoolean = (value) => value?.toLowerCase?.() === "true" ? true : value?.toLowerCase?.() === "false" ? false : value;
+    // Sanitize boolean parameters - always return a boolean value
+    const sanitizeBoolean = (value) => {
+        // If it's already a boolean, return it directly
+        if (typeof value === 'boolean') return value;
+        
+        // For string values, only return true if it exactly equals "true" (case-insensitive)
+        // All other values (including malformed strings like "falsee") will return false
+        return value?.toString()?.toLowerCase?.() === "true";
+    };
+    
     enhance = sanitizeBoolean(enhance);
     nologo = sanitizeBoolean(nologo);
     nofeed = sanitizeBoolean(nofeed) || sanitizeBoolean(isPrivate);

@@ -43,4 +43,45 @@ describe('makeParamsSafe', () => {
     expect(result.seed).toBe(42)
     expect(result.model).toBe('flux')
   })
+
+  it('should properly sanitize malformed boolean string values', () => {
+    const input = {
+      enhance: 'falsee',  // Malformed string as reported in Issue #1418
+      nologo: 'TRUE',     // Test case insensitivity
+      nofeed: 'truee',    // Another malformed string
+      safe: 'TrUe'        // Mixed case
+    }
+
+    const result = makeParamsSafe(input)
+    expect(result.enhance).toBe(false)  // Should be false, not 'falsee'
+    expect(result.nologo).toBe(true)    // Case-insensitive check
+    expect(result.nofeed).toBe(false)   // Should be false, not 'truee'
+    expect(result.safe).toBe(true)      // Mixed case should work
+  })
+
+  it('should handle null, undefined, and various types for boolean params', () => {
+    const input = {
+      enhance: null,
+      nologo: undefined,
+      nofeed: 0,
+      safe: 1
+    }
+
+    const result = makeParamsSafe(input)
+    expect(result.enhance).toBe(false)
+    expect(result.nologo).toBe(false)
+    expect(result.nofeed).toBe(false)
+    expect(result.safe).toBe(false)
+  })
+
+  it('should preserve actual boolean values', () => {
+    const input = {
+      enhance: true,
+      nologo: false
+    }
+
+    const result = makeParamsSafe(input)
+    expect(result.enhance).toBe(true)
+    expect(result.nologo).toBe(false)
+  })
 })

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { generateImageUrl, generateImage, generateAudio, listModels } from './src/index.js';
+import { generateImageUrl, generateImage, generateAudio, listModels } from './pollinations-api-client.js';
 import fs from 'fs';
 import path from 'path';
 

@@ -204,28 +204,24 @@ export async function listModels(type = "image") {
 
 // If this file is run directly (e.g., with Node.js)
 if (typeof require !== 'undefined' && require.main === module) {
-  // Example usage
-  const run = async () => {
+  async function run() {
     try {
       // Example: Generate an image URL
-      const imageResult = await generateImageUrl('A beautiful sunset over the ocean');
-      console.error('Generated Image URL:', imageResult);
+      const imageUrlResult = await generateImageUrl('A beautiful sunset over the ocean');
+      console.log('Image URL Result:', imageUrlResult);
       
-      // Example: List available image models
-      const imageModelsResult = await listModels('image');
-      console.error('Available Image Models:', imageModelsResult);
+      // Example: List available models
+      const modelsResult = await listModels();
+      console.log('Available Models:', modelsResult);
       
       // Example: Generate audio
-      const audioResult = await generateAudio('Hello world! This is a test of the Pollinations audio API.');
-      console.error('Generated Audio Metadata:', audioResult.metadata);
-      
-      // Example: List available text models
-      const textModelsResult = await listModels('text');
-      console.error('Available Text Models:', textModelsResult);
+      console.log('Generating audio...');
+      const audioResult = await generateAudio('Hello world, this is a test of the Pollinations API client.');
+      console.log('Audio generated successfully!');
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error in example:', error);
     }
-  };
+  }
   
   run();
 }

@@ -7,7 +7,14 @@ import {
   ListToolsRequestSchema,
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
-import { generateImageUrl, listModels, generateImage, generateAudio } from './src/index.js';
+import { generateImageUrl, listModels, generateImage, generateAudio } from './pollinations-api-client.js';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import player from 'play-sound';
+
+// Create audio player instance
+const audioPlayer = player({});
 
 // Create the server instance
 const server = new Server(
@@ -197,12 +204,41 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     try {
       const { prompt, options = {} } = args;
       const result = await generateAudio(prompt, options);
+      
+      // Save the audio to a temporary file
+      const tempDir = os.tmpdir();
+      const tempFile = path.join(tempDir, `audio-${Date.now()}.${result.mimeType.split('/')[1] || 'wav'}`);
+      
+      // Decode base64 data before writing to file
+      const audioBuffer = Buffer.from(result.data, 'base64');
+      fs.writeFileSync(tempFile, audioBuffer);
+
+      // Play the audio using the play-sound package
+      audioPlayer.play(tempFile, (err) => {
+        if (err) console.error('Error playing audio:', err);
+        
+        // Clean up the temporary file after playback
+        try {
+          fs.unlinkSync(tempFile);
+        } catch (cleanupErr) {
+          console.error('Error cleaning up temp file:', cleanupErr);
+        }
+      });
+
+      // Return a JSON response like the other functions
+      const responseData = {
+        status: "success",
+        prompt: prompt,
+        voice: options.voice || "alloy",
+        model: "openai-audio",
+        playback: "Audio is being played on your system"
+      };
+      
       return {
         content: [
           { 
-            type: 'audio',
-            data: result.data,
-            mimeType: result.mimeType
+            type: 'text', 
+            text: JSON.stringify(responseData, null, 2)
           }
         ]
       };

@@ -7,12 +7,12 @@ import {
   ListToolsRequestSchema,
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
-import { generateImageUrl, listModels, generateImage } from './src/index.js';
+import { generateImageUrl, listModels, generateImage, generateAudio } from './src/index.js';
 
 // Create the server instance
 const server = new Server(
   {
-    name: 'pollinations-image-api',
+    name: 'pollinations-multimodal-api',
     version: '1.0.0',
   },
   {
@@ -106,11 +106,46 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       }
     },
     {
-      name: 'listModels',
-      description: 'List available image generation models',
+      name: 'generateAudio',
+      description: 'Generate audio from a text prompt and return the audio data',
       inputSchema: {
         type: 'object',
-        properties: {}
+        properties: {
+          prompt: {
+            type: 'string',
+            description: 'The text to convert to speech'
+          },
+          options: {
+            type: 'object',
+            description: 'Additional options for audio generation',
+            properties: {
+              voice: {
+                type: 'string',
+                description: 'Voice to use for audio generation (default: "alloy")'
+              },
+              seed: {
+                type: 'number',
+                description: 'Seed for reproducible results'
+              }
+            },
+          }
+        },
+        required: ['prompt']
+      }
+    },
+    {
+      name: 'listModels',
+      description: 'List available models for image or text generation',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          type: {
+            type: 'string',
+            description: 'Type of models to list ("image" or "text")',
+            enum: ['image', 'text'],
+            default: 'image'
+          }
+        }
       }
     }
   ]
@@ -158,9 +193,31 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         isError: true
       };
     }
+  } else if (name === 'generateAudio') {
+    try {
+      const { prompt, options = {} } = args;
+      const result = await generateAudio(prompt, options);
+      return {
+        content: [
+          { 
+            type: 'audio',
+            data: result.data,
+            mimeType: result.mimeType
+          }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          { type: 'text', text: `Error generating audio: ${error.message}` }
+        ],
+        isError: true
+      };
+    }
   } else if (name === 'listModels') {
     try {
-      const result = await listModels();
+      const { type = 'image' } = args;
+      const result = await listModels(type);
       return {
         content: [
           { type: 'text', text: JSON.stringify(result, null, 2) }
@@ -186,7 +243,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 const run = async () => {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('Pollinations MCP server running on stdio');
+  console.error('Pollinations Multimodal MCP server running on stdio');
 };
 
 run().catch(console.error);

@@ -48,8 +48,20 @@ pollinations/
 ├── text.pollinations.ai/      # Text generation backend service
 ├── pollinations.ai/           # Main React frontend application
 ├── pollinations-react/        # React component library
-└── operations/               # Documentation and operations
+├── model-context-protocol/    # MCP server for AI assistant integration
+└── operations/                # Documentation and operations
 ```
+
+## Model Context Protocol (MCP)
+
+The `model-context-protocol/` directory contains a Model Context Protocol server that allows AI assistants like Claude to directly generate images using the Pollinations API. Key components:
+
+- `src/index.js`: Core functions for image generation and model listing
+- `pollinations-mcp-server.js`: MCP server implementation that handles tool requests
+- `CLAUDE_INSTALLATION.md`: Instructions for setting up with Claude Desktop
+- `test-mcp-client.js`: Test script for verifying functionality
+
+The MCP server provides a standardized way for AI assistants to access Pollinations' services without requiring users to manually copy/paste URLs or handle image generation directly.
 
 ## API Quick Reference
 
@@ -64,6 +76,13 @@ Parameters: model, seed, width, height, nologo, private, enhance, safe
 GET https://text.pollinations.ai/{prompt}
 POST https://text.pollinations.ai/
 Parameters: model, seed, json, system
+```
+
+### Audio Generation
+```
+GET https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}
+POST https://text.pollinations.ai/
+Body: messages*, model (set to "openai-audio"), voice (optional)
 ```
 
 ## Development Guidelines
@@ -82,12 +101,14 @@ Parameters: model, seed, json, system
    - Update API docs for new endpoints
    - Add JSDoc comments for new functions
    - Update README.md for user-facing changes
+   - Keep this .mentat/README.md up to date with new features, functionality, or important project maintenance information
 
 4. Architecture Considerations:
    - Frontend changes should be in pollinations.ai/
    - Image generation in image.pollinations.ai/
    - Text generation in text.pollinations.ai/
    - React components in pollinations-react/
+   - AI assistant integrations in model-context-protocol/
 
 5. Security:
    - Never expose API keys or secrets

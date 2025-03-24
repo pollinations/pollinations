@@ -1,6 +1,6 @@
-# Installing the Pollinations API Client in Claude Desktop
+# Installing the Pollinations Multimodal API Client in Claude Desktop
 
-This guide will walk you through the steps to install the Pollinations API Client as an MCP server in Claude Desktop.
+This guide will walk you through the steps to install the Pollinations Multimodal API Client as an MCP server in Claude Desktop.
 
 ## Prerequisites
 
@@ -90,8 +90,8 @@ chmod +x pollinations-mcp-server.js
 
 Replace `/path/to/pollinations-mcp-server.js` with the absolute path to the `pollinations-mcp-server.js` file.
 
-For example, if you cloned this repository to `/Users/username/pollinations-api-client`, the path would be:
-`/Users/username/pollinations-api-client/pollinations-mcp-server.js`
+For example, if you cloned this repository to `/Users/username/pollinations/model-context-protocol`, the path would be:
+`/Users/username/pollinations/model-context-protocol/pollinations-mcp-server.js`
 
 ### 4. Restart Claude Desktop
 
@@ -129,8 +129,16 @@ The MCP server provides the following tools to Claude:
        - `width` (number, optional): Width of the generated image
        - `height` (number, optional): Height of the generated image
 
-3. `listModels` - Lists available image generation models
-   - No parameters
+3. `generateAudio` - Generates audio from a text prompt and returns the audio data
+   - Parameters:
+     - `prompt` (string): The text to convert to speech
+     - `options` (object, optional):
+       - `voice` (string, optional): Voice to use for audio generation (default: "alloy")
+       - `seed` (number, optional): Seed for reproducible results
+
+4. `listModels` - Lists available models for image or text generation
+   - Parameters:
+     - `type` (string, optional): Type of models to list ("image" or "text"). Default: "image"
 
 ## Usage Examples
 
@@ -150,13 +158,27 @@ Generate an image of a cute cat playing with a ball of yarn and display it direc
 
 Claude will use the `generateImage` tool to create and display the image directly in the chat, without requiring you to click on a URL.
 
+### Generating Audio
+
+```
+Generate audio that says "Welcome to Pollinations, where creativity blooms" with the nova voice.
+```
+
+Claude will use the `generateAudio` tool to create and play audio directly in the chat. You can specify different voices like "alloy", "echo", "fable", "nova", and "onyx".
+
 ### Listing Available Models
 
 ```
 List the available image generation models from the Pollinations API.
 ```
 
-Claude will use the `listModels` tool to show you the available models for image generation.
+Claude will use the `listModels` tool with the "image" type to show you the available models for image generation.
+
+```
+List the available text and audio models from the Pollinations API.
+```
+
+Claude will use the `listModels` tool with the "text" type to show you the available models for text and audio generation.
 
 ## Troubleshooting
 

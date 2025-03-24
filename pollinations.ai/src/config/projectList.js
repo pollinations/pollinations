@@ -41,13 +41,6 @@ export const projectCategories = [
 const allProjects = {
   llmIntegrations: [
     {
-      name: "🆕 OkeyAI API Playground",
-      url: "https://playground.okeymeta.com.ng",
-      description: "Get OkeyMeta OkeyAI APIs for free to integrate OkeyMeta's LLM in your applications at no cost.",
-      author: "@OkeyMeta",
-      submissionDate: "2025-03-22",
-    },
-    {
       name: "🆕 AI Unlimited Customizable Feature Module 🇨🇳",
       url: "https://getquicker.net/Sharedaction?code=9ac738ed-a4b2-4ded-933c-08dd5f710a8b&fromMyShare=true",
       description: "This project provides a free API interface supporting various text and image generation models, including OpenAI's GPT-4, Gemini 2.0, etc. Users can access these models without an API key to perform text generation, image generation, translation, text polishing, and more.",

@@ -12,10 +12,10 @@ const CACHE_STATUS = {
 
 // Event name constants for consistency
 const EVENTS = {
-  REQUEST: 'image_requested',       // Start of the request
-  SERVED_FROM_CACHE: 'image_served_from_cache', // Cache hit
-  GENERATED: 'image_generated',     // Cache miss with successful generation
-  FAILED: 'image_generation_failed' // Error during generation
+  REQUEST: 'imageRequested',       // Start of the request
+  SERVED_FROM_CACHE: 'imageServedFromCache', // Cache hit
+  GENERATED: 'imageGenerated',     // Cache miss with successful generation
+  FAILED: 'imageGenerationFailed' // Error during generation
 };
 
 /**

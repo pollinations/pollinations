@@ -11,14 +11,9 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
         // If it's already a boolean, return it directly
         if (typeof value === 'boolean') return value;
         
-        // If value is null or undefined, return false
-        if (value === null || value === undefined) return false;
-        
-        // Convert to string for consistent handling
-        const strValue = value.toString().toLowerCase();
-        
-        // Return true for common truthy values
-        return ['true', '1', 'yes', 'y', 'on', 'poll'].includes(strValue);
+        // For string values, only return true if it exactly equals "true" (case-insensitive)
+        // All other values (including malformed strings like "falsee") will return false
+        return value?.toString()?.toLowerCase?.() === "true";
     };
     
     enhance = sanitizeBoolean(enhance);

@@ -3,6 +3,58 @@ import { proxyToOrigin } from './image-proxy.js';
 import { sendToAnalytics } from './analytics.js';
 import { getClientIp } from './ip-utils.js';
 
+// Cache status constants for better readability
+const CACHE_STATUS = {
+  PENDING: 'pending',
+  HIT: 'hit',
+  MISS: 'miss'
+};
+
+// Event name constants for consistency
+const EVENTS = {
+  REQUEST: 'image_requested',       // Start of the request
+  SERVED_FROM_CACHE: 'image_served_from_cache', // Cache hit
+  GENERATED: 'image_generated',     // Cache miss with successful generation
+  FAILED: 'image_generation_failed' // Error during generation
+};
+
+/**
+ * Helper function to send analytics with cleaner syntax
+ * @param {Request} request - The original request
+ * @param {string} eventName - The event name from EVENTS constants
+ * @param {string} cacheStatus - The cache status from CACHE_STATUS constants
+ * @param {Object} params - Additional analytics parameters
+ * @param {Object} env - Environment variables
+ * @param {ExecutionContext} ctx - The execution context
+ */
+function sendImageAnalytics(request, eventName, cacheStatus, params, env, ctx) {
+  // Enhanced logging for cache status debugging
+  console.log(`[ANALYTICS DEBUG] Sending event ${eventName} with cacheStatus=${cacheStatus}`);
+  
+  // Create shallow copies to avoid modifying originals
+  const analyticsSafeParams = { ...params.safeParams };
+  analyticsSafeParams.cacheStatus = cacheStatus;
+  
+  // Add error if provided
+  if (params.error) {
+    analyticsSafeParams.error = params.error;
+  }
+  
+  const analyticsData = {
+    originalPrompt: params.originalPrompt,
+    safeParams: analyticsSafeParams,
+    referrer: params.referrer,
+    // Add cacheStatus at the top level to ensure it's accessible
+    cacheStatus: cacheStatus
+  };
+  
+  // Log the full analytics data
+  console.log(`[ANALYTICS DEBUG] Full analytics data:`, JSON.stringify(analyticsData, null, 2));
+  
+  // Send the analytics
+  ctx.waitUntil(sendToAnalytics(request, eventName, analyticsData, env));
+}
+
 /**
  * Cloudflare Worker for caching Pollinations images in R2
  * This worker acts as a thin proxy that:
@@ -35,22 +87,22 @@ export default {
                     request.headers.get('referrer') || 
                     '';
     
+    // Common analytics parameters
+    const analyticsParams = {
+      originalPrompt,
+      safeParams,
+      referrer
+    };
+    
     // Skip caching for certain paths or non-image requests
     if (url.searchParams.has('no-cache') || !url.pathname.startsWith('/prompt')) {
       console.log('Skipping cache for non-cacheable request');
       return await proxyToOrigin(request, env);
     }
     
-    // Send imageRequested analytics event
+    // Send image requested analytics event
     if (url.pathname.startsWith('/prompt/')) {
-      const analyticsData = {
-        originalPrompt,
-        safeParams,
-        referrer,
-        cacheStatus: 'pending'
-      };
-      
-      ctx.waitUntil(sendToAnalytics(request, "imageRequested", analyticsData, env));
+      sendImageAnalytics(request, EVENTS.REQUEST, CACHE_STATUS.PENDING, analyticsParams, env, ctx);
     }
     
     // Generate a cache key from the URL path and query parameters
@@ -66,14 +118,7 @@ export default {
         
         // Send analytics for cache hit
         if (url.pathname.startsWith('/prompt/')) {
-          const analyticsData = {
-            originalPrompt,
-            safeParams,
-            referrer,
-            cacheStatus: 'hit'
-          };
-          
-          // Don't send any analytics events for cache hits
+          sendImageAnalytics(request, EVENTS.SERVED_FROM_CACHE, CACHE_STATUS.HIT, analyticsParams, env, ctx);
         }
         
         // Return the cached image with appropriate headers
@@ -127,14 +172,7 @@ export default {
       
       // Send analytics for cache miss but successful generation
       if (url.pathname.startsWith('/prompt/')) {
-        const analyticsData = {
-          originalPrompt,
-          safeParams,
-          referrer,
-          cacheStatus: 'miss'
-        };
-        
-        ctx.waitUntil(sendToAnalytics(request, "imageGenerated", analyticsData, env));
+        sendImageAnalytics(request, EVENTS.GENERATED, CACHE_STATUS.MISS, analyticsParams, env, ctx);
       }
     } else {
       console.log('Not caching response - either not successful or not an image');
@@ -143,15 +181,11 @@ export default {
       
       // Send analytics for failed request
       if (url.pathname.startsWith('/prompt/') && response.status !== 200) {
-        const analyticsData = {
-          originalPrompt,
-          safeParams,
-          referrer,
-          error: `HTTP ${response.status}: ${response.statusText}`,
-          cacheStatus: 'miss'
+        const errorParams = {
+          ...analyticsParams,
+          error: `HTTP ${response.status}: ${response.statusText}`
         };
-        
-        ctx.waitUntil(sendToAnalytics(request, "imageGenerationFailed", analyticsData, env));
+        sendImageAnalytics(request, EVENTS.FAILED, CACHE_STATUS.MISS, errorParams, env, ctx);
       }
     }
     

@@ -41,6 +41,15 @@ export const projectCategories = [
 const allProjects = {
   llmIntegrations: [
     {
+      name: "🆕 FreeAI 🇨🇳",
+      url: "https://freeai.aihub.ren/",
+      description: "An AI application platform based on Pollinations.AI API, providing free and unlimited AI chat assistant, image generation, and voice synthesis services.",
+      author: "@Azad-sl",
+      repo: "https://github.com/Azad-sl/FreeAI",
+      submissionDate: "2025-03-24",
+      language: "zh-CN"
+    },
+    {
       name: "🆕 AI Unlimited Customizable Feature Module 🇨🇳",
       url: "https://getquicker.net/Sharedaction?code=9ac738ed-a4b2-4ded-933c-08dd5f710a8b&fromMyShare=true",
       description: "This project provides a free API interface supporting various text and image generation models, including OpenAI's GPT-4, Gemini 2.0, etc. Users can access these models without an API key to perform text generation, image generation, translation, text polishing, and more.",
@@ -120,6 +129,15 @@ const allProjects = {
     },
   ],
   creativeApps: [
+    {
+      name: "🆕 AI 文本转音频 🇨🇳",
+      url: "https://tts-gules-theta.vercel.app/",
+      description: "输入文本，选择语音风格，一键将文字转换为自然流畅的语音。 支持多种声音特征，帮您创建专业水准的音频内容。 (Input text, select voice style, and instantly convert text to natural, fluid speech. Supports various voice characteristics to help you create professional-grade audio content.)",
+      author: "https://github.com/Azad-sl",
+      repo: "https://github.com/Azad-sl/tts",
+      submissionDate: "2025-03-24",
+      language: "zh-CN"
+    },
     {
       name: "🆕 Case Me 🇧🇷",
       description: "O projeto consiste em uma vending machine que criará capinhas para celular personalizadas com fotos ou outras imagens e cores de escolha do cliente final. (A vending machine that creates customized phone cases with photos or other images and colors chosen by the end customer.)",
@@ -543,6 +561,14 @@ const allProjects = {
     },
   ],
   tutorials: [
+    {
+      name: "🆕 Connect Pollinations with Open Web UI tutorial",
+      url: "https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI",
+      description: "How to add Pollinations AI Text Models to OpenWebUI for free access to top language models like GPT-4o, Mistral, Claude, and Gemini without signups or API keys.",
+      author: "@cloph-dsp",
+      repo: "https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI",
+      submissionDate: "2025-03-22",
+    },
     {
       name: "🆕 Chinese DeepSeek Tutorial",
       url: "https://linux.do/t/topic/447840/235",

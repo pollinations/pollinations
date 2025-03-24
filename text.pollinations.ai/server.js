@@ -645,7 +645,7 @@ app.get('/openai/models', (req, res) => {
 
 // POST /openai/* request handler
 app.post('/openai*', async (req, res) => {
-    const requestParams = getRequestData(req);
+    const requestParams = { ...getRequestData(req), isPrivate: true };
    
     try {
         await processRequest(req, res, requestParams);
@@ -656,7 +656,7 @@ app.post('/openai*', async (req, res) => {
 
 // OpenAI-compatible v1 endpoint for chat completions
 app.post('/v1/chat/completions', async (req, res) => {
-    const requestParams = getRequestData(req);
+    const requestParams = { ...getRequestData(req), isPrivate: true };
    
     try {
         await processRequest(req, res, requestParams);

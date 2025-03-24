@@ -12,7 +12,7 @@ const connectedClients = new Map();
 const authenticatedClients = new Map();
 
 // Get feed password from environment, default to a placeholder if not set
-const FEED_PASSWORD = process.env.FEED_PASSWORD || 'default_secure_password';
+const FEED_PASSWORD = process.env.FEED_PASSWORD;
 
 function sendToFeedListeners(response, requestParams, ip) {
     // Always log statistics for all requests (private and public)

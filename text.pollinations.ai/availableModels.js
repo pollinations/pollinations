@@ -29,6 +29,7 @@ const handlers = {
     openai: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai'}),
     deepseek: (messages, options) => generateDeepseek(messages, {...options, model: 'deepseek-chat'}),
     mistral: (messages, options) => generateTextMistral(messages, {...options, model: 'mistral'}),
+    mistralRoblox: (messages, options) => generateTextPortkey(messages, {...options, model: 'mistral'}),
     portkey: (messages, options, model) => generateTextPortkey(messages, {...options, model})
 };
 
@@ -85,6 +86,15 @@ export const availableModels = [
         baseModel: true,
         vision: true,
         handler: handlers.mistral
+    },
+    {
+        name: 'mistral-roblox',
+        type: 'chat',
+        censored: false,
+        description: 'Mistral Roblox on Scaleway',
+        baseModel: true,
+        // vision: true,
+        handler: handlers.mistralRoblox
     },
     {
         name: 'unity',
@@ -215,6 +225,15 @@ export const availableModels = [
         description: 'Phi-4 Instruct',
         baseModel: true,
         provider: 'cloudflare',
+        handler: generateTextPortkey
+    },
+    {
+        name: 'phi-mini',
+        type: 'chat',
+        censored: true,
+        description: 'Phi-4 Mini Instruct',
+        baseModel: true,
+        provider: 'azure',
         handler: generateTextPortkey
     },
     {

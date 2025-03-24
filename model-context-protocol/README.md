@@ -1,12 +1,14 @@
-# Pollinations MCP Server
+# Pollinations Multimodal MCP Server
 
-A Model Context Protocol (MCP) server for the Pollinations Image API that enables AI assistants like Claude to generate images directly.
+A Model Context Protocol (MCP) server for the Pollinations APIs that enables AI assistants like Claude to generate images, text, and audio directly.
 
 ## Features
 
 - Generate image URLs from text prompts
 - Generate actual images and return them as base64-encoded data
-- List available image generation models
+- Generate text responses from text prompts
+- Generate audio (text-to-speech) from text prompts
+- List available image and text generation models
 - No authentication required
 - Simple and lightweight
 - Compatible with the Model Context Protocol (MCP)
@@ -20,7 +22,7 @@ A Model Context Protocol (MCP) server for the Pollinations Image API that enable
 ```bash
 # Clone the repository
 git clone https://github.com/pollinations/pollinations.git
-cd pollinations/mcp
+cd pollinations/model-context-protocol
 
 # Install dependencies
 npm install
@@ -41,7 +43,7 @@ This will start the MCP server immediately, making it available for use with Cla
 ### Import the functions
 
 ```javascript
-import { generateImageUrl, generateImage, listModels } from './src/index.js';
+import { generateImageUrl, generateImage, generateText, respondAudio, sayText, listModels } from './src/index.js';
 ```
 
 ### Generate an image URL
@@ -55,7 +57,7 @@ const imageUrl = await generateImageUrl('A beautiful sunset over the ocean', {
 });
 
 console.log(imageUrl);
-// Output: { url: 'https://pollinations.ai/p/...', metadata: { ... } }
+// Output: { imageUrl: 'https://image.pollinations.ai/prompt/...', metadata: { ... } }
 ```
 
 ### Generate an image (returns base64-encoded data)
@@ -76,12 +78,48 @@ console.log(imageData);
 // }
 ```
 
+### Generate text from a prompt
+
+```javascript
+const textResponse = await generateText('What is artificial intelligence?', 
+  'openai',  // model (optional, default: 'openai')
+  42,        // seed (optional)
+  'You are a helpful AI assistant'  // systemPrompt (optional)
+);
+
+console.log(textResponse);
+// Output: 'Artificial intelligence (AI) refers to...'
+```
+
+### Generate audio (returns base64-encoded data)
+
+```javascript
+const audioData = await respondAudio('Hello, world! This is a test.', 
+  'alloy',  // voice (optional, default: 'alloy')
+  42,       // seed (optional)
+  'Speak with enthusiasm'  // voiceInstructions (optional)
+);
+
+console.log(audioData);
+// Output: { 
+//   data: 'base64-encoded-audio-data', 
+//   mimeType: 'audio/mpeg', 
+//   metadata: { ... } 
+// }
+```
+
 ### List available models
 
 ```javascript
-const models = await listModels();
-console.log(models);
+// List image generation models
+const imageModels = await listModels('image');
+console.log(imageModels);
 // Output: { models: ['flux.schnell', 'flux.default', ...] }
+
+// List text generation models (includes audio models)
+const textModels = await listModels('text');
+console.log(textModels);
+// Output: { models: ['openai', 'mistral', 'openai-audio', ...] }
 ```
 
 ## Running the MCP Server
@@ -110,7 +148,7 @@ chmod +x test-mcp-client.js
 ./test-mcp-client.js
 ```
 
-This will test all three functions (generateImageUrl, generateImage, and listModels) and save a test image to the `test-output` directory.
+This will test all available functions and save the generated files to the `test-output` directory.
 
 ## Integration with Claude Desktop
 
@@ -118,13 +156,16 @@ For detailed instructions on how to install and use the Pollinations MCP server 
 
 ## Implementation Details
 
-The MCP server is implemented using the Model Context Protocol SDK and provides three main tools:
+The MCP server is implemented using the Model Context Protocol SDK and provides the following main tools:
 
 1. `generateImageUrl`: Generates an image URL from a text prompt
 2. `generateImage`: Generates an image and returns the base64-encoded data
-3. `listModels`: Lists available image generation models
+3. `generateText`: Generates text from a prompt using text models
+4. `respondAudio`: Generates audio from text and returns the base64-encoded data
+5. `sayText`: Generates speech that says the provided text verbatim
+6. `listModels`: Lists available models for image or text generation
 
-The server follows the "thin proxy" design principle, with minimal processing of the data between the client and the Pollinations API.
+The server follows the "thin proxy" design principle, with minimal processing of the data between the client and the Pollinations APIs.
 
 ## API Reference
 
@@ -141,7 +182,7 @@ Generates an image URL from a text prompt.
   - `height` (number, optional): Height of the generated image
 
 **Returns:**
-- `url` (string): URL to the generated image
+- `imageUrl` (string): URL to the generated image
 - `metadata` (object): Additional information about the generated image
 
 ### generateImage(prompt, options)
@@ -161,12 +202,58 @@ Generates an image from a text prompt and returns the image data.
 - `mimeType` (string): MIME type of the image (e.g., 'image/jpeg')
 - `metadata` (object): Additional information about the generated image
 
-### listModels()
+### generateText(prompt, model, seed, systemPrompt)
 
-Lists available image generation models.
+Generates text from a prompt using the Pollinations Text API.
+
+**Parameters:**
+- `prompt` (string): The text prompt to generate a response for
+- `model` (string, optional): Model to use for text generation (default: "openai")
+- `seed` (number, optional): Seed for reproducible results
+- `systemPrompt` (string, optional): System prompt to set the behavior of the AI
 
 **Returns:**
-- `models` (array): List of available model names
+- Text response from the model
+
+### respondAudio(prompt, voice, seed, voiceInstructions)
+
+Generates an audio response to a text prompt and returns the audio data.
+
+**Parameters:**
+- `prompt` (string): The text prompt to respond to with audio
+- `voice` (string, optional): Voice to use for audio generation (default: "alloy")
+- `seed` (number, optional): Seed for reproducible results
+- `voiceInstructions` (string, optional): Additional instructions for voice character/style
+
+**Returns:**
+- `data` (string): Base64-encoded audio data
+- `mimeType` (string): MIME type of the audio (e.g., 'audio/mpeg')
+- `metadata` (object): Additional information about the generated audio
+
+### sayText(text, voice, seed, voiceInstructions)
+
+Generates speech that says the provided text verbatim.
+
+**Parameters:**
+- `text` (string): The text to speak verbatim
+- `voice` (string, optional): Voice to use for audio generation (default: "alloy")
+- `seed` (number, optional): Seed for reproducible results
+- `voiceInstructions` (string, optional): Additional instructions for voice character/style
+
+**Returns:**
+- `data` (string): Base64-encoded audio data
+- `mimeType` (string): MIME type of the audio (e.g., 'audio/mpeg')
+- `metadata` (object): Additional information about the generated audio
+
+### listModels(type)
+
+Lists available models for the specified type.
+
+**Parameters:**
+- `type` (string, optional): The type of models to list ("image" or "text")
+
+**Returns:**
+- Object containing the list of available models
 
 ## License
 

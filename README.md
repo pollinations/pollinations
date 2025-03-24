@@ -70,8 +70,10 @@ npx pollinations-model-context-protocol
 
 AI assistants can:
 - Generate images from text descriptions
-- Create text-to-speech audio with various voices
-- Access all Pollinations.AI models seamlessly
+- Create text-to-speech audio with various voice options
+- Play audio responses through the system speakers
+- Access all Pollinations.AI models and services seamlessly
+- List available models, voices, and capabilities
 
 For more advanced usage, check out our [API documentation](APIDOCS.md).
 

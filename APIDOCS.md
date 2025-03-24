@@ -39,11 +39,18 @@ List Models: `GET https://text.pollinations.ai/models`
 Pollinations provides an MCP (Model Context Protocol) server that enables AI assistants like Claude to generate images and audio directly.
 
 - Server Name: `pollinations-multimodal-api`
-- Tools:
+- Image Tools:
   - `generateImageUrl`: Generate an image URL from a text prompt
   - `generateImage`: Generate an image and return the base64-encoded data
-  - `generateAudio`: Generate audio from a text prompt and return the audio data
-  - `listModels`: List available models for image or text generation
+  - `listImageModels`: List available image generation models
+- Audio Tools:
+  - `respondAudio`: Generate an audio response to a text prompt and play it
+  - `sayText`: Generate speech that says the provided text verbatim
+  - `listAudioVoices`: List available voices for audio generation
+- Text Tools:
+  - `listTextModels`: List available text generation models
+- General Tools:
+  - `listModels`: List all available models (can filter by type)
 
 For installation and usage instructions, see the [MCP Server Documentation](./model-context-protocol/README.md).
 

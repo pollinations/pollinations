@@ -1,5 +1,7 @@
 # [Pollinations.AI](https://pollinations.ai)
 
+[![All Contributors](https://img.shields.io/github/all-contributors/pollinations/pollinations?color=ee8449&style=flat-square)](#contributors)
+
 ## 🆕 Latest News
 
 - **🤖 MCP Server** - New Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly! [Learn more](./model-context-protocol/README.md).  
@@ -386,3 +388,13 @@ Pollinations.AI is open-source software licensed under the [MIT license](LICENSE
 ---
 
 Made with ❤️ by the Pollinations.AI team
+
+## Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+<!-- ALL-CONTRIBUTORS-LIST:END -->

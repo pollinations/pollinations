@@ -1,5 +1,14 @@
 #!/usr/bin/env node
-import { generateImageUrl, generateImage, generateAudio, listModels } from './pollinations-api-client.js';
+import { 
+  generateImageUrl, 
+  generateImage, 
+  respondAudio, 
+  sayText,
+  listModels,
+  listImageModels,
+  listTextModels,
+  listAudioVoices 
+} from './src/index.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -44,13 +53,28 @@ async function testPollinationsAPI() {
     console.log(`Image saved to: ${imagePath}`);
     console.log('Image metadata:', imageResult.metadata);
     
-    // Test generateAudio function
-    console.log('\n3. Testing generateAudio function...');
+    // Test sayText function
+    console.log('\n3. Testing sayText function...');
     console.log('This may take a moment as we need to generate and fetch the audio...');
     
-    const audioResult = await generateAudio('Hello, world! This is a test of the Pollinations audio API.', {
-      voice: 'alloy'
-    });
+    const sayTextResult = await sayText(
+      'Hello, world! This is a test of the Pollinations text-to-speech API.',
+      'alloy',
+      undefined,
+      'Speak with a friendly tone'
+    );
+    console.log('Text-to-speech result:', sayTextResult);
+    
+    // Test respondAudio function with voice instructions
+    console.log('\n4. Testing respondAudio function with voice instructions...');
+    console.log('This may take a moment as we need to generate and fetch the audio...');
+    
+    const audioResult = await respondAudio(
+      'Hello, world! This is a test of the Pollinations audio API.',
+      'alloy',
+      undefined,
+      'Speak with enthusiasm and energy'
+    );
     
     // Save the audio to a file
     const audioData = audioResult.data;
@@ -64,16 +88,22 @@ async function testPollinationsAPI() {
     console.log('Audio metadata:', audioResult.metadata);
     
     // Test listModels function for image models
-    console.log('\n4. Testing listModels function (image models)...');
-    const imageModelsResult = await listModels('image');
+    console.log('\n5. Testing listModels function (image models)...');
+    const imageModelsResult = await listImageModels();
     console.log('Available image models:');
     console.log(JSON.stringify(imageModelsResult, null, 2));
     
     // Test listModels function for text models
-    console.log('\n5. Testing listModels function (text models)...');
-    const textModelsResult = await listModels('text');
+    console.log('\n6. Testing listModels function (text models)...');
+    const textModelsResult = await listTextModels();
     console.log('Available text models:');
     console.log(JSON.stringify(textModelsResult, null, 2));
+    
+    // Test listAudioVoices function
+    console.log('\n7. Testing listAudioVoices function...');
+    const audioVoicesResult = await listAudioVoices();
+    console.log('Available audio voices:');
+    console.log(JSON.stringify(audioVoicesResult, null, 2));
     
     console.log('\nAll tests completed successfully!');
     console.log(`Test outputs saved to: ${outputDir}`);

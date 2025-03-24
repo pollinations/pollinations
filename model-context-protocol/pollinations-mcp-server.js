@@ -7,7 +7,17 @@ import {
   ListToolsRequestSchema,
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
-import { generateImageUrl, listModels, generateImage, generateAudio } from './pollinations-api-client.js';
+import { 
+  generateImageUrl, 
+  generateImage, 
+  respondAudio, 
+  sayText,
+  listModels,
+  listImageModels,
+  listTextModels,
+  listAudioVoices
+} from './src/index.js';
+import { getAllToolSchemas } from './src/schemas.js';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -39,123 +49,7 @@ process.on('SIGINT', async () => {
 // Set up tool handlers
 // List available tools
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: [
-    {
-      name: 'generateImageUrl',
-      description: 'Generate an image URL from a text prompt',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          prompt: {
-            type: 'string',
-            description: 'The text description of the image to generate'
-          },
-          options: {
-            type: 'object',
-            description: 'Additional options for image generation',
-            properties: {
-              model: {
-                type: 'string',
-                description: 'Model name to use for generation'
-              },
-              seed: {
-                type: 'number',
-                description: 'Seed for reproducible results'
-              },
-              width: {
-                type: 'number',
-                description: 'Width of the generated image'
-              },
-              height: {
-                type: 'number',
-                description: 'Height of the generated image'
-              }
-            },
-          }
-        },
-        required: ['prompt']
-      }
-    },
-    {
-      name: 'generateImage',
-      description: 'Generate an image from a text prompt and return the image data',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          prompt: {
-            type: 'string',
-            description: 'The text description of the image to generate'
-          },
-          options: {
-            type: 'object',
-            description: 'Additional options for image generation',
-            properties: {
-              model: {
-                type: 'string',
-                description: 'Model name to use for generation'
-              },
-              seed: {
-                type: 'number',
-                description: 'Seed for reproducible results'
-              },
-              width: {
-                type: 'number',
-                description: 'Width of the generated image'
-              },
-              height: {
-                type: 'number',
-                description: 'Height of the generated image'
-              }
-            },
-          }
-        },
-        required: ['prompt']
-      }
-    },
-    {
-      name: 'generateAudio',
-      description: 'Generate audio from a text prompt and return the audio data',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          prompt: {
-            type: 'string',
-            description: 'The text to convert to speech'
-          },
-          options: {
-            type: 'object',
-            description: 'Additional options for audio generation',
-            properties: {
-              voice: {
-                type: 'string',
-                description: 'Voice to use for audio generation (default: "alloy")'
-              },
-              seed: {
-                type: 'number',
-                description: 'Seed for reproducible results'
-              }
-            },
-          }
-        },
-        required: ['prompt']
-      }
-    },
-    {
-      name: 'listModels',
-      description: 'List available models for image or text generation',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          type: {
-            type: 'string',
-            description: 'Type of models to list ("image" or "text")',
-            enum: ['image', 'text'],
-            default: 'image'
-          }
-        }
-      }
-    }
-  ]
+  tools: getAllToolSchemas()
 }));
 
 // Handle tool calls
@@ -186,9 +80,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return {
         content: [
           { 
-            type: 'image',
+            type: 'image', 
             data: result.data,
             mimeType: result.mimeType
+          },
+          { 
+            type: 'text', 
+            text: `Generated image from prompt: "${prompt}"\n\nImage metadata: ${JSON.stringify(result.metadata, null, 2)}` 
           }
         ]
       };
@@ -200,45 +98,35 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         isError: true
       };
     }
-  } else if (name === 'generateAudio') {
+  } else if (name === 'respondAudio') {
     try {
-      const { prompt, options = {} } = args;
-      const result = await generateAudio(prompt, options);
+      const { prompt, voice, seed, voiceInstructions } = args;
+      const result = await respondAudio(prompt, voice, seed, voiceInstructions);
       
-      // Save the audio to a temporary file
+      // Save audio to a temporary file
       const tempDir = os.tmpdir();
-      const tempFile = path.join(tempDir, `audio-${Date.now()}.${result.mimeType.split('/')[1] || 'wav'}`);
+      const tempFilePath = path.join(tempDir, `pollinations-audio-${Date.now()}.mp3`);
       
-      // Decode base64 data before writing to file
-      const audioBuffer = Buffer.from(result.data, 'base64');
-      fs.writeFileSync(tempFile, audioBuffer);
-
-      // Play the audio using the play-sound package
-      audioPlayer.play(tempFile, (err) => {
+      // Decode base64 and write to file
+      fs.writeFileSync(tempFilePath, Buffer.from(result.data, 'base64'));
+      
+      // Play the audio file
+      audioPlayer.play(tempFilePath, (err) => {
         if (err) console.error('Error playing audio:', err);
         
-        // Clean up the temporary file after playback
+        // Clean up the temporary file after playing
         try {
-          fs.unlinkSync(tempFile);
+          fs.unlinkSync(tempFilePath);
         } catch (cleanupErr) {
           console.error('Error cleaning up temp file:', cleanupErr);
         }
       });
-
-      // Return a JSON response like the other functions
-      const responseData = {
-        status: "success",
-        prompt: prompt,
-        voice: options.voice || "alloy",
-        model: "openai-audio",
-        playback: "Audio is being played on your system"
-      };
       
       return {
         content: [
           { 
             type: 'text', 
-            text: JSON.stringify(responseData, null, 2)
+            text: `Audio has been played.\n\nAudio metadata: ${JSON.stringify(result.metadata, null, 2)}` 
           }
         ]
       };
@@ -246,6 +134,46 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return {
         content: [
           { type: 'text', text: `Error generating audio: ${error.message}` }
+        ],
+        isError: true
+      };
+    }
+  } else if (name === 'sayText') {
+    try {
+      const { text, voice, seed, voiceInstructions } = args;
+      const result = await sayText(text, voice, seed, voiceInstructions);
+      
+      // Save audio to a temporary file
+      const tempDir = os.tmpdir();
+      const tempFilePath = path.join(tempDir, `pollinations-audio-${Date.now()}.mp3`);
+      
+      // Decode base64 and write to file
+      fs.writeFileSync(tempFilePath, Buffer.from(result.data, 'base64'));
+      
+      // Play the audio file
+      audioPlayer.play(tempFilePath, (err) => {
+        if (err) console.error('Error playing audio:', err);
+        
+        // Clean up the temporary file after playing
+        try {
+          fs.unlinkSync(tempFilePath);
+        } catch (cleanupErr) {
+          console.error('Error cleaning up temp file:', cleanupErr);
+        }
+      });
+      
+      return {
+        content: [
+          { 
+            type: 'text', 
+            text: `Text has been spoken.\n\nAudio metadata: ${JSON.stringify(result.metadata, null, 2)}` 
+          }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          { type: 'text', text: `Error speaking text: ${error.message}` }
         ],
         isError: true
       };
@@ -267,6 +195,54 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         isError: true
       };
     }
+  } else if (name === 'listImageModels') {
+    try {
+      const result = await listImageModels();
+      return {
+        content: [
+          { type: 'text', text: JSON.stringify(result, null, 2) }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          { type: 'text', text: `Error listing image models: ${error.message}` }
+        ],
+        isError: true
+      };
+    }
+  } else if (name === 'listTextModels') {
+    try {
+      const result = await listTextModels();
+      return {
+        content: [
+          { type: 'text', text: JSON.stringify(result, null, 2) }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          { type: 'text', text: `Error listing text models: ${error.message}` }
+        ],
+        isError: true
+      };
+    }
+  } else if (name === 'listAudioVoices') {
+    try {
+      const result = await listAudioVoices();
+      return {
+        content: [
+          { type: 'text', text: JSON.stringify(result, null, 2) }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          { type: 'text', text: `Error listing audio voices: ${error.message}` }
+        ],
+        isError: true
+      };
+    }
   } else {
     throw new McpError(
       ErrorCode.MethodNotFound,
@@ -276,10 +252,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 // Run the server
-const run = async () => {
+async function run() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error('Pollinations Multimodal MCP server running on stdio');
-};
+}
 
 run().catch(console.error);

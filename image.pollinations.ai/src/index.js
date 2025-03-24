@@ -143,13 +143,18 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     progress.updateBar(requestId, 95, 'Cache', 'Updating feed...');
     // if (!safeParams.nofeed) {
     //   if (!(maturity.isChild && maturity.isMature)) {
-        sendToFeedListeners({
+        // Create a clean object with consistent data types
+        const feedData = {
+          // Start with properly sanitized parameters
           ...safeParams,
           concurrentRequests: countFluxJobs(),
           imageURL,
           // Always use the display prompt which will be original prompt for bad domains
           prompt,
-          ...maturity,
+          // Extract only the specific properties we need from maturity, ensuring boolean types
+          isChild: !!maturity.isChild,
+          isMature: !!maturity.isMature,
+          // Include maturity as a nested object for backward compatibility
           maturity,
           timingInfo: relativeTiming(timingInfo),
           ip: getIp(req),
@@ -157,10 +162,12 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
           referrer,
           // Use original wasPimped for normal domains, never for bad domains
           wasPimped,
-          nsfw: maturity.isChild || maturity.isMature,
-          private: safeParams.nofeed,
+          nsfw: !!(maturity.isChild || maturity.isMature),
+          private: !!safeParams.nofeed,
           token: extractToken(req) && extractToken(req).slice(0, 2) + "..."
-        }, { saveAsLastState: true });
+        };
+        
+        sendToFeedListeners(feedData, { saveAsLastState: true });
       // }
     // }
     progress.updateBar(requestId, 100, 'Cache', 'Updated');

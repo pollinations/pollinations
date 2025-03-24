@@ -61,12 +61,17 @@ We're excited to announce MentatBot, the autonomous AI coding assistant that imp
 
 ### MCP Server for AI Assistants
 
-Our MCP (Model Context Protocol) server enables AI assistants like Claude to generate images directly. [Learn more](./model-context-protocol/README.md)
+Our MCP (Model Context Protocol) server enables AI assistants like Claude to generate images and audio directly. [Learn more](./model-context-protocol/README.md)
 
 ```bash
 # Run with npx (no installation required)
 npx pollinations-model-context-protocol
 ```
+
+AI assistants can:
+- Generate images from text descriptions
+- Create text-to-speech audio with various voices
+- Access all Pollinations.AI models seamlessly
 
 For more advanced usage, check out our [API documentation](APIDOCS.md).
 

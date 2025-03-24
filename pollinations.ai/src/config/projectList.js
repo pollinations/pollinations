@@ -128,6 +128,15 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 AI 文本转音频 🇨🇳",
+      url: "https://tts-gules-theta.vercel.app/",
+      description: "输入文本，选择语音风格，一键将文字转换为自然流畅的语音。 支持多种声音特征，帮您创建专业水准的音频内容。 (Input text, select voice style, and instantly convert text to natural, fluid speech. Supports various voice characteristics to help you create professional-grade audio content.)",
+      author: "https://github.com/Azad-sl",
+      repo: "https://github.com/Azad-sl/tts",
+      submissionDate: "2025-03-24",
+      language: "zh-CN"
+    },
+    {
       name: "🆕 Case Me 🇧🇷",
       description: "O projeto consiste em uma vending machine que criará capinhas para celular personalizadas com fotos ou outras imagens e cores de escolha do cliente final. (A vending machine that creates customized phone cases with photos or other images and colors chosen by the end customer.)",
       author: "anaboxmania@gmail.com",

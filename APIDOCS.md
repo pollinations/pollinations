@@ -199,6 +199,61 @@ https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voic
 ##### Speech-to-Text
 Speech-to-text capabilities are also available through the `openai-audio` model.
 
+To transcribe audio, encode your audio file as base64 and send it with your request:
+
+```javascript
+// Simple Speech-to-Text example with Pollinations.AI
+async function transcribeAudio(audioBase64, format = 'wav') {
+  const response = await fetch('https://text.pollinations.ai/openai', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: "openai-audio",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Transcribe this audio" },
+            { 
+              type: "input_audio", 
+              input_audio: { 
+                data: audioBase64, 
+                format: format 
+              } 
+            }
+          ]
+        }
+      ]
+    }),
+  });
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+
+// Example usage with FileReader API in browser
+document.getElementById('audioInput').addEventListener('change', async (event) => {
+  const file = event.target.files[0];
+  const reader = new FileReader();
+  
+  reader.onload = async () => {
+    // Extract base64 data from the result
+    const base64Audio = reader.result.split(',')[1];
+    
+    try {
+      const transcript = await transcribeAudio(base64Audio, file.name.split('.').pop());
+      console.log('Transcription:', transcript);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+  
+  reader.readAsDataURL(file);
+});
+```
+
 **Note:** Our audio features follow the OpenAI audio API specification. For more details and advanced usage, see the [OpenAI Audio Guide](https://platform.openai.com/docs/guides/audio).
 
 #### Example Usage (GET)
@@ -304,7 +359,7 @@ async function generateAudio() {
 generateAudio();
 ```
 
-### Javascript (Audio Transcription)
+### Python (Audio Transcription)
 ```python
 import base64
 import requests

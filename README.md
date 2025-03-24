@@ -215,6 +215,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 AI 文本转音频 🇨🇳 | 输入文本，选择语音风格，一键将文字转换为自然流畅的语音。 支持多种声音特征，帮您创建专业水准的音频内容。 (Input text, select voice style, and instantly convert text to natural, fluid speech. Supports various voice characteristics to help you create professional-grade audio content.) | https://github.com/Azad-sl | [Website](https://tts-gules-theta.vercel.app/), [GitHub](https://github.com/Azad-sl/tts) |
 | 🆕 Case Me 🇧🇷 | O projeto consiste em uma vending machine que criará capinhas para celular personalizadas com fotos ou outras imagens e cores de escolha do cliente final. (A vending machine that creates customized phone cases with photos or other images and colors chosen by the end customer.) | anaboxmania@gmail.com | - |
 | 🆕 PixPax | A user-friendly chatbot that lets you analyze images, remix existing images or create new images, all through simple chat. | @andreas_11 | [Website](https://pixpal.chat) |
 | 🆕 Watch TV with neko (Roblox) | Roblox game where you can talk with AI catgirls 🐾 or just have fun, talking with other players in cozy rooms ⭐️ | @mangofoxplay | [Roblox](https://www.roblox.com/games/15087497266/UPD-Watch-TV-with-neko-AI) |

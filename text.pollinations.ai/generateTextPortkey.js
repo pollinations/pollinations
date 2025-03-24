@@ -27,6 +27,7 @@ const MODEL_MAPPING = {
     'deepseek-r1': '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
     'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
     'phi': 'phi-4-instruct',
+    'phi-mini': 'phi-4-mini-instruct',
     'llama-vision': '@cf/meta/llama-3.2-11b-vision-instruct',
     // Scaleway models
     'qwen-coder': 'qwen2.5-coder-32b-instruct',
@@ -59,6 +60,7 @@ const SYSTEM_PROMPTS = {
     'deepseek-r1': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
     'llamaguard': 'You are a content moderation assistant. Your task is to analyze the input and identify any harmful, unsafe, or inappropriate content.',
     'phi': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
+    'phi-mini': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
     'llama-vision': unrestrictedPrompt,
     // Scaleway models
     'mistral': unrestrictedPrompt,
@@ -332,9 +334,16 @@ export const portkeyConfig = {
         'custom-host': process.env.OPENAI_PHI4_ENDPOINT,
         authKey: process.env.OPENAI_PHI4_API_KEY
     }),
+    'phi-4-mini-instruct': () => ({
+        provider: 'openai',
+        'custom-host': process.env.OPENAI_PHI4_MINI_ENDPOINT,
+        authKey: process.env.OPENAI_PHI4_MINI_API_KEY
+    }),
     '@cf/meta/llama-3.2-11b-vision-instruct': () => createCloudflareModelConfig(),
     // Scaleway model configurations
-    'qwen2.5-coder-32b-instruct': () => createScalewayModelConfig(),
+    'qwen2.5-coder-32b-instruct': () => createScalewayModelConfig({
+        'max-tokens': 8000  // Set specific token limit for Qwen Coder
+    }),
     'llama-3.3-70b-instruct': () => createScalewayModelConfig(),
     'llama-3.1-8b-instruct': () => createScalewayModelConfig(),
     'deepseek-r1-distill-llama-70b': () => createScalewayModelConfig(),
@@ -358,7 +367,7 @@ export const portkeyConfig = {
         authKey: googleCloudAuth.getAccessToken, // Fix: use getAccessToken instead of getToken
         'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
         'vertex-region': 'us-central1',
-        'vertex-model-id': 'gemini-2.0-flash-lite-preview-02-05',
+        'vertex-model-id': 'gemini-2.0-flash-lite',
         'strict-openai-compliance': 'false'
     }),
     'gemini-2.0-flash-thinking-exp-01-21': () => ({

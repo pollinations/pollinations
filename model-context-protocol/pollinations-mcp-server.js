@@ -15,7 +15,10 @@ import {
   listModels,
   listImageModels,
   listTextModels,
-  listAudioVoices
+  listAudioVoices,
+  generateText,
+  listResources,
+  listPrompts
 } from './src/index.js';
 import { getAllToolSchemas } from './src/schemas.js';
 import fs from 'fs';
@@ -239,6 +242,55 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return {
         content: [
           { type: 'text', text: `Error listing audio voices: ${error.message}` }
+        ],
+        isError: true
+      };
+    }
+  } else if (name === 'generateText') {
+    try {
+      const { prompt, model = "openai", seed, systemPrompt, json, private: isPrivate } = args;
+      const result = await generateText(prompt, model, seed, systemPrompt, json, isPrivate);
+      return {
+        content: [
+          { type: 'text', text: result }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          { type: 'text', text: `Error generating text: ${error.message}` }
+        ],
+        isError: true
+      };
+    }
+  } else if (name === 'listResources') {
+    try {
+      const result = await listResources();
+      return {
+        content: [
+          { type: 'text', text: JSON.stringify(result, null, 2) }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          { type: 'text', text: `Error listing resources: ${error.message}` }
+        ],
+        isError: true
+      };
+    }
+  } else if (name === 'listPrompts') {
+    try {
+      const result = await listPrompts();
+      return {
+        content: [
+          { type: 'text', text: JSON.stringify(result, null, 2) }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          { type: 'text', text: `Error listing prompts: ${error.message}` }
         ],
         isError: true
       };

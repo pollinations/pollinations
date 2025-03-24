@@ -4,7 +4,8 @@
 
 import { generateImageUrlSchema, generateImageSchema, listImageModelsSchema } from './services/imageSchema.js';
 import { respondAudioSchema, sayTextSchema, listAudioVoicesSchema } from './services/audioSchema.js';
-import { listTextModelsSchema } from './services/textSchema.js';
+import { generateTextSchema, listTextModelsSchema } from './services/textSchema.js';
+import { listResourcesSchema, listPromptsSchema } from './services/resourceSchema.js';
 
 // Re-export all schemas
 export {
@@ -19,7 +20,12 @@ export {
   listAudioVoicesSchema,
   
   // Text schemas
-  listTextModelsSchema
+  generateTextSchema,
+  listTextModelsSchema,
+  
+  // Resource schemas
+  listResourcesSchema,
+  listPromptsSchema
 };
 
 /**
@@ -34,6 +40,9 @@ export function getAllToolSchemas() {
     respondAudioSchema,
     sayTextSchema,
     listAudioVoicesSchema,
-    listTextModelsSchema
+    generateTextSchema,
+    listTextModelsSchema,
+    listResourcesSchema,
+    listPromptsSchema
   ];
 }

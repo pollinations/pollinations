@@ -7,7 +7,8 @@
 // Import services
 import { generateImageUrl, generateImage, listImageModels } from './services/imageService.js';
 import { respondAudio, sayText, listAudioVoices } from './services/audioService.js';
-import { listTextModels } from './services/textService.js';
+import { generateText, listTextModels } from './services/textService.js';
+import { listResources, listPrompts } from './services/resourceService.js';
 
 /**
  * List available models from Pollinations APIs
@@ -38,7 +39,12 @@ export {
   listAudioVoices,
   
   // Text services
-  listTextModels
+  generateText,
+  listTextModels,
+  
+  // Resource services
+  listResources,
+  listPrompts
 };
 
 // If this file is run directly (e.g., with Node.js)
@@ -60,6 +66,13 @@ if (typeof require !== 'undefined' && require.main === module) {
       
       const voices = await listAudioVoices();
       console.log('Audio voices:', voices);
+      
+      // Test resource listing
+      const resources = await listResources();
+      console.log('Resources:', resources);
+      
+      const prompts = await listPrompts();
+      console.log('Prompts:', prompts);
       
     } catch (error) {
       console.error('Error:', error);

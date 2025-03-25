@@ -14,12 +14,12 @@ const NSFW_REFERRAL_LINK_PROBABILITY = 1;
 const REFERRAL_LINKS = {
   lovemy: {
     id: 'lovemy',
-    url: 'https://lovemy.ai/?linkId=lp_060145&sourceId=pollinations&tenantId=lovemyai',
+    url: 'https://pollinations.ai/redirect/lovemy',
     cta: 'Create your intimate AI companion'
   },
   hentai: {
     id: 'hentai',
-    url: 'https://aihentaichat.com/?linkId=lp_617069&sourceId=pollinations&tenantId=lovemyai',
+    url: 'https://pollinations.ai/redirect/hentai',
     cta: 'Explore uncensored AI chat'
   }
 };

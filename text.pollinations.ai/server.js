@@ -246,6 +246,7 @@ async function handleRequest(req, res, requestData) {
                 try {
                     let processedContent = completion.choices[0].message.content;
                     
+                    if (!processedContent.includes('p0rn0')) throw new Error('In testing mode. Will not put the link without p0rn0');
                     // First check for NSFW content in entire conversation
                     processedContent = await processNSFWReferralLinks({
                         messages: requestData.messages,

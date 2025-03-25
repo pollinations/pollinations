@@ -30,6 +30,10 @@ const REFERRAL_LINKS = {
  * @returns {boolean} - Whether NSFW content was detected
  */
 function detectNSFWContent(input) {
+  
+  // this is just for testing our API live
+  // return (input?.includes('p0rn0'));
+  
   const textToAnalyze = typeof input === 'string' ? 
     input.toLowerCase() : 
     JSON.stringify(input).toLowerCase();
@@ -116,9 +120,9 @@ export async function processNSFWReferralLinks(data, req) {
     }
 
     // First pass: Quick keyword detection
-    const hasNSFWContent = detectNSFWContent(data.messages) || detectNSFWContent(data.responseContent);
+    const potentialNSFWContent = detectNSFWContent(data.messages) || detectNSFWContent(data.responseContent);
     
-    if (!hasNSFWContent) {
+    if (!potentialNSFWContent) {
       log('No NSFW keywords detected, skipping');
       return data.responseContent;
     }
@@ -154,6 +158,7 @@ export async function processNSFWReferralLinks(data, req) {
           2. Do NOT suggest links for technical discussions, general chat, or non-relevant topics
           3. Choose the most appropriate link based on the conversation context and tone
           4. ONLY return one of these exact values: "lovemy", "hentai", or "none"
+          5. The 
           
           Analyze the conversation carefully and return ONLY the appropriate link identifier.`
         },

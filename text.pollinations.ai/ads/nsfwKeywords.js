@@ -4,9 +4,7 @@
  */
 export const nsfwKeywords = [
   // English
-  'girlfriend', 'dating', 'relationship', 'romance', 'intimate',
-  'love', 'companion', 'roleplay', 'nsfw', 'adult', 'erotic',
-  'sexy', 'flirt', 'kiss', 'date',
+  'girlfriend', 'boyfriend', 'partner', 'significant other', 'companion', 'bae', 'boo', 'hubby', 'wifey', 'lover', 'crush', 'situationship', 'exclusive', 'taken', 'commitment', 'couple goals', 'love', 'romantic', 'romance', 'lovey-dovey', 'butterflies', 'infatuated', 'puppy love', 'smitten', 'head over heels', 'falling for', 'heart eyes', 'lovestruck', 'sweetheart', 'flirt', 'flirting', 'kiss', 'kissing', 'smooch', 'cuddle', 'cuddling', 'snuggle', 'PDA', 'hold hands', 'spooning', 'hugging', 'sweet talk', 'whisper sweet nothings', 'courtship', 'date', 'dating', 'date night', 'Netflix and chill', 'swipe right', 'match', 'ghosting', 'DM slide', 'talking stage', 'first base', 'second base', 'beautiful', 'handsome', 'sexy', 'cutie', 'babe', 'baby', 'hun', 'honey', 'darling', 'gorgeous', 'stunning', 'foxy', 'snack', 'hot stuff', 'dreamboat', 'hottie', 'intimate', 'NSFW', 'erotic', 'adult', 'naughty', 'spicy', 'seduce', 'seduction', 'steamy', 'risqué', 'sensual', 'passionate', 'turn-on', 'foreplay', 'hook up', 'FWB', 'ship', 'shipping', 'OTP', 'simp', 'simping', 'thirsty', 'goals', 'stan', 'relationship', 'roleplay', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '😍', '🥰', '😘', '😚', '🔥', '🌹', '😏', '🍆', '🍑',
 
   // Russian
   'подруга', 'знакомства', 'отношения', 'романтика', 'интим',

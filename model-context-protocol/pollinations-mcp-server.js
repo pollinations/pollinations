@@ -18,7 +18,11 @@ import {
   listAudioVoices,
   generateText,
   listResources,
-  listPrompts
+  listPrompts,
+  getRedditSubredditPosts,
+  getRedditPostAndComments,
+  getRedditUserPosts,
+  searchReddit
 } from './src/index.js';
 import { getAllToolSchemas } from './src/schemas.js';
 import fs from 'fs';
@@ -248,7 +252,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
   } else if (name === 'generateText') {
     try {
-      const { prompt, model = "openai", seed, systemPrompt, json, private: isPrivate } = args;
+      const { prompt, model, seed, systemPrompt, json, private: isPrivate } = args;
       const result = await generateText(prompt, model, seed, systemPrompt, json, isPrivate);
       return {
         content: [
@@ -291,6 +295,74 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return {
         content: [
           { type: 'text', text: `Error listing prompts: ${error.message}` }
+        ],
+        isError: true
+      };
+    }
+  } else if (name === 'getRedditSubredditPosts') {
+    try {
+      const { subreddit, listing, limit, timeframe } = args;
+      const result = await getRedditSubredditPosts(subreddit, listing, limit, timeframe);
+      return {
+        content: [
+          { type: 'text', text: JSON.stringify(result, null, 2) }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          { type: 'text', text: `Error getting Reddit posts: ${error.message}` }
+        ],
+        isError: true
+      };
+    }
+  } else if (name === 'getRedditPostAndComments') {
+    try {
+      const { postId, subreddit } = args;
+      const result = await getRedditPostAndComments(postId, subreddit);
+      return {
+        content: [
+          { type: 'text', text: JSON.stringify(result, null, 2) }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          { type: 'text', text: `Error getting Reddit post and comments: ${error.message}` }
+        ],
+        isError: true
+      };
+    }
+  } else if (name === 'getRedditUserPosts') {
+    try {
+      const { username, listing, limit } = args;
+      const result = await getRedditUserPosts(username, listing, limit);
+      return {
+        content: [
+          { type: 'text', text: JSON.stringify(result, null, 2) }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          { type: 'text', text: `Error getting Reddit user posts: ${error.message}` }
+        ],
+        isError: true
+      };
+    }
+  } else if (name === 'searchReddit') {
+    try {
+      const { query, subreddit, limit, sort } = args;
+      const result = await searchReddit(query, subreddit, limit, sort);
+      return {
+        content: [
+          { type: 'text', text: JSON.stringify(result, null, 2) }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          { type: 'text', text: `Error searching Reddit: ${error.message}` }
         ],
         isError: true
       };

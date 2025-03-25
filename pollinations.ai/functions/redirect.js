@@ -100,7 +100,7 @@ exports.handler = async function(event, context) {
   
   try {
     // Send analytics event
-    await sendAnalytics('referral_click', {
+    await sendAnalytics('nsfwReferralLinkClicked', {
       referralId: targetId,
       targetUrl: url,
       source: 'nsfw_referral'

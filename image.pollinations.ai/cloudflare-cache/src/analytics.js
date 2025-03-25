@@ -1,47 +1,13 @@
 /**
  * Analytics functionality for Cloudflare Worker
  * This mirrors the sendToAnalytics functionality from the main image.pollinations.ai service
+ * Following the "thin proxy" design principle - minimal processing, direct forwarding
  */
 
 import { getClientIp } from "./ip-utils.js";
 
-/**
- * Creates base metadata object used across different analytics events
- * @param {Request} request - The original request
- * @param {Object} params - Additional parameters
- * @returns {Object} Base metadata object
- */
-const createAnalyticsMetadata = (request, params = {}) => {
-  const { originalPrompt, safeParams, error } = params;
-
-  // Get client information
-  const clientIP = getClientIp(request);
-
-  const referrer =
-    request.headers.get("referer") || request.headers.get("referrer") || "";
-
-  // Extract query parameters
-  const url = new URL(request.url);
-  const queryParams = {};
-  for (const [key, value] of url.searchParams.entries()) {
-    queryParams[key] = value;
-  }
-
-  // Build metadata object similar to the original
-  const metadata = {
-    ...safeParams,
-    promptRaw: originalPrompt,
-    referrer,
-    ip: clientIP,
-    queryParams,
-    error: error?.message || error,
-    // Cache-specific information
-    cacheStatus: params.cacheStatus || "unknown",
-  };
-
-  console.log("Analytics metadata created:", metadata);
-  return metadata;
-};
+// Define maximum string length for truncation
+const MAX_STRING_LENGTH = 150;
 
 /**
  * Sends analytics event to Google Analytics
@@ -77,105 +43,46 @@ export async function sendToAnalytics(request, name, params = {}, env) {
       ? decodeURIComponent(pathname.split("/prompt/")[1])
       : "";
 
-    // Get client information
-    const referrer =
-      request.headers.get("referer") || request.headers.get("referrer") || "";
-    const userAgent = request.headers.get("user-agent") || "";
-    const language = request.headers.get("accept-language") || "";
-    const clientIP = getClientIp(request) || "::1";
-
     // Process query parameters into safeParams format
     const safeParams = {};
     for (const [key, value] of url.searchParams.entries()) {
       safeParams[key] = value;
     }
 
-    // Extract specific parameters from query params or params object
-    const width = safeParams.width || params.width || 1024;
-    const height = safeParams.height || params.height || 1024;
-    const seed = safeParams.seed || params.seed || 42;
-    const model = safeParams.model || params.model || "flux";
-    const negative_prompt =
-      safeParams.negative_prompt ||
-      params.negative_prompt ||
-      "worst quality, blurry";
-      
-    // Extract cache status with enhanced handling for nested structures
-    const cacheStatus = safeParams.cacheStatus || 
-                       (params.safeParams && params.safeParams.cacheStatus) || 
-                       params.cacheStatus || 
-                       "unknown";
+    // Get client information - check URL params first, then headers
+    const referrer = 
+      request.headers.get("referer") || 
+      request.headers.get("referrer") || 
+      "";
+    const userAgent = request.headers.get("user-agent") || "";
+    const language = request.headers.get("accept-language") || "";
+    const clientIP = getClientIp(request) || "::1";
 
-    // Build the payload in the exact same format as the curl command
+    // Combine all parameter sources with priority
+    const combinedParams = {
+      referrer,
+      ...safeParams,
+      ...params,
+      userAgent,
+      language,
+      ip: clientIP,
+    };
+
+    // Process parameters - only truncate strings
+    const processedParams = processParameters(combinedParams);
+
+    // Build the payload
     const payload = {
       client_id: clientIP,
       events: [
         {
           name: name,
-          params: {
-            userAgent: (userAgent || "").substring(0, 100),
-            language: (language || "").substring(0, 100),
-            width: Number(width),
-            height: Number(height),
-            seed: Number(seed),
-            model: (model || "flux").substring(0, 100),
-            nologo: (
-              safeParams.nologo !== undefined
-                ? safeParams.nologo
-                : params.nologo
-            )
-              ? "true"
-              : "false",
-            negative_prompt: (negative_prompt || "").substring(0, 100),
-            nofeed: (
-              safeParams.nofeed !== undefined
-                ? safeParams.nofeed
-                : params.nofeed
-            )
-              ? "true"
-              : "false",
-            safe: (
-              safeParams.safe !== undefined ? safeParams.safe : params.safe
-            )
-              ? "true"
-              : "false",
-            promptRaw: (originalPrompt || params.promptRaw || "").substring(
-              0,
-              100
-            ),
-            concurrentRequests:
-              safeParams.concurrentRequests !== undefined
-                ? Number(safeParams.concurrentRequests)
-                : params.concurrentRequests || 0,
-            ip: (clientIP || "").substring(0, 100),
-            totalProcessingTime:
-              safeParams.totalProcessingTime !== undefined
-                ? Number(safeParams.totalProcessingTime)
-                : params.totalProcessingTime || 0,
-            isChild: (
-              safeParams.isChild !== undefined
-                ? safeParams.isChild
-                : params.isChild
-            )
-              ? "true"
-              : "false",
-            referrer: (referrer || "").substring(0, 100),
-            cacheStatus: cacheStatus,
-          },
+          params: processedParams
         },
       ],
     };
 
-    // Added detailed logging for cacheStatus debugging
-    console.log(`[ANALYTICS.JS DEBUG] Event: ${name}, Cache Status from safeParams: ${safeParams.cacheStatus || 'not set'}`);
-    console.log(`[ANALYTICS.JS DEBUG] Cache Status from params.safeParams: ${params.safeParams?.cacheStatus || 'not set'}`);
-    console.log(`[ANALYTICS.JS DEBUG] Direct cache status from params: ${params.cacheStatus || 'not set'}`);
-    console.log(`[ANALYTICS.JS DEBUG] Final cache status in payload: ${payload.events[0].params.cacheStatus}`);
-
-    console.log(
-      `[Analytics] Sending ${name} event to Google Analytics:`,
-      payload
-    );
+    console.log(`[Analytics] Sending ${name} event to Google Analytics:`, payload);
 
     // Send to Google Analytics
     const response = await fetch(
@@ -189,60 +96,70 @@ export async function sendToAnalytics(request, name, params = {}, env) {
       }
     );
 
-    const responseText = await response.text();
-    const logDetails = {
-      status: response.status,
-      statusText: response.statusText,
-      body: responseText || "(empty body)",
-      headers: Object.fromEntries(response.headers.entries()),
-      event: name,
-      hasCredentials: {
-        measurementId: !!measurementId,
-        apiSecret: !!apiSecret,
-      },
-    };
-
-    if (!response.ok) {
-      console.error(
-        `[Analytics Error] Failed to send ${name} event:`,
-        logDetails
-      );
-
-      // Try the validation endpoint to get more detailed error info
-      try {
-        const validationResponse = await fetch(
-          `https://www.google-analytics.com/debug/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          }
-        );
-
-        const validationResult = await validationResponse.json();
-        console.error(
-          `[Analytics Debug] Validation response for failed ${name} event:`,
-          validationResult
-        );
-      } catch (validationError) {
-        console.error(
-          `[Analytics Debug] Failed to get validation info for ${name}:`,
-          validationError
-        );
-      }
-    } else {
-      console.log(`[Analytics Success] Sent ${name} event:`, logDetails);
-    }
+    console.log(`[Analytics] Response for ${name} event:`, response);
 
     return response;
   } catch (error) {
-    console.error("[Analytics Error] Exception while sending analytics:", {
-      error: error.message,
-      stack: error.stack,
-      event: name,
-    });
-    return;
+    console.error("Error in sendToAnalytics:", error);
+    return undefined;
   }
+}
+
+/**
+ * Process parameters - only truncate strings, pass everything else through
+ * @param {Object} params - Parameters to process
+ * @returns {Object} Processed parameters
+ */
+function processParameters(params) {
+  const result = {};
+  
+  // Process all parameters
+  for (const [key, value] of Object.entries(params)) {
+    // Skip undefined/null values
+    if (value === undefined || value === null) {
+      continue;
+    }
+    
+    // Handle nested safeParams object
+    if (key === 'safeParams' && typeof value === 'object') {
+      // Extract properties from safeParams and add them directly
+      for (const [nestedKey, nestedValue] of Object.entries(value)) {
+        if (nestedValue !== undefined && nestedValue !== null) {
+          // Don't process this key again if it already exists at the top level
+          if (!(nestedKey in params)) {
+            result[nestedKey] = processValue(nestedValue);
+          }
+        }
+      }
+      continue;
+    }
+    
+    // Process regular parameters - just pass through with string truncation
+    result[key] = processValue(value);
+  }
+  
+  // Set defaults for important parameters if they're missing
+  if (!('model' in result)) result.model = 'flux';
+  if (!('width' in result)) result.width = 1024;
+  if (!('height' in result)) result.height = 1024;
+  if (!('seed' in result)) result.seed = 42;
+  if (!('negative_prompt' in result)) result.negative_prompt = 'worst quality, blurry';
+  if (!('cacheStatus' in result)) result.cacheStatus = 'unknown';
+  
+  return result;
+}
+
+/**
+ * Process a single value - only truncate strings, pass everything else through
+ * @param {any} value - Parameter value
+ * @returns {any} Processed value
+ */
+function processValue(value) {
+  // Only truncate strings, pass everything else through as-is
+  if (typeof value === 'string') {
+    return value.substring(0, MAX_STRING_LENGTH);
+  }
+  
+  // Return all other values as-is
+  return value;
 }

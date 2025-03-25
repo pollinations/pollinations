@@ -28,30 +28,17 @@ const EVENTS = {
  * @param {ExecutionContext} ctx - The execution context
  */
 function sendImageAnalytics(request, eventName, cacheStatus, params, env, ctx) {
-  // Enhanced logging for cache status debugging
-  console.log(`[ANALYTICS DEBUG] Sending event ${eventName} with cacheStatus=${cacheStatus}`);
+  // Simple logging
+  console.log(`[ANALYTICS] Sending event ${eventName} with cacheStatus=${cacheStatus}`);
   
-  // Create shallow copies to avoid modifying originals
-  const analyticsSafeParams = { ...params.safeParams };
-  analyticsSafeParams.cacheStatus = cacheStatus;
-  
-  // Add error if provided
-  if (params.error) {
-    analyticsSafeParams.error = params.error;
-  }
-  
+  // Create a single params object with all necessary data
+  // The refactored analytics.js will handle parameter processing
   const analyticsData = {
-    originalPrompt: params.originalPrompt,
-    safeParams: analyticsSafeParams,
-    referrer: params.referrer,
-    // Add cacheStatus at the top level to ensure it's accessible
-    cacheStatus: cacheStatus
+    ...params,
+    cacheStatus
   };
   
-  // Log the full analytics data
-  console.log(`[ANALYTICS DEBUG] Full analytics data:`, JSON.stringify(analyticsData, null, 2));
-  
-  // Send the analytics
+  // Send the analytics - let the analytics.js module handle the parameter processing
   ctx.waitUntil(sendToAnalytics(request, eventName, analyticsData, env));
 }
 

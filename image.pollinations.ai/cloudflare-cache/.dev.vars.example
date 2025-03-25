@@ -1,0 +1,6 @@
+# Example of .dev.vars file for local development
+# The deploy.sh script will create this file automatically from your .env file
+
+# Google Analytics Configuration
+GA_MEASUREMENT_ID=G-XXXXXXXXXX
+GA_API_SECRET=your-ga-api-secret-here 

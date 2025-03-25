@@ -9,6 +9,7 @@ import { generateImageUrl, generateImage, listImageModels } from './services/ima
 import { respondAudio, sayText, listAudioVoices } from './services/audioService.js';
 import { generateText, listTextModels } from './services/textService.js';
 import { listResources, listPrompts } from './services/resourceService.js';
+import { getRedditSubredditPosts, getRedditPostAndComments, getRedditUserPosts, searchReddit } from './services/redditService.js';
 
 /**
  * List available models from Pollinations APIs
@@ -44,7 +45,13 @@ export {
   
   // Resource services
   listResources,
-  listPrompts
+  listPrompts,
+  
+  // Reddit services
+  getRedditSubredditPosts,
+  getRedditPostAndComments,
+  getRedditUserPosts,
+  searchReddit
 };
 
 // If this file is run directly (e.g., with Node.js)
@@ -73,6 +80,10 @@ if (typeof require !== 'undefined' && require.main === module) {
       
       const prompts = await listPrompts();
       console.log('Prompts:', prompts);
+      
+      // Test Reddit service
+      // const redditPosts = await getRedditSubredditPosts('programming');
+      // console.log('Reddit posts:', redditPosts);
       
     } catch (error) {
       console.error('Error:', error);

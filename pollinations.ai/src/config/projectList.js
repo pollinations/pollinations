@@ -130,6 +130,14 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 VibeCoder",
+      url: "https://vibecoderbyaashir.netlify.app/",
+      description: "A web app for coding with vibes, created using Pollinations.AI Open Source API without coding syntax.",
+      author: "@Aashir__Shaikh",
+      authorUrl: "https://x.com/Aashir__Shaikh",
+      submissionDate: "2025-03-25",
+    },
+    {
       name: "🆕 AI 文本转音频 🇨🇳",
       url: "https://tts-gules-theta.vercel.app/",
       description: "输入文本，选择语音风格，一键将文字转换为自然流畅的语音。 支持多种声音特征，帮您创建专业水准的音频内容。 (Input text, select voice style, and instantly convert text to natural, fluid speech. Supports various voice characteristics to help you create professional-grade audio content.)",

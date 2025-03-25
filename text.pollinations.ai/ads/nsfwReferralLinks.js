@@ -1,8 +1,8 @@
-import { generateTextPortkey } from './generateTextPortkey.js';
+import { generateTextPortkey } from '../generateTextPortkey.js';
 import debug from 'debug';
-import { sendToAnalytics } from './sendToAnalytics.js';
-import { getRequestData } from './requestUtils.js';
-import { nsfwKeywords } from './ads/nsfwKeywords.js';
+import { sendToAnalytics } from '../sendToAnalytics.js';
+import { getRequestData } from '../requestUtils.js';
+import { nsfwKeywords } from './nsfwKeywords.js';
 
 const log = debug('pollinations:referral:nsfw');
 const errorLog = debug('pollinations:referral:nsfw:error');

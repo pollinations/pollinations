@@ -23,6 +23,7 @@ Generate (POST): `POST https://text.pollinations.ai/`
 OpenAI Compatible: `POST https://text.pollinations.ai/openai`
 - Body: Follows OpenAI ChatGPT API format
 - Return: OpenAI-style response
+- Only support completion endpoint currently
 
 ### Audio Generation API
 

@@ -1,5 +1,7 @@
 // Netlify function to handle redirects with analytics
 const fetch = require('node-fetch');
+// dotenv
+require('dotenv').config();
 
 // Define referral link mappings
 const REFERRAL_LINKS = {
@@ -36,17 +38,22 @@ async function sendAnalytics(eventName, metadata, request) {
                     headers['client-ip'] || 
                     '::1';
 
-    // Prepare analytics payload
+    // Prepare analytics payload - following GA4 requirements
     const payload = {
-      client_id: clientIP,
+      client_id: clientIP.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20) || 'anonymous',
       events: [{
         name: eventName,
         params: {
-          ...metadata,
-          referrer,
-          userAgent: userAgent.substring(0, 100),
-          ip: clientIP,
-          timestamp: new Date().toISOString()
+          // GA4 requires snake_case for parameter names
+          referral_id: metadata.referralId || '',
+          target_url: metadata.targetUrl || '',
+          source: metadata.source || '',
+          // Add user info
+          referrer: referrer || '',
+          user_agent: userAgent.substring(0, 100) || '',
+          // Add timestamp as a standard parameter
+          engagement_time_msec: 1,
+          timestamp: Date.now().toString()
         }
       }]
     };

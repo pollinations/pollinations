@@ -102,6 +102,8 @@ function extractLinkIdentifier(response) {
 export async function processNSFWReferralLinks(data, req) {
   try {
     const requestData = getRequestData(req);
+    let wasRandomSelection = false;
+    let response;
 
     // Skip processing for certain referrers
     if (requestData.isRobloxReferrer || requestData.isImagePollinationsReferrer) {
@@ -172,7 +174,7 @@ export async function processNSFWReferralLinks(data, req) {
       log('Sending conversation to OpenAI for NSFW referral analysis');
       
       // Get link selection from OpenAI
-      const response = await generateTextPortkey(messages, { model: 'openai' });
+      response = await generateTextPortkey(messages, { model: 'openai' });
       if (!response?.choices?.[0]?.message?.content) {
         throw new Error('Invalid response format from OpenAI');
       }
@@ -180,6 +182,7 @@ export async function processNSFWReferralLinks(data, req) {
     } catch (error) {
       // If we get a content filter error or any other error, fall back to random selection
       log('Error during LLM analysis, falling back to random selection:', error.message);
+      wasRandomSelection = true;
       selectedLink = getRandomLinkId();
     }
 
@@ -226,7 +229,7 @@ export async function processNSFWReferralLinks(data, req) {
       keywordsDetected: true,
       passedProbability: true,
       selectedLink: selectedLink,
-      wasRandomFallback: selectedLink !== extractLinkIdentifier(response?.choices?.[0]?.message?.content)
+      wasRandomFallback: wasRandomSelection
     });
 
     return processedContent;

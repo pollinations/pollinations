@@ -1,7 +1,5 @@
 // Netlify function to handle redirects with analytics
 const fetch = require('node-fetch');
-// Load environment variables from .env file when running locally
-require('dotenv').config();
 
 // Define referral link mappings
 const REFERRAL_LINKS = {
@@ -101,39 +99,11 @@ exports.handler = async function(event, context) {
   console.log(`Redirect requested for: ${targetId} to ${url}`);
   
   try {
-    // Send analytics event with enhanced metadata
+    // Send analytics event
     await sendAnalytics('nsfwReferralLinkClicked', {
-      // Basic redirect info
       referralId: targetId,
       targetUrl: url,
-      source: 'nsfw_referral',
-      
-      // Request metadata
-      timestamp: new Date().toISOString(),
-      path: event.path,
-      rawPath: event.rawPath,
-      httpMethod: event.httpMethod,
-      
-      // Query parameters
-      queryParams: JSON.stringify(params),
-      
-      // Referrer info
-      referrer: event.headers.referer || event.headers.referrer || '',
-      
-      // User info
-      userAgent: event.headers['user-agent'] || '',
-      language: event.headers['accept-language'] || '',
-      country: event.headers['x-country'] || '',
-      region: event.headers['x-region'] || '',
-      city: event.headers['x-city'] || '',
-      
-      // Request context
-      host: event.headers.host || '',
-      origin: event.headers.origin || '',
-      
-      // Netlify specific
-      netlifyClientIP: event.headers['x-nf-client-connection-ip'] || '',
-      netlifyRequestID: event.headers['x-nf-request-id'] || ''
+      source: 'nsfw_referral'
     }, event);
     
     // Return redirect response

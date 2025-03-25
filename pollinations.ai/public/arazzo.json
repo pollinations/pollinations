@@ -1,0 +1,274 @@
+{
+  "schema_version": "1.0.0",
+  "metadata": {
+    "title": "Pollinations.AI",
+    "description": "Free and open-source API for text and image generation with no signups or API keys required",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Pollinations.AI Team",
+      "url": "https://discord.gg/k9F7SyTgqn"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://github.com/pollinations/pollinations/blob/master/LICENSE"
+    }
+  },
+  "services": [
+    {
+      "name": "Image Generation",
+      "description": "Generate images from text prompts",
+      "endpoint": "https://image.pollinations.ai/prompt/{prompt}",
+      "method": "GET",
+      "parameters": [
+        {
+          "name": "prompt",
+          "description": "Text description of the image to generate",
+          "required": true,
+          "type": "string",
+          "in": "path"
+        },
+        {
+          "name": "model",
+          "description": "Model to use for generation",
+          "required": false,
+          "type": "string",
+          "default": "flux",
+          "in": "query"
+        },
+        {
+          "name": "seed",
+          "description": "Seed for reproducible results",
+          "required": false,
+          "type": "integer",
+          "in": "query"
+        },
+        {
+          "name": "width",
+          "description": "Width of the generated image",
+          "required": false,
+          "type": "integer",
+          "default": 1024,
+          "in": "query"
+        },
+        {
+          "name": "height",
+          "description": "Height of the generated image",
+          "required": false,
+          "type": "integer",
+          "default": 1024,
+          "in": "query"
+        },
+        {
+          "name": "nologo",
+          "description": "Turn off the rendering of the logo",
+          "required": false,
+          "type": "boolean",
+          "default": false,
+          "in": "query"
+        },
+        {
+          "name": "enhance",
+          "description": "Turn on prompt enhancing",
+          "required": false,
+          "type": "boolean",
+          "default": false,
+          "in": "query"
+        },
+        {
+          "name": "safe",
+          "description": "Enable strict NSFW content filtering",
+          "required": false,
+          "type": "boolean",
+          "default": false,
+          "in": "query"
+        }
+      ],
+      "response": {
+        "type": "image",
+        "format": "jpeg/png"
+      },
+      "examples": [
+        {
+          "description": "Generate an image of a sunset",
+          "request": "https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?width=1280&height=720&seed=42"
+        }
+      ]
+    },
+    {
+      "name": "Text Generation",
+      "description": "Generate text from prompts",
+      "endpoint": "https://text.pollinations.ai/{prompt}",
+      "method": "GET",
+      "parameters": [
+        {
+          "name": "prompt",
+          "description": "Text prompt for the AI to respond to",
+          "required": true,
+          "type": "string",
+          "in": "path"
+        },
+        {
+          "name": "model",
+          "description": "Model to use for text generation",
+          "required": false,
+          "type": "string",
+          "default": "openai",
+          "in": "query"
+        },
+        {
+          "name": "seed",
+          "description": "Seed for reproducible results",
+          "required": false,
+          "type": "integer",
+          "in": "query"
+        },
+        {
+          "name": "json",
+          "description": "Receive response in JSON format",
+          "required": false,
+          "type": "boolean",
+          "default": false,
+          "in": "query"
+        },
+        {
+          "name": "system",
+          "description": "System prompt to set the behavior of the AI",
+          "required": false,
+          "type": "string",
+          "in": "query"
+        }
+      ],
+      "response": {
+        "type": "text",
+        "format": "plain/json"
+      },
+      "examples": [
+        {
+          "description": "Generate text about AI",
+          "request": "https://text.pollinations.ai/What%20is%20artificial%20intelligence?model=mistral&seed=42"
+        }
+      ]
+    },
+    {
+      "name": "Text Generation (POST)",
+      "description": "Generate text using a POST request with messages",
+      "endpoint": "https://text.pollinations.ai/",
+      "method": "POST",
+      "requestBody": {
+        "content": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["messages"],
+          "properties": {
+            "messages": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["role", "content"],
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": ["system", "user", "assistant"]
+                  },
+                  "content": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "model": {
+              "type": "string",
+              "default": "openai"
+            },
+            "seed": {
+              "type": "integer"
+            },
+            "jsonMode": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        }
+      },
+      "response": {
+        "type": "json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "response": {
+              "type": "string"
+            },
+            "model": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "description": "Generate text with a system prompt",
+          "request": {
+            "method": "POST",
+            "url": "https://text.pollinations.ai/",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "messages": [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": "What is artificial intelligence?"}
+              ],
+              "model": "mistral",
+              "seed": 42
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "models": {
+    "text": [
+      {
+        "id": "openai",
+        "name": "OpenAI GPT",
+        "description": "Default model for text generation"
+      },
+      {
+        "id": "mistral",
+        "name": "Mistral",
+        "description": "Open-source large language model"
+      },
+      {
+        "id": "claude",
+        "name": "Claude",
+        "description": "Anthropic's Claude model"
+      },
+      {
+        "id": "gemini",
+        "name": "Gemini",
+        "description": "Google's Gemini model"
+      }
+    ],
+    "image": [
+      {
+        "id": "flux",
+        "name": "FLUX",
+        "description": "Default model for image generation"
+      },
+      {
+        "id": "sdxl",
+        "name": "Stable Diffusion XL",
+        "description": "High-quality image generation model"
+      }
+    ]
+  },
+  "authentication": {
+    "type": "none",
+    "description": "No authentication required. All endpoints are freely accessible."
+  },
+  "usage_guidelines": {
+    "rate_limits": "Best effort service, no explicit rate limits. Please be considerate with usage.",
+    "content_policies": "Please respect content policies and avoid generating harmful content.",
+    "attribution": "Consider adding attribution when using generated content: 'Generated using Pollinations.AI (https://pollinations.ai)'"
+  }
+}

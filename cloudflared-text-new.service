@@ -1,0 +1,13 @@
+[Unit]
+Description=Cloudflare Tunnel for text.pollinations.ai (new)
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+ExecStart=/usr/local/bin/cloudflared tunnel --config /home/ubuntu/.cloudflared/config-text-new.yml run
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

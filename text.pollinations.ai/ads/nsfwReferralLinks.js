@@ -14,13 +14,15 @@ const NSFW_REFERRAL_LINK_PROBABILITY = 1;
 const REFERRAL_LINKS = {
   lovemy: {
     id: 'lovemy',
-    url: 'https://pollinations.ai/redirect/lovemy',
-    cta: 'Create your intimate AI companion'
+    url: 'https://lovemy.ai/?linkId=lp_060145&sourceId=pollinations&tenantId=lovemyai',
+    cta: 'Create your intimate AI companion on LoveMy.ai',
+    phrase: 'Looking for a more personal connection?'
   },
   hentai: {
     id: 'hentai',
-    url: 'https://pollinations.ai/redirect/hentai',
-    cta: 'Explore uncensored AI chat'
+    url: 'https://aihentaichat.com/?linkId=lp_617069&sourceId=pollinations&tenantId=lovemyai',
+    cta: 'Explore uncensored AI chat on AIHentaiChat.com',
+    phrase: 'Want to explore without limits?'
   }
 };
 
@@ -51,9 +53,14 @@ function formatReferralLink(linkId, isMarkdown) {
   const link = REFERRAL_LINKS[linkId];
   if (!link) return '';
 
-  return isMarkdown ? 
-    `\n\n[${link.cta}](${link.url})` : 
-    `\n\n${link.cta}: ${link.url}`;
+  if (isMarkdown) {
+    return `
+
+---
+${link.phrase} [**${link.cta}**](${link.url})`;
+  } else {
+    return `\n\n----\n${link.cta}: ${link.url}`;
+  }
 }
 
 /**
@@ -106,7 +113,6 @@ function extractLinkIdentifier(response) {
 export async function processNSFWReferralLinks(data, req) {
   try {
     const requestData = getRequestData(req);
-    let wasRandomSelection = false;
     let response;
 
     // Skip processing for certain referrers
@@ -151,16 +157,16 @@ export async function processNSFWReferralLinks(data, req) {
           content: `You are an AI that analyzes conversations to determine if and which referral link would be appropriate.
 
           Available options:
-          1. lovemy - For romantic/dating focused conversations
+          1. lovemy - For romantic/dating focused conversations with mature themes
           2. hentai - For adult/NSFW focused conversations
-          3. none - For non-relevant conversations
+          3. none - For other conversations
 
-          STRICT RULES:
-          1. ONLY suggest a link if the conversation is genuinely about AI companionship, relationships, or intimacy
-          2. Do NOT suggest links for technical discussions, general chat, or non-relevant topics
-          3. Choose the most appropriate link based on the conversation context and tone
-          4. ONLY return one of these exact values: "lovemy", "hentai", or "none"
-          5. The 
+          RULES:
+          1. Suggest "lovemy" for conversations about romance, relationships, or companionship that have mature themes
+          2. Suggest "hentai" only for explicitly adult/NSFW conversations
+          3. Return "none" for general chat, technical discussions, or non-relevant topics
+          4. Return "none" for innocent romantic conversations without mature themes
+          5. ONLY return one of these exact values: "lovemy", "hentai", or "none"
           
           Analyze the conversation carefully and return ONLY the appropriate link identifier.`
         },
@@ -187,7 +193,6 @@ export async function processNSFWReferralLinks(data, req) {
     } catch (error) {
       // If we get a content filter error or any other error, fall back to random selection
       log('Error during LLM analysis, falling back to random selection:', error.message);
-      wasRandomSelection = true;
       selectedLink = getRandomLinkId();
     }
 

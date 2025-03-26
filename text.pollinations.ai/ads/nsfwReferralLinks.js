@@ -212,14 +212,6 @@ export async function processNSFWReferralLinks(data, req) {
     // Return original content if not markdown
     if (!isMarkdown) {
       log('Skipping link addition - content is not markdown');
-      await sendToAnalytics(req, 'nsfwReferralLinkSkipped', {
-        contentLength: data.responseContent.length,
-        hasMarkdown: isMarkdown,
-        keywordsDetected: true,
-        passedProbability: true,
-        selectedLink: selectedLink,
-        reason: 'non-markdown-content'
-      });
       return data.responseContent;
     }
 
@@ -227,14 +219,18 @@ export async function processNSFWReferralLinks(data, req) {
     const processedContent = data.responseContent + formatReferralLink(selectedLink, isMarkdown);
 
     // Send analytics if link was added
+    // Parameters use snake_case format for GA4 compatibility
     await sendToAnalytics(req, 'nsfwReferralLinkAdded', {
-      contentLength: data.responseContent.length,
-      processedLength: processedContent.length,
-      hasMarkdown: isMarkdown,
-      keywordsDetected: true,
-      passedProbability: true,
-      selectedLink: selectedLink,
-      wasRandomFallback: wasRandomSelection
+      content_length: data.responseContent.length,
+      processed_length: processedContent.length,
+      has_markdown: isMarkdown,
+      keywords_detected: true,
+      passed_probability: true,
+      selected_link: selectedLink,
+      was_random_fallback: wasRandomSelection,
+      // Add some standard GA4 parameters
+      engagement_time_msec: 1,
+      timestamp_micros: Date.now() * 1000 // Convert milliseconds to microseconds
     });
 
     return processedContent;

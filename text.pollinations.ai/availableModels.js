@@ -97,6 +97,14 @@ export const availableModels = [
         handler: handlers.mistralRoblox
     },
     {
+        name: 'roblox-rp',
+        type: 'chat',
+        censored: true,
+        description: 'Roblox Roleplay Assistant',
+        baseModel: true,
+        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'roblox-rp'})
+    },
+    {
         name: 'unity',
         type: 'chat',
         censored: false,

@@ -352,13 +352,13 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
         bufferAndMaturity = await callCloudflareFlux(prompt, safeParams);
       } catch (error) {
         logError('Cloudflare Flux failed, trying SDXL:', error.message);
-        // try {
-        //   if (progress) progress.updateBar(requestId, 35, 'Processing', 'Trying Cloudflare SDXL...');
-        //   bufferAndMaturity = await callCloudflareSDXL(prompt, safeParams);
-        // } catch (sdxlError) {
-        //   logError('Cloudflare SDXL failed, falling back to ComfyUI:', sdxlError.message);
-        //   // Fall through to ComfyUI
-        // }
+        try {
+          if (progress) progress.updateBar(requestId, 35, 'Processing', 'Trying Cloudflare SDXL...');
+          bufferAndMaturity = await callCloudflareSDXL(prompt, safeParams);
+        } catch (sdxlError) {
+          logError('Cloudflare SDXL failed, falling back to ComfyUI:', sdxlError.message);
+          // Fall through to ComfyUI
+        }
       }
     }
     if (!bufferAndMaturity)

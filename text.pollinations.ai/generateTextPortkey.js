@@ -19,6 +19,7 @@ const MODEL_MAPPING = {
     'openai-reasoning': 'o3-mini', // Maps to portkeyConfig['o1-mini'],
     // 'openai-audio': 'gpt-4o-mini-audio-preview',
     'openai-audio': 'gpt-4o-audio-preview',
+    'roblox-rp': 'gpt-4o-mini-roblox-rp', // Roblox roleplay model
     'gemini': 'gemini-2.0-flash-lite-preview-02-05',
     'gemini-thinking': 'gemini-2.0-flash-thinking-exp-01-21',
     // Cloudflare models
@@ -53,6 +54,7 @@ const SYSTEM_PROMPTS = {
     // OpenAI models
     'openai': 'You are a helpful, knowledgeable assistant.',
     'openai-large': 'You are a helpful, knowledgeable assistant.',
+    'roblox-rp': 'You are a helpful assistant for Roblox game development and roleplay. You provide guidance on Lua programming, game design, Roblox-specific features, and help create engaging roleplay scenarios and characters.',
     'gemini': 'You are Gemini, a helpful and versatile AI assistant built by Google. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.',
     // Cloudflare models
     'llama': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
@@ -163,29 +165,6 @@ const baseGroqConfig = {
 };
 
 /**
- * Randomly selects between primary and secondary Azure OpenAI credentials
- * @returns {Object} - Selected API key and endpoint
- */
-function getRandomAzureCredentials() {
-    // Randomly choose between primary and secondary credentials
-    const useSecondary = Math.random() >= 0.5;
-    
-    if (useSecondary && process.env.AZURE_OPENAI_API_KEY_2 && process.env.AZURE_OPENAI_ENDPOINT_2) {
-        log('Using secondary Azure OpenAI credentials');
-        return {
-            apiKey: process.env.AZURE_OPENAI_API_KEY_2,
-            endpoint: process.env.AZURE_OPENAI_ENDPOINT_2
-        };
-    } else {
-        log('Using primary Azure OpenAI credentials');
-        return {
-            apiKey: process.env.AZURE_OPENAI_API_KEY,
-            endpoint: process.env.AZURE_OPENAI_ENDPOINT
-        };
-    }
-}
-
-/**
  * Creates an Azure model configuration
  * @param {string} apiKey - Azure API key
  * @param {string} endpoint - Azure endpoint
@@ -292,10 +271,11 @@ function createGroqModelConfig(additionalConfig = {}) {
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
     // Azure OpenAI model configurations
-    'gpt-4o-mini': () => {
-        const credentials = getRandomAzureCredentials();
-        return createAzureModelConfig(credentials.apiKey, credentials.endpoint, 'gpt-4o-mini');
-    },
+    'gpt-4o-mini': () => createAzureModelConfig(
+        process.env.AZURE_OPENAI_API_KEY,
+        process.env.AZURE_OPENAI_ENDPOINT,
+        'gpt-4o-mini'
+    ),
     'gpt-4o': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_LARGE_API_KEY,
         process.env.AZURE_OPENAI_LARGE_ENDPOINT,
@@ -320,6 +300,11 @@ export const portkeyConfig = {
         process.env.AZURE_OPENAI_AUDIO_LARGE_API_KEY,
         process.env.AZURE_OPENAI_AUDIO_LARGE_ENDPOINT,
         'gpt-4o-audio-preview'
+    ),
+    'gpt-4o-mini-roblox-rp': () => createAzureModelConfig(
+        process.env.AZURE_OPENAI_ROBLOX_API_KEY,
+        process.env.AZURE_OPENAI_ROBLOX_ENDPOINT,
+        'gpt-4o-mini-roblox-rp'
     ),
     // Cloudflare model configurations
     '@cf/meta/llama-3.3-70b-instruct-fp8-fast': () => createCloudflareModelConfig(),

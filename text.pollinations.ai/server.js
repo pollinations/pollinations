@@ -12,7 +12,7 @@ import { getHandler } from './availableModels.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';
-import { processNSFWReferralLinks } from './nsfwReferralLinks.js';
+import { processNSFWReferralLinks } from './ads/nsfwReferralLinks.js';
 import { getRequestData, getReferrer } from './requestUtils.js';
 
 // Load environment variables

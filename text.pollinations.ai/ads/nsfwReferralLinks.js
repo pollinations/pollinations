@@ -1,7 +1,8 @@
-import { generateTextPortkey } from './generateTextPortkey.js';
+import { generateTextPortkey } from '../generateTextPortkey.js';
 import debug from 'debug';
-import { sendToAnalytics } from './sendToAnalytics.js';
-import { getRequestData } from './requestUtils.js';
+import { sendToAnalytics } from '../sendToAnalytics.js';
+import { getRequestData } from '../requestUtils.js';
+import { nsfwKeywords } from './nsfwKeywords.js';
 
 const log = debug('pollinations:referral:nsfw');
 const errorLog = debug('pollinations:referral:nsfw:error');
@@ -9,60 +10,19 @@ const errorLog = debug('pollinations:referral:nsfw:error');
 // Probability of adding NSFW referral links (60%)
 const NSFW_REFERRAL_LINK_PROBABILITY = 1;
 
-// Simplified NSFW keywords list for first-pass detection
-const nsfwKeywords = [
-  // English
-  'girlfriend', 'dating', 'relationship', 'romance', 'intimate',
-  'love', 'companion', 'roleplay', 'nsfw', 'adult', 'erotic',
-  'sexy', 'flirt', 'kiss', 'date',
-
-  // Russian
-  'подруга', 'знакомства', 'отношения', 'романтика', 'интим',
-  'любовь', 'спутник', 'ролевая игра', 'для взрослых', 'эротика',
-  'свидание', 'поцелуй', 'флирт',
-
-  // German
-  'freundin', 'dating', 'beziehung', 'romantik', 'intim',
-  'liebe', 'begleiter', 'rollenspiel', 'erotisch', 'erwachsene',
-  'kuss', 'flirt', 'date',
-
-  // French
-  'petite amie', 'rencontre', 'relation', 'romance', 'intime',
-  'amour', 'compagnon', 'jeu de rôle', 'érotique', 'adulte',
-  'baiser', 'flirt', 'rendez-vous',
-
-  // Hindi
-  'गर्लफ्रेंड', 'डेटिंग', 'रिश्ता', 'रोमांस', 'प्रेम',
-  'प्यार', 'साथी', 'रोल प्ले', 'वयस्क', 'कामुक',
-  'चुंबन', 'फ्लर्ट',
-
-  // Portuguese
-  'namorada', 'namoro', 'relacionamento', 'romance', 'íntimo',
-  'amor', 'companheiro', 'roleplay', 'erótico', 'adulto',
-  'beijo', 'paquera', 'encontro',
-
-  // Indonesian
-  'pacar', 'kencan', 'hubungan', 'romansa', 'intim',
-  'cinta', 'teman', 'roleplay', 'dewasa', 'erotis',
-  'ciuman', 'goda', 'date',
-
-  // Italian
-  'fidanzata', 'incontri', 'relazione', 'romantico', 'intimo',
-  'amore', 'compagno', 'gioco di ruolo', 'erotico', 'adulto',
-  'bacio', 'flirt', 'appuntamento'
-];
-
 // Available NSFW referral links
 const REFERRAL_LINKS = {
   lovemy: {
     id: 'lovemy',
     url: 'https://lovemy.ai/?linkId=lp_060145&sourceId=pollinations&tenantId=lovemyai',
-    cta: 'Create your intimate AI companion'
+    cta: 'Create your intimate AI companion on LoveMy.ai',
+    phrase: 'Looking for a more personal connection?'
   },
   hentai: {
     id: 'hentai',
     url: 'https://aihentaichat.com/?linkId=lp_617069&sourceId=pollinations&tenantId=lovemyai',
-    cta: 'Explore uncensored AI chat'
+    cta: 'Explore uncensored AI chat on AIHentaiChat.com',
+    phrase: 'Want to explore without limits?'
   }
 };
 
@@ -72,6 +32,10 @@ const REFERRAL_LINKS = {
  * @returns {boolean} - Whether NSFW content was detected
  */
 function detectNSFWContent(input) {
+  
+  // this is just for testing our API live
+  // return (input?.includes('p0rn0'));
+  
   const textToAnalyze = typeof input === 'string' ? 
     input.toLowerCase() : 
     JSON.stringify(input).toLowerCase();
@@ -89,9 +53,14 @@ function formatReferralLink(linkId, isMarkdown) {
   const link = REFERRAL_LINKS[linkId];
   if (!link) return '';
 
-  return isMarkdown ? 
-    `\n\n[${link.cta}](${link.url})` : 
-    `\n\n${link.cta}: ${link.url}`;
+  if (isMarkdown) {
+    return `
+
+---
+${link.phrase} [**${link.cta}**](${link.url})`;
+  } else {
+    return `\n\n----\n${link.cta}: ${link.url}`;
+  }
 }
 
 /**
@@ -144,6 +113,7 @@ function extractLinkIdentifier(response) {
 export async function processNSFWReferralLinks(data, req) {
   try {
     const requestData = getRequestData(req);
+    let response;
 
     // Skip processing for certain referrers
     if (requestData.isRobloxReferrer || requestData.isImagePollinationsReferrer) {
@@ -158,9 +128,9 @@ export async function processNSFWReferralLinks(data, req) {
     }
 
     // First pass: Quick keyword detection
-    const hasNSFWContent = detectNSFWContent(data.messages) || detectNSFWContent(data.responseContent);
+    const potentialNSFWContent = detectNSFWContent(data.messages) || detectNSFWContent(data.responseContent);
     
-    if (!hasNSFWContent) {
+    if (!potentialNSFWContent) {
       log('No NSFW keywords detected, skipping');
       return data.responseContent;
     }
@@ -187,15 +157,16 @@ export async function processNSFWReferralLinks(data, req) {
           content: `You are an AI that analyzes conversations to determine if and which referral link would be appropriate.
 
           Available options:
-          1. lovemy - For romantic/dating focused conversations
+          1. lovemy - For romantic/dating focused conversations with mature themes
           2. hentai - For adult/NSFW focused conversations
-          3. none - For non-relevant conversations
+          3. none - For other conversations
 
-          STRICT RULES:
-          1. ONLY suggest a link if the conversation is genuinely about AI companionship, relationships, or intimacy
-          2. Do NOT suggest links for technical discussions, general chat, or non-relevant topics
-          3. Choose the most appropriate link based on the conversation context and tone
-          4. ONLY return one of these exact values: "lovemy", "hentai", or "none"
+          RULES:
+          1. Suggest "lovemy" for conversations about romance, relationships, or companionship that have mature themes
+          2. Suggest "hentai" only for explicitly adult/NSFW conversations
+          3. Return "none" for general chat, technical discussions, or non-relevant topics
+          4. Return "none" for innocent romantic conversations without mature themes
+          5. ONLY return one of these exact values: "lovemy", "hentai", or "none"
           
           Analyze the conversation carefully and return ONLY the appropriate link identifier.`
         },
@@ -214,7 +185,7 @@ export async function processNSFWReferralLinks(data, req) {
       log('Sending conversation to OpenAI for NSFW referral analysis');
       
       // Get link selection from OpenAI
-      const response = await generateTextPortkey(messages, { model: 'openai' });
+      response = await generateTextPortkey(messages, { model: 'openai' });
       if (!response?.choices?.[0]?.message?.content) {
         throw new Error('Invalid response format from OpenAI');
       }
@@ -246,14 +217,6 @@ export async function processNSFWReferralLinks(data, req) {
     // Return original content if not markdown
     if (!isMarkdown) {
       log('Skipping link addition - content is not markdown');
-      await sendToAnalytics(req, 'nsfwReferralLinkSkipped', {
-        contentLength: data.responseContent.length,
-        hasMarkdown: isMarkdown,
-        keywordsDetected: true,
-        passedProbability: true,
-        selectedLink: selectedLink,
-        reason: 'non-markdown-content'
-      });
       return data.responseContent;
     }
 
@@ -261,14 +224,18 @@ export async function processNSFWReferralLinks(data, req) {
     const processedContent = data.responseContent + formatReferralLink(selectedLink, isMarkdown);
 
     // Send analytics if link was added
+    // Parameters use snake_case format for GA4 compatibility
     await sendToAnalytics(req, 'nsfwReferralLinkAdded', {
-      contentLength: data.responseContent.length,
-      processedLength: processedContent.length,
-      hasMarkdown: isMarkdown,
-      keywordsDetected: true,
-      passedProbability: true,
-      selectedLink: selectedLink,
-      wasRandomFallback: selectedLink !== extractLinkIdentifier(response?.choices?.[0]?.message?.content)
+      content_length: data.responseContent.length,
+      processed_length: processedContent.length,
+      has_markdown: isMarkdown,
+      keywords_detected: true,
+      passed_probability: true,
+      selected_link: selectedLink,
+      was_random_fallback: wasRandomSelection,
+      // Add some standard GA4 parameters
+      engagement_time_msec: 1,
+      timestamp_micros: Date.now() * 1000 // Convert milliseconds to microseconds
     });
 
     return processedContent;

@@ -282,6 +282,7 @@ Pollinations.AI is used in various projects, including:
 
 | Bot | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 🤖 pollinations-tg-bot 🇨🇳 | A Telegram bot deployed on Cloudflare Workers, allowing users to generate images, text-to-speech, transcribe voice messages, chat with AI models, and more through Pollinations API | @Shadownc | [Telegram](https://t.me/AipolBot), [GitHub](https://github.com/Shadownc/pollinations-tg-bot) |
 | 🆕 Gacha | A versatile AI chat-bot and image generator powered by Pollinations.AI, featuring web search, image generation with model selection, and character-aware image generation through !webgen command | @_dr_misterio_ | [Website](https://shapes.inc/gacha-gachu/public), [Install](https://shapes.inc/gacha-gachu/install) |
 | 🆕 One Word | A Telegram bot for a word-matching game where players try to write the same word simultaneously, featuring image generation from game words using Pollinations.AI | @Dimaq21 | [Telegram](https://t.me/OdnoSlovoBot) |
 | 🆕 Titan-GPT | Free Telegram bot providing access to neural networks including image and text generation powered by Pollinations.AI | @titangpt_support | [Telegram](https://t.me/titangpt_channel) |

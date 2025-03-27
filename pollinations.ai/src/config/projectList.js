@@ -463,6 +463,15 @@ const allProjects = {
   ],
   socialBots: [
     {
+      name: "🆕 🤖 pollinations-tg-bot 🇨🇳",
+      url: "https://t.me/AipolBot",
+      description: "A Telegram bot deployed on Cloudflare Workers that allows users to generate images, convert text to speech, transcribe voice messages, chat with AI models, and more through the Pollinations API.",
+      author: "@Shadownc",
+      repo: "https://github.com/Shadownc/pollinations-tg-bot",
+      submissionDate: "2025-03-27",
+      language: "zh-CN"
+    },
+    {
       name: "Jackey",
       url: "https://discord.com/oauth2/authorize?client_id=1214916249222643752",
       description: "A Discord Bot that integrates with the pollination image generation api to generate images in various themes, numbers, ratios and models",

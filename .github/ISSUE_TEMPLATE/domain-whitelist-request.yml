@@ -6,6 +6,10 @@ body:
   - type: markdown
     attributes:
       value: |
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
+          <img src="https://raw.githubusercontent.com/pollinations/pollinations/main/src/assets/logo/logo-icon-white.svg" alt="Pollinations Logo" style="width: 40px; height: 40px;">
+          <h1 style="margin: 0; font-size: 24px;">Pollinations.AI</h1>
+        </div>
         Thanks for your interest in Pollinations API! This form is for requesting domain/referrer whitelisting 
         that may provide enhanced API access (e.g., priority queue, modified rate limits).
         

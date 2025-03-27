@@ -1,6 +1,6 @@
 {
   "name": "@pollinations/model-context-protocol",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Model Context Protocol (MCP) server for Pollinations AI image generation",
   "type": "module",
   "bin": {
@@ -31,7 +31,8 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
     "node-fetch": "^3.3.2",
-    "play-sound": "^1.1.6"
+    "play-sound": "^1.1.6",
+    "node-abort-controller": "^3.1.1"
   },
   "repository": {
     "type": "git",
@@ -39,6 +40,6 @@
     "directory": "model-context-protocol"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=14.0.0"
   }
 }

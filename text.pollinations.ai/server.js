@@ -631,29 +631,12 @@ app.post('/', async (req, res) => {
 });
 
 app.get('/openai/models', (req, res) => {
-    // Map all models to the OpenAI format
     const models = availableModels.map(model => ({
         id: model.name,
         object: "model",
         created: Date.now(),
         owned_by: model.name
     }));
-    
-    // Explicitly ensure qwen-reasoning and phi-mini are included
-    // This fixes issue #1459
-    const requiredModels = ['qwen-reasoning', 'phi-mini'];
-    requiredModels.forEach(modelName => {
-        if (!models.some(model => model.id === modelName)) {
-            log(`Adding missing model to OpenAI API response: ${modelName}`);
-            models.push({
-                id: modelName,
-                object: "model",
-                created: Date.now(),
-                owned_by: modelName
-            });
-        }
-    });
-    
     res.json({
         object: "list",
         data: models

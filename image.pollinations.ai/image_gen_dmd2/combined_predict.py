@@ -1,4 +1,5 @@
 import torch
+from safe_loader import safe_torch_load
 from diffusers import StableCascadeDecoderPipeline, StableCascadePriorPipeline
 
 device = "cuda"
@@ -56,10 +57,12 @@ from distutils.dir_util import copy_tree
 from typing import Optional, Iterator, List
 from cog import BasePredictor, Input, Path, BaseModel
 import torch
+from safe_loader import safe_torch_load
 import datetime
 
 # Model specific imports
-import torchaudio
+import torch
+from safe_loader import safe_torch_loadaudio
 import subprocess
 import typing as tp
 
@@ -375,10 +378,12 @@ from distutils.dir_util import copy_tree
 from typing import Optional, Iterator, List
 from cog import BasePredictor, Input, Path, BaseModel
 import torch
+from safe_loader import safe_torch_load
 import datetime
 
 # Model specific imports
-import torchaudio
+import torch
+from safe_loader import safe_torch_loadaudio
 import subprocess
 import typing as tp
 
@@ -890,6 +895,7 @@ import PIL
 import numpy as np
 import uuid
 import torch
+from safe_loader import safe_torch_load
 from cog import BasePredictor, Input, Path
 from diffusers import (DDIMScheduler, DiffusionPipeline,
                        DPMSolverMultistepScheduler,
@@ -1989,6 +1995,7 @@ class Predictor(BasePredictor):
 from cog import BasePredictor, Input, Path, File, BaseModel
 from pedalboard import Pedalboard, Reverb
 import torch
+from safe_loader import safe_torch_load
 import os
 import shutil
 from dotenv import load_dotenv
@@ -2009,7 +2016,8 @@ from lib.modules.infer.infer_pack.models import (
 from lib.modules.infer.audio import load_audio
 from lib.tools.audioEffects import process_audio
 
-import torchaudio
+import torch
+from safe_loader import safe_torch_loadaudio
 from audioshake import extract_audioshake
 
 class Config:
@@ -2097,7 +2105,7 @@ class Predictor(BasePredictor):
         load_dotenv()
 
         print("loading pth %s" % self.model_path)
-        cpt = torch.load(self.model_path, map_location="cpu")
+        cpt = safe_torch_load(f, map_location=torch.device("cpu"))(self.model_path, map_location="cpu")
         self.tgt_sr = cpt["config"][-1]
         cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
         self.if_f0 = cpt.get("f0", 1)
@@ -2297,7 +2305,8 @@ class Predictor(BasePredictor):
 
 from cog import BasePredictor, Input, Path
 from absl import app, flags, logging
-import torch, torchaudio, argparse, os, tqdm, re, gin
+import torch
+from safe_loader import safe_torch_load, torchaudio, argparse, os, tqdm, re, gin
 import cached_conv as cc
 import rave
 import tempfile
@@ -2354,7 +2363,8 @@ class Predictor(BasePredictor):
 # https://github.com/replicate/cog/blob/main/docs/python.md
 
 from cog import BasePredictor, Input, Path
-import torchaudio
+import torch
+from safe_loader import safe_torch_loadaudio
 from audiocraft.models import MAGNeT
 from audiocraft.data.audio import audio_write
 from BeatNet.BeatNet import BeatNet
@@ -2453,6 +2463,7 @@ import gc
 import sys
 
 import torch
+from safe_loader import safe_torch_load
 import random
 from collections import OrderedDict
 from types import SimpleNamespace
@@ -3025,7 +3036,7 @@ def load_model_from_config(
 
         pl_sd = safetensors.torch.load_file(ckpt, device=map_location)
     else:
-        pl_sd = torch.load(ckpt, map_location=map_location)
+        pl_sd = safe_torch_load(ckpt, map_location=map_location)
     try:
         sd = pl_sd["state_dict"]
     except:
@@ -3064,6 +3075,7 @@ from time import time
 import librosa
 import numpy as np
 import torch
+from safe_loader import safe_torch_load
 from cog import BasePredictor, Input, Path
 from einops import rearrange, repeat
 from googletrans import Translator
@@ -3952,6 +3964,7 @@ from pathlib import Path
 
 from PIL import Image
 import torch
+from safe_loader import safe_torch_load
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 import cog
@@ -4049,6 +4062,7 @@ wget 'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN
 import tempfile
 import cv2
 import torch
+from safe_loader import safe_torch_load
 from torchvision.transforms.functional import normalize
 from cog import BasePredictor, Input, Path
 
@@ -4072,7 +4086,7 @@ class Predictor(BasePredictor):
             connect_list=["32", "64", "128", "256"],
         ).to(self.device)
         ckpt_path = "weights/CodeFormer/codeformer.pth"
-        checkpoint = torch.load(ckpt_path)[
+        checkpoint = safe_torch_load(ckpt_path)[
             "params_ema"
         ]  # update file permission if cannot load
         self.net.load_state_dict(checkpoint)
@@ -4238,6 +4252,7 @@ from pathlib import Path
 
 from PIL import Image
 import torch
+from safe_loader import safe_torch_load
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 import cog
@@ -4335,6 +4350,7 @@ wget 'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN
 import tempfile
 import cv2
 import torch
+from safe_loader import safe_torch_load
 from torchvision.transforms.functional import normalize
 from cog import BasePredictor, Input, Path
 
@@ -4358,7 +4374,7 @@ class Predictor(BasePredictor):
             connect_list=["32", "64", "128", "256"],
         ).to(self.device)
         ckpt_path = "weights/CodeFormer/codeformer.pth"
-        checkpoint = torch.load(ckpt_path)[
+        checkpoint = safe_torch_load(ckpt_path)[
             "params_ema"
         ]  # update file permission if cannot load
         self.net.load_state_dict(checkpoint)
@@ -4521,6 +4537,7 @@ from PIL import Image
 import os
 import time
 import torch
+from safe_loader import safe_torch_load
 import numpy as np
 from typing import List
 from transformers import CLIPImageProcessor
@@ -4649,6 +4666,7 @@ from pathlib import Path
 
 from PIL import Image
 import torch
+from safe_loader import safe_torch_load
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 import cog
@@ -4739,6 +4757,7 @@ def load_image(image, image_size, device):
 # Ultralytics YOLO 🚀, AGPL-3.0 license
 
 import torch
+from safe_loader import safe_torch_load
 
 from ultralytics.engine.predictor import BasePredictor
 from ultralytics.engine.results import Results
@@ -4900,6 +4919,7 @@ class DetectionPredictor(BasePredictor):
 
 import cv2
 import torch
+from safe_loader import safe_torch_load
 from PIL import Image
 
 from ultralytics.engine.predictor import BasePredictor
@@ -5018,6 +5038,7 @@ class PosePredictor(DetectionPredictor):
 # Ultralytics YOLO 🚀, AGPL-3.0 license
 
 import torch
+from safe_loader import safe_torch_load
 
 from ultralytics.engine.results import Results
 from ultralytics.models.yolo.detect.predict import DetectionPredictor
@@ -5071,6 +5092,7 @@ class OBBPredictor(DetectionPredictor):
 # Ultralytics YOLO 🚀, AGPL-3.0 license
 
 import torch
+from safe_loader import safe_torch_load
 
 from ultralytics.engine.results import Results
 from ultralytics.models.fastsam.utils import bbox_iou
@@ -5166,7 +5188,9 @@ segmentation tasks.
 
 import numpy as np
 import torch
-import torch.nn.functional as F
+from safe_loader import safe_torch_load
+import torch
+from safe_loader import safe_torch_load.nn.functional as F
 
 from ultralytics.data.augment import LetterBox
 from ultralytics.engine.predictor import BasePredictor
@@ -5402,7 +5426,8 @@ class Predictor(BasePredictor):
         Returns:
             (tuple): A tuple containing segmented masks, confidence scores, and bounding boxes.
         """
-        import torchvision  # scope for faster 'import ultralytics'
+        import torch
+from safe_loader import safe_torch_loadvision  # scope for faster 'import ultralytics'
 
         self.segment_all = True
         ih, iw = im.shape[2:]
@@ -5607,7 +5632,8 @@ class Predictor(BasePredictor):
                 - new_masks (torch.Tensor): The processed masks with small regions removed. Shape is (N, H, W).
                 - keep (List[int]): The indices of the remaining masks post-NMS, which can be used to filter the boxes.
         """
-        import torchvision  # scope for faster 'import ultralytics'
+        import torch
+from safe_loader import safe_torch_loadvision  # scope for faster 'import ultralytics'
 
         if len(masks) == 0:
             return masks
@@ -5635,6 +5661,7 @@ class Predictor(BasePredictor):
 # Ultralytics YOLO 🚀, AGPL-3.0 license
 
 import torch
+from safe_loader import safe_torch_load
 
 from ultralytics.data.augment import LetterBox
 from ultralytics.engine.predictor import BasePredictor
@@ -5721,6 +5748,7 @@ class RTDETRPredictor(BasePredictor):
 # Ultralytics YOLO 🚀, AGPL-3.0 license
 
 import torch
+from safe_loader import safe_torch_load
 
 from ultralytics.engine.predictor import BasePredictor
 from ultralytics.engine.results import Results
@@ -5882,6 +5910,7 @@ class DetectionPredictor(BasePredictor):
 
 import cv2
 import torch
+from safe_loader import safe_torch_load
 from PIL import Image
 
 from ultralytics.engine.predictor import BasePredictor
@@ -6000,6 +6029,7 @@ class PosePredictor(DetectionPredictor):
 # Ultralytics YOLO 🚀, AGPL-3.0 license
 
 import torch
+from safe_loader import safe_torch_load
 
 from ultralytics.engine.results import Results
 from ultralytics.models.yolo.detect.predict import DetectionPredictor
@@ -6053,6 +6083,7 @@ class OBBPredictor(DetectionPredictor):
 # Ultralytics YOLO 🚀, AGPL-3.0 license
 
 import torch
+from safe_loader import safe_torch_load
 
 from ultralytics.engine.results import Results
 from ultralytics.models.fastsam.utils import bbox_iou
@@ -6148,7 +6179,9 @@ segmentation tasks.
 
 import numpy as np
 import torch
-import torch.nn.functional as F
+from safe_loader import safe_torch_load
+import torch
+from safe_loader import safe_torch_load.nn.functional as F
 
 from ultralytics.data.augment import LetterBox
 from ultralytics.engine.predictor import BasePredictor
@@ -6384,7 +6417,8 @@ class Predictor(BasePredictor):
         Returns:
             (tuple): A tuple containing segmented masks, confidence scores, and bounding boxes.
         """
-        import torchvision  # scope for faster 'import ultralytics'
+        import torch
+from safe_loader import safe_torch_loadvision  # scope for faster 'import ultralytics'
 
         self.segment_all = True
         ih, iw = im.shape[2:]
@@ -6589,7 +6623,8 @@ class Predictor(BasePredictor):
                 - new_masks (torch.Tensor): The processed masks with small regions removed. Shape is (N, H, W).
                 - keep (List[int]): The indices of the remaining masks post-NMS, which can be used to filter the boxes.
         """
-        import torchvision  # scope for faster 'import ultralytics'
+        import torch
+from safe_loader import safe_torch_loadvision  # scope for faster 'import ultralytics'
 
         if len(masks) == 0:
             return masks
@@ -6617,6 +6652,7 @@ class Predictor(BasePredictor):
 # Ultralytics YOLO 🚀, AGPL-3.0 license
 
 import torch
+from safe_loader import safe_torch_load
 
 from ultralytics.data.augment import LetterBox
 from ultralytics.engine.predictor import BasePredictor
@@ -6703,6 +6739,7 @@ class RTDETRPredictor(BasePredictor):
 import os
 import time
 import torch
+from safe_loader import safe_torch_load
 from transformers import T5Tokenizer, T5ForConditionalGeneration
 from flask import Flask, request, jsonify
 from diffusers import (
@@ -6736,7 +6773,8 @@ from transformers import T5EncoderModel
 import re
 from safety_checker.censor import check_safety
 
-import torch.nn as nn
+import torch
+from safe_loader import safe_torch_load.nn as nn
 from os.path import expanduser  # pylint: disable=import-outside-toplevel
 from urllib.request import urlretrieve  # pylint: disable=import-outside-toplevel
 
@@ -7065,6 +7103,7 @@ if __name__ == "__main__":
 import os
 import time
 import torch
+from safe_loader import safe_torch_load
 from transformers import T5Tokenizer, T5ForConditionalGeneration
 from flask import Flask, request, jsonify
 from diffusers import (
@@ -7098,7 +7137,8 @@ from transformers import T5EncoderModel
 import re
 from safety_checker.censor import check_safety
 
-import torch.nn as nn
+import torch
+from safe_loader import safe_torch_load.nn as nn
 from os.path import expanduser  # pylint: disable=import-outside-toplevel
 from urllib.request import urlretrieve  # pylint: disable=import-outside-toplevel
 

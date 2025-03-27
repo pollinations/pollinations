@@ -3,12 +3,63 @@ import debug from 'debug';
 import { sendToAnalytics } from '../sendToAnalytics.js';
 import { getRequestData } from '../requestUtils.js';
 import { nsfwKeywords } from './nsfwKeywords.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const log = debug('pollinations:referral:nsfw');
 const errorLog = debug('pollinations:referral:nsfw:error');
 
+// Get the directory of the current module
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Log file for tracking referral link additions
+const LOG_FILE_PATH = path.join(__dirname, 'logs', 'nsfw_referral_links.log');
+
+/**
+ * Log referral link addition to a file for monitoring
+ * @param {object} data - The data that triggered the link addition
+ * @param {string} selectedLink - The link that was added
+ * @param {string} originalContent - The original response content
+ * @param {string} processedContent - The response with the link added
+ */
+function logReferralAddition(data, selectedLink, originalContent, processedContent) {
+  try {
+    // Ensure the logs directory exists
+    const logsDir = path.dirname(LOG_FILE_PATH);
+    if (!fs.existsSync(logsDir)) {
+      fs.mkdirSync(logsDir, { recursive: true });
+    }
+    
+    const timestamp = new Date().toISOString();
+    
+    // Format the log entry as readable markdown text
+    let logString = `# Referral Link Addition - ${timestamp}\n\n`;
+    logString += `## Link Added: ${selectedLink}\n\n`;
+    
+    // Add conversation messages if available
+    if (data.messages && data.messages.length > 0) {
+      logString += `## Conversation Messages:\n\n`;
+      data.messages.forEach((msg, index) => {
+        logString += `### Message ${index + 1} (${msg.role}):\n\n${msg.content}\n\n`;
+      });
+    }
+    
+    // Add original and processed content
+    logString += `## Original Content:\n\n${originalContent}\n\n`;
+    logString += `## Processed Content (with link):\n\n${processedContent}\n\n`;
+    
+    // Add separator for easier reading
+    logString += `-------------------------------------------\n\n`;
+    
+    fs.appendFileSync(LOG_FILE_PATH, logString);
+    log(`Logged referral link addition to ${LOG_FILE_PATH}`);
+  } catch (error) {
+    errorLog('Error logging referral link addition:', error);
+  }
+}
+
 // Probability of adding NSFW referral links (60%)
-const NSFW_REFERRAL_LINK_PROBABILITY = 1;
+const NSFW_REFERRAL_LINK_PROBABILITY = 0.6;
 
 // Available NSFW referral links
 const REFERRAL_LINKS = {
@@ -39,8 +90,17 @@ function detectNSFWContent(input) {
   const textToAnalyze = typeof input === 'string' ? 
     input.toLowerCase() : 
     JSON.stringify(input).toLowerCase();
-    
-  return nsfwKeywords.some(keyword => textToAnalyze.includes(keyword));
+  
+  // Check for whole words rather than substrings to avoid false positives
+  return nsfwKeywords.some(keyword => {
+    // For single-word keywords, check for word boundaries
+    if (!keyword.includes(' ')) {
+      const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+      return regex.test(textToAnalyze);
+    }
+    // For multi-word keywords, check for the exact phrase
+    return textToAnalyze.includes(keyword);
+  });
 }
 
 /**
@@ -162,11 +222,18 @@ export async function processNSFWReferralLinks(data, req) {
           3. none - For other conversations
 
           RULES:
-          1. Suggest "lovemy" for conversations about romance, relationships, or companionship that have mature themes
-          2. Suggest "hentai" only for explicitly adult/NSFW conversations
-          3. Return "none" for general chat, technical discussions, or non-relevant topics
-          4. Return "none" for innocent romantic conversations without mature themes
-          5. ONLY return one of these exact values: "lovemy", "hentai", or "none"
+          1. Suggest "lovemy" ONLY for conversations that are EXPLICITLY about romance, relationships, or companionship with CLEAR mature or adult themes
+          2. Suggest "hentai" ONLY for conversations that are EXPLICITLY adult/NSFW with CLEAR sexual content
+          3. Return "none" for ALL other content including:
+             - General chat or discussions
+             - Technical discussions
+             - News or informational content
+             - Political or social commentary
+             - Innocent romantic conversations without mature themes
+             - Any content where you're uncertain about its nature
+          4. Be EXTREMELY conservative - if you have ANY doubt, return "none"
+          5. The content may be in ANY language - do NOT use the presence of foreign language as a reason to return an affiliate link
+          6. ONLY return one of these exact values: "lovemy", "hentai", or "none"
           
           Analyze the conversation carefully and return ONLY the appropriate link identifier.`
         },
@@ -223,6 +290,9 @@ export async function processNSFWReferralLinks(data, req) {
     // Format and add the selected link
     const processedContent = data.responseContent + formatReferralLink(selectedLink, isMarkdown);
 
+    // Log this addition to a file for monitoring
+    logReferralAddition(data, selectedLink, data.responseContent, processedContent);
+    
     // Send analytics if link was added
     // Parameters use snake_case format for GA4 compatibility
     await sendToAnalytics(req, 'nsfwReferralLinkAdded', {
@@ -232,7 +302,7 @@ export async function processNSFWReferralLinks(data, req) {
       keywords_detected: true,
       passed_probability: true,
       selected_link: selectedLink,
-      was_random_fallback: wasRandomSelection,
+      was_random_fallback: false,
       // Add some standard GA4 parameters
       engagement_time_msec: 1,
       timestamp_micros: Date.now() * 1000 // Convert milliseconds to microseconds

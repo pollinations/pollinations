@@ -1,0 +1,76 @@
+site_name: bolt.diy Docs
+site_dir: ../site
+theme:
+  name: material
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.follow
+    - toc.integrate
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+    # - navigation.instant
+    # - navigation.tracking
+    # - navigation.tabs.sticky
+    # - navigation.expand
+    # - content.code.annotate
+  icon:
+    repo: fontawesome/brands/github
+  # logo: assets/logo.png
+  # favicon: assets/logo.png
+repo_name: bolt.diy
+repo_url: https://github.com/stackblitz-labs/bolt.diy
+edit_uri: ""
+
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/stackblitz-labs/bolt.diy
+      name: bolt.diy
+    - icon: fontawesome/brands/discourse
+      link: https://thinktank.ottomator.ai/
+      name: bolt.diy Discourse
+    - icon: fontawesome/brands/x-twitter
+      link: https://x.com/bolt_diy
+      name: bolt.diy on X
+    - icon: fontawesome/brands/bluesky
+      link: https://bsky.app/profile/bolt.diy
+      name: bolt.diy on Bluesky
+
+      
+
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.arithmatex:
+      generic: true
+  - footnotes
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.mark
+  - attr_list
+  - md_in_html
+  - tables
+  - def_list
+  - admonition
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - toc:
+      permalink: true

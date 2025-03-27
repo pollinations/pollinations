@@ -41,23 +41,6 @@ export const projectCategories = [
 const allProjects = {
   llmIntegrations: [
     {
-      name: "🆕 IMyself AI 🇨🇳",
-      url: "https://openai.lmyself.top/",
-      description: "我们提供高质量的AI生成服务，包括图像生成、文本生成、音频生成和语音转文本服务， 让您轻松创建各种创意内容。 (We provide high-quality AI generation services, including image generation, text generation, audio generation, and speech to text services, allowing you to easily create various creative content.)",
-      author: "Shadownc",
-      submissionDate: "2025-03-27",
-      language: "zh-CN"
-    },
-    {
-      name: "🆕 FreeAI 🇨🇳",
-      url: "https://freeai.aihub.ren/",
-      description: "An AI application platform based on Pollinations.AI API, providing free and unlimited AI chat assistant, image generation, and voice synthesis services.",
-      author: "@Azad-sl",
-      repo: "https://github.com/Azad-sl/FreeAI",
-      submissionDate: "2025-03-24",
-      language: "zh-CN"
-    },
-    {
       name: "🆕 AI Unlimited Customizable Feature Module 🇨🇳",
       url: "https://getquicker.net/Sharedaction?code=9ac738ed-a4b2-4ded-933c-08dd5f710a8b&fromMyShare=true",
       description: "This project provides a free API interface supporting various text and image generation models, including OpenAI's GPT-4, Gemini 2.0, etc. Users can access these models without an API key to perform text generation, image generation, translation, text polishing, and more.",
@@ -69,7 +52,7 @@ const allProjects = {
       name: "🆕 PrivatePollenAI",
       url: "https://mmojocoder.github.io/PrivatePollenAI/chat.html",
       description: "A privacy-focused chat assistant app that securely stores data locally, integrates with PollinationAI for text and image generation, features a minimalistic UI, and allows users to choose models and write their own system instructions.",
-      author: "https://github.com/MMojoCoder",
+      author: "https://discordapp.com/users/tenacious_humming_bird",
       repo: "https://github.com/MMojoCoder/PrivatePollenAI",
       submissionDate: "2025-02-23",
     },
@@ -137,44 +120,6 @@ const allProjects = {
     },
   ],
   creativeApps: [
-    {
-      name: "🆕 VibeCoder",
-      url: "https://vibecoderbyaashir.netlify.app/",
-      description: "A web app for coding with vibes, created using Pollinations.AI Open Source API without coding syntax.",
-      author: "@Aashir__Shaikh",
-      authorUrl: "https://x.com/Aashir__Shaikh",
-      submissionDate: "2025-03-25",
-    },
-    {
-      name: "🆕 AI 文本转音频 🇨🇳",
-      url: "https://tts-gules-theta.vercel.app/",
-      description: "输入文本，选择语音风格，一键将文字转换为自然流畅的语音。 支持多种声音特征，帮您创建专业水准的音频内容。 (Input text, select voice style, and instantly convert text to natural, fluid speech. Supports various voice characteristics to help you create professional-grade audio content.)",
-      author: "https://github.com/Azad-sl",
-      repo: "https://github.com/Azad-sl/tts",
-      submissionDate: "2025-03-24",
-      language: "zh-CN"
-    },
-    {
-      name: "🆕 Case Me 🇧🇷",
-      description: "O projeto consiste em uma vending machine que criará capinhas para celular personalizadas com fotos ou outras imagens e cores de escolha do cliente final. (A vending machine that creates customized phone cases with photos or other images and colors chosen by the end customer.)",
-      author: "anaboxmania@gmail.com",
-      submissionDate: "2025-03-19",
-      language: "pt-BR"
-    },
-    {
-      name: "🆕 PixPax",
-      url: "https://pixpal.chat",
-      description: "A user-friendly chatbot that lets you analyze images, remix existing images or create new images, all through simple chat.",
-      author: "@andreas_11",
-      submissionDate: "2025-03-17",
-    },
-    {
-      name: "🆕 Watch TV with neko (Roblox)",
-      url: "https://www.roblox.com/games/15087497266/UPD-Watch-TV-with-neko-AI",
-      description: "Roblox game where you can talk with AI catgirls 🐾 or just have fun, talking with other players in cozy rooms ⭐️",
-      author: "https://www.roblox.com/users/3857849039/profile/",
-      submissionDate: "2025-03-17",
-    },
     {
       name: "🆕 Jenny AI",
       url: "https://jenny-two.vercel.app/",
@@ -369,21 +314,6 @@ const allProjects = {
   ],
   toolsInterfaces: [
     {
-      name: "🆕 TeekGenAI",
-      url: "https://teekgenai.com/image-genai/",
-      description: "TeekGenAI is a free AI image generator using the Pollinations API. No login required—just enter a prompt and get unique AI-generated images instantly",
-      author: "contact@teekgenai.com",
-      submissionDate: "2025-03-27",
-    },
-    {
-      name: "🆕 toai.chat",
-      url: "https://toai.chat",
-      description: "An AI chat service that operates exclusively via Curl commands, specifically designed for users working in terminal environments without the need for a standalone AI client.",
-      author: "kevin@kevin1986.com",
-      repo: "https://github.com/Veallym0n/toai.chat",
-      submissionDate: "2025-03-27",
-    },
-    {
       name: "🆕 Elixpo Art Chrome Extension",
       url: "https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh",
       description: "It uses the pollinations image endpoint to generate an image with `boltning` as the model in 4 types of aspect ratios and themes with prompt engineering thus transforming selected texts into art smoothly with a disposable GUI in web.",
@@ -485,15 +415,6 @@ const allProjects = {
     },
   ],
   socialBots: [
-    {
-      name: "🆕 🤖 pollinations-tg-bot 🇨🇳",
-      url: "https://t.me/AipolBot",
-      description: "A Telegram bot deployed on Cloudflare Workers that allows users to generate images, convert text to speech, transcribe voice messages, chat with AI models, and more through the Pollinations API.",
-      author: "@Shadownc",
-      repo: "https://github.com/Shadownc/pollinations-tg-bot",
-      submissionDate: "2025-03-27",
-      language: "zh-CN"
-    },
     {
       name: "Jackey",
       url: "https://discord.com/oauth2/authorize?client_id=1214916249222643752",
@@ -601,14 +522,6 @@ const allProjects = {
     },
   ],
   tutorials: [
-    {
-      name: "🆕 Connect Pollinations with Open Web UI tutorial",
-      url: "https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI",
-      description: "How to add Pollinations AI Text Models to OpenWebUI for free access to top language models like GPT-4o, Mistral, Claude, and Gemini without signups or API keys.",
-      author: "@cloph-dsp",
-      repo: "https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI",
-      submissionDate: "2025-03-22",
-    },
     {
       name: "🆕 Chinese DeepSeek Tutorial",
       url: "https://linux.do/t/topic/447840/235",

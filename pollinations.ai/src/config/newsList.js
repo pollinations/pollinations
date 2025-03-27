@@ -1,6 +1,4 @@
-export const newsList = `- **2025-03-24** - MCP Server now supports audio generation! AI assistants like Claude can now generate audio in addition to images using our Model Context Protocol server. Try it with \`npx @pollinations/model-context-protocol\`. [Learn more](https://github.com/pollinations/pollinations/tree/master/model-context-protocol).
-- **2025-03-20** - New MCP Server! AI assistants like Claude can now generate images directly using our Model Context Protocol server. Install with \`npx @pollinations/model-context-protocol\`. [Learn more](https://github.com/pollinations/pollinations/tree/master/model-context-protocol).
-- **2025-03-06** - You can now support us with our new **Tip Us** button. Optionally connect your Discord account to **Ko-Fi** to get premium Discord roles!
+export const newsList = `- **2025-03-06** - You can now support us with our new **Tip Us** button. Optionally connect your Discord account to **Ko-Fi** to get premium Discord roles!
 - **2025-03-05** - New audio features! Text-to-speech and speech-to-text capabilities are now available with the \`openai-audio\` model. Check the [API Docs](https://github.com/pollinations/pollinations/blob/master/APIDOCS.md).
 - **2025-02-05** - Introducing [Pollinations.DIY](https://pollinations.diy) - A browser-based development environment for building AI-powered applications with Pollinations services, based on bolt.diy!
 - **2025-02-05** - New Gemini 2.0 Flash and Gemini 2.0 Flash Thinking models are now available on [text.pollinations.ai/models](https://text.pollinations.ai/models)!

@@ -65,7 +65,7 @@ Our MCP (Model Context Protocol) server enables AI assistants like Claude to gen
 
 ```bash
 # Run with npx (no installation required)
-npx pollinations-model-context-protocol
+npx @pollinations/model-context-protocol
 ```
 
 AI assistants can:

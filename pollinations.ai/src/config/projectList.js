@@ -41,6 +41,14 @@ export const projectCategories = [
 const allProjects = {
   llmIntegrations: [
     {
+      name: "🆕 IMyself AI 🇨🇳",
+      url: "https://openai.lmyself.top/",
+      description: "我们提供高质量的AI生成服务，包括图像生成、文本生成、音频生成和语音转文本服务， 让您轻松创建各种创意内容。 (We provide high-quality AI generation services, including image generation, text generation, audio generation, and speech to text services, allowing you to easily create various creative content.)",
+      author: "Shadownc",
+      submissionDate: "2025-03-27",
+      language: "zh-CN"
+    },
+    {
       name: "🆕 FreeAI 🇨🇳",
       url: "https://freeai.aihub.ren/",
       description: "An AI application platform based on Pollinations.AI API, providing free and unlimited AI chat assistant, image generation, and voice synthesis services.",

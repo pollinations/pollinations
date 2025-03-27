@@ -4072,7 +4072,7 @@ class Predictor(BasePredictor):
             connect_list=["32", "64", "128", "256"],
         ).to(self.device)
         ckpt_path = "weights/CodeFormer/codeformer.pth"
-        checkpoint = torch.load(ckpt_path)[
+        checkpoint = torch.load(ckpt_path, map_location="cpu")[
             "params_ema"
         ]  # update file permission if cannot load
         self.net.load_state_dict(checkpoint)
@@ -4358,7 +4358,7 @@ class Predictor(BasePredictor):
             connect_list=["32", "64", "128", "256"],
         ).to(self.device)
         ckpt_path = "weights/CodeFormer/codeformer.pth"
-        checkpoint = torch.load(ckpt_path)[
+        checkpoint = torch.load(ckpt_path, map_location="cpu")[
             "params_ema"
         ]  # update file permission if cannot load
         self.net.load_state_dict(checkpoint)

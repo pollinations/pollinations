@@ -263,6 +263,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 TeekGenAI | TeekGenAI is a free AI image generator using the Pollinations API. No login required—just enter a prompt and get unique AI-generated images instantly | contact@teekgenai.com | [Website](https://teekgenai.com/image-genai/) |
 | 🆕 toai.chat | An AI chat service that operates exclusively via Curl commands, specifically designed for users working in terminal environments without the need for a standalone AI client | kevin@kevin1986.com | [Website](https://toai.chat), [GitHub](https://github.com/Veallym0n/toai.chat) |
 | Pollinations Feed | A web interface that showcases the realtime feed of pollinations with a bento-grid | Ayushman Bhattacharya | [Website](https://elixpoart.vercel.app/src/feed), [GitHub](https://github.com/Circuit-Overtime/elixpo_ai_chapter) |
 | Elixpo Art | A web interface for easy image generation with theme selection | Ayushman Bhattacharya | [Website](https://circuit-overtime.github.io/Elixpo_ai_pollinations), [GitHub](https://github.com/Circuit-Overtime/elixpo_ai_chapter) |

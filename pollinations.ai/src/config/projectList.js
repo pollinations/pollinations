@@ -361,6 +361,14 @@ const allProjects = {
   ],
   toolsInterfaces: [
     {
+      name: "🆕 toai.chat",
+      url: "https://toai.chat",
+      description: "An AI chat service that operates exclusively via Curl commands, specifically designed for users working in terminal environments without the need for a standalone AI client.",
+      author: "kevin@kevin1986.com",
+      repo: "https://github.com/Veallym0n/toai.chat",
+      submissionDate: "2025-03-27",
+    },
+    {
       name: "🆕 Elixpo Art Chrome Extension",
       url: "https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh",
       description: "It uses the pollinations image endpoint to generate an image with `boltning` as the model in 4 types of aspect ratios and themes with prompt engineering thus transforming selected texts into art smoothly with a disposable GUI in web.",

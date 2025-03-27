@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
-          <img src="https://raw.githubusercontent.com/pollinations/pollinations/master/pollinations.ai/src/assets/logo/logo-icon-white.svg" alt="Pollinations Logo" style="width: 40px; height: 40px;">
+          <img src="https://raw.githubusercontent.com/pollinations/pollinations/master/assets/pollinations_ai_logo_image_white_transparent.png" alt="Pollinations Logo" style="width: 40px; height: 40px;">
           <h1 style="margin: 0; font-size: 24px;">Pollinations.AI - Special Bee Domain Request</h1>
         </div>
         Thanks for your interest in Pollinations API! This form is for requesting domain/referrer approval 

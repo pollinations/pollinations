@@ -44,7 +44,6 @@ Click the links below to see examples in your browser:
     - [Whitelisting ✅](#whitelisting-)
   - [License 📜](#license-)
 
-
 ---
 
 ## Generate Image API 🖼️
@@ -72,11 +71,7 @@ Generates an image based on a text description.
 
 **Return:** Image file (typically JPEG) 🖼️
 
-**Rate Limits:**
-
-- **Per-IP Queue:**
-  - Concurrency: 1 request at a time
-  - Interval: 5000ms between requests
+**Rate Limit (per IP):** 1 concurrent request / 5 sec interval.
 
 <details>
 <summary><strong>Code Examples:</strong> Generate Image (GET)</summary>
@@ -263,11 +258,9 @@ Generates text based on a simple prompt.
 
 **Return:** Generated text (plain text or JSON string if `json=true`) 📝. If `stream=true`, returns an SSE stream.
 
-**Rate Limits:**
+**Rate Limit (per IP):** 1 concurrent request / 3 sec interval.
 
-- **Per-IP Queue:**
-  - Concurrency: 1 request at a time
-  - Interval: 3000ms between requests
+
 
 <details>
 <summary><strong>Code Examples:</strong> Generate Text (GET)</summary>

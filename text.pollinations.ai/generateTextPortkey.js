@@ -304,7 +304,7 @@ export const portkeyConfig = {
     'gpt-4o-mini-roblox-rp': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_ROBLOX_API_KEY,
         process.env.AZURE_OPENAI_ROBLOX_ENDPOINT,
-        'gpt-4o-mini-roblox-rp'
+        'gpt-4o-mini'
     ),
     // Cloudflare model configurations
     '@cf/meta/llama-3.3-70b-instruct-fp8-fast': () => createCloudflareModelConfig(),

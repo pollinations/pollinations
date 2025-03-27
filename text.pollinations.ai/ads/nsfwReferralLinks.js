@@ -91,12 +91,14 @@ function detectNSFWContent(input) {
     input.toLowerCase() : 
     JSON.stringify(input).toLowerCase();
   
+  // Split text into words using regex to handle various separators
+  const words = textToAnalyze.split(/[\s,.!?;:()\[\]{}"'\/\\<>-]+/).filter(word => word.length > 0);
+  
   // Check for whole words rather than substrings to avoid false positives
   return nsfwKeywords.some(keyword => {
-    // For single-word keywords, check for word boundaries
+    // For single-word keywords, check if it's in our word list
     if (!keyword.includes(' ')) {
-      const regex = new RegExp(`\\b${keyword}\\b`, 'i');
-      return regex.test(textToAnalyze);
+      return words.includes(keyword);
     }
     // For multi-word keywords, check for the exact phrase
     return textToAnalyze.includes(keyword);
@@ -171,6 +173,7 @@ function extractLinkIdentifier(response) {
  * @returns {string} - Content with referral link if appropriate
  */
 export async function processNSFWReferralLinks(data, req) {
+  // log('Processing NSFW referral links');
   try {
     const requestData = getRequestData(req);
     let response;
@@ -182,7 +185,7 @@ export async function processNSFWReferralLinks(data, req) {
 
     // Check total content length
     const totalLength = JSON.stringify(data.messages).length + data.responseContent.length;
-    if (totalLength > 8000) {
+    if (totalLength > 16000) {
       log(`Skipping due to content length (${totalLength} characters)`);
       return data.responseContent;
     }
@@ -204,12 +207,9 @@ export async function processNSFWReferralLinks(data, req) {
     log('NSFW keywords detected and probability check passed, analyzing with LLM');
 
     let selectedLink;
+    
     try {
       // Third pass: LLM analysis for link selection
-      const conversationContext = {
-        messages: data.messages,
-        response: data.responseContent
-      };
 
       const messages = [
         {
@@ -241,21 +241,23 @@ export async function processNSFWReferralLinks(data, req) {
           role: "user",
           content: `Analyze this conversation and return ONLY "lovemy", "hentai", or "none" based on the conversation context.
 
-          Conversation history:
-          ${JSON.stringify(conversationContext.messages, null, 2)}
+Conversation history:
+${data.messages.map(m => `${m.role}: ${m.content}`).join('\n').slice(-500)}
 
-          Current response:
-          ${conversationContext.response}`
+Current response:
+${data.responseContent}`
         }
       ];
 
-      log('Sending conversation to OpenAI for NSFW referral analysis');
+      log('Sending conversation to OpenAI for NSFW referral analysis\n', JSON.stringify(messages, null, 2));
       
       // Get link selection from OpenAI
       response = await generateTextPortkey(messages, { model: 'openai' });
       if (!response?.choices?.[0]?.message?.content) {
         throw new Error('Invalid response format from OpenAI');
       }
+
+      log('OpenAI response:', response.choices[0].message.content);
       selectedLink = extractLinkIdentifier(response.choices[0].message.content);
     } catch (error) {
       // If we get a content filter error or any other error, fall back to random selection
@@ -266,7 +268,7 @@ export async function processNSFWReferralLinks(data, req) {
     // If no valid link was selected or 'none' was selected, return original content
     if (!selectedLink || selectedLink === 'none' || !REFERRAL_LINKS[selectedLink]) {
       if (selectedLink === 'none') {
-        log('LLM decided not to add link for content: %s', data.responseContent.slice(0, 50));
+        log('LLM decided not to add link for content: %s', data.responseContent.slice(0, 400));
       } else {
         log('No appropriate link selected');
       }
@@ -302,8 +304,6 @@ export async function processNSFWReferralLinks(data, req) {
       keywords_detected: true,
       passed_probability: true,
       selected_link: selectedLink,
-      was_random_fallback: false,
-      // Add some standard GA4 parameters
       engagement_time_msec: 1,
       timestamp_micros: Date.now() * 1000 // Convert milliseconds to microseconds
     });

@@ -1,4 +1,4 @@
-name: Domain Special Bee Request
+name: Special Bee Request
 description: Request to have your domain/referrer approved for enhanced API access
 title: "[Special Bee Request]: "
 labels: ["special-bee-request"]
@@ -7,8 +7,8 @@ body:
     attributes:
       value: |
         <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
-          <img src="https://raw.githubusercontent.com/pollinations/pollinations/1306-consolidate-api-documentation-new/assets/pollinations_ai_logo_image_white_transparent.png" alt="Pollinations Logo" style="width: 40px; height: 40px;">
-          <h1 style="margin: 0; font-size: 24px;">Special Bee Domain Request</h1>
+          <img src="https://raw.githubusercontent.com/pollinations/pollinations/1306-consolidate-api-documentation-new/assets/pollinations_ai_logo_image_white_transparent.png" alt="Pollinations Logo" width="32" height="32">
+          <h1 style="margin: 0; font-size: 24px;">Special Bee Request</h1>
         </div>
         Thanks for your interest in Pollinations API! This form is for requesting domain/referrer approval 
         that may provide enhanced API access (e.g., priority queue, modified rate limits).

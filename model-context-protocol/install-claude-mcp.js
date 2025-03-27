@@ -34,8 +34,8 @@ config.mcpServers = config.mcpServers || {};
 
 // Add or update the pollinations MCP server configuration
 config.mcpServers.pollinations = {
-  command: 'node',
-  args: [path.resolve('pollinations-mcp-server.js')],
+  command: 'npx',
+  args: ['@pollinations/model-context-protocol'],
   disabled: false,
   alwaysAllow: []
 };

@@ -1,12 +1,18 @@
 {
-  "name": "pollinations-model-context-protocol",
-  "version": "1.0.0",
+  "name": "@pollinations/model-context-protocol",
+  "version": "1.0.1",
   "description": "Model Context Protocol (MCP) server for Pollinations AI image generation",
-  "main": "pollinations-api-client.js",
   "type": "module",
   "bin": {
-    "pollinations-model-context-protocol": "./pollinations-mcp-server.js"
+    "pollinations-mcp-server": "./pollinations-mcp-server.js"
   },
+  "files": [
+    "src/**/*",
+    "pollinations-mcp-server.js",
+    "install-claude-mcp.js",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "node test-mcp-client.js",
     "start": "node pollinations-mcp-server.js",
@@ -31,9 +37,6 @@
     "type": "git",
     "url": "git+https://github.com/pollinations/pollinations.git",
     "directory": "model-context-protocol"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "engines": {
     "node": ">=18.0.0"

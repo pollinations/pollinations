@@ -33,94 +33,10 @@ npm install
 You can also run the MCP server directly using npx without installing it:
 
 ```bash
-npx pollinations-mcp
+npx @pollinations/model-context-protocol
 ```
 
 This will start the MCP server immediately, making it available for use with Claude Desktop or other MCP clients.
-
-## Usage as a Node.js Library
-
-### Import the functions
-
-```javascript
-import { generateImageUrl, generateImage, generateText, respondAudio, sayText, listModels } from './src/index.js';
-```
-
-### Generate an image URL
-
-```javascript
-const imageUrl = await generateImageUrl('A beautiful sunset over the ocean', {
-  width: 512,
-  height: 512,
-  model: 'flux.schnell',  // optional
-  seed: 42                // optional
-});
-
-console.log(imageUrl);
-// Output: { imageUrl: 'https://image.pollinations.ai/prompt/...', metadata: { ... } }
-```
-
-### Generate an image (returns base64-encoded data)
-
-```javascript
-const imageData = await generateImage('A cute cat playing with a ball of yarn', {
-  width: 512,
-  height: 512,
-  model: 'flux.schnell',  // optional
-  seed: 42                // optional
-});
-
-console.log(imageData);
-// Output: { 
-//   data: 'base64-encoded-image-data', 
-//   mimeType: 'image/jpeg', 
-//   metadata: { ... } 
-// }
-```
-
-### Generate text from a prompt
-
-```javascript
-const textResponse = await generateText('What is artificial intelligence?', 
-  'openai',  // model (optional, default: 'openai')
-  42,        // seed (optional)
-  'You are a helpful AI assistant'  // systemPrompt (optional)
-);
-
-console.log(textResponse);
-// Output: 'Artificial intelligence (AI) refers to...'
-```
-
-### Generate audio (returns base64-encoded data)
-
-```javascript
-const audioData = await respondAudio('Hello, world! This is a test.', 
-  'alloy',  // voice (optional, default: 'alloy')
-  42,       // seed (optional)
-  'Speak with enthusiasm'  // voiceInstructions (optional)
-);
-
-console.log(audioData);
-// Output: { 
-//   data: 'base64-encoded-audio-data', 
-//   mimeType: 'audio/mpeg', 
-//   metadata: { ... } 
-// }
-```
-
-### List available models
-
-```javascript
-// List image generation models
-const imageModels = await listModels('image');
-console.log(imageModels);
-// Output: { models: ['flux.schnell', 'flux.default', ...] }
-
-// List text generation models (includes audio models)
-const textModels = await listModels('text');
-console.log(textModels);
-// Output: { models: ['openai', 'mistral', 'openai-audio', ...] }
-```
 
 ## Running the MCP Server
 

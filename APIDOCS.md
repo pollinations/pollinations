@@ -1,61 +1,49 @@
----
 # Pollinations.AI API Documentation
+
+**World's Most Accessible Open GenAI Platform 🚀
+Text, Image & Audio APIs direct integration (no signup)**
+
 ---
 
-## Basics
+## Quickstart
 
-**World's Most Accessible Open GenAI Platform 🚀, integrate our text & image APIs (no signup).**
+Click the links below to see examples in your browser:
 
-### Draw 🖌️
-
-`https://image.pollinations.ai/prompt/pollinations_logo`
-
-### Ask ❓
-
-`https://text.pollinations.ai/why_you_should_donate_to_pollinations_ai`
-
-### Search 🔍
-
-`https://text.pollinations.ai/what_are_the_last_pollinations_ai_news?model=searchgpt`
-
-### Hear 🗣️
-
-`https://text.pollinations.ai/respond_with_a_small_hypnosis_urging_to_donate_to_pollinations_its_a_joke?model=openai-audio&voice=nova`
+- **Draw 🖌️:** [`https://image.pollinations.ai/prompt/pollinations_logo`](https://image.pollinations.ai/prompt/pollinations_logo)
+- **Ask ❓:** [`https://text.pollinations.ai/why_you_should_donate_to_pollinations_ai`](https://text.pollinations.ai/why_you_should_donate_to_pollinations_ai)
+- **Search 🔍:** [`https://text.pollinations.ai/what_are_the_last_pollinations_ai_news?model=searchgpt`](https://text.pollinations.ai/what_are_the_last_pollinations_ai_news?model=searchgpt)
+- **Hear 🗣️:** [`https://text.pollinations.ai/respond_with_a_small_hypnosis_urging_to_donate_to_pollinations_its_a_joke?model=openai-audio&voice=nova`](https://text.pollinations.ai/respond_with_a_small_hypnosis_urging_to_donate_to_pollinations_its_a_joke?model=openai-audio&voice=nova)
 
 ---
 
 ## Summary / Navigation
 
-- [Basics](#basics)
-  - [Draw 🖌️](#draw-️)
-  - [Ask ❓](#ask-)
-  - [Search 🔍](#search-)
-  - [Hear 🗣️](#hear-️)
-- [Summary / Navigation](#summary--navigation)
-- [Generate Image API 🖼️](#generate-image-api-️)
-  - [Text-To-Image (GET) 🖌️](#text-to-image-get-️)
-  - [List Available Image Models 📜](#list-available-image-models-)
-- [Generate Text API 📝](#generate-text-api-)
-  - [Text-To-Text (GET) 🗣️](#text-to-text-get-️)
-  - [Text \& Multimodal (OpenAI Compatible POST) 🧠💬🖼️🎤📝➡️🎙️](#text--multimodal-openai-compatible-post-️️️)
-    - [**Vision Capabilities (Image Input)** 🖼️➡️📝](#vision-capabilities-image-input-️️)
-    - [**Speech-to-Text Capabilities (Audio Input)** 🎤➡️📝](#speech-to-text-capabilities-audio-input-️)
-    - [**Text-to-Speech Capabilities (Audio Output)** 📝➡️🎙️](#text-to-speech-capabilities-audio-output-️️)
-    - [**Function Calling** ⚙️](#function-calling-️)
-  - [List Available Text Models 📜](#list-available-text-models-)
-- [Generate Audio API 🎵](#generate-audio-api-)
-  - [Text-to-Speech (GET) 📝➡️🎙️](#text-to-speech-get-️️)
-- [MCP Server for AI Assistants 🤖🔧](#mcp-server-for-ai-assistants-)
-- [React Hooks ⚛️](#react-hooks-️)
-- [Real-time Feeds API 🔄](#real-time-feeds-api-)
-  - [Image Feed 🖼️📈](#image-feed-️)
-  - [Text Feed 📝📈](#text-feed-)
-- [Referrer 🔗](#referrer-)
-  - [API Update (starting **2025.03.12**) 📅](#api-update-starting-20250312-)
-  - [Whitelisting ✅](#whitelisting-)
-- [License 📜](#license-)
+- [Pollinations.AI API Documentation](#pollinationsai-api-documentation)
+  - [Quickstart](#quickstart)
+  - [Summary / Navigation](#summary--navigation)
+  - [Generate Image API 🖼️](#generate-image-api-️)
+    - [Text-To-Image (GET) 🖌️](#text-to-image-get-️)
+    - [List Available Image Models 📜](#list-available-image-models-)
+  - [Generate Text API 📝](#generate-text-api-)
+    - [Text-To-Text (GET) 🗣️](#text-to-text-get-️)
+    - [Text \& Multimodal (OpenAI Compatible POST) 🧠💬🖼️🎤⚙️](#text--multimodal-openai-compatible-post-️️)
+      - [Vision Capabilities (Image Input) 🖼️➡️📝](#vision-capabilities-image-input-️️)
+      - [Speech-to-Text Capabilities (Audio Input) 🎤➡️📝](#speech-to-text-capabilities-audio-input-️)
+      - [Function Calling ⚙️](#function-calling-️)
+    - [List Available Text Models 📜](#list-available-text-models-)
+  - [Generate Audio API 🎵](#generate-audio-api-)
+    - [Text-to-Speech (GET) 📝➡️🎙️](#text-to-speech-get-️️)
+    - [Text-to-Speech (POST - OpenAI Compatible) 📝➡️🎙️](#text-to-speech-post---openai-compatible-️️)
+  - [MCP Server for AI Assistants 🤖🔧](#mcp-server-for-ai-assistants-)
+  - [React Hooks ⚛️](#react-hooks-️)
+  - [Real-time Feeds API 🔄](#real-time-feeds-api-)
+    - [Image Feed 🖼️📈](#image-feed-️)
+    - [Text Feed 📝📈](#text-feed-)
+  - [Referrer 🔗](#referrer-)
+    - [API Update (starting **2025.03.12**) 📅](#api-update-starting-20250312-)
+    - [Whitelisting ✅](#whitelisting-)
+  - [License 📜](#license-)
 
-_(Note: Markdown heading link generation can vary slightly between platforms. Adjust `#heading-name` if needed.)_
 
 ---
 
@@ -91,7 +79,7 @@ Generates an image based on a text description.
   - Interval: 5000ms between requests
 
 <details>
-<summary>▶️ Code Examples: Generate Image (GET)</summary>
+<summary><strong>Code Examples:</strong> Generate Image (GET)</summary>
 
 **cURL:**
 
@@ -196,7 +184,7 @@ fetchImage("A beautiful sunset over the ocean", {
 **Return:** JSON list of model identifiers.
 
 <details>
-<summary>▶️ Code Examples: List Image Models</summary>
+<summary><strong>Code Examples:</strong> List Image Models</summary>
 
 **cURL:**
 
@@ -282,7 +270,7 @@ Generates text based on a simple prompt.
   - Interval: 3000ms between requests
 
 <details>
-<summary>▶️ Code Examples: Generate Text (GET)</summary>
+<summary><strong>Code Examples:</strong> Generate Text (GET)</summary>
 
 **cURL:**
 
@@ -395,7 +383,7 @@ fetchText("List 3 popular dog breeds", {
 
 ---
 
-### Text & Multimodal (OpenAI Compatible POST) 🧠💬🖼️🎤📝➡️🎙️
+### Text & Multimodal (OpenAI Compatible POST) 🧠💬🖼️🎤⚙️
 
 `POST https://text.pollinations.ai/openai`
 
@@ -404,7 +392,6 @@ Provides an OpenAI-compatible endpoint supporting:
 - Chat Completions (Text Generation)
 - Vision (Image Input Analysis)
 - Speech-to-Text (Audio Input Transcription)
-- **Text-to-Speech (Audio Output Generation)**
 - Function Calling
 - Streaming Responses (for Text Generation)
 
@@ -414,21 +401,20 @@ Follows the OpenAI Chat Completions API format for inputs where applicable.
 
 **Common Body Parameters:**
 
-| Parameter                      | Description                                                                                                                                                      | Notes                                                                                              |
-| :----------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------- |
-| `messages`                     | An array of message objects (role: `system`, `user`, `assistant`). Used for Chat, Vision, STT, TTS (input text).                                                 | Required for most tasks.                                                                           |
-| `model`                        | The model identifier. See [Available Text Models](#list-available-text-models-).                                                                                 | Required. e.g., `openai`, `openai-large`, `claude-hybridspace` (Vision), `openai-audio` (STT/TTS). |
-| `seed`                         | Seed for reproducible results (Text Generation).                                                                                                                 | Optional.                                                                                          |
-| `stream`                       | If `true`, sends partial message deltas using SSE (Text Generation). Process chunks as per OpenAI streaming docs.                                                | Optional, default `false`. Not applicable for direct audio output.                                 |
-| `jsonMode` / `response_format` | Set `response_format={ "type": "json_object" }` to constrain text output to valid JSON. `jsonMode: true` is a legacy alias.                                      | Optional. Check model compatibility. Not applicable for audio output.                              |
-| `tools`                        | A list of tools (functions) the model may call (Text Generation). See [OpenAI Function Calling Guide](https://platform.openai.com/docs/guides/function-calling). | Optional.                                                                                          |
-| `tool_choice`                  | Controls how the model uses tools.                                                                                                                               | Optional.                                                                                          |
-| `private`                      | Set to `true` to prevent the response from appearing in the public feed.                                                                                         | Optional, default `false`.                                                                         |
-| `reasoning_effort`             | Sets reasoning effort for `o3-mini` model (Text Generation).                                                                                                     | Optional. Options: `low`, `medium`, `high`.                                                        |
-| `voice`                        | Specifies the voice for Text-to-Speech.                                                                                                                          | Required for TTS. See [Available Text Models](#list-available-text-models-) for voice list.        |
+| Parameter                      | Description                                                                                                                                                      | Notes                                                                                                                 |
+| :----------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------- |
+| `messages`                     | An array of message objects (role: `system`, `user`, `assistant`). Used for Chat, Vision, STT.                                                                   | Required for most tasks.                                                                                              |
+| `model`                        | The model identifier. See [Available Text Models](#list-available-text-models-).                                                                                 | Required. e.g., `openai` (Chat/Vision), `openai-large` (Vision), `claude-hybridspace` (Vision), `openai-audio` (STT). |
+| `seed`                         | Seed for reproducible results (Text Generation).                                                                                                                 | Optional.                                                                                                             |
+| `stream`                       | If `true`, sends partial message deltas using SSE (Text Generation). Process chunks as per OpenAI streaming docs.                                                | Optional, default `false`.                                                                                            |
+| `jsonMode` / `response_format` | Set `response_format={ "type": "json_object" }` to constrain text output to valid JSON. `jsonMode: true` is a legacy alias.                                      | Optional. Check model compatibility.                                                                                  |
+| `tools`                        | A list of tools (functions) the model may call (Text Generation). See [OpenAI Function Calling Guide](https://platform.openai.com/docs/guides/function-calling). | Optional.                                                                                                             |
+| `tool_choice`                  | Controls how the model uses tools.                                                                                                                               | Optional.                                                                                                             |
+| `private`                      | Set to `true` to prevent the response from appearing in the public feed.                                                                                         | Optional, default `false`.                                                                                            |
+| `reasoning_effort`             | Sets reasoning effort for `o3-mini` model (Text Generation).                                                                                                     | Optional. Options: `low`, `medium`, `high`.                                                                           |
 
 <details>
-<summary>▶️ Code Examples: Basic Chat Completion (POST)</summary>
+<summary><strong>Code Examples:</strong> Basic Chat Completion (POST)</summary>
 
 **cURL:**
 
@@ -528,7 +514,7 @@ postChatCompletion(chatMessages, { model: "mistral", seed: 500 });
 </details>
 
 <details>
-<summary>▶️ Code Examples: Streaming Response (POST)</summary>
+<summary><strong>Code Examples:</strong> Streaming Response (POST)</summary>
 
 **cURL:**
 
@@ -575,19 +561,17 @@ try:
     for event in client.events():
         if event.data:
             try:
+                # Handle potential '[DONE]' marker
+                if event.data.strip() == '[DONE]':
+                     print("\nStream finished.")
+                     break
                 chunk = json.loads(event.data)
                 content = chunk.get('choices', [{}])[0].get('delta', {}).get('content')
                 if content:
                     print(content, end='', flush=True)
                     full_response += content
             except json.JSONDecodeError:
-                # Handle potential non-JSON messages if the stream format varies
-                # Or handle the '[DONE]' message if present (OpenAI standard)
-                if event.data.strip() == '[DONE]':
-                     print("\nStream finished.")
-                     break
-                else:
-                     print(f"\nReceived non-JSON data: {event.data}")
+                 print(f"\nReceived non-JSON data (or marker other than [DONE]): {event.data}")
 
     print("\n--- End of Stream ---")
     # print("Full streamed response:", full_response)
@@ -691,7 +675,7 @@ streamChatCompletion(streamMessages, { model: "openai" }, handleChunk);
 
 ---
 
-#### **Vision Capabilities (Image Input)** 🖼️➡️📝
+#### Vision Capabilities (Image Input) 🖼️➡️📝
 
 - **Models:** `openai`, `openai-large`, `claude-hybridspace` (check [List Text Models](#list-available-text-models-) for updates).
 - **How:** Include image URLs or base64 data within the `content` array of a `user` message.
@@ -719,7 +703,7 @@ streamChatCompletion(streamMessages, { model: "openai" }, handleChunk);
 - **Return:** Standard OpenAI chat completion JSON response containing the text analysis.
 
 <details>
-<summary>▶️ Code Examples: Vision (Image Input)</summary>
+<summary><strong>Code Examples:</strong> Vision (Image Input)</summary>
 
 **cURL (using URL):**
 
@@ -908,7 +892,7 @@ document.getElementById('imageInput').addEventListener('change', (event) => {
 
 ---
 
-#### **Speech-to-Text Capabilities (Audio Input)** 🎤➡️📝
+#### Speech-to-Text Capabilities (Audio Input) 🎤➡️📝
 
 - **Model:** `openai-audio`
 - **How:** Provide base64 audio data and format within the `content` array of a `user` message.
@@ -934,7 +918,7 @@ document.getElementById('imageInput').addEventListener('change', (event) => {
 - **Return:** Standard OpenAI chat completion JSON response containing the transcription in the message content.
 
 <details>
-<summary>▶️ Code Examples: Speech-to-Text (Audio Input)</summary>
+<summary><strong>Code Examples:</strong> Speech-to-Text (Audio Input)</summary>
 
 **Python (`requests`):**
 
@@ -1090,158 +1074,7 @@ document.getElementById('audioInput').addEventListener('change', (event) => {
 
 ---
 
-#### **Text-to-Speech Capabilities (Audio Output)** 📝➡️🎙️
-
-- **Model:** `openai-audio`
-- **How:** Send the text to be synthesized within the `messages` array and specify the desired `voice`.
-  ```json
-  {
-    // Request Body
-    "model": "openai-audio",
-    "messages": [
-      {
-        "role": "user",
-        "content": "Convert this text into speech using the selected voice."
-      }
-    ],
-    "voice": "nova" // e.g., alloy, echo, fable, onyx, nova, shimmer
-  }
-  ```
-- **Return:** Audio file (MP3 format, `Content-Type: audio/mpeg`) 🎧. The response body _is_ the audio data, not JSON.
-
-<details>
-<summary>▶️ Code Examples: Text-to-Speech (POST)</summary>
-
-**cURL:**
-
-```bash
-# Save output directly to an MP3 file
-curl https://text.pollinations.ai/openai \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "openai-audio",
-    "messages": [
-      {"role": "user", "content": "Hello from Pollinations AI! This audio was generated via POST."}
-    ],
-    "voice": "echo"
-  }' \
-  --output generated_audio_post.mp3
-```
-
-**Python (`requests`):**
-
-```python
-import requests
-import json
-
-url = "https://text.pollinations.ai/openai"
-payload = {
-    "model": "openai-audio",
-    "messages": [
-      {"role": "user", "content": "This is a test of the text to speech generation using Python."}
-    ],
-    "voice": "shimmer" # Choose from alloy, echo, fable, onyx, nova, shimmer
-}
-headers = {
-    "Content-Type": "application/json"
-    # Accept header isn't strictly necessary but good practice
-    # "Accept": "audio/mpeg"
-}
-
-output_filename = "generated_audio_post.mp3"
-
-try:
-    response = requests.post(url, headers=headers, json=payload)
-    response.raise_for_status()
-
-    # Check if the response content type is audio
-    if 'audio/mpeg' in response.headers.get('Content-Type', ''):
-        with open(output_filename, 'wb') as f:
-            f.write(response.content)
-        print(f"Audio saved successfully as {output_filename}")
-    else:
-        # If not audio, it might be an error message (JSON or text)
-        print("Error: Expected audio response, but received:")
-        print(f"Content-Type: {response.headers.get('Content-Type')}")
-        try:
-             # Try parsing as JSON error
-             error_data = response.json()
-             print(json.dumps(error_data, indent=2))
-        except json.JSONDecodeError:
-             # Print as plain text error
-             print(response.text)
-
-except requests.exceptions.RequestException as e:
-    print(f"Error making TTS POST request: {e}")
-```
-
-**JavaScript (Browser `fetch`):**
-
-```javascript
-async function generateAudioPost(text, voice = "alloy") {
-  const url = "https://text.pollinations.ai/openai";
-  const payload = {
-    model: "openai-audio",
-    messages: [{ role: "user", content: text }],
-    voice: voice,
-  };
-
-  console.log("Generating audio via POST:", payload);
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      // Try to get error details
-      const errorText = await response.text();
-      throw new Error(
-        `HTTP error! status: ${response.status}, message: ${errorText}`
-      );
-    }
-
-    if (response.headers.get("Content-Type")?.includes("audio/mpeg")) {
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-
-      // Example: Play the audio
-      const audio = new Audio(audioUrl);
-      audio.play();
-      console.log("Audio generated and playing.");
-
-      // Example: Offer download link
-      // const link = document.createElement('a');
-      // link.href = audioUrl;
-      // link.download = 'generated_audio_post.mp3';
-      // link.textContent = 'Download Audio';
-      // document.body.appendChild(link);
-    } else {
-      // Handle unexpected content type (likely an error message)
-      const errorText = await response.text();
-      console.error(
-        "Expected audio response, but received:",
-        response.headers.get("Content-Type")
-      );
-      console.error("Response body:", errorText);
-      throw new Error("API did not return audio content.");
-    }
-  } catch (error) {
-    console.error("Error generating audio via POST:", error);
-  }
-}
-
-// --- Usage ---
-// generateAudioPost("Generate speech using the POST method.", "nova");
-```
-
-</details>
-
----
-
-#### **Function Calling** ⚙️
+#### Function Calling ⚙️
 
 - **Models:** Check compatibility (e.g., `openai` models often support this).
 - **How:** Define available functions in the `tools` parameter. The model may respond with a `tool_calls` object in the JSON response, which your code needs to handle.
@@ -1249,7 +1082,7 @@ async function generateAudioPost(text, voice = "alloy") {
 - **Return:** Standard OpenAI chat completion JSON response, potentially including `tool_calls`.
 
 <details>
-<summary>▶️ Code Examples: Function Calling (Conceptual)</summary>
+<summary><strong>Code Examples:</strong> Function Calling (Conceptual)</summary>
 
 **Note:** These examples show defining tools and interpreting the model's request to call a function. You need to implement the actual function execution (`get_current_weather` in this case) separately.
 
@@ -1399,10 +1232,9 @@ except Exception as e:
 
 ---
 
-**General Return Format (POST /openai):**
+**General Return Format (POST /openai for Text/Vision/STT/Functions):**
 
-- For Text Generation, Vision, STT, Function Calling: OpenAI-style chat completion response object (JSON). 🤖
-- For Text-to-Speech: Raw audio file data (MP3). 🎧
+- OpenAI-style chat completion response object (JSON). 🤖
 
 **Rate Limits:** (Inherits base text API limits, potentially subject to specific model constraints)
 
@@ -1414,10 +1246,10 @@ except Exception as e:
 
 **Description:** Returns a list of available models for the Text Generation API, including those supporting vision, audio (STT/TTS), and specific features. Also lists available voices for TTS.
 
-**Return:** JSON list of model identifiers and details.
+**Return:** JSON list/object containing model identifiers and details (including voices).
 
 <details>
-<summary>▶️ Code Examples: List Text Models</summary>
+<summary><strong>Code Examples:</strong> List Text Models</summary>
 
 **cURL:**
 
@@ -1443,6 +1275,10 @@ try:
     # if isinstance(models_data, list):
     #    model_ids = [m.get('id') for m in models_data if m.get('id')]
     #    print("\nModel IDs:", model_ids)
+    # Example: Extract voices if structure is known
+    # voices = models_data.get('openai-audio', {}).get('voices', [])
+    # print("\nAvailable Voices:", voices)
+
 except requests.exceptions.RequestException as e:
     print(f"Error fetching text models: {e}")
 ```
@@ -1461,6 +1297,8 @@ async function listTextModels() {
     console.log("Available Text Models & Voices:", modelsData);
     // You might want to parse modelsData further depending on its structure
     // e.g., filter for models, extract voices, etc.
+    // const voices = modelsData?.['openai-audio']?.voices || [];
+    // console.log("Voices:", voices);
   } catch (error) {
     console.error("Error fetching text models:", error);
   }
@@ -1475,15 +1313,13 @@ listTextModels();
 
 ## Generate Audio API 🎵
 
-Provides methods for generating audio, primarily focusing on Text-to-Speech.
-
-_(Note: For generating audio via POST, suitable for longer text inputs, see the [Text-to-Speech Capabilities](#text-to-speech-capabilities-audio-output-️️) under the `POST /openai` endpoint.)_
+Provides methods for generating audio via Text-to-Speech (TTS).
 
 ### Text-to-Speech (GET) 📝➡️🎙️
 
 `GET https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}`
 
-Generates speech audio from text using a simple GET request. Best suited for short text snippets due to URL length limitations.
+Generates speech audio from text using a simple GET request. Best suited for **short text snippets** due to URL length limitations.
 
 **Parameters:**
 
@@ -1498,7 +1334,7 @@ Generates speech audio from text using a simple GET request. Best suited for sho
 **Rate Limits:** (Inherits base text API limits)
 
 <details>
-<summary>▶️ Code Examples: Text-to-Speech (GET)</summary>
+<summary><strong>Code Examples:</strong> Text-to-Speech (GET)</summary>
 
 **cURL:**
 
@@ -1597,6 +1433,144 @@ async function generateAudioGet(text, voice = "alloy") {
 
 ---
 
+### Text-to-Speech (POST - OpenAI Compatible) 📝➡️🎙️
+
+`POST https://text.pollinations.ai/openai`
+
+Generates speech audio from text using the OpenAI compatible endpoint. This method is suitable for **longer text inputs** compared to the GET method.
+
+- **Model:** Must use `openai-audio`.
+- **How:** Send the text to be synthesized within the `messages` array and specify the desired `voice` in the JSON body.
+
+**Request Body (JSON):**
+
+```json
+{
+  "model": "openai-audio",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Convert this longer text into speech using the selected voice. This method is better for larger inputs."
+    }
+  ],
+  "voice": "nova", // Required: e.g., alloy, echo, fable, onyx, nova, shimmer
+  "private": false // Optional
+}
+```
+
+**Parameters (in Body):**
+
+| Parameter  | Required | Description                                                                                            | Default |
+| :--------- | :------- | :----------------------------------------------------------------------------------------------------- | :------ |
+| `model`    | Yes      | Must be `openai-audio`.                                                                                |         |
+| `messages` | Yes      | Standard OpenAI message array, containing the text to speak in the `content` of a `user` role message. |         |
+| `voice`    | Yes      | Voice to use. See available voices via [List Text Models](#list-available-text-models-).               | `alloy` |
+| `private`  | No       | Set to `true` to prevent the response from appearing in the public feed.                               | `false` |
+
+**Return:** Audio file (MP3 format, `Content-Type: audio/mpeg`) 🎧. The response body _is_ the audio data, not JSON.
+
+**Rate Limits:** (Inherits base text API limits)
+
+<details>
+<summary><strong>Code Examples:</strong> Text-to-Speech (POST)</summary>
+
+**cURL:**
+
+```bash
+# Save output directly to an MP3 file
+curl https://text.pollinations.ai/openai \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "openai-audio",
+    "messages": [
+      {"role": "user", "content": "Hello from Pollinations AI! This audio was generated via POST."}
+    ],
+    "voice": "echo"
+  }' \
+  --output generated_audio_post.mp3
+```
+
+**Python (`requests`):**
+
+```python
+import requests
+import json
+
+url = "https://text.pollinations.ai/openai"
+payload = {
+    "model": "openai-audio",
+    "messages": [
+      {"role": "user", "content": "This is a test of the text to speech generation using Python and the POST method."}
+    ],
+    "voice": "shimmer" # Choose voice
+}
+headers = {"Content-Type": "application/json"}
+output_filename = "generated_audio_post.mp3"
+
+try:
+    response = requests.post(url, headers=headers, json=payload)
+    response.raise_for_status()
+    if 'audio/mpeg' in response.headers.get('Content-Type', ''):
+        with open(output_filename, 'wb') as f:
+            f.write(response.content)
+        print(f"Audio saved successfully as {output_filename}")
+    else:
+        print("Error: Expected audio response, received:")
+        print(f"Content-Type: {response.headers.get('Content-Type')}")
+        print(response.text)
+except requests.exceptions.RequestException as e:
+    print(f"Error making TTS POST request: {e}")
+```
+
+**JavaScript (Browser `fetch`):**
+
+```javascript
+async function generateAudioPost(text, voice = "alloy") {
+  const url = "https://text.pollinations.ai/openai";
+  const payload = {
+    model: "openai-audio",
+    messages: [{ role: "user", content: text }],
+    voice: voice,
+  };
+  console.log("Generating audio via POST:", payload);
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${errorText}`
+      );
+    }
+    if (response.headers.get("Content-Type")?.includes("audio/mpeg")) {
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      audio.play();
+      console.log("Audio generated and playing.");
+    } else {
+      const errorText = await response.text();
+      console.error(
+        "Expected audio, received:",
+        response.headers.get("Content-Type"),
+        errorText
+      );
+      throw new Error("API did not return audio content.");
+    }
+  } catch (error) {
+    console.error("Error generating audio via POST:", error);
+  }
+}
+// generateAudioPost("Generate speech using the POST method.", "nova");
+```
+
+</details>
+
+---
+
 ## MCP Server for AI Assistants 🤖🔧
 
 Pollinations provides an MCP (Model Context Protocol) server that enables AI assistants (like Claude via Anthropics' tool use feature) to generate images and audio directly.
@@ -1664,7 +1638,7 @@ data: {
 ```
 
 <details>
-<summary>▶️ Code Examples: Image Feed (SSE)</summary>
+<summary><strong>Code Examples:</strong> Image Feed (SSE)</summary>
 
 **cURL:**
 
@@ -1788,7 +1762,7 @@ data: {
 ```
 
 <details>
-<summary>▶️ Code Examples: Text Feed (SSE)</summary>
+<summary><strong>Code Examples:</strong> Text Feed (SSE)</summary>
 
 **cURL:**
 
@@ -1910,5 +1884,3 @@ Pollinations.AI is open-source software licensed under the [MIT license](LICENSE
 ---
 
 Made with ❤️ by the Pollinations.AI team 💡
-
----

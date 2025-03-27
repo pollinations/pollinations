@@ -40,7 +40,7 @@ Click the links below to see examples in your browser:
     - [Image Feed 🖼️📈](#image-feed-️)
     - [Text Feed 📝📈](#text-feed-)
   - [Referrer 🔗](#referrer-)
-    - [API Update (starting **2025.03.12**) 📅](#api-update-starting-20250312-)
+    - [API Update (starting **2025.03.31**) 📅](#api-update-starting-20250331-)
     - [Whitelisting ✅](#whitelisting-)
   - [License 📜](#license-)
 
@@ -1868,7 +1868,7 @@ def connect_text_feed():
 
 ## Referrer 🔗
 
-### API Update (starting **2025.03.12**) 📅
+### API Update (starting **2025.03.31**) 📅
 
 - **Text-To-Image** responses may show the Pollinations.AI logo 🖼️ (can be disabled with `nologo=true`).
 - **Text-To-Text** responses may include a link to pollinations.ai 🔗.

@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "sanitize-filename": "^1.6.3",
+    "sharp": "^0.33.5",
+    "uuid": "^11.1.0"
+  }
+}

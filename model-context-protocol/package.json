@@ -1,10 +1,10 @@
 {
   "name": "@pollinations/model-context-protocol",
-  "version": "1.0.1",
+  "version": "1.0.5",
   "description": "Model Context Protocol (MCP) server for Pollinations AI image generation",
   "type": "module",
   "bin": {
-    "pollinations-mcp-server": "./pollinations-mcp-server.js"
+    "model-context-protocol": "./pollinations-mcp-server.js"
   },
   "files": [
     "src/**/*",

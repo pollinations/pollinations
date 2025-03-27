@@ -33,15 +33,13 @@ body:
       label: Project URL
       description: Link to your project (if public)
       placeholder: "https://example.com"
-    validations:
-      required: true
 
   - type: input
     id: contact-info
     attributes:
       label: Contact Information
       description: How can we reach you? (Discord username, GitHub username, email, or social profile link)
-      placeholder: "e.g., @username or https://profile.example.com"
+      placeholder: "e.g., @username"
     validations:
       required: true
 
@@ -52,63 +50,12 @@ body:
       description: Provide a link to your project's GitHub repository (if available)
       placeholder: "https://github.com/your-repo"
 
-  - type: dropdown
-    id: project-category
-    attributes:
-      label: Project Category
-      description: Select the category that best describes your project
-      options:
-        - LLM Integrations
-        - Creative & Interactive Applications
-        - Tools & Interfaces
-        - Social Bots
-        - SDK & Libraries
-        - Tutorials
-        - Other
-    validations:
-      required: true
-
   - type: input
     id: domain-to-whitelist
     attributes:
       label: Domain/Referrer to Whitelist
       description: The domain or referrer string you want whitelisted
       placeholder: "e.g., example.com or MyBotName"
-    validations:
-      required: true
-
-  - type: dropdown
-    id: api-used
-    attributes:
-      label: API Endpoints Used
-      description: Which Pollinations API endpoints does your project use?
-      multiple: true
-      options:
-        - Image Generation
-        - Text Generation
-        - Audio/TTS Generation
-        - Vision (Image Analysis)
-        - Speech-to-Text
-        - Function Calling
-        - Real-time Feeds
-    validations:
-      required: true
-
-  - type: input
-    id: estimated-requests
-    attributes:
-      label: Estimated Request Volume
-      description: Approximately how many requests per day do you anticipate?
-      placeholder: "e.g., 500 requests/day"
-    validations:
-      required: true
-
-  - type: textarea
-    id: use-case-details
-    attributes:
-      label: Use Case Details
-      description: Provide more specific details about how your application uses the API
-      placeholder: "Explain your usage patterns, how the API is integrated, and any specific needs for higher rate limits or priority queue access..."
     validations:
       required: true
 

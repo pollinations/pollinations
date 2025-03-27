@@ -1,16 +1,16 @@
-name: Domain Whitelist Request
-description: Request to have your domain/referrer whitelisted for enhanced API access
-title: "[Whitelist Request]: "
-labels: ["whitelist-request"]
+name: Domain Special Bee Request
+description: Request to have your domain/referrer approved for enhanced API access
+title: "[Special Bee Request]: "
+labels: ["special-bee-request"]
 body:
   - type: markdown
     attributes:
       value: |
         <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
-          <img src="https://raw.githubusercontent.com/pollinations/pollinations/main/src/assets/logo/logo-icon-white.svg" alt="Pollinations Logo" style="width: 40px; height: 40px;">
-          <h1 style="margin: 0; font-size: 24px;">Pollinations.AI</h1>
+          <img src="https://raw.githubusercontent.com/pollinations/pollinations/master/pollinations.ai/src/assets/logo/logo-icon-white.svg" alt="Pollinations Logo" style="width: 40px; height: 40px;">
+          <h1 style="margin: 0; font-size: 24px;">Pollinations.AI - Special Bee Domain Request</h1>
         </div>
-        Thanks for your interest in Pollinations API! This form is for requesting domain/referrer whitelisting 
+        Thanks for your interest in Pollinations API! This form is for requesting domain/referrer approval 
         that may provide enhanced API access (e.g., priority queue, modified rate limits).
         
   - type: input
@@ -55,10 +55,10 @@ body:
       placeholder: "https://github.com/your-repo"
 
   - type: input
-    id: domain-to-whitelist
+    id: domain-to-approve
     attributes:
-      label: Domain/Referrer to Whitelist
-      description: The domain or referrer string you want whitelisted
+      label: Domain/Referrer to Approve
+      description: The domain or referrer string you want approved
       placeholder: "e.g., example.com or MyBotName"
     validations:
       required: true
@@ -67,7 +67,7 @@ body:
     id: additional-info
     attributes:
       label: Additional Information
-      description: Any other details you'd like to share about your whitelisting request?
+      description: Any other details you'd like to share about your approval request?
       placeholder: "Screenshots, special requirements, future plans..."
 
   - type: markdown
@@ -75,7 +75,7 @@ body:
       value: |
         ### Important Notes
         
-        - Whitelisting is evaluated on a case-by-case basis
+        - Approval is evaluated on a case-by-case basis
         - We may reach out for additional information
         - Please ensure your project complies with our terms of service and ethical guidelines
         - Submitting this form does not guarantee approval 

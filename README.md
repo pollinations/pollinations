@@ -225,6 +225,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 Riffle | A powerful tool designed to make reading English books more enjoyable and effective while helping you build your vocabulary naturally. Using Pollinations AI to create content that incorporates your own vocabulary words allows you to learn them in a vivid, engaging context. | gsx123@gmail.com | [Website](https://riffle.ink) |
 | 🆕 VibeCoder | A web app for coding with vibes, created using Pollinations.AI Open Source API without coding syntax. | @Aashir__Shaikh | [Website](https://vibecoderbyaashir.netlify.app/), [Twitter](https://x.com/Aashir__Shaikh) |
 | 🆕 AI 文本转音频 🇨🇳 | 输入文本，选择语音风格，一键将文字转换为自然流畅的语音。 支持多种声音特征，帮您创建专业水准的音频内容。 (Input text, select voice style, and instantly convert text to natural, fluid speech. Supports various voice characteristics to help you create professional-grade audio content.) | https://github.com/Azad-sl | [Website](https://tts-gules-theta.vercel.app/), [GitHub](https://github.com/Azad-sl/tts) |
 | 🆕 Case Me 🇧🇷 | O projeto consiste em uma vending machine que criará capinhas para celular personalizadas com fotos ou outras imagens e cores de escolha do cliente final. (A vending machine that creates customized phone cases with photos or other images and colors chosen by the end customer.) | anaboxmania@gmail.com | - |

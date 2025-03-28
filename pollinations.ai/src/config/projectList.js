@@ -138,6 +138,13 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 Riffle",
+      url: "https://riffle.ink",
+      description: "A powerful tool designed to make reading English books more enjoyable and effective while helping you build your vocabulary naturally. Using Pollinations AI to create content that incorporates your own vocabulary words allows you to learn them in a vivid, engaging context.",
+      author: "gsx123@gmail.com",
+      submissionDate: "2025-03-28",
+    },
+    {
       name: "🆕 VibeCoder",
       url: "https://vibecoderbyaashir.netlify.app/",
       description: "A web app for coding with vibes, created using Pollinations.AI Open Source API without coding syntax.",
@@ -368,13 +375,6 @@ const allProjects = {
     },
   ],
   toolsInterfaces: [
-    {
-      name: "🆕 TeekGenAI",
-      url: "https://teekgenai.com/image-genai/",
-      description: "TeekGenAI is a free AI image generator using the Pollinations API. No login required—just enter a prompt and get unique AI-generated images instantly",
-      author: "contact@teekgenai.com",
-      submissionDate: "2025-03-27",
-    },
     {
       name: "🆕 toai.chat",
       url: "https://toai.chat",

@@ -1,0 +1,74 @@
+name: Special Bee Request
+description: Request to have your domain/referrer approved for enhanced API access
+title: "[Special Bee Request]: "
+labels: ["special-bee-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+          <img src="https://raw.githubusercontent.com/pollinations/pollinations/master/assets/pollinations_ai_logo_image_white_transparent.png" alt="Pollinations Logo" width="48" height="48" style="display: inline-block;">
+          <h1 style="margin: 0; font-size: 24px; display: inline-block;">Special Bee Request</h1>
+        </div>
+        Thanks for your interest in Pollinations API! This form is for requesting domain/referrer approval 
+        that may provide enhanced API access (e.g., priority queue, modified rate limits).
+        
+  - type: input
+    id: project-name
+    attributes:
+      label: Project Name
+      description: What is the name of your project using Pollinations API?
+      placeholder: "e.g., AI Art Gallery"
+    validations:
+      required: true
+
+  - type: textarea
+    id: project-description
+    attributes:
+      label: Project Description
+      description: Please provide a brief description of your project and how it uses Pollinations API
+      placeholder: "Describe what your project does and how it integrates with Pollinations..."
+    validations:
+      required: true
+
+  - type: input
+    id: project-url
+    attributes:
+      label: Project URL
+      description: Link to your project (if public)
+      placeholder: "https://example.com"
+
+  - type: input
+    id: contact-info
+    attributes:
+      label: Contact Information
+      description: How can we reach you? (Discord username, GitHub username, email, or social profile link)
+      placeholder: "e.g., @username"
+    validations:
+      required: true
+
+  - type: input
+    id: github-repo
+    attributes:
+      label: GitHub Repository URL
+      description: Provide a link to your project's GitHub repository (if available)
+      placeholder: "https://github.com/your-repo"
+
+  - type: input
+    id: domain-to-approve
+    attributes:
+      label: Domain/Referrer to Approve
+      description: The domain or referrer string you want approved
+      placeholder: "e.g., example.com or MyBotName"
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ### Important Notes
+        
+        - Approval is evaluated on a case-by-case basis
+        - We may reach out for additional information
+        - Please ensure your project complies with our terms of service and ethical guidelines
+        - Submitting this form does not guarantee approval 

@@ -40,8 +40,8 @@ Click the links below to see examples in your browser:
     - [Image Feed 🖼️📈](#image-feed-️)
     - [Text Feed 📝📈](#text-feed-)
   - [Referrer 🔗](#referrer-)
-    - [API Update (starting **2025.03.12**) 📅](#api-update-starting-20250312-)
-    - [Whitelisting ✅](#whitelisting-)
+    - [API Update (starting **2025.03.31**) 📅](#api-update-starting-20250331-)
+    - [Special Bee ✅🐝🍯](#special-bee-)
   - [License 📜](#license-)
 
 ---
@@ -390,7 +390,21 @@ Provides an OpenAI-compatible endpoint supporting:
 
 Follows the OpenAI Chat Completions API format for inputs where applicable.
 
-**Request Body (JSON):** Structure depends on the task, generally following [OpenAI API](https://platform.openai.com/docs/api-reference/) conventions.
+**Request Body (JSON):**
+
+```json
+{
+  "model": "openai-audio",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Convert this longer text into speech using the selected voice. This method is better for larger inputs."
+    }
+  ],
+  "voice": "nova",
+  "private": false
+}
+```
 
 **Common Body Parameters:**
 
@@ -674,8 +688,7 @@ streamChatCompletion(streamMessages, { model: "openai" }, handleChunk);
 - **How:** Include image URLs or base64 data within the `content` array of a `user` message.
   ```json
   {
-    // Request Body Snippet
-    "model": "openai", // or other vision-capable model
+    "model": "openai",
     "messages": [
       {
         "role": "user",
@@ -685,11 +698,10 @@ streamChatCompletion(streamMessages, { model: "openai" }, handleChunk);
             "type": "image_url",
             "image_url": { "url": "data:image/jpeg;base64,{base64_string}" }
           }
-          // or { "url": "https://example.com/image.jpg" }
         ]
       }
-    ]
-    // ... other params like max_tokens if needed
+    ],
+    "max_tokens": 300
   }
   ```
 - **Details:** See [OpenAI Vision Guide](https://platform.openai.com/docs/guides/vision).
@@ -891,7 +903,6 @@ document.getElementById('imageInput').addEventListener('change', (event) => {
 - **How:** Provide base64 audio data and format within the `content` array of a `user` message.
   ```json
   {
-    // Request Body Snippet
     "model": "openai-audio",
     "messages": [
       {
@@ -901,7 +912,7 @@ document.getElementById('imageInput').addEventListener('change', (event) => {
           {
             "type": "input_audio",
             "input_audio": { "data": "{base64_audio_string}", "format": "wav" }
-          } // format can be wav, mp3, etc.
+          }
         ]
       }
     ]
@@ -1407,10 +1418,10 @@ async function generateAudioGet(text, voice = "alloy") {
     } else {
       const errorText = await response.text();
       console.error(
-        "Expected audio response, but received:",
-        response.headers.get("Content-Type")
+        "Expected audio, received:",
+        response.headers.get("Content-Type"),
+        errorText
       );
-      console.error("Response body:", errorText);
       throw new Error("API did not return audio content.");
     }
   } catch (error) {
@@ -1446,8 +1457,8 @@ Generates speech audio from text using the OpenAI compatible endpoint. This meth
       "content": "Convert this longer text into speech using the selected voice. This method is better for larger inputs."
     }
   ],
-  "voice": "nova", // Required: e.g., alloy, echo, fable, onyx, nova, shimmer
-  "private": false // Optional
+  "voice": "nova",
+  "private": false
 }
 ```
 
@@ -1619,14 +1630,13 @@ _(Code examples are best viewed in the dedicated React Hooks documentation or re
 **Example Event Data:**
 
 ```json
-data: {
+{
   "width": 1024,
   "height": 1024,
   "seed": 42,
   "model": "flux",
-  "imageURL": "https://image.pollinations.ai/prompt/...",
-  "prompt": "A radiant visage...",
-  ...
+  "imageURL": "https://image.pollinations.ai/prompt/example",
+  "prompt": "A radiant visage in the style of renaissance painting"
 }
 ```
 
@@ -1746,11 +1756,15 @@ def connect_image_feed():
 **Example Event Data:**
 
 ```json
-data: {
-  "response": "Cherry Blossom Pink represents...",
+{
+  "response": "Cherry Blossom Pink represents gentleness, kindness, and the transient nature of life. It symbolizes spring, renewal, and the beauty of impermanence in Japanese culture.",
   "model": "openai",
-  "messages": [ ...openai messages array... ],
-  ...
+  "messages": [
+    {
+      "role": "user",
+      "content": "What does the color cherry blossom pink represent?"
+    }
+  ]
 }
 ```
 
@@ -1854,7 +1868,7 @@ def connect_text_feed():
 
 ## Referrer 🔗
 
-### API Update (starting **2025.03.12**) 📅
+### API Update (starting **2025.03.31**) 📅
 
 - **Text-To-Image** responses may show the Pollinations.AI logo 🖼️ (can be disabled with `nologo=true`).
 - **Text-To-Text** responses may include a link to pollinations.ai 🔗.
@@ -1864,9 +1878,9 @@ def connect_text_feed():
 - **Web Apps:** Browsers typically send this via the `Referer` HTTP header automatically. Explicitly setting the `referrer` parameter can provide more specific context (e.g., `?referrer=MyWebAppSection`).
 - **Bots & Backend Apps:** Add the `referrer` parameter (e.g., `?referrer=MyCoolBot` or in POST body) to identify your application.
 
-### Whitelisting ✅
+### Special Bee ✅🐝🍯
 
-Projects can **request to have their referrer whitelisted** for potentially enhanced API access (e.g., priority queue, modified rate limits). This is evaluated on a case-by-case basis. [Submit a Domain Whitelisting Request](https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml)
+Projects can **request to have their referrer verified** for potentially enhanced API access (e.g., priority queue, modified rate limits). This is evaluated on a case-by-case basis. [Submit a Special Bee Request](https://github.com/pollinations/pollinations/blob/master/.github/ISSUE_TEMPLATE/special-bee-request.yml)
 
 ---
 

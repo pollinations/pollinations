@@ -63,13 +63,6 @@ body:
     validations:
       required: true
 
-  - type: textarea
-    id: additional-info
-    attributes:
-      label: Additional Information
-      description: Any other details you'd like to share about your approval request?
-      placeholder: "Screenshots, special requirements, future plans..."
-
   - type: markdown
     attributes:
       value: |

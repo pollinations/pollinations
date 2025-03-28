@@ -369,13 +369,6 @@ const allProjects = {
   ],
   toolsInterfaces: [
     {
-      name: "🆕 TeekGenAI",
-      url: "https://teekgenai.com/image-genai/",
-      description: "TeekGenAI is a free AI image generator using the Pollinations API. No login required—just enter a prompt and get unique AI-generated images instantly",
-      author: "contact@teekgenai.com",
-      submissionDate: "2025-03-27",
-    },
-    {
       name: "🆕 toai.chat",
       url: "https://toai.chat",
       description: "An AI chat service that operates exclusively via Curl commands, specifically designed for users working in terminal environments without the need for a standalone AI client.",

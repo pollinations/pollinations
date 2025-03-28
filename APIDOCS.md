@@ -1880,7 +1880,7 @@ def connect_text_feed():
 
 ### Whitelisting ✅
 
-Projects can **request to have their referrer whitelisted** for potentially enhanced API access (e.g., priority queue, modified rate limits). This is evaluated on a case-by-case basis. [Submit a Domain Whitelisting Request](https://github.com/pollinations/pollinations/issues/new?template=domain-whitelist-request.yml)
+Projects can **request to have their referrer whitelisted** for potentially enhanced API access (e.g., priority queue, modified rate limits). This is evaluated on a case-by-case basis. [Submit a Domain Whitelisting Request](https://github.com/pollinations/pollinations/issues/new?template=sepacial-bee-request.yml)
 
 ---
 

@@ -41,7 +41,7 @@ Click the links below to see examples in your browser:
     - [Text Feed 📝📈](#text-feed-)
   - [Referrer 🔗](#referrer-)
     - [API Update (starting **2025.03.31**) 📅](#api-update-starting-20250331-)
-    - [Whitelisting ✅](#whitelisting-)
+    - [Special Bee ✅🐝🍯](#special-bee-)
   - [License 📜](#license-)
 
 ---
@@ -1878,9 +1878,9 @@ def connect_text_feed():
 - **Web Apps:** Browsers typically send this via the `Referer` HTTP header automatically. Explicitly setting the `referrer` parameter can provide more specific context (e.g., `?referrer=MyWebAppSection`).
 - **Bots & Backend Apps:** Add the `referrer` parameter (e.g., `?referrer=MyCoolBot` or in POST body) to identify your application.
 
-### Whitelisting ✅
+### Special Bee ✅🐝🍯
 
-Projects can **request to have their referrer whitelisted** for potentially enhanced API access (e.g., priority queue, modified rate limits). This is evaluated on a case-by-case basis. [Submit a Domain Whitelisting Request](https://github.com/pollinations/pollinations/issues/new?template=sepacial-bee-request.yml)
+Projects can **request to have their referrer verified** for potentially enhanced API access (e.g., priority queue, modified rate limits). This is evaluated on a case-by-case basis. [Submit a Special Bee Request](https://github.com/pollinations/pollinations/blob/1306-consolidate-api-documentation-new/.github/ISSUE_TEMPLATE/special-bee-request.yml)
 
 ---
 

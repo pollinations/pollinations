@@ -1614,8 +1614,10 @@ Integrate Pollinations directly into your React applications.
   - Options: `seed`, `jsonMode`, `model` (uses `POST /openai`)
   - Return: `{ sendUserMessage: (message) => void, messages: Array<{role, content}> }`
 
-**Docs:** [https://pollinations.ai/react-hooks](https://pollinations.ai/react-hooks)
-_(Code examples are best viewed in the dedicated React Hooks documentation or repository.)_
+**Docs:** 
+- [README](https://github.com/pollinations/pollinations/blob/master/pollinations-react/README.md)
+- [PLAYGROUND](https://react-hooks.pollinations.ai/)
+
 
 ---
 
@@ -1880,7 +1882,7 @@ def connect_text_feed():
 
 ### Special Bee ✅🐝🍯
 
-Projects can **request to have their referrer verified** for potentially enhanced API access (e.g., priority queue, modified rate limits). This is evaluated on a case-by-case basis. [Submit a Special Bee Request](https://github.com/pollinations/pollinations/blob/master/.github/ISSUE_TEMPLATE/special-bee-request.yml)
+Projects can **request to have their referrer verified** for potentially enhanced API access (e.g., priority queue, modified rate limits). This is evaluated on a case-by-case basis. [Submit a Special Bee Request](https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml)
 
 ---
 

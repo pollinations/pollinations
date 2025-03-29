@@ -1,0 +1,19 @@
+name: Add Issue to Project Board
+
+on:
+  issues:
+    types:
+      - opened
+
+jobs:
+  add-to-project:
+    name: Add issue to project
+    runs-on: ubuntu-latest
+    # Run for issues created from either template in the .github/ISSUE_TEMPLATE directory
+    if: contains(github.event.issue.labels.*.name, 'special-bee-request') || contains(github.event.issue.labels.*.name, 'project-submission')
+    steps:
+      - uses: actions/add-to-project@v0.5.0
+        with:
+          # Replace with your actual project number
+          project-url: https://github.com/orgs/pollinations/projects/20
+          github-token: ${{ secrets.ISSUE_TO_PROJECT }} 

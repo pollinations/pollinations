@@ -247,10 +247,10 @@ async function handleRequest(req, res, requestData) {
                     let processedContent = completion.choices[0].message.content;
                     
                     // First check for NSFW content in entire conversation
-                    processedContent = await processNSFWReferralLinks({
-                        messages: requestData.messages,
-                        responseContent: processedContent
-                    }, req);
+                    // processedContent = await processNSFWReferralLinks({
+                    //     messages: requestData.messages,
+                    //     responseContent: processedContent
+                    // }, req);
                     
                     // Then process regular referral links
                     // processedContent = await processReferralLinks(processedContent, req);
@@ -462,23 +462,23 @@ export function sendContentResponse(res, completion) {
 export async function processRequest(req, res, requestData) {
     const ip = getIp(req);
 
-    // Check for banned phrases first
-    try {
-        await checkBannedPhrases(requestData.messages, ip);
-    } catch (error) {
-        // Only block for actual banned phrases, not API errors
-        if (error.message && error.message.includes("banned phrase")) {
-            return sendErrorResponse(res, req, error, requestData, 403);
-        }
+    // // Check for banned phrases first
+    // try {
+    //     await checkBannedPhrases(requestData.messages, ip);
+    // } catch (error) {
+    //     // Only block for actual banned phrases, not API errors
+    //     if (error.message && error.message.includes("banned phrase")) {
+    //         return sendErrorResponse(res, req, error, requestData, 403);
+    //     }
         
-        // For API errors in streaming mode, pass them through
-        if (requestData.stream) {
-            log('API error in streaming mode:', error);
-            return sendErrorResponse(res, req, error, requestData, error.status || error.code || 500);
-        } else {
-            return sendErrorResponse(res, req, error, requestData, error.status || error.code || 500);
-        }
-    }
+    //     // For API errors in streaming mode, pass them through
+    //     if (requestData.stream) {
+    //         log('API error in streaming mode:', error);
+    //         return sendErrorResponse(res, req, error, requestData, error.status || error.code || 500);
+    //     } else {
+    //         return sendErrorResponse(res, req, error, requestData, error.status || error.code || 500);
+    //     }
+    // }
 
     const cacheKey = createHashKey(requestData);
 
@@ -632,10 +632,11 @@ app.post('/', async (req, res) => {
 
 app.get('/openai/models', (req, res) => {
     const models = availableModels.map(model => ({
+        ...model,
         id: model.name,
         object: "model",
         created: Date.now(),
-        owned_by: model.name
+        owned_by: model.name,
     }));
     res.json({
         object: "list",
@@ -645,7 +646,7 @@ app.get('/openai/models', (req, res) => {
 
 // POST /openai/* request handler
 app.post('/openai*', async (req, res) => {
-    const requestParams = { ...getRequestData(req), isPrivate: true };
+    const requestParams = { ...getRequestData(req), isPrivate: true, private: true }; // figure out later if it should be isPrivate or private
    
     try {
         await processRequest(req, res, requestParams);

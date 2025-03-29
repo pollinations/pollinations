@@ -5,11 +5,6 @@ export const SUPPORTER_LIST = [
     description: "Hosting Custom Flux Models",
   },
   {
-    name: "Karma.YT",
-    url: "https://karma.yt",
-    description: "Social media integrations",
-  },
-  {
     name: "AWS Activate",
     url: "https://aws.amazon.com/",
     description: "GPU Cloud Credits",
@@ -20,11 +15,6 @@ export const SUPPORTER_LIST = [
     description: "GPU Cloud Credits",
   },
   {
-    name: "OVH Cloud",
-    url: "https://www.ovhcloud.com/",
-    description: "GPU Cloud credits",
-  },
-  {
     name: "NVIDIA Inception",
     url: "https://www.nvidia.com/en-us/deep-learning-ai/startups/",
     description: "AI startup support",
@@ -33,11 +23,6 @@ export const SUPPORTER_LIST = [
     name: "Azure (MS for Startups)",
     url: "https://azure.microsoft.com/",
     description: "OpenAI credits",
-  },
-  {
-    name: "Outlier Ventures",
-    url: "https://outlierventures.io/",
-    description: "Startup Accelerator",
   },
   {
     name: "Cloudflare",

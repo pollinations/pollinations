@@ -1614,8 +1614,10 @@ Integrate Pollinations directly into your React applications.
   - Options: `seed`, `jsonMode`, `model` (uses `POST /openai`)
   - Return: `{ sendUserMessage: (message) => void, messages: Array<{role, content}> }`
 
-**Docs:** [https://pollinations.ai/react-hooks](https://pollinations.ai/react-hooks)
-_(Code examples are best viewed in the dedicated React Hooks documentation or repository.)_
+**Docs:** 
+- [README](https://github.com/pollinations/pollinations/blob/master/pollinations-react/README.md)
+- [PLAYGROUND](https://react-hooks.pollinations.ai/)
+
 
 ---
 

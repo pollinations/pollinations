@@ -1,21 +1,20 @@
 # [Pollinations.AI](https://pollinations.ai)
 
-[![All Contributors](https://img.shields.io/github/all-contributors/pollinations/pollinations?color=ee8449&style=flat-square)](#contributors)
+---
 
 ## 🆕 Latest News
 
-- **🔍 Special Bee** - New "Special Bee" issue template! Projects can now request referrer verification by submitting a Domain Verification Request. [More info](https://github.com/pollinations/pollinations/blob/master/APIDOCS.md#special-bees).
+- **🔍 Special Bee** - New "Special Bee" issue template! Projects can now request referrer verification by submitting a [Domain Verification Request](https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml)[More info](https://github.com/pollinations/pollinations/blob/master/APIDOCS.md#special-bee-)
 - **📚 API Documentation** - Major API documentation improvements! We've completely revamped our API docs with better examples, clearer explanations, and interactive code snippets. [Check it out](https://github.com/pollinations/pollinations/blob/master/APIDOCS.md).
 - **🤖 MCP Server** - New Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly! [Learn more](./model-context-protocol/README.md).  
   [![MCP Server Interface](https://github.com/user-attachments/assets/7311a7df-6b6a-4da5-94f8-7d57baca0ba3)](./model-context-protocol/README.md)
 - **💲 Support Us** - You can now support us with our new **Tip Us** button. Optionally connect your Discord account to **Ko-Fi** to get premium Discord roles!
 - **🎵 Audio Generation** - New text-to-speech and speech-to-text capabilities are now available! Try the `openai-audio` model - see our [API documentation](APIDOCS.md#audio-generation-api) for details.
+- **🤖 AI Code Assistant** - We're excited to announce MentatBot, the autonomous AI coding assistant that implements new features directly from GitHub issues! Simply [create an issue](https://github.com/pollinations/pollinations/issues/new) describing what you'd like to see, and MentatBot will analyze and implement it. [Learn more](https://mentat.ai/).
 
-## 🆕 NEWS: AI Code Assistant
+---
 
-We're excited to announce MentatBot, the autonomous AI coding assistant that implements new features directly from GitHub issues! Simply [create an issue](https://github.com/pollinations/pollinations/issues/new) describing what you'd like to see, and MentatBot will analyze and implement it. Learn more about [MentatBot](https://mentat.ai/).
-
-[![Pollinations.AI Logo](https://pollinations.ai/p/Pollinations.AI_logo_that_looks_cool_on_black_background?width=3000&height=1000&nologo=true&seed=-1)](https://pollinations.ai/p/Pollinations.AI_logo_that_looks_cool_on_black_background?width=3000&height=1000&nologo=true&seed=-1)
+[![Pollinations.AI Logo](https://pollinations.ai/p/3D_wireframe_blueprint_of_the_conceptual_isometric_world_of_Pollinations_AI_a_surreal_hyperrealistic_digital_garden_Elements_emerge_partially_from_all_sides?width=3000&height=1000&seed=-1)](https://pollinations.ai/p/3D_wireframe_blueprint_of_the_conceptual_isometric_world_of_Pollinations_AI_a_surreal_hyperrealistic_digital_garden_Elements_emerge_partially_from_all_sides?width=3000&height=1000&seed=-1)
 
 ## 🌟 Introduction
 

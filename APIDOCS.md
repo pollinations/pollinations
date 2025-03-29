@@ -1880,7 +1880,7 @@ def connect_text_feed():
 
 ### Special Bee ✅🐝🍯
 
-Projects can **request to have their referrer verified** for potentially enhanced API access (e.g., priority queue, modified rate limits). This is evaluated on a case-by-case basis. [Submit a Special Bee Request](https://github.com/pollinations/pollinations/blob/master/.github/ISSUE_TEMPLATE/special-bee-request.yml)
+Projects can **request to have their referrer verified** for potentially enhanced API access (e.g., priority queue, modified rate limits). This is evaluated on a case-by-case basis. [Submit a Special Bee Request](https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml)
 
 ---
 

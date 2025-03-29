@@ -9,6 +9,7 @@ import Discord from "./Community"
 import Supporter from "./Supporter"
 import Team from "./Team"
 import News from "./News"
+import { FeedText } from "./FeedText"
 // import { TextFeed } from "./TextFeed"
 
 export default function Home() {
@@ -20,6 +21,7 @@ export default function Home() {
         <Hero />
         <News />
         <FeedImage />
+        <FeedText />
         <Projects />
         <Integration />
         <Discord />

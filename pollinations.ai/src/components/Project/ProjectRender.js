@@ -1,5 +1,5 @@
-import React, { useState } from "react"
-import { Link, AppBar, ButtonGroup, Box, useMediaQuery } from "@mui/material"
+import React from "react"
+import { Link, Box, useMediaQuery } from "@mui/material"
 import Grid from "@mui/material/Grid2"
 import { useTheme } from "@mui/material/styles"
 import { ReactSVG } from "react-svg"
@@ -11,101 +11,24 @@ import useRandomSeed from "../../hooks/useRandomSeed"
 import { usePollinationsImage } from "@pollinations/react"
 import { PROJECT_LOGO_STYLE, PROJECT_DESCRIPTION } from "../../config/copywrite"
 import { rephrase, emojify, shortTechnical } from "../../config/llmTransforms"
-import { projectCategories, projects } from "../../config/projectList"
-import { GeneralButton } from "../GeneralButton"
-import { SectionSubContainer } from "../SectionContainer"
 import { ICONS } from "../../assets/icons/icons"
 import { trackEvent } from "../../config/analytics"
+import { SectionSubContainer } from "../SectionContainer"
 
 /**
- * Get background color for category button
- * @param {string} categoryKey - Key of the category
- * @param {string} selectedCategory - Currently selected category key
- * @returns {string} - CSS color value
+ * Renders the list of projects for the selected category
+ * @param {Object} props - Component props
+ * @param {Array} props.projectList - List of projects to render
+ * @param {Object} props.classes - CSS classes
  */
-const getButtonBackgroundColor = (categoryKey, selectedCategory) => {
-  if (selectedCategory !== categoryKey) {
-    return "transparent";
-  }
-  
-  return categoryKey === "featured" ? Colors.special : Colors.lime;
-};
-
-/**
- * Get text color for category button
- * @param {string} categoryKey - Key of the category
- * @param {string} selectedCategory - Currently selected category key
- * @returns {string} - CSS color value
- */
-const getButtonTextColor = (categoryKey, selectedCategory) => {
-  if (selectedCategory === categoryKey) {
-    return categoryKey === "featured" ? Colors.offwhite : Colors.offblack;
-  }
-  
-  return categoryKey === "featured" ? Colors.special : Colors.lime;
-};
-
-const ProjectsRender = ({ classes }) => {
+const ProjectsRender = ({ projectList, classes }) => {
   const theme = useTheme()
   const PROJECT_LOGO_SIZE = useMediaQuery(theme.breakpoints.down("md")) ? 80 : 96
-  const [selectedCategory, setSelectedCategory] = useState(projectCategories[0].key)
-
-  const handleCategoryClick = (categoryKey) => {
-    setSelectedCategory(categoryKey)
-    trackEvent({
-      action: "select_project_category",
-      category: "project",
-      value: categoryKey,
-    })
-  }
-
-  const displayProjects = selectedCategory
-    ? projects[selectedCategory] || []
-    : Object.values(projects).flat()
 
   return (
     <>
-      <AppBar
-        position="static"
-        style={{
-          boxShadow: "none",
-          backgroundColor: "transparent",
-        }}
-      >
-        <ButtonGroup
-          aria-label="contained primary button group"
-          style={{
-            backgroundColor: "transparent",
-            flexWrap: "wrap",
-            justifyContent: "space-between",
-            boxShadow: "none",
-          }}
-        >
-          {projectCategories.map((category) => (
-            <GeneralButton
-              key={category.key}
-              handleClick={() => handleCategoryClick(category.key)}
-              backgroundColor={getButtonBackgroundColor(category.key, selectedCategory)}
-              textColor={getButtonTextColor(category.key, selectedCategory)}
-              fontSize="1.3rem"
-              style={{
-                fontStyle: "normal",
-                fontWeight: 600,
-                position: "relative",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontFamily: Fonts.title,
-              }}
-            >
-              {category.title}
-            </GeneralButton>
-          ))}
-        </ButtonGroup>
-      </AppBar>
-
       <Grid container spacing={0.5} className={classes.gridContainer}>
-        {displayProjects.map((project, index) => (
+        {projectList?.map((project, index) => (
           <React.Fragment key={index}>
             <SectionSubContainer style={{ padding: "0em" }}>
               <Grid
@@ -131,7 +54,7 @@ const ProjectsRender = ({ classes }) => {
                   container
                   size={12}
                   direction="row"
-                  sx={{ backgroundColor: `${Colors.offblack}50`, padding: "1em" }}
+                  sx={{ padding: "1em" }}
                 >
                   <Grid
                     size={{ xs: 12, md: 4 }}

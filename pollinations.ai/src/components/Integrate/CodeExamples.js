@@ -1,27 +1,24 @@
 import { useState } from "react"
-import { AppBar, ButtonGroup, Box, IconButton } from "@mui/material"
+import { Box, IconButton } from "@mui/material"
 import { CodeBlock, paraisoDark } from "react-code-blocks"
 import { Colors, Fonts } from "../../config/global"
 import React from "react"
 import FileCopyIcon from "@mui/icons-material/FileCopy"
 import CODE_EXAMPLES from "../../config/codeExamplesText"
 import { SectionSubContainer } from "../SectionContainer"
-import { GeneralButton } from "../GeneralButton"
 import { trackEvent } from "../../config/analytics"
+import TabSelector from "../TabSelector"
 
 export function CodeExamples({ image = {} }) {
   const [tabValue, setTabValue] = useState(0)
-
-  const handleChange = (event, newValue) => {
-    setTabValue(newValue)
-    trackEvent({
-      action: 'select_code_category',
-      category: 'integrate',
-      value: `${codeExampleTabs[newValue]}`,
-    })
-  }
-
   const codeExampleTabs = Object.keys(CODE_EXAMPLES)
+
+  const handleTabChange = (tabKey) => {
+    const index = codeExampleTabs.indexOf(tabKey)
+    if (index !== -1) {
+      setTabValue(index)
+    }
+  }
 
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text)
@@ -43,38 +40,14 @@ export function CodeExamples({ image = {} }) {
 
   return (
     <SectionSubContainer style={{ backgroundColor: "transparent", paddingBottom: "0em" }}>
-      <AppBar position="static" style={{ backgroundColor: "transparent", boxShadow: "none" }}>
-        <ButtonGroup
-          aria-label="contained primary button group"
-          style={{
-            backgroundColor: "transparent",
-            flexWrap: "wrap",
-            justifyContent: "space-between",
-            boxShadow: "none",
-          }}
-        >
-          {codeExampleTabs.map((key, index) => (
-            <GeneralButton
-              key={key}
-              handleClick={() => handleChange(null, index)}
-              backgroundColor={tabValue === index ? Colors.lime : "transparent"}
-              textColor={tabValue === index ? Colors.offblack : Colors.lime}
-              fontSize="1.3rem"
-              style={{
-                fontStyle: "normal",
-                fontWeight: 600,
-                position: "relative",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontFamily: Fonts.title,
-              }}
-            >
-              {key}
-            </GeneralButton>
-          ))}
-        </ButtonGroup>
-      </AppBar>
+      <TabSelector 
+        items={codeExampleTabs}
+        selectedKey={codeExampleTabs[tabValue]}
+        onSelectTab={handleTabChange}
+        trackingCategory="integrate"
+        trackingAction="select_code_category"
+      />
+      
       <>
         {codeExampleTabs.map((key, index) => {
           if (tabValue !== index) return null

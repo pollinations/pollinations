@@ -1,8 +1,9 @@
 import React, { useState } from "react"
 import { makeStyles } from "@mui/styles"
+import { Box } from "@mui/material"
 
 import { Colors, Fonts, SectionBG } from "../config/global"
-import { projects } from "../config/projectList"
+import { projects, projectCategories } from "../config/projectList"
 import {
   PROJECT_TITLE,
   PROJECT_SUBTITLE,
@@ -20,10 +21,10 @@ import {
 } from "../components/SectionContainer"
 import ProjectsRender from "../components/Project/ProjectRender"
 import { GeneralButton } from "../components/GeneralButton"
-import { Box } from "@mui/material"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import { trackEvent } from "../config/analytics"
 import OpenInNewIcon from "@mui/icons-material/OpenInNew"
+import TabSelector from "../components/TabSelector"
 
 const useStyles = makeStyles(() => ({
   gridContainer: {
@@ -53,6 +54,24 @@ const Projects = () => {
   const classes = useStyles()
   const [selectedCategory, setSelectedCategory] = useState("apps")
 
+  const handleCategoryClick = (categoryKey) => {
+    setSelectedCategory(categoryKey)
+  }
+
+  const getButtonBackgroundColor = (categoryKey) => {
+    if (selectedCategory !== categoryKey) {
+      return "transparent"
+    }
+    return categoryKey === "featured" ? Colors.special : Colors.lime
+  }
+
+  const getButtonTextColor = (categoryKey) => {
+    if (selectedCategory === categoryKey) {
+      return categoryKey === "featured" ? Colors.offwhite : Colors.offblack
+    }
+    return categoryKey === "featured" ? Colors.special : Colors.lime
+  }
+
   return (
     <SectionContainer backgroundConfig={SectionBG.project}>
       <SectionSubContainer>
@@ -63,7 +82,18 @@ const Projects = () => {
           <LLMTextManipulator text={PROJECT_SUBTITLE} transforms={[rephrase, emojify, noLink]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
+
       <SectionSubContainer>
+        <TabSelector
+          items={projectCategories}
+          selectedKey={selectedCategory}
+          onSelectTab={handleCategoryClick}
+          trackingCategory="project"
+          trackingAction="select_project_category"
+          getButtonBackground={getButtonBackgroundColor}
+          getButtonTextColor={getButtonTextColor}
+        />
+
         <ProjectsRender projectList={projects[selectedCategory]} classes={classes} />
       </SectionSubContainer>
       <SectionSubContainer>
@@ -74,7 +104,7 @@ const Projects = () => {
       <SectionSubContainer>
         <Box sx={{ width: "auto", height: "100px" }}>
           <GeneralButton
-            onClick={handleSubmitButtonClick}
+            handleClick={handleSubmitButtonClick}
             textColor={Colors.lime}
             borderColor={Colors.offwhite}
             fontSize="2em"

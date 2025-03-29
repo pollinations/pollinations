@@ -1,14 +1,19 @@
-import React from "react"
-import { GeneralButton } from "../GeneralButton"
-import { Colors, Fonts } from "../../config/global"
-import { IMAGE_FEED_MODE1, IMAGE_FEED_MODE2 } from "../../config/copywrite"
-import { noLink } from "../../config/llmTransforms"
-import { Box } from "@mui/material"
-import { LLMTextManipulator } from "../../components/LLMTextManipulator"
+import React from "react";
+import { GeneralButton } from "../GeneralButton";
+import { Colors, Fonts } from "../../config/global";
+import { noLink } from "../../config/llmTransforms";
+import { Box } from "@mui/material";
+import { LLMTextManipulator } from "../LLMTextManipulator";
 
-export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
+export function FeedEditSwitch({ 
+  toggleValue, 
+  handleToggleChange, 
+  isLoading, 
+  feedModeText1,
+  feedModeText2 
+}) {
   return (
-    <Box style={{ display: "flex", width: "100%" }}>
+    <Box style={{ display: "flex", width: "100%", justifyContent: "center" }}>
       <GeneralButton
         handleClick={() => handleToggleChange(null, "feed")}
         borderColor={Colors.lime}
@@ -16,14 +21,15 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
         textColor={toggleValue === "feed" ? Colors.offblack : Colors.lime}
         style={{
           height: "70px",
-          width: "100%",
+          width: "auto",
+          minWidth: "180px",
           fontSize: { xs: "1.5em", md: "1.8em" },
           fontFamily: Fonts.title,
           fontWeight: 600,
           padding: "0 1em",
         }}
       >
-        <LLMTextManipulator text={IMAGE_FEED_MODE1} transforms={[noLink]} />
+        <LLMTextManipulator text={feedModeText1} transforms={[noLink]} />
       </GeneralButton>
       <GeneralButton
         handleClick={() => handleToggleChange(null, "edit")}
@@ -31,15 +37,16 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
         backgroundColor={toggleValue === "edit" ? Colors.lime : `${Colors.offblack}99`}
         textColor={toggleValue === "edit" ? Colors.offblack : Colors.lime}
         style={{
-          width: "100%",
+          width: "auto",
+          minWidth: "180px",
           fontSize: { xs: "1.5em", md: "1.8em" },
           fontFamily: Fonts.title,
           fontWeight: 600,
           padding: "0 1em",
         }}
       >
-        <LLMTextManipulator text={IMAGE_FEED_MODE2} transforms={[noLink]} />
+        <LLMTextManipulator text={feedModeText2} transforms={[noLink]} />
       </GeneralButton>
     </Box>
-  )
-}
+  );
+} 

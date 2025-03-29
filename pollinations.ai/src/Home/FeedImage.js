@@ -2,15 +2,16 @@ import React, { useState, useEffect, memo, useCallback } from "react";
 import { Box, CircularProgress } from "@mui/material";
 import { useFeedLoader } from "../utils/useFeedLoader";
 import { useImageEditor, useImageSlideshow } from "../utils/useImageSlideshow";
-import { ServerLoadInfo } from "../components/FeedImage/ServerLoadInfo";
+import { ServerLoadInfo } from "../components/Feeds/ServerLoadInfo.js";
 import { Colors, SectionBG } from "../config/global";
-import { ModelInfo } from "../components/FeedImage/ModelInfo";
-import { ImageEditor } from "../components/FeedImage/ImageEditor";
-import { FeedEditSwitch } from "../components/FeedImage/FeedEditSwitch";
-import { ImageDisplay } from "../components/FeedImage/ImageDisplay";
+import { ModelInfo } from "../components/Feeds/ModelInfo.js";
+import { ImageEditor } from "../components/Feeds/ImageEditor.js";
+import { FeedEditSwitch } from "../components/Feeds/FeedEditSwitch.js";
+import { ImageDisplay } from "../components/Feeds/ImageDisplay.js";
+import { PromptDisplay } from "../components/Feeds/PromptDisplay.js";
 import { SectionContainer, SectionSubContainer, SectionHeadlineStyle } from "../components/SectionContainer";
 import SectionTitle from "../components/SectionTitle";
-import { IMAGE_FEED_SUBTITLE, IMAGE_FEED_TITLE } from "../config/copywrite";
+import { IMAGE_FEED_SUBTITLE, IMAGE_FEED_TITLE, IMAGE_FEED_MODE1, IMAGE_FEED_MODE2, IMAGE_FEED_TOOLTIP_PROMPT } from "../config/copywrite";
 import { emojify, rephrase, noLink } from "../config/llmTransforms.js";
 import { LLMTextManipulator } from "../components/LLMTextManipulator.js";
 import { trackEvent } from "../config/analytics"
@@ -32,6 +33,9 @@ export const FeedImage = memo(() => {
 
   /** Toggles the mode between "feed" or "edit". */
   const [toggleValue, setToggleValue] = useState("feed");
+
+  // For handling parameter changes directly
+  const [modifiedImageParams, setModifiedImageParams] = useState(null);
 
   // -----------------------------
   // Hooks
@@ -80,11 +84,33 @@ export const FeedImage = memo(() => {
     }
   };
 
+  // Handler for image parameter changes (prompt, width, height, etc.)
+  const handleParamChange = useCallback((param, value) => {
+    setIsInputChanged(true);
+    
+    // Create or update modified params object
+    setModifiedImageParams((prevParams) => {
+      const baseParams = prevParams || { ...image };
+      return {
+        ...baseParams,
+        [param]: value
+      };
+    });
+    
+    // If we're not in edit mode, switch to it
+    if (toggleValue !== "edit") {
+      handleToggleChange(null, "edit");
+    }
+  }, [image, toggleValue, handleToggleChange]);
+
+  // Pass modified image parameters to the ImageEditor
+  const effectiveImage = modifiedImageParams || image;
+
   // -----------------------------
   // Rendering
   // -----------------------------
   return (
-    <SectionContainer backgroundConfig={SectionBG.feedImage}>
+    <SectionContainer id="image-feed" backgroundConfig={SectionBG.feedImage}>
       {/* Title Section */}
       <SectionSubContainer>
         <SectionTitle title={IMAGE_FEED_TITLE} />
@@ -92,7 +118,12 @@ export const FeedImage = memo(() => {
 
       {/* Server Load Information */}
       <SectionSubContainer>
-        <ServerLoadInfo lastImage={lastImage} imagesGenerated={imagesGenerated} image={image} />
+        <ServerLoadInfo 
+          lastItem={lastImage} 
+          itemsGenerated={imagesGenerated} 
+          currentItem={image} 
+          itemType="image"
+        />
       </SectionSubContainer>
 
       {/* Subheading / LLM Banner */}
@@ -107,7 +138,7 @@ export const FeedImage = memo(() => {
         {image?.imageURL && (
           <Box
             sx={{
-              backgroundColor: `${Colors.offblack2}0`,
+              backgroundColor: "transparent",
               width: "100%",
             }}
           >
@@ -117,26 +148,47 @@ export const FeedImage = memo(() => {
                 toggleValue={toggleValue}
                 handleToggleChange={handleToggleChange}
                 isLoading={isLoading}
+                feedModeText1={IMAGE_FEED_MODE1}
+                feedModeText2={IMAGE_FEED_MODE2}
               />
             </Box>
 
-            {/* Image Editor */}
-            <Box paddingBottom="1em">
-              <ImageEditor
-                image={image}
+            {/* Prompt Display */}
+            <Box width="100%" mb={2}>
+              <PromptDisplay
+                itemType="image"
+                item={image}
                 isLoading={isLoading}
+                isEditMode={toggleValue === "edit"}
+                onPromptChange={(newPrompt) => {
+                  handleParamChange("prompt", newPrompt);
+                }}
+                onEditModeSwitch={() => handleToggleChange(null, "edit")}
                 setIsInputChanged={setIsInputChanged}
-                isInputChanged={isInputChanged}
-                isStopped={isStopped}
-                switchToEditMode={() => handleToggleChange(null, "edit")}
-                edit={isStopped}
-                toggleValue={toggleValue}
-                handleToggleChange={handleToggleChange}
-                stop={stop}
-                cancelLoading={cancelLoading}
-                updateImage={updateImage}
+                promptTooltip="Prompt"
               />
             </Box>
+
+            {/* Image Editor Controls - Only in Edit Mode */}
+            {toggleValue === "edit" && (
+              <Box paddingBottom="1em">
+                <ImageEditor
+                  image={effectiveImage}
+                  isLoading={isLoading}
+                  setIsInputChanged={setIsInputChanged}
+                  isInputChanged={isInputChanged}
+                  isStopped={isStopped}
+                  switchToEditMode={() => handleToggleChange(null, "edit")}
+                  edit={isStopped}
+                  toggleValue={toggleValue}
+                  handleToggleChange={handleToggleChange}
+                  stop={stop}
+                  cancelLoading={cancelLoading}
+                  updateImage={updateImage}
+                  hidePrompt={true} // Hide the prompt since we're using shared PromptDisplay
+                />
+              </Box>
+            )}
           </Box>
         )}
 
@@ -153,7 +205,7 @@ export const FeedImage = memo(() => {
         {toggleValue === "feed" && (
           <SectionSubContainer>
             <br />
-            {image?.imageURL && <ModelInfo model={image.model} referrer={image.referrer} />}
+            {image?.imageURL && <ModelInfo model={image.model} referrer={image.referrer} itemType="image" />}
           </SectionSubContainer>
         )}
       </SectionSubContainer>

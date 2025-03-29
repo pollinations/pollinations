@@ -38,6 +38,10 @@ export const SectionBG = {
     color: Colors.offblack,
     gradient: true,
   },
+  feedText: {
+    color: Colors.offblack,
+    gradient: true,
+  },
   integration: {
     color: Colors.offblack2,
     gradient: false,

@@ -30,18 +30,13 @@ const Supporter = () => {
 
   // Helper to ensure proper protocol for external links
   const getCompanyLink = (url) => {
-    console.log("[getCompanyLink] Raw URL:", url)
     if (!url) {
-      console.warn("[getCompanyLink] No URL provided, returning '#'")
       return "#"
     }
     if (url.startsWith("http")) {
-      console.log("[getCompanyLink] Protocol included, returning URL as is:", url)
       return url
     } else {
-      const correctedUrl = `https://${url}`
-      console.warn("[getCompanyLink] Protocol missing, corrected URL:", correctedUrl)
-      return correctedUrl
+      return `https://${url}`
     }
   }
 

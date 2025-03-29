@@ -6,6 +6,7 @@ import { Colors, Fonts } from "../../config/global"
 import { CustomTooltip } from "../CustomTooltip"
 import { GeneralButton } from "../GeneralButton"
 import Grid from "@mui/material/Grid2"
+import { ModelSelector } from "./ModelSelector"
 import {
   IMAGE_FEED_ENANCER_TOOLTIP,
   IMAGE_FEED_LOGO_WATERMARK,
@@ -20,7 +21,7 @@ import ReactMarkdown from "react-markdown"
 import { keyframes } from "@emotion/react"
 import CheckIcon from "@mui/icons-material/Check"
 import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank"
-import { LLMTextManipulator } from "../../components/LLMTextManipulator"
+import { LLMTextManipulator } from "../LLMTextManipulator"
 import { getImageURL } from "../../utils/getImageURL"
 import { trackEvent } from "../../config/analytics"
 
@@ -41,6 +42,7 @@ export const ImageEditor = memo(function ImageEditor({
   cancelLoading,
   updateImage,
   handleToggleChange,
+  hidePrompt = false,
 }) {
   // ─── STYLING CONSTANTS ────────────────────────────────────────────────────────
   const labelColor = `${Colors.offwhite}99`
@@ -278,7 +280,7 @@ export const ImageEditor = memo(function ImageEditor({
   // Shared styles for read-only prompt box
   const sharedTextAreaStyle = {
     width: "100%",
-    backgroundColor: `${Colors.offblack}99`,
+    backgroundColor: "transparent",
     border: `0.1px solid ${paramBorderColor}`,
     fontFamily: Fonts.parameter,
     fontSize: paramTextSize,
@@ -308,7 +310,6 @@ export const ImageEditor = memo(function ImageEditor({
   // ────────────────────────────────────────────────────────────────────────────
   return (
     <Box
-      component={Paper}
       sx={{
         border: "none",
         boxShadow: "none",
@@ -316,146 +317,104 @@ export const ImageEditor = memo(function ImageEditor({
       }}
     >
       <Grid container spacing={2}>
-        {/* Prompt Section */}
-        <Grid size={{ xs: 12, md: 12 }}>
-          <Box>
-            <CustomTooltip
-              title={<LLMTextManipulator text={IMAGE_FEED_TOOLTIP_PROMPT} transforms={[rephrase, emojify, noLink]} />}
-              interactive
-            >
-              <Typography component="div" variant="body" sx={typographyStyles.label}>
-                Prompt
-              </Typography>
-            </CustomTooltip>
+        {/* Prompt Section - Only show if hidePrompt is false */}
+        {!hidePrompt && (
+          <Grid size={{ xs: 12, md: 12 }}>
             <Box>
-              {isStopped ? (
-                /* Edit mode: Text area (plaintext) */
-                <TextareaAutosize
-                  value={imageParams.prompt}
-                  onChange={(e) => {
-                    handleParamChange("prompt", e.target.value)
-                  }}
-                  onBlur={() => {
-                    if (typeof trackEvent === "function") {
-                      trackEvent({
-                        action: 'change_prompt',
-                        category: 'feed',
-                      })
-                    }
-                  }}
-                  onFocus={handleFocus}
-                  minRows={3}
-                  maxRows={6}
-                  cacheMeasurements
-                  onHeightChange={(height) => {
-                    // Optionally track height changes
-                  }}
-                  style={{
-                    fontFamily: Fonts.parameter,
-                    fontSize: "1.1em",
-                    color: paramTextColor,
-                    padding: "15px",
-                    resize: "vertical",
-                    overflowY: "auto",
-                    scrollbarWidth: "auto",
-                    scrollbarColor: `${Colors.gray2}99 transparent`,
-                    msOverflowStyle: "auto",
-                    backgroundColor: `${Colors.offblack}99`,
-                    border: `0.1px solid ${paramBorderColor}`,
-                    width: "100%",
-                    lineHeight: "1.5em",
-                  }}
-                />
-              ) : (
-                /* Feed mode: Render Markdown */
-                <Box
-                  style={sharedTextAreaStyle}
-                  onClick={() => {
-                      handleToggleChange(null, "edit")
+              <CustomTooltip
+                title={<LLMTextManipulator text={IMAGE_FEED_TOOLTIP_PROMPT} transforms={[rephrase, emojify, noLink]} />}
+                interactive
+              >
+                <Typography component="div" variant="body" sx={typographyStyles.label}>
+                  Prompt
+                </Typography>
+              </CustomTooltip>
+              <Box>
+                {isStopped ? (
+                  /* Edit mode: Text area (plaintext) */
+                  <TextareaAutosize
+                    value={imageParams.prompt}
+                    onChange={(e) => {
+                      handleParamChange("prompt", e.target.value)
                     }}
-                >
-                  <ReactMarkdown
-                    components={{
-                      p: ({ node, ...props }) => (
-                        <p
-                          style={{
-                            margin: 0,
-                            fontFamily: Fonts.parameter,
-                            fontSize: paramTextSize.md,
-                            color: Colors.offwhite,
-                          }}
-                          {...props}
-                        />
-                      ),
+                    onBlur={() => {
+                      if (typeof trackEvent === "function") {
+                        trackEvent({
+                          action: 'change_prompt',
+                          category: 'feed',
+                        })
+                      }
                     }}
+                    onFocus={handleFocus}
+                    minRows={3}
+                    maxRows={6}
+                    cacheMeasurements
+                    onHeightChange={(height) => {
+                      // Optionally track height changes
+                    }}
+                    style={{
+                      fontFamily: Fonts.parameter,
+                      fontSize: "1.1em",
+                      color: paramTextColor,
+                      padding: "15px",
+                      resize: "vertical",
+                      overflowY: "auto",
+                      scrollbarWidth: "auto",
+                      scrollbarColor: `${Colors.gray2}99 transparent`,
+                      msOverflowStyle: "auto",
+                      backgroundColor: "transparent",
+                      border: `0.1px solid ${paramBorderColor}`,
+                      width: "100%",
+                      lineHeight: "1.5em",
+                    }}
+                  />
+                ) : (
+                  /* Feed mode: Render Markdown */
+                  <Box
+                    style={sharedTextAreaStyle}
+                    onClick={() => {
+                        handleToggleChange(null, "edit")
+                      }}
                   >
-                    {imageParams.prompt}
-                  </ReactMarkdown>
-                </Box>
-              )}
+                    <ReactMarkdown
+                      components={{
+                        p: ({ node, ...props }) => (
+                          <p
+                            style={{
+                              margin: 0,
+                              fontFamily: Fonts.parameter,
+                              fontSize: paramTextSize.md,
+                              color: Colors.offwhite,
+                            }}
+                            {...props}
+                          />
+                        ),
+                      }}
+                    >
+                      {imageParams.prompt}
+                    </ReactMarkdown>
+                  </Box>
+                )}
+              </Box>
             </Box>
-          </Box>
-        </Grid>
+          </Grid>
+        )}
 
         {/* Conditional Rendering of Controls in Edit Mode */}
         {toggleValue === "edit" && (
           <>
             {/* Model Selector */}
             <Grid size={{ xs: 12, sm: 4, md: 2 }}>
-              <CustomTooltip
-                title={<LLMTextManipulator text={IMAGE_FEED_TOOLTIP_MODEL} transforms={[rephrase, emojify, noLink]} />}
-                interactive
-              >
-                <Typography component="div" variant="body" sx={typographyStyles.label}>
-                  Model
-                </Typography>
-              </CustomTooltip>
-              <Button
-                variant="outlined"
-                aria-controls="model-menu"
-                aria-haspopup="true"
-                onClick={handleMenuOpen}
+              <ModelSelector
+                itemType="image"
+                currentModel={model || "flux"}
+                onModelChange={(value) => handleInputChange("model", value)}
+                isLoading={isLoading}
                 onFocus={handleFocus}
-                sx={{
-                  ...buttonStyles.base,
-                  ...buttonStyles.responsiveFontSize,
-                  borderRadius: "0px",
-                  height: "60px",
-                  fontFamily: Fonts.parameter,
-                  fontSize: paramTextSize,
-                  backgroundColor: `${Colors.offblack}99`,
-                }}
-              >
-                {model || "flux"}
-              </Button>
-              <Menu
-                id="model-menu"
-                anchorEl={anchorEl}
-                keepMounted
-                open={Boolean(anchorEl)}
-                onClose={() => handleMenuClose(null)}
-                MenuListProps={{
-                  sx: {
-                    textAlign: "left",
-                    backgroundColor: Colors.offblack,
-                    fontFamily: Fonts.parameter,
-                  },
-                }}
-              >
-                {models.map((modelName) => (
-                  <MenuItem
-                    key={modelName}
-                    onClick={() => handleMenuClose(modelName)}
-                    sx={{
-                      color: paramTextColor,
-                      backgroundColor: Colors.offblack,
-                      ...menuItemHover,
-                    }}
-                  >
-                    {modelName.charAt(0).toUpperCase() + modelName.slice(1)}
-                  </MenuItem>
-                ))}
-              </Menu>
+                tooltipText={IMAGE_FEED_TOOLTIP_MODEL}
+                setIsInputChanged={setIsInputChanged}
+                availableModels={models}
+              />
             </Grid>
 
             {/* Width Input */}
@@ -491,7 +450,7 @@ export const ImageEditor = memo(function ImageEditor({
                     fontFamily: Fonts.parameter,
                     borderRadius: "0px",
                     border: `solid 0.1px ${paramBorderColor}`,
-                    backgroundColor: `${Colors.offblack}99`,
+                    backgroundColor: "transparent",
                   },
                 }}
                 sx={{ width: "100%" }}
@@ -531,7 +490,7 @@ export const ImageEditor = memo(function ImageEditor({
                     fontFamily: Fonts.parameter,
                     border: `solid 0.1px ${paramBorderColor}`,
                     borderRadius: "0px",
-                    backgroundColor: `${Colors.offblack}99`,
+                    backgroundColor: "transparent",
                   },
                 }}
                 sx={{ width: "100%" }}
@@ -563,7 +522,7 @@ export const ImageEditor = memo(function ImageEditor({
                     border: `solid 0.1px ${paramBorderColor}`,
                     borderRadius: "0px",
                     height: "60px",
-                    backgroundColor: `${Colors.offblack}99`,
+                    backgroundColor: "transparent",
                   },
                 }}
               />
@@ -587,7 +546,7 @@ export const ImageEditor = memo(function ImageEditor({
                       height: "60px",
                       width: "100%",
                       border: `solid 0.1px ${paramBorderColor}`,
-                      backgroundColor: `${Colors.offblack}99`,
+                      backgroundColor: "transparent",
                     }}
                   >
                     <Checkbox

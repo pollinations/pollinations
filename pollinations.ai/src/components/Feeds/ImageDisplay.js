@@ -36,7 +36,7 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
         alignItems: "center",
         position: "relative",
         boxShadow: "none",
-        backgroundColor: Colors.offblack,
+        backgroundColor: "transparent",
       }}
     >
       {image ? (
@@ -61,7 +61,7 @@ const ImageStyle = styled.img`
   max-width: 100%;
   object-fit: contain;
 `
-const ImageContainer = styled(Paper)`
+const ImageContainer = styled.div`
   width: 100%;
   display: flex;
   justify-content: center;

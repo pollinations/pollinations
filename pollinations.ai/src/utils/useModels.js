@@ -43,7 +43,9 @@ export const useModels = (modelType = 'text') => {
               )
               .map(model => ({
                 id: model.name,
-                name: model.description || model.name,
+                name: model.description ? 
+                  `${model.name} (${model.description})` : 
+                  model.name,
                 details: model
               }));
           } else if (typeof data === 'object' && data !== null) {

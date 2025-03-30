@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { Colors, Fonts } from '../../config/global';
 import styled from '@emotion/styled';
 import TextareaAutosize from "react-textarea-autosize";
@@ -155,6 +155,10 @@ export function PromptDisplay({
   const [promptHeight, setPromptHeight] = useState(() => {
     return localStorage.getItem('promptHeight') ? parseInt(localStorage.getItem('promptHeight'), 10) : 200;
   });
+  
+  // Add theme and media query for responsive design
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   // Ref for the container element
   const containerRef = useRef(null);
@@ -380,8 +384,8 @@ export function PromptDisplay({
           )}
         </PromptContainer>
         
-        {/* Separate resize handle that stays fixed at the bottom right */}
-        <ResizeHandle ref={resizeHandleRef} />
+        {/* Only show resize handle on non-mobile devices */}
+        {!isMobile && <ResizeHandle ref={resizeHandleRef} />}
       </Box>
     </Box>
   );

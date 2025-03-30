@@ -102,7 +102,6 @@ export const useTextSlideshow = () => {
         eventSource.onopen = () => {
           setConnectionStatus("connected");
           setError(null);
-          console.log("Text feed connection established");
         };
         
         eventSource.onerror = () => {

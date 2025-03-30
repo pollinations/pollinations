@@ -43,28 +43,14 @@ export const useTextEditor = ({ stop, entry }) => {
     // Start building the URL
     let url = `https://text.pollinations.ai/${encodedPrompt}`;
     
-    // Add query parameters
+    // Add query parameters - only include model, force json=false
     const queryParams = [];
     
+    // Only keep model parameter
     if (parameters.model) queryParams.push(`model=${encodeURIComponent(parameters.model)}`);
-    if (parameters.seed) queryParams.push(`seed=${encodeURIComponent(parameters.seed)}`);
-    if (parameters.temperature && parameters.temperature !== 0.7) queryParams.push(`temperature=${encodeURIComponent(parameters.temperature.toString())}`);
-    if (parameters.max_tokens && parameters.max_tokens !== 1000) queryParams.push(`max_tokens=${encodeURIComponent(parameters.max_tokens.toString())}`);
     
-    // Add system message if present
-    const systemMessage = parameters.messages.find(msg => msg?.role === 'system');
-    if (systemMessage?.content) {
-      queryParams.push(`system=${encodeURIComponent(systemMessage.content)}`);
-    }
-    
-    // Add json parameter for consistent JSON response
-    queryParams.push('json=true');
-    
-    // Add private parameter if needed
-    if (parameters.private) queryParams.push('private=true');
-    
-    // Add referrer if available
-    if (parameters.referrer) queryParams.push(`referrer=${encodeURIComponent(parameters.referrer)}`);
+    // Force json=false
+    queryParams.push('json=false');
     
     // Append query parameters to URL if any exist
     if (queryParams.length > 0) {
@@ -96,37 +82,18 @@ export const useTextEditor = ({ stop, entry }) => {
         throw new Error('Invalid parameters: missing prompt or messages');
       }
       
-      // Determine if we're in local development
-      const isLocalDev = window.location.hostname === 'localhost' || 
-                          window.location.hostname === '127.0.0.1';
-
-      // Create the fetch URL - use a CORS proxy in development if needed
-      let fetchUrl = url;
-      
-      if (isLocalDev) {
-        // Log the original URL for debugging
-        console.log('Original URL:', url);
-        
-        // Option 1: Use a public CORS proxy (for development only)
-        fetchUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-        
-        // Option 2: Alternative CORS proxy if the above doesn't work
-        // fetchUrl = `https://cors-anywhere.herokuapp.com/${url}`;
-        
-        console.log('Using CORS proxy:', fetchUrl);
-      }
-      
-      console.log('Fetching from URL:', fetchUrl);
+      // No CORS proxy - use direct URL for all environments
+      console.log('Fetching from URL:', url);
       
       // Make GET request with timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
       
       // Make GET request
-      const response = await fetch(fetchUrl, {
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Accept': 'application/json, text/plain',
+          'Accept': 'text/plain, application/json',
         },
         signal: controller.signal,
         // Add some standard fetch options to help browsers
@@ -144,19 +111,12 @@ export const useTextEditor = ({ stop, entry }) => {
         throw new Error(`HTTP error! status: ${response.status}, message: ${errorText || 'No error details'}`);
       }
       
-      // Parse the response
-      let responseText;
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const jsonResponse = await response.json();
-        responseText = jsonResponse;
-      } else {
-        responseText = await response.text();
-      }
+      // Parse the response - since we're forcing json=false, we'll always get plain text
+      const responseText = await response.text();
       
       // Create entry from API response
       const newEntry = {
-        response: typeof responseText === 'object' ? JSON.stringify(responseText) : responseText,
+        response: responseText,
         referrer: 'pollinations.ai', // Default referrer
         parameters: {
           ...parameters,
@@ -174,7 +134,7 @@ export const useTextEditor = ({ stop, entry }) => {
       
       // If it's a fetch error, also log the URL for debugging
       if (error.message && error.message.includes('fetch')) {
-        console.warn("URL that failed:", createGetUrl(parameters));
+        console.warn("URL that failed:", url);
       }
       
       // Set a fallback entry with error message

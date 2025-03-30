@@ -12,7 +12,7 @@ import { useTextEditor } from "../utils/useTextEditor";
 import { useTextFeedLoader } from "../utils/useTextFeedLoader";
 import { ServerLoadInfo } from "../components/Feeds/ServerLoadInfo.js";
 import { TextEditor } from "../components/Feeds/TextEditor.js";
-import { TextDisplay } from "../components/Feeds/TextDisplay.js";
+import { TextDisplay } from "../components/Feeds/TextResponse.js";
 import { FeedEditSwitch } from "../components/Feeds/FeedEditSwitch.js";
 import { ModelInfo } from "../components/Feeds/ModelInfo.js";
 import { PromptDisplay } from "../components/Feeds/PromptDisplay.js";

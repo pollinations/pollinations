@@ -3,8 +3,6 @@ import { Box, Typography } from '@mui/material';
 import { Colors, Fonts } from '../../config/global';
 import styled from '@emotion/styled';
 import TextareaAutosize from "react-textarea-autosize";
-import { LLMTextManipulator } from "../LLMTextManipulator";
-import { noLink } from "../../config/llmTransforms";
 import ReactMarkdown from "react-markdown";
 
 const LabelStyle = {
@@ -15,15 +13,13 @@ const LabelStyle = {
 };
 
 // Styled components for display
-const StyledTextArea = styled(TextareaAutosize, {
-  shouldForwardProp: (prop) => !['isEditMode'].includes(prop)
-})`
+const StyledTextArea = styled(TextareaAutosize)`
   font-family: ${Fonts?.parameter || 'inherit'};
   font-size: 1.1em;
   color: ${Colors.offwhite};
   padding: 15px;
   resize: none;
-  background-color: ${Colors.offblack}99;
+  background-color: transparent;
   border: none;
   width: 100%;
   line-height: 1.5em;
@@ -41,21 +37,45 @@ const StyledTextArea = styled(TextareaAutosize, {
   }
   
   /* Hide scrollbar for IE, Edge and Firefox */
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;     /* Firefox */
+  msOverflowStyle: none;  /* IE and Edge */
+  scrollbarWidth: none;     /* Firefox */
 `;
 
+// Create the styled component with the shouldForwardProp option to filter out isEditMode
 const PromptContainer = styled(Box, {
-  shouldForwardProp: (prop) => prop !== 'isEditMode'
+  shouldForwardProp: (prop) => prop !== 'isEditMode',
 })`
   min-height: 130px;
   overflow-y: auto;
   overflow-x: hidden;
-  background-color: ${Colors.offblack}99;
   border: 0.5px solid ${Colors.gray2};
-  transition: all 0.2s ease;
+  transition: all 0.2s ease, border-color 0.3s ease;
   cursor: ${props => props.isEditMode ? 'text' : 'pointer'};
   resize: vertical;
+  position: relative;
+  
+  /* Resize handle triangle in bottom right corner */
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 0 20px 20px;
+    border-color: transparent transparent ${Colors.lime} transparent;
+    opacity: 0.7;
+    transition: opacity 0.3s ease, border-width 0.2s ease;
+    pointer-events: auto;
+    z-index: 2;
+    cursor: nwse-resize;
+  }
+  
+  &:hover::after {
+    opacity: 1;
+    border-width: 0 0 24px 24px;
+  }
   
   /* Scrollbar styles for Chrome, Safari and Opera */
   &::-webkit-scrollbar {
@@ -72,32 +92,49 @@ const PromptContainer = styled(Box, {
     border-radius: 3px;
   }
   
-  /* Show scrollbar on hover for Chrome, Safari and Opera - only in edit mode */
-  ${props => props.isEditMode ? `
-    &:hover::-webkit-scrollbar-thumb {
-      background-color: ${Colors.lime}99;
-    }
-  ` : ''}
+  /* Show scrollbar on hover */
+  &:hover::-webkit-scrollbar-thumb {
+    background-color: ${props => props.isEditMode ? `${Colors.lime}99` : 'transparent'};
+  }
   
   /* Firefox scrollbar styling */
   scrollbarWidth: ${props => props.isEditMode ? 'thin' : 'none'};
   scrollbarColor: ${props => props.isEditMode ? `${Colors.lime}60 transparent` : 'transparent transparent'};
   
-  /* Show scrollbar on hover for Firefox - only in edit mode */
-  ${props => props.isEditMode ? `
-    &:hover {
-      scrollbarWidth: thin;
-      scrollbarColor: ${Colors.lime}99 transparent;
-    }
-  ` : ''}
+  /* Show scrollbar on hover for Firefox */
+  &:hover {
+    scrollbarWidth: ${props => props.isEditMode ? 'thin' : 'none'};
+    scrollbarColor: ${props => props.isEditMode ? `${Colors.lime}99 transparent` : 'transparent transparent'};
+    border-color: ${Colors.lime};
+    background-color: transparent;
+  }
 
   &:focus-within {
-    border-color: ${Colors.lime}80;
+    border-color: ${Colors.lime};
   }
   
-  &:hover {
-    border-color: ${props => props.isEditMode ? Colors.lime80 : Colors.gray2};
-    background-color: ${props => props.isEditMode ? Colors.offblack99 : `${Colors.offblack}BB`};
+  /* Show resize cursor on bottom-right corner */
+  &.prompt-container {
+    cursor: ${props => props.isEditMode ? 'text' : 'pointer'};
+  }
+  
+  &.prompt-container:hover {
+    &::after {
+      cursor: nwse-resize;
+    }
+  }
+  
+  /* Style adjustment for bottom-right corner to improve resize grip area */
+  &.prompt-container:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    cursor: nwse-resize;
+    z-index: 1;
+    background-color: transparent;
   }
 `;
 
@@ -128,49 +165,74 @@ export function PromptDisplay({
   sharedPrompt,
   setSharedPrompt
 }) {
-  // For tracking component instance
-  const componentId = useRef(Math.random().toString(36).substr(2, 5));
-  
-  // Local states for prompt
+  // Local prompt state
   const [localPrompt, setLocalPrompt] = useState('');
   
-  // Track the user-defined height of the prompt container
+  // Track the prompt container height
   const [promptHeight, setPromptHeight] = useState(() => {
-    // Initialize from localStorage or use default on first render
-    const storedHeight = localStorage.getItem('promptHeight');
-    return storedHeight ? parseInt(storedHeight, 10) : 200;
+    return localStorage.getItem('promptHeight') ? parseInt(localStorage.getItem('promptHeight'), 10) : 200;
   });
+  
+  // Ref for the container element
+  const containerRef = useRef(null);
   
   // Figure out the current prompt based on item type and state
   const getPromptFromItem = () => {
-    if (itemType === "text") {
-      // For text entries, extract from messages
-      if (item?.parameters?.messages) {
-        const userMessage = item.parameters.messages.find(msg => msg?.role === 'user');
-        return userMessage?.content || '';
-      }
-      return '';
-    } else {
-      // For images, use prompt directly
-      return item?.prompt || '';
+    if (itemType === "text" && item?.parameters?.messages) {
+      const userMessage = item.parameters.messages.find(msg => msg?.role === 'user');
+      return userMessage?.content || '';
     }
+    
+    // Handle item.prompt which could be a string or an object
+    if (item?.prompt) {
+      if (typeof item.prompt === 'object') {
+        // Return the object directly; getPromptContent will handle it later
+        return item.prompt;
+      }
+      return item.prompt;
+    }
+    
+    return '';
   };
   
-  // Use shared prompt if available (for text), otherwise use local or item prompt
+  // Use shared prompt if available, otherwise use local or item prompt
   const currentPrompt = 
     (sharedPrompt !== undefined) ? sharedPrompt : 
     (localPrompt || getPromptFromItem());
   
+  // Ensure currentPrompt is a string for ReactMarkdown
+  const getPromptContent = (prompt) => {
+    if (typeof prompt === 'string') {
+      return prompt;
+    }
+    // Handle object prompts (e.g. {type: 'text', content: 'string'})
+    if (prompt && typeof prompt === 'object') {
+      // If it has a text or content property, use that
+      if (prompt.text) return prompt.text;
+      if (prompt.content) return prompt.content;
+      // Last resort: stringify the object
+      return JSON.stringify(prompt);
+    }
+    // Default to empty string for null/undefined/other types
+    return '';
+  };
+  
   // Handle prompt changes
   const handlePromptChange = (newPrompt) => {
+    // If current prompt is an object with a text field, preserve the object structure
+    const updatedValue = 
+      typeof currentPrompt === 'object' && currentPrompt !== null && 'text' in currentPrompt 
+        ? { ...currentPrompt, text: newPrompt } 
+        : newPrompt;
+        
     if (setSharedPrompt) {
-      setSharedPrompt(newPrompt);
+      setSharedPrompt(updatedValue);
     } else {
-      setLocalPrompt(newPrompt);
+      setLocalPrompt(updatedValue);
     }
     
     if (onPromptChange) {
-      onPromptChange(newPrompt);
+      onPromptChange(updatedValue);
     }
     
     if (setIsInputChanged) {
@@ -186,79 +248,57 @@ export function PromptDisplay({
     }
   }, [item, isEditMode]);
   
-  // Setup ResizeObserver for the prompt container
+  // Setup resize handling
   useEffect(() => {
-    const container = document.querySelector('.prompt-container');
-    if (container) {
-      // Start with the stored height or default
-      const initialHeight = localStorage.getItem('promptHeight') 
-        ? parseInt(localStorage.getItem('promptHeight'), 10) 
-        : 200;
-      
-      // Set initial height directly
-      setPromptHeight(initialHeight);
-      
-      // Only track manual resize events from user interactions
-      let isManualResize = false;
-      
-      // Track mouse down on the resize handle
-      const handleMouseDown = () => {
-        isManualResize = true;
-      };
-      
-      // Track mouse up to end manual resize
-      const handleMouseUp = () => {
-        if (isManualResize) {
-          // If this was a manual resize, store the final height
-          const currentHeight = container.clientHeight;
-          localStorage.setItem('promptHeight', currentHeight.toString());
-          setPromptHeight(currentHeight);
-          isManualResize = false;
+    if (!containerRef.current) return;
+    
+    // Set initial height
+    containerRef.current.style.height = `${promptHeight}px`;
+    
+    let isResizing = false;
+    
+    const handleMouseDown = () => {
+      isResizing = true;
+    };
+    
+    const handleMouseUp = () => {
+      if (isResizing) {
+        const newHeight = containerRef.current.clientHeight;
+        localStorage.setItem('promptHeight', newHeight.toString());
+        setPromptHeight(newHeight);
+        isResizing = false;
+      }
+    };
+    
+    const resizeObserver = new ResizeObserver((entries) => {
+      if (isResizing && entries[0]) {
+        const newHeight = entries[0].contentRect.height;
+        if (newHeight > 0) {
+          setPromptHeight(newHeight);
         }
-      };
-      
-      // Only track actual manual resizes, not automatic ones
-      const resizeObserver = new ResizeObserver(entries => {
-        if (isManualResize) {
-          for (let entry of entries) {
-            const newHeight = entry.contentRect.height;
-            if (newHeight > 0) {
-              setPromptHeight(newHeight);
-            }
-          }
-        }
-      });
-      
-      // Add event listeners for resize handle interactions
-      container.addEventListener('mousedown', handleMouseDown);
-      document.addEventListener('mouseup', handleMouseUp);
-      
-      // Start observing
-      resizeObserver.observe(container);
-      
-      // Clean up
-      return () => {
-        resizeObserver.disconnect();
-        container.removeEventListener('mousedown', handleMouseDown);
+      }
+    });
+    
+    containerRef.current.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mouseup', handleMouseUp);
+    resizeObserver.observe(containerRef.current);
+    
+    return () => {
+      if (containerRef.current) {
+        containerRef.current.removeEventListener('mousedown', handleMouseDown);
         document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, []); // Only run once on mount
+        resizeObserver.disconnect();
+      }
+    };
+  }, []);
   
   // Render the tooltip label
   const renderTooltipLabel = () => {
     if (React.isValidElement(promptTooltip)) {
-      // If it's a JSX element, render it directly
       return <>{promptTooltip}</>;
     }
     
-    if (typeof promptTooltip === 'string') {
-      // If it's a string, render it as text
-      return promptTooltip;
-    }
-    
-    // Default label
-    return "Prompt";
+    return typeof promptTooltip === 'string' ? promptTooltip : "Prompt";
   };
   
   return (
@@ -267,14 +307,15 @@ export function PromptDisplay({
         {renderTooltipLabel()}
       </Typography>
       
-      {isEditMode ? (
-        <PromptContainer 
-          className="prompt-container"
-          isEditMode={true}
-          style={{ height: `${promptHeight}px` }}
-        >
+      <PromptContainer 
+        ref={containerRef}
+        className="prompt-container"
+        isEditMode={isEditMode}
+        onClick={!isEditMode ? onEditModeSwitch : undefined}
+      >
+        {isEditMode ? (
           <StyledTextArea
-            value={currentPrompt}
+            value={getPromptContent(currentPrompt)}
             onChange={(e) => handlePromptChange(e.target.value)}
             placeholder="Enter your prompt here..."
             minRows={3}
@@ -286,16 +327,9 @@ export function PromptDisplay({
               lineHeight: '1.5em'
             }}
           />
-        </PromptContainer>
-      ) : (
-        <PromptContainer 
-          className="prompt-container"
-          isEditMode={false}
-          style={{ height: `${promptHeight}px` }}
-          onClick={onEditModeSwitch}
-        >
-          {itemType === "text" ? (
-            <Box sx={{ padding: '15px' }}>
+        ) : (
+          <Box sx={{ padding: '15px' }}>
+            {itemType === "text" ? (
               <Typography
                 sx={{
                   fontFamily: Fonts.parameter,
@@ -307,11 +341,9 @@ export function PromptDisplay({
                   wordBreak: 'break-word',
                 }}
               >
-                {currentPrompt}
+                {getPromptContent(currentPrompt)}
               </Typography>
-            </Box>
-          ) : (
-            <Box sx={{ padding: '15px' }}>
+            ) : (
               <ReactMarkdown
                 components={{
                   p: ({ node, ...props }) => (
@@ -328,12 +360,12 @@ export function PromptDisplay({
                   ),
                 }}
               >
-                {currentPrompt}
+                {getPromptContent(currentPrompt)}
               </ReactMarkdown>
-            </Box>
-          )}
-        </PromptContainer>
-      )}
+            )}
+          </Box>
+        )}
+      </PromptContainer>
     </Box>
   );
 } 

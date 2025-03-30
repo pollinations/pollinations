@@ -5,6 +5,7 @@ import { keyframes } from "@emotion/react";
 
 /**
  * Shared ServerLoadInfo component for both image and text feeds
+ * This component continues to display and update counters regardless of edit mode
  * 
  * @param {Object} props
  * @param {Object} props.lastItem - Last received item (image or text entry)
@@ -15,6 +16,47 @@ import { keyframes } from "@emotion/react";
 export function ServerLoadInfo({ lastItem, itemsGenerated, currentItem, itemType }) {
   // Simulate load when concurrentRequests is not available
   const [simulatedLoad, setSimulatedLoad] = useState(2);
+  // Add state to track if component is ready to display
+  const [isReady, setIsReady] = useState(false);
+  // Track our own counter for items generated that won't be affected by slideshow stopping
+  const [localItemsCount, setLocalItemsCount] = useState(0);
+
+  // Set ready state after a short delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 500); // 500ms delay
+    
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Set initial local count and update when itemsGenerated changes
+  useEffect(() => {
+    if (itemsGenerated > localItemsCount) {
+      setLocalItemsCount(itemsGenerated);
+    }
+  }, [itemsGenerated, localItemsCount]);
+
+  // Set up event listeners for item generation in both feeds
+  useEffect(() => {
+    // For image feed
+    const handleImageReceived = () => {
+      setLocalItemsCount(prev => prev + 1);
+    };
+    
+    // For text feed
+    const handleTextReceived = () => {
+      setLocalItemsCount(prev => prev + 1);
+    };
+    
+    window.addEventListener('image-received', handleImageReceived);
+    window.addEventListener('text-entry-received', handleTextReceived);
+    
+    return () => {
+      window.removeEventListener('image-received', handleImageReceived);
+      window.removeEventListener('text-entry-received', handleTextReceived);
+    };
+  }, []);
 
   // Update simulated load periodically
   useEffect(() => {
@@ -33,6 +75,14 @@ export function ServerLoadInfo({ lastItem, itemsGenerated, currentItem, itemType
     return () => clearInterval(intervalId);
   }, []);
 
+  // Don't render until ready
+  if (!isReady) {
+    return null;
+  }
+
+  // Always use itemsGenerated from props if it's higher than our local count
+  const displayCount = Math.max(localItemsCount, itemsGenerated || 0);
+
   return (
     <Box
       display="flex"
@@ -46,13 +96,17 @@ export function ServerLoadInfo({ lastItem, itemsGenerated, currentItem, itemType
       }}
     >
       <ServerLoadDisplay concurrentRequests={lastItem?.concurrentRequests || simulatedLoad} />
-      <CountBadge itemsGenerated={itemsGenerated || 0} />
+      <CountBadge itemsGenerated={displayCount} />
       {/* <TimingInfo item={lastItem} /> */}
     </Box>
   );
 }
 
 function ServerLoadDisplay({ concurrentRequests }) {
+  // Ensure we have a valid number by providing a default
+  const safeRequests = concurrentRequests !== undefined && concurrentRequests !== null ? 
+    concurrentRequests : 2; // Default to 2 for medium load
+  
   const barChars = "▁▃▅▇▉";
   
   // Generate a pattern that increases in height
@@ -66,12 +120,12 @@ function ServerLoadDisplay({ concurrentRequests }) {
     return displayString;
   };
 
-  const loadDisplay = getLoadDisplay(Math.round(concurrentRequests));
+  const loadDisplay = getLoadDisplay(Math.round(safeRequests));
 
   // Badge color changes based on the load
   const getBadgeColor = () => {
-    if (concurrentRequests < 2) return Colors.lime;
-    if (concurrentRequests < 4) return "#FFC107"; // amber
+    if (safeRequests < 2) return Colors.lime;
+    if (safeRequests < 4) return "#FFC107"; // amber
     return Colors.special; // high load color
   };
   
@@ -104,7 +158,7 @@ function ServerLoadDisplay({ concurrentRequests }) {
       </Typography>
 
       <Box
-        key={concurrentRequests} // Key changes trigger re-render and restart animation
+        key={safeRequests} // Key changes trigger re-render and restart animation
         sx={{
           backgroundColor: "transparent",
           color: getBadgeColor(),
@@ -131,7 +185,9 @@ function ServerLoadDisplay({ concurrentRequests }) {
 }
 
 function CountBadge({ itemsGenerated }) {
-  const formattedCount = formatNumberWithCommas(itemsGenerated);
+  // Ensure we always have a number, defaulting to 0 if undefined
+  const safeItemCount = itemsGenerated !== undefined && itemsGenerated !== null ? itemsGenerated : 0;
+  const formattedCount = formatNumberWithCommas(safeItemCount);
   
   // Blinking animation keyframes
   const blinkEffect = keyframes`
@@ -171,7 +227,7 @@ function CountBadge({ itemsGenerated }) {
         }}
       >
         <Box
-          key={itemsGenerated} // Key changes trigger re-render and restart animation
+          key={safeItemCount} // Key changes trigger re-render and restart animation
           sx={{
             backgroundColor: "transparent",
             color: Colors.lime,

@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { makeStyles } from "@mui/styles"
 import { Box } from "@mui/material"
 
@@ -52,7 +52,14 @@ const handleSubmitButtonClick = (e) => {
 
 const Projects = () => {
   const classes = useStyles()
-  const [selectedCategory, setSelectedCategory] = useState("apps")
+  const [selectedCategory, setSelectedCategory] = useState("featured")
+
+  useEffect(() => {
+    // Trigger initial category selection on component mount
+    if (projectCategories.length > 0 && selectedCategory) {
+      handleCategoryClick(selectedCategory)
+    }
+  }, [])
 
   const handleCategoryClick = (categoryKey) => {
     setSelectedCategory(categoryKey)

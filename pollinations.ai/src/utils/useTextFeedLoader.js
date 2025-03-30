@@ -1,103 +1,89 @@
 import { useEffect, useState } from 'react';
 
 /**
- * Hook to track and count text entries generated
+ * Simplified hook to track text entries counter and load initial entry
  */
 export function useTextFeedLoader(onNewEntry, setLastEntry) {
+  // Start with estimated value and increment with each new entry
   const [entriesGenerated, setEntriesGenerated] = useState(estimateGeneratedEntries());
-  const [currentLoad, setCurrentLoad] = useState(Math.floor(Math.random() * 4) + 1);
-
-  // Fetch the last entry on mount
+  
+  // Set up listener to increment counter when new entries are received
   useEffect(() => {
+    // Create wrapper function that increments the counter
+    const incrementCounter = () => {
+      setEntriesGenerated(count => count + 1);
+    };
+    
+    // Listen for SSE data events
+    window.addEventListener('text-entry-received', incrementCounter);
+    
+    return () => {
+      window.removeEventListener('text-entry-received', incrementCounter);
+    };
+  }, []);
+  
+  // Fetch the last entry on mount (initial load only)
+  useEffect(() => {
+    let isMounted = true;
+    
     const fetchLastEntry = async () => {
       try {
+        // Use AbortController for timeout handling
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
         const response = await fetch('https://text.pollinations.ai/last', {
           cache: 'no-store',
-          headers: {
-            'Accept': 'application/json'
-          }
+          headers: { 'Accept': 'application/json' },
+          signal: controller.signal
         });
         
-        if (response.ok) {
-          const data = await response.json();
+        clearTimeout(timeoutId);
+        
+        if (response.ok && isMounted) {
+          const contentType = response.headers.get('content-type');
           
-          // Add concurrentRequests if missing
-          if (!data.concurrentRequests) {
-            data.concurrentRequests = currentLoad;
+          if (contentType?.includes('application/json')) {
+            try {
+              const data = await response.json();
+              
+              // Ensure required properties exist
+              const processedData = {
+                ...data,
+                referrer: data.referrer || 'https://pollinations.ai',
+                concurrentRequests: data.concurrentRequests || Math.floor(Math.random() * 3) + 1 // Add concurrentRequests property with fallback to random value between 1-3
+              };
+              
+              setLastEntry(processedData);
+              onNewEntry(processedData);
+            } catch (parseError) {
+              console.warn("Error parsing JSON response:", parseError.message);
+            }
           }
-          
-          // Add referrer if missing
-          if (!data.referrer) {
-            data.referrer = 'https://pollinations.ai';
-          }
-          
-          setLastEntry(data);
-          onNewEntry(data);
+        } else if (isMounted) {
+          console.warn(`Error fetching last entry: ${response.status} ${response.statusText}`);
         }
       } catch (error) {
-        // Silent error handling
+        if (isMounted) {
+          const errorMessage = error.name === 'AbortError' 
+            ? "Initial fetch request timed out" 
+            : `Error fetching initial entry: ${error.message}`;
+          console.warn(errorMessage);
+        }
       }
     };
 
     fetchLastEntry();
-  }, [onNewEntry, setLastEntry, currentLoad]);
-
-  // Set up event source to listen for new entries and update the counter
-  useEffect(() => {
-    const textFeedSource = new EventSource("https://text.pollinations.ai/feed");
     
-    textFeedSource.onmessage = (event) => {
-      try {
-        // Parse the data and add concurrentRequests if it doesn't exist
-        const data = JSON.parse(event.data);
-        
-        // Increment the counter for each new entry - moved inside try block
-        // to ensure we only increment on valid messages
-        setEntriesGenerated(count => count + 1);
-        
-        // Update load randomly (simulating server load fluctuation)
-        if (Math.random() > 0.7) { // Only change occasionally
-          setCurrentLoad(prev => {
-            const change = Math.random() > 0.5 ? 1 : -1;
-            return Math.max(1, Math.min(5, prev + change));
-          });
-        }
-        
-        if (!data.concurrentRequests) {
-          data.concurrentRequests = currentLoad;
-        }
-        
-        // Add referrer if missing
-        if (!data.referrer) {
-          data.referrer = 'https://pollinations.ai';
-        }
-        
-        setLastEntry(data);
-        
-        // No need to call onNewEntry here as it's already handled in useTextSlideshow
-      } catch (e) {
-        // Silent error handling for parsing issues
-        console.error("Error processing text feed message:", e);
-      }
-    };
-    
-    textFeedSource.onerror = async () => {
-      await new Promise(r => setTimeout(r, 1000));
-      console.log("Text feed event source error. Retrying...");
-      textFeedSource.close();
-      // The EventSource will be recreated on the next render cycle
-    };
-    
-    return () => {
-      textFeedSource.close();
-    };
-  }, [currentLoad, setLastEntry, onNewEntry]);
+    return () => { isMounted = false; };
+  }, [onNewEntry, setLastEntry]);
 
   return { entriesGenerated };
 }
 
 /**
  * Estimate the number of text entries generated based on time elapsed
+ * Used as a starting point, will be incremented with each new entry
  */
 function estimateGeneratedEntries() {
   const launchDate = 1738974161902; // Same as image feed for consistency
@@ -107,6 +93,5 @@ function estimateGeneratedEntries() {
   const entriesGeneratedSinceLaunch = Math.round(differenceInSeconds * 4.76); 
   
   // Starting value plus calculated growth
-  const entriesGeneratedCalculated = 23554400 + entriesGeneratedSinceLaunch; 
-  return entriesGeneratedCalculated;
+  return 23554400 + entriesGeneratedSinceLaunch;
 } 

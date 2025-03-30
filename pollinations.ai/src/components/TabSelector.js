@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Box } from "@mui/material";
 import { Colors, Fonts } from "../config/global";
 import { GeneralButton } from "./GeneralButton";
@@ -32,15 +32,32 @@ const TabSelector = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+  
+  // Internal state to track selection when parent doesn't provide one
+  const [internalSelectedKey, setInternalSelectedKey] = useState(
+    selectedKey || (items.length > 0 ? (items[0].key || items[0]) : null)
+  );
+  
+  // Use parent selection if provided, otherwise use internal selection
+  const effectiveSelectedKey = selectedKey || internalSelectedKey;
+
+  // Update internal selection when items change and no selection exists
+  useEffect(() => {
+    if (items.length > 0 && !effectiveSelectedKey) {
+      const firstItemKey = items[0].key || items[0];
+      setInternalSelectedKey(firstItemKey);
+      onSelectTab(firstItemKey);
+    }
+  }, [items, effectiveSelectedKey, onSelectTab]);
 
   // Default background color function if none provided
   const defaultGetButtonBackground = (itemKey) => {
-    return selectedKey === itemKey ? Colors.lime : "transparent";
+    return effectiveSelectedKey === itemKey ? Colors.lime : "transparent";
   };
 
   // Default text color function if none provided
   const defaultGetButtonTextColor = (itemKey) => {
-    return selectedKey === itemKey ? Colors.offblack : Colors.lime;
+    return effectiveSelectedKey === itemKey ? Colors.offblack : Colors.lime;
   };
 
   // Use provided functions or defaults
@@ -48,6 +65,7 @@ const TabSelector = ({
   const getTextColor = getButtonTextColor || defaultGetButtonTextColor;
 
   const handleTabClick = (itemKey) => {
+    setInternalSelectedKey(itemKey);
     onSelectTab(itemKey);
     trackEvent({
       action: trackingAction,
@@ -79,8 +97,8 @@ const TabSelector = ({
             fontFamily: Fonts.title,
             fontWeight: 600,
             fontSize: isMobile ? "0.85rem" : isTablet ? "0.95rem" : "1.5rem",
-            boxShadow: selectedKey === (item.key || item) ? "0 4px 8px rgba(0,0,0,0.2)" : "none",
-            transform: selectedKey === (item.key || item) ? "translateY(-2px)" : "none",
+            boxShadow: effectiveSelectedKey === (item.key || item) ? "0 4px 8px rgba(0,0,0,0.2)" : "none",
+            transform: effectiveSelectedKey === (item.key || item) ? "translateY(-2px)" : "none",
             transition: "all 0.3s ease",
             padding: isMobile ? "0.4rem 0.8rem" : "0.75rem 1.2rem",
             textAlign: "center",

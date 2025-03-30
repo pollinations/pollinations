@@ -29,8 +29,8 @@ const buttonStyles = {
     color: Colors.offwhite,
     width: '100%',
     justifyContent: 'flex-start',
-    height: '56px',
-    border: `solid 0.5px ${paramBorderColor}`,
+    height: '60px',
+    border: 'none',
   },
   responsiveFontSize: {
     fontSize: paramTextSize,
@@ -53,7 +53,6 @@ const menuItemStyles = {
   fontSize: '1.1em',
   padding: '10px 16px',
   minHeight: '44px',
-  transition: 'background-color 0.2s ease',
   ...menuItemHover,
 };
 
@@ -170,27 +169,44 @@ export function ModelSelector({
   return (
     <Box>
       {tooltipComponent}
-      <Button
-        variant="outlined"
-        aria-controls="model-menu"
-        aria-haspopup="true"
-        onClick={handleMenuOpen}
-        onFocus={onFocus}
-        disabled={isLoading || modelsLoading}
+      <Box
         sx={{
-          ...buttonStyles.base,
-          ...buttonStyles.responsiveFontSize,
-          borderRadius: "0px",
+          border: `0.5px solid ${paramBorderColor}`,
           height: "60px",
-          fontFamily: Fonts.parameter,
-          fontSize: paramTextSize,
-          backgroundColor: "transparent",
-          textTransform: "none", // Prevent auto-uppercase
-          ...buttonProps
+          transition: "border-color 0.2s ease",
+          "&:hover": {
+            borderColor: Colors.lime,
+          },
+          "&:focus-within": {
+            borderColor: Colors.lime,
+          }
         }}
       >
-        {modelsLoading ? "Loading models..." : formatDisplayName(getDisplayName())}
-      </Button>
+        <Button
+          variant="outlined"
+          aria-controls="model-menu"
+          aria-haspopup="true"
+          onClick={handleMenuOpen}
+          onFocus={onFocus}
+          disabled={isLoading || modelsLoading}
+          sx={{
+            ...buttonStyles.base,
+            ...buttonStyles.responsiveFontSize,
+            borderRadius: "0px",
+            height: "60px",
+            fontFamily: Fonts.parameter,
+            fontSize: paramTextSize,
+            backgroundColor: "transparent",
+            textTransform: "none", // Prevent auto-uppercase,
+            "&:hover": {
+              backgroundColor: "transparent",
+            },
+            ...buttonProps
+          }}
+        >
+          {modelsLoading ? "Loading models..." : formatDisplayName(getDisplayName())}
+        </Button>
+      </Box>
       <Menu
         id="model-menu"
         anchorEl={anchorEl}

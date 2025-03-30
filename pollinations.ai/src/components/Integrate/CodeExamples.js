@@ -6,11 +6,35 @@ import React from "react"
 import FileCopyIcon from "@mui/icons-material/FileCopy"
 import CODE_EXAMPLES from "../../config/codeExamplesText"
 import { SectionSubContainer } from "../SectionContainer"
-import { trackEvent } from "../../config/analytics"
 import TabSelector from "../TabSelector"
+import { keyframes } from "@emotion/react"
+import styled from "@emotion/styled"
+
+const clickAnimation = keyframes`
+  0% {
+    transform: scale(1);
+    color: ${Colors.lime};
+  }
+  50% {
+    transform: scale(1.2);
+    color: ${Colors.lime};
+  }
+  100% {
+    transform: scale(1);
+    color: ${Colors.offwhite};
+  }
+`
+
+const AnimatedIconButton = styled(IconButton)`
+  &.clicked {
+    animation: ${clickAnimation} 0.5s ease;
+    background-color: transparent;
+  }
+`
 
 export function CodeExamples({ image = {} }) {
   const [tabValue, setTabValue] = useState(0)
+  const [clickedButton, setClickedButton] = useState(null)
   const codeExampleTabs = Object.keys(CODE_EXAMPLES)
 
   const handleTabChange = (tabKey) => {
@@ -20,8 +44,10 @@ export function CodeExamples({ image = {} }) {
     }
   }
 
-  const handleCopy = (text) => {
+  const handleCopy = (text, index) => {
     navigator.clipboard.writeText(text)
+    setClickedButton(index)
+    setTimeout(() => setClickedButton(null), 500)
     console.log("Code copied to clipboard!")
   }
 
@@ -57,9 +83,23 @@ export function CodeExamples({ image = {} }) {
 
           return (
             <Box key={key} position="relative" style={{ width: "100%" }}>
+              <Box display="flex" justifyContent="flex-end">
+                <AnimatedIconButton
+                  onClick={() => handleCopy(text, index)}
+                  className={clickedButton === index ? "clicked" : ""}
+                  sx={{
+                    color: Colors.offwhite,
+                    '&:hover': {
+                      backgroundColor: 'transparent',
+                      color: Colors.lime,
+                    }
+                  }}
+                >
+                  <FileCopyIcon fontSize="large" />
+                </AnimatedIconButton>
+              </Box>
               <SectionSubContainer
                 paddingBottom="0em"
-                style={{ backgroundColor: `${Colors.offblack}60` }}
               >
                 <CodeBlock
                   text={text}
@@ -80,19 +120,6 @@ export function CodeExamples({ image = {} }) {
                     fontFamily: Fonts.parameter,
                   }}
                 />
-                <IconButton
-                  onClick={() => handleCopy(text)}
-                  style={{
-                    position: "absolute",
-                    top: 15,
-                    right: 15,
-                    color: Colors.lime,
-                    marginRight: "0.5em",
-                    marginTop: "0.5em",
-                  }}
-                >
-                  <FileCopyIcon fontSize="large" />
-                </IconButton>
               </SectionSubContainer>
             </Box>
           )

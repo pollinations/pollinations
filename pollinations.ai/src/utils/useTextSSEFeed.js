@@ -1,12 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useInterval } from 'usehooks-ts';
 
 /**
- * Hook to connect to the text SSE feed and manage text slideshow functionality
- * 
- * Note: This hook replaces and consolidates the functionality from both
- * useTextSSEFeed and useTextSlideshow. The name useTextSlideshow is kept
- * for backward compatibility across the codebase.
+ * Hook to connect to the text SSE feed with throttled display
  */
 export const useTextSlideshow = () => {
   const [entry, setEntry] = useState(null);
@@ -15,134 +11,138 @@ export const useTextSlideshow = () => {
   const [connectionStatus, setConnectionStatus] = useState("disconnected");
   const [pendingEntries, setPendingEntries] = useState([]);
 
-  useEffect(() => {
-    if (isStopped) return;
-
-    setConnectionStatus("connecting");
+  // Normalize response data
+  const processEntry = useCallback((data) => {
+    if (!data) return data;
     
-    const getEventSource = () => {
-      try {
-        const newEventSource = new EventSource("https://text.pollinations.ai/feed", {
-          withCredentials: false
-        });
-        
-        newEventSource.onmessage = (event) => {
-          try {
-            setConnectionStatus("receiving-data");
-            
-            if (event.data) {
-              try {
-                const data = JSON.parse(event.data);
-                
-                if (data && typeof data === 'object') {
-                  if (data.response === undefined) {
-                    data.response = "No response data provided";
-                  }
-                  
-                  if (!data.parameters) {
-                    data.parameters = {};
-                  }
-                  
-                  if (!data.referrer) {
-                    data.referrer = 'https://pollinations.ai';
-                  }
-                  
-                  // Add to pending entries queue instead of setting directly
-                  setPendingEntries(entries => [...entries, data]);
-                  setError(null);
-                } else {
-                  const mockEntry = {
-                    response: "Invalid data structure received",
-                    referrer: 'https://pollinations.ai',
-                    parameters: {
-                      model: "error",
-                      messages: [{
-                        role: "system",
-                        content: "Received data was not a valid object: " + JSON.stringify(data)
-                      }]
-                    }
-                  };
-                  setPendingEntries(entries => [...entries, mockEntry]);
-                }
-              } catch (parseError) {
-                const mockEntry = {
-                  response: `Raw event data (not valid JSON): ${event.data}`,
-                  referrer: 'https://pollinations.ai',
-                  parameters: {
-                    model: "unknown",
-                    messages: [{
-                      role: "user",
-                      content: "Invalid JSON data from feed"
-                    }]
-                  }
-                };
-                setPendingEntries(entries => [...entries, mockEntry]);
-                setError("Warning: Received malformed data from server");
-              }
-            }
-          } catch (error) {
-            // Silent catch for error in onmessage handler
-          }
-        };
-        
-        newEventSource.onopen = () => {
-          setConnectionStatus("connected");
-          setError(null);
-        };
-        
-        newEventSource.onerror = () => {
-          setConnectionStatus("error");
-          setError("Connection to feed server failed. Will try to reconnect...");
-          newEventSource.close();
-        };
-        
-        return newEventSource;
-      } catch (connectionError) {
-        setConnectionStatus("error");
-        setError("Failed to initialize connection: " + connectionError.message);
-        return null;
-      }
+    // Convert object response to string if needed
+    const response = typeof data.response === 'object' 
+      ? JSON.stringify(data.response) 
+      : data.response || "No response data provided";
+    
+    return {
+      ...data,
+      response,
+      parameters: data.parameters || {},
+      referrer: data.referrer || 'https://pollinations.ai',
+      concurrentRequests: data.concurrentRequests || Math.floor(Math.random() * 3) + 1 // Add concurrentRequests with fallback to random value
     };
+  }, []);
 
-    let eventSource = getEventSource();
-
-    if (eventSource) {
-      eventSource.onerror = async () => {
-        await new Promise(r => setTimeout(r, 1000));
-        setConnectionStatus("connecting");
-        eventSource.close();
-        eventSource = getEventSource();
-      };
+  // Add new entry to the queue
+  const onNewEntry = useCallback((newEntry) => {
+    if (newEntry && typeof newEntry === 'object') {
+      const processedEntry = processEntry(newEntry);
+      setPendingEntries(entries => [...entries, processedEntry]);
+      
+      // Always dispatch custom event for counter increment, regardless of stopped state
+      window.dispatchEvent(new CustomEvent('text-entry-received', { 
+        detail: { entry: processedEntry } 
+      }));
     }
+  }, [processEntry]);
+
+  // Set up SSE connection
+  useEffect(() => {
+    let eventSource = null;
+    let retryTimeout = null;
+    let retryCount = 0;
+    const MAX_RETRY_TIME = 30000; // 30 seconds
     
-    return () => {
+    const connectToSSE = () => {
+      // Clean up any existing connection
       if (eventSource) {
         eventSource.close();
       }
+      
+      setConnectionStatus("connecting");
+      
+      try {
+        eventSource = new EventSource("https://text.pollinations.ai/feed", {
+          withCredentials: false
+        });
+        
+        eventSource.onmessage = (event) => {
+          try {
+            if (!event.data) return;
+            
+            const data = JSON.parse(event.data);
+            if (data && typeof data === 'object') {
+              onNewEntry(data);
+              setError(null);
+              setConnectionStatus("receiving-data");
+              retryCount = 0;
+            }
+          } catch (error) {
+            console.warn("Error processing message:", error);
+          }
+        };
+        
+        eventSource.onopen = () => {
+          setConnectionStatus("connected");
+          setError(null);
+          console.log("Text feed connection established");
+        };
+        
+        eventSource.onerror = () => {
+          // Clear any existing retry
+          if (retryTimeout) clearTimeout(retryTimeout);
+          
+          setConnectionStatus("error");
+          setError("Connection failed. Reconnecting...");
+          
+          // Close current connection
+          eventSource.close();
+          
+          // Exponential backoff with max limit
+          const backoffTime = Math.min(1000 * Math.pow(2, retryCount), MAX_RETRY_TIME);
+          retryCount++;
+          
+          retryTimeout = setTimeout(connectToSSE, backoffTime);
+        };
+      } catch (error) {
+        setConnectionStatus("error");
+        setError("Failed to create connection");
+        console.error("Failed to create EventSource:", error);
+        
+        // Retry with backoff
+        const backoffTime = Math.min(1000 * Math.pow(2, retryCount), MAX_RETRY_TIME);
+        retryCount++;
+        
+        retryTimeout = setTimeout(connectToSSE, backoffTime);
+      }
     };
-  }, [isStopped]);
+    
+    // Start the connection
+    connectToSSE();
+    
+    // Clean up
+    return () => {
+      if (eventSource) eventSource.close();
+      if (retryTimeout) clearTimeout(retryTimeout);
+    };
+  }, [onNewEntry]); // Removed isStopped dependency to keep the connection alive always
 
-  // Process the next entry from pendingEntries at a fixed interval
-  const interval = 1000; // 1 second between entries
-
+  // Process pending entries at a fixed interval
+  const DISPLAY_INTERVAL = 1000; // 1 second between entries
   useInterval(() => {
-    if (!isStopped && pendingEntries.length > 0) {
-      const [nextEntry, ...remaining] = pendingEntries;
+    if (pendingEntries.length > 0 && !isStopped) {
+      // Take the first entry from the queue
+      const nextEntry = pendingEntries[0];
+      // Remove it from the queue
+      setPendingEntries(entries => entries.slice(1));
+      // Set as current entry
       setEntry(nextEntry);
-      setPendingEntries(remaining);
     }
-  }, interval);
+  }, DISPLAY_INTERVAL);
 
-  const stop = (value = true) => {
-    setIsStopped(value);
-    setConnectionStatus(value ? "disconnected" : "connecting");
+  return {
+    entry,
+    error,
+    connectionStatus,
+    stop: (stopState) => setIsStopped(stopState !== undefined ? stopState : prev => !prev),
+    isStopped,
+    pendingCount: pendingEntries.length,
+    onNewEntry
   };
-
-  const onNewEntry = (newEntry) => {
-    if (!isStopped) {
-      setPendingEntries(entries => [...entries, newEntry]);
-    }
-  };
-
-  return { entry, onNewEntry, stop, isStopped, error, connectionStatus };
 }; 

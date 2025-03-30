@@ -8,8 +8,6 @@ const ResponseContainer = styled(Paper)`
   padding: 20px;
   margin-bottom: 20px;
   background-color: ${Colors.offblack};
-  border: 1px solid ${Colors.lime}40;
-  border-radius: 0px;
   width: 100%;
   max-width: 1000px;
   height: 200px;
@@ -17,7 +15,6 @@ const ResponseContainer = styled(Paper)`
   overflow-x: hidden;
   position: relative;
   cursor: pointer;
-  transition: border-color 0.2s;
 
   /* Hide scrollbar for Chrome, Safari and Opera */
   &::-webkit-scrollbar {
@@ -36,13 +33,13 @@ const ResponseContainer = styled(Paper)`
   }
   
   /* Hide scrollbar for IE, Edge and Firefox */
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;     /* Firefox */
+  msOverflowStyle: none;  /* IE and Edge */
+  scrollbarWidth: none;     /* Firefox */
   
   /* Show scrollbar on hover for Firefox */
   &:hover {
-    scrollbar-width: thin;
-    scrollbar-color: ${Colors.lime}60 transparent;
+    scrollbarWidth: thin;
+    scrollbarColor: ${Colors.lime}60 transparent;
     border-color: ${Colors.lime};
   }
 `;
@@ -116,7 +113,6 @@ export const TextDisplay = ({ entry, isLoading }) => {
       width="100%" 
       sx={{ 
         maxWidth: "1000px", 
-        marginTop: '16px'
       }}
     >
       {isDesktop ? (

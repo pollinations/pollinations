@@ -80,7 +80,7 @@ const Supporter = () => {
                 href={getCompanyLink(company.url)}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: Colors.lime, fontFamily: Fonts.parameter, fontSize: "1.3em" }}
+                style={{ color: Colors.lime, fontFamily: Fonts.parameter, fontSize: "1.1em" }}
                 onClick={() => handleSupporterClick(company.name)}
               >
                 <strong>{company.name}</strong>

@@ -1,41 +1,42 @@
 import React from 'react';
-import { Box, Button, Menu, MenuItem, Typography, CircularProgress } from '@mui/material';
+import { Box, Button, MenuItem, Typography, CircularProgress, Popper, Grow, Paper, MenuList, ClickAwayListener } from '@mui/material';
 import { Colors, Fonts } from '../../config/global';
 import { CustomTooltip } from '../CustomTooltip';
 import { LLMTextManipulator } from '../LLMTextManipulator';
 import { emojify, rephrase, noLink } from '../../config/llmTransforms';
-import { useTextModels } from '../../utils/useTextModels';
+import { useModels } from '../../utils/useModels';
 
-// Styling constants
-const labelColor = `${Colors.offwhite}99`;
-const labelFont = Fonts.parameter;
-const labelSize = '1em';
-const paramTextColor = Colors.offwhite;
-const paramTextSize = { xs: '1.5em', md: '1.1em' };
-const paramBorderColor = Colors.gray2;
+// Default styling constants
+const defaultStyles = {
+  backgroundColor: "transparent",
+  textColor: Colors.offwhite,
+  borderColor: Colors.gray2,
+  borderColorHover: Colors.lime,
+  labelColor: `${Colors.offwhite}99`,
+}
 
 // Typography style for label
-const typographyStyles = {
+const getTypographyStyles = (styles) => ({
   label: {
-    color: labelColor,
-    fontSize: labelSize,
-    fontFamily: labelFont,
+    color: styles.labelColor,
+    fontSize: '1em',
+    fontFamily: Fonts.parameter,
   },
-};
+});
 
 // Button style for model selector
-const buttonStyles = {
+const getButtonStyles = (styles) => ({
   base: {
-    color: Colors.offwhite,
+    color: styles.textColor,
     width: '100%',
     justifyContent: 'flex-start',
     height: '60px',
     border: 'none',
   },
   responsiveFontSize: {
-    fontSize: paramTextSize,
+    fontSize: { xs: '1.5em', md: '1.1em' },
   },
-};
+});
 
 // Menu items hover style
 const menuItemHover = {
@@ -46,15 +47,18 @@ const menuItemHover = {
 };
 
 // Menu item shared styles - extract to a constant for reuse
-const menuItemStyles = {
-  color: paramTextColor,
-  backgroundColor: Colors.offblack,
+const getMenuItemStyles = (styles) => ({
+  color: styles.textColor,
+  backgroundColor: Colors.offblack2,
   fontFamily: Fonts.parameter,
   fontSize: '1.1em',
   padding: '10px 16px',
   minHeight: '44px',
+  whiteSpace: 'normal',
+  wordBreak: 'break-word',
+  lineHeight: '1.4',
   ...menuItemHover,
-};
+});
 
 /**
  * Shared ModelSelector component for both image and text feeds
@@ -69,7 +73,7 @@ const menuItemStyles = {
  * @param {string} props.tooltipText - Text for the tooltip
  * @param {function} props.setIsInputChanged - Function to set input changed state
  * @param {Object} props.buttonProps - Additional props for button
- * @param {Array} props.availableModels - Array of available models (for image)
+ * @param {Object} props.styles - Custom styling properties
  */
 export function ModelSelector({
   itemType = 'text',
@@ -80,76 +84,81 @@ export function ModelSelector({
   tooltipText,
   setIsInputChanged,
   buttonProps = {},
-  availableModels = []
+  styles = {}
 }) {
-  // Menu anchor state (shared)
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  // Merge default styles with custom styles
+  const mergedStyles = { ...defaultStyles, ...styles }
   
-  // For text models, load from API
-  const { models, loading: modelsLoading, error: modelsError } = useTextModels();
+  // Get styled component props
+  const typographyStyles = getTypographyStyles(mergedStyles);
+  const buttonStyles = getButtonStyles(mergedStyles);
+  const menuItemStyles = getMenuItemStyles(mergedStyles);
+
+  // Menu state
+  const [open, setOpen] = React.useState(false);
+  const anchorRef = React.useRef(null);
   
-  // Handle menu open (shared)
-  const handleMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
+  // For models, load from API based on itemType
+  const { models, loading: modelsLoading, error: modelsError } = useModels(itemType);
+  
+  // Handle toggle
+  const handleToggle = () => {
+    setOpen((prevOpen) => !prevOpen);
+  };
+
+  // Handle close
+  const handleClose = (event) => {
+    if (anchorRef.current && anchorRef.current.contains(event.target)) {
+      return;
+    }
+
+    setOpen(false);
+  };
+
+  // Handle menu item click
+  const handleMenuItemClick = (value) => (event) => {
+    onModelChange(value);
+    if (setIsInputChanged) {
+      setIsInputChanged(true);
+    }
+    handleClose(event);
   };
   
-  // Handle menu close and selection (shared)
-  const handleMenuClose = (value) => {
-    setAnchorEl(null);
-    if (value) {
-      onModelChange(value);
-      if (setIsInputChanged) {
-        setIsInputChanged(true);
-      }
+  // Handle key events for accessibility
+  const handleListKeyDown = (event) => {
+    if (event.key === 'Tab') {
+      event.preventDefault();
+      setOpen(false);
+    } else if (event.key === 'Escape') {
+      setOpen(false);
     }
   };
-  
-  // Get appropriate models based on itemType
-  const getModels = () => {
-    if (itemType === 'image') {
-      return availableModels.length > 0 ? availableModels : [];
-    } else {
-      return models || [];
+
+  // Return focus to the button when the menu closes
+  const prevOpen = React.useRef(open);
+  React.useEffect(() => {
+    if (prevOpen.current === true && open === false) {
+      anchorRef.current.focus();
     }
-  };
+
+    prevOpen.current = open;
+  }, [open]);
+  
+  // Get available models
+  const availableModelsList = models || [];
   
   // Get display name for current model
   const getDisplayName = () => {
-    if (itemType === 'image') {
-      return currentModel || (availableModels.length > 0 ? availableModels[0] : "");
-    } else {
-      // For text models, find the matching name
-      if (!currentModel) return "";
-      
-      const foundModel = models?.find(m => m.id === currentModel);
-      if (foundModel) {
-        return foundModel.name;
-      }
-      
-      // Fallback to ID with capitalization
-      return currentModel.charAt(0).toUpperCase() + currentModel.slice(1);
+    if (!currentModel) return "";
+    
+    const foundModel = models?.find(m => m.id === currentModel);
+    if (foundModel) {
+      return foundModel.name;
     }
-  };
-  
-  // Format the display name consistently
-  const formatDisplayName = (name) => {
-    if (!name) return "";
     
-    // Ensure consistent capitalization
-    const displayName = name.charAt(0).toUpperCase() + name.slice(1);
-    
-    // Truncate if too long (for UI consistency)
-    return displayName.length > 20 ? displayName.substring(0, 18) + '...' : displayName;
+    // Fallback to ID
+    return currentModel;
   };
-  
-  // Get available models
-  const availableModelsList = getModels();
-  
-  // If no models are available, don't display anything
-  if ((itemType === 'image' && availableModelsList.length === 0) || 
-      (itemType === 'text' && availableModelsList.length === 0 && !modelsLoading && modelsError)) {
-    return null;
-  }
   
   // Tooltip component based on tooltip text
   const tooltipComponent = tooltipText ? (
@@ -171,113 +180,156 @@ export function ModelSelector({
       {tooltipComponent}
       <Box
         sx={{
-          border: `0.5px solid ${paramBorderColor}`,
+          border: `0.5px solid ${mergedStyles.borderColor}`,
           height: "60px",
           transition: "border-color 0.2s ease",
+          backgroundColor: mergedStyles.backgroundColor,
           "&:hover": {
-            borderColor: Colors.lime,
+            borderColor: mergedStyles.borderColorHover,
+            border: `1px solid ${mergedStyles.borderColorHover}`,
           },
           "&:focus-within": {
-            borderColor: Colors.lime,
-          }
+            borderColor: mergedStyles.borderColorHover,
+            border: `1px solid ${mergedStyles.borderColorHover}`,
+          },
+          // Ensure all borders are visible
+          position: "relative",
+          zIndex: 0,
+          overflow: "hidden"
         }}
       >
         <Button
+          ref={anchorRef}
           variant="outlined"
-          aria-controls="model-menu"
+          aria-controls={open ? 'model-menu-list' : undefined}
+          aria-expanded={open ? 'true' : undefined}
           aria-haspopup="true"
-          onClick={handleMenuOpen}
+          onClick={handleToggle}
           onFocus={onFocus}
           disabled={isLoading || modelsLoading}
+          disableRipple={true}
           sx={{
             ...buttonStyles.base,
             ...buttonStyles.responsiveFontSize,
             borderRadius: "0px",
-            height: "60px",
+            height: "56px",
+            margin: "2px",
+            width: "calc(100% - 4px)",
             fontFamily: Fonts.parameter,
-            fontSize: paramTextSize,
-            backgroundColor: "transparent",
-            textTransform: "none", // Prevent auto-uppercase,
+            textTransform: "none",
             "&:hover": {
-              backgroundColor: "transparent",
+              backgroundColor: Colors.offblack,
             },
+            "&:active": {
+              backgroundColor: Colors.offblack,
+            },
+            border: "none",
+            boxShadow: "none",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            paddingLeft: "12px",
+            paddingRight: "12px",
             ...buttonProps
           }}
         >
-          {modelsLoading ? "Loading models..." : formatDisplayName(getDisplayName())}
+          {modelsLoading ? "Loading models..." : getDisplayName()}
         </Button>
       </Box>
-      <Menu
-        id="model-menu"
-        anchorEl={anchorEl}
-        keepMounted
-        open={Boolean(anchorEl)}
-        onClose={() => handleMenuClose(null)}
-        MenuListProps={{
-          sx: {
-            textAlign: "left",
-            backgroundColor: "transparent",
-            fontFamily: Fonts.parameter,
-          },
-        }}
-        PaperProps={{
-          sx: {
-            backgroundColor: Colors.offblack,
-            boxShadow: `0px 5px 10px rgba(0, 0, 0, 0.5)`,
-            maxHeight: '300px',
-            overflowY: 'auto',
-            // Hide scrollbar but show handle
-            '&::-webkit-scrollbar': {
-              width: '6px',
-              backgroundColor: 'transparent',
-            },
-            '&::-webkit-scrollbar-track': {
-              backgroundColor: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: `${Colors.lime}99`,
-              borderRadius: '3px',
-              '&:hover': {
-                backgroundColor: Colors.lime,
-              },
-            },
-            // Firefox scrollbar styling
-            scrollbarWidth: 'thin',
-            scrollbarColor: `${Colors.lime}99 transparent`,
-          }
+      <Popper
+        open={open}
+        anchorEl={anchorRef.current}
+        role={undefined}
+        placement="bottom-start"
+        transition
+        disablePortal
+        style={{
+          zIndex: 1300
         }}
       >
-        {modelsLoading ? (
-          <MenuItem disabled>
-            <Box display="flex" alignItems="center" gap={1}>
-              <CircularProgress size={16} />
-              <span>Loading models...</span>
-            </Box>
-          </MenuItem>
-        ) : itemType === 'image' ? (
-          // Image models
-          availableModelsList.map((modelName) => (
-            <MenuItem
-              key={modelName}
-              onClick={() => handleMenuClose(modelName)}
-              sx={menuItemStyles}
+        {({ TransitionProps, placement }) => (
+          <Grow
+            {...TransitionProps}
+            style={{
+              transformOrigin:
+                placement === 'bottom-start' ? 'left top' : 'left bottom',
+            }}
+          >
+            <Paper
+              sx={{
+                backgroundColor: Colors.offblack,
+                maxHeight: '300px',
+                minWidth: anchorRef.current ? anchorRef.current.offsetWidth : '200px',
+                width: 'auto',
+                maxWidth: '500px',
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                '&::-webkit-scrollbar': {
+                  width: '6px',
+                  backgroundColor: Colors.offblack2,
+                },
+                '&::-webkit-scrollbar-track': {
+                  backgroundColor: Colors.offblack2,
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  backgroundColor: `${Colors.lime}99`,
+                  borderRadius: '0',
+                  border: 'none',
+                  '&:hover': {
+                    backgroundColor: Colors.lime,
+                  },
+                },
+                scrollbarWidth: 'medium',
+                scrollbarColor: `${Colors.lime}99 ${Colors.offblack2}`,
+                elevation: 0,
+                boxShadow: 'none',
+                border: 'none',
+              }}
             >
-              {formatDisplayName(modelName)}
-            </MenuItem>
-          ))
-        ) : (
-          // Text models
-          availableModelsList.map(modelOption => (
-            <MenuItem
-              key={modelOption.id}
-              onClick={() => handleMenuClose(modelOption.id)}
-              sx={menuItemStyles}
-            >
-              {formatDisplayName(modelOption.name)}
-            </MenuItem>
-          ))
+              <ClickAwayListener onClickAway={handleClose}>
+                <MenuList
+                  autoFocusItem={open}
+                  id="model-menu-list"
+                  aria-labelledby="model-button"
+                  onKeyDown={handleListKeyDown}
+                  sx={{
+                    textAlign: "left",
+                    backgroundColor: Colors.offblack,
+                    fontFamily: Fonts.parameter,
+                    padding: "8px",
+                  }}
+                >
+                  {modelsLoading ? (
+                    <MenuItem disabled>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <CircularProgress size={16} />
+                        <span>Loading models...</span>
+                      </Box>
+                    </MenuItem>
+                  ) : availableModelsList.length > 0 ? (
+                    // Display available models from the API
+                    availableModelsList.map(modelOption => (
+                      <MenuItem
+                        key={modelOption.id}
+                        onClick={handleMenuItemClick(modelOption.id)}
+                        disableRipple={true}
+                        sx={menuItemStyles}
+                      >
+                        {modelOption.name}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    // No models available
+                    <MenuItem disabled sx={menuItemStyles}>
+                      No models available
+                    </MenuItem>
+                  )}
+                </MenuList>
+              </ClickAwayListener>
+            </Paper>
+          </Grow>
         )}
-      </Menu>
+      </Popper>
     </Box>
   );
 } 

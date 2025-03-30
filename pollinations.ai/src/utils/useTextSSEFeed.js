@@ -29,16 +29,37 @@ export const useTextSlideshow = () => {
     };
   }, []);
 
-  // Add new entry to the queue
+  // Add new entry to the queue - filter for GET requests only
   const onNewEntry = useCallback((newEntry) => {
     if (newEntry && typeof newEntry === 'object') {
-      const processedEntry = processEntry(newEntry);
-      setPendingEntries(entries => [...entries, processedEntry]);
+      // Check if this entry is from a GET request using multiple indicators
+      // Any of these conditions would indicate a GET request
+      const isGetRequest = (
+        // Explicitly marked as GET
+        newEntry.parameters?.method === 'GET' ||
+        // No method specified, and no indication of a POST request (chat completion)
+        (!newEntry.parameters?.method && !newEntry.parameters?.type?.includes('chat')) ||
+        // Has a request_url which would typically only exist for GET requests
+        !!newEntry.parameters?.request_url ||
+        // No parameters.messages array (which would indicate a POST/chat request)
+        !newEntry.parameters?.messages
+      );
       
-      // Always dispatch custom event for counter increment, regardless of stopped state
-      window.dispatchEvent(new CustomEvent('text-entry-received', { 
-        detail: { entry: processedEntry } 
-      }));
+      if (isGetRequest) {
+        const processedEntry = processEntry(newEntry);
+        setPendingEntries(entries => [...entries, processedEntry]);
+        
+        // Always dispatch custom event for counter increment, regardless of stopped state
+        window.dispatchEvent(new CustomEvent('text-entry-received', { 
+          detail: { entry: processedEntry } 
+        }));
+      } else {
+        console.log("Skipping non-GET entry:", 
+          newEntry.parameters?.method, 
+          newEntry.parameters?.type,
+          newEntry.parameters?.messages ? "has messages" : "no messages"
+        );
+      }
     }
   }, [processEntry]);
 

@@ -10,17 +10,23 @@ import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import { trackEvent } from "../config/analytics"
 import { useTheme } from "@mui/material/styles"
 import { useMediaQuery } from "@mui/material"
+import { copyToClipboard } from "../utils/clipboard"
 
 const Footer = () => {
   const theme = useTheme()
   const isXs = useMediaQuery(theme.breakpoints.only("xs"))
   const handleEmailLinkClick = (e) => {
     e.preventDefault()
-    navigator.clipboard.writeText("hello@pollinations.ai").then(() => {})
-    trackEvent({
-      action: 'click_email',
-      category: 'footer',
-    })
+    copyToClipboard("hello@pollinations.ai")
+      .then(() => {
+        trackEvent({
+          action: 'click_email',
+          category: 'footer',
+        })
+      })
+      .catch(error => {
+        console.error("Error copying email to clipboard:", error)
+      })
   }
 
   const handleTermsLinkClick = () => {

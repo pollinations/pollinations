@@ -9,6 +9,7 @@ import { SectionSubContainer } from "../SectionContainer"
 import TabSelector from "../TabSelector"
 import { keyframes } from "@emotion/react"
 import styled from "@emotion/styled"
+import { copyToClipboard } from "../../utils/clipboard"
 
 const clickAnimation = keyframes`
   0% {
@@ -45,10 +46,19 @@ export function CodeExamples({ image = {} }) {
   }
 
   const handleCopy = (text, index) => {
-    navigator.clipboard.writeText(text)
-    setClickedButton(index)
-    setTimeout(() => setClickedButton(null), 500)
-    console.log("Code copied to clipboard!")
+    copyToClipboard(text)
+      .then(success => {
+        if (success) {
+          console.log("Code copied to clipboard!")
+        } else {
+          console.warn("Failed to copy code to clipboard")
+        }
+        setClickedButton(index)
+        setTimeout(() => setClickedButton(null), 500)
+      })
+      .catch(error => {
+        console.error("Error copying to clipboard:", error)
+      })
   }
 
   // Default values for when image is not available
@@ -64,10 +74,16 @@ export function CodeExamples({ image = {} }) {
   // Use either the provided image or default values
   const imageToUse = image?.imageURL ? image : defaultImage
 
+  // Create formatted tab items with title and key using the category field
+  const formattedTabs = codeExampleTabs.map(tab => ({
+    key: tab,
+    title: CODE_EXAMPLES[tab].category
+  }))
+
   return (
     <SectionSubContainer style={{ backgroundColor: "transparent", paddingBottom: "0em" }}>
       <TabSelector 
-        items={codeExampleTabs}
+        items={formattedTabs}
         selectedKey={codeExampleTabs[tabValue]}
         onSelectTab={handleTabChange}
         trackingCategory="integrate"

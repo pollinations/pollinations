@@ -66,10 +66,14 @@ export const FeedText = memo(() => {
     
     // Update the shared prompt
     const prompt = extractPrompt(entry.parameters.messages);
-    if (prompt) setSharedPrompt(prompt);
+    if (prompt) {
+      setSharedPrompt(prompt);
+    }
     
     // Update the model
-    if (entry.parameters.model) setSharedModel(entry.parameters.model);
+    if (entry.parameters.model) {
+      setSharedModel(entry.parameters.model);
+    }
   }, [entry, isInputChanged]);
 
   // Reset isInputChanged when response changes
@@ -183,6 +187,7 @@ export const FeedText = memo(() => {
                 promptTooltip="Prompt"
                 sharedPrompt={sharedPrompt}
                 setSharedPrompt={setSharedPrompt}
+                backgroundColor={Colors.offblack}
               />
             </Box>
 
@@ -199,6 +204,7 @@ export const FeedText = memo(() => {
                   cancelGeneration={cancelGeneration}
                   sharedModel={sharedModel}
                   setSharedModel={setSharedModel}
+                  sharedPrompt={sharedPrompt}
                 />
               </Box>
             )}

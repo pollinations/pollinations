@@ -25,6 +25,8 @@ export function useTextFeedLoader(onNewEntry, setLastEntry) {
   // Fetch the last entry on mount (initial load only)
   useEffect(() => {
     let isMounted = true;
+    let retryCount = 0;
+    const MAX_RETRIES = 3;
     
     const fetchLastEntry = async () => {
       try {
@@ -47,15 +49,56 @@ export function useTextFeedLoader(onNewEntry, setLastEntry) {
             try {
               const data = await response.json();
               
-              // Ensure required properties exist
-              const processedData = {
-                ...data,
-                referrer: data.referrer || 'https://pollinations.ai',
-                concurrentRequests: data.concurrentRequests || Math.floor(Math.random() * 3) + 1 // Add concurrentRequests property with fallback to random value between 1-3
-              };
+              // Check if this entry is from a GET request using multiple indicators
+              // Any of these conditions would indicate a GET request
+              const isGetRequest = (
+                // Explicitly marked as GET
+                data.parameters?.method === 'GET' ||
+                // No method specified, and no indication of a POST request (chat completion)
+                (!data.parameters?.method && !data.parameters?.type?.includes('chat')) ||
+                // Has a request_url which would typically only exist for GET requests
+                !!data.parameters?.request_url ||
+                // No parameters.messages array (which would indicate a POST/chat request)
+                !data.parameters?.messages
+              );
               
-              setLastEntry(processedData);
-              onNewEntry(processedData);
+              if (isGetRequest) {
+                // Ensure required properties exist
+                const processedData = {
+                  ...data,
+                  referrer: data.referrer || 'https://pollinations.ai',
+                  concurrentRequests: data.concurrentRequests || Math.floor(Math.random() * 3) + 1 // Add concurrentRequests property with fallback to random value between 1-3
+                };
+                
+                setLastEntry(processedData);
+                onNewEntry(processedData);
+              } else {
+                console.log("Skipping non-GET last entry:", 
+                  data.parameters?.method, 
+                  data.parameters?.type,
+                  data.parameters?.messages ? "has messages" : "no messages"
+                );
+                
+                // If the last entry is not a GET request, try to load another one
+                if (retryCount < MAX_RETRIES) {
+                  retryCount++;
+                  console.log(`Retry ${retryCount}/${MAX_RETRIES} to find GET entry`);
+                  setTimeout(fetchLastEntry, 1000);
+                } else {
+                  console.log(`Failed to find GET entry after ${MAX_RETRIES} retries`);
+                  // Create a fallback entry if needed
+                  const fallbackEntry = {
+                    response: "Welcome to Pollinations Text Feed. Enter a prompt to get started.",
+                    referrer: "pollinations.ai",
+                    parameters: {
+                      method: "GET",
+                      type: "fallback"
+                    }
+                  };
+                  setLastEntry(fallbackEntry);
+                  onNewEntry(fallbackEntry);
+                }
+              }
             } catch (parseError) {
               console.warn("Error parsing JSON response:", parseError.message);
             }

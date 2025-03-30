@@ -1,17 +1,29 @@
-import React, {useCallback } from 'react';
+import React, {useCallback, useEffect } from 'react';
 import { 
   Box, 
   Typography
 } from '@mui/material';
 import { Colors, Fonts } from '../../config/global';
 import styled from '@emotion/styled';
-import { useTextModels } from '../../utils/useTextModels';
+import { useModels } from '../../utils/useModels';
 import { GeneralButton } from '../GeneralButton';
 import { ModelSelector } from './ModelSelector';
 import { LLMTextManipulator } from "../LLMTextManipulator";
 import { noLink } from "../../config/llmTransforms";
 import { IMAGE_EDIT_BUTTON_OFF } from "../../config/copywrite";
 import { keyframes } from "@emotion/react";
+
+// ─── PARAMETER STYLING CONSTANTS ────────────────────────────────────────────────
+// These can be adjusted to control the appearance of all parameter inputs
+const PARAM_STYLES = {
+  backgroundColor: Colors.offblack,
+  textColor: Colors.offwhite,
+  borderColor: Colors.gray2,
+  borderColorHover: Colors.lime,
+  labelColor: `${Colors.offwhite}99`,
+  checkboxColorOn: Colors.offwhite,
+  checkboxColorOff: Colors.offblack,
+}
 
 const LabelStyle = {
   color: `${Colors.offwhite}99`,
@@ -54,8 +66,8 @@ export const TextEditor = ({
   sharedModel,
   setSharedModel
 }) => {
-  // Fetch available models
-  const { models, loading: modelsLoading, error: modelsError } = useTextModels();
+  // Use the new hook with 'text' explicitly passed
+  const { models, loading: modelsLoading, error: modelsError } = useModels('text');
   
   // Early return for non-edit mode (except for prompt-only mode)
   if (toggleValue !== 'edit' && !promptOnly) {
@@ -67,9 +79,18 @@ export const TextEditor = ({
     return null;
   }
   
+  // Log the current sharedPrompt and sharedModel for debugging
+  useEffect(() => {
+    console.log("TextEditor - Current sharedPrompt:", sharedPrompt);
+    console.log("TextEditor - Current sharedModel:", sharedModel);
+  }, [sharedPrompt, sharedModel]);
+  
   // Handle form submission
   const handleSubmit = useCallback(() => {
     if (!sharedModel) return;
+
+    console.log("TextEditor - handleSubmit called with prompt:", sharedPrompt);
+    console.log("TextEditor - handleSubmit called with model:", sharedModel);
 
     const parameters = {
       model: sharedModel,
@@ -102,11 +123,13 @@ export const TextEditor = ({
             itemType="text"
             currentModel={sharedModel}
             onModelChange={(value) => {
+              console.log("ModelSelector - Changed model to:", value);
               setSharedModel(value);
               handleInputChange();
             }}
             isLoading={isLoading || modelsLoading}
             setIsInputChanged={handleInputChange}
+            styles={PARAM_STYLES}
           />
         </Box>
         
@@ -118,12 +141,11 @@ export const TextEditor = ({
             isLoading={isLoading}
             isInputChanged={isInputChanged}
             borderColor={Colors.lime}
-            backgroundColor={Colors.offblack + '99'}
+            backgroundColor={Colors.offblack}
             textColor={Colors.lime}
             fontSize="1.5em"
             style={{ 
               height: "60px",
-              animation: isLoading ? `${blinkAnimation} 2s ease-in-out infinite` : "none",
               fontFamily: Fonts.title,
             }}
           >

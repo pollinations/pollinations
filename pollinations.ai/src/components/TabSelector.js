@@ -76,7 +76,7 @@ const TabSelector = ({
 
   return (
     <Box sx={{ 
-      maxWidth: "800px", 
+      maxWidth: "1000px", 
       width: "100%", 
       marginLeft: "auto", 
       marginRight: "auto", 
@@ -96,7 +96,7 @@ const TabSelector = ({
             minWidth: isMobile ? "100px" : "120px",
             fontFamily: Fonts.title,
             fontWeight: 600,
-            fontSize: isMobile ? "0.85rem" : isTablet ? "0.95rem" : "1.5rem",
+            fontSize: isMobile ? "1.3rem" : isTablet ? "0.95rem" : "1.5rem",
             boxShadow: effectiveSelectedKey === (item.key || item) ? "0 4px 8px rgba(0,0,0,0.2)" : "none",
             transform: effectiveSelectedKey === (item.key || item) ? "translateY(-2px)" : "none",
             transition: "all 0.3s ease",

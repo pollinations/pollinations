@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo, useCallback } from "react";
+import React, { useState, useEffect, memo, useCallback, useRef } from "react";
 import { Box, CircularProgress } from "@mui/material";
 import { useFeedLoader } from "../utils/useFeedLoader";
 import { useImageEditor, useImageSlideshow } from "../utils/useImageSlideshow";
@@ -36,6 +36,9 @@ export const FeedImage = memo(() => {
 
   // For handling parameter changes directly
   const [modifiedImageParams, setModifiedImageParams] = useState(null);
+  
+  // Ref to track if we've initialized the edit mode parameters
+  const editModeInitializedRef = useRef(false);
 
   // -----------------------------
   // Hooks
@@ -62,6 +65,38 @@ export const FeedImage = memo(() => {
   useEffect(() => {
     setIsInputChanged(false);
   }, [image?.imageURL]);
+  
+  /**
+   * Reset the editModeInitializedRef when switching back to feed mode
+   * This ensures that the next time we switch to edit mode, we'll initialize parameters again
+   */
+  useEffect(() => {
+    if (toggleValue === "feed") {
+      editModeInitializedRef.current = false;
+      setModifiedImageParams(null);
+    }
+  }, [toggleValue]);
+
+  // Pass modified image parameters to the ImageEditor
+  // Ensure the effectiveImage always has defined values for number inputs
+  const effectiveImage = {
+    width: 512,    // Default width
+    height: 512,   // Default height
+    seed: 0,       // Default seed
+    enhance: false,
+    nologo: false,
+    model: "flux",
+    prompt: "",
+    ...(image || {}),  // Layer in current image values
+    ...(modifiedImageParams || {})  // Finally apply any user modifications
+  };
+  
+  // For debugging
+  useEffect(() => {
+    if (toggleValue === "edit") {
+      console.log("Current effectiveImage:", effectiveImage);
+    }
+  }, [effectiveImage, toggleValue]);
 
   // -----------------------------
   // Handlers
@@ -76,6 +111,14 @@ export const FeedImage = memo(() => {
       const isEditMode = newValue === "edit";
       stop(isEditMode);  // First stop/start the slideshow
       setToggleValue(newValue);   // Then update the toggle value
+      
+      // When switching to edit mode, copy current image parameters, but only the first time
+      if (isEditMode && image && !editModeInitializedRef.current) {
+        console.log("Initializing edit mode with image:", image);
+        setModifiedImageParams({ ...image });
+        editModeInitializedRef.current = true;
+      }
+      
       trackEvent({
         action: 'click_feed_edit_switch',
         category: 'feed',
@@ -90,7 +133,8 @@ export const FeedImage = memo(() => {
     
     // Create or update modified params object
     setModifiedImageParams((prevParams) => {
-      const baseParams = prevParams || { ...image };
+      // Use callback form of setState to avoid dependency on external `image`
+      const baseParams = prevParams || (image ? { ...image } : {});
       return {
         ...baseParams,
         [param]: value
@@ -101,10 +145,7 @@ export const FeedImage = memo(() => {
     if (toggleValue !== "edit") {
       handleToggleChange(null, "edit");
     }
-  }, [image, toggleValue, handleToggleChange]);
-
-  // Pass modified image parameters to the ImageEditor
-  const effectiveImage = modifiedImageParams || image;
+  }, [toggleValue, handleToggleChange]); // Remove image dependency
 
   // -----------------------------
   // Rendering
@@ -166,6 +207,7 @@ export const FeedImage = memo(() => {
                 onEditModeSwitch={() => handleToggleChange(null, "edit")}
                 setIsInputChanged={setIsInputChanged}
                 promptTooltip="Prompt"
+                backgroundColor={Colors.offblack2}
               />
             </Box>
 
@@ -185,7 +227,6 @@ export const FeedImage = memo(() => {
                   stop={stop}
                   cancelLoading={cancelLoading}
                   updateImage={updateImage}
-                  hidePrompt={true} // Hide the prompt since we're using shared PromptDisplay
                 />
               </Box>
             )}

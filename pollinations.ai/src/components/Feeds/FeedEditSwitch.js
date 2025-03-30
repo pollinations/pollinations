@@ -17,7 +17,7 @@ export function FeedEditSwitch({
       <GeneralButton
         handleClick={() => handleToggleChange(null, "feed")}
         borderColor={Colors.lime}
-        backgroundColor={toggleValue === "feed" ? Colors.lime : `${Colors.offblack}99`}
+        backgroundColor={toggleValue === "feed" ? Colors.lime : Colors.offblack}
         textColor={toggleValue === "feed" ? Colors.offblack : Colors.lime}
         style={{
           height: "70px",
@@ -34,7 +34,7 @@ export function FeedEditSwitch({
       <GeneralButton
         handleClick={() => handleToggleChange(null, "edit")}
         borderColor={Colors.lime}
-        backgroundColor={toggleValue === "edit" ? Colors.lime : `${Colors.offblack}99`}
+        backgroundColor={toggleValue === "edit" ? Colors.lime : Colors.offblack}
         textColor={toggleValue === "edit" ? Colors.offblack : Colors.lime}
         style={{
           width: "auto",

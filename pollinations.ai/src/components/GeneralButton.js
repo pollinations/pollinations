@@ -29,10 +29,27 @@ export const GeneralButton = React.forwardRef(function GeneralButton(
     minHeight: height || "60px",
     borderRadius: "0px",
     padding: "0px 1em",
-    transition: "background-color 0.3s, border-color 0.3s",
+    transition: "all 0.3s ease",
+    opacity: isLoading ? 0.7 : 1,
+    position: "relative",
     "&:hover": {
       backgroundColor: backgroundColor ? `${backgroundColor}B3` : "transparent", // 70% opacity
       borderColor: borderColor ? `${borderColor}B3` : "none", // 70% opacity
+    },
+    "&::after": isLoading ? {
+      content: '""',
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      height: "2px",
+      backgroundColor: textColor || borderColor || "transparent",
+      animation: "loadingProgress 1.5s infinite ease-in-out",
+      width: "100%",
+    } : {},
+    "@keyframes loadingProgress": {
+      "0%": { width: "0%", left: "0%" },
+      "50%": { width: "100%", left: "0%" },
+      "100%": { width: "0%", left: "100%" },
     },
     ...style,
   }

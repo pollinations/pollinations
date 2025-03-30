@@ -7,10 +7,14 @@ import { trackEvent } from '../../config/analytics';
 const ResponseContainer = styled(Paper)`
   padding: 20px;
   margin-bottom: 20px;
-  background-color: ${Colors.offblack};
+  background-color: ${Colors.offblack2};
+  border: 1px solid ${Colors.lime}40;
+  border-radius: 0px;
   width: 100%;
   max-width: 1000px;
-  height: 200px;
+  height: 250px !important;
+  min-height: 250px;
+  max-height: 250px;
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
@@ -18,7 +22,7 @@ const ResponseContainer = styled(Paper)`
 
   /* Hide scrollbar for Chrome, Safari and Opera */
   &::-webkit-scrollbar {
-    width: 8px;
+    width: 20px;
     background: transparent;
   }
   

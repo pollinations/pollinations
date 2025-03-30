@@ -1,30 +1,37 @@
-// Start of Selection
 import React, { useState, useEffect, memo, useRef, useCallback } from "react"
-import { Box, Paper, Typography, Menu, MenuItem, TextField, Checkbox, Button } from "@mui/material"
-import TextareaAutosize from "react-textarea-autosize"
+import { Box } from "@mui/material"
 import { Colors, Fonts } from "../../config/global"
-import { CustomTooltip } from "../CustomTooltip"
 import { GeneralButton } from "../GeneralButton"
 import Grid from "@mui/material/Grid2"
 import { ModelSelector } from "./ModelSelector"
+import { ParameterNumberInput } from "./ParameterNumberInput"
+import { ParameterCheckbox } from "./ParameterCheckbox"
 import {
   IMAGE_FEED_ENANCER_TOOLTIP,
   IMAGE_FEED_LOGO_WATERMARK,
   IMAGE_EDIT_BUTTON_OFF,
-  IMAGE_FEED_TOOLTIP_PROMPT,
   IMAGE_FEED_TOOLTIP_MODEL,
   IMAGE_FEED_TOOLTIP_WIDTH,
   IMAGE_FEED_TOOLTIP_HEIGHT,
   IMAGE_FEED_TOOLTIP_SEED,
 } from "../../config/copywrite"
-import { emojify, rephrase, noLink } from "../../config/llmTransforms"
-import ReactMarkdown from "react-markdown"
+import { noLink } from "../../config/llmTransforms"
 import { keyframes } from "@emotion/react"
-import CheckIcon from "@mui/icons-material/Check"
-import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank"
 import { LLMTextManipulator } from "../LLMTextManipulator"
 import { getImageURL } from "../../utils/getImageURL"
 import { trackEvent } from "../../config/analytics"
+
+// ─── PARAMETER STYLING CONSTANTS ────────────────────────────────────────────────
+// These can be adjusted to control the appearance of all parameter inputs
+const PARAM_STYLES = {
+  backgroundColor: Colors.offblack2,
+  textColor: Colors.offwhite,
+  borderColor: Colors.gray2,
+  borderColorHover: Colors.lime,
+  labelColor: `${Colors.offwhite}99`,
+  checkboxColorOn: Colors.offwhite,
+  checkboxColorOff: Colors.offwhite,
+}
 
 /**
  * ImageEditor
@@ -43,32 +50,37 @@ export const ImageEditor = memo(function ImageEditor({
   cancelLoading,
   updateImage,
   handleToggleChange,
-  hidePrompt = false,
 }) {
-  // ─── STYLING CONSTANTS ────────────────────────────────────────────────────────
-  const labelColor = `${Colors.offwhite}99`
-  const labelFont = Fonts.parameter
-  const labelSize = "1em"
-  const paramTextColor = Colors.offwhite
-  const paramTextSize = { xs: "1.5em", md: "1.1em" }
-  const paramBorderColor = Colors.gray2
-  const checkboxColorOn = Colors.offwhite
-  const checkboxColorOff = Colors.offblack
-
   // ─── LOCAL STATE ─────────────────────────────────────────────────────────────
-  const [anchorEl, setAnchorEl] = useState(null) // Anchor element for model dropdown menu
-  const [imageParams, setImageParams] = useState({}) // Object holding current image parameters
+  // Initialize with default values for numeric inputs
+  const [imageParams, setImageParams] = useState({
+    width: 512,
+    height: 512,
+    seed: 0,
+    enhance: false,
+    nologo: false,
+    model: "flux"
+  }) 
   const imageParamsRef = useRef(imageParams) // Reference to current state for use in callbacks
+  const initializedRef = useRef(false) // Track if we've initialized from props
 
   // ─── EFFECTS ─────────────────────────────────────────────────────────────────
-  // Close the model menu whenever the image updates
-  useEffect(() => {
-    setAnchorEl(null)
-  }, [image])
-
   // Load image parameters into local state whenever `image` changes
   useEffect(() => {
-    setImageParams(image)
+    // Log received image for debugging
+    console.log("ImageEditor received image:", image);
+    
+    // Only set parameters from image if:
+    // 1. We haven't initialized yet, or
+    // 2. The image URL has changed (indicating a completely new image)
+    if (!initializedRef.current || (image && image.imageURL !== imageParamsRef.current.imageURL)) {
+      console.log("Setting initial parameters from image");
+      setImageParams(prevParams => ({
+        ...prevParams,
+        ...(image || {})
+      }));
+      initializedRef.current = true;
+    }
   }, [image])
 
   // Update the ref whenever local imageParams changes
@@ -78,34 +90,6 @@ export const ImageEditor = memo(function ImageEditor({
 
   // Destructuring parameters from imageParams
   const { width, height, seed, enhance = false, nologo = false, model } = imageParams
-
-  // ─── HANDLERS: MENU ─────────────────────────────────────────────────────────
-  /**
-   * handleMenuOpen
-   * Opens the model selection menu when triggered by a Button event.
-   */
-  const handleMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget)
-  }
-
-  /**
-   * handleMenuClose
-   * Closes the model menu. If `value` is provided, updates the selected model.
-   */
-  const handleMenuClose = (value) => {
-    setAnchorEl(null)
-    if (value) {
-      // Track event for selecting a model
-      if (typeof trackEvent === "function") {
-        trackEvent({
-          action: "change_model",
-          category: "feed",
-          value: value,
-        })
-      }
-    }
-    handleInputChange("model", value)
-  }
 
   // ─── HANDLERS: INPUT ────────────────────────────────────────────────────────
   /**
@@ -136,22 +120,9 @@ export const ImageEditor = memo(function ImageEditor({
       trackEvent({
         action: `change_${param}`,
         category: "feed",
-        value: param === "prompt" ? undefined : newValue,
+        value: newValue,
       })
     }
-  }
-
-  // Flags for checkboxes
-  const isEnhanceChecked = enhance
-  const isLogoChecked = !nologo
-
-  // Typography style overrides
-  const typographyStyles = {
-    label: {
-      color: labelColor,
-      fontSize: labelSize,
-      fontFamily: labelFont,
-    },
   }
 
   // ─── BUTTON CLICK ───────────────────────────────────────────────────────────
@@ -205,6 +176,7 @@ export const ImageEditor = memo(function ImageEditor({
       if (!isStopped) {
         stop(true)
       }
+      console.log(`Changing parameter ${param} to:`, value);
       setImageParams((prevParams) => ({
         ...prevParams,
         [param]: value,
@@ -221,12 +193,14 @@ export const ImageEditor = memo(function ImageEditor({
   const handleSubmit = useCallback(() => {
     const currentImageParams = imageParamsRef.current
     const imageURL = getImageURL(currentImageParams)
-    // console.log("Submitting with imageParams:", currentImageParams) // Commented out for production
+    
+    // Make sure to include all necessary parameters, especially prompt
     updateImage({
       ...currentImageParams,
+      prompt: currentImageParams.prompt || image?.prompt || "",
       imageURL,
     })
-  }, [updateImage])
+  }, [updateImage, image?.prompt])
 
   // ─── STYLES: BUTTONS, MENU, ANIMATIONS ─────────────────────────────────────
 
@@ -245,36 +219,6 @@ export const ImageEditor = memo(function ImageEditor({
     }
   `
 
-  // All available model options
-  const models = [
-    "flux",
-    "flux-pro",
-    "flux-realism",
-    "flux-anime",
-    "flux-3d",
-    "flux-cablyai",
-    "turbo",
-  ]
-
-  // Shared styles for read-only prompt box
-  const sharedTextAreaStyle = {
-    width: "100%",
-    backgroundColor: "transparent",
-    border: `0.1px solid ${paramBorderColor}`,
-    fontFamily: Fonts.parameter,
-    fontSize: paramTextSize,
-    color: paramTextColor,
-    padding: "15px",
-    height: "120px",
-    minHeight: "30px",
-    resize: "vertical",
-    overflowY: "auto",
-    scrollbarWidth: "auto",
-    scrollbarColor: `${Colors.gray2}99 transparent`,
-    msOverflowStyle: "auto",
-    transition: "all 0.2s ease",
-  }
-
   // ────────────────────────────────────────────────────────────────────────────
   // RENDER
   // ────────────────────────────────────────────────────────────────────────────
@@ -287,94 +231,6 @@ export const ImageEditor = memo(function ImageEditor({
       }}
     >
       <Grid container spacing={2}>
-        {/* Prompt Section - Only show if hidePrompt is false */}
-        {!hidePrompt && (
-          <Grid size={{ xs: 12, md: 12 }}>
-            <Box>
-              <CustomTooltip
-                title={
-                  <LLMTextManipulator
-                    text={IMAGE_FEED_TOOLTIP_PROMPT}
-                    transforms={[rephrase, emojify, noLink]}
-                  />
-                }
-                interactive
-              >
-                <Typography component="div" variant="body" sx={typographyStyles.label}>
-                  Prompt
-                </Typography>
-              </CustomTooltip>
-              <Box>
-                {isStopped ? (
-                  /* Edit mode: Text area (plaintext) */
-                  <TextareaAutosize
-                    value={imageParams.prompt}
-                    onChange={(e) => {
-                      handleParamChange("prompt", e.target.value)
-                    }}
-                    onBlur={() => {
-                      if (typeof trackEvent === "function") {
-                        trackEvent({
-                          action: "change_prompt",
-                          category: "feed",
-                        })
-                      }
-                    }}
-                    onFocus={handleFocus}
-                    minRows={3}
-                    maxRows={6}
-                    cacheMeasurements
-                    onHeightChange={(height) => {
-                      // Optionally track height changes
-                    }}
-                    style={{
-                      fontFamily: Fonts.parameter,
-                      fontSize: "1.1em",
-                      color: paramTextColor,
-                      padding: "15px",
-                      resize: "vertical",
-                      overflowY: "auto",
-                      scrollbarWidth: "auto",
-                      scrollbarColor: `${Colors.gray2}99 transparent`,
-                      msOverflowStyle: "auto",
-                      backgroundColor: "transparent",
-                      border: `0.1px solid ${paramBorderColor}`,
-                      width: "100%",
-                      lineHeight: "1.5em",
-                    }}
-                  />
-                ) : (
-                  /* Feed mode: Render Markdown */
-                  <Box
-                    style={sharedTextAreaStyle}
-                    onClick={() => {
-                      handleToggleChange(null, "edit")
-                    }}
-                  >
-                    <ReactMarkdown
-                      components={{
-                        p: ({ node, ...props }) => (
-                          <p
-                            style={{
-                              margin: 0,
-                              fontFamily: Fonts.parameter,
-                              fontSize: paramTextSize.md,
-                              color: Colors.offwhite,
-                            }}
-                            {...props}
-                          />
-                        ),
-                      }}
-                    >
-                      {imageParams.prompt}
-                    </ReactMarkdown>
-                  </Box>
-                )}
-              </Box>
-            </Box>
-          </Grid>
-        )}
-
         {/* Conditional Rendering of Controls in Edit Mode */}
         {toggleValue === "edit" && (
           <>
@@ -388,358 +244,92 @@ export const ImageEditor = memo(function ImageEditor({
                 onFocus={handleFocus}
                 tooltipText={IMAGE_FEED_TOOLTIP_MODEL}
                 setIsInputChanged={setIsInputChanged}
-                availableModels={models}
+                styles={PARAM_STYLES}
               />
             </Grid>
 
             {/* Width Input */}
             <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-              <CustomTooltip
-                title={
-                  <LLMTextManipulator
-                    text={IMAGE_FEED_TOOLTIP_WIDTH}
-                    transforms={[rephrase, emojify, noLink]}
-                  />
-                }
-                interactive
-              >
-                <Typography component="div" variant="body" sx={typographyStyles.label}>
-                  Width
-                </Typography>
-              </CustomTooltip>
-              <Box
-                sx={{
-                  border: `0.5px solid ${paramBorderColor}`,
-                  height: "60px",
-                  transition: "border-color 0.2s ease",
-                  "&:hover": {
-                    borderColor: Colors.lime,
-                  },
-                  "&:focus-within": {
-                    borderColor: Colors.lime,
-                  }
-                }}
-              >
-                <TextField
-                  variant="outlined"
-                  value={width}
-                  onChange={(e) => handleInputChange("width", e.target.value)}
-                  onFocus={handleFocus}
-                  onBlur={(e) => {
-                    const parsed = parseInt(e.target.value, 10)
-                    if (typeof trackEvent === "function") {
-                      trackEvent({
-                        action: "change_width",
-                        category: "feed",
-                        value: isNaN(parsed) ? undefined : parsed,
-                      })
-                    }
-                  }}
-                  type="number"
-                  InputProps={{
-                    sx: {
-                      color: paramTextColor,
-                      fontSize: paramTextSize,
-                      fontFamily: Fonts.parameter,
-                      borderRadius: "0px",
-                      backgroundColor: "transparent",
-                      height: "60px",
-                      "& .MuiOutlinedInput-notchedOutline": {
-                        border: "none"
-                      },
-                      "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
-                        WebkitAppearance: "none",
-                        margin: 0
-                      },
-                      "& input[type=number]": {
-                        MozAppearance: "textfield"
-                      }
-                    },
-                  }}
-                  sx={{ width: "100%" }}
-                />
-              </Box>
+              <ParameterNumberInput
+                label="Width"
+                value={width}
+                onChange={(value) => handleInputChange("width", value)}
+                onFocus={handleFocus}
+                tooltipText={IMAGE_FEED_TOOLTIP_WIDTH}
+                paramName="width"
+                setIsInputChanged={setIsInputChanged}
+                styles={PARAM_STYLES}
+              />
             </Grid>
 
             {/* Height Input */}
             <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-              <CustomTooltip
-                title={
-                  <LLMTextManipulator
-                    text={IMAGE_FEED_TOOLTIP_HEIGHT}
-                    transforms={[rephrase, emojify, noLink]}
-                  />
-                }
-                interactive
-              >
-                <Typography component="div" variant="body" sx={typographyStyles.label}>
-                  Height
-                </Typography>
-              </CustomTooltip>
-              <Box
-                sx={{
-                  border: `0.5px solid ${paramBorderColor}`,
-                  height: "60px",
-                  transition: "border-color 0.2s ease",
-                  "&:hover": {
-                    borderColor: Colors.lime,
-                  },
-                  "&:focus-within": {
-                    borderColor: Colors.lime,
-                  }
-                }}
-              >
-                <TextField
-                  variant="outlined"
-                  value={height}
-                  onChange={(e) => handleInputChange("height", e.target.value)}
-                  onFocus={handleFocus}
-                  onBlur={(e) => {
-                    const parsed = parseInt(e.target.value, 10)
-                    if (typeof trackEvent === "function") {
-                      trackEvent({
-                        action: "change_height",
-                        category: "feed",
-                        value: isNaN(parsed) ? undefined : parsed,
-                      })
-                    }
-                  }}
-                  type="number"
-                  InputProps={{
-                    sx: {
-                      color: paramTextColor,
-                      fontSize: paramTextSize,
-                      fontFamily: Fonts.parameter,
-                      borderRadius: "0px",
-                      backgroundColor: "transparent",
-                      height: "60px",
-                      "& .MuiOutlinedInput-notchedOutline": {
-                        border: "none"
-                      },
-                      "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
-                        WebkitAppearance: "none",
-                        margin: 0
-                      },
-                      "& input[type=number]": {
-                        MozAppearance: "textfield"
-                      }
-                    },
-                  }}
-                  sx={{ width: "100%" }}
-                />
-              </Box>
+              <ParameterNumberInput
+                label="Height"
+                value={height}
+                onChange={(value) => handleInputChange("height", value)}
+                onFocus={handleFocus}
+                tooltipText={IMAGE_FEED_TOOLTIP_HEIGHT}
+                paramName="height"
+                setIsInputChanged={setIsInputChanged}
+                styles={PARAM_STYLES}
+              />
             </Grid>
 
             {/* Seed Input */}
             <Grid size={{ xs: 4, sm: 4, md: 2 }}>
-              <CustomTooltip
-                title={
-                  <LLMTextManipulator
-                    text={IMAGE_FEED_TOOLTIP_SEED}
-                    transforms={[rephrase, emojify, noLink]}
-                  />
-                }
-                interactive
-              >
-                <Typography component="div" variant="body" sx={typographyStyles.label}>
-                  Seed
-                </Typography>
-              </CustomTooltip>
-              <Box
-                sx={{
-                  border: `0.5px solid ${paramBorderColor}`,
-                  height: "60px",
-                  transition: "border-color 0.2s ease",
-                  "&:hover": {
-                    borderColor: Colors.lime,
-                  },
-                  "&:focus-within": {
-                    borderColor: Colors.lime,
-                  }
-                }}
-              >
-                <TextField
-                  fullWidth
-                  variant="outlined"
-                  value={seed}
-                  onChange={(e) => handleInputChange("seed", e.target.value)}
-                  onFocus={handleFocus}
-                  type="number"
-                  InputProps={{
-                    sx: {
-                      color: paramTextColor,
-                      fontSize: paramTextSize,
-                      fontFamily: Fonts.parameter,
-                      borderRadius: "0px",
-                      height: "60px",
-                      backgroundColor: "transparent",
-                      "& .MuiOutlinedInput-notchedOutline": {
-                        border: "none"
-                      },
-                      "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
-                        WebkitAppearance: "none",
-                        margin: 0
-                      },
-                      "& input[type=number]": {
-                        MozAppearance: "textfield"
-                      }
-                    },
-                  }}
-                />
-              </Box>
+              <ParameterNumberInput
+                label="Seed"
+                value={seed}
+                onChange={(value) => handleInputChange("seed", value)}
+                onFocus={handleFocus}
+                tooltipText={IMAGE_FEED_TOOLTIP_SEED}
+                paramName="seed"
+                setIsInputChanged={setIsInputChanged}
+                styles={PARAM_STYLES}
+              />
             </Grid>
 
             {/* Enhance Checkbox */}
             <Grid size={{ xs: 4, sm: 2, md: 1 }}>
-              <CustomTooltip
-                title={
-                  <LLMTextManipulator
-                    text={IMAGE_FEED_ENANCER_TOOLTIP}
-                    transforms={[rephrase, emojify, noLink]}
-                  />
-                }
-                interactive
-              >
-                <Typography component="div" variant="body" sx={{
-                  ...typographyStyles.label,
-                  textAlign: "center",
-                  width: "100%"
-                }}>
-                  Enhance
-                </Typography>
-              </CustomTooltip>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  height: "60px",
-                  width: "100%",
-                  backgroundColor: "transparent",
-                  transition: "border-color 0.2s ease",
-                  border: `0.5px solid ${paramBorderColor}`,
-                  "&:hover": {
-                    borderColor: Colors.lime,
-                  }
-                }}
-              >
-                <Checkbox
-                  checked={isEnhanceChecked}
-                  onChange={(e) => {
-                    handleInputChange("enhance", e.target.checked)
-                    if (typeof trackEvent === "function") {
-                      trackEvent({
-                        action: "change_enhance",
-                        category: "feed",
-                        value: isEnhanceChecked,
-                      })
-                    }
-                  }}
-                  onFocus={handleFocus}
-                  icon={<CheckBoxOutlineBlankIcon sx={{ color: Colors.offwhite, fontSize: "1.8rem" }} />}
-                  checkedIcon={<CheckIcon sx={{ color: Colors.offwhite, fontSize: "1.8rem" }} />}
-                  sx={{
-                    color: "transparent",
-                    padding: "12px",
-                    '& .MuiSvgIcon-root': {
-                      fontSize: "1.8rem",
-                    },
-                    "&.Mui-checked": {
-                      color: Colors.lime,
-                    },
-                    "&:hover": {
-                      backgroundColor: "transparent",
-                    },
-                    "& .MuiTouchRipple-root": {
-                      display: "none",
-                    }
-                  }}
-                />
-              </Box>
+              <ParameterCheckbox
+                label="Enhance"
+                checked={enhance}
+                onChange={(value) => handleInputChange("enhance", value)}
+                onFocus={handleFocus}
+                tooltipText={IMAGE_FEED_ENANCER_TOOLTIP}
+                paramName="enhance"
+                setIsInputChanged={setIsInputChanged}
+                styles={PARAM_STYLES}
+              />
             </Grid>
 
             {/* Logo Checkbox */}
             <Grid size={{ xs: 4, sm: 2, md: 1 }}>
-              <CustomTooltip
-                title={
-                  <LLMTextManipulator
-                    text={IMAGE_FEED_LOGO_WATERMARK}
-                    transforms={[rephrase, emojify, noLink]}
-                  />
-                }
-                interactive
-              >
-                <Typography component="div" variant="body" sx={{
-                  ...typographyStyles.label,
-                  textAlign: "center",
-                  width: "100%"
-                }}>
-                  Logo
-                </Typography>
-              </CustomTooltip>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  height: "60px",
-                  width: "100%",
-                  backgroundColor: "transparent",
-                  transition: "border-color 0.2s ease",
-                  border: `0.5px solid ${paramBorderColor}`,
-                  "&:hover": {
-                    borderColor: Colors.lime,
-                  }
-                }}
-              >
-                <Checkbox
-                  checked={isLogoChecked}
-                  onChange={(e) => {
-                    handleInputChange("nologo", !e.target.checked)
-                    if (typeof trackEvent === "function") {
-                      trackEvent({
-                        action: "change_logo",
-                        category: "feed",
-                        value: isLogoChecked,
-                      })
-                    }
-                  }}
-                  onFocus={handleFocus}
-                  icon={<CheckBoxOutlineBlankIcon sx={{ color: Colors.offwhite, fontSize: "1.8rem" }} />}
-                  checkedIcon={<CheckIcon sx={{ color: Colors.offwhite, fontSize: "1.8rem" }} />}
-                  sx={{
-                    color: "transparent",
-                    padding: "12px",
-                    '& .MuiSvgIcon-root': {
-                      fontSize: "1.8rem",
-                    },
-                    "&.Mui-checked": {
-                      color: Colors.lime,
-                    },
-                    "&:hover": {
-                      backgroundColor: "transparent",
-                    },
-                    "& .MuiTouchRipple-root": {
-                      display: "none",
-                    }
-                  }}
-                />
-              </Box>
+              <ParameterCheckbox
+                label="Logo"
+                checked={!nologo}
+                onChange={(value) => handleInputChange("nologo", !value)}
+                onFocus={handleFocus}
+                tooltipText={IMAGE_FEED_LOGO_WATERMARK}
+                paramName="nologo"
+                setIsInputChanged={setIsInputChanged}
+                styles={PARAM_STYLES}
+              />
             </Grid>
 
-            {/* Submit/Generate Button */}
+            {/* Submit Button */}
             <Grid size={{ xs: 12, sm: 4, md: 2 }} style={{ marginTop: "24px" }}>
               <GeneralButton
                 handleClick={handleButtonClick}
                 isLoading={isLoading}
                 isInputChanged={isInputChanged}
                 borderColor={Colors.lime}
-                backgroundColor={`${Colors.offblack}99`}
+                backgroundColor={Colors.offblack}
                 textColor={Colors.lime}
                 fontSize="1.5em"
                 style={{
                   width: "100%",
-                  animation: isLoading ? `${blinkAnimation} 2s ease-in-out infinite` : "none",
                   height: "60px",
                   fontFamily: Fonts.title,
                 }}
@@ -753,4 +343,3 @@ export const ImageEditor = memo(function ImageEditor({
     </Box>
   )
 })
-// End of Selectio

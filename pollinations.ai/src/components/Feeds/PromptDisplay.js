@@ -43,18 +43,62 @@ const StyledTextArea = styled(TextareaAutosize)`
 
 // Create the styled component with the shouldForwardProp option to filter out isEditMode
 const PromptContainer = styled(Box, {
-  shouldForwardProp: (prop) => prop !== 'isEditMode',
+  shouldForwardProp: (prop) => prop !== 'isEditMode' && prop !== 'backgroundColor',
 })`
   min-height: 130px;
   overflow-y: auto;
   overflow-x: hidden;
-  border: 0.5px solid ${Colors.gray2};
+  border: 1px solid ${Colors.gray2};
   transition: all 0.2s ease, border-color 0.3s ease;
   cursor: ${props => props.isEditMode ? 'text' : 'pointer'};
-  resize: vertical;
+  /* Remove the default resize behavior */
+  resize: none;
   position: relative;
+  background-color: ${props => props.backgroundColor || Colors.offblack};
   
-  /* Resize handle triangle in bottom right corner */
+  /* Disable any browser-native resize handles */
+  &::-webkit-resizer {
+    display: none;
+  }
+  
+  /* Hide scrollbar while keeping functionality */
+  /* For WebKit browsers */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* For Firefox and other browsers */
+  scrollbarWidth: none;
+  -ms-overflow-style: none;
+  
+  &:hover {
+    border-color: ${Colors.lime};
+    background-color: ${props => props.backgroundColor || Colors.offblack};
+  }
+
+  &:focus-within {
+    border-color: ${Colors.lime};
+  }
+  
+  /* Show resize cursor on bottom-right corner */
+  &.prompt-container {
+    cursor: ${props => props.isEditMode ? 'text' : 'pointer'};
+  }
+`;
+
+// Styled resize handle that stays fixed in the bottom right corner
+const ResizeHandle = styled.div`
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 24px;
+  height: 24px;
+  cursor: nwse-resize;
+  z-index: 10;
+  pointer-events: auto;
+  background-color: transparent;
+  touch-action: none; /* Prevent touch scroll while resizing */
+
   &::after {
     content: '';
     position: absolute;
@@ -66,75 +110,12 @@ const PromptContainer = styled(Box, {
     border-width: 0 0 20px 20px;
     border-color: transparent transparent ${Colors.lime} transparent;
     opacity: 0.7;
-    transition: opacity 0.3s ease, border-width 0.2s ease;
-    pointer-events: auto;
-    z-index: 2;
-    cursor: nwse-resize;
+    transition: opacity 0.2s ease, border-width 0.2s ease;
   }
   
   &:hover::after {
     opacity: 1;
     border-width: 0 0 24px 24px;
-  }
-  
-  /* Scrollbar styles for Chrome, Safari and Opera */
-  &::-webkit-scrollbar {
-    width: 6px;
-    background: transparent;
-  }
-  
-  &::-webkit-scrollbar-track {
-    background-color: transparent;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background-color: ${props => props.isEditMode ? `${Colors.lime}60` : 'transparent'};
-    border-radius: 3px;
-  }
-  
-  /* Show scrollbar on hover */
-  &:hover::-webkit-scrollbar-thumb {
-    background-color: ${props => props.isEditMode ? `${Colors.lime}99` : 'transparent'};
-  }
-  
-  /* Firefox scrollbar styling */
-  scrollbarWidth: ${props => props.isEditMode ? 'thin' : 'none'};
-  scrollbarColor: ${props => props.isEditMode ? `${Colors.lime}60 transparent` : 'transparent transparent'};
-  
-  /* Show scrollbar on hover for Firefox */
-  &:hover {
-    scrollbarWidth: ${props => props.isEditMode ? 'thin' : 'none'};
-    scrollbarColor: ${props => props.isEditMode ? `${Colors.lime}99 transparent` : 'transparent transparent'};
-    border-color: ${Colors.lime};
-    background-color: transparent;
-  }
-
-  &:focus-within {
-    border-color: ${Colors.lime};
-  }
-  
-  /* Show resize cursor on bottom-right corner */
-  &.prompt-container {
-    cursor: ${props => props.isEditMode ? 'text' : 'pointer'};
-  }
-  
-  &.prompt-container:hover {
-    &::after {
-      cursor: nwse-resize;
-    }
-  }
-  
-  /* Style adjustment for bottom-right corner to improve resize grip area */
-  &.prompt-container:hover::before {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 20px;
-    height: 20px;
-    cursor: nwse-resize;
-    z-index: 1;
-    background-color: transparent;
   }
 `;
 
@@ -143,6 +124,7 @@ const PromptContainer = styled(Box, {
  * 
  * @param {Object} props
  * @param {string} props.itemType - "image" or "text"
+ * @param {string} props.backgroundColor - Background color for the prompt box
  * @param {Object} props.item - Current item (image or text entry)
  * @param {boolean} props.isLoading - Whether item is loading
  * @param {boolean} props.isEditMode - Whether we're in edit mode
@@ -155,6 +137,7 @@ const PromptContainer = styled(Box, {
  */
 export function PromptDisplay({
   itemType = "text",
+  backgroundColor = Colors.offblack,
   item,
   isLoading,
   isEditMode,
@@ -175,12 +158,20 @@ export function PromptDisplay({
   
   // Ref for the container element
   const containerRef = useRef(null);
+  // Ref for the resize handle
+  const resizeHandleRef = useRef(null);
+  
+  // Debug logs for props
+  useEffect(() => {
+    // Removed excessive logging
+  }, [isEditMode, sharedPrompt, item]);
   
   // Figure out the current prompt based on item type and state
   const getPromptFromItem = () => {
     if (itemType === "text" && item?.parameters?.messages) {
       const userMessage = item.parameters.messages.find(msg => msg?.role === 'user');
-      return userMessage?.content || '';
+      const prompt = userMessage?.content || '';
+      return prompt;
     }
     
     // Handle item.prompt which could be a string or an object
@@ -202,18 +193,29 @@ export function PromptDisplay({
   
   // Ensure currentPrompt is a string for ReactMarkdown
   const getPromptContent = (prompt) => {
+    // Removed repetitive log
+    
     if (typeof prompt === 'string') {
       return prompt;
     }
     // Handle object prompts (e.g. {type: 'text', content: 'string'})
     if (prompt && typeof prompt === 'object') {
       // If it has a text or content property, use that
-      if (prompt.text) return prompt.text;
-      if (prompt.content) return prompt.content;
+      if (prompt.text) {
+        // Removed repetitive log
+        return prompt.text;
+      }
+      if (prompt.content) {
+        // Removed repetitive log
+        return prompt.content;
+      }
       // Last resort: stringify the object
-      return JSON.stringify(prompt);
+      const stringified = JSON.stringify(prompt);
+      // Removed repetitive log
+      return stringified;
     }
     // Default to empty string for null/undefined/other types
+    // Removed repetitive log
     return '';
   };
   
@@ -250,15 +252,32 @@ export function PromptDisplay({
   
   // Setup resize handling
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || !resizeHandleRef.current) return;
     
     // Set initial height
     containerRef.current.style.height = `${promptHeight}px`;
     
     let isResizing = false;
+    let startY = 0;
+    let startHeight = 0;
     
-    const handleMouseDown = () => {
-      isResizing = true;
+    const handleMouseDown = (e) => {
+      // Only handle resize if clicking on the resize handle
+      if (e.target === resizeHandleRef.current || resizeHandleRef.current.contains(e.target)) {
+        isResizing = true;
+        startY = e.clientY;
+        startHeight = containerRef.current.offsetHeight;
+        e.preventDefault(); // Prevent text selection during resize
+      }
+    };
+    
+    const handleMouseMove = (e) => {
+      if (!isResizing) return;
+      
+      const newHeight = startHeight + (e.clientY - startY);
+      if (newHeight > 130) { // Enforce minimum height
+        containerRef.current.style.height = `${newHeight}px`;
+      }
     };
     
     const handleMouseUp = () => {
@@ -270,25 +289,17 @@ export function PromptDisplay({
       }
     };
     
-    const resizeObserver = new ResizeObserver((entries) => {
-      if (isResizing && entries[0]) {
-        const newHeight = entries[0].contentRect.height;
-        if (newHeight > 0) {
-          setPromptHeight(newHeight);
-        }
-      }
-    });
-    
-    containerRef.current.addEventListener('mousedown', handleMouseDown);
+    // Add event listeners
+    resizeHandleRef.current.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-    resizeObserver.observe(containerRef.current);
     
     return () => {
-      if (containerRef.current) {
-        containerRef.current.removeEventListener('mousedown', handleMouseDown);
-        document.removeEventListener('mouseup', handleMouseUp);
-        resizeObserver.disconnect();
+      if (resizeHandleRef.current) {
+        resizeHandleRef.current.removeEventListener('mousedown', handleMouseDown);
       }
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
     };
   }, []);
   
@@ -307,65 +318,71 @@ export function PromptDisplay({
         {renderTooltipLabel()}
       </Typography>
       
-      <PromptContainer 
-        ref={containerRef}
-        className="prompt-container"
-        isEditMode={isEditMode}
-        onClick={!isEditMode ? onEditModeSwitch : undefined}
-      >
-        {isEditMode ? (
-          <StyledTextArea
-            value={getPromptContent(currentPrompt)}
-            onChange={(e) => handlePromptChange(e.target.value)}
-            placeholder="Enter your prompt here..."
-            minRows={3}
-            maxRows={12}
-            style={{ 
-              width: '100%',
-              fontFamily: Fonts.parameter,
-              fontSize: '1.1em',
-              lineHeight: '1.5em'
-            }}
-          />
-        ) : (
-          <Box sx={{ padding: '15px' }}>
-            {itemType === "text" ? (
-              <Typography
-                sx={{
-                  fontFamily: Fonts.parameter,
-                  fontSize: '1.1em',
-                  color: Colors.offwhite,
-                  margin: 0,
-                  lineHeight: '1.5em',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                }}
-              >
-                {getPromptContent(currentPrompt)}
-              </Typography>
-            ) : (
-              <ReactMarkdown
-                components={{
-                  p: ({ node, ...props }) => (
-                    <p
-                      style={{
-                        margin: 0,
-                        fontFamily: Fonts.parameter,
-                        fontSize: '1.1em',
-                        color: Colors.offwhite,
-                        lineHeight: '1.5em',
-                      }}
-                      {...props}
-                    />
-                  ),
-                }}
-              >
-                {getPromptContent(currentPrompt)}
-              </ReactMarkdown>
-            )}
-          </Box>
-        )}
-      </PromptContainer>
+      <Box position="relative" sx={{ width: '100%' }}>
+        <PromptContainer 
+          ref={containerRef}
+          className="prompt-container"
+          isEditMode={isEditMode}
+          backgroundColor={backgroundColor}
+          onClick={!isEditMode ? onEditModeSwitch : undefined}
+        >
+          {isEditMode ? (
+            <StyledTextArea
+              value={getPromptContent(currentPrompt)}
+              onChange={(e) => handlePromptChange(e.target.value)}
+              placeholder="Enter your prompt here..."
+              minRows={3}
+              maxRows={12}
+              style={{ 
+                width: '100%',
+                fontFamily: Fonts.parameter,
+                fontSize: '1.1em',
+                lineHeight: '1.5em'
+              }}
+            />
+          ) : (
+            <Box sx={{ padding: '15px' }}>
+              {itemType === "text" ? (
+                <Typography
+                  sx={{
+                    fontFamily: Fonts.parameter,
+                    fontSize: '1.1em',
+                    color: Colors.offwhite,
+                    margin: 0,
+                    lineHeight: '1.5em',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {getPromptContent(currentPrompt)}
+                </Typography>
+              ) : (
+                <ReactMarkdown
+                  components={{
+                    p: ({ node, ...props }) => (
+                      <p
+                        style={{
+                          margin: 0,
+                          fontFamily: Fonts.parameter,
+                          fontSize: '1.1em',
+                          color: Colors.offwhite,
+                          lineHeight: '1.5em',
+                        }}
+                        {...props}
+                      />
+                    ),
+                  }}
+                >
+                  {getPromptContent(currentPrompt)}
+                </ReactMarkdown>
+              )}
+            </Box>
+          )}
+        </PromptContainer>
+        
+        {/* Separate resize handle that stays fixed at the bottom right */}
+        <ResizeHandle ref={resizeHandleRef} />
+      </Box>
     </Box>
   );
 } 

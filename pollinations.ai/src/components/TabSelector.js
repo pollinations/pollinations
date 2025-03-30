@@ -52,7 +52,7 @@ const TabSelector = ({
 
   // Default background color function if none provided
   const defaultGetButtonBackground = (itemKey) => {
-    return effectiveSelectedKey === itemKey ? Colors.lime : "transparent";
+    return effectiveSelectedKey === itemKey ? Colors.lime : Colors.offblack2;
   };
 
   // Default text color function if none provided

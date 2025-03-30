@@ -40,7 +40,7 @@ export const SectionSubContainer = styled.div`
   background-color: ${(props) => props.backgroundColor || "transparent"};
   flex-direction: ${(props) => props.flexDirection || "column"};
   align-items: ${(props) => props.alignItems || "center"};
-  max-width: 1000px;
+  max-width: 900px;
   margin: 0;
   width: 100%;
   padding-bottom: ${(props) => props.paddingBottom || "3em"};
@@ -48,7 +48,16 @@ export const SectionSubContainer = styled.div`
   justify-content: center;
   z-index: ${(props) => props.zIndex || "1"};
 `
-
+export const SectionMainContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2em;
+  width: 100%;
+  max-width: 1000px;
+  background-color: ${Colors.offblack};
+  border-radius: 2em;
+`
 export const SectionTitleStyle = styled.div`
   font-size: ${(props) => props.fontSize || "8em"};
   color: ${(props) => props.color || Colors.lime};
@@ -56,7 +65,6 @@ export const SectionTitleStyle = styled.div`
   letter-spacing: 0.1em;
   line-height: 1em;
   text-align: center;
-  margin-top: 0.5em;
   ${({ theme }) => theme.breakpoints.down('md')} {
     font-size: ${(props) => props.fontSize || "4em"};
   }

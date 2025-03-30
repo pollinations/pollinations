@@ -156,6 +156,9 @@ export function PromptDisplay({
     return localStorage.getItem('promptHeight') ? parseInt(localStorage.getItem('promptHeight'), 10) : 200;
   });
   
+  // Add previous edit mode state tracking
+  const prevEditModeRef = useRef(isEditMode);
+  
   // Add theme and media query for responsive design
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -249,25 +252,40 @@ export function PromptDisplay({
   // Initialize local prompt from item when it changes
   useEffect(() => {
     const promptFromItem = getPromptFromItem();
-    if (promptFromItem && !isEditMode) {
+    
+    // Only update the prompt if:
+    // 1. We're in feed mode and the item has changed, or
+    // 2. We've just switched from edit mode to feed mode
+    const wasInEditMode = prevEditModeRef.current;
+    const isNowInFeedMode = !isEditMode;
+    const switchedToFeedMode = wasInEditMode && isNowInFeedMode;
+    
+    if (promptFromItem && (switchedToFeedMode || (!isEditMode && item))) {
       setLocalPrompt(promptFromItem);
     }
+    
+    // Update the previous edit mode ref
+    prevEditModeRef.current = isEditMode;
   }, [item, isEditMode]);
   
   // Setup resize handling
   useEffect(() => {
     if (!containerRef.current || !resizeHandleRef.current) return;
     
-    // Set initial height
-    containerRef.current.style.height = `${promptHeight}px`;
+    // Set initial height based on device type
+    if (isMobile) {
+      containerRef.current.style.height = '200px';
+    } else {
+      containerRef.current.style.height = `${promptHeight}px`;
+    }
     
     let isResizing = false;
     let startY = 0;
     let startHeight = 0;
     
     const handleMouseDown = (e) => {
-      // Only handle resize if clicking on the resize handle
-      if (e.target === resizeHandleRef.current || resizeHandleRef.current.contains(e.target)) {
+      // Only handle resize if clicking on the resize handle and not on mobile
+      if (!isMobile && (e.target === resizeHandleRef.current || resizeHandleRef.current.contains(e.target))) {
         isResizing = true;
         startY = e.clientY;
         startHeight = containerRef.current.offsetHeight;
@@ -276,7 +294,7 @@ export function PromptDisplay({
     };
     
     const handleMouseMove = (e) => {
-      if (!isResizing) return;
+      if (!isResizing || isMobile) return;
       
       const newHeight = startHeight + (e.clientY - startY);
       if (newHeight > 130) { // Enforce minimum height
@@ -285,7 +303,7 @@ export function PromptDisplay({
     };
     
     const handleMouseUp = () => {
-      if (isResizing) {
+      if (isResizing && !isMobile) {
         const newHeight = containerRef.current.clientHeight;
         localStorage.setItem('promptHeight', newHeight.toString());
         setPromptHeight(newHeight);
@@ -305,7 +323,7 @@ export function PromptDisplay({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, []);
+  }, [isMobile, promptHeight]);
   
   // Render the tooltip label
   const renderTooltipLabel = () => {

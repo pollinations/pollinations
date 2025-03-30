@@ -16,7 +16,7 @@ import { keyframes } from "@emotion/react";
 // ─── PARAMETER STYLING CONSTANTS ────────────────────────────────────────────────
 // These can be adjusted to control the appearance of all parameter inputs
 const PARAM_STYLES = {
-  backgroundColor: Colors.offblack,
+  backgroundColor: Colors.offblack2,
   textColor: Colors.offwhite,
   borderColor: Colors.gray2,
   borderColorHover: Colors.lime,

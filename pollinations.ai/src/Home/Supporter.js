@@ -4,6 +4,7 @@ import {
   SectionContainer,
   SectionSubContainer,
   SectionHeadlineStyle,
+  SectionMainContent,
 } from "../components/SectionContainer"
 import SectionTitle from "../components/SectionTitle"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
@@ -50,6 +51,7 @@ const Supporter = () => {
 
   return (
     <SectionContainer backgroundConfig={SectionBG.supporter}>
+      <SectionMainContent>
       {/* <SvgArtGenerator
         width="1920px"
         height="600px"
@@ -62,8 +64,8 @@ const Supporter = () => {
           <LLMTextManipulator text={SUPPORTER_SUBTITLE} transforms={[rephrase, emojify, noLink]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
-      <SectionSubContainer>
-        <Grid container spacing={4} mb={8}>
+      <SectionSubContainer paddingBottom="0em">
+        <Grid container spacing={4}>
           {SUPPORTER_LIST.map((company) => (
             <Grid key={company.name} size={{ xs: 6, sm: 3 }} style={{ textAlign: "center" }}>
               <img
@@ -100,6 +102,7 @@ const Supporter = () => {
           ))}
         </Grid>
       </SectionSubContainer>
+      </SectionMainContent>
     </SectionContainer>
   )
 }

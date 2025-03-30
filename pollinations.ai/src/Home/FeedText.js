@@ -1,7 +1,7 @@
 import React, { useState, useEffect, memo, useCallback } from "react";
 import { Box, CircularProgress } from "@mui/material";
 import { Colors, SectionBG } from "../config/global";
-import { SectionContainer, SectionSubContainer, SectionHeadlineStyle } from "../components/SectionContainer";
+import { SectionContainer, SectionSubContainer, SectionHeadlineStyle, SectionMainContent } from "../components/SectionContainer";
 import SectionTitle from "../components/SectionTitle";
 import { TEXT_FEED_TITLE, TEXT_FEED_SUBTITLE, TEXT_FEED_MODE1, TEXT_FEED_MODE2 } from "../config/copywrite";
 import { emojify, rephrase, noLink } from "../config/llmTransforms.js";
@@ -127,6 +127,7 @@ export const FeedText = memo(() => {
 
   return (
     <SectionContainer id="text-feed" backgroundConfig={SectionBG.feedText}>
+      <SectionMainContent>
       {/* Title */}
       <SectionSubContainer>
         <SectionTitle title={TEXT_FEED_TITLE} />
@@ -150,7 +151,7 @@ export const FeedText = memo(() => {
       </SectionSubContainer>
 
       {/* Main Content */}
-      <SectionSubContainer>
+      <SectionSubContainer paddingBottom="0em">
         {entry?.response ? (
           <Box
             sx={{
@@ -187,7 +188,7 @@ export const FeedText = memo(() => {
                 promptTooltip="Prompt"
                 sharedPrompt={sharedPrompt}
                 setSharedPrompt={setSharedPrompt}
-                backgroundColor={Colors.offblack}
+                backgroundColor={Colors.offblack2}
               />
             </Box>
 
@@ -220,12 +221,13 @@ export const FeedText = memo(() => {
 
         {/* Model Info (Feed mode only) */}
         {toggleValue === "feed" && entry?.response && (
-          <SectionSubContainer>
+          <SectionSubContainer paddingBottom="0em">
             <br />
             <ModelInfo model={entry.parameters?.model} referrer={entry.referrer} itemType="text" />
           </SectionSubContainer>
         )}
       </SectionSubContainer>
+      </SectionMainContent>
     </SectionContainer>
   );
 });

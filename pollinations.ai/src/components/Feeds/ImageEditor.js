@@ -80,6 +80,13 @@ export const ImageEditor = memo(function ImageEditor({
         ...(image || {})
       }));
       initializedRef.current = true;
+    } else if (image && image.prompt !== imageParamsRef.current.prompt) {
+      // Always update the prompt value when it changes in the parent
+      console.log("Updating prompt from parent:", image.prompt);
+      setImageParams(prevParams => ({
+        ...prevParams,
+        prompt: image.prompt
+      }));
     }
   }, [image])
 
@@ -192,12 +199,19 @@ export const ImageEditor = memo(function ImageEditor({
    */
   const handleSubmit = useCallback(() => {
     const currentImageParams = imageParamsRef.current
-    const imageURL = getImageURL(currentImageParams)
+    
+    // Always use the most up-to-date prompt from props if available
+    // This ensures edited prompts from the parent are picked up
+    const finalParams = {
+      ...currentImageParams,
+      prompt: image?.prompt || currentImageParams.prompt || "",
+    }
+    
+    const imageURL = getImageURL(finalParams)
     
     // Make sure to include all necessary parameters, especially prompt
     updateImage({
-      ...currentImageParams,
-      prompt: currentImageParams.prompt || image?.prompt || "",
+      ...finalParams,
       imageURL,
     })
   }, [updateImage, image?.prompt])

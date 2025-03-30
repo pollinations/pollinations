@@ -7,14 +7,14 @@ import { trackEvent } from '../../config/analytics';
 const ResponseContainer = styled(Paper)`
   padding: 20px;
   margin-bottom: 20px;
-  background-color: ${Colors.offblack2};
+  background-color: ${Colors.offblack};
   border: 1px solid ${Colors.lime}40;
   border-radius: 0px;
   width: 100%;
   max-width: 1000px;
-  height: 250px !important;
-  min-height: 250px;
-  max-height: 250px;
+  height: 200px !important;
+  min-height: 200px;
+  max-height: 200px;
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
@@ -49,14 +49,14 @@ const ResponseContainer = styled(Paper)`
 `;
 
 const ResponseText = styled(Typography)`
-  font-family: 'Courier New', monospace;
+  font-family: ${Fonts.parameter};
   white-space: pre-wrap;
   word-break: break-word;
   color: ${Colors.offwhite};
-  line-height: 1.5;
+  line-height: 1.3;
   overflow-wrap: break-word;
   max-width: 100%;
-  font-size: 1.2em;
+  font-size: 1.3em;
 `;
 
 const LabelStyle = {

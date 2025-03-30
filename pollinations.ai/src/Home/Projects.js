@@ -18,6 +18,7 @@ import {
   SectionContainer,
   SectionSubContainer,
   SectionHeadlineStyle,
+  SectionMainContent,
 } from "../components/SectionContainer"
 import ProjectsRender from "../components/Project/ProjectRender"
 import { GeneralButton } from "../components/GeneralButton"
@@ -67,7 +68,7 @@ const Projects = () => {
 
   const getButtonBackgroundColor = (categoryKey) => {
     if (selectedCategory !== categoryKey) {
-      return "transparent"
+      return Colors.offblack2
     }
     return categoryKey === "featured" ? Colors.special : Colors.lime
   }
@@ -81,52 +82,53 @@ const Projects = () => {
 
   return (
     <SectionContainer backgroundConfig={SectionBG.project}>
-      <SectionSubContainer>
-        <SectionTitle title={PROJECT_TITLE} />
-      </SectionSubContainer>
-      <SectionSubContainer>
-        <SectionHeadlineStyle>
-          <LLMTextManipulator text={PROJECT_SUBTITLE} transforms={[rephrase, emojify, noLink]} />
-        </SectionHeadlineStyle>
-      </SectionSubContainer>
+      <SectionMainContent>
+        <SectionSubContainer>
+          <SectionTitle title={PROJECT_TITLE} />
+        </SectionSubContainer>
 
-      <SectionSubContainer>
-        <TabSelector
-          items={projectCategories}
-          selectedKey={selectedCategory}
-          onSelectTab={handleCategoryClick}
-          trackingCategory="project"
-          trackingAction="select_project_category"
-          getButtonBackground={getButtonBackgroundColor}
-          getButtonTextColor={getButtonTextColor}
-        />
-
-        <ProjectsRender projectList={projects[selectedCategory]} classes={classes} />
-      </SectionSubContainer>
-      <SectionSubContainer>
-        <SectionHeadlineStyle>
-          <LLMTextManipulator text={PROJECT_CTO_1} transforms={[rephrase, emojify, noLink]} />
-        </SectionHeadlineStyle>
-      </SectionSubContainer>
-      <SectionSubContainer>
-        <Box sx={{ width: "auto", height: "100px" }}>
-          <GeneralButton
-            handleClick={handleSubmitButtonClick}
-            textColor={Colors.lime}
-            borderColor={Colors.offwhite}
-            fontSize="2em"
-            backgroundColor={Colors.offblack}
-            style={{
-              fontSize: "1.5rem",
-              fontFamily: Fonts.title,
-              fontWeight: 600,
-            }}
-          >
-            <OpenInNewIcon style={{ marginRight: "8px", width: "32px", height: "32px" }} />
-            {PROJECT_BUTTON}
-          </GeneralButton>
-        </Box>
-      </SectionSubContainer>
+        <SectionSubContainer>
+          <SectionHeadlineStyle>
+            <LLMTextManipulator text={PROJECT_CTO_1} transforms={[rephrase, emojify, noLink]} />
+          </SectionHeadlineStyle>
+        </SectionSubContainer>
+        <SectionSubContainer paddingBottom="0em">
+          <Box sx={{ width: "auto", height: "100px" }}>
+            <GeneralButton
+              handleClick={handleSubmitButtonClick}
+              textColor={Colors.offwhite}
+              borderColor={Colors.offwhite}
+              fontSize="2em"
+              backgroundColor={Colors.offblack}
+              style={{
+                fontSize: "1.5rem",
+                fontFamily: Fonts.title,
+                fontWeight: 600,
+              }}
+            >
+              <OpenInNewIcon style={{ marginRight: "8px", width: "32px", height: "32px" }} />
+              {PROJECT_BUTTON}
+            </GeneralButton>
+          </Box>
+        </SectionSubContainer>
+        <SectionSubContainer>
+          <SectionHeadlineStyle>
+            <LLMTextManipulator text={PROJECT_SUBTITLE} transforms={[rephrase, emojify, noLink]} />
+          </SectionHeadlineStyle>
+        </SectionSubContainer>
+        <SectionSubContainer paddingBottom="0em">
+          <TabSelector
+            items={projectCategories}
+            selectedKey={selectedCategory}
+            onSelectTab={handleCategoryClick}
+            trackingCategory="project"
+            trackingAction="select_project_category"
+            getButtonBackground={getButtonBackgroundColor}
+            getButtonTextColor={getButtonTextColor}
+          />
+          <ProjectsRender projectList={projects[selectedCategory]} classes={classes} />
+        </SectionSubContainer>
+      </SectionMainContent>
     </SectionContainer>
   )
 }

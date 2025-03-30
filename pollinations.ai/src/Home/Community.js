@@ -7,7 +7,7 @@
 
 import { Colors, Fonts } from "../config/global.js"
 import AsciiArtGenerator from "../components/AsciiArtGenerator.js"
-import { SectionContainer, SectionSubContainer } from "../components/SectionContainer.js"
+import { SectionContainer, SectionSubContainer, SectionMainContent } from "../components/SectionContainer.js"
 import {
   COMMUNITY_SUBTITLE,
   COMMUNITY_DISCORD_CTO,
@@ -98,6 +98,7 @@ const Community = () => {
 
   return (
     <SectionContainer backgroundConfig={SectionBG.community}>
+      <SectionMainContent>
       <SectionSubContainer>
         <SectionTitle title={COMMUNITY_TITLE} color={Colors.lime} />
       </SectionSubContainer>
@@ -106,7 +107,7 @@ const Community = () => {
           <LLMTextManipulator text={COMMUNITY_SUBTITLE} transforms={[rephrase, responsive, emojify, noLink]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
-      <SectionSubContainer>
+      <SectionSubContainer paddingBottom="0em">
         <Grid container spacing={4} justifyContent="space-between">
           {communityPlatforms.map((platform, index) => (
             <Grid key={index} size={{ xs: 6, md: 6 }}>
@@ -174,7 +175,7 @@ const Community = () => {
           title={<LLMTextManipulator text={ASCII_APP_TOOLTIP} transforms={[rephrase, emojify, noLink]} />}
           interactive
         >
-          <SectionSubContainer>
+          <SectionSubContainer paddingBottom="0em">
             <Box
               sx={{
                 display: "flex",
@@ -193,6 +194,7 @@ const Community = () => {
           </SectionSubContainer>
         </CustomTooltip>
       </SectionSubContainer>
+      </SectionMainContent>
     </SectionContainer>
   )
 }

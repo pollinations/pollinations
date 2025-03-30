@@ -316,12 +316,22 @@ export function PromptDisplay({
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
     
+    // Ensure mobile height stays fixed
+    const resizeObserver = new ResizeObserver(() => {
+      if (isMobile && containerRef.current) {
+        containerRef.current.style.height = '200px';
+      }
+    });
+    
+    resizeObserver.observe(containerRef.current);
+    
     return () => {
       if (resizeHandleRef.current) {
         resizeHandleRef.current.removeEventListener('mousedown', handleMouseDown);
       }
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      resizeObserver.disconnect();
     };
   }, [isMobile, promptHeight]);
   
@@ -347,6 +357,7 @@ export function PromptDisplay({
           isEditMode={isEditMode}
           backgroundColor={backgroundColor}
           onClick={!isEditMode ? onEditModeSwitch : undefined}
+          sx={isMobile ? { height: '200px !important' } : {}}
         >
           {isEditMode ? (
             <StyledTextArea

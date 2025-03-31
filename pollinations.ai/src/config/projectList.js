@@ -138,6 +138,13 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 LAHGen",
+      url: "https://image.aixboost.com/",
+      description: "An advanced AI-driven text-to-image generation platform designed to provide users with high-quality and realistic AI-generated images based on textual prompts. The platform allows users to generate unlimited AI images for free, leveraging cutting-edge AI models to produce stunning visual outputs in various artistic styles.",
+      author: "working7816@gmail.com",
+      submissionDate: "2025-03-31",
+    },
+    {
       name: "🆕 Elixpo Art",
       url: "https://elixpoart.vercel.app",
       description: "A Web interface to create thematic images from prompts, with multiple aspect ratios and also image reference inputs.",

@@ -69,7 +69,7 @@ export default function News() {
           <SectionHeadlineStyle
             color={Colors.offwhite}
             maxWidth="90%"
-            style={{ fontSize: "1.6em", fontFamily: Fonts.headline }}
+            style={{ fontSize: "1.8em", fontFamily: Fonts.headline, marginLeft: '0.6em' }}
             textAlign="left"
             onClick={handleClickAccordionSummary}
           >

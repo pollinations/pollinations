@@ -78,7 +78,7 @@ const Hero = () => {
       <SectionSubContainer>
         <SectionHeadlineStyle
           maxWidth="1000px"
-          fontSize="1.5em"
+          fontSize="1.8em"
           color={Colors.offblack}
           textAlign={isMobile ? "center" : "left"}
         >

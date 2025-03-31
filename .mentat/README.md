@@ -38,6 +38,23 @@ When handling project submission issues:
    - Add an English translation of the description in parentheses when possible
    - This helps users easily identify and filter projects by language
 
+6. When creating a commit for project submissions, always add attribution to the issue creator using a Co-authored-by line in the commit message:
+   ```
+   Add [Project Name] to project list
+
+   Added [Project Name] to the [Category] category in both:
+   - README.md
+   - pollinations.ai/src/config/projectList.js
+
+   [Brief description of the project]
+
+   Co-authored-by: [GitHub-Username] <[GitHub-Email]>
+   Closes #[Issue-Number]
+   ```
+   - The Co-authored-by line must follow GitHub's format exactly
+   - If you don't have the user's GitHub email, you can try to find it in their previous commits or ask them for it
+   - This ensures the issue creator gets proper credit for their contribution in GitHub's graph
+
 ## Repository Structure
 
 Key directories and their purposes:

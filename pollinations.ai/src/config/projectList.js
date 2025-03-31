@@ -138,6 +138,14 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 Elixpo Art",
+      url: "https://elixpoart.vercel.app",
+      description: "A Web interface to create thematic images from prompts, with multiple aspect ratios and also image reference inputs.",
+      author: "Ayushman Bhattacharya",
+      repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter",
+      submissionDate: "2025-03-31",
+    },
+    {
       name: "🆕 Riffle",
       url: "https://riffle.ink",
       description: "A powerful tool designed to make reading English books more enjoyable and effective while helping you build your vocabulary naturally. Using Pollinations AI to create content that incorporates your own vocabulary words allows you to learn them in a vivid, engaging context.",

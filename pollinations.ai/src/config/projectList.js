@@ -138,6 +138,14 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 El Yapımı MC 🇹🇷",
+      url: "http://cokoyunculu.infinityfreeapp.com/",
+      description: "Bu Proje Bilgisayarınıza El Yapımı Bir MC ekler Stackler YOK Sadece Tuşlar Üstelik BİR SÜRÜ BLOK VAR İsterseniz İndirin. (This project adds a handmade Minecraft clone to your computer with keyboard shortcuts for various blocks instead of stacks)",
+      author: "hikomenbilinemezhaa@gmail.com",
+      submissionDate: "2025-03-31",
+      language: "tr-TR"
+    },
+    {
       name: "🆕 LAHGen",
       url: "https://image.aixboost.com/",
       description: "An advanced AI-driven text-to-image generation platform designed to provide users with high-quality and realistic AI-generated images based on textual prompts. The platform allows users to generate unlimited AI images for free, leveraging cutting-edge AI models to produce stunning visual outputs in various artistic styles.",

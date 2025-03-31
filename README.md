@@ -224,6 +224,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 El Yapımı MC 🇹🇷 | Bu Proje Bilgisayarınıza El Yapımı Bir MC ekler Stackler YOK Sadece Tuşlar Üstelik BİR SÜRÜ BLOK VAR İsterseniz İndirin. (This project adds a handmade Minecraft clone to your computer with keyboard shortcuts for various blocks instead of stacks) | hikomenbilinemezhaa@gmail.com | [Website](http://cokoyunculu.infinityfreeapp.com/) |
 | 🆕 LAHGen | An advanced AI-driven text-to-image generation platform designed to provide users with high-quality and realistic AI-generated images based on textual prompts | working7816@gmail.com | [Website](https://image.aixboost.com/) |
 | 🆕 Elixpo Art | A Web interface to create thematic images from prompts, with multiple aspect ratios and also image reference inputs | Ayushman Bhattacharya | [Website](https://elixpoart.vercel.app), [GitHub](https://github.com/Circuit-Overtime/elixpo_ai_chapter) |
 | 🆕 Riffle | A powerful tool designed to make reading English books more enjoyable and effective while helping you build your vocabulary naturally. Using Pollinations AI to create content that incorporates your own vocabulary words allows you to learn them in a vivid, engaging context. | gsx123@gmail.com | [Website](https://riffle.ink) |

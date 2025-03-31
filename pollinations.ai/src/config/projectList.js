@@ -501,6 +501,14 @@ const allProjects = {
   ],
   socialBots: [
     {
+      name: "🆕 AlphaLLM - AI Discord Bot",
+      url: "https://alphallm.fr.nf",
+      description: "Discord bot that uses several APIs (Pollinations AI and Cerebras AI), to offer a variety of features, including advanced text generation with a history of your conversations, image and voice generation.",
+      author: "@the_yerminator",
+      repo: "https://github.com/YoannDev90/AlphaLLM",
+      submissionDate: "2025-03-31",
+    },
+    {
       name: "🆕 🤖 pollinations-tg-bot 🇨🇳",
       url: "https://t.me/AipolBot",
       description: "A Telegram bot deployed on Cloudflare Workers that allows users to generate images, convert text to speech, transcribe voice messages, chat with AI models, and more through the Pollinations API.",

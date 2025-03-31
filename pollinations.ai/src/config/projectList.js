@@ -138,6 +138,13 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 Podcast #1500",
+      url: "https://open.spotify.com/show/1wu4ngb1dclyTwoNN4cZzK",
+      description: "Podcast project powered by pollinations, featuring dialogues among LLMs. First episode features 3o-mini and DeepSeek R1 70B talking about Vibe Coding.",
+      author: "@brain.diver",
+      submissionDate: "2025-03-31",
+    },
+    {
       name: "🆕 LAHGen",
       url: "https://image.aixboost.com/",
       description: "An advanced AI-driven text-to-image generation platform designed to provide users with high-quality and realistic AI-generated images based on textual prompts. The platform allows users to generate unlimited AI images for free, leveraging cutting-edge AI models to produce stunning visual outputs in various artistic styles.",

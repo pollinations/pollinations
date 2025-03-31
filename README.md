@@ -224,6 +224,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 Podcast #1500 | Podcast project featuring dialogues among LLMs, with first episode featuring 3o-mini and DeepSeek R1 70B discussing Vibe Coding | @brain.diver | [Spotify](https://open.spotify.com/show/1wu4ngb1dclyTwoNN4cZzK) |
 | 🆕 LAHGen | An advanced AI-driven text-to-image generation platform designed to provide users with high-quality and realistic AI-generated images based on textual prompts | working7816@gmail.com | [Website](https://image.aixboost.com/) |
 | 🆕 Elixpo Art | A Web interface to create thematic images from prompts, with multiple aspect ratios and also image reference inputs | Ayushman Bhattacharya | [Website](https://elixpoart.vercel.app), [GitHub](https://github.com/Circuit-Overtime/elixpo_ai_chapter) |
 | 🆕 Riffle | A powerful tool designed to make reading English books more enjoyable and effective while helping you build your vocabulary naturally. Using Pollinations AI to create content that incorporates your own vocabulary words allows you to learn them in a vivid, engaging context. | gsx123@gmail.com | [Website](https://riffle.ink) |

@@ -585,6 +585,14 @@ const allProjects = {
   ],
   sdkLibraries: [
     {
+      name: "🆕 pollinations_ai",
+      url: "https://pub.dev/packages/pollinations_ai",
+      description: "A Flutter/Dart SDK package for accessing all features of pollinations.ai including text generation, image generation, audio, and listing all supported models.",
+      author: "@Meenapintu",
+      repo: "https://github.com/yehigo/pollinations.ai",
+      submissionDate: "2025-03-31",
+    },
+    {
       name: "🆕 Node.js Client Library",
       url: "https://www.npmjs.com/package/pollinationsai",
       description: "A TypeScript/Node.js client for accessing Pollinations AI services including image generation, text processing, and speech synthesis. Features full TypeScript typings, dual CJS/ESM module support, 100% test coverage and feed/streams support, builder pattern API and axios-based HTTP client implementation.",

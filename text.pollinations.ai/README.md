@@ -11,7 +11,6 @@ This repository contains the source code for the Pollinations.ai Text Generation
 - Temperature control for output randomness
 - System prompt support
 - Request caching for improved performance
-- Rate limiting to prevent abuse
 
 ## Installation
 
@@ -40,10 +39,6 @@ The API supports both GET and POST requests. For detailed usage examples, please
 ## API Endpoints
 
 For detailed API documentation, please refer to [APIDOCS.md](../APIDOCS.md).
-
-## Rate Limiting
-
-The API implements rate limiting to prevent abuse. By default, each IP address is limited to 20 requests per minute. Cached responses do not count towards this limit.
 
 ## Caching
 

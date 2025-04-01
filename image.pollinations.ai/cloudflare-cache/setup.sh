@@ -5,28 +5,34 @@
 # Colors for output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${GREEN}Setting up Cloudflare R2 + CDN for Pollinations...${NC}"
 
-# Check if wrangler is installed
-if ! command -v wrangler &> /dev/null; then
-    echo -e "${YELLOW}Wrangler not found. Installing...${NC}"
-    npm install -g wrangler
+# Check if wrangler is installed locally
+if ! [ -f "node_modules/.bin/wrangler" ]; then
+    echo -e "${YELLOW}Wrangler not found locally. Installing...${NC}"
+    npm install
 fi
 
 # Login to Cloudflare if needed
 echo -e "${GREEN}Logging in to Cloudflare...${NC}"
-wrangler login
+npx wrangler login
 
 # Create R2 bucket if it doesn't exist
 BUCKET_NAME="pollinations-images"
 echo -e "${GREEN}Creating R2 bucket: ${BUCKET_NAME}...${NC}"
-wrangler r2 bucket create $BUCKET_NAME
+npx wrangler r2 bucket create $BUCKET_NAME
 
 # Install dependencies
 echo -e "${GREEN}Installing dependencies...${NC}"
 npm install
+
+# Configure environment variables
+echo -e "${GREEN}Configuring environment variables...${NC}"
+chmod +x ./configure-env.sh
+./configure-env.sh
 
 # Deploy the worker
 echo -e "${GREEN}Deploying worker...${NC}"

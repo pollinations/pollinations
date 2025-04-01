@@ -21,9 +21,11 @@
     "@mui/icons-material": "^6.3.1",
     "@mui/material": "^6.3.1",
     "@mui/styles": "^6.3.1",
+    "@netlify/functions": "^2.6.0",
     "@pollinations/react": "^2.0.6",
     "@sideway/address": "^5.0.0",
     "debug": "^4.3.2",
+    "dotenv": "^16.4.5",
     "front-matter": "^4.0.2",
     "joi": "^17.13.3",
     "json5": "^2.2.1",
@@ -57,14 +59,16 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.0",
+    "netlify-cli": "^17.19.0",
     "react-devtools": "^6.0.1",
     "react-error-overlay": "^6.0.11"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test --env=node",
+    "test": "react-scripts test",
     "eject": "react-scripts eject",
+    "netlify": "netlify dev",
     "predeploy": "npm run build"
   },
   "browserslist": {

@@ -41,6 +41,23 @@ export const projectCategories = [
 const allProjects = {
   llmIntegrations: [
     {
+      name: "🆕 IMyself AI 🇨🇳",
+      url: "https://openai.lmyself.top/",
+      description: "我们提供高质量的AI生成服务，包括图像生成、文本生成、音频生成和语音转文本服务， 让您轻松创建各种创意内容。 (We provide high-quality AI generation services, including image generation, text generation, audio generation, and speech to text services, allowing you to easily create various creative content.)",
+      author: "Shadownc",
+      submissionDate: "2025-03-27",
+      language: "zh-CN"
+    },
+    {
+      name: "🆕 FreeAI 🇨🇳",
+      url: "https://freeai.aihub.ren/",
+      description: "An AI application platform based on Pollinations.AI API, providing free and unlimited AI chat assistant, image generation, and voice synthesis services.",
+      author: "@Azad-sl",
+      repo: "https://github.com/Azad-sl/FreeAI",
+      submissionDate: "2025-03-24",
+      language: "zh-CN"
+    },
+    {
       name: "🆕 AI Unlimited Customizable Feature Module 🇨🇳",
       url: "https://getquicker.net/Sharedaction?code=9ac738ed-a4b2-4ded-933c-08dd5f710a8b&fromMyShare=true",
       description: "This project provides a free API interface supporting various text and image generation models, including OpenAI's GPT-4, Gemini 2.0, etc. Users can access these models without an API key to perform text generation, image generation, translation, text polishing, and more.",
@@ -52,7 +69,7 @@ const allProjects = {
       name: "🆕 PrivatePollenAI",
       url: "https://mmojocoder.github.io/PrivatePollenAI/chat.html",
       description: "A privacy-focused chat assistant app that securely stores data locally, integrates with PollinationAI for text and image generation, features a minimalistic UI, and allows users to choose models and write their own system instructions.",
-      author: "https://discordapp.com/users/tenacious_humming_bird",
+      author: "https://github.com/MMojoCoder",
       repo: "https://github.com/MMojoCoder/PrivatePollenAI",
       submissionDate: "2025-02-23",
     },
@@ -120,6 +137,59 @@ const allProjects = {
     },
   ],
   creativeApps: [
+    {
+      name: "🆕 Podcast #1500",
+      url: "https://open.spotify.com/show/1wu4ngb1dclyTwoNN4cZzK",
+      description: "Podcast project powered by pollinations, featuring dialogues among LLMs. First episode features 3o-mini and DeepSeek R1 70B talking about Vibe Coding.",
+      author: "@brain.diver",
+      submissionDate: "2025-03-31",
+    },
+    {
+      name: "🆕 LAHGen",
+      url: "https://image.aixboost.com/",
+      description: "An advanced AI-driven text-to-image generation platform designed to provide users with high-quality and realistic AI-generated images based on textual prompts. The platform allows users to generate unlimited AI images for free, leveraging cutting-edge AI models to produce stunning visual outputs in various artistic styles.",
+      author: "working7816@gmail.com",
+      submissionDate: "2025-03-31",
+    },
+    {
+      name: "🆕 Elixpo Art",
+      url: "https://elixpoart.vercel.app",
+      description: "A Web interface to create thematic images from prompts, with multiple aspect ratios and also image reference inputs.",
+      author: "Ayushman Bhattacharya",
+      repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter",
+      submissionDate: "2025-03-31",
+    },
+    {
+      name: "🆕 Riffle",
+      url: "https://riffle.ink",
+      description: "A powerful tool designed to make reading English books more enjoyable and effective while helping you build your vocabulary naturally. Using Pollinations AI to create content that incorporates your own vocabulary words allows you to learn them in a vivid, engaging context.",
+      author: "gsx123@gmail.com",
+      submissionDate: "2025-03-28",
+    },
+    {
+      name: "🆕 VibeCoder",
+      url: "https://vibecoderbyaashir.netlify.app/",
+      description: "A web app for coding with vibes, created using Pollinations.AI Open Source API without coding syntax.",
+      author: "@Aashir__Shaikh",
+      authorUrl: "https://x.com/Aashir__Shaikh",
+      submissionDate: "2025-03-25",
+    },
+    {
+      name: "🆕 AI 文本转音频 🇨🇳",
+      url: "https://tts-gules-theta.vercel.app/",
+      description: "输入文本，选择语音风格，一键将文字转换为自然流畅的语音。 支持多种声音特征，帮您创建专业水准的音频内容。 (Input text, select voice style, and instantly convert text to natural, fluid speech. Supports various voice characteristics to help you create professional-grade audio content.)",
+      author: "https://github.com/Azad-sl",
+      repo: "https://github.com/Azad-sl/tts",
+      submissionDate: "2025-03-24",
+      language: "zh-CN"
+    },
+    {
+      name: "🆕 Case Me 🇧🇷",
+      description: "O projeto consiste em uma vending machine que criará capinhas para celular personalizadas com fotos ou outras imagens e cores de escolha do cliente final. (A vending machine that creates customized phone cases with photos or other images and colors chosen by the end customer.)",
+      author: "anaboxmania@gmail.com",
+      submissionDate: "2025-03-19",
+      language: "pt-BR"
+    },
     {
       name: "🆕 PixPax",
       url: "https://pixpal.chat",
@@ -328,6 +398,22 @@ const allProjects = {
   ],
   toolsInterfaces: [
     {
+      name: "🆕 WordPress AI Vision Block",
+      url: "https://wordpress.org/plugins/ai-vision-block/",
+      description: "A custom WordPress Gutenberg block that allows you to generate images using the Pollinations API. Simply enter a prompt, and the AI will generate an image for you. Once the post is saved, the image is automatically stored in the WordPress Media Library.",
+      author: "mahmood-asadi",
+      repo: "https://github.com/mahmood-asadi/ai-vision-block",
+      submissionDate: "2025-03-31",
+    },
+    {
+      name: "🆕 toai.chat",
+      url: "https://toai.chat",
+      description: "An AI chat service that operates exclusively via Curl commands, specifically designed for users working in terminal environments without the need for a standalone AI client.",
+      author: "kevin@kevin1986.com",
+      repo: "https://github.com/Veallym0n/toai.chat",
+      submissionDate: "2025-03-27",
+    },
+    {
       name: "🆕 Elixpo Art Chrome Extension",
       url: "https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh",
       description: "It uses the pollinations image endpoint to generate an image with `boltning` as the model in 4 types of aspect ratios and themes with prompt engineering thus transforming selected texts into art smoothly with a disposable GUI in web.",
@@ -430,6 +516,23 @@ const allProjects = {
   ],
   socialBots: [
     {
+      name: "🆕 AlphaLLM - AI Discord Bot",
+      url: "https://alphallm.fr.nf",
+      description: "Discord bot that uses several APIs (Pollinations AI and Cerebras AI), to offer a variety of features, including advanced text generation with a history of your conversations, image and voice generation.",
+      author: "@the_yerminator",
+      repo: "https://github.com/YoannDev90/AlphaLLM",
+      submissionDate: "2025-03-31",
+    },
+    {
+      name: "🆕 🤖 pollinations-tg-bot 🇨🇳",
+      url: "https://t.me/AipolBot",
+      description: "A Telegram bot deployed on Cloudflare Workers that allows users to generate images, convert text to speech, transcribe voice messages, chat with AI models, and more through the Pollinations API.",
+      author: "@Shadownc",
+      repo: "https://github.com/Shadownc/pollinations-tg-bot",
+      submissionDate: "2025-03-27",
+      language: "zh-CN"
+    },
+    {
       name: "Jackey",
       url: "https://discord.com/oauth2/authorize?client_id=1214916249222643752",
       description: "A Discord Bot that integrates with the pollination image generation api to generate images in various themes, numbers, ratios and models",
@@ -489,6 +592,14 @@ const allProjects = {
   ],
   sdkLibraries: [
     {
+      name: "🆕 pollinations_ai",
+      url: "https://pub.dev/packages/pollinations_ai",
+      description: "A Flutter/Dart SDK package for accessing all features of pollinations.ai including text generation, image generation, audio, and listing all supported models.",
+      author: "@Meenapintu",
+      repo: "https://github.com/yehigo/pollinations.ai",
+      submissionDate: "2025-03-31",
+    },
+    {
       name: "🆕 Node.js Client Library",
       url: "https://www.npmjs.com/package/pollinationsai",
       description: "A TypeScript/Node.js client for accessing Pollinations AI services including image generation, text processing, and speech synthesis. Features full TypeScript typings, dual CJS/ESM module support, 100% test coverage and feed/streams support, builder pattern API and axios-based HTTP client implementation.",
@@ -536,6 +647,14 @@ const allProjects = {
     },
   ],
   tutorials: [
+    {
+      name: "🆕 Connect Pollinations with Open Web UI tutorial",
+      url: "https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI",
+      description: "How to add Pollinations AI Text Models to OpenWebUI for free access to top language models like GPT-4o, Mistral, Claude, and Gemini without signups or API keys.",
+      author: "@cloph-dsp",
+      repo: "https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI",
+      submissionDate: "2025-03-22",
+    },
     {
       name: "🆕 Chinese DeepSeek Tutorial",
       url: "https://linux.do/t/topic/447840/235",

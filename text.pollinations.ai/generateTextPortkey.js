@@ -19,6 +19,7 @@ const MODEL_MAPPING = {
     'openai-reasoning': 'o3-mini', // Maps to portkeyConfig['o1-mini'],
     // 'openai-audio': 'gpt-4o-mini-audio-preview',
     'openai-audio': 'gpt-4o-audio-preview',
+    'roblox-rp': 'gpt-4o-mini-roblox-rp', // Roblox roleplay model
     'gemini': 'gemini-2.0-flash-lite-preview-02-05',
     'gemini-thinking': 'gemini-2.0-flash-thinking-exp-01-21',
     // Cloudflare models
@@ -27,6 +28,7 @@ const MODEL_MAPPING = {
     'deepseek-reasoning': '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
     'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
     'phi': 'phi-4-instruct',
+    'phi-mini': 'phi-4-mini-instruct',
     'llama-vision': '@cf/meta/llama-3.2-11b-vision-instruct',
     // Scaleway models
     'qwen-coder': 'qwen2.5-coder-32b-instruct',
@@ -38,7 +40,10 @@ const MODEL_MAPPING = {
     // Modal models
     'hormoz': 'Hormoz-8B',
     // OpenRouter models
-    'claude': 'anthropic/claude-3.5-haiku-20241022'
+    'claude': 'anthropic/claude-3.5-haiku-20241022',
+    // Groq models
+    'qwen-qwq': 'qwen-qwq-32b',
+    'qwen-reasoning': 'qwen-qwq-32b'
 };
 
 // Unrestricted prompt for Scaleway models
@@ -49,6 +54,7 @@ const SYSTEM_PROMPTS = {
     // OpenAI models
     'openai': 'You are a helpful, knowledgeable assistant.',
     'openai-large': 'You are a helpful, knowledgeable assistant.',
+    'roblox-rp': 'You are a helpful assistant for Roblox game development and roleplay. You provide guidance on Lua programming, game design, Roblox-specific features, and help create engaging roleplay scenarios and characters.',
     'gemini': 'You are Gemini, a helpful and versatile AI assistant built by Google. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.',
     // Cloudflare models
     'llama': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
@@ -57,6 +63,7 @@ const SYSTEM_PROMPTS = {
     'deepseek-reasoning': unrestrictedPrompt,
     'llamaguard': 'You are a content moderation assistant. Your task is to analyze the input and identify any harmful, unsafe, or inappropriate content.',
     'phi': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
+    'phi-mini': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
     'llama-vision': unrestrictedPrompt,
     // Scaleway models
     'mistral': unrestrictedPrompt,
@@ -68,13 +75,15 @@ const SYSTEM_PROMPTS = {
     // Modal models
     'hormoz': 'You are Hormoz, a helpful AI assistant created by Muhammadreza Haghiri. You provide accurate and thoughtful responses.',
     // OpenRouter models
-    'claude': 'You are Claude, a helpful AI assistant created by Anthropic. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.'
+    'claude': 'You are Claude, a helpful AI assistant created by Anthropic. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.',
+    // Groq models
+    'qwen-qwq': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
+    'qwen-reasoning': 'You are a reasoning-focused AI assistant specialized in mathematical reasoning, scientific analysis, and coding tasks. When appropriate, break down your thinking step by step to show your reasoning process. Always be helpful, respectful, and honest.'
 };
 
 // Default options
 const DEFAULT_OPTIONS = {
     model: 'openai',
-    temperature: 0.7,
     jsonMode: false
 };
 
@@ -124,6 +133,7 @@ const baseMistralConfig = {
     'custom-host': process.env.SCALEWAY_MISTRAL_BASE_URL,
     authKey: process.env.SCALEWAY_MISTRAL_API_KEY,
     // Set default max_tokens to 8192
+    temperature: 0.3,
     'max-tokens': 8192,
 };
 
@@ -145,28 +155,14 @@ const baseOpenRouterConfig = {
     'max-tokens': 4096,
 };
 
-/**
- * Randomly selects between primary and secondary Azure OpenAI credentials
- * @returns {Object} - Selected API key and endpoint
- */
-function getRandomAzureCredentials() {
-    // Randomly choose between primary and secondary credentials
-    const useSecondary = Math.random() >= 0.5;
-    
-    if (useSecondary && process.env.AZURE_OPENAI_API_KEY_2 && process.env.AZURE_OPENAI_ENDPOINT_2) {
-        log('Using secondary Azure OpenAI credentials');
-        return {
-            apiKey: process.env.AZURE_OPENAI_API_KEY_2,
-            endpoint: process.env.AZURE_OPENAI_ENDPOINT_2
-        };
-    } else {
-        log('Using primary Azure OpenAI credentials');
-        return {
-            apiKey: process.env.AZURE_OPENAI_API_KEY,
-            endpoint: process.env.AZURE_OPENAI_ENDPOINT
-        };
-    }
-}
+// Base configuration for Groq models
+const baseGroqConfig = {
+    provider: 'groq',
+    'custom-host': 'https://api.groq.com/openai/v1',
+    authKey: process.env.GROQ_API_KEY,
+    // Set default max_tokens to 4096
+    'max-tokens': 4096,
+};
 
 /**
  * Creates an Azure model configuration
@@ -260,13 +256,26 @@ function createOpenRouterModelConfig(additionalConfig = {}) {
     };
 }
 
+/**
+ * Creates a Groq model configuration
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - Groq model configuration
+ */
+function createGroqModelConfig(additionalConfig = {}) {
+    return {
+        ...baseGroqConfig,
+        ...additionalConfig
+    };
+}
+
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
     // Azure OpenAI model configurations
-    'gpt-4o-mini': () => {
-        const credentials = getRandomAzureCredentials();
-        return createAzureModelConfig(credentials.apiKey, credentials.endpoint, 'gpt-4o-mini');
-    },
+    'gpt-4o-mini': () => createAzureModelConfig(
+        process.env.AZURE_OPENAI_API_KEY,
+        process.env.AZURE_OPENAI_ENDPOINT,
+        'gpt-4o-mini'
+    ),
     'gpt-4o': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_LARGE_API_KEY,
         process.env.AZURE_OPENAI_LARGE_ENDPOINT,
@@ -292,6 +301,11 @@ export const portkeyConfig = {
         process.env.AZURE_OPENAI_AUDIO_LARGE_ENDPOINT,
         'gpt-4o-audio-preview'
     ),
+    'gpt-4o-mini-roblox-rp': () => createAzureModelConfig(
+        process.env.AZURE_OPENAI_ROBLOX_API_KEY,
+        process.env.AZURE_OPENAI_ROBLOX_ENDPOINT,
+        'gpt-4o-mini-roblox-rp'
+    ),
     // Cloudflare model configurations
     '@cf/meta/llama-3.3-70b-instruct-fp8-fast': () => createCloudflareModelConfig(),
     '@cf/meta/llama-3.1-8b-instruct': () => createCloudflareModelConfig(),
@@ -305,9 +319,16 @@ export const portkeyConfig = {
         'custom-host': process.env.OPENAI_PHI4_ENDPOINT,
         authKey: process.env.OPENAI_PHI4_API_KEY
     }),
+    'phi-4-mini-instruct': () => ({
+        provider: 'openai',
+        'custom-host': process.env.OPENAI_PHI4_MINI_ENDPOINT,
+        authKey: process.env.OPENAI_PHI4_MINI_API_KEY
+    }),
     '@cf/meta/llama-3.2-11b-vision-instruct': () => createCloudflareModelConfig(),
     // Scaleway model configurations
-    'qwen2.5-coder-32b-instruct': () => createScalewayModelConfig(),
+    'qwen2.5-coder-32b-instruct': () => createScalewayModelConfig({
+        'max-tokens': 8000  // Set specific token limit for Qwen Coder
+    }),
     'llama-3.3-70b-instruct': () => createScalewayModelConfig(),
     'llama-3.1-8b-instruct': () => createScalewayModelConfig(),
     'deepseek-r1-distill-llama-70b': () => createScalewayModelConfig(),
@@ -321,13 +342,17 @@ export const portkeyConfig = {
         'http-referer': 'https://pollinations.ai',
         'x-title': 'Pollinations.AI'
     }),
+    'qwen-qwq-32b': () => createGroqModelConfig({
+        'http-referer': 'https://pollinations.ai',
+        'x-title': 'Pollinations.AI'
+    }),
     // Google Vertex AI model configurations
     'gemini-2.0-flash-lite-preview-02-05': () => ({
         provider: 'vertex-ai',
         authKey: googleCloudAuth.getAccessToken, // Fix: use getAccessToken instead of getToken
         'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
         'vertex-region': 'us-central1',
-        'vertex-model-id': 'gemini-2.0-flash-lite-preview-02-05',
+        'vertex-model-id': 'gemini-2.0-flash-lite',
         'strict-openai-compliance': 'false'
     }),
     'gemini-2.0-flash-thinking-exp-01-21': () => ({
@@ -338,48 +363,6 @@ export const portkeyConfig = {
         'strict-openai-compliance': 'false'
     }),
 };
-
-// Function to handle Llama Vision license agreement
-async function agreeLlamaVisionLicense() {
-    try {
-        // Create a client to send the agreement message
-        const client = createOpenAICompatibleClient({
-            endpoint: () => process.env.PORTKEY_API_GATEWAY_URL || 'http://localhost:8000',
-            authHeaderName: 'Authorization',
-            authHeaderValue: () => `Bearer ${process.env.PORTKEY_API_KEY || 'dummy-key'}`,
-            additionalHeaders: {},
-            transformRequest: (requestBody) => {
-                return {
-                    ...requestBody,
-                    headers: {
-                        ...requestBody.headers,
-                        'x-portkey-provider': 'openai',
-                        'x-portkey-custom-host': `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
-                        'x-portkey-auth-key': process.env.CLOUDFLARE_AUTH_TOKEN
-                    }
-                };
-            }
-        });
-
-        // Send the agreement message
-        await client([{ role: 'user', content: 'agree' }], {
-            model: '@cf/meta/llama-3.2-11b-vision-instruct',
-            temperature: 0.7,
-            max_tokens: 10
-        });
-        
-        log('Successfully agreed to Llama Vision license terms');
-        return true;
-    } catch (error) {
-        errorLog('Failed to agree to Llama Vision license terms:', error);
-        return false;
-    }
-}
-
-// Try to agree to the license terms on startup
-agreeLlamaVisionLicense().catch(err => {
-    errorLog('Error during Llama Vision license agreement:', err);
-});
 
 /**
  * Log configuration for a specific provider
@@ -425,14 +408,6 @@ export const generateTextPortkey = createOpenAICompatibleClient({
         try {
             // Get the model name from the request (already mapped by genericOpenAIClient)
             const modelName = requestBody.model; // This is already mapped by genericOpenAIClient
-
-            // Special handling for Llama Vision model
-            if (modelName === '@cf/meta/llama-3.2-11b-vision-instruct') {
-                // Try to agree to license terms first
-                agreeLlamaVisionLicense().catch(err => {
-                    errorLog('Error during Llama Vision license agreement:', err);
-                });
-            }
 
             // Check character limit
             const MAX_CHARS = 512000;
@@ -549,6 +524,16 @@ logProviderConfig(
 logProviderConfig(
     'OpenRouter',
     ([_, config]) => config.provider === 'openai' && config['custom-host']?.includes('openrouter.ai'),
+    config => ({
+        ...config,
+        authKey: config.authKey ? '***' : undefined
+    })
+);
+
+// Log Groq configuration
+logProviderConfig(
+    'Groq',
+    ([_, config]) => config.provider === 'groq',
     config => ({
         ...config,
         authKey: config.authKey ? '***' : undefined

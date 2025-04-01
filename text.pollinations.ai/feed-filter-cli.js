@@ -3,6 +3,8 @@
 import * as EventSource from 'eventsource';
 import debug from 'debug';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 
 // Load environment variables for feed password
 dotenv.config();
@@ -33,6 +35,9 @@ const TOP_IPS_COUNT = 5;
 
 // Number of top referrers to display
 const TOP_REFERRERS_COUNT = 10;
+
+// Array to store raw message data for JSON export
+const rawMessageData = [];
 
 // Helper functions for content detection
 const hasMarkdown = (text) => {
@@ -275,6 +280,55 @@ const startFeedListener = (options = {}) => {
         try {
             const data = JSON.parse(event.data);
             
+            // If JSON logging is enabled, save the raw data
+            if (options.jsonOutputFile) {
+                // Extract only the metadata and numerical information we need
+                const { parameters, response, isPrivate, ip } = data;
+                
+                const messageData = {
+                    timestamp: new Date().toISOString(),
+                    isPrivate: isPrivate || false,
+                    truncatedIp: ip ? ip : 'unknown',
+                    metadata: {
+                        referrer: parameters?.referrer || 'unknown',
+                        model: parameters?.model || 'unknown',
+                        isRobloxReferrer: parameters?.referrer?.toLowerCase().includes('roblox') || false,
+                        isImagePollinationsReferrer: parameters?.isImagePollinationsReferrer || false
+                    },
+                    stats: {
+                        promptTokens: parameters?.prompt_tokens || 0,
+                        completionTokens: parameters?.completion_tokens || 0,
+                        totalTokens: parameters?.total_tokens || 0,
+                        promptLength: {
+                            characters: parameters?.messages 
+                                ? parameters.messages.reduce((sum, msg) => sum + (msg.content?.length || 0), 0) 
+                                : 0,
+                            words: parameters?.messages 
+                                ? parameters.messages.reduce((sum, msg) => sum + (msg.content?.split(/\s+/).length || 0), 0) 
+                                : 0
+                        },
+                        completionLength: {
+                            characters: response?.length || 0,
+                            words: response?.split(/\s+/).length || 0
+                        },
+                        hasMarkdown: hasMarkdown(response || ''),
+                        hasHtml: hasHtml(response || ''),
+                        // Attempt to detect if the message is a roleplay based on asterisks
+                        isRoleplay: /\*.+\*/.test(response || '') || parameters?.messages?.some(msg => /\*.+\*/.test(msg.content || '')) || false
+                    },
+                    // Store the first 100 chars of system message if available (for prompt analysis)
+                    systemPromptPreview: parameters?.messages?.find(msg => msg.role === 'system')?.content?.substring(0, 100) || null
+                };
+                
+                // Save to our array
+                rawMessageData.push(messageData);
+                
+                // Write to file periodically to avoid memory issues
+                if (rawMessageData.length % 10 === 0) {
+                    writeDataToJson(options.jsonOutputFile);
+                }
+            }
+            
             if (matchesFilters(data, options)) {
                 stats.total++;
                 if (data.isPrivate) {
@@ -377,9 +431,32 @@ const startFeedListener = (options = {}) => {
     process.on('SIGINT', () => {
         eventSource.close();
         printStats();
+        
+        // Save data to JSON if enabled
+        if (options.jsonOutputFile) {
+            writeDataToJson(options.jsonOutputFile);
+            log(`Data saved to ${options.jsonOutputFile}`);
+        }
+        
         log('Disconnected from feed');
         process.exit(0);
     });
+};
+
+// Function to write collected data to JSON file
+const writeDataToJson = (filePath) => {
+    try {
+        // Create directory if it doesn't exist
+        const dir = path.dirname(filePath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        
+        fs.writeFileSync(filePath, JSON.stringify(rawMessageData, null, 2));
+        log(`Data saved to ${filePath} (${rawMessageData.length} entries)`);
+    } catch (error) {
+        log('Error writing to JSON file: %O', error);
+    }
 };
 
 // Parse command line arguments
@@ -424,6 +501,9 @@ const parseArgs = () => {
             case '--count-only':
                 options.countOnly = true;
                 break;
+            case '--json-output':
+                options.jsonOutputFile = args[++i];
+                break;
             case '--help':
                 console.log(`
 Usage: node feed-filter-cli.js [options]
@@ -440,6 +520,7 @@ Options:
   --password <value>   Password for accessing private messages
   --base-url <url>     Base URL for API (default: https://text.pollinations.ai)
   --count-only         Only display statistics, not individual messages
+  --json-output <file> Save raw data to JSON file for later analysis
   --help               Show this help message
 
 Environment:

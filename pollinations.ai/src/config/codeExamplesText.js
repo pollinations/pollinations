@@ -348,21 +348,70 @@ eventSource.onmessage = function(event) {
     language: "markdown"
   },
   audio: {
-    code: () => `
-## Audio Generation
+    code: () => `# Audio Generation with Pollinations.AI
 
-### Text-to-Speech
-
-The simplest way to generate audio from text:
-
-\`\`\`
-https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=nova
+## Text-to-Speech
+\`\`\`bash
+# Generate audio from text
+curl "https://text.pollinations.ai/Hello%20world?model=openai-audio&voice=alloy"
 \`\`\`
 
-Our audio features follow the OpenAI audio API specification. For more details and advanced usage, see the [OpenAI Audio Guide](https://platform.openai.com/docs/guides/audio).
-`,
+## Speech-to-Text (Transcription)
+\`\`\`javascript
+// Upload audio file for transcription
+const formData = new FormData();
+formData.append('file', audioFile);
+formData.append('model', 'openai-audio');
+
+fetch('https://text.pollinations.ai/transcriptions', {
+  method: 'POST',
+  body: formData
+})
+.then(response => response.json())
+.then(data => console.log(data.text));
+\`\`\``,
+    language: "markdown"
+  },
+  mcp_server: {
+    code: () => `# Model Context Protocol (MCP) Server for AI Assistants
+
+The Pollinations MCP server enables AI assistants like Claude to generate images and audio directly.
+
+## Installation & Usage
+
+\`\`\`bash
+# Run with npx (no installation required)
+npx @pollinations/model-context-protocol
+\`\`\`
+
+## Features
+
+- Generate images from text descriptions
+- Create text-to-speech audio with various voice options
+- List available models and capabilities
+- No authentication required
+
+## Example Usage (Node.js)
+
+\`\`\`javascript
+import { generateImageUrl, generateImage, respondAudio, sayText } from '@pollinations/model-context-protocol';
+
+// Generate an image URL
+const imageResult = await generateImageUrl('A beautiful sunset over the ocean', {
+  width: 512,
+  height: 512,
+  model: 'flux.schnell'
+});
+console.log(imageResult.imageUrl);
+
+// Generate audio from text
+const audioResult = await respondAudio('Hello, world!', 'alloy');
+// Audio will be played automatically
+\`\`\`
+
+For more details, see the [MCP Server Documentation](https://github.com/pollinations/pollinations/tree/master/model-context-protocol).`,
     language: "markdown"
   }
 };
 
-export default CODE_EXAMPLES; 
+export default CODE_EXAMPLES;

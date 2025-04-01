@@ -3,6 +3,8 @@
  * Following the "thin proxy" design principle - minimal processing, direct forwarding
  */
 
+import { getClientIp } from './ip-utils.js';
+
 /**
  * Proxy a request to the original service
  * @param {Request} request - The original request
@@ -12,7 +14,7 @@
  */
 export async function proxyToOrigin(request, env, originHost) {
   // Log the original request details
-  const clientIP = request.headers.get('cf-connecting-ip') || 'unknown';
+  const clientIP = getClientIp(request);
   console.log('Proxying request from client IP:', clientIP);
   
   // Replace the hostname with the origin service

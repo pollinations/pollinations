@@ -1,21 +1,23 @@
 import React, { useState, useEffect, memo, useCallback } from "react";
 import { Box, CircularProgress } from "@mui/material";
-import { Colors, SectionBG } from "../config/global";
-import { SectionContainer, SectionSubContainer, SectionHeadlineStyle, SectionMainContent } from "../components/SectionContainer";
-import SectionTitle from "../components/SectionTitle";
-import { TEXT_FEED_TITLE, TEXT_FEED_SUBTITLE, TEXT_FEED_MODE1, TEXT_FEED_MODE2 } from "../config/copywrite";
-import { emojify, rephrase, noLink } from "../config/llmTransforms.js";
-import { LLMTextManipulator } from "../components/LLMTextManipulator.js";
-import { trackEvent } from "../config/analytics";
-import { useTextSlideshow } from "../utils/useTextSSEFeed";
-import { useTextEditor } from "../utils/useTextEditor";
-import { useTextFeedLoader } from "../utils/useTextFeedLoader";
-import { ServerLoadInfo } from "../components/Feeds/ServerLoadInfo.js";
-import { TextEditor } from "../components/Feeds/TextEditor.js";
-import { TextDisplay } from "../components/Feeds/TextResponse.js";
-import { FeedEditSwitch } from "../components/Feeds/FeedEditSwitch.js";
-import { ModelInfo } from "../components/Feeds/ModelInfo.js";
-import { PromptDisplay } from "../components/Feeds/PromptDisplay.js";
+import { Colors } from "../../config/global"; // Adjusted path
+import { SectionSubContainer, SectionHeadlineStyle } from "../SectionContainer"; // Adjusted path
+// Removed SectionContainer, SectionMainContent, SectionTitle imports
+// Removed SectionBG import as it's handled by the parent Feeds component
+import { TEXT_FEED_SUBTITLE, TEXT_FEED_MODE1, TEXT_FEED_MODE2 } from "../../config/copywrite"; // Adjusted path
+// Removed TEXT_FEED_TITLE
+import { emojify, rephrase, noLink } from "../../config/llmTransforms.js"; // Adjusted path
+import { LLMTextManipulator } from "../LLMTextManipulator.js"; // Adjusted path
+import { trackEvent } from "../../config/analytics"; // Adjusted path
+import { useTextSlideshow } from "../../utils/useTextSSEFeed"; // Adjusted path
+import { useTextEditor } from "../../utils/useTextEditor"; // Adjusted path
+import { useTextFeedLoader } from "../../utils/useTextFeedLoader"; // Adjusted path
+import { ServerLoadInfo } from "./ServerLoadInfo.js"; // Adjusted path
+import { TextEditor } from "./TextEditor.js"; // Adjusted path
+import { TextDisplay } from "./TextResponse.js"; // Adjusted path
+import { FeedEditSwitch } from "./FeedEditSwitch.js"; // Adjusted path
+import { ModelInfo } from "./ModelInfo.js"; // Adjusted path
+import { PromptDisplay } from "./PromptDisplay.js"; // Adjusted path
 
 /**
  * Extract prompt from messages array
@@ -27,10 +29,12 @@ const extractPrompt = (messages) => {
 };
 
 /**
- * FeedText:
- * Main component to handle the display, editing, and associated UI for text feed.
+ * TextFeed (Refactored):
+ * Inner content for the text feed section.
+ * Assumes it's rendered within a container that handles the main section layout and title.
  */
-export const FeedText = memo(() => {
+export const TextFeed = memo(() => {
+  // ... (Keep all state, hooks, effects, handlers as they were) ...
   // State
   const [lastEntry, setLastEntry] = useState(null);
   const [isInputChanged, setIsInputChanged] = useState(false);
@@ -47,7 +51,6 @@ export const FeedText = memo(() => {
     connectionStatus 
   } = useTextSlideshow();
   
-  // Get entriesGenerated counter
   const { entriesGenerated } = useTextFeedLoader(onNewEntry, setLastEntry);
   
   const { 
@@ -60,37 +63,28 @@ export const FeedText = memo(() => {
     entry: slideshowEntry,
   });
 
-  // Extract prompt and model from entry when it changes
+  // Effects
   useEffect(() => {
     if (!entry?.parameters?.messages || isInputChanged) return;
-    
-    // Update the shared prompt
     const prompt = extractPrompt(entry.parameters.messages);
     if (prompt) {
       setSharedPrompt(prompt);
     }
-    
-    // Update the model
     if (entry.parameters.model) {
       setSharedModel(entry.parameters.model);
     }
   }, [entry, isInputChanged]);
 
-  // Reset isInputChanged when response changes
   useEffect(() => {
     setIsInputChanged(false);
   }, [entry?.response]);
 
-  // Handle toggle between feed and edit modes
+  // Handlers
   const handleToggleChange = useCallback((event, newValue) => {
     if (newValue !== null) {
       const isEditMode = newValue === "edit";
-      
-      // Stop/start the slideshow
       stop(isEditMode);
       setToggleValue(newValue);
-      
-      // Track analytics
       trackEvent({
         action: 'click_text_feed_edit_switch',
         category: 'text_feed',
@@ -99,7 +93,6 @@ export const FeedText = memo(() => {
     }
   }, [stop]);
 
-  // Switch to edit mode when clicking prompt in feed mode
   const handlePromptClick = useCallback(() => {
     if (toggleValue === "feed") {
       handleToggleChange(null, "edit");
@@ -110,7 +103,6 @@ export const FeedText = memo(() => {
     }
   }, [toggleValue, handleToggleChange]);
 
-  // Generate text with current values
   const handleUpdateText = useCallback((parameters = {}) => {
     updateText({
       model: sharedModel,
@@ -125,14 +117,10 @@ export const FeedText = memo(() => {
     });
   }, [updateText, sharedPrompt, sharedModel]);
 
+  // Rendering - REMOVED SectionContainer and SectionMainContent wrappers
+  // REMOVED Title Section
   return (
-    <SectionContainer id="text-feed" backgroundConfig={SectionBG.feedText}>
-      <SectionMainContent>
-      {/* Title */}
-      <SectionSubContainer>
-        <SectionTitle title={TEXT_FEED_TITLE} />
-      </SectionSubContainer>
-
+    <>
       {/* Server Load Info */}
       <SectionSubContainer>
         <ServerLoadInfo 
@@ -227,7 +215,6 @@ export const FeedText = memo(() => {
           </SectionSubContainer>
         )}
       </SectionSubContainer>
-      </SectionMainContent>
-    </SectionContainer>
+    </> // Use fragment instead of removed wrappers
   );
-});
+}); 

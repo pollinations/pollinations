@@ -67,9 +67,7 @@ export const ImageEditor = memo(function ImageEditor({
   // ─── EFFECTS ─────────────────────────────────────────────────────────────────
   // Load image parameters into local state whenever `image` changes
   useEffect(() => {
-    // Log received image for debugging
-    console.log("ImageEditor received image:", image);
-    
+   
     // Only set parameters from image if:
     // 1. We haven't initialized yet, or
     // 2. The image URL has changed (indicating a completely new image)

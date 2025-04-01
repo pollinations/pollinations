@@ -1,7 +1,9 @@
 import { useState } from "react"
 import styled from "@emotion/styled"
 import Hero from "./Hero"
-import { FeedImage } from "./FeedImage"
+// import { FeedImage } from "./FeedImage"
+// import { FeedText } from "./FeedText"
+import { Feeds } from "./Feeds.js"
 import Projects from "./Projects"
 import { Integration } from "./Integration"
 import { ImageContext } from "../utils/ImageContext"
@@ -9,7 +11,6 @@ import Discord from "./Community"
 import Supporter from "./Supporter"
 import Team from "./Team"
 import News from "./News"
-import { FeedText } from "./FeedText"
 // import { TextFeed } from "./TextFeed"
 
 export default function Home() {
@@ -20,8 +21,9 @@ export default function Home() {
       <Style>
         <Hero />
         <News />
-        <FeedImage />
-        <FeedText />
+        {/* <FeedImage /> */}
+        {/* <FeedText /> */}
+        <Feeds />
         <Projects />
         <Integration />
         <Discord />

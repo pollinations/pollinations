@@ -25,6 +25,7 @@ export const GeneralButton = React.forwardRef(function GeneralButton(
     backgroundColor: backgroundColor || "transparent",
     color: textColor || borderColor || "transparent",
     fontSize: fontSize || "1.5em",
+    fontWeight: "normal",
     height: height || "auto",
     minHeight: height || "60px",
     borderRadius: "0px",

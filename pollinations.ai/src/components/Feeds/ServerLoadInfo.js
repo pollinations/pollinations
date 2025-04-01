@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Typography, Box } from "@mui/material";
 import { Colors, Fonts } from "../../config/global";
 import { keyframes } from "@emotion/react";
@@ -20,6 +20,11 @@ export function ServerLoadInfo({ lastItem, itemsGenerated, currentItem, itemType
   const [isReady, setIsReady] = useState(false);
   // Track our own counter for items generated that won't be affected by slideshow stopping
   const [localItemsCount, setLocalItemsCount] = useState(0);
+  
+  // State and Refs for event-based rate calculation
+  const [imagesPerSecond, setImagesPerSecond] = useState(0);
+  const eventsSinceLastCalcRef = useRef(0);
+  const lastRateCalcTimeRef = useRef(Date.now());
 
   // Set ready state after a short delay
   useEffect(() => {
@@ -30,33 +35,41 @@ export function ServerLoadInfo({ lastItem, itemsGenerated, currentItem, itemType
     return () => clearTimeout(timer);
   }, []);
 
-  // Set initial local count and update when itemsGenerated changes
+  // Set up event listeners to count incoming items
   useEffect(() => {
-    if (itemsGenerated > localItemsCount) {
-      setLocalItemsCount(itemsGenerated);
-    }
-  }, [itemsGenerated, localItemsCount]);
-
-  // Set up event listeners for item generation in both feeds
-  useEffect(() => {
-    // For image feed
-    const handleImageReceived = () => {
+    const handleItemReceived = () => {
       setLocalItemsCount(prev => prev + 1);
+      eventsSinceLastCalcRef.current += 1;
     };
     
-    // For text feed
-    const handleTextReceived = () => {
-      setLocalItemsCount(prev => prev + 1);
-    };
-    
-    window.addEventListener('image-received', handleImageReceived);
-    window.addEventListener('text-entry-received', handleTextReceived);
+    window.addEventListener('image-received', handleItemReceived);
+    window.addEventListener('text-entry-received', handleItemReceived);
     
     return () => {
-      window.removeEventListener('image-received', handleImageReceived);
-      window.removeEventListener('text-entry-received', handleTextReceived);
+      window.removeEventListener('image-received', handleItemReceived);
+      window.removeEventListener('text-entry-received', handleItemReceived);
     };
-  }, []);
+  }, []); // Empty dependency array: runs once on mount
+
+  // Set up interval to calculate and update rate periodically
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      const now = Date.now();
+      const timeDiffSeconds = (now - lastRateCalcTimeRef.current) / 1000;
+      const eventCount = eventsSinceLastCalcRef.current;
+
+      if (timeDiffSeconds >= 1.95) { // Update roughly every 2 seconds (changed from 0.95)
+        const currentRate = eventCount / timeDiffSeconds;
+        setImagesPerSecond(currentRate.toFixed(1)); // Changed back to .toFixed(1)
+
+        // Reset for next interval
+        eventsSinceLastCalcRef.current = 0;
+        lastRateCalcTimeRef.current = now;
+      }
+    }, 1000); // Check every 2000ms (changed from 1000ms)
+
+    return () => clearInterval(intervalId); // Clear interval on unmount
+  }, []); // Empty dependency array: runs once on mount
 
   // Update simulated load periodically
   useEffect(() => {
@@ -82,6 +95,9 @@ export function ServerLoadInfo({ lastItem, itemsGenerated, currentItem, itemType
 
   // Always use itemsGenerated from props if it's higher than our local count
   const displayCount = Math.max(localItemsCount, itemsGenerated || 0);
+  // Calculate safeRequests here to pass to RateDisplay
+  const safeRequests = lastItem?.concurrentRequests !== undefined && lastItem?.concurrentRequests !== null ? 
+    lastItem.concurrentRequests : simulatedLoad;
 
   return (
     <Box
@@ -93,93 +109,12 @@ export function ServerLoadInfo({ lastItem, itemsGenerated, currentItem, itemType
       sx={{
         color: Colors.offwhite,
         fontSize: "1.em",
+        flexWrap: "wrap", // Allow wrapping on smaller screens
       }}
     >
-      <ServerLoadDisplay concurrentRequests={lastItem?.concurrentRequests || simulatedLoad} />
       <CountBadge itemsGenerated={displayCount} />
+      <RateDisplay rate={imagesPerSecond} itemType={itemType} /> 
       {/* <TimingInfo item={lastItem} /> */}
-    </Box>
-  );
-}
-
-function ServerLoadDisplay({ concurrentRequests }) {
-  // Ensure we have a valid number by providing a default
-  const safeRequests = concurrentRequests !== undefined && concurrentRequests !== null ? 
-    concurrentRequests : 2; // Default to 2 for medium load
-  
-  const barChars = "▁▃▅▇▉";
-  
-  // Generate a pattern that increases in height
-  const getLoadDisplay = (count) => {
-    let displayString = '';
-    for (let i = 0; i < count; i++) {
-      // Use modulo to cycle through the bar characters for an increasing pattern
-      const index = i % barChars.length;
-      displayString += barChars[index];
-    }
-    return displayString;
-  };
-
-  const loadDisplay = getLoadDisplay(Math.round(safeRequests));
-
-  // Badge color changes based on the load
-  const getBadgeColor = () => {
-    if (safeRequests < 2) return Colors.lime;
-    if (safeRequests < 4) return "#FFC107"; // amber
-    return Colors.special; // high load color
-  };
-  
-  // Blinking animation keyframes with dynamic color
-  const blinkEffect = keyframes`
-    0% { color: ${getBadgeColor()}; text-shadow: 0 0 20px ${getBadgeColor()}; }
-    50% { color: ${getBadgeColor()}99; text-shadow: 0 0 10px ${getBadgeColor()}99; }
-    100% { color: ${getBadgeColor()}; text-shadow: 0 0 5px ${getBadgeColor()}; }
-  `;
-
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        maxWidth: "1000px",
-      }}
-    >
-      <Typography
-        component="div"
-        sx={{
-          color: Colors.offwhite,
-          fontSize: "1.5em",
-          fontFamily: Fonts.headline,
-          fontWeight: 500,
-        }}
-      >
-        Load
-      </Typography>
-
-      <Box
-        key={safeRequests} // Key changes trigger re-render and restart animation
-        sx={{
-          backgroundColor: "transparent",
-          color: getBadgeColor(),
-          animation: `${blinkEffect} 1s ease-in-out`,
-          fontWeight: "bold",
-          fontFamily: Fonts.headline,
-          fontSize: "1.5em",
-          width: "150px",
-          height: "50px",
-          borderRadius: "36px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          transition: "all 0.3s ease",
-          "& > span": {
-            marginTop: "-3px", // Move text 3px higher
-          },
-        }}
-      >
-        <span>{loadDisplay}</span>
-      </Box>
     </Box>
   );
 }
@@ -263,6 +198,113 @@ function TimingInfo({ item }) {
         <b> {Math.round(timeMs / 100) / 10} s</b>
       </span>
     </Typography>
+  );
+}
+
+// Updated RateDisplay component to include load bars
+function RateDisplay({ rate, itemType }) {
+  const displayRate = rate || "0.0"; 
+  const label = itemType === "text" ? "Generated / Sec" : "Generated / Sec";
+
+  // Scaling Logic: Use thresholds to determine number of bars
+  const parsedRate = parseFloat(rate) || 0;
+  let numberOfBars = 0;
+  if (parsedRate >= 20) {
+    numberOfBars = 5;
+  } else if (parsedRate >= 15) {
+    numberOfBars = 4;
+  } else if (parsedRate >= 10) {
+    numberOfBars = 3;
+  } else if (parsedRate >= 5) {
+    numberOfBars = 2;
+  } else if (parsedRate >= 0) {
+    numberOfBars = 1;
+  }
+
+  // Color definition for bars
+  const barColors = ['#FFEB3B', '#FFC107', '#FF9800', '#F44336', '#D32F2F']; // Yellow -> Amber -> Orange -> Red -> Dark Red
+  // Height-varying bar characters
+  const barChars = "▃▅▇▉";
+
+  // Determine color for the rate number based on the last bar
+  let rateColor = Colors.lime; // Default color
+  if (numberOfBars > 0) {
+    rateColor = barColors[numberOfBars - 1]; // Color of the last bar
+  }
+
+  // Floating animation keyframes
+  const floatEffect = keyframes`
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-3px); }
+    100% { transform: translateY(0px); }
+  `;
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        maxWidth: "1000px",
+        minWidth: "150px", 
+      }}
+    >
+      <Typography
+        component="div"
+        sx={{
+          color: Colors.offwhite,
+          fontSize: "1.5em",
+          fontFamily: Fonts.headline,
+          fontWeight: 500,
+        }}
+      >
+        {label}
+      </Typography>
+
+      <Box
+        sx={{
+          backgroundColor: "transparent",
+          color: Colors.lime, 
+          fontWeight: "bold",
+          fontFamily: Fonts.headline,
+          fontSize: "2.5em",
+          height: "50px",
+          width: "220px", // Increased width to fit rate and bars
+          borderRadius: "36px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          transition: "all 0.3s ease",
+          animation: `${floatEffect} 3s ease-in-out infinite`, 
+          "& > span": {
+            marginTop: "-3px", 
+            display: 'flex', // Use flex to align rate and bars
+            alignItems: 'center', // Center items vertically
+            gap: '0.3em' // Add small gap between number and bars
+          },
+        }}
+      >
+        <span>
+          <span style={{ color: rateColor }}>{displayRate}</span>
+          {/* Display load bars based on scaled rate */} 
+          <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+            {Array.from({ length: numberOfBars }).map((_, index) => (
+              <span 
+                key={index} 
+                style={{ 
+                  display: 'inline-block', 
+                  color: barColors[index], 
+                  fontSize: '0.8em', 
+                  lineHeight: '1', 
+                }}
+              >
+                {barChars[index % barChars.length]}
+              </span>
+            ))}
+          </Box>
+        </span>
+      </Box>
+    </Box>
   );
 }
 

@@ -208,13 +208,31 @@ export function createOpenAICompatibleClient(config) {
                     timestamp: new Date().toISOString(),
                     status: response.status,
                     statusText: response.statusText,
-                    error: errorText
-                    
+                    error: errorText,
+                    model: modelName,
+                    requestParams: {
+                        temperature: options.temperature,
+                        max_tokens: options.max_tokens,
+                        top_p: options.top_p,
+                        frequency_penalty: options.frequency_penalty,
+                        presence_penalty: options.presence_penalty,
+                        stream: options.stream
+                    }
                 });
                 
                 // Simply throw the error with the original response
                 const error = new Error(`${providerName} API error: ${response.status} ${response.statusText}`);
                 error.response = { data: errorText, status: response.status };
+                error.model = modelName;
+                error.provider = providerName;
+                error.requestParams = {
+                    temperature: options.temperature,
+                    max_tokens: options.max_tokens,
+                    top_p: options.top_p,
+                    frequency_penalty: options.frequency_penalty,
+                    presence_penalty: options.presence_penalty,
+                    stream: options.stream
+                };
                 throw error;
             }
 

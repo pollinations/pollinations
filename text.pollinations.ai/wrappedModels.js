@@ -1,6 +1,7 @@
 // Import wrapper functions
 import wrapModelWithContext from "./wrapModelWithContext.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
+import generateTextMistral from "./generateTextMistral.js";
 
 // Import persona prompts
 import surSystemPrompt from "./personas/sur.js";
@@ -11,15 +12,10 @@ import evilPrompt from "./personas/evil.js";
 import hypnosisTracyPrompt from "./personas/hypnosisTracy.js";
 
 
-export const surOpenai = wrapModelWithContext(
-  surSystemPrompt,
-  generateTextPortkey,
-  "openai-large"
-);
 
 export const surMistral = wrapModelWithContext(
   surSystemPrompt,
-  generateTextPortkey,
+  generateTextMistral,
   "mistral"
 );
 
@@ -31,7 +27,7 @@ export const hypnosisTracy = wrapModelWithContext(
 
 export const unityMistralLarge = wrapModelWithContext(
   unityPrompt,
-  generateTextPortkey,
+  generateTextMistral,
   "mistral"
 );
 
@@ -49,6 +45,6 @@ export const rtist = wrapModelWithContext(
 
 export const evilCommandR = wrapModelWithContext(
   evilPrompt,
-  generateTextPortkey,
+  generateTextMistral,
   "mistral"
 ); 

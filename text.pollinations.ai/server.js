@@ -660,11 +660,10 @@ app.post('/', async (req, res) => {
 
 app.get('/openai/models', (req, res) => {
     const models = availableModels.map(model => ({
-        ...model,
         id: model.name,
         object: "model",
         created: Date.now(),
-        owned_by: model.name,
+        owned_by: model.provider,
     }));
     res.json({
         object: "list",

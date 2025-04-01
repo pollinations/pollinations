@@ -354,12 +354,40 @@ export async function sendErrorResponse(res, req, error, requestData, statusCode
         }
     }
 
-    errorLog('Error occurred: %O', errorResponse);
-    errorLog('Stack trace: %s', error.stack);
+    // Extract client information
+    const clientInfo = {
+        ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+        userAgent: req.headers['user-agent'] || 'unknown',
+        referer: req.headers['referer'] || 'unknown',
+        origin: req.headers['origin'] || 'unknown',
+    };
 
-    // Log detailed error information to stderr
-    // console.error('Error occurred:', JSON.stringify(errorResponse, null, 2));
-    // console.error('Stack trace:', error.stack);
+    // Extract request parameters (sanitized)
+    const sanitizedRequestData = requestData ? {
+        model: requestData.model || 'unknown',
+        temperature: requestData.temperature,
+        max_tokens: requestData.max_tokens,
+        top_p: requestData.top_p,
+        frequency_penalty: requestData.frequency_penalty,
+        presence_penalty: requestData.presence_penalty,
+        stream: requestData.stream,
+        referrer: requestData.referrer || 'unknown',
+        messageCount: requestData.messages ? requestData.messages.length : 0,
+        totalMessageLength: requestData.messages ? 
+            requestData.messages.reduce((total, msg) => 
+                total + (typeof msg.content === 'string' ? msg.content.length : 0), 0) : 0
+    } : 'no request data';
+
+    // Log comprehensive error information
+    errorLog('Error occurred:', {
+        error: errorResponse,
+        model: error.model || requestData?.model || 'unknown',
+        provider: error.provider || 'unknown',
+        clientInfo,
+        requestData: sanitizedRequestData,
+        requestParams: error.requestParams || {},
+        stack: error.stack
+    });
 
     // Track error event
     await sendToAnalytics(req, 'textGenerationError', {
@@ -761,7 +789,24 @@ async function generateTextBasedOnModel(messages, options) {
         
         return response;
     } catch (error) {
-        errorLog('Error in generateTextBasedOnModel:', error);
+        errorLog('Error in generateTextBasedOnModel:', {
+            error: error.message,
+            model: model,
+            provider: error.provider || 'unknown',
+            requestParams: {
+                ...options,
+                messages: options.messages ? 
+                    options.messages.map(m => ({ 
+                        role: m.role, 
+                        content: typeof m.content === 'string' ? 
+                            m.content.substring(0, 100) + (m.content.length > 100 ? '...' : '') : 
+                            '[non-string content]' 
+                    })) : 
+                    'none'
+            },
+            errorDetails: error.response?.data || null,
+            stack: error.stack
+        });
         
         // For streaming errors, return a special error response that can be streamed
         if (options.stream) {

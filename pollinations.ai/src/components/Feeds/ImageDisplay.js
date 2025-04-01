@@ -1,8 +1,7 @@
 import React, { memo } from "react"
-import { Typography, Link, Paper, useMediaQuery, useTheme } from "@mui/material"
+import { Typography, Link, useMediaQuery, useTheme } from "@mui/material"
 import PromptTooltip from "../PromptTooltip"
 import styled from "@emotion/styled"
-import { Colors } from "../../config/global"
 import { trackEvent } from "../../config/analytics"
 
 /**
@@ -33,10 +32,10 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
       sx={{
         display: "flex",
         flexDirection: "column",
-        alignItems: "center",
         position: "relative",
         boxShadow: "none",
         backgroundColor: "transparent",
+        width: "100%",
       }}
     >
       {image ? (
@@ -58,6 +57,7 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
 
 const ImageStyle = styled.img`
   height: 600px;
+  width: 100%;
   max-width: 100%;
   object-fit: contain;
 `

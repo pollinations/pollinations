@@ -9,9 +9,7 @@ import { Integration } from "./Integration"
 import { ImageContext } from "../utils/ImageContext"
 import Discord from "./Community"
 import Supporter from "./Supporter"
-import Team from "./Team"
 import News from "./News"
-// import { TextFeed } from "./TextFeed"
 
 export default function Home() {
   const [image, setImage] = useState(null)
@@ -21,13 +19,10 @@ export default function Home() {
       <Style>
         <Hero />
         <News />
-        {/* <FeedImage /> */}
-        {/* <FeedText /> */}
         <Feeds />
         <Projects />
         <Integration />
         <Discord />
-        {/* <Team /> */}
         <Supporter />
       </Style>
     </ImageContext.Provider>

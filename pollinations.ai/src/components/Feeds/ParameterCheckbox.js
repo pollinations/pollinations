@@ -35,8 +35,8 @@ export function ParameterCheckbox({
 }) {
   // Default styling constants
   const defaultStyles = {
-    backgroundColor: "transparent",
-    borderColor: Colors.gray2,
+    backgroundColor: Colors.offblack,
+    borderColor: Colors.lime,
     borderColorHover: Colors.lime,
     labelColor: `${Colors.offwhite}99`,
     checkboxColorOn: Colors.offwhite,
@@ -93,7 +93,8 @@ export function ParameterCheckbox({
           width: "100%",
           backgroundColor: mergedStyles.backgroundColor,
           transition: "border-color 0.2s ease",
-          border: `1px solid ${mergedStyles.borderColor}`,
+          border: `3px solid ${mergedStyles.borderColor}`,
+          borderRadius: "0.5em",
           "&:hover": {
             borderColor: mergedStyles.borderColorHover,
           }

@@ -6,7 +6,7 @@ import TextareaAutosize from "react-textarea-autosize";
 import ReactMarkdown from "react-markdown";
 
 const LabelStyle = {
-  color: `${Colors.offwhite}99`,
+  color: Colors.gray2,
   fontSize: '1em',
   fontFamily: Fonts?.parameter || 'inherit',
   marginBottom: '4px'
@@ -45,16 +45,18 @@ const StyledTextArea = styled(TextareaAutosize)`
 const PromptContainer = styled(Box, {
   shouldForwardProp: (prop) => prop !== 'isEditMode' && prop !== 'backgroundColor',
 })`
+  width: 100%; /* Explicitly set width to 100% */
   min-height: 130px;
   overflow-y: auto;
   overflow-x: hidden;
-  border: 1px solid ${Colors.gray2};
+  border: 3px solid ${Colors.gray2};
   transition: all 0.2s ease, border-color 0.3s ease;
   cursor: ${props => props.isEditMode ? 'text' : 'pointer'};
   /* Remove the default resize behavior */
   resize: none;
   position: relative;
-  background-color: ${props => props.backgroundColor || Colors.offblack};
+  background-color: ${Colors.offblack};
+  border-radius: 0.5em;
   
   /* Disable any browser-native resize handles */
   &::-webkit-resizer {
@@ -73,7 +75,7 @@ const PromptContainer = styled(Box, {
   
   &:hover {
     border-color: ${Colors.lime};
-    background-color: ${props => props.backgroundColor || Colors.offblack};
+    background-color: ${Colors.offblack};
   }
 
   &:focus-within {
@@ -91,8 +93,8 @@ const ResizeHandle = styled.div`
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 36px;
   cursor: nwse-resize;
   z-index: 10;
   pointer-events: auto;
@@ -107,9 +109,9 @@ const ResizeHandle = styled.div`
     width: 0;
     height: 0;
     border-style: solid;
-    border-width: 0 0 20px 20px;
+    border-width: 0 0 30px 30px;
     border-color: transparent transparent ${Colors.lime} transparent;
-    opacity: 0.7;
+    opacity: 1;
     transition: opacity 0.2s ease, border-width 0.2s ease;
   }
   
@@ -355,7 +357,7 @@ export function PromptDisplay({
           ref={containerRef}
           className="prompt-container"
           isEditMode={isEditMode}
-          backgroundColor={backgroundColor}
+          backgroundColor={Colors.offwhite}
           onClick={!isEditMode ? onEditModeSwitch : undefined}
           sx={isMobile ? { height: '200px !important' } : {}}
         >
@@ -380,7 +382,7 @@ export function PromptDisplay({
                   sx={{
                     fontFamily: Fonts.parameter,
                     fontSize: '1.1em',
-                    color: Colors.offwhite,
+                    color: Colors.offblack,
                     margin: 0,
                     lineHeight: '1.5em',
                     whiteSpace: 'pre-wrap',
@@ -398,7 +400,7 @@ export function PromptDisplay({
                           margin: 0,
                           fontFamily: Fonts.parameter,
                           fontSize: '1.1em',
-                          color: Colors.offwhite,
+                          color: Colors.offblack,
                           lineHeight: '1.5em',
                         }}
                         {...props}

@@ -24,13 +24,13 @@ import { trackEvent } from "../../config/analytics"
 // ─── PARAMETER STYLING CONSTANTS ────────────────────────────────────────────────
 // These can be adjusted to control the appearance of all parameter inputs
 const PARAM_STYLES = {
-  backgroundColor: Colors.offblack2,
-  textColor: Colors.offwhite,
-  borderColor: Colors.gray2,
+  backgroundColor: Colors.offwhite,
+  textColor: Colors.offblack,
+  borderColor: Colors.offblack,
   borderColorHover: Colors.lime,
   labelColor: `${Colors.offwhite}99`,
-  checkboxColorOn: Colors.offwhite,
-  checkboxColorOff: Colors.offwhite,
+  checkboxColorOn: Colors.offblack,
+  checkboxColorOff: Colors.offblack,
 }
 
 /**
@@ -256,7 +256,6 @@ export const ImageEditor = memo(function ImageEditor({
                 onFocus={handleFocus}
                 tooltipText={IMAGE_FEED_TOOLTIP_MODEL}
                 setIsInputChanged={setIsInputChanged}
-                styles={PARAM_STYLES}
               />
             </Grid>
 

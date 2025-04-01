@@ -40,7 +40,6 @@ export const SectionSubContainer = styled.div`
   background-color: ${(props) => props.backgroundColor || "transparent"};
   flex-direction: ${(props) => props.flexDirection || "column"};
   align-items: ${(props) => props.alignItems || "center"};
-  max-width: 900px;
   margin: 0;
   width: 100%;
   padding-bottom: ${(props) => props.paddingBottom || "3em"};

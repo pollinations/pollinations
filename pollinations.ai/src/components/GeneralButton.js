@@ -15,6 +15,7 @@ export const GeneralButton = React.forwardRef(function GeneralButton(
     style,
     children,
     isInputChanged,
+    borderRadius,
     ...rest
   },
   ref
@@ -28,7 +29,7 @@ export const GeneralButton = React.forwardRef(function GeneralButton(
     fontWeight: "normal",
     height: height || "auto",
     minHeight: height || "60px",
-    borderRadius: "0px",
+    borderRadius: borderRadius || "0px",
     padding: "0px 1em",
     transition: "all 0.3s ease",
     opacity: isLoading ? 0.7 : 1,

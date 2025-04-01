@@ -3,7 +3,7 @@
 export const SHOW_PROMPT_TOOLTIP = false; 
 
 export const Colors = {
-  lime: '#ecf874', //#37b9b0 #00afbf #ecf874 #226062 #54f0f4 #8fd4c3 rgb(13,242,201)
+  lime: '#ecf874', 
   offwhite: '#c7d4d6',
   offblack: '#110518', 
   offblack2: '#181a2c',
@@ -17,8 +17,6 @@ export const Fonts = {
   headline: 'Mako',
   parameter: 'Duru Sans',
 }
-
-//   headline: 'Monospace, monospace',
 
 // Step 1: Create a new mapping object for section backgrounds
 export const SectionBG = {

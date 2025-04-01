@@ -63,7 +63,8 @@ export const Feeds = () => {
             justifyContent: "center",
             alignItems: "center",
             marginBottom: "20px",
-            gap: '1em'
+            gap: '1em',
+            width: '100%'
           }}
           flexDirection={isMdUp ? "row" : "column"}
         >
@@ -76,9 +77,10 @@ export const Feeds = () => {
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             // Set these props directly which GeneralButton is designed to handle
-            backgroundColor={isHovered ? Colors.offblack : Colors.lime}
-            textColor={isHovered ? Colors.lime : Colors.offblack}
+            backgroundColor={isHovered ? Colors.lime : Colors.offblack}
+            textColor={isHovered ? Colors.offblack : Colors.lime}
             borderColor={Colors.lime}
+            borderRadius="0.5em"
             fontSize={isMdUp ? "8em" : "4em"}
             // Add custom style object with fixed width
             style={{
@@ -86,10 +88,11 @@ export const Feeds = () => {
               minWidth: isMdUp ? "400px" : "210px",
               width: "auto",
               maxWidth: "150px",
-              fontWeight: "normal",
+              fontWeight: "bold",
               maxHeight: "160px",
+              padding: "0.7em 1.8em",
               // Add box shadow on hover using the isHovered state
-              boxShadow: isHovered ? `0 0 10px ${Colors.lime}` : "none",
+              boxShadow: isHovered ? `0 0 10px ${Colors.offblack}` : "none",
               transition: "all 0.3s ease",
             }}
           >
@@ -105,10 +108,18 @@ export const Feeds = () => {
         </SectionSubContainer>
 
         {/* Conditional Feed Rendering */}
-        <Box style={{ display: activeMode === "image" ? "block" : "none" }}>
+        <Box sx={{ 
+          display: activeMode === "image" ? "block" : "none", 
+          width: '100%', 
+          alignSelf: 'stretch' 
+        }}>
           <ImageFeed />
         </Box>
-        <Box style={{ display: activeMode === "text" ? "block" : "none" }}>
+        <Box sx={{ 
+          display: activeMode === "text" ? "block" : "none",
+          width: '100%', 
+          alignSelf: 'stretch' 
+        }}>
           <TextFeed />
         </Box>
       </SectionMainContent>

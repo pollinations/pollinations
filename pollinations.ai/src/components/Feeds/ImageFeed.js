@@ -60,6 +60,19 @@ export const ImageFeed = memo(() => {
     }
   }, [toggleValue])
 
+  useEffect(() => {
+    if (toggleValue === "edit" && userEditedPrompt === null && image?.prompt) {
+      setUserEditedPrompt(image.prompt)
+    }
+  }, [toggleValue, userEditedPrompt, image])
+
+  // Add effect to update prompt when image changes in feed mode
+  useEffect(() => {
+    if (toggleValue === "feed" && image?.prompt && image !== slideshowImage) {
+      setUserEditedPrompt(image.prompt)
+    }
+  }, [toggleValue, image, slideshowImage])
+
   const effectiveImage = {
     width: 512,
     height: 512,
@@ -69,17 +82,11 @@ export const ImageFeed = memo(() => {
     model: "flux",
     ...(image || {}),
     ...(modifiedImageParams || {}),
-    prompt: toggleValue === "edit" && userEditedPrompt !== null
-      ? userEditedPrompt
-      : (modifiedImageParams?.prompt || image?.prompt || ""),
+    prompt:
+      toggleValue === "edit" && userEditedPrompt !== null
+        ? userEditedPrompt
+        : modifiedImageParams?.prompt || image?.prompt || "",
   }
-
-  useEffect(() => {
-    if (toggleValue === "edit" && userEditedPrompt === null && image?.prompt) {
-      setUserEditedPrompt(image.prompt);
-    }
-  }, [toggleValue, userEditedPrompt, image]);
-
 
   // Handlers
   const handleToggleChange = (event, newValue) => {
@@ -88,11 +95,10 @@ export const ImageFeed = memo(() => {
       stop(isEditMode)
       setToggleValue(newValue)
 
-      if (isEditMode && image && !editModeInitializedRef.current) {
+      if (isEditMode && image) {
         setModifiedImageParams({ ...image })
-        if (userEditedPrompt === null && image.prompt) {
-          setUserEditedPrompt(image.prompt)
-        }
+        // Always update the prompt when switching to edit mode
+        setUserEditedPrompt(image.prompt || "")
         editModeInitializedRef.current = true
       }
 
@@ -115,7 +121,7 @@ export const ImageFeed = memo(() => {
             prompt: value,
           }
         })
-        return;
+        return
       }
       setModifiedImageParams((prevParams) => {
         const baseParams = prevParams || (image ? { ...image } : {})
@@ -131,11 +137,10 @@ export const ImageFeed = memo(() => {
     [toggleValue, handleToggleChange, image]
   )
 
-
   // Rendering - REMOVED SectionContainer and SectionMainContent wrappers
   // REMOVED Title Section
   return (
-    <>
+    <Box>
       {/* Server Load Information */}
       <SectionSubContainer>
         <ServerLoadInfo
@@ -148,20 +153,22 @@ export const ImageFeed = memo(() => {
       {/* Subheading / LLM Banner */}
       <SectionSubContainer>
         <SectionHeadlineStyle>
-          <LLMTextManipulator
-            text={IMAGE_FEED_SUBTITLE}
-            transforms={[rephrase, emojify, noLink]}
-          />
+          <LLMTextManipulator text={IMAGE_FEED_SUBTITLE} transforms={[rephrase, emojify, noLink]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
 
       {/* Main Content Section */}
-      <SectionSubContainer paddingBottom="0em">
+      <SectionSubContainer 
+        paddingBottom="0em" 
+        alignItems="stretch"
+        sx={{ maxWidth: "900px" }}
+      >
         {image?.imageURL && (
           <Box
             sx={{
-              backgroundColor: "transparent",
-              width: "100%",
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
             }}
           >
             {/* Option Switch (Feed vs Edit) */}
@@ -176,7 +183,11 @@ export const ImageFeed = memo(() => {
             </Box>
 
             {/* Prompt Display */}
-            <Box width="100%" mb={2}>
+            <Box 
+              width="100%" 
+              maxWidth="1000px"
+              mb={2}
+            >
               <PromptDisplay
                 itemType="image"
                 item={image}
@@ -191,16 +202,17 @@ export const ImageFeed = memo(() => {
                 promptTooltip={IMAGE_FEED_TOOLTIP_PROMPT} // Use constant
                 backgroundColor={Colors.offblack2}
                 sharedPrompt={toggleValue === "edit" ? userEditedPrompt : undefined}
+                style={{ width: '100%', minWidth: '100%' }} // Force full width
               />
             </Box>
 
             {/* Image Editor Controls - Only in Edit Mode */}
             {toggleValue === "edit" && (
-              <Box paddingBottom="1em">
+              <Box width="100%" mb={2}>
                 <ImageEditor
                   image={{
                     ...effectiveImage,
-                    prompt: userEditedPrompt || modifiedImageParams?.prompt || image?.prompt || ""
+                    prompt: userEditedPrompt || modifiedImageParams?.prompt || image?.prompt || "",
                   }}
                   isLoading={isLoading}
                   setIsInputChanged={setIsInputChanged}
@@ -216,21 +228,24 @@ export const ImageFeed = memo(() => {
                 />
               </Box>
             )}
+            
+            {/* Image Display - moved inside the same Box as PromptDisplay */}
+            <Box width="100%" maxWidth="1000px">
+              <ImageDisplay image={image} isLoading={isLoading} />
+            </Box>
           </Box>
         )}
 
-        {/* If no image is currently available, show loader. Otherwise, display the loaded image. */}
-        {!image?.imageURL ? (
-          <SectionSubContainer>
+        {/* If no image is currently available, show loader. */}
+        {!image?.imageURL && (
+          <SectionSubContainer width="100%">
             <CircularProgress sx={{ color: Colors.lime }} />
           </SectionSubContainer>
-        ) : (
-          <ImageDisplay image={image} isLoading={isLoading}/>
         )}
 
         {/* If we're in "feed" mode and have an image, show model info. */}
         {toggleValue === "feed" && (
-          <SectionSubContainer paddingBottom="0em">
+          <SectionSubContainer paddingBottom="0em" width="100%">
             <br />
             {image?.imageURL && (
               <ModelInfo model={image.model} referrer={image.referrer} itemType="image" />
@@ -238,6 +253,6 @@ export const ImageFeed = memo(() => {
           </SectionSubContainer>
         )}
       </SectionSubContainer>
-    </> // Use fragment instead of removed wrappers
+    </Box>
   )
-}) 
+})

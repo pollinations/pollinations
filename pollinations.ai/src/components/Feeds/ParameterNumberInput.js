@@ -33,9 +33,9 @@ export function ParameterNumberInput({
 }) {
   // Default styling constants
   const defaultStyles = {
-    backgroundColor: "transparent",
+    backgroundColor: Colors.offblack,
     textColor: Colors.offwhite,
-    borderColor: Colors.gray2,
+    borderColor: Colors.lime,
     borderColorHover: Colors.lime,
     labelColor: `${Colors.offwhite}99`
   }
@@ -88,10 +88,11 @@ export function ParameterNumberInput({
       </CustomTooltip>
       <Box
         sx={{
-          border: `1px solid ${mergedStyles.borderColor}`,
+          border: `3px solid ${Colors.gray2}`,
+          borderRadius: "0.5em",
           height: "60px",
           transition: "border-color 0.2s ease",
-          backgroundColor: mergedStyles.backgroundColor,
+          backgroundColor: Colors.offblack2,
           "&:hover": {
             borderColor: mergedStyles.borderColorHover,
           },
@@ -107,13 +108,13 @@ export function ParameterNumberInput({
           onFocus={onFocus}
           onBlur={handleBlur}
           type="number"
+          textColor={Colors.offwhite}
+          borderColor={Colors.lime}
+
           InputProps={{
             sx: {
-              color: mergedStyles.textColor,
               fontSize: paramTextSize,
               fontFamily: Fonts.parameter,
-              borderRadius: "0px",
-              backgroundColor: "transparent",
               height: "60px",
               "& .MuiOutlinedInput-notchedOutline": {
                 border: "none"

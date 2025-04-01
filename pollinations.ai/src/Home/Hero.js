@@ -87,7 +87,7 @@ const Hero = () => {
       </SectionSubContainer>
       {/* <SvgArtGallery /> */}
       <SectionSubContainer>
-        <Grid container spacing={2} justifyContent={isMobile ? "center" : "flex-end"} width="100%">
+        <Grid container spacing={2} justifyContent={isMobile ? "center" : "flex-end"} >
           <Grid size={12}>
             <SectionHeadlineStyle
               maxWidth="1000px"

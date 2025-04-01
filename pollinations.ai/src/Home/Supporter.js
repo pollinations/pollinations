@@ -14,7 +14,6 @@ import { SUPPORTER_LIST } from "../config/supporterList"
 import StyledLink from "../components/StyledLink"
 import { useTheme, useMediaQuery } from "@mui/material"
 import Grid from "@mui/material/Grid2"
-import SvgArtGenerator from "../components/SvgArtGenerator"
 import { trackEvent } from "../config/analytics"
 
 const Supporter = () => {

@@ -2,10 +2,7 @@ import React, { useState, useEffect, memo, useCallback } from "react";
 import { Box, CircularProgress } from "@mui/material";
 import { Colors } from "../../config/global"; // Adjusted path
 import { SectionSubContainer, SectionHeadlineStyle } from "../SectionContainer"; // Adjusted path
-// Removed SectionContainer, SectionMainContent, SectionTitle imports
-// Removed SectionBG import as it's handled by the parent Feeds component
 import { TEXT_FEED_SUBTITLE, TEXT_FEED_MODE1, TEXT_FEED_MODE2 } from "../../config/copywrite"; // Adjusted path
-// Removed TEXT_FEED_TITLE
 import { emojify, rephrase, noLink } from "../../config/llmTransforms.js"; // Adjusted path
 import { LLMTextManipulator } from "../LLMTextManipulator.js"; // Adjusted path
 import { trackEvent } from "../../config/analytics"; // Adjusted path
@@ -150,7 +147,7 @@ export const TextFeed = memo(() => {
             }}
           >
             {/* Feed/Edit Toggle */}
-            <Box display="flex" justifyContent="center" mb={2} minWidth="400px">
+            <Box display="flex" justifyContent="center" mb={2} >
               <FeedEditSwitch
                 toggleValue={toggleValue}
                 handleToggleChange={handleToggleChange}

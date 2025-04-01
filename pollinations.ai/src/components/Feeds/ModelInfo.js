@@ -37,10 +37,10 @@ export function ModelInfo({ model, referrer, itemType = "text" }) {
     
     // If model not found in API data, format the ID nicely
     return {
-      name: model ? model
+      name: typeof model === 'string' ? model
         .split('-')
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ') : 'Unknown Model',
+        .join(' ') : (model ? String(model) : 'Unknown Model'),
       link: 'https://pollinations.ai',
     };
   };
@@ -57,7 +57,7 @@ export function ModelInfo({ model, referrer, itemType = "text" }) {
   return (
     <Box
       sx={{
-        color: Colors.offwhite,
+        color: Colors.offblack,
         fontSize: "1em",
         fontFamily: Fonts.parameter,
         display: "flex",

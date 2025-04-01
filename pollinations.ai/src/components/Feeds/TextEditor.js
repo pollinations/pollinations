@@ -13,20 +13,10 @@ import { noLink } from "../../config/llmTransforms";
 import { IMAGE_EDIT_BUTTON_OFF } from "../../config/copywrite";
 import { keyframes } from "@emotion/react";
 
-// ─── PARAMETER STYLING CONSTANTS ────────────────────────────────────────────────
-// These can be adjusted to control the appearance of all parameter inputs
-const PARAM_STYLES = {
-  backgroundColor: Colors.offblack2,
-  textColor: Colors.offwhite,
-  borderColor: Colors.gray2,
-  borderColorHover: Colors.lime,
-  labelColor: `${Colors.offwhite}99`,
-  checkboxColorOn: Colors.offwhite,
-  checkboxColorOff: Colors.offblack,
-}
+
 
 const LabelStyle = {
-  color: `${Colors.offwhite}99`,
+  color: Colors.offwhite,
   fontSize: '1em',
   fontFamily: Fonts?.parameter || 'inherit',
 };
@@ -129,7 +119,6 @@ export const TextEditor = ({
             }}
             isLoading={isLoading || modelsLoading}
             setIsInputChanged={handleInputChange}
-            styles={PARAM_STYLES}
           />
         </Box>
         

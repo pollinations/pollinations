@@ -9,17 +9,17 @@ import { useModels } from '../../utils/useModels';
 
 const defaultStyles = {
   // Main component colors
-  backgroundColor: "transparent",
-  textColor: Colors.offwhite,
-  borderColor: Colors.gray2,
+  backgroundColor: Colors.offwhite,
+  textColor: Colors.offblack,
+  borderColor: Colors.lime,
   borderColorHover: Colors.lime,
   labelColor: Colors.offwhite,
   
   // Menu dropdown colors
-  menuBackgroundColor: Colors.offblack,
-  menuHoverBackgroundColor: `${Colors.gray2}99`,
-  menuHoverTextColor: Colors.offwhite,
-  secondaryTextColor: `${Colors.lime}99`,
+  menuBackgroundColor: Colors.offwhite,
+  menuHoverBackgroundColor: `${Colors.lime}99`,
+  menuHoverTextColor: Colors.offblack,
+  secondaryTextColor: `${Colors.offblack}99`,
   
   // Scrollbar colors
   scrollbarColor: `${Colors.lime}99`,
@@ -87,8 +87,8 @@ const getMenuItemStyles = (styles) => ({
  * @param {function} props.onFocus - Callback when component gets focus
  * @param {string} props.tooltipText - Text for the tooltip
  * @param {function} props.setIsInputChanged - Function to set input changed state
- * @param {Object} props.buttonProps - Additional props for button
- * @param {Object} props.styles - Custom styling properties
+ * @param {Object} props.buttonProps - Additional props for button positioning or dimensions
+ * @param {Object} props.layoutProps - Layout props like width, position, etc.
  */
 export function ModelSelector({
   itemType = 'text',
@@ -99,10 +99,10 @@ export function ModelSelector({
   tooltipText,
   setIsInputChanged,
   buttonProps = {},
-  styles = {}
+  layoutProps = {}
 }) {
-  // Merge default styles with custom styles
-  const mergedStyles = { ...defaultStyles, ...styles }
+  // Use default styles for visual styling
+  const mergedStyles = defaultStyles;
   
   // Get styled component props
   const typographyStyles = getTypographyStyles(mergedStyles);
@@ -212,21 +212,22 @@ export function ModelSelector({
   
   // Render button with models in dropdown menu
   return (
-    <Box>
+    <Box {...layoutProps}>
       {tooltipComponent}
       <Box
         sx={{
-          border: `0.5px solid ${mergedStyles.borderColor}`,
+          border: `3px solid transparent`,
+          borderRadius: "0.5em",
           height: "60px",
           transition: "border-color 0.2s ease",
           backgroundColor: mergedStyles.backgroundColor,
           "&:hover": {
             borderColor: mergedStyles.borderColorHover,
-            border: `1px solid ${mergedStyles.borderColorHover}`,
+            border: `3px solid ${mergedStyles.borderColorHover}`,
           },
           "&:focus-within": {
             borderColor: mergedStyles.borderColorHover,
-            border: `1px solid ${mergedStyles.borderColorHover}`,
+            border: `3px solid ${mergedStyles.borderColorHover}`,
           },
           // Ensure all borders are visible
           position: "relative",
@@ -254,10 +255,10 @@ export function ModelSelector({
             fontFamily: Fonts.parameter,
             textTransform: "none",
             "&:hover": {
-              backgroundColor: mergedStyles.buttonHoverColor,
+              backgroundColor: mergedStyles.backgroundColor,
             },
             "&:active": {
-              backgroundColor: mergedStyles.buttonHoverColor,
+              backgroundColor: mergedStyles.backgroundColor,
             },
             border: "none",
             boxShadow: "none",

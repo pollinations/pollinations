@@ -20,7 +20,7 @@ const MODEL_MAPPING = {
     // 'openai-audio': 'gpt-4o-mini-audio-preview',
     'openai-audio': 'gpt-4o-audio-preview',
     'roblox-rp': 'gpt-4o-mini-roblox-rp', // Roblox roleplay model
-    'gemini': 'gemini-2.0-flash-lite-preview-02-05',
+    'gemini': 'gemini-2.5-pro-exp-03-25',
     'gemini-thinking': 'gemini-2.0-flash-thinking-exp-01-21',
     // Cloudflare models
     'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
@@ -304,7 +304,7 @@ export const portkeyConfig = {
     'gpt-4o-mini-roblox-rp': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_ROBLOX_API_KEY,
         process.env.AZURE_OPENAI_ROBLOX_ENDPOINT,
-        'gpt-4o-mini-roblox-rp'
+        'gpt-4o-mini'
     ),
     // Cloudflare model configurations
     '@cf/meta/llama-3.3-70b-instruct-fp8-fast': () => createCloudflareModelConfig(),
@@ -355,11 +355,20 @@ export const portkeyConfig = {
         'vertex-model-id': 'gemini-2.0-flash-lite',
         'strict-openai-compliance': 'false'
     }),
-    'gemini-2.0-flash-thinking-exp-01-21': () => ({
+    'gemini-2.5-pro-exp-03-25': () => ({
         provider: 'vertex-ai',
-        authKey: googleCloudAuth.getAccessToken, // Fix: use getAccessToken instead of getToken
+        authKey: googleCloudAuth.getAccessToken,
         'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
         'vertex-region': 'us-central1',
+        'vertex-model-id': 'gemini-2.5-pro-exp-03-25',
+        'strict-openai-compliance': 'false'
+    }),
+    'gemini-2.0-flash-thinking-exp-01-21': () => ({
+        provider: 'vertex-ai',
+        authKey: googleCloudAuth.getAccessToken, 
+        'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
+        'vertex-region': 'us-central1',
+        'vertex-model-id': 'gemini-2.0-flash-thinking',
         'strict-openai-compliance': 'false'
     }),
 };

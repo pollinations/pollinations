@@ -140,4 +140,5 @@ ${teachings}
 ${personaPrompt}
 `;
 
+// console.log(surSystemPrompt);
 export default surSystemPrompt;

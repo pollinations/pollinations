@@ -10,7 +10,8 @@
     "test:file:verbose": "DEBUG=pollinations:* NODE_ENV=test ava --verbose",
     "test:pattern": "DEBUG=pollinations:* NODE_ENV=test ava --verbose",
     "coverage": "NODE_ENV=test c8 --reporter=text --reporter=html ava --verbose test/server.test.js test/generateText.test.js",
-    "start": "node startServer.js"
+    "start": "node startServer.js",
+    "debug": "clear &&DEBUG=* nodemon startServer.js"
   },
   "keywords": [],
   "author": "",

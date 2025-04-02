@@ -55,7 +55,7 @@ const PromptContainer = styled(Box, {
   /* Remove the default resize behavior */
   resize: none;
   position: relative;
-  background-color: ${Colors.offblack};
+  background-color: ${Colors.offblack2};
   border-radius: 0.5em;
   
   /* Disable any browser-native resize handles */
@@ -75,7 +75,6 @@ const PromptContainer = styled(Box, {
   
   &:hover {
     border-color: ${Colors.lime};
-    background-color: ${Colors.offblack};
   }
 
   &:focus-within {
@@ -357,7 +356,6 @@ export function PromptDisplay({
           ref={containerRef}
           className="prompt-container"
           isEditMode={isEditMode}
-          backgroundColor={Colors.offwhite}
           onClick={!isEditMode ? onEditModeSwitch : undefined}
           sx={isMobile ? { height: '200px !important' } : {}}
         >
@@ -382,7 +380,7 @@ export function PromptDisplay({
                   sx={{
                     fontFamily: Fonts.parameter,
                     fontSize: '1.1em',
-                    color: Colors.offblack,
+                    color: Colors.offwhite,
                     margin: 0,
                     lineHeight: '1.5em',
                     whiteSpace: 'pre-wrap',
@@ -400,7 +398,7 @@ export function PromptDisplay({
                           margin: 0,
                           fontFamily: Fonts.parameter,
                           fontSize: '1.1em',
-                          color: Colors.offblack,
+                          color: Colors.offwhite,
                           lineHeight: '1.5em',
                         }}
                         {...props}

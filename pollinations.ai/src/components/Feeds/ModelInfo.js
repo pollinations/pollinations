@@ -57,7 +57,7 @@ export function ModelInfo({ model, referrer, itemType = "text" }) {
   return (
     <Box
       sx={{
-        color: Colors.offblack,
+        color: Colors.offwhite,
         fontSize: "1em",
         fontFamily: Fonts.parameter,
         display: "flex",

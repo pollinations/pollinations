@@ -173,7 +173,6 @@ export const TextFeed = memo(() => {
                 promptTooltip="Prompt"
                 sharedPrompt={sharedPrompt}
                 setSharedPrompt={setSharedPrompt}
-                backgroundColor={Colors.offblack2}
               />
             </Box>
 

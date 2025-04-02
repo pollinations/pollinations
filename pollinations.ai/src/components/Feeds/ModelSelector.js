@@ -6,75 +6,6 @@ import { LLMTextManipulator } from '../LLMTextManipulator';
 import { emojify, rephrase, noLink } from '../../config/llmTransforms';
 import { useModels } from '../../utils/useModels';
 
-
-const defaultStyles = {
-  // Main component colors
-  backgroundColor: Colors.offwhite,
-  textColor: Colors.offblack,
-  borderColor: Colors.lime,
-  borderColorHover: Colors.lime,
-  labelColor: Colors.offwhite,
-  
-  // Menu dropdown colors
-  menuBackgroundColor: Colors.offwhite,
-  menuHoverBackgroundColor: `${Colors.lime}99`,
-  menuHoverTextColor: Colors.offblack,
-  secondaryTextColor: `${Colors.offblack}99`,
-  
-  // Scrollbar colors
-  scrollbarColor: `${Colors.lime}99`,
-  scrollbarHoverColor: Colors.lime,
-  scrollbarTrackColor: Colors.offblack,
-  
-  // Button state colors
-  buttonHoverColor: Colors.offblack,
-}
-
-// Typography style for label
-const getTypographyStyles = (styles) => ({
-  label: {
-    color: styles.labelColor,
-    fontSize: '1em',
-    fontFamily: Fonts.parameter,
-  },
-});
-
-// Button style for model selector
-const getButtonStyles = (styles) => ({
-  base: {
-    color: styles.textColor,
-    width: '100%',
-    justifyContent: 'flex-start',
-    height: '60px',
-    border: 'none',
-  },
-  responsiveFontSize: {
-    fontSize: { xs: '1.2em', md: '1.1em' },
-  },
-});
-
-// Menu items hover style
-const getMenuItemHover = (styles) => ({
-  '&:hover': {
-    backgroundColor: styles.menuHoverBackgroundColor,
-    color: styles.menuHoverTextColor,
-  },
-});
-
-// Menu item shared styles - extract to a constant for reuse
-const getMenuItemStyles = (styles) => ({
-  color: styles.textColor,
-  backgroundColor: styles.menuBackgroundColor,
-  fontFamily: Fonts.parameter,
-  fontSize: '1.1em',
-  padding: '10px 16px',
-  minHeight: '44px',
-  whiteSpace: 'normal',
-  wordBreak: 'break-word',
-  lineHeight: '1.4',
-  ...getMenuItemHover(styles),
-});
-
 /**
  * Shared ModelSelector component for both image and text feeds
  * Uses a unified UI dropdown pattern for both types
@@ -101,14 +32,6 @@ export function ModelSelector({
   buttonProps = {},
   layoutProps = {}
 }) {
-  // Use default styles for visual styling
-  const mergedStyles = defaultStyles;
-  
-  // Get styled component props
-  const typographyStyles = getTypographyStyles(mergedStyles);
-  const buttonStyles = getButtonStyles(mergedStyles);
-  const menuItemStyles = getMenuItemStyles(mergedStyles);
-
   // Menu state
   const [open, setOpen] = React.useState(false);
   const anchorRef = React.useRef(null);
@@ -126,7 +49,6 @@ export function ModelSelector({
     if (anchorRef.current && anchorRef.current.contains(event.target)) {
       return;
     }
-
     setOpen(false);
   };
 
@@ -155,7 +77,6 @@ export function ModelSelector({
     if (prevOpen.current === true && open === false) {
       anchorRef.current.focus();
     }
-
     prevOpen.current = open;
   }, [open]);
   
@@ -165,14 +86,10 @@ export function ModelSelector({
   // Get display name for current model
   const getDisplayName = () => {
     if (!currentModel) return "";
-    
     const foundModel = models?.find(m => m.id === currentModel);
     if (foundModel) {
-      // Return the model name as is
       return foundModel.name;
     }
-    
-    // Fallback to ID
     return currentModel;
   };
   
@@ -186,13 +103,12 @@ export function ModelSelector({
           <Typography component="span" sx={{ fontWeight: 'bold' }}>
             {displayName.split('(')[0].trim()}
           </Typography>
-          <Typography component="span" sx={{ color: mergedStyles.secondaryTextColor }}>
+          <Typography component="span" sx={{ color: `${Colors.offblack}99` }}>
             {' '}({displayName.split('(')[1]}
           </Typography>
         </Box>
       );
     }
-    
     return displayName;
   };
   
@@ -202,34 +118,34 @@ export function ModelSelector({
       title={<LLMTextManipulator text={tooltipText} transforms={[rephrase, emojify, noLink]} />}
       interactive
     >
-      <Typography component="div" variant="body" sx={typographyStyles.label}>
+      <Typography sx={{ color: Colors.gray2, fontSize: '1em', fontFamily: Fonts.parameter }}>
         Model
       </Typography>
     </CustomTooltip>
   ) : (
-    <Typography sx={typographyStyles.label}>Model</Typography>
+    <Typography sx={{ color: Colors.gray2, fontSize: '1em', fontFamily: Fonts.parameter }}>
+      Model
+    </Typography>
   );
   
-  // Render button with models in dropdown menu
   return (
     <Box {...layoutProps}>
       {tooltipComponent}
       <Box
         sx={{
-          border: `3px solid transparent`,
+          border: `3px solid ${Colors.gray2}`,
           borderRadius: "0.5em",
           height: "60px",
           transition: "border-color 0.2s ease",
-          backgroundColor: mergedStyles.backgroundColor,
+          backgroundColor: Colors.offblack2,
           "&:hover": {
-            borderColor: mergedStyles.borderColorHover,
-            border: `3px solid ${mergedStyles.borderColorHover}`,
+            borderColor: Colors.lime,
+            border: `3px solid ${Colors.lime}`,
           },
           "&:focus-within": {
-            borderColor: mergedStyles.borderColorHover,
-            border: `3px solid ${mergedStyles.borderColorHover}`,
+            borderColor: Colors.lime,
+            border: `3px solid ${Colors.lime}`,
           },
-          // Ensure all borders are visible
           position: "relative",
           zIndex: 0,
           overflow: "hidden"
@@ -246,20 +162,17 @@ export function ModelSelector({
           disabled={isLoading || modelsLoading}
           disableRipple={true}
           sx={{
-            ...buttonStyles.base,
-            ...buttonStyles.responsiveFontSize,
+            color: Colors.offwhite,
+            width: '100%',
+            justifyContent: 'flex-start',
+            height: '60px',
+            border: 'none',
             borderRadius: "0px",
             height: "56px",
             margin: "2px",
             width: "calc(100% - 4px)",
             fontFamily: Fonts.parameter,
             textTransform: "none",
-            "&:hover": {
-              backgroundColor: mergedStyles.backgroundColor,
-            },
-            "&:active": {
-              backgroundColor: mergedStyles.backgroundColor,
-            },
             border: "none",
             boxShadow: "none",
             overflow: "hidden",
@@ -267,6 +180,10 @@ export function ModelSelector({
             whiteSpace: "nowrap",
             paddingLeft: "12px",
             paddingRight: "12px",
+            fontSize: { xs: '1.2em', md: '1.1em' },
+            '&:hover': {
+              backgroundColor: 'transparent',
+            },
             ...buttonProps
           }}
         >
@@ -294,33 +211,36 @@ export function ModelSelector({
           >
             <Paper
               sx={{
-                backgroundColor: mergedStyles.menuBackgroundColor,
                 maxHeight: '300px',
                 minWidth: anchorRef.current ? anchorRef.current.offsetWidth : '200px',
                 width: 'auto',
                 maxWidth: '500px',
                 overflowY: 'auto',
                 overflowX: 'hidden',
-                '&::-webkit-scrollbar': {
-                  width: '6px',
-                  backgroundColor: mergedStyles.scrollbarTrackColor,
-                },
-                '&::-webkit-scrollbar-track': {
-                  backgroundColor: mergedStyles.scrollbarTrackColor,
-                },
-                '&::-webkit-scrollbar-thumb': {
-                  backgroundColor: mergedStyles.scrollbarColor,
-                  borderRadius: '0',
-                  border: 'none',
-                  '&:hover': {
-                    backgroundColor: mergedStyles.scrollbarHoverColor,
-                  },
-                },
-                scrollbarWidth: 'medium',
-                scrollbarColor: `${mergedStyles.scrollbarColor} ${mergedStyles.scrollbarTrackColor}`,
                 elevation: 0,
                 boxShadow: 'none',
-                border: 'none',
+                /* Hide scrollbar for Chrome, Safari and Opera */
+                '&::-webkit-scrollbar': {
+                  width: '20px',
+                  background: 'transparent',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  backgroundColor: 'transparent',
+                },
+                /* Show scrollbar on hover for Chrome, Safari and Opera */
+                '&:hover::-webkit-scrollbar-thumb': {
+                  backgroundColor: `${Colors.lime}60`,
+                  borderRadius: '4px',
+                },
+                /* Hide scrollbar for IE, Edge and Firefox */
+                msOverflowStyle: 'none',  /* IE and Edge */
+                scrollbarWidth: 'none',     /* Firefox */
+                /* Show scrollbar on hover for Firefox */
+                '&:hover': {
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: `${Colors.lime}60 transparent`,
+                  borderColor: `${Colors.lime}`,
+                },
               }}
             >
               <ClickAwayListener onClickAway={handleClose}>
@@ -331,7 +251,7 @@ export function ModelSelector({
                   onKeyDown={handleListKeyDown}
                   sx={{
                     textAlign: "left",
-                    backgroundColor: mergedStyles.menuBackgroundColor,
+                    backgroundColor: Colors.offblack2,
                     fontFamily: Fonts.parameter,
                     padding: "8px",
                   }}
@@ -344,20 +264,33 @@ export function ModelSelector({
                       </Box>
                     </MenuItem>
                   ) : availableModelsList.length > 0 ? (
-                    // Display available models from the API
                     availableModelsList.map(modelOption => (
                       <MenuItem
                         key={modelOption.id}
                         onClick={handleMenuItemClick(modelOption.id)}
                         disableRipple={true}
-                        sx={menuItemStyles}
+                        sx={{
+                          color: Colors.offwhite,
+                          backgroundColor: Colors.offblack2,
+                          fontFamily: Fonts.parameter,
+                          fontSize: '1.1em',
+                          padding: '10px 16px',
+                          minHeight: '44px',
+                          whiteSpace: 'normal',
+                          wordBreak: 'break-word',
+                          lineHeight: '1.4',
+                          '&:hover': {
+                            backgroundColor: Colors.lime,
+                            color: Colors.offblack,
+                          },
+                        }}
                       >
                         {modelOption.name.includes('(') ? (
                           <Box>
                             <Typography component="span" sx={{ fontWeight: 'bold' }}>
                               {modelOption.name.split('(')[0].trim()}
                             </Typography>
-                            <Typography component="span" sx={{ color: mergedStyles.secondaryTextColor }}>
+                            <Typography component="span" sx={{ color: `${Colors.gray2}` }}>
                               {' '}({modelOption.name.split('(')[1]}
                             </Typography>
                           </Box>
@@ -367,8 +300,14 @@ export function ModelSelector({
                       </MenuItem>
                     ))
                   ) : (
-                    // No models available
-                    <MenuItem disabled sx={menuItemStyles}>
+                    <MenuItem disabled sx={{
+                      color: Colors.offwhite,
+                      backgroundColor: Colors.offblack,
+                      fontFamily: Fonts.parameter,
+                      fontSize: '1.1em',
+                      padding: '10px 16px',
+                      minHeight: '44px',
+                    }}>
                       No models available
                     </MenuItem>
                   )}

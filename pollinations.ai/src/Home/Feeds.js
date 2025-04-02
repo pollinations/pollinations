@@ -88,7 +88,6 @@ export const Feeds = () => {
               minWidth: isMdUp ? "400px" : "210px",
               width: "auto",
               maxWidth: "150px",
-              fontWeight: "bold",
               maxHeight: "160px",
               padding: "0.7em 1.8em",
               // Add box shadow on hover using the isHovered state
@@ -96,11 +95,7 @@ export const Feeds = () => {
               transition: "all 0.3s ease",
             }}
           >
-            {/* Text changes based on hover state */}
-            {isHovered 
-              ? `${activeMode === "image" ? "Text" : "Image"}` // Show target mode when hovered
-              : `${activeMode === "image" ? "Image" : "Text"}` // Show current mode normally
-            }
+            {activeMode === "text" ? "text" : "image"}
           </GeneralButton>
           <SectionTitleStyle>
               Feed

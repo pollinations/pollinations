@@ -35,20 +35,19 @@ export function ParameterCheckbox({
 }) {
   // Default styling constants
   const defaultStyles = {
-    backgroundColor: Colors.offblack,
-    borderColor: Colors.lime,
+    backgroundColor: Colors.offblack2,
+    borderColor: Colors.gray2,
     borderColorHover: Colors.lime,
-    labelColor: `${Colors.offwhite}99`,
+    labelColor: Colors.gray2,
     checkboxColorOn: Colors.offwhite,
-    checkboxColorOff: Colors.offblack
+    checkboxColorOff: Colors.offwhite
   }
   
-  // Merge default styles with custom styles
-  const mergedStyles = { ...defaultStyles, ...styles }
+
   
   const typographyStyles = {
     label: {
-      color: mergedStyles.labelColor,
+      color: defaultStyles.labelColor,
       fontSize: "1em",
       fontFamily: Fonts.parameter,
       textAlign: "center",
@@ -91,12 +90,12 @@ export function ParameterCheckbox({
           alignItems: "center",
           height: "60px",
           width: "100%",
-          backgroundColor: mergedStyles.backgroundColor,
+          backgroundColor: defaultStyles.backgroundColor,
           transition: "border-color 0.2s ease",
-          border: `3px solid ${mergedStyles.borderColor}`,
+          border: `3px solid ${defaultStyles.borderColor}`,
           borderRadius: "0.5em",
           "&:hover": {
-            borderColor: mergedStyles.borderColorHover,
+            borderColor: defaultStyles.borderColorHover,
           }
         }}
       >
@@ -108,7 +107,7 @@ export function ParameterCheckbox({
           icon={
             <CheckBoxOutlineBlankIcon
               sx={{
-                color: mergedStyles.checkboxColorOff,
+                color: defaultStyles.checkboxColorOff,
                 fontSize: "1.8em",
                 padding: "2px"
               }}
@@ -117,7 +116,7 @@ export function ParameterCheckbox({
           checkedIcon={
             <CheckIcon
               sx={{
-                color: mergedStyles.checkboxColorOn,
+                color: defaultStyles.checkboxColorOn,
                 fontSize: "1.8em",
                 padding: "2px"
               }}

@@ -8,7 +8,7 @@ const ResponseContainer = styled(Paper)`
   padding: 20px;
   margin-bottom: 20px;
   background-color: ${Colors.offblack};
-  border: 1px solid ${Colors.lime}40;
+  border: 0px solid ${Colors.lime}40;
   border-radius: 0px;
   width: 100%;
   max-width: 1000px;

@@ -32,53 +32,21 @@ export const useModels = (modelType = 'text') => {
           let processedModels = [];
           
           if (Array.isArray(data)) {
-            // New API format: array of objects with name, type, description, etc.
+            // Process all models
             processedModels = data
-              .filter(model => 
-                // Filter out audio models and non-chat models
-                model && typeof model === 'object' && 
-                model.name && 
-                model.type === 'chat' && 
-                !model.name.includes('audio')
-              )
               .map(model => ({
                 id: model.name,
-                name: model.description ? 
-                  `${model.name} (${model.description})` : 
-                  model.name,
+                name: model.description ? `${model.name} - ${model.description}` : model.name,
                 details: model
               }));
-          } else if (typeof data === 'object' && data !== null) {
-            // Legacy format (object with keys as model IDs)
-            const modelIds = Object.keys(data).filter(key => 
-              key !== 'voices' && key !== 'metadata'
-            );
-            
-            processedModels = modelIds
-              .filter(id => !id.includes('audio') && !id.includes('tts'))
-              .map(id => ({
-                id,
-                name: id,
-                details: data[id]
-              }));
-          } else {
-            console.warn("Unexpected model data format:", data);
-            throw new Error("Unexpected model data format");
           }
           
-          // Sort models: baseModels first, then alphabetically
-          processedModels.sort((a, b) => {
-            // First sort by baseModel (if available)
-            if (a.details?.baseModel && !b.details?.baseModel) return -1;
-            if (!a.details?.baseModel && b.details?.baseModel) return 1;
-            
-            // Then sort alphabetically
-            return a.name.localeCompare(b.name);
-          });
+          // Sort models alphabetically
+          processedModels.sort((a, b) => a.name.localeCompare(b.name));
           
           setModels(processedModels);
         } else {
-          // Process image models - simple array of strings
+          // Process image models
           if (Array.isArray(data)) {
             const imageModels = data.map(modelId => ({
               id: modelId,

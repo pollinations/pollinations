@@ -5,9 +5,15 @@ import debug from 'debug';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
+import { Command } from 'commander';
+import dns from 'dns';
+import { promisify } from 'util';
+
+// Promisify DNS lookup
+const dnsReverse = promisify(dns.reverse);
 
 // Load environment variables for feed password
-dotenv.config();
+dotenv.config();    
 
 const log = debug('pollinations:filter');
 debug.enable('pollinations:filter');
@@ -102,16 +108,27 @@ const trackTokensByReferrer = (referrer, tokenData) => {
 const trackIpAddress = (ip) => {
     if (!ip) return;
     
-    // Truncate IP for privacy (keep only first parts)
-    const truncatedIp = ip;
+    // Store the full IP
+    const fullIp = ip;
     
-    if (!stats.ips[truncatedIp]) {
-        stats.ips[truncatedIp] = {
+    if (!stats.ips[fullIp]) {
+        stats.ips[fullIp] = {
             requests: 1,
             tokens: 0
         };
     } else {
-        stats.ips[truncatedIp].requests++;
+        stats.ips[fullIp].requests++;
+    }
+};
+
+// Helper function to resolve IP to hostname - only called for top IPs when printing stats
+const resolveIpToHostname = async (ip) => {
+    try {
+        const hostnames = await dnsReverse(ip);
+        return hostnames && hostnames.length > 0 ? hostnames[0] : null;
+    } catch (error) {
+        // Silently fail if resolution doesn't work
+        return null;
     }
 };
 
@@ -119,9 +136,9 @@ const trackIpAddress = (ip) => {
 const updateIpTokenUsage = (ip, tokens) => {
     if (!ip || !tokens) return;
     
-    const truncatedIp = ip;
-    if (stats.ips[truncatedIp]) {
-        stats.ips[truncatedIp].tokens += tokens;
+    const fullIp = ip;
+    if (stats.ips[fullIp]) {
+        stats.ips[fullIp].tokens += tokens;
     }
 };
 
@@ -163,14 +180,38 @@ const matchesFilters = (data, options = {}) => {
     const { response, parameters, isPrivate } = data;
     const referrer = parameters?.referrer;
 
+    // Check for Roblox first - this is a hard filter that applies to all messages
+    // regardless of other filters
+    if (!options.roblox) {
+        // Check referrer, model name, and system prompt for Roblox
+        const isRobloxReferrer = referrer && referrer.toLowerCase().includes('roblox');
+        const isRobloxModel = parameters?.model && 
+            (parameters.model.toLowerCase().includes('roblox') || parameters.model === 'roblox-rp');
+        
+        if (isRobloxReferrer || isRobloxModel) {
+            return false;
+        }
+    }
+
     // Filter by privacy status
     if (options.onlyPrivate && !isPrivate) return false;
     if (options.onlyPublic && isPrivate) return false;
 
-    if (options.noRoblox && referrer && referrer.toLowerCase().includes('roblox')) return false;
+    // NEW: Filter out based on referrer substrings
+    if (options.excludeReferrerSubstring && options.excludeReferrerSubstring.length > 0) {
+        if (referrer) { // Only check if referrer exists
+            const lowerCaseReferrer = referrer.toLowerCase();
+            for (const substring of options.excludeReferrerSubstring) {
+                if (lowerCaseReferrer.includes(substring.toLowerCase())) {
+                    return false; // Exclude if any substring matches
+                }
+            }
+        }
+    }
 
+    // Filter IN based on specific referrer value/regex
     if (options.referrer !== undefined) {
-        if (options.referrer === false && referrer) return false;
+        if (options.referrer === false && referrer) return false; // --no-referrer
         if (options.referrer instanceof RegExp && (!referrer || !options.referrer.test(referrer))) return false;
         if (typeof options.referrer === 'string' && referrer !== options.referrer) return false;
     }
@@ -186,7 +227,7 @@ const matchesFilters = (data, options = {}) => {
 };
 
 // Print current stats
-const printStats = () => {
+const printStats = async () => {
     log('\nStats:');
     log(`Total messages: ${stats.total}`);
     log(`Public messages: ${stats.public} (${calculatePercentage(stats.public, stats.total)})`);
@@ -245,91 +286,97 @@ const printStats = () => {
     // Print top IP statistics - only one list sorted by requests
     if (Object.keys(stats.ips).length > 0) {
         log('\nTop IP Addresses by Requests:');
-        const topIpsByRequests = getTopNItems(stats.ips, TOP_IPS_COUNT, 'requests');
-        Object.entries(topIpsByRequests).forEach(([ip, data]) => {
-            log(`${ip}: ${data.requests.toLocaleString()} requests, ${data.tokens.toLocaleString()} tokens`);
+        const topIps = getTopNItems(stats.ips, TOP_IPS_COUNT, 'requests');
+        
+        // Resolve hostnames for top IPs only when displaying stats
+        const resolvePromises = Object.keys(topIps).map(async (ip) => {
+            const hostname = await resolveIpToHostname(ip);
+            const hostnameInfo = hostname ? ` (${hostname})` : '';
+            log(`${ip}${hostnameInfo}: ${topIps[ip].requests} requests, ${topIps[ip].tokens.toLocaleString()} tokens`);
         });
+        
+        // Wait for all resolutions to complete before continuing
+        await Promise.all(resolvePromises);
     }
     
     log('-'.repeat(30));
 };
 
 // Main function to start the feed listener
-const startFeedListener = (options = {}) => {
+const startFeedListener = async (options = {}) => {
     // Determine which feed URL to use based on options
     let baseUrl = options.baseUrl || 'https://text.pollinations.ai';
     let feedUrl = `${baseUrl}/feed`;
-    
-    // If private feed access is requested, check for password
-    if (options.includePrivate || options.onlyPrivate) {
-        const password = options.password || process.env.FEED_PASSWORD;
-        
-        if (password) {
-            feedUrl = `${baseUrl}/feed?password=${encodeURIComponent(password)}`;
-            log('Using authenticated feed (includes private messages)');
-        } else {
-            log('WARNING: Private messages requested but no password provided');
-            log('Set password with --password or FEED_PASSWORD in .env file');
-        }
+     
+    // Check for password first (from options or environment)
+    const password = options.password || process.env.FEED_PASSWORD;
+
+    // If a password is provided, use the authenticated feed URL
+    if (password) {
+        feedUrl = `${baseUrl}/feed?password=${encodeURIComponent(password)}`;
+        log('Using authenticated feed (includes private messages)');
     }
-    
+     
     log(`Connecting to feed at ${feedUrl.replace(/password=([^&]+)/, 'password=[REDACTED]')}`);
     const eventSource = new EventSource.EventSource(feedUrl);
     
-    eventSource.onmessage = (event) => {
+    eventSource.onmessage = async (event) => {
         try {
             const data = JSON.parse(event.data);
             
-            // If JSON logging is enabled, save the raw data
-            if (options.jsonOutputFile) {
-                // Extract only the metadata and numerical information we need
-                const { parameters, response, isPrivate, ip } = data;
-                
-                const messageData = {
-                    timestamp: new Date().toISOString(),
-                    isPrivate: isPrivate || false,
-                    truncatedIp: ip ? ip : 'unknown',
-                    metadata: {
-                        referrer: parameters?.referrer || 'unknown',
-                        model: parameters?.model || 'unknown',
-                        isRobloxReferrer: parameters?.referrer?.toLowerCase().includes('roblox') || false,
-                        isImagePollinationsReferrer: parameters?.isImagePollinationsReferrer || false
-                    },
-                    stats: {
-                        promptTokens: parameters?.prompt_tokens || 0,
-                        completionTokens: parameters?.completion_tokens || 0,
-                        totalTokens: parameters?.total_tokens || 0,
-                        promptLength: {
-                            characters: parameters?.messages 
-                                ? parameters.messages.reduce((sum, msg) => sum + (msg.content?.length || 0), 0) 
-                                : 0,
-                            words: parameters?.messages 
-                                ? parameters.messages.reduce((sum, msg) => sum + (msg.content?.split(/\s+/).length || 0), 0) 
-                                : 0
-                        },
-                        completionLength: {
-                            characters: response?.length || 0,
-                            words: response?.split(/\s+/).length || 0
-                        },
-                        hasMarkdown: hasMarkdown(response || ''),
-                        hasHtml: hasHtml(response || ''),
-                        // Attempt to detect if the message is a roleplay based on asterisks
-                        isRoleplay: /\*.+\*/.test(response || '') || parameters?.messages?.some(msg => /\*.+\*/.test(msg.content || '')) || false
-                    },
-                    // Store the first 100 chars of system message if available (for prompt analysis)
-                    systemPromptPreview: parameters?.messages?.find(msg => msg.role === 'system')?.content?.substring(0, 100) || null
-                };
-                
-                // Save to our array
-                rawMessageData.push(messageData);
-                
-                // Write to file periodically to avoid memory issues
-                if (rawMessageData.length % 10 === 0) {
-                    writeDataToJson(options.jsonOutputFile);
-                }
-            }
-            
+            // Check filters FIRST
             if (matchesFilters(data, options)) {
+                
+                // If JSON logging is enabled AND the message passes filters, save the raw data
+                if (options.jsonOutputFile) {
+                    // Extract only the metadata and numerical information we need
+                    const { parameters, response, isPrivate, ip } = data;
+                    
+                    const messageData = {
+                        timestamp: new Date().toISOString(),
+                        isPrivate: isPrivate || false,
+                        ip: ip ? ip : 'unknown',
+                        metadata: {
+                            referrer: parameters?.referrer || 'unknown',
+                            model: parameters?.model || 'unknown',
+                            isRobloxReferrer: parameters?.referrer?.toLowerCase().includes('roblox') || false,
+                            isImagePollinationsReferrer: parameters?.isImagePollinationsReferrer || false
+                        },
+                        stats: {
+                            promptTokens: parameters?.prompt_tokens || 0,
+                            completionTokens: parameters?.completion_tokens || 0,
+                            totalTokens: parameters?.total_tokens || 0,
+                            promptLength: {
+                                characters: parameters?.messages 
+                                    ? parameters.messages.reduce((sum, msg) => sum + (msg.content?.length || 0), 0) 
+                                    : 0,
+                                words: parameters?.messages 
+                                    ? parameters.messages.reduce((sum, msg) => sum + (msg.content?.split(/\s+/).length || 0), 0) 
+                                    : 0
+                            },
+                            completionLength: {
+                                characters: response?.length || 0,
+                                words: response?.split(/\s+/).length || 0
+                            },
+                            hasMarkdown: hasMarkdown(response || ''),
+                            hasHtml: hasHtml(response || ''),
+                            // Attempt to detect if the message is a roleplay based on asterisks
+                            isRoleplay: /\*.+\*/.test(response || '') || parameters?.messages?.some(msg => /\*.+\*/.test(msg.content || '')) || false
+                        },
+                        // Store the first 100 chars of system message if available (for prompt analysis)
+                        systemPromptPreview: parameters?.messages?.find(msg => msg.role === 'system')?.content?.substring(0, 100) || null
+                    };
+                    
+                    // Save to our array
+                    rawMessageData.push(messageData);
+                    
+                    // Write to file periodically to avoid memory issues
+                    if (rawMessageData.length % 10 === 0) {
+                        writeDataToJson(options.jsonOutputFile);
+                    }
+                }
+
+                // --- Update stats and console output (only happens if filters match) ---
                 stats.total++;
                 if (data.isPrivate) {
                     stats.private++;
@@ -404,11 +451,11 @@ const startFeedListener = (options = {}) => {
                 if (options.countOnly) {
                     // In count-only mode, update stats more frequently
                     if (stats.total % 5 === 0) {
-                        printStats();
+                        await printStats();
                     }
                 } else if (stats.total % 10 === 0) {
                     // In normal mode, print stats every 10 messages
-                    printStats();
+                    await printStats();
                 }
             }
         } catch (error) {
@@ -428,9 +475,9 @@ const startFeedListener = (options = {}) => {
     log('Connected to feed with filters: %O', options);
 
     // Handle cleanup on process exit
-    process.on('SIGINT', () => {
+    process.on('SIGINT', async () => {
         eventSource.close();
-        printStats();
+        await printStats();
         
         // Save data to JSON if enabled
         if (options.jsonOutputFile) {
@@ -461,75 +508,25 @@ const writeDataToJson = (filePath) => {
 
 // Parse command line arguments
 const parseArgs = () => {
-    const args = process.argv.slice(2);
-    const options = {};
-    
-    for (let i = 0; i < args.length; i++) {
-        const arg = args[i];
-        
-        switch (arg) {
-            case '--no-referrer':
-                options.referrer = false;
-                break;
-            case '--referrer':
-                options.referrer = args[++i];
-                break;
-            case '--has-markdown':
-                options.hasMarkdown = true;
-                break;
-            case '--has-html':
-                options.hasHtml = true;
-                break;
-            case '--no-roblox':
-                options.noRoblox = true;
-                break;
-            case '--private':
-                options.includePrivate = true;
-                break;
-            case '--only-private':
-                options.onlyPrivate = true;
-                break;
-            case '--only-public':
-                options.onlyPublic = true;
-                break;
-            case '--password':
-                options.password = args[++i];
-                break;
-            case '--base-url':
-                options.baseUrl = args[++i];
-                break;
-            case '--count-only':
-                options.countOnly = true;
-                break;
-            case '--json-output':
-                options.jsonOutputFile = args[++i];
-                break;
-            case '--help':
-                console.log(`
-Usage: node feed-filter-cli.js [options]
+    const program = new Command();
 
-Options:
-  --no-referrer        Only show messages without a referrer
-  --referrer <value>   Filter by specific referrer
-  --has-markdown       Only show messages containing markdown
-  --has-html           Only show messages containing HTML
-  --no-roblox          Filter out messages with Roblox referrers
-  --private            Include private messages (requires password)
-  --only-private       Show only private messages (requires password)
-  --only-public        Show only public messages
-  --password <value>   Password for accessing private messages
-  --base-url <url>     Base URL for API (default: https://text.pollinations.ai)
-  --count-only         Only display statistics, not individual messages
-  --json-output <file> Save raw data to JSON file for later analysis
-  --help               Show this help message
+    program
+        .option('--no-referrer', 'Only show messages without a referrer')
+        .option('--referrer <value>', 'Filter by specific referrer')
+        .option('--has-markdown', 'Only show messages containing markdown')
+        .option('--has-html', 'Only show messages containing HTML')
+        .option('--no-roblox', 'Filter out messages with Roblox referrers')
+        .option('--exclude-referrer-substring <value>', 'Filter out messages where referrer contains this substring (can be used multiple times)', (value, previous) => (previous || []).concat([value]), [])
+        .option('--only-private', 'Show only private messages (requires password)')
+        .option('--only-public', 'Show only public messages')
+        .option('--password <value>', 'Password for accessing private messages')
+        .option('--base-url <url>', 'Base URL for API (default: https://text.pollinations.ai)')
+        .option('--count-only', 'Only display statistics, not individual messages')
+        .option('--json-output <file>', 'Save raw data to JSON file for later analysis')
+ 
+     program.parse(process.argv);
 
-Environment:
-  FEED_PASSWORD        Can be set in .env file instead of using --password
-`);
-                process.exit(0);
-        }
-    }
-    return options;
+    return program.opts();
 };
 
 // Start the application

@@ -1,10 +1,5 @@
 export const SUPPORTER_LIST = [
   {
-    name: "LLMPlayground.net",
-    url: "https://llmplayground.net/",
-    description: "Hosting Custom Flux Models",
-  },
-  {
     name: "AWS Activate",
     url: "https://aws.amazon.com/",
     description: "GPU Cloud Credits",

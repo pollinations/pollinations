@@ -22,6 +22,7 @@
     "@huggingface/inference": "^2.8.1",
     "await-sleep": "^0.0.1",
     "axios": "^1.7.7",
+    "commander": "^13.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "eventsource": "^3.0.2",

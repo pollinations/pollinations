@@ -79,7 +79,7 @@ const models = [
     handler: generateTextMistral,
     //    details:  "Efficient language generation focused on speed and clarity.",
     provider: "Scaleway",
-    input_modalities: ["text"],
+    input_modalities: ["text", "image"],
     output_modalities: ["text"],
   },
   {

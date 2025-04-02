@@ -79,7 +79,7 @@ const models = [
     handler: generateTextMistral,
     //    details:  "Efficient language generation focused on speed and clarity.",
     provider: "Scaleway",
-    input_modalities: ["text"],
+    input_modalities: ["text", "image"],
     output_modalities: ["text"],
   },
   {
@@ -89,7 +89,7 @@ const models = [
     //    details:  "Uncensored.",
     provider: "Scaleway",
     uncensored: true,
-    input_modalities: ["text"],
+    input_modalities: ["text", "image"],
     output_modalities: ["text"],
   },
   {
@@ -127,7 +127,7 @@ const models = [
     //    details:  "Experimental mode for unfiltered and creatively diverse outputs.",
     provider: "Scaleway",
     uncensored: true,
-    input_modalities: ["text"],
+    input_modalities: ["text", "image"],
     output_modalities: ["text"],
   },
   {
@@ -239,7 +239,7 @@ const models = [
     //    details:  "Optimized Mistral model for Roblox-related tasks.",
     provider: "Scaleway",
     uncensored: true,
-    input_modalities: ["text"],
+    input_modalities: ["text", "image"],
     output_modalities: ["text"],
   },
   {
@@ -289,7 +289,7 @@ const models = [
     handler: surMistral,
     //    details:  "Sur assistant powered by Mistral architecture for enhanced capabilities.",
     provider: "Scaleway",
-    input_modalities: ["text"],
+    input_modalities: ["text", "image"],
     output_modalities: ["text"],
   },
   {

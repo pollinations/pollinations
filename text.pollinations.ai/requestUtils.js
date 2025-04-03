@@ -2,16 +2,12 @@ import debug from 'debug';
 
 const log = debug('pollinations:requestUtils');
 
-// List of whitelisted domains
-const WHITELISTED_DOMAINS = [
-    'pollinations',
-    'thot',
-    'ai-ministries.com',
-    'localhost',
-    'pollinations.github.io',
-    '127.0.0.1',
-    'nima'
-];
+
+// Read whitelisted domains from environment variable
+export const WHITELISTED_DOMAINS = process.env.WHITELISTED_DOMAINS 
+    ? process.env.WHITELISTED_DOMAINS.split(',').map(domain => domain.trim())
+    : [];
+
 
 /**
  * Helper function to get referrer from request

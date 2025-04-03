@@ -15,8 +15,8 @@ const errorLog = debug('pollinations:portkey:error');
 const MODEL_MAPPING = {
     // Azure OpenAI models
     'openai': 'gpt-4o-mini',       // Maps to portkeyConfig['gpt-4o-mini']
-    'openai-large': 'gpt-4o',      // Maps to portkeyConfig['gpt-4o']
-    'openai-reasoning': 'o3-mini', // Maps to portkeyConfig['o1-mini'],
+    'openai-large': 'gpt-4o-mini',      // Maps to portkeyConfig['gpt-4o']
+    'openai-reasoning': 'o1-mini', // Maps to portkeyConfig['o1-mini'],
     // 'openai-audio': 'gpt-4o-mini-audio-preview',
     'openai-audio': 'gpt-4o-audio-preview',
     'roblox-rp': 'gpt-4o-mini-roblox-rp', // Roblox roleplay model

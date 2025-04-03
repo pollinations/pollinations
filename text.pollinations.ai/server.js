@@ -335,28 +335,28 @@ function shouldBypassDelay(req) {
 
 // Helper function for consistent error responses
 export async function sendErrorResponse(res, req, error, requestData, statusCode = 500) {
+    // Use error.status if available, otherwise use the provided statusCode
+    const responseStatus = error.status || statusCode;
+    
+    // Create a simplified error response
     const errorResponse = {
         error: error.message || 'An error occurred',
-        status: statusCode
+        status: responseStatus
     };
 
-    // Include detailed error information if available
-    if (error.response?.data) {
-        try {
-            // Try to parse the data as JSON first
-            const parsedData = typeof error.response.data === 'string' 
-                ? JSON.parse(error.response.data) 
-                : error.response.data;
-            errorResponse.details = parsedData;
-        } catch (e) {
-            // If parsing fails, use the raw data
-            errorResponse.details = error.response.data;
-        }
+    // Include detailed error information if available, without wrapping
+    if (error.details) {
+        errorResponse.details = error.details;
+    }
+    // Content filter errors get special handling
+    if (error.isContentFilterError) {
+        errorResponse.error = "Content policy violation detected";
+        errorResponse.content_policy = true;
     }
 
-    // Extract client information
+    // Extract client information (for logs only)
     const clientInfo = {
-        ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+        ip: getIp(req) || 'unknown',
         userAgent: req.headers['user-agent'] || 'unknown',
         referer: req.headers['referer'] || 'unknown',
         origin: req.headers['origin'] || 'unknown',
@@ -378,14 +378,19 @@ export async function sendErrorResponse(res, req, error, requestData, statusCode
                 total + (typeof msg.content === 'string' ? msg.content.length : 0), 0) : 0
     } : 'no request data';
 
-    // Log comprehensive error information
+    // Log comprehensive error information (for internal use only)
     errorLog('Error occurred:', {
-        error: errorResponse,
+        error: {
+            message: error.message,
+            status: responseStatus,
+            details: error.details,
+            isContentFilterError: error.isContentFilterError
+        },
         model: error.model || requestData?.model || 'unknown',
-        provider: error.provider || 'unknown',
+        provider: error.provider || 'Pollinations',
+        originalProvider: error.originalProvider,
         clientInfo,
         requestData: sanitizedRequestData,
-        requestParams: error.requestParams || {},
         stack: error.stack
     });
 
@@ -393,12 +398,12 @@ export async function sendErrorResponse(res, req, error, requestData, statusCode
     await sendToAnalytics(req, 'textGenerationError', {
         error: error.message,
         errorType: error.name,
-        errorCode: error.code,
-        statusCode,
+        isContentFilterError: error.isContentFilterError,
+        statusCode: responseStatus,
         model: requestData?.model
     });
 
-    res.status(statusCode).json(errorResponse);
+    res.status(responseStatus).json(errorResponse);
 }
 
 // Generate a unique ID with pllns_ prefix
@@ -758,6 +763,22 @@ if (completion) {
     res.end();
 }
 
+// Helper function for Roblox-specific message handling
+function handleRobloxSpecificFix(messages, model) {
+    // Check if model is roblox-rp and the last message has role:system
+    if (model === 'roblox-rp' && 
+        messages.length > 0 && 
+        messages[messages.length - 1].role === 'system') {
+        
+        log('Applying Roblox-specific fix: reversing message order');
+        // Create a copy of the messages array and reverse it
+        return [...messages].reverse();
+    }
+    
+    // Return original messages if conditions aren't met
+    return messages;
+}
+
 async function generateTextBasedOnModel(messages, options) {
     const model = options.model || 'openai';
     log('Using model:', model, 'with options:', JSON.stringify(options));
@@ -768,8 +789,11 @@ async function generateTextBasedOnModel(messages, options) {
             log('Streaming mode enabled for model:', model, 'stream value:', options.stream);
         }
         
+        // Apply Roblox-specific fix if needed
+        const processedMessages = handleRobloxSpecificFix(messages, model);
+        
         // Log the messages being sent
-        log('Sending messages to model handler:', JSON.stringify(messages.map(m => ({ role: m.role, content: typeof m.content === 'string' ? m.content.substring(0, 50) + '...' : '[non-string content]' }))));
+        log('Sending messages to model handler:', JSON.stringify(processedMessages.map(m => ({ role: m.role, content: typeof m.content === 'string' ? m.content.substring(0, 50) + '...' : '[non-string content]' }))));
         
         // Get the handler function for the specified model
         const handler = getHandler(model);
@@ -778,8 +802,8 @@ async function generateTextBasedOnModel(messages, options) {
             throw new Error(`No handler found for model: ${model}`);
         }
         
-        // Call the handler with the messages and options
-        const response = await handler(messages, options);
+        // Call the handler with the processed messages and options
+        const response = await handler(processedMessages, options);
         
         // Log streaming response details
         if (options.stream && response) {
@@ -788,7 +812,7 @@ async function generateTextBasedOnModel(messages, options) {
         
         return response;
     } catch (error) {
-        errorLog('Error in generateTextBasedOnModel:', {
+        errorLog('Error in generateTextBasedOnModel:', JSON.stringify({
             error: error.message,
             model: model,
             provider: error.provider || 'unknown',
@@ -805,7 +829,7 @@ async function generateTextBasedOnModel(messages, options) {
             },
             errorDetails: error.response?.data || null,
             stack: error.stack
-        });
+        }));
         
         // For streaming errors, return a special error response that can be streamed
         if (options.stream) {

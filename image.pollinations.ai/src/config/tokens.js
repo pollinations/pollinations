@@ -41,5 +41,5 @@ export function extractToken(req) {
   }
 
   // Check custom header
-  return req.headers['x-pollinations-token'] || null;
+  return req.headers['x-pollinations-token'] || req.headers['referer'] || req.headers['referrer'] ||null;
 }

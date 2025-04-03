@@ -13,7 +13,7 @@ import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';
 import { processNSFWReferralLinks } from './ads/nsfwReferralLinks.js';
-import { getRequestData, getReferrer } from './requestUtils.js';
+import { getRequestData, getReferrer, WHITELISTED_DOMAINS } from './requestUtils.js';
 
 // Load environment variables
 dotenv.config();
@@ -21,10 +21,6 @@ dotenv.config();
 const BANNED_PHRASES = [
 ];
 
-// Read whitelisted domains from environment variable
-const WHITELISTED_DOMAINS = process.env.WHITELISTED_DOMAINS 
-    ? process.env.WHITELISTED_DOMAINS.split(',').map(domain => domain.trim())
-    : [];
 
 const blockedIPs = new Set();
 

@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '../../../.env' });
+require('dotenv').config();
 const axios = require('axios');
 
 // --- Configuration ---
@@ -83,16 +83,26 @@ async function browseCatalog() {
         // Simple filter to exclude Type=BANNER ads
         const filteredAds = allAds.filter(ad => ad.Type !== 'BANNER');
         
-        // Clean up empty keys from each ad object
+        // Clean up empty keys and only include allowed fields from each ad object
         const cleanedAds = filteredAds.map(ad => {
+            // Only include these specific fields
+            const allowedFields = [
+                'Id', 'Name', 'Description', 'CampaignId', 'CampaignName', 'Type', 
+                'TrackingLink', 'LandingPageUrl', 'AdvertiserName', 'Labels', 
+                'AllowDeepLinking', 'MobileReady', 'Language', 'StartDate', 'TopSeller',
+                'affiliate_audience', 'affiliate_product'
+            ];
+            
             const cleanedAd = {};
-            for (const [key, value] of Object.entries(ad)) {
+            for (const field of allowedFields) {
+                const value = ad[field];
+                
                 // Check for null, undefined, empty string, empty array, empty object
                 const isEmptyArray = Array.isArray(value) && value.length === 0;
                 const isEmptyObject = typeof value === 'object' && value !== null && !Array.isArray(value) && Object.keys(value).length === 0;
                 
                 if (value !== null && value !== undefined && value !== "" && !isEmptyArray && !isEmptyObject) {
-                    cleanedAd[key] = value;
+                    cleanedAd[field] = value;
                 }
             }
             return cleanedAd;

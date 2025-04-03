@@ -164,15 +164,39 @@ export function createOpenAICompatibleClient(config) {
                 // Check if the response is successful for streaming
                 if (!response.ok) {
                     const errorText = await response.text();
-                    errorLog(`[${requestId}] ${providerName} API error in streaming mode: ${response.status} ${response.statusText}, error: ${errorText}`);
+                    let errorDetails = null;
+                    try {
+                        errorDetails = JSON.parse(errorText);
+                    } catch (e) {
+                        errorDetails = errorText;
+                    }
+
+                    // Check if this is a content filter error
+                    const isContentFilterError = 
+                        (errorDetails?.error?.code === 'content_filter') || 
+                        (errorText.includes('content management policy')) ||
+                        (errorText.includes('content policy')) ||
+                        (errorText.includes('content filter'));
+
+                    // Build a cleaner error message
+                    let errorMessage;
+                    if (isContentFilterError) {
+                        errorMessage = "Content policy violation detected";
+                    } else {
+                        // Replace provider name references with "Pollinations"
+                        errorMessage = `${response.status} ${response.statusText}`;
+                    }
+
+                    const error = new Error(errorMessage);
+                    error.status = response.status;
+                    error.details = errorDetails;
                     
-                    // Create an error with detailed information from the provider
-                    const error = new Error(`${providerName} API error: ${response.status} ${response.statusText}`);
-                    error.response = { 
-                        data: errorText, 
-                        status: response.status,
-                        details: errorText // Add the detailed error message
-                    };
+                    // For tracking, still keep provider info internally
+                    error.originalProvider = providerName;
+                    error.provider = "Pollinations";
+                    error.model = modelName;
+                    error.isContentFilterError = isContentFilterError;
+                    
                     throw error;
                 }
                 
@@ -204,35 +228,39 @@ export function createOpenAICompatibleClient(config) {
             // Handle error responses
             if (!response.ok) {
                 const errorText = await response.text();
-                errorLog(`[${requestId}] ${providerName} API error`, {
-                    timestamp: new Date().toISOString(),
-                    status: response.status,
-                    statusText: response.statusText,
-                    error: errorText,
-                    model: modelName,
-                    requestParams: {
-                        temperature: options.temperature,
-                        max_tokens: options.max_tokens,
-                        top_p: options.top_p,
-                        frequency_penalty: options.frequency_penalty,
-                        presence_penalty: options.presence_penalty,
-                        stream: options.stream
-                    }
-                });
+                let errorDetails = null;
+                try {
+                    errorDetails = JSON.parse(errorText);
+                } catch (e) {
+                    errorDetails = errorText;
+                }
+
+                // Check if this is a content filter error
+                const isContentFilterError = 
+                    (errorDetails?.error?.code === 'content_filter') || 
+                    (errorText.includes('content management policy')) ||
+                    (errorText.includes('content policy')) ||
+                    (errorText.includes('content filter'));
+
+                // Build a cleaner error message
+                let errorMessage;
+                if (isContentFilterError) {
+                    errorMessage = "Content policy violation detected";
+                } else {
+                    // Replace provider name references with "Pollinations"
+                    errorMessage = `${response.status} ${response.statusText}`;
+                }
+
+                const error = new Error(errorMessage);
+                error.status = response.status;
+                error.details = errorDetails;
                 
-                // Simply throw the error with the original response
-                const error = new Error(`${providerName} API error: ${response.status} ${response.statusText}`);
-                error.response = { data: errorText, status: response.status };
+                // For tracking, still keep provider info internally
+                error.originalProvider = providerName;
+                error.provider = "Pollinations";
                 error.model = modelName;
-                error.provider = providerName;
-                error.requestParams = {
-                    temperature: options.temperature,
-                    max_tokens: options.max_tokens,
-                    top_p: options.top_p,
-                    frequency_penalty: options.frequency_penalty,
-                    presence_penalty: options.presence_penalty,
-                    stream: options.stream
-                };
+                error.isContentFilterError = isContentFilterError;
+                
                 throw error;
             }
 

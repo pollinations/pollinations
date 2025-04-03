@@ -6,6 +6,7 @@ import { generateImageUrlSchema, generateImageSchema, listImageModelsSchema } fr
 import { respondAudioSchema, sayTextSchema, listAudioVoicesSchema } from './services/audioSchema.js';
 import { generateTextSchema, listTextModelsSchema } from './services/textSchema.js';
 import { listResourcesSchema, listPromptsSchema } from './services/resourceSchema.js';
+import { getRedditSubredditPostsSchema, getRedditPostAndCommentsSchema, getRedditUserPostsSchema, searchRedditSchema } from './services/redditSchema.js';
 
 // Re-export all schemas
 export {
@@ -25,7 +26,13 @@ export {
   
   // Resource schemas
   listResourcesSchema,
-  listPromptsSchema
+  listPromptsSchema,
+  
+  // Reddit schemas
+  getRedditSubredditPostsSchema,
+  getRedditPostAndCommentsSchema,
+  getRedditUserPostsSchema,
+  searchRedditSchema
 };
 
 /**
@@ -43,6 +50,10 @@ export function getAllToolSchemas() {
     generateTextSchema,
     listTextModelsSchema,
     listResourcesSchema,
-    listPromptsSchema
+    listPromptsSchema,
+    getRedditSubredditPostsSchema,
+    getRedditPostAndCommentsSchema,
+    getRedditUserPostsSchema,
+    searchRedditSchema
   ];
 }

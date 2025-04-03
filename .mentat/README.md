@@ -224,3 +224,7 @@ Core Values:
 - Evolving
 
 Remember these principles when implementing changes or reviewing submissions.
+
+# Git Workflow
+- If the user asks to send to git or something similar do all these steps:
+- Git status, diff, create. branch. commit all, push and write a PR description

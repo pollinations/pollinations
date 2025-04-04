@@ -33,7 +33,7 @@ export const SectionContainer = styled.div`
   align-items: center;
   padding: ${(props) => props.padding || "1em"};
     ${({ theme }) => theme.breakpoints.down('md')} {
-    padding: 0.1em 0em;
+    padding: 1em 1em;
   }
   z-index: ${(props) => props.zIndex || "-1"};
 `

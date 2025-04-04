@@ -8,7 +8,7 @@ const ResponseContainer = styled(Paper)`
   padding: 20px;
   margin-bottom: 20px;
   background-color: ${Colors.offblack};
-  border: 0px solid ${Colors.lime}40;
+  border: 0px solid ${Colors.lime};
   border-radius: 0px;
   width: 100%;
   max-width: 1000px;
@@ -32,7 +32,7 @@ const ResponseContainer = styled(Paper)`
   
   /* Show scrollbar on hover for Chrome, Safari and Opera */
   &:hover::-webkit-scrollbar-thumb {
-    background-color: ${Colors.lime}60;
+    background-color: ${Colors.lime};
     border-radius: 4px;
   }
   

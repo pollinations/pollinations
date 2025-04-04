@@ -35,9 +35,7 @@ export function ParameterNumberInput({
   const defaultStyles = {
     backgroundColor: Colors.offblack,
     textColor: Colors.offwhite,
-    borderColor: Colors.lime,
-    borderColorHover: Colors.lime,
-    labelColor: `${Colors.offwhite}99`
+    labelColor: Colors.offwhite
   }
   
   // Merge default styles with custom styles
@@ -48,7 +46,7 @@ export function ParameterNumberInput({
   const typographyStyles = {
     label: {
       color: mergedStyles.labelColor,
-      fontSize: "1em",
+      fontSize: "0.9em",
       fontFamily: Fonts.parameter,
     },
   }
@@ -88,17 +86,8 @@ export function ParameterNumberInput({
       </CustomTooltip>
       <Box
         sx={{
-          border: `3px solid ${Colors.gray2}`,
-          borderRadius: "0.5em",
           height: "60px",
-          transition: "border-color 0.2s ease",
           backgroundColor: Colors.offblack2,
-          "&:hover": {
-            borderColor: mergedStyles.borderColorHover,
-          },
-          "&:focus-within": {
-            borderColor: mergedStyles.borderColorHover,
-          }
         }}
       >
         <TextField
@@ -109,7 +98,6 @@ export function ParameterNumberInput({
           onBlur={handleBlur}
           type="number"
           textColor={Colors.offwhite}
-          borderColor={Colors.lime}
 
           InputProps={{
             sx: {

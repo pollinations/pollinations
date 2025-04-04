@@ -49,14 +49,14 @@ const PromptContainer = styled(Box, {
   min-height: 130px;
   overflow-y: auto;
   overflow-x: hidden;
-  border: 3px solid ${Colors.gray2};
+  border: 0px solid ${Colors.gray2};
   transition: all 0.2s ease, border-color 0.3s ease;
   cursor: ${props => props.isEditMode ? 'text' : 'pointer'};
   /* Remove the default resize behavior */
   resize: none;
   position: relative;
   background-color: ${Colors.offblack2};
-  border-radius: 0.5em;
+  border-radius: 0em;
   
   /* Disable any browser-native resize handles */
   &::-webkit-resizer {

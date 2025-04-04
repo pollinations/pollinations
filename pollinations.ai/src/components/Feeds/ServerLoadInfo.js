@@ -112,7 +112,7 @@ export function ServerLoadInfo({ lastItem, itemsGenerated, currentItem, itemType
         flexWrap: "wrap", // Allow wrapping on smaller screens
       }}
     >
-      <CountBadge itemsGenerated={displayCount} />
+      {/* <CountBadge itemsGenerated={displayCount} /> */}
       <RateDisplay rate={imagesPerSecond} itemType={itemType} /> 
       {/* <TimingInfo item={lastItem} /> */}
     </Box>

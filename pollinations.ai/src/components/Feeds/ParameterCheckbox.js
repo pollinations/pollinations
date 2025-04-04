@@ -29,14 +29,11 @@ export function ParameterCheckbox({
   onFocus,
   tooltipText,
   paramName,
-  setIsInputChanged,
   category = "feed",
-  styles = {}
 }) {
   // Default styling constants
   const defaultStyles = {
     backgroundColor: Colors.offblack2,
-    borderColor: Colors.gray2,
     borderColorHover: Colors.lime,
     labelColor: Colors.gray2,
     checkboxColorOn: Colors.offwhite,
@@ -92,8 +89,8 @@ export function ParameterCheckbox({
           width: "100%",
           backgroundColor: defaultStyles.backgroundColor,
           transition: "border-color 0.2s ease",
-          border: `3px solid ${defaultStyles.borderColor}`,
-          borderRadius: "0.5em",
+          border: `0px solid ${defaultStyles.borderColor}`,
+          borderRadius: "0em",
           "&:hover": {
             borderColor: defaultStyles.borderColorHover,
           }

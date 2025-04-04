@@ -141,6 +141,13 @@ export const ImageFeed = memo(() => {
   // REMOVED Title Section
   return (
     <Box>
+
+      {/* Subheading / LLM Banner */}
+      <SectionSubContainer>
+        <SectionHeadlineStyle>
+          <LLMTextManipulator text={IMAGE_FEED_SUBTITLE} transforms={[rephrase, emojify, noLink]} />
+        </SectionHeadlineStyle>
+      </SectionSubContainer>
       {/* Server Load Information */}
       <SectionSubContainer>
         <ServerLoadInfo
@@ -150,13 +157,6 @@ export const ImageFeed = memo(() => {
           itemType="image"
         />
       </SectionSubContainer>
-      {/* Subheading / LLM Banner */}
-      <SectionSubContainer>
-        <SectionHeadlineStyle>
-          <LLMTextManipulator text={IMAGE_FEED_SUBTITLE} transforms={[rephrase, emojify, noLink]} />
-        </SectionHeadlineStyle>
-      </SectionSubContainer>
-
       {/* Main Content Section */}
       <SectionSubContainer 
         paddingBottom="0em" 

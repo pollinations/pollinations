@@ -12,22 +12,32 @@ export function FeedEditSwitch({
   feedModeText1,
   feedModeText2 
 }) {
+  const sharedButtonStyles = {
+    height: "70px",
+    minWidth: "150px",
+    fontSize: "1.8em",
+    fontFamily: Fonts.title,
+    fontWeight: 600,
+    padding: "0 0.5em",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  };
+
   return (
-    <Box style={{ display: "flex", width: "100%", justifyContent: "center" }}>
+    <Box 
+      sx={{ 
+        display: "flex", 
+        width: "100%", 
+        justifyContent: "center",
+      }}
+    >
       <GeneralButton
         handleClick={() => handleToggleChange(null, "feed")}
         borderColor={Colors.lime}
         backgroundColor={toggleValue === "feed" ? Colors.lime : Colors.offblack}
         textColor={toggleValue === "feed" ? Colors.offblack : Colors.lime}
-        style={{
-          height: "70px",
-          width: "auto",
-          minWidth: "180px",
-          fontSize: { xs: "1.5em", md: "1.8em" },
-          fontFamily: Fonts.title,
-          fontWeight: 600,
-          padding: "0 1em",
-        }}
+        style={sharedButtonStyles}
       >
         <LLMTextManipulator text={feedModeText1} transforms={[noLink]} />
       </GeneralButton>
@@ -36,14 +46,7 @@ export function FeedEditSwitch({
         borderColor={Colors.lime}
         backgroundColor={toggleValue === "edit" ? Colors.lime : Colors.offblack}
         textColor={toggleValue === "edit" ? Colors.offblack : Colors.lime}
-        style={{
-          width: "auto",
-          minWidth: "180px",
-          fontSize: { xs: "1.5em", md: "1.8em" },
-          fontFamily: Fonts.title,
-          fontWeight: 600,
-          padding: "0 1em",
-        }}
+        style={sharedButtonStyles}
       >
         <LLMTextManipulator text={feedModeText2} transforms={[noLink]} />
       </GeneralButton>

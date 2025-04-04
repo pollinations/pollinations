@@ -133,18 +133,18 @@ export function ModelSelector({
       {tooltipComponent}
       <Box
         sx={{
-          border: `3px solid ${Colors.gray2}`,
-          borderRadius: "0.5em",
+          border: `0px solid ${Colors.gray2}`,
+          borderRadius: "0em",
           height: "60px",
           transition: "border-color 0.2s ease",
           backgroundColor: Colors.offblack2,
           "&:hover": {
             borderColor: Colors.lime,
-            border: `3px solid ${Colors.lime}`,
+            border: `0px solid ${Colors.lime}`,
           },
           "&:focus-within": {
             borderColor: Colors.lime,
-            border: `3px solid ${Colors.lime}`,
+            border: `0px solid ${Colors.lime}`,
           },
           position: "relative",
           zIndex: 0,
@@ -230,7 +230,7 @@ export function ModelSelector({
                 /* Show scrollbar on hover for Chrome, Safari and Opera */
                 '&:hover::-webkit-scrollbar-thumb': {
                   backgroundColor: `${Colors.lime}60`,
-                  borderRadius: '4px',
+                  borderRadius: '0px',
                 },
                 /* Hide scrollbar for IE, Edge and Firefox */
                 msOverflowStyle: 'none',  /* IE and Edge */

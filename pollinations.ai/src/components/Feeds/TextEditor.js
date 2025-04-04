@@ -1,7 +1,9 @@
 import React, {useCallback, useEffect } from 'react';
 import { 
   Box, 
-  Typography
+  Typography,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import { Colors, Fonts } from '../../config/global';
 import styled from '@emotion/styled';
@@ -59,6 +61,10 @@ export const TextEditor = ({
   // Use the new hook with 'text' explicitly passed
   const { models, loading: modelsLoading, error: modelsError } = useModels('text');
   
+  // Add theme and media query for responsive design
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   // Early return for non-edit mode (except for prompt-only mode)
   if (toggleValue !== 'edit' && !promptOnly) {
     return null;
@@ -103,12 +109,20 @@ export const TextEditor = ({
     }
   }, [isInputChanged, setIsInputChanged]);
 
-  // If we only need to render the controls
+  // Render a responsive layout based on screen size
   return (
     <Box sx={{ width: '100%', maxWidth: '1000px' }}>
-      <Box sx={{ display: 'flex', width: '100%' }}>
+      <Box sx={{ 
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        width: '100%',
+      }}>
         {/* Model Select */}
-        <Box sx={{ flexGrow: 1, mr: 2 }}>
+        <Box sx={{ 
+          flexGrow: 1, 
+          mr: isMobile ? 0 : 2,
+          mb: isMobile ? 2 : 0 
+        }}>
           <ModelSelector
             itemType="text"
             currentModel={sharedModel}
@@ -123,7 +137,7 @@ export const TextEditor = ({
         </Box>
         
         {/* Generate Button */}
-        <Box>
+        <Box sx={{ width: isMobile ? '100%' : 'auto' }}>
           <Typography sx={LabelStyle}>&nbsp;</Typography>
           <GeneralButton
             handleClick={isLoading ? cancelGeneration : handleSubmit}
@@ -136,6 +150,7 @@ export const TextEditor = ({
             style={{ 
               height: "60px",
               fontFamily: Fonts.title,
+              width: isMobile ? '100%' : 'auto'
             }}
           >
             <LLMTextManipulator text={IMAGE_EDIT_BUTTON_OFF} transforms={[noLink]} />

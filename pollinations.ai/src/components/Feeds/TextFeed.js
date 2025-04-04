@@ -1,29 +1,29 @@
-import React, { useState, useEffect, memo, useCallback } from "react";
-import { Box, CircularProgress } from "@mui/material";
-import { Colors } from "../../config/global"; // Adjusted path
-import { SectionSubContainer, SectionHeadlineStyle } from "../SectionContainer"; // Adjusted path
-import { TEXT_FEED_SUBTITLE, TEXT_FEED_MODE1, TEXT_FEED_MODE2 } from "../../config/copywrite"; // Adjusted path
-import { emojify, rephrase, noLink } from "../../config/llmTransforms.js"; // Adjusted path
-import { LLMTextManipulator } from "../LLMTextManipulator.js"; // Adjusted path
-import { trackEvent } from "../../config/analytics"; // Adjusted path
-import { useTextSlideshow } from "../../utils/useTextSSEFeed"; // Adjusted path
-import { useTextEditor } from "../../utils/useTextEditor"; // Adjusted path
-import { useTextFeedLoader } from "../../utils/useTextFeedLoader"; // Adjusted path
-import { ServerLoadInfo } from "./ServerLoadInfo.js"; // Adjusted path
-import { TextEditor } from "./TextEditor.js"; // Adjusted path
-import { TextDisplay } from "./TextResponse.js"; // Adjusted path
-import { FeedEditSwitch } from "./FeedEditSwitch.js"; // Adjusted path
-import { ModelInfo } from "./ModelInfo.js"; // Adjusted path
-import { PromptDisplay } from "./PromptDisplay.js"; // Adjusted path
+import React, { useState, useEffect, memo, useCallback } from "react"
+import { Box, CircularProgress } from "@mui/material"
+import { Colors } from "../../config/global" // Adjusted path
+import { SectionSubContainer, SectionHeadlineStyle } from "../SectionContainer" // Adjusted path
+import { TEXT_FEED_SUBTITLE, TEXT_FEED_MODE1, TEXT_FEED_MODE2 } from "../../config/copywrite" // Adjusted path
+import { emojify, rephrase, noLink } from "../../config/llmTransforms.js" // Adjusted path
+import { LLMTextManipulator } from "../LLMTextManipulator.js" // Adjusted path
+import { trackEvent } from "../../config/analytics" // Adjusted path
+import { useTextSlideshow } from "../../utils/useTextSSEFeed" // Adjusted path
+import { useTextEditor } from "../../utils/useTextEditor" // Adjusted path
+import { useTextFeedLoader } from "../../utils/useTextFeedLoader" // Adjusted path
+import { ServerLoadInfo } from "./ServerLoadInfo.js" // Adjusted path
+import { TextEditor } from "./TextEditor.js" // Adjusted path
+import { TextDisplay } from "./TextResponse.js" // Adjusted path
+import { FeedEditSwitch } from "./FeedEditSwitch.js" // Adjusted path
+import { ModelInfo } from "./ModelInfo.js" // Adjusted path
+import { PromptDisplay } from "./PromptDisplay.js" // Adjusted path
 
 /**
  * Extract prompt from messages array
  */
 const extractPrompt = (messages) => {
-  if (!messages || !Array.isArray(messages)) return '';
-  const userMessage = messages.find(msg => msg?.role === 'user');
-  return userMessage?.content || '';
-};
+  if (!messages || !Array.isArray(messages)) return ""
+  const userMessage = messages.find((msg) => msg?.role === "user")
+  return userMessage?.content || ""
+}
 
 /**
  * TextFeed (Refactored):
@@ -33,106 +33,101 @@ const extractPrompt = (messages) => {
 export const TextFeed = memo(() => {
   // ... (Keep all state, hooks, effects, handlers as they were) ...
   // State
-  const [lastEntry, setLastEntry] = useState(null);
-  const [isInputChanged, setIsInputChanged] = useState(false);
-  const [toggleValue, setToggleValue] = useState("feed");
-  const [sharedPrompt, setSharedPrompt] = useState('');
-  const [sharedModel, setSharedModel] = useState('openai');
+  const [lastEntry, setLastEntry] = useState(null)
+  const [isInputChanged, setIsInputChanged] = useState(false)
+  const [toggleValue, setToggleValue] = useState("feed")
+  const [sharedPrompt, setSharedPrompt] = useState("")
+  const [sharedModel, setSharedModel] = useState("openai")
 
   // Hooks
-  const { 
-    entry: slideshowEntry, 
-    onNewEntry, 
-    stop, 
-    error, 
-    connectionStatus 
-  } = useTextSlideshow();
-  
-  const { entriesGenerated } = useTextFeedLoader(onNewEntry, setLastEntry);
-  
-  const { 
-    updateText, 
-    cancelGeneration, 
-    entry, 
-    isLoading 
-  } = useTextEditor({
+  const { entry: slideshowEntry, onNewEntry, stop, error, connectionStatus } = useTextSlideshow()
+
+  const { entriesGenerated } = useTextFeedLoader(onNewEntry, setLastEntry)
+
+  const { updateText, cancelGeneration, entry, isLoading } = useTextEditor({
     stop,
     entry: slideshowEntry,
-  });
+  })
 
   // Effects
   useEffect(() => {
-    if (!entry?.parameters?.messages || isInputChanged) return;
-    const prompt = extractPrompt(entry.parameters.messages);
+    if (!entry?.parameters?.messages || isInputChanged) return
+    const prompt = extractPrompt(entry.parameters.messages)
     if (prompt) {
-      setSharedPrompt(prompt);
+      setSharedPrompt(prompt)
     }
     if (entry.parameters.model) {
-      setSharedModel(entry.parameters.model);
+      setSharedModel(entry.parameters.model)
     }
-  }, [entry, isInputChanged]);
+  }, [entry, isInputChanged])
 
   useEffect(() => {
-    setIsInputChanged(false);
-  }, [entry?.response]);
+    setIsInputChanged(false)
+  }, [entry?.response])
 
   // Handlers
-  const handleToggleChange = useCallback((event, newValue) => {
-    if (newValue !== null) {
-      const isEditMode = newValue === "edit";
-      stop(isEditMode);
-      setToggleValue(newValue);
-      trackEvent({
-        action: 'click_text_feed_edit_switch',
-        category: 'text_feed',
-        value: isEditMode ? "edit" : "feed",
-      });
-    }
-  }, [stop]);
+  const handleToggleChange = useCallback(
+    (event, newValue) => {
+      if (newValue !== null) {
+        const isEditMode = newValue === "edit"
+        stop(isEditMode)
+        setToggleValue(newValue)
+        trackEvent({
+          action: "click_text_feed_edit_switch",
+          category: "text_feed",
+          value: isEditMode ? "edit" : "feed",
+        })
+      }
+    },
+    [stop]
+  )
 
   const handlePromptClick = useCallback(() => {
     if (toggleValue === "feed") {
-      handleToggleChange(null, "edit");
+      handleToggleChange(null, "edit")
       trackEvent({
-        action: 'click_text_prompt',
-        category: 'text_feed',
-      });
+        action: "click_text_prompt",
+        category: "text_feed",
+      })
     }
-  }, [toggleValue, handleToggleChange]);
+  }, [toggleValue, handleToggleChange])
 
-  const handleUpdateText = useCallback((parameters = {}) => {
-    updateText({
-      model: sharedModel,
-      messages: [
-        { role: 'system', content: 'You are a helpful assistant.' },
-        { role: 'user', content: sharedPrompt || '' }
-      ],
-      temperature: 0.7,
-      max_tokens: 1000,
-      type: 'chat',
-      ...parameters
-    });
-  }, [updateText, sharedPrompt, sharedModel]);
+  const handleUpdateText = useCallback(
+    (parameters = {}) => {
+      updateText({
+        model: sharedModel,
+        messages: [
+          { role: "system", content: "You are a helpful assistant." },
+          { role: "user", content: sharedPrompt || "" },
+        ],
+        temperature: 0.7,
+        max_tokens: 1000,
+        type: "chat",
+        ...parameters,
+      })
+    },
+    [updateText, sharedPrompt, sharedModel]
+  )
 
   // Rendering - REMOVED SectionContainer and SectionMainContent wrappers
   // REMOVED Title Section
   return (
     <>
-      {/* Server Load Info */}
-      <SectionSubContainer>
-        <ServerLoadInfo 
-          lastItem={lastEntry}
-          itemsGenerated={entriesGenerated}
-          currentItem={entry} 
-          itemType="text"
-        />
-      </SectionSubContainer>
-
       {/* Subtitle */}
       <SectionSubContainer>
         <SectionHeadlineStyle>
           <LLMTextManipulator text={TEXT_FEED_SUBTITLE} transforms={[rephrase, emojify, noLink]} />
         </SectionHeadlineStyle>
+      </SectionSubContainer>
+
+      {/* Server Load Info */}
+      <SectionSubContainer>
+        <ServerLoadInfo
+          lastItem={lastEntry}
+          itemsGenerated={entriesGenerated}
+          currentItem={entry}
+          itemType="text"
+        />
       </SectionSubContainer>
 
       {/* Main Content */}
@@ -147,7 +142,7 @@ export const TextFeed = memo(() => {
             }}
           >
             {/* Feed/Edit Toggle */}
-            <Box display="flex" justifyContent="center" mb={2} >
+            <Box display="flex" justifyContent="center" mb={2}>
               <FeedEditSwitch
                 toggleValue={toggleValue}
                 handleToggleChange={handleToggleChange}
@@ -156,7 +151,7 @@ export const TextFeed = memo(() => {
                 feedModeText2={TEXT_FEED_MODE2}
               />
             </Box>
-            
+
             {/* Prompt Display */}
             <Box width="100%" maxWidth="1000px" mb={2}>
               <PromptDisplay
@@ -165,8 +160,8 @@ export const TextFeed = memo(() => {
                 isLoading={isLoading}
                 isEditMode={toggleValue === "edit"}
                 onPromptChange={(newPrompt) => {
-                  setSharedPrompt(newPrompt);
-                  setIsInputChanged(true);
+                  setSharedPrompt(newPrompt)
+                  setIsInputChanged(true)
                 }}
                 onEditModeSwitch={handlePromptClick}
                 setIsInputChanged={setIsInputChanged}
@@ -212,5 +207,5 @@ export const TextFeed = memo(() => {
         )}
       </SectionSubContainer>
     </> // Use fragment instead of removed wrappers
-  );
-}); 
+  )
+})

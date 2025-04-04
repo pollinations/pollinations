@@ -1,5 +1,6 @@
 import React from "react"
 import { Button } from "@mui/material"
+import { Colors } from "../config/global"
 
 // ForwardRef component that directly uses the MUI <Button>
 export const GeneralButton = React.forwardRef(function GeneralButton(
@@ -22,7 +23,7 @@ export const GeneralButton = React.forwardRef(function GeneralButton(
 ) {
   // Merge style props with inline styling
   const mergedStyle = {
-    border: borderColor ? `1px solid ${borderColor}` : "none",
+    border: borderColor ? `3px solid ${borderColor}` : "none",
     backgroundColor: backgroundColor || "transparent",
     color: textColor || borderColor || "transparent",
     fontSize: fontSize || "1.5em",
@@ -31,12 +32,13 @@ export const GeneralButton = React.forwardRef(function GeneralButton(
     minHeight: height || "60px",
     borderRadius: borderRadius || "0px",
     padding: "0px 1em",
-    transition: "all 0.3s ease",
+    transition: "all 0.6s ease",
     opacity: isLoading ? 0.7 : 1,
     position: "relative",
     "&:hover": {
       backgroundColor: backgroundColor ? `${backgroundColor}B3` : "transparent", // 70% opacity
       borderColor: borderColor ? `${borderColor}B3` : "none", // 70% opacity
+      filter: "brightness(105%)",
     },
     "&::after": isLoading ? {
       content: '""',

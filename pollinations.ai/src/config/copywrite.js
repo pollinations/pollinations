@@ -17,11 +17,11 @@ export const HERO_INTRO =
 
 
 export const HERO_CTO = 
-  "Talk to us, reach out. "
+  "Talk to us, reach out."
 
 export const HERO_EMAIL_BUTTON = "hello@pollinations.ai"
 export const HERO_GITHUB_LINK = "README.md"
-export const HERO_DISCORD_LINK = "Join on Discord"
+export const HERO_DISCORD_LINK = "Join on Discord (do not use markdown link formatting)"
 
 export const NEWS_TITLE = 
   "**Last update**" + newsList.split("\n")[0];
@@ -36,7 +36,7 @@ export const IMAGE_FEED_MODE1 = "Watch";
 export const IMAGE_FEED_MODE2 = "Try";
 export const IMAGE_EDIT_BUTTON_ON = "Imagine";
 export const IMAGE_EDIT_BUTTON_OFF = "Imagine";
-export const IMAGE_FEED_TOOLTIP_PROMPT = "Image description";
+export const IMAGE_FEED_TOOLTIP_PROMPT = "Prompt";
 
 export const IMAGE_FEED_TOOLTIP_MODEL = "Select the text-to-image model."
 export const IMAGE_FEED_TOOLTIP_WIDTH = 

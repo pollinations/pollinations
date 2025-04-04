@@ -103,8 +103,9 @@ const Hero = () => {
             <GeneralButton
               handleClick={handleDiscordButtonClick}
               isLoading={false}
-              backgroundColor={Colors.offblack}
-              textColor={Colors.offwhite}
+              borderColor={Colors.offblack}
+              backgroundColor={Colors.offwhite}
+              textColor={Colors.offblack}
               style={{
                 fontSize: "1.5rem",
                 fontFamily: Fonts.title,
@@ -114,12 +115,12 @@ const Hero = () => {
               <ReactSVG
                 src={ICONS.discord}
                 beforeInjection={(svg) => {
-                  svg.setAttribute("fill", Colors.offwhite)
+                  svg.setAttribute("fill", Colors.offblack)
                 }}
                 style={{
                   width: "40px",
                   height: "40px",
-                  marginRight: "8px",
+                  marginRight: "10px",
                   background: "transparent",
                 }}
               />
@@ -129,9 +130,10 @@ const Hero = () => {
           <Grid>
             <GeneralButton
               handleClick={handleGithubButtonClick}
+              borderColor={Colors.offblack}
+              backgroundColor={Colors.offwhite}
               isLoading={false}
-              backgroundColor={Colors.offblack}
-              textColor={Colors.offwhite}
+              textColor={Colors.offblack}
               style={{
                 fontSize: "1.5rem",
                 fontFamily: Fonts.title,
@@ -141,12 +143,12 @@ const Hero = () => {
               <ReactSVG
                 src={ICONS.github}
                 beforeInjection={(svg) => {
-                  svg.setAttribute("fill", Colors.offwhite)
+                  svg.setAttribute("fill", Colors.offblack)
                 }}
                 style={{
                   width: "32px",
                   height: "32px",
-                  marginRight: "8px",
+                  marginRight: "16px",
                   background: "transparent",
                 }}
               />

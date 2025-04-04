@@ -47,19 +47,21 @@ export default function News() {
       >
         <AccordionSummary
           sx={{
+            padding: "0.5em 2em",
             backgroundColor: Colors.special,
             "&:hover": {
               backgroundColor: `${Colors.special}99`,
             },
-            borderRadius: '2em',
+            borderRadius: '0em',
             '&.Mui-expanded': {
               borderBottomLeftRadius: 0,
               borderBottomRightRadius: 0,
-              borderTopLeftRadius: '2em',
-              borderTopRightRadius: '2em',
             },
             '& .MuiAccordionSummary-expandIconWrapper': {
               transform: 'scale(2.0)',
+              '&.Mui-expanded': {
+                transform: 'rotate(180deg) scale(2.0) translateX(0.2em)',
+              }
             },
           }}
           expandIcon={<ArrowDownwardIcon style={{ color: Colors.offwhite, fontSize: '1.5rem', marginRight: '0.2em' }} />}
@@ -68,7 +70,7 @@ export default function News() {
         >
           <SectionHeadlineStyle
             color={Colors.offwhite}
-            maxWidth="90%"
+            maxWidth="95%"
             style={{ fontSize: "1.8em", fontFamily: Fonts.headline, marginLeft: '0.6em' }}
             textAlign="left"
             onClick={handleClickAccordionSummary}
@@ -79,8 +81,7 @@ export default function News() {
         <AccordionDetails 
           sx={{ 
             backgroundColor: Colors.offblack,
-            borderBottomLeftRadius: '2em',
-            borderBottomRightRadius: '2em',
+
           }}
         >
           <SectionHeadlineStyle

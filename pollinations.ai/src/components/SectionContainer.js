@@ -32,6 +32,9 @@ export const SectionContainer = styled.div`
   flex-direction: column;
   align-items: center;
   padding: ${(props) => props.padding || "1em"};
+    ${({ theme }) => theme.breakpoints.down('md')} {
+    padding: 0.1em 0em;
+  }
   z-index: ${(props) => props.zIndex || "-1"};
 `
 
@@ -55,7 +58,7 @@ export const SectionMainContent = styled.div`
   width: 100%;
   max-width: 1000px;
   background-color: ${Colors.offblack};
-  border-radius: 2em;
+  border-radius: 0em;
 `
 export const SectionTitleStyle = styled.div`
   font-size: ${(props) => props.fontSize || "8em"};

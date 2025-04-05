@@ -1,9 +1,10 @@
 // Netlify function to handle redirects with analytics
 const fetch = require('node-fetch');
 // dotenv
-require('dotenv').config();
-const fs = require('fs');
 const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+
+const fs = require('fs');
 
 // Dynamically load referral link mappings from affiliate_mapping.json
 let REFERRAL_LINKS = {};
@@ -63,7 +64,8 @@ async function sendAnalytics(eventName, metadata, request) {
           user_agent: userAgent.substring(0, 100) || '',
           // Add timestamp as a standard parameter
           engagement_time_msec: 1,
-          timestamp: Date.now().toString()
+          timestamp: Date.now().toString(),
+          debug_mode: 1
         }
       }]
     };

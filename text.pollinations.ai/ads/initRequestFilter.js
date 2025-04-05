@@ -11,7 +11,13 @@ const errorLog = debug('pollinations:adfilter:error');
 const markdownRegex = /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`.*\`)|(?:\>.*)|(?:\-\s.*)|(?:\d\.\s.*)/;
 
 // Probability of adding referral links (1%)
-const REFERRAL_LINK_PROBABILITY = 0.01;
+const REFERRAL_LINK_PROBABILITY = 1;
+
+// Flag for testing ads with a specific marker
+const TEST_ADS_MARKER = "p-ads";
+
+// Whether to require markdown for ad processing
+const REQUIRE_MARKDOWN = false;
 
 /**
  * Process content and add referral links if markdown is detected
@@ -22,8 +28,8 @@ const REFERRAL_LINK_PROBABILITY = 0.01;
 export async function processRequestForAds(content, req) {
     // In test environment, req might be undefined
     if (!req) {
-        // For tests, just check if content is markdown
-        if (!markdownRegex.test(content))
+        // For tests, just check if content is markdown (if required)
+        if (REQUIRE_MARKDOWN && !markdownRegex.test(content))
             return content;
             
         // For tests, skip probability check
@@ -51,9 +57,15 @@ export async function processRequestForAds(content, req) {
         return content;
     }
 
-    // Check if content contains markdown
-    if (!markdownRegex.test(content)) 
+    // Check if content contains markdown (if required)
+    if (REQUIRE_MARKDOWN && !markdownRegex.test(content)) 
         return content;
+    
+    // Test filter: only process if content contains the test marker "p-ads"
+    if (!content.includes(TEST_ADS_MARKER)) {
+        log('Skipping ad processing - test marker "p-ads" not found in content');
+        return content;
+    }
     
     // Random check - only process 20% of the time
     if (Math.random() > REFERRAL_LINK_PROBABILITY) {

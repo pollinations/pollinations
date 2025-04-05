@@ -45,9 +45,9 @@ export function ParameterCheckbox({
   const typographyStyles = {
     label: {
       color: defaultStyles.labelColor,
-      fontSize: "1em",
+      fontSize: "0.9em",
       fontFamily: Fonts.parameter,
-      textAlign: "center",
+      textAlign: "left",
       width: "100%"
     },
   }

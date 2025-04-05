@@ -118,12 +118,12 @@ export function ModelSelector({
       title={<LLMTextManipulator text={tooltipText} transforms={[rephrase, emojify, noLink]} />}
       interactive
     >
-      <Typography sx={{ color: Colors.gray2, fontSize: '1em', fontFamily: Fonts.parameter }}>
+      <Typography sx={{ color: Colors.gray2, fontSize: '0.9em', fontFamily: Fonts.parameter }}>
         Model
       </Typography>
     </CustomTooltip>
   ) : (
-    <Typography sx={{ color: Colors.gray2, fontSize: '1em', fontFamily: Fonts.parameter }}>
+    <Typography sx={{ color: Colors.gray2, fontSize: '0.9em', fontFamily: Fonts.parameter }}>
       Model
     </Typography>
   );

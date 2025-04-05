@@ -7,7 +7,7 @@ import ReactMarkdown from "react-markdown";
 
 const LabelStyle = {
   color: Colors.gray2,
-  fontSize: '1em',
+  fontSize: '0.9em',
   fontFamily: Fonts?.parameter || 'inherit',
   marginBottom: '4px'
 };

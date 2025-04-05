@@ -61,7 +61,7 @@ const ResponseText = styled(Typography)`
 
 const LabelStyle = {
   color: `${Colors.offwhite}99`,
-  fontSize: '1em',
+  fontSize: '0.9em',
   fontFamily: Fonts?.parameter || 'inherit',
   marginBottom: '4px'
 };

@@ -84,14 +84,15 @@ export async function processRequestForAds(content, req) {
         
         log(`Added ${linkInfo.linkCount} referral links to content`);
         
-        // Send analytics event for each referral link (only in production with valid req)
-        if (req && linkInfo.linkCount > 0 && process.env.NODE_ENV !== 'test') {
+        // Send analytics event for each referral link (regardless of environment)
+        if (req && linkInfo.linkCount > 0) {
             await sendToAnalytics(req, 'referralLinkAdded', {
                 linkCount: linkInfo.linkCount,
                 topics: linkInfo.topicsString,
                 linkTexts: linkInfo.linkTextsString,
                 contentLength: content.length,
-                processedLength: processedContent.length
+                processedLength: processedContent.length,
+                affiliateIds: linkInfo.affiliateIds ? linkInfo.affiliateIds.join(',') : ''
             });
         }
         

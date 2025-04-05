@@ -9,61 +9,35 @@ export function ModelInfo({ model, referrer }) {
     return domain.split(".").slice(-2).join(".")
   }
 
-  // Static model info for common models
-  const MODEL_INFO = {
-    turbo: {
-      modelName: "Boltning",
-      modelLink: "https://civitai.com/models/413466/boltning-realistic-lightning-hyper",
-    },
-    flux: {
-      modelName: "Flux.Schnell",
-      modelLink: "https://blackforestlabs.ai/",
-    },
-    "flux-pro": {
-      modelName: "Flux.Schnell Pro",
-      modelLink: "https://blackforestlabs.ai/",
-    },
-    "flux-realism": {
-      modelName: "Flux.Schnell Realism",
-      modelLink: "https://blackforestlabs.ai/",
-    },
-    "flux-anime": {
-      modelName: "Flux.Schnell Anime",
-      modelLink: "https://blackforestlabs.ai/",
-    },
-    "flux-3d": {
-      modelName: "Flux.Schnell 3D",
-      modelLink: "https://blackforestlabs.ai/",
-    },
-    "flux-cablyai": {
-      modelName: "Flux.Schnell CablyAI",
-      modelLink: "https://blackforestlabs.ai/",
-    },
-    default: {
-      modelName: "Unknown Model",
-      modelLink: "#",
-    },
+  // Define only special cases that need custom links or names
+  const SPECIAL_MODEL_LINKS = {
+    turbo: "https://civitai.com/models/413466/boltning-realistic-lightning-hyper",
+    flux: "https://blackforestlabs.ai/",
+    // Add any other special model links here as needed
   }
 
-  // Generate default model info for models not in the static list
-  const getModelInfo = (modelName) => {
-    if (MODEL_INFO[modelName]) {
-      return MODEL_INFO[modelName];
+  // Get the model link based on the model name
+  const getModelLink = (modelName) => {
+    if (modelName.startsWith("flux")) {
+      return "https://blackforestlabs.ai/"
     }
+    return SPECIAL_MODEL_LINKS[modelName] || "#"
+  }
+
+  // Format the model name for display
+  const formatModelName = (modelName) => {
+    if (modelName === "turbo") return "Boltning"
+    if (modelName === "flux") return "Flux.Schnell"
     
-    // Format unknown model names nicely
-    const formattedName = modelName
+    // Format other model names nicely
+    return modelName
       .split(/[-_]/)
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-    
-    return {
-      modelName: formattedName,
-      modelLink: "#",
-    };
+      .join(" ")
   }
 
-  const { modelName, modelLink } = getModelInfo(model);
+  const modelLink = getModelLink(model)
+  const modelName = formatModelName(model)
 
   const renderModelInfo = (name, link) => (
     <Box

@@ -1,24 +1,15 @@
 // Netlify function to handle redirects with analytics
 const fetch = require('node-fetch');
 // dotenv
-const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+require('dotenv').config();
+// Import affiliate mappings directly from JS module
+const affiliateMappings = require('./affiliate_mapping.js');
 
-const fs = require('fs');
-
-// Dynamically load referral link mappings from affiliate_mapping.json
-let REFERRAL_LINKS = {};
-try {
-  const data = fs.readFileSync(path.join(__dirname, 'affiliate_mapping.json'), 'utf8');
-  const mappings = JSON.parse(data);
-  REFERRAL_LINKS = mappings.reduce((acc, curr) => {
-    acc[curr.Id] = curr.TrackingLink;
-    return acc;
-  }, {});
-  console.log('Loaded affiliate mappings:', REFERRAL_LINKS);
-} catch (error) {
-  console.error('Error loading affiliate mappings:', error);
-}
+// Convert the array to a lookup object for faster access
+const REFERRAL_LINKS = affiliateMappings.reduce((acc, curr) => {
+  acc[curr.Id] = curr.TrackingLink;
+  return acc;
+}, {});
 
 /**
  * Send analytics event to Google Analytics
@@ -113,7 +104,18 @@ exports.handler = async function(event, context) {
   
   // Get URL from query parameters or use the mapped URL
   const params = event.queryStringParameters || {};
-  const url = params.url || REFERRAL_LINKS[targetId] || 'https://pollinations.ai';
+  const url = params.url || REFERRAL_LINKS[targetId];
+  
+  // If no URL is found for this ID, return an error
+  if (!url) {
+    return {
+      statusCode: 404,
+      body: JSON.stringify({
+        error: 'Redirect target not found',
+        message: `No redirect URL found for ID: ${targetId}`
+      })
+    };
+  }
   
   console.log(`Redirect requested for: ${targetId} to ${url}`);
   

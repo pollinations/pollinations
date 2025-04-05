@@ -1,4 +1,4 @@
-[
+module.exports = [
   {
     "Id": "1422856",
     "TrackingLink": "https://martinic.evyy.net/c/6058776/1422856/4482"

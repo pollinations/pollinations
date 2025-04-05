@@ -3,7 +3,13 @@ const fetch = require('node-fetch');
 // dotenv
 require('dotenv').config();
 // Import affiliate mappings directly from JS module
-const REFERRAL_LINKS = require('./affiliate_mappings');
+const affiliateMappings = require('./affiliate_mapping');
+
+// Convert the array to a lookup object for faster access
+const REFERRAL_LINKS = affiliateMappings.reduce((acc, curr) => {
+  acc[curr.Id] = curr.TrackingLink;
+  return acc;
+}, {});
 
 /**
  * Send analytics event to Google Analytics

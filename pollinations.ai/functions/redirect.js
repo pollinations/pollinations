@@ -55,7 +55,8 @@ async function sendAnalytics(eventName, metadata, request) {
           user_agent: userAgent.substring(0, 100) || '',
           // Add timestamp as a standard parameter
           engagement_time_msec: 1,
-          timestamp: Date.now().toString()
+          timestamp: Date.now().toString(),
+          debug_mode: 1
         }
       }]
     };

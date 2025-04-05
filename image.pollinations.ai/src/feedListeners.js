@@ -1,5 +1,6 @@
 import { parse } from 'url';
 import debug from 'debug';
+import { isMature } from './utils/mature.js';
 
 const logFeed = debug('pollinations:feed');
 
@@ -40,6 +41,11 @@ export const registerFeedListener = async (req, res) => {
 };
 
 export const sendToFeedListeners = (data, options = {}) => {
+  // Check if prompt contains mature content and flag it
+  if (data?.prompt && !data?.isMature) {
+    data.isMature = isMature(data.prompt);
+  }
+  
   if (options.saveAsLastState) {
     lastStates.push(data);
   }
@@ -47,7 +53,18 @@ export const sendToFeedListeners = (data, options = {}) => {
 };
 
 function sendToListener(listener, data, nsfw) {
-  if (!nsfw && (data?.private || data?.nsfw || data?.isChild || data?.isMature || data?.maturity?.nsfw || data?.maturity?.isChild || data?.maturity?.isMature)) return;
+  // Don't send mature content to listeners who don't want NSFW
+  if (!nsfw && (
+    data?.private || 
+    data?.nsfw || 
+    data?.isChild || 
+    data?.isMature || 
+    data?.maturity?.nsfw || 
+    data?.maturity?.isChild || 
+    data?.maturity?.isMature || 
+    (data?.prompt && isMature(data?.prompt))
+  )) return;
+  
   logFeed("data", data);
   return listener.write(`data: ${JSON.stringify(data)}\n\n`);
 }

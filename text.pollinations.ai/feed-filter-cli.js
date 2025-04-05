@@ -40,7 +40,10 @@ const stats = {
 const TOP_IPS_COUNT = 5;
 
 // Number of top referrers to display
-const TOP_REFERRERS_COUNT = 10;
+const TOP_REFERRERS_COUNT = 5;
+
+// Number of top models to display
+const TOP_MODELS_COUNT = 5;
 
 // Array to store raw message data for JSON export
 const rawMessageData = [];
@@ -241,10 +244,16 @@ const printStats = async () => {
     
     if (Object.keys(stats.models).length > 0) {
         log('\nModels:');
-        const sortedModels = sortObjectByValues(stats.models);
-        Object.entries(sortedModels).forEach(([model, count]) => {
+        const topModels = getTopNItems(stats.models, TOP_MODELS_COUNT);
+        Object.entries(topModels).forEach(([model, count]) => {
             log(`${model}: ${count} (${calculatePercentage(count, stats.total)})`);
         });
+        
+        // Show how many more models exist beyond the top ones
+        const totalModels = Object.keys(stats.models).length;
+        if (totalModels > TOP_MODELS_COUNT) {
+            log(`... and ${totalModels - TOP_MODELS_COUNT} more models`);
+        }
     }
     
     if (Object.keys(stats.referrers).length > 0) {

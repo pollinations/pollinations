@@ -23,6 +23,7 @@ import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank"
 import { LLMTextManipulator } from "../../components/LLMTextManipulator"
 import { getImageURL } from "../../utils/getImageURL"
 import { trackEvent } from "../../config/analytics"
+import useFetchModels from "../../hooks/useFetchModels"
 
 /**
  * ImageEditor
@@ -264,15 +265,12 @@ export const ImageEditor = memo(function ImageEditor({
   
 
 
-  // All available model options
-  const models = [
-    "flux",
-    "flux-pro",
-    "flux-realism",
-    "flux-anime",
-    "flux-3d",
-    "flux-cablyai",
-    "turbo",
+  // Get dynamic model options from API
+  const { models: availableModels, loading: modelsLoading } = useFetchModels();
+  
+  // Use available models from API or fallback to empty array while loading
+  const models = availableModels.length > 0 ? availableModels : [
+    model || "flux", // Include current model if it exists
   ]
 
   // Shared styles for read-only prompt box
@@ -426,7 +424,12 @@ export const ImageEditor = memo(function ImageEditor({
                   backgroundColor: `${Colors.offblack}99`,
                 }}
               >
-                {model || "flux"}
+                {modelsLoading ? "Loading..." : 
+                  (model || "flux")
+                    .split(/[-_]/)
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(" ")
+                }
               </Button>
               <Menu
                 id="model-menu"
@@ -439,22 +442,39 @@ export const ImageEditor = memo(function ImageEditor({
                     textAlign: "left",
                     backgroundColor: Colors.offblack,
                     fontFamily: Fonts.parameter,
+                    maxHeight: "50vh",
+                    overflow: "auto",
                   },
                 }}
               >
-                {models.map((modelName) => (
+                {modelsLoading ? (
                   <MenuItem
-                    key={modelName}
-                    onClick={() => handleMenuClose(modelName)}
+                    disabled
                     sx={{
-                      color: paramTextColor,
+                      color: Colors.gray2,
                       backgroundColor: Colors.offblack,
-                      ...menuItemHover,
                     }}
                   >
-                    {modelName.charAt(0).toUpperCase() + modelName.slice(1)}
+                    Loading models...
                   </MenuItem>
-                ))}
+                ) : (
+                  models.map((modelName) => (
+                    <MenuItem
+                      key={modelName}
+                      onClick={() => handleMenuClose(modelName)}
+                      sx={{
+                        color: paramTextColor,
+                        backgroundColor: Colors.offblack,
+                        ...menuItemHover,
+                      }}
+                    >
+                      {modelName
+                        .split(/[-_]/)
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(" ")}
+                    </MenuItem>
+                  ))
+                )}
               </Menu>
             </Grid>
 

@@ -3,7 +3,7 @@ const fetch = require('node-fetch');
 // dotenv
 require('dotenv').config();
 // Import affiliate mappings directly from JS module
-const affiliateMappings = require('./affiliate_mapping');
+const affiliateMappings = require('./affiliate_mapping.js');
 
 // Convert the array to a lookup object for faster access
 const REFERRAL_LINKS = affiliateMappings.reduce((acc, curr) => {

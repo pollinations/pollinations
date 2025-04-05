@@ -1,5 +1,6 @@
 import { generateTextPortkey } from '../generateTextPortkey.js';
 import debug from 'debug';
+import affiliatePrompt from './affiliate_prompt.js';
 
 const log = debug('pollinations:adfilter');
 const errorLog = debug('pollinations:adfilter:error');
@@ -12,7 +13,15 @@ const errorLog = debug('pollinations:adfilter:error');
 export async function generateReferralLinks(content) {
     log('Sending content to OpenAI for referral link insertion');
     
-    // Prepare the prompt for OpenAI
+    // First, use LLM to determine the most relevant affiliate
+    const affiliateId = await findRelevantAffiliate(content);
+    
+    // If we found a relevant affiliate, use it for the referral link
+    if (affiliateId) {
+        log(`Found relevant affiliate ID: ${affiliateId}`);
+    }
+    
+    // Prepare the prompt for OpenAI with the affiliate ID if found
     const messages = [
         {
             role: "system",
@@ -27,13 +36,14 @@ export async function generateReferralLinks(content) {
             6. For concepts, use topic=[category]
             7. NEVER add referral links to formatting-related text (like "Bold text" or "italic")
             8. NEVER add referral links inside code blocks or technical examples
+            ${affiliateId ? `9. Use the affiliate ID "${affiliateId}" in the referral link URL` : ''}
 
             Example of good link placement:
             Input: "The MacBook Pro is great for development. The iPad Pro and iPhone 15 are also excellent. **Bold text** and *italic text* are formatting examples."
-            Output: "[MacBook Pro](https://pollinations.ai/referral?topic=macbook) is great for development. The iPad Pro and iPhone 15 are also excellent. **Bold text** and *italic text* are formatting examples."
+            Output: "[MacBook Pro](https://pollinations.ai/referral?topic=macbook${affiliateId ? `&id=${affiliateId}` : ''}) is great for development. The iPad Pro and iPhone 15 are also excellent. **Bold text** and *italic text* are formatting examples."
             Note: We added just one strategic link and ignored formatting-related text
 
-            The referral link format is: https://pollinations.ai/referral?topic=[topic]`
+            The referral link format is: https://pollinations.ai/referral?topic=[topic]${affiliateId ? `&id=${affiliateId}` : ''}`
         },
         {
             role: "user",
@@ -53,21 +63,83 @@ export async function generateReferralLinks(content) {
 }
 
 /**
+ * Find the most relevant affiliate for the given content
+ * @param {string} content - The content to analyze
+ * @returns {Promise<string|null>} - The ID of the most relevant affiliate, or null if none found
+ */
+async function findRelevantAffiliate(content) {
+    log('Finding relevant affiliate for content');
+    
+    try {
+        // Prepare the prompt for the LLM to find the most relevant affiliate
+        const messages = [
+            {
+                role: "system",
+                content: `You are a helpful assistant that analyzes content and determines the most relevant affiliate program from a list.
+                
+                Here is the list of available affiliate programs:
+                ${affiliatePrompt}
+                
+                Your task is to:
+                1. Analyze the content provided by the user
+                2. Determine which affiliate program is most relevant to the content
+                3. Return ONLY the ID of the most relevant affiliate program
+                4. If no affiliate program is relevant, return "none"
+                
+                Return ONLY the ID value, nothing else - no explanations, no additional text.`
+            },
+            {
+                role: "user",
+                content: `Analyze this content and return the ID of the most relevant affiliate program:\n\n${content}`
+            }
+        ];
+        
+        // Generate the affiliate ID using OpenAI
+        const response = await generateTextPortkey(messages, { model: 'openai' });
+        const affiliateId = response.choices[0].message.content.trim();
+        
+        // If the response is "none" or empty, return null
+        if (!affiliateId || affiliateId.toLowerCase() === 'none') {
+            log('No relevant affiliate found');
+            return null;
+        }
+        
+        log(`Selected affiliate ID: ${affiliateId}`);
+        return affiliateId;
+    } catch (error) {
+        errorLog('Error finding relevant affiliate:', error);
+        return null;
+    }
+}
+
+/**
  * Extract referral link information from processed content
  * @param {string} processedContent - Content with referral links 
  * @returns {object} - Information about extracted links
  */
 export function extractReferralLinkInfo(processedContent) {
-    const referralLinkRegex = /\[([^\]]+)\]\(https:\/\/pollinations\.ai\/referral\?topic=([^)\s]+)\)/g;
+    const referralLinkRegex = /\[([^\]]+)\]\(https:\/\/pollinations\.ai\/referral\?topic=([^)&\s]+)(?:&id=([^)&\s]+))?\)/g;
     const topics = [];
     const linkDetails = [];
+    const affiliateIds = new Set();
     let match;
     
     while ((match = referralLinkRegex.exec(processedContent)) !== null) {
-        const [fullMatch, linkText, topic] = match;
+        const [fullMatch, linkText, topic, affiliateId] = match;
         topics.push(topic);
-        linkDetails.push({ text: linkText, topic });
-        console.log(`Added referral link: "${linkText}" (topic: ${topic})`);
+        
+        const linkDetail = { 
+            text: linkText, 
+            topic 
+        };
+        
+        if (affiliateId) {
+            linkDetail.affiliateId = affiliateId;
+            affiliateIds.add(affiliateId);
+        }
+        
+        linkDetails.push(linkDetail);
+        console.log(`Added referral link: "${linkText}" (topic: ${topic}${affiliateId ? `, affiliate: ${affiliateId}` : ''})`);
     }
     
     return {
@@ -75,7 +147,8 @@ export function extractReferralLinkInfo(processedContent) {
         topics,
         linkDetails,
         topicsString: topics.join(','),
-        linkTextsString: linkDetails.map(d => d.text).join(',')
+        linkTextsString: linkDetails.map(d => d.text).join(','),
+        affiliateIds: Array.from(affiliateIds)
     };
 }
 

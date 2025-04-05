@@ -131,7 +131,7 @@ const models = [
     output_modalities: ["text"],
   },
   {
-    name: "deepseek-reasoning",
+    name: "deepseek-reasoning-qwen",
     description: "DeepSeek-R1 Distill Qwen 32B",
     handler: generateTextPortkey,
     //    details:  "Combines distilled reasoning with advanced contextual understanding.",

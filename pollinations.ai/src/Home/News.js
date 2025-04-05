@@ -86,7 +86,7 @@ export default function News() {
         >
           <SectionHeadlineStyle
             color={Colors.offwhite}
-            style={{ fontSize: "1.2em", fontFamily: Fonts.title }}
+            style={{ fontSize: "1.2em", fontFamily: Fonts.headline }}
             textAlign="left"
             maxWidth="90%"
           >

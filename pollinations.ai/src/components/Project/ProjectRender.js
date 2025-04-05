@@ -3,14 +3,12 @@ import { Link, Box, useMediaQuery } from "@mui/material"
 import Grid from "@mui/material/Grid2"
 import { useTheme } from "@mui/material/styles"
 import { ReactSVG } from "react-svg"
-
 import { Colors, Fonts } from "../../config/global"
-import StyledLink from "../StyledLink"
 import { LLMTextManipulator } from "../LLMTextManipulator"
 import useRandomSeed from "../../hooks/useRandomSeed"
 import { usePollinationsImage } from "@pollinations/react"
-import { PROJECT_LOGO_STYLE, PROJECT_DESCRIPTION } from "../../config/copywrite"
-import { rephrase, emojify, shortTechnical } from "../../config/llmTransforms"
+import { PROJECT_LOGO_STYLE } from "../../config/copywrite"
+import { shortTechnical } from "../../config/llmTransforms"
 import { ICONS } from "../../assets/icons/icons"
 import { trackEvent } from "../../config/analytics"
 import { SectionSubContainer } from "../SectionContainer"
@@ -48,9 +46,9 @@ const ProjectsRender = ({ projectList, classes }) => {
                   // Mobile layout
                   <Grid container direction="column" width="100%">
                     {/* First row: Image and title side by side */}
-                    <Grid 
-                      container 
-                      direction="row" 
+                    <Grid
+                      container
+                      direction="row"
                       alignItems="center"
                       justifyContent="flex-start"
                       width="100%"
@@ -95,12 +93,13 @@ const ProjectsRender = ({ projectList, classes }) => {
                                 >
                                   {project.author}
                                 </Link>
-                              ) : project.author.startsWith("[") && project.author.includes("](") ? (
+                              ) : project.author.startsWith("[") &&
+                                project.author.includes("](") ? (
                                 (() => {
-                                  const match = project.author.match(/^\[(.*?)\]\((.*?)\)$/);
+                                  const match = project.author.match(/^\[(.*?)\]\((.*?)\)$/)
                                   if (match) {
-                                    const displayName = match[1];
-                                    const userUrl = match[2];
+                                    const displayName = match[1]
+                                    const userUrl = match[2]
                                     return (
                                       <Link
                                         href={userUrl}
@@ -117,9 +116,9 @@ const ProjectsRender = ({ projectList, classes }) => {
                                       >
                                         {displayName}
                                       </Link>
-                                    );
+                                    )
                                   }
-                                  return project.author;
+                                  return project.author
                                 })()
                               ) : project.author.includes("http") ? (
                                 <Link
@@ -138,14 +137,9 @@ const ProjectsRender = ({ projectList, classes }) => {
                         </Box>
                       </Grid>
                     </Grid>
-                    
+
                     {/* Second row: Description */}
-                    <Grid 
-                      container 
-                      direction="row" 
-                      width="100%" 
-                      sx={{ mt: 2 }}
-                    >
+                    <Grid container direction="row" width="100%" sx={{ mt: 2 }}>
                       <Grid size={12} style={{ textAlign: "left" }}>
                         <span
                           style={{
@@ -174,12 +168,7 @@ const ProjectsRender = ({ projectList, classes }) => {
                         url={project.url}
                       />
                     </Grid>
-                    <Grid
-                      container
-                      size={12}
-                      direction="row"
-                      sx={{ padding: "1em" }}
-                    >
+                    <Grid container size={12} direction="row" sx={{ padding: "1em" }}>
                       <Grid
                         size={{ xs: 12, md: 4 }}
                         marginBottom={{ xs: "0.5em", md: "0em" }}
@@ -215,12 +204,13 @@ const ProjectsRender = ({ projectList, classes }) => {
                                 >
                                   {project.author}
                                 </Link>
-                              ) : project.author.startsWith("[") && project.author.includes("](") ? (
+                              ) : project.author.startsWith("[") &&
+                                project.author.includes("](") ? (
                                 (() => {
-                                  const match = project.author.match(/^\[(.*?)\]\((.*?)\)$/);
+                                  const match = project.author.match(/^\[(.*?)\]\((.*?)\)$/)
                                   if (match) {
-                                    const displayName = match[1];
-                                    const userUrl = match[2];
+                                    const displayName = match[1]
+                                    const userUrl = match[2]
                                     return (
                                       <Link
                                         href={userUrl}
@@ -237,9 +227,9 @@ const ProjectsRender = ({ projectList, classes }) => {
                                       >
                                         {displayName}
                                       </Link>
-                                    );
+                                    )
                                   }
-                                  return project.author;
+                                  return project.author
                                 })()
                               ) : project.author.includes("http") ? (
                                 <Link
@@ -379,8 +369,8 @@ const ProjectImage = ({ name, PROJECT_LOGO_SIZE, description, url }) => {
   }
 
   const imageStyle = {
-    width: PROJECT_LOGO_SIZE, 
-    height: PROJECT_LOGO_SIZE, 
+    width: PROJECT_LOGO_SIZE,
+    height: PROJECT_LOGO_SIZE,
     borderRadius: "1em",
     transition: "transform 0.2s ease-in-out",
     cursor: "pointer",
@@ -388,12 +378,7 @@ const ProjectImage = ({ name, PROJECT_LOGO_SIZE, description, url }) => {
   }
 
   return (
-    <Link
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={handleImageClick}
-    >
+    <Link href={url} target="_blank" rel="noopener noreferrer" onClick={handleImageClick}>
       <img
         src={imageUrl}
         alt={name}

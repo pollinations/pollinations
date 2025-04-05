@@ -11,6 +11,12 @@ export function useFeedLoader(onNewImage, setLastImage) {
       imageFeedSource.onmessage = evt => {
         const data = JSON.parse(evt.data);
         setImagesGenerated(no => no + 1);
+        
+        // Dispatch custom event for counter increment
+        window.dispatchEvent(new CustomEvent('image-received', { 
+          detail: { image: data } 
+        }));
+        
         // lastServerLoad = data["concurrentRequests"];
         if (data["status"] === "end_generating")
           setLastImage(data);

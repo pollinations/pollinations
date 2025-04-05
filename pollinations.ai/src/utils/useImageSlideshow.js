@@ -79,6 +79,7 @@ export function useImageEditor({ stop, image }) {
 
     try {
       console.log("Updating image with newImage:", newImage);
+      console.log("Prompt being used for image update:", newImage.prompt);
       const loadedImage = await loadImage(newImage);
       setEditedImage(loadedImage);
     } catch (error) {

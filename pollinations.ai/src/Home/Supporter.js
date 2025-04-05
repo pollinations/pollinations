@@ -4,6 +4,7 @@ import {
   SectionContainer,
   SectionSubContainer,
   SectionHeadlineStyle,
+  SectionMainContent,
 } from "../components/SectionContainer"
 import SectionTitle from "../components/SectionTitle"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
@@ -13,7 +14,6 @@ import { SUPPORTER_LIST } from "../config/supporterList"
 import StyledLink from "../components/StyledLink"
 import { useTheme, useMediaQuery } from "@mui/material"
 import Grid from "@mui/material/Grid2"
-import SvgArtGenerator from "../components/SvgArtGenerator"
 import { trackEvent } from "../config/analytics"
 
 const Supporter = () => {
@@ -30,18 +30,13 @@ const Supporter = () => {
 
   // Helper to ensure proper protocol for external links
   const getCompanyLink = (url) => {
-    console.log("[getCompanyLink] Raw URL:", url)
     if (!url) {
-      console.warn("[getCompanyLink] No URL provided, returning '#'")
       return "#"
     }
     if (url.startsWith("http")) {
-      console.log("[getCompanyLink] Protocol included, returning URL as is:", url)
       return url
     } else {
-      const correctedUrl = `https://${url}`
-      console.warn("[getCompanyLink] Protocol missing, corrected URL:", correctedUrl)
-      return correctedUrl
+      return `https://${url}`
     }
   }
 
@@ -55,6 +50,7 @@ const Supporter = () => {
 
   return (
     <SectionContainer backgroundConfig={SectionBG.supporter}>
+      <SectionMainContent>
       {/* <SvgArtGenerator
         width="1920px"
         height="600px"
@@ -67,8 +63,8 @@ const Supporter = () => {
           <LLMTextManipulator text={SUPPORTER_SUBTITLE} transforms={[rephrase, emojify, noLink]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
-      <SectionSubContainer>
-        <Grid container spacing={4} mb={8}>
+      <SectionSubContainer paddingBottom="0em">
+        <Grid container spacing={4}>
           {SUPPORTER_LIST.map((company) => (
             <Grid key={company.name} size={{ xs: 6, sm: 3 }} style={{ textAlign: "center" }}>
               <img
@@ -85,7 +81,7 @@ const Supporter = () => {
                 href={getCompanyLink(company.url)}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: Colors.lime, fontFamily: Fonts.parameter, fontSize: "1.3em" }}
+                style={{ color: Colors.lime, fontFamily: Fonts.parameter, fontSize: "1.1em" }}
                 onClick={() => handleSupporterClick(company.name)}
               >
                 <strong>{company.name}</strong>
@@ -105,6 +101,7 @@ const Supporter = () => {
           ))}
         </Grid>
       </SectionSubContainer>
+      </SectionMainContent>
     </SectionContainer>
   )
 }

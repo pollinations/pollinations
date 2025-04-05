@@ -17,27 +17,26 @@ export const HERO_INTRO =
 
 
 export const HERO_CTO = 
-  "Talk to us, reach out. "
+  "Talk to us, reach out."
 
 export const HERO_EMAIL_BUTTON = "hello@pollinations.ai"
 export const HERO_GITHUB_LINK = "README.md"
-export const HERO_DISCORD_LINK = "Join on Discord"
+export const HERO_DISCORD_LINK = "Join on Discord (do not use markdown link formatting)"
 
 export const NEWS_TITLE = 
   "**Last update**" + newsList.split("\n")[0];
 
 export const NEWS_LIST = newsList.split("\n").slice(1).join("\n")
 
-export const IMAGE_FEED_SUBTITLE =
-  "Real-time feed of our image API endpoint"
+export const IMAGE_FEED_SUBTITLE = "See what others are creating in real-time"
 
 
-export const IMAGE_FEED_TITLE = "Live Feed"
+export const IMAGE_FEED_TITLE = "Image Feed"
 export const IMAGE_FEED_MODE1 = "Watch";
 export const IMAGE_FEED_MODE2 = "Try";
 export const IMAGE_EDIT_BUTTON_ON = "Imagine";
 export const IMAGE_EDIT_BUTTON_OFF = "Imagine";
-export const IMAGE_FEED_TOOLTIP_PROMPT = "describe the image to generate.";
+export const IMAGE_FEED_TOOLTIP_PROMPT = "Prompt";
 
 export const IMAGE_FEED_TOOLTIP_MODEL = "Select the text-to-image model."
 export const IMAGE_FEED_TOOLTIP_WIDTH = 
@@ -118,3 +117,9 @@ export const FOOTER_INFO = " 2025 Pollinations.AI - An open source AI startup ba
 
 export const ASCII_ART_PROMPT = (width, height) =>
   `Unicode/Ascii Art inspired by elegant, minimal Egyptian gods and mystical pyramids. ${width} width x ${height} height characters. Incorporate hieroglyphs and maintain a lot of empty space. Return only the characters, no other text or quotes.`
+
+// Text Feed Section
+export const TEXT_FEED_TITLE = "Text Feed";
+export const TEXT_FEED_SUBTITLE = "Real-time feed of Pollinations.AI's text API endpoints";
+export const TEXT_FEED_MODE1 = "Watch";
+export const TEXT_FEED_MODE2 = "Try";

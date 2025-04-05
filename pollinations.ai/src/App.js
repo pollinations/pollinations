@@ -6,6 +6,8 @@ import Footer from "./Home/Footer"
 import Home from "./Home"
 import Terms from "./Home/Terms"
 import { trackEvent } from "./config/analytics"
+import { ThemeProvider } from "@mui/material/styles"
+import { theme } from "./styles/theme"
 
 const ReferralRedirect = () => {
   const [searchParams] = useSearchParams();
@@ -59,7 +61,7 @@ const AppRoutes = [
 ]
 
 const App = () => (
-  <>
+  <ThemeProvider theme={theme}>
     <SEOMetadata />
     <Header />
     <Routes>
@@ -68,7 +70,7 @@ const App = () => (
       ))}
     </Routes>
     <Footer />
-  </>
+  </ThemeProvider>
 )
 
 export default App

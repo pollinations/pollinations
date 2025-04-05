@@ -5,6 +5,7 @@ import {
   SectionContainer,
   SectionSubContainer,
   SectionHeadlineStyle,
+  SectionMainContent,
 } from "../components/SectionContainer.js"
 import { INTEGRATE_TITLE, INTEGRATE_SUBTITLE, INTEGRATE_GITHUB_LINK } from "../config/copywrite"
 import { rephrase, emojify, noLink } from "../config/llmTransforms.js"
@@ -30,6 +31,7 @@ export const Integration = () => {
 
   return (
     <SectionContainer backgroundConfig={SectionBG.integration}>
+      <SectionMainContent>
       <SectionSubContainer>
         <SectionTitle title={INTEGRATE_TITLE} />
       </SectionSubContainer>
@@ -66,9 +68,10 @@ export const Integration = () => {
           {INTEGRATE_GITHUB_LINK}
         </GeneralButton>
       </SectionSubContainer>
-      <SectionSubContainer>
+      <SectionSubContainer paddingBottom="0em">
         <CodeExamples image={image} />
       </SectionSubContainer>
+      </SectionMainContent>
     </SectionContainer>
   )
 }

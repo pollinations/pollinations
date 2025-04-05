@@ -15,7 +15,6 @@ const SERVERS = {
 const SERVER_TIMEOUT = 45000; // 45 seconds
 const MAIN_SERVER_URL = process.env.POLLINATIONS_MASTER_URL || 'https://image.pollinations.ai/register';
 
-const IS_MAIN_SERVER = MAIN_SERVER_URL === 'https://image.pollinations.ai/register';
 
 const concurrency = 2;
 

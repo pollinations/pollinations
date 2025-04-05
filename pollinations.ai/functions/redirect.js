@@ -2,12 +2,22 @@
 const fetch = require('node-fetch');
 // dotenv
 require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
 
-// Define referral link mappings
-const REFERRAL_LINKS = {
-  lovemy: 'https://lovemy.ai/?linkId=lp_060145&sourceId=pollinations&tenantId=lovemyai',
-  hentai: 'https://aihentaichat.com/?linkId=lp_617069&sourceId=pollinations&tenantId=lovemyai'
-};
+// Dynamically load referral link mappings from affiliate_mapping.json
+let REFERRAL_LINKS = {};
+try {
+  const data = fs.readFileSync(path.join(__dirname, 'affiliate_mapping.json'), 'utf8');
+  const mappings = JSON.parse(data);
+  REFERRAL_LINKS = mappings.reduce((acc, curr) => {
+    acc[curr.Id] = curr.TrackingLink;
+    return acc;
+  }, {});
+  console.log('Loaded affiliate mappings:', REFERRAL_LINKS);
+} catch (error) {
+  console.error('Error loading affiliate mappings:', error);
+}
 
 /**
  * Send analytics event to Google Analytics

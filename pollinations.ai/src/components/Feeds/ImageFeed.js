@@ -48,6 +48,9 @@ export const ImageFeed = memo(() => {
   })
   const { imagesGenerated } = useFeedLoader(onNewImage, setLastImage)
 
+  // Determine the current image to display based on mode
+  const currentImage = toggleValue === 'feed' ? slideshowImage : image;
+
   // Effects
   useEffect(() => {
     setIsInputChanged(false)
@@ -66,7 +69,6 @@ export const ImageFeed = memo(() => {
     }
   }, [toggleValue, userEditedPrompt, image])
 
-  // Add effect to update prompt when image changes in feed mode
   useEffect(() => {
     if (toggleValue === "feed" && image?.prompt && image !== slideshowImage) {
       setUserEditedPrompt(image.prompt)
@@ -97,7 +99,6 @@ export const ImageFeed = memo(() => {
 
       if (isEditMode && image) {
         setModifiedImageParams({ ...image })
-        // Always update the prompt when switching to edit mode
         setUserEditedPrompt(image.prompt || "")
         editModeInitializedRef.current = true
       }
@@ -113,29 +114,27 @@ export const ImageFeed = memo(() => {
   const handleParamChange = useCallback(
     (param, value) => {
       setIsInputChanged(true)
+      const baseParams = modifiedImageParams || (image ? { ...image } : {})
+
       if (param === "prompt") {
-        setModifiedImageParams((prevParams) => {
-          const baseParams = prevParams || (image ? { ...image } : {})
-          return {
-            ...baseParams,
-            prompt: value,
-          }
-        })
-        return
-      }
-      setModifiedImageParams((prevParams) => {
-        const baseParams = prevParams || (image ? { ...image } : {})
-        return {
-          ...baseParams,
+         setModifiedImageParams(prevParams => ({
+           ...(prevParams || baseParams),
+           prompt: value,
+         }));
+         return;
+      } else {
+        setModifiedImageParams(prevParams => ({
+          ...(prevParams || baseParams),
           [param]: value,
-        }
-      })
+        }));
+      }
+
       if (toggleValue !== "edit") {
-        handleToggleChange(null, "edit")
+        handleToggleChange(null, "edit");
       }
     },
-    [toggleValue, handleToggleChange, image]
-  )
+    [toggleValue, handleToggleChange, image, modifiedImageParams]
+  );
 
   // Rendering - REMOVED SectionContainer and SectionMainContent wrappers
   // REMOVED Title Section
@@ -153,17 +152,17 @@ export const ImageFeed = memo(() => {
         <ServerLoadInfo
           lastItem={lastImage}
           itemsGenerated={imagesGenerated}
-          currentItem={image}
+          currentItem={currentImage}
           itemType="image"
         />
       </SectionSubContainer>
       {/* Main Content Section */}
-      <SectionSubContainer 
-        paddingBottom="0em" 
+      <SectionSubContainer
+        paddingBottom="0em"
         alignItems="stretch"
         sx={{ maxWidth: "900px" }}
       >
-        {image?.imageURL && (
+        {currentImage?.imageURL && (
           <Box
             sx={{
                 width: "100%",
@@ -183,26 +182,26 @@ export const ImageFeed = memo(() => {
             </Box>
 
             {/* Prompt Display */}
-            <Box 
-              width="100%" 
+            <Box
+              width="100%"
               maxWidth="1000px"
               mb={2}
             >
               <PromptDisplay
                 itemType="image"
-                item={image}
+                item={currentImage}
                 isLoading={isLoading}
                 isEditMode={toggleValue === "edit"}
                 onPromptChange={(newPrompt) => {
-                  setUserEditedPrompt(newPrompt)
-                  handleParamChange("prompt", newPrompt)
+                  setUserEditedPrompt(newPrompt);
+                  handleParamChange("prompt", newPrompt);
                 }}
                 onEditModeSwitch={() => handleToggleChange(null, "edit")}
                 setIsInputChanged={setIsInputChanged}
-                promptTooltip={IMAGE_FEED_TOOLTIP_PROMPT} // Use constant
+                promptTooltip={IMAGE_FEED_TOOLTIP_PROMPT}
                 backgroundColor={Colors.offblack2}
                 sharedPrompt={toggleValue === "edit" ? userEditedPrompt : undefined}
-                style={{ width: '100%', minWidth: '100%' }} // Force full width
+                style={{ width: '100%', minWidth: '100%' }}
               />
             </Box>
 
@@ -210,16 +209,12 @@ export const ImageFeed = memo(() => {
             {toggleValue === "edit" && (
               <Box width="100%" mb={2}>
                 <ImageEditor
-                  image={{
-                    ...effectiveImage,
-                    prompt: userEditedPrompt || modifiedImageParams?.prompt || image?.prompt || "",
-                  }}
+                  image={effectiveImage}
                   isLoading={isLoading}
                   setIsInputChanged={setIsInputChanged}
                   isInputChanged={isInputChanged}
                   isStopped={isStopped}
-                  switchToEditMode={() => handleToggleChange(null, "edit")}
-                  edit={isStopped} // Assuming 'edit' prop controls editability based on isStopped
+                  edit={isStopped}
                   toggleValue={toggleValue}
                   handleToggleChange={handleToggleChange}
                   stop={stop}
@@ -231,25 +226,23 @@ export const ImageFeed = memo(() => {
             
             {/* Image Display - moved inside the same Box as PromptDisplay */}
             <Box width="100%" maxWidth="1000px">
-              <ImageDisplay image={image} isLoading={isLoading} />
+              <ImageDisplay image={currentImage} isLoading={isLoading} />
             </Box>
           </Box>
         )}
 
         {/* If no image is currently available, show loader. */}
-        {!image?.imageURL && (
+        {!currentImage?.imageURL && (
           <SectionSubContainer width="100%">
             <CircularProgress sx={{ color: Colors.lime }} />
           </SectionSubContainer>
         )}
 
         {/* If we're in "feed" mode and have an image, show model info. */}
-        {toggleValue === "feed" && (
+        {toggleValue === "feed" && currentImage?.imageURL && (
           <SectionSubContainer paddingBottom="0em" width="100%">
             <br />
-            {image?.imageURL && (
-              <ModelInfo model={image.model} referrer={image.referrer} itemType="image" />
-            )}
+            <ModelInfo model={currentImage.model} referrer={currentImage.referrer} itemType="image" />
           </SectionSubContainer>
         )}
       </SectionSubContainer>

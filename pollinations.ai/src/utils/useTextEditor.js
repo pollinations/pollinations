@@ -11,12 +11,11 @@ export const useTextEditor = ({ stop, entry }) => {
   // Update from parent entry if needed
   useEffect(() => {
     if (!entry) return;
-    
-    // Only update if we haven't generated our own entry or if we don't have an entry yet
-    if (!hasGeneratedEntry.current || !currentEntry) {
-      setCurrentEntry(entry);
-    }
-  }, [entry, currentEntry]);
+
+    // Always update currentEntry when the parent entry changes
+    setCurrentEntry(entry);
+
+  }, [entry]);
 
   // Helper function to convert parameters to URL for GET request
   const createGetUrl = (parameters) => {

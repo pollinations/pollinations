@@ -23,8 +23,8 @@ export const registerFeedListener = async (req, res) => {
     'Connection': 'keep-alive'
   });
 
-  // add listener to feedListeners
-  feedListeners = [...feedListeners, { res, nsfw: query.nsfw === 'true' }];
+  // add listener to feedListeners - NSFW parameter is now ignored
+  feedListeners = [...feedListeners, { res }];
 
   // remove listener when connection closes
   req.on('close', () => {
@@ -36,7 +36,7 @@ export const registerFeedListener = async (req, res) => {
   const statesToSend = lastStates.slice(-pastResults);
 
   for (const lastState of statesToSend) {
-    await sendToListener(res, lastState, query.nsfw === 'true');
+    await sendToListener(res, lastState);
   }
 };
 
@@ -49,12 +49,12 @@ export const sendToFeedListeners = (data, options = {}) => {
   if (options.saveAsLastState) {
     lastStates.push(data);
   }
-  feedListeners.forEach(listener => sendToListener(listener.res, data, listener.nsfw));
+  feedListeners.forEach(listener => sendToListener(listener.res, data));
 };
 
-function sendToListener(listener, data, nsfw) {
-  // Don't send mature content to listeners who don't want NSFW
-  if (!nsfw && (
+function sendToListener(listener, data) {
+  // Always filter out mature content regardless of client preferences
+  if (
     data?.private || 
     data?.nsfw || 
     data?.isChild || 
@@ -63,7 +63,7 @@ function sendToListener(listener, data, nsfw) {
     data?.maturity?.isChild || 
     data?.maturity?.isMature || 
     (data?.prompt && isMature(data?.prompt))
-  )) return;
+  ) return;
   
   logFeed("data", data);
   return listener.write(`data: ${JSON.stringify(data)}\n\n`);

@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState } from "react"
 import { Colors, Fonts, SectionBG } from "../config/global"
 import {
   SectionContainer,
@@ -12,7 +12,7 @@ import { SUPPORTER_TITLE, SUPPORTER_SUBTITLE, SUPPORTER_LOGO_STYLE } from "../co
 import { rephrase, emojify, noLink } from "../config/llmTransforms"
 import { SUPPORTER_LIST } from "../config/supporterList"
 import StyledLink from "../components/StyledLink"
-import { useTheme, useMediaQuery } from "@mui/material"
+import { useTheme, useMediaQuery, Link } from "@mui/material"
 import Grid from "@mui/material/Grid2"
 import { trackEvent } from "../config/analytics"
 
@@ -48,6 +48,37 @@ const Supporter = () => {
     })
   }
 
+  // Image component with hover effect
+  const SupporterImage = ({ company }) => {
+    const [isHovered, setIsHovered] = useState(false)
+    
+    const imageStyle = {
+      width: imageDimension,
+      height: imageDimension,
+      borderRadius: "15px",
+      transition: "transform 0.2s ease-in-out",
+      cursor: "pointer",
+      transform: isHovered ? "scale(0.95)" : "scale(1)",
+    }
+
+    return (
+      <Link
+        href={getCompanyLink(company.url)}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => handleSupporterClick(company.name)}
+      >
+        <img
+          src={generateImageUrl(company.name, company.description, SUPPORTER_LOGO_STYLE)}
+          alt={company.name}
+          style={imageStyle}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        />
+      </Link>
+    )
+  }
+
   return (
     <SectionContainer backgroundConfig={SectionBG.supporter}>
       <SectionMainContent>
@@ -67,13 +98,7 @@ const Supporter = () => {
         <Grid container spacing={4}>
           {SUPPORTER_LIST.map((company) => (
             <Grid key={company.name} size={{ xs: 6, sm: 3 }} style={{ textAlign: "center" }}>
-              <img
-                src={generateImageUrl(company.name, company.description, SUPPORTER_LOGO_STYLE)}
-                alt={company.name}
-                width={imageDimension}
-                height={imageDimension}
-                style={{ borderRadius: "15px" }}
-              />
+              <SupporterImage company={company} />
               <br />
               <br />
               <StyledLink

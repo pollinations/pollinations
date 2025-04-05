@@ -2,47 +2,8 @@
 const fetch = require('node-fetch');
 // dotenv
 require('dotenv').config();
-const fs = require('fs');
-const path = require('path');
-
-// Dynamically load referral link mappings from affiliate_mapping.json
-let REFERRAL_LINKS = {};
-let MAPPING_LOADED = false;
-try {
-  // Try multiple potential paths to find the affiliate_mapping.json file
-  let data;
-  const possiblePaths = [
-    path.join(__dirname, 'affiliate_mapping.json'),
-    path.join(__dirname, '../affiliate_mapping.json'),
-    path.join(process.cwd(), 'functions', 'affiliate_mapping.json')
-  ];
-  
-  for (const filePath of possiblePaths) {
-    try {
-      if (fs.existsSync(filePath)) {
-        data = fs.readFileSync(filePath, 'utf8');
-        console.log(`Successfully loaded affiliate mappings from ${filePath}`);
-        break;
-      }
-    } catch (err) {
-      console.log(`Could not load from ${filePath}:`, err.message);
-    }
-  }
-  
-  if (data) {
-    const mappings = JSON.parse(data);
-    REFERRAL_LINKS = mappings.reduce((acc, curr) => {
-      acc[curr.Id] = curr.TrackingLink;
-      return acc;
-    }, {});
-    MAPPING_LOADED = true;
-    console.log('Loaded affiliate mappings:', REFERRAL_LINKS);
-  } else {
-    console.error('Could not find affiliate_mapping.json in any of the expected locations');
-  }
-} catch (error) {
-  console.error('Error loading affiliate mappings:', error);
-}
+// Import affiliate mappings directly from JS module
+const REFERRAL_LINKS = require('./affiliate_mappings');
 
 /**
  * Send analytics event to Google Analytics
@@ -133,17 +94,6 @@ exports.handler = async function(event, context) {
   const path = event.path || '';
   const pathSegments = path.split('/');
   const targetId = pathSegments[pathSegments.length - 1];
-  
-  // Check if we have mappings loaded
-  if (!MAPPING_LOADED) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        error: 'Affiliate mappings could not be loaded',
-        message: 'The server could not load the affiliate mappings file'
-      })
-    };
-  }
   
   // Get URL from query parameters or use the mapped URL
   const params = event.queryStringParameters || {};

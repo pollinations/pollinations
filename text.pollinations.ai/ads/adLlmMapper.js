@@ -1,6 +1,9 @@
 import { OpenAI } from "openai";
-import { log } from "../utils/logger.js";
+import debug from 'debug';
 import affiliatePrompt, { affiliatesData } from "./affiliate_prompt.js";
+
+const log = debug('pollinations:adfilter');
+const errorLog = debug('pollinations:adfilter:error');
 
 // Configure OpenAI with API key from environment variables
 const openai = new OpenAI({
@@ -93,7 +96,7 @@ AFFILIATE ID:`;
             description: matchedAffiliate.description
         };
     } catch (error) {
-        log(`Error finding relevant affiliate: ${error.message}`);
+        errorLog(`Error finding relevant affiliate: ${error.message}`);
         return null;
     }
 }
@@ -142,7 +145,7 @@ export async function generateAffiliateAd(affiliateId) {
         log(`Generated ad for ${affiliate.name} (${affiliateId})`);
         return adText;
     } catch (error) {
-        log(`Error generating affiliate ad: ${error.message}`);
+        errorLog(`Error generating affiliate ad: ${error.message}`);
         return null;
     }
 }

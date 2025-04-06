@@ -17,7 +17,7 @@ const REFERRAL_LINK_PROBABILITY = 0.05;
 const TEST_ADS_MARKER = "p-ads";
 
 // Whether to require markdown for ad processing
-const REQUIRE_MARKDOWN = false;
+const REQUIRE_MARKDOWN = true;
 
 /**
  * Process content and add referral links if markdown is detected

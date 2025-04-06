@@ -10,11 +10,13 @@ const errorLog = debug('pollinations:adfilter:error');
 // Regular expression to detect markdown content
 const markdownRegex = /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`.*\`)|(?:\>.*)|(?:\-\s.*)|(?:\d\.\s.*)/;
 
-// Probability of adding referral links (1%)
-const REFERRAL_LINK_PROBABILITY = 1;
+// Probability of adding referral links (5%)
+const REFERRAL_LINK_PROBABILITY = 0.05;
 
 // Flag for testing ads with a specific marker
 const TEST_ADS_MARKER = "p-ads";
+// Regex to match p-ads with potential surrounding punctuation or whitespace
+const TEST_ADS_REGEX = /p-ads[.,\s]?/i;
 
 // Whether to require markdown for ad processing
 const REQUIRE_MARKDOWN = false;
@@ -62,26 +64,31 @@ export async function processRequestForAds(content, req, messages = []) {
     if (REQUIRE_MARKDOWN && !markdownRegex.test(content)) 
         return content;
     
-    // Test filter: only process if content or input messages contain the test marker "p-ads"
-    let markerFound = content.includes(TEST_ADS_MARKER);
+    // Test filter: check if content or input messages contain the test marker "p-ads"
+    // Use regex to match p-ads with potential punctuation
+    let markerFound = TEST_ADS_REGEX.test(content);
     
     // Also check in the input messages if available
     if (!markerFound && messages && messages.length > 0) {
-        markerFound = messages.some(msg => msg.content && msg.content.includes(TEST_ADS_MARKER));
+        markerFound = messages.some(msg => msg.content && TEST_ADS_REGEX.test(msg.content));
     }
+    
+    // If marker is found, set probability to 100%, otherwise use the default 5%
+    const effectiveProbability = markerFound ? 1.0 : REFERRAL_LINK_PROBABILITY;
     
     if (!markerFound) {
-        log('Skipping ad processing - test marker "p-ads" not found in content or input messages');
-        return content;
+        log('No test marker "p-ads" found, using default probability');
+    } else {
+        log('Test marker "p-ads" found, using 100% probability');
     }
     
-    // Random check - only process 20% of the time
-    if (Math.random() > REFERRAL_LINK_PROBABILITY) {
-        // log('Skipping referral link processing due to probability check');
+    // Random check - only process based on the effective probability
+    if (Math.random() > effectiveProbability) {
+        log('Skipping referral link processing due to probability check');
         return content;
     }
 
-    log('Processing markdown content for referral links');
+    log('Processing content for referral links');
 
     try {
         // Find the relevant affiliate - now returns an object with affiliate details

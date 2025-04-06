@@ -1,9 +1,11 @@
-import { generateTextPortkey } from '../generateTextPortkey.js';
-import debug from 'debug';
-import affiliatePrompt from './affiliate_prompt.js';
+import { OpenAI } from "openai";
+import { log } from "../utils/logger.js";
+import affiliatePrompt, { affiliatesData } from "./affiliate_prompt.js";
 
-const log = debug('pollinations:adfilter');
-const errorLog = debug('pollinations:adfilter:error');
+// Configure OpenAI with API key from environment variables
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+});
 
 /**
  * Find the most relevant affiliate for the given content using an LLM.
@@ -12,85 +14,89 @@ const errorLog = debug('pollinations:adfilter:error');
  * @param {Array} messages - The input messages to analyze (optional).
  * @returns {Promise<string|null>} - The ID of the most relevant affiliate, or null if none found/suitable.
  */
-async function findRelevantAffiliate(content, messages = []) {
-    log('Finding relevant affiliate for content and messages');
+export async function findRelevantAffiliate(content, messages = []) {
+    // Combine the last 3 messages with the current content for context
+    const lastMessages = messages.slice(-3).map(m => m.content || "").filter(Boolean);
+    const combinedContent = [...lastMessages, content].join("\n");
+    
+    if (!combinedContent || combinedContent.trim() === "") {
+        log("No content to analyze for affiliate matching");
+        return null;
+    }
+
+    // Check if we should exclude NSFW content
+    const shouldExcludeNSFW = !combinedContent.toLowerCase().includes("nsfw") && 
+                              !combinedContent.toLowerCase().includes("adult") &&
+                              !combinedContent.toLowerCase().includes("sex");
+
+    // Filter out NSFW affiliates if needed
+    const eligibleAffiliates = shouldExcludeNSFW 
+        ? affiliatesData.filter(affiliate => !affiliate.nsfw)
+        : affiliatesData;
+    
+    // If no eligible affiliates, return null
+    if (eligibleAffiliates.length === 0) {
+        log("No eligible affiliates available");
+        return null;
+    }
 
     try {
-        // Combine input messages and output content for analysis
-        let combinedContent = content;
+        // Use the markdown format for the LLM prompt
+        const promptForLLM = `
+Based on the following conversation content, determine which affiliate program would be most relevant to suggest.
+Return ONLY the ID of the most relevant affiliate from the list below, or "none" if none are relevant.
+
+CONVERSATION CONTENT:
+${combinedContent}
+
+AVAILABLE AFFILIATES:
+${affiliatePrompt}
+
+AFFILIATE ID:`;
+
+        const completion = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [{ role: "user", content: promptForLLM }],
+            max_tokens: 50,
+            temperature: 0.3,
+        });
+
+        const response = completion.choices[0]?.message?.content?.trim();
         
-        // If we have input messages, add them to the combined content
-        if (messages && messages.length > 0) {
-            // Get only the last 3 messages for context
-            const recentMessages = messages.slice(-3);
-            
-            // Extract the text from each message, truncate if needed, and add to the combined content
-            const messageTexts = recentMessages.map(msg => {
-                const role = msg.role || 'unknown';
-                let content = msg.content || '';
-                
-                // Truncate content if it's too long (max 250 chars)
-                if (content.length > 250) {
-                    content = content.substring(0, 250) + '...';
-                }
-                
-                return `${role}: ${content}`;
-            }).join('\n\n');
-            
-            combinedContent = `${messageTexts}\n\n${content}`;
-            log('Combined recent input messages and output content for affiliate analysis');
-        }
-
-        // Prepare the prompt for the LLM to find the most relevant affiliate
-        const promptMessages = [
-            {
-                role: "system",
-                content: `You are a helpful assistant that analyzes content and determines the most relevant affiliate program from a list.
-
-                Here is the list of available affiliate programs:
-                ${affiliatePrompt}
-
-                Your task is to:
-                1. Analyze the content provided by the user.
-                2. Determine which affiliate program is MOST relevant to the content.
-                3. Return ONLY the ID of the most relevant affiliate program (e.g., '1422856', '432264', 'lovemy', 'kofi').
-                4. If no affiliate program is clearly relevant or you are unsure, return "none".
-                5. Be conservative: if multiple seem potentially relevant but none stand out strongly, return "none".
-
-                Return ONLY the ID value or "none", nothing else - no explanations, no additional text.`
-            },
-            {
-                role: "user",
-                content: `Analyze this content and return the ID of the most relevant affiliate program:\n\n${combinedContent}`
-            }
-        ];
-
-        // Generate the affiliate ID using an LLM (Portkey)
-        const response = await generateTextPortkey(promptMessages, { model: 'openai' }); // Assuming OpenAI via Portkey
-        const affiliateId = response.choices[0].message.content.trim();
-
-        // If the response is "none" or empty, return null
-        if (!affiliateId || affiliateId.toLowerCase() === 'none') {
-            log('No relevant affiliate found by LLM');
+        if (!response || response.toLowerCase() === "none") {
+            log("No relevant affiliate found by LLM");
             return null;
         }
 
-        // Basic validation: Check if the returned ID actually exists in the prompt data
-        const idPattern = new RegExp(`- ID: ${affiliateId}\\b`);
-        if (!idPattern.test(affiliatePrompt)) {
-            log(`LLM returned an invalid or unknown affiliate ID: ${affiliateId}`);
+        // Extract just the affiliate ID from the response
+        const affiliateIdMatch = response.match(/\b([a-zA-Z0-9]+)\b/);
+        const affiliateId = affiliateIdMatch ? affiliateIdMatch[1] : null;
+        
+        if (!affiliateId) {
+            log("Could not extract affiliate ID from LLM response");
             return null;
         }
 
+        // Find the affiliate in our data
+        const matchedAffiliate = affiliatesData.find(a => a.id === affiliateId);
+        
+        if (!matchedAffiliate) {
+            log(`Affiliate ID ${affiliateId} not found in affiliate data`);
+            return null;
+        }
 
-        log(`LLM selected affiliate ID: ${affiliateId}`);
-        return affiliateId;
+        log(`Found relevant affiliate: ${matchedAffiliate.name} (${affiliateId})`);
+        return {
+            id: affiliateId,
+            name: matchedAffiliate.name,
+            product: matchedAffiliate.product,
+            description: matchedAffiliate.description
+        };
     } catch (error) {
-        errorLog('Error finding relevant affiliate:', error);
+        log(`Error finding relevant affiliate: ${error.message}`);
         return null;
     }
 }
-
 
 /**
  * Generates a markdown ad string for the identified affiliate provider.
@@ -98,135 +104,110 @@ async function findRelevantAffiliate(content, messages = []) {
  * @param {string} affiliateId - The ID of the affiliate provider.
  * @returns {string|null} - A markdown string for the ad, or null if ID is invalid or ad cannot be generated.
  */
-function generateAffiliateAd(affiliateId) {
-    log("Generating referral ad string for affiliate:", affiliateId);
+export async function generateAffiliateAd(affiliateId) {
     if (!affiliateId) {
-        log("No affiliate ID provided for ad generation.");
+        log("No affiliate ID provided for ad generation");
         return null;
     }
 
-    // Regex to find the section for the given affiliate ID
-    // It looks for "- ID: [affiliateId]" and captures everything until the next "##" or end of string
-    const affiliateSectionRegex = new RegExp(`- ID: ${affiliateId}\\b([\\s\\S]*?)(?=\\n##|$)`, "s");
-    const match = affiliatePrompt.match(affiliateSectionRegex);
-
-    if (!match || !match[1]) {
-        errorLog("Could not find section details for affiliate ID:", affiliateId, "in affiliate_prompt.js");
-        return null;
-    }
-
-    const affiliateDetails = match[1]; // Content of the specific affiliate's section
-
-    // Extract a relevant text snippet for the ad. Priority: Description, Product, then generic.
-    let adTextSource = '';
-    const descriptionMatch = affiliateDetails.match(/- Description: (.*?)\n/);
-    const productMatch = affiliateDetails.match(/- Product: (.*?)\n/);
-
-    if (descriptionMatch && descriptionMatch[1].trim()) {
-        adTextSource = descriptionMatch[1].trim();
-    } else if (productMatch && productMatch[1].trim()) {
-        adTextSource = productMatch[1].trim(); // Use product name/description if Description field is missing
-    }
-
-    // If still no text, create a very generic one (less ideal)
-    if (!adTextSource) {
-         // Attempt to get the Affiliate name from the preceding "##" line as a last resort
-        const nameRegex = new RegExp(`## (.*?)\\n[\\s\\S]*- ID: ${affiliateId}\\b`);
-        const nameMatch = affiliatePrompt.match(nameRegex);
-        const affiliateName = nameMatch ? nameMatch[1].trim() : `Affiliate ${affiliateId}`;
-        adTextSource = `Learn more about ${affiliateName}`;
-        log(`No specific description/product found for ${affiliateId}, using generic ad text.`);
-    }
-
-
-    // --- Ad Text Truncation ---
-    const MAX_AD_LENGTH = 80;
-    let adText = adTextSource;
-     if (adText.length > MAX_AD_LENGTH) {
-        // Try to find a sentence break before the max length
-        let lastSentenceBreak = adText.lastIndexOf('.', MAX_AD_LENGTH);
-        // Only break if it's a reasonable length (e.g., more than half the max length)
-        if (lastSentenceBreak > MAX_AD_LENGTH / 2) {
-             adText = adText.substring(0, lastSentenceBreak + 1);
-        } else {
-             // Otherwise, just truncate and add ellipsis
-             adText = adText.substring(0, MAX_AD_LENGTH) + "...";
+    try {
+        // Find the affiliate in our data
+        const affiliate = affiliatesData.find(a => a.id === affiliateId);
+        
+        if (!affiliate) {
+            log(`Affiliate ID ${affiliateId} not found in affiliate data`);
+            return null;
         }
+
+        // Use the description if available, otherwise use the product
+        let adTextSource = affiliate.description || null;
+        
+        // If no description, use product information
+        if (!adTextSource && affiliate.product) {
+            adTextSource = `Learn more about ${affiliate.product}`;
+        }
+        
+        // If still no text, create a very generic one (less ideal)
+        if (!adTextSource) {
+            adTextSource = `Learn more about ${affiliate.name}`;
+            log(`No specific description/product found for ${affiliateId}, using generic ad text.`);
+        }
+
+        // Create the referral link
+        const referralLink = `https://pollinations.ai/referral?topic=${encodeURIComponent(affiliate.name)}&id=${affiliateId}`;
+        
+        // Format the ad
+        const adText = `\n\n---\n${adTextSource} [Learn more](${referralLink})`;
+        
+        log(`Generated ad for ${affiliate.name} (${affiliateId})`);
+        return adText;
+    } catch (error) {
+        log(`Error generating affiliate ad: ${error.message}`);
+        return null;
     }
-    // --- End Truncation ---
-
-
-    // Construct the redirect URL
-    const url = `https://pollinations.ai/redirect/${affiliateId}`;
-
-    // Construct the final markdown ad string
-    const adString = `\n\n---\n[${adText}](${url})\n`;
-
-    log("Generated ad string:", adString);
-    return adString;
 }
 
-
-// Keep the extraction function as it might be useful for analytics or other purposes
 /**
- * Extract referral link information from processed content (less relevant now but kept)
- * @param {string} processedContent - Content potentially containing referral links
- * @returns {object} - Information about extracted links
+ * Extracts information about referral links in the content.
+ * @param {string} content - The content to analyze for referral links.
+ * @returns {Object} - Information about the referral links found.
  */
-export function extractReferralLinkInfo(processedContent) {
-    // This regex might need adjustment if the link format changes
-    const referralLinkRegex = /\[([^\]]+)\]\(https:\/\/pollinations\.ai\/(?:referral\?topic=|redirect\/)([^)&\s]+)(?:&id=([^)&\s]+))?\)/g;
-    const topicsOrIds = []; // Can now be topics or IDs
-    const linkDetails = [];
-    const affiliateIds = new Set(); // Explicit affiliate IDs if present
-    let match;
-
-    while ((match = referralLinkRegex.exec(processedContent)) !== null) {
-        const [fullMatch, linkText, topicOrId, explicitAffiliateId] = match;
-        topicsOrIds.push(topicOrId);
-
-        const linkDetail = {
-            text: linkText,
-            topicOrId: topicOrId
-        };
-
-        // If the link uses the old format with &id=
-        if (explicitAffiliateId) {
-            linkDetail.affiliateId = explicitAffiliateId;
-            affiliateIds.add(explicitAffiliateId);
-        }
-         // If the link uses the new redirect format, the topicOrId is the affiliateId
-        else if (processedContent.includes('/redirect/')) {
-             linkDetail.affiliateId = topicOrId; // The ID is part of the path
-             affiliateIds.add(topicOrId);
-        }
-
-
-        linkDetails.push(linkDetail);
-        // log(`Found link: "${linkText}" (Topic/ID: ${topicOrId}${linkDetail.affiliateId ? `, Affiliate: ${linkDetail.affiliateId}` : ''})`);
-    }
-
-    return {
-        linkCount: topicsOrIds.length,
-        topicsOrIds, // Renamed from 'topics'
-        linkDetails,
-        topicsOrIdsString: topicsOrIds.join(','), // Renamed
-        linkTextsString: linkDetails.map(d => d.text).join(','),
-        affiliateIds: Array.from(affiliateIds)
+function extractReferralLinkInfo(content) {
+    // Initialize result object
+    const result = {
+        linkCount: 0,
+        linkTexts: [],
+        linkTextsString: '',
+        topicsOrIds: [],
+        topicsOrIdsString: '',
+        affiliateIds: []
     };
+    
+    if (!content) return result;
+    
+    // Regular expression to find referral links in the content
+    // Updated to match the new format: https://pollinations.ai/referral?topic=X&id=Y
+    const referralLinkRegex = /\[([^\]]+)\]\((https:\/\/pollinations\.ai\/referral\?topic=([^&]+)&id=([^&\)]+))[^\)]*\)/g;
+    
+    let match;
+    while ((match = referralLinkRegex.exec(content)) !== null) {
+        // Increment link count
+        result.linkCount++;
+        
+        // Extract link text
+        const linkText = match[1];
+        result.linkTexts.push(linkText);
+        
+        // Extract topic and affiliate ID from the URL
+        const topic = decodeURIComponent(match[3]);
+        const affiliateId = match[4];
+        
+        result.topicsOrIds.push(topic);
+        
+        // Add affiliate ID to the list if it exists
+        if (affiliateId) {
+            result.affiliateIds.push(affiliateId);
+        }
+    }
+    
+    // Join arrays into strings for analytics
+    result.linkTextsString = result.linkTexts.join(',');
+    result.topicsOrIdsString = result.topicsOrIds.join(',');
+    
+    return result;
 }
 
 // Mock function might need update or removal depending on testing strategy
 /**
- * Helper function for test environments to add mock referral links (APPENDS NOW)
- * @param {string} content - Content to process
- * @returns {string} - Content with a mock appended referral link
+ * Add mock referral links for testing purposes
+ * @param {string} content - Content to add mock links to
+ * @returns {string} - Content with mock links added
  */
-export function addMockReferralLinks(content) {
-    // Appends a simple mock ad instead of inserting
-    const mockAd = "\n\n---\n[Mock Product Ad](https://pollinations.ai/redirect/mock_affiliate)\n";
-    return content + mockAd;
+function addMockReferralLinks(content) {
+    // Add a mock referral link for testing
+    const mockReferralLink = `\n\n---\nTest affiliate product description [Learn more](https://pollinations.ai/referral?topic=TestAffiliate&id=test123)`;
+    return content + mockReferralLink;
 }
 
 // Export the relevant functions
-export { findRelevantAffiliate, generateAffiliateAd };
+export { extractReferralLinkInfo, addMockReferralLinks };

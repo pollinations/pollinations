@@ -84,32 +84,32 @@ export async function processRequestForAds(content, req, messages = []) {
     log('Processing markdown content for referral links');
 
     try {
-        // Find the relevant affiliate ID
-        const affiliateId = await findRelevantAffiliate(content, messages);
+        // Find the relevant affiliate - now returns an object with affiliate details
+        const affiliateData = await findRelevantAffiliate(content, messages);
         
-        // If an affiliate ID is found, generate the ad string
-        if (affiliateId) {
-            const adString = generateAffiliateAd(affiliateId);
+        // If affiliate data is found, generate the ad string
+        if (affiliateData) {
+            const adString = await generateAffiliateAd(affiliateData.id);
             
             // If an ad string was successfully generated, append it
             if (adString) {
                 const processedContent = content + adString; // Append ad string
                 
-                // Extract info for analytics (adjust if needed for new format)
+                // Extract info for analytics
                 const linkInfo = extractReferralLinkInfo(processedContent); 
                 
-                log(`Appended ad for affiliate ${affiliateId}. Total links now: ${linkInfo.linkCount}`);
+                log(`Appended ad for affiliate ${affiliateData.name} (${affiliateData.id}). Total links now: ${linkInfo.linkCount}`);
                 
                 // Send analytics event
                 if (req && linkInfo.linkCount > 0) {
                     await sendToAnalytics(req, 'referralLinkAdded', {
                         linkCount: linkInfo.linkCount,
-                        // Adjust analytics data points as needed for the new structure
                         topics: linkInfo.topicsOrIdsString || '', 
                         linkTexts: linkInfo.linkTextsString || '',
                         contentLength: content.length,
                         processedLength: processedContent.length,
-                        affiliateIds: linkInfo.affiliateIds ? linkInfo.affiliateIds.join(',') : ''
+                        affiliateIds: linkInfo.affiliateIds ? linkInfo.affiliateIds.join(',') : '',
+                        affiliateName: affiliateData.name || ''
                     });
                 }
                 

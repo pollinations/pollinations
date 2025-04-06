@@ -250,7 +250,7 @@ async function handleRequest(req, res, requestData) {
                     // }, req);
                     
                     // Then process regular referral links
-                    processedContent = await processRequestForAds(processedContent, req);
+                    processedContent = await processRequestForAds(processedContent, req, requestData.messages);
                     
                     completion.choices[0].message.content = processedContent;
                 } catch (error) {

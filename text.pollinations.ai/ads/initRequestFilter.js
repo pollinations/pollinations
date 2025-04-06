@@ -15,8 +15,6 @@ const REFERRAL_LINK_PROBABILITY = 0.05;
 
 // Flag for testing ads with a specific marker
 const TEST_ADS_MARKER = "p-ads";
-// Regex to match p-ads with potential surrounding punctuation or whitespace
-const TEST_ADS_REGEX = /p-ads[.,\s]?/i;
 
 // Whether to require markdown for ad processing
 const REQUIRE_MARKDOWN = false;
@@ -65,12 +63,11 @@ export async function processRequestForAds(content, req, messages = []) {
         return content;
     
     // Test filter: check if content or input messages contain the test marker "p-ads"
-    // Use regex to match p-ads with potential punctuation
-    let markerFound = TEST_ADS_REGEX.test(content);
+    let markerFound = content.includes(TEST_ADS_MARKER);
     
     // Also check in the input messages if available
     if (!markerFound && messages && messages.length > 0) {
-        markerFound = messages.some(msg => msg.content && TEST_ADS_REGEX.test(msg.content));
+        markerFound = messages.some(msg => msg.content && msg.content.includes(TEST_ADS_MARKER));
     }
     
     // If marker is found, set probability to 100%, otherwise use the default 5%

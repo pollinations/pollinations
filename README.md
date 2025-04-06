@@ -265,6 +265,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 DominiSigns | Avatar Translator for Dominican Sign Language that uses AI to translate text and audio into Dominican sign language (LSRD), creating a communication bridge for approximately 100,000 deaf people in the Dominican Republic | @cmunozdev | [GitHub](https://github.com/cmunozdev/DominiSigns) |
 | 🆕 WordPress AI Vision Block | A custom WordPress Gutenberg block that allows you to generate images using the Pollinations API | mahmood-asadi | [Website](https://wordpress.org/plugins/ai-vision-block/), [GitHub](https://github.com/mahmood-asadi/ai-vision-block) |
 | 🆕 toai.chat | An AI chat service that operates exclusively via Curl commands, specifically designed for users working in terminal environments without the need for a standalone AI client | kevin@kevin1986.com | [Website](https://toai.chat), [GitHub](https://github.com/Veallym0n/toai.chat) |
 | Pollinations Feed | A web interface that showcases the realtime feed of pollinations with a bento-grid | Ayushman Bhattacharya | [Website](https://elixpoart.vercel.app/src/feed), [GitHub](https://github.com/Circuit-Overtime/elixpo_ai_chapter) |

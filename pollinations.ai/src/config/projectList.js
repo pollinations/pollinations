@@ -398,6 +398,13 @@ const allProjects = {
   ],
   toolsInterfaces: [
     {
+      name: "🆕 DominiSigns",
+      description: "Avatar Translator for Dominican Sign Language that uses artificial intelligence to translate text and audio into Dominican sign language (LSRD), creating a communication bridge for approximately 100,000 deaf people in the Dominican Republic.",
+      author: "@cmunozdev",
+      repo: "https://github.com/cmunozdev/DominiSigns",
+      submissionDate: "2025-04-06",
+    },
+    {
       name: "🆕 WordPress AI Vision Block",
       url: "https://wordpress.org/plugins/ai-vision-block/",
       description: "A custom WordPress Gutenberg block that allows you to generate images using the Pollinations API. Simply enter a prompt, and the AI will generate an image for you. Once the post is saved, the image is automatically stored in the WordPress Media Library.",

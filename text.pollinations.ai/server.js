@@ -22,7 +22,7 @@ dotenv.config();
 const BANNED_PHRASES = [
 ];
 
-
+// const blockedIPs = new Set();
 const blockedIPs = new Set();
 
 async function blockIP(ip) {
@@ -294,6 +294,8 @@ async function handleRequest(req, res, requestData) {
 
         if (requestData.stream) {
             log('Sending streaming response with sendAsOpenAIStream');
+            // Add requestData to completion object for access in streaming ad wrapper
+            completion.requestData = requestData;
             sendAsOpenAIStream(res, completion, req);
         } else {
             if (req.method === 'GET') {
@@ -730,15 +732,26 @@ if (completion) {
         if (responseStream.pipe) {
             log('Using pipe for Node.js Readable stream');
             
-            // Check if we should process the stream for ads
-            if (req && req.body && req.body.messages) {
-                log('Processing stream for ads');
+            // Get messages from the request data
+            // For GET requests, messages will be in the request path
+            // For POST requests, messages will be in the request body
+            const messages = req ? (
+                // Try to get messages from different sources
+                (req.body && req.body.messages) || 
+                (req.requestData && req.requestData.messages) || 
+                (completion.requestData && completion.requestData.messages) ||
+                []
+            ) : [];
+            
+            // Check if we have messages and should process the stream for ads
+            if (req && messages.length > 0) {
+                log('Processing stream for ads with', messages.length, 'messages');
                 
                 // Create a wrapped stream that will add ads at the end
                 const wrappedStream = createStreamingAdWrapper(
                     responseStream, 
                     req, 
-                    req.body.messages
+                    messages
                 );
                 
                 // Pipe the wrapped stream to the response

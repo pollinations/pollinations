@@ -20,36 +20,36 @@ const TEST_ADS_MARKER = "p-ads";
 // Whether to require markdown for ad processing
 const REQUIRE_MARKDOWN = true;
 
-/**
- * Process content and add referral links if markdown is detected
- * @param {string} content - The output content to process
- * @param {object} req - Express request object for analytics
- * @param {Array} messages - The input messages (optional)
- * @returns {Promise<string>} - The processed content with referral links
- */
-export async function processRequestForAds(content, req, messages = []) {
+// Extracted utility functions
+function shouldShowAds(content, messages = [], req = null) {
     // Get request data for referrer check
-    const requestData = getRequestData(req);
+    const requestData = req ? getRequestData(req) : null;
 
     // Skip ad processing if any referrer is present
-    if (requestData.referrer && requestData.referrer !== 'unknown') {
+    if (requestData && requestData.referrer && requestData.referrer !== 'unknown') {
         log('Skipping ad processing due to referrer presence:', requestData.referrer);
-        return content;
+        return { shouldShowAd: false, markerFound: false };
     }
-
-    // Test filter: check if content or input messages contain the test marker "p-ads"
-    let markerFound = content.includes(TEST_ADS_MARKER);
     
-    // Also check in the input messages if available
-    if (!markerFound && messages && messages.length > 0) {
+    // Check if messages contain the test marker "p-ads"
+    let markerFound = false;
+    
+    // Check in the messages array
+    if (messages && messages.length > 0) {
         markerFound = messages.some(msg => msg.content && msg.content.includes(TEST_ADS_MARKER));
     }
     
-    // Check if content contains markdown (if required and not test marker)
-    if (REQUIRE_MARKDOWN && !markerFound && !markdownRegex.test(content)) 
-        return content;
+    // For GET requests, also check the URL path which might contain the marker
+    if (!markerFound && req && req.path) {
+        markerFound = req.path.includes(TEST_ADS_MARKER);
+    }
     
-    // If marker is found, set probability to 100%, otherwise use the default probability
+    // If content is provided, also check it
+    if (!markerFound && content) {
+        markerFound = content.includes(TEST_ADS_MARKER);
+    }
+    
+    // If marker is not found, use the default probability
     const effectiveProbability = markerFound ? 1.0 : REFERRAL_LINK_PROBABILITY;
     
     if (!markerFound) {
@@ -59,56 +59,120 @@ export async function processRequestForAds(content, req, messages = []) {
     }
     
     // Random check - only process based on the effective probability
-    if (Math.random() > effectiveProbability) {
-        log('Skipping referral link processing due to probability check');
-        return content;
+    const shouldShowAd = Math.random() <= effectiveProbability;
+    
+    if (!shouldShowAd) {
+        log('Skipping ad processing due to probability check');
     }
+    
+    return { shouldShowAd, markerFound };
+}
 
-    log('Processing content for referral links');
+function shouldProceedWithAd(content, markerFound) {
+    // Skip if content is empty or too short
+    if (!content || content.length < 50) {
+        log('Content too short for ad processing');
+        return false;
+    }
+    
+    // Check if content contains markdown (if required and not marker found)
+    if (REQUIRE_MARKDOWN && !markerFound && !markdownRegex.test(content)) {
+        log('No markdown detected in content, skipping ad');
+        return false;
+    }
+    
+    return true;
+}
 
+async function generateAdForContent(content, req, messages, markerFound = false, isStreaming = false) {
+    if (!shouldProceedWithAd(content, markerFound)) {
+        return null;
+    }
+    
+    log(`Processing ${isStreaming ? 'streaming ' : ''}content for ad generation`);
+    
     try {
-        // Find the relevant affiliate - now returns an object with affiliate details
+        // Find the relevant affiliate
         const affiliateData = await findRelevantAffiliate(content, messages);
         
         // If affiliate data is found, generate the ad string
         if (affiliateData) {
             const adString = await generateAffiliateAd(affiliateData.id);
             
-            // If an ad string was successfully generated, append it
+            // If an ad string was successfully generated
             if (adString) {
-                const processedContent = content + adString; // Append ad string
-                
                 // Extract info for analytics
-                const linkInfo = extractReferralLinkInfo(processedContent); 
+                const linkInfo = extractReferralLinkInfo(content + adString);
                 
-                log(`Appended ad for affiliate ${affiliateData.name} (${affiliateData.id}). Total links now: ${linkInfo.linkCount}`);
+                log(`Generated ${isStreaming ? 'streaming ' : ''}ad for affiliate ${affiliateData.name} (${affiliateData.id}). Total links: ${linkInfo.linkCount}`);
                 
                 // Send analytics event
                 if (linkInfo.linkCount > 0) {
                     await sendToAnalytics(req, 'referralLinkAdded', {
                         linkCount: linkInfo.linkCount,
-                        topics: linkInfo.topicsOrIdsString || '', 
+                        topics: linkInfo.topicsOrIdsString || '',
                         linkTexts: linkInfo.linkTextsString || '',
                         contentLength: content.length,
-                        processedLength: processedContent.length,
+                        processedLength: content.length + adString.length,
                         affiliateIds: linkInfo.affiliateIds ? linkInfo.affiliateIds.join(',') : '',
-                        affiliateName: affiliateData.name || ''
+                        affiliateName: affiliateData.name || '',
+                        isStreaming
                     });
                 }
                 
-                return processedContent; // Return content with appended ad
+                return adString;
             }
         }
         
-        // If no relevant affiliate or ad string couldn't be generated, return original content
-        log("No relevant affiliate found or ad generation failed.");
-        return content;
-
+        log(`No relevant affiliate found for ${isStreaming ? 'streaming ' : ''}content`);
+        return null;
     } catch (error) {
-        errorLog('Error adding referral links:', error);
-        // If there's an error, return the original content
+        errorLog(`Error generating ${isStreaming ? 'streaming ' : ''}ad:`, error);
+        return null;
+    }
+}
+
+function formatAdAsSSE(adString) {
+    // Create a fake delta object that matches OpenAI's format
+    const fakeChunk = {
+        id: 'ad-chunk',
+        object: 'chat.completion.chunk',
+        created: Math.floor(Date.now() / 1000),
+        model: 'gpt-4',
+        choices: [{
+            index: 0,
+            delta: {
+                content: adString
+            },
+            finish_reason: null
+        }]
+    };
+    
+    // Format as SSE
+    return `data: ${JSON.stringify(fakeChunk)}\n\n`;
+}
+
+/**
+ * Process content and add referral links if markdown is detected
+ * @param {string} content - The output content to process
+ * @param {object} req - Express request object for analytics
+ * @param {Array} messages - The input messages (optional)
+ * @returns {Promise<string>} - The processed content with referral links
+ */
+export async function processRequestForAds(content, req, messages = []) {
+    const { shouldShowAd, markerFound } = shouldShowAds(content, messages, req);
+    
+    if (!shouldShowAd) {
         return content;
     }
+    
+    const adString = await generateAdForContent(content, req, messages, markerFound, false);
+    
+    if (adString) {
+        return content + adString;
+    }
+    
+    return content;
 }
 
 /**
@@ -125,33 +189,9 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
         return responseStream;
     }
     
-    // Get request data for referrer check
-    const requestData = getRequestData(req);
-
-    // Skip ad processing if any referrer is present
-    if (requestData.referrer && requestData.referrer !== 'unknown') {
-        log('Skipping streaming ad processing due to referrer presence:', requestData.referrer);
-        return responseStream;
-    }
+    const { shouldShowAd, markerFound } = shouldShowAds(null, messages, req);
     
-    // Check if messages contain the test marker "p-ads"
-    let markerFound = false;
-    if (messages && messages.length > 0) {
-        markerFound = messages.some(msg => msg.content && msg.content.includes(TEST_ADS_MARKER));
-    }
-    
-    // If marker is not found, use the default probability
-    const effectiveProbability = markerFound ? 1.0 : REFERRAL_LINK_PROBABILITY;
-    
-    if (!markerFound) {
-        log('No test marker "p-ads" found in messages, using default probability');
-    } else {
-        log('Test marker "p-ads" found in messages, using 100% probability');
-    }
-    
-    // Random check - only process based on the effective probability
-    if (Math.random() > effectiveProbability) {
-        log('Skipping streaming ad processing due to probability check');
+    if (!shouldShowAd) {
         return responseStream;
     }
     
@@ -160,13 +200,11 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
     // Collect the content to analyze for affiliate matching
     let collectedContent = '';
     let isDone = false;
-    let foundDoneMessage = false;
-    let doneMessageChunk = null;
     
     // Create a transform stream that will:
     // 1. Pass through all chunks unchanged
     // 2. Collect content for analysis
-    // 3. Add an ad before the [DONE] message
+    // 3. Add an ad after the [DONE] message
     const streamTransformer = new Transform({
         objectMode: true,
         transform(chunk, encoding, callback) {
@@ -175,51 +213,43 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
             
             // Check if this is the [DONE] message
             if (chunkStr.includes('data: [DONE]')) {
-                log('Found [DONE] message in stream');
-                foundDoneMessage = true;
-                doneMessageChunk = chunk;
+                isDone = true;
                 
                 // Process the collected content and add an ad
-                processCollectedContent(collectedContent, req, messages)
+                generateAdForContent(collectedContent, req, messages, markerFound, true)
                     .then(adString => {
                         if (adString) {
-                            // Format the ad as a proper SSE message with OpenAI delta format
+                            // Format the ad as a proper SSE message
                             const adChunk = formatAdAsSSE(adString);
                             
                             // Push the ad chunk before the [DONE] message
                             this.push(adChunk);
-                            log('Added ad to stream before [DONE] message');
                         }
                         
                         // Push the [DONE] message
-                        this.push(doneMessageChunk);
+                        this.push(chunk);
                         callback();
                     })
                     .catch(error => {
                         errorLog('Error processing streaming ad:', error);
                         // Just push the original chunk if there's an error
-                        this.push(doneMessageChunk);
+                        this.push(chunk);
                         callback();
                     });
             } else {
                 // For normal chunks, extract the content and pass through unchanged
-                if (!isDone && !foundDoneMessage) {
+                if (!isDone) {
                     try {
                         // Try to extract content from the SSE data
-                        const matches = chunkStr.matchAll(/data: ({.*?})\n\n/g);
-                        for (const match of matches) {
-                            if (match && match[1]) {
-                                try {
-                                    const data = JSON.parse(match[1]);
-                                    if (data.choices && 
-                                        data.choices[0] && 
-                                        data.choices[0].delta && 
-                                        data.choices[0].delta.content) {
-                                        collectedContent += data.choices[0].delta.content;
-                                    }
-                                } catch (e) {
-                                    // Ignore JSON parse errors
+                        const contentMatch = chunkStr.match(/data: (.*)\n\n/);
+                        if (contentMatch && contentMatch[1]) {
+                            try {
+                                const data = JSON.parse(contentMatch[1]);
+                                if (data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content) {
+                                    collectedContent += data.choices[0].delta.content;
                                 }
+                            } catch (e) {
+                                // Ignore JSON parse errors, might not be JSON
                             }
                         }
                     } catch (e) {
@@ -236,98 +266,4 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
     
     // Pipe the original stream through our transformer
     return responseStream.pipe(streamTransformer);
-}
-
-/**
- * Process the collected content and generate an ad if appropriate
- * @param {string} content - The collected content from the stream
- * @param {object} req - Express request object for analytics
- * @param {Array} messages - The input messages
- * @returns {Promise<string|null>} - The ad string or null if no ad should be added
- */
-async function processCollectedContent(content, req, messages) {
-    // Skip if content is empty or too short
-    if (!content || content.length < 50) {
-        log('Content too short for streaming ad processing');
-        return null;
-    }
-    
-    // Check if content contains markdown
-    if (REQUIRE_MARKDOWN && !markdownRegex.test(content)) {
-        log('No markdown detected in streaming content, skipping ad');
-        return null;
-    }
-    
-    log('Processing streaming content for ad generation');
-    
-    try {
-        // Find the relevant affiliate
-        const affiliateData = await findRelevantAffiliate(content, messages);
-        
-        // If affiliate data is found, generate the ad string
-        if (affiliateData) {
-            const adString = await generateAffiliateAd(affiliateData.id);
-            
-            // If an ad string was successfully generated
-            if (adString) {
-                // Extract info for analytics
-                const linkInfo = extractReferralLinkInfo(content + adString);
-                
-                log(`Generated streaming ad for affiliate ${affiliateData.name} (${affiliateData.id}). Total links: ${linkInfo.linkCount}`);
-                
-                // Send analytics event
-                if (linkInfo.linkCount > 0) {
-                    await sendToAnalytics(req, 'referralLinkAdded', {
-                        linkCount: linkInfo.linkCount,
-                        topics: linkInfo.topicsOrIdsString || '',
-                        linkTexts: linkInfo.linkTextsString || '',
-                        contentLength: content.length,
-                        processedLength: content.length + adString.length,
-                        affiliateIds: linkInfo.affiliateIds ? linkInfo.affiliateIds.join(',') : '',
-                        affiliateName: affiliateData.name || '',
-                        isStreaming: true
-                    });
-                }
-                
-                return adString;
-            }
-        }
-        
-        log('No relevant affiliate found for streaming content');
-        return null;
-    } catch (error) {
-        errorLog('Error generating streaming ad:', error);
-        return null;
-    }
-}
-
-/**
- * Format an ad string as a Server-Sent Event (SSE) message
- * @param {string} adString - The ad string to format
- * @returns {string} - The formatted SSE message
- */
-function formatAdAsSSE(adString) {
-    // Create a delta object in the same format as OpenAI's streaming API
-    const deltaObject = {
-        choices: [{
-            content_filter_results: {
-                hate: { filtered: false, severity: "safe" },
-                self_harm: { filtered: false, severity: "safe" },
-                sexual: { filtered: false, severity: "safe" },
-                violence: { filtered: false, severity: "safe" }
-            },
-            delta: { content: adString },
-            finish_reason: null,
-            index: 0,
-            logprobs: null
-        }],
-        created: Math.floor(Date.now() / 1000),
-        id: `chatcmpl-ad-${Math.random().toString(36).substring(2, 10)}`,
-        model: "gpt-ad-affiliate",
-        object: "chat.completion.chunk",
-        system_fingerprint: "fp_pollinations_ad"
-    };
-    
-    // Format as an SSE message
-    return `data: ${JSON.stringify(deltaObject)}\n\n`;
 }

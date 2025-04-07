@@ -10,7 +10,7 @@ const errorLog = debug('pollinations:adfilter:error');
  *
  * @param {string} content - The output content to analyze.
  * @param {Array} messages - The input messages to analyze (optional).
- * @returns {Promise<string|null>} - The ID of the most relevant affiliate, or null if none found/suitable.
+ * @returns {Promise<object|null>} - The affiliate object, or null if none found/suitable.
  */
 export async function findRelevantAffiliate(content, messages = []) {
     // Combine the last 3 messages with the current content for context
@@ -59,18 +59,7 @@ AFFILIATE ID:`;
         if (!response || response.toLowerCase() === "none") {
             log("No relevant affiliate found by LLM, using Ko-fi donation as fallback");
             // Find the Ko-fi affiliate in our data
-            const kofiAffiliate = affiliatesData.find(a => a.id === "kofi");
-            
-            if (kofiAffiliate) {
-                return {
-                    id: "kofi",
-                    name: kofiAffiliate.name,
-                    product: kofiAffiliate.product,
-                    description: kofiAffiliate.description
-                };
-            }
-            
-            return null;
+            return affiliatesData.find(a => a.id === "kofi") || null;
         }
 
         // Extract just the affiliate ID from the response
@@ -80,18 +69,7 @@ AFFILIATE ID:`;
         if (!affiliateId) {
             log("Could not extract affiliate ID from LLM response, using Ko-fi donation as fallback");
             // Find the Ko-fi affiliate in our data
-            const kofiAffiliate = affiliatesData.find(a => a.id === "kofi");
-            
-            if (kofiAffiliate) {
-                return {
-                    id: "kofi",
-                    name: kofiAffiliate.name,
-                    product: kofiAffiliate.product,
-                    description: kofiAffiliate.description
-                };
-            }
-            
-            return null;
+            return affiliatesData.find(a => a.id === "kofi") || null;
         }
 
         // Find the affiliate in our data
@@ -100,43 +78,16 @@ AFFILIATE ID:`;
         if (!matchedAffiliate) {
             log(`Affiliate ID ${affiliateId} not found in affiliate data, using Ko-fi donation as fallback`);
             // Find the Ko-fi affiliate in our data
-            const kofiAffiliate = affiliatesData.find(a => a.id === "kofi");
-            
-            if (kofiAffiliate) {
-                return {
-                    id: "kofi",
-                    name: kofiAffiliate.name,
-                    product: kofiAffiliate.product,
-                    description: kofiAffiliate.description
-                };
-            }
-            
-            return null;
+            return affiliatesData.find(a => a.id === "kofi") || null;
         }
 
         log(`Found relevant affiliate: ${matchedAffiliate.name} (${affiliateId})`);
-        return {
-            id: affiliateId,
-            name: matchedAffiliate.name,
-            product: matchedAffiliate.product,
-            description: matchedAffiliate.description
-        };
+        return matchedAffiliate;
     } catch (error) {
         errorLog(`Error finding relevant affiliate: ${error.message}`);
         // Use Ko-fi as fallback in case of errors
         log("Using Ko-fi donation as fallback due to error");
-        const kofiAffiliate = affiliatesData.find(a => a.id === "kofi");
-        
-        if (kofiAffiliate) {
-            return {
-                id: "kofi",
-                name: kofiAffiliate.name,
-                product: kofiAffiliate.product,
-                description: kofiAffiliate.description
-            };
-        }
-        
-        return null;
+        return affiliatesData.find(a => a.id === "kofi") || null;
     }
 }
 
@@ -160,19 +111,18 @@ export async function generateAffiliateAd(affiliateId) {
             return null;
         }
         
-        // Special handling for Ko-fi donations
-        if (affiliateId === 'kofi') {
-            // Create the referral link
-            const referralLink = `https://pollinations.ai/redirect/${affiliateId}`;
-            
-            // Format the ad with special message for Pollinations.AI
-            const adText = `\n\n---\nThis response was powered by Pollinations.AI free text generation APIs. [Support our mission](${referralLink}) to continue providing these AI models for free to everyone, with no signups or API keys required.`;
-            
-            log(`Generated special Ko-fi support ad for Pollinations.AI`);
+        // Create the referral link
+        const referralLink = `https://pollinations.ai/redirect/${affiliateId}`;
+        
+        // Use the ad_text field if available
+        if (affiliate.ad_text) {
+            // Replace placeholder with actual link
+            const adText = `\n\n---\n${affiliate.ad_text.replace('[Support our mission]', `[Support our mission](${referralLink})`)}`;
+            log(`Generated ad for ${affiliate.name} (${affiliateId}) using custom ad text`);
             return adText;
         }
         
-        // For regular affiliates, use the standard approach
+        // Otherwise, use the standard approach
         let adTextSource = '';
         
         // Try to use the description first
@@ -189,9 +139,6 @@ export async function generateAffiliateAd(affiliateId) {
             adTextSource = `Learn more about ${affiliate.name}`;
             log(`No specific description/product found for ${affiliateId}, using generic ad text.`);
         }
-
-        // Create the referral link
-        const referralLink = `https://pollinations.ai/redirect/${affiliateId}`;
         
         // Format the ad
         const adText = `\n\n---\n${adTextSource} [Learn more](${referralLink})`;

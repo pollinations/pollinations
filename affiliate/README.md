@@ -70,6 +70,43 @@ Each affiliate should include the following fields:
 }
 ```
 
+## Consolidated Affiliate Data
+
+The `affiliates.js` file serves as the single source of truth for all affiliate information used across the Pollinations platform. This file:
+
+1. Consolidates data from both `pollinations.ai/functions/affiliate_mapping.js` and `text.pollinations.ai/ads/affiliate_prompt.js`
+2. Provides rich metadata for each affiliate (ID, name, product, description, audience, categories, tags, tracking links)
+3. Supports both CommonJS and ES modules for compatibility across different parts of the application
+4. Includes utility functions for generating markdown (for LLM prompting) and creating redirect mappings
+
+### Usage in Other Files
+
+The consolidated affiliate data is used in:
+
+- `pollinations.ai/functions/redirect.js` - For handling redirects to affiliate links
+- `pollinations.ai/functions/affiliate_mapping.js` - For backward compatibility
+- `text.pollinations.ai/ads/affiliate_prompt.js` - For ad generation and content matching
+- `text.pollinations.ai/ads/adLlmMapper.js` - For finding relevant affiliates based on content
+
+### Data Structure
+
+Each affiliate in the consolidated file includes:
+
+```javascript
+{
+  id: "unique_id",
+  name: "Affiliate Name",
+  product: "Product description",
+  description: "Detailed description of the affiliate product",
+  audience: "Target audience description",
+  categories: ["Category1", "Category2"],
+  tags: ["tag1", "tag2"],  // Optional
+  nsfw: true,              // Optional, for adult content
+  ad_text: "Custom ad text with {url} placeholder",  // Optional
+  trackingLink: "https://example.com/?ref=your_ref_link"
+}
+```
+
 ## Output Format
 
 The final output is stored in `impact/scripts/get_affiliate_list/result/` with filenames following the format:

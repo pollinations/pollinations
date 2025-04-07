@@ -2,14 +2,11 @@
 const fetch = require('node-fetch');
 // dotenv
 require('dotenv').config();
-// Import affiliate mappings directly from JS module
-const affiliateMappings = require('./affiliate_mapping.js');
+// Import redirect mapping from the consolidated affiliates.js file
+const { redirectMapping } = require('../../affiliate/affiliates.js');
 
-// Convert the array to a lookup object for faster access
-const REFERRAL_LINKS = affiliateMappings.reduce((acc, curr) => {
-  acc[curr.Id] = curr.TrackingLink;
-  return acc;
-}, {});
+// Use the redirectMapping directly as it's already in the correct format
+const REFERRAL_LINKS = redirectMapping;
 
 /**
  * Send analytics event to Google Analytics

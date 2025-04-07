@@ -93,7 +93,17 @@ const affiliates = [
     description: "Support Pollinations AI with a donation on Ko-fi",
     audience: "Individuals looking to support creators and projects financially.",
     categories: ["Charitable Causes", "Apps"],
-    tags: ["donation", "support"]
+    tags: ["donation", "support"],
+    ad_text: "Powered by Pollinations.AI free text APIs. [Support our mission]({url}) to keep AI accessible for everyone."
+  },
+  {
+    id: "25841",
+    name: "Kodak Photo Printer",
+    product: "Kodak 4PASS photo printers and instant cameras",
+    description: "Get high-quality Kodak photo printers and instant cameras with 4PASS technology for superior photo quality.",
+    audience: "Photography enthusiasts and consumers looking for high-quality photo printing solutions",
+    categories: ["Consumer Electronics", "Photography"],
+    tags: ["photo printer", "instant camera", "4PASS technology"]
   }
 ];
 
@@ -123,6 +133,10 @@ Use this information to determine which affiliate campaign is most relevant to t
     
     if (affiliate.nsfw) {
       markdown += `- **NSFW**: Yes\n`;
+    }
+    
+    if (affiliate.ad_text) {
+      markdown += `- **Ad Text**: ${affiliate.ad_text}\n`;
     }
   });
 

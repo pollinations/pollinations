@@ -127,7 +127,7 @@ export async function generateAffiliateAd(affiliateId) {
         }
 
         // Create the referral link
-        const referralLink = `https://pollinations.ai/referral?topic=${encodeURIComponent(affiliate.name)}&id=${affiliateId}`;
+        const referralLink = `https://pollinations.ai/referral/${affiliateId}`;
         
         // Format the ad
         const adText = `\n\n---\n${adTextSource} [Learn more](${referralLink})`;
@@ -159,8 +159,8 @@ function extractReferralLinkInfo(content) {
     if (!content) return result;
     
     // Regular expression to find referral links in the content
-    // Updated to match the new format: https://pollinations.ai/referral?topic=X&id=Y
-    const referralLinkRegex = /\[([^\]]+)\]\((https:\/\/pollinations\.ai\/referral\?topic=([^&]+)&id=([^&\)]+))[^\)]*\)/g;
+    // Updated to match the new format: https://pollinations.ai/referral/[id]
+    const referralLinkRegex = /\[([^\]]+)\]\((https:\/\/pollinations\.ai\/referral\/([a-zA-Z0-9]+))[^\)]*\)/g;
     
     let match;
     while ((match = referralLinkRegex.exec(content)) !== null) {
@@ -171,11 +171,10 @@ function extractReferralLinkInfo(content) {
         const linkText = match[1];
         result.linkTexts.push(linkText);
         
-        // Extract topic and affiliate ID from the URL
-        const topic = decodeURIComponent(match[3]);
-        const affiliateId = match[4];
+        // Extract affiliate ID from the URL
+        const affiliateId = match[3];
         
-        result.topicsOrIds.push(topic);
+        result.topicsOrIds.push(affiliateId);
         
         // Add affiliate ID to the list if it exists
         if (affiliateId) {
@@ -198,7 +197,7 @@ function extractReferralLinkInfo(content) {
  */
 function addMockReferralLinks(content) {
     // Add a mock referral link for testing
-    const mockReferralLink = `\n\n---\nTest affiliate product description [Learn more](https://pollinations.ai/referral?topic=TestAffiliate&id=test123)`;
+    const mockReferralLink = `\n\n---\nTest affiliate product description [Learn more](https://pollinations.ai/referral/test123)`;
     return content + mockReferralLink;
 }
 

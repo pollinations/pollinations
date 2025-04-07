@@ -57,7 +57,19 @@ AFFILIATE ID:`;
         const response = completion.choices[0]?.message?.content?.trim();
         
         if (!response || response.toLowerCase() === "none") {
-            log("No relevant affiliate found by LLM");
+            log("No relevant affiliate found by LLM, using Ko-fi donation as fallback");
+            // Find the Ko-fi affiliate in our data
+            const kofiAffiliate = affiliatesData.find(a => a.id === "kofi");
+            
+            if (kofiAffiliate) {
+                return {
+                    id: "kofi",
+                    name: kofiAffiliate.name,
+                    product: kofiAffiliate.product,
+                    description: kofiAffiliate.description
+                };
+            }
+            
             return null;
         }
 
@@ -66,7 +78,19 @@ AFFILIATE ID:`;
         const affiliateId = affiliateIdMatch ? affiliateIdMatch[1] : null;
         
         if (!affiliateId) {
-            log("Could not extract affiliate ID from LLM response");
+            log("Could not extract affiliate ID from LLM response, using Ko-fi donation as fallback");
+            // Find the Ko-fi affiliate in our data
+            const kofiAffiliate = affiliatesData.find(a => a.id === "kofi");
+            
+            if (kofiAffiliate) {
+                return {
+                    id: "kofi",
+                    name: kofiAffiliate.name,
+                    product: kofiAffiliate.product,
+                    description: kofiAffiliate.description
+                };
+            }
+            
             return null;
         }
 
@@ -74,7 +98,19 @@ AFFILIATE ID:`;
         const matchedAffiliate = affiliatesData.find(a => a.id === affiliateId);
         
         if (!matchedAffiliate) {
-            log(`Affiliate ID ${affiliateId} not found in affiliate data`);
+            log(`Affiliate ID ${affiliateId} not found in affiliate data, using Ko-fi donation as fallback`);
+            // Find the Ko-fi affiliate in our data
+            const kofiAffiliate = affiliatesData.find(a => a.id === "kofi");
+            
+            if (kofiAffiliate) {
+                return {
+                    id: "kofi",
+                    name: kofiAffiliate.name,
+                    product: kofiAffiliate.product,
+                    description: kofiAffiliate.description
+                };
+            }
+            
             return null;
         }
 
@@ -87,6 +123,19 @@ AFFILIATE ID:`;
         };
     } catch (error) {
         errorLog(`Error finding relevant affiliate: ${error.message}`);
+        // Use Ko-fi as fallback in case of errors
+        log("Using Ko-fi donation as fallback due to error");
+        const kofiAffiliate = affiliatesData.find(a => a.id === "kofi");
+        
+        if (kofiAffiliate) {
+            return {
+                id: "kofi",
+                name: kofiAffiliate.name,
+                product: kofiAffiliate.product,
+                description: kofiAffiliate.description
+            };
+        }
+        
         return null;
     }
 }

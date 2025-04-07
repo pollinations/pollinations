@@ -2,7 +2,7 @@ import { generateTextPortkey } from '../generateTextPortkey.js';
 import debug from 'debug';
 import { sendToAnalytics } from '../sendToAnalytics.js';
 import { getRequestData } from '../requestUtils.js';
-import { findRelevantAffiliate, generateAffiliateAd, extractReferralLinkInfo, addMockReferralLinks } from './adLlmMapper.js';
+import { findRelevantAffiliate, generateAffiliateAd, extractReferralLinkInfo } from './adLlmMapper.js';
 
 const log = debug('pollinations:adfilter');
 const errorLog = debug('pollinations:adfilter:error');
@@ -10,7 +10,7 @@ const errorLog = debug('pollinations:adfilter:error');
 // Regular expression to detect markdown content
 const markdownRegex = /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`.*\`)|(?:\>.*)|(?:\-\s.*)|(?:\d\.\s.*)/;
 
-// Probability of adding referral links (5%)
+// Probability of adding referral links (0%)
 const REFERRAL_LINK_PROBABILITY = 0;
 
 // Flag for testing ads with a specific marker
@@ -27,30 +27,8 @@ const REQUIRE_MARKDOWN = true;
  * @returns {Promise<string>} - The processed content with referral links
  */
 export async function processRequestForAds(content, req, messages = []) {
-    // In test environment, req might be undefined
-    if (!req) {
-        // For tests, just check if content is markdown (if required)
-        if (REQUIRE_MARKDOWN && !markdownRegex.test(content))
-            return content;
-            
-        // For tests, skip probability check
-        if (process.env.NODE_ENV !== 'test' && Math.random() > REFERRAL_LINK_PROBABILITY) {
-            return content;
-        }
-        
-        // For tests, return content with a simple mock referral link
-        if (process.env.NODE_ENV === 'test') {
-            // Check if Math.random is mocked to 1 (for probability test)
-            if (Math.random() === 1) {
-                return content;
-            }
-            
-            return addMockReferralLinks(content);
-        }
-    }
-    
-    // Normal production flow
-    const requestData = req ? getRequestData(req) : { referrer: null };
+    // Get request data for referrer check
+    const requestData = getRequestData(req);
 
     // Skip ad processing if any referrer is present
     if (requestData.referrer && requestData.referrer !== 'unknown') {
@@ -70,7 +48,7 @@ export async function processRequestForAds(content, req, messages = []) {
     if (REQUIRE_MARKDOWN && !markerFound && !markdownRegex.test(content)) 
         return content;
     
-    // If marker is found, set probability to 100%, otherwise use the default 5%
+    // If marker is found, set probability to 100%, otherwise use the default probability
     const effectiveProbability = markerFound ? 1.0 : REFERRAL_LINK_PROBABILITY;
     
     if (!markerFound) {
@@ -105,7 +83,7 @@ export async function processRequestForAds(content, req, messages = []) {
                 log(`Appended ad for affiliate ${affiliateData.name} (${affiliateData.id}). Total links now: ${linkInfo.linkCount}`);
                 
                 // Send analytics event
-                if (req && linkInfo.linkCount > 0) {
+                if (linkInfo.linkCount > 0) {
                     await sendToAnalytics(req, 'referralLinkAdded', {
                         linkCount: linkInfo.linkCount,
                         topics: linkInfo.topicsOrIdsString || '', 

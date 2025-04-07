@@ -189,17 +189,5 @@ function extractReferralLinkInfo(content) {
     return result;
 }
 
-// Mock function might need update or removal depending on testing strategy
-/**
- * Add mock referral links for testing purposes
- * @param {string} content - Content to add mock links to
- * @returns {string} - Content with mock links added
- */
-function addMockReferralLinks(content) {
-    // Add a mock referral link for testing
-    const mockReferralLink = `\n\n---\nTest affiliate product description [Learn more](https://pollinations.ai/referral/test123)`;
-    return content + mockReferralLink;
-}
-
 // Export the relevant functions
-export { extractReferralLinkInfo, addMockReferralLinks };
+export { findRelevantAffiliate, generateAffiliateAd, extractReferralLinkInfo };

@@ -4,7 +4,7 @@ const affiliates = [
     id: "1422856",
     name: "Martinic Audio",
     product: "Martinic Kee Bass VST/AU plugin",
-    description: "The Martinic Kee Bass VST/AU plugin is based on the original electronic schema and an actual physical Kee Bass. AND Get a licence now FOR FREE!",
+    description: "Get a free license for the Martinic Kee Bass VST/AU plugin, modeled on the original.",
     audience: "Music producers and sound designers looking for high-quality virtual instruments.",
     categories: ["Music & Audio", "Software"]
   },
@@ -12,6 +12,7 @@ const affiliates = [
     id: "432264",
     name: "NordVPN",
     product: "NordVPN subscription service for secure internet browsing.",
+    description: "Secure your internet browsing with a NordVPN subscription.",
     audience: "Individuals seeking online privacy and security.",
     categories: ["Software", "Internet Service Provider", "Security"]
   },
@@ -19,6 +20,7 @@ const affiliates = [
     id: "1548053",
     name: "jAlbum Affiliate Program",
     product: "jAlbum software for creating digital photo albums.",
+    description: "Create and share digital photo albums online with jAlbum software.",
     audience: "Individuals and professionals looking to create and share photo albums online.",
     categories: ["Apps", "Creative Digital Assets", "Photography"]
   },
@@ -26,6 +28,7 @@ const affiliates = [
     id: "1630115",
     name: "Soundcore",
     product: "Soundcore audio products and accessories",
+    description: "Shop high-quality Soundcore audio products and accessories.",
     audience: "Consumers looking for high-quality audio products and accessories",
     categories: ["Consumer Electronics", "Accessories & Peripherals"]
   },
@@ -33,6 +36,7 @@ const affiliates = [
     id: "2073393",
     name: "CapCut Affiliate Program",
     product: "Logo and banner design services offered by CapCut.",
+    description: "Enhance your brand with professional logo and banner design from CapCut.",
     audience: "Individuals and businesses looking to enhance their brand identity with a professional logo and banners.",
     categories: ["Creative Digital Assets", "Graphic Design"],
     tags: ["New logo and banners"]
@@ -41,7 +45,7 @@ const affiliates = [
     id: "2144039",
     name: "Clawcloud (Singapore) Private Limited",
     product: "Dedicated VPS hosting with high bandwidth and service availability.",
-    description: "Dedicated VPS \n● Up to 1Gbps BGP bandwidth\n● 99.975% Service Availability\nshop now from $10/mo",
+    description: "Get reliable dedicated VPS hosting with high bandwidth from Clawcloud, starting at $10/mo.",
     audience: "Businesses and individuals seeking reliable and high-performance web hosting solutions.",
     categories: ["Internet Service Provider", "Web Hosting"],
     tags: ["webhosting", "VPS", "dedicated VPS"]
@@ -50,6 +54,7 @@ const affiliates = [
     id: "2699274",
     name: "Talkpal - AI Language Learning",
     product: "Talkpal landscape banner for promoting AI communication services.",
+    description: "Explore AI-based language learning and communication solutions with Talkpal.",
     audience: "Individuals and businesses looking for AI-based communication solutions.",
     categories: ["Apps", "Software", "Internet Service Provider"]
   },
@@ -57,7 +62,7 @@ const affiliates = [
     id: "2774941",
     name: "HeyReal.AI",
     product: "Logo design services with customizable blue background options.",
-    description: "The image contains the Logo, the name of the website, and different solid color backgrounds.",
+    description: "Get custom logo designs and branding solutions from HeyReal.AI.",
     audience: "Individuals and businesses looking for custom logos and branding solutions.",
     categories: ["Creative Digital Assets", "Art & Photography"]
   },

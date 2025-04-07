@@ -1,4 +1,21 @@
-module.exports = [
+// Import the consolidated affiliate data
+try {
+  // Try to import from the consolidated file
+  const { redirectMapping } = require('../../affiliate/affiliates.js');
+  
+  // Convert the redirectMapping object to the expected array format
+  const affiliateMappingArray = Object.entries(redirectMapping).map(([id, trackingLink]) => ({
+    Id: id,
+    TrackingLink: trackingLink
+  }));
+  
+  module.exports = affiliateMappingArray;
+} catch (error) {
+  console.error('Error importing from consolidated affiliates.js file:', error);
+  console.log('Falling back to original affiliate mapping data');
+  
+  // Original data will be used as fallback
+  module.exports = [
   {
     "Id": "1422856",
     "TrackingLink": "https://martinic.evyy.net/c/6058776/1422856/4482"
@@ -1964,3 +1981,4 @@ module.exports = [
     "TrackingLink": "https://primedigitalmarketing.pxf.io/jeQnEb"
   }
 ]
+};

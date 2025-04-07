@@ -10,7 +10,7 @@ const errorLog = debug('pollinations:adfilter:error');
  *
  * @param {string} content - The output content to analyze.
  * @param {Array} messages - The input messages to analyze (optional).
- * @returns {Promise<string|null>} - The ID of the most relevant affiliate, or null if none found/suitable.
+ * @returns {Promise<object|null>} - The affiliate object, or null if none found/suitable.
  */
 export async function findRelevantAffiliate(content, messages = []) {
     // Combine the last 3 messages with the current content for context
@@ -57,8 +57,9 @@ AFFILIATE ID:`;
         const response = completion.choices[0]?.message?.content?.trim();
         
         if (!response || response.toLowerCase() === "none") {
-            log("No relevant affiliate found by LLM");
-            return null;
+            log("No relevant affiliate found by LLM, using Ko-fi donation as fallback");
+            // Find the Ko-fi affiliate in our data
+            return affiliatesData.find(a => a.id === "kofi") || null;
         }
 
         // Extract just the affiliate ID from the response
@@ -66,43 +67,41 @@ AFFILIATE ID:`;
         const affiliateId = affiliateIdMatch ? affiliateIdMatch[1] : null;
         
         if (!affiliateId) {
-            log("Could not extract affiliate ID from LLM response");
-            return null;
+            log("Could not extract affiliate ID from LLM response, using Ko-fi donation as fallback");
+            // Find the Ko-fi affiliate in our data
+            return affiliatesData.find(a => a.id === "kofi") || null;
         }
 
         // Find the affiliate in our data
         const matchedAffiliate = affiliatesData.find(a => a.id === affiliateId);
         
         if (!matchedAffiliate) {
-            log(`Affiliate ID ${affiliateId} not found in affiliate data`);
-            return null;
+            log(`Affiliate ID ${affiliateId} not found in affiliate data, using Ko-fi donation as fallback`);
+            // Find the Ko-fi affiliate in our data
+            return affiliatesData.find(a => a.id === "kofi") || null;
         }
 
         log(`Found relevant affiliate: ${matchedAffiliate.name} (${affiliateId})`);
-        return {
-            id: affiliateId,
-            name: matchedAffiliate.name,
-            product: matchedAffiliate.product,
-            description: matchedAffiliate.description
-        };
+        return matchedAffiliate;
     } catch (error) {
         errorLog(`Error finding relevant affiliate: ${error.message}`);
-        return null;
+        // Use Ko-fi as fallback in case of errors
+        log("Using Ko-fi donation as fallback due to error");
+        return affiliatesData.find(a => a.id === "kofi") || null;
     }
 }
 
 /**
- * Generates a markdown ad string for the identified affiliate provider.
- *
- * @param {string} affiliateId - The ID of the affiliate provider.
- * @returns {string|null} - A markdown string for the ad, or null if ID is invalid or ad cannot be generated.
+ * Generate an ad string for the given affiliate ID
+ * @param {string} affiliateId - The ID of the affiliate to generate an ad for
+ * @returns {Promise<string|null>} - The ad string or null if generation failed
  */
 export async function generateAffiliateAd(affiliateId) {
     if (!affiliateId) {
-        log("No affiliate ID provided for ad generation");
+        log('No affiliate ID provided for ad generation');
         return null;
     }
-
+    
     try {
         // Find the affiliate in our data
         const affiliate = affiliatesData.find(a => a.id === affiliateId);
@@ -111,12 +110,27 @@ export async function generateAffiliateAd(affiliateId) {
             log(`Affiliate ID ${affiliateId} not found in affiliate data`);
             return null;
         }
-
-        // Use the description if available, otherwise use the product
-        let adTextSource = affiliate.description || null;
         
-        // If no description, use product information
-        if (!adTextSource && affiliate.product) {
+        // Create the referral link
+        const referralLink = `https://pollinations.ai/redirect/${affiliateId}`;
+        
+        // Use the ad_text field if available
+        if (affiliate.ad_text) {
+            // Replace url placeholder with the actual link
+            const adText = `\n\n---\n${affiliate.ad_text.replace('{url}', referralLink)}`;
+            log(`Generated ad for ${affiliate.name} (${affiliateId}) using custom ad text`);
+            return adText;
+        }
+        
+        // Otherwise, use the standard approach
+        let adTextSource = '';
+        
+        // Try to use the description first
+        if (affiliate.description) {
+            adTextSource = affiliate.description;
+        }
+        // If no description, try to use the product name
+        else if (affiliate.product) {
             adTextSource = `Learn more about ${affiliate.product}`;
         }
         
@@ -125,9 +139,6 @@ export async function generateAffiliateAd(affiliateId) {
             adTextSource = `Learn more about ${affiliate.name}`;
             log(`No specific description/product found for ${affiliateId}, using generic ad text.`);
         }
-
-        // Create the referral link
-        const referralLink = `https://pollinations.ai/referral/${affiliateId}`;
         
         // Format the ad
         const adText = `\n\n---\n${adTextSource} [Learn more](${referralLink})`;
@@ -145,7 +156,7 @@ export async function generateAffiliateAd(affiliateId) {
  * @param {string} content - The content to analyze for referral links.
  * @returns {Object} - Information about the referral links found.
  */
-function extractReferralLinkInfo(content) {
+export function extractReferralLinkInfo(content) {
     // Initialize result object
     const result = {
         linkCount: 0,
@@ -188,18 +199,3 @@ function extractReferralLinkInfo(content) {
     
     return result;
 }
-
-// Mock function might need update or removal depending on testing strategy
-/**
- * Add mock referral links for testing purposes
- * @param {string} content - Content to add mock links to
- * @returns {string} - Content with mock links added
- */
-function addMockReferralLinks(content) {
-    // Add a mock referral link for testing
-    const mockReferralLink = `\n\n---\nTest affiliate product description [Learn more](https://pollinations.ai/referral/test123)`;
-    return content + mockReferralLink;
-}
-
-// Export the relevant functions
-export { extractReferralLinkInfo, addMockReferralLinks };

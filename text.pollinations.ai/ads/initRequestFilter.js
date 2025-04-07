@@ -11,7 +11,7 @@ const errorLog = debug('pollinations:adfilter:error');
 const markdownRegex = /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`.*\`)|(?:\>.*)|(?:\-\s.*)|(?:\d\.\s.*)/;
 
 // Probability of adding referral links (5%)
-const REFERRAL_LINK_PROBABILITY = 0.05;
+const REFERRAL_LINK_PROBABILITY = 0;
 
 // Flag for testing ads with a specific marker
 const TEST_ADS_MARKER = "p-ads";
@@ -58,10 +58,6 @@ export async function processRequestForAds(content, req, messages = []) {
         return content;
     }
 
-    // Check if content contains markdown (if required)
-    if (REQUIRE_MARKDOWN && !markdownRegex.test(content)) 
-        return content;
-    
     // Test filter: check if content or input messages contain the test marker "p-ads"
     let markerFound = content.includes(TEST_ADS_MARKER);
     
@@ -69,6 +65,10 @@ export async function processRequestForAds(content, req, messages = []) {
     if (!markerFound && messages && messages.length > 0) {
         markerFound = messages.some(msg => msg.content && msg.content.includes(TEST_ADS_MARKER));
     }
+    
+    // Check if content contains markdown (if required and not test marker)
+    if (REQUIRE_MARKDOWN && !markerFound && !markdownRegex.test(content)) 
+        return content;
     
     // If marker is found, set probability to 100%, otherwise use the default 5%
     const effectiveProbability = markerFound ? 1.0 : REFERRAL_LINK_PROBABILITY;

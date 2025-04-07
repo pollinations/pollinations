@@ -94,7 +94,7 @@ const affiliates = [
     audience: "Individuals looking to support creators and projects financially.",
     categories: ["Charitable Causes", "Apps"],
     tags: ["donation", "support"],
-    ad_text: "This response was powered by Pollinations.AI free text generation APIs. [Support our mission]({url}) to continue providing these AI models for free to everyone."
+    ad_text: "Powered by Pollinations.AI free text APIs. [Support our mission]({url}) to keep AI accessible for everyone."
   }
 ];
 

@@ -160,11 +160,13 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
     // Collect the content to analyze for affiliate matching
     let collectedContent = '';
     let isDone = false;
+    let foundDoneMessage = false;
+    let doneMessageChunk = null;
     
     // Create a transform stream that will:
     // 1. Pass through all chunks unchanged
     // 2. Collect content for analysis
-    // 3. Add an ad after the [DONE] message
+    // 3. Add an ad before the [DONE] message
     const streamTransformer = new Transform({
         objectMode: true,
         transform(chunk, encoding, callback) {
@@ -173,43 +175,51 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
             
             // Check if this is the [DONE] message
             if (chunkStr.includes('data: [DONE]')) {
-                isDone = true;
+                log('Found [DONE] message in stream');
+                foundDoneMessage = true;
+                doneMessageChunk = chunk;
                 
                 // Process the collected content and add an ad
                 processCollectedContent(collectedContent, req, messages)
                     .then(adString => {
                         if (adString) {
-                            // Format the ad as a proper SSE message
+                            // Format the ad as a proper SSE message with OpenAI delta format
                             const adChunk = formatAdAsSSE(adString);
                             
                             // Push the ad chunk before the [DONE] message
                             this.push(adChunk);
+                            log('Added ad to stream before [DONE] message');
                         }
                         
                         // Push the [DONE] message
-                        this.push(chunk);
+                        this.push(doneMessageChunk);
                         callback();
                     })
                     .catch(error => {
                         errorLog('Error processing streaming ad:', error);
                         // Just push the original chunk if there's an error
-                        this.push(chunk);
+                        this.push(doneMessageChunk);
                         callback();
                     });
             } else {
                 // For normal chunks, extract the content and pass through unchanged
-                if (!isDone) {
+                if (!isDone && !foundDoneMessage) {
                     try {
                         // Try to extract content from the SSE data
-                        const contentMatch = chunkStr.match(/data: (.*)\n\n/);
-                        if (contentMatch && contentMatch[1]) {
-                            try {
-                                const data = JSON.parse(contentMatch[1]);
-                                if (data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content) {
-                                    collectedContent += data.choices[0].delta.content;
+                        const matches = chunkStr.matchAll(/data: ({.*?})\n\n/g);
+                        for (const match of matches) {
+                            if (match && match[1]) {
+                                try {
+                                    const data = JSON.parse(match[1]);
+                                    if (data.choices && 
+                                        data.choices[0] && 
+                                        data.choices[0].delta && 
+                                        data.choices[0].delta.content) {
+                                        collectedContent += data.choices[0].delta.content;
+                                    }
+                                } catch (e) {
+                                    // Ignore JSON parse errors
                                 }
-                            } catch (e) {
-                                // Ignore JSON parse errors, might not be JSON
                             }
                         }
                     } catch (e) {
@@ -300,10 +310,22 @@ function formatAdAsSSE(adString) {
     // Create a delta object in the same format as OpenAI's streaming API
     const deltaObject = {
         choices: [{
+            content_filter_results: {
+                hate: { filtered: false, severity: "safe" },
+                self_harm: { filtered: false, severity: "safe" },
+                sexual: { filtered: false, severity: "safe" },
+                violence: { filtered: false, severity: "safe" }
+            },
             delta: { content: adString },
+            finish_reason: null,
             index: 0,
-            finish_reason: null
-        }]
+            logprobs: null
+        }],
+        created: Math.floor(Date.now() / 1000),
+        id: `chatcmpl-ad-${Math.random().toString(36).substring(2, 10)}`,
+        model: "gpt-ad-affiliate",
+        object: "chat.completion.chunk",
+        system_fingerprint: "fp_pollinations_ad"
     };
     
     // Format as an SSE message

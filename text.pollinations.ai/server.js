@@ -13,7 +13,7 @@ import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';
 import { processNSFWReferralLinks } from './ads/nsfwReferralLinks.js';
-import { processRequestForAds } from './ads/initRequestFilter.js';
+import { processRequestForAds, createStreamingAdWrapper } from './ads/initRequestFilter.js';
 import { getRequestData, getReferrer, WHITELISTED_DOMAINS } from './requestUtils.js';
 
 // Load environment variables
@@ -730,17 +730,43 @@ if (completion) {
         if (responseStream.pipe) {
             log('Using pipe for Node.js Readable stream');
             
-            // Directly pipe the stream to the client - true thin proxy approach
-            log('Directly piping SSE stream to client');
-            responseStream.pipe(res);
-            
-            // Handle client disconnect
-            if (req) req.on('close', () => {
-                log('Client disconnected');
-                if (responseStream.destroy) {
-                    responseStream.destroy();
-                }
-            });
+            // Check if we should process the stream for ads
+            if (req && req.body && req.body.messages) {
+                log('Processing stream for ads');
+                
+                // Create a wrapped stream that will add ads at the end
+                const wrappedStream = createStreamingAdWrapper(
+                    responseStream, 
+                    req, 
+                    req.body.messages
+                );
+                
+                // Pipe the wrapped stream to the response
+                wrappedStream.pipe(res);
+                
+                // Handle client disconnect
+                if (req) req.on('close', () => {
+                    log('Client disconnected');
+                    if (wrappedStream.destroy) {
+                        wrappedStream.destroy();
+                    }
+                    if (responseStream.destroy) {
+                        responseStream.destroy();
+                    }
+                });
+            } else {
+                // Directly pipe the stream to the client - true thin proxy approach
+                log('Directly piping SSE stream to client (no ad processing)');
+                responseStream.pipe(res);
+                
+                // Handle client disconnect
+                if (req) req.on('close', () => {
+                    log('Client disconnected');
+                    if (responseStream.destroy) {
+                        responseStream.destroy();
+                    }
+                });
+            }
             
             return;
         }

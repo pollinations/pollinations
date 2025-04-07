@@ -97,7 +97,6 @@ export function ParameterNumberInput({
           onFocus={onFocus}
           onBlur={handleBlur}
           type="number"
-          textColor={Colors.offwhite}
 
           InputProps={{
             sx: {

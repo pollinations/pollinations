@@ -72,7 +72,6 @@ export const ImageEditor = memo(function ImageEditor({
     // 1. We haven't initialized yet, or
     // 2. The image URL has changed (indicating a completely new image)
     if (!initializedRef.current || (image && image.imageURL !== imageParamsRef.current.imageURL)) {
-      console.log("Setting initial parameters from image");
       setImageParams(prevParams => ({
         ...prevParams,
         ...(image || {})

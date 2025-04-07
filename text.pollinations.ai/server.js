@@ -13,7 +13,7 @@ import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';
 import { processNSFWReferralLinks } from './ads/nsfwReferralLinks.js';
-import { processRequestForAds } from './ads/initRequestFilter.js';
+import { processRequestForAds, createStreamingAdWrapper } from './ads/initRequestFilter.js';
 import { getRequestData, getReferrer, WHITELISTED_DOMAINS } from './requestUtils.js';
 
 // Load environment variables
@@ -22,7 +22,7 @@ dotenv.config();
 const BANNED_PHRASES = [
 ];
 
-
+// const blockedIPs = new Set();
 const blockedIPs = new Set();
 
 async function blockIP(ip) {
@@ -294,6 +294,8 @@ async function handleRequest(req, res, requestData) {
 
         if (requestData.stream) {
             log('Sending streaming response with sendAsOpenAIStream');
+            // Add requestData to completion object for access in streaming ad wrapper
+            completion.requestData = requestData;
             sendAsOpenAIStream(res, completion, req);
         } else {
             if (req.method === 'GET') {
@@ -730,17 +732,54 @@ if (completion) {
         if (responseStream.pipe) {
             log('Using pipe for Node.js Readable stream');
             
-            // Directly pipe the stream to the client - true thin proxy approach
-            log('Directly piping SSE stream to client');
-            responseStream.pipe(res);
+            // Get messages from the request data
+            // For GET requests, messages will be in the request path
+            // For POST requests, messages will be in the request body
+            const messages = req ? (
+                // Try to get messages from different sources
+                (req.body && req.body.messages) || 
+                (req.requestData && req.requestData.messages) || 
+                (completion.requestData && completion.requestData.messages) ||
+                []
+            ) : [];
             
-            // Handle client disconnect
-            if (req) req.on('close', () => {
-                log('Client disconnected');
-                if (responseStream.destroy) {
-                    responseStream.destroy();
-                }
-            });
+            // Check if we have messages and should process the stream for ads
+            if (req && messages.length > 0) {
+                log('Processing stream for ads with', messages.length, 'messages');
+                
+                // Create a wrapped stream that will add ads at the end
+                const wrappedStream = createStreamingAdWrapper(
+                    responseStream, 
+                    req, 
+                    messages
+                );
+                
+                // Pipe the wrapped stream to the response
+                wrappedStream.pipe(res);
+                
+                // Handle client disconnect
+                if (req) req.on('close', () => {
+                    log('Client disconnected');
+                    if (wrappedStream.destroy) {
+                        wrappedStream.destroy();
+                    }
+                    if (responseStream.destroy) {
+                        responseStream.destroy();
+                    }
+                });
+            } else {
+                // Directly pipe the stream to the client - true thin proxy approach
+                log('Directly piping SSE stream to client (no ad processing)');
+                responseStream.pipe(res);
+                
+                // Handle client disconnect
+                if (req) req.on('close', () => {
+                    log('Client disconnected');
+                    if (responseStream.destroy) {
+                        responseStream.destroy();
+                    }
+                });
+            }
             
             return;
         }

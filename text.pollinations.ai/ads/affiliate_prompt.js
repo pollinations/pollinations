@@ -1,111 +1,5 @@
-// Define affiliates as a structured JSON object
-const affiliates = [
-  {
-    id: "1422856",
-    name: "Martinic Audio",
-    product: "Martinic Kee Bass VST/AU plugin",
-    description: "Get a free license for the Martinic Kee Bass VST/AU plugin, modeled on the original.",
-    audience: "Music producers and sound designers looking for high-quality virtual instruments.",
-    categories: ["Music & Audio", "Software"]
-  },
-  {
-    id: "432264",
-    name: "NordVPN",
-    product: "NordVPN subscription service for secure internet browsing.",
-    description: "Secure your internet browsing with a NordVPN subscription.",
-    audience: "Individuals seeking online privacy and security.",
-    categories: ["Software", "Internet Service Provider", "Security"]
-  },
-  {
-    id: "1548053",
-    name: "jAlbum Affiliate Program",
-    product: "jAlbum software for creating digital photo albums.",
-    description: "Create and share digital photo albums online with jAlbum software.",
-    audience: "Individuals and professionals looking to create and share photo albums online.",
-    categories: ["Apps", "Creative Digital Assets", "Photography"]
-  },
-  {
-    id: "1630115",
-    name: "Soundcore",
-    product: "Soundcore audio products and accessories",
-    description: "Shop high-quality Soundcore audio products and accessories.",
-    audience: "Consumers looking for high-quality audio products and accessories",
-    categories: ["Consumer Electronics", "Accessories & Peripherals"]
-  },
-  {
-    id: "2073393",
-    name: "CapCut Affiliate Program",
-    product: "Logo and banner design services offered by CapCut.",
-    description: "Enhance your brand with professional logo and banner design from CapCut.",
-    audience: "Individuals and businesses looking to enhance their brand identity with a professional logo and banners.",
-    categories: ["Creative Digital Assets", "Graphic Design"],
-    tags: ["New logo and banners"]
-  },
-  {
-    id: "2144039",
-    name: "Clawcloud (Singapore) Private Limited",
-    product: "Dedicated VPS hosting with high bandwidth and service availability.",
-    description: "Get reliable dedicated VPS hosting with high bandwidth from Clawcloud, starting at $10/mo.",
-    audience: "Businesses and individuals seeking reliable and high-performance web hosting solutions.",
-    categories: ["Internet Service Provider", "Web Hosting"],
-    tags: ["webhosting", "VPS", "dedicated VPS"]
-  },
-  {
-    id: "2699274",
-    name: "Talkpal - AI Language Learning",
-    product: "Talkpal landscape banner for promoting AI communication services.",
-    description: "Explore AI-based language learning and communication solutions with Talkpal.",
-    audience: "Individuals and businesses looking for AI-based communication solutions.",
-    categories: ["Apps", "Software", "Internet Service Provider"]
-  },
-  {
-    id: "2774941",
-    name: "HeyReal.AI",
-    product: "Logo design services with customizable blue background options.",
-    description: "Get custom logo designs and branding solutions from HeyReal.AI.",
-    audience: "Individuals and businesses looking for custom logos and branding solutions.",
-    categories: ["Creative Digital Assets", "Art & Photography"]
-  },
-  {
-    id: "lovemy",
-    name: "LoveMy.ai",
-    product: "An AI companion that offers personalized interactions and intimacy.",
-    description: "Create your intimate AI companion on LoveMy.ai",
-    audience: "Individuals seeking an intimate and personalized AI companionship experience.",
-    categories: ["Sexual Wellness & Adult"],
-    tags: ["ai companion", "nsfw", "adult"],
-    nsfw: true
-  },
-  {
-    id: "hentai",
-    name: "AIHentaiChat.com",
-    product: "Uncensored AI chat services",
-    description: "Explore uncensored AI chat on AIHentaiChat.com",
-    audience: "Adults seeking uncensored AI chat experiences",
-    categories: ["Sexual Wellness & Adult", "Apps"],
-    tags: ["ai companion", "nsfw", "adult", "hentai"],
-    nsfw: true
-  },
-  {
-    id: "kofi",
-    name: "Support Pollinations on Ko-fi",
-    product: "Donation platform for creators.",
-    description: "Support Pollinations AI with a donation on Ko-fi",
-    audience: "Individuals looking to support creators and projects financially.",
-    categories: ["Charitable Causes", "Apps"],
-    tags: ["donation", "support"],
-    ad_text: "Powered by Pollinations.AI free text APIs. [Support our mission]({url}) to keep AI accessible for everyone."
-  },
-  {
-    id: "25841",
-    name: "Kodak Photo Printer",
-    product: "Kodak 4PASS photo printers and instant cameras",
-    description: "Get high-quality Kodak photo printers and instant cameras with 4PASS technology for superior photo quality.",
-    audience: "Photography enthusiasts and consumers looking for high-quality photo printing solutions",
-    categories: ["Consumer Electronics", "Photography"],
-    tags: ["photo printer", "instant camera", "4PASS technology"]
-  }
-];
+// Import from the consolidated affiliates.js file
+import { affiliatesData } from '../../affiliate/affiliates.js';
 
 // Function to generate markdown from the JSON data
 function generateMarkdownFromJSON(affiliatesData) {
@@ -154,9 +48,11 @@ Use this information to determine which affiliate campaign is most relevant to t
   return markdown;
 }
 
-// Export both the JSON data and the markdown
-export const affiliatesData = affiliates;
-export const affiliateMarkdown = generateMarkdownFromJSON(affiliates);
+// Generate the markdown from the imported data
+export const affiliateMarkdown = generateMarkdownFromJSON(affiliatesData);
+
+// Export both the JSON data and the markdown for backward compatibility
+export { affiliatesData };
 
 // For backward compatibility, export the markdown as default
-export default generateMarkdownFromJSON(affiliates);
+export default affiliateMarkdown;

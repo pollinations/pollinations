@@ -1,5 +1,5 @@
 import debug from 'debug';
-import affiliatePrompt, { affiliatesData } from "./affiliate_prompt.js";
+import { affiliateMarkdown, affiliatesData } from "./affiliate_prompt.js";
 import { generateTextPortkey } from '../generateTextPortkey.js';
 
 const log = debug('pollinations:adfilter');
@@ -48,7 +48,7 @@ CONVERSATION CONTENT:
 ${combinedContent}
 
 AVAILABLE AFFILIATES:
-${affiliatePrompt}
+${affiliateMarkdown}
 
 AFFILIATE ID:`;
 

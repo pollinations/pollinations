@@ -1,14 +1,9 @@
-import { OpenAI } from "openai";
 import debug from 'debug';
 import affiliatePrompt, { affiliatesData } from "./affiliate_prompt.js";
+import { generateTextPortkey } from '../generateTextPortkey.js';
 
 const log = debug('pollinations:adfilter');
 const errorLog = debug('pollinations:adfilter:error');
-
-// Configure OpenAI with API key from environment variables
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-});
 
 /**
  * Find the most relevant affiliate for the given content using an LLM.
@@ -57,13 +52,8 @@ ${affiliatePrompt}
 
 AFFILIATE ID:`;
 
-        const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
-            messages: [{ role: "user", content: promptForLLM }],
-            max_tokens: 50,
-            temperature: 0.3,
-        });
-
+        const completion = await generateTextPortkey([{ role: "user", content: promptForLLM }]);
+        
         const response = completion.choices[0]?.message?.content?.trim();
         
         if (!response || response.toLowerCase() === "none") {

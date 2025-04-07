@@ -1,132 +1,206 @@
-import { generateTextPortkey } from '../generateTextPortkey.js';
 import debug from 'debug';
+import affiliatePrompt, { affiliatesData } from "./affiliate_prompt.js";
+import { generateTextPortkey } from '../generateTextPortkey.js';
 
 const log = debug('pollinations:adfilter');
 const errorLog = debug('pollinations:adfilter:error');
 
 /**
- * Generate referral links using an LLM
- * @param {string} content - The content to process
- * @returns {Promise<string>} - The processed content with referral links
+ * Find the most relevant affiliate for the given content using an LLM.
+ *
+ * @param {string} content - The output content to analyze.
+ * @param {Array} messages - The input messages to analyze (optional).
+ * @returns {Promise<string|null>} - The ID of the most relevant affiliate, or null if none found/suitable.
  */
-export async function generateReferralLinks(content) {
-    log('Sending content to OpenAI for referral link insertion');
+export async function findRelevantAffiliate(content, messages = []) {
+    // Combine the last 3 messages with the current content for context
+    const lastMessages = messages.slice(-3).map(m => m.content || "").filter(Boolean);
+    const combinedContent = [...lastMessages, content].join("\n");
     
-    // Prepare the prompt for OpenAI
-    const messages = [
-        {
-            role: "system",
-            content: `You are a helpful assistant that adds a LIMITED number of referral links to markdown content. 
+    if (!combinedContent || combinedContent.trim() === "") {
+        log("No content to analyze for affiliate matching");
+        return null;
+    }
 
-            STRICT RULES:
-            1. Add NO MORE THAN 1-3 referral links total
-            2. Be selective - only link meaningful products or concepts
-            3. ONLY wrap existing text with referral links - NEVER add new text
-            4. Maintain all original markdown formatting exactly as is
-            5. For products, use topic=[productname]
-            6. For concepts, use topic=[category]
-            7. NEVER add referral links to formatting-related text (like "Bold text" or "italic")
-            8. NEVER add referral links inside code blocks or technical examples
+    // Check if we should exclude NSFW content
+    const shouldExcludeNSFW = !combinedContent.toLowerCase().includes("nsfw") && 
+                              !combinedContent.toLowerCase().includes("adult") &&
+                              !combinedContent.toLowerCase().includes("sex");
 
-            Example of good link placement:
-            Input: "The MacBook Pro is great for development. The iPad Pro and iPhone 15 are also excellent. **Bold text** and *italic text* are formatting examples."
-            Output: "[MacBook Pro](https://pollinations.ai/referral?topic=macbook) is great for development. The iPad Pro and iPhone 15 are also excellent. **Bold text** and *italic text* are formatting examples."
-            Note: We added just one strategic link and ignored formatting-related text
-
-            The referral link format is: https://pollinations.ai/referral?topic=[topic]`
-        },
-        {
-            role: "user",
-            content: `Return the following markdown with NO MORE THAN 1-3 strategically placed referral links around existing text. Be selective - don't link everything. Never link formatting examples. Maintain exact formatting:\n\n${content}`
-        }
-    ];
+    // Filter out NSFW affiliates if needed
+    const eligibleAffiliates = shouldExcludeNSFW 
+        ? affiliatesData.filter(affiliate => !affiliate.nsfw)
+        : affiliatesData;
+    
+    // If no eligible affiliates, return null
+    if (eligibleAffiliates.length === 0) {
+        log("No eligible affiliates available");
+        return null;
+    }
 
     try {
-        // Generate the modified content using OpenAI
-        const response = await generateTextPortkey(messages, { model: 'openai' });
-        return response.choices[0].message.content;
+        // Use the markdown format for the LLM prompt
+        const promptForLLM = `
+Based on the following conversation content, determine which affiliate program would be most relevant to suggest.
+Return ONLY the ID of the most relevant affiliate from the list below, or "none" if none are relevant.
+
+CONVERSATION CONTENT:
+${combinedContent}
+
+AVAILABLE AFFILIATES:
+${affiliatePrompt}
+
+AFFILIATE ID:`;
+
+        const completion = await generateTextPortkey([{ role: "user", content: promptForLLM }]);
+        
+        const response = completion.choices[0]?.message?.content?.trim();
+        
+        if (!response || response.toLowerCase() === "none") {
+            log("No relevant affiliate found by LLM");
+            return null;
+        }
+
+        // Extract just the affiliate ID from the response
+        const affiliateIdMatch = response.match(/\b([a-zA-Z0-9]+)\b/);
+        const affiliateId = affiliateIdMatch ? affiliateIdMatch[1] : null;
+        
+        if (!affiliateId) {
+            log("Could not extract affiliate ID from LLM response");
+            return null;
+        }
+
+        // Find the affiliate in our data
+        const matchedAffiliate = affiliatesData.find(a => a.id === affiliateId);
+        
+        if (!matchedAffiliate) {
+            log(`Affiliate ID ${affiliateId} not found in affiliate data`);
+            return null;
+        }
+
+        log(`Found relevant affiliate: ${matchedAffiliate.name} (${affiliateId})`);
+        return {
+            id: affiliateId,
+            name: matchedAffiliate.name,
+            product: matchedAffiliate.product,
+            description: matchedAffiliate.description
+        };
     } catch (error) {
-        errorLog('Error adding referral links:', error);
-        // If there's an error, return the original content
-        return content;
+        errorLog(`Error finding relevant affiliate: ${error.message}`);
+        return null;
     }
 }
 
 /**
- * Extract referral link information from processed content
- * @param {string} processedContent - Content with referral links 
- * @returns {object} - Information about extracted links
+ * Generates a markdown ad string for the identified affiliate provider.
+ *
+ * @param {string} affiliateId - The ID of the affiliate provider.
+ * @returns {string|null} - A markdown string for the ad, or null if ID is invalid or ad cannot be generated.
  */
-export function extractReferralLinkInfo(processedContent) {
-    const referralLinkRegex = /\[([^\]]+)\]\(https:\/\/pollinations\.ai\/referral\?topic=([^)\s]+)\)/g;
-    const topics = [];
-    const linkDetails = [];
-    let match;
-    
-    while ((match = referralLinkRegex.exec(processedContent)) !== null) {
-        const [fullMatch, linkText, topic] = match;
-        topics.push(topic);
-        linkDetails.push({ text: linkText, topic });
-        console.log(`Added referral link: "${linkText}" (topic: ${topic})`);
+export async function generateAffiliateAd(affiliateId) {
+    if (!affiliateId) {
+        log("No affiliate ID provided for ad generation");
+        return null;
     }
-    
-    return {
-        linkCount: topics.length,
-        topics,
-        linkDetails,
-        topicsString: topics.join(','),
-        linkTextsString: linkDetails.map(d => d.text).join(',')
+
+    try {
+        // Find the affiliate in our data
+        const affiliate = affiliatesData.find(a => a.id === affiliateId);
+        
+        if (!affiliate) {
+            log(`Affiliate ID ${affiliateId} not found in affiliate data`);
+            return null;
+        }
+
+        // Use the description if available, otherwise use the product
+        let adTextSource = affiliate.description || null;
+        
+        // If no description, use product information
+        if (!adTextSource && affiliate.product) {
+            adTextSource = `Learn more about ${affiliate.product}`;
+        }
+        
+        // If still no text, create a very generic one (less ideal)
+        if (!adTextSource) {
+            adTextSource = `Learn more about ${affiliate.name}`;
+            log(`No specific description/product found for ${affiliateId}, using generic ad text.`);
+        }
+
+        // Create the referral link
+        const referralLink = `https://pollinations.ai/referral?topic=${encodeURIComponent(affiliate.name)}&id=${affiliateId}`;
+        
+        // Format the ad
+        const adText = `\n\n---\n${adTextSource} [Learn more](${referralLink})`;
+        
+        log(`Generated ad for ${affiliate.name} (${affiliateId})`);
+        return adText;
+    } catch (error) {
+        errorLog(`Error generating affiliate ad: ${error.message}`);
+        return null;
+    }
+}
+
+/**
+ * Extracts information about referral links in the content.
+ * @param {string} content - The content to analyze for referral links.
+ * @returns {Object} - Information about the referral links found.
+ */
+function extractReferralLinkInfo(content) {
+    // Initialize result object
+    const result = {
+        linkCount: 0,
+        linkTexts: [],
+        linkTextsString: '',
+        topicsOrIds: [],
+        topicsOrIdsString: '',
+        affiliateIds: []
     };
-}
-
-/**
- * Helper function for test environments to add mock referral links
- * @param {string} content - Content to process
- * @returns {string} - Content with mock referral links
- */
-export function addMockReferralLinks(content) {
-    // Simple regex to find product names (capitalized words) but not at the start of lines
-    // This avoids replacing markdown headers
-    const lines = content.split('\n');
-    let modifiedContent = '';
-    let count = 0;
     
-    for (const line of lines) {
-        // Skip markdown headers, code blocks, and other formatting
-        if (line.startsWith('#') || line.startsWith('```') ||
-            line.startsWith('>') || line.startsWith('-') ||
-            line.startsWith('*') || /^\d+\./.test(line)) {
-            modifiedContent += line + '\n';
-            continue;
+    if (!content) return result;
+    
+    // Regular expression to find referral links in the content
+    // Updated to match the new format: https://pollinations.ai/referral?topic=X&id=Y
+    const referralLinkRegex = /\[([^\]]+)\]\((https:\/\/pollinations\.ai\/referral\?topic=([^&]+)&id=([^&\)]+))[^\)]*\)/g;
+    
+    let match;
+    while ((match = referralLinkRegex.exec(content)) !== null) {
+        // Increment link count
+        result.linkCount++;
+        
+        // Extract link text
+        const linkText = match[1];
+        result.linkTexts.push(linkText);
+        
+        // Extract topic and affiliate ID from the URL
+        const topic = decodeURIComponent(match[3]);
+        const affiliateId = match[4];
+        
+        result.topicsOrIds.push(topic);
+        
+        // Add affiliate ID to the list if it exists
+        if (affiliateId) {
+            result.affiliateIds.push(affiliateId);
         }
-        
-        // For regular text lines, look for capitalized words to replace
-        let modifiedLine = line;
-        const productRegex = /\b[A-Z][a-z]+(?:\s[A-Z][a-z]+)*\b/g;
-        let match;
-        
-        // Reset regex lastIndex
-        productRegex.lastIndex = 0;
-        
-        // Add up to 3 referral links
-        while ((match = productRegex.exec(line)) !== null && count < 3) {
-            const product = match[0];
-            const topic = product.toLowerCase().replace(/\s/g, '-');
-            const link = `[${product}](https://pollinations.ai/referral?topic=${topic})`;
-            
-            // Replace only this occurrence
-            const before = modifiedLine.substring(0, match.index);
-            const after = modifiedLine.substring(match.index + product.length);
-            modifiedLine = before + link + after;
-            
-            count++;
-            
-            // Adjust regex to continue from after the replacement
-            productRegex.lastIndex = match.index + link.length;
-        }
-        
-        modifiedContent += modifiedLine + '\n';
     }
     
-    return modifiedContent.trim();
+    // Join arrays into strings for analytics
+    result.linkTextsString = result.linkTexts.join(',');
+    result.topicsOrIdsString = result.topicsOrIds.join(',');
+    
+    return result;
 }
+
+// Mock function might need update or removal depending on testing strategy
+/**
+ * Add mock referral links for testing purposes
+ * @param {string} content - Content to add mock links to
+ * @returns {string} - Content with mock links added
+ */
+function addMockReferralLinks(content) {
+    // Add a mock referral link for testing
+    const mockReferralLink = `\n\n---\nTest affiliate product description [Learn more](https://pollinations.ai/referral?topic=TestAffiliate&id=test123)`;
+    return content + mockReferralLink;
+}
+
+// Export the relevant functions
+export { extractReferralLinkInfo, addMockReferralLinks };

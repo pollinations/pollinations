@@ -13,6 +13,7 @@ import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';
 import { processNSFWReferralLinks } from './ads/nsfwReferralLinks.js';
+import { processRequestForAds } from './ads/initRequestFilter.js';
 import { getRequestData, getReferrer, WHITELISTED_DOMAINS } from './requestUtils.js';
 
 // Load environment variables
@@ -249,7 +250,7 @@ async function handleRequest(req, res, requestData) {
                     // }, req);
                     
                     // Then process regular referral links
-                    // processedContent = await processReferralLinks(processedContent, req);
+                    processedContent = await processRequestForAds(processedContent, req, requestData.messages);
                     
                     completion.choices[0].message.content = processedContent;
                 } catch (error) {

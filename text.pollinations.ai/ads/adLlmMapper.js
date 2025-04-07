@@ -141,17 +141,16 @@ AFFILIATE ID:`;
 }
 
 /**
- * Generates a markdown ad string for the identified affiliate provider.
- *
- * @param {string} affiliateId - The ID of the affiliate provider.
- * @returns {string|null} - A markdown string for the ad, or null if ID is invalid or ad cannot be generated.
+ * Generate an ad string for the given affiliate ID
+ * @param {string} affiliateId - The ID of the affiliate to generate an ad for
+ * @returns {Promise<string|null>} - The ad string or null if generation failed
  */
 export async function generateAffiliateAd(affiliateId) {
     if (!affiliateId) {
-        log("No affiliate ID provided for ad generation");
+        log('No affiliate ID provided for ad generation');
         return null;
     }
-
+    
     try {
         // Find the affiliate in our data
         const affiliate = affiliatesData.find(a => a.id === affiliateId);
@@ -160,12 +159,28 @@ export async function generateAffiliateAd(affiliateId) {
             log(`Affiliate ID ${affiliateId} not found in affiliate data`);
             return null;
         }
-
-        // Use the description if available, otherwise use the product
-        let adTextSource = affiliate.description || null;
         
-        // If no description, use product information
-        if (!adTextSource && affiliate.product) {
+        // Special handling for Ko-fi donations
+        if (affiliateId === 'kofi') {
+            // Create the referral link
+            const referralLink = `https://pollinations.ai/redirect/${affiliateId}`;
+            
+            // Format the ad with special message for Pollinations.AI
+            const adText = `\n\n---\nThis response was powered by Pollinations.AI free text generation APIs. [Support our mission](${referralLink}) to continue providing these AI models for free to everyone, with no signups or API keys required.`;
+            
+            log(`Generated special Ko-fi support ad for Pollinations.AI`);
+            return adText;
+        }
+        
+        // For regular affiliates, use the standard approach
+        let adTextSource = '';
+        
+        // Try to use the description first
+        if (affiliate.description) {
+            adTextSource = affiliate.description;
+        }
+        // If no description, try to use the product name
+        else if (affiliate.product) {
             adTextSource = `Learn more about ${affiliate.product}`;
         }
         

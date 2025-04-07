@@ -116,9 +116,8 @@ export async function generateAffiliateAd(affiliateId) {
         
         // Use the ad_text field if available
         if (affiliate.ad_text) {
-            // Replace link placeholder with markdown link
-            const linkRegex = /\{\{LINK:(.*?)\}\}/;
-            const adText = `\n\n---\n${affiliate.ad_text.replace(linkRegex, (match, linkText) => `[${linkText}](${referralLink})`)}`;
+            // Replace url placeholder with the actual link
+            const adText = `\n\n---\n${affiliate.ad_text.replace('{url}', referralLink)}`;
             log(`Generated ad for ${affiliate.name} (${affiliateId}) using custom ad text`);
             return adText;
         }

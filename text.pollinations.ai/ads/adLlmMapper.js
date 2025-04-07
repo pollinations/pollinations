@@ -127,7 +127,7 @@ export async function generateAffiliateAd(affiliateId) {
         }
 
         // Create the referral link
-        const referralLink = `https://pollinations.ai/referral/${affiliateId}`;
+        const referralLink = `https://pollinations.ai/redirect/${affiliateId}`;
         
         // Format the ad
         const adText = `\n\n---\n${adTextSource} [Learn more](${referralLink})`;
@@ -145,7 +145,7 @@ export async function generateAffiliateAd(affiliateId) {
  * @param {string} content - The content to analyze for referral links.
  * @returns {Object} - Information about the referral links found.
  */
-function extractReferralLinkInfo(content) {
+export function extractReferralLinkInfo(content) {
     // Initialize result object
     const result = {
         linkCount: 0,
@@ -188,6 +188,3 @@ function extractReferralLinkInfo(content) {
     
     return result;
 }
-
-// Export the relevant functions
-export { findRelevantAffiliate, generateAffiliateAd, extractReferralLinkInfo };

@@ -4,6 +4,8 @@ import { sendToAnalytics } from '../sendToAnalytics.js';
 import { getRequestData } from '../requestUtils.js';
 import { findRelevantAffiliate, generateAffiliateAd, extractReferralLinkInfo } from './adLlmMapper.js';
 import { Transform } from 'stream';
+import { logAdInteraction } from './adLogger.js';
+import { affiliatesData } from '../../affiliate/affiliates.js';
 
 const log = debug('pollinations:adfilter');
 const errorLog = debug('pollinations:adfilter:error');
@@ -12,13 +14,36 @@ const errorLog = debug('pollinations:adfilter:error');
 const markdownRegex = /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`.*\`)|(?:\>.*)|(?:\-\s.*)|(?:\d\.\s.*)/;
 
 // Probability of adding referral links (0%)
-const REFERRAL_LINK_PROBABILITY = 0;
+const REFERRAL_LINK_PROBABILITY = 0.1;
 
 // Flag for testing ads with a specific marker
 const TEST_ADS_MARKER = "p-ads";
 
 // Whether to require markdown for ad processing
 const REQUIRE_MARKDOWN = true;
+
+// Create a flattened list of all trigger words from all affiliates
+const ALL_TRIGGER_WORDS = affiliatesData.reduce((words, affiliate) => {
+    if (affiliate.triggerWords && Array.isArray(affiliate.triggerWords)) {
+        return [...words, ...affiliate.triggerWords];
+    }
+    return words;
+}, []);
+
+// Function to check if content contains any trigger words
+function contentContainsTriggerWords(content) {
+    if (!content || typeof content !== 'string') {
+        return false;
+    }
+    
+    // Convert content to lowercase for case-insensitive matching
+    const lowercaseContent = content.toLowerCase();
+    
+    // Check if content contains any trigger word (case insensitive)
+    return ALL_TRIGGER_WORDS.some(word => 
+        lowercaseContent.includes(word.toLowerCase())
+    );
+}
 
 // Extracted utility functions
 function shouldShowAds(content, messages = [], req = null) {
@@ -27,7 +52,7 @@ function shouldShowAds(content, messages = [], req = null) {
 
     // Skip ad processing if any referrer is present
     if (requestData && requestData.referrer && requestData.referrer !== 'unknown') {
-        log('Skipping ad processing due to referrer presence:', requestData.referrer);
+        // log('Skipping ad processing due to referrer presence:', requestData.referrer);
         return { shouldShowAd: false, markerFound: false };
     }
     
@@ -49,23 +74,34 @@ function shouldShowAds(content, messages = [], req = null) {
         markerFound = content.includes(TEST_ADS_MARKER);
     }
     
-    // If marker is not found, use the default probability
-    const effectiveProbability = markerFound ? 1.0 : REFERRAL_LINK_PROBABILITY;
+    // Check for trigger words in content or messages
+    let triggerWordsFound = false;
+    if (content) {
+        triggerWordsFound = contentContainsTriggerWords(content);
+    }
+    if (!triggerWordsFound && messages && messages.length > 0) {
+        triggerWordsFound = messages.some(msg => 
+            msg.content && contentContainsTriggerWords(msg.content)
+        );
+    }
     
-    if (!markerFound) {
-        log('No test marker "p-ads" found, using default probability');
-    } else {
+    // If marker is not found, use the default probability
+    const effectiveProbability = markerFound 
+        ? 1.0 // 100% probability for marker found
+        : triggerWordsFound 
+            ? REFERRAL_LINK_PROBABILITY * 3 // Triple probability for trigger words
+            : REFERRAL_LINK_PROBABILITY;
+    
+    if (markerFound) {
         log('Test marker "p-ads" found, using 100% probability');
+    } else if (triggerWordsFound) {
+        log(`Trigger words found in content, using triple probability (${(REFERRAL_LINK_PROBABILITY * 3).toFixed(2)})`);
     }
     
     // Random check - only process based on the effective probability
     const shouldShowAd = Math.random() <= effectiveProbability;
     
-    if (!shouldShowAd) {
-        log('Skipping ad processing due to probability check');
-    }
-    
-    return { shouldShowAd, markerFound };
+    return { shouldShowAd, markerFound: markerFound || triggerWordsFound };
 }
 
 function shouldProceedWithAd(content, markerFound) {
@@ -97,7 +133,8 @@ async function generateAdForContent(content, req, messages, markerFound = false,
         
         // If affiliate data is found, generate the ad string
         if (affiliateData) {
-            const adString = await generateAffiliateAd(affiliateData.id);
+            // Pass content and messages to enable language matching
+            const adString = await generateAffiliateAd(affiliateData.id, content, messages);
             
             // If an ad string was successfully generated
             if (adString) {
@@ -106,17 +143,27 @@ async function generateAdForContent(content, req, messages, markerFound = false,
                 
                 log(`Generated ${isStreaming ? 'streaming ' : ''}ad for affiliate ${affiliateData.name} (${affiliateData.id}). Total links: ${linkInfo.linkCount}`);
                 
-                // Send analytics event
-                if (linkInfo.linkCount > 0) {
-                    await sendToAnalytics(req, 'referralLinkAdded', {
-                        linkCount: linkInfo.linkCount,
-                        topics: linkInfo.topicsOrIdsString || '',
-                        linkTexts: linkInfo.linkTextsString || '',
-                        contentLength: content.length,
-                        processedLength: content.length + adString.length,
-                        affiliateIds: linkInfo.affiliateIds ? linkInfo.affiliateIds.join(',') : '',
-                        affiliateName: affiliateData.name || '',
-                        isStreaming
+                // Log the ad interaction - only log when an ad is actually added
+                await logAdInteraction({
+                    messages,
+                    content,
+                    adString,
+                    affiliateData,
+                    req,
+                    reason: 'success',
+                    isStreaming
+                });
+                
+                // Send to analytics if we have a request object
+                if (req) {
+                    sendToAnalytics(req, 'ad_shown', {
+                        ad_type: 'affiliate',
+                        affiliate_id: affiliateData.id,
+                        affiliate_name: affiliateData.name,
+                        streaming: isStreaming,
+                        link_count: linkInfo.linkCount,
+                        link_texts: linkInfo.linkTextsString,
+                        topics: linkInfo.topicsOrIdsString
                     });
                 }
                 
@@ -124,10 +171,10 @@ async function generateAdForContent(content, req, messages, markerFound = false,
             }
         }
         
-        log(`No relevant affiliate found for ${isStreaming ? 'streaming ' : ''}content`);
         return null;
     } catch (error) {
-        errorLog(`Error generating ${isStreaming ? 'streaming ' : ''}ad:`, error);
+        errorLog(`Error generating ad: ${error.message}`);
+        // We no longer log errors since we only want to log successful ad additions
         return null;
     }
 }
@@ -160,9 +207,14 @@ function formatAdAsSSE(adString) {
  * @returns {Promise<string>} - The processed content with referral links
  */
 export async function processRequestForAds(content, req, messages = []) {
+    if (!content) {
+        return content;
+    }
+    
     const { shouldShowAd, markerFound } = shouldShowAds(content, messages, req);
     
     if (!shouldShowAd) {
+        // No longer logging when ads are not shown
         return content;
     }
     
@@ -172,6 +224,7 @@ export async function processRequestForAds(content, req, messages = []) {
         return content + adString;
     }
     
+    // No longer logging when no ad was generated
     return content;
 }
 
@@ -224,6 +277,8 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
                             
                             // Push the ad chunk before the [DONE] message
                             this.push(adChunk);
+                        } else {
+                            // No longer logging when no ad is shown in streaming mode
                         }
                         
                         // Push the [DONE] message
@@ -232,6 +287,7 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
                     })
                     .catch(error => {
                         errorLog('Error processing streaming ad:', error);
+                        // No longer logging errors
                         // Just push the original chunk if there's an error
                         this.push(chunk);
                         callback();

@@ -10,7 +10,8 @@ const affiliates = [
     description: "Get a free license for the Martinic Kee Bass VST/AU plugin, modeled on the original.",
     audience: "Music producers and sound designers looking for high-quality virtual instruments.",
     categories: ["Music & Audio", "Software"],
-    trackingLink: "https://martinic.evyy.net/c/6058776/1422856/4482"
+    trackingLink: "https://martinic.evyy.net/c/6058776/1422856/4482",
+    triggerWords: ["bass plugin", "VST", "VST plugin", "music production", "audio plugin", "synthesizer", "music software", "DAW", "audio production", "instrument plugin"]
   },
   {
     id: "432264",
@@ -19,7 +20,8 @@ const affiliates = [
     description: "Secure your internet browsing with a NordVPN subscription.",
     audience: "Individuals seeking online privacy and security.",
     categories: ["Software", "Internet Service Provider", "Security"],
-    trackingLink: "https://nordvpn.sjv.io/c/6058776/432264/7452"
+    trackingLink: "https://nordvpn.sjv.io/c/6058776/432264/7452",
+    triggerWords: ["VPN", "privacy", "online security", "secure browsing", "internet privacy", "encryption", "IP hiding", "private network", "cybersecurity", "data protection"]
   },
   {
     id: "1548053",
@@ -28,7 +30,8 @@ const affiliates = [
     description: "Create and share digital photo albums online with jAlbum software.",
     audience: "Individuals and professionals looking to create and share photo albums online.",
     categories: ["Apps", "Creative Digital Assets", "Photography"],
-    trackingLink: "https://jalbum-affiliate-program.sjv.io/c/6058776/1548053/17916"
+    trackingLink: "https://jalbum-affiliate-program.sjv.io/c/6058776/1548053/17916",
+    triggerWords: ["photo album", "digital album", "image gallery", "photo sharing", "photography", "picture collection", "photo organization", "photo management", "image hosting", "photo portfolio"]
   },
   {
     id: "1630115",
@@ -37,7 +40,8 @@ const affiliates = [
     description: "Shop high-quality Soundcore audio products and accessories.",
     audience: "Consumers looking for high-quality audio products and accessories",
     categories: ["Consumer Electronics", "Accessories & Peripherals"],
-    trackingLink: "https://soundcore.sjv.io/c/6058776/1630115/18028"
+    trackingLink: "https://soundcore.sjv.io/c/6058776/1630115/18028",
+    triggerWords: ["headphones", "earbuds", "speakers", "audio equipment", "sound quality", "bluetooth speakers", "wireless audio", "music devices", "audio accessories", "premium sound"]
   },
   {
     id: "2073393",
@@ -47,7 +51,8 @@ const affiliates = [
     audience: "Individuals and businesses looking to enhance their brand identity with a professional logo and banners.",
     categories: ["Creative Digital Assets", "Graphic Design"],
     tags: ["New logo and banners"],
-    trackingLink: "https://capcutaffiliateprogram.pxf.io/c/6058776/2073393/22474"
+    trackingLink: "https://capcutaffiliateprogram.pxf.io/c/6058776/2073393/22474",
+    triggerWords: ["logo design", "banner design", "graphic design", "brand identity", "visual branding", "company logo", "marketing graphics", "design services", "branding elements", "creative design"]
   },
   {
     id: "2144039",
@@ -57,7 +62,8 @@ const affiliates = [
     audience: "Businesses and individuals seeking reliable and high-performance web hosting solutions.",
     categories: ["Internet Service Provider", "Web Hosting"],
     tags: ["webhosting", "VPS", "dedicated VPS"],
-    trackingLink: "https://clawcloudsingaporeprivatelimited.sjv.io/c/6058776/2144039/26865"
+    trackingLink: "https://clawcloudsingaporeprivatelimited.sjv.io/c/6058776/2144039/26865",
+    triggerWords: ["web hosting", "VPS", "dedicated server", "cloud hosting", "server hosting", "hosting service", "virtual private server", "website hosting", "hosting provider", "bandwidth"]
   },
   {
     id: "2699274",
@@ -66,7 +72,8 @@ const affiliates = [
     description: "Explore AI-based language learning and communication solutions with Talkpal.",
     audience: "Individuals and businesses looking for AI-based communication solutions.",
     categories: ["Apps", "Software", "Internet Service Provider"],
-    trackingLink: "https://talkpalinc.sjv.io/c/6058776/2699274/30644"
+    trackingLink: "https://talkpalinc.sjv.io/c/6058776/2699274/30644",
+    triggerWords: ["language learning", "AI communication", "language practice", "virtual language tutor", "conversation practice", "language skills", "foreign language", "language app", "AI tutor", "linguistic AI"]
   },
   {
     id: "2774941",
@@ -75,7 +82,8 @@ const affiliates = [
     description: "Get custom logo designs and branding solutions from HeyReal.AI.",
     audience: "Individuals and businesses looking for custom logos and branding solutions.",
     categories: ["Creative Digital Assets", "Art & Photography"],
-    trackingLink: "https://go.sjv.io/c/6058776/2774941/30752"
+    trackingLink: "https://go.sjv.io/c/6058776/2774941/30752",
+    triggerWords: ["AI logo", "logo design", "custom logo", "branding", "brand identity", "business logo", "logo creation", "design service", "logo generator", "visual identity"]
   },
   {
     id: "lovemy",
@@ -86,7 +94,8 @@ const affiliates = [
     categories: ["Sexual Wellness & Adult"],
     tags: ["ai companion", "nsfw", "adult"],
     nsfw: true,
-    trackingLink: "https://lovemy.ai/?linkId=lp_060145&sourceId=pollinations&tenantId=lovemyai"
+    trackingLink: "https://lovemy.ai/?linkId=lp_060145&sourceId=pollinations&tenantId=lovemyai",
+    triggerWords: ["AI companion", "virtual girlfriend", "digital companion", "AI relationship", "virtual partner", "AI chat", "romantic AI", "intimate AI", "personal AI", "virtual dating"]
   },
   {
     id: "hentai",
@@ -97,7 +106,8 @@ const affiliates = [
     categories: ["Sexual Wellness & Adult", "Apps"],
     tags: ["ai companion", "nsfw", "adult", "hentai"],
     nsfw: true,
-    trackingLink: "https://aihentaichat.com/?linkId=lp_617069&sourceId=pollinations&tenantId=lovemyai"
+    trackingLink: "https://aihentaichat.com/?linkId=lp_617069&sourceId=pollinations&tenantId=lovemyai",
+    triggerWords: ["hentai", "anime", "manga", "adult content", "NSFW", "uncensored", "adult chat", "fantasy chat", "anime characters", "adult anime"]
   },
   {
     id: "kofi",
@@ -108,7 +118,8 @@ const affiliates = [
     categories: ["Charitable Causes", "Apps"],
     tags: ["donation", "support"],
     ad_text: "Powered by Pollinations.AI free text APIs. [Support our mission]({url}) to keep AI accessible for everyone.",
-    trackingLink: "https://ko-fi.com/pollinationsai"
+    trackingLink: "https://ko-fi.com/pollinationsai",
+    triggerWords: ["donation", "support creators", "creator support", "funding", "tip jar", "financial support", "creator economy", "patronage", "buy me a coffee", "contribute"]
   },
   {
     id: "25841",
@@ -118,7 +129,8 @@ const affiliates = [
     audience: "Photography enthusiasts and consumers looking for high-quality photo printing solutions",
     categories: ["Consumer Electronics", "Photography"],
     tags: ["photo printer", "instant camera", "4PASS technology"],
-    trackingLink: "https://primedigitalmarketing.pxf.io/jeQnEb"
+    trackingLink: "https://primedigitalmarketing.pxf.io/jeQnEb",
+    triggerWords: ["photo printer", "instant camera", "printing photos", "photo quality", "portable printer", "image printing", "digital prints", "instant printing", "photo paper", "photography equipment"]
   }
   // Add all other affiliates from affiliate_mapping.js that aren't already included
   // In a real implementation, we would include all entries from the original file

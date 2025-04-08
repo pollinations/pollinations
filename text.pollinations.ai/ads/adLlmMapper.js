@@ -1,6 +1,7 @@
 import debug from 'debug';
 import { affiliateMarkdown, affiliatesData } from "./affiliate_prompt.js";
 import { generateTextPortkey } from '../generateTextPortkey.js';
+import { logAdInteraction } from './adLogger.js';
 
 const log = debug('pollinations:adfilter');
 const errorLog = debug('pollinations:adfilter:error');
@@ -57,9 +58,21 @@ AFFILIATE ID:`;
         const response = completion.choices[0]?.message?.content?.trim();
         
         if (!response || response.toLowerCase() === "none") {
-            log("No relevant affiliate found by LLM, using Ko-fi donation as fallback");
-            // Find the Ko-fi affiliate in our data
-            return affiliatesData.find(a => a.id === "kofi") || null;
+            // Define the percentage chance of showing Ko-fi when no other affiliate is found
+            const kofiShowPercentage = 30; // 30% chance to show Ko-fi
+            
+            // Generate a random number between 0-100
+            const randomValue = Math.floor(Math.random() * 100);
+            
+            // Only show Ko-fi ad if the random value is below our threshold
+            if (randomValue < kofiShowPercentage) {
+                log(`No relevant affiliate found by LLM, showing Ko-fi donation (${randomValue} < ${kofiShowPercentage}%)`);
+                // Find the Ko-fi affiliate in our data
+                return affiliatesData.find(a => a.id === "kofi") || null;
+            } else {
+                log(`No relevant affiliate found by LLM, skipping ad (${randomValue} >= ${kofiShowPercentage}%)`);
+                return null;
+            }
         }
 
         // Extract just the affiliate ID from the response
@@ -67,36 +80,74 @@ AFFILIATE ID:`;
         const affiliateId = affiliateIdMatch ? affiliateIdMatch[1] : null;
         
         if (!affiliateId) {
-            log("Could not extract affiliate ID from LLM response, using Ko-fi donation as fallback");
-            // Find the Ko-fi affiliate in our data
-            return affiliatesData.find(a => a.id === "kofi") || null;
+            // Define the percentage chance of showing Ko-fi when no valid ID is extracted
+            const kofiShowPercentage = 10; // 30% chance to show Ko-fi
+            
+            // Generate a random number between 0-100
+            const randomValue = Math.floor(Math.random() * 100);
+            
+            // Only show Ko-fi ad if the random value is below our threshold
+            if (randomValue < kofiShowPercentage) {
+                log(`Could not extract affiliate ID from LLM response, showing Ko-fi (${randomValue} < ${kofiShowPercentage}%)`);
+                // Find the Ko-fi affiliate in our data
+                return affiliatesData.find(a => a.id === "kofi") || null;
+            } else {
+                log(`Could not extract affiliate ID from LLM response, skipping ad (${randomValue} >= ${kofiShowPercentage}%)`);
+                return null;
+            }
         }
 
         // Find the affiliate in our data
         const matchedAffiliate = affiliatesData.find(a => a.id === affiliateId);
         
         if (!matchedAffiliate) {
-            log(`Affiliate ID ${affiliateId} not found in affiliate data, using Ko-fi donation as fallback`);
-            // Find the Ko-fi affiliate in our data
-            return affiliatesData.find(a => a.id === "kofi") || null;
+            // Define the percentage chance of showing Ko-fi when affiliate ID isn't found
+            const kofiShowPercentage = 30; // 30% chance to show Ko-fi
+            
+            // Generate a random number between 0-100
+            const randomValue = Math.floor(Math.random() * 100);
+            
+            // Only show Ko-fi ad if the random value is below our threshold
+            if (randomValue < kofiShowPercentage) {
+                log(`Affiliate ID ${affiliateId} not found in affiliate data, showing Ko-fi (${randomValue} < ${kofiShowPercentage}%)`);
+                // Find the Ko-fi affiliate in our data
+                return affiliatesData.find(a => a.id === "kofi") || null;
+            } else {
+                log(`Affiliate ID ${affiliateId} not found in affiliate data, skipping ad (${randomValue} >= ${kofiShowPercentage}%)`);
+                return null;
+            }
         }
 
         log(`Found relevant affiliate: ${matchedAffiliate.name} (${affiliateId})`);
         return matchedAffiliate;
     } catch (error) {
         errorLog(`Error finding relevant affiliate: ${error.message}`);
-        // Use Ko-fi as fallback in case of errors
-        log("Using Ko-fi donation as fallback due to error");
-        return affiliatesData.find(a => a.id === "kofi") || null;
+        
+        // Define the percentage chance of showing Ko-fi when an error occurs
+        const kofiShowPercentage = 30; // 30% chance to show Ko-fi
+        
+        // Generate a random number between 0-100
+        const randomValue = Math.floor(Math.random() * 100);
+        
+        // Only show Ko-fi ad if the random value is below our threshold
+        if (randomValue < kofiShowPercentage) {
+            log(`Using Ko-fi donation as fallback due to error (${randomValue} < ${kofiShowPercentage}%)`);
+            return affiliatesData.find(a => a.id === "kofi") || null;
+        } else {
+            log(`Skipping ad due to error (${randomValue} >= ${kofiShowPercentage}%)`);
+            return null;
+        }
     }
 }
 
 /**
  * Generate an ad string for the given affiliate ID
  * @param {string} affiliateId - The ID of the affiliate to generate an ad for
+ * @param {string} content - The original content to match language with
+ * @param {Array} messages - The original messages for context
  * @returns {Promise<string|null>} - The ad string or null if generation failed
  */
-export async function generateAffiliateAd(affiliateId) {
+export async function generateAffiliateAd(affiliateId, content = '', messages = []) {
     if (!affiliateId) {
         log('No affiliate ID provided for ad generation');
         return null;
@@ -114,34 +165,68 @@ export async function generateAffiliateAd(affiliateId) {
         // Create the referral link
         const referralLink = `https://pollinations.ai/redirect/${affiliateId}`;
         
-        // Use the ad_text field if available
-        if (affiliate.ad_text) {
-            // Replace url placeholder with the actual link
-            const adText = `\n\n---\n${affiliate.ad_text.replace('{url}', referralLink)}`;
-            log(`Generated ad for ${affiliate.name} (${affiliateId}) using custom ad text`);
-            return adText;
-        }
-        
-        // Otherwise, use the standard approach
+        // Get base ad text - simplified approach for all types
         let adTextSource = '';
         
-        // Try to use the description first
-        if (affiliate.description) {
-            adTextSource = affiliate.description;
+        // Use the ad_text field if available
+        if (affiliate.ad_text) {
+            adTextSource = affiliate.ad_text.replace('{url}', referralLink);
+        } 
+        // Use description if available
+        else if (affiliate.description) {
+            adTextSource = `${affiliate.description} [Learn more](${referralLink})`;
         }
-        // If no description, try to use the product name
+        // Use product name if available
         else if (affiliate.product) {
-            adTextSource = `Learn more about ${affiliate.product}`;
+            adTextSource = `Learn more about ${affiliate.product} [Learn more](${referralLink})`;
+        }
+        // Fallback to generic text
+        else {
+            adTextSource = `Learn more about ${affiliate.name} [Learn more](${referralLink})`;
+            log(`No specific text for ${affiliateId}, using generic ad text.`);
         }
         
-        // If still no text, create a very generic one (less ideal)
-        if (!adTextSource) {
-            adTextSource = `Learn more about ${affiliate.name}`;
-            log(`No specific description/product found for ${affiliateId}, using generic ad text.`);
+        // Detect language and translate ad text if content is provided
+        if (content && content.trim().length > 0) {
+            // Combine the last message with the content for better language detection
+            const lastMessage = messages.length > 0 ? messages[messages.length - 1].content || '' : '';
+            const sampleText = lastMessage && lastMessage.length > 100 ? lastMessage : content;
+            
+            // Use LLM to detect language and translate
+            const translationPrompt = `
+You are a professional translator. Detect the language of the provided text and translate the advertisement to match that language.
+If the text is already in English, just return the original advertisement text unchanged.
+
+Important instructions:
+1. Return ONLY the translated text - no explanations, no confirmations, no additional text
+2. Do not introduce any additional formatting, preserve the original formatting when possible
+3. Preserve any markdown links in the format [text](url)
+4. Your response should contain nothing but the translated advertisement
+
+TEXT FOR LANGUAGE DETECTION:
+${sampleText.substring(0, 300)}...
+
+ADVERTISEMENT TO TRANSLATE:
+${adTextSource}
+
+TRANSLATED ADVERTISEMENT:`;
+
+            try {
+                const completion = await generateTextPortkey([{ role: "user", content: translationPrompt }]);
+                const translatedText = completion.choices[0]?.message?.content?.trim();
+                
+                if (translatedText && translatedText.length > 0) {
+                    log(`Translated ad for ${affiliate.name} (${affiliateId})`);
+                    adTextSource = translatedText;
+                }
+            } catch (translationError) {
+                errorLog(`Error translating ad: ${translationError.message}`);
+                // Continue with original text if translation fails
+            }
         }
         
-        // Format the ad
-        const adText = `\n\n---\n${adTextSource} [Learn more](${referralLink})`;
+        // Format the final ad - single approach for all types
+        const adText = `\n\n---\n${adTextSource}`;
         
         log(`Generated ad for ${affiliate.name} (${affiliateId})`);
         return adText;

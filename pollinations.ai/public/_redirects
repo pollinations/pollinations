@@ -6,3 +6,4 @@
 /readme / 200
 /referral / 200
 /sirius-cybernetics-elevator-challenge https://b_jhzjeywxldc.v0.build/ 301
+/redirect/* /.netlify/functions/redirect/:splat 200

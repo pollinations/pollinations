@@ -32,19 +32,8 @@ export function generateCacheKey(url, requestBody = null) {
   let bodyHash = '';
   if (requestBody) {
     try {
-      // Extract only the parts of the request body that affect the response
-      const relevantBodyParts = {
-        messages: requestBody.messages,
-        model: requestBody.model,
-        temperature: requestBody.temperature,
-        max_tokens: requestBody.max_tokens,
-        top_p: requestBody.top_p,
-        frequency_penalty: requestBody.frequency_penalty,
-        presence_penalty: requestBody.presence_penalty,
-      };
-      
-      // Create a hash of the relevant body parts
-      bodyHash = '-' + createHash(JSON.stringify(relevantBodyParts));
+      // Use the entire requestBody as is - true thin proxy approach
+      bodyHash = '-' + createHash(JSON.stringify(requestBody));
     } catch (error) {
       console.error('Error creating body hash:', error);
     }

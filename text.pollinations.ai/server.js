@@ -13,7 +13,8 @@ import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';
 import { processNSFWReferralLinks } from './ads/nsfwReferralLinks.js';
-import { getRequestData, getReferrer } from './requestUtils.js';
+import { processRequestForAds, createStreamingAdWrapper } from './ads/initRequestFilter.js';
+import { getRequestData, getReferrer, WHITELISTED_DOMAINS } from './requestUtils.js';
 
 // Load environment variables
 dotenv.config();
@@ -21,11 +22,7 @@ dotenv.config();
 const BANNED_PHRASES = [
 ];
 
-// Read whitelisted domains from environment variable
-const WHITELISTED_DOMAINS = process.env.WHITELISTED_DOMAINS 
-    ? process.env.WHITELISTED_DOMAINS.split(',').map(domain => domain.trim())
-    : [];
-
+// const blockedIPs = new Set();
 const blockedIPs = new Set();
 
 async function blockIP(ip) {
@@ -247,13 +244,13 @@ async function handleRequest(req, res, requestData) {
                     let processedContent = completion.choices[0].message.content;
                     
                     // First check for NSFW content in entire conversation
-                    processedContent = await processNSFWReferralLinks({
-                        messages: requestData.messages,
-                        responseContent: processedContent
-                    }, req);
+                    // processedContent = await processNSFWReferralLinks({
+                    //     messages: requestData.messages,
+                    //     responseContent: processedContent
+                    // }, req);
                     
                     // Then process regular referral links
-                    // processedContent = await processReferralLinks(processedContent, req);
+                    processedContent = await processRequestForAds(processedContent, req, requestData.messages);
                     
                     completion.choices[0].message.content = processedContent;
                 } catch (error) {
@@ -297,6 +294,8 @@ async function handleRequest(req, res, requestData) {
 
         if (requestData.stream) {
             log('Sending streaming response with sendAsOpenAIStream');
+            // Add requestData to completion object for access in streaming ad wrapper
+            completion.requestData = requestData;
             sendAsOpenAIStream(res, completion, req);
         } else {
             if (req.method === 'GET') {
@@ -335,42 +334,75 @@ function shouldBypassDelay(req) {
 
 // Helper function for consistent error responses
 export async function sendErrorResponse(res, req, error, requestData, statusCode = 500) {
+    // Use error.status if available, otherwise use the provided statusCode
+    const responseStatus = error.status || statusCode;
+    
+    // Create a simplified error response
     const errorResponse = {
         error: error.message || 'An error occurred',
-        status: statusCode
+        status: responseStatus
     };
 
-    // Include detailed error information if available
-    if (error.response?.data) {
-        try {
-            // Try to parse the data as JSON first
-            const parsedData = typeof error.response.data === 'string' 
-                ? JSON.parse(error.response.data) 
-                : error.response.data;
-            errorResponse.details = parsedData;
-        } catch (e) {
-            // If parsing fails, use the raw data
-            errorResponse.details = error.response.data;
-        }
+    // Include detailed error information if available, without wrapping
+    if (error.details) {
+        errorResponse.details = error.details;
+    }
+    // Content filter errors get special handling
+    if (error.isContentFilterError) {
+        errorResponse.error = "Content policy violation detected";
+        errorResponse.content_policy = true;
     }
 
-    errorLog('Error occurred: %O', errorResponse);
-    errorLog('Stack trace: %s', error.stack);
+    // Extract client information (for logs only)
+    const clientInfo = {
+        ip: getIp(req) || 'unknown',
+        userAgent: req.headers['user-agent'] || 'unknown',
+        referer: req.headers['referer'] || 'unknown',
+        origin: req.headers['origin'] || 'unknown',
+    };
 
-    // Log detailed error information to stderr
-    // console.error('Error occurred:', JSON.stringify(errorResponse, null, 2));
-    // console.error('Stack trace:', error.stack);
+    // Extract request parameters (sanitized)
+    const sanitizedRequestData = requestData ? {
+        model: requestData.model || 'unknown',
+        temperature: requestData.temperature,
+        max_tokens: requestData.max_tokens,
+        top_p: requestData.top_p,
+        frequency_penalty: requestData.frequency_penalty,
+        presence_penalty: requestData.presence_penalty,
+        stream: requestData.stream,
+        referrer: requestData.referrer || 'unknown',
+        messageCount: requestData.messages ? requestData.messages.length : 0,
+        totalMessageLength: requestData.messages ? 
+            requestData.messages.reduce((total, msg) => 
+                total + (typeof msg.content === 'string' ? msg.content.length : 0), 0) : 0
+    } : 'no request data';
+
+    // Log comprehensive error information (for internal use only)
+    errorLog('Error occurred:', {
+        error: {
+            message: error.message,
+            status: responseStatus,
+            details: error.details,
+            isContentFilterError: error.isContentFilterError
+        },
+        model: error.model || requestData?.model || 'unknown',
+        provider: error.provider || 'Pollinations',
+        originalProvider: error.originalProvider,
+        clientInfo,
+        requestData: sanitizedRequestData,
+        stack: error.stack
+    });
 
     // Track error event
     await sendToAnalytics(req, 'textGenerationError', {
         error: error.message,
         errorType: error.name,
-        errorCode: error.code,
-        statusCode,
+        isContentFilterError: error.isContentFilterError,
+        statusCode: responseStatus,
         model: requestData?.model
     });
 
-    res.status(statusCode).json(errorResponse);
+    res.status(responseStatus).json(errorResponse);
 }
 
 // Generate a unique ID with pllns_ prefix
@@ -462,23 +494,23 @@ export function sendContentResponse(res, completion) {
 export async function processRequest(req, res, requestData) {
     const ip = getIp(req);
 
-    // Check for banned phrases first
-    try {
-        await checkBannedPhrases(requestData.messages, ip);
-    } catch (error) {
-        // Only block for actual banned phrases, not API errors
-        if (error.message && error.message.includes("banned phrase")) {
-            return sendErrorResponse(res, req, error, requestData, 403);
-        }
+    // // Check for banned phrases first
+    // try {
+    //     await checkBannedPhrases(requestData.messages, ip);
+    // } catch (error) {
+    //     // Only block for actual banned phrases, not API errors
+    //     if (error.message && error.message.includes("banned phrase")) {
+    //         return sendErrorResponse(res, req, error, requestData, 403);
+    //     }
         
-        // For API errors in streaming mode, pass them through
-        if (requestData.stream) {
-            log('API error in streaming mode:', error);
-            return sendErrorResponse(res, req, error, requestData, error.status || error.code || 500);
-        } else {
-            return sendErrorResponse(res, req, error, requestData, error.status || error.code || 500);
-        }
-    }
+    //     // For API errors in streaming mode, pass them through
+    //     if (requestData.stream) {
+    //         log('API error in streaming mode:', error);
+    //         return sendErrorResponse(res, req, error, requestData, error.status || error.code || 500);
+    //     } else {
+    //         return sendErrorResponse(res, req, error, requestData, error.status || error.code || 500);
+    //     }
+    // }
 
     const cacheKey = createHashKey(requestData);
 
@@ -635,7 +667,7 @@ app.get('/openai/models', (req, res) => {
         id: model.name,
         object: "model",
         created: Date.now(),
-        owned_by: model.name
+        owned_by: model.provider,
     }));
     res.json({
         object: "list",
@@ -645,7 +677,7 @@ app.get('/openai/models', (req, res) => {
 
 // POST /openai/* request handler
 app.post('/openai*', async (req, res) => {
-    const requestParams = { ...getRequestData(req), isPrivate: true };
+    const requestParams = { ...getRequestData(req), isPrivate: true, private: true }; // figure out later if it should be isPrivate or private
    
     try {
         await processRequest(req, res, requestParams);
@@ -700,17 +732,54 @@ if (completion) {
         if (responseStream.pipe) {
             log('Using pipe for Node.js Readable stream');
             
-            // Directly pipe the stream to the client - true thin proxy approach
-            log('Directly piping SSE stream to client');
-            responseStream.pipe(res);
+            // Get messages from the request data
+            // For GET requests, messages will be in the request path
+            // For POST requests, messages will be in the request body
+            const messages = req ? (
+                // Try to get messages from different sources
+                (req.body && req.body.messages) || 
+                (req.requestData && req.requestData.messages) || 
+                (completion.requestData && completion.requestData.messages) ||
+                []
+            ) : [];
             
-            // Handle client disconnect
-            if (req) req.on('close', () => {
-                log('Client disconnected');
-                if (responseStream.destroy) {
-                    responseStream.destroy();
-                }
-            });
+            // Check if we have messages and should process the stream for ads
+            if (req && messages.length > 0) {
+                log('Processing stream for ads with', messages.length, 'messages');
+                
+                // Create a wrapped stream that will add ads at the end
+                const wrappedStream = createStreamingAdWrapper(
+                    responseStream, 
+                    req, 
+                    messages
+                );
+                
+                // Pipe the wrapped stream to the response
+                wrappedStream.pipe(res);
+                
+                // Handle client disconnect
+                if (req) req.on('close', () => {
+                    log('Client disconnected');
+                    if (wrappedStream.destroy) {
+                        wrappedStream.destroy();
+                    }
+                    if (responseStream.destroy) {
+                        responseStream.destroy();
+                    }
+                });
+            } else {
+                // Directly pipe the stream to the client - true thin proxy approach
+                log('Directly piping SSE stream to client (no ad processing)');
+                responseStream.pipe(res);
+                
+                // Handle client disconnect
+                if (req) req.on('close', () => {
+                    log('Client disconnected');
+                    if (responseStream.destroy) {
+                        responseStream.destroy();
+                    }
+                });
+            }
             
             return;
         }
@@ -730,6 +799,22 @@ if (completion) {
     res.end();
 }
 
+// Helper function for Roblox-specific message handling
+function handleRobloxSpecificFix(messages, model) {
+    // Check if model is roblox-rp and the last message has role:system
+    if (model === 'roblox-rp' && 
+        messages.length > 0 && 
+        messages[messages.length - 1].role === 'system') {
+        
+        log('Applying Roblox-specific fix: reversing message order');
+        // Create a copy of the messages array and reverse it
+        return [...messages].reverse();
+    }
+    
+    // Return original messages if conditions aren't met
+    return messages;
+}
+
 async function generateTextBasedOnModel(messages, options) {
     const model = options.model || 'openai';
     log('Using model:', model, 'with options:', JSON.stringify(options));
@@ -740,8 +825,11 @@ async function generateTextBasedOnModel(messages, options) {
             log('Streaming mode enabled for model:', model, 'stream value:', options.stream);
         }
         
+        // Apply Roblox-specific fix if needed
+        const processedMessages = handleRobloxSpecificFix(messages, model);
+        
         // Log the messages being sent
-        log('Sending messages to model handler:', JSON.stringify(messages.map(m => ({ role: m.role, content: typeof m.content === 'string' ? m.content.substring(0, 50) + '...' : '[non-string content]' }))));
+        log('Sending messages to model handler:', JSON.stringify(processedMessages.map(m => ({ role: m.role, content: typeof m.content === 'string' ? m.content.substring(0, 50) + '...' : '[non-string content]' }))));
         
         // Get the handler function for the specified model
         const handler = getHandler(model);
@@ -750,8 +838,8 @@ async function generateTextBasedOnModel(messages, options) {
             throw new Error(`No handler found for model: ${model}`);
         }
         
-        // Call the handler with the messages and options
-        const response = await handler(messages, options);
+        // Call the handler with the processed messages and options
+        const response = await handler(processedMessages, options);
         
         // Log streaming response details
         if (options.stream && response) {
@@ -760,7 +848,24 @@ async function generateTextBasedOnModel(messages, options) {
         
         return response;
     } catch (error) {
-        errorLog('Error in generateTextBasedOnModel:', error);
+        errorLog('Error in generateTextBasedOnModel:', JSON.stringify({
+            error: error.message,
+            model: model,
+            provider: error.provider || 'unknown',
+            requestParams: {
+                ...options,
+                messages: options.messages ? 
+                    options.messages.map(m => ({ 
+                        role: m.role, 
+                        content: typeof m.content === 'string' ? 
+                            m.content.substring(0, 100) + (m.content.length > 100 ? '...' : '') : 
+                            '[non-string content]' 
+                    })) : 
+                    'none'
+            },
+            errorDetails: error.response?.data || null,
+            stack: error.stack
+        }));
         
         // For streaming errors, return a special error response that can be streamed
         if (options.stream) {

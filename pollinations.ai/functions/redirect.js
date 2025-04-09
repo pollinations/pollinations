@@ -1,13 +1,14 @@
 // Netlify function to handle redirects with analytics
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 // dotenv
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config();
 
-// Define referral link mappings
-const REFERRAL_LINKS = {
-  lovemy: 'https://lovemy.ai/?linkId=lp_060145&sourceId=pollinations&tenantId=lovemyai',
-  hentai: 'https://aihentaichat.com/?linkId=lp_617069&sourceId=pollinations&tenantId=lovemyai'
-};
+// Import redirect mapping from the consolidated affiliates.js file
+import { redirectMapping } from '../../affiliate/affiliates.js';
+
+// Use the redirectMapping directly as it's already in the correct format
+const REFERRAL_LINKS = redirectMapping;
 
 /**
  * Send analytics event to Google Analytics
@@ -53,7 +54,8 @@ async function sendAnalytics(eventName, metadata, request) {
           user_agent: userAgent.substring(0, 100) || '',
           // Add timestamp as a standard parameter
           engagement_time_msec: 1,
-          timestamp: Date.now().toString()
+          timestamp: Date.now().toString(),
+          debug_mode: 1
         }
       }]
     };
@@ -86,7 +88,7 @@ async function sendAnalytics(eventName, metadata, request) {
   }
 }
 
-exports.handler = async function(event, context) {
+export const handler = async function(event, context) {
   console.log('Redirect function called with event:', {
     path: event.path,
     httpMethod: event.httpMethod,
@@ -101,7 +103,18 @@ exports.handler = async function(event, context) {
   
   // Get URL from query parameters or use the mapped URL
   const params = event.queryStringParameters || {};
-  const url = params.url || REFERRAL_LINKS[targetId] || 'https://pollinations.ai';
+  const url = params.url || REFERRAL_LINKS[targetId];
+  
+  // If no URL is found for this ID, return an error
+  if (!url) {
+    return {
+      statusCode: 404,
+      body: JSON.stringify({
+        error: 'Redirect target not found',
+        message: `No redirect URL found for ID: ${targetId}`
+      })
+    };
+  }
   
   console.log(`Redirect requested for: ${targetId} to ${url}`);
   

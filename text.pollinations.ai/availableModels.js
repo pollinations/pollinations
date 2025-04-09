@@ -74,6 +74,15 @@ const models = [
     output_modalities: ["text"],
   },
   {
+    name: "llamascout",
+    description: "Llama 4 Scout 17B",
+    handler: generateTextPortkey,
+    //    details: "Llama 4 Scout model optimized for efficient text generation.",
+    provider: "Cloudflare",
+    input_modalities: ["text"],
+    output_modalities: ["text"],
+  },
+  {
     name: "mistral",
     description: "Mistral Small 3",
     handler: generateTextMistral,

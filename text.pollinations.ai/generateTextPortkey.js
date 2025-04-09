@@ -25,6 +25,7 @@ const MODEL_MAPPING = {
     // Cloudflare models
     'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
     'llamalight': '@cf/meta/llama-3.1-8b-instruct',
+    'llamascout': '@cf/meta/llama-4-scout-17b-16e-instruct',
     'deepseek-reasoning': '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
     'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
     'phi': 'phi-4-instruct',
@@ -343,6 +344,10 @@ export const portkeyConfig = {
         authKey: process.env.OPENAI_PHI4_MINI_API_KEY
     }),
     '@cf/meta/llama-3.2-11b-vision-instruct': () => createCloudflareModelConfig(),
+    '@cf/meta/llama-4-scout-17b-16e-instruct': () => ({
+        ...createCloudflareModelConfig(),
+        'max-tokens': 4096  // Reduced from 8192 to avoid context length errors
+    }),
     // Scaleway model configurations
     'qwen2.5-coder-32b-instruct': () => createScalewayModelConfig({
         'max-tokens': 8000  // Set specific token limit for Qwen Coder

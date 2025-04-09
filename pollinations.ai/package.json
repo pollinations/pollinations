@@ -1,6 +1,6 @@
 {
-  "name": "thot-labs",
-  "homepage": "https://thot-labs.com",
+  "name": "pollinations.ai",
+  "homepage": "https://pollinations.ai",
   "version": "0.4.8",
   "private": false,
   "dependencies": {

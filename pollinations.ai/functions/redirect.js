@@ -120,7 +120,7 @@ export const handler = async function(event, context) {
   
   try {
     // Send analytics event
-    await sendAnalytics('ads_ReferralLinkClicked', {
+    await sendAnalytics('ad_clicked', {
       referralId: targetId,
       targetUrl: url,
       source: 'referral'

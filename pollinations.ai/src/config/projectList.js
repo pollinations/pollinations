@@ -41,6 +41,13 @@ export const projectCategories = [
 const allProjects = {
   llmIntegrations: [
     {
+      name: "🆕 Goalani",
+      url: "https://goalani.com",
+      description: "Voice-enabled AI fitness coach. Using only your voice, you can communicate with the agent to manage your fitness and nutrition. Features weight tracking, exercise logging, food tracking with AI-generated images, and agent customization.",
+      author: "goalani.app@gmail.com",
+      submissionDate: "2025-04-09",
+    },
+    {
       name: "🆕 IMyself AI 🇨🇳",
       url: "https://openai.lmyself.top/",
       description: "我们提供高质量的AI生成服务，包括图像生成、文本生成、音频生成和语音转文本服务， 让您轻松创建各种创意内容。 (We provide high-quality AI generation services, including image generation, text generation, audio generation, and speech to text services, allowing you to easily create various creative content.)",

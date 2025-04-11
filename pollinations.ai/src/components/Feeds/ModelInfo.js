@@ -80,7 +80,7 @@ export function ModelInfo({ model, referrer, itemType = "text" }) {
         </Link>
       </Box>
 
-      <Box>
+      {/* <Box>
         {"Prompt Enhancer: "}
         <Link
           href={getPromptEnhancerLink()}
@@ -90,18 +90,25 @@ export function ModelInfo({ model, referrer, itemType = "text" }) {
         >
           Azure OpenAI
         </Link>
-      </Box>
+      </Box> */}
 
+      {/* Always render Referrer */}
       <Box>
-      {"Referrer: "}
-        <Link
-          href={referrer}
-          target="_blank"
-          rel="noopener noreferrer"
-          sx={{ color: Colors.lime, fontSize: "1em" }}
-        >
-          {formatReferrer(referrer)}
-        </Link>
+        {"Referrer: "}
+        {/* Conditionally render Link only if referrer is a valid URL string */}
+        {referrer && typeof referrer === 'string' && referrer.trim() !== '' && referrer !== 'unknown' ? (
+          <Link
+            href={referrer} 
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{ color: Colors.lime, fontSize: "1em" }}
+          >
+            {formatReferrer(referrer)}
+          </Link>
+        ) : (
+          // Otherwise, display the raw referrer value, defaulting to "unknown" for falsy values
+          referrer || 'unknown'
+        )}
       </Box>
     </Box>
   );

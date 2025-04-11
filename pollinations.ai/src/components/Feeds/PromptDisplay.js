@@ -347,9 +347,12 @@ export function PromptDisplay({
   
   return (
     <Box width="100%">
-      <Typography sx={LabelStyle}>
-        {renderTooltipLabel()}
-      </Typography>
+      
+      {isEditMode && (
+        <Typography sx={LabelStyle}>
+          {renderTooltipLabel()}
+        </Typography>
+      )}
       
       <Box position="relative" sx={{ width: '100%' }}>
         <PromptContainer 

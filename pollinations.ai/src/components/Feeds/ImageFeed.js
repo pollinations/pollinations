@@ -171,7 +171,7 @@ export const ImageFeed = memo(() => {
             }}
           >
             {/* Option Switch (Feed vs Edit) */}
-            <Box display="flex" justifyContent="center" mb={2}>
+            <Box display="flex" justifyContent="center" mb={4}>
               <FeedEditSwitch
                 toggleValue={toggleValue}
                 handleToggleChange={handleToggleChange}
@@ -185,7 +185,7 @@ export const ImageFeed = memo(() => {
             <Box
               width="100%"
               maxWidth="1000px"
-              mb={2}
+              mb={1}
             >
               <PromptDisplay
                 itemType="image"
@@ -207,7 +207,7 @@ export const ImageFeed = memo(() => {
 
             {/* Image Editor Controls - Only in Edit Mode */}
             {toggleValue === "edit" && (
-              <Box width="100%" mb={2}>
+              <Box width="100%" mb={1}>
                 <ImageEditor
                   image={effectiveImage}
                   isLoading={isLoading}
@@ -225,7 +225,7 @@ export const ImageFeed = memo(() => {
             )}
             
             {/* Image Display - moved inside the same Box as PromptDisplay */}
-            <Box width="100%" maxWidth="1000px">
+            <Box width="100%" maxWidth="1000px" >
               <ImageDisplay image={currentImage} isLoading={isLoading} />
             </Box>
           </Box>
@@ -233,7 +233,7 @@ export const ImageFeed = memo(() => {
 
         {/* If no image is currently available, show loader. */}
         {!currentImage?.imageURL && (
-          <SectionSubContainer width="100%">
+          <SectionSubContainer width="100%" >
             <CircularProgress sx={{ color: Colors.lime }} />
           </SectionSubContainer>
         )}
@@ -241,7 +241,6 @@ export const ImageFeed = memo(() => {
         {/* If we're in "feed" mode and have an image, show model info. */}
         {toggleValue === "feed" && currentImage?.imageURL && (
           <SectionSubContainer paddingBottom="0em" width="100%">
-            <br />
             <ModelInfo model={currentImage.model} referrer={currentImage.referrer} itemType="image" />
           </SectionSubContainer>
         )}

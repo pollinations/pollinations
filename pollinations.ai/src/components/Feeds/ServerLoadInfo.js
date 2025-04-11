@@ -9,7 +9,7 @@ import { keyframes } from "@emotion/react";
  * 
  * @param {Object} props
  * @param {Object} props.lastItem - Last received item (image or text entry)
- * @param {number} props.itemsGenerated - Count of items generated
+ * @param {number} props.itemsGenerated - Count of items generated from the parent feed
  * @param {Object} props.currentItem - Current displayed item
  * @param {string} props.itemType - Type of item ("image" or "text")
  */
@@ -18,8 +18,6 @@ export function ServerLoadInfo({ lastItem, itemsGenerated, currentItem, itemType
   const [simulatedLoad, setSimulatedLoad] = useState(2);
   // Add state to track if component is ready to display
   const [isReady, setIsReady] = useState(false);
-  // Track our own counter for items generated that won't be affected by slideshow stopping
-  const [localItemsCount, setLocalItemsCount] = useState(0);
   
   // State and Refs for event-based rate calculation
   const [imagesPerSecond, setImagesPerSecond] = useState(0);
@@ -35,24 +33,15 @@ export function ServerLoadInfo({ lastItem, itemsGenerated, currentItem, itemType
     return () => clearTimeout(timer);
   }, []);
 
-  // Set up event listeners to count incoming items
+  // Modified: Effect for rate calculation now ONLY needs to handle events for rate, not local count
   useEffect(() => {
-    const handleItemReceived = () => {
-      setLocalItemsCount(prev => prev + 1);
+    const handleItemReceivedForRate = () => {
       eventsSinceLastCalcRef.current += 1;
     };
     
-    window.addEventListener('image-received', handleItemReceived);
-    window.addEventListener('text-entry-received', handleItemReceived);
+    window.addEventListener('image-received', handleItemReceivedForRate);
+    window.addEventListener('text-entry-received', handleItemReceivedForRate);
     
-    return () => {
-      window.removeEventListener('image-received', handleItemReceived);
-      window.removeEventListener('text-entry-received', handleItemReceived);
-    };
-  }, []); // Empty dependency array: runs once on mount
-
-  // Set up interval to calculate and update rate periodically
-  useEffect(() => {
     const intervalId = setInterval(() => {
       const now = Date.now();
       const timeDiffSeconds = (now - lastRateCalcTimeRef.current) / 1000;
@@ -66,9 +55,13 @@ export function ServerLoadInfo({ lastItem, itemsGenerated, currentItem, itemType
         eventsSinceLastCalcRef.current = 0;
         lastRateCalcTimeRef.current = now;
       }
-    }, 1000); // Check every 2000ms (changed from 1000ms)
+    }, 1000); // Check every 1000ms
 
-    return () => clearInterval(intervalId); // Clear interval on unmount
+    return () => {
+      clearInterval(intervalId); // Clear interval on unmount
+      window.removeEventListener('image-received', handleItemReceivedForRate);
+      window.removeEventListener('text-entry-received', handleItemReceivedForRate);
+    };
   }, []); // Empty dependency array: runs once on mount
 
   // Update simulated load periodically
@@ -93,8 +86,8 @@ export function ServerLoadInfo({ lastItem, itemsGenerated, currentItem, itemType
     return null;
   }
 
-  // Always use itemsGenerated from props if it's higher than our local count
-  const displayCount = Math.max(localItemsCount, itemsGenerated || 0);
+  // Always use itemsGenerated from props. Default to 0 if undefined/null.
+  const displayCount = itemsGenerated !== undefined && itemsGenerated !== null ? itemsGenerated : 0;
   // Calculate safeRequests here to pass to RateDisplay
   const safeRequests = lastItem?.concurrentRequests !== undefined && lastItem?.concurrentRequests !== null ? 
     lastItem.concurrentRequests : simulatedLoad;
@@ -112,7 +105,7 @@ export function ServerLoadInfo({ lastItem, itemsGenerated, currentItem, itemType
         flexWrap: "wrap", // Allow wrapping on smaller screens
       }}
     >
-      {/* <CountBadge itemsGenerated={displayCount} /> */}
+      <CountBadge itemsGenerated={displayCount} />
       <RateDisplay rate={imagesPerSecond} itemType={itemType} /> 
       {/* <TimingInfo item={lastItem} /> */}
     </Box>
@@ -143,13 +136,13 @@ function CountBadge({ itemsGenerated }) {
       <Typography
         component="div"
         sx={{
-          color: Colors.offwhite,
+          color: Colors.gray2,
           fontSize: "1.5em",
           fontFamily: Fonts.headline,
           fontWeight: 500,
         }}
       >
-        Generated #
+        Count #
       </Typography>
 
       <Box
@@ -204,7 +197,6 @@ function TimingInfo({ item }) {
 // Updated RateDisplay component to include load bars
 function RateDisplay({ rate, itemType }) {
   const displayRate = rate || "0.0"; 
-  const label = itemType === "text" ? "Generated / Sec" : "Generated / Sec";
 
   // Scaling Logic: Use thresholds to determine number of bars
   const parsedRate = parseFloat(rate) || 0;
@@ -252,13 +244,13 @@ function RateDisplay({ rate, itemType }) {
       <Typography
         component="div"
         sx={{
-          color: Colors.offwhite,
+          color: Colors.gray2,
           fontSize: "1.5em",
           fontFamily: Fonts.headline,
           fontWeight: 500,
         }}
       >
-        {label}
+        Gen / Sec
       </Typography>
 
       <Box

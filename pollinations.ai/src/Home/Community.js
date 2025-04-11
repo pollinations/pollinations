@@ -136,7 +136,7 @@ const Community = () => {
                     textColor={Colors.offwhite}
                     fontSize={isXs ? "1.5em" : "2.5em"}
                     borderColor={Colors.offwhite}
-                    style={{ fontFamily: Fonts.title }}
+                    style={{ fontFamily: Fonts.parameter }}
                   >
                     <ReactSVG
                       src={getPlatformIcon(platform.platform)}

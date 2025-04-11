@@ -140,7 +140,7 @@ export const TextFeed = memo(() => {
             }}
           >
             {/* Feed/Edit Toggle */}
-            <Box display="flex" justifyContent="center" mb={2}>
+            <Box display="flex" justifyContent="center" mb={4}>
               <FeedEditSwitch
                 toggleValue={toggleValue}
                 handleToggleChange={handleToggleChange}
@@ -199,8 +199,7 @@ export const TextFeed = memo(() => {
         {/* Model Info (Feed mode only) */}
         {toggleValue === "feed" && entry?.response && (
           <SectionSubContainer paddingBottom="0em">
-            <br />
-            <ModelInfo model={entry.parameters?.model} referrer={entry.referrer} itemType="text" />
+            <ModelInfo model={entry.parameters?.model} referrer={entry.parameters?.referrer} itemType="text" />
           </SectionSubContainer>
         )}
       </SectionSubContainer>

@@ -71,8 +71,9 @@ const LabelStyle = {
  * @param {Object} props - Component props
  * @param {Object} props.entry - The text entry to display
  * @param {boolean} props.isLoading - Loading state
+ * @param {boolean} props.isEditMode - Edit mode state
  */
-export const TextDisplay = ({ entry, isLoading }) => {
+export const TextDisplay = ({ entry, isLoading, isEditMode }) => {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
 
@@ -98,7 +99,9 @@ export const TextDisplay = ({ entry, isLoading }) => {
 
   const ResponseContent = (
     <Box width="100%" display="flex" flexDirection="column">
-      <Typography sx={LabelStyle}>Response</Typography>
+      {isEditMode && (
+        <Typography sx={LabelStyle}>Response</Typography>
+      )}
       <ResponseContainer elevation={0} onClick={handleResponseClick}>
         <ResponseText 
           variant="body1" 

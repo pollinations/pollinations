@@ -43,7 +43,7 @@ export const Integration = () => {
         <GeneralButton
           handleClick={handleGithubButtonClick}
           isLoading={false}
-          backgroundColor={Colors.offblack}
+          backgroundColor={Colors.offblack2}
           textColor={Colors.offwhite}
           borderColor={Colors.offwhite}
           style={{

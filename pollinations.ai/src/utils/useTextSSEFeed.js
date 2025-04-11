@@ -84,7 +84,6 @@ export const useTextSlideshow = (mode) => {
       
       // Only proceed if mode is 'text'
       if (mode !== 'text') {
-        console.log("Mode is not 'text', skipping text feed connection.");
         setConnectionStatus("disconnected");
         return;
       }
@@ -167,7 +166,6 @@ export const useTextSlideshow = (mode) => {
 
     // Clean up: close connection and clear timeouts
     return () => {
-      console.log("Cleaning up text feed SSE hook.");
       if (eventSource) {
         console.log("Closing text feed EventSource.");
         eventSource.close();

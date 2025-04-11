@@ -46,7 +46,6 @@ export function useFeedLoader(onNewImage, setLastImage, mode) {
     };
 
     if (mode === 'image') {
-      console.log("Mode is 'image', connecting to image feed.");
       eventSource = getEventSource();
     } else {
       console.log("Mode is not 'image', skipping image feed connection.");
@@ -55,7 +54,6 @@ export function useFeedLoader(onNewImage, setLastImage, mode) {
     // Cleanup function: Close the connection if it exists when mode changes or component unmounts
     return () => {
       if (eventSource) {
-        console.log("Closing image feed EventSource.");
         eventSource.close();
         eventSource = null; // Clear the reference
       }

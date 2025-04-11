@@ -95,10 +95,10 @@ export function ServerLoadInfo({ lastItem, itemsGenerated, currentItem, itemType
   return (
     <Box
       display="flex"
-      flexDirection={{ xs: "column", sm: "row" }}
+      flexDirection={{ xs: "row", sm: "row" }}
       justifyContent="center"
       alignItems="center"
-      style={{ gap: "2em" }}
+      style={{ gap: "1em" }}
       sx={{
         color: Colors.offwhite,
         fontSize: "1.em",
@@ -137,7 +137,7 @@ function CountBadge({ itemsGenerated }) {
         component="div"
         sx={{
           color: Colors.gray2,
-          fontSize: "1.5em",
+          fontSize: { xs: "1.2em", sm: "1.5em" },
           fontFamily: Fonts.headline,
           fontWeight: 500,
         }}
@@ -150,7 +150,6 @@ function CountBadge({ itemsGenerated }) {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: "8px",
           width: "100%",
         }}
       >
@@ -162,7 +161,7 @@ function CountBadge({ itemsGenerated }) {
             animation: `${blinkEffect} 1s ease-in-out`,
             fontWeight: "bold",
             fontFamily: Fonts.headline,
-            fontSize: "2.5em",
+            fontSize: { xs: "1.5em", sm: "2.5em" },
             height: "50px",
             width: "250px",
             borderRadius: "36px",
@@ -170,9 +169,6 @@ function CountBadge({ itemsGenerated }) {
             alignItems: "center",
             justifyContent: "center",
             transition: "all 0.3s ease",
-            "& > span": {
-              marginTop: "-3px", // Move text 3px higher
-            },
           }}
         >
           <span>{formattedCount}</span>
@@ -245,7 +241,7 @@ function RateDisplay({ rate, itemType }) {
         component="div"
         sx={{
           color: Colors.gray2,
-          fontSize: "1.5em",
+          fontSize: { xs: "1.2em", sm: "1.5em" },
           fontFamily: Fonts.headline,
           fontWeight: 500,
         }}
@@ -259,7 +255,7 @@ function RateDisplay({ rate, itemType }) {
           color: Colors.lime, 
           fontWeight: "bold",
           fontFamily: Fonts.headline,
-          fontSize: "2.5em",
+          fontSize: { xs: "1.5em", sm: "2.5em" },
           height: "50px",
           width: "220px", // Increased width to fit rate and bars
           borderRadius: "36px",
@@ -269,7 +265,6 @@ function RateDisplay({ rate, itemType }) {
           transition: "all 0.3s ease",
           animation: `${floatEffect} 3s ease-in-out infinite`, 
           "& > span": {
-            marginTop: "-3px", 
             display: 'flex', // Use flex to align rate and bars
             alignItems: 'center', // Center items vertically
             gap: '0.3em' // Add small gap between number and bars
@@ -286,7 +281,7 @@ function RateDisplay({ rate, itemType }) {
                 style={{ 
                   display: 'inline-block', 
                   color: barColors[index], 
-                  fontSize: '0.8em', 
+                  fontSize: { xs: '0.7em', sm: '0.8em' },
                   lineHeight: '1', 
                 }}
               >

@@ -50,27 +50,41 @@ const Hero = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   
   useEffect(() => {
-    // Load Ko-fi widget script
-    const script = document.createElement('script');
-    script.src = 'https://storage.ko-fi.com/cdn/scripts/overlay-widget.js';
-    script.async = true;
-    script.onload = () => {
-      // Initialize Ko-fi widget after script is loaded
-      window.kofiWidgetOverlay.draw('pollinationsai', {
-        'type': 'floating-chat',
-        'floating-chat.donateButton.text': 'Tip Us',
-        'floating-chat.donateButton.background-color': '#d9534f',
-        'floating-chat.donateButton.text-color': '#fff'
-      });
-    };
-    document.body.appendChild(script);
-    
-    // Cleanup function to remove the script when component unmounts
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
+    // Check if the Ko-fi script already exists
+    const kofiScriptSrc = 'https://storage.ko-fi.com/cdn/scripts/overlay-widget.js';
+    const existingScript = document.querySelector(`script[src="${kofiScriptSrc}"]`);
+
+    // Only add the script if it doesn't already exist
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.src = kofiScriptSrc;
+      script.async = true;
+      script.onload = () => {
+        // Initialize Ko-fi widget after script is loaded
+        if (window.kofiWidgetOverlay) { // Check if object exists before using
+          window.kofiWidgetOverlay.draw('pollinationsai', {
+            'type': 'floating-chat',
+            'floating-chat.donateButton.text': 'Tip Us',
+            'floating-chat.donateButton.background-color': '#d9534f',
+            'floating-chat.donateButton.text-color': '#fff'
+          });
+        }
+      };
+      document.body.appendChild(script);
+    } else {
+      // If script exists, ensure the widget is drawn (in case component remounted after script loaded but before widget drawn)
+      if (window.kofiWidgetOverlay && typeof window.kofiWidgetOverlay.draw === 'function') {
+        window.kofiWidgetOverlay.draw('pollinationsai', {
+            'type': 'floating-chat',
+            'floating-chat.donateButton.text': 'Tip Us',
+            'floating-chat.donateButton.background-color': '#d9534f',
+            'floating-chat.donateButton.text-color': '#fff'
+          });
       }
-    };
+    }
+
+    // Cleanup function removed as the check prevents duplicate scripts
+    // and removing might interfere if other components rely on the script
   }, []); // Empty dependency array means this effect runs once on mount
   return (
     <SectionContainer backgroundConfig={SectionBG.hero}>

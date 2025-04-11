@@ -14,7 +14,7 @@ export function FeedEditSwitch({
 }) {
   const sharedButtonStyles = {
     height: "70px",
-    minWidth: "150px",
+    minWidth: { xs: "120px", sm: "150px" },
     fontSize: "1.8em",
     fontFamily: Fonts.title,
     fontWeight: 600,

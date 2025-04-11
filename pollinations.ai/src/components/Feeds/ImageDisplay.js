@@ -60,6 +60,10 @@ const ImageStyle = styled.img`
   width: 100%;
   max-width: 100%;
   object-fit: contain;
+
+  ${({ theme }) => theme.breakpoints.down('md')} {
+    height: 400px;
+  }
 `
 const ImageContainer = styled.div`
   width: 100%;

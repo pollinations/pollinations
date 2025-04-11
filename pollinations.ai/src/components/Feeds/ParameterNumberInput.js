@@ -71,19 +71,25 @@ export function ParameterNumberInput({
   
   return (
     <>
-      <CustomTooltip
-        title={
-          <LLMTextManipulator
-            text={tooltipText}
-            transforms={[rephrase, emojify, noLink]}
-          />
-        }
-        interactive
-      >
+      {tooltipText ? (
+        <CustomTooltip
+          title={
+            <LLMTextManipulator
+              text={tooltipText}
+              transforms={[rephrase, emojify, noLink]}
+            />
+          }
+          interactive
+        >
+          <Typography component="div" variant="body" sx={typographyStyles.label}>
+            {label}
+          </Typography>
+        </CustomTooltip>
+      ) : (
         <Typography component="div" variant="body" sx={typographyStyles.label}>
           {label}
         </Typography>
-      </CustomTooltip>
+      )}
       <Box
         sx={{
           height: "60px",

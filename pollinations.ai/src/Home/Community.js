@@ -170,20 +170,19 @@ const Community = () => {
             </Grid>
           ))}
         </Grid>
-        <CustomTooltip
+        {/* <CustomTooltip
           title={<LLMTextManipulator text={ASCII_APP_TOOLTIP} transforms={[rephrase, emojify, noLink]} />}
           interactive
-        >
+        > */}
           <SectionSubContainer paddingBottom="2em">
             <Box
               sx={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                cursor: "pointer",
                 maxWidth: "400px",
               }}
-              onClick={handleAsciiArtClick}
+              // onClick={handleAsciiArtClick}
             >
               <AsciiArtGenerator
                 width="100px"
@@ -191,7 +190,7 @@ const Community = () => {
               />
             </Box>
           </SectionSubContainer>
-        </CustomTooltip>
+        {/* </CustomTooltip> */}
       </SectionSubContainer>
     </SectionContainer>
   )

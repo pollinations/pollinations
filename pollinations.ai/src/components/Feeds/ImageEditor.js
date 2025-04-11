@@ -230,9 +230,6 @@ export const ImageEditor = memo(function ImageEditor({
     }
   `
 
-  // ────────────────────────────────────────────────────────────────────────────
-  // RENDER
-  // ────────────────────────────────────────────────────────────────────────────
   return (
     <Box
       sx={{
@@ -253,7 +250,7 @@ export const ImageEditor = memo(function ImageEditor({
                 onModelChange={(value) => handleInputChange("model", value)}
                 isLoading={isLoading}
                 onFocus={handleFocus}
-                tooltipText={IMAGE_FEED_TOOLTIP_MODEL}
+                tooltipText={null}
                 setIsInputChanged={setIsInputChanged}
               />
             </Grid>
@@ -265,7 +262,7 @@ export const ImageEditor = memo(function ImageEditor({
                 value={width}
                 onChange={(value) => handleInputChange("width", value)}
                 onFocus={handleFocus}
-                tooltipText={IMAGE_FEED_TOOLTIP_WIDTH}
+                tooltipText={null}
                 paramName="width"
                 setIsInputChanged={setIsInputChanged}
                 styles={PARAM_STYLES}
@@ -279,7 +276,7 @@ export const ImageEditor = memo(function ImageEditor({
                 value={height}
                 onChange={(value) => handleInputChange("height", value)}
                 onFocus={handleFocus}
-                tooltipText={IMAGE_FEED_TOOLTIP_HEIGHT}
+                tooltipText={null}
                 paramName="height"
                 setIsInputChanged={setIsInputChanged}
                 styles={PARAM_STYLES}

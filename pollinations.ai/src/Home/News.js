@@ -31,7 +31,7 @@ export default function News() {
       <Accordion
         sx={{
           width: "100%",
-          maxWidth: "1000px",
+          // maxWidth: "1000px",
           margin: 0,
           padding: 0,
           borderRadius: "2em !important",

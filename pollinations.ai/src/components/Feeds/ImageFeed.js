@@ -158,7 +158,7 @@ export const ImageFeed = memo(() => {
       </SectionSubContainer>
       {/* Main Content Section */}
       <SectionSubContainer
-        paddingBottom="0em"
+        paddingBottom="4em"
         alignItems="stretch"
         sx={{ maxWidth: "900px" }}
       >

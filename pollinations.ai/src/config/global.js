@@ -33,25 +33,23 @@ export const SectionBG = {
     gradient: false,
   },
   feedImage: {
-    color: Colors.offwhite,
+    color: Colors.offblack,
     gradient: true,
   },
   feedText: {
-    color: Colors.offwhite,
+    color: Colors.offblack,
     gradient: true,
   },
-
-
   project: {
-    color: Colors.offwhite,
+    color: Colors.offblack2,
     gradient: false,
   },
   integration: {
-    color: Colors.offwhite,
+    color: Colors.offblack,
     gradient: false,
   },
   community: {
-    color: Colors.offwhite,
+    color: Colors.offblack2,
     gradient: true,
   },
   team: {
@@ -59,7 +57,7 @@ export const SectionBG = {
     gradient: true,
   },
   supporter: {
-    color: Colors.offwhite,
+    color: Colors.offblack,
     gradient: true,
   },
   footer: {

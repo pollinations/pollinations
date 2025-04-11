@@ -45,8 +45,9 @@ export const SectionSubContainer = styled.div`
   align-items: ${(props) => props.alignItems || "center"};
   margin: 0;
   width: 100%;
-  padding-bottom: ${(props) => props.paddingBottom || "3em"};
-  padding-top: 0em;
+  max-width: 1000px;
+  padding-bottom: ${(props) => props.paddingBottom || "1em"};
+  padding-top: 2em;
   justify-content: center;
   z-index: ${(props) => props.zIndex || "1"};
 `
@@ -56,7 +57,6 @@ export const SectionMainContent = styled.div`
   align-items: center;
   padding: 2em;
   width: 100%;
-  max-width: 1000px;
   background-color: ${Colors.offblack};
   border-radius: 0em;
 `

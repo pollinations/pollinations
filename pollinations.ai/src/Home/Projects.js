@@ -68,7 +68,7 @@ const Projects = () => {
 
   const getButtonBackgroundColor = (categoryKey) => {
     if (selectedCategory !== categoryKey) {
-      return Colors.offblack2
+      return Colors.offblack
     }
     return categoryKey === "featured" ? Colors.special : Colors.lime
   }
@@ -82,7 +82,6 @@ const Projects = () => {
 
   return (
     <SectionContainer backgroundConfig={SectionBG.project}>
-      <SectionMainContent>
         <SectionSubContainer>
           <SectionTitle title={PROJECT_TITLE} />
         </SectionSubContainer>
@@ -116,7 +115,7 @@ const Projects = () => {
             <LLMTextManipulator text={PROJECT_SUBTITLE} transforms={[rephrase, emojify, noLink]} />
           </SectionHeadlineStyle>
         </SectionSubContainer>
-        <SectionSubContainer paddingBottom="0em">
+        <SectionSubContainer paddingBottom="4em">
           <TabSelector
             items={projectCategories}
             selectedKey={selectedCategory}
@@ -128,7 +127,6 @@ const Projects = () => {
           />
           <ProjectsRender projectList={projects[selectedCategory]} classes={classes} />
         </SectionSubContainer>
-      </SectionMainContent>
     </SectionContainer>
   )
 }

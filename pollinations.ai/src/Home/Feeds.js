@@ -45,7 +45,6 @@ export const Feeds = () => {
 
   return (
     <SectionContainer id="feeds" style={sectionContainerStyle}>
-      <SectionMainContent>
         
         {/* Title Section with Single Toggle Button and Title */}
         <SectionSubContainer
@@ -87,7 +86,9 @@ export const Feeds = () => {
           sx={{
             display: activeMode === "image" ? "block" : "none",
             width: "100%",
-            alignSelf: "stretch",
+            maxWidth: "1000px",
+            margin: "0 auto",
+            alignSelf: "center",
           }}
         >
           <ImageFeed />
@@ -96,12 +97,13 @@ export const Feeds = () => {
           sx={{
             display: activeMode === "text" ? "block" : "none",
             width: "100%",
-            alignSelf: "stretch",
+            maxWidth: "1000px",
+            margin: "0 auto",
+            alignSelf: "center",
           }}
         >
           <TextFeed />
         </Box>
-      </SectionMainContent>
     </SectionContainer>
   )
 }

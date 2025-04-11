@@ -98,7 +98,6 @@ const Community = () => {
 
   return (
     <SectionContainer backgroundConfig={SectionBG.community}>
-      <SectionMainContent>
       <SectionSubContainer>
         <SectionTitle title={COMMUNITY_TITLE} color={Colors.lime} />
       </SectionSubContainer>
@@ -175,7 +174,7 @@ const Community = () => {
           title={<LLMTextManipulator text={ASCII_APP_TOOLTIP} transforms={[rephrase, emojify, noLink]} />}
           interactive
         >
-          <SectionSubContainer paddingBottom="0em">
+          <SectionSubContainer paddingBottom="2em">
             <Box
               sx={{
                 display: "flex",
@@ -194,7 +193,6 @@ const Community = () => {
           </SectionSubContainer>
         </CustomTooltip>
       </SectionSubContainer>
-      </SectionMainContent>
     </SectionContainer>
   )
 }

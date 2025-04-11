@@ -109,8 +109,6 @@ export const TextFeed = memo(() => {
     [updateText, sharedPrompt, sharedModel]
   )
 
-  // Rendering - REMOVED SectionContainer and SectionMainContent wrappers
-  // REMOVED Title Section
   return (
     <>
       {/* Subtitle */}
@@ -131,7 +129,7 @@ export const TextFeed = memo(() => {
       </SectionSubContainer>
 
       {/* Main Content */}
-      <SectionSubContainer paddingBottom="0em">
+      <SectionSubContainer paddingBottom="4em">
         {entry?.response ? (
           <Box
             sx={{

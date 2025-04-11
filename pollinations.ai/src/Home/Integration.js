@@ -31,7 +31,6 @@ export const Integration = () => {
 
   return (
     <SectionContainer backgroundConfig={SectionBG.integration}>
-      <SectionMainContent>
       <SectionSubContainer>
         <SectionTitle title={INTEGRATE_TITLE} />
       </SectionSubContainer>
@@ -68,10 +67,9 @@ export const Integration = () => {
           {INTEGRATE_GITHUB_LINK}
         </GeneralButton>
       </SectionSubContainer>
-      <SectionSubContainer paddingBottom="0em">
+      <SectionSubContainer paddingBottom="4em">
         <CodeExamples image={image} />
       </SectionSubContainer>
-      </SectionMainContent>
     </SectionContainer>
   )
 }

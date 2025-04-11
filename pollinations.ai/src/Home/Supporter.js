@@ -81,11 +81,6 @@ const Supporter = () => {
 
   return (
     <SectionContainer backgroundConfig={SectionBG.supporter}>
-      <SectionMainContent>
-      {/* <SvgArtGenerator
-        width="1920px"
-        height="600px"
-      /> */}
       <SectionSubContainer>
         <SectionTitle title={SUPPORTER_TITLE} />
       </SectionSubContainer>
@@ -94,7 +89,7 @@ const Supporter = () => {
           <LLMTextManipulator text={SUPPORTER_SUBTITLE} transforms={[rephrase, emojify, noLink]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
-      <SectionSubContainer paddingBottom="0em">
+      <SectionSubContainer paddingBottom="4em">
         <Grid container spacing={4}>
           {SUPPORTER_LIST.map((company) => (
             <Grid key={company.name} size={{ xs: 6, sm: 3 }} style={{ textAlign: "center" }}>
@@ -126,7 +121,6 @@ const Supporter = () => {
           ))}
         </Grid>
       </SectionSubContainer>
-      </SectionMainContent>
     </SectionContainer>
   )
 }

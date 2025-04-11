@@ -11,11 +11,13 @@ import { trackEvent } from "../config/analytics"
 import { useTheme } from "@mui/material/styles"
 import { useMediaQuery } from "@mui/material"
 import { copyToClipboard } from "../utils/clipboard"
+import { useState } from "react"
 
 const Footer = () => {
   const theme = useTheme()
   const isXs = useMediaQuery(theme.breakpoints.only("xs"))
   const isMdDown = useMediaQuery(theme.breakpoints.down("md"))
+  const [copied, setCopied] = useState(false)
 
   const handleEmailLinkClick = (e) => {
     e.preventDefault()
@@ -25,6 +27,8 @@ const Footer = () => {
           action: 'click_email',
           category: 'footer',
         })
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
       })
       .catch(error => {
         console.error("Error copying email to clipboard:", error)
@@ -65,7 +69,7 @@ const Footer = () => {
               href="mailto:hello@pollinations.ai"
               sx={{ userSelect: "text" }}
             >
-              <b>hello@pollinations.ai</b>
+              {copied ? <b>Copied! ✅</b> : <b>hello@pollinations.ai</b>}
             </StyledLink>
           </Box>
           <Box>

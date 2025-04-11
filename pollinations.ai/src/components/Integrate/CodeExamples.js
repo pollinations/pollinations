@@ -7,35 +7,11 @@ import FileCopyIcon from "@mui/icons-material/FileCopy"
 import CODE_EXAMPLES from "../../config/codeExamplesText"
 import { SectionSubContainer } from "../SectionContainer"
 import TabSelector from "../TabSelector"
-import { keyframes } from "@emotion/react"
-import styled from "@emotion/styled"
 import { copyToClipboard } from "../../utils/clipboard"
-
-const clickAnimation = keyframes`
-  0% {
-    transform: scale(1);
-    color: ${Colors.lime};
-  }
-  50% {
-    transform: scale(1.2);
-    color: ${Colors.lime};
-  }
-  100% {
-    transform: scale(1);
-    color: ${Colors.offwhite};
-  }
-`
-
-const AnimatedIconButton = styled(IconButton)`
-  &.clicked {
-    animation: ${clickAnimation} 0.5s ease;
-    background-color: transparent;
-  }
-`
 
 export function CodeExamples({ image = {} }) {
   const [tabValue, setTabValue] = useState(0)
-  const [clickedButton, setClickedButton] = useState(null)
+  const [copiedIndex, setCopiedIndex] = useState(null)
   const codeExampleTabs = Object.keys(CODE_EXAMPLES)
 
   const handleTabChange = (tabKey) => {
@@ -50,11 +26,11 @@ export function CodeExamples({ image = {} }) {
       .then(success => {
         if (success) {
           console.log("Code copied to clipboard!")
+          setCopiedIndex(index)
+          setTimeout(() => setCopiedIndex(null), 2000)
         } else {
           console.warn("Failed to copy code to clipboard")
         }
-        setClickedButton(index)
-        setTimeout(() => setClickedButton(null), 500)
       })
       .catch(error => {
         console.error("Error copying to clipboard:", error)
@@ -99,20 +75,29 @@ export function CodeExamples({ image = {} }) {
 
           return (
             <Box key={key} position="relative" style={{ width: "100%" }}>
-              <Box display="flex" justifyContent="flex-end">
-                <AnimatedIconButton
+              <Box display="flex" justifyContent="flex-start">
+                <IconButton
                   onClick={() => handleCopy(text, index)}
-                  className={clickedButton === index ? "clicked" : ""}
                   sx={{
+                    textAlign: 'left',
                     color: Colors.offwhite,
+                    fontFamily: Fonts.title,
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    marginLeft: '1em',
+                    fontSize: '1em',
                     '&:hover': {
                       backgroundColor: 'transparent',
-                      color: Colors.lime,
-                    }
+                      color: copiedIndex === index ? Colors.offwhite : Colors.lime,
+                    },
                   }}
                 >
-                  <FileCopyIcon fontSize="large" />
-                </AnimatedIconButton>
+                  {copiedIndex === index ? (
+                    <b>COPIED! ✅</b>
+                  ) : (
+                    <b>COPY</b>
+                  )}
+                </IconButton>
               </Box>
               <SectionSubContainer
                 paddingBottom="0em"
@@ -128,8 +113,6 @@ export function CodeExamples({ image = {} }) {
                     width: "100%",
                     height: "auto",
                     border: `0px`,
-                    paddingTop: "0.5em",
-                    paddingBottom: "0.5em",
                     boxShadow: "none",
                     overflowX: "hidden",
                     overflowY: "hidden",

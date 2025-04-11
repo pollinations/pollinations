@@ -41,6 +41,13 @@ export const projectCategories = [
 const allProjects = {
   llmIntegrations: [
     {
+      name: "🆕 巫林星 🇨🇳",
+      description: "用于人脸识别 小程序用于人脸 (Face recognition mini program)",
+      author: "824641873@qq.com",
+      submissionDate: "2025-04-11",
+      language: "zh-CN"
+    },
+    {
       name: "🆕 Goalani",
       url: "https://goalani.com",
       description: "Voice-enabled AI fitness coach. Using only your voice, you can communicate with the agent to manage your fitness and nutrition. Features weight tracking, exercise logging, food tracking with AI-generated images, and agent customization.",

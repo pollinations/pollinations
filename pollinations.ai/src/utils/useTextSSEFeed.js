@@ -4,7 +4,7 @@ import { useInterval } from 'usehooks-ts';
 /**
  * Hook to connect to the text SSE feed with throttled display
  */
-export const useTextSlideshow = () => {
+export const useTextSlideshow = (mode) => {
   const [entry, setEntry] = useState(null);
   const [isStopped, setIsStopped] = useState(false);
   const [error, setError] = useState(null);
@@ -69,20 +69,35 @@ export const useTextSlideshow = () => {
     let retryTimeout = null;
     let retryCount = 0;
     const MAX_RETRY_TIME = 30000; // 30 seconds
-    
+
     const connectToSSE = () => {
       // Clean up any existing connection
       if (eventSource) {
         eventSource.close();
+        eventSource = null;
+      }
+      // Clear pending retries
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
+        retryTimeout = null;
       }
       
-      setConnectionStatus("connecting");
+      // Only proceed if mode is 'text'
+      if (mode !== 'text') {
+        console.log("Mode is not 'text', skipping text feed connection.");
+        setConnectionStatus("disconnected");
+        return;
+      }
       
+      console.log("Mode is 'text', connecting to text feed.");
+      setConnectionStatus("connecting");
+      retryCount = 0; // Reset retry count on successful connection attempt start
+
       try {
         eventSource = new EventSource("https://text.pollinations.ai/feed", {
           withCredentials: false
         });
-        
+
         eventSource.onmessage = (event) => {
           try {
             if (!event.data) return;
@@ -98,50 +113,74 @@ export const useTextSlideshow = () => {
             console.warn("Error processing message:", error);
           }
         };
-        
+
         eventSource.onopen = () => {
+          console.log("Text feed EventSource connected.");
           setConnectionStatus("connected");
           setError(null);
+          retryCount = 0; // Reset retries on successful open
         };
-        
+
         eventSource.onerror = () => {
-          // Clear any existing retry
-          if (retryTimeout) clearTimeout(retryTimeout);
-          
+          console.warn("Text feed EventSource error.");
+          if (retryTimeout) clearTimeout(retryTimeout); // Clear previous retry timeout
+
           setConnectionStatus("error");
           setError("Connection failed. Reconnecting...");
+
+          if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+          }
           
-          // Close current connection
-          eventSource.close();
-          
-          // Exponential backoff with max limit
-          const backoffTime = Math.min(1000 * Math.pow(2, retryCount), MAX_RETRY_TIME);
-          retryCount++;
-          
-          retryTimeout = setTimeout(connectToSSE, backoffTime);
+          // Only retry if the mode is still 'text'
+          if (mode === 'text') {
+            const backoffTime = Math.min(1000 * Math.pow(2, retryCount), MAX_RETRY_TIME);
+            retryCount++;
+            console.log(`Retrying text feed connection in ${backoffTime}ms (attempt ${retryCount})`);
+            retryTimeout = setTimeout(connectToSSE, backoffTime);
+          } else {
+            console.log("Mode changed, not retrying text feed connection.");
+            setConnectionStatus("disconnected");
+          }
         };
       } catch (error) {
+        console.error("Failed to create text EventSource:", error);
         setConnectionStatus("error");
         setError("Failed to create connection");
-        console.error("Failed to create EventSource:", error);
-        
-        // Retry with backoff
-        const backoffTime = Math.min(1000 * Math.pow(2, retryCount), MAX_RETRY_TIME);
-        retryCount++;
-        
-        retryTimeout = setTimeout(connectToSSE, backoffTime);
+
+        // Only retry if the mode is still 'text'
+        if (mode === 'text') {
+          const backoffTime = Math.min(1000 * Math.pow(2, retryCount), MAX_RETRY_TIME);
+          retryCount++;
+          console.log(`Retrying text feed connection after create error in ${backoffTime}ms (attempt ${retryCount})`);
+          retryTimeout = setTimeout(connectToSSE, backoffTime);
+        } else {
+           console.log("Mode changed, not retrying text feed connection after create error.");
+           setConnectionStatus("disconnected");
+        }
       }
     };
-    
-    // Start the connection
+
+    // Initial connection attempt or when mode changes to 'text'
     connectToSSE();
-    
-    // Clean up
+
+    // Clean up: close connection and clear timeouts
     return () => {
-      if (eventSource) eventSource.close();
-      if (retryTimeout) clearTimeout(retryTimeout);
+      console.log("Cleaning up text feed SSE hook.");
+      if (eventSource) {
+        console.log("Closing text feed EventSource.");
+        eventSource.close();
+        eventSource = null;
+      }
+      if (retryTimeout) {
+        console.log("Clearing text feed retry timeout.");
+        clearTimeout(retryTimeout);
+        retryTimeout = null;
+      }
+      setConnectionStatus("disconnected"); // Set status on cleanup
     };
-  }, [onNewEntry]); // Removed isStopped dependency to keep the connection alive always
+  }, [mode, onNewEntry]); // Add mode to dependency array
 
   // Process pending entries at a fixed interval
   const DISPLAY_INTERVAL = 1000; // 1 second between entries

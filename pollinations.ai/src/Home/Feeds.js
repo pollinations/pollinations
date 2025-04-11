@@ -91,7 +91,7 @@ export const Feeds = () => {
             alignSelf: "center",
           }}
         >
-          <ImageFeed />
+          <ImageFeed mode={activeMode} />
         </Box>
         <Box
           sx={{
@@ -102,7 +102,7 @@ export const Feeds = () => {
             alignSelf: "center",
           }}
         >
-          <TextFeed />
+          <TextFeed mode={activeMode} />
         </Box>
     </SectionContainer>
   )

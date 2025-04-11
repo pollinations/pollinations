@@ -30,7 +30,7 @@ const extractPrompt = (messages) => {
  * Inner content for the text feed section.
  * Assumes it's rendered within a container that handles the main section layout and title.
  */
-export const TextFeed = memo(() => {
+export const TextFeed = memo(({ mode }) => {
   // ... (Keep all state, hooks, effects, handlers as they were) ...
   // State
   const [lastEntry, setLastEntry] = useState(null)
@@ -40,7 +40,7 @@ export const TextFeed = memo(() => {
   const [sharedModel, setSharedModel] = useState("openai")
 
   // Hooks
-  const { entry: slideshowEntry, onNewEntry, stop, error, connectionStatus } = useTextSlideshow()
+  const { entry: slideshowEntry, onNewEntry, stop, error, connectionStatus } = useTextSlideshow(mode)
 
   const { entriesGenerated } = useTextFeedLoader(onNewEntry, setLastEntry)
 

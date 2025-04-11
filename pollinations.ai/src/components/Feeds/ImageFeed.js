@@ -30,7 +30,7 @@ import { trackEvent } from "../../config/analytics" // Adjusted path
  * Inner content for the image feed section.
  * Assumes it's rendered within a container that handles the main section layout and title.
  */
-export const ImageFeed = memo(() => {
+export const ImageFeed = memo(({ mode }) => {
   // ... (Keep all state, hooks, effects, handlers as they were) ...
   // State
   const [lastImage, setLastImage] = useState(null)
@@ -46,7 +46,7 @@ export const ImageFeed = memo(() => {
     stop,
     image: slideshowImage,
   })
-  const { imagesGenerated } = useFeedLoader(onNewImage, setLastImage)
+  const { imagesGenerated } = useFeedLoader(onNewImage, setLastImage, mode)
 
   // Determine the current image to display based on mode
   const currentImage = toggleValue === 'feed' ? slideshowImage : image;

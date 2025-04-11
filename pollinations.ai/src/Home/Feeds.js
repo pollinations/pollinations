@@ -54,7 +54,7 @@ export const Feeds = () => {
             alignItems: "center",
             gap: "1em",
           }}
-          flexDirection={isMdUp ? "row" : "column"}
+          flexDirection="row"
         >
           <GeneralButton
             handleClick={() => {

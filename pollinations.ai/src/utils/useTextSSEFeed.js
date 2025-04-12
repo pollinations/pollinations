@@ -88,7 +88,6 @@ export const useTextSlideshow = (mode) => {
         return;
       }
       
-      console.log("Mode is 'text', connecting to text feed.");
       setConnectionStatus("connecting");
       retryCount = 0; // Reset retry count on successful connection attempt start
 
@@ -114,14 +113,12 @@ export const useTextSlideshow = (mode) => {
         };
 
         eventSource.onopen = () => {
-          console.log("Text feed EventSource connected.");
           setConnectionStatus("connected");
           setError(null);
           retryCount = 0; // Reset retries on successful open
         };
 
         eventSource.onerror = () => {
-          console.warn("Text feed EventSource error.");
           if (retryTimeout) clearTimeout(retryTimeout); // Clear previous retry timeout
 
           setConnectionStatus("error");
@@ -136,12 +133,12 @@ export const useTextSlideshow = (mode) => {
           if (mode === 'text') {
             const backoffTime = Math.min(1000 * Math.pow(2, retryCount), MAX_RETRY_TIME);
             retryCount++;
-            console.log(`Retrying text feed connection in ${backoffTime}ms (attempt ${retryCount})`);
             retryTimeout = setTimeout(connectToSSE, backoffTime);
           } else {
-            console.log("Mode changed, not retrying text feed connection.");
             setConnectionStatus("disconnected");
           }
+
+          console.warn("Text feed EventSource error.");
         };
       } catch (error) {
         console.error("Failed to create text EventSource:", error);
@@ -152,10 +149,8 @@ export const useTextSlideshow = (mode) => {
         if (mode === 'text') {
           const backoffTime = Math.min(1000 * Math.pow(2, retryCount), MAX_RETRY_TIME);
           retryCount++;
-          console.log(`Retrying text feed connection after create error in ${backoffTime}ms (attempt ${retryCount})`);
           retryTimeout = setTimeout(connectToSSE, backoffTime);
         } else {
-           console.log("Mode changed, not retrying text feed connection after create error.");
            setConnectionStatus("disconnected");
         }
       }
@@ -167,12 +162,10 @@ export const useTextSlideshow = (mode) => {
     // Clean up: close connection and clear timeouts
     return () => {
       if (eventSource) {
-        console.log("Closing text feed EventSource.");
         eventSource.close();
         eventSource = null;
       }
       if (retryTimeout) {
-        console.log("Clearing text feed retry timeout.");
         clearTimeout(retryTimeout);
         retryTimeout = null;
       }

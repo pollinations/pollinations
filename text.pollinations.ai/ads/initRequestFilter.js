@@ -45,25 +45,6 @@ function contentContainsTriggerWords(content) {
     );
 }
 
-/**
- * Send analytics about skipped ads
- * @param {object} req - Express request object for analytics
- * @param {string} reason - Reason why the ad was skipped
- * @param {boolean} isStreaming - Whether this is a streaming request
- * @param {object} additionalData - Any additional data to include
- */
-export function sendAdSkippedAnalytics(req, reason, isStreaming = false, additionalData = {}) {
-    if (!req) return;
-    
-    log(`Ad skipped: ${reason}, streaming: ${isStreaming}`);
-    
-    sendToAnalytics(req, 'ad_skipped', {
-        reason,
-        streaming: isStreaming,
-        ...additionalData
-    });
-}
-
 // Extracted utility functions
 function shouldShowAds(content, messages = [], req = null) {
     // Get request data for referrer check
@@ -72,11 +53,6 @@ function shouldShowAds(content, messages = [], req = null) {
     // Skip ad processing if any referrer is present
     if (requestData && requestData.referrer && requestData.referrer !== 'unknown') {
         // log('Skipping ad processing due to referrer presence:', requestData.referrer);
-        if (req) {
-            sendAdSkippedAnalytics(req, 'referrer_present', false, {
-                referrer: requestData.referrer
-            });
-        }
         return { shouldShowAd: false, markerFound: false };
     }
     
@@ -125,15 +101,6 @@ function shouldShowAds(content, messages = [], req = null) {
     // Random check - only process based on the effective probability
     const shouldShowAd = Math.random() <= effectiveProbability;
     
-    // Send analytics if the probability check failed
-    if (!shouldShowAd && req) {
-        sendAdSkippedAnalytics(req, 'probability_check_failed', false, {
-            effectiveProbability,
-            triggerWordsFound,
-            markerFound
-        });
-    }
-    
     return { shouldShowAd, markerFound: markerFound || triggerWordsFound };
 }
 
@@ -155,16 +122,6 @@ function shouldProceedWithAd(content, markerFound) {
 
 async function generateAdForContent(content, req, messages, markerFound = false, isStreaming = false) {
     if (!shouldProceedWithAd(content, markerFound)) {
-        if (req) {
-            const reason = !content || content.length < 50 
-                ? 'content_too_short' 
-                : 'no_markdown';
-            
-            sendAdSkippedAnalytics(req, reason, isStreaming, {
-                contentLength: content ? content.length : 0,
-                hasMarkdown: markdownRegex.test(content || '')
-            });
-        }
         return null;
     }
     
@@ -174,25 +131,10 @@ async function generateAdForContent(content, req, messages, markerFound = false,
         // Find the relevant affiliate
         const affiliateData = await findRelevantAffiliate(content, messages);
         
-        // If no affiliate data is found, send analytics and return null
-        if (!affiliateData && req) {
-            sendAdSkippedAnalytics(req, 'no_relevant_affiliate', isStreaming);
-            return null;
-        }
-        
         // If affiliate data is found, generate the ad string
         if (affiliateData) {
             // Pass content and messages to enable language matching
             const adString = await generateAffiliateAd(affiliateData.id, content, messages);
-            
-            // If ad generation failed, send analytics
-            if (!adString && req) {
-                sendAdSkippedAnalytics(req, 'ad_generation_failed', isStreaming, {
-                    affiliate_id: affiliateData.id,
-                    affiliate_name: affiliateData.name
-                });
-                return null;
-            }
             
             // If an ad string was successfully generated
             if (adString) {
@@ -232,11 +174,7 @@ async function generateAdForContent(content, req, messages, markerFound = false,
         return null;
     } catch (error) {
         errorLog(`Error generating ad: ${error.message}`);
-        if (req) {
-            sendAdSkippedAnalytics(req, 'error', isStreaming, {
-                error_message: error.message
-            });
-        }
+        // We no longer log errors since we only want to log successful ad additions
         return null;
     }
 }
@@ -276,7 +214,7 @@ export async function processRequestForAds(content, req, messages = []) {
     const { shouldShowAd, markerFound } = shouldShowAds(content, messages, req);
     
     if (!shouldShowAd) {
-        // We've already sent the ad_skipped analytics in shouldShowAds
+        // No longer logging when ads are not shown
         return content;
     }
     
@@ -286,7 +224,7 @@ export async function processRequestForAds(content, req, messages = []) {
         return content + adString;
     }
     
-    // We've already sent the ad_skipped analytics in generateAdForContent
+    // No longer logging when no ad was generated
     return content;
 }
 
@@ -301,16 +239,12 @@ export async function processRequestForAds(content, req, messages = []) {
 export function createStreamingAdWrapper(responseStream, req, messages = []) {
     if (!responseStream || !responseStream.pipe) {
         log('Invalid stream provided to createStreamingAdWrapper');
-        if (req) {
-            sendAdSkippedAnalytics(req, 'invalid_stream', true);
-        }
         return responseStream;
     }
     
     const { shouldShowAd, markerFound } = shouldShowAds(null, messages, req);
     
     if (!shouldShowAd) {
-        // We've already sent the ad_skipped analytics in shouldShowAds
         return responseStream;
     }
     
@@ -344,7 +278,7 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
                             // Push the ad chunk before the [DONE] message
                             this.push(adChunk);
                         } else {
-                            // We've already sent the ad_skipped analytics in generateAdForContent
+                            // No longer logging when no ad is shown in streaming mode
                         }
                         
                         // Push the [DONE] message
@@ -353,11 +287,7 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
                     })
                     .catch(error => {
                         errorLog('Error processing streaming ad:', error);
-                        if (req) {
-                            sendAdSkippedAnalytics(req, 'error', true, {
-                                error_message: error.message
-                            });
-                        }
+                        // No longer logging errors
                         // Just push the original chunk if there's an error
                         this.push(chunk);
                         callback();

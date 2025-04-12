@@ -107,18 +107,6 @@ The MCP server provides the following tools:
 5. `generateText` - Generates text from a prompt using text models
 6. `listModels` - Lists available models for image or text generation
 
-## For Developers
-
-If you want to use the package in your own projects:
-
-```bash
-# Install as a dependency
-npm install @pollinations/model-context-protocol
-
-# Import in your code
-import { generateImageUrl, generateImage, generateText, respondAudio, sayText, listModels } from '@pollinations/model-context-protocol';
-```
-
 ## Changelog
 
 ### Version 1.0.6

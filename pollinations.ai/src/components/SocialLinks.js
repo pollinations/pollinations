@@ -22,27 +22,29 @@ const LinkItem = styled(Link, {
   justifyContent: "center",
   alignItems: "center",
   borderRadius: "50%",
-  border: `1px solid ${Colors.offblack}`,
-  backgroundColor: isHovered ? Colors.offblack : Colors.offwhite,
+  border: `2px solid ${Colors.offblack}`,
+  backgroundColor: isHovered ? Colors.offblack : "transparent",
   width: "40px",
   height: "40px",
-  transition: "background-color 0.3s",
+  transition: "all 0.6s ease",
   textDecoration: "none",
 }))
 
 // Replacing the <img> with a Styled ReactSVG to control the svg fill dynamically
 const StyledReactSVG = styled(ReactSVG, {
-  shouldForwardProp: (prop) => prop !== "isHovered",
-})(({ isHovered }) => ({
+  shouldForwardProp: (prop) => !['isHovered', 'invert'].includes(prop),
+})(({ isHovered, invert }) => ({
   "& svg": {
-    fill: isHovered ? Colors.offwhite : Colors.offblack,
-    transition: "fill 0.3s",
+    fill: isHovered 
+      ? Colors.offwhite
+      : Colors.offblack,
+    transition: "fill 0.6s ease",
     width: "100%",
     height: "100%",
   },
 }))
 
-export const SocialLinks = ({ gap, location }) => {
+export const SocialLinks = ({ gap, location, invert }) => {
   const [hoveredIndex, setHoveredIndex] = useState(null)
 
   const handleLinkClick = (platform) => {
@@ -68,10 +70,15 @@ export const SocialLinks = ({ gap, location }) => {
             onMouseEnter={() => setHoveredIndex(index)}
             onMouseLeave={() => setHoveredIndex(null)}
             onClick={() => handleLinkClick(platform)}
+            sx={invert ? {
+              border: `1px solid ${Colors.offwhite}`,
+              backgroundColor: isHovered ? Colors.offblack : "transparent",
+            } : {}}
           >
             <StyledReactSVG
               src={icon}
               isHovered={isHovered}
+              invert={invert}
               wrapper="span"
               aria-label={`${platform}-icon`}
               style={{ width, height }}

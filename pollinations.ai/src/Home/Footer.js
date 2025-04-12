@@ -4,23 +4,35 @@ import { Fonts, SectionBG } from "../config/global"
 import StyledLink from "../components/StyledLink"
 import { SectionContainer } from "../components/SectionContainer"
 import Grid from "@mui/material/Grid2"
-import { FOOTER_INFO, FOOTER_TERMS_CONDITIONS_LINK } from "../config/copywrite"
+import { FOOTER_INFO_1, FOOTER_INFO_2, FOOTER_TERMS_CONDITIONS_LINK } from "../config/copywrite"
 import { noLink } from "../config/llmTransforms"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import { trackEvent } from "../config/analytics"
 import { useTheme } from "@mui/material/styles"
 import { useMediaQuery } from "@mui/material"
+import { copyToClipboard } from "../utils/clipboard"
+import { useState } from "react"
 
 const Footer = () => {
   const theme = useTheme()
   const isXs = useMediaQuery(theme.breakpoints.only("xs"))
+  const isMdDown = useMediaQuery(theme.breakpoints.down("md"))
+  const [copied, setCopied] = useState(false)
+
   const handleEmailLinkClick = (e) => {
     e.preventDefault()
-    navigator.clipboard.writeText("hello@pollinations.ai").then(() => {})
-    trackEvent({
-      action: 'click_email',
-      category: 'footer',
-    })
+    copyToClipboard("hello@pollinations.ai")
+      .then(() => {
+        trackEvent({
+          action: 'click_email',
+          category: 'footer',
+        })
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      })
+      .catch(error => {
+        console.error("Error copying email to clipboard:", error)
+      })
   }
 
   const handleTermsLinkClick = () => {
@@ -35,17 +47,18 @@ const Footer = () => {
       <Box
         width="100%"
         display="flex"
-        flexDirection={isXs ? "column" : "row"}
+        flexDirection={isMdDown ? "column" : "row"}
         justifyContent="space-between"
         padding="1em"
         gap="2em"
+        marginBottom="4em"
       >
         <Grid
           size={{ xs: 12, md: 6 }}
           sx={{
             display: "flex",
             flexDirection: "column",
-            alignItems: isXs ? "center" : "flex-start",
+            alignItems: isMdDown ? "center" : "flex-start",
             gap: "1em",
           }}
         >
@@ -56,7 +69,7 @@ const Footer = () => {
               href="mailto:hello@pollinations.ai"
               sx={{ userSelect: "text" }}
             >
-              <b>hello@pollinations.ai</b>
+              {copied ? <b>Copied! ✅</b> : <b>hello@pollinations.ai</b>}
             </StyledLink>
           </Box>
           <Box>
@@ -69,8 +82,8 @@ const Footer = () => {
             display: "flex",
             flexDirection: "column",
             justifyContent: "flex-end",
-            marginTop: isXs ? "1em" : "0em",
-            alignItems: isXs ? "center" : "flex-end",
+            marginTop: isMdDown ? "1em" : "0em",
+            alignItems: isMdDown ? "center" : "flex-end",
           }}
         >
           <Box height="100%" sx={{ fontSize: "1.5em", fontFamily: Fonts.title }}>
@@ -84,9 +97,11 @@ const Footer = () => {
               fontFamily: Fonts.title,
               width: "100%",
               textAlign: isXs ? "center" : "right",
+              marginTop: "0.5em",
             }}
           >
-            <LLMTextManipulator text={FOOTER_INFO} transforms={[noLink]} />
+            <LLMTextManipulator text={FOOTER_INFO_1} transforms={[noLink]} />
+            <LLMTextManipulator text={FOOTER_INFO_2} transforms={[noLink]} />
           </Box>
         </Grid>
       </Box>

@@ -266,7 +266,7 @@ This document lists repositories where Pollinations.AI could be added to increas
 ### 42. [Progressive-Web-Apps](https://github.com/TalAter/awesome-progressive-web-apps)
 - **Stars**: 1.9k+
 - **Description**: A curated list of Progressive Web Apps resources
-- **Why a good fit**: Pollinations.AI API is lightweight enough for PWA integration
+- **Why a good fit**: Platform specifically for discovering and testing APIs
 - **Integration Effort**: Low - Simple PR with PWA integration examples
 
 ## AI Education for Teens and Students
@@ -457,8 +457,6 @@ This document lists repositories where Pollinations.AI could be added to increas
 - **Why a good fit**: Pollinations.AI's developer-friendly features would be relevant to this audience
 - **Integration Effort**: Low - Simple PR highlighting developer use cases
 
-## Additional Repositories
-
 ### 73. [AUTOMATIC1111/stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui)
 - **Stars**: 100k+
 - **Description**: Popular UI for image generation with extensive features and extensions
@@ -530,3 +528,5 @@ For educational impact specifically focused on teens, prioritize:
 | curriculum (AI & Cybersecurity for Teens) | [PR #1](https://github.com/cyberai4k12/curriculum/pull/1) | Open | Added Pollinations.AI as a resource for generative AI experiments |
 | AI-Image-Creation-Toolkit | [PR #1](https://github.com/eduhubai/AI-Image-Creation-Toolkit/pull/1) | Open | Added Pollinations.AI integration for free, no-signup image generation |
 | startup_teens_machine_learning | [PR #3](https://github.com/simpleclub/startup_teens_machine_learning/pull/3) | Open | Added Jupyter notebook for generative AI with Pollinations.AI in German |
+| ML-YouTube-Courses | [PR #48](https://github.com/dair-ai/ML-YouTube-Courses/pull/48) | Open | Added Pollinations.AI as a generative AI resource for students |
+| ai-edu | [PR #828](https://github.com/microsoft/ai-edu/pull/828) | In Progress | Added comprehensive Generative AI with Pollinations practical case |

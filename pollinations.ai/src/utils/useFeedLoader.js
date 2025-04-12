@@ -30,16 +30,12 @@ export function useFeedLoader(onNewImage, setLastImage, mode) {
       };
       source.onerror = async () => {
         await new Promise(r => setTimeout(r, 1000));
-        console.log("Image feed EventSource error. Closing and attempting to re-open.");
         // Ensure we only try to reconnect if the mode is still 'image'
         if (eventSource) {
           eventSource.close();
         }
         if (mode === 'image') {
-           console.log("Reconnecting image feed...");
-           eventSource = getEventSource(); // Attempt to reconnect
-        } else {
-           console.log("Mode changed, not reconnecting image feed.");
+          eventSource = getEventSource(); // Attempt to reconnect
         }
       };
       return source;
@@ -47,8 +43,6 @@ export function useFeedLoader(onNewImage, setLastImage, mode) {
 
     if (mode === 'image') {
       eventSource = getEventSource();
-    } else {
-      console.log("Mode is not 'image', skipping image feed connection.");
     }
 
     // Cleanup function: Close the connection if it exists when mode changes or component unmounts

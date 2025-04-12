@@ -35,18 +35,6 @@ export const SEOMetadata = ({ title, description, url }) => {
       <meta name="twitter:card" content="summary_large_image" />
       <meta property="twitter:description" content={description} />
       <meta property="og:url" content={url} />
-
-      {/* Open Graph / Facebook */}
-      <meta property="og:title" content={seoDefaults.title} />
-      <meta property="og:description" content={seoDefaults.description} />
-      <meta property="og:url" content={seoDefaults.url} />
-      <meta property="og:image" content={seoDefaults.image} />
-
-      {/* Twitter */}
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={seoDefaults.title} />
-      <meta name="twitter:description" content={seoDefaults.description} />
-      <meta name="twitter:image" content={seoDefaults.image} />
     </Helmet>
   )
 }

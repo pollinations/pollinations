@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes, useSearchParams } from "react-router-dom"
 import { useEffect } from "react"
-import { SEOMetadata } from "./components/Helmet"
+import { SEOMetadata, SEOImage } from "./components/Helmet"
 import Header from "./Home/Header"
 import Footer from "./Home/Footer"
 import Home from "./Home"
@@ -61,6 +61,7 @@ const AppRoutes = [
 const App = () => (
   <>
     <SEOMetadata />
+    <SEOImage />
     <Header />
     <Routes>
       {AppRoutes.map(({ key, ...route }) => (

@@ -1,9 +1,11 @@
 // Netlify function to handle redirects with analytics
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 // dotenv
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config();
+
 // Import redirect mapping from the consolidated affiliates.js file
-const { redirectMapping } = require('../../affiliate/affiliates.js');
+import { redirectMapping } from '../../affiliate/affiliates.js';
 
 // Use the redirectMapping directly as it's already in the correct format
 const REFERRAL_LINKS = redirectMapping;
@@ -86,7 +88,7 @@ async function sendAnalytics(eventName, metadata, request) {
   }
 }
 
-exports.handler = async function(event, context) {
+export const handler = async function(event, context) {
   console.log('Redirect function called with event:', {
     path: event.path,
     httpMethod: event.httpMethod,
@@ -118,10 +120,10 @@ exports.handler = async function(event, context) {
   
   try {
     // Send analytics event
-    await sendAnalytics('nsfwReferralLinkClicked', {
+    await sendAnalytics('ad_clicked', {
       referralId: targetId,
       targetUrl: url,
-      source: 'nsfw_referral'
+      source: 'referral'
     }, event);
     
     // Return redirect response

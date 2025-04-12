@@ -98,7 +98,7 @@ export function ServerLoadInfo({ lastItem, itemsGenerated, currentItem, itemType
       flexDirection={{ xs: "row", sm: "row" }}
       justifyContent="center"
       alignItems="center"
-      style={{ gap: "1em" }}
+      style={{ gap: "4em" }}
       sx={{
         color: Colors.offwhite,
         fontSize: "1.em",
@@ -130,7 +130,6 @@ function CountBadge({ itemsGenerated }) {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        maxWidth: "1000px",
       }}
     >
       <Typography
@@ -163,7 +162,6 @@ function CountBadge({ itemsGenerated }) {
             fontFamily: Fonts.headline,
             fontSize: { xs: "1.5em", sm: "2.5em" },
             height: "50px",
-            width: "250px",
             borderRadius: "36px",
             display: "flex",
             alignItems: "center",
@@ -194,12 +192,10 @@ function TimingInfo({ item }) {
 function RateDisplay({ rate, itemType }) {
   const displayRate = rate || "0.0"; 
 
-  // Scaling Logic: Use thresholds to determine number of bars
+  // Updated Scaling Logic: Use thresholds to determine number of bars
   const parsedRate = parseFloat(rate) || 0;
   let numberOfBars = 0;
-  if (parsedRate >= 20) {
-    numberOfBars = 5;
-  } else if (parsedRate >= 15) {
+  if (parsedRate >= 15) {
     numberOfBars = 4;
   } else if (parsedRate >= 10) {
     numberOfBars = 3;
@@ -210,7 +206,7 @@ function RateDisplay({ rate, itemType }) {
   }
 
   // Color definition for bars
-  const barColors = ['#FFEB3B', '#FFC107', '#FF9800', '#F44336', '#D32F2F']; // Yellow -> Amber -> Orange -> Red -> Dark Red
+  const barColors = ['#FFEB3B', '#FFC107', '#FF9800', '#F44336']; // Yellow -> Amber -> Orange -> Red
   // Height-varying bar characters
   const barChars = "▃▅▇▉";
 
@@ -233,8 +229,6 @@ function RateDisplay({ rate, itemType }) {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        maxWidth: "1000px",
-        minWidth: "150px", 
       }}
     >
       <Typography
@@ -257,7 +251,6 @@ function RateDisplay({ rate, itemType }) {
           fontFamily: Fonts.headline,
           fontSize: { xs: "1.5em", sm: "2.5em" },
           height: "50px",
-          width: "220px", // Increased width to fit rate and bars
           borderRadius: "36px",
           display: "flex",
           alignItems: "center",
@@ -267,7 +260,7 @@ function RateDisplay({ rate, itemType }) {
           "& > span": {
             display: 'flex', // Use flex to align rate and bars
             alignItems: 'center', // Center items vertically
-            gap: '0.3em' // Add small gap between number and bars
+            gap: '0.3em', // Add small gap between number and bars
           },
         }}
       >
@@ -283,6 +276,7 @@ function RateDisplay({ rate, itemType }) {
                   color: barColors[index], 
                   fontSize: { xs: '0.7em', sm: '0.8em' },
                   lineHeight: '1', 
+                  marginBottom: "8px",
                 }}
               >
                 {barChars[index % barChars.length]}

@@ -78,37 +78,37 @@ const affiliates = [
   {
     id: "2774941",
     name: "HeyReal.AI",
-    product: "Logo design services with customizable blue background options.",
-    description: "Get custom logo designs and branding solutions from HeyReal.AI.",
-    audience: "Individuals and businesses looking for custom logos and branding solutions.",
-    categories: ["Creative Digital Assets", "Art & Photography"],
+    product: "Platform for creating and chatting with realistic AI characters",
+    description: "Experience immersive conversations with customizable AI characters on HeyReal.AI",
+    audience: "Individuals seeking to interact with AI characters for entertainment, creativity, and personal engagement",
+    categories: ["Creative Digital Assets", "AI & Technology"],
     trackingLink: "https://go.sjv.io/c/6058776/2774941/30752",
-    triggerWords: ["AI logo", "logo design", "custom logo", "branding", "brand identity", "business logo", "logo creation", "design service", "logo generator", "visual identity"]
+    triggerWords: ["AI characters", "AI chat", "virtual companions", "AI conversation", "character AI", "AI personalities", "interactive AI", "AI roleplay", "conversational AI", "virtual friends"]
   },
-  {
-    id: "lovemy",
-    name: "LoveMy.ai",
-    product: "An AI companion that offers personalized interactions and intimacy.",
-    description: "Create your intimate AI companion on LoveMy.ai",
-    audience: "Individuals seeking an intimate and personalized AI companionship experience.",
-    categories: ["Sexual Wellness & Adult"],
-    tags: ["ai companion", "nsfw", "adult"],
-    nsfw: true,
-    trackingLink: "https://lovemy.ai/?linkId=lp_060145&sourceId=pollinations&tenantId=lovemyai",
-    triggerWords: ["AI companion", "virtual girlfriend", "digital companion", "AI relationship", "virtual partner", "AI chat", "romantic AI", "intimate AI", "personal AI", "virtual dating"]
-  },
-  {
-    id: "hentai",
-    name: "AIHentaiChat.com",
-    product: "Uncensored AI chat services",
-    description: "Explore uncensored AI chat on AIHentaiChat.com",
-    audience: "Adults seeking uncensored AI chat experiences",
-    categories: ["Sexual Wellness & Adult", "Apps"],
-    tags: ["ai companion", "nsfw", "adult", "hentai"],
-    nsfw: true,
-    trackingLink: "https://aihentaichat.com/?linkId=lp_617069&sourceId=pollinations&tenantId=lovemyai",
-    triggerWords: ["hentai", "anime", "manga", "adult content", "NSFW", "uncensored", "adult chat", "fantasy chat", "anime characters", "adult anime"]
-  },
+  // {
+  //   id: "lovemy",
+  //   name: "LoveMy.ai",
+  //   product: "An AI companion that offers personalized interactions and intimacy.",
+  //   description: "Create your intimate AI companion on LoveMy.ai",
+  //   audience: "Individuals seeking an intimate and personalized AI companionship experience.",
+  //   categories: ["Sexual Wellness & Adult"],
+  //   tags: ["ai companion", "nsfw", "adult"],
+  //   nsfw: true,
+  //   trackingLink: "https://lovemy.ai/?linkId=lp_060145&sourceId=pollinations&tenantId=lovemyai",
+  //   triggerWords: ["AI companion", "virtual girlfriend", "digital companion", "AI relationship", "virtual partner", "AI chat", "romantic AI", "intimate AI", "personal AI", "virtual dating"]
+  // },
+  // {
+  //   id: "hentai",
+  //   name: "AIHentaiChat.com",
+  //   product: "Uncensored AI chat services",
+  //   description: "Explore uncensored AI chat on AIHentaiChat.com",
+  //   audience: "Adults seeking uncensored AI chat experiences",
+  //   categories: ["Sexual Wellness & Adult", "Apps"],
+  //   tags: ["ai companion", "nsfw", "adult", "hentai"],
+  //   nsfw: true,
+  //   trackingLink: "https://aihentaichat.com/?linkId=lp_617069&sourceId=pollinations&tenantId=lovemyai",
+  //   triggerWords: ["hentai", "anime", "manga", "adult content", "NSFW", "uncensored", "adult chat", "fantasy chat", "anime characters", "adult anime"]
+  // },
   {
     id: "kofi",
     name: "Support Pollinations on Ko-fi",

@@ -29,6 +29,34 @@ Pollinations.AI aims to be accessible to users worldwide, regardless of language
 
 This approach helps expand Pollinations.AI's reach to diverse global communities while respecting language preferences.
 
+## Essential Documentation to Review First
+
+Before proceeding with any integration work, it's critical to thoroughly review the main Pollinations.AI documentation to understand the platform's capabilities, architecture, and API features:
+
+### 1. README.md
+
+First, review the [main README.md](https://github.com/pollinations/pollinations/blob/master/README.md) to understand:
+- Core features and value proposition of Pollinations.AI
+- Project architecture and components
+- Available services (text, image, audio generation)
+- MCP server capabilities for AI assistants
+- React hooks for frontend integration
+- Community engagement opportunities
+- Project structure and organization
+
+### 2. APIDOCS.md
+
+Next, review the [API documentation](https://github.com/pollinations/pollinations/blob/master/APIDOCS.md) to understand:
+- Detailed API endpoints for image, text, and audio generation
+- Parameter options and default values
+- Code examples in multiple languages
+- Rate limits and usage guidelines
+- OpenAI-compatible interfaces
+- Referrer requirements and Special Bee program
+- Real-time feeds API for monitoring generations
+
+Understanding these documents will ensure you can accurately represent Pollinations.AI's capabilities when integrating with repositories and answer any questions that might arise during the PR review process.
+
 ## Key Pollinations.AI Features to Highlight
 
 When adding Pollinations.AI to repositories, emphasize these key features:

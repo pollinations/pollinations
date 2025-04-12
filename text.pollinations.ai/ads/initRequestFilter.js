@@ -344,7 +344,6 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
                             // Push the ad chunk before the [DONE] message
                             this.push(adChunk);
                         } else {
-                            // No longer logging when no ad is shown in streaming mode
                             // We've already sent the ad_skipped analytics in generateAdForContent
                         }
                         

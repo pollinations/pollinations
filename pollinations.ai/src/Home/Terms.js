@@ -5,7 +5,7 @@ import { NavLink } from "react-router-dom"
 import { FOOTER_TERMS_CONDITIONS } from "../config/copywrite"
 import { emojify, friendlyMarkdownStyle, rephrase } from "../config/llmTransforms"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
-import CancelPresentationOutlinedIcon from "@mui/icons-material/CancelPresentationOutlined"
+import CloseIcon from "@mui/icons-material/Close"
 import { Box } from "@mui/material"
 const Terms = () => {
   return (
@@ -21,7 +21,7 @@ const Terms = () => {
           onMouseEnter={(e) => (e.currentTarget.style.color = `${Colors.lime}90`)}
           onMouseLeave={(e) => (e.currentTarget.style.color = Colors.lime)}
         >
-          <CancelPresentationOutlinedIcon fontSize="large" />
+          <CloseIcon fontSize="large" />
         </NavLink>
       </Box>
       <SectionSubContainer style={{ backgroundColor: Colors.offblack, fontFamily: Fonts.headline }}>

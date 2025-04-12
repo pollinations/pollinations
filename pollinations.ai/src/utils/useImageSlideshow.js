@@ -70,6 +70,13 @@ export function useImageEditor({ stop, image }) {
   const [editedImage, setEditedImage] = useState(null);
   const abortControllerRef = useRef(null);
 
+  // Effect to reset editedImage when the source image from the slideshow changes
+  useEffect(() => {
+    // When the parent 'image' (from slideshow) changes, reset the internal edited state.
+    // This ensures that when the feed advances, the editor doesn't hold onto old edits.
+    setEditedImage(null);
+  }, [image]); // Depend on the image prop from the parent (slideshow)
+
   const updateImage = useCallback(async (newImage) => {
     stop(true);
     setIsLoading(true);
@@ -79,6 +86,7 @@ export function useImageEditor({ stop, image }) {
 
     try {
       console.log("Updating image with newImage:", newImage);
+      console.log("Prompt being used for image update:", newImage.prompt);
       const loadedImage = await loadImage(newImage);
       setEditedImage(loadedImage);
     } catch (error) {
@@ -99,9 +107,12 @@ export function useImageEditor({ stop, image }) {
     }
   }, []);
 
-  image = editedImage || image;
+  // Instead, explicitly return the editedImage if it exists, otherwise the input image
+  const returnedImage = editedImage || image;
 
-  return { updateImage, cancelLoading, image, isLoading, setIsLoading };
+  // Return editedImage if it exists, otherwise the original image prop
+  // The key name remains 'image' for compatibility with parent component
+  return { updateImage, cancelLoading, image: returnedImage, isLoading, setIsLoading };
 }
 
 const loadImage = async (newImage) => {

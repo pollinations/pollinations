@@ -5,6 +5,7 @@ import {
   SectionContainer,
   SectionSubContainer,
   SectionHeadlineStyle,
+  SectionMainContent,
 } from "../components/SectionContainer.js"
 import { INTEGRATE_TITLE, INTEGRATE_SUBTITLE, INTEGRATE_GITHUB_LINK } from "../config/copywrite"
 import { rephrase, emojify, noLink } from "../config/llmTransforms.js"
@@ -42,7 +43,7 @@ export const Integration = () => {
         <GeneralButton
           handleClick={handleGithubButtonClick}
           isLoading={false}
-          backgroundColor={Colors.offblack}
+          backgroundColor={Colors.offblack2}
           textColor={Colors.offwhite}
           borderColor={Colors.offwhite}
           style={{
@@ -66,7 +67,7 @@ export const Integration = () => {
           {INTEGRATE_GITHUB_LINK}
         </GeneralButton>
       </SectionSubContainer>
-      <SectionSubContainer>
+      <SectionSubContainer paddingBottom="4em">
         <CodeExamples image={image} />
       </SectionSubContainer>
     </SectionContainer>

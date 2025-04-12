@@ -3,10 +3,10 @@
 export const SHOW_PROMPT_TOOLTIP = false; 
 
 export const Colors = {
-  lime: '#ecf874', //#37b9b0 #00afbf #ecf874 #226062 #54f0f4 #8fd4c3 rgb(13,242,201)
+  lime: '#ecf874', 
   offwhite: '#c7d4d6',
   offblack: '#110518', 
-  offblack2: '#181a2c',
+  offblack2: '#181A2C',
   gray1: '#B3B3B3',
   gray2: '#8A8A8A',
   special: 'rgb(191,64,64)',
@@ -17,8 +17,6 @@ export const Fonts = {
   headline: 'Mako',
   parameter: 'Duru Sans',
 }
-
-//   headline: 'Monospace, monospace',
 
 // Step 1: Create a new mapping object for section backgrounds
 export const SectionBG = {
@@ -38,17 +36,21 @@ export const SectionBG = {
     color: Colors.offblack,
     gradient: true,
   },
-  integration: {
-    color: Colors.offblack2,
-    gradient: false,
-  },
-  community: {
-    color: Colors.offblack2,
+  feedText: {
+    color: Colors.offblack,
     gradient: true,
   },
   project: {
     color: Colors.offblack2,
     gradient: false,
+  },
+  integration: {
+    color: Colors.offblack,
+    gradient: false,
+  },
+  community: {
+    color: Colors.offblack2,
+    gradient: true,
   },
   team: {
     color: Colors.offwhite,

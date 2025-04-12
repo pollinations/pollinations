@@ -25,6 +25,7 @@ const MODEL_MAPPING = {
     // Cloudflare models
     'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
     'llamalight': '@cf/meta/llama-3.1-8b-instruct',
+    'llamascout': '@cf/meta/llama-4-scout-17b-16e-instruct',
     'deepseek-reasoning': '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
     'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
     'phi': 'phi-4-instruct',
@@ -32,7 +33,7 @@ const MODEL_MAPPING = {
     'llama-vision': '@cf/meta/llama-3.2-11b-vision-instruct',
     // Scaleway models
     'qwen-coder': 'qwen2.5-coder-32b-instruct',
-    'mistral': 'mistral/mistral-small-24b-instruct-2501:fp8',  // Updated to use the new Mistral model
+    'mistral': '@cf/mistralai/mistral-small-3.1-24b-instruct',  // Updated to use Cloudflare Mistral model
     'llama-scaleway': 'llama-3.3-70b-instruct',
     'llamalight-scaleway': 'llama-3.1-8b-instruct',
     'deepseek-reasoning-large': 'deepseek-r1-distill-llama-70b',
@@ -41,9 +42,8 @@ const MODEL_MAPPING = {
     'hormoz': 'Hormoz-8B',
     // OpenRouter models
     'claude': 'anthropic/claude-3.5-haiku-20241022',
-    // Groq models
-    'qwen-qwq': 'qwen-qwq-32b',
-    'qwen-reasoning': 'qwen-qwq-32b'
+    // Cloudflare models
+    'qwen-qwq': '@cf/qwen/qwq-32b'
 };
 
 // Base prompts that can be reused across different models
@@ -84,7 +84,7 @@ const SYSTEM_PROMPTS = {
     'phi-mini': BASE_PROMPTS.conversational,
     'llama-vision': BASE_PROMPTS.unrestricted,
     // Scaleway models
-    'mistral': BASE_PROMPTS.unrestricted,
+    'mistral': BASE_PROMPTS.conversational,
     'llama-scaleway': BASE_PROMPTS.unrestricted,
     'llamalight-scaleway': BASE_PROMPTS.unrestricted,
     'qwen-coder': BASE_PROMPTS.coding,
@@ -94,9 +94,8 @@ const SYSTEM_PROMPTS = {
     'hormoz': BASE_PROMPTS.hormoz,
     // OpenRouter models
     'claude': 'You are Claude, a helpful AI assistant created by Anthropic. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.',
-    // Groq models
-    'qwen-qwq': BASE_PROMPTS.conversational,
-    'qwen-reasoning': BASE_PROMPTS.reasoning
+    // Cloudflare models
+    'qwen-qwq': BASE_PROMPTS.conversational
 };
 
 // Default options
@@ -343,6 +342,10 @@ export const portkeyConfig = {
         authKey: process.env.OPENAI_PHI4_MINI_API_KEY
     }),
     '@cf/meta/llama-3.2-11b-vision-instruct': () => createCloudflareModelConfig(),
+    '@cf/meta/llama-4-scout-17b-16e-instruct': () => ({
+        ...createCloudflareModelConfig(),
+        'max-tokens': 4096  // Reduced from 8192 to avoid context length errors
+    }),
     // Scaleway model configurations
     'qwen2.5-coder-32b-instruct': () => createScalewayModelConfig({
         'max-tokens': 8000  // Set specific token limit for Qwen Coder
@@ -352,7 +355,10 @@ export const portkeyConfig = {
     'deepseek-r1-distill-llama-70b': () => createScalewayModelConfig(),
     'pixtral-12b-2409': () => createPixtralModelConfig(),
     // Mistral model configuration
-    'mistral/mistral-small-24b-instruct-2501:fp8': () => createMistralModelConfig(),
+    '@cf/mistralai/mistral-small-3.1-24b-instruct': () => createCloudflareModelConfig({
+        'max-tokens': 8192,
+        temperature: 0.3
+    }),
     // Modal model configurations
     'Hormoz-8B': () => createModalModelConfig(),
     // OpenRouter model configurations
@@ -360,7 +366,8 @@ export const portkeyConfig = {
         'http-referer': 'https://pollinations.ai',
         'x-title': 'Pollinations.AI'
     }),
-    'qwen-qwq-32b': () => createGroqModelConfig({
+    // Cloudflare models
+    '@cf/qwen/qwq-32b': () => createCloudflareModelConfig({
         'http-referer': 'https://pollinations.ai',
         'x-title': 'Pollinations.AI'
     }),
@@ -427,7 +434,7 @@ export const generateTextPortkey = createOpenAICompatibleClient({
     // This decision is made based on the model being requested
     supportsSystemMessages: (options) => {
         // Check if it's a model that doesn't support system messages
-        return !['openai-reasoning', 'o3-mini', 'deepseek-reasoner'].includes(options.model);
+        return !['openai-reasoning', 'o3-mini', 'deepseek-reasoning'].includes(options.model);
     },
     
     // Transform request to add Azure-specific headers based on the model

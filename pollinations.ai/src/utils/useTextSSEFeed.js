@@ -45,7 +45,11 @@ export const useTextSlideshow = (mode) => {
         !newEntry.parameters?.messages
       );
       
-      if (isGetRequest) {
+      // Check if referrer is not set
+      const hasNoReferrer = !newEntry.referrer || newEntry.referrer === '' || 
+                           (!newEntry.parameters?.referrer || newEntry.parameters?.referrer === '');
+      
+      if (isGetRequest && hasNoReferrer) {
         const processedEntry = processEntry(newEntry);
         setPendingEntries(entries => [...entries, processedEntry]);
         
@@ -54,10 +58,11 @@ export const useTextSlideshow = (mode) => {
           detail: { entry: processedEntry } 
         }));
       } else {
-        console.log("Skipping non-GET entry:", 
+        console.log("Skipping entry:", 
           newEntry.parameters?.method, 
           newEntry.parameters?.type,
-          newEntry.parameters?.messages ? "has messages" : "no messages"
+          newEntry.parameters?.messages ? "has messages" : "no messages",
+          hasNoReferrer ? "no referrer" : "has referrer"
         );
       }
     }

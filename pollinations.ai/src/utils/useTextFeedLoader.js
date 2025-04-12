@@ -62,7 +62,11 @@ export function useTextFeedLoader(onNewEntry, setLastEntry) {
                 !data.parameters?.messages
               );
               
-              if (isGetRequest) {
+              // Check if referrer is not set
+              const hasNoReferrer = !data.referrer || data.referrer === '' || 
+                                   (!data.parameters?.referrer || data.parameters?.referrer === '');
+              
+              if (isGetRequest && hasNoReferrer) {
                 // Ensure required properties exist
                 const processedData = {
                   ...data,
@@ -73,23 +77,24 @@ export function useTextFeedLoader(onNewEntry, setLastEntry) {
                 setLastEntry(processedData);
                 onNewEntry(processedData);
               } else {
-                console.log("Skipping non-GET last entry:", 
+                console.log("Skipping entry:", 
                   data.parameters?.method, 
                   data.parameters?.type,
-                  data.parameters?.messages ? "has messages" : "no messages"
+                  data.parameters?.messages ? "has messages" : "no messages",
+                  hasNoReferrer ? "no referrer" : "has referrer"
                 );
                 
-                // If the last entry is not a GET request, try to load another one
+                // If the entry doesn't meet our criteria, try to load another one
                 if (retryCount < MAX_RETRIES) {
                   retryCount++;
-                  console.log(`Retry ${retryCount}/${MAX_RETRIES} to find GET entry`);
+                  console.log(`Retry ${retryCount}/${MAX_RETRIES} to find suitable entry`);
                   setTimeout(fetchLastEntry, 1000);
                 } else {
-                  console.log(`Failed to find GET entry after ${MAX_RETRIES} retries`);
+                  console.log(`Failed to find suitable entry after ${MAX_RETRIES} retries`);
                   // Create a fallback entry if needed
                   const fallbackEntry = {
                     response: "Welcome to Pollinations Text Feed. Enter a prompt to get started.",
-                    referrer: "pollinations.ai",
+                    referrer: "",
                     parameters: {
                       method: "GET",
                       type: "fallback"

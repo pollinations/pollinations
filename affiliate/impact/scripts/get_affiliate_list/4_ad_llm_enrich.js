@@ -4,8 +4,8 @@ const readline = require("readline");
 
 const POLLINATIONS_TEXT_API = "https://text.pollinations.ai";
 const MAX_RETRIES = 3; // Maximum number of retry attempts for API calls
-const RETRY_DELAY = 3000; // 4 seconds delay between retries
-const CALL_DELAY = 1000; // 1 second delay between API calls (reduced from 3s)
+const RETRY_DELAY = 3000; // 3 seconds delay between retries
+const CALL_DELAY = 1000; // 1 second delay between API calls
 const REFERRER = process.env.POLLINATIONS_REFERRER || 'pollinations'; // Get referrer from .env or use default
 
 /**
@@ -21,8 +21,8 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
  * @returns {Promise<object|null>} - The analysis object or null if an error occurs.
  */
 async function getAdAnalysis(ad) {
-  // First extract relevant information from the ad
-  const url = ad.LandingPageUrl || ad.TrackingLink || '';
+  // First extract relevant information from the ad - check for new tracking links format
+  const url = ad.TrackingURL || ad.LandingPageUrl || ad.TrackingLink || '';
   
   // If there's no URL to analyze, return empty analysis
   if (!url || typeof url !== "string") {
@@ -31,24 +31,34 @@ async function getAdAnalysis(ad) {
       AffiliateAudience: null,
       AffiliateProduct: null,
       AffiliateCategory: null,
+      triggerWords: null
     };
   }
 
-  // Extract other useful context from the ad
-  const name = ad.Name || '';
-  const description = ad.Description || '';
+  // Extract other useful context from the ad - handle both old and new format
+  const name = ad.Name || ad.CampaignName || '';
+  const description = ad.Description || ad.CampaignDescription || '';
   const advertiser = ad.AdvertiserName || '';
   const labels = ad.Labels || '';
   const type = ad.Type || '';
   const isCustom = ad.isCustomAffiliate || false;
   const campaignDesc = ad.CampaignDescription || '';
+  const shippingRegions = Array.isArray(ad.ShippingRegions) 
+    ? ad.ShippingRegions.join(', ') 
+    : (ad.ShippingRegions || '');
+
+  // Log the data we're using for analysis
+  console.error(`[analyze_link] Analyzing URL: ${url}`);
+  console.error(`[analyze_link] Ad Name: ${name}`);
+  console.error(`[analyze_link] Advertiser: ${advertiser}`);
 
   // Create an enhanced prompt that includes all relevant ad information
   const prompt = `YOU MUST RESPOND ONLY WITH A SIMPLE JSON OBJECT. DO NOT USE TOOL_CALLS. DO NOT USE FUNCTION_CALLS.
-The JSON must have exactly these three keys:
+The JSON must have exactly these four keys:
 1. "affiliate_audience": a string describing the target audience for this product/service
 2. "affiliate_product": a string describing the main product/service offered
 3. "affiliate_category": an array with relevant categories (choose one or multiple from the following categories: "Accessories & Peripherals", "Accessories & Services", "Accommodations", "Apparel & Accessories", "Apparel", "Shoes & Accessories", "Apps", "Art & Craft Supplies", "Art & Photography", "Auctions", "Automobiles & Auto Services", "B2B", "Baby & Kids", "Home", "Baby Essentials", "Bags & Accessories", "Bath & Beauty", "Bed & Bath", "Books & Magazines", "Books & Newsstand", "CDN Service", "Career", "Charitable Causes", "Clothing & Accessories", "Collectibles & Hobbies", "College", "Computers", "Consumer Electronics", "Cosmetics & Skin Care", "Creative Digital Assets", "Credit Cards", "Reporting & Repair", "Diet & Nutrition", "Disaster Relief", "Educational", "Entertainment & Activities", "Fall", "First Aid & pharmacy", "Flowers", "Food & Beverages", "Food & Drink", "Food & Gifts", "Fragrance", "Furniture & Home Decor", "Games", "Games/Toys", "Gaming", "Gifts & Services", "Gifts & Stationery", "Gourmet", "Handmade Goods", "Health & Beauty", "Home & Garden", "Home Improvement", "Home", "Pet & Garden", "Household Essentials & Services", "Images", "Insurance", "Internet Service Provider", "Jewelry & Watches", "Kitchen & Dining", "Learning", "Legal", "Loans & Financial Services", "Luxury", "Mens Apparel", "Mobile Services & Telecommunications", "Movie & TV", "Movies & Music", "Online Dating", "Outdoors & Recreation", "Parts & Accessories", "Party & Party Supplies", "Patio & Garden", "Pet Services", "Pet Supplies", "Real Estate", "Recreational Vehicles", "Romance", "Server Hosting", "Sexual Wellness & Adult", "Shoes", "Shopping", "Software", "Spa & Personal Grooming", "Specialty Sizes", "Sports & Exercise Equipment", "Sports & Outdoor", "Sports Apparel & Accessories", "Spring", "Summer", "Supplies & Furniture", "Tax", "Templates", "Fonts", "Add-ons & more", "Textbooks & Supplies", "Themes", "Code", "Graphics", "Video & more", "Tickets & Shows", "Transportation", "Vacations", "Vision", "Website Hosting", "Wine & Spirits", "Winter", "Womens Apparel")
+4. "trigger_words": an array of 5-10 INDIVIDUAL SINGLE WORDS (no phrases) that would be relevant for this product or service. Each array element must be a single word only, not a phrase.
 
 ANALYZE THIS AD:
 Name: ${name}
@@ -59,21 +69,27 @@ Labels: ${labels}
 Type: ${type}
 Custom Affiliate: ${isCustom}
 Campaign Description: ${campaignDesc}
+Shipping Regions: ${shippingRegions}
 
 PAY CLOSE ATTENTION TO THE LABELS - they often contain important category information.
 If the labels contain "nsfw", "adult", or similar terms, make sure to include "Sexual Wellness & Adult" in the categories.
 
-Example format: {"affiliate_audience":"description here","affiliate_product":"description here","affiliate_category":["category 1 here","category 2 here"]}`;
+For "trigger_words", ABSOLUTELY ONLY INCLUDE SINGLE WORDS, NOT PHRASES. 
+Each element in the trigger_words array must be exactly one word only.
+For example, instead of ["noise cancelling", "wireless headphones"], use ["noise", "cancelling", "wireless", "headphones"].
+
+Example format: {"affiliate_audience":"description here","affiliate_product":"description here","affiliate_category":["category 1 here","category 2 here"],"trigger_words":["word1","word2","word3","word4","word5","word6"]}`;
 
   // Implement retry logic
   let retries = 0;
   
   while (retries <= MAX_RETRIES) {
     try {
-      console.error(`[analyze_link] Fetching analysis for ad: ${ad.Id || 'unknown'} (${name})${retries > 0 ? ` [Retry ${retries}/${MAX_RETRIES}]` : ''}`);
+      const adId = ad.Id || ad.CampaignId || 'unknown';
+      console.error(`[analyze_link] Fetching analysis for ad: ${adId} (${name})${retries > 0 ? ` [Retry ${retries}/${MAX_RETRIES}]` : ''}`);
       
       const response = await axios.get(
-        `https://text.pollinations.ai/${encodeURIComponent(prompt)}?model=searchgpt&json=true&referrer=${REFERRER}`,
+        `${POLLINATIONS_TEXT_API}/${encodeURIComponent(prompt)}?model=searchgpt&json=true&referrer=${REFERRER}`,
         {
           timeout: 30000, // 30 second timeout
         }
@@ -81,7 +97,7 @@ Example format: {"affiliate_audience":"description here","affiliate_product":"de
 
       // Log the raw response data for debugging
       console.error(
-        `[analyze_link] Raw API response data for ${ad.Id}:`,
+        `[analyze_link] Raw API response data for ${adId}:`,
         JSON.stringify(response.data, null, 2)
       );
 
@@ -94,24 +110,26 @@ Example format: {"affiliate_audience":"description here","affiliate_product":"de
           analysisData = JSON.parse(response.data);
         } catch (parseError) {
           console.error(
-            `[analyze_link] Error parsing JSON string response for ${ad.Id}: ${parseError.message}. Raw data:`,
+            `[analyze_link] Error parsing JSON string response for ${adId}: ${parseError.message}. Raw data:`,
             response.data
           );
           return {
             AffiliateAudience: null,
             AffiliateProduct: null,
             AffiliateCategory: null,
+            triggerWords: null
           };
         }
       } else {
         console.error(
-          `[analyze_link] Unexpected response data type (${typeof response.data}) for ${ad.Id}. Raw data:`,
+          `[analyze_link] Unexpected response data type (${typeof response.data}) for ${adId}. Raw data:`,
           response.data
         );
         return {
           AffiliateAudience: null,
           AffiliateProduct: null,
           AffiliateCategory: null,
+          triggerWords: null
         };
       }
 
@@ -121,19 +139,21 @@ Example format: {"affiliate_audience":"description here","affiliate_product":"de
         typeof analysisData === "object" &&
         (analysisData.affiliate_audience !== undefined ||
           analysisData.affiliate_product !== undefined ||
-          analysisData.affiliate_category !== undefined)
+          analysisData.affiliate_category !== undefined ||
+          analysisData.trigger_words !== undefined)
       ) {
         console.error(
-          `[analyze_link] Successfully extracted analysis for ${ad.Id}`
+          `[analyze_link] Successfully extracted analysis for ${adId}`
         );
         return {
           AffiliateAudience: analysisData.affiliate_audience || null,
           AffiliateProduct: analysisData.affiliate_product || null,
           AffiliateCategory: analysisData.affiliate_category || null,
+          triggerWords: analysisData.trigger_words || null
         };
       } else {
         console.error(
-          `[analyze_link] Response missing expected keys for ${ad.Id}. Received:`,
+          `[analyze_link] Response missing expected keys for ${adId}. Received:`,
           JSON.stringify(analysisData, null, 2)
         );
 
@@ -154,15 +174,17 @@ Example format: {"affiliate_audience":"description here","affiliate_product":"de
               if (
                 extractedJson.affiliate_audience ||
                 extractedJson.affiliate_product ||
-                extractedJson.affiliate_category
+                extractedJson.affiliate_category ||
+                extractedJson.trigger_words
               ) {
                 console.error(
-                  `[analyze_link] Successfully extracted embedded JSON data for ${ad.Id}`
+                  `[analyze_link] Successfully extracted embedded JSON data for ${adId}`
                 );
                 return {
                   AffiliateAudience: extractedJson.affiliate_audience || null,
                   AffiliateProduct: extractedJson.affiliate_product || null,
                   AffiliateCategory: extractedJson.affiliate_category || null,
+                  triggerWords: extractedJson.trigger_words || null
                 };
               }
             }
@@ -177,6 +199,7 @@ Example format: {"affiliate_audience":"description here","affiliate_product":"de
           AffiliateAudience: null,
           AffiliateProduct: null,
           AffiliateCategory: null,
+          triggerWords: null
         };
       }
     } catch (error) {
@@ -191,7 +214,7 @@ Example format: {"affiliate_audience":"description here","affiliate_product":"de
         if (isRetryableError && retries < MAX_RETRIES) {
           retries++;
           console.error(
-            `[analyze_link] Retryable error for ${ad.Id}: Status ${error.response.status}. Waiting ${RETRY_DELAY/1000}s before retry ${retries}/${MAX_RETRIES}...`
+            `[analyze_link] Retryable error for ${ad.Id || ad.CampaignId || 'unknown'}: Status ${error.response.status}. Waiting ${RETRY_DELAY/1000}s before retry ${retries}/${MAX_RETRIES}...`
           );
           await sleep(RETRY_DELAY);
           continue; // Try again
@@ -200,7 +223,7 @@ Example format: {"affiliate_audience":"description here","affiliate_product":"de
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
         console.error(
-          `[analyze_link] API Error for ${ad.Id}: Status ${error.response.status}, Data:`,
+          `[analyze_link] API Error for ${ad.Id || ad.CampaignId || 'unknown'}: Status ${error.response.status}, Data:`,
           typeof error.response.data === 'object' ? 
             JSON.stringify(error.response.data, null, 2) : 
             error.response.data
@@ -210,7 +233,7 @@ Example format: {"affiliate_audience":"description here","affiliate_product":"de
         if (retries < MAX_RETRIES) {
           retries++;
           console.error(
-            `[analyze_link] Network error for ${ad.Id}. Waiting ${RETRY_DELAY/1000}s before retry ${retries}/${MAX_RETRIES}...`
+            `[analyze_link] Network error for ${ad.Id || ad.CampaignId || 'unknown'}. Waiting ${RETRY_DELAY/1000}s before retry ${retries}/${MAX_RETRIES}...`
           );
           await sleep(RETRY_DELAY);
           continue; // Try again
@@ -218,25 +241,26 @@ Example format: {"affiliate_audience":"description here","affiliate_product":"de
         
         // The request was made but no response was received
         console.error(
-          `[analyze_link] Network Error for ${ad.Id}: No response received`
+          `[analyze_link] Network Error for ${ad.Id || ad.CampaignId || 'unknown'}: No response received`
         );
       } else {
         // Something happened in setting up the request that triggered an Error
         console.error(
-          `[analyze_link] Request Setup Error for ${ad.Id}:`,
+          `[analyze_link] Request Setup Error for ${ad.Id || ad.CampaignId || 'unknown'}:`,
           error.message
         );
       }
       
       // If we've reached maximum retries or it's not a retryable error, return null values
       if (retries >= MAX_RETRIES) {
-        console.error(`[analyze_link] Maximum retries (${MAX_RETRIES}) reached for ${ad.Id}. Giving up.`);
+        console.error(`[analyze_link] Maximum retries (${MAX_RETRIES}) reached for ${ad.Id || ad.CampaignId || 'unknown'}. Giving up.`);
       }
       
       return {
         AffiliateAudience: null,
         AffiliateProduct: null,
         AffiliateCategory: null,
+        triggerWords: null
       };
     }
   }
@@ -309,6 +333,7 @@ async function processInput() {
         finalAd.AffiliateAudience = analysisResult?.AffiliateAudience || finalAd.AffiliateAudience || finalAd.affiliate_audience || null;
         finalAd.AffiliateProduct = analysisResult?.AffiliateProduct || finalAd.AffiliateProduct || finalAd.affiliate_product || null;
         finalAd.AffiliateCategory = analysisResult?.AffiliateCategory || finalAd.AffiliateCategory || finalAd.affiliate_category || null;
+        finalAd.triggerWords = analysisResult?.triggerWords || finalAd.triggerWords || null;
 
         // Remove the old snake_case keys if they exist
         delete finalAd.affiliate_audience;

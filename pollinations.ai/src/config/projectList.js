@@ -145,6 +145,14 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 Pollinations.ai Image Generation (for Frame)",
+      url: "https://github.com/CitizenOneX/frame_pollinations",
+      description: "A Flutter application that listens for image generation prompts, requests images from Pollinations.AI, and displays them on the Frame wearable device. Users can use voice commands to generate images and save/share them using the device's sharing mechanism.",
+      author: "CitizenOneX",
+      repo: "https://github.com/CitizenOneX/frame_pollinations",
+      submissionDate: "2025-04-13",
+    },
+    {
       name: "🆕 Podcast #1500",
       url: "https://open.spotify.com/show/1wu4ngb1dclyTwoNN4cZzK",
       description: "Podcast project powered by pollinations, featuring dialogues among LLMs. First episode features 3o-mini and DeepSeek R1 70B talking about Vibe Coding.",

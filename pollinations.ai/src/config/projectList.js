@@ -606,6 +606,14 @@ const allProjects = {
   ],
   sdkLibraries: [
     {
+      name: "🆕 MCPollinations",
+      url: "https://github.com/pinkpixel-dev/MCPollinations",
+      description: "A Model Context Protocol (MCP) server that enables AI assistants to generate images, text, and audio through the Pollinations APIs. Supports customizable parameters, image saving, and multiple model options.",
+      author: "@voodoohop",
+      repo: "https://github.com/pinkpixel-dev/MCPollinations",
+      submissionDate: "2025-04-13",
+    },
+    {
       name: "🆕 pollinations_ai",
       url: "https://pub.dev/packages/pollinations_ai",
       description: "A Flutter/Dart SDK package for accessing all features of pollinations.ai including text generation, image generation, audio, and listing all supported models.",

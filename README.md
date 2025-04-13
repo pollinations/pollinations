@@ -304,6 +304,7 @@ Pollinations.AI is used in various projects, including:
 
 | Library | Description | Creator | Links |
 |---------|-------------|---------|-------|
+| 🆕 MCPollinations | A Model Context Protocol (MCP) server that enables AI assistants to generate images, text, and audio through the Pollinations APIs | @voodoohop | [GitHub](https://github.com/pinkpixel-dev/MCPollinations), [NPM](https://www.npmjs.com/package/@pinkpixel/mcpollinations) |
 | 🆕 pollinations_ai | A Flutter/Dart SDK package for accessing all features of pollinations.ai including text generation, image generation, audio, and listing all supported models | @Meenapintu | [pub.dev](https://pub.dev/packages/pollinations_ai), [GitHub](https://github.com/yehigo/pollinations.ai) |
 | 🆕 Node.js Client Library | A TypeScript/Node.js client for accessing Pollinations AI services including image generation, text processing, and speech synthesis. Features full TypeScript typings, dual CJS/ESM module support, 100% test coverage and feed/streams support, builder pattern API and axios-based HTTP client implementation | @fqueis | [NPM](https://www.npmjs.com/package/pollinationsai), [GitHub](https://github.com/fqueis/pollinationsai) |
 | 🆕 ComfyUI-Pollinations | A custom node for ComfyUI that utilizes the Pollinations API to generate images and text based on user prompts, supporting multiple image and text generation models | 1038lab | [GitHub](https://github.com/1038lab/ComfyUI-Pollinations) |

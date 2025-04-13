@@ -188,36 +188,51 @@ export async function generateAffiliateAd(affiliateId, content = '', messages = 
         
         // Detect language and translate ad text if content is provided
         if (content && content.trim().length > 0) {
-            // Combine the last message with the content for better language detection
-            const lastMessage = messages.length > 0 ? messages[messages.length - 1].content || '' : '';
-            const sampleText = lastMessage && lastMessage.length > 100 ? lastMessage : content;
+            // Use the entire content for language detection instead of just a snippet
+            const sampleText = content;
             
             // Use LLM to detect language and translate
             const translationPrompt = `
-You are a professional translator. Detect the language of the provided text and translate the advertisement to match that language.
-If the text is already in English, just return the original advertisement text unchanged.
+You are a professional translator. First, detect the language of the provided text sample.
 
-Important instructions:
-1. Return ONLY the translated text - no explanations, no confirmations, no additional text
-2. Do not introduce any additional formatting, preserve the original formatting when possible
-3. Preserve any markdown links in the format [text](url)
-4. Your response should contain nothing but the translated advertisement
+IMPORTANT INSTRUCTIONS:
+1. If the detected language is English, respond with "ENGLISH" followed by the original advertisement text unchanged.
+2. If the detected language is NOT English, translate the advertisement to match that language and respond with the language name followed by the translated text.
+3. Return your response in this exact format: "LANGUAGE_NAME: translated_text"
+4. Preserve any markdown links in the format [text](url)
+5. Do not add any explanations or additional text
 
 TEXT FOR LANGUAGE DETECTION:
-${sampleText.substring(0, 300)}...
+${sampleText}
 
 ADVERTISEMENT TO TRANSLATE:
 ${adTextSource}
 
-TRANSLATED ADVERTISEMENT:`;
+RESPONSE:`;
 
             try {
                 const completion = await generateTextPortkey([{ role: "user", content: translationPrompt }]);
-                const translatedText = completion.choices[0]?.message?.content?.trim();
+                const response = completion.choices[0]?.message?.content?.trim();
                 
-                if (translatedText && translatedText.length > 0) {
-                    log(`Translated ad for ${affiliate.name} (${affiliateId})`);
-                    adTextSource = translatedText;
+                if (response && response.length > 0) {
+                    // Check if the response indicates English
+                    if (response.toUpperCase().startsWith('ENGLISH:')) {
+                        // Keep original text, strip the "ENGLISH:" prefix
+                        adTextSource = response.substring(8).trim();
+                        log(`Content detected as English, keeping original ad text for ${affiliate.name} (${affiliateId})`);
+                    } else {
+                        // Extract language and translated text
+                        const colonIndex = response.indexOf(':');
+                        if (colonIndex > 0) {
+                            const detectedLanguage = response.substring(0, colonIndex).trim();
+                            adTextSource = response.substring(colonIndex + 1).trim();
+                            log(`Translated ad for ${affiliate.name} (${affiliateId}) to ${detectedLanguage}`);
+                        } else {
+                            // If format is unexpected, use the response as is
+                            adTextSource = response;
+                            log(`Received unformatted translation for ${affiliate.name} (${affiliateId})`);
+                        }
+                    }
                 }
             } catch (translationError) {
                 errorLog(`Error translating ad: ${translationError.message}`);

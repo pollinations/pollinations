@@ -413,6 +413,14 @@ const allProjects = {
   ],
   toolsInterfaces: [
     {
+      name: "🆕 Imagen",
+      url: "https://altkriz.github.io/imagen/",
+      description: "A beautiful web interface for generating images using Pollinations.ai API with only the \"flux\" and \"turbo\" models.",
+      author: "@altkriz",
+      repo: "https://github.com/altkriz/imagen",
+      submissionDate: "2025-04-13",
+    },
+    {
       name: "🆕 DominiSigns",
       description: "Avatar Translator for Dominican Sign Language that uses artificial intelligence to translate text and audio into Dominican sign language (LSRD), creating a communication bridge for approximately 100,000 deaf people in the Dominican Republic.",
       author: "@cmunozdev",

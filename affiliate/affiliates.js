@@ -542,6 +542,16 @@ const affiliates = [
     categories: ["Consumer Electronics", "Printers", "Photography", "Gadgets"],
     trackingLink: "https://primedigitalmarketing.pxf.io/c/6058776/2902339/25841",
     triggerWords: ["photo printer", "portable printer", "kodak printer", "instant printer", "smartphone printer", "mini printer"]
+  },
+  {
+    id: "RWzlAdv71NrOxT",
+    name: "DreamGF",
+    product: "AI companion service",
+    description: "Create your own AI companion on DreamGF.",
+    audience: "Individuals seeking personalized AI companionship experiences.",
+    categories: ["AI", "Entertainment", "Digital Companions"],
+    trackingLink: "https://dreamgf.ai/?a=RWzlAdv71NrOxT",
+    triggerWords: ["ai companion", "virtual girlfriend", "ai chat", "digital companion", "ai character", "virtual relationship", "ai interaction"]
   }
 ];
 

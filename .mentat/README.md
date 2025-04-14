@@ -7,6 +7,7 @@ When handling project submission issues:
 1. Add new projects to the top of the appropriate section in:
    - README.md under the "Projects Using Pollinations.AI" section
    - pollinations.ai/src/config/projectList.js in the corresponding category array
+   - pollinations.ai/src/config/projects.csv at the top of the file following the previous entries scheme
    - add a UTF8 icon higlighting them as new additions
 
 2. Project Entry Format:

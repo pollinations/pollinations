@@ -625,7 +625,7 @@ const allProjects = {
       name: "🆕 MCPollinations",
       url: "https://github.com/pinkpixel-dev/MCPollinations",
       description: "A Model Context Protocol (MCP) server that enables AI assistants to generate images, text, and audio through the Pollinations APIs. Supports customizable parameters, image saving, and multiple model options.",
-      author: "@voodoohop",
+      author: "Pink Pixel",
       repo: "https://github.com/pinkpixel-dev/MCPollinations",
       submissionDate: "2025-04-13",
     },

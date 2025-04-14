@@ -59,7 +59,7 @@ AFFILIATE ID:`;
         
         if (!response || response.toLowerCase() === "none") {
             // Define the percentage chance of showing Ko-fi when no other affiliate is found
-            const kofiShowPercentage = 30; // 30% chance to show Ko-fi
+            const kofiShowPercentage = 10; // 10% chance to show Ko-fi
             
             // Generate a random number between 0-100
             const randomValue = Math.floor(Math.random() * 100);

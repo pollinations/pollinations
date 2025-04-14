@@ -14,13 +14,13 @@ const errorLog = debug('pollinations:adfilter:error');
 const markdownRegex = /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`.*\`)|(?:\>.*)|(?:\-\s.*)|(?:\d\.\s.*)/;
 
 // Probability of adding referral links (0%)
-const REFERRAL_LINK_PROBABILITY = 0.1;
+const REFERRAL_LINK_PROBABILITY = 0.3;
 
 // Flag for testing ads with a specific marker
 const TEST_ADS_MARKER = "p-ads";
 
 // Whether to require markdown for ad processing
-const REQUIRE_MARKDOWN = true;
+const REQUIRE_MARKDOWN = false;
 
 // Create a flattened list of all trigger words from all affiliates
 const ALL_TRIGGER_WORDS = affiliatesData.reduce((words, affiliate) => {

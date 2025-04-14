@@ -552,6 +552,36 @@ const affiliates = [
     categories: ["AI", "Entertainment", "Digital Companions"],
     trackingLink: "https://dreamgf.ai/?a=RWzlAdv71NrOxT",
     triggerWords: ["ai companion", "virtual girlfriend", "ai chat", "digital companion", "ai character", "virtual relationship", "ai interaction"]
+  },
+  {
+    id: "1281667",
+    name: "IPRoyal",
+    product: "Proxy services for online privacy and security",
+    description: "Access secure proxy solutions for enhanced online privacy and data protection with IPRoyal.",
+    audience: "Individuals seeking proxy solutions for online privacy and security.",
+    categories: ["Internet Service Provider", "Software"],
+    trackingLink: "https://iproyal.sjv.io/c/6058776/1281667/15731",
+    triggerWords: ["proxy", "security", "privacy", "online", "anonymous", "data protection", "internet security"]
+  },
+  {
+    id: "1826593",
+    name: "Godlike Host",
+    product: "Web hosting and server solutions",
+    description: "Get reliable web hosting services with high performance and excellent customer support from Godlike Host.",
+    audience: "Individuals and businesses seeking web hosting solutions",
+    categories: ["Internet Service Provider", "Hosting", "Software"],
+    trackingLink: "https://godlikehost.sjv.io/c/6058776/1826593/21774",
+    triggerWords: ["hosting", "website", "server", "domain", "service", "cloud", "performance", "web hosting"]
+  },
+  {
+    id: "1917730",
+    name: "Homestyler",
+    product: "3D home design software",
+    description: "Create professional 3D home designs easily with Homestyler's intuitive design platform.",
+    audience: "Home design enthusiasts and DIY decorators",
+    categories: ["Home", "Software", "Apps"],
+    trackingLink: "https://homestyler.sjv.io/c/6058776/1917730/22993",
+    triggerWords: ["design", "software", "3D", "home", "decor", "plan", "interior", "architecture"]
   }
 ];
 

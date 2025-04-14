@@ -12,7 +12,6 @@ import { getHandler } from './availableModels.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';
-import { processNSFWReferralLinks } from './ads/nsfwReferralLinks.js';
 import { processRequestForAds, createStreamingAdWrapper } from './ads/initRequestFilter.js';
 import { getRequestData, getReferrer, WHITELISTED_DOMAINS } from './requestUtils.js';
 

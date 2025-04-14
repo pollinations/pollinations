@@ -15,7 +15,7 @@ const errorLog = debug('pollinations:portkey:error');
 const MODEL_MAPPING = {
     // Azure OpenAI models
     'openai': 'gpt-4o-mini',       // Maps to portkeyConfig['gpt-4o-mini']
-    'openai-large': 'gpt-4o-mini',      // Maps to portkeyConfig['gpt-4o']
+    'openai-large': 'azure-gpt-4.1',      // Now maps to portkeyConfig['azure-gpt-4.1']
     'openai-reasoning': 'o1-mini', // Maps to portkeyConfig['o1-mini'],
     // 'openai-audio': 'gpt-4o-mini-audio-preview',
     'openai-audio': 'gpt-4o-audio-preview',
@@ -348,6 +348,11 @@ export const portkeyConfig = {
         process.env.AZURE_OPENAI_ROBLOX_API_KEY,
         process.env.AZURE_OPENAI_ROBLOX_ENDPOINT,
         'gpt-4o-mini'
+    ),
+    'azure-gpt-4.1': () => createAzureModelConfig(
+        process.env.AZURE_OPENAI_41_API_KEY,
+        process.env.AZURE_OPENAI_41_ENDPOINT,
+        'gpt-4.1'
     ),
     // Cloudflare model configurations
     '@cf/meta/llama-3.3-70b-instruct-fp8-fast': () => createCloudflareModelConfig(),

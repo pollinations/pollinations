@@ -113,10 +113,37 @@ try {
         }
     }
 
+    // --- Sort records by submissionDate (descending) ---
+    console.log('Sorting records by submission date (newest first)...');
+    records.sort((a, b) => {
+        const dateA = a.submissionDate;
+        const dateB = b.submissionDate;
+
+        // Basic validation for YYYY-MM-DD format
+        const isValidDate = (dateStr) => dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
+
+        const validA = isValidDate(dateA);
+        const validB = isValidDate(dateB);
+
+        if (validA && validB) {
+            // Both dates are valid, compare directly (descending)
+            return dateB.localeCompare(dateA); 
+        } else if (validA) {
+            // Only A is valid, A is newer (comes first)
+            return -1; 
+        } else if (validB) {
+            // Only B is valid, B is newer (comes first)
+            return 1;
+        } else {
+            // Neither is valid, maintain original relative order (or treat as equal)
+            return 0; 
+        }
+    });
+
     const headers = Array.from(headerSet).map(id => ({ id, title: id }));
 
     console.log(`Found ${headers.length} unique columns: ${headers.map(h=>h.id).join(', ')}`);
-    console.log(`Total projects found: ${records.length}`);
+    console.log(`Total projects found and sorted: ${records.length}`);
 
     // --- Write to CSV ---
     const csvWriter = createObjectCsvWriter({

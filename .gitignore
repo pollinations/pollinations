@@ -144,7 +144,6 @@ tmp
 # Jetbrains
 .idea
 venv
-output/
 prompts.txt
 image_gen/venv
 image_gen/output/

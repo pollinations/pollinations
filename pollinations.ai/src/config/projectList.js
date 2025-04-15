@@ -145,6 +145,14 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 🌱 Strain Navigator",
+      url: "https://www.strainnavigator.com/",
+      description: "A collection of tools to help Growers, Breeders & Seed Bankers. Free & Open Source powered by Pollinations.ai.",
+      author: "@Tolerable",
+      repo: "https://github.com/Tolerable/strainnavigator",
+      submissionDate: "2025-04-15",
+    },
+    {
       name: "🆕 MalaysiaPrompt 🇲🇾",
       url: "https://malaysiaprompt.rf.gd/",
       description: "A free and fun platform for creating unique AI-generated images. No fancy skills needed – just your ideas and a few clicks to bring them to life. Features image generation, text-to-prompt conversion, and image-to-text capabilities.",

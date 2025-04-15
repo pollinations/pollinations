@@ -694,6 +694,13 @@ const allProjects = {
   ],
   tutorials: [
     {
+      name: "🆕 Pollinations.AI AI/Teens talk",
+      url: "https://www.youtube.com/live/5Rvdfr2qYGA?si=i5NLOKI49fGxNAEK&t=1034",
+      description: "Session 2: ai/teens worldwide conference exploring the forces shaping AI today, diving into governance, virtual connections, and decision-making with voices from multiple European cities.",
+      author: "@thomash_pollinations",
+      submissionDate: "2025-04-15",
+    },
+    {
       name: "🆕 Connect Pollinations with Open Web UI tutorial",
       url: "https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI",
       description: "How to add Pollinations AI Text Models to OpenWebUI for free access to top language models like GPT-4o, Mistral, Claude, and Gemini without signups or API keys.",

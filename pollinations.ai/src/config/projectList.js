@@ -39,6 +39,15 @@ export const projectCategories = [
 ];
 
 const allProjects = {
+  toolsInterfaces: [
+    {
+      name: "🆕 NetSim",
+      url: "https://netsim.us.to/",
+      description: "websim.ai clone that's actually good",
+      author: "@kennet678",
+      submissionDate: "2025-04-15",
+    },
+  ],
   llmIntegrations: [
     {
       name: "🆕 DreamBig - Generative AI Playground",
@@ -444,6 +453,13 @@ const allProjects = {
     },
   ],
   toolsInterfaces: [
+    {
+      name: "🆕 NetSim",
+      url: "https://netsim.us.to/",
+      description: "websim.ai clone that's actually good",
+      author: "@kennet678",
+      submissionDate: "2025-04-15",
+    },
     {
       name: "🆕 B&W SVG Generator",
       url: "https://fluxsvggenerator.streamlit.app/",

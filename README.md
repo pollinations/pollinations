@@ -224,6 +224,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 Generator AI Image 🇮🇩 | Advanced AI Image Generator adalah platform inovatif yang memungkinkan Anda membuat gambar digital menakjubkan dengan kecerdasan buatan by pollinations.ai. (An innovative platform that allows you to create amazing digital images with artificial intelligence powered by pollinations.ai.) | @kenthirai | [Website](https://kenthir.my.id/advanced-generator/) |
 | 🆕 Pollinations.ai Image Generation (for Frame) | A Flutter application that listens for image generation prompts, requests images from Pollinations.AI, and displays them on the Frame wearable device | CitizenOneX | [GitHub](https://github.com/CitizenOneX/frame_pollinations) |
 | 🆕 Podcast #1500 | Podcast project featuring dialogues among LLMs, with first episode featuring 3o-mini and DeepSeek R1 70B discussing Vibe Coding | @brain.diver | [Spotify](https://open.spotify.com/show/1wu4ngb1dclyTwoNN4cZzK) |
 | 🆕 LAHGen | An advanced AI-driven text-to-image generation platform designed to provide users with high-quality and realistic AI-generated images based on textual prompts | working7816@gmail.com | [Website](https://image.aixboost.com/) |

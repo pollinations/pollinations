@@ -438,6 +438,13 @@ const allProjects = {
   ],
   toolsInterfaces: [
     {
+      name: "🆕 B&W SVG Generator",
+      url: "https://fluxsvggenerator.streamlit.app/",
+      description: "Uses Flux (through pollinations) and potrace to create B&W Vector files",
+      author: "@pointsguy118",
+      submissionDate: "2025-04-15",
+    },
+    {
       name: "🆕 Imagen",
       url: "https://altkriz.github.io/imagen/",
       description: "A beautiful web interface for generating images using Pollinations.ai API with only the \"flux\" and \"turbo\" models.",

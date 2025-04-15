@@ -601,6 +601,13 @@ const allProjects = {
   ],
   socialBots: [
     {
+      name: "🆕 🤖 Raftar.xyz",
+      url: "https://raftar.xyz",
+      description: "A Discord multi-purpose bot with over 100+ commands, including AI image generation, ChatGPT, and SearchGPT powered by Pollinations.AI.",
+      author: "@goodgamerhere",
+      submissionDate: "2025-04-15",
+    },
+    {
       name: "🆕 AlphaLLM - AI Discord Bot",
       url: "https://alphallm.fr.nf",
       description: "Discord bot that uses several APIs (Pollinations AI and Cerebras AI), to offer a variety of features, including advanced text generation with a history of your conversations, image and voice generation.",

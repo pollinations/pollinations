@@ -1,4 +1,5 @@
 category,name,url,description,author,submissionDate,language,repo,featured,authorUrl
+llmIntegrations,🆕 DreamBig - Generative AI Playground,https://dreambiglabs.vercel.app/,"Interactive AI playground with chat, image generation, and voice responses for creative exploration.",@opzzxsprinta._999,2025-04-15,,,,
 toolsInterfaces,🆕 B&W SVG Generator,https://fluxsvggenerator.streamlit.app/,"Uses Flux (through pollinations) and potrace to create B&W Vector files",@pointsguy118,2025-04-15,,,,
 creativeApps,🆕 🌱 Strain Navigator,https://www.strainnavigator.com/,"A collection of tools to help Growers, Breeders & Seed Bankers. Free & Open Source powered by Pollinations.ai.",@Tolerable,2025-04-15,,https://github.com/Tolerable/strainnavigator,,
 creativeApps,🆕 MalaysiaPrompt 🇲🇾,https://malaysiaprompt.rf.gd/,"A free and fun platform for creating unique AI-generated images. No fancy skills needed – just your ideas and a few clicks to bring them to life. Features image generation, text-to-prompt conversion, and image-to-text capabilities.",@enciksnow,2025-04-15,ms-MY,,,https://x.com/enciksnow

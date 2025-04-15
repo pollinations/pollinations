@@ -145,6 +145,14 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 Generator AI Image 🇮🇩",
+      url: "https://kenthir.my.id/advanced-generator/",
+      description: "Advanced AI Image Generator adalah platform inovatif yang memungkinkan Anda membuat gambar digital menakjubkan dengan kecerdasan buatan by pollinations.ai. Dengan dukungan berbagai model AI canggih seperti DALL·E 3, Stable Diffusion, dan Flux-Default. (An innovative platform that allows you to create amazing digital images with artificial intelligence powered by pollinations.ai. Supports various advanced AI models like DALL-E 3, Stable Diffusion, and Flux-Default.)",
+      author: "@kenthirai",
+      submissionDate: "2025-04-15",
+      language: "id-ID"
+    },
+    {
       name: "🆕 Pollinations.ai Image Generation (for Frame)",
       url: "https://github.com/CitizenOneX/frame_pollinations",
       description: "A Flutter application that listens for image generation prompts, requests images from Pollinations.AI, and displays them on the Frame wearable device. Users can use voice commands to generate images and save/share them using the device's sharing mechanism.",

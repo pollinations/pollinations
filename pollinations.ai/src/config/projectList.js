@@ -684,6 +684,13 @@ const allProjects = {
   ],
   sdkLibraries: [
     {
+      name: "🆕 Smpldev",
+      url: "https://smpldev.ftp.sh/",
+      description: "Create, deploy, and scale full-stack web and mobile applications in minutes.",
+      author: "@kennet678",
+      submissionDate: "2025-04-15",
+    },
+    {
       name: "🆕 MCPollinations",
       url: "https://github.com/pinkpixel-dev/MCPollinations",
       description: "A Model Context Protocol (MCP) server that enables AI assistants to generate images, text, and audio through the Pollinations APIs. Supports customizable parameters, image saving, and multiple model options.",

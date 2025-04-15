@@ -41,6 +41,13 @@ export const projectCategories = [
 const allProjects = {
   llmIntegrations: [
     {
+      name: "🆕 DreamBig - Generative AI Playground",
+      url: "https://dreambiglabs.vercel.app/",
+      description: "Interactive AI playground with chat, image generation, and voice responses for creative exploration.",
+      author: "@opzzxsprinta._999",
+      submissionDate: "2025-04-15",
+    },
+    {
       name: "🆕 Goalani",
       url: "https://goalani.com",
       description: "Voice-enabled AI fitness coach. Using only your voice, you can communicate with the agent to manage your fitness and nutrition. Features weight tracking, exercise logging, food tracking with AI-generated images, and agent customization.",

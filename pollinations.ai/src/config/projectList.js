@@ -145,6 +145,15 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 MalaysiaPrompt 🇲🇾",
+      url: "https://malaysiaprompt.rf.gd/",
+      description: "A free and fun platform for creating unique AI-generated images. No fancy skills needed – just your ideas and a few clicks to bring them to life. Features image generation, text-to-prompt conversion, and image-to-text capabilities.",
+      author: "@enciksnow",
+      authorUrl: "https://x.com/enciksnow",
+      submissionDate: "2025-04-15",
+      language: "ms-MY"
+    },
+    {
       name: "🆕 Generator AI Image 🇮🇩",
       url: "https://kenthir.my.id/advanced-generator/",
       description: "Advanced AI Image Generator adalah platform inovatif yang memungkinkan Anda membuat gambar digital menakjubkan dengan kecerdasan buatan by pollinations.ai. Dengan dukungan berbagai model AI canggih seperti DALL·E 3, Stable Diffusion, dan Flux-Default. (An innovative platform that allows you to create amazing digital images with artificial intelligence powered by pollinations.ai. Supports various advanced AI models like DALL-E 3, Stable Diffusion, and Flux-Default.)",

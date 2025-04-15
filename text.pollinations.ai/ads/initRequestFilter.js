@@ -14,7 +14,7 @@ const errorLog = debug('pollinations:adfilter:error');
 const markdownRegex = /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`.*\`)|(?:\>.*)|(?:\-\s.*)|(?:\d\.\s.*)/;
 
 // Probability of adding referral links (0%)
-const REFERRAL_LINK_PROBABILITY = 0.3;
+const REFERRAL_LINK_PROBABILITY = 0.1;
 
 // Flag for testing ads with a specific marker
 const TEST_ADS_MARKER = "p-ads";
@@ -68,17 +68,6 @@ export function sendAdSkippedAnalytics(req, reason, isStreaming = false, additio
 function shouldShowAds(content, messages = [], req = null) {
     // Get request data for referrer check
     const requestData = req ? getRequestData(req) : null;
-
-    // Skip ad processing if any referrer is present
-    if (requestData && requestData.referrer && requestData.referrer !== 'unknown') {
-        // log('Skipping ad processing due to referrer presence:', requestData.referrer);
-        if (req) {
-            sendAdSkippedAnalytics(req, 'referrer_present', false, {
-                referrer: requestData.referrer
-            });
-        }
-        return { shouldShowAd: false, markerFound: false };
-    }
     
     // Check if messages contain the test marker "p-ads"
     let markerFound = false;
@@ -98,6 +87,23 @@ function shouldShowAds(content, messages = [], req = null) {
         markerFound = content.includes(TEST_ADS_MARKER);
     }
     
+    // If marker is found, skip all other checks and show ads
+    if (markerFound) {
+        log('Test marker "p-ads" found, using 100% probability and overriding referrer filter');
+        return { shouldShowAd: true, markerFound: true };
+    }
+    
+    // Skip ad processing if any referrer is present (only if marker not found)
+    if (requestData && requestData.referrer && requestData.referrer !== 'unknown') {
+        // log('Skipping ad processing due to referrer presence:', requestData.referrer);
+        if (req) {
+            sendAdSkippedAnalytics(req, 'referrer_present', false, {
+                referrer: requestData.referrer
+            });
+        }
+        return { shouldShowAd: false, markerFound: false };
+    }
+    
     // Check for trigger words in content or messages
     let triggerWordsFound = false;
     if (content) {
@@ -109,16 +115,12 @@ function shouldShowAds(content, messages = [], req = null) {
         );
     }
     
-    // If marker is not found, use the default probability
-    const effectiveProbability = markerFound 
-        ? 1.0 // 100% probability for marker found
-        : triggerWordsFound 
-            ? REFERRAL_LINK_PROBABILITY * 3 // Triple probability for trigger words
-            : REFERRAL_LINK_PROBABILITY;
+    // Calculate probability based on trigger words
+    const effectiveProbability = triggerWordsFound 
+        ? REFERRAL_LINK_PROBABILITY * 3 // Triple probability for trigger words
+        : REFERRAL_LINK_PROBABILITY;
     
-    if (markerFound) {
-        log('Test marker "p-ads" found, using 100% probability');
-    } else if (triggerWordsFound) {
+    if (triggerWordsFound) {
         log(`Trigger words found in content, using triple probability (${(REFERRAL_LINK_PROBABILITY * 3).toFixed(2)})`);
     }
     

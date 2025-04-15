@@ -321,6 +321,7 @@ Pollinations.AI is used in various projects, including:
 
 | Tutorial | Description | Creator | Links |
 |----------|-------------|---------|-------|
+| 🆕 Pollinations.AI AI/Teens talk | Session 2: ai/teens worldwide conference exploring the forces shaping AI today, diving into governance, virtual connections, and decision-making with voices from multiple European cities | @thomash_pollinations | [YouTube](https://www.youtube.com/live/5Rvdfr2qYGA?si=i5NLOKI49fGxNAEK&t=1034) |
 | 🆕 Connect Pollinations with Open Web UI tutorial | How to add Pollinations AI Text Models to OpenWebUI for free access to top language models like GPT-4o, Mistral, Claude, and Gemini without signups or API keys | @cloph-dsp | [GitHub](https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI) |
 | 🆕 Chinese DeepSeek Tutorial | A tutorial showing how to make DeepSeek AI support image generation by leveraging Pollinations.ai's API | isinry | [Forum Post](https://linux.do/t/topic/447840/235), [Profile](https://linux.do/u/isinry) |
 | Artistic Styles Book | An interactive book showcasing 90+ artistic styles | Juan Gmo. Rivera | [HTML](https://proyectodescartes.org/iCartesiLibri/materiales_didacticos/Libro_Estilos/index.html), [PDF](https://proyectodescartes.org/iCartesiLibri/PDF/Libro_Estilos.pdf) |

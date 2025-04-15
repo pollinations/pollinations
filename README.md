@@ -271,6 +271,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 NetSim | websim.ai clone that's actually good | @kennet678 | [Website](https://netsim.us.to/) |
 | 🆕 B&W SVG Generator | Uses Flux (through pollinations) and potrace to create B&W Vector files | @pointsguy118 | [Website](https://fluxsvggenerator.streamlit.app/) |
 | 🆕 Imagen | A beautiful web interface for generating images using Pollinations.ai API with only the "flux" and "turbo" models | @altkriz | [Website](https://altkriz.github.io/imagen/), [GitHub](https://github.com/altkriz/imagen) |
 | 🆕 DominiSigns | Avatar Translator for Dominican Sign Language that uses AI to translate text and audio into Dominican sign language (LSRD), creating a communication bridge for approximately 100,000 deaf people in the Dominican Republic | @cmunozdev | [GitHub](https://github.com/cmunozdev/DominiSigns) |

@@ -1,7 +1,6 @@
 // Import all handler functions
 import { generateTextSearch } from "./generateTextSearch.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
-import { generateTextPixtral } from "./generateTextPixtral.js";
 import { generateTextMistral } from "./generateTextMistral.js";
 
 // Import wrapped models from the new file
@@ -153,40 +152,12 @@ const models = [
     output_modalities: ["text"],
   },
   {
-    name: "llamalight",
-    description: "Llama 3.1 8B Instruct",
-    handler: generateTextPortkey,
-    //    details:  "Lightweight model designed for rapid instruction following.",
-    provider: "Cloudflare",
-    input_modalities: ["text"],
-    output_modalities: ["text"],
-  },
-  {
     name: "phi",
     description: "Phi-4 Instruct",
     handler: generateTextPortkey,
     //    details:  "Reliable model for precise instruction following and robust responses.",
     provider: "Cloudflare",
     input_modalities: ["text", "image", "audio"],
-    output_modalities: ["text"],
-  },
-  {
-    name: "llama-vision",
-    description: "Llama 3.2 11B Vision",
-    handler: generateTextPortkey,
-    //    details:  "Integrates visual inputs with text generation for multimodal tasks.",
-    provider: "Cloudflare",
-    input_modalities: ["text", "image"],
-    output_modalities: ["text"],
-  },
-  {
-    name: "pixtral",
-    description: "Pixtral 12B",
-    handler: generateTextPixtral,
-    //    details:  "Multimodal transformer delivering concise text outputs from visual inputs.",
-    provider: "Scaleway",
-
-    input_modalities: ["text", "image"],
     output_modalities: ["text"],
   },
   // {
@@ -289,17 +260,6 @@ const models = [
     //    details:  "Sur assistant powered by Mistral architecture for enhanced capabilities.",
     provider: "Scaleway",
     input_modalities: ["text", "image"],
-    output_modalities: ["text"],
-  },
-  {
-    name: "llama-scaleway",
-    description: "Llama (Scaleway)",
-    handler: (messages, options) =>
-      generateTextPortkey(messages, { ...options, model: "llama-scaleway" }),
-    //    details:  "Llama model hosted on Scaleway infrastructure for reliable performance.",
-    provider: "Scaleway",
-    uncensored: true,
-    input_modalities: ["text"],
     output_modalities: ["text"],
   },
   {

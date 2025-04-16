@@ -24,20 +24,15 @@ const MODEL_MAPPING = {
     'gemini-thinking': 'gemini-2.0-flash-thinking-exp-01-21',
     // Cloudflare models
     'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
-    'llamalight': '@cf/meta/llama-3.1-8b-instruct',
     'llamascout': '@cf/meta/llama-4-scout-17b-16e-instruct',
     'deepseek-reasoning': '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
     'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
     'phi': 'phi-4-instruct',
     'phi-mini': 'phi-4-mini-instruct',
-    'llama-vision': '@cf/meta/llama-3.2-11b-vision-instruct',
     // Scaleway models
     'qwen-coder': 'qwen2.5-coder-32b-instruct',
     'mistral': '@cf/mistralai/mistral-small-3.1-24b-instruct',  // Updated to use Cloudflare Mistral model
-    'llama-scaleway': 'llama-3.3-70b-instruct',
-    'llamalight-scaleway': 'llama-3.1-8b-instruct',
     'deepseek-reasoning-large': 'deepseek-r1-distill-llama-70b',
-    'pixtral': 'pixtral-12b-2409',  // Pixtral model using Scaleway
     // Modal models
     'hormoz': 'Hormoz-8B',
     // OpenRouter models
@@ -78,20 +73,15 @@ const SYSTEM_PROMPTS = {
     'gemini': BASE_PROMPTS.gemini,
     // Cloudflare models
     'llama': BASE_PROMPTS.conversational,
-    'llamalight': BASE_PROMPTS.conversational,
     'deepseek-reasoning-large': BASE_PROMPTS.helpful,
     'deepseek-reasoning': BASE_PROMPTS.unrestricted,
     'llamaguard': BASE_PROMPTS.moderation,
     'phi': BASE_PROMPTS.conversational,
     'phi-mini': BASE_PROMPTS.conversational,
-    'llama-vision': BASE_PROMPTS.unrestricted,
     // Scaleway models
     'mistral': BASE_PROMPTS.conversational,
-    'llama-scaleway': BASE_PROMPTS.unrestricted,
-    'llamalight-scaleway': BASE_PROMPTS.unrestricted,
     'qwen-coder': BASE_PROMPTS.coding,
     'gemini-thinking': BASE_PROMPTS.gemini + ' When appropriate, show your reasoning step by step.',
-    'pixtral': BASE_PROMPTS.unrestricted,  // Pixtral model with unrestricted prompt
     // Modal models
     'hormoz': BASE_PROMPTS.hormoz,
     // OpenRouter models
@@ -139,14 +129,7 @@ const baseScalewayConfig = {
     'max-tokens': 8192,
 };
 
-// Base configuration for Pixtral Scaleway model
-const basePixtralConfig = {
-    provider: 'openai',
-    'custom-host': process.env.SCALEWAY_PIXTRAL_BASE_URL,
-    authKey: process.env.SCALEWAY_PIXTRAL_API_KEY,
-    // Set default max_tokens to 8192
-    'max-tokens': 8192,
-};
+// Base configuration for Mistral Scaleway model
 
 // Base configuration for Mistral Scaleway model
 const baseMistralConfig = {
@@ -251,17 +234,6 @@ function createScalewayModelConfig(additionalConfig = {}) {
     };
 }
 
-/**
- * Creates a Pixtral model configuration
- * @param {Object} additionalConfig - Additional configuration to merge with base config
- * @returns {Object} - Pixtral model configuration
- */
-function createPixtralModelConfig(additionalConfig = {}) {
-    return {
-        ...basePixtralConfig,
-        ...additionalConfig
-    };
-}
 
 /**
  * Creates a Mistral model configuration
@@ -382,9 +354,7 @@ export const portkeyConfig = {
         'max-tokens': 8000  // Set specific token limit for Qwen Coder
     }),
     'llama-3.3-70b-instruct': () => createScalewayModelConfig(),
-    'llama-3.1-8b-instruct': () => createScalewayModelConfig(),
     'deepseek-r1-distill-llama-70b': () => createScalewayModelConfig(),
-    'pixtral-12b-2409': () => createPixtralModelConfig(),
     // Mistral model configuration
     '@cf/mistralai/mistral-small-3.1-24b-instruct': () => createCloudflareModelConfig({
         'max-tokens': 8192,
@@ -566,15 +536,6 @@ logProviderConfig(
     })
 );
 
-// Log Pixtral configuration
-logProviderConfig(
-    'Pixtral',
-    ([name, _]) => name === 'pixtral-12b-2409',
-    config => ({
-        ...config,
-        authKey: config.authKey ? '***' : undefined
-    })
-);
 
 // Log Modal configuration
 logProviderConfig(

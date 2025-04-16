@@ -614,6 +614,22 @@ function prepareRequestParameters(requestParams) {
         ...requestParams
     };
     
+    // Handle seed parameter based on model provider
+    if (finalParams.seed !== undefined) {
+        // Check if this is a Cloudflare model (which doesn't support seed)
+        const isCloudflareModel = modelConfig && (
+            modelConfig.provider === 'Cloudflare' || 
+            (modelConfig.model && modelConfig.model.includes('@cf/'))
+        );
+        
+        if (isCloudflareModel) {
+            log('Removing seed parameter for Cloudflare model:', requestParams.model);
+            delete finalParams.seed;
+        } else {
+            log('Preserving seed parameter for model:', requestParams.model, 'seed:', finalParams.seed);
+        }
+    }
+    
     // Add audio parameters if it's an audio model
     if (isAudioModel) {
         // Get the voice parameter from the request or use "alloy" as default

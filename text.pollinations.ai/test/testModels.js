@@ -5,9 +5,8 @@ const models = [
   "openai", "openai-large", "openai-reasoning", "qwen-coder", "llama", "mistral", 
   "mistral-roblox", "roblox-rp", "unity", "midijourney", "rtist", "searchgpt", 
   "evil", "deepseek", "deepseek-r1", "deepseek-reasoner", "deepseek-r1-llama", 
-  "qwen-reasoning", "llamalight", "llamaguard", "phi", "phi-mini", "llama-vision", 
-  "pixtral", "gemini", "gemini-thinking", "hormoz", "hypnosis-tracy", "sur", 
-  "sur-mistral", "llama-scaleway", "openai-audio"
+  "qwen-reasoning", "llamaguard", "phi", "phi-mini", "gemini", "gemini-thinking", 
+  "hormoz", "hypnosis-tracy", "sur", "sur-mistral", "openai-audio"
 ];
 
 // Table headers

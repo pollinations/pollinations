@@ -47,6 +47,14 @@ const allProjects = {
       author: "@kennet678",
       submissionDate: "2025-04-15",
     },
+    {
+      name: "🆕 VibeCoder",
+      url: "https://vibecoderbyaashir.netlify.app/",
+      description: "A web app for coding with vibes, created using Pollinations.AI Open Source API without coding syntax.",
+      author: "@Aashir__Shaikh",
+      authorUrl: "https://x.com/Aashir__Shaikh",
+      submissionDate: "2025-03-25",
+    },
   ],
   llmIntegrations: [
     {
@@ -221,14 +229,6 @@ const allProjects = {
       description: "A powerful tool designed to make reading English books more enjoyable and effective while helping you build your vocabulary naturally. Using Pollinations AI to create content that incorporates your own vocabulary words allows you to learn them in a vivid, engaging context.",
       author: "gsx123@gmail.com",
       submissionDate: "2025-03-28",
-    },
-    {
-      name: "🆕 VibeCoder",
-      url: "https://vibecoderbyaashir.netlify.app/",
-      description: "A web app for coding with vibes, created using Pollinations.AI Open Source API without coding syntax.",
-      author: "@Aashir__Shaikh",
-      authorUrl: "https://x.com/Aashir__Shaikh",
-      submissionDate: "2025-03-25",
     },
     {
       name: "🆕 AI 文本转音频 🇨🇳",

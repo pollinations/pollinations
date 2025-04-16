@@ -299,20 +299,19 @@ download_image(image_url)
 
 ## pip install pollinations
 
-import pollinations as ai
+import pollinations
 
-model_obj = ai.Model()
-
-image = model_obj.generate(
-    prompt=f'${shorten(prompt)} {ai.realistic}',
-    model=ai.${model || "flux"},
+model = pollinations.Image(
+    model="${model || "flux"}",
     width=${width},
     height=${height},
     seed=${seed}
 )
-image.save('image-output.jpg')
 
-print(image.url)
+model.Generate(
+    prompt="${shorten(prompt)}",
+    save=True
+)
 `,
     language: "python"
   },

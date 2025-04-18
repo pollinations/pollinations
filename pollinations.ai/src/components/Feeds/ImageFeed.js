@@ -141,12 +141,6 @@ export const ImageFeed = memo(({ mode }) => {
   return (
     <Box>
 
-      {/* Subheading / LLM Banner */}
-      <SectionSubContainer>
-        <SectionHeadlineStyle>
-          <LLMTextManipulator text={IMAGE_FEED_SUBTITLE} transforms={[rephrase, emojify, noLink]} />
-        </SectionHeadlineStyle>
-      </SectionSubContainer>
       {/* Server Load Information */}
       <SectionSubContainer>
         <ServerLoadInfo

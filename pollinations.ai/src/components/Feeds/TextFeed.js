@@ -111,13 +111,6 @@ export const TextFeed = memo(({ mode }) => {
 
   return (
     <>
-      {/* Subtitle */}
-      <SectionSubContainer>
-        <SectionHeadlineStyle>
-          <LLMTextManipulator text={TEXT_FEED_SUBTITLE} transforms={[rephrase, emojify, noLink]} />
-        </SectionHeadlineStyle>
-      </SectionSubContainer>
-
       {/* Server Load Info */}
       <SectionSubContainer>
         <ServerLoadInfo

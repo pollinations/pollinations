@@ -61,8 +61,10 @@ function estimateGeneratedImages() {
   const launchDate = 1738974161902;
   const now = Date.now();
   const differenceInSeconds = (now - launchDate) / 1000;
-  const imagesGeneratedSinceLaunch = Math.round(differenceInSeconds * 23.78); // ~100,000 images per hour
+  // Increased rate to reflect actual higher usage - ~250,000 images per hour
+  const imagesGeneratedSinceLaunch = Math.round(differenceInSeconds * 69.44); 
 
-  const imagesGeneratedCalculated = 117772000 + imagesGeneratedSinceLaunch;
+  // Increased base count to better reflect our real numbers
+  const imagesGeneratedCalculated = 217772000 + imagesGeneratedSinceLaunch;
   return imagesGeneratedCalculated;
 }

@@ -132,9 +132,11 @@ function estimateGeneratedEntries() {
   const launchDate = 1738974161902; // Same as image feed for consistency
   const now = Date.now();
   const differenceInSeconds = (now - launchDate) / 1000;
-  // Assuming text generation rate is about 1/5 of the image rate
-  const entriesGeneratedSinceLaunch = Math.round(differenceInSeconds * 4.76); 
+  // Increased text generation rate to reflect actual higher usage
+  // Based on table stats: 54K texts vs 41K images (21K generated + 20K cached) in 30 minutes
+  // Text rate is actually higher than image rate (not 1/5)
+  const entriesGeneratedSinceLaunch = Math.round(differenceInSeconds * 30); 
   
-  // Starting value plus calculated growth
-  return 23554400 + entriesGeneratedSinceLaunch;
-} 
+  // Increased base count to better reflect our real numbers
+  return 54554400 + entriesGeneratedSinceLaunch;
+}

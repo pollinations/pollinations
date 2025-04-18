@@ -170,16 +170,16 @@ const models = [
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
   },
-  {
-    name: "pixtral",
-    description: "Pixtral 12B",
-    handler: generateTextPixtral,
-    //    details:  "Multimodal transformer delivering concise text outputs from visual inputs.",
-    provider: "Scaleway",
+  // {
+  //   name: "pixtral",
+  //   description: "Pixtral 12B",
+  //   handler: generateTextPixtral,
+  //   //    details:  "Multimodal transformer delivering concise text outputs from visual inputs.",
+  //   provider: "Scaleway",
 
-    input_modalities: ["text", "image"],
-    output_modalities: ["text"],
-  },
+  //   input_modalities: ["text", "image"],
+  //   output_modalities: ["text"],
+  // },
   {
     name: "gemini",
     description: "gemini-2.5-flash-preview-04-17",
@@ -219,27 +219,6 @@ const models = [
     provider: "Azure",
     input_modalities: ["text", "audio"],
     output_modalities: ["audio", "text"],
-  },
-  {
-    name: "mistral-roblox",
-    description: "Mistral Roblox on Scaleway",
-    handler: generateTextMistral,
-    //    details:  "Optimized Mistral model for Roblox-related tasks.",
-    provider: "Scaleway",
-    uncensored: true,
-    input_modalities: ["text", "image"],
-    output_modalities: ["text"],
-  },
-  {
-    name: "roblox-rp",
-    description: "Roblox Roleplay Assistant",
-    handler: (messages, options) =>
-      generateTextPortkey(messages, { ...options, model: "roblox-rp" }),
-    //    details:  "Specialized assistant for Roblox roleplay scenarios.",
-    provider: "Azure",
-
-    input_modalities: ["text"],
-    output_modalities: ["text"],
   },
   {
     name: "deepseek",

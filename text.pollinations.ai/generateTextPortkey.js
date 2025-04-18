@@ -213,26 +213,6 @@ function createDeepSeekModelConfig(additionalConfig = {}) {
 }
 
 /**
- * Creates an Azure model configuration
- * @param {string} apiKey - Azure API key
- * @param {string} endpoint - Azure endpoint
- * @param {string} modelName - Model name to use if not extracted from endpoint
- * @returns {Object} - Azure model configuration
- */
-function createAzureModelConfig(apiKey, endpoint, modelName) {
-    const deploymentId = extractDeploymentName(endpoint) || modelName;
-    return {
-        ...baseAzureConfig,
-        'azure-api-key': apiKey,
-        'azure-resource-name': extractResourceName(endpoint),
-        'azure-deployment-id': deploymentId,
-        'azure-api-version': extractApiVersion(endpoint),
-        'azure-model-name': deploymentId,
-        authKey: apiKey, // For Authorization header
-    };
-}
-
-/**
  * Creates a Cloudflare model configuration
  * @param {Object} additionalConfig - Additional configuration to merge with base config
  * @returns {Object} - Cloudflare model configuration
@@ -255,7 +235,6 @@ function createScalewayModelConfig(additionalConfig = {}) {
         ...additionalConfig
     };
 }
-
 
 /**
  * Creates a Mistral model configuration
@@ -305,7 +284,6 @@ function createGroqModelConfig(additionalConfig = {}) {
     };
 }
 
->>>>>>> 4e2fe952 (Update models, affiliate, ad filter, and prompt logic; see git diff for details [2025-04-18])
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
     // Azure OpenAI model configurations
@@ -530,7 +508,7 @@ export const generateTextPortkey = createOpenAICompatibleClient({
     systemPrompts: SYSTEM_PROMPTS,
     defaultOptions: DEFAULT_OPTIONS,
     providerName: 'Portkey Gateway'
-};
+});
 
 function countMessageCharacters(messages) {
     return messages.reduce((total, message) => {

@@ -33,12 +33,12 @@ export function ServerLoadInfo({ lastItem, itemsGenerated, currentItem, itemType
     return () => clearTimeout(timer);
   }, []);
 
-  // Simplified rate calculation that directly shows accurate rates based on real backend stats
+  // Adjusted rate calculation based on user feedback
   useEffect(() => {
-    // Set realistic minimum rates based on actual backend stats
-    // 54K text generations in 30 minutes = ~30 per second
-    // 46K image generations in 30 minutes = ~25.6 per second
-    const baseRatePerSecond = itemType === "text" ? 30 : 25.6;
+    // Set realistic rates based on user feedback
+    // Images: ~14 per second
+    // Text: ~10 per second (slightly lower than image rate)
+    const baseRatePerSecond = itemType === "text" ? 10 : 14;
     
     // Add very small variation to make numbers change
     const calculateDisplayRate = () => {

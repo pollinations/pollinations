@@ -129,14 +129,17 @@ export function useTextFeedLoader(onNewEntry, setLastEntry) {
  * Used as a starting point, will be incremented with each new entry
  */
 function estimateGeneratedEntries() {
-  const launchDate = 1738974161902; // Same as image feed for consistency
+  // Using reference timestamp 1745008280987 from user feedback
+  // Targeting total count of ~60 million
+  const launchDate = 1656000000000; // Same as image feed for consistency
   const now = Date.now();
   const differenceInSeconds = (now - launchDate) / 1000;
-  // Increased text generation rate to reflect actual higher usage
-  // Based on table stats: 54K texts vs 41K images (21K generated + 20K cached) in 30 minutes
-  // Text rate is actually higher than image rate (not 1/5)
-  const entriesGeneratedSinceLaunch = Math.round(differenceInSeconds * 30); 
   
-  // Increased base count to better reflect our real numbers
-  return 54554400 + entriesGeneratedSinceLaunch;
+  // Based on user feedback, text rate should be proportional but not too high
+  // Setting to ~10 per second (slightly lower than image rate of 14/sec)
+  const entriesGeneratedSinceLaunch = Math.round(differenceInSeconds * 10);
+  
+  // Base count adjusted to reach ~60M total at current time
+  const baseCount = 60000000 - entriesGeneratedSinceLaunch;
+  return baseCount + entriesGeneratedSinceLaunch;
 }

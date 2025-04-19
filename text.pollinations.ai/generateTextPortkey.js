@@ -14,13 +14,15 @@ const errorLog = debug('pollinations:portkey:error');
 // Model mapping for Portkey
 const MODEL_MAPPING = {
     // Azure OpenAI models
-    'openai': 'gpt-4o-mini',       // Maps to portkeyConfig['gpt-4o-mini']
-    'openai-large': 'azure-gpt-4.1',      // Now maps to portkeyConfig['azure-gpt-4.1']
-    'openai-reasoning': 'o1-mini', // Maps to portkeyConfig['o1-mini'],
+    'openai': 'gpt-4.1-nano',       // Maps to portkeyConfig['gpt-4o-mini']
+    'openai-large': 'azure-gpt-4.1-mini',  
+    'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
+    'openai-reasoning': 'o4-mini', // Maps to portkeyConfig['o1-mini'],
     // 'openai-audio': 'gpt-4o-mini-audio-preview',
     'openai-audio': 'gpt-4o-audio-preview',
     'roblox-rp': 'gpt-4o-mini-roblox-rp', // Roblox roleplay model
-    'gemini': 'gemini-2.5-pro-exp-03-25',
+    'command-r': 'Cohere-command-r-plus-08-2024-jt', // Cohere Command R Plus model
+    'gemini': 'gemini-2.5-flash-preview-04-17',
     'gemini-thinking': 'gemini-2.0-flash-thinking-exp-01-21',
     // Cloudflare models
     'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
@@ -59,8 +61,6 @@ You never use phrases that imply moral superiority or a sense of authority, incl
     reasoning: 'You are a reasoning-focused AI assistant specialized in mathematical reasoning, scientific analysis, and coding tasks. When appropriate, break down your thinking step by step to show your reasoning process. Always be helpful, respectful, and honest.',
     coding: `You are an expert coding assistant with deep knowledge of programming languages, software architecture, and best practices. Your purpose is to help users write high-quality, efficient, and maintainable code. You provide clear explanations, suggest improvements, and help debug issues while following industry best practices.`,
     moderation: 'You are a content moderation assistant. Your task is to analyze the input and identify any harmful, unsafe, or inappropriate content.',
-    gemini: 'You are Gemini, a helpful and versatile AI assistant built by Google. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.',
-    roblox: 'You are a helpful assistant for Roblox game development and roleplay. You provide guidance on Lua programming, game design, Roblox-specific features, and help create engaging roleplay scenarios and characters.',
     hormoz: 'You are Hormoz, a helpful AI assistant created by Muhammadreza Haghiri. You provide accurate and thoughtful responses.'
 };
 
@@ -69,8 +69,8 @@ const SYSTEM_PROMPTS = {
     // OpenAI models
     'openai': BASE_PROMPTS.conversational,
     'openai-large': BASE_PROMPTS.conversational,
-    'roblox-rp': BASE_PROMPTS.roblox,
-    'gemini': BASE_PROMPTS.gemini,
+    'openai-xlarge': BASE_PROMPTS.conversational,
+    'gemini': BASE_PROMPTS.conversational,
     // Cloudflare models
     'llama': BASE_PROMPTS.conversational,
     'deepseek-reasoning-large': BASE_PROMPTS.helpful,
@@ -89,7 +89,9 @@ const SYSTEM_PROMPTS = {
     // Cloudflare models
     'qwen-qwq': BASE_PROMPTS.conversational,
     // DeepSeek models
-    'deepseek': BASE_PROMPTS.conversational
+    'deepseek': BASE_PROMPTS.conversational,
+    // Cohere models
+    'command-r': BASE_PROMPTS.conversational
 };
 
 // Default options
@@ -111,6 +113,26 @@ const baseAzureConfig = {
     retry: '3',
 };
 
+/**
+ * Creates an Azure model configuration
+ * @param {string} apiKey - Azure API key
+ * @param {string} endpoint - Azure endpoint
+ * @param {string} modelName - Model name to use if not extracted from endpoint
+ * @returns {Object} - Azure model configuration
+ */
+function createAzureModelConfig(apiKey, endpoint, modelName) {
+    const deploymentId = extractDeploymentName(endpoint) || modelName;
+    return {
+        ...baseAzureConfig,
+        'azure-api-key': apiKey,
+        'azure-resource-name': extractResourceName(endpoint),
+        'azure-deployment-id': deploymentId,
+        'azure-api-version': extractApiVersion(endpoint),
+        'azure-model-name': deploymentId,
+        authKey: apiKey, // For Authorization header
+    };
+}
+
 // Base configuration for Cloudflare models
 const baseCloudflareConfig = {
     provider: 'openai',
@@ -118,6 +140,7 @@ const baseCloudflareConfig = {
     authKey: process.env.CLOUDFLARE_AUTH_TOKEN,
     // Set default max_tokens to 8192 (increased from 256)
     'max-tokens': 8192,
+    'temperature': 0.1,
 };
 
 // Base configuration for Scaleway models
@@ -191,26 +214,6 @@ function createDeepSeekModelConfig(additionalConfig = {}) {
 }
 
 /**
- * Creates an Azure model configuration
- * @param {string} apiKey - Azure API key
- * @param {string} endpoint - Azure endpoint
- * @param {string} modelName - Model name to use if not extracted from endpoint
- * @returns {Object} - Azure model configuration
- */
-function createAzureModelConfig(apiKey, endpoint, modelName) {
-    const deploymentId = extractDeploymentName(endpoint) || modelName;
-    return {
-        ...baseAzureConfig,
-        'azure-api-key': apiKey,
-        'azure-resource-name': extractResourceName(endpoint),
-        'azure-deployment-id': deploymentId,
-        'azure-api-version': extractApiVersion(endpoint),
-        'azure-model-name': deploymentId,
-        authKey: apiKey, // For Authorization header
-    };
-}
-
-/**
  * Creates a Cloudflare model configuration
  * @param {Object} additionalConfig - Additional configuration to merge with base config
  * @returns {Object} - Cloudflare model configuration
@@ -233,7 +236,6 @@ function createScalewayModelConfig(additionalConfig = {}) {
         ...additionalConfig
     };
 }
-
 
 /**
  * Creates a Mistral model configuration
@@ -286,10 +288,10 @@ function createGroqModelConfig(additionalConfig = {}) {
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
     // Azure OpenAI model configurations
-    'gpt-4o-mini': () => createAzureModelConfig(
+    'gpt-4.1-nano': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_API_KEY,
         process.env.AZURE_OPENAI_ENDPOINT,
-        'gpt-4o-mini'
+        'gpt-4.1-nano'
     ),
     'gpt-4o': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_LARGE_API_KEY,
@@ -301,10 +303,10 @@ export const portkeyConfig = {
         process.env.AZURE_O1MINI_ENDPOINT,
         'o1-mini'
     ),
-    'o3-mini': () => createAzureModelConfig(
-        process.env.AZURE_O1MINI_API_KEY,
-        process.env.AZURE_O1MINI_ENDPOINT,
-        'o3-mini'
+    'o4-mini': () => createAzureModelConfig(
+        process.env.AZURE_O4MINI_API_KEY,
+        process.env.AZURE_O4MINI_ENDPOINT,
+        'o4-mini'
     ),
     'gpt-4o-mini-audio-preview': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_AUDIO_API_KEY,
@@ -321,11 +323,25 @@ export const portkeyConfig = {
         process.env.AZURE_OPENAI_ROBLOX_ENDPOINT,
         'gpt-4o-mini'
     ),
-    'azure-gpt-4.1': () => createAzureModelConfig(
+    'azure-gpt-4.1-mini': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_41_API_KEY,
         process.env.AZURE_OPENAI_41_ENDPOINT,
+        'gpt-4.1-mini'
+    ),
+    'azure-gpt-4.1-xlarge': () => createAzureModelConfig(
+        process.env.AZURE_OPENAI_XLARGE_API_KEY,
+        process.env.AZURE_OPENAI_XLARGE_ENDPOINT,
         'gpt-4.1'
     ),
+    'Cohere-command-r-plus-08-2024-jt': () => ({
+        provider: 'openai',
+        'custom-host': process.env.AZURE_COMMAND_R_ENDPOINT,
+        authKey: process.env.AZURE_COMMAND_R_API_KEY,
+        'auth-header-name': 'Authorization',
+        'auth-header-value-prefix': '',
+        'max-tokens': 800,
+        temperature: 0.3
+    }),
     // Cloudflare model configurations
     '@cf/meta/llama-3.3-70b-instruct-fp8-fast': () => createCloudflareModelConfig(),
     '@cf/meta/llama-3.1-8b-instruct': () => createCloudflareModelConfig(),
@@ -373,12 +389,12 @@ export const portkeyConfig = {
         'x-title': 'Pollinations.AI'
     }),
     // Google Vertex AI model configurations
-    'gemini-2.0-flash-lite-preview-02-05': () => ({
+    'gemini-2.5-flash-preview-04-17': () => ({
         provider: 'vertex-ai',
         authKey: googleCloudAuth.getAccessToken, // Fix: use getAccessToken instead of getToken
         'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
         'vertex-region': 'us-central1',
-        'vertex-model-id': 'gemini-2.0-flash-lite',
+        'vertex-model-id': 'gemini-2.5-flash-preview-04-17',
         'strict-openai-compliance': 'false'
     }),
     'gemini-2.5-pro-exp-03-25': () => ({
@@ -389,7 +405,7 @@ export const portkeyConfig = {
         'vertex-model-id': 'gemini-2.5-pro-exp-03-25',
         'strict-openai-compliance': 'false'
     }),
-    'gemini-2.0-flash-thinking-exp-01-21': () => ({
+    'gemini-2.0-flash-thinking': () => ({
         provider: 'vertex-ai',
         authKey: googleCloudAuth.getAccessToken, 
         'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
@@ -399,21 +415,6 @@ export const portkeyConfig = {
     }),
     'DeepSeek-V3-0324': () => createDeepSeekModelConfig(),
 };
-
-/**
- * Log configuration for a specific provider
- * @param {string} providerName - Name of the provider
- * @param {Function} filterFn - Function to filter models by provider
- * @param {Function} sanitizeFn - Optional function to sanitize sensitive data
- */
-function logProviderConfig(providerName, filterFn, sanitizeFn = config => config) {
-    const models = Object.entries(portkeyConfig).filter(filterFn);
-    if (models.length > 0) {
-        const example = sanitizeFn(models[0][1]());
-        log(`${providerName} configuration example:`, JSON.stringify(example, null, 2));
-        log(`${providerName} models:`, models.map(([name]) => name).join(', '));
-    }
-}
 
 /**
  * Generates text using a local Portkey gateway with Azure OpenAI models
@@ -436,7 +437,7 @@ export const generateTextPortkey = createOpenAICompatibleClient({
     // This decision is made based on the model being requested
     supportsSystemMessages: (options) => {
         // Check if it's a model that doesn't support system messages
-        return !['openai-reasoning', 'o3-mini', 'deepseek-reasoning'].includes(options.model);
+        return !['openai-reasoning', 'o4-mini', 'deepseek-reasoning'].includes(options.model);
     },
     
     // Transform request to add Azure-specific headers based on the model
@@ -509,74 +510,6 @@ export const generateTextPortkey = createOpenAICompatibleClient({
     defaultOptions: DEFAULT_OPTIONS,
     providerName: 'Portkey Gateway'
 });
-
-// Log Azure configuration
-logProviderConfig(
-    'Azure', 
-    ([_, configFn]) => configFn().provider === 'azure-openai'
-);
-
-// Log Cloudflare configuration
-logProviderConfig(
-    'Cloudflare', 
-    ([_, configFn]) => configFn().provider === 'openai' && configFn()['custom-host']?.includes('cloudflare'),
-    config => ({
-        ...config,
-        authKey: config.authKey ? '***' : undefined
-    })
-);
-
-// Log Scaleway configuration
-logProviderConfig(
-    'Scaleway',
-    ([_, configFn]) => configFn().provider === 'openai' && configFn()['custom-host']?.includes('scaleway'),
-    config => ({
-        ...config,
-        authKey: config.authKey ? '***' : undefined
-    })
-);
-
-
-// Log Modal configuration
-logProviderConfig(
-    'Modal',
-    ([_, config]) => config.provider === 'openai' && config['custom-host']?.includes('modal.run'),
-    config => ({
-        ...config,
-        authKey: config.authKey ? '***' : undefined
-    })
-);
-
-// Log OpenRouter configuration
-logProviderConfig(
-    'OpenRouter',
-    ([_, config]) => config.provider === 'openai' && config['custom-host']?.includes('openrouter.ai'),
-    config => ({
-        ...config,
-        authKey: config.authKey ? '***' : undefined
-    })
-);
-
-// Log Groq configuration
-logProviderConfig(
-    'Groq',
-    ([_, config]) => config.provider === 'groq',
-    config => ({
-        ...config,
-        authKey: config.authKey ? '***' : undefined
-    })
-);
-
-// Log Vertex AI configuration
-logProviderConfig(
-    'Vertex AI',
-    ([_, config]) => config['vertex-project-id'],
-    config => ({
-        ...config,
-        authKey: config.authKey ? '***' : undefined,
-        'vertex-project-id': config['vertex-project-id'] ? '***' : undefined
-    })
-);
 
 function countMessageCharacters(messages) {
     return messages.reduce((total, message) => {

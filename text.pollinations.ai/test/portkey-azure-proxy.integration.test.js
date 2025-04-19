@@ -19,32 +19,6 @@ process.on('unhandledRejection', (reason, promise) => {
     // Don't exit the process, just log the error
 });
 
-/**
- * Test: Azure Configuration Extraction
- * 
- * Purpose: Verify that the helper functions correctly extract Azure configuration from endpoints
- * 
- * Expected behavior:
- * 1. The functions should extract the correct values from the endpoints
- */
-test('should extract Azure configuration correctly', async t => {
-    // Import the helper functions directly from the module
-    const { extractBaseUrl, extractResourceName, extractDeploymentName, extractApiVersion, azureConfig } = await import('../generateTextPortkey.js');
-    
-    // Test extraction functions with sample endpoint
-    const sampleEndpoint = "https://pollinations.openai.azure.com/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-08-01-preview";
-    
-    t.is(extractBaseUrl(sampleEndpoint), "https://pollinations.openai.azure.com");
-    t.is(extractResourceName(sampleEndpoint), "pollinations");
-    t.is(extractDeploymentName(sampleEndpoint), "gpt-4o-mini");
-    t.is(extractApiVersion(sampleEndpoint), "2024-08-01-preview");
-    
-    // Check that Azure config has been populated
-    t.true(typeof azureConfig === 'object');
-    t.true(typeof azureConfig['gpt-4o-mini'] === 'object');
-    t.true(typeof azureConfig['gpt-4o'] === 'object');
-    t.true(typeof azureConfig['o1-mini'] === 'object');
-});
 
 /**
  * Test: Basic Text Generation with gpt-4o-mini

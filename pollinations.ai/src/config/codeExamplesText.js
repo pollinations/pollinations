@@ -2,6 +2,7 @@ const shorten = (str) => (str.length > 60 ? str.slice(0, 60) + "..." : str);
 
 const CODE_EXAMPLES = {
   api_cheatsheet: {
+    category: "API Cheatsheet",
     code: () => `## Pollinations.AI Cheatsheet for Coding Assistants
 
 ### Image Generation
@@ -16,6 +17,9 @@ Generate (GET): \`GET https://text.pollinations.ai/{prompt}\`
 ### Text Generation (Advanced)
 Generate (POST): \`POST https://text.pollinations.ai/\`
 
+### Audio Generation
+Generate Audio: \`GET https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}\`
+
 ### OpenAI Compatible Endpoint
 OpenAI Compatible: \`POST https://text.pollinations.ai/openai\`
 
@@ -29,6 +33,7 @@ Text Feed: \`GET https://text.pollinations.ai/feed\`
     language: "markdown"
   },
   llm_prompt: {
+    category: "LLM Prompt",
     code: () => `You will now act as a prompt generator. 
 I will describe an image to you, and you will create a prompt that could be used for image-generation. 
 Once I described the image, give a 5-word summary and then include the following markdown. 
@@ -42,6 +47,7 @@ Make sure the prompts in the URL are encoded. Don't quote the generated markdown
     language: "markdown"
   },
   llm_prompt_chat: {
+    category: "LLM Prompt Chat",
     code: () => `
   # Image Generator Instructions
 
@@ -81,6 +87,7 @@ Make sure the prompts in the URL are encoded. Don't quote the generated markdown
     language: "markdown"
   },
   markdown: {
+    category: "Markdown",
     code: ({ imageURL, prompt, width, height, seed, model }) =>
       `# Image Parameters
 Prompt: **${prompt}**
@@ -94,6 +101,7 @@ Model: **${model || "flux"}**
     language: "markdown"
   },
   react: {
+    category: "React",
     code: ({ prompt, width, height, seed, model }) => `
 // React code example using usepollinationsImage hook
 
@@ -120,6 +128,7 @@ export default GeneratedImageComponent;
     language: "javascript"
   },
   html: {
+    category: "HTML",
     code: ({ imageURL, prompt, width, height, seed, model }) =>
       `<html>
   <body>
@@ -140,6 +149,7 @@ export default GeneratedImageComponent;
     language: "html"
   },
   rust: {
+    category: "Rust",
     code: ({ prompt, width, height, seed, model }) => `
 // Rust code example for downloading an image
 
@@ -185,6 +195,7 @@ reqwest = { version = "0.11", features =["blocking", "json"] }
     language: "rust"
   },
   nodejs: {
+    category: "Node.js",
     code: ({ prompt, width, height, seed, model }) => `
 // Node.js code examples for Pollinations.AI
 
@@ -236,10 +247,28 @@ async function generatePrivateText() {
 }
 
 generatePrivateText();
+
+// Example 3: Audio Generation (Text-to-Speech)
+async function generateAudio() {
+  // Simple GET request for text-to-speech
+  const text = "Welcome to Pollinations, where creativity blooms!";
+  const voice = "nova"; // Optional voice parameter
+  const url = "https://text.pollinations.ai/" + encodeURIComponent(text) + "?model=openai-audio&voice=" + voice;
+  
+  const response = await fetch(url);
+  
+  // Save the audio file
+  const buffer = await response.buffer();
+  fs.writeFileSync('generated_audio.mp3', buffer);
+  console.log('Audio generated and saved!');
+}
+
+generateAudio();
 `,
     language: "javascript"
   },
   python: {
+    category: "Python",
     code: ({ prompt, width, height, seed, model }) => `
 # Python code example for downloading an image
 
@@ -270,24 +299,24 @@ download_image(image_url)
 
 ## pip install pollinations
 
-import pollinations as ai
+import pollinations
 
-model_obj = ai.Model()
-
-image = model_obj.generate(
-    prompt=f'${shorten(prompt)} {ai.realistic}',
-    model=ai.${model || "flux"},
+model = pollinations.Image(
+    model="${model || "flux"}",
     width=${width},
     height=${height},
     seed=${seed}
 )
-image.save('image-output.jpg')
 
-print(image.url)
+model.Generate(
+    prompt="${shorten(prompt)}",
+    save=True
+)
 `,
     language: "python"
   },
   feed_endpoints: {
+    category: "Feed Endpoints",
     code: () => `
 ## Feed Endpoints
 
@@ -326,7 +355,74 @@ eventSource.onmessage = function(event) {
 \`\`\`
 `,
     language: "markdown"
+  },
+  audio: {
+    category: "Audio",
+    code: () => `# Audio Generation with Pollinations.AI
+
+## Text-to-Speech
+\`\`\`bash
+# Generate audio from text
+curl "https://text.pollinations.ai/Hello%20world?model=openai-audio&voice=alloy"
+\`\`\`
+
+## Speech-to-Text (Transcription)
+\`\`\`javascript
+// Upload audio file for transcription
+const formData = new FormData();
+formData.append('file', audioFile);
+formData.append('model', 'openai-audio');
+
+fetch('https://text.pollinations.ai/transcriptions', {
+  method: 'POST',
+  body: formData
+})
+.then(response => response.json())
+.then(data => console.log(data.text));
+\`\`\``,
+    language: "markdown"
+  },
+  mcp_server: {
+    category: "MCP Server",
+    code: () => `# Model Context Protocol (MCP) Server for AI Assistants
+
+The Pollinations MCP server enables AI assistants like Claude to generate images and audio directly.
+
+## Installation & Usage
+
+\`\`\`bash
+# Run with npx (no installation required)
+npx @pollinations/model-context-protocol
+\`\`\`
+
+## Features
+
+- Generate images from text descriptions
+- Create text-to-speech audio with various voice options
+- List available models and capabilities
+- No authentication required
+
+## Example Usage (Node.js)
+
+\`\`\`javascript
+import { generateImageUrl, generateImage, respondAudio, sayText } from '@pollinations/model-context-protocol';
+
+// Generate an image URL
+const imageResult = await generateImageUrl('A beautiful sunset over the ocean', {
+  width: 512,
+  height: 512,
+  model: 'flux.schnell'
+});
+console.log(imageResult.imageUrl);
+
+// Generate audio from text
+const audioResult = await respondAudio('Hello, world!', 'alloy');
+// Audio will be played automatically
+\`\`\`
+
+For more details, see the [MCP Server Documentation](https://github.com/pollinations/pollinations/tree/master/model-context-protocol).`,
+    language: "markdown"
   }
 };
 
-export default CODE_EXAMPLES; 
+export default CODE_EXAMPLES;

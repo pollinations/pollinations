@@ -1,16 +1,22 @@
 import { useEffect, useState } from 'react';
-import { isMature } from '../utils/mature';
 
-
-export function useFeedLoader(onNewImage, setLastImage) {
+export function useFeedLoader(onNewImage, setLastImage, mode) {
   const [imagesGenerated, setImagesGenerated] = useState(estimateGeneratedImages());
 
   useEffect(() => {
+    let eventSource = null;
+
     const getEventSource = () => {
-      const imageFeedSource = new EventSource("https://image.pollinations.ai/feed");
-      imageFeedSource.onmessage = evt => {
+      const source = new EventSource("https://image.pollinations.ai/feed");
+      source.onmessage = evt => {
         const data = JSON.parse(evt.data);
         setImagesGenerated(no => no + 1);
+        
+        // Dispatch custom event for counter increment
+        window.dispatchEvent(new CustomEvent('image-received', { 
+          detail: { image: data } 
+        }));
+        
         // lastServerLoad = data["concurrentRequests"];
         if (data["status"] === "end_generating")
           setLastImage(data);
@@ -18,55 +24,44 @@ export function useFeedLoader(onNewImage, setLastImage) {
         const urlParams = new URLSearchParams(window.location.search);
         const nsfwParam = urlParams.get('nsfw');
 
-        if (nsfwParam !== 'true') {
-          if (data["nsfw"] || data["isChild"]) {
-            // console.log("Skipping NSFW content:", data["nsfw"], );
-            return;
-          }
-          if (data["imageURL"]) {
-            if (!data["prompt"]) {
-              console.error("No prompt found in image data", data, "Why???");
-              onNewImage(data);
-              return;
-            }
-            const matureWord = isMature(data["prompt"] || "");
-            if (matureWord) {
-              // console.log("Skipping mature word:", matureWord, data["prompt"]);
-              return;
-            }
-            onNewImage(data);
-          }
-        } else {
-          if (data["imageURL"]) {
-            onNewImage(data);
-          }
+        if (data["imageURL"]) {
+          onNewImage(data);
         }
       };
-      return imageFeedSource;
+      source.onerror = async () => {
+        await new Promise(r => setTimeout(r, 1000));
+        // Ensure we only try to reconnect if the mode is still 'image'
+        if (eventSource) {
+          eventSource.close();
+        }
+        if (mode === 'image') {
+          eventSource = getEventSource(); // Attempt to reconnect
+        }
+      };
+      return source;
     };
 
-    let eventSource = getEventSource();
-
-    eventSource.onerror = async () => {
-      await new Promise(r => setTimeout(r, 1000));
-      console.log("Event source error. Closing and re-opening.");
-      eventSource.close();
+    if (mode === 'image') {
       eventSource = getEventSource();
-    };
+    }
 
+    // Cleanup function: Close the connection if it exists when mode changes or component unmounts
     return () => {
-      eventSource.close();
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null; // Clear the reference
+      }
     };
-  }, [onNewImage]);
+  }, [mode, onNewImage, setLastImage]); // Add mode to dependency array
 
   return { imagesGenerated };
 }
 
 function estimateGeneratedImages() {
-  const launchDate = 1737974161902;
+  const launchDate = 1738974161902;
   const now = Date.now();
   const differenceInSeconds = (now - launchDate) / 1000;
-  const imagesGeneratedSinceLaunch = Math.round(differenceInSeconds * 12);
+  const imagesGeneratedSinceLaunch = Math.round(differenceInSeconds * 23.78); // ~100,000 images per hour
 
   const imagesGeneratedCalculated = 117772000 + imagesGeneratedSinceLaunch;
   return imagesGeneratedCalculated;

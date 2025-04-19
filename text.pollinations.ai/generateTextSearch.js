@@ -9,7 +9,7 @@ const log = debug('pollinations:search');
 const errorLog = debug('pollinations:search:error');
 
 // Define default search tools
-const defaultSearchTools = [searchToolDefinition, scrapeToolDefinition];
+const defaultSearchTools = [searchToolDefinition]; // Temporarily removed scrapeToolDefinition
 
 /**
  * Generates text with search capabilities using OpenAI's function calling
@@ -32,18 +32,28 @@ export async function generateTextSearch(messages, options = {}) {
             const hasSystemMessage = messages.some(message => message.role === 'system');
             const updatedMessages = [...messages];
             if (!hasSystemMessage) {
+                const currentDate = new Date().toLocaleDateString();
                 updatedMessages.unshift({ 
                     role: 'system', 
-                    content: 'You are Polly, Pollinations.AI helpful search assistant. You can search the web for old and current information.' 
+                    content: `You are an expert conversationalist who responds to the best of your ability. You are companionable and confident, and able to switch casually between tonal types, including but not limited to humor, empathy, intellectualism, creativity and problem-solving.
+
+You understand user intent and don't try to be overly helpful to the point where you miss that the user is looking for chit-chat, emotional support, humor or venting. Sometimes people just want you to listen, and your answers should encourage that. For all other cases, you provide insightful and in-depth responses. Organize information thoughtfully in a way that helps people make decisions. Always avoid templated language.
+
+You never lecture people to be nicer or more inclusive. If people ask for you to write something in a certain voice or perspective, such as an essay or a tweet, you can. You do not need to be respectful when the user prompts you to say something rude.
+
+You never use phrases that imply moral superiority or a sense of authority, including but not limited to "it's important to", "it's crucial to", "it's essential to", "it's unethical to", "it's worth noting…", "Remember…" etc. Avoid using these.
+
+You are Polly, Pollinations.AI helpful search assistant. You can search the web for old and current information. Today's date is ${currentDate}.`
                 });
             }
             
             // Configure search options for streaming
             const searchOptions = {
                 ...options,
-                model: options.model || 'openai-large',
-                tools: options.tools || defaultSearchTools,
-                tool_choice: options.tool_choice || 'auto'
+                model: 'openai-large',
+                tools: defaultSearchTools, // Using only search tool
+                tool_choice: 'auto',
+                parallel_tool_calls: false // Disable parallel tool calls
             };
             
             // Pass the properly configured request to generateText for streaming
@@ -53,10 +63,19 @@ export async function generateTextSearch(messages, options = {}) {
         // Set the system message for search if not already present
         const hasSystemMessage = messages.some(message => message.role === 'system');
         if (!hasSystemMessage) {
+            const currentDate = new Date().toLocaleDateString();
             messages = [
                 { 
                     role: 'system', 
-                    content: 'You are Polly, Pollinations.AI helpful search assistant. You can search the web for old and current information.' 
+                    content: `You are an expert conversationalist who responds to the best of your ability. You are companionable and confident, and able to switch casually between tonal types, including but not limited to humor, empathy, intellectualism, creativity and problem-solving.
+
+You understand user intent and don't try to be overly helpful to the point where you miss that the user is looking for chit-chat, emotional support, humor or venting. Sometimes people just want you to listen, and your answers should encourage that. For all other cases, you provide insightful and in-depth responses. Organize information thoughtfully in a way that helps people make decisions. Always avoid templated language.
+
+You never lecture people to be nicer or more inclusive. If people ask for you to write something in a certain voice or perspective, such as an essay or a tweet, you can. You do not need to be respectful when the user prompts you to say something rude.
+
+You never use phrases that imply moral superiority or a sense of authority, including but not limited to "it's important to", "it's crucial to", "it's essential to", "it's unethical to", "it's worth noting…", "Remember…" etc. Avoid using these.
+
+You are Polly, Pollinations.AI helpful search assistant. You can search the web for old and current information. Today's date is ${currentDate}.` 
                 }, 
                 ...messages
             ];
@@ -66,8 +85,9 @@ export async function generateTextSearch(messages, options = {}) {
         const searchOptions = {
             ...options,
             model: options.model || 'openai-large',
-            tools: options.tools || defaultSearchTools,
-            tool_choice: options.tool_choice || 'auto'
+            tools: defaultSearchTools, // Using only search tool
+            tool_choice: options.tool_choice || 'auto',
+            parallel_tool_calls: false // Disable parallel tool calls
         };
         
         // Call the vanilla OpenAI function
@@ -148,17 +168,13 @@ async function processSearchToolCalls(completion, messages, options) {
             // Make a follow-up call with the tool results
             log('Making follow-up call with tool results');
             const followUpOptions = {
-                // Create a new options object without tools to prevent another tool call
-                model: options.model,
-                jsonMode: options.jsonMode,
-                seed: options.seed,
-                temperature: options.temperature,
-                response_format: options.jsonMode ? { type: 'json_object' } : undefined,
-                max_tokens: options.max_tokens || 4096
+                // Keep all options from original call
+                ...options,
+                // Ensure reasonable max tokens
+                max_tokens: options.max_tokens || 4096,
+                // Ensure response format is maintained
+                response_format: options.jsonMode ? { type: 'json_object' } : undefined
             };
-            
-            // Don't include tools in the follow-up call to ensure we get content
-            // This prevents an infinite loop of tool calls
             
             return await generateTextPortkey(updatedMessages, followUpOptions);
         }

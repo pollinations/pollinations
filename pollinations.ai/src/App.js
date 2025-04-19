@@ -1,11 +1,12 @@
 import { Navigate, Route, Routes, useSearchParams } from "react-router-dom"
 import { useEffect } from "react"
-import { SEOMetadata } from "./components/Helmet"
 import Header from "./Home/Header"
 import Footer from "./Home/Footer"
 import Home from "./Home"
 import Terms from "./Home/Terms"
 import { trackEvent } from "./config/analytics"
+import { ThemeProvider } from "@mui/material/styles"
+import { theme } from "./styles/theme"
 
 const ReferralRedirect = () => {
   const [searchParams] = useSearchParams();
@@ -59,8 +60,7 @@ const AppRoutes = [
 ]
 
 const App = () => (
-  <>
-    <SEOMetadata />
+  <ThemeProvider theme={theme}>
     <Header />
     <Routes>
       {AppRoutes.map(({ key, ...route }) => (
@@ -68,7 +68,7 @@ const App = () => (
       ))}
     </Routes>
     <Footer />
-  </>
+  </ThemeProvider>
 )
 
 export default App

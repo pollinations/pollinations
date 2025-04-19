@@ -6,7 +6,8 @@ import {
     ensureSystemMessage,
     generateRequestId,
     cleanUndefined,
-    normalizeOptions
+    normalizeOptions,
+    convertSystemToUserMessages
 } from './textGenerationUtils.js';
 
 /**
@@ -21,6 +22,8 @@ import {
  * @param {string} config.providerName - Name of the provider (for logging and errors)
  * @param {Function} config.formatResponse - Optional function to format the response
  * @param {Object} config.additionalHeaders - Optional additional headers to include in requests
+ * @param {boolean|Function} config.supportsSystemMessages - Whether the API supports system messages (default: true)
+ *                                                          Can be a function that receives options and returns boolean
  * @returns {Function} - Client function that handles API requests
  */
 export function createOpenAICompatibleClient(config) {
@@ -34,7 +37,8 @@ export function createOpenAICompatibleClient(config) {
         providerName = 'unknown',
         formatResponse = null,
         additionalHeaders = {},
-        transformRequest = null
+        transformRequest = null,
+        supportsSystemMessages = true
     } = config;
 
     const log = debug(`pollinations:${providerName.toLowerCase()}`);
@@ -67,21 +71,39 @@ export function createOpenAICompatibleClient(config) {
             // Validate and normalize messages
             const validatedMessages = validateAndNormalizeMessages(messages);
             
-            // Ensure system message is present if the model supports it
-            const defaultSystemPrompt = systemPrompts[modelKey] || null;
-            const messagesWithSystem = ensureSystemMessage(validatedMessages, normalizedOptions, defaultSystemPrompt);
+            // Determine if the model supports system messages
+            let supportsSystem = supportsSystemMessages;
+            if (typeof supportsSystemMessages === 'function') {
+                supportsSystem = supportsSystemMessages(normalizedOptions);
+            }
+            
+            // Process messages based on system message support
+            let processedMessages;
+            if (supportsSystem) {
+                // Ensure system message is present if the model supports it
+                const defaultSystemPrompt = systemPrompts[modelKey] || null;
+                processedMessages = ensureSystemMessage(validatedMessages, normalizedOptions, defaultSystemPrompt);
+            } else {
+                // For models that don't support system messages, convert them to user messages
+                log(`[${requestId}] Model ${modelName} doesn't support system messages, converting to user messages`);
+                const defaultSystemPrompt = systemPrompts[modelKey] || null;
+                const messagesWithSystem = ensureSystemMessage(validatedMessages, normalizedOptions, defaultSystemPrompt);
+                processedMessages = convertSystemToUserMessages(messagesWithSystem);
+            }
             
             // Build request body
             const requestBody = {
                 model: modelName,
-                messages: messagesWithSystem,
+                messages: processedMessages,
                 temperature: normalizedOptions.temperature,
                 stream: normalizedOptions.stream,
                 seed: normalizedOptions.seed,
                 max_tokens: normalizedOptions.maxTokens,
                 response_format: normalizedOptions.jsonMode ? { type: 'json_object' } : undefined,
                 tools: normalizedOptions.tools,
-                tool_choice: normalizedOptions.tool_choice
+                tool_choice: normalizedOptions.tool_choice,
+                modalities: normalizedOptions.modalities,
+                audio: normalizedOptions.audio,
             };
 
             // Clean undefined and null values
@@ -91,38 +113,9 @@ export function createOpenAICompatibleClient(config) {
 
             // Apply custom request transformation if provided
             const finalRequestBody = transformRequest
-                ? transformRequest(cleanedRequestBody)
+                ? await transformRequest(cleanedRequestBody)
                 : cleanedRequestBody;
-            
-            // Doe-check for any null values that might have been reintroduced
-            if (providerName === 'Cloudflare') {
-                // For Cloudflare, we need to be extra careful about null values
-                log(`[${requestId}] Double-checking for null values in Cloudflare request`);
-                
-                // Remove any null values that might have been reintroduced
-                Object.keys(finalRequestBody).forEach(key => {
-                    if (finalRequestBody[key] === null) {
-                        log(`[${requestId}] Removing null value for key ${key} in final Cloudflare request`);
-                        delete finalRequestBody[key];
-                    }
-                });
-                
-                // Also check for null values in nested objects
-                if (finalRequestBody.response_format && typeof finalRequestBody.response_format === 'object') {
-                    Object.keys(finalRequestBody.response_format).forEach(key => {
-                        if (finalRequestBody.response_format[key] === null) {
-                            log(`[${requestId}] Removing null value for key ${key} in response_format`);
-                            delete finalRequestBody.response_format[key];
-                        }
-                    });
-                    
-                    // If response_format is empty after cleaning, remove it
-                    if (Object.keys(finalRequestBody.response_format).length === 0) {
-                        log(`[${requestId}] Removing empty response_format object`);
-                        delete finalRequestBody.response_format;
-                    }
-                }
-            }
+    
 
             log(`[${requestId}] Sending request to ${providerName} API`, {
                 timestamp: new Date().toISOString(),
@@ -130,12 +123,12 @@ export function createOpenAICompatibleClient(config) {
                 maxTokens: cleanedRequestBody.max_tokens,
                 temperature: cleanedRequestBody.temperature
             });
-            
+
             log(`[${requestId}] Final request body:`, JSON.stringify(finalRequestBody, null, 2));
 
             // Determine the endpoint URL
             const endpointUrl = typeof endpoint === 'function' 
-                ? endpoint(modelName) 
+                ? endpoint(modelName, normalizedOptions) 
                 : endpoint;
 
             // Prepare headers
@@ -153,6 +146,9 @@ export function createOpenAICompatibleClient(config) {
 
             log(`[${requestId}] Request headers:`, headers);
 
+            log(`[${requestId}] Sending request to ${providerName} API at ${endpointUrl}`);
+
+            log(`[${requestId}] Request body:`, JSON.stringify(finalRequestBody, null, 2));
             // Make API request
             const response = await fetch(endpointUrl, {
                 method: "POST",
@@ -168,15 +164,39 @@ export function createOpenAICompatibleClient(config) {
                 // Check if the response is successful for streaming
                 if (!response.ok) {
                     const errorText = await response.text();
-                    errorLog(`[${requestId}] ${providerName} API error in streaming mode: ${response.status} ${response.statusText}, error: ${errorText}`);
+                    let errorDetails = null;
+                    try {
+                        errorDetails = JSON.parse(errorText);
+                    } catch (e) {
+                        errorDetails = errorText;
+                    }
+
+                    // Check if this is a content filter error
+                    const isContentFilterError = 
+                        (errorDetails?.error?.code === 'content_filter') || 
+                        (errorText.includes('content management policy')) ||
+                        (errorText.includes('content policy')) ||
+                        (errorText.includes('content filter'));
+
+                    // Build a cleaner error message
+                    let errorMessage;
+                    if (isContentFilterError) {
+                        errorMessage = "Content policy violation detected";
+                    } else {
+                        // Replace provider name references with "Pollinations"
+                        errorMessage = `${response.status} ${response.statusText}`;
+                    }
+
+                    const error = new Error(errorMessage);
+                    error.status = response.status;
+                    error.details = errorDetails;
                     
-                    // Create an error with detailed information from the provider
-                    const error = new Error(`${providerName} API error: ${response.status} ${response.statusText}`);
-                    error.response = { 
-                        data: errorText, 
-                        status: response.status,
-                        details: errorText // Add the detailed error message
-                    };
+                    // For tracking, still keep provider info internally
+                    error.originalProvider = providerName;
+                    error.provider = "Pollinations";
+                    error.model = modelName;
+                    error.isContentFilterError = isContentFilterError;
+                    
                     throw error;
                 }
                 
@@ -208,17 +228,39 @@ export function createOpenAICompatibleClient(config) {
             // Handle error responses
             if (!response.ok) {
                 const errorText = await response.text();
-                errorLog(`[${requestId}] ${providerName} API error`, {
-                    timestamp: new Date().toISOString(),
-                    status: response.status,
-                    statusText: response.statusText,
-                    error: errorText
-                    
-                });
+                let errorDetails = null;
+                try {
+                    errorDetails = JSON.parse(errorText);
+                } catch (e) {
+                    errorDetails = errorText;
+                }
+
+                // Check if this is a content filter error
+                const isContentFilterError = 
+                    (errorDetails?.error?.code === 'content_filter') || 
+                    (errorText.includes('content management policy')) ||
+                    (errorText.includes('content policy')) ||
+                    (errorText.includes('content filter'));
+
+                // Build a cleaner error message
+                let errorMessage;
+                if (isContentFilterError) {
+                    errorMessage = "Content policy violation detected";
+                } else {
+                    // Replace provider name references with "Pollinations"
+                    errorMessage = `${response.status} ${response.statusText}`;
+                }
+
+                const error = new Error(errorMessage);
+                error.status = response.status;
+                error.details = errorDetails;
                 
-                // Simply throw the error with the original response
-                const error = new Error(`${providerName} API error: ${response.status} ${response.statusText}`);
-                error.response = { data: errorText, status: response.status };
+                // For tracking, still keep provider info internally
+                error.originalProvider = providerName;
+                error.provider = "Pollinations";
+                error.model = modelName;
+                error.isContentFilterError = isContentFilterError;
+                
                 throw error;
             }
 
@@ -259,6 +301,31 @@ export function createOpenAICompatibleClient(config) {
                     completion_tokens: 0,
                     total_tokens: 0
                 };
+            }
+            
+            // Correctly set the finish_reason to "length" when max_tokens limit is reached
+            if (data.choices && Array.isArray(data.choices) && data.choices.length > 0) {
+                // Check if we hit the max tokens limit
+                const maxTokens = cleanedRequestBody.max_tokens;
+                const completionTokens = data.usage?.completion_tokens;
+                
+                // If completion tokens are close to max tokens (within 5 tokens) or 
+                // if the model reached the max token limit and finish_reason isn't already set
+                if (maxTokens && completionTokens && 
+                    (completionTokens >= maxTokens - 5 || 
+                     (data.choices[0].finish_reason === null || data.choices[0].finish_reason === 'stop'))) {
+                    
+                    // Log potential truncation
+                    log(`[${requestId}] Possible response truncation detected. Max tokens: ${maxTokens}, Completion tokens: ${completionTokens}`);
+                    
+                    // For cloudflare and other providers that might not correctly set finish_reason
+                    if (modelName && (modelName.includes('@cf/') || modelName.includes('llamaguard'))) {
+                        if (completionTokens >= maxTokens - 10) {
+                            log(`[${requestId}] Setting finish_reason to "length" for Cloudflare model response`);
+                            data.choices[0].finish_reason = 'length';
+                        }
+                    }
+                }
             }
 
             log(`[${requestId}] Final response:`, JSON.stringify(data, null, 2));

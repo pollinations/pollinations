@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect } from "react"
 import { Colors, Fonts, SectionBG } from "../config/global"
 import { GeneralButton } from "../components/GeneralButton"
 import {
@@ -48,13 +48,51 @@ const handleEmailButtonClick = (e) => {
 const Hero = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
+  
+  useEffect(() => {
+    // Check if the Ko-fi script already exists
+    const kofiScriptSrc = 'https://storage.ko-fi.com/cdn/scripts/overlay-widget.js';
+    const existingScript = document.querySelector(`script[src="${kofiScriptSrc}"]`);
+
+    // Only add the script if it doesn't already exist
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.src = kofiScriptSrc;
+      script.async = true;
+      script.onload = () => {
+        // Initialize Ko-fi widget after script is loaded
+        if (window.kofiWidgetOverlay) { // Check if object exists before using
+          window.kofiWidgetOverlay.draw('pollinationsai', {
+            'type': 'floating-chat',
+            'floating-chat.donateButton.text': 'Tip Us',
+            'floating-chat.donateButton.background-color': '#d9534f',
+            'floating-chat.donateButton.text-color': '#fff'
+          });
+        }
+      };
+      document.body.appendChild(script);
+    } else {
+      // If script exists, ensure the widget is drawn (in case component remounted after script loaded but before widget drawn)
+      if (window.kofiWidgetOverlay && typeof window.kofiWidgetOverlay.draw === 'function') {
+        window.kofiWidgetOverlay.draw('pollinationsai', {
+            'type': 'floating-chat',
+            'floating-chat.donateButton.text': 'Tip Us',
+            'floating-chat.donateButton.background-color': '#d9534f',
+            'floating-chat.donateButton.text-color': '#fff'
+          });
+      }
+    }
+
+    // Cleanup function removed as the check prevents duplicate scripts
+    // and removing might interfere if other components rely on the script
+  }, []); // Empty dependency array means this effect runs once on mount
   return (
     <SectionContainer backgroundConfig={SectionBG.hero}>
       {/* <SvgArtGenerator width="1920px" height="100px"></SvgArtGenerator> */}
       <SectionSubContainer>
         <SectionHeadlineStyle
           maxWidth="1000px"
-          fontSize="1.5em"
+          fontSize="1.8em"
           color={Colors.offblack}
           textAlign={isMobile ? "center" : "left"}
         >
@@ -63,7 +101,7 @@ const Hero = () => {
       </SectionSubContainer>
       {/* <SvgArtGallery /> */}
       <SectionSubContainer>
-        <Grid container spacing={2} justifyContent={isMobile ? "center" : "flex-end"} width="100%">
+        <Grid container spacing={2} justifyContent={isMobile ? "center" : "flex-end"} >
           <Grid size={12}>
             <SectionHeadlineStyle
               maxWidth="1000px"
@@ -79,8 +117,9 @@ const Hero = () => {
             <GeneralButton
               handleClick={handleDiscordButtonClick}
               isLoading={false}
-              backgroundColor={Colors.offblack}
-              textColor={Colors.offwhite}
+              borderColor={Colors.offblack}
+              backgroundColor={Colors.offwhite}
+              textColor={Colors.offblack}
               style={{
                 fontSize: "1.5rem",
                 fontFamily: Fonts.title,
@@ -90,12 +129,12 @@ const Hero = () => {
               <ReactSVG
                 src={ICONS.discord}
                 beforeInjection={(svg) => {
-                  svg.setAttribute("fill", Colors.offwhite)
+                  svg.setAttribute("fill", Colors.offblack)
                 }}
                 style={{
                   width: "40px",
                   height: "40px",
-                  marginRight: "8px",
+                  marginRight: "10px",
                   background: "transparent",
                 }}
               />
@@ -105,9 +144,10 @@ const Hero = () => {
           <Grid>
             <GeneralButton
               handleClick={handleGithubButtonClick}
+              borderColor={Colors.offblack}
+              backgroundColor={Colors.offwhite}
               isLoading={false}
-              backgroundColor={Colors.offblack}
-              textColor={Colors.offwhite}
+              textColor={Colors.offblack}
               style={{
                 fontSize: "1.5rem",
                 fontFamily: Fonts.title,
@@ -117,12 +157,12 @@ const Hero = () => {
               <ReactSVG
                 src={ICONS.github}
                 beforeInjection={(svg) => {
-                  svg.setAttribute("fill", Colors.offwhite)
+                  svg.setAttribute("fill", Colors.offblack)
                 }}
                 style={{
                   width: "32px",
                   height: "32px",
-                  marginRight: "8px",
+                  marginRight: "16px",
                   background: "transparent",
                 }}
               />

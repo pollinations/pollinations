@@ -2,16 +2,12 @@ import debug from 'debug';
 
 const log = debug('pollinations:requestUtils');
 
-// List of whitelisted domains
-const WHITELISTED_DOMAINS = [
-    'pollinations',
-    'thot',
-    'ai-ministries.com',
-    'localhost',
-    'pollinations.github.io',
-    '127.0.0.1',
-    'nima'
-];
+
+// Read whitelisted domains from environment variable
+export const WHITELISTED_DOMAINS = process.env.WHITELISTED_DOMAINS 
+    ? process.env.WHITELISTED_DOMAINS.split(',').map(domain => domain.trim())
+    : [];
+
 
 /**
  * Helper function to get referrer from request
@@ -51,6 +47,20 @@ export function getRequestData(req) {
     const isImagePollinationsReferrer = WHITELISTED_DOMAINS.some(domain => referrer.toLowerCase().includes(domain));
     const isRobloxReferrer = referrer.toLowerCase().includes('roblox') || referrer.toLowerCase().includes('gacha11211');
     const stream = data.stream || false; 
+    
+    // Extract voice parameter for audio models
+    const voice = data.voice || "alloy";
+
+    // Extract audio parameters
+    const modalities = data.modalities;
+    const audio = data.audio;
+
+    // Extract tools and tool_choice for function calling
+    const tools = data.tools || undefined;
+    const tool_choice = data.tool_choice || undefined;
+    
+    // Extract reasoning_effort parameter for o3-mini model
+    const reasoning_effort = data.reasoning_effort || undefined;
 
     const messages = data.messages || [{ role: 'user', content: req.params[0] }];
     if (systemPrompt) {
@@ -67,6 +77,12 @@ export function getRequestData(req) {
         isRobloxReferrer,
         referrer,
         stream,
-        isPrivate
+        isPrivate,
+        voice,
+        tools,
+        tool_choice,
+        modalities,
+        audio,
+        reasoning_effort
     };
 }

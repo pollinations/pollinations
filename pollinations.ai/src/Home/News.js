@@ -29,39 +29,64 @@ export default function News() {
   return (
     <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
       <Accordion
-        style={{
+        sx={{
           width: "100%",
+          // maxWidth: "1000px",
           margin: 0,
           padding: 0,
-          borderRadius: "0em",
+          borderRadius: "2em !important",
+          '&:before': {
+            display: 'none',
+          },
+          '.MuiAccordion-region': {
+            borderBottomLeftRadius: '2em',
+            borderBottomRightRadius: '2em',
+          },
         }}
         onChange={handleAccordionChange}
       >
         <AccordionSummary
           sx={{
+            padding: "0.5em 2em",
             backgroundColor: Colors.special,
             "&:hover": {
               backgroundColor: `${Colors.special}99`,
             },
+            borderRadius: '0em',
+            '&.Mui-expanded': {
+              borderBottomLeftRadius: 0,
+              borderBottomRightRadius: 0,
+            },
+            '& .MuiAccordionSummary-expandIconWrapper': {
+              transform: 'scale(2.0)',
+              '&.Mui-expanded': {
+                transform: 'rotate(180deg) scale(2.0) translateX(0.2em)',
+              }
+            },
           }}
-          expandIcon={<ArrowDownwardIcon style={{ color: Colors.offwhite }} />}
+          expandIcon={<ArrowDownwardIcon style={{ color: Colors.offwhite, fontSize: '1.5rem', marginRight: '0.2em' }} />}
           aria-controls="panel1-content"
           id="panel1-header"
         >
           <SectionHeadlineStyle
             color={Colors.offwhite}
-            maxWidth="90%"
-            style={{ fontSize: "1.6em", fontFamily: Fonts.headline }}
+            maxWidth="95%"
+            style={{ fontSize: "1.8em", fontFamily: Fonts.headline, marginLeft: '0.6em' }}
             textAlign="left"
             onClick={handleClickAccordionSummary}
           >
             <LLMTextManipulator text={NEWS_TITLE} transforms={[rephrase, emojify]} />
           </SectionHeadlineStyle>
         </AccordionSummary>
-        <AccordionDetails style={{ backgroundColor: Colors.offblack }}>
+        <AccordionDetails 
+          sx={{ 
+            backgroundColor: Colors.offblack,
+
+          }}
+        >
           <SectionHeadlineStyle
             color={Colors.offwhite}
-            style={{ fontSize: "1.2em", fontFamily: Fonts.title }}
+            style={{ fontSize: "1.2em", fontFamily: Fonts.headline }}
             textAlign="left"
             maxWidth="90%"
           >

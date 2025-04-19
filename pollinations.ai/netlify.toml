@@ -1,0 +1,14 @@
+[build]
+  functions = "functions"
+
+[[redirects]]
+  from = "/redirect/*"
+  to = "/.netlify/functions/redirect/:splat"
+  status = 200
+  force = true
+
+# Ensure Netlify preserves the React router paths
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -1,249 +1,304 @@
 // Import all handler functions
-import { generateTextScaleway } from './generateTextScaleway.js';
-import { generateDeepseek } from './generateDeepseek.js';
-import { generateTextCloudflare } from './generateTextCloudflare.js';
-import { generateTextGemini } from './generateTextGemini.js';
-import { generateTextSearch } from './generateTextSearch.js';
-import { generateTextOpenRouter } from './generateTextOpenRouter.js';
-import { generateTextModal } from './generateTextModal.js';
-import { generateTextPortkey } from './generateTextPortkey.js';
-import wrapModelWithContext from './wrapModelWithContext.js';
+import { generateTextSearch } from "./generateTextSearch.js";
+import { generateTextPortkey } from "./generateTextPortkey.js";
+import { generateTextMistral } from "./generateTextMistral.js";
 
-// Import persona prompts
-import surSystemPrompt from './personas/sur.js';
-import unityPrompt from './personas/unity.js';
-import midijourneyPrompt from './personas/midijourney.js';
-import rtistPrompt from './personas/rtist.js';
-import evilPrompt from './personas/evil.js';
-import hypnosisTracyPrompt from './personas/hypnosisTracy.js';
+// Import wrapped models from the new file
+import {
+  surMistral,
+  hypnosisTracy,
+  unityMistralLarge,
+  midijourney,
+  rtist,
+  evilCommandR as evilMistral,
+} from "./wrappedModels.js";
 
-// Create wrapped models
-const surOpenai = wrapModelWithContext(surSystemPrompt, generateTextPortkey, "openai");
-const surMistral = wrapModelWithContext(surSystemPrompt, generateTextScaleway, "mistral");
-const hypnosisTracy = wrapModelWithContext(hypnosisTracyPrompt, generateTextPortkey, "openai-large");
-const unityMistralLarge = wrapModelWithContext(unityPrompt, generateTextScaleway, "mistral");
-const midijourney = wrapModelWithContext(midijourneyPrompt, generateTextPortkey, "openai-large");
-const rtist = wrapModelWithContext(rtistPrompt, generateTextPortkey, "openai-large");
-const evilCommandR = wrapModelWithContext(evilPrompt, generateTextScaleway, "mistral");
+// Removed handlers object – call handler functions directly in model definitions
 
-// Define model handlers
-const handlers = {
-    openai: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai'}),
-    deepseek: (messages, options) => generateDeepseek(messages, {...options, model: 'deepseek-chat'}),
-    mistral: (messages, options) => generateTextScaleway(messages, options),
-    cloudflare: (messages, options) => generateTextCloudflare(messages, options),
-    gemini: (messages, options) => generateTextGemini(messages, options),
-    openRouter: (messages, options, model) => generateTextOpenRouter(messages, {...options, model}),
-    modal: (messages, options) => generateTextModal(messages, options),
-    portkey: (messages, options, model) => generateTextPortkey(messages, {...options, model})
-};
+const models = [
+  {
+    name: "openai",
+    description: "OpenAI GPT-4o-mini",
+    handler: generateTextPortkey,
+    //    details:  "Optimized for fast and cost-effective text and image processing.",
+    provider: "Azure",
+    input_modalities: ["text", "image"],
+    output_modalities: ["text"],
+  },
+  {
+    name: "openai-large",
+    description: "OpenAI GPT-4.1",
+    handler: generateTextPortkey,
+    //    details: "Delivers enhanced performance for high-quality text and image analysis.",
+    provider: "Azure",
+    input_modalities: ["text", "image"],
+    output_modalities: ["text"],
+  },
+  // {
+  //   name: "openai-reasoning",
+  //   description: "OpenAI o3-mini",
+  //   handler: generateTextPortkey,
+  //   //    details: "Specialized for advanced reasoning and complex multi-step problem solving.",
+  //   reasoning: true,
+  //   provider: "Azure",
+  //   input_modalities: ["text"],
+  //   output_modalities: ["text"],
+  // },
+  {
+    name: "qwen-coder",
+    description: "Qwen 2.5 Coder 32B",
+    handler: generateTextPortkey,
+    //    details: "Tailored for coding tasks with efficient code generation and debugging support.",
+    provider: "Scaleway",
+    input_modalities: ["text"],
+    output_modalities: ["text"],
+  },
+  {
+    name: "llama",
+    description: "Llama 3.3 70B",
+    handler: generateTextPortkey,
+    //    details: "Versatile language model suited for a wide range of text applications.",
+    provider: "Cloudflare",
+    input_modalities: ["text"],
+    output_modalities: ["text"],
+  },
+  {
+    name: "llamascout",
+    description: "Llama 4 Scout 17B",
+    handler: generateTextPortkey,
+    //    details: "Llama 4 Scout model optimized for efficient text generation.",
+    provider: "Cloudflare",
+    input_modalities: ["text"],
+    output_modalities: ["text"],
+  },
+  {
+    name: "mistral",
+    description: "Mistral Small 3",
+    handler: generateTextMistral,
+    //    details:  "Efficient language generation focused on speed and clarity.",
+    provider: "Scaleway",
+    input_modalities: ["text", "image"],
+    output_modalities: ["text"],
+  },
+  {
+    name: "unity",
+    description: "Unity Mistral Large",
+    handler: unityMistralLarge,
+    //    details:  "Uncensored.",
+    provider: "Scaleway",
+    uncensored: true,
+    input_modalities: ["text", "image"],
+    output_modalities: ["text"],
+  },
+  {
+    name: "midijourney",
+    description: "Midijourney",
+    handler: midijourney,
+    //    details:  "Generates creative musical compositions from text prompts in ABC notation.",
+    provider: "Azure",
+    input_modalities: ["text"],
+    output_modalities: ["text"],
+  },
+  {
+    name: "rtist",
+    description: "Rtist",
+    handler: rtist,
+    //    details:  "Image generation assistant by @Bqrio.",
+    provider: "Azure",
+    input_modalities: ["text"],
+    output_modalities: ["text"],
+  },
+  {
+    name: "searchgpt",
+    description: "SearchGPT",
+    handler: generateTextSearch,
+    //    details:  "Integrates real-time search results for responses.",
+    provider: "Azure",
 
-export const availableModels = [
-    {
-        name: 'openai',
-        type: 'chat',
-        censored: true,
-        description: 'OpenAI GPT-4o-mini',
-        baseModel: true,
-        vision: true,
-        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai'})
-    },
-    {
-        name: 'openai-large',
-        type: 'chat',
-        censored: true,
-        description: 'OpenAI GPT-4o',
-        baseModel: true,
-        vision: true,
-        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai-large'})
-    },
-    {
-        name: 'openai-reasoning',
-        type: 'chat',
-        censored: true,
-        description: 'OpenAI o1-mini',
-        baseModel: true,
-        reasoning: true,
-        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai-reasoning'})
-    },
-    {
-        name: 'qwen-coder',
-        type: 'chat',
-        censored: true,
-        description: 'Qwen 2.5 Coder 32B',
-        baseModel: true,
-        handler: (messages, options) => generateTextScaleway(messages, options)
-    },
-    {
-        name: 'llama',
-        type: 'chat',
-        censored: false,
-        description: 'Llama 3.3 70B',
-        baseModel: true,
-        handler: (messages, options) => generateTextCloudflare(messages, { ...options, model: 'llama' })
-    },
-    {
-        name: 'mistral',
-        type: 'chat',
-        censored: false,
-        description: 'Mistral Nemo',
-        baseModel: true,
-        handler: handlers.mistral
-    },
-    {
-        name: 'unity',
-        type: 'chat',
-        censored: false,
-        description: 'Unity with Mistral Large by Unity AI Lab',
-        baseModel: false,
-        handler: (messages, options) => unityMistralLarge(messages, options)
-    },
-    {
-        name: 'midijourney',
-        type: 'chat',
-        censored: true,
-        description: 'Midijourney musical transformer',
-        baseModel: false,
-        handler: (messages, options) => midijourney(messages, options)
-    },
-    {
-        name: 'rtist',
-        type: 'chat',
-        censored: true,
-        description: 'Rtist image generator by @bqrio',
-        baseModel: false,
-        handler: (messages, options) => rtist(messages, options)
-    },
-    {
-        name: 'searchgpt',
-        type: 'chat',
-        censored: true,
-        description: 'SearchGPT with realtime news and web search',
-        baseModel: false,
-        handler: (messages, options) => generateTextSearch(messages, options)
-    },
-    {
-        name: 'evil',
-        type: 'chat',
-        censored: false,
-        description: 'Evil Mode - Experimental',
-        baseModel: false,
-        handler: (messages, options) => evilCommandR(messages, options)
-    },
-    {
-        name: 'deepseek',
-        type: 'chat',
-        censored: true,
-        description: 'DeepSeek-V3',
-        baseModel: true,
-        handler: handlers.deepseek
-    },
-    {
-        name: 'claude-hybridspace',
-        type: 'chat',
-        censored: true,
-        description: 'Claude Hybridspace',
-        baseModel: true,
-        handler: (messages, options) => generateTextOpenRouter(messages, {...options, model: "anthropic/claude-3.5-haiku-20241022"})
-    },
-    {
-        name: 'deepseek-r1',
-        type: 'chat',
-        censored: true,
-        description: 'DeepSeek-R1 Distill Qwen 32B',
-        baseModel: true,
-        reasoning: true,
-        provider: 'cloudflare',
-        handler: (messages, options) => generateTextCloudflare(messages, options)
-    },
-    {
-        name: 'deepseek-reasoner',
-        type: 'chat',
-        censored: true,
-        description: 'DeepSeek R1 - Full',
-        baseModel: true,
-        reasoning: true,
-        provider: 'deepseek',
-        handler: (messages, options) => generateDeepseek(messages, { ...options, model: 'deepseek-reasoner' })
-    },
-    {
-        name: 'llamalight',
-        type: 'chat',
-        censored: false,
-        description: 'Llama 3.1 8B Instruct',
-        baseModel: true,
-        handler: (messages, options) => generateTextCloudflare(messages, options)
-    },
-    {
-        name: 'llamaguard',
-        type: 'safety',
-        censored: false,
-        description: 'Llamaguard 7B AWQ',
-        baseModel: false,
-        provider: 'cloudflare',
-        handler: (messages, options) => generateTextCloudflare(messages, options)
-    },
-    {
-        name: 'gemini',
-        type: 'chat',
-        censored: true,
-        description: 'Gemini 2.0 Flash',
-        baseModel: true,
-        provider: 'google',
-        handler: handlers.gemini
-    },
-    {
-        name: 'gemini-thinking',
-        type: 'chat',
-        censored: true,
-        description: 'Gemini 2.0 Flash Thinking',
-        baseModel: true,
-        provider: 'google',
-        handler: handlers.gemini
-    },
-    {
-        name: 'hormoz',
-        type: 'chat',
-        description: 'Hormoz 8b by Muhammadreza Haghiri',
-        baseModel: false,
-        provider: 'modal.com',
-        censored: false,
-        handler: handlers.modal
-    },
-    {
-        name: 'hypnosis-tracy',
-        type: 'chat',
-        description: 'Hypnosis Tracy - Your Self-Help AI',
-        baseModel: false,
-        provider: 'modal.com',
-        censored: false,
-        handler: (messages, options) => hypnosisTracy(messages, options)
-    },
-    {
-        name: 'sur',
-        type: 'chat',
-        censored: true,
-        description: 'Sur AI Assistant',
-        baseModel: false,
-        handler: (messages, options) => surOpenai(messages, options)
-    },
-    {
-        name: 'sur-mistral',
-        type: 'chat',
-        censored: true,
-        description: 'Sur AI Assistant (Mistral)',
-        baseModel: false,
-        handler: (messages, options) => surMistral(messages, options)
-    },
-    {
-        name: 'llama-scaleway',
-        type: 'chat',
-        censored: false,
-        description: 'Llama (Scaleway)',
-        baseModel: true,
-        handler: (messages, options) => generateTextScaleway(messages, {...options, model: 'llama'})
-    }
+    input_modalities: ["text", "image"],
+    output_modalities: ["text"],
+  },
+  {
+    name: "evil",
+    description: "Evil",
+    handler: evilMistral,
+    //    details:  "Experimental mode for unfiltered and creatively diverse outputs.",
+    provider: "Scaleway",
+    uncensored: true,
+    input_modalities: ["text", "image"],
+    output_modalities: ["text"],
+  },
+  {
+    name: "deepseek-reasoning",
+    description: "DeepSeek-R1 Distill Qwen 32B",
+    handler: generateTextPortkey,
+    //    details:  "Combines distilled reasoning with advanced contextual understanding.",
+    reasoning: true,
+    provider: "Cloudflare",
+    aliases: "deepseek-r1",
+    input_modalities: ["text"],
+    output_modalities: ["text"],
+  },
+  {
+    name: "deepseek-reasoning-large",
+    description: "DeepSeek R1 - Llama 70B",
+    handler: generateTextPortkey,
+    //    details:  "Leverages Llama 70B architecture for efficient reasoning and cost-effectiveness.",
+    reasoning: true,
+    provider: "Scaleway",
+
+    aliases: "deepseek-r1-llama",
+    input_modalities: ["text"],
+    output_modalities: ["text"],
+  },
+  {
+    name: "phi",
+    description: "Phi-4 Instruct",
+    handler: generateTextPortkey,
+    //    details:  "Reliable model for precise instruction following and robust responses.",
+    provider: "Cloudflare",
+    input_modalities: ["text", "image", "audio"],
+    output_modalities: ["text"],
+  },
+  // {
+  //   name: "gemini",
+  //   description: "Gemini 2.0 Flash",
+  //   handler: (messages, options) =>
+  //     generateTextPortkey(messages, { ...options, model: "gemini" }),
+  //   //    details:  "High-performance model with capabilities in audio and text generation.",
+  //   provider: "Azure",
+
+  //   input_modalities: ["text", "image", "audio"],
+  //   output_modalities: ["audio", "text"],
+  // },
+  // {
+  //   name: "gemini-reasoning",
+  //   description: "Gemini 2.0 Flash Thinking",
+  //   handler: (messages, options) =>
+  //     generateTextPortkey(messages, { ...options, model: "gemini-thinking" }),
+  //   //    details:  "Enhanced reasoning model with integrated multimodal output.",
+  //   reasoning: true,
+  //   provider: "Azure",
+  //   aliases: "gemini-thinking",
+  //   input_modalities: ["text", "image", "audio"],
+  //   output_modalities: ["audio", "text"],
+  // },
+  {
+    name: "hormoz",
+    description: "Hormoz 8b",
+    handler: (messages, options) =>
+      generateTextPortkey(messages, { ...options, model: "hormoz" }),
+    //    details:  "Uncensored model.",
+    provider: "Modal",
+    input_modalities: ["text"],
+    output_modalities: ["text"],
+  },
+  {
+    name: "hypnosis-tracy",
+    description: "Hypnosis Tracy 7B",
+    handler: hypnosisTracy,
+    //    details:  "Self-help assistant offering therapeutic guidance and advice.",
+    provider: "Azure",
+    input_modalities: ["text", "audio"],
+    output_modalities: ["audio", "text"],
+  },
+  {
+    name: "mistral-roblox",
+    description: "Mistral Roblox on Scaleway",
+    handler: generateTextMistral,
+    //    details:  "Optimized Mistral model for Roblox-related tasks.",
+    provider: "Scaleway",
+    uncensored: true,
+    input_modalities: ["text", "image"],
+    output_modalities: ["text"],
+  },
+  {
+    name: "roblox-rp",
+    description: "Roblox Roleplay Assistant",
+    handler: (messages, options) =>
+      generateTextPortkey(messages, { ...options, model: "roblox-rp" }),
+    //    details:  "Specialized assistant for Roblox roleplay scenarios.",
+    provider: "Azure",
+
+    input_modalities: ["text"],
+    output_modalities: ["text"],
+  },
+  {
+    name: "deepseek",
+    description: "DeepSeek-V3",
+    handler: generateTextPortkey,
+    //    details:  "Advanced language model with comprehensive understanding capabilities.",
+    provider: "DeepSeek",
+    input_modalities: ["text"],
+    output_modalities: ["text"],
+  },
+  // {
+  //   name: "deepseek-reasoning",
+  //   description: "DeepSeek R1 - Full",
+  //   handler: generateDeepseek,
+  //   //    details:  "Complete reasoning model with enhanced analytical capabilities.",
+  //   provider: "DeepSeek",
+  //   reasoning: true,
+  //   aliases: "deepseek-reasoner",
+  //   input_modalities: ["text"],
+  //   output_modalities: ["text"],
+  // },
+  // {
+  //   name: "qwen-reasoning",
+  //   description: "Qwen QWQ 32B - Advanced Reasoning",
+  //   handler: generateTextPortkey,
+  //   //    details:  "Specialized reasoning model from Qwen optimized for complex problem-solving.",
+  //   provider: "Groq",
+  //   reasoning: true,
+  //   input_modalities: ["text"],
+  //   output_modalities: ["text"],
+  // },
+  {
+    name: "sur",
+    description: "Sur AI Assistant (Mistral)",
+    handler: surMistral,
+    //    details:  "Sur assistant powered by Mistral architecture for enhanced capabilities.",
+    provider: "Scaleway",
+    input_modalities: ["text", "image"],
+    output_modalities: ["text"],
+  },
+  {
+    name: "openai-audio",
+    description: "OpenAI GPT-4o-audio-preview",
+    voices: [
+      "alloy",
+      "echo",
+      "fable",
+      "onyx",
+      "nova",
+      "shimmer",
+      "coral",
+      "verse",
+      "ballad",
+      "ash",
+      "sage",
+      "amuch",
+      "dan",
+    ],
+    handler: generateTextPortkey,
+    //    details:  "Audio-focused variant delivering rich auditory and textual content.",
+    provider: "Azure",
+    input_modalities: ["text", "image", "audio"],
+    output_modalities: ["audio", "text"],
+  },
 ];
+
+// Now export the processed models with proper functional approach
+export const availableModels = models.map((model) => {
+  const inputs = model.input_modalities || [];
+  const outputs = model.output_modalities || [];
+
+  return {
+    ...model,
+    vision: inputs.includes("image"),
+    audio: inputs.includes("audio") || outputs.includes("audio"),
+  };
+});
 
 /**
  * Find a model by name
@@ -251,8 +306,11 @@ export const availableModels = [
  * @returns {Object|null} - The model object or null if not found
  */
 export function findModelByName(modelName) {
-    return availableModels.find(model => model.name === modelName) || 
-           availableModels.find(model => model.name === 'openai'); // Default to openai
+  return (
+    availableModels.find(
+      (model) => model.name === modelName || model.aliases === modelName
+    ) || availableModels.find((model) => model.name === "openai")
+  ); // Default to openai
 }
 
 /**
@@ -261,14 +319,17 @@ export function findModelByName(modelName) {
  * @returns {Function} - The handler function for the model, or the default handler if not found
  */
 export function getHandler(modelName) {
-    const model = findModelByName(modelName);
-    return model.handler;
+  const model = findModelByName(modelName);
+  return model.handler;
 }
 
-// For backward compatibility
-export const modelHandlers = {};
-availableModels.forEach(model => {
-    if (model.handler) {
-        modelHandlers[model.name] = model.handler;
-    }
-});
+/**
+ * Get all model names with their aliases
+ * @returns {Object} - Object mapping primary model names to their aliases
+ */
+export function getAllModelAliases() {
+  return availableModels.reduce((aliasMap, model) => {
+    aliasMap[model.name] = model.aliases ? [model.aliases] : [];
+    return aliasMap;
+  }, {});
+}

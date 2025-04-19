@@ -58,6 +58,14 @@ const allProjects = {
   ],
   llmIntegrations: [
     {
+      name: "🆕 OkeyAI",
+      url: "https://chat.okeymeta.com.ng",
+      description: "An LLM created by Africans to understand and have cultural awareness of African contexts and languages, OkeyAI outperforms many LLM models based on size and intelligence, OkeyMeta uses pollination image generating API to train it's LLM (OkeyAI) on images in real time.",
+      author: "@okeymeta",
+      repo: "https://github.com/okeymeta",
+      submissionDate: "2025-04-19",
+    },
+    {
       name: "🆕 DreamBig - Generative AI Playground",
       url: "https://dreambiglabs.vercel.app/",
       description: "Interactive AI playground with chat, image generation, and voice responses for creative exploration.",

@@ -140,6 +140,7 @@ const baseCloudflareConfig = {
     authKey: process.env.CLOUDFLARE_AUTH_TOKEN,
     // Set default max_tokens to 8192 (increased from 256)
     'max-tokens': 8192,
+    'temperature': 0.1,
 };
 
 // Base configuration for Scaleway models

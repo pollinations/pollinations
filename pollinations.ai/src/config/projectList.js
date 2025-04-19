@@ -66,6 +66,13 @@ const allProjects = {
       submissionDate: "2025-04-19",
     },
     {
+      name: "🆕 🤖 DesmondBot",
+      url: "https://cities-tomato-strong-peoples.trycloudflare.com/",
+      description: "A snarky bot based on Llama that is 100% free, powered by the Pollinations text API and OpenWebUI. Other models are available as well.",
+      author: "@mcgdj",
+      submissionDate: "2025-04-18",
+    },
+    {
       name: "🆕 DreamBig - Generative AI Playground",
       url: "https://dreambiglabs.vercel.app/",
       description: "Interactive AI playground with chat, image generation, and voice responses for creative exploration.",

@@ -227,6 +227,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 BlackWave | An AI image generator that creates unique images from text prompts. Fast, easy and free! | @metimol | [Website](https://blackwave.studio/) |
 | 🆕 Generator Text AI 🇮🇩 | Generator Teks AI canggih dengan berbagai model AI seperti OpenAI, Llama, Mistral, dan DeepSeek. Hasilkan jawaban instan, dukung mode gelap/fokus, riwayat percakapan, dan contoh pertanyaan acak. Alat sempurna untuk kreativitas dan produktivitas. (Advanced AI Text Generator with various AI models like OpenAI, Llama, Mistral, and DeepSeek. Generate instant answers, support dark/focus mode, conversation history, and random question examples. Perfect tool for creativity and productivity.) | @ayick13 | [Website](https://app.ariftirtana.my.id/), [GitHub](https://github.com/ayick13/app) |
 | 🆕 🌱 Strain Navigator | A collection of tools to help Growers, Breeders & Seed Bankers. Free & Open Source powered by Pollinations.ai. | @Tolerable | [Website](https://www.strainnavigator.com/), [GitHub](https://github.com/Tolerable/strainnavigator) |
 | 🆕 MalaysiaPrompt 🇲🇾 | A free and fun platform for creating unique AI-generated images. No fancy skills needed – just your ideas and a few clicks to bring them to life. Features image generation, text-to-prompt conversion, and image-to-text capabilities. | @enciksnow | [Website](https://malaysiaprompt.rf.gd/) |

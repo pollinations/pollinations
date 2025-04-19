@@ -177,6 +177,13 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 BlackWave",
+      url: "https://blackwave.studio/",
+      description: "An AI image generator that creates unique images from text prompts. Fast, easy and free!",
+      author: "@metimol",
+      submissionDate: "2025-04-19"
+    },
+    {
       name: "🆕 Generator Text AI 🇮🇩",
       url: "https://app.ariftirtana.my.id/",
       description: "Generator Teks AI canggih dengan berbagai model AI seperti OpenAI, Llama, Mistral, dan DeepSeek. Hasilkan jawaban instan, dukung mode gelap/fokus, riwayat percakapan, dan contoh pertanyaan acak. Alat sempurna untuk kreativitas dan produktivitas. (Advanced AI Text Generator with various AI models like OpenAI, Llama, Mistral, and DeepSeek. Generate instant answers, support dark/focus mode, conversation history, and random question examples. Perfect tool for creativity and productivity.)",

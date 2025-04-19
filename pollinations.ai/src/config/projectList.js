@@ -58,6 +58,14 @@ const allProjects = {
   ],
   llmIntegrations: [
     {
+      name: "🆕 OkeyAI",
+      url: "https://chat.okeymeta.com.ng",
+      description: "An LLM created by Africans to understand and have cultural awareness of African contexts and languages, OkeyAI outperforms many LLM models based on size and intelligence, OkeyMeta uses pollination image generating API to train it's LLM (OkeyAI) on images in real time.",
+      author: "@okeymeta",
+      repo: "https://github.com/okeymeta",
+      submissionDate: "2025-04-19",
+    },
+    {
       name: "🆕 🤖 DesmondBot",
       url: "https://cities-tomato-strong-peoples.trycloudflare.com/",
       description: "A snarky bot based on Llama that is 100% free, powered by the Pollinations text API and OpenWebUI. Other models are available as well.",
@@ -175,6 +183,13 @@ const allProjects = {
     },
   ],
   creativeApps: [
+    {
+      name: "🆕 BlackWave",
+      url: "https://blackwave.studio/",
+      description: "An AI image generator that creates unique images from text prompts. Fast, easy and free!",
+      author: "@metimol",
+      submissionDate: "2025-04-19"
+    },
     {
       name: "🆕 Generator Text AI 🇮🇩",
       url: "https://app.ariftirtana.my.id/",

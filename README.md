@@ -202,6 +202,7 @@ Pollinations.AI is used in various projects, including:
 
 | Project | Description | Creator | Links |
 |---------|-------------|---------|-------|
+| 🆕 OkeyAI | An LLM created by Africans to understand and have cultural awareness of African contexts and languages, OkeyAI outperforms many LLM models based on size and intelligence, OkeyMeta uses pollination image generating API to train it's LLM (OkeyAI) on images in real time. | @okeymeta | [Website](https://chat.okeymeta.com.ng), [GitHub](https://github.com/okeymeta) |
 | 🆕 🤖 DesmondBot | A snarky bot based on Llama that is 100% free, powered by the Pollinations text API and OpenWebUI. Other models are available as well. | @mcgdj | [Website](https://cities-tomato-strong-peoples.trycloudflare.com/) |
 | 🆕 🤖 Raftar.xyz | A Discord multi-purpose bot with over 100+ commands, including AI image generation, ChatGPT, and SearchGPT powered by Pollinations.AI | @goodgamerhere | [Website](https://raftar.xyz) |
 | 🆕 DreamBig - Generative AI Playground | Interactive AI playground with chat, image generation, and voice responses for creative exploration | @opzzxsprinta._999 | [Website](https://dreambiglabs.vercel.app/) |
@@ -227,6 +228,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 BlackWave | An AI image generator that creates unique images from text prompts. Fast, easy and free! | @metimol | [Website](https://blackwave.studio/) |
 | 🆕 Generator Text AI 🇮🇩 | Generator Teks AI canggih dengan berbagai model AI seperti OpenAI, Llama, Mistral, dan DeepSeek. Hasilkan jawaban instan, dukung mode gelap/fokus, riwayat percakapan, dan contoh pertanyaan acak. Alat sempurna untuk kreativitas dan produktivitas. (Advanced AI Text Generator with various AI models like OpenAI, Llama, Mistral, and DeepSeek. Generate instant answers, support dark/focus mode, conversation history, and random question examples. Perfect tool for creativity and productivity.) | @ayick13 | [Website](https://app.ariftirtana.my.id/), [GitHub](https://github.com/ayick13/app) |
 | 🆕 🌱 Strain Navigator | A collection of tools to help Growers, Breeders & Seed Bankers. Free & Open Source powered by Pollinations.ai. | @Tolerable | [Website](https://www.strainnavigator.com/), [GitHub](https://github.com/Tolerable/strainnavigator) |
 | 🆕 MalaysiaPrompt 🇲🇾 | A free and fun platform for creating unique AI-generated images. No fancy skills needed – just your ideas and a few clicks to bring them to life. Features image generation, text-to-prompt conversion, and image-to-text capabilities. | @enciksnow | [Website](https://malaysiaprompt.rf.gd/) |

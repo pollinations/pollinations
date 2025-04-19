@@ -1444,32 +1444,38 @@ async function generateAudioGet(text, voice = "alloy") {
 Generates speech audio from text using the OpenAI compatible endpoint. This method is suitable for **longer text inputs** compared to the GET method.
 
 - **Model:** Must use `openai-audio`.
-- **How:** Send the text to be synthesized within the `messages` array and specify the desired `voice` in the JSON body.
+- **How:** Send the text to be synthesized within the `messages` array and configure the audio generation options.
 
 **Request Body (JSON):**
 
 ```json
 {
   "model": "openai-audio",
+  "modalities": ["text", "audio"],
+  "audio": { "voice": "alloy", "format": "pcm16" },
   "messages": [
+    {
+      "role": "developer",
+      "content": "You are a versatile AI"
+    },
     {
       "role": "user",
       "content": "Convert this longer text into speech using the selected voice. This method is better for larger inputs."
     }
   ],
-  "voice": "nova",
   "private": false
 }
 ```
 
 **Parameters (in Body):**
 
-| Parameter  | Required | Description                                                                                            | Default |
-| :--------- | :------- | :----------------------------------------------------------------------------------------------------- | :------ |
-| `model`    | Yes      | Must be `openai-audio`.                                                                                |         |
-| `messages` | Yes      | Standard OpenAI message array, containing the text to speak in the `content` of a `user` role message. |         |
-| `voice`    | Yes      | Voice to use. See available voices via [List Text Models](#list-available-text-models-).               | `alloy` |
-| `private`  | No       | Set to `true` to prevent the response from appearing in the public feed.                               | `false` |
+| Parameter    | Required | Description                                                                                            | Default |
+| :----------- | :------- | :----------------------------------------------------------------------------------------------------- | :------ |
+| `model`      | Yes      | Must be `openai-audio`.                                                                                |         |
+| `modalities` | Yes      | Array specifying output modalities. Include both `"text"` and `"audio"` for text-to-speech.            |         |
+| `audio`      | Yes      | Audio configuration object with `voice` (e.g., "alloy", "nova", "echo" - see available voices at /models) and `format` settings. |         |
+| `messages`   | Yes      | Standard OpenAI message array, containing the text to speak in the `content` of a `user` role message. |         |
+| `private`    | No       | Set to `true` to prevent the response from appearing in the public feed.                               | `false` |
 
 **Return:** Audio file (MP3 format, `Content-Type: audio/mpeg`) 🎧. The response body _is_ the audio data, not JSON.
 

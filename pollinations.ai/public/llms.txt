@@ -3,7 +3,7 @@
 
 # Site Information
 Name: Pollinations.AI
-Description: An open-source gen AI platform providing free text and image generation APIs with no signups or API keys required.
+Description: An open-source gen AI platform providing free text, image, and audio generation APIs with no signups or API keys required.
 URL: https://pollinations.ai
 API-Documentation: https://pollinations.ai/APIDOCS.md
 GitHub: https://github.com/pollinations/pollinations
@@ -18,6 +18,8 @@ Allow: /APIDOCS.md
 API-Endpoint: https://image.pollinations.ai/prompt/{prompt} # Image generation
 API-Endpoint: https://text.pollinations.ai/{prompt} # Text generation
 API-Endpoint: https://text.pollinations.ai/ # Text generation (POST)
+API-Endpoint: https://text.pollinations.ai/v1/chat/completions # OpenAI-compatible endpoint
+API-Endpoint: https://text.pollinations.ai/openai # OpenAI-compatible endpoint
 API-Endpoint: https://image.pollinations.ai/models # List available image models
 API-Endpoint: https://text.pollinations.ai/models # List available text models
 
@@ -42,6 +44,8 @@ Data-Practice: Privacy-focused design
 # Capabilities
 Capability: Text generation with various models
 Capability: Image generation from text prompts
+Capability: Audio generation and speech-to-text
+Capability: Function calling and tool use
 Capability: Multi-language support
 Capability: Prompt enhancement
 Capability: Content safety filtering
@@ -51,4 +55,4 @@ Rate-Limit: Best effort service, no explicit rate limits
 Rate-Limit: Please be considerate with usage
 
 # Last Updated
-Last-Updated: 2025-03-04
+Last-Updated: 2025-04-19

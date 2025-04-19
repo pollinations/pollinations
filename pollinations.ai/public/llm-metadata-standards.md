@@ -30,6 +30,8 @@ The `agents.json` file is an OpenAPI-based specification that allows LLMs to dis
 - Parameter descriptions and defaults
 - Example requests for common use cases
 - Authentication information (none required)
+- Function calling capabilities and tool use
+- Audio generation parameters
 
 This specification makes it easier for AI agents to understand and use our API capabilities programmatically.
 
@@ -40,9 +42,11 @@ Located at: [/mcp.json](https://pollinations.ai/mcp.json)
 The MCP file provides structured context about Pollinations.AI for LLMs, including:
 
 - Platform purpose and capabilities
-- Available services and models
+- Available services and models (text, image, and audio)
 - Usage guidelines
 - Related resources
+- Function calling support
+- OpenAI-compatible endpoints
 
 This helps LLMs better understand the context of our platform when interacting with it.
 
@@ -57,8 +61,39 @@ The Arazzo specification provides a simplified service description format that f
 - Request and response formats
 - Example requests
 - Model information
+- Capabilities including function calling, streaming, and multi-modal support
 
 This format is designed to be easily parsed by LLMs for understanding API capabilities.
+
+## Supported Capabilities
+
+Our metadata standards now document the following capabilities:
+
+### Text Generation
+
+- Various LLM models including OpenAI, Mistral, Claude, Gemini, and more
+- Support for Mistral Small 24B, Phi Mini, Qwen Reasoning, and O3 Mini models
+- System prompts and message-based conversations
+- OpenAI-compatible endpoints for easy integration
+
+### Image Generation
+
+- Text-to-image generation with multiple models
+- Width, height, and seed parameters for customization
+- Safety filtering and prompt enhancement
+
+### Audio Generation
+
+- Text-to-speech conversion with multiple voice options
+- Various output formats including MP3, Opus, AAC, FLAC, PCM, and WAV
+- Speed adjustment for speech synthesis
+
+### Advanced Features
+
+- Function calling and tool use for complex tasks
+- Response streaming for real-time interactions
+- Multi-modal capabilities for image inputs in text generation
+- OpenAI-compatible endpoints at `/v1/chat/completions` and `/openai`
 
 ## Benefits
 
@@ -68,6 +103,7 @@ Implementing these standards provides several benefits:
 2. **Better Integration**: Enables more sophisticated integrations with AI systems
 3. **Future-Proofing**: Positions us to be compatible with emerging AI ecosystem standards
 4. **Enhanced User Experience**: Makes it easier for developers using LLMs to work with our platform
+5. **Simplified Tool Development**: Function calling support enables AI-powered workflows
 
 ## Usage Examples
 
@@ -75,10 +111,10 @@ Implementing these standards provides several benefits:
 
 AI agents can now more easily:
 
-- Discover our API capabilities
-- Understand parameter requirements
-- Generate valid API calls
-- Interpret responses correctly
+- Discover our API capabilities including audio generation and function calling
+- Understand parameter requirements for all service types
+- Generate valid API calls to text, image, and audio endpoints
+- Interpret responses correctly and handle tool calls
 
 ### For Developers
 
@@ -87,7 +123,57 @@ Developers can point their LLM-powered tools to these metadata files to:
 - Automatically generate API client code
 - Create documentation
 - Build integrations with minimal manual configuration
+- Implement function calling and tool use workflows
+
+## Example Function Calling
+
+```json
+{
+  "messages": [
+    {"role": "user", "content": "What's the weather in New York?"}
+  ],
+  "model": "openai",
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get the current weather in a given location",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "location": {
+              "type": "string",
+              "description": "The city and state"
+            },
+            "unit": {
+              "type": "string",
+              "enum": ["celsius", "fahrenheit"]
+            }
+          },
+          "required": ["location"]
+        }
+      }
+    }
+  ]
+}
+```
+
+## Example Audio Generation
+
+```json
+{
+  "model": "openai-audio",
+  "input": "Hello world! This is a text-to-speech example using Pollinations.AI.",
+  "voice": "alloy",
+  "response_format": "mp3"
+}
+```
 
 ## Future Considerations
 
 As these standards evolve, we will continue to update our implementations to ensure compatibility with the broader AI ecosystem. We welcome feedback on these implementations through our [GitHub repository](https://github.com/pollinations/pollinations).
+
+## Last Updated
+
+2025-04-19

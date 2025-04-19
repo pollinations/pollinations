@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "metadata": {
     "title": "Pollinations.AI",
-    "description": "Free and open-source API for text and image generation with no signups or API keys required",
+    "description": "Free and open-source API for text, image, and audio generation with no signups or API keys required",
     "version": "1.0.0",
     "contact": {
       "name": "Pollinations.AI Team",
@@ -11,7 +11,8 @@
     "license": {
       "name": "MIT",
       "url": "https://github.com/pollinations/pollinations/blob/master/LICENSE"
-    }
+    },
+    "last_updated": "2025-04-19"
   },
   "services": [
     {
@@ -186,6 +187,13 @@
             "jsonMode": {
               "type": "boolean",
               "default": false
+            },
+            "tools": {
+              "type": "array",
+              "description": "Tools that the model can use",
+              "items": {
+                "type": "object"
+              }
             }
           }
         }
@@ -200,6 +208,12 @@
             },
             "model": {
               "type": "string"
+            },
+            "tool_calls": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
             }
           }
         }
@@ -222,6 +236,171 @@
               "seed": 42
             }
           }
+        },
+        {
+          "description": "Generate text with function calling",
+          "request": {
+            "method": "POST",
+            "url": "https://text.pollinations.ai/",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "messages": [
+                {"role": "user", "content": "What's the weather in New York?"}
+              ],
+              "model": "openai",
+              "tools": [
+                {
+                  "type": "function",
+                  "function": {
+                    "name": "get_weather",
+                    "description": "Get the current weather in a given location",
+                    "parameters": {
+                      "type": "object",
+                      "properties": {
+                        "location": {
+                          "type": "string",
+                          "description": "The city and state"
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": ["celsius", "fahrenheit"]
+                        }
+                      },
+                      "required": ["location"]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "OpenAI-Compatible Chat Completions",
+      "description": "Standard OpenAI-compatible endpoint for chat completions",
+      "endpoint": "https://text.pollinations.ai/v1/chat/completions",
+      "method": "POST",
+      "requestBody": {
+        "content": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "messages": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "model": {
+              "type": "string"
+            },
+            "stream": {
+              "type": "boolean"
+            },
+            "temperature": {
+              "type": "number"
+            },
+            "max_tokens": {
+              "type": "integer"
+            },
+            "tools": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      },
+      "response": {
+        "type": "json",
+        "format": "application/json"
+      },
+      "examples": [
+        {
+          "description": "Standard OpenAI-compatible chat completion request",
+          "request": {
+            "method": "POST",
+            "url": "https://text.pollinations.ai/v1/chat/completions",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "messages": [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": "Hello, who are you?"}
+              ],
+              "model": "openai"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Audio Generation",
+      "description": "Convert text to speech with various voice options",
+      "endpoint": "https://text.pollinations.ai/",
+      "method": "POST",
+      "requestBody": {
+        "content": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["model", "input"],
+          "properties": {
+            "model": {
+              "type": "string",
+              "description": "Audio model to use",
+              "default": "openai-audio"
+            },
+            "input": {
+              "type": "string",
+              "description": "Text to convert to speech"
+            },
+            "voice": {
+              "type": "string",
+              "description": "Voice to use for speech synthesis",
+              "enum": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
+              "default": "alloy"
+            },
+            "response_format": {
+              "type": "string",
+              "description": "Format of the output audio",
+              "enum": ["mp3", "opus", "aac", "flac", "pcm", "wav"],
+              "default": "mp3"
+            },
+            "speed": {
+              "type": "number",
+              "description": "Speed of the generated audio",
+              "minimum": 0.25,
+              "maximum": 4.0,
+              "default": 1.0
+            }
+          }
+        }
+      },
+      "response": {
+        "type": "audio",
+        "format": "mp3/opus/wav"
+      },
+      "examples": [
+        {
+          "description": "Convert text to speech",
+          "request": {
+            "method": "POST",
+            "url": "https://text.pollinations.ai/",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "model": "openai-audio",
+              "input": "Hello world! This is a text-to-speech example using Pollinations.AI.",
+              "voice": "alloy",
+              "response_format": "mp3"
+            }
+          }
         }
       ]
     }
@@ -234,9 +413,19 @@
         "description": "Default model for text generation"
       },
       {
+        "id": "openai-4",
+        "name": "GPT-4",
+        "description": "OpenAI's advanced reasoning model"
+      },
+      {
         "id": "mistral",
         "name": "Mistral",
         "description": "Open-source large language model"
+      },
+      {
+        "id": "mistral-small",
+        "name": "Mistral Small 24B",
+        "description": "Smaller, faster Mistral model"
       },
       {
         "id": "claude",
@@ -246,7 +435,22 @@
       {
         "id": "gemini",
         "name": "Gemini",
-        "description": "Google's Gemini model"
+        "description": "Google's Gemini model with Vertex AI integration"
+      },
+      {
+        "id": "phi-mini",
+        "name": "Phi Mini",
+        "description": "Microsoft's compact and efficient model"
+      },
+      {
+        "id": "qwen-reasoning",
+        "name": "Qwen Reasoning",
+        "description": "Advanced reasoning capabilities"
+      },
+      {
+        "id": "o3-mini",
+        "name": "O3 Mini",
+        "description": "Compact version of OpenAI's o1 model"
       }
     ],
     "image": [
@@ -260,7 +464,29 @@
         "name": "Stable Diffusion XL",
         "description": "High-quality image generation model"
       }
+    ],
+    "audio": [
+      {
+        "id": "openai-audio",
+        "name": "OpenAI Audio",
+        "description": "Text-to-speech model with multiple voice options",
+        "voices": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+      }
     ]
+  },
+  "capabilities": {
+    "function_calling": {
+      "description": "Support for function calling to enable models to perform actions",
+      "supported_models": ["openai", "openai-4", "claude", "gemini"]
+    },
+    "streaming": {
+      "description": "Support for streaming responses as they are generated",
+      "endpoints": ["/v1/chat/completions", "/openai"]
+    },
+    "multi_modal": {
+      "description": "Support for image inputs in text generation",
+      "supported_models": ["openai-4", "gemini", "claude"]
+    }
   },
   "authentication": {
     "type": "none",

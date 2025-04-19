@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "metadata": {
     "name": "Pollinations.AI API",
-    "description": "Free and open-source API for text and image generation with no signups or API keys required",
+    "description": "Free and open-source API for text, image, and audio generation with no signups or API keys required",
     "logo": "https://pollinations.ai/favicon-32x32.png",
     "contact_url": "https://discord.gg/k9F7SyTgqn",
     "legal_info_url": "https://github.com/pollinations/pollinations/blob/master/LICENSE"
@@ -11,7 +11,7 @@
     "openapi": "3.0.0",
     "info": {
       "title": "Pollinations.AI API",
-      "description": "Free and open-source API for text and image generation with no signups or API keys required",
+      "description": "Free and open-source API for text, image, and audio generation with no signups or API keys required",
       "version": "1.0.0",
       "contact": {
         "name": "Pollinations.AI",
@@ -30,7 +30,7 @@
       },
       {
         "url": "https://text.pollinations.ai",
-        "description": "Text Generation API"
+        "description": "Text and Audio Generation API"
       }
     ],
     "paths": {
@@ -154,7 +154,7 @@
       "/models": {
         "get": {
           "summary": "List available models",
-          "description": "Returns a list of available models for image or text generation",
+          "description": "Returns a list of available models for image, text, or audio generation",
           "operationId": "listModels",
           "tags": ["Models"],
           "responses": {
@@ -346,6 +346,35 @@
                     "private": {
                       "type": "boolean",
                       "default": false
+                    },
+                    "tools": {
+                      "type": "array",
+                      "description": "List of tools the model is allowed to call",
+                      "items": {
+                        "type": "object",
+                        "required": ["type", "function"],
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": ["function"]
+                          },
+                          "function": {
+                            "type": "object",
+                            "required": ["name", "description", "parameters"],
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "parameters": {
+                                "type": "object"
+                              }
+                            }
+                          }
+                        }
+                      }
                     }
                   }
                 }
@@ -365,6 +394,12 @@
                       },
                       "model": {
                         "type": "string"
+                      },
+                      "tool_calls": {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
                       }
                     }
                   }
@@ -449,6 +484,23 @@
                     },
                     "max_tokens": {
                       "type": "integer"
+                    },
+                    "tools": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "tool_choice": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "enum": ["auto", "none"]
+                        },
+                        {
+                          "type": "object"
+                        }
+                      ]
                     }
                   }
                 }
@@ -488,6 +540,12 @@
                                 },
                                 "content": {
                                   "type": "string"
+                                },
+                                "tool_calls": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object"
+                                  }
                                 }
                               }
                             },
@@ -524,6 +582,155 @@
             },
             "500": {
               "description": "Server error"
+            }
+          }
+        }
+      },
+      "/v1/chat/completions": {
+        "post": {
+          "summary": "OpenAI-compatible chat completions endpoint",
+          "description": "Standard OpenAI-compatible endpoint for chat completions",
+          "operationId": "chatCompletions",
+          "tags": ["Text Generation"],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["messages"],
+                  "properties": {
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": ["role", "content"],
+                        "properties": {
+                          "role": {
+                            "type": "string",
+                            "enum": ["system", "user", "assistant", "function"]
+                          },
+                          "content": {
+                            "oneOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "array",
+                                "items": {
+                                  "type": "object"
+                                }
+                              }
+                            ]
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "function_call": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    },
+                    "model": {
+                      "type": "string"
+                    },
+                    "temperature": {
+                      "type": "number"
+                    },
+                    "max_tokens": {
+                      "type": "integer"
+                    },
+                    "stream": {
+                      "type": "boolean"
+                    },
+                    "functions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "function_call": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "enum": ["auto", "none"]
+                        },
+                        {
+                          "type": "object"
+                        }
+                      ]
+                    },
+                    "tools": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "tool_choice": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "enum": ["auto", "none"]
+                        },
+                        {
+                          "type": "object"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Chat completion response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "object": {
+                        "type": "string"
+                      },
+                      "created": {
+                        "type": "integer"
+                      },
+                      "model": {
+                        "type": "string"
+                      },
+                      "choices": {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      },
+                      "usage": {
+                        "type": "object",
+                        "properties": {
+                          "prompt_tokens": {
+                            "type": "integer"
+                          },
+                          "completion_tokens": {
+                            "type": "integer"
+                          },
+                          "total_tokens": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "text/event-stream": {
+                  "schema": {
+                    "type": "string"
+                  }
+                }
+              }
             }
           }
         }
@@ -638,6 +845,45 @@
               "type": "boolean",
               "description": "Prevents response from appearing in public feed",
               "default": false
+            },
+            "tools": {
+              "type": "array",
+              "description": "List of tools the model can use",
+              "items": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "AudioGenerationParams": {
+          "type": "object",
+          "properties": {
+            "input": {
+              "type": "string",
+              "description": "Text to convert to speech"
+            },
+            "model": {
+              "type": "string",
+              "description": "Audio model to use",
+              "default": "openai-audio"
+            },
+            "voice": {
+              "type": "string",
+              "description": "Voice to use for speech synthesis",
+              "enum": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+            },
+            "response_format": {
+              "type": "string",
+              "description": "Format of the output audio",
+              "enum": ["mp3", "opus", "aac", "flac", "pcm", "wav"],
+              "default": "mp3"
+            },
+            "speed": {
+              "type": "number",
+              "description": "Speed of the generated audio",
+              "minimum": 0.25,
+              "maximum": 4.0,
+              "default": 1.0
             }
           }
         }
@@ -671,8 +917,8 @@
       }
     },
     {
-      "name": "Generate text with POST request",
-      "description": "Generate text using a POST request with messages",
+      "name": "Generate text with function calling",
+      "description": "Generate text with function calling capability",
       "request": {
         "method": "POST",
         "url": "https://text.pollinations.ai/",
@@ -682,10 +928,50 @@
         "body": {
           "messages": [
             {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": "What is artificial intelligence?"}
+            {"role": "user", "content": "What's the weather in New York?"}
           ],
-          "model": "mistral",
-          "seed": 42
+          "model": "openai",
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "get_weather",
+                "description": "Get the current weather in a given location",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "location": {
+                      "type": "string",
+                      "description": "The city and state, e.g. San Francisco, CA"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": ["celsius", "fahrenheit"],
+                      "description": "The temperature unit to use"
+                    }
+                  },
+                  "required": ["location"]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Generate audio",
+      "description": "Convert text to speech using OpenAI's audio models",
+      "request": {
+        "method": "POST",
+        "url": "https://text.pollinations.ai/",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "model": "openai-audio",
+          "input": "Hello world! This is a text-to-speech example using Pollinations.AI.",
+          "voice": "alloy",
+          "response_format": "mp3"
         }
       }
     }

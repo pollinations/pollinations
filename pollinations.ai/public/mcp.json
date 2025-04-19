@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "name": "Pollinations.AI",
-  "description": "An open-source gen AI platform providing free text and image generation APIs with no signups or API keys required.",
+  "description": "An open-source gen AI platform providing free text, image, and audio generation APIs with no signups or API keys required.",
   "url": "https://pollinations.ai",
   "logo": "https://pollinations.ai/favicon-32x32.png",
   "contact": {
@@ -9,13 +9,16 @@
     "github": "https://github.com/pollinations/pollinations"
   },
   "context": {
-    "purpose": "Pollinations.AI provides free and open-source AI services for text and image generation without requiring API keys or authentication.",
+    "purpose": "Pollinations.AI provides free and open-source AI services for text, image, and audio generation without requiring API keys or authentication.",
     "capabilities": [
-      "Text generation with various models including OpenAI, Mistral, Claude, and more",
+      "Text generation with various models including OpenAI, Mistral, Claude, Gemini, and more",
       "Image generation from text prompts",
+      "Audio generation and text-to-speech conversion",
+      "Function calling and tool use for complex tasks",
       "Multi-language support",
       "Prompt enhancement",
-      "Content safety filtering"
+      "Content safety filtering",
+      "OpenAI-compatible API endpoints"
     ],
     "api_documentation": "https://pollinations.ai/APIDOCS.md",
     "related_resources": [
@@ -28,6 +31,11 @@
         "name": "llms.txt",
         "url": "https://pollinations.ai/llms.txt",
         "description": "Guidance for Large Language Models interacting with Pollinations.AI"
+      },
+      {
+        "name": "arazzo.json",
+        "url": "https://pollinations.ai/arazzo.json",
+        "description": "Simplified service description format for AI tools"
       }
     ]
   },
@@ -43,6 +51,18 @@
       "url": "https://text.pollinations.ai",
       "description": "Generate text from prompts using various LLM models",
       "example": "https://text.pollinations.ai/What%20is%20artificial%20intelligence?model=mistral&seed=42"
+    },
+    {
+      "name": "OpenAI-Compatible API",
+      "url": "https://text.pollinations.ai/v1/chat/completions",
+      "description": "Standard OpenAI-compatible endpoint for chat completions",
+      "example": "POST https://text.pollinations.ai/v1/chat/completions with OpenAI API format"
+    },
+    {
+      "name": "Audio Generation API",
+      "url": "https://text.pollinations.ai/",
+      "description": "Convert text to speech with various voice options",
+      "example": "POST to https://text.pollinations.ai/ with model: 'openai-audio'"
     }
   ],
   "models": {
@@ -53,9 +73,19 @@
         "description": "Default model for text generation"
       },
       {
+        "id": "openai-4",
+        "name": "GPT-4",
+        "description": "OpenAI's advanced reasoning model"
+      },
+      {
         "id": "mistral",
         "name": "Mistral",
         "description": "Open-source large language model"
+      },
+      {
+        "id": "mistral-small",
+        "name": "Mistral Small 24B",
+        "description": "Smaller, faster Mistral model"
       },
       {
         "id": "claude",
@@ -65,7 +95,22 @@
       {
         "id": "gemini",
         "name": "Gemini",
-        "description": "Google's Gemini model"
+        "description": "Google's Gemini model with Vertex AI integration"
+      },
+      {
+        "id": "phi-mini",
+        "name": "Phi Mini",
+        "description": "Microsoft's compact and efficient model"
+      },
+      {
+        "id": "qwen-reasoning",
+        "name": "Qwen Reasoning",
+        "description": "Advanced reasoning capabilities"
+      },
+      {
+        "id": "o3-mini",
+        "name": "O3 Mini",
+        "description": "Compact version of OpenAI's o1 model"
       }
     ],
     "image": [
@@ -79,7 +124,42 @@
         "name": "Stable Diffusion XL",
         "description": "High-quality image generation model"
       }
+    ],
+    "audio": [
+      {
+        "id": "openai-audio",
+        "name": "OpenAI Audio",
+        "description": "Text-to-speech model with multiple voice options",
+        "voices": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+      }
     ]
+  },
+  "features": {
+    "function_calling": {
+      "description": "Models can call predefined functions to handle specific tasks",
+      "supported_models": ["openai", "openai-4", "claude", "gemini"],
+      "example": {
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "description": "Get the current weather in a given location",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "location": {
+                    "type": "string",
+                    "description": "The city and state"
+                  }
+                },
+                "required": ["location"]
+              }
+            }
+          }
+        ]
+      }
+    }
   },
   "usage_guidelines": {
     "authentication": "No authentication required. All endpoints are freely accessible.",
@@ -87,5 +167,5 @@
     "content_policies": "Please respect content policies and avoid generating harmful content.",
     "attribution": "Consider adding attribution when using generated content: 'Generated using Pollinations.AI (https://pollinations.ai)'"
   },
-  "last_updated": "2025-03-04"
+  "last_updated": "2025-04-19"
 }

@@ -20,7 +20,7 @@ const REFERRAL_LINK_PROBABILITY = 0.1;
 const TEST_ADS_MARKER = "p-ads";
 
 // Whether to require markdown for ad processing
-const REQUIRE_MARKDOWN = false;
+const REQUIRE_MARKDOWN = true;
 
 // Create a flattened list of all trigger words from all affiliates
 const ALL_TRIGGER_WORDS = affiliatesData.reduce((words, affiliate) => {

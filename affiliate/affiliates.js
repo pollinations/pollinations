@@ -23,16 +23,16 @@ const affiliates = [
     trackingLink: "https://nordvpn.sjv.io/c/6058776/432264/7452",
     triggerWords: ["VPN", "privacy", "online security", "secure browsing", "internet privacy", "encryption", "IP hiding", "private network", "cybersecurity", "data protection"]
   },
-  {
-    id: "1548053",
-    name: "jAlbum Affiliate Program",
-    product: "jAlbum software for creating digital photo albums.",
-    description: "Create and share digital photo albums online with jAlbum software.",
-    audience: "Individuals and professionals looking to create and share photo albums online.",
-    categories: ["Apps", "Creative Digital Assets", "Photography"],
-    trackingLink: "https://jalbum-affiliate-program.sjv.io/c/6058776/1548053/17916",
-    triggerWords: ["photo album", "digital album", "image gallery", "photo sharing", "photography", "picture collection", "photo organization", "photo management", "image hosting", "photo portfolio"]
-  },
+  // {
+  //   id: "1548053",
+  //   name: "jAlbum Affiliate Program",
+  //   product: "jAlbum software for creating digital photo albums.",
+  //   description: "Create and share digital photo albums online with jAlbum software.",
+  //   audience: "Individuals and professionals looking to create and share photo albums online.",
+  //   categories: ["Apps", "Creative Digital Assets", "Photography"],
+  //   trackingLink: "https://jalbum-affiliate-program.sjv.io/c/6058776/1548053/17916",
+  //   triggerWords: ["photo album", "digital album", "image gallery", "photo sharing", "photography", "picture collection", "photo organization", "photo management", "image hosting", "photo portfolio"]
+  // },
   {
     id: "1630115",
     name: "Soundcore",

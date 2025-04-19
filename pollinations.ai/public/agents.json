@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "metadata": {
     "name": "Pollinations.AI API",
-    "description": "Free and open-source API for text and image generation with no signups or API keys required",
+    "description": "Free and open-source API for text, image, and audio generation with no signups or API keys required",
     "logo": "https://pollinations.ai/favicon-32x32.png",
     "contact_url": "https://discord.gg/k9F7SyTgqn",
     "legal_info_url": "https://github.com/pollinations/pollinations/blob/master/LICENSE"
@@ -11,7 +11,7 @@
     "openapi": "3.0.0",
     "info": {
       "title": "Pollinations.AI API",
-      "description": "Free and open-source API for text and image generation with no signups or API keys required",
+      "description": "Free and open-source API for text, image, and audio generation with no signups or API keys required",
       "version": "1.0.0",
       "contact": {
         "name": "Pollinations.AI",
@@ -31,6 +31,10 @@
       {
         "url": "https://text.pollinations.ai",
         "description": "Text Generation API"
+      },
+      {
+        "url": "https://audio.pollinations.ai",
+        "description": "Audio Generation API"
       }
     ],
     "paths": {
@@ -128,6 +132,15 @@
                 "type": "boolean",
                 "default": false
               }
+            },
+            {
+              "name": "referrer",
+              "in": "query",
+              "description": "Referrer URL/Identifier for tracking and Special Bee program",
+              "required": false,
+              "schema": {
+                "type": "string"
+              }
             }
           ],
           "responses": {
@@ -187,15 +200,15 @@
       },
       "/{prompt}": {
         "get": {
-          "summary": "Generate text from a prompt",
-          "description": "Creates text based on the provided prompt",
-          "operationId": "generateText",
-          "tags": ["Text Generation"],
+          "summary": "Generate text or audio from a prompt",
+          "description": "Creates text based on the provided prompt or audio based on the provided text",
+          "operationId": "generateTextOrAudio",
+          "tags": ["Text Generation", "Audio Generation"],
           "parameters": [
             {
               "name": "prompt",
               "in": "path",
-              "description": "Text prompt for the AI to respond to",
+              "description": "Text prompt for the AI to respond to or text to convert to speech",
               "required": true,
               "schema": {
                 "type": "string"
@@ -204,7 +217,7 @@
             {
               "name": "model",
               "in": "query",
-              "description": "Model to use for text generation",
+              "description": "Model to use for generation. For audio, use 'openai-audio'",
               "required": false,
               "schema": {
                 "type": "string",
@@ -223,7 +236,7 @@
             {
               "name": "json",
               "in": "query",
-              "description": "Set to 'true' to receive response in JSON format",
+              "description": "Set to 'true' to receive response in JSON format (text generation only)",
               "required": false,
               "schema": {
                 "type": "boolean",
@@ -233,7 +246,7 @@
             {
               "name": "system",
               "in": "query",
-              "description": "System prompt to set the behavior of the AI",
+              "description": "System prompt to set the behavior of the AI (text generation only)",
               "required": false,
               "schema": {
                 "type": "string"
@@ -248,11 +261,41 @@
                 "type": "boolean",
                 "default": false
               }
+            },
+            {
+              "name": "stream",
+              "in": "query",
+              "description": "Set to 'true' for streaming responses via Server-Sent Events (SSE) (text generation only)",
+              "required": false,
+              "schema": {
+                "type": "boolean",
+                "default": false
+              }
+            },
+            {
+              "name": "voice",
+              "in": "query",
+              "description": "Voice to use for text-to-speech (audio generation only)",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "enum": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
+                "default": "nova"
+              }
+            },
+            {
+              "name": "referrer",
+              "in": "query",
+              "description": "Referrer URL/Identifier for tracking and Special Bee program",
+              "required": false,
+              "schema": {
+                "type": "string"
+              }
             }
           ],
           "responses": {
             "200": {
-              "description": "Generated text",
+              "description": "Generated text or audio",
               "content": {
                 "text/plain": {
                   "schema": {
@@ -262,6 +305,178 @@
                 "application/json": {
                   "schema": {
                     "type": "object"
+                  }
+                },
+                "text/event-stream": {
+                  "schema": {
+                    "type": "string"
+                  }
+                },
+                "audio/mpeg": {
+                  "schema": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad request"
+            },
+            "500": {
+              "description": "Server error"
+            }
+          }
+        }
+      },
+      "/openai": {
+        "post": {
+          "summary": "OpenAI-compatible API endpoint",
+          "description": "Provides an OpenAI-compatible interface for text generation, vision, speech-to-text, and function calling",
+          "operationId": "openaiCompatible",
+          "tags": ["Text Generation", "Vision", "Audio", "Function Calling"],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["messages"],
+                  "properties": {
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": ["role", "content"],
+                        "properties": {
+                          "role": {
+                            "type": "string",
+                            "enum": ["system", "user", "assistant"]
+                          },
+                          "content": {
+                            "oneOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "enum": ["text", "image_url"]
+                                    },
+                                    "text": {
+                                      "type": "string"
+                                    },
+                                    "image_url": {
+                                      "type": "object",
+                                      "properties": {
+                                        "url": {
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "model": {
+                      "type": "string",
+                      "default": "openai"
+                    },
+                    "seed": {
+                      "type": "integer"
+                    },
+                    "jsonMode": {
+                      "type": "boolean",
+                      "default": false
+                    },
+                    "private": {
+                      "type": "boolean",
+                      "default": false
+                    },
+                    "stream": {
+                      "type": "boolean",
+                      "default": false
+                    },
+                    "tools": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "tool_choice": {
+                      "type": "object"
+                    },
+                    "voice": {
+                      "type": "string",
+                      "enum": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+                    },
+                    "referrer": {
+                      "type": "string"
+                    },
+                    "response_format": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": ["json_object", "text"]
+                        }
+                      }
+                    },
+                    "reasoning_effort": {
+                      "type": "string",
+                      "enum": ["low", "medium", "high"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Generated response (text, audio, or function calls)",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "object": {
+                        "type": "string"
+                      },
+                      "created": {
+                        "type": "integer"
+                      },
+                      "model": {
+                        "type": "string"
+                      },
+                      "choices": {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                },
+                "text/event-stream": {
+                  "schema": {
+                    "type": "string"
+                  }
+                },
+                "audio/mpeg": {
+                  "schema": {
+                    "type": "string",
+                    "format": "binary"
                   }
                 }
               }
@@ -380,75 +595,39 @@
           }
         }
       },
-      "/openai": {
+      "/audio": {
         "post": {
-          "summary": "OpenAI-compatible API endpoint",
-          "description": "Provides an OpenAI-compatible interface for text generation",
-          "operationId": "openaiCompatible",
-          "tags": ["Text Generation"],
+          "summary": "Generate audio from text (Text-to-Speech)",
+          "description": "Creates audio based on the provided text using text-to-speech",
+          "operationId": "generateAudioPost",
+          "tags": ["Audio Generation"],
           "requestBody": {
             "required": true,
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["messages"],
+                  "required": ["text"],
                   "properties": {
-                    "messages": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": ["role", "content"],
-                        "properties": {
-                          "role": {
-                            "type": "string",
-                            "enum": ["system", "user", "assistant"]
-                          },
-                          "content": {
-                            "oneOf": [
-                              {
-                                "type": "string"
-                              },
-                              {
-                                "type": "array",
-                                "items": {
-                                  "type": "object",
-                                  "properties": {
-                                    "type": {
-                                      "type": "string",
-                                      "enum": ["text", "image_url"]
-                                    },
-                                    "text": {
-                                      "type": "string"
-                                    },
-                                    "image_url": {
-                                      "type": "object",
-                                      "properties": {
-                                        "url": {
-                                          "type": "string"
-                                        }
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-                            ]
-                          }
-                        }
-                      }
+                    "text": {
+                      "type": "string"
                     },
                     "model": {
                       "type": "string",
-                      "default": "openai"
+                      "enum": ["openai-audio"],
+                      "default": "openai-audio"
                     },
-                    "temperature": {
-                      "type": "number",
-                      "minimum": 0,
-                      "maximum": 2,
-                      "default": 1
+                    "voice": {
+                      "type": "string",
+                      "enum": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
+                      "default": "nova"
                     },
-                    "max_tokens": {
-                      "type": "integer"
+                    "private": {
+                      "type": "boolean",
+                      "default": false
+                    },
+                    "referrer": {
+                      "type": "string"
                     }
                   }
                 }
@@ -457,64 +636,12 @@
           },
           "responses": {
             "200": {
-              "description": "OpenAI-style response",
+              "description": "Generated audio",
               "content": {
-                "application/json": {
+                "audio/mpeg": {
                   "schema": {
-                    "type": "object",
-                    "properties": {
-                      "id": {
-                        "type": "string"
-                      },
-                      "object": {
-                        "type": "string"
-                      },
-                      "created": {
-                        "type": "integer"
-                      },
-                      "model": {
-                        "type": "string"
-                      },
-                      "choices": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "message": {
-                              "type": "object",
-                              "properties": {
-                                "role": {
-                                  "type": "string"
-                                },
-                                "content": {
-                                  "type": "string"
-                                }
-                              }
-                            },
-                            "finish_reason": {
-                              "type": "string"
-                            },
-                            "index": {
-                              "type": "integer"
-                            }
-                          }
-                        }
-                      },
-                      "usage": {
-                        "type": "object",
-                        "properties": {
-                          "prompt_tokens": {
-                            "type": "integer"
-                          },
-                          "completion_tokens": {
-                            "type": "integer"
-                          },
-                          "total_tokens": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
+                    "type": "string",
+                    "format": "binary"
                   }
                 }
               }
@@ -524,26 +651,6 @@
             },
             "500": {
               "description": "Server error"
-            }
-          }
-        }
-      },
-      "/feed": {
-        "get": {
-          "summary": "Get a feed of generated content",
-          "description": "Returns a Server-Sent Events (SSE) stream of user-generated content",
-          "operationId": "getFeed",
-          "tags": ["Feed"],
-          "responses": {
-            "200": {
-              "description": "SSE stream of generated content",
-              "content": {
-                "text/event-stream": {
-                  "schema": {
-                    "type": "string"
-                  }
-                }
-              }
             }
           }
         }
@@ -687,6 +794,13 @@
           "model": "mistral",
           "seed": 42
         }
+      }
+    },
+    {
+      "name": "Generate audio",
+      "description": "Generate audio from text using text-to-speech",
+      "request": {
+        "url": "https://audio.pollinations.ai/Hello%20world?model=openai-audio&voice=nova"
       }
     }
   ]

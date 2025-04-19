@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "name": "Pollinations.AI",
-  "description": "An open-source gen AI platform providing free text and image generation APIs with no signups or API keys required.",
+  "description": "An open-source gen AI platform providing free text, image, and audio generation APIs with no signups or API keys required.",
   "url": "https://pollinations.ai",
   "logo": "https://pollinations.ai/favicon-32x32.png",
   "contact": {
@@ -9,13 +9,17 @@
     "github": "https://github.com/pollinations/pollinations"
   },
   "context": {
-    "purpose": "Pollinations.AI provides free and open-source AI services for text and image generation without requiring API keys or authentication.",
+    "purpose": "Pollinations.AI provides free and open-source AI services for text, image, and audio generation without requiring API keys or authentication.",
     "capabilities": [
       "Text generation with various models including OpenAI, Mistral, Claude, and more",
       "Image generation from text prompts",
+      "Audio generation (text-to-speech) with multiple voice options",
+      "Speech-to-text transcription",
       "Multi-language support",
       "Prompt enhancement",
-      "Content safety filtering"
+      "Content safety filtering",
+      "Vision capabilities (image input analysis)",
+      "Function calling for AI agents"
     ],
     "api_documentation": "https://pollinations.ai/APIDOCS.md",
     "related_resources": [
@@ -28,6 +32,16 @@
         "name": "llms.txt",
         "url": "https://pollinations.ai/llms.txt",
         "description": "Guidance for Large Language Models interacting with Pollinations.AI"
+      },
+      {
+        "name": "arazzo.json",
+        "url": "https://pollinations.ai/arazzo.json",
+        "description": "Simplified service description format focused on endpoints and parameters"
+      },
+      {
+        "name": "MCP Server",
+        "url": "https://github.com/pollinations/pollinations/tree/master/model-context-protocol",
+        "description": "Model Context Protocol server for AI assistants to generate images and audio directly"
       }
     ]
   },
@@ -36,13 +50,28 @@
       "name": "Image Generation API",
       "url": "https://image.pollinations.ai",
       "description": "Generate images from text prompts",
-      "example": "https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?width=1280&height=720&seed=42"
+      "example": "https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?width=1280&height=720&seed=42",
+      "rate_limit": "1 concurrent request / 5 sec interval per IP"
     },
     {
       "name": "Text Generation API",
       "url": "https://text.pollinations.ai",
       "description": "Generate text from prompts using various LLM models",
-      "example": "https://text.pollinations.ai/What%20is%20artificial%20intelligence?model=mistral&seed=42"
+      "example": "https://text.pollinations.ai/What%20is%20artificial%20intelligence?model=mistral&seed=42",
+      "rate_limit": "1 concurrent request / 3 sec interval per IP"
+    },
+    {
+      "name": "Audio Generation API",
+      "url": "https://text.pollinations.ai",
+      "description": "Generate audio from text using text-to-speech with various voice options",
+      "example": "https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=nova",
+      "rate_limit": "1 concurrent request / 3 sec interval per IP"
+    },
+    {
+      "name": "MCP Server",
+      "url": "https://github.com/pollinations/pollinations/tree/master/model-context-protocol",
+      "description": "Model Context Protocol server for AI assistants like Claude to generate images and audio directly",
+      "example": "npx @pollinations/model-context-protocol"
     }
   ],
   "models": {
@@ -66,6 +95,26 @@
         "id": "gemini",
         "name": "Gemini",
         "description": "Google's Gemini model"
+      },
+      {
+        "id": "llama",
+        "name": "Llama",
+        "description": "Meta's Llama model"
+      },
+      {
+        "id": "deepseek",
+        "name": "DeepSeek",
+        "description": "DeepSeek's language model"
+      },
+      {
+        "id": "searchgpt",
+        "name": "SearchGPT",
+        "description": "Model with real-time web search capabilities"
+      },
+      {
+        "id": "o3-mini",
+        "name": "O3-mini",
+        "description": "Optimized small language model with reasoning capabilities"
       }
     ],
     "image": [
@@ -78,6 +127,19 @@
         "id": "sdxl",
         "name": "Stable Diffusion XL",
         "description": "High-quality image generation model"
+      },
+      {
+        "id": "turbo",
+        "name": "Turbo",
+        "description": "Fast image generation model"
+      }
+    ],
+    "audio": [
+      {
+        "id": "openai-audio",
+        "name": "OpenAI Audio",
+        "description": "Text-to-speech and speech-to-text model",
+        "voices": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
       }
     ]
   },
@@ -85,7 +147,8 @@
     "authentication": "No authentication required. All endpoints are freely accessible.",
     "rate_limits": "Best effort service, no explicit rate limits. Please be considerate with usage.",
     "content_policies": "Please respect content policies and avoid generating harmful content.",
-    "attribution": "Consider adding attribution when using generated content: 'Generated using Pollinations.AI (https://pollinations.ai)'"
+    "attribution": "Consider adding attribution when using generated content: 'Generated using Pollinations.AI (https://pollinations.ai)'",
+    "special_bee": "Special Bee program available for domain verification and referrer recognition. Submit a request through GitHub."
   },
-  "last_updated": "2025-03-04"
+  "last_updated": "2025-04-19"
 }

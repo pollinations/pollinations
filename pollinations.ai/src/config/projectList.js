@@ -184,6 +184,15 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 ruangriung AI Generator 🇮🇩",
+      url: "https://ruangriung.my.id",
+      description: "RuangRiung AI Image Generator yang memungkinkan pengguna membuat gambar dari teks (text-to-image) dengan berbagai gaya seni, seperti fotorealistik, anime, lukisan digital, dan lainnya. Halaman ini dilengkapi dengan antarmuka yang interaktif, termasuk mode gelap, pengaturan lanjutan (seperti dimensi gambar, kualitas, dan seed), serta fitur untuk menyimpan riwayat dan prompt. (RuangRiung AI Image Generator that allows users to create images from text with various art styles, such as photorealistic, anime, digital painting, and others. Features an interactive interface, dark mode, advanced settings, and options to save history and prompts.)",
+      author: "@ruangriung",
+      repo: "https://github.com/ruangriung",
+      submissionDate: "2025-04-19",
+      language: "id"
+    },
+    {
       name: "🆕 BlackWave",
       url: "https://blackwave.studio/",
       description: "An AI image generator that creates unique images from text prompts. Fast, easy and free!",

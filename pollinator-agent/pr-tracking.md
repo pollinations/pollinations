@@ -22,3 +22,4 @@ This document tracks the status of pull requests submitted to add Pollinations.A
 | [ML-YouTube-Courses](https://github.com/dair-ai/ML-YouTube-Courses) | [PR #48](https://github.com/dair-ai/ML-YouTube-Courses/pull/48) | Open | - | Added Pollinations.AI as a generative AI resource for students |
 | [ai-chatbot-framework](https://github.com/alfredfrancis/ai-chatbot-framework) | [PR #196](https://github.com/alfredfrancis/ai-chatbot-framework/pull/196) | Open | 2025-04-19 | Added Pollinations.AI integration for text and image generation |
 | [koishi](https://github.com/koishijs/koishi) | [PR #1498](https://github.com/koishijs/koishi/pull/1498) | Open | 2025-04-19 | Added Pollinations.AI plugin for image and text generation |
+| [cheshire-cat-ai](https://github.com/cheshire-cat-ai/core) | [Plugin Repository](https://github.com/voodoohop/cheshire-cat-pollinations-plugin) | Published | 2025-04-19 | Created standalone Pollinations.AI plugin for Cheshire Cat AI |

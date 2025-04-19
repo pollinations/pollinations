@@ -1452,7 +1452,7 @@ Generates speech audio from text using the OpenAI compatible endpoint. This meth
 {
   "model": "openai-audio",
   "modalities": ["text", "audio"],
-  "audio": { "voice": "allow", "format": "pcm16" },
+  "audio": { "voice": "alloy", "format": "pcm16" },
   "messages": [
     {
       "role": "developer",
@@ -1473,7 +1473,7 @@ Generates speech audio from text using the OpenAI compatible endpoint. This meth
 | :----------- | :------- | :----------------------------------------------------------------------------------------------------- | :------ |
 | `model`      | Yes      | Must be `openai-audio`.                                                                                |         |
 | `modalities` | Yes      | Array specifying output modalities. Include both `"text"` and `"audio"` for text-to-speech.            |         |
-| `audio`      | Yes      | Audio configuration object with `voice` and `format` settings.                                         |         |
+| `audio`      | Yes      | Audio configuration object with `voice` (e.g., "alloy", "nova", "echo" - see available voices at /models) and `format` settings. |         |
 | `messages`   | Yes      | Standard OpenAI message array, containing the text to speak in the `content` of a `user` role message. |         |
 | `private`    | No       | Set to `true` to prevent the response from appearing in the public feed.                               | `false` |
 

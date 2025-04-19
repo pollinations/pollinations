@@ -32,96 +32,100 @@
           "description": "Model to use for generation",
           "required": false,
           "type": "string",
-          "default": "flux",
-          "in": "query"
-        },
-        {
-          "name": "seed",
-          "description": "Seed for reproducible results",
-          "required": false,
-          "type": "integer",
-          "in": "query"
+          "in": "query",
+          "enum": ["flux", "turbo"],
+          "default": "flux"
         },
         {
           "name": "width",
           "description": "Width of the generated image",
           "required": false,
           "type": "integer",
+          "in": "query",
           "default": 1024,
-          "in": "query"
+          "minimum": 64,
+          "maximum": 2048
         },
         {
           "name": "height",
           "description": "Height of the generated image",
           "required": false,
           "type": "integer",
+          "in": "query",
           "default": 1024,
+          "minimum": 64,
+          "maximum": 2048
+        },
+        {
+          "name": "steps",
+          "description": "Number of diffusion steps (more steps = higher quality but slower)",
+          "required": false,
+          "type": "integer",
+          "in": "query",
+          "default": 30,
+          "minimum": 10,
+          "maximum": 150
+        },
+        {
+          "name": "seed",
+          "description": "Random seed for reproducible results",
+          "required": false,
+          "type": "integer",
           "in": "query"
         },
         {
-          "name": "nologo",
-          "description": "Turn off the rendering of the logo",
+          "name": "guidance_scale",
+          "description": "How closely to follow the prompt (higher = more faithful but less creative)",
           "required": false,
-          "type": "boolean",
-          "default": false,
-          "in": "query"
+          "type": "number",
+          "in": "query",
+          "default": 7.5,
+          "minimum": 1.0,
+          "maximum": 20.0
         },
         {
-          "name": "enhance",
-          "description": "Turn on prompt enhancing",
+          "name": "negative_prompt",
+          "description": "Things to avoid in the generated image",
           "required": false,
-          "type": "boolean",
-          "default": false,
-          "in": "query"
-        },
-        {
-          "name": "safe",
-          "description": "Enable strict NSFW content filtering",
-          "required": false,
-          "type": "boolean",
-          "default": false,
-          "in": "query"
-        },
-        {
-          "name": "private",
-          "description": "Prevent the image from appearing in the public feed",
-          "required": false,
-          "type": "boolean",
-          "default": false,
+          "type": "string",
           "in": "query"
         },
         {
           "name": "referrer",
-          "description": "Referrer URL/Identifier for tracking and Special Bee program",
+          "description": "Referrer information for tracking",
+          "required": false,
+          "type": "string",
+          "in": "query"
+        },
+        {
+          "name": "special_bee",
+          "description": "Special Bee program identifier for higher rate limits",
           "required": false,
           "type": "string",
           "in": "query"
         }
       ],
-      "response": {
-        "type": "image",
-        "format": "jpeg/png"
-      },
+      "response_format": "image/png",
       "examples": [
         {
-          "description": "Generate an image of a sunset",
-          "request": "https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?width=1280&height=720&seed=42"
+          "description": "Generate an image of a sunset over the ocean",
+          "request": "https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?model=flux&width=1024&height=768"
         },
         {
-          "description": "Generate an enhanced image with a specific model",
-          "request": "https://image.pollinations.ai/prompt/Cyberpunk%20city%20at%20night?model=sdxl&enhance=true&width=1024&height=1024"
+          "description": "Generate a quick image with the turbo model",
+          "request": "https://image.pollinations.ai/prompt/A%20cute%20puppy?model=turbo&width=512&height=512"
         }
       ]
     },
     {
-      "name": "Text Generation (GET)",
+      "name": "Text Generation",
       "description": "Generate text from prompts",
       "endpoint": "https://text.pollinations.ai/{prompt}",
       "method": "GET",
       "parameters": [
         {
           "name": "prompt",
-          "description": "Text prompt for the AI to respond to",
+          "description": "Text prompt for generation",
           "required": true,
           "type": "string",
           "in": "path"
@@ -131,77 +135,98 @@
           "description": "Model to use for text generation",
           "required": false,
           "type": "string",
-          "default": "openai",
-          "in": "query"
+          "in": "query",
+          "enum": [
+            "openai", 
+            "openai-large", 
+            "openai-reasoning", 
+            "qwen-coder", 
+            "llama", 
+            "llamascout", 
+            "mistral", 
+            "unity", 
+            "midijourney", 
+            "rtist", 
+            "searchgpt", 
+            "evil", 
+            "deepseek-reasoning", 
+            "deepseek-reasoning-large", 
+            "phi", 
+            "llama-vision", 
+            "gemini", 
+            "hormoz", 
+            "hypnosis-tracy", 
+            "deepseek", 
+            "sur", 
+            "openai-audio"
+          ],
+          "default": "openai"
         },
         {
-          "name": "seed",
-          "description": "Seed for reproducible results",
+          "name": "max_tokens",
+          "description": "Maximum number of tokens to generate",
           "required": false,
           "type": "integer",
-          "in": "query"
+          "in": "query",
+          "default": 1000,
+          "minimum": 1,
+          "maximum": 4096
         },
         {
-          "name": "json",
-          "description": "Receive response in JSON format",
+          "name": "temperature",
+          "description": "Sampling temperature (higher = more creative, lower = more deterministic)",
           "required": false,
-          "type": "boolean",
-          "default": false,
-          "in": "query"
+          "type": "number",
+          "in": "query",
+          "default": 0.7,
+          "minimum": 0.0,
+          "maximum": 2.0
         },
         {
           "name": "system",
-          "description": "System prompt to set the behavior of the AI",
+          "description": "System prompt to guide the model's behavior",
           "required": false,
           "type": "string",
           "in": "query"
         },
         {
           "name": "stream",
-          "description": "Enable streaming responses via Server-Sent Events (SSE)",
+          "description": "Whether to stream the response",
           "required": false,
           "type": "boolean",
-          "default": false,
-          "in": "query"
-        },
-        {
-          "name": "private",
-          "description": "Prevent the response from appearing in the public feed",
-          "required": false,
-          "type": "boolean",
-          "default": false,
-          "in": "query"
+          "in": "query",
+          "default": false
         },
         {
           "name": "referrer",
-          "description": "Referrer URL/Identifier for tracking and Special Bee program",
+          "description": "Referrer information for tracking",
+          "required": false,
+          "type": "string",
+          "in": "query"
+        },
+        {
+          "name": "special_bee",
+          "description": "Special Bee program identifier for higher rate limits",
           "required": false,
           "type": "string",
           "in": "query"
         }
       ],
-      "response": {
-        "type": "text",
-        "format": "plain/json/stream"
-      },
+      "response_format": "text/plain",
       "examples": [
         {
-          "description": "Generate text about AI",
-          "request": "https://text.pollinations.ai/What%20is%20artificial%20intelligence?model=mistral&seed=42"
+          "description": "Generate a short story",
+          "request": "https://text.pollinations.ai/Write%20a%20short%20story%20about%20a%20robot%20learning%20to%20paint?model=openai&max_tokens=500"
         },
         {
-          "description": "Generate text with a system prompt",
-          "request": "https://text.pollinations.ai/Write%20a%20short%20poem?system=You%20are%20a%20poet&model=claude"
-        },
-        {
-          "description": "Generate streaming text response",
-          "request": "https://text.pollinations.ai/Tell%20me%20a%20story?stream=true"
+          "description": "Generate code with a specialized model",
+          "request": "https://text.pollinations.ai/Write%20a%20Python%20function%20to%20calculate%20the%20Fibonacci%20sequence?model=qwen-coder"
         }
       ]
     },
     {
-      "name": "Audio Generation (GET)",
-      "description": "Generate audio from text using text-to-speech",
+      "name": "Audio Generation",
+      "description": "Generate audio from text (text-to-speech)",
       "endpoint": "https://text.pollinations.ai/{prompt}",
       "method": "GET",
       "parameters": [
@@ -214,269 +239,163 @@
         },
         {
           "name": "model",
-          "description": "Model to use for audio generation (must be 'openai-audio')",
+          "description": "Model to use for audio generation",
           "required": true,
           "type": "string",
-          "default": "openai-audio",
-          "in": "query"
+          "in": "query",
+          "enum": ["openai-audio"],
+          "default": "openai-audio"
         },
         {
           "name": "voice",
           "description": "Voice to use for text-to-speech",
           "required": false,
           "type": "string",
-          "default": "nova",
-          "enum": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
-          "in": "query"
-        },
-        {
-          "name": "private",
-          "description": "Prevent the audio from appearing in the public feed",
-          "required": false,
-          "type": "boolean",
-          "default": false,
-          "in": "query"
+          "in": "query",
+          "enum": ["alloy", "echo", "fable", "onyx", "nova", "shimmer", "coral", "verse", "ballad", "ash", "sage", "amuch", "dan"],
+          "default": "nova"
         },
         {
           "name": "referrer",
-          "description": "Referrer URL/Identifier for tracking and Special Bee program",
+          "description": "Referrer information for tracking",
+          "required": false,
+          "type": "string",
+          "in": "query"
+        },
+        {
+          "name": "special_bee",
+          "description": "Special Bee program identifier for higher rate limits",
           "required": false,
           "type": "string",
           "in": "query"
         }
       ],
-      "response": {
-        "type": "audio",
-        "format": "mp3"
-      },
+      "response_format": "audio/mpeg",
       "examples": [
         {
-          "description": "Generate audio with default voice",
-          "request": "https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio"
+          "description": "Generate speech with the Nova voice",
+          "request": "https://text.pollinations.ai/Hello%20world!%20This%20is%20a%20test%20of%20the%20text-to-speech%20system?model=openai-audio&voice=nova"
         },
         {
-          "description": "Generate audio with specific voice",
-          "request": "https://text.pollinations.ai/This%20is%20a%20demonstration%20of%20text%20to%20speech?model=openai-audio&voice=alloy"
+          "description": "Generate speech with the Alloy voice",
+          "request": "https://text.pollinations.ai/Welcome%20to%20Pollinations.AI%20audio%20generation?model=openai-audio&voice=alloy"
         }
       ]
     },
     {
-      "name": "Text Generation (POST)",
-      "description": "Generate text using a POST request with messages",
-      "endpoint": "https://text.pollinations.ai/openai",
+      "name": "Chat Completions (OpenAI-compatible)",
+      "description": "Generate chat completions using OpenAI-compatible API",
+      "endpoint": "https://api.pollinations.ai/v1/chat/completions",
       "method": "POST",
-      "requestBody": {
-        "content": "application/json",
-        "schema": {
-          "type": "object",
-          "required": ["messages"],
-          "properties": {
-            "messages": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "required": ["role", "content"],
-                "properties": {
-                  "role": {
-                    "type": "string",
-                    "enum": ["system", "user", "assistant"]
-                  },
-                  "content": {
-                    "type": "string"
-                  }
-                }
-              }
-            },
-            "model": {
-              "type": "string",
-              "default": "openai"
-            },
-            "seed": {
-              "type": "integer"
-            },
-            "jsonMode": {
-              "type": "boolean",
-              "default": false
-            },
-            "stream": {
-              "type": "boolean",
-              "default": false
-            },
-            "private": {
-              "type": "boolean",
-              "default": false
-            },
-            "referrer": {
-              "type": "string"
-            },
-            "tools": {
-              "type": "array",
-              "items": {
-                "type": "object"
-              }
-            },
-            "tool_choice": {
-              "type": "object"
-            },
-            "response_format": {
-              "type": "object",
-              "properties": {
-                "type": {
-                  "type": "string",
-                  "enum": ["json_object", "text"]
-                }
-              }
-            }
+      "request_format": "application/json",
+      "request_body": {
+        "model": "openai",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful assistant."
+          },
+          {
+            "role": "user",
+            "content": "Hello, who are you?"
           }
-        }
+        ],
+        "temperature": 0.7,
+        "max_tokens": 1000,
+        "stream": false
       },
-      "response": {
-        "type": "json",
-        "schema": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string"
-            },
-            "object": {
-              "type": "string"
-            },
-            "created": {
-              "type": "integer"
-            },
-            "model": {
-              "type": "string"
-            },
-            "choices": {
-              "type": "array",
-              "items": {
-                "type": "object"
-              }
-            }
-          }
-        }
-      },
+      "response_format": "application/json",
       "examples": [
         {
           "description": "Basic chat completion",
           "request": {
+            "url": "https://api.pollinations.ai/v1/chat/completions",
             "method": "POST",
-            "url": "https://text.pollinations.ai/openai",
             "headers": {
               "Content-Type": "application/json"
             },
             "body": {
               "model": "openai",
               "messages": [
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": "What is the weather like in Paris today?"}
+                {
+                  "role": "system",
+                  "content": "You are a helpful assistant."
+                },
+                {
+                  "role": "user",
+                  "content": "Hello, who are you?"
+                }
               ]
             }
           }
         },
         {
-          "description": "Streaming chat completion",
+          "description": "Chat completion with function calling",
           "request": {
+            "url": "https://api.pollinations.ai/v1/chat/completions",
             "method": "POST",
-            "url": "https://text.pollinations.ai/openai",
             "headers": {
               "Content-Type": "application/json"
             },
             "body": {
-              "model": "mistral",
+              "model": "openai",
               "messages": [
-                {"role": "user", "content": "Write a poem about the sea"}
+                {
+                  "role": "user",
+                  "content": "What's the weather like in San Francisco?"
+                }
               ],
-              "stream": true
-            }
-          }
-        },
-        {
-          "description": "Vision capability with image input",
-          "request": {
-            "method": "POST",
-            "url": "https://text.pollinations.ai/openai",
-            "headers": {
-              "Content-Type": "application/json"
-            },
-            "body": {
-              "model": "openai-large",
-              "messages": [
-                {"role": "user", "content": [
-                  {"type": "text", "text": "What's in this image?"},
-                  {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}}
-                ]}
-              ]
+              "functions": [
+                {
+                  "name": "get_weather",
+                  "description": "Get the current weather in a given location",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "location": {
+                        "type": "string",
+                        "description": "The city and state, e.g. San Francisco, CA"
+                      },
+                      "unit": {
+                        "type": "string",
+                        "enum": ["celsius", "fahrenheit"],
+                        "description": "The temperature unit to use"
+                      }
+                    },
+                    "required": ["location"]
+                  }
+                }
+              ],
+              "function_call": "auto"
             }
           }
         }
       ]
     },
     {
-      "name": "Audio Generation (POST)",
-      "description": "Generate audio using a POST request with text",
-      "endpoint": "https://text.pollinations.ai/openai",
+      "name": "Speech Generation (OpenAI-compatible)",
+      "description": "Generate speech from text using OpenAI-compatible API",
+      "endpoint": "https://api.pollinations.ai/v1/audio/speech",
       "method": "POST",
-      "requestBody": {
-        "content": "application/json",
-        "schema": {
-          "type": "object",
-          "required": ["model", "messages"],
-          "properties": {
-            "model": {
-              "type": "string",
-              "enum": ["openai-audio"],
-              "default": "openai-audio"
-            },
-            "messages": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "required": ["role", "content"],
-                "properties": {
-                  "role": {
-                    "type": "string",
-                    "enum": ["user"]
-                  },
-                  "content": {
-                    "type": "string"
-                  }
-                }
-              }
-            },
-            "voice": {
-              "type": "string",
-              "enum": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
-              "default": "nova"
-            },
-            "private": {
-              "type": "boolean",
-              "default": false
-            },
-            "referrer": {
-              "type": "string"
-            }
-          }
-        }
+      "request_format": "application/json",
+      "request_body": {
+        "model": "openai-audio",
+        "input": "Hello, world!",
+        "voice": "nova"
       },
-      "response": {
-        "type": "audio",
-        "format": "mp3"
-      },
+      "response_format": "audio/mpeg",
       "examples": [
         {
-          "description": "Generate audio with POST request",
+          "description": "Generate speech with the Nova voice",
           "request": {
+            "url": "https://api.pollinations.ai/v1/audio/speech",
             "method": "POST",
-            "url": "https://text.pollinations.ai/openai",
             "headers": {
               "Content-Type": "application/json"
             },
             "body": {
               "model": "openai-audio",
-              "messages": [
-                {"role": "user", "content": "Convert this longer text into speech using the selected voice. This method is better for larger inputs."}
-              ],
+              "input": "Hello, world! This is a test of the text-to-speech system.",
               "voice": "nova"
             }
           }
@@ -484,143 +403,252 @@
       ]
     },
     {
-      "name": "Speech-to-Text (POST)",
-      "description": "Transcribe audio to text",
-      "endpoint": "https://text.pollinations.ai/openai",
+      "name": "Audio Transcription (OpenAI-compatible)",
+      "description": "Transcribe audio to text using OpenAI-compatible API",
+      "endpoint": "https://api.pollinations.ai/v1/audio/transcriptions",
       "method": "POST",
-      "requestBody": {
-        "content": "application/json",
-        "schema": {
-          "type": "object",
-          "required": ["model", "messages"],
-          "properties": {
-            "model": {
-              "type": "string",
-              "enum": ["openai-audio"],
-              "default": "openai-audio"
-            },
-            "messages": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "required": ["role", "content"],
-                "properties": {
-                  "role": {
-                    "type": "string",
-                    "enum": ["user"]
-                  },
-                  "content": [
-                    {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "enum": ["text"]
-                        },
-                        "text": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "enum": ["audio_url"]
-                        },
-                        "audio_url": {
-                          "type": "object",
-                          "properties": {
-                            "url": {
-                              "type": "string"
-                            }
-                          }
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            },
-            "private": {
-              "type": "boolean",
-              "default": false
-            },
-            "referrer": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "response": {
-        "type": "json",
-        "schema": {
-          "type": "object",
-          "properties": {
-            "text": {
-              "type": "string"
-            }
-          }
-        }
-      },
+      "request_format": "multipart/form-data",
+      "response_format": "application/json",
       "examples": [
         {
-          "description": "Transcribe audio to text",
+          "description": "Transcribe an audio file",
           "request": {
+            "url": "https://api.pollinations.ai/v1/audio/transcriptions",
             "method": "POST",
-            "url": "https://text.pollinations.ai/openai",
             "headers": {
-              "Content-Type": "application/json"
+              "Content-Type": "multipart/form-data"
             },
             "body": {
-              "model": "openai-audio",
-              "messages": [
-                {
-                  "role": "user",
-                  "content": [
-                    {
-                      "type": "text",
-                      "text": "Transcribe this audio file"
-                    },
-                    {
-                      "type": "audio_url",
-                      "audio_url": {
-                        "url": "https://example.com/audio.mp3"
-                      }
-                    }
-                  ]
-                }
-              ]
+              "file": "(binary audio file)",
+              "model": "openai-audio"
             }
           }
-        }
-      ]
-    },
-    {
-      "name": "List Available Models",
-      "description": "Get a list of available models for image or text generation",
-      "endpoint": "https://image.pollinations.ai/models",
-      "method": "GET",
-      "response": {
-        "type": "json",
-        "schema": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "examples": [
-        {
-          "description": "List available image models",
-          "request": "https://image.pollinations.ai/models"
-        },
-        {
-          "description": "List available text models",
-          "request": "https://text.pollinations.ai/models"
         }
       ]
     }
-  ]
+  ],
+  "models": {
+    "text": [
+      {
+        "id": "openai",
+        "name": "OpenAI GPT-4.1-nano",
+        "description": "OpenAI's GPT model with text and image input capabilities",
+        "provider": "Azure",
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"],
+        "vision": true
+      },
+      {
+        "id": "openai-large",
+        "name": "OpenAI GPT-4.1 mini",
+        "description": "Larger version of OpenAI's GPT model with text and image input capabilities",
+        "provider": "Azure",
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"],
+        "vision": true
+      },
+      {
+        "id": "openai-reasoning",
+        "name": "OpenAI o4-mini",
+        "description": "Reasoning-focused model from OpenAI",
+        "provider": "Azure",
+        "reasoning": true,
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"],
+        "vision": true
+      },
+      {
+        "id": "qwen-coder",
+        "name": "Qwen 2.5 Coder 32B",
+        "description": "Code-focused model from Qwen",
+        "provider": "Scaleway",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"]
+      },
+      {
+        "id": "llama",
+        "name": "Llama 3.3 70B",
+        "description": "Large language model from Meta",
+        "provider": "Cloudflare",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"]
+      },
+      {
+        "id": "llamascout",
+        "name": "Llama 4 Scout 17B",
+        "description": "Scout variant of Llama 4",
+        "provider": "Cloudflare",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"]
+      },
+      {
+        "id": "mistral",
+        "name": "Mistral Small 3",
+        "description": "Mistral's small model with vision capabilities",
+        "provider": "Scaleway",
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"],
+        "vision": true
+      },
+      {
+        "id": "unity",
+        "name": "Unity Mistral Large",
+        "description": "Uncensored Mistral model with vision capabilities",
+        "provider": "Scaleway",
+        "uncensored": true,
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"],
+        "vision": true
+      },
+      {
+        "id": "midijourney",
+        "name": "Midijourney",
+        "description": "Music generation focused model",
+        "provider": "Azure",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"]
+      },
+      {
+        "id": "rtist",
+        "name": "Rtist",
+        "description": "Creative writing focused model",
+        "provider": "Azure",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"]
+      },
+      {
+        "id": "searchgpt",
+        "name": "SearchGPT",
+        "description": "Search-augmented model",
+        "provider": "Azure",
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"],
+        "vision": true
+      },
+      {
+        "id": "evil",
+        "name": "Evil",
+        "description": "Uncensored model with vision capabilities",
+        "provider": "Scaleway",
+        "uncensored": true,
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"],
+        "vision": true
+      },
+      {
+        "id": "deepseek-reasoning",
+        "name": "DeepSeek-R1 Distill Qwen 32B",
+        "description": "Reasoning-focused model from DeepSeek",
+        "provider": "Cloudflare",
+        "reasoning": true,
+        "aliases": ["deepseek-r1"],
+        "input_modalities": ["text"],
+        "output_modalities": ["text"]
+      },
+      {
+        "id": "deepseek-reasoning-large",
+        "name": "DeepSeek R1 - Llama 70B",
+        "description": "Large reasoning-focused model from DeepSeek",
+        "provider": "Scaleway",
+        "reasoning": true,
+        "aliases": ["deepseek-r1-llama"],
+        "input_modalities": ["text"],
+        "output_modalities": ["text"]
+      },
+      {
+        "id": "phi",
+        "name": "Phi-4 Instruct",
+        "description": "Multi-modal model with text, image, and audio input capabilities",
+        "provider": "Cloudflare",
+        "input_modalities": ["text", "image", "audio"],
+        "output_modalities": ["text"],
+        "vision": true,
+        "audio": true
+      },
+      {
+        "id": "llama-vision",
+        "name": "Llama 3.2 11B Vision",
+        "description": "Vision-capable Llama model",
+        "provider": "Cloudflare",
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"],
+        "vision": true
+      },
+      {
+        "id": "gemini",
+        "name": "Gemini 2.5 Flash Preview",
+        "description": "Multi-modal model from Google with text, image, and audio capabilities",
+        "provider": "Azure",
+        "input_modalities": ["text", "image", "audio"],
+        "output_modalities": ["audio", "text"],
+        "vision": true,
+        "audio": true
+      },
+      {
+        "id": "hormoz",
+        "name": "Hormoz 8b",
+        "description": "Compact language model",
+        "provider": "Modal",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"]
+      },
+      {
+        "id": "hypnosis-tracy",
+        "name": "Hypnosis Tracy 7B",
+        "description": "Model with text and audio capabilities",
+        "provider": "Azure",
+        "input_modalities": ["text", "audio"],
+        "output_modalities": ["audio", "text"],
+        "audio": true
+      },
+      {
+        "id": "deepseek",
+        "name": "DeepSeek-V3",
+        "description": "Language model from DeepSeek",
+        "provider": "DeepSeek",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"]
+      },
+      {
+        "id": "sur",
+        "name": "Sur AI Assistant",
+        "description": "Mistral-based model with vision capabilities",
+        "provider": "Scaleway",
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"],
+        "vision": true
+      },
+      {
+        "id": "openai-audio",
+        "name": "OpenAI GPT-4o-audio-preview",
+        "description": "Multi-modal model with text, image, and audio capabilities",
+        "provider": "Azure",
+        "input_modalities": ["text", "image", "audio"],
+        "output_modalities": ["audio", "text"],
+        "vision": true,
+        "audio": true,
+        "voices": ["alloy", "echo", "fable", "onyx", "nova", "shimmer", "coral", "verse", "ballad", "ash", "sage", "amuch", "dan"]
+      }
+    ],
+    "image": [
+      {
+        "id": "flux",
+        "name": "FLUX",
+        "description": "Latest stable diffusion model",
+        "provider": "Pollinations"
+      },
+      {
+        "id": "turbo",
+        "name": "Turbo",
+        "description": "Fast image generation model",
+        "provider": "Pollinations"
+      }
+    ]
+  },
+  "documentation_url": "https://pollinations.ai/docs",
+  "repository_url": "https://github.com/pollinations/pollinations",
+  "pricing": {
+    "description": "Free for personal and non-commercial use with rate limits",
+    "url": "https://pollinations.ai/pricing"
+  }
 }

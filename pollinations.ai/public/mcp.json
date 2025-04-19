@@ -78,68 +78,229 @@
     "text": [
       {
         "id": "openai",
-        "name": "OpenAI GPT",
-        "description": "Default model for text generation"
+        "description": "OpenAI GPT-4.1-nano (supports text and image inputs)",
+        "provider": "Azure",
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"],
+        "vision": true,
+        "audio": false
       },
       {
-        "id": "mistral",
-        "name": "Mistral",
-        "description": "Open-source large language model"
+        "id": "openai-large",
+        "description": "OpenAI GPT-4.1 mini (supports text and image inputs)",
+        "provider": "Azure",
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"],
+        "vision": true,
+        "audio": false
       },
       {
-        "id": "claude",
-        "name": "Claude",
-        "description": "Anthropic's Claude model"
+        "id": "openai-reasoning",
+        "description": "OpenAI o4-mini (reasoning-focused model)",
+        "provider": "Azure",
+        "reasoning": true,
+        "vision": true,
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"],
+        "audio": false
       },
       {
-        "id": "gemini",
-        "name": "Gemini",
-        "description": "Google's Gemini model"
+        "id": "qwen-coder",
+        "description": "Qwen 2.5 Coder 32B (code-focused model)",
+        "provider": "Scaleway",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"],
+        "vision": false,
+        "audio": false
       },
       {
         "id": "llama",
-        "name": "Llama",
-        "description": "Meta's Llama model"
+        "description": "Llama 3.3 70B",
+        "provider": "Cloudflare",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"],
+        "vision": false,
+        "audio": false
       },
       {
-        "id": "deepseek",
-        "name": "DeepSeek",
-        "description": "DeepSeek's language model"
+        "id": "llamascout",
+        "description": "Llama 4 Scout 17B",
+        "provider": "Cloudflare",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"],
+        "vision": false,
+        "audio": false
+      },
+      {
+        "id": "mistral",
+        "description": "Mistral Small 3 (supports text and image inputs)",
+        "provider": "Scaleway",
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"],
+        "vision": true,
+        "audio": false
+      },
+      {
+        "id": "unity",
+        "description": "Unity Mistral Large (uncensored, supports text and image inputs)",
+        "provider": "Scaleway",
+        "uncensored": true,
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"],
+        "vision": true,
+        "audio": false
+      },
+      {
+        "id": "midijourney",
+        "description": "Midijourney (music generation focused)",
+        "provider": "Azure",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"],
+        "vision": false,
+        "audio": false
+      },
+      {
+        "id": "rtist",
+        "description": "Rtist (creative writing focused)",
+        "provider": "Azure",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"],
+        "vision": false,
+        "audio": false
       },
       {
         "id": "searchgpt",
-        "name": "SearchGPT",
-        "description": "Model with real-time web search capabilities"
+        "description": "SearchGPT (search-augmented model)",
+        "provider": "Azure",
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"],
+        "vision": true,
+        "audio": false
       },
       {
-        "id": "o3-mini",
-        "name": "O3-mini",
-        "description": "Optimized small language model with reasoning capabilities"
+        "id": "evil",
+        "description": "Evil (uncensored model with text and image inputs)",
+        "provider": "Scaleway",
+        "uncensored": true,
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"],
+        "vision": true,
+        "audio": false
+      },
+      {
+        "id": "deepseek-reasoning",
+        "description": "DeepSeek-R1 Distill Qwen 32B (reasoning-focused)",
+        "reasoning": true,
+        "provider": "Cloudflare",
+        "aliases": "deepseek-r1",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"],
+        "vision": false,
+        "audio": false
+      },
+      {
+        "id": "deepseek-reasoning-large",
+        "description": "DeepSeek R1 - Llama 70B (reasoning-focused)",
+        "reasoning": true,
+        "provider": "Scaleway",
+        "aliases": "deepseek-r1-llama",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"],
+        "vision": false,
+        "audio": false
+      },
+      {
+        "id": "phi",
+        "description": "Phi-4 Instruct (supports text, image, and audio inputs)",
+        "provider": "Cloudflare",
+        "input_modalities": ["text", "image", "audio"],
+        "output_modalities": ["text"],
+        "vision": true,
+        "audio": true
+      },
+      {
+        "id": "llama-vision",
+        "description": "Llama 3.2 11B Vision (supports text and image inputs)",
+        "provider": "Cloudflare",
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"],
+        "vision": true,
+        "audio": false
+      },
+      {
+        "id": "gemini",
+        "description": "Gemini 2.5 Flash Preview (supports text, image, and audio inputs/outputs)",
+        "provider": "Azure",
+        "input_modalities": ["text", "image", "audio"],
+        "output_modalities": ["audio", "text"],
+        "vision": true,
+        "audio": true
+      },
+      {
+        "id": "hormoz",
+        "description": "Hormoz 8b",
+        "provider": "Modal",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"],
+        "vision": false,
+        "audio": false
+      },
+      {
+        "id": "hypnosis-tracy",
+        "description": "Hypnosis Tracy 7B (supports text and audio inputs/outputs)",
+        "provider": "Azure",
+        "input_modalities": ["text", "audio"],
+        "output_modalities": ["audio", "text"],
+        "vision": false,
+        "audio": true
+      },
+      {
+        "id": "deepseek",
+        "description": "DeepSeek-V3",
+        "provider": "DeepSeek",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"],
+        "vision": false,
+        "audio": false
+      },
+      {
+        "id": "sur",
+        "description": "Sur AI Assistant (Mistral-based, supports text and image inputs)",
+        "provider": "Scaleway",
+        "input_modalities": ["text", "image"],
+        "output_modalities": ["text"],
+        "vision": true,
+        "audio": false
+      },
+      {
+        "id": "openai-audio",
+        "description": "OpenAI GPT-4o-audio-preview (supports text, image, and audio inputs/outputs)",
+        "voices": ["alloy", "echo", "fable", "onyx", "nova", "shimmer", "coral", "verse", "ballad", "ash", "sage", "amuch", "dan"],
+        "provider": "Azure",
+        "input_modalities": ["text", "image", "audio"],
+        "output_modalities": ["audio", "text"],
+        "vision": true,
+        "audio": true
       }
     ],
     "image": [
       {
         "id": "flux",
-        "name": "FLUX",
-        "description": "Default model for image generation"
-      },
-      {
-        "id": "sdxl",
-        "name": "Stable Diffusion XL",
-        "description": "High-quality image generation model"
+        "description": "Latest stable diffusion model",
+        "provider": "Pollinations"
       },
       {
         "id": "turbo",
-        "name": "Turbo",
-        "description": "Fast image generation model"
+        "description": "Fast image generation model",
+        "provider": "Pollinations"
       }
     ],
     "audio": [
       {
         "id": "openai-audio",
-        "name": "OpenAI Audio",
-        "description": "Text-to-speech and speech-to-text model",
-        "voices": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+        "description": "OpenAI GPT-4o-audio-preview with text-to-speech capabilities",
+        "provider": "Azure",
+        "voices": ["alloy", "echo", "fable", "onyx", "nova", "shimmer", "coral", "verse", "ballad", "ash", "sage", "amuch", "dan"]
       }
     ]
   },

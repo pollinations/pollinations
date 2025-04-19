@@ -5,6 +5,7 @@ This document tracks the status of pull requests submitted to add Pollinations.A
 | Repository | PR Link | Status | Date | Notes |
 |------------|---------|--------|------|-------|
 | [awesome-generative-ai](https://github.com/steven2358/awesome-generative-ai) | [PR #225](https://github.com/steven2358/awesome-generative-ai/pull/225) | Open | 2025-04-19 | Added Pollinations.AI to Other section |
+| [chatbot-ui](https://github.com/mckaywrigley/chatbot-ui) | [PR #1930](https://github.com/mckaywrigley/chatbot-ui/pull/1930) | Open | 2025-04-19 | Added Pollinations.AI integration with text models |
 | [awesome-generative-ai-apis](https://github.com/foss42/awesome-generative-ai-apis) | [PR #337](https://github.com/foss42/awesome-generative-ai-apis/pull/337) | Open | - | Added Pollinations.AI to the "Image" section |
 | [awesome-generative-ai](https://github.com/steven2358/awesome-generative-ai) | [PR #221](https://github.com/steven2358/awesome-generative-ai/pull/221) | Open | - | Added Pollinations.AI to multiple sections |
 | [awesome-cyberai4k12](https://github.com/cyberai4k12/awesome-cyberai4k12) | [PR #1](https://github.com/cyberai4k12/awesome-cyberai4k12/pull/1) | Open | - | Added Pollinations.AI to the "AI Tools for Education" section |

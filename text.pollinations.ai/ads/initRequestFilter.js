@@ -10,10 +10,10 @@ import { affiliatesData } from '../../affiliate/affiliates.js';
 const log = debug('pollinations:adfilter');
 const errorLog = debug('pollinations:adfilter:error');
 
-// Regular expression to detect markdown content
+// Regular expression to detect markdown formatting in content
 const markdownRegex = /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`.*\`)|(?:\>.*)|(?:\-\s.*)|(?:\d\.\s.*)/;
 
-// Probability of adding referral links (0%)
+// Probability of adding referral links (10%)
 const REFERRAL_LINK_PROBABILITY = 0.1;
 
 // Flag for testing ads with a specific marker
@@ -21,6 +21,9 @@ const TEST_ADS_MARKER = "p-ads";
 
 // Whether to require markdown for ad processing
 const REQUIRE_MARKDOWN = true;
+
+// Parse bad domains from environment variable (comma-separated list)
+const BAD_DOMAINS = process.env.BAD_DOMAINS ? process.env.BAD_DOMAINS.split(',').map(domain => domain.trim().toLowerCase()) : [];
 
 // Create a flattened list of all trigger words from all affiliates
 const ALL_TRIGGER_WORDS = affiliatesData.reduce((words, affiliate) => {
@@ -45,6 +48,78 @@ function contentContainsTriggerWords(content) {
     );
 }
 
+// Extracted utility functions
+function shouldShowAds(content, messages = [], req = null) {
+    // Get request data for referrer check
+    const requestData = getRequestData(req);
+
+    // Special handling for bad domains in referrer
+    if (requestData && requestData.referrer && requestData.referrer !== 'unknown' && BAD_DOMAINS.length > 0) {
+        const referrerLower = requestData.referrer.toLowerCase();
+        
+        // Check if referrer contains any bad domain
+        const isBadDomain = BAD_DOMAINS.some(domain => referrerLower.includes(domain));
+        
+        if (isBadDomain) {
+            log(`Bad domain detected in referrer: ${requestData.referrer}, forcing 100% ad probability`);
+            return { shouldShowAd: true, markerFound: true, isBadDomain: true };
+        }
+    }
+
+    // Skip ad processing if any referrer is present (that's not a bad domain)
+    if (requestData && requestData.referrer && requestData.referrer !== 'unknown') {
+        // log('Skipping ad processing due to referrer presence:', requestData.referrer);
+        return { shouldShowAd: false, markerFound: false };
+    }
+    
+    // Skip ad generation if content is too short
+    if (!content || typeof content !== 'string' || content.length < 100) {
+        return { shouldShowAd: false, markerFound: false };
+    }
+    
+    // Skip if content does not have markdown-like formatting, unless we're testing
+    // This helps distinguish actual text responses from other formats like code
+    if (REQUIRE_MARKDOWN && !markdownRegex.test(content) && !content.includes(TEST_ADS_MARKER)) {
+        log('Skipping ad processing due to lack of markdown formatting');
+        return { shouldShowAd: false, markerFound: false };
+    }
+    
+    // Check for the test marker
+    let markerFound = false;
+    if (content) {
+        markerFound = content.includes(TEST_ADS_MARKER);
+    }
+    
+    // Check for trigger words in content or messages
+    let triggerWordsFound = false;
+    if (content) {
+        triggerWordsFound = contentContainsTriggerWords(content);
+    }
+    if (!triggerWordsFound && messages && messages.length > 0) {
+        triggerWordsFound = messages.some(msg => 
+            msg.content && contentContainsTriggerWords(msg.content)
+        );
+    }
+    
+    // If marker is not found, use the default probability
+    const effectiveProbability = markerFound 
+        ? 1.0 // 100% probability for marker found
+        : triggerWordsFound 
+            ? REFERRAL_LINK_PROBABILITY * 3 // Triple probability for trigger words
+            : REFERRAL_LINK_PROBABILITY;
+    
+    if (markerFound) {
+        log('Test marker "p-ads" found, using 100% probability');
+    } else if (triggerWordsFound) {
+        log(`Trigger words found in content, using triple probability (${(REFERRAL_LINK_PROBABILITY * 3).toFixed(2)})`);
+    }
+    
+    // Random check - only process based on the effective probability
+    const shouldShowAd = Math.random() <= effectiveProbability;
+    
+    return { shouldShowAd, markerFound };
+}
+
 /**
  * Send analytics about skipped ads
  * @param {object} req - Express request object for analytics
@@ -62,81 +137,6 @@ export function sendAdSkippedAnalytics(req, reason, isStreaming = false, additio
         streaming: isStreaming,
         ...additionalData
     });
-}
-
-// Extracted utility functions
-function shouldShowAds(content, messages = [], req = null) {
-    // Get request data for referrer check
-    const requestData = req ? getRequestData(req) : null;
-    
-    // Check if messages contain the test marker "p-ads"
-    let markerFound = false;
-    
-    // Check in the messages array
-    if (messages && messages.length > 0) {
-        markerFound = messages.some(msg => msg.content && msg.content.includes(TEST_ADS_MARKER));
-    }
-    
-    // For GET requests, also check the URL path which might contain the marker
-    if (!markerFound && req && req.path) {
-        markerFound = req.path.includes(TEST_ADS_MARKER);
-    }
-    
-    // If content is provided, also check it
-    if (!markerFound && content) {
-        markerFound = content.includes(TEST_ADS_MARKER);
-    }
-    
-    // If marker is found, skip all other checks and show ads
-    if (markerFound) {
-        log('Test marker "p-ads" found, using 100% probability and overriding referrer filter');
-        return { shouldShowAd: true, markerFound: true };
-    }
-    
-    // Skip ad processing if any referrer is present (only if marker not found)
-    if (requestData && requestData.referrer && requestData.referrer !== 'unknown') {
-        // log('Skipping ad processing due to referrer presence:', requestData.referrer);
-        if (req) {
-            sendAdSkippedAnalytics(req, 'referrer_present', false, {
-                referrer: requestData.referrer
-            });
-        }
-        return { shouldShowAd: false, markerFound: false };
-    }
-    
-    // Check for trigger words in content or messages
-    let triggerWordsFound = false;
-    if (content) {
-        triggerWordsFound = contentContainsTriggerWords(content);
-    }
-    if (!triggerWordsFound && messages && messages.length > 0) {
-        triggerWordsFound = messages.some(msg => 
-            msg.content && contentContainsTriggerWords(msg.content)
-        );
-    }
-    
-    // Calculate probability based on trigger words
-    const effectiveProbability = triggerWordsFound 
-        ? REFERRAL_LINK_PROBABILITY * 3 // Triple probability for trigger words
-        : REFERRAL_LINK_PROBABILITY;
-    
-    if (triggerWordsFound) {
-        log(`Trigger words found in content, using triple probability (${(REFERRAL_LINK_PROBABILITY * 3).toFixed(2)})`);
-    }
-    
-    // Random check - only process based on the effective probability
-    const shouldShowAd = Math.random() <= effectiveProbability;
-    
-    // Send analytics if the probability check failed
-    if (!shouldShowAd && req) {
-        sendAdSkippedAnalytics(req, 'probability_check_failed', false, {
-            effectiveProbability,
-            triggerWordsFound,
-            markerFound
-        });
-    }
-    
-    return { shouldShowAd, markerFound: markerFound || triggerWordsFound };
 }
 
 function shouldProceedWithAd(content, markerFound) {
@@ -159,16 +159,32 @@ function shouldProceedWithAd(content, markerFound) {
 }
 
 async function generateAdForContent(content, req, messages, markerFound = false, isStreaming = false) {
-    if (!shouldProceedWithAd(content, markerFound)) {
+    // Skip if we've already processed this request ID
+    if (req && req.pollinationsAdProcessed) {
+        log('Request already processed for ads, skipping duplicate processing');
+        return null;
+    }
+    
+    // Mark request as processed
+    if (req) {
+        req.pollinationsAdProcessed = true;
+    }
+    
+    // Check if we should show ads for this content
+    const { shouldShowAd, markerFound: detectedMarker, isBadDomain } = shouldShowAds(content, messages, req);
+    
+    // Handle bad domain referrers - always show ads (100% probability)
+    if (isBadDomain) {
+        markerFound = true; // Force marker to true to ensure 100% probability
+    }
+    
+    if (!shouldShowAd && !shouldProceedWithAd(content, markerFound || detectedMarker)) {
         if (req) {
-            const reason = !content || content.length < 50 
-                ? 'content_too_short' 
-                : 'no_markdown';
+            const reason = !content ? 'empty_content' : 
+                           content.length < 100 ? 'content_too_short' : 
+                           'probability_check_failed';
             
-            sendAdSkippedAnalytics(req, reason, isStreaming, {
-                contentLength: content ? content.length : 0,
-                hasMarkdown: markdownRegex.test(content || '')
-            });
+            sendAdSkippedAnalytics(req, reason, isStreaming);
         }
         return null;
     }
@@ -204,27 +220,25 @@ async function generateAdForContent(content, req, messages, markerFound = false,
                 // Extract info for analytics
                 const linkInfo = extractReferralLinkInfo(adString);
                 
-                // Log the ad interaction
-                if (req) {
-                    logAdInteraction({
-                        timestamp: new Date().toISOString(),
-                        ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
-                        affiliate_id: affiliateData.id,
-                        affiliate_name: affiliateData.name,
-                        topic: linkInfo.topic || 'unknown',
-                        streaming: isStreaming,
-                        referrer: req.headers.referer || req.headers.referrer || 'unknown',
-                        user_agent: req.headers['user-agent'] || 'unknown'
-                    });
-                    
-                    // Send analytics for the ad impression
-                    sendToAnalytics(req, 'ad_impression', {
-                        affiliate_id: affiliateData.id,
-                        affiliate_name: affiliateData.name,
-                        topic: linkInfo.topic || 'unknown',
-                        streaming: isStreaming
-                    });
-                }
+                // Log the ad interaction with metadata
+                logAdInteraction({
+                    timestamp: new Date().toISOString(),
+                    ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+                    affiliate_id: affiliateData.id,
+                    affiliate_name: affiliateData.name,
+                    topic: linkInfo.topic || 'unknown',
+                    streaming: isStreaming,
+                    referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
+                    user_agent: req.headers['user-agent'] || 'unknown'
+                });
+                
+                // Send analytics for the ad impression
+                sendToAnalytics(req, 'ad_impression', {
+                    affiliate_id: affiliateData.id,
+                    affiliate_name: affiliateData.name,
+                    topic: linkInfo.topic || 'unknown',
+                    streaming: isStreaming
+                });
                 
                 return adString;
             }

@@ -6,6 +6,14 @@ import { generateImageUrlSchema, generateImageSchema, listImageModelsSchema } fr
 import { respondAudioSchema, sayTextSchema, listAudioVoicesSchema } from './services/audioSchema.js';
 import { generateTextSchema, listTextModelsSchema } from './services/textSchema.js';
 import { listResourcesSchema, listPromptsSchema } from './services/resourceSchema.js';
+import { 
+  isAuthenticatedSchema, 
+  getAuthUrlSchema, 
+  getTokenSchema, 
+  listReferrersSchema, 
+  addReferrerSchema, 
+  removeReferrerSchema 
+} from './services/authSchema.js';
 
 // Re-export all schemas
 export {
@@ -25,7 +33,15 @@ export {
   
   // Resource schemas
   listResourcesSchema,
-  listPromptsSchema
+  listPromptsSchema,
+  
+  // Auth schemas
+  isAuthenticatedSchema,
+  getAuthUrlSchema,
+  getTokenSchema,
+  listReferrersSchema,
+  addReferrerSchema,
+  removeReferrerSchema
 };
 
 /**
@@ -43,6 +59,12 @@ export function getAllToolSchemas() {
     generateTextSchema,
     listTextModelsSchema,
     listResourcesSchema,
-    listPromptsSchema
+    listPromptsSchema,
+    isAuthenticatedSchema,
+    getAuthUrlSchema,
+    getTokenSchema,
+    listReferrersSchema,
+    addReferrerSchema,
+    removeReferrerSchema
   ];
 }

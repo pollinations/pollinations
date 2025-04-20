@@ -9,6 +9,18 @@ import { generateImageUrl, generateImage, listImageModels } from './services/ima
 import { respondAudio, sayText, listAudioVoices } from './services/audioService.js';
 import { generateText, listTextModels } from './services/textService.js';
 import { listResources, listPrompts } from './services/resourceService.js';
+import { 
+  isAuthenticated,
+  getAuthUrl,
+  getToken,
+  regenerateToken,
+  listReferrers,
+  addReferrer,
+  removeReferrer,
+  verifyToken,
+  verifyReferrer,
+  completeAuth
+} from './services/authService.js';
 
 /**
  * List available models from Pollinations APIs
@@ -44,7 +56,19 @@ export {
   
   // Resource services
   listResources,
-  listPrompts
+  listPrompts,
+  
+  // Authentication services
+  isAuthenticated,
+  getAuthUrl,
+  getToken,
+  regenerateToken,
+  listReferrers,
+  addReferrer,
+  removeReferrer,
+  verifyToken,
+  verifyReferrer,
+  completeAuth
 };
 
 // If this file is run directly (e.g., with Node.js)

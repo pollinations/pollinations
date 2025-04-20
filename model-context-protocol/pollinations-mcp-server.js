@@ -97,6 +97,14 @@ import {
   listPrompts
 } from './src/index.js';
 import { getAllToolSchemas } from './src/schemas.js';
+import {
+  isAuthenticated,
+  getAuthUrl,
+  getToken,
+  listReferrers,
+  addReferrer,
+  removeReferrer
+} from './src/services/authService.js';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -367,6 +375,108 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return {
         content: [
           { type: 'text', text: `Error listing prompts: ${error.message}` }
+        ],
+        isError: true
+      };
+    }
+  } else if (name === 'isAuthenticated') {
+    try {
+      const { sessionId } = args;
+      const result = await isAuthenticated(sessionId);
+      return {
+        content: [
+          { type: 'text', text: JSON.stringify(result, null, 2) }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          { type: 'text', text: `Error checking authentication: ${error.message}` }
+        ],
+        isError: true
+      };
+    }
+  } else if (name === 'getAuthUrl') {
+    try {
+      const { returnUrl } = args;
+      const result = await getAuthUrl({ returnUrl });
+      return {
+        content: [
+          { type: 'text', text: JSON.stringify(result, null, 2) }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          { type: 'text', text: `Error getting auth URL: ${error.message}` }
+        ],
+        isError: true
+      };
+    }
+  } else if (name === 'getToken') {
+    try {
+      const { sessionId } = args;
+      const result = await getToken(sessionId);
+      return {
+        content: [
+          { type: 'text', text: JSON.stringify(result, null, 2) }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          { type: 'text', text: `Error getting token: ${error.message}` }
+        ],
+        isError: true
+      };
+    }
+  } else if (name === 'listReferrers') {
+    try {
+      const { sessionId } = args;
+      const result = await listReferrers(sessionId);
+      return {
+        content: [
+          { type: 'text', text: JSON.stringify(result, null, 2) }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          { type: 'text', text: `Error listing referrers: ${error.message}` }
+        ],
+        isError: true
+      };
+    }
+  } else if (name === 'addReferrer') {
+    try {
+      const { sessionId, referrer } = args;
+      const result = await addReferrer(sessionId, referrer);
+      return {
+        content: [
+          { type: 'text', text: JSON.stringify(result, null, 2) }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          { type: 'text', text: `Error adding referrer: ${error.message}` }
+        ],
+        isError: true
+      };
+    }
+  } else if (name === 'removeReferrer') {
+    try {
+      const { sessionId, referrer } = args;
+      const result = await removeReferrer(sessionId, referrer);
+      return {
+        content: [
+          { type: 'text', text: JSON.stringify(result, null, 2) }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          { type: 'text', text: `Error removing referrer: ${error.message}` }
         ],
         isError: true
       };

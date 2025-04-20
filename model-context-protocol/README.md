@@ -9,7 +9,8 @@ A Model Context Protocol (MCP) server for the Pollinations APIs that enables AI 
 - Generate text responses from text prompts
 - Generate audio (text-to-speech) from text prompts
 - List available image and text generation models
-- No authentication required
+- GitHub-based authentication (new!)
+- Support for both token-based and referrer-based authentication
 - Simple and lightweight
 - Compatible with the Model Context Protocol (MCP)
 
@@ -96,9 +97,49 @@ node --version
 
 If it shows a version lower than 16.0.0, consider upgrading for best compatibility.
 
+## GitHub Authentication (New!)
+
+The MCP server now includes a GitHub-based authentication system that provides:
+
+- GitHub OAuth authentication for Pollinations services
+- Dual authentication methods:
+  - **Referrer-based authentication**: Automatically authenticate based on whitelisted domains
+  - **Token-based authentication**: Use a personal access token for API access
+
+For detailed documentation on the authentication system, see [GITHUB_AUTH.md](./GITHUB_AUTH.md).
+
+### Authentication Server
+
+To start the authentication server:
+
+```bash
+# Run the authentication server
+npm run start-auth
+```
+
+The authentication server runs on port 3000 by default and should be deployed at `me.pollinations.ai`. It provides:
+
+1. GitHub OAuth flow endpoints
+2. Token management endpoints
+3. Referrer whitelist management endpoints
+4. A simple web interface for managing authentication settings
+
+### Environment Variables
+
+The authentication server requires the following environment variables:
+
+```
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+SESSION_SECRET=random_secret_for_sessions  # Optional, will generate random if not provided
+PORT=3000  # Optional, defaults to 3000
+```
+
 ## Available Tools
 
 The MCP server provides the following tools:
+
+### Content Generation
 
 1. `generateImageUrl` - Generates an image URL from a text prompt
 2. `generateImage` - Generates an image and returns it as base64-encoded data
@@ -107,7 +148,23 @@ The MCP server provides the following tools:
 5. `generateText` - Generates text from a prompt using text models
 6. `listModels` - Lists available models for image or text generation
 
+### Authentication (New!)
+
+7. `isAuthenticated` - Check if a session is authenticated with GitHub
+8. `getAuthUrl` - Get the GitHub OAuth URL for authentication
+9. `getToken` - Get or generate a personal access token for the authenticated user
+10. `listReferrers` - List authorized referrers for a user
+11. `addReferrer` - Add a referrer to a user's whitelist
+12. `removeReferrer` - Remove a referrer from a user's whitelist
+
 ## Changelog
+
+### Version 1.0.7
+- Added GitHub-based authentication system
+- Implemented dual authentication methods (referrer-based and token-based)
+- Added authentication server with web interface (me.pollinations.ai)
+- Added authentication-related MCP tools
+- Added detailed documentation for authentication in GITHUB_AUTH.md
 
 ### Version 1.0.6
 - Added compatibility with Node.js versions 14.0.0 and later

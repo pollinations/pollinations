@@ -15,6 +15,7 @@ The system follows the "thin proxy" design principle and integrates seamlessly w
 
 - **GitHub OAuth** - Authentication using GitHub identity
 - **JSON storage** - Simple token and referrer storage system
+- **MCP tools** - All authentication management is done through MCP tools
 - **Dual auth methods** - Support for both referrer validation and token-based auth
 
 ## Setup
@@ -31,6 +32,7 @@ The system follows the "thin proxy" design principle and integrates seamlessly w
      ```
      GITHUB_CLIENT_ID=your_client_id
      GITHUB_CLIENT_SECRET=your_client_secret
+     REDIRECT_URI=https://me.pollinations.ai/github/callback
      ```
 
 ### Deployment
@@ -39,18 +41,23 @@ The system follows the "thin proxy" design principle and integrates seamlessly w
    - Create a new DNS entry pointing to your server
    - Configure HTTPS (recommended using Cloudflare or Let's Encrypt)
 
-2. Start the MCP server
-   - The server will handle both MCP requests and authentication
+2. Start the Authentication Server
+   ```
+   npm run start-auth
+   ```
+
+3. The MCP server will automatically integrate with the authentication service
 
 ## Authentication Flow
 
 ### Option 1: Referrer-Based Authentication
 
-1. User signs in with GitHub on me.pollinations.ai
-   - The system redirects to GitHub for authentication
-   - After authentication, the user returns to me.pollinations.ai
-   
-2. User manages whitelisted domains (referrers)
+1. User initiates authentication via an MCP tool
+   - The system provides a GitHub authentication URL
+   - User completes GitHub authentication
+   - After authentication, the user receives a session ID
+
+2. User manages whitelisted domains (referrers) through MCP tools
    - By default, text.pollinations.ai and image.pollinations.ai are whitelisted
    - User can add or remove domains using the MCP tools
 
@@ -61,12 +68,13 @@ The system follows the "thin proxy" design principle and integrates seamlessly w
 
 ### Option 2: Token-Based Authentication
 
-1. User signs in with GitHub on me.pollinations.ai
+1. User initiates authentication via an MCP tool
    - After authentication, the system generates a Pollinations access token
-   
+   - Token is returned via MCP tool
+
 2. User uses the token for API access
    - Include the token in Authorization header: `Authorization: Bearer poll_token`
-   - Token can be regenerated or revoked if needed
+   - Token can be regenerated or revoked as needed via MCP tools
 
 ## API Reference
 
@@ -136,64 +144,31 @@ Remove a referrer from a user's whitelist.
 }
 ```
 
-## Web Server Implementation
+## Authentication Server API Endpoints
 
-While the MCP server handles the authentication logic, you still need to implement a simple web server to handle the GitHub OAuth callback and manage authentication sessions. This web server should:
+The authentication server exposes minimal endpoints required for the OAuth flow:
 
-1. Handle the `/github/login` endpoint to start the OAuth flow
-2. Handle the `/github/callback` endpoint to process the OAuth response
-3. Create and manage user sessions
-4. Serve a simple UI for token management and referrer configuration
+### OAuth Endpoints
 
-A simple implementation using Express.js would be:
+- **GET /github/login**
+  - Initiates the GitHub OAuth flow
+  - Query parameters:
+    - `returnUrl`: URL to redirect to after successful authentication (optional)
 
-```javascript
-import express from 'express';
-import { completeAuth } from './src/services/authService.js';
+- **GET /github/callback**
+  - OAuth callback endpoint for GitHub
+  - Handles the code exchange and token generation
+  - Returns the sessionId and token for MCP use
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+### Verification Endpoints
 
-app.get('/github/login', (req, res) => {
-  // Redirect to GitHub login page
-  const clientId = process.env.GITHUB_CLIENT_ID;
-  const redirectUri = encodeURIComponent('https://me.pollinations.ai/github/callback');
-  const state = crypto.randomBytes(16).toString('hex');
-  
-  // Store state in session
-  req.session.oauthState = state;
-  
-  const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=read:user&state=${state}`;
-  res.redirect(authUrl);
-});
+- **POST /api/auth/verify-token**
+  - Verifies if a token is valid
+  - Body: `{ "token": "poll_token" }`
 
-app.get('/github/callback', async (req, res) => {
-  const { code, state } = req.query;
-  
-  // Verify state to prevent CSRF
-  if (state !== req.session.oauthState) {
-    return res.status(400).send('Invalid state parameter');
-  }
-  
-  try {
-    // Complete authentication
-    const authResult = await completeAuth(code, state);
-    
-    // Set session
-    req.session.authenticated = true;
-    req.session.userId = authResult.sessionId;
-    
-    // Redirect to return URL or dashboard
-    res.redirect(authResult.returnUrl || '/dashboard');
-  } catch (error) {
-    res.status(500).send(`Authentication error: ${error.message}`);
-  }
-});
-
-app.listen(PORT, () => {
-  console.log(`Pollinations Authentication server running on port ${PORT}`);
-});
-```
+- **POST /api/auth/verify-referrer**
+  - Verifies if a referrer is authorized for a user
+  - Body: `{ "userId": "github:12345678", "referrer": "example.com" }`
 
 ## Security Considerations
 

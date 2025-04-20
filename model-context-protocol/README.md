@@ -120,9 +120,10 @@ npm run start-auth
 The authentication server runs on port 3000 by default and should be deployed at `me.pollinations.ai`. It provides:
 
 1. GitHub OAuth flow endpoints
-2. Token management endpoints
-3. Referrer whitelist management endpoints
-4. A simple web interface for managing authentication settings
+2. Token verification endpoints
+3. Referrer validation endpoints
+
+All authentication management (token generation, referrer management) is done through the MCP tools.
 
 ### Environment Variables
 
@@ -131,7 +132,7 @@ The authentication server requires the following environment variables:
 ```
 GITHUB_CLIENT_ID=your_github_client_id
 GITHUB_CLIENT_SECRET=your_github_client_secret
-SESSION_SECRET=random_secret_for_sessions  # Optional, will generate random if not provided
+REDIRECT_URI=https://me.pollinations.ai/github/callback  # Optional, defaults to this value
 PORT=3000  # Optional, defaults to 3000
 ```
 

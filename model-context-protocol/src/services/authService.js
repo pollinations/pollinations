@@ -1,11 +1,12 @@
 /**
  * GitHub Authentication Service for Pollinations MCP
- * 
+ *
  * Implements GitHub OAuth authentication with dual methods:
  * 1. Referrer-based authentication
  * 2. Token-based authentication
  */
 
+import 'dotenv/config';
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
@@ -36,10 +37,10 @@ async function ensureStorageExists() {
  * Load user data from storage
  * @returns {Promise<Object>} The user data
  */
-async function loadUserData() {
+export async function loadUserData() {
   try {
     await ensureStorageExists();
-    
+
     try {
       const data = await fs.readFile(STORAGE_FILE, 'utf8');
       return JSON.parse(data);
@@ -60,7 +61,7 @@ async function loadUserData() {
  * Save user data to storage
  * @param {Object} data - The user data to save
  */
-async function saveUserData(data) {
+export async function saveUserData(data) {
   try {
     await ensureStorageExists();
     await fs.writeFile(STORAGE_FILE, JSON.stringify(data, null, 2));
@@ -80,7 +81,7 @@ function generateToken() {
 
 /**
  * Check if a session is authenticated
- * 
+ *
  * @param {string} sessionId - The session ID to check
  * @returns {Promise<Object>} Authentication status
  */
@@ -92,7 +93,7 @@ export async function isAuthenticated(sessionId) {
   try {
     const userData = await loadUserData();
     const isAuth = !!userData.users[sessionId];
-    
+
     return {
       authenticated: isAuth,
       sessionId,
@@ -109,7 +110,7 @@ export async function isAuthenticated(sessionId) {
 
 /**
  * Get GitHub OAuth authentication URL
- * 
+ *
  * @param {Object} options - Options for authentication
  * @param {string} [options.returnUrl] - URL to redirect to after authentication
  * @returns {Promise<Object>} Authentication URL
@@ -120,23 +121,23 @@ export async function getAuthUrl(options = {}) {
   }
 
   const { returnUrl } = options;
-  
+
   const state = crypto.randomBytes(16).toString('hex');
   const redirectUri = encodeURIComponent(DEFAULT_REDIRECT_URI);
-  
+
   // Store state and return URL temporarily
   const userData = await loadUserData();
   if (!userData.states) userData.states = {};
-  
+
   userData.states[state] = {
     returnUrl: returnUrl || '',
     created_at: new Date().toISOString()
   };
-  
+
   await saveUserData(userData);
-  
+
   const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=read:user&state=${state}`;
-  
+
   return {
     authUrl,
     state
@@ -145,12 +146,14 @@ export async function getAuthUrl(options = {}) {
 
 /**
  * Complete GitHub OAuth authentication
- * 
+ *
  * @param {string} code - OAuth code from GitHub
  * @param {string} state - State parameter for verification
  * @returns {Promise<Object>} Authentication result
  */
 export async function completeAuth(code, state) {
+  console.log(`CompleteAuth called with code: ${code.substring(0, 5)}... and state: ${state}`);
+
   if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
     throw new Error('GitHub OAuth credentials are not set');
   }
@@ -162,38 +165,74 @@ export async function completeAuth(code, state) {
   try {
     // Verify state
     const userData = await loadUserData();
-    if (!userData.states || !userData.states[state]) {
+    console.log(`User data loaded, states: ${JSON.stringify(userData.states ? Object.keys(userData.states) : 'none')}`);
+
+    // In test mode, be more lenient with state validation
+    if (process.env.TEST_MODE === 'true') {
+      if (!userData.states) {
+        userData.states = {};
+      }
+
+      // If state doesn't exist in test mode, create it
+      if (!userData.states[state]) {
+        console.log(`Creating state ${state} in test mode`);
+        userData.states[state] = {
+          returnUrl: '',
+          created_at: new Date().toISOString()
+        };
+        await saveUserData(userData);
+      }
+    } else if (!userData.states || !userData.states[state]) {
       throw new Error('Invalid state parameter');
     }
 
-    const { returnUrl } = userData.states[state];
-    
+    const { returnUrl } = userData.states[state] || { returnUrl: '' };
+
     // Exchange code for token
+    const redirectUri = process.env.TEST_MODE === 'true' ?
+      `http://localhost:${process.env.PORT || 3000}/github/callback` :
+      DEFAULT_REDIRECT_URI;
+
+    console.log(`Exchanging code for token with redirect URI: ${redirectUri}`);
+    console.log(`GitHub Client ID: ${GITHUB_CLIENT_ID.substring(0, 5)}...`);
+
+    const requestBody = {
+      client_id: GITHUB_CLIENT_ID,
+      client_secret: GITHUB_CLIENT_SECRET,
+      code,
+      redirect_uri: redirectUri
+    };
+
     const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify({
-        client_id: GITHUB_CLIENT_ID,
-        client_secret: GITHUB_CLIENT_SECRET,
-        code,
-        redirect_uri: DEFAULT_REDIRECT_URI
-      })
+      body: JSON.stringify(requestBody)
     });
 
     if (!tokenResponse.ok) {
-      throw new Error('Failed to exchange code for token');
+      console.error(`Token response not OK: ${tokenResponse.status} ${tokenResponse.statusText}`);
+      throw new Error(`Failed to exchange code for token: ${tokenResponse.status} ${tokenResponse.statusText}`);
     }
 
     const tokenData = await tokenResponse.json();
+    console.log(`Token response data: ${JSON.stringify(tokenData)}`);
+
     const githubToken = tokenData.access_token;
-    
+
     if (!githubToken) {
-      throw new Error('No access token received from GitHub');
+      console.error(`No access token in response: ${JSON.stringify(tokenData)}`);
+
+      // Check for error in the response
+      if (tokenData.error) {
+        throw new Error(`GitHub OAuth error: ${tokenData.error} - ${tokenData.error_description || 'No description'}`);
+      } else {
+        throw new Error('No access token received from GitHub');
+      }
     }
-    
+
     // Get user info from GitHub
     const userResponse = await fetch('https://api.github.com/user', {
       headers: {
@@ -208,10 +247,10 @@ export async function completeAuth(code, state) {
 
     const userInfo = await userResponse.json();
     const githubId = `github:${userInfo.id}`;
-    
+
     // Generate Pollinations token
     const pollinationsToken = generateToken();
-    
+
     // Store user data
     userData.users[githubId] = {
       github_token: githubToken,
@@ -226,12 +265,12 @@ export async function completeAuth(code, state) {
       },
       referrers: ['text.pollinations.ai', 'image.pollinations.ai']
     };
-    
+
     // Clean up state
     delete userData.states[state];
-    
+
     await saveUserData(userData);
-    
+
     return {
       success: true,
       sessionId: githubId,
@@ -246,7 +285,7 @@ export async function completeAuth(code, state) {
 
 /**
  * Get or generate a Pollinations access token for the authenticated user
- * 
+ *
  * @param {string} sessionId - The session ID of the authenticated user
  * @returns {Promise<Object>} Token information
  */
@@ -258,15 +297,15 @@ export async function getToken(sessionId) {
   try {
     const userData = await loadUserData();
     const user = userData.users[sessionId];
-    
+
     if (!user) {
       throw new Error('User not authenticated');
     }
-    
+
     // Update last used time
     user.last_used = new Date().toISOString();
     await saveUserData(userData);
-    
+
     return {
       token: user.pollinations_token,
       created_at: user.created_at
@@ -279,7 +318,7 @@ export async function getToken(sessionId) {
 
 /**
  * Regenerate a new Pollinations access token
- * 
+ *
  * @param {string} sessionId - The session ID of the authenticated user
  * @returns {Promise<Object>} New token information
  */
@@ -291,18 +330,18 @@ export async function regenerateToken(sessionId) {
   try {
     const userData = await loadUserData();
     const user = userData.users[sessionId];
-    
+
     if (!user) {
       throw new Error('User not authenticated');
     }
-    
+
     // Generate new token
     const newToken = generateToken();
     user.pollinations_token = newToken;
     user.last_used = new Date().toISOString();
-    
+
     await saveUserData(userData);
-    
+
     return {
       token: newToken,
       created_at: new Date().toISOString()
@@ -315,7 +354,7 @@ export async function regenerateToken(sessionId) {
 
 /**
  * List authorized referrers for a user
- * 
+ *
  * @param {string} sessionId - The session ID of the authenticated user
  * @returns {Promise<Object>} List of authorized referrers
  */
@@ -327,15 +366,15 @@ export async function listReferrers(sessionId) {
   try {
     const userData = await loadUserData();
     const user = userData.users[sessionId];
-    
+
     if (!user) {
       throw new Error('User not authenticated');
     }
-    
+
     // Update last used time
     user.last_used = new Date().toISOString();
     await saveUserData(userData);
-    
+
     return {
       referrers: user.referrers || []
     };
@@ -347,7 +386,7 @@ export async function listReferrers(sessionId) {
 
 /**
  * Add a referrer to a user's whitelist
- * 
+ *
  * @param {string} sessionId - The session ID of the authenticated user
  * @param {string} referrer - The domain to add to the whitelist
  * @returns {Promise<Object>} Updated list of authorized referrers
@@ -360,25 +399,25 @@ export async function addReferrer(sessionId, referrer) {
   try {
     const userData = await loadUserData();
     const user = userData.users[sessionId];
-    
+
     if (!user) {
       throw new Error('User not authenticated');
     }
-    
+
     // Ensure the referrers array exists
     if (!user.referrers) {
       user.referrers = [];
     }
-    
+
     // Only add if not already in the list
     if (!user.referrers.includes(referrer)) {
       user.referrers.push(referrer);
     }
-    
+
     // Update last used time
     user.last_used = new Date().toISOString();
     await saveUserData(userData);
-    
+
     return {
       referrers: user.referrers
     };
@@ -390,7 +429,7 @@ export async function addReferrer(sessionId, referrer) {
 
 /**
  * Remove a referrer from a user's whitelist
- * 
+ *
  * @param {string} sessionId - The session ID of the authenticated user
  * @param {string} referrer - The domain to remove from the whitelist
  * @returns {Promise<Object>} Updated list of authorized referrers
@@ -403,23 +442,23 @@ export async function removeReferrer(sessionId, referrer) {
   try {
     const userData = await loadUserData();
     const user = userData.users[sessionId];
-    
+
     if (!user) {
       throw new Error('User not authenticated');
     }
-    
+
     // Ensure the referrers array exists
     if (!user.referrers) {
       user.referrers = [];
     }
-    
+
     // Remove the referrer
     user.referrers = user.referrers.filter(r => r !== referrer);
-    
+
     // Update last used time
     user.last_used = new Date().toISOString();
     await saveUserData(userData);
-    
+
     return {
       referrers: user.referrers
     };
@@ -431,7 +470,7 @@ export async function removeReferrer(sessionId, referrer) {
 
 /**
  * Verify a Pollinations token for API access
- * 
+ *
  * @param {string} token - The token to verify
  * @returns {Promise<Object>} Verification result
  */
@@ -442,22 +481,22 @@ export async function verifyToken(token) {
 
   try {
     const userData = await loadUserData();
-    
+
     // Find user with matching token
     const user = Object.entries(userData.users).find(
       ([_, data]) => data.pollinations_token === token
     );
-    
+
     if (!user) {
       return { valid: false };
     }
-    
+
     const [userId, userInfo] = user;
-    
+
     // Update last used time
     userInfo.last_used = new Date().toISOString();
     await saveUserData(userData);
-    
+
     return {
       valid: true,
       userId,
@@ -471,7 +510,7 @@ export async function verifyToken(token) {
 
 /**
  * Verify if a referrer is authorized for a user
- * 
+ *
  * @param {string} userId - The user ID
  * @param {string} referrer - The referrer to check
  * @returns {Promise<Object>} Verification result
@@ -484,11 +523,11 @@ export async function verifyReferrer(userId, referrer) {
   try {
     const userData = await loadUserData();
     const user = userData.users[userId];
-    
+
     if (!user || !user.referrers) {
       return { valid: false };
     }
-    
+
     const isValid = user.referrers.some(r => {
       // Allow for wildcard subdomains
       if (r.startsWith('*.')) {
@@ -497,13 +536,13 @@ export async function verifyReferrer(userId, referrer) {
       }
       return r === referrer;
     });
-    
+
     if (isValid) {
       // Update last used time
       user.last_used = new Date().toISOString();
       await saveUserData(userData);
     }
-    
+
     return { valid: isValid };
   } catch (error) {
     console.error('Error verifying referrer:', error);

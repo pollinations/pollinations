@@ -28,12 +28,13 @@ The system follows the "thin proxy" design principle and integrates seamlessly w
    - Note your Client ID and Client Secret
 
 2. Environment Variables
-   - Set these environment variables:
+   - Set these environment variables in a `.env` file or directly in your environment:
      ```
      GITHUB_CLIENT_ID=your_client_id
      GITHUB_CLIENT_SECRET=your_client_secret
      REDIRECT_URI=https://flow.pollinations.ai/github/callback
      ```
+   - The application uses dotenv to load environment variables from the `.env` file
 
 ### Deployment
 
@@ -43,7 +44,11 @@ The system follows the "thin proxy" design principle and integrates seamlessly w
 
 2. Start the Authentication Server
    ```
+   # For production
    npm run start-auth
+
+   # For local testing
+   npm run start-auth-test
    ```
 
 3. The MCP server will automatically integrate with the authentication service

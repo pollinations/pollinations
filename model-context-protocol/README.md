@@ -11,6 +11,7 @@ A Model Context Protocol (MCP) server for the Pollinations APIs that enables AI 
 - List available image and text generation models
 - GitHub-based authentication (new!)
 - Support for both token-based and referrer-based authentication
+- Multiple transport options: STDIO (default) and SSE
 - Simple and lightweight
 - Compatible with the Model Context Protocol (MCP)
 
@@ -38,6 +39,61 @@ npm install -g @pollinations/model-context-protocol
 # Run the server
 model-context-protocol
 ```
+
+## Transport Options
+
+The MCP server supports two transport options:
+
+### STDIO Transport (Default)
+
+Standard input/output transport is ideal for local integrations and command-line tools:
+
+```bash
+# Run with STDIO transport (default)
+npx @pollinations/model-context-protocol
+
+# Or explicitly specify STDIO
+npx @pollinations/model-context-protocol --transport stdio
+```
+
+### SSE Transport (Server-Sent Events)
+
+SSE transport enables web-based clients to connect to the MCP server with integrated GitHub authentication:
+
+```bash
+# Run with SSE transport
+npx @pollinations/model-context-protocol --transport sse
+
+# Specify a custom port (default is 3000)
+npx @pollinations/model-context-protocol --transport sse --port 8080
+
+# Run in development mode with relaxed authentication
+NODE_ENV=development npx @pollinations/model-context-protocol --transport sse
+```
+
+When using SSE transport, the server provides these endpoints:
+- `/sse` - SSE endpoint for server-to-client streaming
+- `/messages` - Message endpoint for client-to-server communication
+- `/github/login` - GitHub OAuth login endpoint
+- `/github/callback` - GitHub OAuth callback endpoint
+- `/api/auth/verify-token` - Token verification endpoint
+- `/api/auth/verify-referrer` - Referrer verification endpoint
+- `/health` - Health check endpoint
+
+## GitHub Authentication
+
+The MCP server includes integrated GitHub authentication when using SSE transport. To use it:
+
+1. Create a GitHub OAuth application at https://github.com/settings/developers
+2. Set the callback URL to `http://localhost:3000/github/callback` (for local development) or your production URL
+3. Set these environment variables:
+   ```
+   GITHUB_CLIENT_ID=your_client_id
+   GITHUB_CLIENT_SECRET=your_client_secret
+   REDIRECT_URI=http://localhost:3000/github/callback
+   ```
+
+For more details on authentication, see [GITHUB_AUTH.md](./GITHUB_AUTH.md).
 
 ## Claude Desktop Integration
 
@@ -80,7 +136,7 @@ This is usually caused by running on an older version of Node.js (below version 
    # or run with npx
    npx @pollinations/model-context-protocol@latest
    ```
-   
+
 3. **Install AbortController manually**:
    - If for some reason the polyfill doesn't work:
    ```bash
@@ -96,45 +152,6 @@ node --version
 ```
 
 If it shows a version lower than 16.0.0, consider upgrading for best compatibility.
-
-## GitHub Authentication (New!)
-
-The MCP server now includes a GitHub-based authentication system that provides:
-
-- GitHub OAuth authentication for Pollinations services
-- Dual authentication methods:
-  - **Referrer-based authentication**: Automatically authenticate based on whitelisted domains
-  - **Token-based authentication**: Use a personal access token for API access
-
-For detailed documentation on the authentication system, see [GITHUB_AUTH.md](./GITHUB_AUTH.md).
-
-### Authentication Server
-
-To start the authentication server:
-
-```bash
-# Run the authentication server
-npm run start-auth
-```
-
-The authentication server runs on port 3000 by default and should be deployed at `flow.pollinations.ai`. It provides:
-
-1. GitHub OAuth flow endpoints
-2. Token verification endpoints
-3. Referrer validation endpoints
-
-All authentication management (token generation, referrer management) is done through the MCP tools.
-
-### Environment Variables
-
-The authentication server requires the following environment variables:
-
-```
-GITHUB_CLIENT_ID=your_github_client_id
-GITHUB_CLIENT_SECRET=your_github_client_secret
-REDIRECT_URI=https://flow.pollinations.ai/github/callback  # Optional, defaults to this value
-PORT=3000  # Optional, defaults to 3000
-```
 
 ## Available Tools
 
@@ -170,7 +187,7 @@ The MCP server provides the following tools:
 ### Version 1.0.6
 - Added compatibility with Node.js versions 14.0.0 and later
 - Added AbortController polyfill for Node.js versions below 16.0.0
-- Fixed "AbortController is not defined" error 
+- Fixed "AbortController is not defined" error
 - Improved error handling and reporting
 - Added troubleshooting guide in README
 - Enhanced documentation with system requirements and installation options

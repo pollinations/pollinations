@@ -14,6 +14,7 @@ import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';
 import { processRequestForAds, createStreamingAdWrapper } from './ads/initRequestFilter.js';
 import { getRequestData, getReferrer, WHITELISTED_DOMAINS } from './requestUtils.js';
+import githubRoutes from './github/githubRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -96,6 +97,9 @@ app.use(cors());
 app.get('/', (req, res) => {
     res.redirect('https://sur.pollinations.ai');
 });
+
+// Mount GitHub authentication routes
+app.use('/github', githubRoutes);
 
 // Serve crossdomain.xml for Flash connections
 app.get('/crossdomain.xml', (req, res) => {

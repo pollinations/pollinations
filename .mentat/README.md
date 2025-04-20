@@ -23,7 +23,16 @@ When handling project submission issues:
    }
    ```
 
-3. Categories:
+3. GitHub Star Counts:
+   - For projects with GitHub repositories, add their star count in the README.md
+   - Use the simple script to fetch current star counts:
+     ```bash
+     node .github/scripts/github-star-fetcher.js owner/repo
+     ```
+   - The script will output the formatted star count for direct use in Markdown
+   - See [GitHub-Stars.md](GitHub-Stars.md) for complete instructions and best practices
+
+4. Categories:
    - LLM Integrations
    - Creative & Interactive Applications
    - Tools & Interfaces

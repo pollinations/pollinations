@@ -184,6 +184,15 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 RuangRiung AI Image 🇮🇩",
+      url: "https://ruangriung.my.id",
+      description: "RuangRiung AI Image Generator ideal untuk seniman digital, desainer, atau siapa pun yang ingin mengeksplorasi kreativitas dengan bantuan AI. Tersedia dalam bahasa Inggris dan Indonesia, website ini menggabungkan fungsionalitas lengkap dengan desain yang elegan dan responsif. (RuangRiung AI Image Generator is ideal for digital artists, designers, or anyone who wants to explore creativity with AI assistance. Available in English and Indonesian, this website combines complete functionality with an elegant and responsive design.)",
+      author: "@ruangriung",
+      repo: "https://github.com/ruangriung",
+      submissionDate: "2025-04-20",
+      language: "id-ID"
+    },
+    {
       name: "🆕 BlackWave",
       url: "https://blackwave.studio/",
       description: "An AI image generator that creates unique images from text prompts. Fast, easy and free!",

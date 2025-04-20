@@ -332,67 +332,6 @@ async function runSseServer(port) {
     credentials: true
   }));
   
-  // Authentication middleware for protected endpoints
-  const authMiddleware = async (req, res, next) => {
-    // Check for token-based authentication
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      const tokenResult = await verifyToken(token);
-      
-      if (tokenResult.valid) {
-        req.userId = tokenResult.userId;
-        return next();
-      }
-    }
-    
-    // Check for referrer-based authentication
-    const referrer = req.headers.referer || req.headers.origin;
-    if (referrer) {
-      try {
-        // Extract domain from referrer
-        const domain = new URL(referrer).hostname;
-        
-        // Check if this is a whitelisted domain (public access)
-        if (['text.pollinations.ai', 'image.pollinations.ai', 'flow.pollinations.ai'].includes(domain)) {
-          return next();
-        }
-        
-        // If we have a userId from a session cookie, verify the referrer
-        if (req.cookies && req.cookies.userId) {
-          const referrerResult = await verifyReferrer(req.cookies.userId, domain);
-          if (referrerResult.valid) {
-            req.userId = req.cookies.userId;
-            return next();
-          }
-        }
-      } catch (error) {
-        console.error('Error processing referrer:', error);
-      }
-    }
-    
-    // If running in development mode, allow localhost access
-    if (process.env.NODE_ENV === 'development' && 
-        (req.hostname === 'localhost' || req.hostname === '127.0.0.1')) {
-      return next();
-    }
-    
-    // Authentication failed
-    res.status(401).json({
-      jsonrpc: '2.0',
-      error: {
-        code: -32001,
-        message: 'Authentication required'
-      },
-      id: null
-    });
-  };
-  
-  // Apply authentication middleware to protected endpoints only
-  // Do NOT apply to SSE endpoints since they are used for authentication
-  // app.use('/sse', authMiddleware);
-  // app.use('/messages', authMiddleware);
-  
   // SSE endpoint for server-to-client streaming
   app.get('/sse', (req, res) => {
     console.error('SSE connection established');

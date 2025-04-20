@@ -27,7 +27,7 @@ import {
 const PORT = process.env.PORT || 3000;
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
-const REDIRECT_URI = process.env.REDIRECT_URI || 'https://me.pollinations.ai/github/callback';
+const REDIRECT_URI = process.env.REDIRECT_URI || 'https://flow.pollinations.ai/github/callback';
 
 // Check for required environment variables
 if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {

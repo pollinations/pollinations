@@ -18,7 +18,7 @@ const STORAGE_FILE = path.join(STORAGE_DIR, 'auth.json');
 // GitHub OAuth settings
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
-const DEFAULT_REDIRECT_URI = 'https://me.pollinations.ai/github/callback';
+const DEFAULT_REDIRECT_URI = 'https://flow.pollinations.ai/github/callback';
 
 /**
  * Ensure storage directory exists

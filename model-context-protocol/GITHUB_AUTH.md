@@ -24,7 +24,7 @@ The system follows the "thin proxy" design principle and integrates seamlessly w
 
 1. GitHub OAuth Application
    - Create a new OAuth App at https://github.com/settings/developers
-   - Set the callback URL to `https://me.pollinations.ai/github/callback`
+   - Set the callback URL to `https://flow.pollinations.ai/github/callback`
    - Note your Client ID and Client Secret
 
 2. Environment Variables
@@ -32,12 +32,12 @@ The system follows the "thin proxy" design principle and integrates seamlessly w
      ```
      GITHUB_CLIENT_ID=your_client_id
      GITHUB_CLIENT_SECRET=your_client_secret
-     REDIRECT_URI=https://me.pollinations.ai/github/callback
+     REDIRECT_URI=https://flow.pollinations.ai/github/callback
      ```
 
 ### Deployment
 
-1. Set up DNS for me.pollinations.ai
+1. Set up DNS for flow.pollinations.ai
    - Create a new DNS entry pointing to your server
    - Configure HTTPS (recommended using Cloudflare or Let's Encrypt)
 

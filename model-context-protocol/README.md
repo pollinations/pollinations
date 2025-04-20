@@ -117,7 +117,7 @@ To start the authentication server:
 npm run start-auth
 ```
 
-The authentication server runs on port 3000 by default and should be deployed at `me.pollinations.ai`. It provides:
+The authentication server runs on port 3000 by default and should be deployed at `flow.pollinations.ai`. It provides:
 
 1. GitHub OAuth flow endpoints
 2. Token verification endpoints
@@ -132,7 +132,7 @@ The authentication server requires the following environment variables:
 ```
 GITHUB_CLIENT_ID=your_github_client_id
 GITHUB_CLIENT_SECRET=your_github_client_secret
-REDIRECT_URI=https://me.pollinations.ai/github/callback  # Optional, defaults to this value
+REDIRECT_URI=https://flow.pollinations.ai/github/callback  # Optional, defaults to this value
 PORT=3000  # Optional, defaults to 3000
 ```
 

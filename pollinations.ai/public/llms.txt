@@ -98,4 +98,4 @@ Rate-Limit: Image API: 1 concurrent request / 5 sec interval per IP
 Rate-Limit: Text API: 1 concurrent request / 3 sec interval per IP
 
 # Last Updated
-Last-Updated: 2025-04-19
+Last-Updated: 2025-04-20

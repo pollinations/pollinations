@@ -1,6 +1,6 @@
 # LLM Metadata Standards for Pollinations.AI
 
-This document explains the implementation of various LLM metadata standards on Pollinations.AI to improve discoverability and usability for AI agents and tools.
+This document explains the implementation of various LLM metadata standards on Pollinations.AI to improve discoverability and usability for AI agents and tools. Last updated: 2025-04-20.
 
 ## Implemented Standards
 
@@ -35,7 +35,7 @@ def parse_llms_txt(content):
     # Simple parser for llms.txt
     sections = {}
     current_section = None
-    
+
     for line in content.split('\n'):
         if line.startswith('#'):
             # New section
@@ -44,7 +44,7 @@ def parse_llms_txt(content):
         elif line.strip() and current_section:
             # Add content to current section
             sections[current_section].append(line)
-    
+
     return sections
 
 # Use the parsed information to understand API endpoints
@@ -84,11 +84,11 @@ async function loadAgentsJson(domain) {
 async function generateImageWithAgent(prompt, options = {}) {
   // Load the agents.json specification
   const agentsSpec = await loadAgentsJson("pollinations.ai");
-  
+
   // Find the image generation endpoint
   const imageGenPath = agentsSpec.openapi.paths["/prompt/{prompt}"];
   const imageGenParams = imageGenPath.get.parameters;
-  
+
   // Extract parameter defaults
   const defaultParams = {};
   imageGenParams.forEach(param => {
@@ -96,23 +96,23 @@ async function generateImageWithAgent(prompt, options = {}) {
       defaultParams[param.name] = param.schema.default;
     }
   });
-  
+
   // Combine defaults with user options
   const finalParams = {...defaultParams, ...options};
-  
+
   // Construct the URL
   const baseUrl = agentsSpec.openapi.servers.find(s => s.description === "Image Generation API").url;
   const queryParams = new URLSearchParams();
-  
+
   Object.entries(finalParams).forEach(([key, value]) => {
     if (key !== "prompt") { // Don't add prompt to query params
       queryParams.set(key, value);
     }
   });
-  
+
   const encodedPrompt = encodeURIComponent(prompt);
   const url = `${baseUrl}/prompt/${encodedPrompt}?${queryParams.toString()}`;
-  
+
   // Make the request
   return url; // Return the URL that can be used to fetch the image
 }
@@ -157,15 +157,15 @@ def select_appropriate_model(mcp_info, task_type, requirements):
     """Select the best model based on task requirements"""
     if task_type not in mcp_info["models"]:
         return None
-    
+
     available_models = mcp_info["models"][task_type]
-    
+
     # Simple model selection based on description matching
     for model in available_models:
         for req in requirements:
             if req.lower() in model["description"].lower():
                 return model["id"]
-    
+
     # Return default model if no match
     return available_models[0]["id"] if available_models else None
 
@@ -213,30 +213,30 @@ async function loadArazzoSpec(domain) {
 
 async function findServiceByCapability(capability) {
   const arazzo = await loadArazzoSpec("pollinations.ai");
-  
+
   // Search for services matching the capability
-  return arazzo.services.filter(service => 
+  return arazzo.services.filter(service =>
     service.description.toLowerCase().includes(capability.toLowerCase())
   );
 }
 
 async function executeExampleRequest(serviceName) {
   const arazzo = await loadArazzoSpec("pollinations.ai");
-  
+
   // Find the service
   const service = arazzo.services.find(s => s.name === serviceName);
   if (!service || !service.examples || service.examples.length === 0) {
     return null;
   }
-  
+
   // Get the first example
   const example = service.examples[0];
-  
+
   // For GET requests, we can just return the URL
   if (service.method === "GET") {
     return example.request;
   }
-  
+
   // For POST requests, we need the full request details
   return example.request;
 }
@@ -244,7 +244,7 @@ async function executeExampleRequest(serviceName) {
 // Example usage
 findServiceByCapability("audio").then(services => {
   console.log("Services for audio generation:", services.map(s => s.name));
-  
+
   if (services.length > 0) {
     executeExampleRequest(services[0].name).then(request => {
       console.log("Example request:", request);
@@ -314,13 +314,13 @@ async function testWithLLM() {
       {
         role: "user",
         content: `Here are the metadata standards for Pollinations.AI:
-        
+
         llms.txt:
         ${llmsTxt}
-        
+
         agents.json (summary):
         ${JSON.stringify(agentsJson.metadata)}
-        
+
         mcp.json (summary):
         ${JSON.stringify({
           name: mcpJson.name,
@@ -328,7 +328,7 @@ async function testWithLLM() {
           services: mcpJson.services.map(s => s.name),
           models: Object.keys(mcpJson.models)
         })}
-        
+
         Based on this information, how would you generate an image of a sunset over the ocean?`
       }
     ],
@@ -367,25 +367,25 @@ async function testWithLLM() {
   });
 
   console.log("LLM Response:", response.choices[0].message);
-  
+
   // If the LLM chose to use the function
   if (response.choices[0].message.tool_calls) {
     const toolCall = response.choices[0].message.tool_calls[0];
     const functionArgs = JSON.parse(toolCall.function.arguments);
-    
+
     console.log("Function called with arguments:", functionArgs);
-    
+
     // Actually make the request to Pollinations.AI
     const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(functionArgs.prompt)}`;
     const queryParams = new URLSearchParams();
-    
+
     if (functionArgs.model) queryParams.append('model', functionArgs.model);
     if (functionArgs.width) queryParams.append('width', functionArgs.width);
     if (functionArgs.height) queryParams.append('height', functionArgs.height);
-    
+
     const fullUrl = `${imageUrl}?${queryParams.toString()}`;
     console.log("Generated image URL:", fullUrl);
-    
+
     // Download the image
     const response = await axios.get(fullUrl, { responseType: 'stream' });
     response.data.pipe(fs.createWriteStream('generated_image.jpg'));
@@ -430,29 +430,29 @@ function PollinationsDemo() {
   const imagePrompt = "A beautiful sunset over the ocean";
   const textPrompt = "Describe a beautiful sunset over the ocean";
   const audioPrompt = "Welcome to Pollinations.AI";
-  
+
   const imageUrl = usePollinationsImage(imagePrompt, { width: 800, height: 600 });
   const text = usePollinationsText(textPrompt);
   const audioUrl = usePollinationsAudio(audioPrompt, { voice: "nova" });
-  
+
   return (
     <div>
       <h1>Pollinations.AI Demo</h1>
-      
+
       <h2>Generated Image</h2>
       {imageUrl ? (
         <img src={imageUrl} alt={imagePrompt} style={{ maxWidth: '100%' }} />
       ) : (
         <p>Loading image...</p>
       )}
-      
+
       <h2>Generated Text</h2>
       {text ? (
         <p>{text}</p>
       ) : (
         <p>Loading text...</p>
       )}
-      
+
       <h2>Generated Audio</h2>
       {audioUrl ? (
         <audio controls src={audioUrl} />

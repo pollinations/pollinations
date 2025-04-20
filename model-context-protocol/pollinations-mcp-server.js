@@ -328,11 +328,11 @@ async function runSseServer(port) {
   
   // Configure CORS to allow specific origins
   app.use(cors({
-    origin: ['https://text.pollinations.ai', 'https://image.pollinations.ai', 'http://localhost:3000'],
+    origin: ['https://text.pollinations.ai', 'https://image.pollinations.ai', 'http://localhost:3000', 'https://flow.pollinations.ai'],
     credentials: true
   }));
   
-  // Authentication middleware for SSE endpoints
+  // Authentication middleware for protected endpoints
   const authMiddleware = async (req, res, next) => {
     // Check for token-based authentication
     const authHeader = req.headers.authorization;
@@ -354,7 +354,7 @@ async function runSseServer(port) {
         const domain = new URL(referrer).hostname;
         
         // Check if this is a whitelisted domain (public access)
-        if (['text.pollinations.ai', 'image.pollinations.ai'].includes(domain)) {
+        if (['text.pollinations.ai', 'image.pollinations.ai', 'flow.pollinations.ai'].includes(domain)) {
           return next();
         }
         
@@ -377,12 +377,6 @@ async function runSseServer(port) {
       return next();
     }
     
-    // For SSE endpoints, allow access without authentication in development
-    if ((req.path === '/sse' || req.path === '/messages') && 
-        process.env.NODE_ENV === 'development') {
-      return next();
-    }
-    
     // Authentication failed
     res.status(401).json({
       jsonrpc: '2.0',
@@ -394,9 +388,10 @@ async function runSseServer(port) {
     });
   };
   
-  // Apply authentication middleware to SSE endpoints
-  app.use('/sse', authMiddleware);
-  app.use('/messages', authMiddleware);
+  // Apply authentication middleware to protected endpoints only
+  // Do NOT apply to SSE endpoints since they are used for authentication
+  // app.use('/sse', authMiddleware);
+  // app.use('/messages', authMiddleware);
   
   // SSE endpoint for server-to-client streaming
   app.get('/sse', (req, res) => {

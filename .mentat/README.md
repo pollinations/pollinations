@@ -17,13 +17,25 @@ When handling project submission issues:
      url: "https://project-url.com",
      description: "Brief description of the project.",
      author: "@discord_username", // if available or alternatively a URL to a social media profile
-     repo: "https://github.com/repo-url", // if available
+     repo: "https://github.com/repo-url", // if available, will automatically display GitHub star count
      submissionDate: "YYYY-MM-DD", // automatically added for new submissions
      language: "zh-CN" // for non-English projects, include the language code
    }
    ```
 
-3. Categories:
+3. GitHub Star Counts:
+   - For projects with GitHub repositories, the star count will be displayed automatically
+   - Star counts are updated daily via a GitHub Action
+   - When adding a new project with a GitHub repository, ensure the `repo` field contains the correct GitHub URL
+   - The star count will be added to the UI next to the GitHub link automatically
+   - You don't need to manually add or update the star count
+   - To manually update star counts (for testing or after adding many new projects):
+     ```bash
+     # From the repository root directory
+     node .github/scripts/update-github-stars.js
+     ```
+
+4. Categories:
    - LLM Integrations
    - Creative & Interactive Applications
    - Tools & Interfaces

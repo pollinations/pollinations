@@ -12,6 +12,8 @@ import { shortTechnical } from "../../config/llmTransforms"
 import { ICONS } from "../../assets/icons/icons"
 import { trackEvent } from "../../config/analytics"
 import { SectionSubContainer } from "../SectionContainer"
+import { getStarCount, formatStarCount } from "../../utils/githubStars"
+import StarIcon from "@mui/icons-material/Star"
 
 /**
  * Renders the list of projects for the selected category
@@ -317,6 +319,10 @@ const renderRepoLink = (repoUrl) => {
     })
   }
 
+  // Get star count for this repository if available
+  const starCount = getStarCount(repoUrl);
+  const formattedStars = formatStarCount(starCount);
+
   return (
     <Link
       href={repoUrl}
@@ -330,6 +336,7 @@ const renderRepoLink = (repoUrl) => {
         fontSize: "1em",
         display: "flex",
         alignItems: "center",
+        marginTop: "0.5em",
       }}
     >
       <ReactSVG
@@ -345,6 +352,22 @@ const renderRepoLink = (repoUrl) => {
         }}
       />
       <span style={{ display: "flex", alignItems: "center", verticalAlign: "middle" }}>GITHUB</span>
+      
+      {starCount !== null && (
+        <span 
+          style={{ 
+            display: "flex", 
+            alignItems: "center", 
+            marginLeft: "0.5em", 
+            background: "rgba(255, 255, 255, 0.1)",
+            padding: "0.1em 0.4em",
+            borderRadius: "4px",
+          }}
+        >
+          <StarIcon style={{ fontSize: "0.9em", marginRight: "2px", color: "#FFD700" }} />
+          {formattedStars}
+        </span>
+      )}
     </Link>
   )
 }

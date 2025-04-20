@@ -1,0 +1,39 @@
+name: Update GitHub Star Counts
+
+on:
+  schedule:
+    # Run daily at 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  update-stars:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          
+      - name: Fetch GitHub star counts
+        run: node .github/scripts/fetch-github-stars.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Check for changes
+        id: git-check
+        run: |
+          git diff --exit-code pollinations.ai/src/config/github-stars.json || echo "changes=true" >> $GITHUB_OUTPUT
+          
+      - name: Commit and push if there are changes
+        if: steps.git-check.outputs.changes == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add pollinations.ai/src/config/github-stars.json
+          git commit -m "Update GitHub star counts"
+          git push

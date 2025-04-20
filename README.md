@@ -28,6 +28,7 @@
 - 🖼️ **Embed like any normal image or text**
 - 🎵 **Audio generation:** Text-to-speech and speech-to-text capabilities
 - 🌍 Over **50,000 active users** and > **_20 million images generated per month_**
+- ⭐ **GitHub star counts:** Automatically updated star counts for projects with GitHub repositories
 - 🤝 Used by various **open-source LLMs**, **bots**, and **communities**
 - 🎣 **_Easy-to-use React hooks_** ([React Hooks Examples](https://react-hooks.pollinations.ai/))
 - 🤖 **Autonomous Development:** Features implemented by our MentatBot coding assistant through GitHub issues
@@ -195,6 +196,8 @@ graph LR
 ```
 
 ## Projects Using Pollinations.AI
+
+> **⭐ GitHub Star Counts:** Projects with GitHub repositories now display their star counts, helping users gauge project popularity. Star counts are updated daily via an automated process.
 
 Pollinations.AI is used in various projects, including:
 

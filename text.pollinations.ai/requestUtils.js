@@ -16,7 +16,7 @@ export const WHITELISTED_DOMAINS = process.env.WHITELISTED_DOMAINS
  * @returns {string} - Referrer string
  */
 export function getReferrer(req, data) {
-    const referer = req.headers.referer || req.headers.referrer || data.referrer || req.headers['http-referer'] || 'unknown';
+    const referer = req.headers.referer || req.headers.referrer || req.headers.origin || data.referrer || data.origin || req.headers['http-referer'] || 'unknown';
     return referer;
 }
 

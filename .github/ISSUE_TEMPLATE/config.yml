@@ -1,1 +1,5 @@
 blank_issues_enabled: true
+contact_links:
+  - name: GitHub Authentication with SSE MCP Server
+    url: https://github.com/pollinations/pollinations/blob/master/.github/ISSUE_TEMPLATE/github-auth-mcp-server.md
+    about: Implement a centralized GitHub authentication system with dual authentication methods

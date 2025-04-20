@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pollinations Flow - GitHub Authentication</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="logo">
+        <img src="img/logo.svg" alt="Pollinations Flow Logo">
+        <h1>Pollinations Flow</h1>
+      </div>
+      <nav id="nav-menu">
+        <ul>
+          <li><a href="#about">About</a></li>
+          <li><a href="#dashboard" class="auth-required hidden">Dashboard</a></li>
+          <li><a href="#tokens" class="auth-required hidden">Tokens</a></li>
+          <li><a href="#referrers" class="auth-required hidden">Referrers</a></li>
+          <li><a href="/github/login" class="auth-not-required">Sign in with GitHub</a></li>
+          <li><a href="/logout" class="auth-required hidden">Sign out</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section id="home" class="active">
+      <div class="container">
+        <div class="hero">
+          <h2>Seamless Authentication for Pollinations Services</h2>
+          <p>Flow is a central authentication service for Pollinations.AI that uses GitHub as an identity provider.</p>
+          <div class="cta">
+            <a href="/github/login" class="button primary auth-not-required">Sign in with GitHub</a>
+            <a href="#dashboard" class="button secondary auth-required hidden">Go to Dashboard</a>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <section id="about">
+      <div class="container">
+        <h2>About Flow</h2>
+        <div class="content-grid">
+          <div class="feature">
+            <h3>Two Authentication Methods</h3>
+            <p>Flow offers two different ways to authenticate with Pollinations services:</p>
+            <ul>
+              <li><strong>Referrer-based:</strong> Automatic authentication from whitelisted domains</li>
+              <li><strong>Token-based:</strong> Direct authentication using your personal access token</li>
+            </ul>
+          </div>
+          <div class="feature">
+            <h3>Secure by Design</h3>
+            <p>Flow uses GitHub OAuth for secure authentication and follows best practices for token management and referrer validation. Your data stays private and secure.</p>
+          </div>
+          <div class="feature">
+            <h3>Unified Access Control</h3>
+            <p>Manage access to all Pollinations services in one place. Add or remove domains from your whitelist and control who can use your identity.</p>
+          </div>
+          <div class="feature">
+            <h3>Model Context Protocol (MCP)</h3>
+            <p>Flow implements the Model Context Protocol for AI assistants, allowing authenticated access to Pollinations services directly from AI chat interfaces.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <section id="dashboard" class="auth-required hidden">
+      <div class="container">
+        <h2>Dashboard</h2>
+        <div class="user-info">
+          <div class="user-profile">
+            <img id="user-avatar" src="" alt="User Avatar" class="avatar">
+            <div class="user-details">
+              <h3 id="user-name">Loading...</h3>
+              <p id="user-github">@username</p>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="stat-box">
+              <h4>Your Pollinations Token</h4>
+              <div class="token-display">
+                <input type="password" id="token-field" readonly>
+                <button id="toggle-token" class="icon-button" title="Show/Hide Token">👁️</button>
+                <button id="copy-token" class="icon-button" title="Copy Token">📋</button>
+              </div>
+              <button id="regenerate-token" class="button danger">Regenerate Token</button>
+              <p class="note">Your token provides direct access to Pollinations services. Keep it secure!</p>
+            </div>
+            <div class="stat-box">
+              <h4>Authorized Referrers</h4>
+              <div id="referrer-count">0 domains</div>
+              <a href="#referrers" class="button secondary">Manage Referrers</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <section id="tokens" class="auth-required hidden">
+      <div class="container">
+        <h2>Token Management</h2>
+        <div class="content-card">
+          <h3>Your Pollinations Access Token</h3>
+          <p>This token allows you to authenticate with Pollinations services directly, without going through the GitHub OAuth flow each time.</p>
+          
+          <div class="token-display large">
+            <input type="password" id="token-field-large" readonly>
+            <button id="toggle-token-large" class="icon-button" title="Show/Hide Token">👁️</button>
+            <button id="copy-token-large" class="icon-button" title="Copy Token">📋</button>
+          </div>
+          
+          <div class="button-group">
+            <button id="regenerate-token-large" class="button danger">Regenerate Token</button>
+          </div>
+          
+          <div class="usage-examples">
+            <h4>How to Use Your Token</h4>
+            <div class="code-tabs">
+              <div class="tab-headers">
+                <button class="tab-header active" data-tab="curl">cURL</button>
+                <button class="tab-header" data-tab="js">JavaScript</button>
+                <button class="tab-header" data-tab="py">Python</button>
+              </div>
+              <div class="tab-content">
+                <div class="tab-pane active" id="curl-example">
+                  <pre><code>curl -H "X-Pollinations-Token: YOUR_TOKEN" https://image.pollinations.ai/prompt/beautiful%20sunset</code></pre>
+                </div>
+                <div class="tab-pane" id="js-example">
+                  <pre><code>// Using fetch
+fetch('https://image.pollinations.ai/prompt/beautiful%20sunset', {
+  headers: {
+    'X-Pollinations-Token': 'YOUR_TOKEN'
+  }
+})
+.then(response => response.json())
+.then(data => console.log(data));</code></pre>
+                </div>
+                <div class="tab-pane" id="py-example">
+                  <pre><code>import requests
+
+response = requests.get(
+    'https://image.pollinations.ai/prompt/beautiful%20sunset',
+    headers={'X-Pollinations-Token': 'YOUR_TOKEN'}
+)
+data = response.json()
+print(data)</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <section id="referrers" class="auth-required hidden">
+      <div class="container">
+        <h2>Referrer Management</h2>
+        <div class="content-card">
+          <h3>Authorized Referrers</h3>
+          <p>Manage which domains can use your GitHub identity for Pollinations services. When you visit these domains, you'll be automatically authenticated.</p>
+          
+          <div class="referrer-list">
+            <table id="referrer-table">
+              <thead>
+                <tr>
+                  <th>Domain</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="referrer-table-body">
+                <tr>
+                  <td colspan="2">Loading...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="add-referrer">
+            <h4>Add New Referrer</h4>
+            <div class="input-group">
+              <input type="text" id="new-referrer" placeholder="Enter domain (e.g., app.example.com)">
+              <button id="add-referrer-btn" class="button primary">Add Domain</button>
+            </div>
+            <p class="note">Only add domains you trust. These domains will be able to access Pollinations services using your identity.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 Pollinations.AI - <a href="https://github.com/pollinations/pollinations" target="_blank">GitHub</a></p>
+    </div>
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

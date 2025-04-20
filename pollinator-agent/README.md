@@ -26,14 +26,14 @@ We have successfully created pull requests to add Pollinations.AI to the followi
 3. [awesome-cyberai4k12](https://github.com/cyberai4k12/awesome-cyberai4k12)
 4. [public-apis](https://github.com/public-apis/public-apis)
 
-See the [PR Tracking section](./potential-repositories.md#pr-tracking) in the potential-repositories.md file for the current status of these pull requests.
+See the [PR Tracking file](./pr-tracking.md) for the current status of these pull requests.
 
 ## How to Use
 
 1. Review the [integration guide](./integration-guide.md) to understand the process
 2. Check the [potential repositories list](./potential-repositories.md) to identify new targets
 3. Follow the step-by-step instructions in the integration guide to create new PRs
-4. Update the PR tracking table with new entries
+4. Update the [PR tracking file](./pr-tracking.md) with new entries
 
 ## Contributing
 
@@ -41,7 +41,7 @@ When adding new repositories to the list, make sure to:
 
 1. Check contribution guidelines to ensure they allow adding links/services
 2. Follow the format in the potential-repositories.md file
-3. Update the PR tracking table with any new pull requests
+3. Update the [PR tracking file](./pr-tracking.md) with any new pull requests
 
 ## Future Work
 

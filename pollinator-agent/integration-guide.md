@@ -189,11 +189,11 @@ When adding Pollinations.AI to repositories, emphasize these key features:
      - Confirmation of HTTPS/CORS support
      - Any other information required by contribution guidelines
 
-4. **Track the PR** in your PR tracking document
+4. **Track the PR** in the [pr-tracking.md](./pr-tracking.md) file
 
 ### 7. PR Tracking
 
-Maintain a PR tracking table in a markdown file with the following format:
+Maintain a PR tracking table in the [pr-tracking.md](./pr-tracking.md) file with the following format:
 
 ```markdown
 ## PR Tracking
@@ -208,7 +208,7 @@ Maintain a PR tracking table in a markdown file with the following format:
 1. **Monitor PRs** for feedback or requested changes
 2. **Respond promptly** to maintainer comments
 3. **Update PRs** as needed based on feedback
-4. **Update PR tracking table** with status changes
+4. **Update [PR tracking file](./pr-tracking.md)** with status changes
 
 ## Repository-Specific Integration Examples
 
@@ -250,7 +250,7 @@ Maintain a PR tracking table in a markdown file with the following format:
 - [ ] Highlighted key features (free, no signup, etc.)
 - [ ] Included link to Pollinations.AI website
 - [ ] Created descriptive PR with all required information
-- [ ] Added entry to PR tracking table
+- [ ] Added entry to [PR tracking file](./pr-tracking.md)
 
 ## Lessons Learned
 

@@ -17,8 +17,15 @@
   ],
   "scripts": {
     "test": "node test-mcp-client.js",
+    "test-auth": "node test-auth.js",
     "start": "node pollinations-mcp-server.js",
+    "start-sse": "node pollinations-mcp-server.js --transport sse",
+    "start-sse-dev": "NODE_ENV=development node pollinations-mcp-server.js --transport sse",
+    "start-tunnel": "node pollinations-mcp-server.js --transport tunnel",
+    "start-tunnel-dev": "NODE_ENV=development node pollinations-mcp-server.js --transport tunnel",
+    "setup-tunnel": "bash scripts/setup-cloudflare-tunnel.sh",
     "start-auth": "node pollinations-auth-server.js",
+    "start-auth-test": "TEST_MODE=true node pollinations-auth-server.js",
     "install-claude-mcp": "node install-claude-mcp.js"
   },
   "keywords": [
@@ -35,18 +42,26 @@
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
-    "express": "^4.18.2",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^4.18.2",
+    "node-abort-controller": "^3.1.1",
     "node-fetch": "^3.3.2",
+    "open": "^10.1.1",
     "play-sound": "^1.1.6",
-    "node-abort-controller": "^3.1.1"
+    "yargs": "^17.7.2",
+    "zod": "^3.24.3"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pollinations/pollinations.git",
     "directory": "model-context-protocol"
   },
+  "bugs": {
+    "url": "https://github.com/pollinations/pollinations/issues"
+  },
+  "homepage": "https://github.com/pollinations/pollinations#readme",
   "engines": {
     "node": ">=14.0.0"
   }

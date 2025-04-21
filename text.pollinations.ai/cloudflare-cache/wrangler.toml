@@ -19,3 +19,4 @@ cpu_ms = 30000  # 30 seconds CPU time (max for Workers Unbound)
 # Configure logging
 [observability.logs]
 enabled = true
+invocation_logs = false

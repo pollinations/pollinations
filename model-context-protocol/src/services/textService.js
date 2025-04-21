@@ -7,18 +7,24 @@
 /**
  * Generates text from a prompt using the Pollinations Text API
  * 
- * @param {string} prompt - The text prompt to generate a response for
- * @param {string} [model="openai"] - Model to use for text generation
- * @param {number} [seed] - Seed for reproducible results
- * @param {string} [systemPrompt] - Optional system prompt to set the behavior of the AI
- * @param {boolean} [json] - Set to true to receive response in JSON format
- * @param {boolean} [private] - Set to true to prevent the response from appearing in the public feed
- * @returns {Promise<string>} - The generated text response
+ * @param {Object} params - The parameters for text generation
+ * @param {string} params.prompt - The text prompt to generate a response for
+ * @param {string} [params.model="openai"] - Model to use for text generation
+ * @param {Object} [params.options={}] - Additional options for text generation
+ * @param {number} [params.options.seed] - Seed for reproducible results
+ * @param {string} [params.options.systemPrompt] - Optional system prompt to set the behavior of the AI
+ * @param {boolean} [params.options.json] - Set to true to receive response in JSON format
+ * @param {boolean} [params.options.isPrivate] - Set to true to prevent the response from appearing in the public feed
+ * @returns {Promise<Object>} - MCP response object with the generated text
  */
-export async function generateText(prompt, model = "openai", seed, systemPrompt, json, isPrivate) {
+export async function generateText(params) {
+  const { prompt, model = "openai", options = {} } = params;
+  
   if (!prompt || typeof prompt !== 'string') {
     throw new Error('Prompt is required and must be a string');
   }
+  
+  const { seed, systemPrompt, json, isPrivate } = options;
   
   // Build the query parameters
   const queryParams = new URLSearchParams();
@@ -50,7 +56,12 @@ export async function generateText(prompt, model = "openai", seed, systemPrompt,
     // Get the text response
     const textResponse = await response.text();
     
-    return textResponse;
+    // Return the response in MCP format
+    return {
+      content: [
+        { type: 'text', text: textResponse }
+      ]
+    };
   } catch (error) {
     console.error('Error generating text:', error);
     throw error;
@@ -60,9 +71,10 @@ export async function generateText(prompt, model = "openai", seed, systemPrompt,
 /**
  * List available text generation models from Pollinations API
  * 
- * @returns {Promise<Object>} - Object containing the list of available text models
+ * @param {Object} params - The parameters for listing text models
+ * @returns {Promise<Object>} - MCP response object with the list of available text models
  */
-export async function listTextModels() {
+export async function listTextModels(params) {
   try {
     const response = await fetch('https://text.pollinations.ai/models');
     
@@ -71,7 +83,13 @@ export async function listTextModels() {
     }
     
     const models = await response.json();
-    return { models };
+    
+    // Return the response in MCP format
+    return {
+      content: [
+        { type: 'text', text: JSON.stringify({ models }, null, 2) }
+      ]
+    };
   } catch (error) {
     console.error('Error listing text models:', error);
     throw error;

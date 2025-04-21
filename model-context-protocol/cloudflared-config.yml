@@ -3,5 +3,5 @@ credentials-file: ./flow-pollinations-credentials.json
 
 ingress:
   - hostname: flow.pollinations.ai
-    service: http://localhost:31112
+    service: http://localhost:31122
   - service: http_status:404

@@ -28,12 +28,7 @@ export const getAuthUrlSchema = {
   description: 'Get the GitHub OAuth URL for authentication',
   inputSchema: {
     type: 'object',
-    properties: {
-      returnUrl: {
-        type: 'string',
-        description: 'URL to redirect to after authentication'
-      }
-    }
+    properties: {}
   }
 };
 
@@ -52,6 +47,24 @@ export const getTokenSchema = {
       }
     },
     required: ['sessionId']
+  }
+};
+
+/**
+ * Schema for the verifyToken tool
+ */
+export const verifyTokenSchema = {
+  name: 'verifyToken',
+  description: 'Verify a Pollinations access token',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      token: {
+        type: 'string',
+        description: 'Pollinations access token to verify'
+      }
+    },
+    required: ['token']
   }
 };
 

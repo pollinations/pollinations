@@ -82,25 +82,6 @@ app.get('/github/login', async (req, res) => {
     });
   }
 
-  // In test mode, also store state in the userData file for completeAuth
-  if (TEST_MODE) {
-    try {
-      // Import the necessary functions from authService
-      const { loadUserData, saveUserData } = await import('./src/services/authService.js');
-      const userData = await loadUserData();
-      if (!userData.states) userData.states = {};
-
-      userData.states[state] = {
-        returnUrl: returnUrl || '',
-        created_at: new Date().toISOString()
-      };
-
-      await saveUserData(userData);
-    } catch (error) {
-      console.error('Error storing state in userData:', error);
-    }
-  }
-
   // Redirect to GitHub OAuth
   const redirectUri = encodeURIComponent(REDIRECT_URI);
   const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=read:user&state=${state}`;
@@ -127,43 +108,8 @@ app.get('/github/callback', async (req, res) => {
     res.clearCookie('oauth_state');
     res.clearCookie('return_url');
 
-    // In test mode, display a user-friendly page with the session ID and token
-    if (TEST_MODE) {
-      res.send(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Authentication Successful</title>
-          <style>
-            body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-            .container { background: #f5f5f5; border-radius: 5px; padding: 20px; margin-top: 20px; }
-            h1 { color: #4CAF50; }
-            .field { margin-bottom: 10px; }
-            .label { font-weight: bold; }
-            .value { font-family: monospace; background: #e0e0e0; padding: 5px; border-radius: 3px; }
-            .note { margin-top: 20px; font-style: italic; }
-          </style>
-        </head>
-        <body>
-          <h1>Authentication Successful</h1>
-          <div class="container">
-            <div class="field">
-              <div class="label">Session ID:</div>
-              <div class="value">${authResult.sessionId}</div>
-            </div>
-            <div class="field">
-              <div class="label">Token:</div>
-              <div class="value">${authResult.pollinationsToken}</div>
-            </div>
-            ${returnUrl ? `<div class="field"><a href="${returnUrl}?userId=${encodeURIComponent(authResult.sessionId)}&token=${encodeURIComponent(authResult.pollinationsToken)}">Continue to ${returnUrl}</a></div>` : ''}
-            <div class="note">Copy the Session ID to use with the MCP authentication tools.</div>
-          </div>
-        </body>
-        </html>
-      `);
-    }
     // Return the auth result as JSON or redirect in production mode
-    else if (returnUrl) {
+    if (returnUrl) {
       // Format: returnUrl?userId=...&token=...
       const redirectUrl = `${returnUrl}?userId=${encodeURIComponent(authResult.sessionId)}&token=${encodeURIComponent(authResult.pollinationsToken)}`;
       res.redirect(redirectUrl);

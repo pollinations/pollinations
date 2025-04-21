@@ -10,6 +10,7 @@ import {
   isAuthenticatedSchema, 
   getAuthUrlSchema, 
   getTokenSchema, 
+  verifyTokenSchema,
   listReferrersSchema, 
   addReferrerSchema, 
   removeReferrerSchema 
@@ -39,32 +40,8 @@ export {
   isAuthenticatedSchema,
   getAuthUrlSchema,
   getTokenSchema,
+  verifyTokenSchema,
   listReferrersSchema,
   addReferrerSchema,
   removeReferrerSchema
 };
-
-/**
- * Get all tool schemas as an array
- * @returns {Array} Array of all tool schemas
- */
-export function getAllToolSchemas() {
-  return [
-    generateImageUrlSchema,
-    generateImageSchema,
-    listImageModelsSchema,
-    respondAudioSchema,
-    sayTextSchema,
-    listAudioVoicesSchema,
-    generateTextSchema,
-    listTextModelsSchema,
-    listResourcesSchema,
-    listPromptsSchema,
-    isAuthenticatedSchema,
-    getAuthUrlSchema,
-    getTokenSchema,
-    listReferrersSchema,
-    addReferrerSchema,
-    removeReferrerSchema
-  ];
-}

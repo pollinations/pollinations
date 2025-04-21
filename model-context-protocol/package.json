@@ -20,9 +20,7 @@
     "test-auth": "node test-auth.js",
     "start": "node pollinations-mcp-server.js",
     "start-sse": "node pollinations-mcp-server.js --transport sse",
-    "start-sse-dev": "NODE_ENV=development node pollinations-mcp-server.js --transport sse",
     "start-tunnel": "node pollinations-mcp-server.js --transport tunnel",
-    "start-tunnel-dev": "NODE_ENV=development node pollinations-mcp-server.js --transport tunnel",
     "setup-tunnel": "bash scripts/setup-cloudflare-tunnel.sh",
     "start-auth": "node pollinations-auth-server.js",
     "start-auth-test": "TEST_MODE=true node pollinations-auth-server.js",
@@ -41,7 +39,7 @@
   "author": "Pollinations.AI",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.7.0",
+    "@modelcontextprotocol/sdk": "^1.10.1",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",

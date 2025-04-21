@@ -4,16 +4,25 @@
  * Functions for interacting with the Pollinations Audio API
  */
 
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+
 /**
  * Generates an audio response to a text prompt using the Pollinations Text API
  * 
- * @param {string} prompt - The text prompt to respond to with audio
- * @param {string} [voice="alloy"] - Voice to use for audio generation
- * @param {number} [seed] - Seed for reproducible results
- * @param {string} [voiceInstructions] - Additional instructions for voice character/style
- * @returns {Promise<Object>} - Object containing the base64 audio data, mime type, and metadata
+ * @param {Object} params - The parameters for audio generation
+ * @param {string} params.prompt - The text prompt to respond to with audio
+ * @param {string} [params.voice="alloy"] - Voice to use for audio generation
+ * @param {string} [params.format="mp3"] - Format of the audio (mp3, wav, etc.)
+ * @param {string} [params.voiceInstructions] - Additional instructions for voice character/style
+ * @param {Object} [params.audioPlayer] - Optional audio player for terminal playback
+ * @param {string} [params.tempDir] - Optional temporary directory for audio playback
+ * @returns {Promise<Object>} - MCP response object with the audio data
  */
-export async function respondAudio(prompt, voice = "alloy", seed, voiceInstructions) {
+export async function respondAudio(params) {
+  const { prompt, voice = "alloy", format = "mp3", voiceInstructions, audioPlayer, tempDir } = params;
+  
   if (!prompt || typeof prompt !== 'string') {
     throw new Error('Prompt is required and must be a string');
   }
@@ -22,7 +31,7 @@ export async function respondAudio(prompt, voice = "alloy", seed, voiceInstructi
   const queryParams = new URLSearchParams();
   queryParams.append('model', 'openai-audio'); // Required for audio generation
   queryParams.append('voice', voice);
-  if (seed !== undefined) queryParams.append('seed', seed);
+  if (format) queryParams.append('format', format);
   
   // Construct the URL
   let finalPrompt = prompt;
@@ -57,16 +66,24 @@ export async function respondAudio(prompt, voice = "alloy", seed, voiceInstructi
     // Determine the mime type from the response headers or default to audio/mpeg
     const contentType = response.headers.get('content-type') || 'audio/mpeg';
     
+    // If running in a terminal environment, play the audio
+    if (audioPlayer && tempDir) {
+      await playAudio(base64Data, contentType, 'audio_response', audioPlayer, tempDir);
+    }
+    
+    // Return the response in MCP format
     return {
-      data: base64Data,
-      mimeType: contentType,
-      metadata: {
-        prompt,
-        voice,
-        model: 'openai-audio',
-        seed,
-        voiceInstructions
-      }
+      content: [
+        {
+          type: 'audio',
+          data: base64Data,
+          mimeType: contentType
+        },
+        {
+          type: 'text',
+          text: `Generated audio response for prompt: "${prompt}"\n\nVoice: ${voice || 'default'}\nFormat: ${format}`
+        }
+      ]
     };
   } catch (error) {
     console.error('Error generating audio:', error);
@@ -77,13 +94,18 @@ export async function respondAudio(prompt, voice = "alloy", seed, voiceInstructi
 /**
  * Generates speech from text with a verbatim instruction
  * 
- * @param {string} text - The text to speak verbatim
- * @param {string} [voice="alloy"] - Voice to use for audio generation
- * @param {number} [seed] - Seed for reproducible results
- * @param {string} [voiceInstructions] - Additional instructions for voice character/style
- * @returns {Promise<Object>} - Object containing the base64 audio data, mime type, and metadata
+ * @param {Object} params - The parameters for speech generation
+ * @param {string} params.text - The text to speak verbatim
+ * @param {string} [params.voice="alloy"] - Voice to use for audio generation
+ * @param {string} [params.format="mp3"] - Format of the audio (mp3, wav, etc.)
+ * @param {string} [params.voiceInstructions] - Additional instructions for voice character/style
+ * @param {Object} [params.audioPlayer] - Optional audio player for terminal playback
+ * @param {string} [params.tempDir] - Optional temporary directory for audio playback
+ * @returns {Promise<Object>} - MCP response object with the audio data
  */
-export async function sayText(text, voice = "alloy", seed, voiceInstructions) {
+export async function sayText(params) {
+  const { text, voice = "alloy", format = "mp3", voiceInstructions, audioPlayer, tempDir } = params;
+  
   if (!text || typeof text !== 'string') {
     throw new Error('Text is required and must be a string');
   }
@@ -91,16 +113,77 @@ export async function sayText(text, voice = "alloy", seed, voiceInstructions) {
   // Create the verbatim instruction
   const verbatimPrompt = `Say verbatim: ${text}`;
   
-  // Pass to respondAudio with the same parameters
-  return respondAudio(verbatimPrompt, voice, seed, voiceInstructions);
+  try {
+    // Build the query parameters
+    const queryParams = new URLSearchParams();
+    queryParams.append('model', 'openai-audio'); // Required for audio generation
+    queryParams.append('voice', voice);
+    if (format) queryParams.append('format', format);
+    
+    // Construct the URL
+    let finalPrompt = verbatimPrompt;
+    
+    // Add voice instructions if provided
+    if (voiceInstructions) {
+      finalPrompt = `${voiceInstructions}\n\n${verbatimPrompt}`;
+    }
+    
+    const encodedPrompt = encodeURIComponent(finalPrompt);
+    const baseUrl = 'https://text.pollinations.ai';
+    let url = `${baseUrl}/${encodedPrompt}`;
+    
+    // Add query parameters
+    const queryString = queryParams.toString();
+    url += `?${queryString}`;
+    
+    // Fetch the audio from the URL
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to generate audio: ${response.statusText}`);
+    }
+    
+    // Get the audio data as an ArrayBuffer
+    const audioBuffer = await response.arrayBuffer();
+    
+    // Convert the ArrayBuffer to a base64 string
+    const base64Data = Buffer.from(audioBuffer).toString('base64');
+    
+    // Determine the mime type from the response headers or default to audio/mpeg
+    const contentType = response.headers.get('content-type') || 'audio/mpeg';
+    
+    // If running in a terminal environment, play the audio
+    if (audioPlayer && tempDir) {
+      await playAudio(base64Data, contentType, 'say_text', audioPlayer, tempDir);
+    }
+    
+    // Return the response in MCP format
+    return {
+      content: [
+        {
+          type: 'audio',
+          data: base64Data,
+          mimeType: contentType
+        },
+        {
+          type: 'text',
+          text: `Generated audio for text: "${text}"\n\nVoice: ${voice || 'default'}\nFormat: ${format}`
+        }
+      ]
+    };
+  } catch (error) {
+    console.error('Error generating audio:', error);
+    throw error;
+  }
 }
 
 /**
  * List available audio voices from Pollinations API
  * 
- * @returns {Promise<Array<string>>} - Array of available voice options
+ * @param {Object} params - The parameters for listing audio voices
+ * @returns {Promise<Object>} - MCP response object with the list of available voice options
  */
-export async function listAudioVoices() {
+export async function listAudioVoices(params) {
   try {
     const response = await fetch('https://text.pollinations.ai/models');
     
@@ -113,15 +196,93 @@ export async function listAudioVoices() {
     // Find the openai-audio model and extract its voices
     const audioModel = models.find(model => model.name === 'openai-audio');
     
+    let voices;
     if (audioModel && Array.isArray(audioModel.voices)) {
-      return audioModel.voices;
+      voices = audioModel.voices;
+    } else {
+      // Default voices if we can't find the list
+      voices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
     }
     
-    // Default voices if we can't find the list
-    return ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+    // Return the response in MCP format
+    return {
+      content: [
+        { type: 'text', text: JSON.stringify(voices, null, 2) }
+      ]
+    };
   } catch (error) {
     console.error('Error listing audio voices:', error);
     // Return default voices if there's an error
-    return ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+    const defaultVoices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+    
+    // Return the response in MCP format
+    return {
+      content: [
+        { type: 'text', text: JSON.stringify(defaultVoices, null, 2) }
+      ]
+    };
+  }
+}
+
+/**
+ * Plays audio data using the provided audio player
+ * 
+ * @param {string} audioData - Base64 encoded audio data
+ * @param {string} mimeType - MIME type of the audio data
+ * @param {string} prefix - Filename prefix for the temporary file
+ * @param {Object} audioPlayer - Audio player instance
+ * @param {string} tempDir - Temporary directory path
+ * @returns {Promise<void>}
+ */
+export function playAudio(audioData, mimeType, prefix, audioPlayer, tempDir) {
+  if (!audioPlayer || !tempDir) {
+    return Promise.resolve();
+  }
+  
+  return new Promise((resolve, reject) => {
+    try {
+      const format = getFormatFromMimeType(mimeType);
+      const tempFile = path.join(tempDir, `${prefix}_${Date.now()}.${format}`);
+      fs.writeFileSync(tempFile, Buffer.from(audioData, 'base64'));
+      
+      audioPlayer.play(tempFile, (err) => {
+        if (err) {
+          console.error('Error playing audio:', err);
+        }
+        
+        // Clean up temp file after playing
+        try {
+          fs.unlinkSync(tempFile);
+        } catch (e) {
+          console.error('Error removing temp file:', e);
+        }
+        
+        resolve();
+      });
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      reject(error);
+    }
+  });
+}
+
+/**
+ * Gets the format from the given MIME type
+ * 
+ * @param {string} mimeType - MIME type
+ * @returns {string} - Format
+ */
+function getFormatFromMimeType(mimeType) {
+  switch (mimeType) {
+    case 'audio/mpeg':
+      return 'mp3';
+    case 'audio/wav':
+      return 'wav';
+    case 'audio/ogg':
+      return 'ogg';
+    case 'audio/aac':
+      return 'aac';
+    default:
+      return 'mp3'; // Default to MP3
   }
 }

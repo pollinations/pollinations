@@ -111,26 +111,21 @@ export async function isAuthenticated(sessionId) {
 /**
  * Get GitHub OAuth authentication URL
  *
- * @param {Object} options - Options for authentication
- * @param {string} [options.returnUrl] - URL to redirect to after authentication
  * @returns {Promise<Object>} Authentication URL
  */
-export async function getAuthUrl(options = {}) {
+export async function getAuthUrl() {
   if (!GITHUB_CLIENT_ID) {
     throw new Error('GITHUB_CLIENT_ID environment variable is not set');
   }
 
-  const { returnUrl } = options;
-
   const state = crypto.randomBytes(16).toString('hex');
   const redirectUri = encodeURIComponent(DEFAULT_REDIRECT_URI);
 
-  // Store state and return URL temporarily
+  // Store state temporarily
   const userData = await loadUserData();
   if (!userData.states) userData.states = {};
 
   userData.states[state] = {
-    returnUrl: returnUrl || '',
     created_at: new Date().toISOString()
   };
 
@@ -167,31 +162,12 @@ export async function completeAuth(code, state) {
     const userData = await loadUserData();
     console.log(`User data loaded, states: ${JSON.stringify(userData.states ? Object.keys(userData.states) : 'none')}`);
 
-    // In test mode, be more lenient with state validation
-    if (process.env.TEST_MODE === 'true') {
-      if (!userData.states) {
-        userData.states = {};
-      }
-
-      // If state doesn't exist in test mode, create it
-      if (!userData.states[state]) {
-        console.log(`Creating state ${state} in test mode`);
-        userData.states[state] = {
-          returnUrl: '',
-          created_at: new Date().toISOString()
-        };
-        await saveUserData(userData);
-      }
-    } else if (!userData.states || !userData.states[state]) {
+    if (!userData.states || !userData.states[state]) {
       throw new Error('Invalid state parameter');
     }
 
-    const { returnUrl } = userData.states[state] || { returnUrl: '' };
-
     // Exchange code for token
-    const redirectUri = process.env.TEST_MODE === 'true' ?
-      `http://localhost:${process.env.PORT || 3000}/github/callback` :
-      DEFAULT_REDIRECT_URI;
+    const redirectUri = process.env.REDIRECT_URI || DEFAULT_REDIRECT_URI;
 
     console.log(`Exchanging code for token with redirect URI: ${redirectUri}`);
     console.log(`GitHub Client ID: ${GITHUB_CLIENT_ID.substring(0, 5)}...`);
@@ -274,8 +250,7 @@ export async function completeAuth(code, state) {
     return {
       success: true,
       sessionId: githubId,
-      pollinationsToken,
-      returnUrl
+      pollinationsToken
     };
   } catch (error) {
     console.error('Error completing authentication:', error);

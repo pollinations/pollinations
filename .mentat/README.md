@@ -24,14 +24,21 @@ When handling project submission issues:
    ```
 
 3. GitHub Star Counts:
-   - For projects with GitHub repositories, add their star count in the README.md
+   - For projects with GitHub repositories, add their star count as a `stars` property:
+     ```javascript
+     {
+       name: "Project Name",
+       // other properties...
+       repo: "https://github.com/owner/repo",
+       stars: 1234  // Add this property for GitHub repos
+     }
+     ```
    - Use the github-star-fetcher script to get current counts:
      ```bash
      node .github/scripts/github-star-fetcher.js owner/repo
      ```
-   - Copy the formatted Markdown output and paste it in the README.md
-   - Only include star counts in the README.md, not in projectList.js or projects.csv
-   - Order projects with higher star counts higher in each section when possible
+   - When possible, arrange projects with higher star counts higher in each category
+   - The star count will be displayed on the project page next to the GitHub link
 
 4. Categories:
    - LLM Integrations

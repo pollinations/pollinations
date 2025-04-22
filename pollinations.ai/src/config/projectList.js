@@ -101,7 +101,8 @@ const allProjects = {
       author: "@Azad-sl",
       repo: "https://github.com/Azad-sl/FreeAI",
       submissionDate: "2025-03-24",
-      language: "zh-CN"
+      language: "zh-CN",
+      stars: 44
     },
     {
       name: "🆕 AI Unlimited Customizable Feature Module 🇨🇳",
@@ -118,6 +119,7 @@ const allProjects = {
       author: "https://github.com/MMojoCoder",
       repo: "https://github.com/MMojoCoder/PrivatePollenAI",
       submissionDate: "2025-02-23",
+      stars: 2
     },
     {
       name: "🆕 Zelos AI image generator",
@@ -145,18 +147,21 @@ const allProjects = {
       description: "An open-source, modern-design ChatGPT/LLMs UI/Framework with speech-synthesis, multi-modal, and extensible plugin system.",
       repo: "https://github.com/lobehub/lobe-chat",
       featured: true,
+      stars: 59000
     },
     {
       name: "Qwen-Agent",
       url: "https://github.com/QwenLM/Qwen-Agent",
       description: "A framework for developing agentic LLM applications.",
       repo: "https://github.com/QwenLM/Qwen-Agent",
+      stars: 6600
     },
     {
       name: "SillyTavern",
       url: "https://docs.sillytavern.app/extensions/stable-diffusion/",
       description: "An LLM frontend for power users. Pollinations permits it to generate images.",
       repo: "https://github.com/SillyTavern/SillyTavern",
+      stars: 13700
     },
     {
       name: "FlowGPT",
@@ -168,6 +173,8 @@ const allProjects = {
       url: "https://github.com/xtekky/gpt4free",
       description: "The official gpt4free repository - various collection of powerful language models.",
       author: "xtekky",
+      repo: "https://github.com/xtekky/gpt4free",
+      stars: 64100
     },
     {
       name: "Unity AI Lab",
@@ -180,6 +187,7 @@ const allProjects = {
       description: "A versatile AI assistant with advanced image and text generation capabilities.",
       author: "Th3-C0der",
       repo: "https://github.com/Th3-C0der",
+      stars: 20
     },
   ],
   creativeApps: [
@@ -240,6 +248,7 @@ const allProjects = {
       author: "CitizenOneX",
       repo: "https://github.com/CitizenOneX/frame_pollinations",
       submissionDate: "2025-04-13",
+      stars: 3
     },
     {
       name: "🆕 Podcast #1500",
@@ -724,27 +733,13 @@ const allProjects = {
   ],
   sdkLibraries: [
     {
-      name: "🆕 Smpldev",
-      url: "https://smpldev.ftp.sh/",
-      description: "Create, deploy, and scale full-stack web and mobile applications in minutes.",
-      author: "@kennet678",
-      submissionDate: "2025-04-15",
-    },
-    {
-      name: "🆕 MCPollinations",
-      url: "https://github.com/pinkpixel-dev/MCPollinations",
-      description: "A Model Context Protocol (MCP) server that enables AI assistants to generate images, text, and audio through the Pollinations APIs. Supports customizable parameters, image saving, and multiple model options.",
-      author: "Pink Pixel",
-      repo: "https://github.com/pinkpixel-dev/MCPollinations",
-      submissionDate: "2025-04-13",
-    },
-    {
-      name: "🆕 pollinations_ai",
-      url: "https://pub.dev/packages/pollinations_ai",
-      description: "A Flutter/Dart SDK package for accessing all features of pollinations.ai including text generation, image generation, audio, and listing all supported models.",
-      author: "@Meenapintu",
-      repo: "https://github.com/yehigo/pollinations.ai",
-      submissionDate: "2025-03-31",
+      name: "🆕 ComfyUI-Pollinations",
+      url: "https://github.com/1038lab/ComfyUI-Pollinations",
+      description: "A custom node for ComfyUI that utilizes the Pollinations API to generate images and text based on user prompts, supporting multiple image and text generation models.",
+      author: "https://github.com/1038lab/",
+      repo: "https://github.com/1038lab/ComfyUI-Pollinations",
+      submissionDate: "2025-03-04",
+      stars: 29
     },
     {
       name: "🆕 Node.js Client Library",
@@ -753,14 +748,32 @@ const allProjects = {
       author: "@fqueis",
       repo: "https://github.com/fqueis/pollinationsai",
       submissionDate: "2025-03-14",
+      stars: 11
     },
     {
-      name: "🆕 ComfyUI-Pollinations",
-      url: "https://github.com/1038lab/ComfyUI-Pollinations",
-      description: "A custom node for ComfyUI that utilizes the Pollinations API to generate images and text based on user prompts, supporting multiple image and text generation models.",
-      author: "https://github.com/1038lab/",
-      repo: "https://github.com/1038lab/ComfyUI-Pollinations",
-      submissionDate: "2025-03-04",
+      name: "🆕 MCPollinations",
+      url: "https://github.com/pinkpixel-dev/MCPollinations",
+      description: "A Model Context Protocol (MCP) server that enables AI assistants to generate images, text, and audio through the Pollinations APIs. Supports customizable parameters, image saving, and multiple model options.",
+      author: "Pink Pixel",
+      repo: "https://github.com/pinkpixel-dev/MCPollinations",
+      submissionDate: "2025-04-13",
+      stars: 6
+    },
+    {
+      name: "🆕 pollinations_ai",
+      url: "https://pub.dev/packages/pollinations_ai",
+      description: "A Flutter/Dart SDK package for accessing all features of pollinations.ai including text generation, image generation, audio, and listing all supported models.",
+      author: "@Meenapintu",
+      repo: "https://github.com/yehigo/pollinations.ai",
+      submissionDate: "2025-03-31",
+      stars: 4
+    },
+    {
+      name: "🆕 Smpldev",
+      url: "https://smpldev.ftp.sh/",
+      description: "Create, deploy, and scale full-stack web and mobile applications in minutes.",
+      author: "@kennet678",
+      submissionDate: "2025-04-15",
     },
     {
       name: "pollinations NPM Module",

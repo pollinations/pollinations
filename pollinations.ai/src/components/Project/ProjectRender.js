@@ -12,7 +12,6 @@ import { shortTechnical } from "../../config/llmTransforms"
 import { ICONS } from "../../assets/icons/icons"
 import { trackEvent } from "../../config/analytics"
 import { SectionSubContainer } from "../SectionContainer"
-import { getStarCount } from "../../utils/githubStars"
 
 /**
  * Renders the list of projects for the selected category
@@ -154,7 +153,7 @@ const ProjectsRender = ({ projectList, classes }) => {
                             transforms={[shortTechnical]}
                           />
                         </span>
-                        {project.repo && renderRepoLink(project.repo)}
+                        {project.repo && renderRepoLink(project.repo, project.stars)}
                       </Grid>
                     </Grid>
                   </Grid>
@@ -262,7 +261,7 @@ const ProjectsRender = ({ projectList, classes }) => {
                             transforms={[shortTechnical]}
                           />
                         </span>
-                        {project.repo && renderRepoLink(project.repo)}
+                        {project.repo && renderRepoLink(project.repo, project.stars)}
                       </Grid>
                     </Grid>
                   </>
@@ -309,7 +308,7 @@ const renderProjectLink = (project) => {
   )
 }
 
-const renderRepoLink = (repoUrl) => {
+const renderRepoLink = (repoUrl, stars) => {
   const handleRepoLinkClick = () => {
     trackEvent({
       action: "click_project_repo",
@@ -317,9 +316,6 @@ const renderRepoLink = (repoUrl) => {
       value: repoUrl,
     })
   }
-
-  // Get star count from the utility function
-  const stars = getStarCount(repoUrl);
 
   // Format star count for display
   const formatStarCount = (count) => {

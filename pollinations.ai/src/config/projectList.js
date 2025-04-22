@@ -1,7 +1,7 @@
 // Project entries support an optional submissionDate field (format: "YYYY-MM-DD")
 // This field is automatically added for new submissions but may not be present in older entries
 // The date is not currently displayed in the UI but is recorded for future use
-// 
+//
 // Projects in non-English languages should include:
 // - A country flag emoji in the name (e.g., 🇨🇳 for Chinese)
 // - A "language" field with the appropriate language code
@@ -101,7 +101,8 @@ const allProjects = {
       author: "@Azad-sl",
       repo: "https://github.com/Azad-sl/FreeAI",
       submissionDate: "2025-03-24",
-      language: "zh-CN"
+      language: "zh-CN",
+      stars: 44
     },
     {
       name: "🆕 AI Unlimited Customizable Feature Module 🇨🇳",
@@ -118,6 +119,7 @@ const allProjects = {
       author: "https://github.com/MMojoCoder",
       repo: "https://github.com/MMojoCoder/PrivatePollenAI",
       submissionDate: "2025-02-23",
+      stars: 2
     },
     {
       name: "🆕 Zelos AI image generator",
@@ -145,18 +147,21 @@ const allProjects = {
       description: "An open-source, modern-design ChatGPT/LLMs UI/Framework with speech-synthesis, multi-modal, and extensible plugin system.",
       repo: "https://github.com/lobehub/lobe-chat",
       featured: true,
+      stars: 59000
     },
     {
       name: "Qwen-Agent",
       url: "https://github.com/QwenLM/Qwen-Agent",
       description: "A framework for developing agentic LLM applications.",
       repo: "https://github.com/QwenLM/Qwen-Agent",
+      stars: 6600
     },
     {
       name: "SillyTavern",
       url: "https://docs.sillytavern.app/extensions/stable-diffusion/",
       description: "An LLM frontend for power users. Pollinations permits it to generate images.",
       repo: "https://github.com/SillyTavern/SillyTavern",
+      stars: 13700
     },
     {
       name: "FlowGPT",
@@ -168,6 +173,8 @@ const allProjects = {
       url: "https://github.com/xtekky/gpt4free",
       description: "The official gpt4free repository - various collection of powerful language models.",
       author: "xtekky",
+      repo: "https://github.com/xtekky/gpt4free",
+      stars: 64100
     },
     {
       name: "Unity AI Lab",
@@ -180,6 +187,7 @@ const allProjects = {
       description: "A versatile AI assistant with advanced image and text generation capabilities.",
       author: "Th3-C0der",
       repo: "https://github.com/Th3-C0der",
+      stars: 20
     },
   ],
   creativeApps: [
@@ -212,6 +220,7 @@ const allProjects = {
       description: "Generator Teks AI canggih dengan berbagai model AI seperti OpenAI, Llama, Mistral, dan DeepSeek. Hasilkan jawaban instan, dukung mode gelap/fokus, riwayat percakapan, dan contoh pertanyaan acak. Alat sempurna untuk kreativitas dan produktivitas. (Advanced AI Text Generator with various AI models like OpenAI, Llama, Mistral, and DeepSeek. Generate instant answers, support dark/focus mode, conversation history, and random question examples. Perfect tool for creativity and productivity.)",
       author: "@ayick13",
       repo: "https://github.com/ayick13/app",
+      stars: 0,
       submissionDate: "2025-04-16",
       language: "id-ID"
     },
@@ -221,6 +230,7 @@ const allProjects = {
       description: "A collection of tools to help Growers, Breeders & Seed Bankers. Free & Open Source powered by Pollinations.ai.",
       author: "@Tolerable",
       repo: "https://github.com/Tolerable/strainnavigator",
+      stars: 1,
       submissionDate: "2025-04-15",
     },
     {
@@ -247,6 +257,7 @@ const allProjects = {
       author: "CitizenOneX",
       repo: "https://github.com/CitizenOneX/frame_pollinations",
       submissionDate: "2025-04-13",
+      stars: 3
     },
     {
       name: "🆕 Podcast #1500",
@@ -268,6 +279,7 @@ const allProjects = {
       description: "A Web interface to create thematic images from prompts, with multiple aspect ratios and also image reference inputs.",
       author: "Ayushman Bhattacharya",
       repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter",
+      stars: 8,
       submissionDate: "2025-03-31",
     },
     {
@@ -283,6 +295,7 @@ const allProjects = {
       description: "输入文本，选择语音风格，一键将文字转换为自然流畅的语音。 支持多种声音特征，帮您创建专业水准的音频内容。 (Input text, select voice style, and instantly convert text to natural, fluid speech. Supports various voice characteristics to help you create professional-grade audio content.)",
       author: "https://github.com/Azad-sl",
       repo: "https://github.com/Azad-sl/tts",
+      stars: 2,
       submissionDate: "2025-03-24",
       language: "zh-CN"
     },
@@ -348,6 +361,7 @@ const allProjects = {
       description: "An AI-powered image generation platform for Android designed to create stunning visuals from text prompts. Features dynamic image generation as users scroll, save to gallery, favorites, and a user-friendly interface.",
       author: "https://discord.com/channels/@taylorsnupe",
       repo: "https://github.com/AminMusah/ai-image-generator",
+      stars: 1,
       submissionDate: "2025-03-12",
     },
     {
@@ -385,6 +399,7 @@ const allProjects = {
       description: "Website to easily create images via pollinations.ai API.",
       author: "@oopshnik",
       repo: "https://github.com/oopshnik/image1gen",
+      stars: 8,
       submissionDate: "2025-02-22",
     },
     {
@@ -393,6 +408,7 @@ const allProjects = {
       description: "A web-based AI image generator powered by Pollinations.ai, featuring multi-model support, customizable parameters, and real-time preview.",
       author: "@hrisjeui",
       repo: "https://github.com/hrisjeui/Multi-text-image-model-pollinations",
+      stars: 2,
       submissionDate: "2025-02-15",
     },
     {
@@ -401,6 +417,7 @@ const allProjects = {
       description: "An AI-driven tool that transforms text prompts using MidiJourney into MIDI-based melodies through browser oscillators.",
       author: "@brain.diver",
       repo: "https://github.com/rafabez/pollisonic_generator",
+      stars: 0,
       featured: true,
     },
     {
@@ -409,6 +426,7 @@ const allProjects = {
       description: "A web-based generative interactive fiction (text adventure) set in a sci-fi underwater world.",
       author: "@brain.diver",
       repo: "https://github.com/rafabez/abyss_ascending",
+      stars: 0,
     },
     {
       name: "Deep Saga",
@@ -424,7 +442,7 @@ const allProjects = {
       featured: true,
     },
     {
-      
+
       name: "MIDIjourney",
       url: "https://github.com/korus-labs/MIDIjourney",
       description: "An AI-powered plugin for Ableton Live that turns text descriptions into music.",
@@ -435,7 +453,8 @@ const allProjects = {
       url: "https://turboreelgpt.tech/",
       description: "An open-source video generation system using AI.",
       author: "@pedroriosa",
-      repo: "https://github.com/TurboReel/TurboReel_studio",
+      repo: "https://github.com/TurboReel/mediachain",
+      stars: 42,
     },
     {
       name: "Rangrez AI",
@@ -449,6 +468,7 @@ const allProjects = {
       description: "A Choose Your Own Adventure RPG, dynamically narrated by AI.",
       author: "JayJayBinks",
       repo: "https://github.com/JayJayBinks/infinite-tales-rpg",
+      stars: 21,
     },
     {
       name: "StorySight",
@@ -467,6 +487,7 @@ const allProjects = {
       description: "A Hitchhiker's Guide to the Galaxy themed LLM-based elevator game.",
       author: "@thomash_pollinations",
       repo: "https://github.com/voodoohop/sirius-cybernetics-elevator-challenge",
+      stars: 0,
     },
     {
       name: "POLLIPAPER",
@@ -520,6 +541,7 @@ const allProjects = {
       description: "A beautiful web interface for generating images using Pollinations.ai API with only the \"flux\" and \"turbo\" models.",
       author: "@altkriz",
       repo: "https://github.com/altkriz/imagen",
+      stars: 3,
       submissionDate: "2025-04-13",
     },
     {
@@ -527,6 +549,7 @@ const allProjects = {
       description: "Avatar Translator for Dominican Sign Language that uses artificial intelligence to translate text and audio into Dominican sign language (LSRD), creating a communication bridge for approximately 100,000 deaf people in the Dominican Republic.",
       author: "@cmunozdev",
       repo: "https://github.com/cmunozdev/DominiSigns",
+      stars: 3,
       submissionDate: "2025-04-06",
     },
     {
@@ -535,6 +558,7 @@ const allProjects = {
       description: "A custom WordPress Gutenberg block that allows you to generate images using the Pollinations API. Simply enter a prompt, and the AI will generate an image for you. Once the post is saved, the image is automatically stored in the WordPress Media Library.",
       author: "mahmood-asadi",
       repo: "https://github.com/mahmood-asadi/ai-vision-block",
+      stars: 5,
       submissionDate: "2025-03-31",
     },
     {
@@ -543,6 +567,7 @@ const allProjects = {
       description: "An AI chat service that operates exclusively via Curl commands, specifically designed for users working in terminal environments without the need for a standalone AI client.",
       author: "kevin@kevin1986.com",
       repo: "https://github.com/Veallym0n/toai.chat",
+      stars: 2,
       submissionDate: "2025-03-27",
     },
     {
@@ -551,6 +576,7 @@ const allProjects = {
       description: "It uses the pollinations image endpoint to generate an image with `boltning` as the model in 4 types of aspect ratios and themes with prompt engineering thus transforming selected texts into art smoothly with a disposable GUI in web.",
       author: "Ayushman Bhatacharya",
       repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter/tree/main/Elixpo%20Chrome%20%20Extension",
+      stars: 8,
       submissionDate: "2025-03-14",
     },
     {
@@ -559,6 +585,7 @@ const allProjects = {
       description: "Builds a bentro grid UI which integrates with the pollinations realtime SSE feed to show case art generation, with virtual DOM update to reduce lag and optimization.",
       author: "Ayushman Bhattacharya",
       repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter",
+      stars: 8,
       submissionDate: "2025-03-14",
     },
     {
@@ -582,6 +609,7 @@ const allProjects = {
       description: "A browser-based coding environment based on bolt.diy, featuring integrated Pollinations AI services, visual code editing, and project management tools.",
       author: "@thomash_pollinations",
       repo: "https://github.com/pollinations/pollinations.diy",
+      stars: 5,
       featured: true,
     },
     {
@@ -660,6 +688,7 @@ const allProjects = {
       description: "Discord bot that uses several APIs (Pollinations AI and Cerebras AI), to offer a variety of features, including advanced text generation with a history of your conversations, image and voice generation.",
       author: "@the_yerminator",
       repo: "https://github.com/YoannDev90/AlphaLLM",
+      stars: 5,
       submissionDate: "2025-03-31",
     },
     {
@@ -668,6 +697,7 @@ const allProjects = {
       description: "A Telegram bot deployed on Cloudflare Workers that allows users to generate images, convert text to speech, transcribe voice messages, chat with AI models, and more through the Pollinations API.",
       author: "@Shadownc",
       repo: "https://github.com/Shadownc/pollinations-tg-bot",
+      stars: 2,
       submissionDate: "2025-03-27",
       language: "zh-CN"
     },
@@ -731,27 +761,13 @@ const allProjects = {
   ],
   sdkLibraries: [
     {
-      name: "🆕 Smpldev",
-      url: "https://smpldev.ftp.sh/",
-      description: "Create, deploy, and scale full-stack web and mobile applications in minutes.",
-      author: "@kennet678",
-      submissionDate: "2025-04-15",
-    },
-    {
-      name: "🆕 MCPollinations",
-      url: "https://github.com/pinkpixel-dev/MCPollinations",
-      description: "A Model Context Protocol (MCP) server that enables AI assistants to generate images, text, and audio through the Pollinations APIs. Supports customizable parameters, image saving, and multiple model options.",
-      author: "Pink Pixel",
-      repo: "https://github.com/pinkpixel-dev/MCPollinations",
-      submissionDate: "2025-04-13",
-    },
-    {
-      name: "🆕 pollinations_ai",
-      url: "https://pub.dev/packages/pollinations_ai",
-      description: "A Flutter/Dart SDK package for accessing all features of pollinations.ai including text generation, image generation, audio, and listing all supported models.",
-      author: "@Meenapintu",
-      repo: "https://github.com/yehigo/pollinations.ai",
-      submissionDate: "2025-03-31",
+      name: "🆕 ComfyUI-Pollinations",
+      url: "https://github.com/1038lab/ComfyUI-Pollinations",
+      description: "A custom node for ComfyUI that utilizes the Pollinations API to generate images and text based on user prompts, supporting multiple image and text generation models.",
+      author: "https://github.com/1038lab/",
+      repo: "https://github.com/1038lab/ComfyUI-Pollinations",
+      submissionDate: "2025-03-04",
+      stars: 29
     },
     {
       name: "🆕 Node.js Client Library",
@@ -760,14 +776,32 @@ const allProjects = {
       author: "@fqueis",
       repo: "https://github.com/fqueis/pollinationsai",
       submissionDate: "2025-03-14",
+      stars: 11
     },
     {
-      name: "🆕 ComfyUI-Pollinations",
-      url: "https://github.com/1038lab/ComfyUI-Pollinations",
-      description: "A custom node for ComfyUI that utilizes the Pollinations API to generate images and text based on user prompts, supporting multiple image and text generation models.",
-      author: "https://github.com/1038lab/",
-      repo: "https://github.com/1038lab/ComfyUI-Pollinations",
-      submissionDate: "2025-03-04",
+      name: "🆕 MCPollinations",
+      url: "https://github.com/pinkpixel-dev/MCPollinations",
+      description: "A Model Context Protocol (MCP) server that enables AI assistants to generate images, text, and audio through the Pollinations APIs. Supports customizable parameters, image saving, and multiple model options.",
+      author: "Pink Pixel",
+      repo: "https://github.com/pinkpixel-dev/MCPollinations",
+      submissionDate: "2025-04-13",
+      stars: 6
+    },
+    {
+      name: "🆕 pollinations_ai",
+      url: "https://pub.dev/packages/pollinations_ai",
+      description: "A Flutter/Dart SDK package for accessing all features of pollinations.ai including text generation, image generation, audio, and listing all supported models.",
+      author: "@Meenapintu",
+      repo: "https://github.com/yehigo/pollinations.ai",
+      submissionDate: "2025-03-31",
+      stars: 4
+    },
+    {
+      name: "🆕 Smpldev",
+      url: "https://smpldev.ftp.sh/",
+      description: "Create, deploy, and scale full-stack web and mobile applications in minutes.",
+      author: "@kennet678",
+      submissionDate: "2025-04-15",
     },
     {
       name: "pollinations NPM Module",
@@ -814,6 +848,7 @@ const allProjects = {
       description: "How to add Pollinations AI Text Models to OpenWebUI for free access to top language models like GPT-4o, Mistral, Claude, and Gemini without signups or API keys.",
       author: "@cloph-dsp",
       repo: "https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI",
+      stars: 6,
       submissionDate: "2025-03-22",
     },
     {
@@ -862,7 +897,7 @@ export const projects = {
 
 /**
  * Organizes projects into categories and creates the featured section
- * 
+ *
  * @param {Object} sourceProjects - Object containing all projects by category
  * @param {Array} featuredCreators - Array of creator names/handles to prioritize for featuring
  * @returns {Object} - Organized projects object with populated categories
@@ -905,13 +940,16 @@ const organizeFeaturedProjects = (sourceProjects, featuredCreators = []) => {
 
   // Process each category
   Object.keys(sourceProjects).forEach(category => {
+    // First, collect all projects in this category
+    const categoryProjects = [];
+
     sourceProjects[category].forEach(project => {
       // Check if project should be featured
       const author = project.author || "";
-      const isTeenCreator = lowercaseCreators.some(creator => 
+      const isTeenCreator = lowercaseCreators.some(creator =>
         author.toLowerCase().includes(creator)
       );
-      
+
       // Add to featured if explicitly marked or created by a teen creator or is in teen-friendly list
       if (project.featured || isTeenCreator || teenFriendlyProjects.includes(project.name)) {
         result.featured.push({
@@ -920,14 +958,54 @@ const organizeFeaturedProjects = (sourceProjects, featuredCreators = []) => {
           featured: true
         });
       }
-      
-      // Always add to original category
-      result[category].push(project);
+
+      // Add to category collection
+      categoryProjects.push(project);
     });
+
+    // Sort projects: first by whether they have stars (with stars first),
+    // then by star count (higher first), then preserve original order
+    categoryProjects.sort((a, b) => {
+      // If both have stars, sort by star count (higher first)
+      if (a.stars !== undefined && b.stars !== undefined) {
+        return b.stars - a.stars;
+      }
+      // If only a has stars, a comes first
+      if (a.stars !== undefined) {
+        return -1;
+      }
+      // If only b has stars, b comes first
+      if (b.stars !== undefined) {
+        return 1;
+      }
+      // If neither has stars, preserve original order
+      return 0;
+    });
+
+    // Add sorted projects to result
+    result[category] = categoryProjects;
   });
 
   // Remove projects that don't fit for teens from featured
   result.featured = result.featured.filter(project => !excludeFromTeenFeatured.includes(project.name));
+
+  // Sort featured projects by stars (higher first), then preserve original order
+  result.featured.sort((a, b) => {
+    // If both have stars, sort by star count (higher first)
+    if (a.stars !== undefined && b.stars !== undefined) {
+      return b.stars - a.stars;
+    }
+    // If only a has stars, a comes first
+    if (a.stars !== undefined) {
+      return -1;
+    }
+    // If only b has stars, b comes first
+    if (b.stars !== undefined) {
+      return 1;
+    }
+    // If neither has stars, preserve original order
+    return 0;
+  });
 
   return result;
 };

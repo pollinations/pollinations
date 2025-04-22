@@ -23,7 +23,28 @@ When handling project submission issues:
    }
    ```
 
-3. Categories:
+3. GitHub Star Counts:
+   - For projects with GitHub repositories, add their star count as a `stars` property:
+     ```javascript
+     {
+       name: "Project Name",
+       // other properties...
+       repo: "https://github.com/owner/repo",
+       stars: 1234  // Add this property for GitHub repos
+     }
+     ```
+   - Use the update-project-stars.js script to get current counts:
+     ```bash
+     # For a specific repository:
+     node .github/scripts/update-project-stars.js owner/repo
+
+     # To update all repositories in projectList.js:
+     node .github/scripts/update-project-stars.js
+     ```
+   - When possible, arrange projects with higher star counts higher in each category
+   - The star count will be displayed on the project page next to the GitHub link
+
+4. Categories:
    - LLM Integrations
    - Creative & Interactive Applications
    - Tools & Interfaces
@@ -109,7 +130,7 @@ The MCP server provides a standardized way for AI assistants to access Pollinati
    - Always use `console.error()` for debugging, but be aware that excessive logging can still cause issues
    - When testing outside of Claude, you can use `console.log()` freely
 
-2. **Response Format**: 
+2. **Response Format**:
    - All tool responses to Claude must be properly formatted JSON
    - For text responses, wrap them in a JSON structure and use `JSON.stringify()` before returning
    - Follow the pattern used by existing functions like `generateImageUrl` and `listModels`

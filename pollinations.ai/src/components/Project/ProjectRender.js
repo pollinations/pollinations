@@ -12,6 +12,7 @@ import { shortTechnical } from "../../config/llmTransforms"
 import { ICONS } from "../../assets/icons/icons"
 import { trackEvent } from "../../config/analytics"
 import { SectionSubContainer } from "../SectionContainer"
+import { getStarCount } from "../../utils/githubStars"
 
 /**
  * Renders the list of projects for the selected category
@@ -317,6 +318,22 @@ const renderRepoLink = (repoUrl) => {
     })
   }
 
+  // Get star count from the utility function
+  const stars = getStarCount(repoUrl);
+
+  // Format star count for display
+  const formatStarCount = (count) => {
+    if (!count) return null;
+    
+    if (count < 1000) {
+      return count.toString();
+    } else {
+      return (count / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    }
+  };
+
+  const formattedStars = formatStarCount(stars);
+
   return (
     <Link
       href={repoUrl}
@@ -344,7 +361,22 @@ const renderRepoLink = (repoUrl) => {
           svg.setAttribute("height", "18")
         }}
       />
-      <span style={{ display: "flex", alignItems: "center", verticalAlign: "middle" }}>GITHUB</span>
+      <span style={{ display: "flex", alignItems: "center", verticalAlign: "middle" }}>
+        GITHUB
+        {formattedStars && (
+          <span style={{ 
+            marginLeft: "8px", 
+            backgroundColor: "rgba(255, 255, 255, 0.15)", 
+            padding: "0px 6px", 
+            borderRadius: "4px",
+            fontSize: "0.85em",
+            display: "flex",
+            alignItems: "center"
+          }}>
+            ⭐ {formattedStars}
+          </span>
+        )}
+      </span>
     </Link>
   )
 }

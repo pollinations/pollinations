@@ -33,9 +33,13 @@ When handling project submission issues:
        stars: 1234  // Add this property for GitHub repos
      }
      ```
-   - Use the github-star-fetcher script to get current counts:
+   - Use the update-project-stars.js script to get current counts:
      ```bash
-     node .github/scripts/github-star-fetcher.js owner/repo
+     # For a specific repository:
+     node .github/scripts/update-project-stars.js owner/repo
+
+     # To update all repositories in projectList.js:
+     node .github/scripts/update-project-stars.js
      ```
    - When possible, arrange projects with higher star counts higher in each category
    - The star count will be displayed on the project page next to the GitHub link
@@ -126,7 +130,7 @@ The MCP server provides a standardized way for AI assistants to access Pollinati
    - Always use `console.error()` for debugging, but be aware that excessive logging can still cause issues
    - When testing outside of Claude, you can use `console.log()` freely
 
-2. **Response Format**: 
+2. **Response Format**:
    - All tool responses to Claude must be properly formatted JSON
    - For text responses, wrap them in a JSON structure and use `JSON.stringify()` before returning
    - Follow the pattern used by existing functions like `generateImageUrl` and `listModels`

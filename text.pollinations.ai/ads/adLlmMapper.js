@@ -53,13 +53,14 @@ ${affiliateMarkdown}
 
 AFFILIATE ID:`;
 
-        const completion = await generateTextPortkey([{ role: "user", content: promptForLLM }]);
+        // Use the openai-large model explicitly for better affiliate matching
+        const completion = await generateTextPortkey([{ role: "user", content: promptForLLM }], { model: 'openai-large' });
         
         const response = completion.choices[0]?.message?.content?.trim();
         
         if (!response || response.toLowerCase() === "none") {
             // Define the percentage chance of showing Ko-fi when no other affiliate is found
-            const kofiShowPercentage = 10; // 10% chance to show Ko-fi
+            const kofiShowPercentage = 5; // 10% chance to show Ko-fi
             
             // Generate a random number between 0-100
             const randomValue = Math.floor(Math.random() * 100);
@@ -81,7 +82,7 @@ AFFILIATE ID:`;
         
         if (!affiliateId) {
             // Define the percentage chance of showing Ko-fi when no valid ID is extracted
-            const kofiShowPercentage = 10; // 30% chance to show Ko-fi
+            const kofiShowPercentage = 30; // 30% chance to show Ko-fi
             
             // Generate a random number between 0-100
             const randomValue = Math.floor(Math.random() * 100);

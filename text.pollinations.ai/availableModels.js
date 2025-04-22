@@ -75,9 +75,9 @@ const models = [
   {
     name: "mistral",
     description: "Mistral Small 3",
-    handler: generateTextMistral,
+    handler: generateTextPortkey,
     //    details:  "Efficient language generation focused on speed and clarity.",
-    provider: "Scaleway",
+    provider: "Cloudflare",
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
   },

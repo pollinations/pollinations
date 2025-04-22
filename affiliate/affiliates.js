@@ -283,16 +283,16 @@ const affiliates = [
     trackingLink: "https://modlily.sjv.io/c/6058776/1453616/17059",
     triggerWords: ["womens fashion", "online clothing store", "dresses", "swimwear", "affordable fashion", "fashion deals"]
   },
-  {
-    id: "1570637",
-    name: "Happy Sinks Affiliate Program",
-    product: "Kitchen cleaning tools and accessories",
-    description: "Find stylish and functional kitchen cleaning tools and sink accessories from HAPPY SiNKS.",
-    audience: "Homeowners looking for innovative and aesthetic kitchen cleaning solutions.",
-    categories: ["Home Goods", "Kitchen", "Cleaning Supplies"],
-    trackingLink: "https://happy-sinks.pxf.io/c/6058776/1570637/18086",
-    triggerWords: ["kitchen cleaning", "sink accessories", "dish brush", "sponge holder", "kitchen organization", "home cleaning"]
-  },
+  // {
+  //   id: "1570637",
+  //   name: "Happy Sinks Affiliate Program",
+  //   product: "Kitchen cleaning tools and accessories",
+  //   description: "Find stylish and functional kitchen cleaning tools and sink accessories from HAPPY SiNKS.",
+  //   audience: "Homeowners looking for innovative and aesthetic kitchen cleaning solutions.",
+  //   categories: ["Home Goods", "Kitchen", "Cleaning Supplies"],
+  //   trackingLink: "https://happy-sinks.pxf.io/c/6058776/1570637/18086",
+  //   triggerWords: ["kitchen cleaning", "sink accessories", "dish brush", "sponge holder", "kitchen organization", "home cleaning"]
+  // },
   {
     id: "1588112",
     name: "Puzzle Ready affiliate program",
@@ -582,6 +582,16 @@ const affiliates = [
     categories: ["Home", "Software", "Apps"],
     trackingLink: "https://homestyler.sjv.io/c/6058776/1917730/22993",
     triggerWords: ["design", "software", "3D", "home", "decor", "plan", "interior", "architecture"]
+  },
+  {
+    id: "397623",
+    name: "Wren AI",
+    product: "GenBI AI-powered business intelligence platform",
+    description: "Unlock the power of data without complexity using Wren AI's conversational GenBI platform and AI-powered spreadsheets.",
+    audience: "Business teams, data analysts, executives, and marketers seeking simplified data insights",
+    categories: ["Software", "AI Tools", "Business Intelligence", "Data Analytics"],
+    trackingLink: "https://getwren.ai?via=397623",
+    triggerWords: ["business intelligence", "data analytics", "GenBI", "AI analytics", "data visualization", "SQL", "spreadsheets", "dashboards", "data insights", "business data"]
   }
 ];
 

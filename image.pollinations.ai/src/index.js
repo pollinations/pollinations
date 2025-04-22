@@ -157,7 +157,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
           // Include maturity as a nested object for backward compatibility
           maturity,
           timingInfo: relativeTiming(timingInfo),
-          ip: getIp(req),
+          // ip: getIp(req),
           status: "end_generating",
           referrer,
           // Use original wasPimped for normal domains, never for bad domains

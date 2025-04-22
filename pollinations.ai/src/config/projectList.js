@@ -184,6 +184,13 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 ImageGen AI Image",
+      url: "https://imagegen.narendradwivedi.org",
+      description: "A web application that utilizes Pollinations.AI API to generate images based on user-defined descriptions, with features like prompt enhancement, customizable image settings, and image download.",
+      author: "https://www.linkedin.com/in/narendradwivedi",
+      submissionDate: "2025-04-22"
+    },
+    {
       name: "🆕 RuangRiung AI Image 🇮🇩",
       url: "https://ruangriung.my.id",
       description: "RuangRiung AI Image Generator ideal untuk seniman digital, desainer, atau siapa pun yang ingin mengeksplorasi kreativitas dengan bantuan AI. Tersedia dalam bahasa Inggris dan Indonesia, website ini menggabungkan fungsionalitas lengkap dengan desain yang elegan dan responsif. (RuangRiung AI Image Generator is ideal for digital artists, designers, or anyone who wants to explore creativity with AI assistance. Available in English and Indonesian, this website combines complete functionality with an elegant and responsive design.)",

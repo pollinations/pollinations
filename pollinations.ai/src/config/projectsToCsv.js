@@ -121,7 +121,7 @@ try {
         const dateB = b.submissionDate;
 
         // Basic validation for YYYY-MM-DD format
-        const isValidDate = (dateStr) => dateStr && /^\\d{4}-\\d{2}-\\d{2}$/.test(dateStr);
+        const isValidDate = (dateStr) => dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
 
         const validA = isValidDate(dateA);
         const validB = isValidDate(dateB);

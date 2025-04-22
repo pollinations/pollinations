@@ -3,8 +3,9 @@ const path = require('path');
 const vm = require('vm');
 const { createObjectCsvWriter } = require('csv-writer');
 
-const projectListPath = path.join(__dirname, '..', 'pollinations.ai', 'src', 'config', 'projectList.js');
-const outputPath = path.join(__dirname, '..', 'projects.csv'); // Output in the root
+// Construct the path relative to the script's directory
+const projectListPath = path.join(__dirname, 'projectList.js');
+const outputPath = path.join(__dirname, '..', '..', '..', 'projects.csv'); // Output in the root
 
 console.log(`Reading project list from: ${projectListPath}`);
 console.log(`Output CSV will be written to: ${outputPath}`);
@@ -113,8 +114,8 @@ try {
         }
     }
 
-    // --- Sort records by submissionDate (descending) ---
-    console.log('Sorting records by submission date (newest first)...');
+    // --- Sort records by submissionDate (ascending) ---
+    console.log('Sorting records by submission date (oldest first)...');
     records.sort((a, b) => {
         const dateA = a.submissionDate;
         const dateB = b.submissionDate;
@@ -126,13 +127,13 @@ try {
         const validB = isValidDate(dateB);
 
         if (validA && validB) {
-            // Both dates are valid, compare directly (descending)
-            return dateB.localeCompare(dateA); 
+            // Both dates are valid, compare directly (ascending)
+            return dateA.localeCompare(dateB); 
         } else if (validA) {
-            // Only A is valid, A is newer (comes first)
+            // Only A is valid, A is "older" in this context (comes first)
             return -1; 
         } else if (validB) {
-            // Only B is valid, B is newer (comes first)
+            // Only B is valid, B is "older" (comes first)
             return 1;
         } else {
             // Neither is valid, maintain original relative order (or treat as equal)

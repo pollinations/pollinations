@@ -2,7 +2,7 @@ import { generateTextPortkey } from '../generateTextPortkey.js';
 import debug from 'debug';
 import { sendToAnalytics } from '../sendToAnalytics.js';
 import { getRequestData } from '../requestUtils.js';
-import { findRelevantAffiliate, generateAffiliateAd, extractReferralLinkInfo } from './adLlmMapper.js';
+import { findRelevantAffiliate, generateAffiliateAd, extractReferralLinkInfo, REDIRECT_BASE_URL } from './adLlmMapper.js';
 import { Transform } from 'stream';
 import { logAdInteraction } from './adLogger.js';
 import { affiliatesData } from '../../affiliate/affiliates.js';
@@ -13,8 +13,8 @@ const errorLog = debug('pollinations:adfilter:error');
 // Regular expression to detect markdown formatting in content
 const markdownRegex = /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`.*\`)|(?:\>.*)|(?:\-\s.*)|(?:\d\.\s.*)/;
 
-// Probability of adding referral links (5%)
-const REFERRAL_LINK_PROBABILITY = 0.05;
+// Probability of adding referral links (10%)
+const REFERRAL_LINK_PROBABILITY = 0.1;
 
 // Flag for testing ads with a specific marker
 const TEST_ADS_MARKER = "p-ads";
@@ -70,6 +70,20 @@ function shouldShowAds(content, messages = [], req = null) {
     if (requestData && requestData.referrer && requestData.referrer !== 'unknown' && (requestData.referrer?.includes('roblox') || requestData.referrer?.includes('image.pollinations.ai'))) {
         // log('Skipping ad processing due to referrer presence:', requestData.referrer);
         return { shouldShowAd: false, markerFound: false };
+    }
+
+    // Check if an ad already exists in the conversation history
+    if (messages && messages.length > 0) {
+        // Look for the redirect URL pattern in any of the messages
+        const hasExistingAd = messages.some(msg => {
+            if (!msg.content || typeof msg.content !== 'string') return false;
+            return msg.content.includes(REDIRECT_BASE_URL);
+        });
+
+        if (hasExistingAd) {
+            log('Ad already exists in conversation history, skipping additional ad');
+            return { shouldShowAd: false, markerFound: false, adAlreadyExists: true };
+        }
     }
 
     // Skip ad generation if content is too short
@@ -171,7 +185,7 @@ async function generateAdForContent(content, req, messages, markerFound = false,
     }
 
     // Check if we should show ads for this content
-    const { shouldShowAd, markerFound: detectedMarker, isBadDomain } = shouldShowAds(content, messages, req);
+    const { shouldShowAd, markerFound: detectedMarker, isBadDomain, adAlreadyExists } = shouldShowAds(content, messages, req);
 
     // Handle bad domain referrers - always show ads (100% probability)
     if (isBadDomain) {
@@ -182,6 +196,7 @@ async function generateAdForContent(content, req, messages, markerFound = false,
         if (req) {
             const reason = !content ? 'empty_content' :
                            content.length < 100 ? 'content_too_short' :
+                           adAlreadyExists ? 'ad_already_exists' :
                            'probability_check_failed';
 
             sendAdSkippedAnalytics(req, reason, isStreaming);
@@ -329,7 +344,15 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
         return responseStream;
     }
 
-    const { shouldShowAd, markerFound } = shouldShowAds(null, messages, req);
+    const { shouldShowAd, markerFound, adAlreadyExists } = shouldShowAds(null, messages, req);
+
+    if (adAlreadyExists) {
+        log('Ad already exists in conversation history, skipping streaming ad');
+        if (req) {
+            sendAdSkippedAnalytics(req, 'ad_already_exists', true);
+        }
+        return responseStream;
+    }
 
     if (!shouldShowAd) {
         // We've already sent the ad_skipped analytics in shouldShowAds
@@ -348,7 +371,7 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
     // 3. Add an ad after the [DONE] message
     const streamTransformer = new Transform({
         objectMode: true,
-        transform(chunk, encoding, callback) {
+        transform(chunk, _encoding, callback) {
             // Convert chunk to string
             const chunkStr = chunk.toString();
 

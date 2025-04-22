@@ -5,7 +5,7 @@ const { createObjectCsvWriter } = require('csv-writer');
 
 // Construct the path relative to the script's directory
 const projectListPath = path.join(__dirname, 'projectList.js');
-const outputPath = path.join(__dirname, '..', '..', '..', 'projects.csv'); // Output in the root
+const outputPath = path.join(__dirname, 'projects.csv'); // Output in the same directory as the script
 
 console.log(`Reading project list from: ${projectListPath}`);
 console.log(`Output CSV will be written to: ${outputPath}`);
@@ -114,30 +114,39 @@ try {
         }
     }
 
-    // --- Sort records by submissionDate (ascending) ---
-    console.log('Sorting records by submission date (oldest first)...');
+    // --- Sort records: No-date entries first (by category), then dated entries (oldest first) ---
+    console.log('Sorting records: Undated first (by category), then dated (oldest first)...');
     records.sort((a, b) => {
         const dateA = a.submissionDate;
         const dateB = b.submissionDate;
 
         // Basic validation for YYYY-MM-DD format
-        const isValidDate = (dateStr) => dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
+        const isValidDate = (dateStr) => dateStr && /^\\d{4}-\\d{2}-\\d{2}$/.test(dateStr);
 
         const validA = isValidDate(dateA);
         const validB = isValidDate(dateB);
 
+        // Case 1: Both dates are valid
         if (validA && validB) {
-            // Both dates are valid, compare directly (ascending)
-            return dateA.localeCompare(dateB); 
-        } else if (validA) {
-            // Only A is valid, A is "older" in this context (comes first)
-            return -1; 
-        } else if (validB) {
-            // Only B is valid, B is "older" (comes first)
+            // Sort by date ascending (oldest first)
+            return dateA.localeCompare(dateB);
+        }
+        // Case 2: Only A is valid (B is invalid/missing)
+        else if (validA) {
+            // Valid dates come AFTER invalid ones, so A comes after B
             return 1;
-        } else {
-            // Neither is valid, maintain original relative order (or treat as equal)
-            return 0; 
+        }
+        // Case 3: Only B is valid (A is invalid/missing)
+        else if (validB) {
+            // Valid dates come AFTER invalid ones, so B comes after A
+            return -1;
+        }
+        // Case 4: Both dates are invalid/missing
+        else {
+            // Sort by category ascending (alphabetical)
+            const categoryA = a.category || ''; // Handle potentially missing category
+            const categoryB = b.category || ''; // Handle potentially missing category
+            return categoryA.localeCompare(categoryB);
         }
     });
 

@@ -13,7 +13,7 @@ const errorLog = debug('pollinations:adfilter:error');
 // Regular expression to detect markdown formatting in content
 const markdownRegex = /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`.*\`)|(?:\>.*)|(?:\-\s.*)|(?:\d\.\s.*)/;
 
-// Probability of adding referral links (10%)
+// Probability of adding referral links (5%)
 const REFERRAL_LINK_PROBABILITY = 0.05;
 
 // Flag for testing ads with a specific marker
@@ -38,12 +38,12 @@ function contentContainsTriggerWords(content) {
     if (!content || typeof content !== 'string') {
         return false;
     }
-    
+
     // Convert content to lowercase for case-insensitive matching
     const lowercaseContent = content.toLowerCase();
-    
+
     // Check if content contains any trigger word (case insensitive)
-    return ALL_TRIGGER_WORDS.some(word => 
+    return ALL_TRIGGER_WORDS.some(word =>
         lowercaseContent.includes(word.toLowerCase())
     );
 }
@@ -56,67 +56,67 @@ function shouldShowAds(content, messages = [], req = null) {
     // Special handling for bad domains in referrer
     if (requestData && requestData.referrer && requestData.referrer !== 'unknown' && BAD_DOMAINS.length > 0) {
         const referrerLower = requestData.referrer.toLowerCase();
-        
+
         // Check if referrer contains any bad domain
         const isBadDomain = BAD_DOMAINS.some(domain => referrerLower.includes(domain));
-        
+
         if (isBadDomain) {
             log(`Bad domain detected in referrer: ${requestData.referrer}, forcing 100% ad probability`);
             return { shouldShowAd: true, markerFound: true, isBadDomain: true };
         }
     }
 
-    // Skip ad processing if any referrer is present (that's not a bad domain)
+    // Skip ad processing if referrer is from roblox or image.pollinations.ai
     if (requestData && requestData.referrer && requestData.referrer !== 'unknown' && (requestData.referrer?.includes('roblox') || requestData.referrer?.includes('image.pollinations.ai'))) {
         // log('Skipping ad processing due to referrer presence:', requestData.referrer);
         return { shouldShowAd: false, markerFound: false };
     }
-    
+
     // Skip ad generation if content is too short
     if (!content || typeof content !== 'string' || content.length < 100) {
         return { shouldShowAd: false, markerFound: false };
     }
-    
+
     // Skip if content does not have markdown-like formatting, unless we're testing
     // This helps distinguish actual text responses from other formats like code
     if (REQUIRE_MARKDOWN && !markdownRegex.test(content) && !content.includes(TEST_ADS_MARKER)) {
         log('Skipping ad processing due to lack of markdown formatting');
         return { shouldShowAd: false, markerFound: false };
     }
-    
+
     // Check for the test marker
     let markerFound = false;
     if (content) {
         markerFound = content.includes(TEST_ADS_MARKER);
     }
-    
+
     // Check for trigger words in content or messages
     let triggerWordsFound = false;
     if (content) {
         triggerWordsFound = contentContainsTriggerWords(content);
     }
     if (!triggerWordsFound && messages && messages.length > 0) {
-        triggerWordsFound = messages.some(msg => 
+        triggerWordsFound = messages.some(msg =>
             msg.content && contentContainsTriggerWords(msg.content)
         );
     }
-    
+
     // If marker is not found, use the default probability
-    const effectiveProbability = markerFound 
+    const effectiveProbability = markerFound
         ? 1.0 // 100% probability for marker found
-        : triggerWordsFound 
+        : triggerWordsFound
             ? REFERRAL_LINK_PROBABILITY * 3 // Triple probability for trigger words
             : REFERRAL_LINK_PROBABILITY;
-    
+
     if (markerFound) {
         log('Test marker "p-ads" found, using 100% probability');
     } else if (triggerWordsFound) {
         log(`Trigger words found in content, using triple probability (${(REFERRAL_LINK_PROBABILITY * 3).toFixed(2)})`);
     }
-    
+
     // Random check - only process based on the effective probability
     const shouldShowAd = Math.random() <= effectiveProbability;
-    
+
     return { shouldShowAd, markerFound };
 }
 
@@ -129,9 +129,9 @@ function shouldShowAds(content, messages = [], req = null) {
  */
 export function sendAdSkippedAnalytics(req, reason, isStreaming = false, additionalData = {}) {
     if (!req) return;
-    
+
     log(`Ad skipped: ${reason}, streaming: ${isStreaming}`);
-    
+
     sendToAnalytics(req, 'ad_skipped', {
         reason,
         streaming: isStreaming,
@@ -144,17 +144,17 @@ function shouldProceedWithAd(content, markerFound) {
     if (!content) {
         return false;
     }
-    
+
     // Skip if content is too short (less than 50 characters)
     if (content.length < 50) {
         return false;
     }
-    
+
     // If markdown is required and not found, skip (unless marker is present)
     if (REQUIRE_MARKDOWN && !markerFound && !markdownRegex.test(content)) {
         return false;
     }
-    
+
     return true;
 }
 
@@ -164,48 +164,48 @@ async function generateAdForContent(content, req, messages, markerFound = false,
         log('Request already processed for ads, skipping duplicate processing');
         return null;
     }
-    
+
     // Mark request as processed
     if (req) {
         req.pollinationsAdProcessed = true;
     }
-    
+
     // Check if we should show ads for this content
     const { shouldShowAd, markerFound: detectedMarker, isBadDomain } = shouldShowAds(content, messages, req);
-    
+
     // Handle bad domain referrers - always show ads (100% probability)
     if (isBadDomain) {
         markerFound = true; // Force marker to true to ensure 100% probability
     }
-    
+
     if (!shouldShowAd && !shouldProceedWithAd(content, markerFound || detectedMarker)) {
         if (req) {
-            const reason = !content ? 'empty_content' : 
-                           content.length < 100 ? 'content_too_short' : 
+            const reason = !content ? 'empty_content' :
+                           content.length < 100 ? 'content_too_short' :
                            'probability_check_failed';
-            
+
             sendAdSkippedAnalytics(req, reason, isStreaming);
         }
         return null;
     }
-    
+
     try {
         log('Generating ad for content...');
-        
+
         // Find the relevant affiliate
         const affiliateData = await findRelevantAffiliate(content, messages);
-        
+
         // If no affiliate data is found, send analytics and return null
         if (!affiliateData && req) {
             sendAdSkippedAnalytics(req, 'no_relevant_affiliate', isStreaming);
             return null;
         }
-        
+
         // If affiliate data is found, generate the ad string
         if (affiliateData) {
             // Pass content and messages to enable language matching
             const adString = await generateAffiliateAd(affiliateData.id, content, messages);
-            
+
             // If ad generation failed, send analytics
             if (!adString && req) {
                 sendAdSkippedAnalytics(req, 'ad_generation_failed', isStreaming, {
@@ -214,12 +214,12 @@ async function generateAdForContent(content, req, messages, markerFound = false,
                 });
                 return null;
             }
-            
+
             // If an ad string was successfully generated
             if (adString) {
                 // Extract info for analytics
                 const linkInfo = extractReferralLinkInfo(adString);
-                
+
                 // Log the ad interaction with metadata
                 logAdInteraction({
                     timestamp: new Date().toISOString(),
@@ -231,7 +231,7 @@ async function generateAdForContent(content, req, messages, markerFound = false,
                     referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
                     user_agent: req.headers['user-agent'] || 'unknown'
                 });
-                
+
                 // Send analytics for the ad impression
                 sendToAnalytics(req, 'ad_impression', {
                     affiliate_id: affiliateData.id,
@@ -239,11 +239,11 @@ async function generateAdForContent(content, req, messages, markerFound = false,
                     topic: linkInfo.topic || 'unknown',
                     streaming: isStreaming
                 });
-                
+
                 return adString;
             }
         }
-        
+
         return null;
     } catch (error) {
         errorLog(`Error generating ad: ${error.message}`);
@@ -260,7 +260,7 @@ function formatAdAsSSE(adString) {
     try {
         // Create a proper SSE message with the ad content
         // This should be in the format expected by the client
-        
+
         // Create a delta object similar to what the API would return
         const deltaObject = {
             id: `ad_${Date.now()}`,
@@ -277,7 +277,7 @@ function formatAdAsSSE(adString) {
                 }
             ]
         };
-        
+
         // Format as SSE
         return `data: ${JSON.stringify(deltaObject)}\n\n`;
     } catch (error) {
@@ -295,19 +295,19 @@ function formatAdAsSSE(adString) {
  */
 export async function processRequestForAds(content, req, messages = []) {
     const { shouldShowAd, markerFound } = shouldShowAds(content, messages, req);
-    
+
     if (!shouldShowAd) {
         // We've already sent the ad_skipped analytics in shouldShowAds
         return content;
     }
-    
+
     // Generate ad string based on content
     const adString = await generateAdForContent(content, req, messages, markerFound);
-    
+
     if (adString) {
         return content + adString;
     }
-    
+
     // We've already sent the ad_skipped analytics in generateAdForContent
     return content;
 }
@@ -328,20 +328,20 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
         }
         return responseStream;
     }
-    
+
     const { shouldShowAd, markerFound } = shouldShowAds(null, messages, req);
-    
+
     if (!shouldShowAd) {
         // We've already sent the ad_skipped analytics in shouldShowAds
         return responseStream;
     }
-    
+
     log('Creating streaming ad wrapper');
-    
+
     // Collect the content to analyze for affiliate matching
     let collectedContent = '';
     let isDone = false;
-    
+
     // Create a transform stream that will:
     // 1. Pass through all chunks unchanged
     // 2. Collect content for analysis
@@ -351,24 +351,24 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
         transform(chunk, encoding, callback) {
             // Convert chunk to string
             const chunkStr = chunk.toString();
-            
+
             // Check if this is the [DONE] message
             if (chunkStr.includes('data: [DONE]')) {
                 isDone = true;
-                
+
                 // Process the collected content and add an ad
                 generateAdForContent(collectedContent, req, messages, markerFound, true)
                     .then(adString => {
                         if (adString) {
                             // Format the ad as a proper SSE message
                             const adChunk = formatAdAsSSE(adString);
-                            
+
                             // Push the ad chunk before the [DONE] message
                             this.push(adChunk);
                         } else {
                             // We've already sent the ad_skipped analytics in generateAdForContent
                         }
-                        
+
                         // Push the [DONE] message
                         this.push(chunk);
                         callback();
@@ -404,14 +404,14 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
                         // Ignore errors in content extraction
                     }
                 }
-                
+
                 // Pass through the chunk unchanged
                 this.push(chunk);
                 callback();
             }
         }
     });
-    
+
     // Pipe the original stream through our transformer
     return responseStream.pipe(streamTransformer);
 }

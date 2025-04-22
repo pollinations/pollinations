@@ -14,7 +14,7 @@ const errorLog = debug('pollinations:adfilter:error');
 const markdownRegex = /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`.*\`)|(?:\>.*)|(?:\-\s.*)|(?:\d\.\s.*)/;
 
 // Probability of adding referral links (10%)
-const REFERRAL_LINK_PROBABILITY = 0.1;
+const REFERRAL_LINK_PROBABILITY = 0.05;
 
 // Flag for testing ads with a specific marker
 const TEST_ADS_MARKER = "p-ads";
@@ -67,7 +67,7 @@ function shouldShowAds(content, messages = [], req = null) {
     }
 
     // Skip ad processing if any referrer is present (that's not a bad domain)
-    if (requestData && requestData.referrer && requestData.referrer !== 'unknown') {
+    if (requestData && requestData.referrer && requestData.referrer !== 'unknown' && (requestData.referrer?.includes('roblox') || requestData.referrer?.includes('image.pollinations.ai'))) {
         // log('Skipping ad processing due to referrer presence:', requestData.referrer);
         return { shouldShowAd: false, markerFound: false };
     }

@@ -1,4 +1,5 @@
 category,name,url,description,author,submissionDate,repo,featured,language,authorUrl
+llmIntegrations,🆕 FoodAnaly,https://foodanaly.vercel.app/,"An AI application for food analysis that uses advanced artificial intelligence technology to help users understand food ingredients, nutritional value, and health impacts.",liukang0120@163.com,2025-04-23,,,,
 creativeApps,🎵 PolliSonic Generator,https://interzone.art.br/pollisonic_generator/,An AI-driven tool that transforms text prompts using MidiJourney into MIDI-based melodies through browser oscillators.,@brain.diver,,https://github.com/rafabez/pollisonic_generator,true,,
 creativeApps,Abyss Ascending,https://interzone.art.br/abyss_ascending/,A web-based generative interactive fiction (text adventure) set in a sci-fi underwater world.,@brain.diver,,https://github.com/rafabez/abyss_ascending,,,
 creativeApps,Deep Saga,https://play.google.com/store/apps/details?id=com.cestrian.deepsaga.android&pcampaignid=pollinations,A text based RPG available on Android with AI-generated scene images.,@jr_7_77,,,,,

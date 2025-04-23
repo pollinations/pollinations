@@ -204,6 +204,7 @@ Pollinations.AI is used in various projects, including:
 
 | Project | Description | Creator | Links |
 |---------|-------------|---------|-------|
+| 🆕 FoodAnaly | An AI application for food analysis that uses advanced artificial intelligence technology to help users understand food ingredients, nutritional value, and health impacts. | liukang0120@163.com | [Website](https://foodanaly.vercel.app/) |
 | 🆕 OkeyAI | An LLM created by Africans to understand and have cultural awareness of African contexts and languages, OkeyAI outperforms many LLM models based on size and intelligence, OkeyMeta uses pollination image generating API to train it's LLM (OkeyAI) on images in real time. | @okeymeta | [Website](https://chat.okeymeta.com.ng), [GitHub](https://github.com/okeymeta) |
 | 🆕 🤖 DesmondBot | A snarky bot based on Llama that is 100% free, powered by the Pollinations text API and OpenWebUI. Other models are available as well. | @mcgdj | [Website](https://cities-tomato-strong-peoples.trycloudflare.com/) |
 | 🆕 🤖 Raftar.xyz | A Discord multi-purpose bot with over 100+ commands, including AI image generation, ChatGPT, and SearchGPT powered by Pollinations.AI | @goodgamerhere | [Website](https://raftar.xyz) |

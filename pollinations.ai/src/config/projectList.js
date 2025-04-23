@@ -58,6 +58,13 @@ const allProjects = {
   ],
   llmIntegrations: [
     {
+      name: "🆕 FoodAnaly",
+      url: "https://foodanaly.vercel.app/",
+      description: "An AI application for food analysis that uses advanced artificial intelligence technology to help users understand food ingredients, nutritional value, and health impacts. Provides food safety analysis, nutritional health assessment, sports and fitness analysis, visual display, alternative recommendations, and practical insights for different dietary habits.",
+      author: "liukang0120@163.com",
+      submissionDate: "2025-04-23",
+    },
+    {
       name: "🆕 OkeyAI",
       url: "https://chat.okeymeta.com.ng",
       description: "An LLM created by Africans to understand and have cultural awareness of African contexts and languages, OkeyAI outperforms many LLM models based on size and intelligence, OkeyMeta uses pollination image generating API to train it's LLM (OkeyAI) on images in real time.",

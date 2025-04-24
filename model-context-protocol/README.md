@@ -11,7 +11,7 @@ A Model Context Protocol (MCP) server for the Pollinations APIs that enables AI 
 - List available image and text generation models
 - GitHub-based authentication (new!)
 - Support for both token-based and referrer-based authentication
-- Multiple transport options: STDIO (default) and SSE
+- STDIO transport for easy integration
 - Simple and lightweight
 - Compatible with the Model Context Protocol (MCP)
 
@@ -40,60 +40,18 @@ npm install -g @pollinations/model-context-protocol
 model-context-protocol
 ```
 
-## Transport Options
+## Transport
 
-The MCP server supports two transport options:
-
-### STDIO Transport (Default)
-
-Standard input/output transport is ideal for local integrations and command-line tools:
+The MCP server uses STDIO transport, which is ideal for local integrations and command-line tools:
 
 ```bash
-# Run with STDIO transport (default)
+# Run with STDIO transport
 npx @pollinations/model-context-protocol
-
-# Or explicitly specify STDIO
-npx @pollinations/model-context-protocol --transport stdio
 ```
 
-### SSE Transport (Server-Sent Events)
+## Authentication
 
-SSE transport enables web-based clients to connect to the MCP server with integrated GitHub authentication:
-
-```bash
-# Run with SSE transport
-npx @pollinations/model-context-protocol --transport sse
-
-# Specify a custom port (default is 3000)
-npx @pollinations/model-context-protocol --transport sse --port 8080
-
-# Run in development mode with relaxed authentication
-NODE_ENV=development npx @pollinations/model-context-protocol --transport sse
-```
-
-When using SSE transport, the server provides these endpoints:
-- `/sse` - SSE endpoint for server-to-client streaming
-- `/messages` - Message endpoint for client-to-server communication
-- `/github/login` - GitHub OAuth login endpoint
-- `/github/callback` - GitHub OAuth callback endpoint
-- `/api/auth/verify-token` - Token verification endpoint
-- `/api/auth/verify-referrer` - Referrer verification endpoint
-- `/health` - Health check endpoint
-
-## GitHub Authentication
-
-The MCP server includes integrated GitHub authentication when using SSE transport. To use it:
-
-1. Create a GitHub OAuth application at https://github.com/settings/developers
-2. Set the callback URL to `http://localhost:3000/github/callback` (for local development) or your production URL
-3. Set these environment variables:
-   ```
-   GITHUB_CLIENT_ID=your_client_id
-   GITHUB_CLIENT_SECRET=your_client_secret
-   REDIRECT_URI=http://localhost:3000/github/callback
-   ```
-
-For more details on authentication, see [GITHUB_AUTH.md](./GITHUB_AUTH.md).
+The MCP server includes authentication capabilities. For details on authentication, see [GITHUB_AUTH.md](./GITHUB_AUTH.md).
 
 ## Claude Desktop Integration
 

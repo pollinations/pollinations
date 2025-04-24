@@ -1,40 +1,30 @@
 // Transport setup functions for the Pollinations MCP server
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { createExpressApp, startExpressServer } from './serverSetup.js';
-import { startCloudflareServer } from './cloudflareSetup.js';
 
 /**
- * Starts the MCP server with the selected transport
+ * Starts the MCP server with the stdio transport
  * @param {Object} options - Configuration options
  * @param {Object} options.server - MCP server instance
- * @param {string} options.transport - Transport type (stdio, sse, tunnel)
- * @param {number} options.port - Port for HTTP server
- * @param {string} options.tunnelConfig - Path to Cloudflare tunnel config
- * @param {Object} options.authConfig - Authentication configuration
+ * @param {string} options.transport - Transport type (stdio)
  * @returns {Promise<void>}
  */
-export async function startServerWithTransport({ 
-  server, 
-  transport, 
-  port, 
-  tunnelConfig,
-  authConfig
+export async function startServerWithTransport({
+  server,
+  transport
 }) {
+  console.error(`[TRANSPORT] Starting server with transport: ${transport}`);
   try {
     if (transport === 'stdio') {
       // Use STDIO transport
+      console.error(`[TRANSPORT] Using STDIO transport`);
       await startStdioTransport({ server });
-    } else if (transport === 'sse') {
-      // Use SSE transport with integrated authentication
-      await startSseTransport({ server, port, authConfig });
-    } else if (transport === 'tunnel') {
-      // Use Cloudflare tunnel with SSE transport
-      await startTunnelTransport({ server, port, tunnelConfig, authConfig });
     } else {
+      console.error(`[TRANSPORT ERROR] Unsupported transport: ${transport}`);
       throw new Error(`Unsupported transport: ${transport}`);
     }
   } catch (error) {
-    console.error('Error starting server:', error);
+    console.error(`[TRANSPORT ERROR] Error starting server: ${error.message}`);
+    console.error(`[TRANSPORT ERROR STACK] ${error.stack}`);
     process.exit(1);
   }
 }
@@ -46,49 +36,20 @@ export async function startServerWithTransport({
  * @returns {Promise<void>}
  */
 async function startStdioTransport({ server }) {
+  console.error(`[STDIO] Initializing STDIO transport`);
   const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.log('Pollinations Multimodal MCP server running on stdio');
+  console.error(`[STDIO] STDIO transport initialized`);
+
+  console.error(`[STDIO] Connecting server to STDIO transport`);
+  try {
+    await server.connect(transport);
+    console.error(`[STDIO] Server successfully connected to STDIO transport`);
+    console.log('Pollinations Multimodal MCP server running on stdio');
+  } catch (error) {
+    console.error(`[STDIO ERROR] Failed to connect server to STDIO transport: ${error.message}`);
+    console.error(`[STDIO ERROR STACK] ${error.stack}`);
+    throw error;
+  }
 }
 
-/**
- * Starts the MCP server with SSE transport
- * @param {Object} options - Configuration options
- * @param {Object} options.server - MCP server instance
- * @param {number} options.port - Port for HTTP server
- * @param {Object} options.authConfig - Authentication configuration
- * @returns {Promise<Object>} HTTP server
- */
-async function startSseTransport({ server, port, authConfig }) {
-  // Create Express app with SSE transport
-  const app = createExpressApp({ 
-    server, 
-    ...authConfig
-  });
-  
-  // Start the server
-  return await startExpressServer(app, port);
-}
 
-/**
- * Starts the MCP server with Cloudflare tunnel transport
- * @param {Object} options - Configuration options
- * @param {Object} options.server - MCP server instance
- * @param {number} options.port - Port for HTTP server
- * @param {string} options.tunnelConfig - Path to Cloudflare tunnel config
- * @param {Object} options.authConfig - Authentication configuration
- * @returns {Promise<Object>} HTTP server
- */
-async function startTunnelTransport({ server, port, tunnelConfig, authConfig }) {
-  // First start the SSE server
-  const httpServer = await startSseTransport({ server, port, authConfig });
-  
-  // Then start the Cloudflare tunnel
-  await startCloudflareServer({ 
-    port, 
-    configPath: tunnelConfig,
-    server
-  });
-  
-  return httpServer;
-}

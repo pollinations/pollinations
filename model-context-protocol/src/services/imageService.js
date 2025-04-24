@@ -1,12 +1,142 @@
 /**
  * Pollinations Image Service
- * 
- * Functions for interacting with the Pollinations Image API
+ *
+ * Functions and schemas for interacting with the Pollinations Image API
  */
+
+import { createMCPResponse, createTextContent, createImageContent, buildUrl, createToolDefinition } from '../utils.js';
+
+// Constants
+const IMAGE_API_BASE_URL = 'https://image.pollinations.ai';
+
+/**
+ * Schema for the generateImageUrl tool
+ */
+export const generateImageUrlSchema = {
+  name: 'generateImageUrl',
+  description: 'Generate an image URL from a text prompt',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      prompt: {
+        type: 'string',
+        description: 'The text description of the image to generate'
+      },
+      options: {
+        type: 'object',
+        description: 'Additional options for image generation',
+        properties: {
+          model: {
+            type: 'string',
+            description: 'Model name to use for generation'
+          },
+          seed: {
+            type: 'number',
+            description: 'Seed for reproducible results'
+          },
+          width: {
+            type: 'number',
+            description: 'Width of the generated image'
+          },
+          height: {
+            type: 'number',
+            description: 'Height of the generated image'
+          }
+        },
+      }
+    },
+    required: ['prompt']
+  }
+};
+
+/**
+ * Schema for the generateImage tool
+ */
+export const generateImageSchema = {
+  name: 'generateImage',
+  description: 'Generate an image and return the base64-encoded data',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      prompt: {
+        type: 'string',
+        description: 'The text description of the image to generate'
+      },
+      options: {
+        type: 'object',
+        description: 'Additional options for image generation',
+        properties: {
+          model: {
+            type: 'string',
+            description: 'Model name to use for generation'
+          },
+          seed: {
+            type: 'number',
+            description: 'Seed for reproducible results'
+          },
+          width: {
+            type: 'number',
+            description: 'Width of the generated image'
+          },
+          height: {
+            type: 'number',
+            description: 'Height of the generated image'
+          }
+        },
+      }
+    },
+    required: ['prompt']
+  }
+};
+
+/**
+ * Schema for the listImageModels tool
+ */
+export const listImageModelsSchema = {
+  name: 'listImageModels',
+  description: 'List available image models',
+  inputSchema: {
+    type: 'object',
+    properties: {}
+  }
+};
+
+/**
+ * Internal function to generate an image URL without MCP formatting
+ *
+ * @param {string} prompt - The text description of the image to generate
+ * @param {Object} options - Additional options for image generation
+ * @returns {Object} - Object containing the image URL and metadata
+ */
+async function _generateImageUrlInternal(prompt, options = {}) {
+  const {
+    model,
+    seed,
+    width = 1024,
+    height = 1024,
+  } = options;
+
+  // Construct the URL with query parameters
+  const encodedPrompt = encodeURIComponent(prompt);
+  const path = `prompt/${encodedPrompt}`;
+  const queryParams = { model, seed, width, height };
+
+  const url = buildUrl(IMAGE_API_BASE_URL, path, queryParams);
+
+  // Return the URL with metadata
+  return {
+    imageUrl: url,
+    prompt,
+    width,
+    height,
+    model,
+    seed
+  };
+}
 
 /**
  * Generates an image URL from a text prompt using the Pollinations Image API
- * 
+ *
  * @param {Object} params - The parameters for image URL generation
  * @param {string} params.prompt - The text description of the image to generate
  * @param {Object} [params.options={}] - Additional options for image generation
@@ -18,56 +148,23 @@
  */
 export async function generateImageUrl(params) {
   const { prompt, options = {} } = params;
-  
+
   if (!prompt || typeof prompt !== 'string') {
     throw new Error('Prompt is required and must be a string');
   }
 
-  const { 
-    model, 
-    seed, 
-    width = 1024, 
-    height = 1024,
-  } = options;
-  
-  // Build the query parameters
-  const queryParams = new URLSearchParams();
-  if (model) queryParams.append('model', model);
-  if (seed !== undefined) queryParams.append('seed', seed);
-  if (width) queryParams.append('width', width);
-  if (height) queryParams.append('height', height);
-  
-  // Construct the URL
-  const encodedPrompt = encodeURIComponent(prompt);
-  const baseUrl = 'https://image.pollinations.ai';
-  let url = `${baseUrl}/prompt/${encodedPrompt}`;
-  
-  // Add query parameters if they exist
-  const queryString = queryParams.toString();
-  if (queryString) {
-    url += `?${queryString}`;
-  }
-  
+  // Generate the image URL and metadata
+  const result = await _generateImageUrlInternal(prompt, options);
+
   // Return the response in MCP format
-  const result = {
-    imageUrl: url,
-    prompt,
-    width,
-    height,
-    model,
-    seed
-  };
-  
-  return {
-    content: [
-      { type: 'text', text: JSON.stringify(result, null, 2) }
-    ]
-  };
+  return createMCPResponse([
+    createTextContent(result, true)
+  ]);
 }
 
 /**
  * Generates an image from a text prompt and returns the image data as base64
- * 
+ *
  * @param {Object} params - The parameters for image generation
  * @param {string} params.prompt - The text description of the image to generate
  * @param {Object} [params.options={}] - Additional options for image generation
@@ -79,31 +176,31 @@ export async function generateImageUrl(params) {
  */
 export async function generateImage(params) {
   const { prompt, options = {} } = params;
-  
+
   if (!prompt || typeof prompt !== 'string') {
     throw new Error('Prompt is required and must be a string');
   }
 
   // First, generate the image URL (but don't use the MCP response format)
   const urlResult = await _generateImageUrlInternal(prompt, options);
-  
+
   try {
     // Fetch the image from the URL
     const response = await fetch(urlResult.imageUrl);
-    
+
     if (!response.ok) {
       throw new Error(`Failed to generate image: ${response.statusText}`);
     }
-    
+
     // Get the image data as an ArrayBuffer
     const imageBuffer = await response.arrayBuffer();
-    
+
     // Convert the ArrayBuffer to a base64 string
     const base64Data = Buffer.from(imageBuffer).toString('base64');
-    
+
     // Determine the mime type from the response headers or default to image/jpeg
     const contentType = response.headers.get('content-type') || 'image/jpeg';
-    
+
     const metadata = {
       prompt: urlResult.prompt,
       width: urlResult.width,
@@ -111,21 +208,12 @@ export async function generateImage(params) {
       model: urlResult.model,
       seed: urlResult.seed
     };
-    
+
     // Return the response in MCP format
-    return {
-      content: [
-        {
-          type: 'image',
-          data: base64Data,
-          mimeType: contentType
-        },
-        {
-          type: 'text',
-          text: `Generated image from prompt: "${prompt}"\n\nImage metadata: ${JSON.stringify(metadata, null, 2)}`
-        }
-      ]
-    };
+    return createMCPResponse([
+      createImageContent(base64Data, contentType),
+      createTextContent(`Generated image from prompt: "${prompt}"\n\nImage metadata: ${JSON.stringify(metadata, null, 2)}`)
+    ]);
   } catch (error) {
     console.error('Error generating image:', error);
     throw error;
@@ -134,26 +222,25 @@ export async function generateImage(params) {
 
 /**
  * List available image generation models from Pollinations API
- * 
+ *
  * @param {Object} params - The parameters for listing image models
  * @returns {Promise<Object>} - MCP response object with the list of available image models
  */
 export async function listImageModels(params) {
   try {
-    const response = await fetch('https://image.pollinations.ai/models');
-    
+    const url = buildUrl(IMAGE_API_BASE_URL, 'models');
+    const response = await fetch(url);
+
     if (!response.ok) {
       throw new Error(`Failed to list models: ${response.statusText}`);
     }
-    
+
     const models = await response.json();
-    
+
     // Return the response in MCP format
-    return {
-      content: [
-        { type: 'text', text: JSON.stringify(models, null, 2) }
-      ]
-    };
+    return createMCPResponse([
+      createTextContent(models, true)
+    ]);
   } catch (error) {
     console.error('Error listing image models:', error);
     throw error;
@@ -161,45 +248,10 @@ export async function listImageModels(params) {
 }
 
 /**
- * Internal function to generate an image URL without MCP formatting
- * 
- * @param {string} prompt - The text description of the image to generate
- * @param {Object} options - Additional options for image generation
- * @returns {Object} - Object containing the image URL and metadata
+ * Export tools with their schemas and handlers
  */
-async function _generateImageUrlInternal(prompt, options = {}) {
-  const { 
-    model, 
-    seed, 
-    width = 1024, 
-    height = 1024,
-  } = options;
-  
-  // Build the query parameters
-  const queryParams = new URLSearchParams();
-  if (model) queryParams.append('model', model);
-  if (seed !== undefined) queryParams.append('seed', seed);
-  if (width) queryParams.append('width', width);
-  if (height) queryParams.append('height', height);
-  
-  // Construct the URL
-  const encodedPrompt = encodeURIComponent(prompt);
-  const baseUrl = 'https://image.pollinations.ai';
-  let url = `${baseUrl}/prompt/${encodedPrompt}`;
-  
-  // Add query parameters if they exist
-  const queryString = queryParams.toString();
-  if (queryString) {
-    url += `?${queryString}`;
-  }
-  
-  // Return the URL directly, keeping it simple
-  return {
-    imageUrl: url,
-    prompt,
-    width,
-    height,
-    model,
-    seed
-  };
-}
+export const imageTools = {
+  generateImageUrl: createToolDefinition(generateImageUrlSchema, generateImageUrl),
+  generateImage: createToolDefinition(generateImageSchema, generateImage),
+  listImageModels: createToolDefinition(listImageModelsSchema, listImageModels)
+};

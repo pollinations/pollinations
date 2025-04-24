@@ -11,6 +11,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import crypto from 'crypto';
+import { createToolDefinition } from '../utils.js';
 
 // Storage constants
 const STORAGE_DIR = path.join(os.homedir(), '.pollinations');
@@ -20,6 +21,174 @@ const STORAGE_FILE = path.join(STORAGE_DIR, 'auth.json');
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 const DEFAULT_REDIRECT_URI = 'https://flow.pollinations.ai/github/callback';
+
+/**
+ * Schema for the isAuthenticated tool
+ */
+export const isAuthenticatedSchema = {
+  name: 'isAuthenticated',
+  description: 'Check if a session is authenticated with GitHub',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      sessionId: {
+        type: 'string',
+        description: 'The session ID to check authentication for'
+      }
+    },
+    required: ['sessionId']
+  }
+};
+
+/**
+ * Schema for the getAuthUrl tool
+ */
+export const getAuthUrlSchema = {
+  name: 'getAuthUrl',
+  description: 'Get the GitHub OAuth URL for authentication',
+  inputSchema: {
+    type: 'object',
+    properties: {}
+  }
+};
+
+/**
+ * Schema for the getToken tool
+ */
+export const getTokenSchema = {
+  name: 'getToken',
+  description: 'Get or generate a personal access token for the authenticated user',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      sessionId: {
+        type: 'string',
+        description: 'The session ID of the authenticated user'
+      }
+    },
+    required: ['sessionId']
+  }
+};
+
+/**
+ * Schema for the regenerateToken tool
+ */
+export const regenerateTokenSchema = {
+  name: 'regenerateToken',
+  description: 'Regenerate a new personal access token for the authenticated user',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      sessionId: {
+        type: 'string',
+        description: 'The session ID of the authenticated user'
+      }
+    },
+    required: ['sessionId']
+  }
+};
+
+/**
+ * Schema for the verifyToken tool
+ */
+export const verifyTokenSchema = {
+  name: 'verifyToken',
+  description: 'Verify a Pollinations access token',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      token: {
+        type: 'string',
+        description: 'Pollinations access token to verify'
+      }
+    },
+    required: ['token']
+  }
+};
+
+/**
+ * Schema for the listReferrers tool
+ */
+export const listReferrersSchema = {
+  name: 'listReferrers',
+  description: 'List authorized referrers for a user',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      sessionId: {
+        type: 'string',
+        description: 'The session ID of the authenticated user'
+      }
+    },
+    required: ['sessionId']
+  }
+};
+
+/**
+ * Schema for the addReferrer tool
+ */
+export const addReferrerSchema = {
+  name: 'addReferrer',
+  description: 'Add a referrer to a user\'s whitelist',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      sessionId: {
+        type: 'string',
+        description: 'The session ID of the authenticated user'
+      },
+      referrer: {
+        type: 'string',
+        description: 'The domain to add to the whitelist (e.g. text.pollinations.ai)'
+      }
+    },
+    required: ['sessionId', 'referrer']
+  }
+};
+
+/**
+ * Schema for the removeReferrer tool
+ */
+export const removeReferrerSchema = {
+  name: 'removeReferrer',
+  description: 'Remove a referrer from a user\'s whitelist',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      sessionId: {
+        type: 'string',
+        description: 'The session ID of the authenticated user'
+      },
+      referrer: {
+        type: 'string',
+        description: 'The domain to remove from the whitelist'
+      }
+    },
+    required: ['sessionId', 'referrer']
+  }
+};
+
+/**
+ * Schema for the verifyReferrer tool
+ */
+export const verifyReferrerSchema = {
+  name: 'verifyReferrer',
+  description: 'Verify if a referrer is authorized for a user',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      userId: {
+        type: 'string',
+        description: 'The user ID to check'
+      },
+      referrer: {
+        type: 'string',
+        description: 'The referrer domain to check'
+      }
+    },
+    required: ['userId', 'referrer']
+  }
+};
 
 /**
  * Ensure storage directory exists
@@ -524,3 +693,18 @@ export async function verifyReferrer(userId, referrer) {
     return { valid: false, error: error.message };
   }
 }
+
+/**
+ * Export tools with their schemas and handlers
+ */
+export const authTools = {
+  isAuthenticated: createToolDefinition(isAuthenticatedSchema, isAuthenticated),
+  getAuthUrl: createToolDefinition(getAuthUrlSchema, getAuthUrl),
+  getToken: createToolDefinition(getTokenSchema, getToken),
+  regenerateToken: createToolDefinition(regenerateTokenSchema, regenerateToken),
+  listReferrers: createToolDefinition(listReferrersSchema, listReferrers),
+  addReferrer: createToolDefinition(addReferrerSchema, addReferrer),
+  removeReferrer: createToolDefinition(removeReferrerSchema, removeReferrer),
+  verifyToken: createToolDefinition(verifyTokenSchema, verifyToken),
+  verifyReferrer: createToolDefinition(verifyReferrerSchema, verifyReferrer)
+};

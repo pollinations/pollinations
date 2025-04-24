@@ -18,10 +18,9 @@
   "scripts": {
     "test": "node test-mcp-client.js",
     "test-auth": "node test-auth.js",
+    "test:integration": "vitest run tests/integration",
+    "test:integration:watch": "vitest watch tests/integration",
     "start": "node pollinations-mcp-server.js",
-    "start-sse": "node pollinations-mcp-server.js --transport sse",
-    "start-tunnel": "node pollinations-mcp-server.js --transport tunnel",
-    "setup-tunnel": "bash scripts/setup-cloudflare-tunnel.sh",
     "start-auth": "node pollinations-auth-server.js",
     "start-auth-test": "TEST_MODE=true node pollinations-auth-server.js",
     "install-claude-mcp": "node install-claude-mcp.js"
@@ -62,5 +61,10 @@
   "homepage": "https://github.com/pollinations/pollinations#readme",
   "engines": {
     "node": ">=14.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.1",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.2"
   }
 }

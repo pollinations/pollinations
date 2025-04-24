@@ -1,17 +1,43 @@
 /**
  * Pollinations Resource Service
- * 
- * Functions for handling resources and prompts
+ *
+ * Functions and schemas for handling resources and prompts
  */
+
+import { createMCPResponse, createTextContent, createToolDefinition } from '../utils.js';
+
+/**
+ * Schema for the listResources tool
+ */
+export const listResourcesSchema = {
+  name: 'listResources',
+  description: 'List available resources from the Pollinations API',
+  inputSchema: {
+    type: 'object',
+    properties: {}
+  }
+};
+
+/**
+ * Schema for the listPrompts tool
+ */
+export const listPromptsSchema = {
+  name: 'listPrompts',
+  description: 'List available example prompts from the Pollinations API',
+  inputSchema: {
+    type: 'object',
+    properties: {}
+  }
+};
 
 /**
  * Lists available resources
- * 
+ *
  * @returns {Promise<Object>} - Object containing the list of available resources
  */
 export async function listResources() {
-  // Return resources in the format specified by the MCP specification
-  return {
+  // Prepare the resources data
+  const resourcesData = {
     resources: [
       {
         uri: "pollinations:image-models",
@@ -53,17 +79,21 @@ export async function listResources() {
       }
     ]
   };
+
+  // Return the response in MCP format using utility functions
+  return createMCPResponse([
+    createTextContent(resourcesData, true)
+  ]);
 }
 
 /**
  * Lists available prompts
- * 
+ *
  * @returns {Promise<Object>} - Object containing the list of available prompts
  */
 export async function listPrompts() {
-  // For now, return a basic list of example prompts
-  // This can be expanded later to fetch from an actual API endpoint
-  return {
+  // Prepare the prompts data
+  const promptsData = {
     prompts: [
       {
         id: "image-generation",
@@ -94,4 +124,17 @@ export async function listPrompts() {
       }
     ]
   };
+
+  // Return the response in MCP format using utility functions
+  return createMCPResponse([
+    createTextContent(promptsData, true)
+  ]);
 }
+
+/**
+ * Export tools with their schemas and handlers
+ */
+export const resourceTools = {
+  listResources: createToolDefinition(listResourcesSchema, listResources),
+  listPrompts: createToolDefinition(listPromptsSchema, listPrompts)
+};

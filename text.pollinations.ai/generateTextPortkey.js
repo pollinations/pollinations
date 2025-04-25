@@ -18,12 +18,13 @@ const MODEL_MAPPING = {
     'openai-large': 'azure-gpt-4.1-mini',  
     'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
     'openai-reasoning': 'o4-mini', // Maps to portkeyConfig['o1-mini'],
+    'openai-reasoning-large': 'o3', // OpenAI o3 model
     // 'openai-audio': 'gpt-4o-mini-audio-preview',
     'openai-audio': 'gpt-4o-audio-preview',
     'roblox-rp': 'gpt-4o-mini-roblox-rp', // Roblox roleplay model
     'command-r': 'Cohere-command-r-plus-08-2024-jt', // Cohere Command R Plus model
     'gemini': 'gemini-2.5-flash-preview-04-17',
-    'gemini-thinking': 'gemini-2.0-flash-thinking-exp-01-21',
+    'gemini-thinking': 'gemini-2.5-flash-thinking',
     // Cloudflare models
     'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
     'llamascout': '@cf/meta/llama-4-scout-17b-16e-instruct',
@@ -39,6 +40,7 @@ const MODEL_MAPPING = {
     'hormoz': 'Hormoz-8B',
     // OpenRouter models
     'claude': 'anthropic/claude-3.5-haiku-20241022',
+    'claude-large': 'anthropic/claude-3.7-sonnet',
     // Cloudflare models
     'qwen-qwq': '@cf/qwen/qwq-32b',
     // DeepSeek models
@@ -308,6 +310,11 @@ export const portkeyConfig = {
         process.env.AZURE_O4MINI_ENDPOINT,
         'o4-mini'
     ),
+    'o3': () => createAzureModelConfig(
+        process.env.AZURE_O3_API_KEY,
+        process.env.AZURE_O3_ENDPOINT,
+        'o3'
+    ),
     'gpt-4o-mini-audio-preview': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_AUDIO_API_KEY,
         process.env.AZURE_OPENAI_AUDIO_ENDPOINT,
@@ -383,6 +390,10 @@ export const portkeyConfig = {
         'http-referer': 'https://pollinations.ai',
         'x-title': 'Pollinations.AI'
     }),
+    'anthropic/claude-3.7-sonnet': () => createOpenRouterModelConfig({
+        'http-referer': 'https://pollinations.ai',
+        'x-title': 'Pollinations.AI'
+    }),
     // Cloudflare models
     '@cf/qwen/qwq-32b': () => createCloudflareModelConfig({
         'http-referer': 'https://pollinations.ai',
@@ -405,12 +416,12 @@ export const portkeyConfig = {
         'vertex-model-id': 'gemini-2.5-pro-exp-03-25',
         'strict-openai-compliance': 'false'
     }),
-    'gemini-2.0-flash-thinking': () => ({
+    'gemini-2.5-flash-thinking': () => ({
         provider: 'vertex-ai',
         authKey: googleCloudAuth.getAccessToken, 
         'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
         'vertex-region': 'us-central1',
-        'vertex-model-id': 'gemini-2.0-flash-thinking',
+        'vertex-model-id': 'gemini-2.5-flash-thinking',
         'strict-openai-compliance': 'false'
     }),
     'DeepSeek-V3-0324': () => createDeepSeekModelConfig(),

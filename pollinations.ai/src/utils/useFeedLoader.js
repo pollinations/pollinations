@@ -62,8 +62,8 @@ function estimateGeneratedImages() {
   const launchDate = 1738974161902;
   const now = Date.now();
   const differenceInSeconds = (now - launchDate) / 1000;
-  // Multiply rate by 5 as per issue #1793 (from 23.78 to 118.9)
-  const imagesGeneratedSinceLaunch = Math.round(differenceInSeconds * 118.9); // ~500,000 images per hour
+  // Reverted back to original rate as requested
+  const imagesGeneratedSinceLaunch = Math.round(differenceInSeconds * 23.78); // ~100,000 images per hour
 
   const imagesGeneratedCalculated = 117772000 + imagesGeneratedSinceLaunch;
   return imagesGeneratedCalculated;

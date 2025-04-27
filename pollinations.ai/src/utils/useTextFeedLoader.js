@@ -10,8 +10,9 @@ export function useTextFeedLoader(onNewEntry, setLastEntry) {
   // Set up listener to increment counter when new entries are received
   useEffect(() => {
     // Create wrapper function that increments the counter
+    // Increment by 5 instead of 1 as per issue #1793
     const incrementCounter = () => {
-      setEntriesGenerated(count => count + 1);
+      setEntriesGenerated(count => count + 5);
     };
     
     // Listen for SSE data events
@@ -132,9 +133,9 @@ function estimateGeneratedEntries() {
   const launchDate = 1738974161902; // Same as image feed for consistency
   const now = Date.now();
   const differenceInSeconds = (now - launchDate) / 1000;
-  // Assuming text generation rate is about 1/5 of the image rate
-  const entriesGeneratedSinceLaunch = Math.round(differenceInSeconds * 4.76); 
+  // Multiply rate by 5 as per issue #1793 (from 4.76 to 23.8)
+  const entriesGeneratedSinceLaunch = Math.round(differenceInSeconds * 23.8); 
   
   // Starting value plus calculated growth
   return 23554400 + entriesGeneratedSinceLaunch;
-} 
+}

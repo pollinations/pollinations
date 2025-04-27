@@ -117,12 +117,7 @@ function CountBadge({ itemsGenerated }) {
   const safeItemCount = itemsGenerated !== undefined && itemsGenerated !== null ? itemsGenerated : 0;
   const formattedCount = formatNumberWithCommas(safeItemCount);
   
-  // Blinking animation keyframes
-  const blinkEffect = keyframes`
-    0% { color: ${Colors.special}; text-shadow: 0 0 20px ${Colors.special}; }
-    50% { color: ${Colors.special}99; text-shadow: 0 0 10px ${Colors.special}99; }
-    100% { color: ${Colors.special}; text-shadow: 0 0 5px ${Colors.special}; }
-  `;
+  // Removed blinking animation keyframes and glow effect as per issue #1793
   
   return (
     <Box
@@ -153,11 +148,9 @@ function CountBadge({ itemsGenerated }) {
         }}
       >
         <Box
-          key={safeItemCount} // Key changes trigger re-render and restart animation
           sx={{
             backgroundColor: "transparent",
             color: Colors.lime,
-            animation: `${blinkEffect} 1s ease-in-out`,
             fontWeight: "bold",
             fontFamily: Fonts.headline,
             fontSize: { xs: "1.5em", sm: "2.5em" },
@@ -190,9 +183,12 @@ function TimingInfo({ item }) {
 
 // Updated RateDisplay component to include load bars
 function RateDisplay({ rate, itemType }) {
-  const displayRate = rate || "0.0"; 
+  // Multiply rate by 5 as per issue #1793
+  const adjustedRate = rate ? (parseFloat(rate) * 5).toFixed(1) : "0.0";
+  const displayRate = adjustedRate;
 
   // Updated Scaling Logic: Use thresholds to determine number of bars
+  // Note: No need to adjust thresholds since we're displaying the adjusted rate
   const parsedRate = parseFloat(rate) || 0;
   let numberOfBars = 0;
   if (parsedRate >= 15) {

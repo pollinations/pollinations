@@ -281,6 +281,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 Pollinations.ai Enhancer | Enhances the user experience on pollinations.ai pages by improving content readability, adding convenient download options, and providing easy access to generation metadata | @fisven | [Website](https://greasyfork.org/en/scripts/534183-pollinations-ai-enhancer), [GitHub](https://github.com/fisventurous/pollinationsai-enhancer) |
 | 🆕 NetSim | websim.ai clone that's actually good | @kennet678 | [Website](https://netsim.us.to/) |
 | 🆕 B&W SVG Generator | Uses Flux (through pollinations) and potrace to create B&W Vector files | @pointsguy118 | [Website](https://fluxsvggenerator.streamlit.app/) |
 | 🆕 Imagen | A beautiful web interface for generating images using Pollinations.ai API with only the "flux" and "turbo" models | @altkriz | [Website](https://altkriz.github.io/imagen/), [GitHub](https://github.com/altkriz/imagen) |

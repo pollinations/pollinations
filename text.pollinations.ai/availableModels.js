@@ -2,6 +2,7 @@
 import { generateTextSearch } from "./generateTextSearch.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { generateTextMistral } from "./generateTextMistral.js";
+import { generateTextElevenLabs } from "./generateTextElevenLabs.js";
 
 // Import wrapped models from the new file
 import {
@@ -293,6 +294,26 @@ const models = [
     provider: "Azure",
     input_modalities: ["text", "image", "audio"],
     output_modalities: ["audio", "text"],
+  },
+  {
+    name: "elevenlabs",
+    description: "Eleven Labs Text-to-Speech",
+    voices: [
+      "Rachel",
+      "Domi",
+      "Bella",
+      "Antoni",
+      "Elli",
+      "Josh",
+      "Arnold",
+      "Adam",
+      "Sam"
+    ],
+    handler: generateTextElevenLabs,
+    //    details:  "High-quality text-to-speech with versatile voice options.",
+    provider: "ElevenLabs",
+    input_modalities: ["text"],
+    output_modalities: ["audio"],
   },
 ];
 

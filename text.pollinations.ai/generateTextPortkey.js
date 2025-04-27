@@ -20,6 +20,7 @@ const MODEL_MAPPING = {
     'openai-reasoning': 'o4-mini', // Maps to portkeyConfig['o1-mini'],
     // 'openai-audio': 'gpt-4o-mini-audio-preview',
     'openai-audio': 'gpt-4o-audio-preview',
+    'elevenlabs': 'elevenlabs', // Direct mapping for Eleven Labs model
     'roblox-rp': 'gpt-4o-mini-roblox-rp', // Roblox roleplay model
     'command-r': 'Cohere-command-r-plus-08-2024-jt', // Cohere Command R Plus model
     'gemini': 'gemini-2.5-flash-preview-04-17',

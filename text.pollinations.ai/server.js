@@ -14,6 +14,7 @@ import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';
 import { processRequestForAds, createStreamingAdWrapper } from './ads/initRequestFilter.js';
 import { getRequestData, getReferrer, WHITELISTED_DOMAINS } from './requestUtils.js';
+import { textToSpeech, listVoices } from './generateTextElevenLabs.js';
 
 // Load environment variables
 dotenv.config();
@@ -694,7 +695,123 @@ app.post('/v1/chat/completions', async (req, res) => {
     } catch (error) {
         sendErrorResponse(res, req, error, requestParams);
     }
-})
+});
+
+// OpenAI-compatible audio/speech endpoint (also accessible via /v1/audio/speech)
+app.post(['/audio/speech', '/v1/audio/speech', '/openai/audio/speech'], async (req, res) => {
+    try {
+        // Get required parameters from the request body
+        const { model = 'elevenlabs', input, voice = 'Rachel', response_format = 'mp3' } = req.body;
+        
+        if (!input) {
+            throw new Error('Input text is required');
+        }
+        
+        log('Audio speech request:', { model, voice, response_format, inputLength: input.length });
+        
+        // Generate audio based on the model
+        let audioBuffer;
+        
+        if (model === 'elevenlabs' || model.startsWith('eleven')) {
+            // Use Eleven Labs
+            audioBuffer = await textToSpeech(input, {
+                voice,
+                response_format,
+                model: req.body.elevenlabs_model || 'eleven_multilingual_v2'
+            });
+        } else {
+            // Use OpenAI audio model through our existing implementation
+            const messages = [{ role: 'user', content: `Say verbatim: ${input}` }];
+            const options = {
+                model: 'openai-audio',
+                voice,
+                audio: { voice, format: response_format },
+                modalities: ['text', 'audio']
+            };
+            
+            const completion = await generateTextBasedOnModel(messages, options);
+            
+            if (completion.error) {
+                throw new Error(completion.error);
+            }
+            
+            if (completion.choices?.[0]?.message?.audio?.data) {
+                // Extract audio data from the response
+                audioBuffer = Buffer.from(completion.choices[0].message.audio.data, 'base64');
+            } else {
+                throw new Error('Failed to generate audio');
+            }
+        }
+        
+        // Set appropriate content type based on response_format
+        const contentType = response_format === 'mp3' 
+            ? 'audio/mpeg' 
+            : (response_format === 'opus' ? 'audio/opus' : 'audio/pcm');
+        
+        res.setHeader('Content-Type', contentType);
+        res.send(audioBuffer);
+        
+        // Track successful completion
+        await sendToAnalytics(req, 'audioGenerated', {
+            model,
+            voice,
+            response_format,
+            input_length: input.length,
+            success: true
+        });
+        
+    } catch (error) {
+        errorLog('Error generating speech:', error);
+        const status = error.status || 400;
+        res.status(status).json({ 
+            error: { message: error.message }
+        });
+        
+        // Track error
+        await sendToAnalytics(req, 'audioGenerationError', {
+            error: error.message,
+            errorType: error.name,
+            statusCode: status
+        });
+    }
+});
+
+// List available voices endpoint (OpenAI-compatible)
+app.get(['/audio/voices', '/v1/audio/voices', '/openai/audio/voices'], async (req, res) => {
+    try {
+        // Get model from query parameter
+        const model = req.query.model || 'all';
+        let voices = [];
+        
+        if (model === 'all' || model === 'elevenlabs') {
+            // Get Eleven Labs voices
+            const elevenLabsVoices = await listVoices();
+            voices.push(...elevenLabsVoices.map(v => ({
+                ...v,
+                provider: 'elevenlabs'
+            })));
+        }
+        
+        if (model === 'all' || model === 'openai-audio') {
+            // Get OpenAI voices from availableModels
+            const openAiModel = availableModels.find(m => m.name === 'openai-audio');
+            if (openAiModel && openAiModel.voices) {
+                voices.push(...openAiModel.voices.map(name => ({
+                    voice_id: name,
+                    name,
+                    provider: 'openai'
+                })));
+            }
+        }
+        
+        res.json({ voices });
+    } catch (error) {
+        errorLog('Error listing voices:', error);
+        res.status(500).json({ 
+            error: { message: 'Failed to list voices: ' + error.message }
+        });
+    }
+});
 
 function sendAsOpenAIStream(res, completion, req = null) {
     log('sendAsOpenAIStream called with completion type:', typeof completion);

@@ -17,5 +17,8 @@ ORIGIN_HOST = "text-origin.pollinations.ai"
 cpu_ms = 30000  # 30 seconds CPU time (max for Workers Unbound)
 
 # Configure logging
+[observability]
+enabled = false      # turns Workers Logs off completely
+
 [observability.logs]
-enabled = true
+invocation_logs = false

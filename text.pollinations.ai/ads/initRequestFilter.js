@@ -52,12 +52,33 @@ function contentContainsTriggerWords(content) {
 function shouldShowAds(content, messages = [], req = null) {
     // Check for the test marker first - if found, immediately return true
     let markerFound = false;
+
+    // Check for marker in content
     if (content && typeof content === 'string') {
         markerFound = content.includes(TEST_ADS_MARKER);
 
         // If marker is found, force ad display regardless of other conditions
         if (markerFound) {
-            log('Test marker "p-ads" found, forcing ad display regardless of other conditions');
+            log('Test marker "p-ads" found in content, forcing ad display regardless of other conditions');
+            return { shouldShowAd: true, markerFound: true, forceAd: true };
+        }
+    }
+
+    // Also check for marker in messages (important for streaming case)
+    if (!markerFound && messages && messages.length > 0) {
+        // Convert all message contents to strings for consistent checking
+        const messageContents = messages.map(msg => {
+            if (!msg) return '';
+            if (typeof msg.content === 'string') return msg.content;
+            if (msg.content) return JSON.stringify(msg.content);
+            return '';
+        });
+
+        // Check if any message contains the marker
+        markerFound = messageContents.some(content => content.includes(TEST_ADS_MARKER));
+
+        if (markerFound) {
+            log('Test marker "p-ads" found in messages, forcing ad display regardless of other conditions');
             return { shouldShowAd: true, markerFound: true, forceAd: true };
         }
     }
@@ -179,6 +200,21 @@ function shouldProceedWithAd(content, markerFound) {
 }
 
 async function generateAdForContent(content, req, messages, markerFound = false, isStreaming = false) {
+    // Log the function call with details
+    log(`generateAdForContent called with isStreaming=${isStreaming}, markerFound=${markerFound}, content length=${content ? content.length : 0}`);
+
+    // For streaming requests, log more details about the content
+    if (isStreaming) {
+        if (content) {
+            log(`Streaming content sample (first 100 chars): ${content.substring(0, 100)}${content.length > 100 ? '...' : ''}`);
+        } else {
+            log('No content provided for streaming ad generation');
+        }
+
+        // Log message count
+        log(`Message count for streaming ad generation: ${messages ? messages.length : 0}`);
+    }
+
     // Skip if we've already processed this request ID
     if (req && req.pollinationsAdProcessed) {
         log('Request already processed for ads, skipping duplicate processing');
@@ -427,6 +463,9 @@ async function generateAdForContent(content, req, messages, markerFound = false,
 
 function formatAdAsSSE(adString) {
     try {
+        // Log that we're formatting an ad as SSE
+        log(`Formatting ad as SSE: ${adString.substring(0, 50)}${adString.length > 50 ? '...' : ''}`);
+
         // Create a proper SSE message with the ad content
         // This should be in the format expected by the client
 
@@ -448,9 +487,15 @@ function formatAdAsSSE(adString) {
         };
 
         // Format as SSE
-        return `data: ${JSON.stringify(deltaObject)}\n\n`;
+        const formattedSSE = `data: ${JSON.stringify(deltaObject)}\n\n`;
+
+        // Log the formatted SSE (truncated for brevity)
+        log(`Formatted SSE (truncated): ${formattedSSE.substring(0, 100)}${formattedSSE.length > 100 ? '...' : ''}`);
+
+        return formattedSSE;
     } catch (error) {
         errorLog(`Error formatting ad as SSE: ${error.message}`);
+        errorLog(`Error stack: ${error.stack}`);
         return '';
     }
 }
@@ -555,9 +600,26 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
 
     log('Creating streaming ad wrapper' + (shouldForceAd ? ' (forced by p-ads)' : ''));
 
+    // Log the messages for debugging
+    if (messages && messages.length > 0) {
+        log(`Processing streaming with ${messages.length} messages`);
+        // Log the first message content (truncated for brevity)
+        const firstMessageContent = messages[0].content;
+        if (typeof firstMessageContent === 'string') {
+            log(`First message content (truncated): ${firstMessageContent.substring(0, 100)}${firstMessageContent.length > 100 ? '...' : ''}`);
+        } else if (firstMessageContent) {
+            log(`First message content is not a string: ${typeof firstMessageContent}`);
+        }
+    } else {
+        log('No messages provided to streaming ad wrapper');
+    }
+
     // Collect the content to analyze for affiliate matching
     let collectedContent = '';
     let isDone = false;
+
+    // Log when we start collecting content
+    log('Starting to collect content from stream chunks');
 
     // Create a transform stream that will:
     // 1. Pass through all chunks unchanged
@@ -672,19 +734,79 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
                 if (!isDone) {
                     try {
                         // Try to extract content from the SSE data
-                        const contentMatch = chunkStr.match(/data: (.*)\n\n/);
-                        if (contentMatch && contentMatch[1]) {
-                            try {
-                                const data = JSON.parse(contentMatch[1]);
-                                if (data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content) {
-                                    collectedContent += data.choices[0].delta.content;
+                        // First, try the standard SSE format with data: prefix
+                        const contentMatches = chunkStr.match(/data: (.*?)(?:\n\n|$)/g);
+
+                        if (contentMatches && contentMatches.length > 0) {
+                            // Process each match (there might be multiple data: lines in one chunk)
+                            for (const match of contentMatches) {
+                                const dataContent = match.replace(/^data: /, '').trim();
+
+                                if (dataContent) {
+                                    try {
+                                        // Try to parse as JSON first
+                                        const data = JSON.parse(dataContent);
+
+                                        // Handle different response formats
+                                        if (data.choices && data.choices.length > 0) {
+                                            // Standard OpenAI format
+                                            const choice = data.choices[0];
+
+                                            if (choice.delta && choice.delta.content) {
+                                                // Streaming format with delta
+                                                collectedContent += choice.delta.content;
+                                            } else if (choice.message && choice.message.content) {
+                                                // Non-streaming format with message
+                                                collectedContent += choice.message.content;
+                                            } else if (choice.text) {
+                                                // Older API format
+                                                collectedContent += choice.text;
+                                            }
+                                        } else if (data.content) {
+                                            // Simple content field
+                                            collectedContent += data.content;
+                                        } else if (typeof data === 'string') {
+                                            // Direct string response
+                                            collectedContent += data;
+                                        }
+                                    } catch (e) {
+                                        // If not valid JSON, treat as plain text
+                                        // This handles cases where the response is not JSON
+                                        if (dataContent !== '[DONE]') {
+                                            collectedContent += dataContent;
+                                        }
+                                    }
                                 }
-                            } catch (e) {
-                                // Ignore JSON parse errors, might not be JSON
+                            }
+                        } else {
+                            // If no data: prefix found, try to use the chunk as is
+                            // This is a fallback for non-standard SSE formats
+                            const plainText = chunkStr.trim();
+                            if (plainText && !plainText.includes('[DONE]')) {
+                                try {
+                                    // Try to parse as JSON
+                                    const data = JSON.parse(plainText);
+                                    if (data.choices && data.choices[0]) {
+                                        if (data.choices[0].delta && data.choices[0].delta.content) {
+                                            collectedContent += data.choices[0].delta.content;
+                                        } else if (data.choices[0].message && data.choices[0].message.content) {
+                                            collectedContent += data.choices[0].message.content;
+                                        }
+                                    }
+                                } catch (e) {
+                                    // If not JSON, use as plain text
+                                    collectedContent += plainText;
+                                }
                             }
                         }
+
+                        // Log collected content periodically (every 500 chars)
+                        if (collectedContent.length % 500 < 10) {
+                            log(`Collected content length: ${collectedContent.length} chars`);
+                        }
                     } catch (e) {
-                        // Ignore errors in content extraction
+                        // Log but don't fail on content extraction errors
+                        errorLog(`Error extracting content from stream chunk: ${e.message}`);
                     }
                 }
 

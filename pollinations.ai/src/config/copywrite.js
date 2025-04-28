@@ -35,7 +35,7 @@ export const IMAGE_FEED_TITLE = "Image Feed"
 export const IMAGE_FEED_MODE1 = "Watch";
 export const IMAGE_FEED_MODE2 = "Try";
 export const IMAGE_EDIT_BUTTON_ON = "Imagine";
-export const IMAGE_EDIT_BUTTON_OFF = "Imagine";
+export const IMAGE_EDIT_BUTTON_OFF = "Write the 'Imagine' word only";
 export const IMAGE_FEED_TOOLTIP_PROMPT = "Prompt";
 
 export const IMAGE_FEED_TOOLTIP_MODEL = "Select the text-to-image model."

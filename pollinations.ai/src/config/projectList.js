@@ -46,6 +46,7 @@ const allProjects = {
       description: "Enhances the user experience on pollinations.ai pages by improving content readability, adding convenient download options, and providing easy access to generation metadata.",
       author: "@fisven",
       repo: "https://github.com/fisventurous/pollinationsai-enhancer",
+      stars: 0,
       submissionDate: "2025-04-27",
     },
     {

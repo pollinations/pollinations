@@ -69,7 +69,7 @@ const models = [
     handler: generateTextPortkey,
     //    details: "Llama 4 Scout model optimized for efficient text generation.",
     provider: "Cloudflare",
-    input_modalities: ["text"],
+    input_modalities: ["text", "image"],
     output_modalities: ["text"],
   },
   {

@@ -15,7 +15,7 @@ const errorLog = debug('pollinations:portkey:error');
 const MODEL_MAPPING = {
     // Azure OpenAI models
     'openai': 'gpt-4.1-nano',       // Maps to portkeyConfig['gpt-4o-mini']
-    'openai-large': 'azure-gpt-4.1-mini',  
+    'openai-large': 'azure-gpt-4.1-mini',
     'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
     'openai-reasoning': 'o4-mini', // Maps to portkeyConfig['o1-mini'],
     // 'openai-audio': 'gpt-4o-mini-audio-preview',
@@ -135,9 +135,9 @@ function createAzureModelConfig(apiKey, endpoint, modelName) {
 
 // Base configuration for Cloudflare models
 const baseCloudflareConfig = {
-    provider: 'openai',
-    'custom-host': `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
-    authKey: process.env.CLOUDFLARE_AUTH_TOKEN,
+    provider: 'workers-ai', // Changed from 'openai' to 'workers-ai' for proper multimodal support
+    'workersAiAccountId': process.env.CLOUDFLARE_ACCOUNT_ID,
+    'apiKey': process.env.CLOUDFLARE_AUTH_TOKEN,
     // Set default max_tokens to 8192 (increased from 256)
     'max-tokens': 8192,
     'temperature': 0.1,
@@ -363,7 +363,8 @@ export const portkeyConfig = {
     '@cf/meta/llama-3.2-11b-vision-instruct': () => createCloudflareModelConfig(),
     '@cf/meta/llama-4-scout-17b-16e-instruct': () => ({
         ...createCloudflareModelConfig(),
-        'max-tokens': 4096  // Reduced from 8192 to avoid context length errors
+        'max-tokens': 4096,  // Reduced from 8192 to avoid context length errors
+        'fn': 'chatComplete'  // Explicitly set function to chatComplete for multimodal support
     }),
     // Scaleway model configurations
     'qwen2.5-coder-32b-instruct': () => createScalewayModelConfig({
@@ -374,7 +375,8 @@ export const portkeyConfig = {
     // Mistral model configuration
     '@cf/mistralai/mistral-small-3.1-24b-instruct': () => createCloudflareModelConfig({
         'max-tokens': 8192,
-        temperature: 0.3
+        temperature: 0.3,
+        'fn': 'chatComplete'  // Explicitly set function to chatComplete for multimodal support
     }),
     // Modal model configurations
     'Hormoz-8B': () => createModalModelConfig(),
@@ -407,7 +409,7 @@ export const portkeyConfig = {
     }),
     'gemini-2.0-flash-thinking': () => ({
         provider: 'vertex-ai',
-        authKey: googleCloudAuth.getAccessToken, 
+        authKey: googleCloudAuth.getAccessToken,
         'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
         'vertex-region': 'us-central1',
         'vertex-model-id': 'gemini-2.0-flash-thinking',
@@ -422,24 +424,24 @@ export const portkeyConfig = {
 export const generateTextPortkey = createOpenAICompatibleClient({
     // Use Portkey API Gateway URL from .env with fallback to localhost
     endpoint: () => `${process.env.PORTKEY_GATEWAY_URL || 'http://localhost:8787'}/v1/chat/completions`,
-    
+
     // Auth header configuration
     authHeaderName: 'Authorization',
     authHeaderValue: () => {
         // Use the actual Portkey API key from environment variables
         return `Bearer ${process.env.PORTKEY_API_KEY}`;
     },
-    
+
     // Additional headers will be dynamically set in transformRequest
     additionalHeaders: {},
-    
+
     // Models that don't support system messages will have system messages converted to user messages
     // This decision is made based on the model being requested
     supportsSystemMessages: (options) => {
         // Check if it's a model that doesn't support system messages
         return !['openai-reasoning', 'o4-mini', 'deepseek-reasoning'].includes(options.model);
     },
-    
+
     // Transform request to add Azure-specific headers based on the model
     transformRequest: async (requestBody) => {
         try {
@@ -449,7 +451,7 @@ export const generateTextPortkey = createOpenAICompatibleClient({
             // Check character limit
             const MAX_CHARS = 512000;
             const totalChars = countMessageCharacters(requestBody.messages);
-            
+
             if (totalChars > MAX_CHARS) {
                 errorLog('Input text exceeds maximum length of %d characters (current: %d)', MAX_CHARS, totalChars);
                 throw new Error(`Input text exceeds maximum length of ${MAX_CHARS} characters (current: ${totalChars})`);
@@ -469,14 +471,14 @@ export const generateTextPortkey = createOpenAICompatibleClient({
             // Generate headers (now async call)
             const additionalHeaders = await generatePortkeyHeaders(config);
             log('Added provider-specific headers:', JSON.stringify(additionalHeaders, null, 2));
-            
+
             // Set the headers as a property on the request object that will be used by genericOpenAIClient
             requestBody._additionalHeaders = additionalHeaders;
-            
+
             // Check if the model has a specific maxTokens limit in availableModels.js
             // Use the model name from requestBody instead of options which isn't available here
             const modelConfig = findModelByName(requestBody.model);
-            
+
             // For models with specific token limits or those using defaults
             if (!requestBody.max_tokens) {
                 if (modelConfig && modelConfig.maxTokens) {
@@ -489,21 +491,21 @@ export const generateTextPortkey = createOpenAICompatibleClient({
                     requestBody.max_tokens = config['max-tokens'];
                 }
             }
-            
+
             // Special handling for o1-mini model which requires max_completion_tokens instead of max_tokens
             if (modelName === 'o1-mini' && requestBody.max_tokens) {
                 log(`Converting max_tokens to max_completion_tokens for o1-mini model`);
                 requestBody.max_completion_tokens = requestBody.max_tokens;
                 delete requestBody.max_tokens;
             }
-            
+
             return requestBody;
         } catch (error) {
             errorLog('Error in request transformation:', error);
             throw error;
         }
     },
-    
+
     // Model mapping, system prompts, and default options
     modelMapping: MODEL_MAPPING,
     systemPrompts: SYSTEM_PROMPTS,

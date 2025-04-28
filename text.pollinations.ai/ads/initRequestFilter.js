@@ -50,6 +50,18 @@ function contentContainsTriggerWords(content) {
 
 // Extracted utility functions
 function shouldShowAds(content, messages = [], req = null) {
+    // Check for the test marker first - if found, immediately return true
+    let markerFound = false;
+    if (content && typeof content === 'string') {
+        markerFound = content.includes(TEST_ADS_MARKER);
+
+        // If marker is found, force ad display regardless of other conditions
+        if (markerFound) {
+            log('Test marker "p-ads" found, forcing ad display regardless of other conditions');
+            return { shouldShowAd: true, markerFound: true, forceAd: true };
+        }
+    }
+
     // Get request data for referrer check
     const requestData = getRequestData(req);
 
@@ -96,12 +108,6 @@ function shouldShowAds(content, messages = [], req = null) {
     if (REQUIRE_MARKDOWN && !markdownRegex.test(content) && !content.includes(TEST_ADS_MARKER)) {
         log('Skipping ad processing due to lack of markdown formatting');
         return { shouldShowAd: false, markerFound: false };
-    }
-
-    // Check for the test marker
-    let markerFound = false;
-    if (content) {
-        markerFound = content.includes(TEST_ADS_MARKER);
     }
 
     // Check for trigger words in content or messages
@@ -185,14 +191,17 @@ async function generateAdForContent(content, req, messages, markerFound = false,
     }
 
     // Check if we should show ads for this content
-    const { shouldShowAd, markerFound: detectedMarker, isBadDomain, adAlreadyExists } = shouldShowAds(content, messages, req);
+    const { shouldShowAd, markerFound: detectedMarker, isBadDomain, adAlreadyExists, forceAd } = shouldShowAds(content, messages, req);
 
     // Handle bad domain referrers - always show ads (100% probability)
     if (isBadDomain) {
         markerFound = true; // Force marker to true to ensure 100% probability
     }
 
-    if (!shouldShowAd && !shouldProceedWithAd(content, markerFound || detectedMarker)) {
+    // If p-ads marker was found, set forceAd flag
+    const shouldForceAd = forceAd || false;
+
+    if (!shouldShowAd && !shouldProceedWithAd(content, markerFound || detectedMarker) && !shouldForceAd) {
         if (req) {
             const reason = !content ? 'empty_content' :
                            content.length < 100 ? 'content_too_short' :
@@ -210,8 +219,50 @@ async function generateAdForContent(content, req, messages, markerFound = false,
         // Find the relevant affiliate
         const affiliateData = await findRelevantAffiliate(content, messages);
 
-        // If no affiliate data is found, send analytics and return null
-        if (!affiliateData && req) {
+        // If no affiliate data is found but we should force an ad (p-ads marker present)
+        if (!affiliateData && shouldForceAd) {
+            log('No relevant affiliate found, but p-ads marker is present. Using Ko-fi as fallback.');
+            // Find the Ko-fi affiliate in our data as a guaranteed fallback
+            const kofiAffiliate = affiliatesData.find(a => a.id === "kofi");
+
+            if (kofiAffiliate) {
+                // Generate the ad string for Ko-fi
+                const adString = await generateAffiliateAd("kofi", content, messages);
+
+                if (adString) {
+                    // Extract info for analytics
+                    const linkInfo = extractReferralLinkInfo(adString);
+
+                    // Log the ad interaction with metadata
+                    if (req) {
+                        logAdInteraction({
+                            timestamp: new Date().toISOString(),
+                            ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+                            affiliate_id: "kofi",
+                            affiliate_name: kofiAffiliate.name,
+                            topic: linkInfo.topic || 'unknown',
+                            streaming: isStreaming,
+                            referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
+                            user_agent: req.headers['user-agent'] || 'unknown'
+                        });
+
+                        // Send analytics for the ad impression
+                        sendToAnalytics(req, 'ad_impression', {
+                            affiliate_id: "kofi",
+                            affiliate_name: kofiAffiliate.name,
+                            topic: linkInfo.topic || 'unknown',
+                            streaming: isStreaming,
+                            forced: true
+                        });
+                    }
+
+                    return adString;
+                }
+            }
+        }
+
+        // If no affiliate data is found and not forcing an ad, send analytics and return null
+        if (!affiliateData && req && !shouldForceAd) {
             sendAdSkippedAnalytics(req, 'no_relevant_affiliate', isStreaming);
             return null;
         }
@@ -221,8 +272,43 @@ async function generateAdForContent(content, req, messages, markerFound = false,
             // Pass content and messages to enable language matching
             const adString = await generateAffiliateAd(affiliateData.id, content, messages);
 
-            // If ad generation failed, send analytics
-            if (!adString && req) {
+            // If ad generation failed but we should force an ad (p-ads marker present)
+            if (!adString && shouldForceAd) {
+                log('Ad generation failed, but p-ads marker is present. Using Ko-fi as fallback.');
+                // Try with Ko-fi as a fallback
+                const kofiAdString = await generateAffiliateAd("kofi", content, messages);
+
+                if (kofiAdString && req) {
+                    // Extract info for analytics
+                    const linkInfo = extractReferralLinkInfo(kofiAdString);
+
+                    // Log the ad interaction with metadata
+                    logAdInteraction({
+                        timestamp: new Date().toISOString(),
+                        ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+                        affiliate_id: "kofi",
+                        affiliate_name: "Support Pollinations on Ko-fi",
+                        topic: linkInfo.topic || 'unknown',
+                        streaming: isStreaming,
+                        referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
+                        user_agent: req.headers['user-agent'] || 'unknown'
+                    });
+
+                    // Send analytics for the ad impression
+                    sendToAnalytics(req, 'ad_impression', {
+                        affiliate_id: "kofi",
+                        affiliate_name: "Support Pollinations on Ko-fi",
+                        topic: linkInfo.topic || 'unknown',
+                        streaming: isStreaming,
+                        forced: true
+                    });
+
+                    return kofiAdString;
+                }
+            }
+
+            // If ad generation failed and not forcing an ad, send analytics
+            if (!adString && req && !shouldForceAd) {
                 sendAdSkippedAnalytics(req, 'ad_generation_failed', isStreaming, {
                     affiliate_id: affiliateData.id,
                     affiliate_name: affiliateData.name
@@ -236,12 +322,45 @@ async function generateAdForContent(content, req, messages, markerFound = false,
                 const linkInfo = extractReferralLinkInfo(adString);
 
                 // Log the ad interaction with metadata
+                if (req) {
+                    logAdInteraction({
+                        timestamp: new Date().toISOString(),
+                        ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+                        affiliate_id: affiliateData.id,
+                        affiliate_name: affiliateData.name,
+                        topic: linkInfo.topic || 'unknown',
+                        streaming: isStreaming,
+                        referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
+                        user_agent: req.headers['user-agent'] || 'unknown'
+                    });
+
+                    // Send analytics for the ad impression
+                    sendToAnalytics(req, 'ad_impression', {
+                        affiliate_id: affiliateData.id,
+                        affiliate_name: affiliateData.name,
+                        topic: linkInfo.topic || 'unknown',
+                        streaming: isStreaming,
+                        forced: shouldForceAd
+                    });
+                }
+
+                return adString;
+            }
+        }
+
+        // If we get here and should force an ad, create a generic Ko-fi ad as last resort
+        if (shouldForceAd) {
+            log('All ad generation attempts failed, but p-ads marker is present. Creating generic Ko-fi ad.');
+            const genericKofiAd = "\n\n---\nPowered by Pollinations.AI free text APIs. [Support our mission](https://pollinations.ai/redirect/kofi) to keep AI accessible for everyone.";
+
+            if (req) {
+                // Log the ad interaction with metadata
                 logAdInteraction({
                     timestamp: new Date().toISOString(),
                     ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
-                    affiliate_id: affiliateData.id,
-                    affiliate_name: affiliateData.name,
-                    topic: linkInfo.topic || 'unknown',
+                    affiliate_id: "kofi",
+                    affiliate_name: "Support Pollinations on Ko-fi",
+                    topic: "generic",
                     streaming: isStreaming,
                     referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
                     user_agent: req.headers['user-agent'] || 'unknown'
@@ -249,19 +368,54 @@ async function generateAdForContent(content, req, messages, markerFound = false,
 
                 // Send analytics for the ad impression
                 sendToAnalytics(req, 'ad_impression', {
-                    affiliate_id: affiliateData.id,
-                    affiliate_name: affiliateData.name,
-                    topic: linkInfo.topic || 'unknown',
-                    streaming: isStreaming
+                    affiliate_id: "kofi",
+                    affiliate_name: "Support Pollinations on Ko-fi",
+                    topic: "generic",
+                    streaming: isStreaming,
+                    forced: true,
+                    fallback: true
                 });
-
-                return adString;
             }
+
+            return genericKofiAd;
         }
 
         return null;
     } catch (error) {
         errorLog(`Error generating ad: ${error.message}`);
+
+        // If error occurs but we should force an ad, return a generic Ko-fi ad
+        if (shouldForceAd) {
+            log('Error occurred, but p-ads marker is present. Creating generic Ko-fi ad as fallback.');
+            const genericKofiAd = "\n\n---\nPowered by Pollinations.AI free text APIs. [Support our mission](https://pollinations.ai/redirect/kofi) to keep AI accessible for everyone.";
+
+            if (req) {
+                // Log the ad interaction with metadata
+                logAdInteraction({
+                    timestamp: new Date().toISOString(),
+                    ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+                    affiliate_id: "kofi",
+                    affiliate_name: "Support Pollinations on Ko-fi",
+                    topic: "error_fallback",
+                    streaming: isStreaming,
+                    referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
+                    user_agent: req.headers['user-agent'] || 'unknown'
+                });
+
+                // Send analytics for the ad impression
+                sendToAnalytics(req, 'ad_impression', {
+                    affiliate_id: "kofi",
+                    affiliate_name: "Support Pollinations on Ko-fi",
+                    topic: "error_fallback",
+                    streaming: isStreaming,
+                    forced: true,
+                    error: error.message
+                });
+            }
+
+            return genericKofiAd;
+        }
+
         if (req) {
             sendAdSkippedAnalytics(req, 'error', isStreaming, {
                 error_message: error.message
@@ -309,9 +463,12 @@ function formatAdAsSSE(adString) {
  * @returns {Promise<string>} - The processed content with referral links
  */
 export async function processRequestForAds(content, req, messages = []) {
-    const { shouldShowAd, markerFound } = shouldShowAds(content, messages, req);
+    const { shouldShowAd, markerFound, forceAd } = shouldShowAds(content, messages, req);
 
-    if (!shouldShowAd) {
+    // If p-ads marker was found, set forceAd flag
+    const shouldForceAd = forceAd || false;
+
+    if (!shouldShowAd && !shouldForceAd) {
         // We've already sent the ad_skipped analytics in shouldShowAds
         return content;
     }
@@ -321,6 +478,38 @@ export async function processRequestForAds(content, req, messages = []) {
 
     if (adString) {
         return content + adString;
+    }
+
+    // If we should force an ad but none was generated, create a generic Ko-fi ad
+    if (shouldForceAd) {
+        log('No ad generated but p-ads marker is present. Creating generic Ko-fi ad for non-streaming response.');
+        const genericKofiAd = "\n\n---\nPowered by Pollinations.AI free text APIs. [Support our mission](https://pollinations.ai/redirect/kofi) to keep AI accessible for everyone.";
+
+        if (req) {
+            // Log the ad interaction with metadata
+            logAdInteraction({
+                timestamp: new Date().toISOString(),
+                ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+                affiliate_id: "kofi",
+                affiliate_name: "Support Pollinations on Ko-fi",
+                topic: "nonstreaming_fallback",
+                streaming: false,
+                referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
+                user_agent: req.headers['user-agent'] || 'unknown'
+            });
+
+            // Send analytics for the ad impression
+            sendToAnalytics(req, 'ad_impression', {
+                affiliate_id: "kofi",
+                affiliate_name: "Support Pollinations on Ko-fi",
+                topic: "nonstreaming_fallback",
+                streaming: false,
+                forced: true,
+                fallback: true
+            });
+        }
+
+        return content + genericKofiAd;
     }
 
     // We've already sent the ad_skipped analytics in generateAdForContent
@@ -344,9 +533,13 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
         return responseStream;
     }
 
-    const { shouldShowAd, markerFound, adAlreadyExists } = shouldShowAds(null, messages, req);
+    const { shouldShowAd, markerFound, adAlreadyExists, forceAd } = shouldShowAds(null, messages, req);
 
-    if (adAlreadyExists) {
+    // If p-ads marker was found, set forceAd flag
+    const shouldForceAd = forceAd || false;
+
+    // Only check for existing ads if we're not forcing an ad
+    if (adAlreadyExists && !shouldForceAd) {
         log('Ad already exists in conversation history, skipping streaming ad');
         if (req) {
             sendAdSkippedAnalytics(req, 'ad_already_exists', true);
@@ -354,12 +547,13 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
         return responseStream;
     }
 
-    if (!shouldShowAd) {
+    // Only skip if we're not forcing an ad
+    if (!shouldShowAd && !shouldForceAd) {
         // We've already sent the ad_skipped analytics in shouldShowAds
         return responseStream;
     }
 
-    log('Creating streaming ad wrapper');
+    log('Creating streaming ad wrapper' + (shouldForceAd ? ' (forced by p-ads)' : ''));
 
     // Collect the content to analyze for affiliate matching
     let collectedContent = '';
@@ -388,6 +582,38 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
 
                             // Push the ad chunk before the [DONE] message
                             this.push(adChunk);
+                        } else if (shouldForceAd) {
+                            // If we're forcing an ad but none was generated, create a generic Ko-fi ad
+                            log('No ad generated but p-ads marker is present. Creating generic Ko-fi ad for streaming.');
+                            const genericKofiAd = "\n\n---\nPowered by Pollinations.AI free text APIs. [Support our mission](https://pollinations.ai/redirect/kofi) to keep AI accessible for everyone.";
+                            const adChunk = formatAdAsSSE(genericKofiAd);
+
+                            // Push the ad chunk before the [DONE] message
+                            this.push(adChunk);
+
+                            if (req) {
+                                // Log the ad interaction with metadata
+                                logAdInteraction({
+                                    timestamp: new Date().toISOString(),
+                                    ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+                                    affiliate_id: "kofi",
+                                    affiliate_name: "Support Pollinations on Ko-fi",
+                                    topic: "streaming_fallback",
+                                    streaming: true,
+                                    referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
+                                    user_agent: req.headers['user-agent'] || 'unknown'
+                                });
+
+                                // Send analytics for the ad impression
+                                sendToAnalytics(req, 'ad_impression', {
+                                    affiliate_id: "kofi",
+                                    affiliate_name: "Support Pollinations on Ko-fi",
+                                    topic: "streaming_fallback",
+                                    streaming: true,
+                                    forced: true,
+                                    fallback: true
+                                });
+                            }
                         } else {
                             // We've already sent the ad_skipped analytics in generateAdForContent
                         }
@@ -398,12 +624,46 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
                     })
                     .catch(error => {
                         errorLog('Error processing streaming ad:', error);
-                        if (req) {
+
+                        if (shouldForceAd) {
+                            // If error occurs but we should force an ad, create a generic Ko-fi ad
+                            log('Error occurred, but p-ads marker is present. Creating generic Ko-fi ad for streaming.');
+                            const genericKofiAd = "\n\n---\nPowered by Pollinations.AI free text APIs. [Support our mission](https://pollinations.ai/redirect/kofi) to keep AI accessible for everyone.";
+                            const adChunk = formatAdAsSSE(genericKofiAd);
+
+                            // Push the ad chunk before the [DONE] message
+                            this.push(adChunk);
+
+                            if (req) {
+                                // Log the ad interaction with metadata
+                                logAdInteraction({
+                                    timestamp: new Date().toISOString(),
+                                    ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+                                    affiliate_id: "kofi",
+                                    affiliate_name: "Support Pollinations on Ko-fi",
+                                    topic: "error_streaming_fallback",
+                                    streaming: true,
+                                    referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
+                                    user_agent: req.headers['user-agent'] || 'unknown'
+                                });
+
+                                // Send analytics for the ad impression
+                                sendToAnalytics(req, 'ad_impression', {
+                                    affiliate_id: "kofi",
+                                    affiliate_name: "Support Pollinations on Ko-fi",
+                                    topic: "error_streaming_fallback",
+                                    streaming: true,
+                                    forced: true,
+                                    error: error.message
+                                });
+                            }
+                        } else if (req) {
                             sendAdSkippedAnalytics(req, 'error', true, {
                                 error_message: error.message
                             });
                         }
-                        // Just push the original chunk if there's an error
+
+                        // Push the [DONE] message
                         this.push(chunk);
                         callback();
                     });

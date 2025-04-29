@@ -4,7 +4,7 @@
  * Functions and schemas for interacting with the Pollinations Text API
  */
 
-import { createMCPResponse, createTextContent, buildUrl, createToolDefinition } from '../utils.js';
+import { createMCPResponse, createTextContent, buildUrl, createToolDefinition } from '../utils/coreUtils.js';
 
 // Constants
 const TEXT_API_BASE_URL = 'https://text.pollinations.ai';

@@ -7,7 +7,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { createMCPResponse, createTextContent, createToolDefinition, buildUrl } from '../utils.js';
+import { createMCPResponse, createTextContent, createToolDefinition, buildUrl } from '../utils/coreUtils.js';
 
 // Constants
 const AUDIO_API_BASE_URL = 'https://text.pollinations.ai';

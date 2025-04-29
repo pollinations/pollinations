@@ -288,3 +288,4 @@ text.pollinations.ai/v2/
 # Local Netlify folder
 .netlify
 model-context-protocol/mcp-server-sqlite-npx/
+model-context-protocol/github-app-auth/.dev.vars

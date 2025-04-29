@@ -4,7 +4,7 @@
  * Functions and schemas for interacting with the Pollinations Image API
  */
 
-import { createMCPResponse, createTextContent, createImageContent, buildUrl, createToolDefinition } from '../utils.js';
+import { createMCPResponse, createTextContent, createImageContent, buildUrl, createToolDefinition } from '../utils/coreUtils.js';
 
 // Constants
 const IMAGE_API_BASE_URL = 'https://image.pollinations.ai';

@@ -11,7 +11,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import crypto from 'crypto';
-import { createToolDefinition } from '../utils.js';
+import { createToolDefinition } from '../utils/coreUtils.js';
 
 // Storage constants
 const STORAGE_DIR = path.join(os.homedir(), '.pollinations');

@@ -4,7 +4,7 @@
  * Functions and schemas for handling resources and prompts
  */
 
-import { createMCPResponse, createTextContent, createToolDefinition } from '../utils.js';
+import { createMCPResponse, createTextContent, createToolDefinition } from '../utils/coreUtils.js';
 
 /**
  * Schema for the listResources tool

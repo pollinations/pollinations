@@ -21,7 +21,8 @@ const affiliates = [
     audience: "Individuals seeking online privacy and security.",
     categories: ["Software", "Internet Service Provider", "Security"],
     trackingLink: "https://nordvpn.sjv.io/c/6058776/432264/7452",
-    triggerWords: ["VPN", "privacy", "online security", "secure browsing", "internet privacy", "encryption", "IP hiding", "private network", "cybersecurity", "data protection"]
+    triggerWords: ["VPN", "privacy", "online security", "secure browsing", "internet privacy", "encryption", "IP hiding", "private network", "cybersecurity", "data protection"],
+    weight: 2.5
   },
   // {
   //   id: "1548053",
@@ -241,6 +242,18 @@ const affiliates = [
     trackingLink: "https://getwren.ai?via=397623",
     triggerWords: ["business intelligence", "data analytics", "GenBI", "AI analytics", "data visualization", "SQL", "spreadsheets", "dashboards", "data insights", "business data"],
     weight: 3.0
+  },
+  {
+    id: "2699274",
+    name: "Talkpal - AI Language Learning",
+    product: "Talkpal landscape banner for promoting AI communication services.",
+    description: "Explore AI-based language learning and communication solutions with Talkpal.",
+    audience: "Language learners and individuals interested in AI-powered communication tools.",
+    categories: ["Education", "Language Learning", "AI Tools"],
+    tags: ["AI language learning"],
+    trackingLink: "https://talkpal.sjv.io/c/6058776/2699274/30644",
+    triggerWords: ["language learning", "AI language", "language practice", "conversation practice", "language tutor", "language app", "language learning software", "speaking practice", "language skills", "AI tutor"],
+    weight: 1.8
   }
 ];
 

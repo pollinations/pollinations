@@ -117,7 +117,7 @@ export default {
             return new Response(JSON.stringify({
               status: 'completed',
               user: {
-                id: user.github_id,
+                id: String(user.github_id).replace('.0', ''),
                 login: user.github_login
               }
             }), {
@@ -216,14 +216,14 @@ export default {
           await env.DB.prepare(
             `INSERT OR REPLACE INTO users (github_id, github_login, access_token) VALUES (?, ?, ?)`
           )
-          .bind(userData.id, userData.login, accessToken)
+          .bind(String(userData.id), userData.login, accessToken)
           .run();
           
           // Update session status
           await env.DB.prepare(
             `UPDATE auth_sessions SET status = ?, user_id = ? WHERE session_id = ?`
           )
-          .bind('completed', userData.id, session.session_id)
+          .bind('completed', String(userData.id), session.session_id)
           .run();
           
           // Simple success HTML

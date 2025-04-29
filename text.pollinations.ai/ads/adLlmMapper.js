@@ -48,6 +48,9 @@ export async function findRelevantAffiliate(content, messages = []) {
 Based on the following conversation content, determine which affiliate program would be most relevant to suggest.
 Return ONLY the ID of the most relevant affiliate from the list below, or "none" if none are relevant.
 
+When multiple affiliates are equally relevant to the conversation, prefer those with higher Priority values.
+Some affiliates have a Priority field - these should be given preference when they are relevant to the conversation.
+
 CONVERSATION CONTENT:
 ${combinedContent}
 

@@ -204,6 +204,7 @@ Pollinations.AI is used in various projects, including:
 
 | Project | Description | Creator | Links |
 |---------|-------------|---------|-------|
+| 🆕 Aura Chat bot | A chat bot integrating Pollinations API for text and image generation | @Py-Phoenix-PJS | [Email](mailto:itznarutotamilan007@gmail.com) |
 | 🆕 FoodAnaly | An AI application for food analysis that uses advanced artificial intelligence technology to help users understand food ingredients, nutritional value, and health impacts. | liukang0120@163.com | [Website](https://foodanaly.vercel.app/) |
 | 🆕 OkeyAI | An LLM created by Africans to understand and have cultural awareness of African contexts and languages, OkeyAI outperforms many LLM models based on size and intelligence, OkeyMeta uses pollination image generating API to train it's LLM (OkeyAI) on images in real time. | @okeymeta | [Website](https://chat.okeymeta.com.ng), [GitHub](https://github.com/okeymeta) |
 | 🆕 🤖 DesmondBot | A snarky bot based on Llama that is 100% free, powered by the Pollinations text API and OpenWebUI. Other models are available as well. | @mcgdj | [Website](https://cities-tomato-strong-peoples.trycloudflare.com/) |
@@ -281,6 +282,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 Echo AI | An HTML-based chat interface that leverages Pollinations AI as its core engine for both text and image generation, featuring user authentication, streaming responses, and plan management | @3ch0AI | [Website](https://3ch0ai.github.io/EchoAI), [GitHub](https://github.com/3ch0AI/EchoAI) |
 | 🆕 Pollinations.ai Enhancer | Enhances the user experience on pollinations.ai pages by improving content readability, adding convenient download options, and providing easy access to generation metadata | @fisven | [Website](https://greasyfork.org/en/scripts/534183-pollinations-ai-enhancer), [GitHub](https://github.com/fisventurous/pollinationsai-enhancer) |
 | 🆕 NetSim | websim.ai clone that's actually good | @kennet678 | [Website](https://netsim.us.to/) |
 | 🆕 B&W SVG Generator | Uses Flux (through pollinations) and potrace to create B&W Vector files | @pointsguy118 | [Website](https://fluxsvggenerator.streamlit.app/) |

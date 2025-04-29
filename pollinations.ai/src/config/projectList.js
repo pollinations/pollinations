@@ -41,6 +41,14 @@ export const projectCategories = [
 const allProjects = {
   toolsInterfaces: [
     {
+      name: "🆕 Echo AI",
+      url: "https://3ch0ai.github.io/EchoAI",
+      description: "An HTML-based chat interface that leverages Pollinations AI as its core engine for both text and image generation, featuring user authentication, streaming responses, and plan management.",
+      author: "@3ch0AI",
+      repo: "https://github.com/3ch0AI/EchoAI",
+      submissionDate: "2025-04-28",
+    },
+    {
       name: "🆕 Pollinations.ai Enhancer",
       url: "https://greasyfork.org/en/scripts/534183-pollinations-ai-enhancer",
       description: "Enhances the user experience on pollinations.ai pages by improving content readability, adding convenient download options, and providing easy access to generation metadata.",
@@ -66,6 +74,12 @@ const allProjects = {
     },
   ],
   llmIntegrations: [
+    {
+      name: "🆕 Aura Chat bot",
+      description: "A chat bot integrating Pollinations API for text and image generation.",
+      author: "@Py-Phoenix-PJS",
+      submissionDate: "2025-04-26",
+    },
     {
       name: "🆕 FoodAnaly",
       url: "https://foodanaly.vercel.app/",

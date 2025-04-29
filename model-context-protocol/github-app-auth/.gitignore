@@ -1,0 +1,17 @@
+# Environment variables
+.dev.vars
+.env
+
+# Cloudflare Wrangler local development files
+.wrangler/
+
+# SQLite database files
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Node.js dependencies
+node_modules/
+
+# Build output
+dist/

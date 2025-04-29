@@ -155,7 +155,11 @@ When adding Pollinations.AI to repositories, emphasize these key features:
 
 2. **Follow the exact format** used by existing entries
 
-3. **Add Pollinations.AI in alphabetical order** (if required by guidelines)
+3. **Be modest in placement**:
+   - If the list is alphabetical, place Pollinations.AI according to alphabetical order
+   - If the list is chronological, place Pollinations.AI according to date
+   - If the list has no clear ordering system, add Pollinations.AI toward the end of the list rather than at the beginning or middle
+   - Never place Pollinations.AI as the first item in a list unless alphabetical order dictates it
 
 4. **Use consistent description format** that highlights key features:
    ```
@@ -166,6 +170,8 @@ When adding Pollinations.AI to repositories, emphasize these key features:
    ```
    | [Pollinations.AI](https://pollinations.ai) | Free, no-signup APIs for text, image, and audio generation | No | Yes | Yes |
    ```
+
+6. **Make minimal changes** to the repository, focusing only on adding Pollinations.AI without modifying existing content.
 
 ### 6. Committing and Creating Pull Requests
 

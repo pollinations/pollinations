@@ -23,6 +23,7 @@ const MODEL_MAPPING = {
     'roblox-rp': 'gpt-4o-mini-roblox-rp', // Roblox roleplay model
     'command-r': 'Cohere-command-r-plus-08-2024-jt', // Cohere Command R Plus model
     'gemini': 'gemini-2.5-flash-preview-04-17',
+    'gemini-pro': 'gemini-2.5-pro',
     'gemini-thinking': 'gemini-2.0-flash-thinking-exp-01-21',
     // Cloudflare models
     'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
@@ -39,6 +40,7 @@ const MODEL_MAPPING = {
     'hormoz': 'Hormoz-8B',
     // OpenRouter models
     'claude': 'anthropic/claude-3.5-haiku-20241022',
+    'claude-thinking': 'anthropic/claude-3.7-thinking',
     // Cloudflare models
     'qwen-qwq': '@cf/qwen/qwq-32b',
     // DeepSeek models
@@ -71,6 +73,7 @@ const SYSTEM_PROMPTS = {
     'openai-large': BASE_PROMPTS.conversational,
     'openai-xlarge': BASE_PROMPTS.conversational,
     'gemini': BASE_PROMPTS.conversational,
+    'gemini-pro': BASE_PROMPTS.conversational,
     // Cloudflare models
     'llama': BASE_PROMPTS.conversational,
     'deepseek-reasoning-large': BASE_PROMPTS.helpful,
@@ -81,11 +84,12 @@ const SYSTEM_PROMPTS = {
     // Scaleway models
     'mistral': BASE_PROMPTS.conversational,
     'qwen-coder': BASE_PROMPTS.coding,
-    'gemini-thinking': BASE_PROMPTS.gemini + ' When appropriate, show your reasoning step by step.',
+    'gemini-thinking': BASE_PROMPTS.conversational + ' When appropriate, show your reasoning step by step.',
     // Modal models
     'hormoz': BASE_PROMPTS.hormoz,
     // OpenRouter models
     'claude': 'You are Claude, a helpful AI assistant created by Anthropic. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.',
+    'claude-thinking': 'You are Claude, a helpful AI assistant created by Anthropic specialized in reasoning. You provide accurate, balanced information and can assist with a wide range of tasks. When appropriate, break down your thinking step by step to show your reasoning process. Always be thorough and detailed in your explanations.',
     // Cloudflare models
     'qwen-qwq': BASE_PROMPTS.conversational,
     // DeepSeek models
@@ -384,6 +388,12 @@ export const portkeyConfig = {
         'http-referer': 'https://pollinations.ai',
         'x-title': 'Pollinations.AI'
     }),
+    'anthropic/claude-3.7-thinking': () => createOpenRouterModelConfig({
+        'http-referer': 'https://pollinations.ai',
+        'x-title': 'Pollinations.AI',
+        'max-tokens': 8192,
+        temperature: 0.3
+    }),
     // Cloudflare models
     '@cf/qwen/qwq-32b': () => createCloudflareModelConfig({
         'http-referer': 'https://pollinations.ai',
@@ -396,6 +406,14 @@ export const portkeyConfig = {
         'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
         'vertex-region': 'us-central1',
         'vertex-model-id': 'gemini-2.5-flash-preview-04-17',
+        'strict-openai-compliance': 'false'
+    }),
+    'gemini-2.5-pro': () => ({
+        provider: 'vertex-ai',
+        authKey: googleCloudAuth.getAccessToken,
+        'vertex-project-id': process.env.GCLOUD_PROJECT_ID,
+        'vertex-region': 'us-central1',
+        'vertex-model-id': 'gemini-2.5-pro',
         'strict-openai-compliance': 'false'
     }),
     'gemini-2.5-pro-exp-03-25': () => ({

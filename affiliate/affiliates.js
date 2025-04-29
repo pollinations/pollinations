@@ -10,6 +10,7 @@ const affiliates = [
     description: "Get a free license for the Martinic Kee Bass VST/AU plugin, modeled on the original.",
     audience: "Music producers and sound designers looking for high-quality virtual instruments.",
     categories: ["Music & Audio", "Software"],
+    blockedCountries: ["CN", "IR", "KP", "SY", "CU"],
     trackingLink: "https://martinic.evyy.net/c/6058776/1422856/4482",
     triggerWords: ["bass plugin", "VST", "VST plugin", "music production", "audio plugin", "synthesizer", "music software", "DAW", "audio production", "instrument plugin"]
   },
@@ -20,6 +21,7 @@ const affiliates = [
     description: "Secure your internet browsing with a NordVPN subscription.",
     audience: "Individuals seeking online privacy and security.",
     categories: ["Software", "Internet Service Provider", "Security"],
+    blockedCountries: ["CN", "RU", "IR", "KP", "SY", "CU", "BY", "TM", "AE", "SA", "EG", "VN"],
     trackingLink: "https://nordvpn.sjv.io/c/6058776/432264/7452",
     triggerWords: ["VPN", "privacy", "online security", "secure browsing", "internet privacy", "encryption", "IP hiding", "private network", "cybersecurity", "data protection"],
     weight: 2.5
@@ -31,6 +33,7 @@ const affiliates = [
   //   description: "Create and share digital photo albums online with jAlbum software.",
   //   audience: "Individuals and professionals looking to create and share photo albums online.",
   //   categories: ["Apps", "Creative Digital Assets", "Photography"],
+  //   blockedCountries: ["CN", "IR", "KP", "SY"],
   //   trackingLink: "https://jalbum-affiliate-program.sjv.io/c/6058776/1548053/17916",
   //   triggerWords: ["photo album", "digital album", "image gallery", "photo sharing", "photography", "picture collection", "photo organization", "photo management", "image hosting", "photo portfolio"]
   // },
@@ -41,6 +44,7 @@ const affiliates = [
     description: "Shop high-quality Soundcore audio products and accessories.",
     audience: "Consumers looking for high-quality audio products and accessories",
     categories: ["Consumer Electronics", "Accessories & Peripherals"],
+    blockedCountries: [],
     trackingLink: "https://soundcore.sjv.io/c/6058776/1630115/18028",
     triggerWords: ["headphones", "earbuds", "speakers", "audio equipment", "sound quality", "bluetooth speakers", "wireless audio", "music devices", "audio accessories", "premium sound"]
   },
@@ -51,6 +55,7 @@ const affiliates = [
     description: "Enhance your brand with professional logo and banner design from CapCut.",
     audience: "Individuals and businesses looking to enhance their brand identity with a professional logo and banners.",
     categories: ["Creative Digital Assets", "Graphic Design"],
+    blockedCountries: [],
     tags: ["New logo and banners"],
     trackingLink: "https://capcutaffiliateprogram.pxf.io/c/6058776/2073393/22474",
     triggerWords: ["logo design", "banner design", "graphic design", "brand identity", "visual branding", "company logo", "marketing graphics", "design services", "branding elements", "creative design"]
@@ -62,9 +67,11 @@ const affiliates = [
     description: "Get reliable dedicated VPS hosting with high bandwidth from Clawcloud, starting at $10/mo.",
     audience: "Businesses and individuals seeking reliable and high-performance web hosting solutions.",
     categories: ["Internet Service Provider", "Web Hosting"],
+    blockedCountries: ["CN", "IR", "KP", "SY", "CU"],
     tags: ["webhosting", "VPS", "dedicated VPS"],
     trackingLink: "https://clawcloudsingaporeprivatelimited.sjv.io/c/6058776/2144039/26865",
-    triggerWords: ["web hosting", "VPS", "dedicated server", "cloud hosting", "server hosting", "hosting service", "virtual private server", "website hosting", "hosting provider", "bandwidth"]
+    triggerWords: ["web hosting", "VPS", "dedicated server", "cloud hosting", "server hosting", "hosting service", "virtual private server", "website hosting", "hosting provider", "bandwidth"],
+    weight: 2.0
   },
   {
     id: "2774941",
@@ -73,6 +80,7 @@ const affiliates = [
     description: "Create your own AI companion on HeyReal.ai.",
     audience: "Users interested in AI chatbots, virtual companions, and character interaction.",
     categories: ["AI Tools", "Chatbots", "Entertainment", "Social"],
+    blockedCountries: ["CN", "IR", "KP", "SY", "CU"],
     trackingLink: "https://go.sjv.io/c/6058776/2774941/30752",
     triggerWords: ["ai chatbot", "character ai", "virtual companion", "ai chat", "realistic ai", "custom ai character", "talk to ai"],
     weight: 2.0
@@ -85,6 +93,7 @@ const affiliates = [
   //   audience: "Individuals seeking an intimate and personalized AI companionship experience.",
   //   categories: ["AI", "Entertainment", "Digital Companions", "NSFW"],
   //   nsfw: true,
+  //   blockedCountries: ["CN", "IR", "KP", "SY", "SA", "AE", "QA", "KW", "OM", "BH", "PK", "ID", "MY"],
   //   trackingLink: "https://lovemy.ai/?via=pollinations",
   //   triggerWords: ["ai companion", "virtual companion", "ai girlfriend", "ai boyfriend", "digital companion", "ai relationship", "virtual relationship", "ai character", "ai chat", "intimate ai"]
   // },
@@ -96,6 +105,7 @@ const affiliates = [
   //   audience: "Adult content consumers interested in anime and manga style artwork.",
   //   categories: ["Entertainment", "NSFW", "Adult Content", "AI Art"],
   //   nsfw: true,
+  //   blockedCountries: ["CN", "IR", "KP", "SY", "SA", "AE", "QA", "KW", "OM", "BH", "PK", "ID", "MY"],
   //   trackingLink: "https://hentai.ai/?via=pollinations",
   //   triggerWords: ["hentai", "anime", "manga", "adult content", "NSFW", "uncensored", "adult chat", "fantasy chat", "anime characters", "adult anime"]
   // },
@@ -106,6 +116,7 @@ const affiliates = [
     description: "Support Pollinations AI with a donation on Ko-fi",
     audience: "Individuals who appreciate Pollinations' services and want to support the platform.",
     categories: ["Donation", "Support"],
+    blockedCountries: ["IR", "KP", "SY", "CU"],
     tags: ["donation", "support"],
     ad_text: "Powered by Pollinations.AI free text APIs. [Support our mission]({url}) to keep AI accessible for everyone.",
     trackingLink: "https://ko-fi.com/pollinationsai",
@@ -119,6 +130,7 @@ const affiliates = [
     description: "Get $10 OFF Kodak Mini 2 retro portable printer and Kodak Dock Plus retro printer.",
     audience: "Individuals wanting to print photos from their smartphones or devices.",
     categories: ["Consumer Electronics", "Printers", "Photography", "Gadgets"],
+    blockedCountries: ["IR", "KP", "SY", "CU"],
     trackingLink: "https://primedigitalmarketing.pxf.io/c/6058776/2902339/25841",
     triggerWords: ["photo printer", "instant camera", "printing photos", "photo quality", "portable printer", "image printing", "digital prints", "instant printing", "photo paper", "photography equipment"]
   },
@@ -129,6 +141,7 @@ const affiliates = [
     description: "Monitor and manage your children's computer activities with SentryPC parental control software.",
     audience: "Parents concerned about their children's online activities and screen time.",
     categories: ["Software", "Parental Control", "Security"],
+    blockedCountries: ["CN", "RU", "IR", "KP", "SY", "CU"],
     trackingLink: "https://sentrypc.pxf.io/c/6058776/200613/3255",
     triggerWords: ["parental control", "child monitoring", "screen time", "internet safety", "computer monitoring", "child protection", "online safety", "web filtering", "activity tracking", "family safety"]
   },
@@ -139,6 +152,7 @@ const affiliates = [
     description: "Protect your online privacy and security with ExpressVPN's high-speed encrypted connections.",
     audience: "Individuals concerned about online privacy and security.",
     categories: ["Software", "Internet Service Provider", "Security"],
+    blockedCountries: ["CN", "RU", "IR", "KP", "SY", "CU", "BY", "TM", "AE", "SA", "EG", "VN"],
     trackingLink: "https://www.xvbelink.com/?a_fid=pollinations&url=https%3A%2F%2Fwww.expressvpn.com%2F",
     triggerWords: ["VPN", "privacy", "online security", "secure browsing", "internet privacy", "encryption", "IP hiding", "private network", "cybersecurity", "data protection"]
   },
@@ -149,6 +163,7 @@ const affiliates = [
     description: "Experience premium sound quality with Cowin's noise-cancelling headphones and audio products.",
     audience: "Music enthusiasts and professionals seeking high-quality audio equipment.",
     categories: ["Consumer Electronics", "Audio Equipment"],
+    blockedCountries: [],
     trackingLink: "https://cowinaudio.pxf.io/c/6058776/1099744/13624",
     triggerWords: ["headphones", "noise cancelling", "audio equipment", "wireless headphones", "bluetooth headphones", "sound quality", "music listening", "audio accessories", "premium sound", "wireless audio"]
   },
@@ -159,6 +174,7 @@ const affiliates = [
     description: "Simplify meeting scheduling and time management with Doodle's automated scheduling tools.",
     audience: "Professionals and teams looking to optimize scheduling and time management.",
     categories: ["Software", "Productivity", "Business Tools"],
+    blockedCountries: ["CN", "IR", "KP", "SY", "CU"],
     trackingLink: "https://doodle.pxf.io/c/6058776/2882892/32965",
     triggerWords: ["scheduling", "calendar", "meeting planner", "time management", "appointment scheduling", "team coordination", "availability", "booking system", "productivity tool", "meeting organization"]
   },
@@ -169,6 +185,7 @@ const affiliates = [
     description: "Shop for Lenovo computers, laptops, and electronic devices with special deals.",
     audience: "Consumers and businesses looking for quality computers and electronic devices.",
     categories: ["Consumer Electronics", "Computers", "Technology"],
+    blockedCountries: [],
     trackingLink: "https://lenovo.dgi7au.net/c/6058776/242590/4036",
     triggerWords: ["lenovo", "laptops", "desktops", "computer hardware", "electronics", "hong kong electronics", "pc", "computer deals"]
   },
@@ -179,6 +196,7 @@ const affiliates = [
     description: "Purchase AGM car starter batteries and other automotive electronics from Electronicx.",
     audience: "Car owners and automotive enthusiasts looking for reliable batteries and electronics.",
     categories: ["Automotive", "Electronics"],
+    blockedCountries: ["IR", "KP", "SY", "CU"],
     trackingLink: "https://electronicx.pxf.io/c/6058776/1166330/14322",
     triggerWords: ["car battery", "automotive electronics", "AGM battery", "car accessories", "vehicle electronics", "car parts", "auto electronics", "starter battery", "car maintenance", "automotive parts"]
   },
@@ -189,6 +207,7 @@ const affiliates = [
     description: "Keep your bike or motorcycle clean with Muc-Off's premium cleaning products.",
     audience: "Cyclists and motorcycle enthusiasts who want to maintain their vehicles.",
     categories: ["Automotive", "Cycling", "Maintenance"],
+    blockedCountries: ["IR", "KP", "SY", "CU"],
     trackingLink: "https://mucoff.sjv.io/c/6058776/1168108/14325",
     triggerWords: ["bike cleaner", "motorcycle cleaner", "car wash", "pressure washer", "vehicle maintenance", "cleaning supplies", "bike maintenance"]
   },
@@ -199,6 +218,7 @@ const affiliates = [
     description: "Keep your bike or motorcycle clean with Muc-Off's premium cleaning products.",
     audience: "Cyclists and motorcycle enthusiasts who want to maintain their vehicles.",
     categories: ["Automotive", "Cycling", "Maintenance"],
+    blockedCountries: ["IR", "KP", "SY", "CU"],
     trackingLink: "https://mucoff.sjv.io/c/6058776/1168108/14325",
     triggerWords: ["bike cleaner", "motorcycle cleaner", "car wash", "pressure washer", "vehicle maintenance", "cleaning supplies", "bike maintenance"]
   },
@@ -209,6 +229,7 @@ const affiliates = [
     description: "Access secure proxy solutions for enhanced online privacy and data protection with IPRoyal.",
     audience: "Individuals seeking proxy solutions for online privacy and security.",
     categories: ["Internet Service Provider", "Software"],
+    blockedCountries: ["CN", "RU", "IR", "KP", "SY", "CU", "BY", "TM", "AE", "SA", "EG", "VN"],
     trackingLink: "https://iproyal.sjv.io/c/6058776/1281667/15731",
     triggerWords: ["proxy", "security", "privacy", "online", "anonymous", "data protection", "internet security"]
   },
@@ -219,6 +240,7 @@ const affiliates = [
     description: "Get reliable web hosting services with high performance and excellent customer support from Godlike Host.",
     audience: "Individuals and businesses seeking web hosting solutions",
     categories: ["Internet Service Provider", "Hosting", "Software"],
+    blockedCountries: ["CN", "IR", "KP", "SY", "CU"],
     trackingLink: "https://godlikehost.sjv.io/c/6058776/1826593/21774",
     triggerWords: ["hosting", "website", "server", "domain", "service", "cloud", "performance", "web hosting"]
   },
@@ -229,6 +251,7 @@ const affiliates = [
     description: "Create professional 3D home designs easily with Homestyler's intuitive design platform.",
     audience: "Home design enthusiasts and DIY decorators",
     categories: ["Home", "Software", "Apps"],
+    blockedCountries: [],
     trackingLink: "https://homestyler.sjv.io/c/6058776/1917730/22993",
     triggerWords: ["design", "software", "3D", "home", "decor", "plan", "interior", "architecture"]
   },
@@ -239,6 +262,7 @@ const affiliates = [
     description: "Unlock the power of data without complexity using Wren AI's conversational GenBI platform and AI-powered spreadsheets.",
     audience: "Business teams, data analysts, executives, and marketers seeking simplified data insights",
     categories: ["Software", "AI Tools", "Business Intelligence", "Data Analytics"],
+    blockedCountries: ["CN", "IR", "KP", "SY", "CU", "RU"],
     trackingLink: "https://getwren.ai?via=397623",
     triggerWords: ["business intelligence", "data analytics", "GenBI", "AI analytics", "data visualization", "SQL", "spreadsheets", "dashboards", "data insights", "business data"],
     weight: 3.0
@@ -250,6 +274,7 @@ const affiliates = [
     description: "Explore AI-based language learning and communication solutions with Talkpal.",
     audience: "Language learners and individuals interested in AI-powered communication tools.",
     categories: ["Education", "Language Learning", "AI Tools"],
+    blockedCountries: ["IR", "KP", "SY", "CU"],
     tags: ["AI language learning"],
     trackingLink: "https://talkpal.sjv.io/c/6058776/2699274/30644",
     triggerWords: ["language learning", "AI language", "language practice", "conversation practice", "language tutor", "language app", "language learning software", "speaking practice", "language skills", "AI tutor"],
@@ -262,6 +287,7 @@ const affiliates = [
     description: "Register domains and get reliable web hosting with Namecheap's affordable services.",
     audience: "Website owners, developers, and businesses looking for domain registration and hosting solutions.",
     categories: ["Web Services", "Internet Service Provider"],
+    blockedCountries: ["CN", "IR", "KP", "SY", "CU", "RU"],
     trackingLink: "https://namecheap.pxf.io/c/6058776/511355/5618",
     triggerWords: ["domain", "hosting", "website", "web hosting", "domain registration", "DNS", "server", "website builder", "SSL certificate", "email hosting"]
   },
@@ -272,6 +298,7 @@ const affiliates = [
   //   description: "Protect your online privacy and secure your internet connection with ExpressVPN.",
   //   audience: "Internet users concerned about privacy and security.",
   //   categories: ["Software", "Internet Service Provider", "Security"],
+  //   blockedCountries: ["CN", "RU", "IR", "KP", "SY", "CU", "BY", "TM", "AE", "SA", "EG", "VN"],
   //   trackingLink: "https://go.expressvpn.com/c/6058776/1462842/16063",
   //   triggerWords: ["VPN", "online privacy", "secure browsing", "internet security", "geo-restriction", "IP masking", "encrypted connection", "anonymous browsing", "data protection", "streaming access"]
   // },
@@ -282,6 +309,7 @@ const affiliates = [
   //   description: "Enhance customer support with Tidio's AI-powered live chat and chatbot solutions for your website.",
   //   audience: "Business owners and marketers looking to improve customer engagement and support on their websites.",
   //   categories: ["Software", "Business Services", "Customer Support"],
+  //   blockedCountries: ["CN", "IR", "KP", "SY", "CU"],
   //   trackingLink: "https://www.tidio.com/en/affiliates/?ref=6058776_1830593",
   //   triggerWords: ["live chat", "chatbot", "customer support", "website chat", "AI chat", "customer service", "business communication", "support software", "chat widget", "customer engagement"]
   // },
@@ -292,6 +320,7 @@ const affiliates = [
   //   description: "Edit and produce audio professionally with Soundop's efficient audio workstation software.",
   //   audience: "Audio professionals, music producers, and content creators needing powerful audio editing tools.",
   //   categories: ["Music & Audio", "Software", "Creative Tools"],
+  //   blockedCountries: ["CN", "IR", "KP", "SY", "CU"],
   //   trackingLink: "https://soundop.com/ref/pollinations/",
   //   triggerWords: ["audio editing", "music production", "DAW", "audio workstation", "sound editing", "music software", "audio processing", "sound design", "audio production", "recording software"]
   // },
@@ -302,6 +331,7 @@ const affiliates = [
   //   description: "Shop for fashion items, potentially themed for events like St. Patrick's Day, at oyrosy.com.",
   //   audience: "Consumers looking for trendy apparel and accessories.",
   //   categories: ["Apparel", "Fashion", "Accessories"],
+  //   blockedCountries: ["IR", "KP", "SY", "CU"],
   //   trackingLink: "https://oyrosycom.sjv.io/c/6058776/2823497/32511",
   //   triggerWords: ["fashion", "apparel", "online clothing", "accessories", "trendy clothes", "seasonal fashion"]
   // },
@@ -312,6 +342,7 @@ const affiliates = [
   //   description: "Get $10 OFF Kodak Mini 2 retro portable printer and Kodak Dock Plus retro printer.",
   //   audience: "Individuals wanting to print photos from their smartphones or devices.",
   //   categories: ["Consumer Electronics", "Printers", "Photography", "Gadgets"],
+  //   blockedCountries: ["IR", "KP", "SY", "CU"],
   //   trackingLink: "https://primedigitalmarketing.pxf.io/c/6058776/2902339/25841",
   //   triggerWords: ["photo printer", "portable printer", "kodak printer", "instant printer", "smartphone printer", "mini printer"]
   // },
@@ -322,6 +353,7 @@ const affiliates = [
   //   description: "Create your own AI companion on DreamGF.",
   //   audience: "Individuals seeking personalized AI companionship experiences.",
   //   categories: ["AI", "Entertainment", "Digital Companions"],
+  //   blockedCountries: ["CN", "IR", "KP", "SY", "CU"],
   //   trackingLink: "https://dreamgf.ai/?a=RWzlAdv71NrOxT",
   //   triggerWords: ["ai companion", "virtual girlfriend", "ai chat", "digital companion", "ai character", "virtual relationship", "ai interaction"]
   // },
@@ -332,6 +364,7 @@ const affiliates = [
   //   description: "Find stylish and functional kitchen cleaning tools and sink accessories from HAPPY SiNKS.",
   //   audience: "Homeowners looking for innovative and aesthetic kitchen cleaning solutions.",
   //   categories: ["Home Goods", "Kitchen", "Cleaning Supplies"],
+  //   blockedCountries: ["IR", "KP", "SY", "CU"],
   //   trackingLink: "https://happysinksaffiliateprogram.sjv.io/c/6058776/1570637/18152",
   //   triggerWords: ["kitchen sink", "sink accessories", "kitchen cleaning", "sink organizer", "dish cleaning", "kitchen organization", "sink caddy", "kitchen tools", "home cleaning", "sink supplies"]
   // },
@@ -342,6 +375,7 @@ const affiliates = [
   //   description: "Create and share digital photo albums online with jAlbum software.",
   //   audience: "Individuals and professionals looking to create and share photo albums online.",
   //   categories: ["Apps", "Creative Digital Assets", "Photography"],
+  //   blockedCountries: ["CN", "IR", "KP", "SY"],
   //   trackingLink: "https://jalbum-affiliate-program.sjv.io/c/6058776/1548053/17916",
   //   triggerWords: ["photo album", "digital album", "image gallery", "photo sharing", "photography", "picture collection", "photo organization", "photo management", "image hosting", "photo portfolio"]
   // },
@@ -354,6 +388,7 @@ const affiliates = [
   //   categories: ["AI", "Entertainment", "Digital Companions", "NSFW"],
   //   tags: ["ai companion", "nsfw", "adult"],
   //   nsfw: true,
+  //   blockedCountries: ["CN", "IR", "KP", "SY", "SA", "AE", "QA", "KW", "OM", "BH", "PK", "ID", "MY"],
   //   trackingLink: "https://lovemy.ai/?via=pollinations",
   //   triggerWords: ["ai companion", "virtual companion", "ai girlfriend", "ai boyfriend", "digital companion", "ai relationship", "virtual relationship", "ai character", "ai chat", "intimate ai"]
   // },
@@ -364,6 +399,7 @@ const affiliates = [
     description: "Explore uncensored AI chat on AIHentaiChat.com",
     audience: "Adults seeking uncensored AI chat experiences. Be very selective.",
     categories: ["AI", "Entertainment", "Digital Companions", "NSFW"],
+    blockedCountries: ["CN", "IR", "KP", "SY", "SA", "AE", "QA", "KW", "OM", "BH", "PK", "ID", "MY", "TH", "VN", "SG"],
     tags: ["ai companion", "nsfw", "adult", "hentai"],
     nsfw: true,
     trackingLink: "https://hentai.ai/?via=pollinations",

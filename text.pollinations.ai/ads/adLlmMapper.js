@@ -14,9 +14,10 @@ const errorLog = debug('pollinations:adfilter:error');
  *
  * @param {string} content - The output content to analyze.
  * @param {Array} messages - The input messages to analyze (optional).
+ * @param {string} userCountry - The user's country code (optional).
  * @returns {Promise<object|null>} - The affiliate object, or null if none found/suitable.
  */
-export async function findRelevantAffiliate(content, messages = []) {
+export async function findRelevantAffiliate(content, messages = [], userCountry = null) {
     // Combine the last 3 messages with the current content for context
     const lastMessages = messages.slice(-3).map(m => m.content || "").filter(Boolean);
     const combinedContent = [...lastMessages, content].join("\n");
@@ -32,9 +33,29 @@ export async function findRelevantAffiliate(content, messages = []) {
                               !combinedContent.toLowerCase().includes("sex");
 
     // Filter out NSFW affiliates if needed
-    const eligibleAffiliates = shouldExcludeNSFW
+    let eligibleAffiliates = shouldExcludeNSFW
         ? affiliatesData.filter(affiliate => !affiliate.nsfw)
         : affiliatesData;
+
+    // Filter out affiliates that are blocked in the user's country
+    if (userCountry) {
+        log(`Filtering affiliates for user country: ${userCountry}`);
+        eligibleAffiliates = eligibleAffiliates.filter(affiliate => {
+            // Skip if affiliate doesn't have blockedCountries property
+            if (!affiliate.blockedCountries || !Array.isArray(affiliate.blockedCountries)) {
+                return true;
+            }
+            
+            // Check if the user's country is in the blockedCountries list
+            const isBlocked = affiliate.blockedCountries.includes(userCountry);
+            if (isBlocked) {
+                log(`Affiliate ${affiliate.id} (${affiliate.name}) is blocked in ${userCountry}`);
+            }
+            return !isBlocked;
+        });
+        
+        log(`${eligibleAffiliates.length} affiliates available after country filtering`);
+    }
 
     // If no eligible affiliates, return null
     if (eligibleAffiliates.length === 0) {
@@ -43,6 +64,12 @@ export async function findRelevantAffiliate(content, messages = []) {
     }
 
     try {
+        // Generate affiliate markdown for the prompt, only including eligible affiliates
+        const eligibleAffiliateMarkdown = eligibleAffiliates.map(affiliate => {
+            const weight = affiliate.weight ? ` (Priority: ${affiliate.weight})` : '';
+            return `- ${affiliate.id}: ${affiliate.name} - ${affiliate.description}${weight}`;
+        }).join('\n');
+
         // Use the markdown format for the LLM prompt
         const promptForLLM = `
 Based on the following conversation content, determine which affiliate program would be most relevant to suggest.
@@ -55,7 +82,7 @@ CONVERSATION CONTENT:
 ${combinedContent}
 
 AVAILABLE AFFILIATES:
-${affiliateMarkdown}
+${eligibleAffiliateMarkdown}
 
 AFFILIATE ID:`;
 
@@ -66,7 +93,7 @@ AFFILIATE ID:`;
 
         if (!response || response.toLowerCase() === "none") {
             // Define the percentage chance of showing Ko-fi when no other affiliate is found
-            const kofiShowPercentage = 5; // 10% chance to show Ko-fi
+            const kofiShowPercentage = 5; // 5% chance to show Ko-fi
 
             // Generate a random number between 0-100
             const randomValue = Math.floor(Math.random() * 100);
@@ -75,7 +102,17 @@ AFFILIATE ID:`;
             if (randomValue < kofiShowPercentage) {
                 log(`No relevant affiliate found by LLM, showing Ko-fi donation (${randomValue} < ${kofiShowPercentage}%)`);
                 // Find the Ko-fi affiliate in our data
-                return affiliatesData.find(a => a.id === "kofi") || null;
+                const kofiAffiliate = affiliatesData.find(a => a.id === "kofi");
+                
+                // Check if Ko-fi is blocked in the user's country
+                if (kofiAffiliate && userCountry && 
+                    kofiAffiliate.blockedCountries && 
+                    kofiAffiliate.blockedCountries.includes(userCountry)) {
+                    log(`Ko-fi affiliate is blocked in user's country (${userCountry}), skipping ad`);
+                    return null;
+                }
+                
+                return kofiAffiliate || null;
             } else {
                 log(`No relevant affiliate found by LLM, skipping ad (${randomValue} >= ${kofiShowPercentage}%)`);
                 return null;
@@ -97,7 +134,17 @@ AFFILIATE ID:`;
             if (randomValue < kofiShowPercentage) {
                 log(`Could not extract affiliate ID from LLM response, showing Ko-fi (${randomValue} < ${kofiShowPercentage}%)`);
                 // Find the Ko-fi affiliate in our data
-                return affiliatesData.find(a => a.id === "kofi") || null;
+                const kofiAffiliate = affiliatesData.find(a => a.id === "kofi");
+                
+                // Check if Ko-fi is blocked in the user's country
+                if (kofiAffiliate && userCountry && 
+                    kofiAffiliate.blockedCountries && 
+                    kofiAffiliate.blockedCountries.includes(userCountry)) {
+                    log(`Ko-fi affiliate is blocked in user's country (${userCountry}), skipping ad`);
+                    return null;
+                }
+                
+                return kofiAffiliate || null;
             } else {
                 log(`Could not extract affiliate ID from LLM response, skipping ad (${randomValue} >= ${kofiShowPercentage}%)`);
                 return null;
@@ -105,7 +152,7 @@ AFFILIATE ID:`;
         }
 
         // Find the affiliate in our data
-        const matchedAffiliate = affiliatesData.find(a => a.id === affiliateId);
+        const matchedAffiliate = eligibleAffiliates.find(a => a.id === affiliateId);
 
         if (!matchedAffiliate) {
             // Define the percentage chance of showing Ko-fi when affiliate ID isn't found
@@ -116,34 +163,30 @@ AFFILIATE ID:`;
 
             // Only show Ko-fi ad if the random value is below our threshold
             if (randomValue < kofiShowPercentage) {
-                log(`Affiliate ID ${affiliateId} not found in affiliate data, showing Ko-fi (${randomValue} < ${kofiShowPercentage}%)`);
+                log(`Affiliate ID ${affiliateId} not found in eligible affiliates, showing Ko-fi (${randomValue} < ${kofiShowPercentage}%)`);
                 // Find the Ko-fi affiliate in our data
-                return affiliatesData.find(a => a.id === "kofi") || null;
+                const kofiAffiliate = affiliatesData.find(a => a.id === "kofi");
+                
+                // Check if Ko-fi is blocked in the user's country
+                if (kofiAffiliate && userCountry && 
+                    kofiAffiliate.blockedCountries && 
+                    kofiAffiliate.blockedCountries.includes(userCountry)) {
+                    log(`Ko-fi affiliate is blocked in user's country (${userCountry}), skipping ad`);
+                    return null;
+                }
+                
+                return kofiAffiliate || null;
             } else {
-                log(`Affiliate ID ${affiliateId} not found in affiliate data, skipping ad (${randomValue} >= ${kofiShowPercentage}%)`);
+                log(`Affiliate ID ${affiliateId} not found in eligible affiliates, skipping ad (${randomValue} >= ${kofiShowPercentage}%)`);
                 return null;
             }
         }
 
-        log(`Found relevant affiliate: ${matchedAffiliate.name} (${affiliateId})`);
+        log(`Found relevant affiliate: ${matchedAffiliate.name} (${matchedAffiliate.id})`);
         return matchedAffiliate;
     } catch (error) {
         errorLog(`Error finding relevant affiliate: ${error.message}`);
-
-        // Define the percentage chance of showing Ko-fi when an error occurs
-        const kofiShowPercentage = 30; // 30% chance to show Ko-fi
-
-        // Generate a random number between 0-100
-        const randomValue = Math.floor(Math.random() * 100);
-
-        // Only show Ko-fi ad if the random value is below our threshold
-        if (randomValue < kofiShowPercentage) {
-            log(`Using Ko-fi donation as fallback due to error (${randomValue} < ${kofiShowPercentage}%)`);
-            return affiliatesData.find(a => a.id === "kofi") || null;
-        } else {
-            log(`Skipping ad due to error (${randomValue} >= ${kofiShowPercentage}%)`);
-            return null;
-        }
+        return null;
     }
 }
 

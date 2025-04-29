@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [
     "github",
@@ -22,11 +24,13 @@
     "@cloudflare/workers-types": "^4.20250429.0",
     "@types/jsonwebtoken": "^9.0.9",
     "typescript": "^5.8.3",
+    "vitest": "^1.1.0",
     "wrangler": "^4.13.2"
   },
   "dependencies": {
     "arctic": "^3.6.0",
     "itty-router": "^5.0.18",
+    "jose": "^5.2.0",
     "jsonwebtoken": "^9.0.2"
   }
 }

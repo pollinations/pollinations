@@ -26,3 +26,4 @@ This document tracks the status of pull requests submitted to add Pollinations.A
 | [awesome-ai-learning (Awesome-LLM)](https://github.com/Hannibal046/Awesome-LLM) | [PR #TBD](https://github.com/Hannibal046/Awesome-LLM/pulls) | Open | 2025-04-19 | Added Pollinations.AI to the LLM Applications section |
 | [SillyTavern](https://github.com/SillyTavern/SillyTavern) | [PR #TBD](https://github.com/SillyTavern/SillyTavern/pulls) | Submitted | 2025-05-16 | Added Pollinations.AI integration for text and image generation |
 | [OpenWebUI](https://github.com/open-webui/open-webui) | [PR #TBD](https://github.com/open-webui/open-webui/pulls) | Submitted | 2025-05-16 | Added Pollinations.AI integration for image generation |
+| [awesome-creative-coding](https://github.com/terkelg/awesome-creative-coding) | [PR #213](https://github.com/terkelg/awesome-creative-coding/pull/213) | Open | 2025-04-29 | Added Pollinations.AI to the AI/ML section |

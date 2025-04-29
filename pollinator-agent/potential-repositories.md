@@ -24,53 +24,53 @@ This document lists repositories where Pollinations.AI could be added to increas
   - Audio Gen section (text-to-speech capabilities)
 - **Integration Effort**: Low - Create a PR with appropriate sections
 
-### 3. [awesome-ai-tools](https://github.com/malgamves/awesome-ai-tools)
-- **Stars**: 800+
-- **Description**: A curated list of Artificial Intelligence tools, services, and resources
-- **Why a good fit**: Has sections for image generation, text generation, and APIs
-- **Integration Effort**: Low - Simple PR required
-
-### 4. [awesome-ai-for-devs](https://github.com/fabiomoschella/awesome-ai-for-devs)
+### 3. [awesome-ai-for-devs](https://github.com/fabiomoschella/awesome-ai-for-devs)
 - **Stars**: 450+
 - **Description**: A curated list of AI tools, frameworks, libraries focused on developers
 - **Why a good fit**: Pollinations.AI's developer-friendly features (React hooks, API, MCP server) make it suitable for this dev-focused list
 - **Integration Effort**: Low - Create PR highlighting developer tooling
 
-### 5. [awesome-machine-learning](https://github.com/josephmisiti/awesome-machine-learning)
+### 4. [awesome-machine-learning](https://github.com/josephmisiti/awesome-machine-learning)
 - **Stars**: 62k+
 - **Description**: A comprehensive curated list of ML frameworks, libraries and software by language
 - **Why a good fit**: One of the most popular AI repositories on GitHub with massive visibility
 - **Integration Effort**: Medium - Need to match their specific format and categorization by language
 
-### 6. [awesome-ai-tool-list](https://github.com/aitoollist/awesome-ai-tool-list)
+### 5. [awesome-ai-tool-list](https://github.com/aitoollist/awesome-ai-tool-list)
 - **Stars**: 590+
 - **Description**: An awesome directory of AI tools that powers aitoollist.org
 - **Why a good fit**: Includes categories for image generation, text generation, and audio
 - **Integration Effort**: Low - Format is straightforward with clear categories
 
-### 7. [awesome-text-to-image-studies](https://github.com/AlonzoLeeeooo/awesome-text-to-image-studies)
+### 6. [awesome-text-to-image-studies](https://github.com/AlonzoLeeeooo/awesome-text-to-image-studies)
 - **Stars**: 170+
 - **Description**: Collection of papers and resources related to text-to-image generation
 - **Why a good fit**: While mainly research-focused, the "projects and products" section would be perfect for Pollinations.AI
 - **Integration Effort**: Low - Simple addition to existing categorization
 
-### 8. [awesome-generative-ai-apis](https://github.com/foss42/awesome-generative-ai-apis)
+### 7. [awesome-generative-ai-apis](https://github.com/foss42/awesome-generative-ai-apis)
 - **Stars**: 800+
 - **Description**: A curated list of generative AI APIs with accessible endpoints
 - **Why a good fit**: Directly focused on APIs like Pollinations, with sections for image, text, and audio generation
 - **Integration Effort**: Low - Simple PR with API details and examples
 
-### 9. [awesome-text-ml](https://github.com/oskar-j/awesome-text-ml)
+### 8. [awesome-text-ml](https://github.com/oskar-j/awesome-text-ml)
 - **Stars**: 170+
 - **Description**: A curated list of ML awesome frameworks & libraries for text data
 - **Why a good fit**: Pollinations.AI's text generation capabilities would be relevant to this repository
 - **Integration Effort**: Low - Create a PR highlighting text generation capabilities
 
-### 10. [awesome-chatgpt](https://github.com/humanloop/awesome-chatgpt)
+### 9. [awesome-chatgpt](https://github.com/humanloop/awesome-chatgpt)
 - **Stars**: 12k+
 - **Description**: Curated list of ChatGPT-related resources, tools, and apps
 - **Why a good fit**: The MCP server would be particularly relevant as it enables AI assistants to generate images
 - **Integration Effort**: Low - Simple PR with clear categorization
+
+### 10. [awesome-ai-agents](https://github.com/e2b-dev/awesome-ai-agents)
+- **Stars**: 4.7k+
+- **Description**: A curated list of autonomous AI agent projects and tools
+- **Why a good fit**: The MCP server would be relevant for AI agents that need to generate visual content
+- **Integration Effort**: Low - Simple PR highlighting MCP server application for agents
 
 ## Specialized Lists
 

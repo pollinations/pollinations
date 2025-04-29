@@ -199,6 +199,8 @@ graph LR
 > **⭐ GitHub Star Counts:** Projects with GitHub repositories include star counts to help you gauge their popularity.
 > 
 > **🆕 NEW Tag:** Projects are marked with the 🆕 emoji when they are recently added. This tag is automatically removed after 15 days from the submission date or if no date is specified.
+> 
+> **Note:** Some projects may be temporarily hidden from this list if they are currently broken or undergoing maintenance.
 
 Pollinations.AI is used in various projects, including:
 

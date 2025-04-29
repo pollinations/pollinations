@@ -6,16 +6,16 @@ A minimal GitHub OAuth and App authentication system for Pollinations MCP, built
 
 ```mermaid
 graph TD
-    Client[Client/Chatbot] -->|1. Request auth| AuthStart[/auth/start]
+    Client[Client/Chatbot] -->|1. Request auth| AuthStart("/auth/start")
     AuthStart -->|2. Return sessionId & authUrl| Client
     Client -->|3. Open URL| GitHub[GitHub OAuth]
-    GitHub -->|4. Redirect with code| Callback[/auth/callback]
+    GitHub -->|4. Redirect with code| Callback("/auth/callback")
     Callback -->|5. Store token| DB[(D1 Database)]
-    Client -->|6. Poll status| AuthStatus[/auth/status/:sessionId]
+    Client -->|6. Poll status| AuthStatus("/auth/status/:sessionId")
     AuthStatus -->|7. Return auth status| Client
     
     subgraph "GitHub App Flow"
-        Client -->|8. Link installation| LinkApp[/app/link]
+        Client -->|8. Link installation| LinkApp("/app/link")
         LinkApp -->|9. Create JWT| JWT[JWT Signing]
         JWT -->|10. Get installation token| GitHubApp[GitHub App API]
         GitHubApp -->|11. Return token| LinkApp
@@ -36,20 +36,20 @@ sequenceDiagram
     participant GitHub
     participant DB as D1 Database
     
-    Client->>Worker: GET /auth/start
-    Worker->>DB: Create auth session
-    Worker->>Client: Return sessionId & authUrl
-    Client->>GitHub: Open authorization URL
-    GitHub->>Worker: Redirect to /auth/callback with code
-    Worker->>GitHub: Exchange code for token
-    GitHub->>Worker: Return access token
-    Worker->>GitHub: Get user profile
-    GitHub->>Worker: Return user profile
-    Worker->>DB: Store user & token
-    Worker->>Client: Show success page
-    Client->>Worker: GET /auth/status/:sessionId
-    Worker->>DB: Check session status
-    Worker->>Client: Return auth status
+    Client->Worker: GET /auth/start
+    Worker->DB: Create auth session
+    Worker->Client: Return sessionId & authUrl
+    Client->GitHub: Open authorization URL
+    GitHub->Worker: Redirect to /auth/callback with code
+    Worker->GitHub: Exchange code for token
+    GitHub->Worker: Return access token
+    Worker->GitHub: Get user profile
+    GitHub->Worker: Return user profile
+    Worker->DB: Store user & token
+    Worker->Client: Show success page
+    Client->Worker: GET /auth/status/:sessionId
+    Worker->DB: Check session status
+    Worker->Client: Return auth status
 ```
 
 ### GitHub App Flow
@@ -61,24 +61,24 @@ sequenceDiagram
     participant GitHub
     participant DB as D1 Database
     
-    Client->>Worker: POST /app/link (userId, installationId)
-    Worker->>Worker: Generate JWT with App private key
-    Worker->>GitHub: Request installation token
-    GitHub->>Worker: Return installation token
-    Worker->>DB: Store installation token
-    Worker->>Client: Return success
+    Client->Worker: POST /app/link (userId, installationId)
+    Worker->Worker: Generate JWT with App private key
+    Worker->GitHub: Request installation token
+    GitHub->Worker: Return installation token
+    Worker->DB: Store installation token
+    Worker->Client: Return success
     
     Note over Client,GitHub: Later, when using GitHub API
-    Client->>Worker: GET /token/:userId
-    Worker->>DB: Get stored token
-    Worker->>Worker: Check if token expired
+    Client->Worker: GET /token/:userId
+    Worker->DB: Get stored token
+    Worker->Worker: Check if token expired
     alt Token expired
-        Worker->>Worker: Generate new JWT
-        Worker->>GitHub: Request new installation token
-        GitHub->>Worker: Return new token
-        Worker->>DB: Update token
+        Worker->Worker: Generate new JWT
+        Worker->GitHub: Request new installation token
+        GitHub->Worker: Return new token
+        Worker->DB: Update token
     end
-    Worker->>Client: Return valid token
+    Worker->Client: Return valid token
 ```
 
 ## API Endpoints

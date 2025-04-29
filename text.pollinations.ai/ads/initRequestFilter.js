@@ -48,6 +48,29 @@ function contentContainsTriggerWords(content) {
     );
 }
 
+// Function to get user's country code from request
+function getUserCountry(req) {
+    if (!req) return null;
+    
+    // Check for country code in headers (common for proxies like Cloudflare)
+    const cfCountry = req.headers['cf-ipcountry'];
+    if (cfCountry) {
+        log(`Country from Cloudflare header: ${cfCountry}`);
+        return cfCountry;
+    }
+    
+    // Check for country in X-Geo-Country header (some CDNs use this)
+    const xGeoCountry = req.headers['x-geo-country'];
+    if (xGeoCountry) {
+        log(`Country from X-Geo-Country header: ${xGeoCountry}`);
+        return xGeoCountry;
+    }
+    
+    // If no country information is available, return null
+    log('No country information found in request headers');
+    return null;
+}
+
 // Extracted utility functions
 function shouldShowAds(content, messages = [], req = null) {
     // Check for the test marker first - if found, immediately return true
@@ -226,6 +249,10 @@ async function generateAdForContent(content, req, messages, markerFound = false,
         req.pollinationsAdProcessed = true;
     }
 
+    // Get user's country code
+    const userCountry = getUserCountry(req);
+    log(`User country detected: ${userCountry || 'unknown'}`);
+
     // Check if we should show ads for this content
     const { shouldShowAd, markerFound: detectedMarker, isBadDomain, adAlreadyExists, forceAd } = shouldShowAds(content, messages, req);
 
@@ -252,8 +279,8 @@ async function generateAdForContent(content, req, messages, markerFound = false,
     try {
         log('Generating ad for content...');
 
-        // Find the relevant affiliate
-        const affiliateData = await findRelevantAffiliate(content, messages);
+        // Find the relevant affiliate, passing the user's country code
+        const affiliateData = await findRelevantAffiliate(content, messages, userCountry);
 
         // If no affiliate data is found but we should force an ad (p-ads marker present)
         if (!affiliateData && shouldForceAd) {
@@ -262,6 +289,17 @@ async function generateAdForContent(content, req, messages, markerFound = false,
             const kofiAffiliate = affiliatesData.find(a => a.id === "kofi");
 
             if (kofiAffiliate) {
+                // Check if Ko-fi is blocked in user's country
+                if (userCountry && kofiAffiliate.blockedCountries && kofiAffiliate.blockedCountries.includes(userCountry)) {
+                    log(`Ko-fi affiliate is blocked in user's country (${userCountry}), skipping ad`);
+                    sendAdSkippedAnalytics(req, 'country_blocked', isStreaming, {
+                        affiliate_id: "kofi",
+                        affiliate_name: kofiAffiliate.name,
+                        country: userCountry
+                    });
+                    return null;
+                }
+
                 // Generate the ad string for Ko-fi
                 const adString = await generateAffiliateAd("kofi", content, messages);
 
@@ -279,7 +317,8 @@ async function generateAdForContent(content, req, messages, markerFound = false,
                             topic: linkInfo.topic || 'unknown',
                             streaming: isStreaming,
                             referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
-                            user_agent: req.headers['user-agent'] || 'unknown'
+                            user_agent: req.headers['user-agent'] || 'unknown',
+                            country: userCountry || 'unknown'
                         });
 
                         // Send analytics for the ad impression
@@ -288,7 +327,8 @@ async function generateAdForContent(content, req, messages, markerFound = false,
                             affiliate_name: kofiAffiliate.name,
                             topic: linkInfo.topic || 'unknown',
                             streaming: isStreaming,
-                            forced: true
+                            forced: true,
+                            country: userCountry || 'unknown'
                         });
                     }
 
@@ -408,8 +448,7 @@ async function generateAdForContent(content, req, messages, markerFound = false,
                     affiliate_name: "Support Pollinations on Ko-fi",
                     topic: "generic",
                     streaming: isStreaming,
-                    forced: true,
-                    fallback: true
+                    forced: true
                 });
             }
 

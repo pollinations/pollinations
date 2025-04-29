@@ -57,6 +57,37 @@ sequenceDiagram
     Worker->DB: Store token
 ```
 
+## Data Flow
+
+### OAuth Flow Data
+
+```
+1. /auth/start → { sessionId, authUrl }
+2. GitHub callback → code, state
+3. /auth/callback → HTML success page
+4. /auth/status/:sessionId → { status, userId }
+```
+
+### GitHub App Flow Data
+
+```
+1. /app/link (POST) → { userId, installationId }
+2. JWT creation → { iat, exp, iss }
+3. Installation token → { token, expiresAt }
+4. /token/:userId → { token, expiresAt }
+```
+
+### Token Usage
+
+```
+GET /token/:userId?domain=example.com
+↓
+{
+  "token": "ghs_xxxxxxxxxxxx",
+  "expiresAt": "2023-04-30T12:00:00Z"
+}
+```
+
 ## API Endpoints
 
 | Endpoint | Method | Description |

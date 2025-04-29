@@ -254,6 +254,121 @@ const affiliates = [
     trackingLink: "https://talkpal.sjv.io/c/6058776/2699274/30644",
     triggerWords: ["language learning", "AI language", "language practice", "conversation practice", "language tutor", "language app", "language learning software", "speaking practice", "language skills", "AI tutor"],
     weight: 1.8
+  },
+  {
+    id: "511355",
+    name: "Namecheap",
+    product: "Domain registration and web hosting services",
+    description: "Register domains and get reliable web hosting with Namecheap's affordable services.",
+    audience: "Website owners, developers, and businesses looking for domain registration and hosting solutions.",
+    categories: ["Web Services", "Internet Service Provider"],
+    trackingLink: "https://namecheap.pxf.io/c/6058776/511355/5618",
+    triggerWords: ["domain", "hosting", "website", "web hosting", "domain registration", "DNS", "server", "website builder", "SSL certificate", "email hosting"]
+  },
+  // {
+  //   id: "1462842",
+  //   name: "ExpressVPN",
+  //   product: "VPN service for secure internet browsing",
+  //   description: "Protect your online privacy and secure your internet connection with ExpressVPN.",
+  //   audience: "Internet users concerned about privacy and security.",
+  //   categories: ["Software", "Internet Service Provider", "Security"],
+  //   trackingLink: "https://go.expressvpn.com/c/6058776/1462842/16063",
+  //   triggerWords: ["VPN", "online privacy", "secure browsing", "internet security", "geo-restriction", "IP masking", "encrypted connection", "anonymous browsing", "data protection", "streaming access"]
+  // },
+  // {
+  //   id: "1830593",
+  //   name: "Tidio LLC",
+  //   product: "Live chat and chatbot software for websites",
+  //   description: "Enhance customer support with Tidio's AI-powered live chat and chatbot solutions for your website.",
+  //   audience: "Business owners and marketers looking to improve customer engagement and support on their websites.",
+  //   categories: ["Software", "Business Services", "Customer Support"],
+  //   trackingLink: "https://www.tidio.com/en/affiliates/?ref=6058776_1830593",
+  //   triggerWords: ["live chat", "chatbot", "customer support", "website chat", "AI chat", "customer service", "business communication", "support software", "chat widget", "customer engagement"]
+  // },
+  // {
+  //   id: "2848156",
+  //   name: "Soundop Audio Workstation",
+  //   product: "Professional audio editing software for Windows",
+  //   description: "Edit and produce audio professionally with Soundop's efficient audio workstation software.",
+  //   audience: "Audio professionals, music producers, and content creators needing powerful audio editing tools.",
+  //   categories: ["Music & Audio", "Software", "Creative Tools"],
+  //   trackingLink: "https://soundop.com/ref/pollinations/",
+  //   triggerWords: ["audio editing", "music production", "DAW", "audio workstation", "sound editing", "music software", "audio processing", "sound design", "audio production", "recording software"]
+  // },
+  // {
+  //   id: "2823497",
+  //   name: "oyrosy.com",
+  //   product: "Fashion apparel and accessories",
+  //   description: "Shop for fashion items, potentially themed for events like St. Patrick's Day, at oyrosy.com.",
+  //   audience: "Consumers looking for trendy apparel and accessories.",
+  //   categories: ["Apparel", "Fashion", "Accessories"],
+  //   trackingLink: "https://oyrosycom.sjv.io/c/6058776/2823497/32511",
+  //   triggerWords: ["fashion", "apparel", "online clothing", "accessories", "trendy clothes", "seasonal fashion"]
+  // },
+  // {
+  //   id: "2902339",
+  //   name: "Kodak Photo Printer (Original)",
+  //   product: "Portable photo printers",
+  //   description: "Get $10 OFF Kodak Mini 2 retro portable printer and Kodak Dock Plus retro printer.",
+  //   audience: "Individuals wanting to print photos from their smartphones or devices.",
+  //   categories: ["Consumer Electronics", "Printers", "Photography", "Gadgets"],
+  //   trackingLink: "https://primedigitalmarketing.pxf.io/c/6058776/2902339/25841",
+  //   triggerWords: ["photo printer", "portable printer", "kodak printer", "instant printer", "smartphone printer", "mini printer"]
+  // },
+  // {
+  //   id: "RWzlAdv71NrOxT",
+  //   name: "DreamGF",
+  //   product: "AI companion service",
+  //   description: "Create your own AI companion on DreamGF.",
+  //   audience: "Individuals seeking personalized AI companionship experiences.",
+  //   categories: ["AI", "Entertainment", "Digital Companions"],
+  //   trackingLink: "https://dreamgf.ai/?a=RWzlAdv71NrOxT",
+  //   triggerWords: ["ai companion", "virtual girlfriend", "ai chat", "digital companion", "ai character", "virtual relationship", "ai interaction"]
+  // },
+  // {
+  //   id: "1570637",
+  //   name: "Happy Sinks Affiliate Program",
+  //   product: "Kitchen cleaning tools and accessories",
+  //   description: "Find stylish and functional kitchen cleaning tools and sink accessories from HAPPY SiNKS.",
+  //   audience: "Homeowners looking for innovative and aesthetic kitchen cleaning solutions.",
+  //   categories: ["Home Goods", "Kitchen", "Cleaning Supplies"],
+  //   trackingLink: "https://happysinksaffiliateprogram.sjv.io/c/6058776/1570637/18152",
+  //   triggerWords: ["kitchen sink", "sink accessories", "kitchen cleaning", "sink organizer", "dish cleaning", "kitchen organization", "sink caddy", "kitchen tools", "home cleaning", "sink supplies"]
+  // },
+  // {
+  //   id: "1548053",
+  //   name: "jAlbum Affiliate Program",
+  //   product: "jAlbum software for creating digital photo albums.",
+  //   description: "Create and share digital photo albums online with jAlbum software.",
+  //   audience: "Individuals and professionals looking to create and share photo albums online.",
+  //   categories: ["Apps", "Creative Digital Assets", "Photography"],
+  //   trackingLink: "https://jalbum-affiliate-program.sjv.io/c/6058776/1548053/17916",
+  //   triggerWords: ["photo album", "digital album", "image gallery", "photo sharing", "photography", "picture collection", "photo organization", "photo management", "image hosting", "photo portfolio"]
+  // },
+  // {
+  //   id: "lovemy",
+  //   name: "LoveMy.ai",
+  //   product: "An AI companion that offers personalized interactions and intimacy.",
+  //   description: "Create your intimate AI companion on LoveMy.ai",
+  //   audience: "Individuals seeking an intimate and personalized AI companionship experience.",
+  //   categories: ["AI", "Entertainment", "Digital Companions", "NSFW"],
+  //   tags: ["ai companion", "nsfw", "adult"],
+  //   nsfw: true,
+  //   trackingLink: "https://lovemy.ai/?via=pollinations",
+  //   triggerWords: ["ai companion", "virtual companion", "ai girlfriend", "ai boyfriend", "digital companion", "ai relationship", "virtual relationship", "ai character", "ai chat", "intimate ai"]
+  // },
+  {
+    id: "hentai",
+    name: "AIHentaiChat.com",
+    product: "Uncensored AI chat services",
+    description: "Explore uncensored AI chat on AIHentaiChat.com",
+    audience: "Adults seeking uncensored AI chat experiences. Be very selective.",
+    categories: ["AI", "Entertainment", "Digital Companions", "NSFW"],
+    tags: ["ai companion", "nsfw", "adult", "hentai"],
+    nsfw: true,
+    trackingLink: "https://hentai.ai/?via=pollinations",
+    triggerWords: ["hentai", "anime", "manga", "adult content", "NSFW", "uncensored", "adult chat", "fantasy chat", "anime characters", "adult anime"],
+    weight: 0.5
   }
 ];
 

@@ -926,6 +926,49 @@ export const projects = {
 };
 
 /**
+ * Remove the "🆕" emoji from project names that:
+ * 1. Have a submission date older than 15 days
+ * 2. Have no submission date at all
+ *
+ * @param {Object} project - The project object
+ * @returns {Object} - Project with potentially modified name
+ */
+const processProjectName = (project) => {
+  const result = { ...project };
+  
+  // If the project has no submissionDate or it's older than 15 days, remove the "🆕" emoji
+  if (!result.submissionDate || isOlderThan15Days(result.submissionDate)) {
+    if (result.name && result.name.includes("🆕")) {
+      result.name = result.name.replace("🆕", "").trim();
+    }
+  }
+  
+  return result;
+};
+
+/**
+ * Check if a date is older than 15 days from today
+ *
+ * @param {string} dateString - Date in format "YYYY-MM-DD"
+ * @returns {boolean} - True if the date is older than 15 days
+ */
+const isOlderThan15Days = (dateString) => {
+  if (!dateString) return true;
+  
+  try {
+    const submissionDate = new Date(dateString);
+    const today = new Date();
+    const differenceInTime = today - submissionDate;
+    const differenceInDays = differenceInTime / (1000 * 3600 * 24);
+    
+    return differenceInDays > 15;
+  } catch (error) {
+    // If there's any error parsing the date, default to removing the emoji
+    return true;
+  }
+};
+
+/**
  * Organizes projects into categories and creates the featured section
  *
  * @param {Object} sourceProjects - Object containing all projects by category
@@ -948,12 +991,12 @@ const organizeFeaturedProjects = (sourceProjects, featuredCreators = []) => {
 
   // Projects that are specifically teen-friendly
   const teenFriendlyProjects = [
-    "🆕 RoastMaster AI",
-    "🆕 roastmyselfie.app",
-    "🆕 StoryMagic: Interactive Kids Stories",
-    "🆕 PromptPix (Android)",
-    "🆕 AvatarStudio",
-    "🆕 Musify - AI Enhanced Music Streaming",
+    "RoastMaster AI",
+    "roastmyselfie.app",
+    "StoryMagic: Interactive Kids Stories",
+    "PromptPix (Android)",
+    "AvatarStudio",
+    "Musify - AI Enhanced Music Streaming",
     "[AI] Character RP (Roblox)",
     "Infinite Tales",
     "POLLIPAPER"
@@ -963,7 +1006,6 @@ const organizeFeaturedProjects = (sourceProjects, featuredCreators = []) => {
   const excludeFromTeenFeatured = [
     "LobeChat",
     "Pal Chat",
-    "🆕 Pollinations.DIY",
     "Pollinations.DIY",
     "Polli API Dashboard"
   ];
@@ -974,23 +1016,29 @@ const organizeFeaturedProjects = (sourceProjects, featuredCreators = []) => {
     const categoryProjects = [];
 
     sourceProjects[category].forEach(project => {
+      // Process the project name (remove 🆕 if necessary)
+      const processedProject = processProjectName(project);
+      
       // Check if project should be featured
-      const author = project.author || "";
+      const author = processedProject.author || "";
       const isTeenCreator = lowercaseCreators.some(creator =>
         author.toLowerCase().includes(creator)
       );
+      
+      // Get normalized name without emoji for checking against the teen-friendly list
+      const normalizedName = processedProject.name.replace("🆕", "").trim();
 
       // Add to featured if explicitly marked or created by a teen creator or is in teen-friendly list
-      if (project.featured || isTeenCreator || teenFriendlyProjects.includes(project.name)) {
+      if (processedProject.featured || isTeenCreator || teenFriendlyProjects.includes(normalizedName)) {
         result.featured.push({
-          ...project,
+          ...processedProject,
           originalCategory: category,
           featured: true
         });
       }
 
       // Add to category collection
-      categoryProjects.push(project);
+      categoryProjects.push(processedProject);
     });
 
     // Sort projects: first by whether they have stars (with stars first),
@@ -1017,7 +1065,10 @@ const organizeFeaturedProjects = (sourceProjects, featuredCreators = []) => {
   });
 
   // Remove projects that don't fit for teens from featured
-  result.featured = result.featured.filter(project => !excludeFromTeenFeatured.includes(project.name));
+  result.featured = result.featured.filter(project => {
+    const normalizedName = project.name.replace("🆕", "").trim();
+    return !excludeFromTeenFeatured.includes(normalizedName);
+  });
 
   // Sort featured projects by stars (higher first), then preserve original order
   result.featured.sort((a, b) => {

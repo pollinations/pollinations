@@ -10,7 +10,13 @@ When handling project submission issues:
    - pollinations.ai/src/config/projects.csv at the top of the file following the previous entries scheme
    - add a UTF8 icon higlighting them as new additions
 
-2. Project Entry Format:
+2. The "🆕" (NEW) emoji:
+   - Add this emoji to mark new project submissions
+   - The emoji will be automatically removed after 15 days from the submission date
+   - Projects without a submission date will not have the NEW emoji
+   - This helps keep the project list fresh and highlights the most recent additions
+
+3. Project Entry Format:
    ```javascript
    {
      name: "Project Name",
@@ -23,7 +29,7 @@ When handling project submission issues:
    }
    ```
 
-3. GitHub Star Counts:
+4. GitHub Star Counts:
    - For projects with GitHub repositories, add their star count as a `stars` property:
      ```javascript
      {
@@ -44,7 +50,7 @@ When handling project submission issues:
    - When possible, arrange projects with higher star counts higher in each category
    - The star count will be displayed on the project page next to the GitHub link
 
-4. Categories:
+5. Categories:
    - LLM Integrations
    - Creative & Interactive Applications
    - Tools & Interfaces
@@ -52,15 +58,15 @@ When handling project submission issues:
    - SDK & Libraries
    - Tutorials
 
-4. Add appropriate UTF-8 icons to titles where relevant (🤖 for bots, 🎨 for creative apps, etc.)
+6. Add appropriate UTF-8 icons to titles where relevant (🤖 for bots, 🎨 for creative apps, etc.)
 
-5. For projects in non-English languages:
+7. For projects in non-English languages:
    - Add a country flag emoji to the project name (e.g., 🇨🇳 for Chinese, 🇪🇸 for Spanish)
    - Include the "language" field in the project entry with the appropriate language code
    - Add an English translation of the description in parentheses when possible
    - This helps users easily identify and filter projects by language
 
-6. When creating a commit for project submissions, always add attribution to the issue creator using a Co-authored-by line in the commit message:
+8. When creating a commit for project submissions, always add attribution to the issue creator using a Co-authored-by line in the commit message:
    ```
    Add [Project Name] to project list
 

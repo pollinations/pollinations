@@ -133,7 +133,7 @@
       },
       {
         "id": "mistral",
-        "description": "Mistral Small 3 (supports text and image inputs)",
+        "description": "Mistral Small 3.1 24B (supports text and image inputs)",
         "provider": "Scaleway",
         "input_modalities": ["text", "image"],
         "output_modalities": ["text"],
@@ -142,7 +142,7 @@
       },
       {
         "id": "unity",
-        "description": "Unity Mistral Large (uncensored, supports text and image inputs)",
+        "description": "Unity Unrestricted Agent (Mistral Small 3.1) (uncensored, supports text and image inputs)",
         "provider": "Scaleway",
         "uncensored": true,
         "input_modalities": ["text", "image"],

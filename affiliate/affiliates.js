@@ -12,7 +12,8 @@ const affiliates = [
     categories: ["AI Tools", "Content Creation", "Business Tools"],
     blockedCountries: [],
     trackingLink: "https://draftalpha.com?referrer=pollinations",
-    triggerWords: ["ux writing", "brand voice", "copywriting", "ai writer", "content creation", "startup tools", "branding", "marketing copy", "user experience", "product content"]
+    triggerWords: ["ux writing", "brand voice", "copywriting", "ai writer", "content creation", "startup tools", "branding", "marketing copy", "user experience", "product content"],
+    weight: 1.5
   },
   {
     id: "1422856",

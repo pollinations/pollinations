@@ -97,7 +97,7 @@ const allProjects = {
     },
     {
       name: "🆕 🤖 DesmondBot",
-      url: "https://cities-tomato-strong-peoples.trycloudflare.com/",
+      url: "https://swedish-innocent-teeth-majority.trycloudflare.com",
       description: "A snarky bot based on Llama that is 100% free, powered by the Pollinations text API and OpenWebUI. Other models are available as well.",
       author: "@mcgdj",
       submissionDate: "2025-04-18",

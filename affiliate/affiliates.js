@@ -4,6 +4,18 @@
 // Define affiliates as a structured JSON object with all necessary data
 const affiliates = [
   {
+    id: "draftalpha",
+    name: "Draft Alpha",
+    product: "AI powered UX Writer",
+    description: "Draft Alpha helps early stage products create and apply an enterprise grade brand voice effortlessly",
+    audience: "startups",
+    categories: ["AI Tools", "Content Creation", "Business Tools"],
+    blockedCountries: [],
+    trackingLink: "https://draftalpha.com?referrer=pollinations",
+    triggerWords: ["ux writing", "brand voice", "copywriting", "ai writer", "content creation", "startup tools", "branding", "marketing copy", "user experience", "product content"],
+    weight: 1.5
+  },
+  {
     id: "1422856",
     name: "Martinic Audio",
     product: "Martinic Kee Bass VST/AU plugin",

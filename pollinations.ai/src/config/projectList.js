@@ -222,6 +222,13 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 NailsGen",
+      url: "https://www.nailsgen.com/",
+      description: "Create beautiful nail art designs with AI. Generate unique nail art designs with different styles and colors.",
+      author: "lipengliang2012@163.com",
+      submissionDate: "2025-04-30"
+    },
+    {
       name: "🆕 ImageGen AI Image",
       url: "https://imagegen.narendradwivedi.org",
       description: "A web application that utilizes Pollinations.AI API to generate images based on user-defined descriptions, with features like prompt enhancement, customizable image settings, and image download.",

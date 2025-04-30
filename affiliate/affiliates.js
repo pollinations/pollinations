@@ -11,7 +11,7 @@ const affiliates = [
     audience: "startups",
     categories: ["AI Tools", "Content Creation", "Business Tools"],
     blockedCountries: [],
-    trackingLink: "https://draftalpha.com",
+    trackingLink: "https://draftalpha.com?referrer=pollinations",
     triggerWords: ["ux writing", "brand voice", "copywriting", "ai writer", "content creation", "startup tools", "branding", "marketing copy", "user experience", "product content"]
   },
   {

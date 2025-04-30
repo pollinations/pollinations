@@ -38,7 +38,7 @@
   {
     "id": "draftalpha",
     "type": "TEXT_LINK",
-    "trackingLink": "https://draftalpha.com",
+    "trackingLink": "https://draftalpha.com?referrer=pollinations",
     "landingPageUrl": "https://draftalpha.com",
     "advertiserName": "Draft Alpha",
     "mobileReady": "true",

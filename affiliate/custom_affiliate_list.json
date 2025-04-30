@@ -34,5 +34,17 @@
     "description": "Support Pollinations AI with a donation on Ko-fi",
     "topSeller": "false",
     "labels": "donation,support"
+  },
+  {
+    "id": "draftalpha",
+    "type": "TEXT_LINK",
+    "trackingLink": "https://draftalpha.com",
+    "landingPageUrl": "https://draftalpha.com",
+    "advertiserName": "Draft Alpha",
+    "mobileReady": "true",
+    "language": "ENGLISH",
+    "description": "Draft Alpha helps early stage products create and apply an enterprise grade brand voice effortlessly",
+    "topSeller": "false",
+    "labels": "ai,ux,writer,brand voice,startups"
   }
 ]

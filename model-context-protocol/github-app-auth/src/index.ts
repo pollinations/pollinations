@@ -27,16 +27,64 @@ interface GitHubUserResponse {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const startTime = Date.now();
     const url = new URL(request.url);
     const path = url.pathname;
+    const method = request.method;
+    
+    console.log(`[${new Date().toISOString()}] ${method} ${path} - Request received`);
+    
+    // Add request ID for tracing
+    const requestId = crypto.randomUUID();
+    console.log(`Request ID: ${requestId}`);
+    
+    // Log request headers for debugging
+    const headers: Record<string, string> = {};
+    request.headers.forEach((value, key) => {
+      headers[key] = value;
+    });
+    console.log(`Request headers: ${JSON.stringify(headers)}`);
+    
+    // Function to log response before returning
+    const logAndReturnResponse = (response: Response, context: string = '') => {
+      const duration = Date.now() - startTime;
+      console.log(`[${new Date().toISOString()}] ${method} ${path} - Response sent (${response.status}) in ${duration}ms ${context}`);
+      return response;
+    };
 
     // Simple router
     try {
-      // Health check
+      // Health check with detailed information
       if (path === '/health') {
-        return new Response(JSON.stringify({ status: 'ok' }), {
-          headers: { 'Content-Type': 'application/json' }
+        console.log('Health check requested');
+        
+        // Check D1 database connection
+        let dbStatus = 'unknown';
+        try {
+          // Simple query to check if DB is accessible
+          const result = await env.DB.prepare('SELECT 1 as test').first();
+          dbStatus = result && result.test === 1 ? 'connected' : 'error';
+          console.log('Database health check:', dbStatus);
+        } catch (error) {
+          console.error('Database health check error:', error);
+          dbStatus = 'error';
+        }
+        
+        const response = new Response(JSON.stringify({ 
+          status: 'ok', 
+          timestamp: new Date().toISOString(),
+          requestId,
+          environment: {
+            database: dbStatus
+          }
+        }), {
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Request-ID': requestId
+          }
         });
+        
+        return logAndReturnResponse(response, 'Health check');
       }
       
       // Auth start endpoint
@@ -57,12 +105,20 @@ export default {
           .bind(sessionId, state, 'pending')
           .run();
           
-          return new Response(JSON.stringify({
+          console.log(`Auth session created: ${sessionId}`);
+          
+          const response = new Response(JSON.stringify({
             sessionId,
-            authUrl
+            authUrl,
+            requestId
           }), {
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 
+              'Content-Type': 'application/json',
+              'X-Request-ID': requestId
+            }
           });
+          
+          return logAndReturnResponse(response, 'Auth start');
         } catch (error) {
           const dbError = error as Error;
           console.error('Database error:', dbError);
@@ -87,7 +143,7 @@ export default {
         try {
           // Check session status in D1
           const session = await env.DB.prepare(
-            `SELECT status, user_id FROM auth_sessions WHERE session_id = ?`
+            `SELECT status, github_user_id FROM auth_sessions WHERE session_id = ?`
           )
           .bind(sessionId)
           .first();
@@ -100,11 +156,11 @@ export default {
           }
           
           // If session is completed, get user info
-          if (session.status === 'completed' && session.user_id) {
+          if (session.status === 'completed' && session.github_user_id) {
             const user = await env.DB.prepare(
-              `SELECT github_id, github_login, access_token FROM users WHERE github_id = ?`
+              `SELECT github_user_id, username, access_token FROM users WHERE github_user_id = ?`
             )
-            .bind(session.user_id)
+            .bind(session.github_user_id)
             .first();
             
             if (!user) {
@@ -117,8 +173,8 @@ export default {
             return new Response(JSON.stringify({
               status: 'completed',
               user: {
-                id: String(user.github_id).replace('.0', ''),
-                login: user.github_login
+                id: String(user.github_user_id).replace('.0', ''),
+                login: user.username
               }
             }), {
               headers: { 'Content-Type': 'application/json' }
@@ -214,14 +270,14 @@ export default {
           
           // Store user in database
           await env.DB.prepare(
-            `INSERT OR REPLACE INTO users (github_id, github_login, access_token) VALUES (?, ?, ?)`
+            `INSERT OR REPLACE INTO users (github_user_id, username, access_token) VALUES (?, ?, ?)`
           )
           .bind(String(userData.id), userData.login, accessToken)
           .run();
           
           // Update session status
           await env.DB.prepare(
-            `UPDATE auth_sessions SET status = ?, user_id = ? WHERE session_id = ?`
+            `UPDATE auth_sessions SET status = ?, github_user_id = ? WHERE session_id = ?`
           )
           .bind('completed', String(userData.id), session.session_id)
           .run();
@@ -259,14 +315,37 @@ export default {
       }
       
       // Default 404 response
-      return new Response('Not found', { status: 404 });
+      console.log(`No route matched for ${method} ${path}`);
+      const notFoundResponse = new Response(JSON.stringify({ 
+        error: 'Not found',
+        path,
+        requestId
+      }), { 
+        status: 404,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-ID': requestId
+        }
+      });
+      
+      return logAndReturnResponse(notFoundResponse, 'Route not found');
     } catch (error) {
       const serverError = error as Error;
       console.error('Unhandled error:', serverError);
-      return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      
+      const errorResponse = new Response(JSON.stringify({ 
+        error: 'Internal server error',
+        requestId,
+        message: serverError.message
+      }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Request-ID': requestId
+        }
       });
+      
+      return logAndReturnResponse(errorResponse, `Unhandled error: ${serverError.message}`);
     }
   }
 };

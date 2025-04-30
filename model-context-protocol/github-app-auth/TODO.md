@@ -10,15 +10,19 @@ The current implementation provides a basic GitHub OAuth flow with the following
 
 - `GET /auth/start` - Initiates the OAuth flow and returns a session ID and GitHub authorization URL
 - `GET /auth/callback` - Handles the OAuth callback, exchanges the code for a token, and stores user data
-- `GET /auth/status/:sessionId` - Allows the chatbot to poll for authentication status
+- `GET /auth/status/:sessionId` - Allows the client to poll for authentication status
 
 ### Key Files
 
 - `src/index.ts` - Main Worker entry point with routing and request handling
+- `src/db.ts` - Database operations for users and auth sessions
+- `src/handlers.ts` - API handlers for authentication endpoints
+- `src/types.ts` - TypeScript interfaces for the application
 - `schema.sql` - D1 database schema for users and auth sessions
 - `.dev.vars` - Local environment variables (not committed to git)
 - `wrangler.toml` - Cloudflare Worker configuration
-- `tsconfig.json` - TypeScript configuration
+- `tests/oauth-flow-test.ts` - End-to-end test for the OAuth flow
+- `tests/github-app.test.ts` - Integration tests for GitHub App functionality
 
 ### Design Principles
 
@@ -92,16 +96,26 @@ if (path === '/domains') {
 }
 ```
 
-### 3. Server-Sent Events (SSE)
+### 3. Real-time Status Updates
 
-Implement SSE for real-time status updates instead of polling:
+Consider options for real-time status updates:
 
-- [ ] Add an SSE endpoint (`GET /auth/events/:sessionId`)
-- [ ] Implement event emission when authentication status changes
-- [ ] Update client-side code to use SSE instead of polling
+#### Option A: Polling (Current Implementation)
+- ✅ Simple to implement and maintain
+- ✅ Aligns with "thin proxy" design principle
+- ✅ Works with all clients without special handling
+- ❌ Less efficient for real-time updates
+
+#### Option B: Server-Sent Events (SSE)
+- ✅ More efficient for real-time updates
+- ✅ One-way communication from server to client
+- ❌ Adds complexity to the server implementation
+- ❌ May require special handling for some clients
+
+If implementing SSE, the endpoint would look like:
 
 ```typescript
-// Example SSE endpoint (to be implemented)
+// Example SSE endpoint (potential implementation)
 if (path.startsWith('/auth/events/')) {
   const sessionId = path.split('/').pop();
   
@@ -151,8 +165,8 @@ Improve security of the authentication system:
 
 Improve testing and documentation:
 
-- [ ] Add unit tests for authentication logic
-- [ ] Add integration tests for the complete authentication flow
+- [x] Add integration tests for the complete authentication flow
+- [x] Add end-to-end tests for the OAuth flow
 - [ ] Create comprehensive API documentation
 - [ ] Add usage examples for client applications
 
@@ -208,12 +222,19 @@ To run the worker locally:
    REDIRECT_URI=http://localhost:8787/auth/callback
    ```
 
-2. Start the worker:
+2. Initialize the database:
    ```bash
-   npx wrangler dev --local
+   npm run db:init
    ```
 
-3. Test the authentication flow:
-   - Visit `http://localhost:8787/auth/start` to initiate the flow
-   - Complete the GitHub authorization
-   - Check the status at `http://localhost:8787/auth/status/:sessionId`
+3. Start the worker:
+   ```bash
+   npm run dev
+   ```
+
+4. Test the authentication flow:
+   - Run the OAuth flow test: `npm run test:oauth`
+   - Or manually:
+     - Visit `http://localhost:8787/auth/start` to initiate the flow
+     - Complete the GitHub authorization
+     - Check the status at `http://localhost:8787/auth/status/:sessionId`

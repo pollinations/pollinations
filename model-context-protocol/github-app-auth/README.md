@@ -1,6 +1,6 @@
 # GitHub Authentication System
 
-A minimal GitHub OAuth and App authentication system for Pollinations MCP, built with Cloudflare Workers and D1.
+A minimal GitHub OAuth and App authentication system for Pollinations MCP, built with Cloudflare Workers and D1, following the "thin proxy" design principle.
 
 ## Key Features
 
@@ -9,31 +9,27 @@ A minimal GitHub OAuth and App authentication system for Pollinations MCP, built
 - **GitHub App Integration**: Higher rate limits via GitHub App installation tokens
 - **Domain Whitelisting**: Security control for token usage
 - **D1 Database**: Serverless storage for user data and tokens
-- **Token Refresh**: Automatic refresh for expired tokens
 
 ## Architecture
+
+The system follows a simple architecture with minimal processing:
 
 ```mermaid
 graph TD
     Client[Client] -->|Request auth| Auth[Auth Flow]
     Auth -->|Store data| DB[(Database)]
     Client -->|Use token| GitHub[GitHub API]
-    
-    subgraph "Auth Types"
-        OAuth[OAuth Flow]
-        App[GitHub App]
-    end
 ```
 
 ## Authentication Flows
 
 ### OAuth Flow
 
-- Client requests authentication via `/auth/start` endpoint
-- Server creates session and returns GitHub authorization URL
-- User authenticates on GitHub and is redirected to callback
-- Server exchanges code for token and stores user data
-- Client polls `/auth/status/:sessionId` for completion
+1. Client requests authentication via `/auth/start` endpoint
+2. Server creates session and returns GitHub authorization URL
+3. User authenticates on GitHub and is redirected to callback
+4. Server exchanges code for token and stores user data
+5. Client polls `/auth/status/:sessionId` for completion
 
 ```mermaid
 sequenceDiagram
@@ -41,51 +37,6 @@ sequenceDiagram
     Worker->GitHub: Redirect to GitHub
     GitHub->Worker: Code
     Worker->Client: Success
-```
-
-### GitHub App Flow
-
-- User links GitHub App installation to their account
-- Server generates JWT for GitHub App authentication
-- Server exchanges JWT for installation token
-- Token is stored and refreshed automatically when expired
-
-```mermaid
-sequenceDiagram
-    Client->Worker: Link installation
-    Worker->GitHub: Get token
-    Worker->DB: Store token
-```
-
-## Data Flow
-
-### OAuth Flow Data
-
-```
-1. /auth/start → { sessionId, authUrl }
-2. GitHub callback → code, state
-3. /auth/callback → HTML success page
-4. /auth/status/:sessionId → { status, userId }
-```
-
-### GitHub App Flow Data
-
-```
-1. /app/link (POST) → { userId, installationId }
-2. JWT creation → { iat, exp, iss }
-3. Installation token → { token, expiresAt }
-4. /token/:userId → { token, expiresAt }
-```
-
-### Token Usage
-
-```
-GET /token/:userId?domain=example.com
-↓
-{
-  "token": "ghs_xxxxxxxxxxxx",
-  "expiresAt": "2023-04-30T12:00:00Z"
-}
 ```
 
 ## API Endpoints
@@ -97,26 +48,139 @@ GET /token/:userId?domain=example.com
 | `/auth/status/:sessionId` | GET | Authentication status |
 | `/app/link` | POST | Links GitHub App installation |
 | `/token/:userId` | GET | Returns valid GitHub token |
-| `/domains` | GET/POST/DELETE | Manages domain whitelist |
+| `/health` | GET | Health check endpoint |
 
 ## Database Schema
 
+The database schema is defined in `schema.sql` and includes:
+
 ### Users Table
-- GitHub user ID and login
-- OAuth access token
-- GitHub App installation ID and token
-- Token expiration timestamp
-- Domain whitelist for security
+```sql
+CREATE TABLE IF NOT EXISTS users (
+  github_user_id TEXT PRIMARY KEY,
+  username TEXT NOT NULL,
+  access_token TEXT,
+  installation_id TEXT,
+  installation_token TEXT,
+  token_expires_at TEXT
+);
+```
 
 ### Auth Sessions Table
-- Session ID for tracking OAuth flow
-- State parameter for CSRF protection
-- Status tracking (pending/complete/error)
+```sql
+CREATE TABLE IF NOT EXISTS auth_sessions (
+  id TEXT PRIMARY KEY,
+  state TEXT NOT NULL,
+  status TEXT NOT NULL,
+  github_user_id TEXT,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (github_user_id) REFERENCES users(github_user_id)
+);
+```
 
-## Implementation Notes
+## Development
 
-- JWT signing uses jose library for GitHub App authentication
-- Token refresh happens automatically when tokens expire
-- Domain verification ensures tokens are only used from approved domains
-- Error handling follows the thin proxy principle with minimal transformation
-- Built with Cloudflare Workers for serverless operation
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn
+- Wrangler CLI (`npm install -g wrangler`)
+- GitHub OAuth App credentials
+
+### Setup
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create a `.dev.vars` file with your GitHub OAuth credentials:
+   ```
+   GITHUB_CLIENT_ID=your_client_id
+   GITHUB_CLIENT_SECRET=your_client_secret
+   REDIRECT_URI=http://localhost:8787/auth/callback
+   ```
+4. Initialize the D1 database:
+   ```bash
+   npm run db:init
+   ```
+
+### Running Locally
+
+Start the development server:
+```bash
+npm run dev
+```
+
+The server will be available at http://localhost:8787.
+
+### Testing
+
+The project includes several types of tests:
+
+1. Run all tests:
+   ```bash
+   npm test
+   ```
+
+2. Run OAuth flow test (requires manual interaction):
+   ```bash
+   npm run test:oauth
+   ```
+
+3. Run integration tests:
+   ```bash
+   npm run test:integration
+   ```
+
+## Deployment
+
+1. Set up the required secrets in the Cloudflare dashboard:
+   - `GITHUB_CLIENT_ID`
+   - `GITHUB_CLIENT_SECRET`
+   - `REDIRECT_URI`
+
+2. Deploy the worker:
+   ```bash
+   npm run deploy
+   ```
+
+3. Create the D1 database in production:
+   ```bash
+   npx wrangler d1 create github_auth --production
+   npx wrangler d1 execute github_auth --file=schema.sql --production
+   ```
+
+## Design Principles
+
+This project follows the "thin proxy" design principle:
+
+1. **Minimal Data Transformation**: Pass through data with minimal changes
+2. **Direct Response Handling**: Avoid unnecessary processing of responses
+3. **Simple Error Handling**: Keep error handling straightforward
+4. **No Unnecessary Metadata**: Don't add extra metadata to normalize APIs
+5. **Keep It Simple**: Avoid complex logic when simple solutions work
+
+## Project Structure
+
+```
+github-app-auth/
+├── src/                  # Source code
+│   ├── index.ts          # Main entry point
+│   ├── db.ts             # Database operations
+│   ├── handlers.ts       # API handlers
+│   ├── github.ts         # GitHub API interactions
+│   ├── githubApp.ts      # GitHub App functionality
+│   └── types.ts          # TypeScript types
+├── tests/                # Test files
+│   ├── github-app.test.ts # Integration tests
+│   ├── oauth-flow-test.ts # OAuth flow test
+│   └── vitest.config.ts   # Test configuration
+├── schema.sql            # Database schema
+├── wrangler.toml         # Cloudflare configuration
+└── package.json          # Dependencies and scripts
+```
+
+## License
+
+ISC

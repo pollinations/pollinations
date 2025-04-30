@@ -4,6 +4,7 @@
 
 # Cloudflare Wrangler local development files
 .wrangler/
+.wrangler-data/
 
 # SQLite database files
 *.sqlite
@@ -15,3 +16,10 @@ node_modules/
 
 # Build output
 dist/
+
+# Logs
+logs/
+*.log
+
+# Temporary test files
+tests/temp-*.ts

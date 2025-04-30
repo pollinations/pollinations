@@ -483,7 +483,7 @@
       },
       {
         "id": "mistral",
-        "name": "Mistral Small 3",
+        "name": "Mistral Small 3.1 24B",
         "description": "Mistral's small model with vision capabilities",
         "provider": "Scaleway",
         "input_modalities": ["text", "image"],
@@ -492,7 +492,7 @@
       },
       {
         "id": "unity",
-        "name": "Unity Mistral Large",
+        "name": "Unity Unrestricted Agent (Mistral Small 3.1)",
         "description": "Uncensored Mistral model with vision capabilities",
         "provider": "Scaleway",
         "uncensored": true,

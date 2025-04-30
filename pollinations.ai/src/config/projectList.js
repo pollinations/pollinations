@@ -83,6 +83,15 @@ const allProjects = {
   ],
   llmIntegrations: [
     {
+      name: "🆕 imggen.top 🇨🇳",
+      url: "https://www.imggen.top/",
+      description: "Create stunning AI-generated images in seconds with our free AI image generator. No login required, unlimited generations, powered by FLUX model.",
+      author: "lipengliang2012@163.com",
+      submissionDate: "2025-04-30",
+      language: "zh-CN",
+      order: 4,
+    },
+    {
       name: "🆕 Aura Chat bot",
       description: "A chat bot integrating Pollinations API for text and image generation.",
       author: "@Py-Phoenix-PJS",

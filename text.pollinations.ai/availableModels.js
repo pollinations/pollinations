@@ -2,6 +2,7 @@
 import { generateTextSearch } from "./generateTextSearch.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { generateTextMistral } from "./generateTextMistral.js";
+import { createOpenAIReasoningWrapper } from "./systemPromptProtection.js";
 
 // Import wrapped models from the new file
 import {
@@ -12,6 +13,9 @@ import {
   rtist,
   evilCommandR as evilMistral,
 } from "./wrappedModels.js";
+
+// Create a protected version of the openai-reasoning handler
+const protectedOpenAIReasoning = createOpenAIReasoningWrapper(generateTextPortkey);
 
 // Removed handlers object – call handler functions directly in model definitions
 
@@ -37,7 +41,7 @@ const models = [
   {
     name: "openai-reasoning",
     description: "OpenAI o4-mini",
-    handler: generateTextPortkey,
+    handler: protectedOpenAIReasoning,
     //    details: "Specialized for advanced reasoning and complex multi-step problem solving.",
     reasoning: true,
     provider: "Azure",

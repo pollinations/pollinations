@@ -208,6 +208,7 @@ Pollinations.AI is used in various projects, including:
 
 | Project | Description | Creator | Links |
 |---------|-------------|---------|-------|
+| 🆕 imggen.top 🇨🇳 | Create stunning AI-generated images in seconds with our free AI image generator. No login required, unlimited generations, powered by FLUX model. | lipengliang2012@163.com | [Website](https://www.imggen.top/) |
 | 🆕 Aura Chat bot | A chat bot integrating Pollinations API for text and image generation | @Py-Phoenix-PJS | [Email](mailto:itznarutotamilan007@gmail.com) |
 | 🆕 FoodAnaly | An AI application for food analysis that uses advanced artificial intelligence technology to help users understand food ingredients, nutritional value, and health impacts. | liukang0120@163.com | [Website](https://foodanaly.vercel.app/) |
 | 🆕 OkeyAI | An LLM created by Africans to understand and have cultural awareness of African contexts and languages, OkeyAI outperforms many LLM models based on size and intelligence, OkeyMeta uses pollination image generating API to train it's LLM (OkeyAI) on images in real time. | @okeymeta | [Website](https://chat.okeymeta.com.ng), [GitHub](https://github.com/okeymeta) |

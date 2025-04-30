@@ -74,7 +74,7 @@ const models = [
   },
   {
     name: "mistral",
-    description: "Mistral Small 3",
+    description: "Mistral Small 3.1 24B",
     handler: generateTextPortkey,
     //    details:  "Efficient language generation focused on speed and clarity.",
     provider: "Cloudflare",
@@ -83,7 +83,7 @@ const models = [
   },
   {
     name: "unity",
-    description: "Unity Mistral Large",
+    description: "Unity Unrestricted Agent (Mistral Small 3.1)",
     handler: unityMistralLarge,
     //    details:  "Uncensored.",
     provider: "Scaleway",

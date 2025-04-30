@@ -258,6 +258,14 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 🎨 WebGeniusAI",
+      url: "https://logise.neocities.org/webgeniusai",
+      description: "AI tool that generates HTML websites with visuals from Pollinations.",
+      author: "@logise",
+      submissionDate: "2025-04-30",
+      order: 1
+    },
+    {
       name: "🆕 NailsGen",
       url: "https://www.nailsgen.com/",
       description: "Create beautiful nail art designs with AI. Generate unique nail art designs with different styles and colors.",

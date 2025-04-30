@@ -294,6 +294,23 @@ const models = [
     input_modalities: ["text", "image", "audio"],
     output_modalities: ["audio", "text"],
   },
+  {
+    name: "openai-reasoning-large",
+    description: "OpenAI o3",
+    handler: generateTextPortkey,
+    reasoning: true,
+    provider: "Azure",
+    input_modalities: ["text", "image"],
+    output_modalities: ["text"],
+  },
+  {
+    name: "claude-large",
+    description: "Claude 3.7 Sonnet",
+    handler: generateTextPortkey,
+    provider: "Anthropic",
+    input_modalities: ["text", "image"],
+    output_modalities: ["text"],
+  },
 ];
 
 // Now export the processed models with proper functional approach

@@ -1,4 +1,5 @@
 category,name,url,description,author,submissionDate,repo,featured,language,authorUrl
+creativeApps,🆕 NailsGen,https://www.nailsgen.com/,"Create beautiful nail art designs with AI. Generate unique nail art designs with different styles and colors.",lipengliang2012@163.com,2025-04-30,,,,
 toolsInterfaces,🆕 Echo AI,https://3ch0ai.github.io/EchoAI,"An HTML-based chat interface that leverages Pollinations AI as its core engine for both text and image generation, featuring user authentication, streaming responses, and plan management.",@3ch0AI,2025-04-28,https://github.com/3ch0AI/EchoAI,,,
 toolsInterfaces,🆕 Pollinations.ai Enhancer,https://greasyfork.org/en/scripts/534183-pollinations-ai-enhancer,"Enhances the user experience on pollinations.ai pages by improving content readability, adding convenient download options, and providing easy access to generation metadata.",@fisven,2025-04-27,https://github.com/fisventurous/pollinationsai-enhancer,,,
 llmIntegrations,🆕 Aura Chat bot,,"A chat bot integrating Pollinations API for text and image generation.",@Py-Phoenix-PJS,2025-04-26,,,,

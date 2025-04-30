@@ -238,6 +238,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 WebGeniusAI | AI tool that generates HTML websites with visuals from Pollinations. | @logise | [Website](https://logise.neocities.org/webgeniusai) |
 | 🆕 NailsGen | Create beautiful nail art designs with AI. Generate unique nail art designs with different styles and colors. | lipengliang2012@163.com | [Website](https://www.nailsgen.com/) |
 | 🆕 ImageGen AI Image | A web application that utilizes Pollinations.AI API to generate images based on user-defined descriptions, with features like prompt enhancement, customizable image settings, and image download. | @narendradwivedi | [Website](https://imagegen.narendradwivedi.org), [LinkedIn](https://www.linkedin.com/in/narendradwivedi) |
 | 🆕 RuangRiung AI Image 🇮🇩 | RuangRiung AI Image Generator ideal untuk seniman digital, desainer, atau siapa pun yang ingin mengeksplorasi kreativitas dengan bantuan AI. Tersedia dalam bahasa Inggris dan Indonesia, website ini menggabungkan fungsionalitas lengkap dengan desain yang elegan dan responsif. (RuangRiung AI Image Generator is ideal for digital artists, designers, or anyone who wants to explore creativity with AI assistance. Available in English and Indonesian, this website combines complete functionality with an elegant and responsive design.) | @ruangriung | [Website](https://ruangriung.my.id), [GitHub](https://github.com/ruangriung) |

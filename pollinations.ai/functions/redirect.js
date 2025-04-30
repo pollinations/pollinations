@@ -4,8 +4,8 @@ import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Import redirect mapping from the consolidated affiliates.js file
-import { redirectMapping } from '../../affiliate/affiliates.js';
+// Import redirect mapping and affiliate data from the consolidated affiliates.js file
+import { redirectMapping, affiliatesData } from '../../affiliate/affiliates.js';
 
 // Use the redirectMapping directly as it's already in the correct format
 const REFERRAL_LINKS = redirectMapping;
@@ -38,6 +38,15 @@ async function sendAnalytics(eventName, metadata, request) {
                     headers['x-forwarded-for'] || 
                     headers['client-ip'] || 
                     '::1';
+    // Extract country code from headers
+    const userCountry = headers['cf-ipcountry'] || 
+                        headers['x-geo-country'] || 
+                        'unknown';
+
+    // Find affiliate name
+    const affiliateId = metadata.referralId || '';
+    const affiliate = affiliatesData.find(a => a.id === affiliateId);
+    const affiliateName = affiliate ? affiliate.name : 'unknown';
 
     // Prepare analytics payload - following GA4 requirements
     const payload = {
@@ -49,13 +58,14 @@ async function sendAnalytics(eventName, metadata, request) {
           referral_id: metadata.referralId || '',
           target_url: metadata.targetUrl || '',
           source: metadata.source || '',
-          // Add user info
           referrer: referrer || '',
           user_agent: userAgent.substring(0, 100) || '',
-          // Add timestamp as a standard parameter
-          engagement_time_msec: 1,
           timestamp: Date.now().toString(),
-          debug_mode: 1
+          debug_mode: 1,
+          engagement_time_msec: 1, // Standard for server-side events
+          affiliate_id: affiliateId,
+          affiliate_name: affiliateName,
+          country: userCountry,
         }
       }]
     };

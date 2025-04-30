@@ -444,6 +444,19 @@ export const generateTextPortkey = createOpenAICompatibleClient({
     // Transform request to add Azure-specific headers based on the model
     transformRequest: async (requestBody) => {
         try {
+            // Support for models in the format 'or:X' (OpenRouter custom models)
+            if (typeof requestBody.model === 'string' && requestBody.model.startsWith('or:')) {
+                const openRouterModelId = requestBody.model.slice(3); // Remove 'or:'
+                requestBody.model = openRouterModelId;
+                // Dynamically add config for this OpenRouter model if not present
+                if (!portkeyConfig[openRouterModelId]) {
+                    portkeyConfig[openRouterModelId] = () => createOpenRouterModelConfig({
+                        'http-referer': 'https://pollinations.ai',
+                        'x-title': 'Pollinations.AI'
+                    });
+                }
+            }
+
             // Get the model name from the request (already mapped by genericOpenAIClient)
             const modelName = requestBody.model; // This is already mapped by genericOpenAIClient
 

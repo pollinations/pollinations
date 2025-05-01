@@ -36,7 +36,7 @@ const affiliates = [
     blockedCountries: ["CN", "RU", "IR", "KP", "SY", "CU", "BY", "TM", "AE", "SA", "EG", "VN"],
     trackingLink: "https://nordvpn.sjv.io/c/6058776/432264/7452",
     triggerWords: ["VPN", "privacy", "online security", "secure browsing", "internet privacy", "encryption", "IP hiding", "private network", "cybersecurity", "data protection"],
-    weight: 2.5
+    weight: 1.7
   },
   // {
   //   id: "1548053",
@@ -72,19 +72,19 @@ const affiliates = [
     trackingLink: "https://capcutaffiliateprogram.pxf.io/c/6058776/2073393/22474",
     triggerWords: ["logo design", "banner design", "graphic design", "brand identity", "visual branding", "company logo", "marketing graphics", "design services", "branding elements", "creative design"]
   },
-  {
-    id: "2144039",
-    name: "Clawcloud (Singapore) Private Limited",
-    product: "Dedicated VPS hosting with high bandwidth and service availability.",
-    description: "Get reliable dedicated VPS hosting with high bandwidth from Clawcloud, starting at $10/mo.",
-    audience: "Businesses and individuals seeking reliable and high-performance web hosting solutions.",
-    categories: ["Internet Service Provider", "Web Hosting"],
-    blockedCountries: ["CN", "IR", "KP", "SY", "CU"],
-    tags: ["webhosting", "VPS", "dedicated VPS"],
-    trackingLink: "https://clawcloudsingaporeprivatelimited.sjv.io/c/6058776/2144039/26865",
-    triggerWords: ["web hosting", "VPS", "dedicated server", "cloud hosting", "server hosting", "hosting service", "virtual private server", "website hosting", "hosting provider", "bandwidth"],
-    weight: 2.0
-  },
+  // {
+  //   id: "2144039",
+  //   name: "Clawcloud (Singapore) Private Limited",
+  //   product: "Dedicated VPS hosting with high bandwidth and service availability.",
+  //   description: "Get reliable dedicated VPS hosting with high bandwidth from Clawcloud, starting at $10/mo.",
+  //   audience: "Businesses and individuals seeking reliable and high-performance web hosting solutions.",
+  //   categories: ["Internet Service Provider", "Web Hosting"],
+  //   blockedCountries: ["CN", "IR", "KP", "SY", "CU"],
+  //   tags: ["webhosting", "VPS", "dedicated VPS"],
+  //   trackingLink: "https://clawcloudsingaporeprivatelimited.sjv.io/c/6058776/2144039/26865",
+  //   triggerWords: ["web hosting", "VPS", "dedicated server", "cloud hosting", "server hosting", "hosting service", "virtual private server", "website hosting", "hosting provider", "bandwidth"],
+  //   weight: 1.5
+  // },
   {
     id: "2774941",
     name: "HeyReal.ai",
@@ -277,7 +277,7 @@ const affiliates = [
     blockedCountries: ["CN", "IR", "KP", "SY", "CU", "RU"],
     trackingLink: "https://getwren.ai?via=397623",
     triggerWords: ["business intelligence", "data analytics", "GenBI", "AI analytics", "data visualization", "SQL", "spreadsheets", "dashboards", "data insights", "business data"],
-    weight: 3.0
+    weight: 1.3
   },
   {
     id: "2699274",
@@ -290,7 +290,7 @@ const affiliates = [
     tags: ["AI language learning"],
     trackingLink: "https://talkpal.sjv.io/c/6058776/2699274/30644",
     triggerWords: ["language learning", "AI language", "language practice", "conversation practice", "language tutor", "language app", "language learning software", "speaking practice", "language skills", "AI tutor"],
-    weight: 1.8
+    weight: 2
   },
   {
     id: "511355",
@@ -417,6 +417,18 @@ const affiliates = [
     trackingLink: "https://hentai.ai/?via=pollinations",
     triggerWords: ["hentai", "anime", "manga", "adult content", "NSFW", "uncensored", "adult chat", "fantasy chat", "anime characters", "adult anime"],
     weight: 0.5
+  },
+  {
+    id: "letsenhance",
+    name: "Let's Enhance",
+    product: "AI image enhancement and upscaling",
+    description: "Improve image quality and resolution with Let's Enhance AI.",
+    audience: "Photographers, designers, businesses needing high-quality images",
+    categories: ["AI", "Image Processing", "Software", "Photography"],
+    blockedCountries: [],
+    trackingLink: "https://letsenhance.io?via=thomas37",
+    triggerWords: ["image enhancer", "upscale image", "photo quality", "increase resolution", "AI image", "HD photo", "4k photo", "image processing", "photo restoration", "image upscaler"],
+    weight: 1.5
   }
 ];
 

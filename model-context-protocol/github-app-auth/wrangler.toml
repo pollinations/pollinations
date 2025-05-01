@@ -18,6 +18,11 @@ REDIRECT_URI = "https://auth.pollinations.ai/auth/callback"
 [env.dev]
 vars = { GITHUB_CLIENT_ID = "Ov23li0fJetQ56U2JKsF", REDIRECT_URI = "http://localhost:8787/auth/callback" }
 
+# Custom Domain configuration
+[[routes]]
+pattern = "auth.pollinations.ai"
+custom_domain = true
+
 # Use secrets for sensitive information
 # To set secrets locally: wrangler secret put GITHUB_CLIENT_SECRET
 # For GitHub App key: wrangler secret put GITHUB_APP_PRIVATE_KEY

@@ -919,6 +919,16 @@ const allProjects = {
   ],
   sdkLibraries: [
     {
+      name: "🆕 Mimir AIP",
+      url: "https://mimir-aip.github.io/",
+      description: "An open-source AI pipeline framework designed to simplify the integration and orchestration of various AI models and services. The platform provides a modular architecture that allows developers to easily build, test, and deploy AI-powered applications with support for Pollinations.ai as a provider.",
+      author: "@CiaranMcAleer",
+      repo: "https://github.com/Mimir-AIP/Mimir-AIP",
+      submissionDate: "2025-05-01",
+      stars: 0,
+      order: 1,
+    },
+    {
       name: "🆕 ComfyUI-Pollinations",
       url: "https://github.com/1038lab/ComfyUI-Pollinations",
       description: "A custom node for ComfyUI that utilizes the Pollinations API to generate images and text based on user prompts, supporting multiple image and text generation models.",

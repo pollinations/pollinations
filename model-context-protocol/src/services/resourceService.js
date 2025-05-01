@@ -4,38 +4,15 @@
  * Functions and schemas for handling resources and prompts
  */
 
-import { createMCPResponse, createTextContent, createToolDefinition } from '../utils/coreUtils.js';
-
-/**
- * Schema for the listResources tool
- */
-export const listResourcesSchema = {
-  name: 'listResources',
-  description: 'List available resources from the Pollinations API',
-  inputSchema: {
-    type: 'object',
-    properties: {}
-  }
-};
-
-/**
- * Schema for the listPrompts tool
- */
-export const listPromptsSchema = {
-  name: 'listPrompts',
-  description: 'List available example prompts from the Pollinations API',
-  inputSchema: {
-    type: 'object',
-    properties: {}
-  }
-};
+import { createMCPResponse, createTextContent } from '../utils/coreUtils.js';
+import { z } from 'zod';
 
 /**
  * Lists available resources
  *
  * @returns {Promise<Object>} - Object containing the list of available resources
  */
-export async function listResources() {
+async function listResources() {
   // Prepare the resources data
   const resourcesData = {
     resources: [
@@ -91,7 +68,7 @@ export async function listResources() {
  *
  * @returns {Promise<Object>} - Object containing the list of available prompts
  */
-export async function listPrompts() {
+async function listPrompts() {
   // Prepare the prompts data
   const promptsData = {
     prompts: [
@@ -132,9 +109,20 @@ export async function listPrompts() {
 }
 
 /**
- * Export tools with their schemas and handlers
+ * Export tools as complete arrays ready to be passed to server.tool()
  */
-export const resourceTools = {
-  listResources: createToolDefinition(listResourcesSchema, listResources),
-  listPrompts: createToolDefinition(listPromptsSchema, listPrompts)
-};
+export const resourceTools = [
+  [
+    'listResources',
+    'List available resources from the Pollinations API',
+    {},
+    listResources
+  ],
+  
+  [
+    'listPrompts',
+    'List available example prompts from the Pollinations API',
+    {},
+    listPrompts
+  ]
+];

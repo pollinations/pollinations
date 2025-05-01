@@ -4,102 +4,11 @@
  * Functions and schemas for interacting with the Pollinations Image API
  */
 
-import { createMCPResponse, createTextContent, createImageContent, buildUrl, createToolDefinition } from '../utils/coreUtils.js';
+import { createMCPResponse, createTextContent, createImageContent, buildUrl } from '../utils/coreUtils.js';
+import { z } from 'zod';
 
 // Constants
 const IMAGE_API_BASE_URL = 'https://image.pollinations.ai';
-
-/**
- * Schema for the generateImageUrl tool
- */
-export const generateImageUrlSchema = {
-  name: 'generateImageUrl',
-  description: 'Generate an image URL from a text prompt',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      prompt: {
-        type: 'string',
-        description: 'The text description of the image to generate'
-      },
-      options: {
-        type: 'object',
-        description: 'Additional options for image generation',
-        properties: {
-          model: {
-            type: 'string',
-            description: 'Model name to use for generation'
-          },
-          seed: {
-            type: 'number',
-            description: 'Seed for reproducible results'
-          },
-          width: {
-            type: 'number',
-            description: 'Width of the generated image'
-          },
-          height: {
-            type: 'number',
-            description: 'Height of the generated image'
-          }
-        },
-      }
-    },
-    required: ['prompt']
-  }
-};
-
-/**
- * Schema for the generateImage tool
- */
-export const generateImageSchema = {
-  name: 'generateImage',
-  description: 'Generate an image and return the base64-encoded data',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      prompt: {
-        type: 'string',
-        description: 'The text description of the image to generate'
-      },
-      options: {
-        type: 'object',
-        description: 'Additional options for image generation',
-        properties: {
-          model: {
-            type: 'string',
-            description: 'Model name to use for generation'
-          },
-          seed: {
-            type: 'number',
-            description: 'Seed for reproducible results'
-          },
-          width: {
-            type: 'number',
-            description: 'Width of the generated image'
-          },
-          height: {
-            type: 'number',
-            description: 'Height of the generated image'
-          }
-        },
-      }
-    },
-    required: ['prompt']
-  }
-};
-
-/**
- * Schema for the listImageModels tool
- */
-export const listImageModelsSchema = {
-  name: 'listImageModels',
-  description: 'List available image models',
-  inputSchema: {
-    type: 'object',
-    properties: {}
-  }
-};
 
 /**
  * Internal function to generate an image URL without MCP formatting
@@ -146,7 +55,7 @@ async function _generateImageUrlInternal(prompt, options = {}) {
  * @param {number} [params.options.height=1024] - Height of the generated image
  * @returns {Object} - MCP response object with the image URL
  */
-export async function generateImageUrl(params) {
+async function generateImageUrl(params) {
   const { prompt, options = {} } = params;
 
   if (!prompt || typeof prompt !== 'string') {
@@ -174,7 +83,7 @@ export async function generateImageUrl(params) {
  * @param {number} [params.options.height=1024] - Height of the generated image
  * @returns {Promise<Object>} - MCP response object with the image data
  */
-export async function generateImage(params) {
+async function generateImage(params) {
   const { prompt, options = {} } = params;
 
   if (!prompt || typeof prompt !== 'string') {
@@ -226,7 +135,7 @@ export async function generateImage(params) {
  * @param {Object} params - The parameters for listing image models
  * @returns {Promise<Object>} - MCP response object with the list of available image models
  */
-export async function listImageModels(params) {
+async function listImageModels(params) {
   try {
     const url = buildUrl(IMAGE_API_BASE_URL, 'models');
     const response = await fetch(url);
@@ -248,10 +157,43 @@ export async function listImageModels(params) {
 }
 
 /**
- * Export tools with their schemas and handlers
+ * Export tools as complete arrays ready to be passed to server.tool()
  */
-export const imageTools = {
-  generateImageUrl: createToolDefinition(generateImageUrlSchema, generateImageUrl),
-  generateImage: createToolDefinition(generateImageSchema, generateImage),
-  listImageModels: createToolDefinition(listImageModelsSchema, listImageModels)
-};
+export const imageTools = [
+  [
+    'generateImageUrl',
+    'Generate an image URL from a text prompt',
+    {
+      prompt: z.string().describe('The text description of the image to generate'),
+      options: z.object({
+        model: z.string().optional().describe('Model name to use for generation'),
+        seed: z.number().optional().describe('Seed for reproducible results'),
+        width: z.number().optional().describe('Width of the generated image'),
+        height: z.number().optional().describe('Height of the generated image')
+      }).optional().describe('Additional options for image generation')
+    },
+    generateImageUrl
+  ],
+  
+  [
+    'generateImage',
+    'Generate an image and return the base64-encoded data',
+    {
+      prompt: z.string().describe('The text description of the image to generate'),
+      options: z.object({
+        model: z.string().optional().describe('Model name to use for generation'),
+        seed: z.number().optional().describe('Seed for reproducible results'),
+        width: z.number().optional().describe('Width of the generated image'),
+        height: z.number().optional().describe('Height of the generated image')
+      }).optional().describe('Additional options for image generation')
+    },
+    generateImage
+  ],
+  
+  [
+    'listImageModels',
+    'List available image models',
+    {},
+    listImageModels
+  ]
+];

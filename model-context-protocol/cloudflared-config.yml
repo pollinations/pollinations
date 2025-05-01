@@ -1,7 +1,0 @@
-tunnel: 0a68e2da-1be7-4453-8872-e8d4313a3f67
-credentials-file: ./flow-pollinations-credentials.json
-
-ingress:
-  - hostname: flow.pollinations.ai
-    service: http://localhost:31122
-  - service: http_status:404

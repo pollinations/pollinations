@@ -404,16 +404,9 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
           if (progress) progress.updateBar(requestId, 35, 'Processing', 'Trying Cloudflare Dreamshaper...');
           bufferAndMaturity = await callCloudflareDreamshaper(prompt, safeParams);
         } catch (dreamshaperError) {
-          logError('Cloudflare Dreamshaper failed, trying Turbo server:', dreamshaperError.message);
-          try {
-            if (progress) progress.updateBar(requestId, 40, 'Processing', 'Trying Turbo server...');
-            // Create a modified params object with model set to "turbo"
-            const turboParams = { ...safeParams, model: 'turbo' };
-            bufferAndMaturity = await callComfyUI(prompt, turboParams, concurrentRequests);
-          } catch (turboError) {
-            logError('Turbo server failed, falling back to ComfyUI:', turboError.message);
-            // Fall through to ComfyUI
-          }
+          logError('Cloudflare Dreamshaper failed:', dreamshaperError.message);
+          // Removed the specific Turbo fallback block
+          // The code will now fall through to the general ComfyUI call below if Dreamshaper fails
         }
       }
     }

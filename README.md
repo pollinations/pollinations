@@ -208,6 +208,7 @@ Pollinations.AI is used in various projects, including:
 
 | Project | Description | Creator | Links |
 |---------|-------------|---------|-------|
+| 🆕 CoNavic | A free, open-source browser extension that brings the power of ChatGPT and browser automation directly to your fingertips. Instantly access AI assistance, manage tabs, and organize bookmarks using natural language all securely within your browser. | @mkantwala | [GitHub](https://github.com/mkantwala/CoNavic/) - ⭐ 1 |
 | 🆕 imggen.top 🇨🇳 | Create stunning AI-generated images in seconds with our free AI image generator. No login required, unlimited generations, powered by FLUX model. | lipengliang2012@163.com | [Website](https://www.imggen.top/) |
 | 🆕 Aura Chat bot | A chat bot integrating Pollinations API for text and image generation | @Py-Phoenix-PJS | [Email](mailto:itznarutotamilan007@gmail.com) |
 | 🆕 FoodAnaly | An AI application for food analysis that uses advanced artificial intelligence technology to help users understand food ingredients, nutritional value, and health impacts. | liukang0120@163.com | [Website](https://foodanaly.vercel.app/) |

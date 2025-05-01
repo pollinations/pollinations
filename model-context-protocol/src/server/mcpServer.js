@@ -15,8 +15,6 @@ import { toolDefinitions } from '../index.js';
  */
 async function startMcpServer() {
   try {
-    console.error('[SERVER] Creating MCP server');
-    
     // Create the MCP server with tool definitions
     const server = new Server({
       name: 'pollinations-mcp',
@@ -29,38 +27,18 @@ async function startMcpServer() {
       }
     });
     
-    console.error('[SERVER] MCP server created successfully');
-    console.error('[STDIO] Initializing STDIO transport');
-    
     // Create and connect the STDIO transport
     const transport = new StdioServerTransport();
+    await server.connect(transport);
     
-    console.error('[STDIO] STDIO transport initialized');
-    console.error('[STDIO] Connecting server to STDIO transport');
+    console.log('Pollinations Multimodal MCP server running on stdio');
     
-    try {
-      await server.connect(transport);
-      console.error('[STDIO] Server successfully connected to STDIO transport');
-      console.log('Pollinations Multimodal MCP server running on stdio');
-      
-      // Handle process termination gracefully
-      process.on('SIGINT', () => {
-        console.error('[SERVER] Received SIGINT, shutting down...');
-        process.exit(0);
-      });
-      
-      process.on('SIGTERM', () => {
-        console.error('[SERVER] Received SIGTERM, shutting down...');
-        process.exit(0);
-      });
-    } catch (error) {
-      console.error(`[STDIO ERROR] Failed to connect server to STDIO transport: ${error.message}`);
-      console.error(`[STDIO ERROR] ${error.stack}`);
-      process.exit(1);
-    }
+    // Handle process termination
+    process.on('SIGINT', () => process.exit(0));
+    process.on('SIGTERM', () => process.exit(0));
+    
   } catch (error) {
-    console.error(`[SERVER ERROR] Failed to start MCP server: ${error.message}`);
-    console.error(`[SERVER ERROR] ${error.stack}`);
+    console.error(`Failed to start MCP server: ${error.message}`);
     process.exit(1);
   }
 }

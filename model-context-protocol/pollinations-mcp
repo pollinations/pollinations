@@ -19,32 +19,11 @@ const __dirname = dirname(__filename);
 // Path to the MCP server script
 const serverPath = join(__dirname, 'src', 'server', 'mcpServer.js');
 
-console.error(`Starting Pollinations MCP server (stdio transport)`);
-console.error(`Server script: ${serverPath}`);
-
 // Spawn the server process with stdio transport
 const serverProcess = spawn('node', [serverPath], {
   stdio: 'inherit'
 });
 
-// Handle server process events
-serverProcess.on('error', (error) => {
-  console.error(`Error starting server: ${error.message}`);
-  process.exit(1);
-});
-
-serverProcess.on('exit', (code) => {
-  if (code !== 0) {
-    console.error(`Server exited with code ${code}`);
-    process.exit(code);
-  }
-});
-
 // Handle process termination signals
-process.on('SIGINT', () => {
-  serverProcess.kill('SIGINT');
-});
-
-process.on('SIGTERM', () => {
-  serverProcess.kill('SIGTERM');
-});
+process.on('SIGINT', () => serverProcess.kill('SIGINT'));
+process.on('SIGTERM', () => serverProcess.kill('SIGTERM'));

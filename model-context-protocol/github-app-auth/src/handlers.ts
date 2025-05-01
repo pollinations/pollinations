@@ -45,31 +45,61 @@ export async function handleAuthCallback(request: Request, env: Env): Promise<Re
   }
   
   try {
+    console.log(`Processing callback with code: ${code.substring(0, 5)}... and state: ${state.substring(0, 10)}...`);
     const github = createGitHubOAuthClient(env);
     
     // Validate the code and get access token
+    console.log('Validating authorization code...');
     const tokens = await github.validateAuthorizationCode(code);
     const accessToken = tokens.accessToken();
+    console.log('Access token obtained successfully');
     
     // Get the user's GitHub profile
+    console.log('Fetching user profile...');
     const userProfile: GitHubUserProfile = await getUserProfile(accessToken);
     
     if (!userProfile.id) {
+      console.error('User profile missing ID:', userProfile);
       return new Response(JSON.stringify({ error: 'Failed to get user profile' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
     }
+    console.log(`User profile retrieved for: ${userProfile.login} (ID: ${userProfile.id})`);
     
     // Store user in database
-    await upsertUser(env.DB, {
-      github_user_id: userProfile.id.toString(),
-      username: userProfile.login
-    });
-    
-    // Find the session that matches this state (in a real app, more verification would be done)
-    // For simplicity in this demo, we're assuming the session lookup would work correctly
-    // We would typically validate the session from a cookie or search for it by state
+    console.log('Storing user in database...');
+    try {
+      await upsertUser(env.DB, {
+        github_user_id: userProfile.id.toString(),
+        username: userProfile.login
+      });
+      console.log('User stored successfully');
+      
+      // Find the session that matches this state and update it
+      console.log('Updating session status...');
+      try {
+        // Find session by state
+        const sessionResult = await env.DB.prepare(
+          `SELECT session_id FROM auth_sessions WHERE state = ?`
+        )
+        .bind(state)
+        .first();
+        
+        if (sessionResult && sessionResult.session_id) {
+          // Update the session with the GitHub user ID and mark as complete
+          await completeAuthSession(env.DB, sessionResult.session_id, userProfile.id.toString());
+          console.log(`Session ${sessionResult.session_id} updated successfully`);
+        } else {
+          console.error('Session not found for state:', state);
+        }
+      } catch (sessionError) {
+        console.error('Error updating session:', sessionError);
+      }
+    } catch (dbError) {
+      console.error('Error storing user:', dbError);
+      throw dbError;
+    }
     
     // Create HTML response for successful auth
     const html = `
@@ -107,7 +137,23 @@ export async function handleAuthCallback(request: Request, env: Env): Promise<Re
     });
   } catch (error) {
     console.error('Auth callback error:', error);
-    return new Response(JSON.stringify({ error: 'Authentication failed' }), {
+    // Log more details about the error
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+    
+    // Check if it's a response error from GitHub
+    if (error && typeof error === 'object' && 'status' in error) {
+      console.error('Response status:', (error as any).status);
+      console.error('Response body:', (error as any).body || 'No body');
+    }
+    
+    return new Response(JSON.stringify({ 
+      error: 'Authentication failed', 
+      message: error instanceof Error ? error.message : 'Unknown error',
+      time: new Date().toISOString()
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });

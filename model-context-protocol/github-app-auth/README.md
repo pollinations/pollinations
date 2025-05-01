@@ -25,11 +25,11 @@ graph TD
 
 ### OAuth Flow
 
-1. Client requests authentication via `/auth/start` endpoint
+1. Client requests authentication via `/start` endpoint
 2. Server creates session and returns GitHub authorization URL
 3. User authenticates on GitHub and is redirected to callback
 4. Server exchanges code for token and stores user data
-5. Client polls `/auth/status/:sessionId` for completion
+5. Client polls `/status/:sessionId` for completion
 
 ```mermaid
 sequenceDiagram
@@ -43,9 +43,11 @@ sequenceDiagram
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/auth/start` | GET | Initiates OAuth flow |
-| `/auth/callback` | GET | OAuth callback |
-| `/auth/status/:sessionId` | GET | Authentication status |
+| `/start` | GET | Initiates OAuth flow |
+| `/callback` | GET | OAuth callback |
+| `/status/:sessionId` | GET | Authentication status |
+| `/api/user/:githubUserId/domains` | GET | Get user's whitelisted domains |
+| `/api/user/:githubUserId/domains` | PUT | Update user's whitelisted domains |
 | `/app/link` | POST | Links GitHub App installation |
 | `/token/:userId` | GET | Returns valid GitHub token |
 | `/health` | GET | Health check endpoint |
@@ -98,7 +100,7 @@ CREATE TABLE IF NOT EXISTS auth_sessions (
    ```
    GITHUB_CLIENT_ID=your_client_id
    GITHUB_CLIENT_SECRET=your_client_secret
-   REDIRECT_URI=http://localhost:8787/auth/callback
+   REDIRECT_URI=http://localhost:8787/callback
    ```
 4. Initialize the D1 database:
    ```bash

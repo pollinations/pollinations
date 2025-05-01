@@ -5,25 +5,9 @@
  * the "thin proxy" design principle.
  */
 
-export interface Env {
-  GITHUB_CLIENT_ID: string;
-  GITHUB_CLIENT_SECRET: string;
-  REDIRECT_URI: string;
-  DB: D1Database;
-}
-
-// Define response types for better type safety
-interface TokenResponse {
-  access_token?: string;
-  error?: string;
-  [key: string]: any;
-}
-
-interface GitHubUserResponse {
-  login: string;
-  id: number;
-  [key: string]: any;
-}
+import { handleAuthStart, handleAuthCallback, handleAuthStatus } from './handlers';
+import { getUserByGithubId, updateDomainWhitelist } from './db';
+import type { Env } from './types';
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -54,6 +38,12 @@ export default {
 
     // Simple router
     try {
+      // Root path redirect to /start
+      if (path === '/') {
+        console.log('Root path accessed, redirecting to /start');
+        return Response.redirect(`${url.origin}/start`, 302);
+      }
+      
       // Health check with detailed information
       if (path === '/health') {
         console.log('Health check requested');
@@ -87,233 +77,148 @@ export default {
         return logAndReturnResponse(response, 'Health check');
       }
       
-      // Auth start endpoint
-      if (path === '/auth/start') {
-        // Generate a random state for CSRF protection
-        const state = crypto.randomUUID();
-        
-        // Create GitHub OAuth URL
-        const authUrl = `https://github.com/login/oauth/authorize?client_id=${env.GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(env.REDIRECT_URI)}&scope=user:email&state=${state}`;
-        
-        // Store state in D1 (simplified for testing)
-        const sessionId = crypto.randomUUID();
-        
-        try {
-          await env.DB.prepare(
-            `INSERT INTO auth_sessions (session_id, state, status) VALUES (?, ?, ?)`
-          )
-          .bind(sessionId, state, 'pending')
-          .run();
-          
-          console.log(`Auth session created: ${sessionId}`);
-          
-          const response = new Response(JSON.stringify({
-            sessionId,
-            authUrl,
-            requestId
-          }), {
-            headers: { 
-              'Content-Type': 'application/json',
-              'X-Request-ID': requestId
-            }
-          });
-          
-          return logAndReturnResponse(response, 'Auth start');
-        } catch (error) {
-          const dbError = error as Error;
-          console.error('Database error:', dbError);
-          return new Response(JSON.stringify({ error: 'Database error', details: dbError.message }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
+      // Auth start endpoint - Use Arctic-based implementation
+      if (path === '/start') {
+        console.log('Auth start requested');
+        const response = await handleAuthStart(request, env);
+        return logAndReturnResponse(response, 'Auth start');
       }
       
-      // Auth status endpoint
-      if (path.startsWith('/auth/status/')) {
+      // Auth status endpoint - Use Arctic-based implementation
+      if (path.startsWith('/status/')) {
         const sessionId = path.split('/').pop();
         
         if (!sessionId) {
-          return new Response(JSON.stringify({ error: 'Session ID required' }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' }
-          });
+          return logAndReturnResponse(
+            new Response(JSON.stringify({ error: 'Session ID required' }), {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' }
+            }),
+            'Missing session ID'
+          );
+        }
+        
+        console.log(`Auth status requested for session: ${sessionId}`);
+        const response = await handleAuthStatus(request, env, sessionId);
+        return logAndReturnResponse(response, 'Auth status');
+      }
+      
+      // Auth callback endpoint - Use Arctic-based implementation
+      if (path === '/callback') {
+        console.log('Auth callback received');
+        const response = await handleAuthCallback(request, env);
+        return logAndReturnResponse(response, 'Auth callback');
+      }
+      
+      // Get user domains endpoint
+      if (path.match(/^\/api\/user\/(.+)\/domains$/) && method === 'GET') {
+        const matches = path.match(/^\/api\/user\/(.+)\/domains$/);
+        const githubUserId = matches ? matches[1] : null;
+        
+        if (!githubUserId) {
+          return logAndReturnResponse(
+            new Response(JSON.stringify({ error: 'Invalid user ID' }), {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' }
+            }),
+            'Invalid user ID'
+          );
         }
         
         try {
-          // Check session status in D1
-          const session = await env.DB.prepare(
-            `SELECT status, github_user_id FROM auth_sessions WHERE session_id = ?`
-          )
-          .bind(sessionId)
-          .first();
+          const user = await getUserByGithubId(env.DB, githubUserId);
           
-          if (!session) {
-            return new Response(JSON.stringify({ error: 'Session not found' }), {
-              status: 404,
-              headers: { 'Content-Type': 'application/json' }
-            });
-          }
-          
-          // If session is completed, get user info
-          if (session.status === 'completed' && session.github_user_id) {
-            const user = await env.DB.prepare(
-              `SELECT github_user_id, username, access_token FROM users WHERE github_user_id = ?`
-            )
-            .bind(session.github_user_id)
-            .first();
-            
-            if (!user) {
-              return new Response(JSON.stringify({ error: 'User not found' }), {
+          if (!user) {
+            return logAndReturnResponse(
+              new Response(JSON.stringify({ error: 'User not found' }), {
                 status: 404,
                 headers: { 'Content-Type': 'application/json' }
-              });
-            }
-            
-            return new Response(JSON.stringify({
-              status: 'completed',
-              user: {
-                id: String(user.github_user_id).replace('.0', ''),
-                login: user.username
-              }
-            }), {
-              headers: { 'Content-Type': 'application/json' }
-            });
+              }),
+              'User not found'
+            );
           }
           
-          // Return current status
-          return new Response(JSON.stringify({
-            status: session.status
-          }), {
-            headers: { 'Content-Type': 'application/json' }
-          });
+          const domains = user.domain_whitelist ? JSON.parse(user.domain_whitelist) : [];
+          
+          return logAndReturnResponse(
+            new Response(JSON.stringify({ domains }), {
+              headers: { 'Content-Type': 'application/json' }
+            }),
+            'Domains retrieved'
+          );
         } catch (error) {
-          const dbError = error as Error;
-          console.error('Database error:', dbError);
-          return new Response(JSON.stringify({ error: 'Database error', details: dbError.message }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-          });
+          console.error('Get domains error:', error);
+          return logAndReturnResponse(
+            new Response(JSON.stringify({ error: 'Failed to get domains' }), {
+              status: 500,
+              headers: { 'Content-Type': 'application/json' }
+            }),
+            'Get domains error'
+          );
         }
       }
       
-      // Auth callback endpoint
-      if (path === '/auth/callback') {
-        const code = url.searchParams.get('code');
-        const state = url.searchParams.get('state');
+      // Update user domains endpoint
+      if (path.match(/^\/api\/user\/(.+)\/domains$/) && method === 'PUT') {
+        const matches = path.match(/^\/api\/user\/(.+)\/domains$/);
+        const githubUserId = matches ? matches[1] : null;
         
-        if (!code || !state) {
-          return new Response(JSON.stringify({ error: 'Missing code or state' }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' }
-          });
+        if (!githubUserId) {
+          return logAndReturnResponse(
+            new Response(JSON.stringify({ error: 'Invalid user ID' }), {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' }
+            }),
+            'Invalid user ID'
+          );
         }
         
         try {
-          // Find session by state
-          const session = await env.DB.prepare(
-            `SELECT session_id FROM auth_sessions WHERE state = ?`
-          )
-          .bind(state)
-          .first();
+          const user = await getUserByGithubId(env.DB, githubUserId);
           
-          if (!session) {
-            return new Response(JSON.stringify({ error: 'Invalid state' }), {
-              status: 400,
-              headers: { 'Content-Type': 'application/json' }
-            });
+          if (!user) {
+            return logAndReturnResponse(
+              new Response(JSON.stringify({ error: 'User not found' }), {
+                status: 404,
+                headers: { 'Content-Type': 'application/json' }
+              }),
+              'User not found'
+            );
           }
           
-          // Exchange code for access token - direct fetch, no dependencies
-          const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
-            method: 'POST',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              client_id: env.GITHUB_CLIENT_ID,
-              client_secret: env.GITHUB_CLIENT_SECRET,
-              code,
-              redirect_uri: env.REDIRECT_URI
-            })
-          });
+          const body = await request.json() as { domains: unknown };
+          const domains = body.domains;
           
-          const tokenData = await tokenResponse.json() as TokenResponse;
-          
-          if (tokenData.error) {
-            return new Response(JSON.stringify({ error: tokenData.error }), {
-              status: 400,
-              headers: { 'Content-Type': 'application/json' }
-            });
+          if (!Array.isArray(domains)) {
+            return logAndReturnResponse(
+              new Response(JSON.stringify({ error: 'Invalid domains format' }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' }
+              }),
+              'Invalid domains format'
+            );
           }
           
-          const accessToken = tokenData.access_token;
+          await updateDomainWhitelist(env.DB, githubUserId, domains);
           
-          if (!accessToken) {
-            return new Response(JSON.stringify({ error: 'No access token returned' }), {
-              status: 400,
+          return logAndReturnResponse(
+            new Response(JSON.stringify({ success: true, domains }), {
               headers: { 'Content-Type': 'application/json' }
-            });
-          }
-          
-          // Get user data
-          const userResponse = await fetch('https://api.github.com/user', {
-            headers: {
-              'Authorization': `token ${accessToken}`,
-              'Accept': 'application/json',
-              'User-Agent': 'GitHub-Auth-App'
-            }
-          });
-          
-          const userData = await userResponse.json() as GitHubUserResponse;
-          
-          // Store user in database
-          await env.DB.prepare(
-            `INSERT OR REPLACE INTO users (github_user_id, username, access_token) VALUES (?, ?, ?)`
-          )
-          .bind(String(userData.id), userData.login, accessToken)
-          .run();
-          
-          // Update session status
-          await env.DB.prepare(
-            `UPDATE auth_sessions SET status = ?, github_user_id = ? WHERE session_id = ?`
-          )
-          .bind('completed', String(userData.id), session.session_id)
-          .run();
-          
-          // Simple success HTML
-          const html = `
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <title>Authentication Successful</title>
-                <style>
-                  body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-                  .success { color: green; }
-                </style>
-              </head>
-              <body>
-                <h1 class="success">Authentication Successful!</h1>
-                <p>You are authenticated as ${userData.login}</p>
-                <p>You can close this window and return to your application.</p>
-              </body>
-            </html>
-          `;
-          
-          return new Response(html, {
-            headers: { 'Content-Type': 'text/html' }
-          });
+            }),
+            'Domains updated'
+          );
         } catch (error) {
-          const authError = error as Error;
-          console.error('Auth error:', authError);
-          return new Response(JSON.stringify({ error: 'Authentication failed', details: authError.message }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-          });
+          console.error('Update domains error:', error);
+          return logAndReturnResponse(
+            new Response(JSON.stringify({ error: 'Failed to update domains' }), {
+              status: 500,
+              headers: { 'Content-Type': 'application/json' }
+            }),
+            'Update domains error'
+          );
         }
       }
-      
+
       // Default 404 response
       console.log(`No route matched for ${method} ${path}`);
       const notFoundResponse = new Response(JSON.stringify({ 

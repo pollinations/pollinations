@@ -135,21 +135,34 @@ The project includes several types of tests:
 
 ## Deployment
 
-1. Set up the required secrets in the Cloudflare dashboard:
-   - `GITHUB_CLIENT_ID`
-   - `GITHUB_CLIENT_SECRET`
-   - `REDIRECT_URI`
+1. Set up the required secrets in Cloudflare:
+   ```bash
+   # Set the GitHub Client Secret as a Cloudflare secret
+   echo "your_client_secret" | npx wrangler secret put GITHUB_CLIENT_SECRET --name github-app-auth
+   ```
 
-2. Deploy the worker:
+2. Configure the custom domain in wrangler.toml:
+   ```toml
+   # Custom Domain configuration
+   [[routes]]
+   pattern = "auth.pollinations.ai"
+   custom_domain = true
+   ```
+
+3. Deploy the worker:
    ```bash
    npm run deploy
    ```
 
-3. Create the D1 database in production:
+4. Create the D1 database in production:
    ```bash
    npx wrangler d1 create github_auth --production
    npx wrangler d1 execute github_auth --file=schema.sql --production
    ```
+
+5. Verify the deployment:
+   - Worker URL: https://github-app-auth.thomash-efd.workers.dev
+   - Custom Domain: https://auth.pollinations.ai
 
 ## Design Principles
 

@@ -19,6 +19,10 @@ echo "$1" | npx wrangler secret put GITHUB_CLIENT_SECRET --name github-app-auth
 echo "Deploying worker to Cloudflare..."
 npx wrangler deploy
 
+# Initialize the D1 database in production
+echo "Initializing D1 database in production..."
+npx wrangler d1 execute github_auth --file=schema.sql --remote
+
 echo "Deployment completed successfully!"
 echo "The GitHub App authentication service is now available at:"
 echo "- Worker URL: https://github-app-auth.thomash-efd.workers.dev"

@@ -7,11 +7,11 @@
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server.js';
-import { startServerWithTransport } from './transportSetup.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { toolDefinitions } from '../index.js';
 
 /**
- * Creates and starts the MCP server
+ * Starts the MCP server with STDIO transport
  */
 async function startMcpServer() {
   try {
@@ -20,7 +20,7 @@ async function startMcpServer() {
     // Create the MCP server with tool definitions
     const server = new Server({
       name: 'pollinations-mcp',
-      version: '1.0.0'
+      version: '1.0.7'
     }, {
       capabilities: {
         tools: {
@@ -30,30 +30,37 @@ async function startMcpServer() {
     });
     
     console.error('[SERVER] MCP server created successfully');
-    console.error('[SERVER] Starting server with stdio transport');
+    console.error('[STDIO] Initializing STDIO transport');
     
-    // Start the server with stdio transport
-    await startServerWithTransport({
-      server,
-      transport: 'stdio'
-    });
+    // Create and connect the STDIO transport
+    const transport = new StdioServerTransport();
     
-    console.error('[SERVER] Server started successfully');
+    console.error('[STDIO] STDIO transport initialized');
+    console.error('[STDIO] Connecting server to STDIO transport');
     
-    // Handle process termination gracefully
-    process.on('SIGINT', async () => {
-      console.error('[SERVER] Received SIGINT, shutting down...');
-      process.exit(0);
-    });
-    
-    process.on('SIGTERM', async () => {
-      console.error('[SERVER] Received SIGTERM, shutting down...');
-      process.exit(0);
-    });
-    
+    try {
+      await server.connect(transport);
+      console.error('[STDIO] Server successfully connected to STDIO transport');
+      console.log('Pollinations Multimodal MCP server running on stdio');
+      
+      // Handle process termination gracefully
+      process.on('SIGINT', () => {
+        console.error('[SERVER] Received SIGINT, shutting down...');
+        process.exit(0);
+      });
+      
+      process.on('SIGTERM', () => {
+        console.error('[SERVER] Received SIGTERM, shutting down...');
+        process.exit(0);
+      });
+    } catch (error) {
+      console.error(`[STDIO ERROR] Failed to connect server to STDIO transport: ${error.message}`);
+      console.error(`[STDIO ERROR] ${error.stack}`);
+      process.exit(1);
+    }
   } catch (error) {
     console.error(`[SERVER ERROR] Failed to start MCP server: ${error.message}`);
-    console.error(`[SERVER ERROR STACK] ${error.stack}`);
+    console.error(`[SERVER ERROR] ${error.stack}`);
     process.exit(1);
   }
 }

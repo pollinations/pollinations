@@ -24,7 +24,7 @@ console.error(`Server script: ${serverPath}`);
 
 // Spawn the server process with stdio transport
 const serverProcess = spawn('node', [serverPath], {
-  stdio: ['inherit', 'inherit', 'inherit']
+  stdio: 'inherit'
 });
 
 // Handle server process events

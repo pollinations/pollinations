@@ -1,6 +1,6 @@
 # Pollinations Multimodal MCP Server
 
-A Model Context Protocol (MCP) server for the Pollinations APIs that enables AI assistants like Claude to generate images, text, and audio directly.
+A Model Context Protocol (MCP) server for the Pollinations APIs that enables AI assistants like Claude to generate images, text, and audio directly. This server follows the "thin proxy" design principle, focusing on minimal data transformation and direct communication through stdio.
 
 ## Features
 
@@ -9,9 +9,7 @@ A Model Context Protocol (MCP) server for the Pollinations APIs that enables AI 
 - Generate text responses from text prompts
 - Generate audio (text-to-speech) from text prompts
 - List available image and text generation models
-- GitHub-based authentication (new!)
-- Support for both token-based and referrer-based authentication
-- STDIO transport for easy integration
+- STDIO transport for easy integration with MCP clients
 - Simple and lightweight
 - Compatible with the Model Context Protocol (MCP)
 
@@ -37,21 +35,23 @@ If you prefer to install it globally:
 npm install -g @pollinations/model-context-protocol
 
 # Run the server
-model-context-protocol
+pollinations-mcp
 ```
 
 ## Transport
 
-The MCP server uses STDIO transport, which is ideal for local integrations and command-line tools:
+The MCP server exclusively uses STDIO transport, which is ideal for local integrations and command-line tools:
 
 ```bash
 # Run with STDIO transport
 npx @pollinations/model-context-protocol
 ```
 
-## Authentication
+For MCP clients, connect using:
 
-The MCP server includes authentication capabilities. For details on authentication, see [GITHUB_AUTH.md](./GITHUB_AUTH.md).
+```bash
+npx supergateway --stdio -- pollinations-mcp
+```
 
 ## Claude Desktop Integration
 
@@ -124,23 +124,14 @@ The MCP server provides the following tools:
 5. `generateText` - Generates text from a prompt using text models
 6. `listModels` - Lists available models for image or text generation
 
-### Authentication (New!)
-
-7. `isAuthenticated` - Check if a session is authenticated with GitHub
-8. `getAuthUrl` - Get the GitHub OAuth URL for authentication
-9. `getToken` - Get or generate a personal access token for the authenticated user
-10. `listReferrers` - List authorized referrers for a user
-11. `addReferrer` - Add a referrer to a user's whitelist
-12. `removeReferrer` - Remove a referrer from a user's whitelist
-
 ## Changelog
 
 ### Version 1.0.7
-- Added GitHub-based authentication system
-- Implemented dual authentication methods (referrer-based and token-based)
-- Added authentication server with web interface (me.pollinations.ai)
-- Added authentication-related MCP tools
-- Added detailed documentation for authentication in GITHUB_AUTH.md
+- Simplified architecture by removing HTTP server components
+- Transitioned to stdio-only transport following MCP best practices
+- Removed authentication server (moved to separate github-app-auth service)
+- Reduced dependencies for a smaller, more focused package
+- Updated documentation to reflect the new architecture
 
 ### Version 1.0.6
 - Added compatibility with Node.js versions 14.0.0 and later

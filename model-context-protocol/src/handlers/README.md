@@ -1,54 +1,19 @@
 # Pollinations MCP Server Handlers
 
-This directory contains the handler modules for the Pollinations Model Context Protocol (MCP) server. These handlers follow the "thin proxy" design principle, focusing on routing requests to the appropriate services with minimal data transformation.
-
-## Handler Modules
-
-### `apiAuthHandlers.js`
-
-Provides handlers for API authentication endpoints:
-
-- `handleVerifyToken`: Verifies API tokens for authenticated access
-- `handleVerifyReferrer`: Verifies if a referrer is authorized for a user
-- `handleHealthCheck`: Simple health check endpoint
-
-### `githubAuthHandlers.js`
-
-Implements GitHub OAuth authentication flow:
-
-- `handleGithubLogin`: Initiates the GitHub OAuth flow
-- `handleGithubCallback`: Processes the GitHub OAuth callback
-
-### `sseHandlers.js`
-
-Handles Server-Sent Events (SSE) connections:
-
-- `handleSseConnection`: Establishes an SSE connection for server-to-client streaming
+This directory contains handler modules for the Pollinations Model Context Protocol (MCP) server. These handlers follow the "thin proxy" design principle, focusing on minimal data transformation.
 
 ## Design Principles
 
 1. **Thin Proxy**: Handlers act as thin proxies, minimizing data transformation and processing
-2. **Separation of Concerns**: Authentication, transport, and business logic are separated
-3. **Modularity**: Each handler module focuses on a specific aspect of the server
-4. **Reusability**: Handler functions can be composed and reused in different server configurations
+2. **Modularity**: Each handler module focuses on a specific aspect of the server
+3. **Reusability**: Handler functions can be composed and reused in different configurations
 
-## Usage
+## Note on Server Transport
 
-The handlers are designed to be used with Express.js routes. They are created using factory functions that accept dependencies, following the dependency injection pattern:
+The Pollinations MCP server now exclusively uses stdio transport for communication, following the Model Context Protocol standard. This simplifies the architecture by:
 
-```javascript
-// Example usage in an Express app
-import { createGithubAuthHandlers } from './handlers/githubAuthHandlers.js';
-import { createApiAuthHandlers } from './handlers/apiAuthHandlers.js';
+1. Eliminating the need for HTTP server components
+2. Enabling direct integration with MCP clients through standard input/output
+3. Maintaining the "thin proxy" design principle with minimal overhead
 
-const app = express();
-
-const { handleGithubLogin, handleGithubCallback } = createGithubAuthHandlers({
-  clientId: process.env.GITHUB_CLIENT_ID,
-  clientSecret: process.env.GITHUB_CLIENT_SECRET,
-  redirectUri: process.env.REDIRECT_URI
-});
-
-app.get('/github/login', handleGithubLogin);
-app.get('/github/callback', handleGithubCallback);
-```
+This approach allows the server to be used directly by MCP clients without requiring network configuration or authentication middleware.

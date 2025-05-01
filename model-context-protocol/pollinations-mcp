@@ -1,0 +1,50 @@
+#!/usr/bin/env node
+
+/**
+ * Pollinations MCP CLI
+ * 
+ * This script serves as the command-line interface for the Pollinations MCP server.
+ * It follows the "thin proxy" design principle by using stdio transport
+ * for communication with MCP clients.
+ */
+
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { spawn } from 'child_process';
+
+// Get the directory of the current file
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Path to the MCP server script
+const serverPath = join(__dirname, 'src', 'server', 'mcpServer.js');
+
+console.error(`Starting Pollinations MCP server (stdio transport)`);
+console.error(`Server script: ${serverPath}`);
+
+// Spawn the server process with stdio transport
+const serverProcess = spawn('node', [serverPath], {
+  stdio: ['inherit', 'inherit', 'inherit']
+});
+
+// Handle server process events
+serverProcess.on('error', (error) => {
+  console.error(`Error starting server: ${error.message}`);
+  process.exit(1);
+});
+
+serverProcess.on('exit', (code) => {
+  if (code !== 0) {
+    console.error(`Server exited with code ${code}`);
+    process.exit(code);
+  }
+});
+
+// Handle process termination signals
+process.on('SIGINT', () => {
+  serverProcess.kill('SIGINT');
+});
+
+process.on('SIGTERM', () => {
+  serverProcess.kill('SIGTERM');
+});

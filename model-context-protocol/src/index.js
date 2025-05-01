@@ -9,19 +9,6 @@ import { imageTools, generateImageUrl, generateImage, listImageModels } from './
 import { textTools, generateText, listTextModels } from './services/textService.js';
 import { audioTools, respondAudio, sayText, listAudioVoices, playAudio } from './services/audioService.js';
 import { resourceTools, listResources, listPrompts } from './services/resourceService.js';
-import {
-  authTools,
-  isAuthenticated,
-  getAuthUrl,
-  getToken,
-  regenerateToken,
-  listReferrers,
-  addReferrer,
-  removeReferrer,
-  verifyToken,
-  verifyReferrer,
-  completeAuth
-} from './services/authService.js';
 
 // Each model type has its own listing function with specific behavior
 // We don't need a generic wrapper function that just delegates
@@ -41,10 +28,7 @@ export const toolDefinitions = {
   ...audioTools,
 
   // Resource tools
-  ...resourceTools,
-
-  // Auth tools
-  ...authTools
+  ...resourceTools
 };
 
 // Export all service functions individually for backward compatibility
@@ -66,17 +50,5 @@ export {
 
   // Resource services
   listResources,
-  listPrompts,
-
-  // Authentication services
-  isAuthenticated,
-  getAuthUrl,
-  getToken,
-  regenerateToken,
-  listReferrers,
-  addReferrer,
-  removeReferrer,
-  verifyToken,
-  verifyReferrer,
-  completeAuth
+  listPrompts
 };

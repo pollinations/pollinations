@@ -1,29 +1,22 @@
 {
   "name": "@pollinations/model-context-protocol",
-  "version": "1.0.6",
-  "description": "Model Context Protocol (MCP) server for Pollinations AI image generation",
+  "version": "1.0.7",
+  "description": "Model Context Protocol (MCP) server for Pollinations AI services using stdio transport",
   "type": "module",
   "bin": {
-    "model-context-protocol": "./pollinations-mcp-server.js"
+    "pollinations-mcp": "./pollinations-mcp"
   },
   "files": [
     "src/**/*",
-    "pollinations-mcp-server.js",
-    "pollinations-auth-server.js",
-    "install-claude-mcp.js",
+    "pollinations-mcp",
     "README.md",
-    "GITHUB_AUTH.md",
     "LICENSE"
   ],
   "scripts": {
     "test": "node test-mcp-client.js",
-    "test-auth": "node test-auth.js",
     "test:integration": "vitest run tests/integration",
     "test:integration:watch": "vitest watch tests/integration",
-    "start": "node pollinations-mcp-server.js",
-    "start-auth": "node pollinations-auth-server.js",
-    "start-auth-test": "TEST_MODE=true node pollinations-auth-server.js",
-    "install-claude-mcp": "node install-claude-mcp.js"
+    "start": "node ./pollinations-mcp"
   },
   "keywords": [
     "pollinations",
@@ -32,22 +25,16 @@
     "generation",
     "model-context-protocol",
     "mcp",
-    "authentication",
-    "github-oauth"
+    "stdio"
   ],
   "author": "Pollinations.AI",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.10.1",
-    "cookie-parser": "^1.4.6",
-    "cors": "^2.8.5",
     "dotenv": "^16.5.0",
-    "express": "^4.18.2",
     "node-abort-controller": "^3.1.1",
     "node-fetch": "^3.3.2",
-    "open": "^10.1.1",
     "play-sound": "^1.1.6",
-    "yargs": "^17.7.2",
     "zod": "^3.24.3"
   },
   "repository": {

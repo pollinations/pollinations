@@ -28,7 +28,7 @@ This document tracks the status of pull requests submitted to external repositor
 | [awesome-creative-coding](https://github.com/terkelg/awesome-creative-coding) | [PR #213](https://github.com/terkelg/awesome-creative-coding/pull/213) | Open | 2025-04-29 | Added Pollinations.AI to the AI/ML section |
 | [public-apis/public-apis](https://github.com/public-apis/public-apis) | [PR #TBD](https://github.com/public-apis/public-apis/pulls) | Planned | 2025-04-30 | Will add to the "Machine Learning" section |
 | [filipecalegario/awesome-generative-ai](https://github.com/filipecalegario/awesome-generative-ai) | [PR #TBD](https://github.com/filipecalegario/awesome-generative-ai/pulls) | Planned | 2025-04-30 | Will add to multiple sections (Text, Image Generation, Audio) |
-| [touretzkyds/ai4k12](https://github.com/touretzkyds/ai4k12) | [PR #TBD](https://github.com/touretzkyds/ai4k12/pulls) | Planned | 2025-04-30 | Will add to the Resource Directory |
+| [touretzkyds/ai4k12](https://github.com/touretzkyds/ai4k12) | [PR #TBD](https://github.com/touretzkyds/ai4k12/pulls) | Ready | 2025-04-30 | Added multilingual (EN/ES) educational resources aligned with "5 Big Ideas in AI" framework |
 | [EdenIsHereToStay/AiSchool](https://github.com/EdenIsHereToStay/AiSchool) | [PR #TBD](https://github.com/EdenIsHereToStay/AiSchool/pulls) | Planned | 2025-04-30 | Will add to resources section |
 | [zukixa/cool-ai-stuff](https://github.com/zukixa/cool-ai-stuff) | [PR #TBD](https://github.com/zukixa/cool-ai-stuff/pulls) | Planned | 2025-04-30 | Will add to the main list |
 | [apibird/public-apis](https://github.com/apibird/public-apis) | [PR #TBD](https://github.com/apibird/public-apis/pulls) | Planned | 2025-04-30 | Will add to the "Machine Learning" section |

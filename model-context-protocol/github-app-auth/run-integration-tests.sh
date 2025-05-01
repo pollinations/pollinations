@@ -12,7 +12,7 @@ export GITHUB_APP_ID="test-app-id"
 export GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEAtest
 -----END RSA PRIVATE KEY-----"
-export REDIRECT_URI="http://localhost:8787/auth/callback"
+export REDIRECT_URI="http://localhost:8787/callback"
 
 # Initialize the database with schema
 echo "Initializing database with schema..."

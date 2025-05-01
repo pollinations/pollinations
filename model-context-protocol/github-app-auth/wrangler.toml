@@ -12,11 +12,11 @@ database_id = "4145d600-1df6-44a2-9769-5d5f731deb77" # Replace with actual D1 ID
 # Add environment variables for production
 [vars]
 GITHUB_CLIENT_ID = "Ov23li0fJetQ56U2JKsF"
-REDIRECT_URI = "https://auth.pollinations.ai/auth/callback"
+REDIRECT_URI = "https://auth.pollinations.ai/callback"
 
 # Use local env variables for development
 [env.dev]
-vars = { GITHUB_CLIENT_ID = "Ov23li0fJetQ56U2JKsF", REDIRECT_URI = "http://localhost:8787/auth/callback" }
+vars = { GITHUB_CLIENT_ID = "Ov23li0fJetQ56U2JKsF", REDIRECT_URI = "http://localhost:8787/callback" }
 
 # Custom Domain configuration
 [[routes]]

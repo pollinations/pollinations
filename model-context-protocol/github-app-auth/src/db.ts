@@ -62,6 +62,8 @@ export async function upsertUser(
   db: D1Database, 
   user: User
 ): Promise<void> {
+  console.log('Upserting user:', JSON.stringify(user));
+  
   // Check if user exists
   const existingUser = await db.prepare(
     `SELECT * FROM users WHERE github_user_id = ?`
@@ -70,45 +72,36 @@ export async function upsertUser(
   .first();
   
   if (existingUser) {
-    // Update existing user
+    // Update existing user - only update fields that are provided
+    // Use a simpler query that only updates the required fields
     await db.prepare(
       `UPDATE users 
-       SET username = ?, 
-           app_installation_id = COALESCE(?, app_installation_id), 
-           installation_token = COALESCE(?, installation_token),
-           token_expiry = COALESCE(?, token_expiry),
+       SET username = ?,
            updated_at = CURRENT_TIMESTAMP
        WHERE github_user_id = ?`
     )
     .bind(
-      user.username, 
-      user.app_installation_id, 
-      user.installation_token,
-      user.token_expiry,
+      user.username,
       user.github_user_id
     )
     .run();
+    
+    console.log('Updated existing user:', user.github_user_id);
   } else {
-    // Create new user
+    // Create new user with minimal required fields
     await db.prepare(
       `INSERT INTO users (
          github_user_id, 
-         username, 
-         app_installation_id, 
-         installation_token, 
-         token_expiry,
-         domain_whitelist
-       ) VALUES (?, ?, ?, ?, ?, ?)`
+         username
+       ) VALUES (?, ?)`
     )
     .bind(
       user.github_user_id,
-      user.username,
-      user.app_installation_id,
-      user.installation_token,
-      user.token_expiry,
-      user.domain_whitelist || '[]'
+      user.username
     )
     .run();
+    
+    console.log('Created new user:', user.github_user_id);
   }
 }
 

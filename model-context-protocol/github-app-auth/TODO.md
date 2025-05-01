@@ -8,9 +8,9 @@ This document provides context and next steps for the GitHub authentication syst
 
 The current implementation provides a basic GitHub OAuth flow with the following endpoints:
 
-- `GET /auth/start` - Initiates the OAuth flow and returns a session ID and GitHub authorization URL
-- `GET /auth/callback` - Handles the OAuth callback, exchanges the code for a token, and stores user data
-- `GET /auth/status/:sessionId` - Allows the client to poll for authentication status
+- `GET /start` - Initiates the OAuth flow and returns a session ID and GitHub authorization URL
+- `GET /callback` - Handles the OAuth callback, exchanges the code for a token, and stores user data
+- `GET /status/:sessionId` - Allows the client to poll for authentication status
 
 ### Key Files
 
@@ -116,7 +116,7 @@ If implementing SSE, the endpoint would look like:
 
 ```typescript
 // Example SSE endpoint (potential implementation)
-if (path.startsWith('/auth/events/')) {
+if (path.startsWith('/events/')) {
   const sessionId = path.split('/').pop();
   
   // Set up SSE headers
@@ -175,9 +175,9 @@ Improve testing and documentation:
 ### GitHub Documentation
 
 - [GitHub Apps](https://docs.github.com/en/developers/apps/getting-started-with-apps/about-apps)
-- [GitHub OAuth](https://docs.github.com/en/developers/apps/building-oauth-apps/authorizing-oauth-apps)
+- [GitHub OAuth](https://docs.github.com/en/developers/apps/building-oauth-appsorizing-oauth-apps)
 - [GitHub API Rate Limits](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting)
-- [GitHub App JWT Authentication](https://docs.github.com/en/developers/apps/building-github-apps/authenticating-with-github-apps)
+- [GitHub App JWT Authentication](https://docs.github.com/en/developers/apps/building-github-appsenticating-with-github-apps)
 
 ### Cloudflare Documentation
 
@@ -219,7 +219,7 @@ To run the worker locally:
    ```
    GITHUB_CLIENT_ID=your_client_id
    GITHUB_CLIENT_SECRET=your_client_secret
-   REDIRECT_URI=http://localhost:8787/auth/callback
+   REDIRECT_URI=http://localhost:8787/callback
    ```
 
 2. Initialize the database:
@@ -235,6 +235,6 @@ To run the worker locally:
 4. Test the authentication flow:
    - Run the OAuth flow test: `npm run test:oauth`
    - Or manually:
-     - Visit `http://localhost:8787/auth/start` to initiate the flow
+     - Visit `http://localhost:8787/start` to initiate the flow
      - Complete the GitHub authorization
-     - Check the status at `http://localhost:8787/auth/status/:sessionId`
+     - Check the status at `http://localhost:8787/status/:sessionId`

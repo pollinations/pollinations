@@ -14,7 +14,7 @@ const errorLog = debug('pollinations:adfilter:error');
 const markdownRegex = /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`.*\`)|(?:\>.*)|(?:\-\s.*)|(?:\d\.\s.*)/;
 
 // Probability of adding referral links (10%)
-const REFERRAL_LINK_PROBABILITY = 0.1;
+const REFERRAL_LINK_PROBABILITY = 0.03;
 
 // Flag for testing ads with a specific marker
 const TEST_ADS_MARKER = "p-ads";
@@ -169,7 +169,7 @@ function shouldShowAds(content, messages = [], req = null) {
     const effectiveProbability = markerFound
         ? 1.0 // 100% probability for marker found
         : triggerWordsFound
-            ? REFERRAL_LINK_PROBABILITY * 3 // Triple probability for trigger words
+            ? REFERRAL_LINK_PROBABILITY * 2 // Triple probability for trigger words
             : REFERRAL_LINK_PROBABILITY;
 
     if (markerFound) {

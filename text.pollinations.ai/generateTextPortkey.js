@@ -448,7 +448,7 @@ export const generateTextPortkey = createOpenAICompatibleClient({
             const modelName = requestBody.model; // This is already mapped by genericOpenAIClient
 
             // Check character limit
-            const MAX_CHARS = 512000;
+            const MAX_CHARS = 2048000;
             const totalChars = countMessageCharacters(requestBody.messages);
 
             if (totalChars > MAX_CHARS) {

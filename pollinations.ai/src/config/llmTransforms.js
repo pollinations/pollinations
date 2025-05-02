@@ -22,3 +22,5 @@ export const shortTechnical = () => `Convey in one very short sentence. Technica
 export const oneSentence = () => `Express this in one sentence.`;
 
 export const noLink = () => `Do not use any link URL`;
+
+export const doNotRephrase = () => `Do not change the text. Use exactly the provided text as it is.`;

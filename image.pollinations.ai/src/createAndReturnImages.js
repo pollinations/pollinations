@@ -202,6 +202,8 @@ async function callCloudflareModel(prompt, safeParams, modelPath, additionalPara
     ...additionalParams
   };
 
+  logCloudflare(`Cloudflare ${modelPath} request body:`, JSON.stringify(requestBody, null, 2));
+
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -215,6 +217,7 @@ async function callCloudflareModel(prompt, safeParams, modelPath, additionalPara
   if (!response.ok) {
     const errorText = await response.text();
     logError(`Cloudflare ${modelPath} API request failed, status:`, response.status, 'response:', errorText);
+    logError(`Cloudflare ${modelPath} API request headers:`, JSON.stringify(Object.fromEntries([...response.headers]), null, 2));
     throw new Error(`Cloudflare ${modelPath} API request failed with status ${response.status}: ${errorText}`);
   }
 
@@ -224,11 +227,13 @@ async function callCloudflareModel(prompt, safeParams, modelPath, additionalPara
 
   if (contentType && contentType.includes('image/')) {
     // Direct binary image response (typical for SDXL)
-    logCloudflare(`Received binary image from Cloudflare ${modelPath}`);
+    logCloudflare(`Received binary image from Cloudflare ${modelPath} with content type: ${contentType}`);
     imageBuffer = await response.buffer();
+    logCloudflare(`Image buffer size: ${imageBuffer.length} bytes`);
   } else {
     // JSON response with base64 encoded image (typical for Flux)
     const data = await response.json();
+    logCloudflare(`Received JSON response from Cloudflare ${modelPath}:`, JSON.stringify(data, null, 2));
     if (!data.success) {
       logError(`Cloudflare ${modelPath} API request failed, full response:`, data);
       throw new Error(data.errors?.[0]?.message || `Cloudflare ${modelPath} API request failed`);
@@ -260,6 +265,49 @@ async function callCloudflareFlux(prompt, safeParams) {
  */
 async function callCloudflareSDXL(prompt, safeParams) {
   return callCloudflareModel(prompt, safeParams, 'bytedance/stable-diffusion-xl-lightning');
+}
+
+/**
+ * Calls the Cloudflare Dreamshaper API to generate images
+ * @param {string} prompt - The prompt for image generation
+ * @param {Object} safeParams - The parameters for image generation
+ * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
+ */
+async function callCloudflareDreamshaper(prompt, safeParams) {
+  try {
+    // Append seed to prompt if it's non-default
+    let modifiedPrompt = prompt;
+    if (safeParams.seed && safeParams.seed !== 42) {
+      modifiedPrompt = `${prompt}, seed:${safeParams.seed}`;
+    }
+    
+    // Create a minimal params object with only width and height
+    const dreamshaperParams = {
+      width: safeParams.width || 1024,
+      height: safeParams.height || 1024
+    };
+    
+    // Create a modified safeParams without the seed
+    const modifiedSafeParams = { ...safeParams };
+    delete modifiedSafeParams.seed;
+    
+    // Call the model with the minimal parameters
+    logCloudflare(`Using Dreamshaper with prompt: ${modifiedPrompt} and parameters:`, JSON.stringify(dreamshaperParams, null, 2));
+    const result = await callCloudflareModel(modifiedPrompt, modifiedSafeParams, 'lykon/dreamshaper-8-lcm', dreamshaperParams);
+    return result;
+  } catch (error) {
+    // Log detailed error information
+    logError('Dreamshaper detailed error:', error);
+    if (error.response) {
+      try {
+        const responseText = await error.response.text();
+        logError('Dreamshaper response text:', responseText);
+      } catch (textError) {
+        logError('Could not get response text:', textError.message);
+      }
+    }
+    throw error;
+  }
 }
 
 /**
@@ -351,13 +399,14 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
         if (progress) progress.updateBar(requestId, 30, 'Processing', 'Trying Cloudflare Flux...');
         bufferAndMaturity = await callCloudflareFlux(prompt, safeParams);
       } catch (error) {
-        logError('Cloudflare Flux failed, trying SDXL:', error.message);
+        logError('Cloudflare Flux failed, trying Dreamshaper:', error.message);
         try {
-          if (progress) progress.updateBar(requestId, 35, 'Processing', 'Trying Cloudflare SDXL...');
-          bufferAndMaturity = await callCloudflareSDXL(prompt, safeParams);
-        } catch (sdxlError) {
-          logError('Cloudflare SDXL failed, falling back to ComfyUI:', sdxlError.message);
-          // Fall through to ComfyUI
+          if (progress) progress.updateBar(requestId, 35, 'Processing', 'Trying Cloudflare Dreamshaper...');
+          bufferAndMaturity = await callCloudflareDreamshaper(prompt, safeParams);
+        } catch (dreamshaperError) {
+          logError('Cloudflare Dreamshaper failed:', dreamshaperError.message);
+          // Removed the specific Turbo fallback block
+          // The code will now fall through to the general ComfyUI call below if Dreamshaper fails
         }
       }
     }

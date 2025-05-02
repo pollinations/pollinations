@@ -10,7 +10,8 @@ export function useFeedLoader(onNewImage, setLastImage, mode) {
       const source = new EventSource("https://image.pollinations.ai/feed");
       source.onmessage = evt => {
         const data = JSON.parse(evt.data);
-        setImagesGenerated(no => no + 1);
+        // Increment by 5 instead of 1 as per issue #1793
+        setImagesGenerated(no => no + 5);
         
         // Dispatch custom event for counter increment
         window.dispatchEvent(new CustomEvent('image-received', { 
@@ -61,7 +62,8 @@ function estimateGeneratedImages() {
   const launchDate = 1738974161902;
   const now = Date.now();
   const differenceInSeconds = (now - launchDate) / 1000;
-  const imagesGeneratedSinceLaunch = Math.round(differenceInSeconds * 23.78); // ~100,000 images per hour
+  // Multiply rate by 5 as per issue #1793 (from 23.78 to 118.9)
+  const imagesGeneratedSinceLaunch = Math.round(differenceInSeconds * 118.9); // ~500,000 images per hour
 
   const imagesGeneratedCalculated = 117772000 + imagesGeneratedSinceLaunch;
   return imagesGeneratedCalculated;

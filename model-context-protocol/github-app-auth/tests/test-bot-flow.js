@@ -67,6 +67,7 @@ async function startAuth() {
 // Check authentication status
 async function checkAuthStatus() {
   console.log('Checking authentication status...');
+  console.log(`Session ID: ${sessionId}`);
   
   let isComplete = false;
   let attempts = 0;
@@ -85,13 +86,13 @@ async function checkAuthStatus() {
         return;
       }
       
-      console.log('Authentication pending... (waiting 10 seconds)');
-      await wait(10000); // Wait 10 seconds before checking again
+      console.log('Authentication pending... (waiting 2 seconds)');
+      await wait(2000); // Wait 2 seconds before checking again
       attempts++;
       
     } catch (error) {
       console.error('Error checking auth status:', error);
-      await wait(10000);
+      await wait(2000);
       attempts++;
     }
   }

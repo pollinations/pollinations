@@ -16,6 +16,7 @@ import { imageTools } from './services/imageService.js';
 import { textTools } from './services/textService.js';
 import { audioTools } from './services/audioService.js';
 import { resourceTools } from './services/resourceService.js';
+import { authTools } from './services/authService.js';
 
 // Export all tools as a flat array
 const toolDefinitions = [
@@ -27,7 +28,7 @@ const toolDefinitions = [
 
   // Audio tools
   ...audioTools,
-
+  ...authTools,
   // Resource tools
   // ...resourceTools
 ];

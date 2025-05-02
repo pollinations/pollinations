@@ -4,13 +4,17 @@
 
 When handling project submission issues:
 
-1. Add new projects to the top of the appropriate section in:
+1. Add new projects to the appropriate section in:
    - README.md under the "Projects Using Pollinations.AI" section
    - pollinations.ai/src/config/projectList.js in the corresponding category array
-   - pollinations.ai/src/config/projects.csv at the top of the file following the previous entries scheme
-   - add a UTF8 icon higlighting them as new additions
+   - add a UTF8 icon highlighting them as new additions
 
-2. Project Entry Format:
+2. The "🆕" (NEW) emoji:
+   - Add this emoji to mark new project submissions
+   - The emoji will be automatically removed after 15 days from the submission date
+   - Projects without a submission date will not have the NEW emoji
+
+3. Project Entry Format:
    ```javascript
    {
      name: "Project Name",
@@ -19,11 +23,45 @@ When handling project submission issues:
      author: "@discord_username", // if available or alternatively a URL to a social media profile
      repo: "https://github.com/repo-url", // if available
      submissionDate: "YYYY-MM-DD", // automatically added for new submissions
-     language: "zh-CN" // for non-English projects, include the language code
+     language: "zh-CN", // for non-English projects, include the language code
+     hidden: true, // optional, set to true for broken projects that shouldn't appear in README.md
+     order: 1 // ordering priority based on status (1=highest, 5=lowest)
    }
    ```
 
-3. Categories:
+4. Project Ordering Rules:
+   - In the README.md file, projects should be ordered within their categories:
+     - First by the `order` parameter (lower values first: 1, 2, 3, 4, 5)
+     - Then by GitHub star count (higher star counts first)
+     - For projects with the same order and no stars, use the submission date if there is one, if not keep the order as it is.
+   - In the website rendering, the projectList.js order will be dynamically sorted using the same criteria so the actual order in the projectList.js file should not be changed
+
+5. Hiding Broken Projects:
+   - Use the `hidden: true` parameter to mark projects that are broken or no longer maintained
+   - Projects with this flag will not be displayed in the README.md project listings
+   - They will still remain in the projectList.js as the source of truth
+
+6. GitHub Star Counts:
+   - For projects with GitHub repositories, add their star count as a `stars` property:
+     ```javascript
+     {
+       name: "Project Name",
+       // other properties...
+       repo: "https://github.com/owner/repo",
+       stars: 1234  // Add this property for GitHub repos
+     }
+     ```
+   - Use the update-project-stars.js script to get current counts:
+     ```bash
+     # For a specific repository:
+     node .github/scripts/update-project-stars.js owner/repo
+
+     # To update all repositories in projectList.js:
+     node .github/scripts/update-project-stars.js
+     ```
+   - The star count will be displayed on the project page next to the GitHub link
+
+7. Categories:
    - LLM Integrations
    - Creative & Interactive Applications
    - Tools & Interfaces
@@ -31,30 +69,30 @@ When handling project submission issues:
    - SDK & Libraries
    - Tutorials
 
-4. Add appropriate UTF-8 icons to titles where relevant (🤖 for bots, 🎨 for creative apps, etc.)
+8. Add appropriate UTF-8 icons to titles where relevant (🤖 for bots, 🎨 for creative apps, etc.)
 
-5. For projects in non-English languages:
+9.  For projects in non-English languages:
    - Add a country flag emoji to the project name (e.g., 🇨🇳 for Chinese, 🇪🇸 for Spanish)
    - Include the "language" field in the project entry with the appropriate language code
    - Add an English translation of the description in parentheses when possible
    - This helps users easily identify and filter projects by language
 
-6. When creating a commit for project submissions, always add attribution to the issue creator using a Co-authored-by line in the commit message:
-   ```
-   Add [Project Name] to project list
+10. When creating a commit for project submissions, always add attribution to the issue creator using a Co-authored-by line in the commit message:
+    ```
+    Add [Project Name] to project list
 
-   Added [Project Name] to the [Category] category in both:
-   - README.md
-   - pollinations.ai/src/config/projectList.js
+    Added [Project Name] to the [Category] category in both:
+    - README.md
+    - pollinations.ai/src/config/projectList.js
 
-   [Brief description of the project]
+    [Brief description of the project]
 
-   Co-authored-by: [GitHub-Username] <[GitHub-Email]>
-   Closes #[Issue-Number]
-   ```
-   - The Co-authored-by line must follow GitHub's format exactly
-   - If you don't have the user's GitHub email, you can try to find it in their previous commits or ask them for it
-   - This ensures the issue creator gets proper credit for their contribution in GitHub's graph
+    Co-authored-by: [GitHub-Username] <[GitHub-Email]>
+    Closes #[Issue-Number]
+    ```
+    - The Co-authored-by line must follow GitHub's format exactly
+    - If you don't have the user's GitHub email, you can try to find it in their previous commits or ask them for it
+    - This ensures the issue creator gets proper credit for their contribution in GitHub's graph
 
 ## Repository Structure
 
@@ -109,7 +147,7 @@ The MCP server provides a standardized way for AI assistants to access Pollinati
    - Always use `console.error()` for debugging, but be aware that excessive logging can still cause issues
    - When testing outside of Claude, you can use `console.log()` freely
 
-2. **Response Format**: 
+2. **Response Format**:
    - All tool responses to Claude must be properly formatted JSON
    - For text responses, wrap them in a JSON structure and use `JSON.stringify()` before returning
    - Follow the pattern used by existing functions like `generateImageUrl` and `listModels`

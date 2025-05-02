@@ -153,7 +153,7 @@ const ProjectsRender = ({ projectList, classes }) => {
                             transforms={[shortTechnical]}
                           />
                         </span>
-                        {project.repo && renderRepoLink(project.repo)}
+                        {project.repo && renderRepoLink(project.repo, project.stars)}
                       </Grid>
                     </Grid>
                   </Grid>
@@ -261,7 +261,7 @@ const ProjectsRender = ({ projectList, classes }) => {
                             transforms={[shortTechnical]}
                           />
                         </span>
-                        {project.repo && renderRepoLink(project.repo)}
+                        {project.repo && renderRepoLink(project.repo, project.stars)}
                       </Grid>
                     </Grid>
                   </>
@@ -308,7 +308,7 @@ const renderProjectLink = (project) => {
   )
 }
 
-const renderRepoLink = (repoUrl) => {
+const renderRepoLink = (repoUrl, stars) => {
   const handleRepoLinkClick = () => {
     trackEvent({
       action: "click_project_repo",
@@ -316,6 +316,19 @@ const renderRepoLink = (repoUrl) => {
       value: repoUrl,
     })
   }
+
+  // Format star count for display
+  const formatStarCount = (count) => {
+    if (!count) return null;
+    
+    if (count < 1000) {
+      return count.toString();
+    } else {
+      return (count / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    }
+  };
+
+  const formattedStars = formatStarCount(stars);
 
   return (
     <Link
@@ -344,7 +357,22 @@ const renderRepoLink = (repoUrl) => {
           svg.setAttribute("height", "18")
         }}
       />
-      <span style={{ display: "flex", alignItems: "center", verticalAlign: "middle" }}>GITHUB</span>
+      <span style={{ display: "flex", alignItems: "center", verticalAlign: "middle" }}>
+        GITHUB
+        {formattedStars && (
+          <span style={{ 
+            marginLeft: "8px", 
+            backgroundColor: "rgba(255, 255, 255, 0.15)", 
+            padding: "0px 6px", 
+            borderRadius: "4px",
+            fontSize: "0.85em",
+            display: "flex",
+            alignItems: "center"
+          }}>
+            ⭐ {formattedStars}
+          </span>
+        )}
+      </span>
     </Link>
   )
 }

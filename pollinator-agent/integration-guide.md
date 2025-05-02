@@ -155,7 +155,11 @@ When adding Pollinations.AI to repositories, emphasize these key features:
 
 2. **Follow the exact format** used by existing entries
 
-3. **Add Pollinations.AI in alphabetical order** (if required by guidelines)
+3. **Be modest in placement**:
+   - If the list is alphabetical, place Pollinations.AI according to alphabetical order
+   - If the list is chronological, place Pollinations.AI according to date
+   - If the list has no clear ordering system, add Pollinations.AI toward the end of the list rather than at the beginning or middle
+   - Never place Pollinations.AI as the first item in a list unless alphabetical order dictates it
 
 4. **Use consistent description format** that highlights key features:
    ```
@@ -166,6 +170,8 @@ When adding Pollinations.AI to repositories, emphasize these key features:
    ```
    | [Pollinations.AI](https://pollinations.ai) | Free, no-signup APIs for text, image, and audio generation | No | Yes | Yes |
    ```
+
+6. **Make minimal changes** to the repository, focusing only on adding Pollinations.AI without modifying existing content.
 
 ### 6. Committing and Creating Pull Requests
 
@@ -209,6 +215,35 @@ Maintain a PR tracking table in the [pr-tracking.md](./pr-tracking.md) file with
 2. **Respond promptly** to maintainer comments
 3. **Update PRs** as needed based on feedback
 4. **Update [PR tracking file](./pr-tracking.md)** with status changes
+
+## Contribution Guidelines
+
+When contributing to external repositories, especially "awesome" lists, adhere strictly to the following:
+
+1.  **Minimal Changes Only:**
+    *   Focus *exclusively* on adding the Pollinations.AI entry in the appropriate section(s).
+    *   **DO NOT** reformat the file, change list styles (e.g., bullets vs. numbers), reorder existing items, fix typos unrelated to your addition, or make *any* structural changes.
+    *   Your diff should ideally only show the lines you added.
+    *   Respect the existing formatting and structure of the file, even if it seems inconsistent or suboptimal.
+2.  **Find the Right Section:** Identify the most relevant category for Pollinations.AI (e.g., LLM Services, API Providers, Text-to-Image, etc.).
+3.  **Follow Existing Format:** Mimic the exact format (markdown syntax, link style, description length) of other entries in the section.
+4.  **Concise Description:** Keep the description brief and focused on the core value proposition relevant to the list's audience (developers).
+5.  **Create Pull Request:**
+    *   Fork the repository.
+    *   Create a new branch (e.g., `add-pollinations-ai`).
+    *   Add your minimal changes.
+    *   Commit with a clear message (e.g., "feat: Add Pollinations.AI to LLM Services").
+    *   Push the branch to your fork.
+    *   Open a Pull Request against the original repository's main branch.
+    *   Keep the PR title and description concise and focused on the addition.
+
+**Why Minimal Changes?**
+
+*   **Respect:** Shows respect for the maintainer's work and chosen structure.
+*   **Clarity:** Makes the PR easy to review, focusing only on the new addition.
+*   **Mergeability:** Reduces the chance of merge conflicts and increases the likelihood of quick acceptance.
+
+By following these guidelines, we ensure our contributions are valuable, easy to integrate, and maintain a positive relationship with the open-source community.
 
 ## Repository-Specific Integration Examples
 

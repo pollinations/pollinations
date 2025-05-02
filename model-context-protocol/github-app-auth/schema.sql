@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   app_installation_id TEXT,
   installation_token TEXT,
   token_expiry TIMESTAMP,
-  domain_whitelist TEXT,
+  domain_allowlist TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

@@ -2,7 +2,7 @@
  * Pollinations Authentication Service
  *
  * Functions and schemas for authenticating with auth.pollinations.ai
- * and managing domain whitelists
+ * and managing domain allowlists
  */
 
 import { createMCPResponse, createTextContent } from '../utils/coreUtils.js';
@@ -74,12 +74,12 @@ async function checkAuthStatus(params) {
 }
 
 /**
- * Gets the domains whitelisted for a user
+ * Gets the domains allowlisted for a user
  *
  * @param {Object} params - The parameters for getting domains
  * @param {string} params.userId - The GitHub user ID
  * @param {string} params.sessionId - The session ID for authentication
- * @returns {Promise<Object>} - MCP response object with the whitelisted domains
+ * @returns {Promise<Object>} - MCP response object with the allowlisted domains
  */
 async function getDomains(params) {
   const { userId, sessionId } = params;
@@ -118,11 +118,11 @@ async function getDomains(params) {
 }
 
 /**
- * Updates the domains whitelisted for a user
+ * Updates the domains allowlisted for a user
  *
  * @param {Object} params - The parameters for updating domains
  * @param {string} params.userId - The GitHub user ID
- * @param {string[]} params.domains - The domains to whitelist
+ * @param {string[]} params.domains - The domains to allowlist
  * @param {string} params.sessionId - The session ID for authentication
  * @returns {Promise<Object>} - MCP response object with the updated domains
  */
@@ -175,7 +175,7 @@ async function updateDomains(params) {
 export const authTools = [
   [
     'startAuth',
-    'Start GitHub OAuth authentication flow',
+    'Start GitHub OAuth authentication flow to log in to Pollinations',
     {},
     startAuth
   ],
@@ -191,7 +191,7 @@ export const authTools = [
   
   [
     'getDomains',
-    'Get domains whitelisted for a user',
+    'Get domains allowlisted for a user',
     {
       userId: z.string().describe('The GitHub user ID'),
       sessionId: z.string().describe('The session ID for authentication')
@@ -201,10 +201,10 @@ export const authTools = [
   
   [
     'updateDomains',
-    'Update domains whitelisted for a user',
+    'Update domains allowlisted for a user',
     {
       userId: z.string().describe('The GitHub user ID'),
-      domains: z.array(z.string()).describe('The domains to whitelist'),
+      domains: z.array(z.string()).describe('The domains to allowlist'),
       sessionId: z.string().describe('The session ID for authentication')
     },
     updateDomains

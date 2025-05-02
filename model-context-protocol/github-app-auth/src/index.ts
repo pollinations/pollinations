@@ -6,7 +6,7 @@
  */
 
 import { handleAuthStart, handleAuthCallback, handleAuthStatus } from './handlers';
-import { getUserByGithubId, updateDomainWhitelist, getAuthSession } from './db';
+import { getUserByGithubId, updateDomainAllowlist, getAuthSession } from './db';
 import type { Env } from './types';
 
 export default {
@@ -190,7 +190,7 @@ export default {
             );
           }
           
-          const domains = user.domain_whitelist ? JSON.parse(user.domain_whitelist) : [];
+          const domains = user.domain_allowlist ? JSON.parse(user.domain_allowlist) : [];
           
           return logAndReturnResponse(
             new Response(JSON.stringify({ domains }), {
@@ -303,7 +303,7 @@ export default {
             );
           }
           
-          await updateDomainWhitelist(env.DB, githubUserId, domains);
+          await updateDomainAllowlist(env.DB, githubUserId, domains);
           
           return logAndReturnResponse(
             new Response(JSON.stringify({ success: true, domains }), {

@@ -7,7 +7,7 @@ A minimal GitHub OAuth and App authentication system for Pollinations MCP, built
 - **Thin Proxy Design**: Minimal data transformation, direct pass-through of responses
 - **OAuth Authentication**: Standard GitHub OAuth flow for user authentication
 - **GitHub App Integration**: Higher rate limits via GitHub App installation tokens
-- **Domain Whitelisting**: Security control for token usage
+- **Domain Allowlisting**: Security control for token usage
 - **D1 Database**: Serverless storage for user data and tokens
 
 ## Architecture
@@ -46,8 +46,8 @@ sequenceDiagram
 | `/start` | GET | Initiates OAuth flow |
 | `/callback` | GET | OAuth callback |
 | `/status/:sessionId` | GET | Authentication status |
-| `/api/user/:githubUserId/domains` | GET | Get user's whitelisted domains |
-| `/api/user/:githubUserId/domains` | PUT | Update user's whitelisted domains |
+| `/api/user/:githubUserId/domains` | GET | Get user's allowlisted domains |
+| `/api/user/:githubUserId/domains` | PUT | Update user's allowlisted domains |
 | `/app/link` | POST | Links GitHub App installation |
 | `/token/:userId` | GET | Returns valid GitHub token |
 | `/health` | GET | Health check endpoint |

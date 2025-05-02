@@ -137,16 +137,16 @@ export async function updateInstallationToken(
 }
 
 /**
- * Updates a user's domain whitelist
+ * Updates a user's domain allowlist
  */
-export async function updateDomainWhitelist(
+export async function updateDomainAllowlist(
   db: D1Database,
   githubUserId: string,
   domains: string[]
 ): Promise<void> {
   await db.prepare(
     `UPDATE users 
-     SET domain_whitelist = ?, updated_at = CURRENT_TIMESTAMP
+     SET domain_allowlist = ?, updated_at = CURRENT_TIMESTAMP
      WHERE github_user_id = ?`
   )
   .bind(JSON.stringify(domains), githubUserId)
@@ -154,22 +154,22 @@ export async function updateDomainWhitelist(
 }
 
 /**
- * Checks if a domain is whitelisted for a user
+ * Checks if a domain is allowlisted for a user
  */
-export async function isDomainWhitelisted(
+export async function isDomainAllowlisted(
   db: D1Database,
   githubUserId: string,
   domain: string
 ): Promise<boolean> {
   const user = await getUserByGithubId(db, githubUserId);
   
-  if (!user || !user.domain_whitelist) {
+  if (!user || !user.domain_allowlist) {
     return false;
   }
   
   try {
-    const whitelist = JSON.parse(user.domain_whitelist) as string[];
-    return whitelist.includes(domain);
+    const allowlist = JSON.parse(user.domain_allowlist) as string[];
+    return allowlist.includes(domain);
   } catch (error) {
     return false;
   }

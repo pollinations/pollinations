@@ -3,7 +3,7 @@
 /**
  * Test script for GitHub authentication flow with domain management
  * 
- * This script simulates a bot that helps users manage their whitelisted domains
+ * This script simulates a bot that helps users manage their allowlisted domains
  * through GitHub authentication following the "thin proxy" design principle.
  */
 
@@ -103,7 +103,7 @@ async function checkAuthStatus() {
   }
 }
 
-// Get user's whitelisted domains
+// Get user's allowlisted domains
 async function getDomains() {
   if (!githubUserId) {
     console.error('Not authenticated. Please authenticate first.');
@@ -125,7 +125,7 @@ async function getDomains() {
   }
 }
 
-// Update user's whitelisted domains
+// Update user's allowlisted domains
 async function updateDomains(domains) {
   if (!githubUserId) {
     console.error('Not authenticated. Please authenticate first.');
@@ -153,7 +153,7 @@ async function updateDomains(domains) {
 // Main menu
 async function showMainMenu() {
   console.log('\n📋 MAIN MENU');
-  console.log('1. View whitelisted domains');
+  console.log('1. View allowlisted domains');
   console.log('2. Add a domain');
   console.log('3. Remove a domain');
   console.log('4. Exit');
@@ -185,10 +185,10 @@ async function showMainMenu() {
 async function viewDomains() {
   const domains = await getDomains();
   
-  console.log('\n🌐 Your whitelisted domains:');
+  console.log('\n🌐 Your allowlisted domains:');
   
   if (domains.length === 0) {
-    console.log('No domains are currently whitelisted.');
+    console.log('No domains are currently allowlisted.');
   } else {
     domains.forEach((domain, index) => {
       console.log(`${index + 1}. ${domain}`);
@@ -217,7 +217,7 @@ async function addDomain() {
   }
   
   if (domains.includes(newDomain)) {
-    console.log(`Domain ${newDomain} is already whitelisted.`);
+    console.log(`Domain ${newDomain} is already allowlisted.`);
   } else {
     const updatedDomains = [...domains, newDomain];
     const success = await updateDomains(updatedDomains);
@@ -237,12 +237,12 @@ async function removeDomain() {
   const domains = await getDomains();
   
   if (domains.length === 0) {
-    console.log('\nNo domains are currently whitelisted.');
+    console.log('\nNo domains are currently allowlisted.');
     await showMainMenu();
     return;
   }
   
-  console.log('\n🌐 Your whitelisted domains:');
+  console.log('\n🌐 Your allowlisted domains:');
   domains.forEach((domain, index) => {
     console.log(`${index + 1}. ${domain}`);
   });
@@ -276,7 +276,7 @@ async function main() {
   console.log('\n🤖 GitHub Auth Bot - Domain Management');
   console.log('====================================\n');
   
-  console.log('This bot helps you manage your whitelisted domains after authenticating with GitHub.');
+  console.log('This bot helps you manage your allowlisted domains after authenticating with GitHub.');
   console.log('You will be guided through the authentication process and then can manage your domains.\n');
   
   const startNow = await askQuestion('Would you like to start the authentication process? (y/n): ');

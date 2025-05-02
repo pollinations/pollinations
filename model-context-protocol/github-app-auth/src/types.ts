@@ -18,7 +18,7 @@ export interface User {
   app_installation_id?: string;
   installation_token?: string;
   token_expiry?: string;
-  domain_whitelist?: string;
+  domain_allowlist?: string;
   created_at?: string;
   updated_at?: string;
 }

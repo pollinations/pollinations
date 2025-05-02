@@ -65,30 +65,30 @@ async function createJWT(appId: string, privateKey: string): Promise<string> {
 }
 ```
 
-### 2. Domain Whitelisting
+### 2. Domain Allowlisting
 
-Add support for domain whitelisting to control which domains can use a user's GitHub tokens:
+Add support for domain allowlisting to control which domains can use a user's GitHub tokens:
 
-- [ ] Add endpoints for managing domain whitelists (`GET/POST/DELETE /domains`)
-- [ ] Update the database schema to store domain whitelist information
+- [ ] Add endpoints for managing domain allowlists (`GET/POST/DELETE /domains`)
+- [ ] Update the database schema to store domain allowlist information
 - [ ] Implement domain verification in the token usage flow
 
 ```typescript
-// Example domain whitelist endpoint (to be implemented)
+// Example domain allowlist endpoint (to be implemented)
 if (path === '/domains') {
   // Get user ID from authentication
   const userId = getUserIdFromAuth(request);
   
   if (request.method === 'GET') {
-    // Return the user's domain whitelist
-    const domains = await getDomainWhitelist(env.DB, userId);
+    // Return the user's domain allowlist
+    const domains = await getDomainAllowlist(env.DB, userId);
     return new Response(JSON.stringify({ domains }), {
       headers: { 'Content-Type': 'application/json' }
     });
   } else if (request.method === 'POST') {
-    // Add a domain to the whitelist
+    // Add a domain to the allowlist
     const { domain } = await request.json();
-    await addDomainToWhitelist(env.DB, userId, domain);
+    await addDomainToAllowlist(env.DB, userId, domain);
     return new Response(JSON.stringify({ success: true }), {
       headers: { 'Content-Type': 'application/json' }
     });

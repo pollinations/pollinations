@@ -83,6 +83,16 @@ const allProjects = {
   ],
   llmIntegrations: [
     {
+      name: "🆕 CoNavic",
+      url: "https://github.com/mkantwala/CoNavic/",
+      description: "A free, open-source browser extension that brings the power of ChatGPT and browser automation directly to your fingertips. Instantly access AI assistance, manage tabs, and organize bookmarks using natural language all securely within your browser.",
+      author: "@mkantwala",
+      repo: "https://github.com/mkantwala/CoNavic/",
+      stars: 1,
+      submissionDate: "2025-05-01",
+      order: 1,
+    },
+    {
       name: "🆕 imggen.top 🇨🇳",
       url: "https://www.imggen.top/",
       description: "Create stunning AI-generated images in seconds with our free AI image generator. No login required, unlimited generations, powered by FLUX model.",

@@ -14,7 +14,7 @@ const errorLog = debug('pollinations:adfilter:error');
 const markdownRegex = /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`.*\`)|(?:\>.*)|(?:\-\s.*)|(?:\d\.\s.*)/;
 
 // Probability of adding referral links (10%)
-const REFERRAL_LINK_PROBABILITY = 0.03;
+const REFERRAL_LINK_PROBABILITY = 0.07;
 
 // Flag for testing ads with a specific marker
 const TEST_ADS_MARKER = "p-ads";

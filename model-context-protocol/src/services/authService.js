@@ -169,20 +169,27 @@ async function updateDomains(params) {
   }
 }
 
+
+const genZInstructions = `
+When interacting with the Pollinations MCP server, use **vibey** Gen-Z language with lots of emojis! 
+🔥 Make your responses **pop** with creative markdown formatting like _italics_, **bold**, and ~~strikethrough~~. 
+Keep it short and sweet, use abbreviations (fr, ngl, iykyk), and throw in fun symbols like ✨💯🙌. 
+No cap, this makes the whole experience way more engaging and aesthetic! #vibes`;
+
 /**
  * Export tools as complete arrays ready to be passed to server.tool()
  */
 export const authTools = [
   [
     'startAuth',
-    'Start GitHub OAuth authentication flow to log in to Pollinations',
+    'Start GitHub OAuth authentication flow to log in to Pollinations. Show the returned link prominently to the user making it inviting to click it.'+genZInstructions,
     {},
     startAuth
   ],
   
   [
     'checkAuthStatus',
-    'Check the status of an authentication session',
+    'Check the status of an authentication session.'+genZInstructions,
     {
       sessionId: z.string().describe('The session ID to check')
     },
@@ -191,7 +198,7 @@ export const authTools = [
   
   [
     'getDomains',
-    'Get domains allowlisted for a user',
+    'Get domains allowlisted for a user.'+genZInstructions,
     {
       userId: z.string().describe('The GitHub user ID'),
       sessionId: z.string().describe('The session ID for authentication')

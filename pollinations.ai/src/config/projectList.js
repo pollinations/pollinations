@@ -268,6 +268,15 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 Dreamscape AI",
+      url: "https://dreamscape.pinkpixel.dev",
+      description: "Dreamscape AI is a creative studio for generating, enhancing, and transforming images, plus conversational AI capabilities with text and voice interfaces, and a deep research tool. The entire site is almost all powered by Pollinations API aside from the image enhancement tools. It generates images, optimizes prompts and creates image titles with the text API, features lots of image styling prompts, also has chat and voice chat with chat memory, and a research tool.",
+      author: "@sizzlebop",
+      repo: "https://github.com/pinkpixel-dev/dreamscape-ai",
+      submissionDate: "2025-05-02",
+      order: 1,
+    },
+    {
       name: "🆕 PollinateAI",
       url: "https://pollinateai.vercel.app",
       description: "PollinateAI is an image generation platform that aims to ease the stress of graphic and visual designers in delivering inspirations for their work. Regular consumers are also welcomed.",

@@ -15,7 +15,7 @@ import hypnosisTracyPrompt from "./personas/hypnosisTracy.js";
 
 export const surMistral = wrapModelWithContext(
   surSystemPrompt,
-  generateTextMistral,
+  generateTextPortkey,
   "mistral"
 );
 
@@ -27,7 +27,7 @@ export const hypnosisTracy = wrapModelWithContext(
 
 export const unityMistralLarge = wrapModelWithContext(
   unityPrompt,
-  generateTextMistral,
+  generateTextPortkey,
   "mistral"
 );
 
@@ -45,6 +45,6 @@ export const rtist = wrapModelWithContext(
 
 export const evilCommandR = wrapModelWithContext(
   evilPrompt,
-  generateTextMistral,
+  generateTextPortkey,
   "mistral"
-); 
+);

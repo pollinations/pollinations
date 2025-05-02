@@ -1,6 +1,6 @@
 {
   "name": "@pollinations/model-context-protocol",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Model Context Protocol (MCP) server for Pollinations AI services using stdio transport",
   "type": "module",
   "bin": {

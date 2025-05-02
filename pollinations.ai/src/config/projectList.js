@@ -268,6 +268,16 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🆕 PollinateAI",
+      url: "https://pollinateai.vercel.app",
+      description: "PollinateAI is an image generation platform that aims to ease the stress of graphic and visual designers in delivering inspirations for their work. Regular consumers are also welcomed.",
+      author: "@Auspicious14",
+      repo: "https://github.com/Auspicious14/image-generator-fe.git",
+      stars: 0,
+      submissionDate: "2025-05-01",
+      order: 1,
+    },
+    {
       name: "🆕 🎨 WebGeniusAI",
       url: "https://logise.neocities.org/webgeniusai",
       description: "AI tool that generates HTML websites with visuals from Pollinations.",

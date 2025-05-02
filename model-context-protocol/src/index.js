@@ -57,23 +57,23 @@ export async function startMcpServer() {
       },
       instructions: `# 🚀 Pollinations MCP Server
 
-## 💫 What I Can Do
-Hey there! I'm your creative sidekick for **images**, **text**, **audio** and **GitHub auth** - all through simple commands! ✨
+## 💫 Available Capabilities
+This MCP server provides tools for **images**, **text**, **audio** and **Pollinations login** management through simple commands. ✨
 
-## 🎨 Creative Capabilities
+## 🎨 Creative Tools
 - Generate **stunning images** from text descriptions
 - Create **audio responses** and **text-to-speech** with various voices
 - Generate **text content** using powerful AI models
-- Manage **GitHub authentication** and domain allowlists
+- Manage **Pollinations login** and domain allowlists
 
 ## 💡 Pro Tips
 - Combine tools for amazing results! Generate an image → convert to speech about it
 - Use specific models for better results (check available models first)
-- Adjust parameters like width/height for images to match your needs
+- Adjust parameters like width/height for images to match specific needs
 - Try different voices for unique audio vibes
 
-## 🤔 Need Help?
-Just ask! I'm here to make creativity easy and fun! Let's make something awesome together! 🎉`
+## 🤔 Usage Help
+These tools enable creative content generation with Pollinations APIs. The assistant can help with using these tools effectively.`
     });
     
     // Register all tools using the spread operator to pass the tool definition arrays

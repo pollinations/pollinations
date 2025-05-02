@@ -51,11 +51,7 @@ export async function startMcpServer() {
     // Create the MCP server with tool definitions
     const server = new McpServer({
       name: 'pollinations-mcp',
-      version: '1.0.8',
-    }, {
-      capabilities: {
-        tools: {}
-      },
+      version: '1.0.10',
       instructions: `# 🚀 Pollinations MCP Server
 
 ## 💫 Available Capabilities
@@ -78,6 +74,10 @@ When interacting with the Pollinations MCP server, use **vibey** Gen-Z language 
 
 ## 🤔 Usage Help
 These tools enable creative content generation with Pollinations APIs. The assistant can help with using these tools effectively.`,
+    }, {
+      capabilities: {
+        tools: {}
+      }
     });
     
     // Register all tools using the spread operator to pass the tool definition arrays

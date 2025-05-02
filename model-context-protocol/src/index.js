@@ -55,71 +55,21 @@ export async function startMcpServer() {
       capabilities: {
         tools: {}
       },
-      instructions: `# 🚀 Pollinations MCP Server - Unleash Your Creative Superpowers! 
+      instructions: `# 🚀 Pollinations MCP Server
 
-## 💫 What's This?
-Hey there! I'm your creative sidekick for generating **images**, **text**, **audio** and managing your GitHub auth - all through simple commands! No complicated setup, just pure creative magic ✨
+## 💫 What I Can Do
+Hey there! I'm your creative sidekick for **images**, **text**, **audio** and **GitHub auth** - all through simple commands! ✨
 
-## 🎨 Image Generation
-- **generateImageUrl** - Get a shareable URL for your image creation
-  \`\`\`
-  generateImageUrl({ prompt: "sunset over mountains with purple sky" })
-  \`\`\`
-- **generateImage** - Get the actual image as base64 (perfect for embedding!)
-  \`\`\`
-  generateImage({ prompt: "cyberpunk cat wearing sunglasses", options: { width: 768, height: 768 } })
-  \`\`\`
-- **listImageModels** - See what image models are available
-  \`\`\`
-  listImageModels()
-  \`\`\`
-
-## 🔊 Audio & Speech
-- **respondAudio** - Generate an audio response (like a mini podcast!)
-  \`\`\`
-  respondAudio({ prompt: "Explain quantum computing in simple terms", voice: "nova" })
-  \`\`\`
-- **sayText** - Make the exact text into speech
-  \`\`\`
-  sayText({ text: "Hey, this is exactly what I'll say!" })
-  \`\`\`
-- **listAudioVoices** - Check out available voice options
-  \`\`\`
-  listAudioVoices()
-  \`\`\`
-
-## ✍️ Text Generation
-- **generateText** - Create text content with AI models
-  \`\`\`
-  generateText({ prompt: "Write a short poem about technology", model: "openai" })
-  \`\`\`
-- **listTextModels** - See available text models
-  \`\`\`
-  listTextModels()
-  \`\`\`
-
-## 🔐 GitHub Authentication
-- **startAuth** - Begin GitHub OAuth flow
-  \`\`\`
-  startAuth()
-  \`\`\`
-- **checkAuthStatus** - Check if auth is complete
-  \`\`\`
-  checkAuthStatus({ sessionId: "your-session-id" })
-  \`\`\`
-- **getDomains** - View your allowlisted domains
-  \`\`\`
-  getDomains({ userId: "your-github-id", sessionId: "your-session-id" })
-  \`\`\`
-- **updateDomains** - Update your allowlisted domains
-  \`\`\`
-  updateDomains({ userId: "your-github-id", domains: ["example.com"], sessionId: "your-session-id" })
-  \`\`\`
+## 🎨 Creative Capabilities
+- Generate **stunning images** from text descriptions
+- Create **audio responses** and **text-to-speech** with various voices
+- Generate **text content** using powerful AI models
+- Manage **GitHub authentication** and domain allowlists
 
 ## 💡 Pro Tips
 - Combine tools for amazing results! Generate an image → convert to speech about it
-- Use specific models for better results (try \`listImageModels()\` and \`listTextModels()\`)
-- Adjust width/height for images to match your needs
+- Use specific models for better results (check available models first)
+- Adjust parameters like width/height for images to match your needs
 - Try different voices for unique audio vibes
 
 ## 🤔 Need Help?

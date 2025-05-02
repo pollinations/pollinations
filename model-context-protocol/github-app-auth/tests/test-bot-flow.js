@@ -111,7 +111,11 @@ async function getDomains() {
   }
   
   try {
-    const response = await fetch(`${API_BASE_URL}/api/user/${githubUserId}/domains`);
+    const response = await fetch(`${API_BASE_URL}/api/user/${githubUserId}/domains`, {
+      headers: {
+        'x-session-id': sessionId
+      }
+    });
     const data = await response.json();
     
     return data.domains || [];
@@ -132,7 +136,8 @@ async function updateDomains(domains) {
     const response = await fetch(`${API_BASE_URL}/api/user/${githubUserId}/domains`, {
       method: 'PUT',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'x-session-id': sessionId
       },
       body: JSON.stringify({ domains })
     });

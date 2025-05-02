@@ -1,6 +1,6 @@
 # PR Tracking
 
-This document tracks the status of pull requests submitted to add Pollinations.AI to various repositories.
+This document tracks the status of pull requests submitted to external repositories to promote Pollinations.AI.
 
 | Repository | PR Link | Status | Date | Notes |
 |------------|---------|--------|------|-------|
@@ -23,7 +23,17 @@ This document tracks the status of pull requests submitted to add Pollinations.A
 | [ai-chatbot-framework](https://github.com/alfredfrancis/ai-chatbot-framework) | [PR #196](https://github.com/alfredfrancis/ai-chatbot-framework/pull/196) | Closed | 2025-04-29 | Temporarily closed for testing. Extensive integration changes. |
 | [koishi](https://github.com/koishijs/koishi) | [PR #1498](https://github.com/koishijs/koishi/pull/1498) | Closed | 2025-04-29 | Temporarily closed for testing. Extensive integration changes. |
 | [cheshire-cat-ai](https://github.com/cheshire-cat-ai/core) | [Plugin Repository](https://github.com/voodoohop/cheshire-cat-pollinations-plugin) | Published | 2025-04-19 | Created standalone Pollinations.AI plugin for Cheshire Cat AI |
+| [awesome-ai-tools](https://github.com/vishalxl/Awesome-Generative-AI-Tools) | [PR #TBD](https://github.com/vishalxl/Awesome-Generative-AI-Tools/pulls) | Planned | 2025-04-19 | Will add to the "Image Generation" and "Text Generation" sections |
 | [awesome-ai-learning (Awesome-LLM)](https://github.com/Hannibal046/Awesome-LLM) | [PR #TBD](https://github.com/Hannibal046/Awesome-LLM/pulls) | Open | 2025-04-19 | Added Pollinations.AI to the LLM Applications section |
 | [SillyTavern](https://github.com/SillyTavern/SillyTavern) | [PR #TBD](https://github.com/SillyTavern/SillyTavern/pulls) | Submitted | 2025-05-16 | Added Pollinations.AI integration for text and image generation |
 | [OpenWebUI](https://github.com/open-webui/open-webui) | [PR #TBD](https://github.com/open-webui/open-webui/pulls) | Submitted | 2025-05-16 | Added Pollinations.AI integration for image generation |
 | [awesome-creative-coding](https://github.com/terkelg/awesome-creative-coding) | [PR #213](https://github.com/terkelg/awesome-creative-coding/pull/213) | Open | 2025-04-29 | Added Pollinations.AI to the AI/ML section |
+| [public-apis/public-apis](https://github.com/public-apis/public-apis) | [PR #TBD](https://github.com/public-apis/public-apis/pulls) | Planned | 2025-04-30 | Will add to the "Machine Learning" section |
+| [filipecalegario/awesome-generative-ai](https://github.com/filipecalegario/awesome-generative-ai) | [PR #TBD](https://github.com/filipecalegario/awesome-generative-ai/pulls) | Planned | 2025-04-30 | Will add to multiple sections (Text, Image Generation, Audio) |
+| [touretzkyds/ai4k12](https://github.com/touretzkyds/ai4k12) | [PR #TBD](https://github.com/touretzkyds/ai4k12/pulls) | Ready | 2025-04-30 | Added multilingual (EN/ES) educational resources aligned with "5 Big Ideas in AI" framework |
+| [EdenIsHereToStay/AiSchool](https://github.com/EdenIsHereToStay/AiSchool) | [PR #TBD](https://github.com/EdenIsHereToStay/AiSchool/pulls) | Planned | 2025-04-30 | Will add to resources section |
+| [zukixa/cool-ai-stuff](https://github.com/zukixa/cool-ai-stuff) | [PR #TBD](https://github.com/zukixa/cool-ai-stuff/pulls) | Planned | 2025-04-30 | Will add to the main list |
+| [apibird/public-apis](https://github.com/apibird/public-apis) | [PR #TBD](https://github.com/apibird/public-apis/pulls) | Planned | 2025-04-30 | Will add to the "Machine Learning" section |
+| [eduStack/ai4kid](https://github.com/eduStack/ai4kid) | [PR #1](https://github.com/eduStack/ai4kid/pull/1) | Open | 2025-04-30 | Added Pollinations.AI to the "生成式人工智能" section with bilingual guide and demo |
+| [natnew/Awesome-Generative-AI](https://github.com/natnew/Awesome-Generative-AI) | [PR #TBD](https://github.com/natnew/Awesome-Generative-AI/pulls) | Planned | 2025-04-30 | Will add to the "APIs and Frameworks" section |
+| [meetpateltech/AI-Infinity](https://github.com/meetpateltech/AI-Infinity) | [PR #TBD](https://github.com/meetpateltech/AI-Infinity/pulls) | Planned | 2025-04-30 | Will add to multiple categories |

@@ -1,22 +1,22 @@
 {
   "name": "@pollinations/model-context-protocol",
-  "version": "1.0.6",
-  "description": "Model Context Protocol (MCP) server for Pollinations AI image generation",
+  "version": "1.0.11",
+  "description": "Model Context Protocol (MCP) server for Pollinations AI services using stdio transport",
   "type": "module",
   "bin": {
-    "model-context-protocol": "./pollinations-mcp-server.js"
+    "pollinations-mcp": "./pollinations-mcp"
   },
   "files": [
     "src/**/*",
-    "pollinations-mcp-server.js",
-    "install-claude-mcp.js",
+    "pollinations-mcp",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
     "test": "node test-mcp-client.js",
-    "start": "node pollinations-mcp-server.js",
-    "install-claude-mcp": "node install-claude-mcp.js"
+    "test:integration": "vitest run tests/integration",
+    "test:integration:watch": "vitest watch tests/integration",
+    "start": "node ./pollinations-mcp"
   },
   "keywords": [
     "pollinations",
@@ -24,22 +24,34 @@
     "image",
     "generation",
     "model-context-protocol",
-    "mcp"
+    "mcp",
+    "stdio"
   ],
   "author": "Pollinations.AI",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.7.0",
+    "@modelcontextprotocol/sdk": "^1.10.2",
+    "dotenv": "^16.5.0",
+    "node-abort-controller": "^3.1.1",
     "node-fetch": "^3.3.2",
     "play-sound": "^1.1.6",
-    "node-abort-controller": "^3.1.1"
+    "zod": "^3.24.3"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pollinations/pollinations.git",
     "directory": "model-context-protocol"
   },
+  "bugs": {
+    "url": "https://github.com/pollinations/pollinations/issues"
+  },
+  "homepage": "https://github.com/pollinations/pollinations#readme",
   "engines": {
     "node": ">=14.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.1",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.2"
   }
 }

@@ -1,6 +1,6 @@
 # Pollinations Multimodal MCP Server
 
-A Model Context Protocol (MCP) server for the Pollinations APIs that enables AI assistants like Claude to generate images, text, and audio directly.
+A Model Context Protocol (MCP) server for the Pollinations APIs that enables AI assistants like Claude to generate images, text, and audio directly. This server follows the "thin proxy" design principle, focusing on minimal data transformation and direct communication through stdio.
 
 ## Features
 
@@ -9,7 +9,7 @@ A Model Context Protocol (MCP) server for the Pollinations APIs that enables AI 
 - Generate text responses from text prompts
 - Generate audio (text-to-speech) from text prompts
 - List available image and text generation models
-- No authentication required
+- STDIO transport for easy integration with MCP clients
 - Simple and lightweight
 - Compatible with the Model Context Protocol (MCP)
 
@@ -35,7 +35,22 @@ If you prefer to install it globally:
 npm install -g @pollinations/model-context-protocol
 
 # Run the server
-model-context-protocol
+pollinations-mcp
+```
+
+## Transport
+
+The MCP server exclusively uses STDIO transport, which is ideal for local integrations and command-line tools:
+
+```bash
+# Run with STDIO transport
+npx @pollinations/model-context-protocol
+```
+
+For MCP clients, connect using:
+
+```bash
+npx supergateway --stdio -- pollinations-mcp
 ```
 
 ## Claude Desktop Integration
@@ -79,7 +94,7 @@ This is usually caused by running on an older version of Node.js (below version 
    # or run with npx
    npx @pollinations/model-context-protocol@latest
    ```
-   
+
 3. **Install AbortController manually**:
    - If for some reason the polyfill doesn't work:
    ```bash
@@ -100,6 +115,8 @@ If it shows a version lower than 16.0.0, consider upgrading for best compatibili
 
 The MCP server provides the following tools:
 
+### Content Generation
+
 1. `generateImageUrl` - Generates an image URL from a text prompt
 2. `generateImage` - Generates an image and returns it as base64-encoded data
 3. `respondAudio` - Generates an audio response to a text prompt
@@ -109,10 +126,17 @@ The MCP server provides the following tools:
 
 ## Changelog
 
+### Version 1.0.7
+- Simplified architecture by removing HTTP server components
+- Transitioned to stdio-only transport following MCP best practices
+- Removed authentication server (moved to separate github-app-auth service)
+- Reduced dependencies for a smaller, more focused package
+- Updated documentation to reflect the new architecture
+
 ### Version 1.0.6
 - Added compatibility with Node.js versions 14.0.0 and later
 - Added AbortController polyfill for Node.js versions below 16.0.0
-- Fixed "AbortController is not defined" error 
+- Fixed "AbortController is not defined" error
 - Improved error handling and reporting
 - Added troubleshooting guide in README
 - Enhanced documentation with system requirements and installation options

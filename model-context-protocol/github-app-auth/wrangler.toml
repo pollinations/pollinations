@@ -1,0 +1,28 @@
+name = "github-app-auth"
+main = "src/index.ts"
+compatibility_date = "2023-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "github_auth"
+database_id = "4145d600-1df6-44a2-9769-5d5f731deb77" # Replace with actual D1 ID after creation
+
+# Add environment variables for production
+[vars]
+GITHUB_CLIENT_ID = "Ov23li0fJetQ56U2JKsF"
+REDIRECT_URI = "https://auth.pollinations.ai/callback"
+
+# Use local env variables for development
+[env.dev]
+vars = { GITHUB_CLIENT_ID = "Ov23li0fJetQ56U2JKsF", REDIRECT_URI = "http://localhost:8787/callback" }
+
+# Custom Domain configuration
+[[routes]]
+pattern = "auth.pollinations.ai"
+custom_domain = true
+
+# Use secrets for sensitive information
+# To set secrets locally: wrangler secret put GITHUB_CLIENT_SECRET
+# For GitHub App key: wrangler secret put GITHUB_APP_PRIVATE_KEY

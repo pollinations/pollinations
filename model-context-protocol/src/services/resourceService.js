@@ -1,17 +1,20 @@
 /**
  * Pollinations Resource Service
- * 
- * Functions for handling resources and prompts
+ *
+ * Functions and schemas for handling resources and prompts
  */
+
+import { createMCPResponse, createTextContent } from '../utils/coreUtils.js';
+import { z } from 'zod';
 
 /**
  * Lists available resources
- * 
+ *
  * @returns {Promise<Object>} - Object containing the list of available resources
  */
-export async function listResources() {
-  // Return resources in the format specified by the MCP specification
-  return {
+async function listResources() {
+  // Prepare the resources data
+  const resourcesData = {
     resources: [
       {
         uri: "pollinations:image-models",
@@ -53,17 +56,21 @@ export async function listResources() {
       }
     ]
   };
+
+  // Return the response in MCP format using utility functions
+  return createMCPResponse([
+    createTextContent(resourcesData, true)
+  ]);
 }
 
 /**
  * Lists available prompts
- * 
+ *
  * @returns {Promise<Object>} - Object containing the list of available prompts
  */
-export async function listPrompts() {
-  // For now, return a basic list of example prompts
-  // This can be expanded later to fetch from an actual API endpoint
-  return {
+async function listPrompts() {
+  // Prepare the prompts data
+  const promptsData = {
     prompts: [
       {
         id: "image-generation",
@@ -94,4 +101,28 @@ export async function listPrompts() {
       }
     ]
   };
+
+  // Return the response in MCP format using utility functions
+  return createMCPResponse([
+    createTextContent(promptsData, true)
+  ]);
 }
+
+/**
+ * Export tools as complete arrays ready to be passed to server.tool()
+ */
+export const resourceTools = [
+  [
+    'listResources',
+    'List available resources from the Pollinations API',
+    {},
+    listResources
+  ],
+  
+  [
+    'listPrompts',
+    'List available example prompts from the Pollinations API',
+    {},
+    listPrompts
+  ]
+];

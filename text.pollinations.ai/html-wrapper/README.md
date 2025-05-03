@@ -15,13 +15,31 @@ npm install
 
 ## Usage
 
-Start the server:
+### Option 1: Run with Node.js/Express
+
+Start the server using Node.js:
 
 ```bash
 npm start
 ```
 
-The server will run on port 16386 by default. You can change this by setting the PORT environment variable.
+### Option 2: Run with Wrangler (Recommended)
+
+Start the server using Cloudflare's Wrangler for local development:
+
+```bash
+./start-wrangler.sh
+```
+
+or
+
+```bash
+npm run dev
+```
+
+This will run the same code that gets deployed to Cloudflare Workers, providing a consistent environment between development and production.
+
+The server will run on port 16386 by default. You can change this by setting the PORT environment variable or updating the wrangler.toml file.
 
 ## Making Requests
 
@@ -53,24 +71,24 @@ The system prompt instructs the model to:
 - Include all necessary JavaScript within <script> tags
 - Make the design clean, modern, and responsive
 
-## Deployment to web.pollinations.ai
+## Deployment to websim.pollinations.ai
 
-To deploy this service to web.pollinations.ai:
+To deploy this service to websim.pollinations.ai:
 
-1. Make sure the service is working correctly locally
-2. Package the service for deployment:
+1. Make sure the service is working correctly locally using Wrangler
+2. Deploy using Wrangler:
    ```bash
-   npm install
+   npm run deploy
    ```
-3. Deploy to web.pollinations.ai using Cloudflare Workers:
-   - Create a new Cloudflare Worker
-   - Upload the code to the worker
-   - Configure the worker to handle requests at web.pollinations.ai/html
-   - Set the necessary environment variables
+
+   Or manually:
+   ```bash
+   npx wrangler deploy
+   ```
 
 Once deployed, you can access the service at:
 ```
-https://web.pollinations.ai/html/Create a simple calculator with HTML, CSS, and JavaScript
+https://websim.pollinations.ai/Create a simple calculator with HTML, CSS, and JavaScript
 ```
 
-Note: The actual deployment process may vary depending on the specific Cloudflare Workers setup used by pollinations.ai.
+Note: The deployment configuration is defined in the wrangler.toml file.

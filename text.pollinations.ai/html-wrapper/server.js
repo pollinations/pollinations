@@ -14,7 +14,7 @@ Include all necessary CSS inline within a <style> tag in the head section.
 Include all necessary JavaScript within <script> tags, preferably at the end of the body.
 Make the design clean, modern, and responsive.
 Write the code in a sequence that lets the browsr already render something meaningful while it is being transmitted
-Feel free to incrementally show the UI.
+The UI will be shown as it is being transmitted.
 Imagine you are coding for a demoscene challenge where code should be short and elegant.
 Use images from src="https://image.polliations.ai/prompt/[urlencoded prompt]?width=[width]&height=[height]"
 `;
@@ -48,7 +48,7 @@ app.get('/*', async (req, res) => {
     res.setHeader('Transfer-Encoding', 'chunked');
 
     // Prepare the request to web.pollinations.ai/openai
-    const apiResponse = await fetch('https://web.pollinations.ai/openai/chat/completions', {
+    const apiResponse = await fetch('https://text.pollinations.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

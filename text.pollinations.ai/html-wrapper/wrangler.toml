@@ -3,8 +3,14 @@ main = "worker.js"
 compatibility_date = "2023-05-03"
 
 routes = [
-  { pattern = "web.pollinations.ai/html/*", zone_name = "pollinations.ai" }
+  { pattern = "websim.pollinations.ai/*", zone_name = "pollinations.ai" }
 ]
 
 [vars]
 PORT = "16386"
+
+# Local development settings
+[dev]
+port = 16386
+local_protocol = "http"
+ip = "localhost"

@@ -70,9 +70,8 @@ export default {
       const { readable, writable } = new TransformStream();
 
       // Variables to track state
-      let codeBlockStarted = false;
-      let codeBlockEnded = false;
-      let accumulatedText = '';
+      let insideCodeBlock = false;
+      let buffer = '';
 
       // Process the stream using eventsource-parser
       const parser = createParser((event) => {
@@ -85,36 +84,34 @@ export default {
 
             if (data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content) {
               const content = data.choices[0].delta.content;
-              accumulatedText += content;
 
               // Check for code block markers
-              if (!codeBlockStarted && accumulatedText.includes('```html')) {
-                codeBlockStarted = true;
-                // Extract everything after ```html
-                const startIndex = accumulatedText.indexOf('```html') + 7;
-                const htmlContent = accumulatedText.substring(startIndex);
+              if (content.includes('```html')) {
+                insideCodeBlock = true;
+                // Only keep what comes after ```html
+                buffer = content.split('```html')[1] || '';
+              } else if (insideCodeBlock && content.includes('```')) {
+                // We've reached the end of the code block
+                // Only include content before the closing ```
+                const parts = content.split('```');
+                buffer += parts[0];
 
-                // Write the HTML content
+                // Write the buffer to the stream
                 const writer = writable.getWriter();
-                writer.write(new TextEncoder().encode(htmlContent));
+                writer.write(new TextEncoder().encode(buffer));
                 writer.releaseLock();
-              } else if (codeBlockStarted && !codeBlockEnded) {
-                // Check if this chunk contains the end marker
-                if (content.includes('```')) {
-                  codeBlockEnded = true;
-                  // Only write content up to the end marker
-                  const endIndex = content.indexOf('```');
-                  if (endIndex > 0) {
-                    const writer = writable.getWriter();
-                    writer.write(new TextEncoder().encode(content.substring(0, endIndex)));
-                    writer.releaseLock();
-                  }
-                } else {
-                  // Continue streaming HTML content
-                  const writer = writable.getWriter();
-                  writer.write(new TextEncoder().encode(content));
-                  writer.releaseLock();
-                }
+
+                // Reset state
+                insideCodeBlock = false;
+                buffer = '';
+              } else if (insideCodeBlock) {
+                // Inside code block, accumulate content
+                buffer += content;
+
+                // Write the content to the stream
+                const writer = writable.getWriter();
+                writer.write(new TextEncoder().encode(content));
+                writer.releaseLock();
               }
             }
           } catch (error) {
@@ -138,18 +135,9 @@ export default {
             parser.feed(new TextDecoder().decode(value));
           }
 
-          // If we never started streaming HTML code block, send a fallback HTML
-          if (!codeBlockStarted && accumulatedText) {
-            const writer = writable.getWriter();
-            writer.write(new TextEncoder().encode('<!DOCTYPE html>\n<html>\n<body>\n'));
-            writer.write(new TextEncoder().encode(`<pre>${accumulatedText}</pre>`));
-            writer.write(new TextEncoder().encode('\n</body>\n</html>'));
-            writer.close();
-          } else {
-            // Close the writer
-            const writer = writable.getWriter();
-            writer.close();
-          }
+          // Always close the writer when done
+          const writer = writable.getWriter();
+          writer.close();
         } catch (error) {
           console.error('Error processing stream:', error);
           const writer = writable.getWriter();

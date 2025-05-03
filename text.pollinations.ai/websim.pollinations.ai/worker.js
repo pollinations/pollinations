@@ -5,11 +5,12 @@ Include all necessary CSS inline within a <style> tag in the head section.
 Include all necessary JavaScript within <script> tags, preferably at the end of the body.
 Make the design clean, modern, and responsive.
 Write the code in a sequence that lets the browser already render something meaningful while it is being transmitted.
-Feel free to incrementally show the UI.
+The UI will be incrementally shown as the code is streamed to the frontend.
 Imagine you are coding for a demoscene challenge where code should be short and elegant.
 Use images from src="https://image.pollinations.ai/prompt/[urlencoded prompt]?width=[width]&height=[height]"
-Links to subpages should always be relative without a leading slash.
-You are targeting modern browsers.`;
+Links to subpages should always be relative without a leading slash. Don't use JS-based links unless it is triggering something interactive. New content should usually come by following a real link.
+You are targeting modern browsers.
+Please include open-graph metatags and use a Pollinations image for the thumbnail / image preview.`;
 
 // Main handler function
 export default {

@@ -25,6 +25,11 @@ export default {
  * @returns {Response} The response
  */
 async function handleRequest(request) {
+  // Handle CORS preflight requests
+  if (request.method === 'OPTIONS') {
+    return handleCorsPreflightRequest();
+  }
+
   const url = new URL(request.url);
   const path = decodeURIComponent(url.pathname);
 
@@ -35,11 +40,42 @@ async function handleRequest(request) {
   // Extract prompt from path
   const prompt = extractPromptFromPath(path);
   if (!prompt) {
-    return new Response('Pass a prompt after /', { status: 400 });
+    return new Response('Pass a prompt after /', {
+      status: 400,
+      headers: getCorsHeaders()
+    });
   }
 
   // Generate HTML from prompt
   return generateHtml(prompt);
+}
+
+/**
+ * Get standard CORS headers
+ * @returns {Object} CORS headers
+ */
+function getCorsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+  };
+}
+
+/**
+ * Handle CORS preflight requests
+ * @returns {Response} A response with CORS headers
+ */
+function handleCorsPreflightRequest() {
+  const headers = {
+    ...getCorsHeaders(),
+    'Access-Control-Max-Age': '86400', // 24 hours
+  };
+
+  return new Response(null, {
+    status: 204,
+    headers
+  });
 }
 
 /**
@@ -51,14 +87,25 @@ async function handleRequest(request) {
 function processPath(path, request) {
   // Quick filters for common non-content requests
   if (path === '/favicon.ico' || path.startsWith('/.')) {
-    return new Response('Not found', { status: 404 });
+    return new Response('Not found', {
+      status: 404,
+      headers: getCorsHeaders()
+    });
   }
 
   // Enforce trailing slash only if there are 2 or less slashes in the path
   if (shouldRedirectWithTrailingSlash(path)) {
     const redirectUrl = new URL(request.url);
     redirectUrl.pathname += '/';
-    return Response.redirect(redirectUrl.toString(), 301);
+
+    // Create a new response with the same status and redirect URL, but with CORS headers
+    return new Response(null, {
+      status: 301,
+      headers: {
+        ...getCorsHeaders(),
+        'Location': redirectUrl.toString()
+      }
+    });
   }
 
   return null;
@@ -100,7 +147,10 @@ async function generateHtml(prompt) {
   const upstream = await fetchFromTextApi(prompt);
 
   if (!upstream.ok || !upstream.body) {
-    return new Response(`Upstream error ${upstream.status}`, { status: 502 });
+    return new Response(`Upstream error ${upstream.status}`, {
+      status: 502,
+      headers: getCorsHeaders()
+    });
   }
 
   // Process the stream
@@ -110,12 +160,13 @@ async function generateHtml(prompt) {
     .pipeThrough(createHtmlGateTransformer())
     .pipeThrough(new TextEncoderStream()); // text ➜ bytes
 
-  // Return the response
+  // Return the response with CORS headers
   return new Response(htmlStream, {
     headers: {
       'Content-Type':     'text/html; charset=utf-8',
       'Content-Encoding': 'identity',
-      'Cache-Control':    'no-cache'
+      'Cache-Control':    'no-cache',
+      ...getCorsHeaders()
     }
   });
 }

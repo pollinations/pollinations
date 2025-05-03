@@ -15,27 +15,33 @@ export default {
     const url = new URL(request.url);
     const clientIP = request.headers.get('cf-connecting-ip') || 'unknown';
     const method = request.method;
-    
+
     console.log(`Request: ${method} ${url.pathname}`);
-    
+
     // Skip caching for specific paths or when no-cache is specified
     const nonCacheablePaths = ['/models', '/feed', '/openai/models'];
     if (url.searchParams.has('no-cache') || nonCacheablePaths.includes(url.pathname)) {
       console.log('Skipping cache for non-cacheable request');
       return await proxyToOrigin(request, env);
     }
-    
-    // Check if this is a streaming request
-    const isStreamingRequest = url.searchParams.has('stream');
-    
+
+    // Initialize streaming request flag based on URL query parameter
+    let isStreamingRequest = url.searchParams.has('stream');
+
     // For POST requests, we need to read the body to generate the cache key
     let requestBody = null;
     let requestClone = request.clone();
-    
+
     if (method === 'POST') {
       try {
         requestBody = await request.clone().json();
         console.log('Request body parsed for cache key generation');
+
+        // Also check if the request body has stream: true
+        if (requestBody && requestBody.stream === true) {
+          isStreamingRequest = true;
+          console.log('Streaming request detected from request body');
+        }
       } catch (error) {
         console.error('Error parsing request body:', error);
         // If we can't parse the body, we can't generate a proper cache key
@@ -43,20 +49,20 @@ export default {
         return await proxyToOrigin(requestClone, env);
       }
     }
-    
+
     // Generate a cache key from the URL path, query parameters, and request body
     const cacheKey = generateCacheKey(url, requestBody);
     console.log('Cache key:', cacheKey);
-    
+
     // Check if we have this response cached in R2
     try {
       const cachedResponse = await env.TEXT_BUCKET.get(cacheKey);
-      
+
       if (cachedResponse) {
         console.log(`Cache hit for: ${cacheKey}`);
         // Return the cached response with appropriate headers
         const cachedHeaders = new Headers();
-        
+
         // Use the stored HTTP metadata if available
         if (cachedResponse.httpMetadata) {
           if (cachedResponse.httpMetadata.contentType) {
@@ -80,14 +86,14 @@ export default {
         if (isStreamingRequest) {
           cachedHeaders.set('content-type', 'text/event-stream; charset=utf-8');
         }
-        
+
         // Always set these headers for cache control and CORS
         cachedHeaders.set('cache-control', 'public, max-age=31536000, immutable');
         cachedHeaders.set('x-cache', 'HIT');
         cachedHeaders.set('access-control-allow-origin', '*');
         cachedHeaders.set('access-control-allow-methods', 'GET, POST, OPTIONS');
         cachedHeaders.set('access-control-allow-headers', 'Content-Type');
-        
+
         return new Response(cachedResponse.body, {
           headers: cachedHeaders
         });
@@ -95,24 +101,24 @@ export default {
     } catch (error) {
       console.error('Error retrieving cached response:', error);
     }
-    
+
     console.log(`Cache miss for: ${cacheKey}`);
-    
+
     // Cache miss - proxy to origin
     console.log('Proxying request to origin service...');
     const response = await proxyToOrigin(requestClone, env);
-    
+
     // Only cache successful responses (including streaming responses)
     if (response.status === 200) {
       // Check content type to determine if it's a text, JSON, or streaming response
       const contentType = response.headers.get('content-type') || '';
-      const isTextResponse = contentType.includes('text/') || 
-                            contentType.includes('application/json') || 
+      const isTextResponse = contentType.includes('text/') ||
+                            contentType.includes('application/json') ||
                             contentType.includes('application/javascript');
-      
+
       // Check if this is a streaming response
       const isStreamingResponse = contentType.includes('text/event-stream');
-      
+
       // Cache both regular text responses and streaming responses
       if (isTextResponse || isStreamingResponse) {
         console.log('Caching successful text response');
@@ -124,11 +130,11 @@ export default {
     } else {
       console.log('Not caching unsuccessful response with status:', response.status);
     }
-    
+
     // Add cache miss header to the response
     const newHeaders = new Headers(response.headers);
     newHeaders.set('x-cache', 'MISS');
-    
+
     return new Response(response.body, {
       status: response.status,
       statusText: response.statusText,

@@ -3,8 +3,15 @@ import { createParser } from 'eventsource-parser';
 // System prompt that instructs the model to return a single HTML file
 const HTML_SYSTEM_PROMPT = `You are an HTML generator. Your task is to return a single, complete HTML file that implements what the user asks for.
 The HTML should be valid, self-contained, and ready to be rendered in a browser.
-Do not include any explanations, markdown formatting, or code blocks.
-Start your response with <!DOCTYPE html> and end with </html>.
+Place your HTML code inside a markdown code block with the html language specifier like this:
+
+\`\`\`html
+<!DOCTYPE html>
+<html>
+...
+</html>
+\`\`\`
+
 Include all necessary CSS inline within a <style> tag in the head section.
 Include all necessary JavaScript within <script> tags, preferably at the end of the body.
 Make the design clean, modern, and responsive.
@@ -13,10 +20,7 @@ Feel free to incrementally show the UI.
 Imagine you are coding for a demoscene challenge where code should be short and elegant.
 Use images from src="https://image.pollinations.ai/prompt/[urlencoded prompt]?width=[width]&height=[height]"`;
 
-// Function to detect if a string contains an HTML tag
-function containsHtmlTag(text) {
-  return /<(!DOCTYPE|html|head|body|div|p|h[1-6]|span|a|img|ul|ol|li|table|tr|td|th|form|input|button|script|style)\b/i.test(text);
-}
+// No helper functions needed - we check for code blocks directly in the stream processing
 
 // Main worker function
 export default {
@@ -66,9 +70,9 @@ export default {
       const { readable, writable } = new TransformStream();
 
       // Variables to track state
-      let htmlStarted = false;
-      let accumulatedHtml = '';
-      let docTypeWritten = false;
+      let codeBlockStarted = false;
+      let codeBlockEnded = false;
+      let accumulatedText = '';
 
       // Process the stream using eventsource-parser
       const parser = createParser((event) => {
@@ -81,34 +85,36 @@ export default {
 
             if (data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content) {
               const content = data.choices[0].delta.content;
-              accumulatedHtml += content;
+              accumulatedText += content;
 
-              // Check if we've encountered the first HTML tag
-              if (!htmlStarted && containsHtmlTag(accumulatedHtml)) {
-                htmlStarted = true;
+              // Check for code block markers
+              if (!codeBlockStarted && accumulatedText.includes('```html')) {
+                codeBlockStarted = true;
+                // Extract everything after ```html
+                const startIndex = accumulatedText.indexOf('```html') + 7;
+                const htmlContent = accumulatedText.substring(startIndex);
 
-                // If we've found HTML but haven't written the doctype yet, check if it's in the accumulated content
-                if (!docTypeWritten) {
-                  const doctypeIndex = accumulatedHtml.indexOf('<!DOCTYPE html>');
-                  if (doctypeIndex !== -1) {
-                    // Write everything from the doctype onwards
-                    const writer = writable.getWriter();
-                    writer.write(new TextEncoder().encode(accumulatedHtml.substring(doctypeIndex)));
-                    writer.releaseLock();
-                    docTypeWritten = true;
-                  } else {
-                    // If no doctype found but we have HTML tags, add the doctype and write everything
-                    const writer = writable.getWriter();
-                    writer.write(new TextEncoder().encode('<!DOCTYPE html>\n' + accumulatedHtml));
-                    writer.releaseLock();
-                    docTypeWritten = true;
-                  }
-                }
-              } else if (htmlStarted && docTypeWritten) {
-                // Continue streaming HTML content
+                // Write the HTML content
                 const writer = writable.getWriter();
-                writer.write(new TextEncoder().encode(content));
+                writer.write(new TextEncoder().encode(htmlContent));
                 writer.releaseLock();
+              } else if (codeBlockStarted && !codeBlockEnded) {
+                // Check if this chunk contains the end marker
+                if (content.includes('```')) {
+                  codeBlockEnded = true;
+                  // Only write content up to the end marker
+                  const endIndex = content.indexOf('```');
+                  if (endIndex > 0) {
+                    const writer = writable.getWriter();
+                    writer.write(new TextEncoder().encode(content.substring(0, endIndex)));
+                    writer.releaseLock();
+                  }
+                } else {
+                  // Continue streaming HTML content
+                  const writer = writable.getWriter();
+                  writer.write(new TextEncoder().encode(content));
+                  writer.releaseLock();
+                }
               }
             }
           } catch (error) {
@@ -132,11 +138,11 @@ export default {
             parser.feed(new TextDecoder().decode(value));
           }
 
-          // If we never started streaming HTML (no HTML tags found), send the accumulated content
-          if (!htmlStarted && accumulatedHtml) {
+          // If we never started streaming HTML code block, send a fallback HTML
+          if (!codeBlockStarted && accumulatedText) {
             const writer = writable.getWriter();
             writer.write(new TextEncoder().encode('<!DOCTYPE html>\n<html>\n<body>\n'));
-            writer.write(new TextEncoder().encode(`<pre>${accumulatedHtml}</pre>`));
+            writer.write(new TextEncoder().encode(`<pre>${accumulatedText}</pre>`));
             writer.write(new TextEncoder().encode('\n</body>\n</html>'));
             writer.close();
           } else {

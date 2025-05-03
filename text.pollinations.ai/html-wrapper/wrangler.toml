@@ -2,6 +2,7 @@ name = "html-wrapper"
 main = "worker.js"
 compatibility_date = "2023-05-03"
 
+# Routes configuration
 routes = [
   { pattern = "websim.pollinations.ai/*", zone_name = "pollinations.ai" }
 ]

@@ -20,11 +20,17 @@ export default {
     if (path === '/favicon.ico' || path.startsWith('/.'))
       return new Response('Not found', { status: 404 });
 
-    // Enforce trailing slash for all paths except the root
+    // Enforce trailing slash only if there are 2 or less slashes in the path
     if (path !== '/' && !path.endsWith('/')) {
-      const redirectUrl = new URL(request.url);
-      redirectUrl.pathname += '/';
-      return Response.redirect(redirectUrl.toString(), 301);
+      // Count the number of slashes in the path
+      const slashCount = (path.match(/\//g) || []).length;
+
+      // Only redirect if there are 2 or less slashes (including the leading slash)
+      if (slashCount <= 2) {
+        const redirectUrl = new URL(request.url);
+        redirectUrl.pathname += '/';
+        return Response.redirect(redirectUrl.toString(), 301);
+      }
     }
 
     const prompt = path.slice(1, path.endsWith('/') ? -1 : undefined);

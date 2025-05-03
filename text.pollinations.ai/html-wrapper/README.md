@@ -75,21 +75,7 @@ To deploy this service to websim.pollinations.ai:
 
 1. Make sure the service is working correctly locally using Wrangler
 
-2. Add the DNS entry for websim.pollinations.ai:
-   - Log in to the Cloudflare dashboard for pollinations.ai
-   - Go to DNS > Records
-   - Add a new CNAME record:
-     - Name: websim
-     - Target: workers.dev
-     - Proxy status: Proxied
-     - TTL: Auto
-
-   Alternatively, you can use the provided script (after updating it with your credentials):
-   ```bash
-   ./add-dns-entry.sh
-   ```
-
-3. Deploy using Wrangler:
+2. Deploy using Wrangler:
    ```bash
    # Install Wrangler globally (if not already installed)
    npm install -g wrangler
@@ -97,6 +83,8 @@ To deploy this service to websim.pollinations.ai:
    # Deploy the worker
    wrangler deploy worker.js
    ```
+
+   Wrangler will automatically create the necessary DNS records for the custom domain (websim.pollinations.ai) as specified in your wrangler.toml file.
 
 Once deployed, you can access the service at:
 ```

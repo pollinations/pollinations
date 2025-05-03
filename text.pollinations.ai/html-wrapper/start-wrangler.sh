@@ -1,4 +1,4 @@
 #!/bin/bash
 cd "$(dirname "$0")"
 npm install
-npm run dev
+npx wrangler dev worker.js --local

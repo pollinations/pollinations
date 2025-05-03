@@ -28,13 +28,11 @@ npm start
 Start the server using Cloudflare's Wrangler for local development:
 
 ```bash
-./start-wrangler.sh
-```
+# Install Wrangler globally (if not already installed)
+npm install -g wrangler
 
-or
-
-```bash
-npm run dev
+# Run the worker locally
+wrangler dev worker.js --local
 ```
 
 This will run the same code that gets deployed to Cloudflare Workers, providing a consistent environment between development and production.
@@ -78,12 +76,11 @@ To deploy this service to websim.pollinations.ai:
 1. Make sure the service is working correctly locally using Wrangler
 2. Deploy using Wrangler:
    ```bash
-   npm run deploy
-   ```
+   # Install Wrangler globally (if not already installed)
+   npm install -g wrangler
 
-   Or manually:
-   ```bash
-   npx wrangler deploy
+   # Deploy the worker
+   wrangler deploy worker.js
    ```
 
 Once deployed, you can access the service at:

@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "wrangler dev --local",
-    "deploy": "wrangler deploy"
+    "dev": "wrangler dev worker.js --local",
+    "deploy": "wrangler deploy worker.js"
   },
   "dependencies": {
     "express": "^4.18.2",

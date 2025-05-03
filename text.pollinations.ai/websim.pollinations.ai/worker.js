@@ -115,7 +115,7 @@ async function generateHtml(prompt) {
     headers: {
       'Content-Type':     'text/html; charset=utf-8',
       'Content-Encoding': 'identity',
-      // 'Cache-Control':    'no-cache'
+      'Cache-Control':    'no-cache'
     }
   });
 }

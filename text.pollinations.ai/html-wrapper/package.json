@@ -5,13 +5,11 @@
   "main": "worker.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
     "dev": "wrangler dev worker.js --local",
     "deploy": "wrangler deploy worker.js"
   },
   "dependencies": {
     "eventsource-parser": "^1.1.1",
-    "express": "^4.18.2",
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {

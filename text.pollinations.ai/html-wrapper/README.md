@@ -15,16 +15,6 @@ npm install
 
 ## Usage
 
-### Option 1: Run with Node.js/Express
-
-Start the server using Node.js:
-
-```bash
-npm start
-```
-
-### Option 2: Run with Wrangler (Recommended)
-
 Start the server using Cloudflare's Wrangler for local development:
 
 ```bash
@@ -35,9 +25,15 @@ npm install -g wrangler
 wrangler dev worker.js --local
 ```
 
+Alternatively, you can use the npm script:
+
+```bash
+npm run dev
+```
+
 This will run the same code that gets deployed to Cloudflare Workers, providing a consistent environment between development and production.
 
-The server will run on port 16386 by default. You can change this by setting the PORT environment variable or updating the wrangler.toml file.
+The server will run on port 16386 by default. You can change this by updating the wrangler.toml file.
 
 ## Making Requests
 

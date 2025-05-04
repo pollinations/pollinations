@@ -10,7 +10,7 @@ Imagine you are coding for a demoscene challenge where code should be short and 
 Use images from src="https://image.pollinations.ai/prompt/[urlencoded prompt]?width=[width]&height=[height]"
 Links to subpages should always be relative without a leading slash. Don't use JS-based links unless it is triggering something interactive. New content should usually come by following a real link.
 You are targeting modern browsers.
-Please include open-graph metatags and use a Pollinations image for the thumbnail / image preview.`;
+Please include open-graph metatags and use a Pollinations image for the thumbnail / image preview. include 'og:image:width' and 'og:image:height`;
 
 // Main handler function
 export default {

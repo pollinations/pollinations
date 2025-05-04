@@ -112,7 +112,7 @@ If you need to modify the configuration:
 
 The text caching solution differs from the image caching solution in a few key ways:
 
-1. **Request Body Handling**: 
+1. **Request Body Handling**:
    - Includes relevant parts of the request body in the cache key for POST requests
    - Handles both GET and POST requests appropriately
 
@@ -134,3 +134,27 @@ The text caching solution includes support for caching streaming (Server-Sent Ev
    - Returns the complete cached stream as a single response
 3. This approach works because SSE is just a text format with a specific structure (lines prefixed with "data: " and separated by double newlines)
 4. The client can process the complete stream just as if it were receiving it in real-time
+
+### Important Caching Considerations
+
+The caching system follows the thin proxy principle while handling streaming and POST requests appropriately:
+
+1. **Separate Caches for Streaming and Non-Streaming Requests**:
+   - The `stream` parameter is included in the cache key generation
+   - This ensures streaming and non-streaming responses are cached separately
+   - Necessary because they use different response formats (text/event-stream vs. application/json)
+
+2. **Thin Proxy Approach for Request Bodies**:
+   - The entire request body is used for cache key generation, following the thin proxy principle
+   - No modification of request bodies or addition of default values
+   - Preserves the original request exactly as sent by the client
+
+3. **Seed Parameter Handling**:
+   - The system logs when a request is missing a seed value for debugging purposes
+   - The origin service handles seed generation for requests without a seed
+   - No modification of the request is performed by the caching layer
+
+4. **Transparent Caching**:
+   - The caching layer acts as a transparent proxy, making minimal assumptions about the content
+   - Requests and responses are passed through with minimal processing
+   - Cache keys are generated based on the complete request information

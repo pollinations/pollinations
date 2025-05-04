@@ -292,6 +292,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 Polynate | AI-powered text and audio content generation platform providing a user-friendly interface for interacting with various AI generation services from Pollinations.ai | @voodoohop | [Website](https://polynate.cloudwerx.dev/), [GitHub](https://github.com/CLOUDWERX-DEV/polynate) - ⭐ 1 |
 | 🆕 Echo AI | An HTML-based chat interface that leverages Pollinations AI as its core engine for both text and image generation, featuring user authentication, streaming responses, and plan management | @3ch0AI | [Website](https://3ch0ai.github.io/EchoAI), [GitHub](https://github.com/3ch0AI/EchoAI) |
 | 🆕 Pollinations.ai Enhancer | Enhances the user experience on pollinations.ai pages by improving content readability, adding convenient download options, and providing easy access to generation metadata | @fisven | [Website](https://greasyfork.org/en/scripts/534183-pollinations-ai-enhancer), [GitHub](https://github.com/fisventurous/pollinationsai-enhancer) |
 | 🆕 NetSim | websim.ai clone that's actually good | @kennet678 | [Website](https://netsim.us.to/) |

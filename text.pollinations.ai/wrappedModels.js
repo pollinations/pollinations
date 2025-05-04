@@ -28,7 +28,7 @@ export const hypnosisTracy = wrapModelWithContext(
 
 export const unityMistralLarge = wrapModelWithContext(
   unityPrompt,
-  generateTextMistral,
+  generateTextPortkey,
   "mistral"
 );
 
@@ -46,10 +46,9 @@ export const rtist = wrapModelWithContext(
 
 export const evilCommandR = wrapModelWithContext(
   evilPrompt,
-  generateTextMistral,
+  generateTextPortkey,
   "mistral"
 ); 
-
 
 export const generateTextMirexa = wrapModelWithContext(
   mirexaSystemPrompt,

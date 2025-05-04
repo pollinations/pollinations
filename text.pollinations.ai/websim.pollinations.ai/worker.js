@@ -164,6 +164,14 @@ async function generateHtml(prompt) {
     });
   }
 
+  // Log cache status headers
+  console.log('Cache status:', {
+    'cf-cache-status': upstream.headers.get('cf-cache-status'),
+    'age': upstream.headers.get('age'),
+    'cache-control': upstream.headers.get('cache-control'),
+    'x-cache': upstream.headers.get('x-cache')
+  });
+
   // Process the stream
   const htmlStream = upstream.body
     .pipeThrough(new TextDecoderStream())  // bytes ➜ text
@@ -171,12 +179,13 @@ async function generateHtml(prompt) {
     .pipeThrough(createHtmlGateTransformer())
     .pipeThrough(new TextEncoderStream()); // text ➜ bytes
 
-  // Return the response with CORS headers
+  // Return the response with CORS headers and pass through cache headers for debugging
   return new Response(htmlStream, {
     headers: {
       'Content-Type':     'text/html; charset=utf-8',
       'Content-Encoding': 'identity',
       'Cache-Control':    'no-cache',
+      'X-Upstream-Cache-Status': upstream.headers.get('cf-cache-status') || 'unknown',
       ...getCorsHeaders()
     }
   });

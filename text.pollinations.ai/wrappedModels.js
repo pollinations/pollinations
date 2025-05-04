@@ -10,12 +10,13 @@ import midijourneyPrompt from "./personas/midijourney.js";
 import rtistPrompt from "./personas/rtist.js";
 import evilPrompt from "./personas/evil.js";
 import hypnosisTracyPrompt from "./personas/hypnosisTracy.js";
+import mirexaSystemPrompt from "./personas/mirexa.js";
 
 
 
 export const surMistral = wrapModelWithContext(
   surSystemPrompt,
-  generateTextMistral,
+  generateTextPortkey,
   "mistral"
 );
 
@@ -27,7 +28,7 @@ export const hypnosisTracy = wrapModelWithContext(
 
 export const unityMistralLarge = wrapModelWithContext(
   unityPrompt,
-  generateTextMistral,
+  generateTextPortkey,
   "mistral"
 );
 
@@ -45,6 +46,12 @@ export const rtist = wrapModelWithContext(
 
 export const evilCommandR = wrapModelWithContext(
   evilPrompt,
-  generateTextMistral,
+  generateTextPortkey,
   "mistral"
 ); 
+
+export const generateTextMirexa = wrapModelWithContext(
+  mirexaSystemPrompt,
+  generateTextPortkey,
+  "openai-large"
+);

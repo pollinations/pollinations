@@ -1,0 +1,18 @@
+{
+  "name": "html-wrapper",
+  "version": "1.0.0",
+  "description": "Wrapper service for text.pollinations.ai/openai that returns HTML content",
+  "main": "worker.js",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev worker.js --local",
+    "deploy": "wrangler deploy worker.js"
+  },
+  "dependencies": {
+    "eventsource-parser": "^1.1.1",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "wrangler": "^4.14.1"
+  }
+}

@@ -337,6 +337,7 @@ Pollinations.AI is used in various projects, including:
 
 | Library | Description | Creator | Links |
 |---------|-------------|---------|-------|
+| 🆕 Pollinations Task Master | A fork of the original task master but uses pollinations instead to be used for free. Has both a CLI and MCP and distributed as an npm package now as "pollinations-taskmaster" | @LousyBook94 | [GitHub](https://github.com/LousyBook94/pollinations-task-master) |
 | 🆕 Mimir AIP | An open-source AI pipeline framework designed to simplify the integration and orchestration of various AI models and services, including Pollinations.ai as a provider | @CiaranMcAleer | [Website](https://mimir-aip.github.io/), [GitHub](https://github.com/Mimir-AIP/Mimir-AIP) |
 | 🆕 Smpldev | Create, deploy, and scale full-stack web and mobile applications in minutes | @kennet678 | [Website](https://smpldev.ftp.sh/) |
 | Polli API Dashboard | Real-time dashboard monitoring text.pollinations.ai/feed | @Sugamdeol | [Website](https://polli-api.vercel.app), [GitHub](https://github.com/Sugamdeol/Polli-api) |

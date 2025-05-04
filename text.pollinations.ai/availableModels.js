@@ -11,6 +11,7 @@ import {
   midijourney,
   rtist,
   evilCommandR as evilMistral,
+  generateTextMirexa,
 } from "./wrappedModels.js";
 
 // Removed handlers object – call handler functions directly in model definitions
@@ -24,6 +25,16 @@ const models = [
     provider: "Azure",
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
+  },
+  {
+    name: "openai-fast",
+    description: "OpenAI GPT-4.1-nano",
+    handler: generateTextPortkey,
+    //    details:  "Optimized for fast and cost-effective text and image processing.",
+    provider: "Azure",
+    input_modalities: ["text", "image"],
+    output_modalities: ["text"],
+    aliases: "openai-small",
   },
   {
     name: "openai-large",
@@ -92,6 +103,13 @@ const models = [
     output_modalities: ["text"],
   },
   {
+    name: "mirexa",
+    description: "WithThatWay's Mirexa",
+    handler: generateTextMirexa,
+    input_modalities: ["text", "image"],
+    output_modalities: ["text"],
+  },
+  {
     name: "midijourney",
     description: "Midijourney",
     handler: midijourney,
@@ -131,7 +149,7 @@ const models = [
   },
   {
     name: "deepseek-reasoning",
-    description: "DeepSeek-R1 Distill Qwen 32B",
+    description: "MAI-DS-R1",
     handler: generateTextPortkey,
     //    details:  "Combines distilled reasoning with advanced contextual understanding.",
     reasoning: true,
@@ -140,18 +158,18 @@ const models = [
     input_modalities: ["text"],
     output_modalities: ["text"],
   },
-  {
-    name: "deepseek-reasoning-large",
-    description: "DeepSeek R1 - Llama 70B",
-    handler: generateTextPortkey,
-    //    details:  "Leverages Llama 70B architecture for efficient reasoning and cost-effectiveness.",
-    reasoning: true,
-    provider: "Scaleway",
+  // {
+  //   name: "deepseek-reasoning-large",
+  //   description: "DeepSeek R1 - Llama 70B",
+  //   handler: generateTextPortkey,
+  //   //    details:  "Leverages Llama 70B architecture for efficient reasoning and cost-effectiveness.",
+  //   reasoning: true,
+  //   provider: "Scaleway",
 
-    aliases: "deepseek-r1-llama",
-    input_modalities: ["text"],
-    output_modalities: ["text"],
-  },
+  //   aliases: "deepseek-r1-llama",
+  //   input_modalities: ["text"],
+  //   output_modalities: ["text"],
+  // },
   {
     name: "phi",
     description: "Phi-4 Instruct",

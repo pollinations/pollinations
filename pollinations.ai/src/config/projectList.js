@@ -958,6 +958,15 @@ const allProjects = {
   ],
   sdkLibraries: [
     {
+      name: "🆕 Pollinations Task Master",
+      url: "https://github.com/LousyBook94/pollinations-task-master",
+      description: "A fork of the original task master but uses pollinations instead to be used for free. Has both a CLI and MCP and distributed as an npm package now as \"pollinations-taskmaster\".",
+      author: "@LousyBook94",
+      repo: "https://github.com/LousyBook94/pollinations-task-master",
+      submissionDate: "2025-05-04",
+      order: 2,
+    },
+    {
       name: "🆕 Mimir AIP",
       url: "https://mimir-aip.github.io/",
       description: "An open-source AI pipeline framework designed to simplify the integration and orchestration of various AI models and services. The platform provides a modular architecture that allows developers to easily build, test, and deploy AI-powered applications with support for Pollinations.ai as a provider.",

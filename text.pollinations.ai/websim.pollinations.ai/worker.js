@@ -1,3 +1,14 @@
+/**
+ * HTML Generator Worker for websim.pollinations.ai
+ *
+ * IMPORTANT: When making fetch requests to other Cloudflare Workers in the same zone:
+ * - Requests to the same hostname (e.g., text.pollinations.ai) will bypass all Workers
+ *   due to Cloudflare's loop-avoidance mechanism
+ * - To ensure requests go through the proper Workers (including caching), use the
+ *   workers.dev URL (e.g., pollinations-text-cache.thomash-efd.workers.dev) instead
+ * - Alternatively, use a different subdomain (e.g., api.pollinations.ai)
+ */
+
 const systemPrompt = `You are an HTML generator. Your task is to return a single, complete HTML file that implements what the user asks for.
 The HTML should be valid, self-contained, and ready to be rendered in a browser.
 
@@ -177,7 +188,9 @@ async function generateHtml(prompt) {
  * @returns {Promise<Response>} The upstream response
  */
 function fetchFromTextApi(prompt) {
-  return fetch('https://text.pollinations.ai/v1/chat/completions', {
+  // Use the workers.dev URL to avoid Cloudflare's loop-avoidance mechanism
+  // This ensures the request goes through the caching worker
+  return fetch('https://pollinations-text-cache.thomash-efd.workers.dev/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

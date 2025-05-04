@@ -1,0 +1,17 @@
+name = "html-wrapper"
+main = "worker.js"
+compatibility_date = "2023-05-03"
+
+# Routes configuration
+routes = [
+  { pattern = "websim.pollinations.ai/*", zone_name = "pollinations.ai" }
+]
+
+[vars]
+PORT = "16386"
+
+# Local development settings
+[dev]
+port = 16386
+local_protocol = "http"
+ip = "localhost"

@@ -45,6 +45,16 @@ export const projectCategories = [
 const allProjects = {
   toolsInterfaces: [
     {
+      name: "🆕 Polynate",
+      url: "https://polynate.cloudwerx.dev/",
+      description: "AI-powered text and audio content generation platform providing a user-friendly interface for interacting with various AI generation services from Pollinations.ai.",
+      author: "@voodoohop",
+      repo: "https://github.com/CLOUDWERX-DEV/polynate",
+      stars: 1,
+      submissionDate: "2025-05-04",
+      order: 1,
+    },
+    {
       name: "🆕 Echo AI",
       url: "https://3ch0ai.github.io/EchoAI",
       description: "An HTML-based chat interface that leverages Pollinations AI as its core engine for both text and image generation, featuring user authentication, streaming responses, and plan management.",

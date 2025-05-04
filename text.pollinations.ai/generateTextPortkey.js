@@ -14,7 +14,8 @@ const errorLog = debug('pollinations:portkey:error');
 // Model mapping for Portkey
 const MODEL_MAPPING = {
     // Azure OpenAI models
-    'openai': 'gpt-4.1-nano',       // Maps to portkeyConfig['gpt-4o-mini']
+    'openai-fast': 'gpt-4.1-nano',
+    'openai': 'gpt-4.1-mini',       // Maps to portkeyConfig['gpt-4o-mini']
     'openai-large': 'azure-gpt-4.1-mini',
     'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
     'openai-reasoning': 'o4-mini', // Maps to portkeyConfig['o1-mini'],
@@ -27,7 +28,7 @@ const MODEL_MAPPING = {
     // Cloudflare models
     'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
     'llamascout': '@cf/meta/llama-4-scout-17b-16e-instruct',
-    'deepseek-reasoning': '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
+    'deepseek-reasoning': 'MAI-DS-R1',
     'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
     'phi': 'phi-4-instruct',
     'phi-mini': 'phi-4-mini-instruct',
@@ -67,6 +68,7 @@ You never use phrases that imply moral superiority or a sense of authority, incl
 // Default system prompts for different models
 const SYSTEM_PROMPTS = {
     // OpenAI models
+    'openai-fast': BASE_PROMPTS.conversational,
     'openai': BASE_PROMPTS.conversational,
     'openai-large': BASE_PROMPTS.conversational,
     'openai-xlarge': BASE_PROMPTS.conversational,
@@ -74,7 +76,7 @@ const SYSTEM_PROMPTS = {
     // Cloudflare models
     'llama': BASE_PROMPTS.conversational,
     'deepseek-reasoning-large': BASE_PROMPTS.helpful,
-    'deepseek-reasoning': BASE_PROMPTS.unrestricted,
+    'deepseek-reasoning': BASE_PROMPTS.conversational,
     'llamaguard': BASE_PROMPTS.moderation,
     'phi': BASE_PROMPTS.conversational,
     'phi-mini': BASE_PROMPTS.conversational,
@@ -201,6 +203,16 @@ const baseDeepSeekConfig = {
     'max-tokens': 8192
 };
 
+
+const baseDeepSeekReasoningConfig = {
+    provider: 'openai',
+    'custom-host': process.env.AZURE_DEEPSEEK_REASONING_ENDPOINT,
+    authKey: process.env.AZURE_DEEPSEEK_REASONING_API_KEY,
+    'auth-header-name': 'Authorization',
+    'auth-header-value-prefix': '',
+    'max-tokens': 8192
+};
+
 /**
  * Creates a DeepSeek model configuration
  * @param {Object} additionalConfig - Additional configuration to merge with base config
@@ -209,6 +221,18 @@ const baseDeepSeekConfig = {
 function createDeepSeekModelConfig(additionalConfig = {}) {
     return {
         ...baseDeepSeekConfig,
+        ...additionalConfig
+    };
+}
+
+/**
+ * Creates a DeepSeek Reasoning model configuration
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - DeepSeek Reasoning model configuration
+ */
+function createDeepSeekReasoningConfig(additionalConfig = {}) {
+    return {
+        ...baseDeepSeekReasoningConfig,
         ...additionalConfig
     };
 }
@@ -273,25 +297,21 @@ function createOpenRouterModelConfig(additionalConfig = {}) {
     };
 }
 
-/**
- * Creates a Groq model configuration
- * @param {Object} additionalConfig - Additional configuration to merge with base config
- * @returns {Object} - Groq model configuration
- */
-function createGroqModelConfig(additionalConfig = {}) {
-    return {
-        ...baseGroqConfig,
-        ...additionalConfig
-    };
-}
+
+
 
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
     // Azure OpenAI model configurations
     'gpt-4.1-nano': () => createAzureModelConfig(
+        process.env.AZURE_OPENAI_NANO_API_KEY,
+        process.env.AZURE_OPENAI_NANO_ENDPOINT,
+        'gpt-4.1-nano'
+    ),
+    'gpt-4.1-mini': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_API_KEY,
         process.env.AZURE_OPENAI_ENDPOINT,
-        'gpt-4.1-nano'
+        'gpt-4.1-mini'
     ),
     'gpt-4o': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_LARGE_API_KEY,
@@ -415,6 +435,7 @@ export const portkeyConfig = {
         'strict-openai-compliance': 'false'
     }),
     'DeepSeek-V3-0324': () => createDeepSeekModelConfig(),
+    'MAI-DS-R1': () => createDeepSeekReasoningConfig(),
 };
 
 /**

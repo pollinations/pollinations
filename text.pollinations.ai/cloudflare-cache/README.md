@@ -89,7 +89,8 @@ After running the script, follow the provided instructions to set up DNS records
 
 2. **Caching Strategy**:
    - Uses URL path, query parameters, and relevant parts of the request body as cache keys
-   - Skips caching for streaming responses or when `no-cache` parameter is present
+   - Generates efficient SHA-256 hash-based cache keys for consistent performance
+   - Skips caching for specific paths and when `no-cache` parameter is present
    - Sets appropriate cache headers for CDN optimization
    - Supports caching of streaming responses (SSE) and serves them correctly when requested
 
@@ -108,6 +109,13 @@ If you need to modify the configuration:
 2. Modify the origin host in `wrangler.toml` if needed
 3. Adjust caching logic in `src/cache-utils.js` if necessary
 
+## Dependencies
+
+This project uses minimal dependencies:
+
+1. **fast-json-stable-stringify**: Ensures consistent JSON serialization for reliable cache key generation
+2. **wrangler**: Development dependency for deploying and managing Cloudflare Workers
+
 ## Key Differences from Image Cache
 
 The text caching solution differs from the image caching solution in a few key ways:
@@ -121,8 +129,9 @@ The text caching solution differs from the image caching solution in a few key w
    - Includes support for caching streaming responses (SSE)
 
 3. **Cache Key Generation**:
-   - More sophisticated cache key generation that considers request body parameters
-   - Filters out parameters that shouldn't affect caching (like stream)
+   - Efficient SHA-256 hashing for consistent and collision-resistant cache keys
+   - Considers both URL parameters and request body for comprehensive caching
+   - Properly handles common parameters across different request types
 
 ## Streaming Response Handling
 

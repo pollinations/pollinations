@@ -10,6 +10,7 @@ The lightning‑fast path from idea ➜ monetised generative‑AI product.
 
 <!--
 SLIDE GUIDANCE:
+Do you think maybe starting the first slide with the name of another company is too early? we should focus on pollinations. or it goes in the speaker notes
 -->
 
 ---

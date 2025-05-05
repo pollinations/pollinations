@@ -11,6 +11,8 @@ bucket_name = "pollinations-text"
 [vars]
 #ORIGIN_HOST = "text-origin.pollinations.ai"
 ORIGIN_HOST ="http://163.172.149.24:16385"
+# Enable debug logging (set to "true" to enable, "false" to disable)
+DEBUG = "cache:*"
 
 # Increase limits for long-running operations
 # This requires a paid Workers Unbound plan

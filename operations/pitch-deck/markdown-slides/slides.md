@@ -4,6 +4,21 @@
 
 ---
 
+## Index
+
+- [Our Vision](#our-vision)
+- [The Problem](#the-problem)
+- [Our Solution](#our-solution)
+- [Impressive Traction](#impressive-traction)
+- [How It Works](#how-it-works)
+- [Our Technology](#our-technology)
+- [Monetization Strategy](#monetization-strategy)
+- [Why This Works](#why-this-works)
+- [Roadmap](#roadmap)
+- [Join Us](#join-us)
+
+---
+
 # Our Vision
 
 **Democratize generative AI:** make state-of-the-art creation tools free and open so anyone can build, share and monetize AI-powered experiences.

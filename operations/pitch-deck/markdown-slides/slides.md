@@ -175,7 +175,7 @@ gantt
   Post‑Seed Scale‑up          :a4, 2026-04-01, 90d
 ```
 
-| Quarter   | Focus & KPIs                                                                      | 
+|    |                                                                    | 
 | --------- | --------------------------------------------------------------------------------- | 
 | **Q3 25** | Real‑time ad‑telemetry • context embeddings • infra cost/gen ↓ 15 %               | 
 | **Q4 25** | Dev wallet + **50 % rev‑share** live • brand‑safety classifier                    | 
@@ -190,14 +190,17 @@ SLIDE GUIDANCE:
 
 # 👥 Team
 
-| Role | Who | Edge |
-|------|-----|------|
+|  |  |  |
+|------|------|-------|
 | **CEO** | Thomas Haferlach | Sets vision & strategy, drives breakthrough AI R&D |
 | **COO** | Elliot Fouchy | Executes strategy & finance; leads delivery & FP&A |
+
+> 💫 **Founders have shipped creative‑AI products together for 10 years: a tested, high‑trust partnership built on shared vision and execution**
+
+|  |  |  |
+|------|------|--------|
 | **Engineering & Data** (post pre-seed) | Senior ML & infra team | GPU fleet, diffusion models, analytics pipelines |
 | **Community** (post pre-seed) | Open Source Guild | 100 k OSS developers, 1.7 k⭐ GitHub |
-
-*Founders have shipped creative‑AI products together for 10 years — a tested, high‑trust partnership.*
 
 ## Raising **\$2.5 – 3 M seed**
 

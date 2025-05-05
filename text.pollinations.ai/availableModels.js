@@ -170,7 +170,7 @@ const models = [
     aliases: "deepseek-r1",
     input_modalities: ["text"],
     output_modalities: ["text"],
-    tools: true,
+    tools: false,
   },
   // {
   //   name: "deepseek-reasoning-large",

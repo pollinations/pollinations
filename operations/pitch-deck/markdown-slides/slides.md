@@ -8,7 +8,7 @@ title: Pollinations.ai — Unity for AI
 
 The lightning‑fast path from idea ➜ monetised generative‑AI product.
 
-<!-- 
+<!--
 SLIDE GUIDANCE:
 -->
 
@@ -20,7 +20,15 @@ SLIDE GUIDANCE:
 * **14 M+** plays on flagship Unity-style ad integration *(our live ad-revenue pilot)*
 * 300+ live apps • 13 k Discord • 1.8 k⭐ GitHub
 * 30% MoM user growth
-* *Key Markets: 30% CN, 13% US, 13% EU, 6% IN*
+
+<div class="flex">
+  <div class="flex-1">
+    <p><strong>Key Markets:</strong> 30% CN, 13% US, 13% EU, 6% IN</p>
+  </div>
+  <div class="flex-1">
+    <img src="/media/piechart_countries.png" alt="Geographic distribution" class="w-64" />
+  </div>
+</div>
 
 <!--
 SLIDE GUIDANCE:
@@ -48,7 +56,7 @@ Key growth metrics should be added : 30% MoM media generation
 
 *The current ecosystem forces painful trade-offs.*
 
-<!-- 
+<!--
 SLIDE GUIDANCE:
 - Frame problem as a dual pain point affecting both developers AND users
 - Don't forget the AD providers. They are not reaching the indie creator apps. The money comes from there so they may be more important than the others in terms of priority/ or same importance
@@ -77,7 +85,7 @@ curl https://image.pollinations.ai/prompt/galactic%20otter
 open myapp.com            # generated via pollinations‑init
 ```
 
-<!-- 
+<!--
 SLIDE GUIDANCE:
 - copy/paste example not the best
 - should we already mention hosting here?
@@ -111,10 +119,10 @@ SLIDE GUIDANCE:
 3. Premium tiers (SLA, bigger models) - *Planned Q1 2026*
 4. 50% app rev‑share (Roblox style) - *Pilot live*
 
-<!-- 
+<!--
 SLIDE GUIDANCE:
 - source of truth for Revenue Streams is the file: context/roadmap.md
-- untapped / developping market 
+- untapped / developping market
 - Potential positioning options from parallels doc: "GIPHY-meets-AdSense for AI", "Unsplash for AI—monetised out-of-the-box"
 - Unity, AppLovin, and other platforms demonstrate lightweight SDKs with embedded ads are proven high-margin models
 - Consider adding slide on how we're better/differently positioned than Unity/AppLovin for AI era (AI-native, better targeting)
@@ -141,7 +149,7 @@ flowchart LR
 * **Tech Advantage:** Native AI-powered ad targeting (like AppLovin's Axon 2.0)
 * **Network Effect:** More apps → better data → better platform → more apps
 
-<!-- 
+<!--
 SLIDE GUIDANCE:
 - Unity generates $1.2B (66%) from ads via lightweight SDK with rev-share - directly parallel to our model
 - potentially the best slide to add competition
@@ -172,7 +180,7 @@ Q2 2026  :m3, 2026-04-01, 90d
 | **Q1 26** | Monetisation v1 • 50 % rev‑share        |
 | **Q2 26** | Image/audio ads • dev tools v2          |
 
-<!-- 
+<!--
 SLIDE GUIDANCE:
 - Use context/roadmap.md as source of truth. Update all based on it
 - Connect roadmap to funding requirements - show how seed gets us to Q2 2026
@@ -197,7 +205,7 @@ SLIDE GUIDANCE:
 * 25 % team growth (devrel, BD)
 * 10 % runway buffer
 
-<!-- 
+<!--
 SLIDE GUIDANCE:
 - update all using this file: context/team.md
 - Collaboration: The founders share a long history of collaboration, having worked together on various technology and creative projects for more than a decade, building strong synergy and shared vision.

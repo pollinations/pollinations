@@ -194,17 +194,28 @@ SLIDE GUIDANCE:
 
 ---
 
-# 👥 Team
+# 👥 **Team**
+
+### 🚀 **Founders**
 
 |  |  |  |
 |------|------|-------|
-| **CEO** | Thomas Haferlach | Sets vision & strategy, drives breakthrough AI R&D |
-| **COO** | Elliot Fouchy | Executes strategy & finance; leads delivery & FP&A |
+| **CEO** | **Thomas Haferlach** | Sets vision & strategy, drives breakthrough AI R&D |
+| **COO** | **Elliot Fouchy** | Executes strategy & finance; leads delivery & FP&A |
+
+__
+
+### 🛠️ **Pre-Seed Resources**
 
 |  |  |  |
 |------|------|--------|
-| **Engineering & Data** (post pre-seed) | Senior ML & infra team | GPU fleet, diffusion models, analytics pipelines |
-| **Community** (post pre-seed) | Open Source Guild | 100 k OSS developers, 1.7 k⭐ GitHub |
+| **🧠 Engineering & Data** | Senior ML & infra team | GPU fleet, diffusion models, analytics pipelines |
+| **🌐 Community** | Open Source Guild | 100k OSS developers, 1.7k⭐ GitHub |
+
+<!--
+SLIDE GUIDANCE:
+> 10-year partnership shipping creative-AI products: high-trust founders aligned on vision & execution
+-->
 
 ---
 

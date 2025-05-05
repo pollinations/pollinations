@@ -10,12 +10,6 @@ The lightning‑fast path from idea ➜ monetised generative‑AI product.
 
 <!-- 
 SLIDE GUIDANCE:
-- UPDATED: Changed analogy from "Roblox for AI" to "Unity for AI" - broader and more aligned with business model
-- Unity generates $1.2B (66%) from ads via lightweight SDK with rev-share - directly parallel to our model
-- Connection worth making: We provide comprehensive AI development & monetization similar to how Unity does for game developers
-- Consider showing Unity's success metrics as validation of the model
-- The "Unity for AI" better captures our broader offerings (text, chat, code assistance) beyond just media
-- "Lightning-fast path" is good positioning - focus on speed-to-market advantage
 -->
 
 ---
@@ -24,15 +18,16 @@ SLIDE GUIDANCE:
 
 * **3 M** monthly active users • **100 M** media generated every month
 * **14 M+** plays on flagship Unity-style ad integration *(our live ad-revenue pilot)*
-* 300+ live apps • 13 k Discord • 1.7 k⭐ GitHub
+* 300+ live apps • 13 k Discord • 1.8 k⭐ GitHub
+* 30% MoM user growth
 * *Key Markets: 30% CN, 13% US, 13% EU, 6% IN*
 
 <!--
 SLIDE GUIDANCE:
 The 30% China presence is significant - emphasize our global reach as differentiator
-Add a graph
+Pie chart for the markets
+Add a graph - thomash thinks users is the best metric to show. we can calculate the percentage of media generations are users and extrapolate into the past based on our current users
 Key growth metrics should be added : 30% MoM media generation
-Could add metrics on ad performance (fill rate, eCPM) from any beta tests to reinforce Unity parallel
 -->
 
 ---
@@ -148,11 +143,13 @@ flowchart LR
 
 <!-- 
 SLIDE GUIDANCE:
+- Unity generates $1.2B (66%) from ads via lightweight SDK with rev-share - directly parallel to our model
+- potentially the best slide to add competition
 - 4× more citizen devs than pros devs is the the beginning of the trend
-- Consider adding from parallels doc: "Anyone who can type a prompt is a potential Pollinations integrator"
-- Could mention Replit's 20M+ users (125% growth in 18 months) as proof of youthful prompt-dev growth
-- Consider adding IDC forecast: 750M new cloud-native apps by 2026 - huge TAM expansion
-- Risk mitigation worth mentioning: Edge caching for low latency (200ms p95 SLA target)
+- it feels like market trend should be in the previous slide to me
+- one of our principle moats is that devs are embedding us in their open source repositories, making youtube videos, and spreading the word organically. discord bots in many guilds...
+- Consider adding from parallels doc: "Anyone who can type a prompt is a potential Pollinations integrator" (maybe previous slide)
+- Consider adding IDC forecast: 750M new cloud-native apps by 2026 - huge TAM expansion (previous slide?)
 - Ad unit options to consider highlighting: native widgets, brand overlays, performance link ads
 -->
 

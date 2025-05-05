@@ -1,13 +1,12 @@
 ---
-title: Pollinations.ai — Unity for AI
+title: pollinations.ai — Unity for AI
 ---
 
-# 🌀 Pollinations.ai
+# ![Pollinations.ai Logo](/media/pollinations-ai-logo.png) pollinations.ai
 
 ## Unity for AI
 
-The lightning‑fast path from idea ➜ monetised generative‑AI product.
-
+**The lightning‑fast path from idea ➜ monetized generative‑AI product.**
 <!--
 SLIDE GUIDANCE:
 -->

@@ -45,23 +45,30 @@ layout: two-cols
 # 😖 Problem
 
 ## Developers
-* Complex & costly AI infra
-* Keys, auth & billing pain
+* Complex AI infrastructure
+* Authentication headaches
 * No built‑in monetisation
+
 ## End Users
-* Paywalls & forced sign‑ups
-* Data‑privacy worries
+* Paywalls everywhere
+* Privacy concerns
 * Limited customisation
+
 ## Ad Providers
-* Struggle to reach indie creator apps
-* Missing access to emerging youth demographic
-* No AI-native targeting options (more and more content consumed through AI assistants - integrate this nicely)
+* Missing youth demographic
+* No AI-native targeting
+
+::right::
+
+<img src="/media/paintpointsgenz.png" alt="Pain Points Visual" class="w-full" />
 
 *The current ecosystem forces painful trade-offs.*
 
 <!--
 SLIDE GUIDANCE:
-- emerging youth demographic is weird maybe.
+- Frame problem as a dual pain point affecting both developers AND users
+- Don't forget the AD providers. They are not reaching the indie creator apps. The money comes from there so they may be more important than the others in terms of priority/ or same importance
+- The problem statement is clear - but could potentially add 1-2 concrete examples of developer/user friction
 - Consider mentioning competition implicitly (without naming) by referencing their limitations (check context/parallels-unity-for-ai-and-others.md for more detail)
 -->
 
@@ -158,7 +165,6 @@ SLIDE GUIDANCE:
 - Unity generates $1.2B (66%) from ads via lightweight SDK with rev-share - directly parallel to our model
 - potentially the best slide to add competition
 - 4× more citizen devs than pros devs is the the beginning of the trend
-- it feels like market trend should be in the previous slide to me
 - one of our principle moats is that devs are embedding us in their open source repositories, making youtube videos, and spreading the word organically. discord bots in many guilds...
 - Consider adding from parallels doc: "Anyone who can type a prompt is a potential Pollinations integrator" (maybe previous slide)
 - Consider adding IDC forecast: 750M new cloud-native apps by 2026 - huge TAM expansion (previous slide?)

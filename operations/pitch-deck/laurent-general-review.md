@@ -1,4 +1,4 @@
-*General review – LP – 29 Apr 2025*
+*General review – LP – 29 Apr 2025*
 
 ## SYNTHESIS OF EXCHANGES & STRATEGIC DIRECTION
 
@@ -6,7 +6,7 @@ Over the last weeks we clarified **who we are**, **what we have already shipped*
 
 ---
 
-### 1 / Present & know us
+### 1 / Present & know us
 
 | Name | Role | One‑sentence super‑power |
 | :---- | :---- | :---- |
@@ -20,7 +20,7 @@ We are radically complementary: an artist‑engineer, an infra perfectionist, an
 
 ---
 
-### 2 / Pollinations achievements to date
+### 2 / Pollinations achievements to date
 
 * In the **last 90 days** users generated **≈ 80 million media assets** (images, text, audio).  
 * **Traffic distribution:** 30 % CN, 13 % US, 13 % EU, 6 % IN, long tail elsewhere.  
@@ -29,11 +29,11 @@ We are radically complementary: an artist‑engineer, an infra perfectionist, an
 
 ---
 
-### 3 / Pollinations technical features
+### 3 / Pollinations technical features
 
 #### • An open‑source *AI toolbox* for developers
 
-* **SDK + CLI:** `pollinations init` scaffolds a repo, injects secrets, and pushes a GitHub Action that deploys to our GPU fabric.  
+* **SDK & AI Integration:** Multiple starter kits with deep AI assistant integration for effortless project setup across different platforms and frameworks.
 * **Language & models:** currently image (Stable Diffusion XL custom LoRAs), text (Llama‑3‑8B‑Instruct \+ adapters), audio (MusicGen‑Large).  
 * **Community:** Discord (13 k members) \+ GitHub (1.7 k stars) serve as support & co‑creation spaces.
 
@@ -48,7 +48,7 @@ We consumed \~**1.4 M GPU‑seconds** out of 3 M credits. At the current bur
 
 ---
 
-### 4 / Pollinations business models
+### 4 / Pollinations business models
 
 | Model | Status | Next milestone |
 | :---- | :---- | :---- |
@@ -60,7 +60,7 @@ Data resale is technically feasible (we already store user geo and prompt metada
 
 ---
 
-### 5 / User journey, comms & marketing
+### 5 / User journey, comms & marketing
 
 *Discovery → Discord → Build → Launch* Most users arrive via AI blogs or TikTok demos, join Discord, clone the SDK template, and push a live bot within 30 minutes. We have intentionally **not paid for traffic** yet; growth is organic while we validate monetisation.
 
@@ -68,7 +68,7 @@ A lightweight **application form** for early‑access APIs already captured **10
 
 ---
 
-### 6 / Entity KPIs (Apr 2025)
+### 6 / Entity KPIs (Apr 2025)
 
 | KPI | Value | Comment |
 | :---- | :---- | :---- |
@@ -81,7 +81,7 @@ A lightweight **application form** for early‑access APIs already captured **10
 
 ---
 
-### 7 / Risk analysis
+### 7 / Risk analysis
 
 | Risk | Likelihood | Impact | Mitigation |
 | :---- | :---- | :---- | :---- |
@@ -93,7 +93,7 @@ A lightweight **application form** for early‑access APIs already captured **10
 
 ---
 
-### 8 / Immediate next steps (May–Aug 2025)
+### 8 / Immediate next steps (May–Aug 2025)
 
 1. Release image‑level adsorption model (CLIP + attention masks).  
 2. Launch Creator dashboard with live cost / revenue graphs & Stripe Connect payouts.  
@@ -102,4 +102,4 @@ A lightweight **application form** for early‑access APIs already captured **10
 
 ---
 
-*Document edited for technical clarity; original narrative structure preserved.*  
+*Document edited for technical clarity; original narrative structure preserved.*

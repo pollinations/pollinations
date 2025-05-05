@@ -1,21 +1,21 @@
-# pollinations.ai **Overview (Q2 2025)**
+# pollinations.ai **Overview (Q2 2025)**
 
 ## **1\. Company**
 
-**Name:** pollinations.ai  
-**Legal Entity:** Pollinations.AI OÜ (Estonia)  
+**Name:** pollinations.ai  
+**Legal Entity:** Pollinations.AI OÜ (Estonia)  
 **HQ & Ops:** Berlin, Germany
 
 **Mission Labs:** Democratise generative AI: make state‑of‑the‑art creation tools free and open so anyone can build, share and monetise AI‑powered experiences.
 
-**Vision:** Become the **“Roblox for AI”** – a global, open platform where developers and non‑coders alike can easily create, deploy and monetise AI applications.
+**Vision:** Become the **"Roblox for AI"** – a global, open platform where developers and non‑coders alike can easily create, deploy and monetise AI applications.
 
 ## **2\. Product & Platform**
 
-Pollinations is a “no‑keys, no‑friction” creation layer on top of cutting‑edge AI models. We give makers three things:
+Pollinations is a "no‑keys, no‑friction" creation layer on top of cutting‑edge AI models. We give makers three things:
 
 * **Instant API Endpoints** – copy‑paste a URL to generate text, images, audio (video next in line).  No log‑in required for the first call.  
-* **One‑Command App Starter** – run `pollinations-init myapp.com` in any text editor; we scaffold a GitHub repo, wire up hosting on GitHub Pages and hand back a personal token.  
+* **AI-Integrated SDKs & Starter Kits** – use your preferred AI assistant to launch projects across multiple platforms with community-supported templates. Your AI assistant handles scaffolding, hosting setup, and authentication without leaving your workspace.  
 * **Edge AI at Scale** – every request transparently taps our global GPU fleet; the developer never touches infrastructure.
 
 #### **Monetisation Plugins – How Money Will Flow**
@@ -32,7 +32,7 @@ Pollinations handles ad sourcing, billing and payouts automatically.
 #### **Phase‑1 Proof‑of‑Concept**
 
 * **Ads only for *unregistered* apps** – if a call comes without a valid Pollinations token, we append a text‑only ad line to the response. Registered apps remain ad‑free during the experiment. **(live today)**  
-* **Authentication** – during `pollinations-init`, we issue a token and store the app domain → token mapping.  
+* **Authentication** – during onboarding through AI assistants, we issue a token and store the app domain → token mapping.  
 * **Edge Services** – image, text and audio generation already run at scale; React SDK (open‑source) wraps the calls. See repo: [https://github.com/pollinations/pollinations](https://github.com/pollinations/pollinations). **(live today)**  
 * **App Shared Revenue Model** – Roblox app RP Character 1 **(live today)**
 

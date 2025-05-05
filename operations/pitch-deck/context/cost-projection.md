@@ -1,6 +1,8 @@
-,Payrolls,56000,18.67%,,,,,,,,,,,,
-,ML DevOps / Analytics,52000,17.33%,,,,,,,,,,,,
-,Cloud Computing,150000,50.00%,,,,,,,,,,,,
-,Services Subscription,8400,2.80%,,,,,,,,,,,,
-,Marketing ,11000,3.67%,,,,,,,,,,,,
-,Admin / Operation ,19000,6.33%,,,,,,,,,,,,
+| Category | Amount | Percentage |
+|----------|---------|------------|
+| Payrolls | €60,000 | 20.00% |
+| ML DevOps / Data Analysis | €90,000 | 30.00% |
+| Cloud Computing | €100,000 | 33.33% |
+| Marketing | €20,000 | 6.67% |
+| Legal / Operation | €30,000 | 10.00% |
+| | €300,000 | 100.00% |

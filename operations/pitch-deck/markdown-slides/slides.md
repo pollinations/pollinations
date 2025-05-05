@@ -13,28 +13,27 @@ SLIDE GUIDANCE:
 -->
 
 ---
+layout: two-cols
+---
 
 # 🚀 Traction
 
 * **3 M** monthly active users • **100 M** media generated every month
 * **14 M+** plays on flagship Unity-style ad integration *(our live ad-revenue pilot)*
 * 300+ live apps • 13 k Discord • 1.8 k⭐ GitHub
-* 30% MoM user growth
+* **30% MoM user growth**
 
-<div class="flex">
-  <div class="flex-1">
-    <p><strong>Key Markets:</strong> 30% CN, 13% US, 13% EU, 6% IN</p>
-  </div>
-  <div class="flex-1">
-    <img src="/media/piechart_countries.png" alt="Geographic distribution" class="w-64" />
-  </div>
-</div>
+::right::
+
+<img src="/media/media_requests_per_day.png" alt="Media Requests Growth" class="w-full mb-4" />
+
+<img src="/media/piechart_countries.png" alt="Geographic distribution" class="w-64 mx-auto" />
+<p class="text-center text-xs text-gray-500">Our significant presence in China (30%) demonstrates our global reach</p>
 
 <!--
 SLIDE GUIDANCE:
+<p class="text-center text-sm mt-2"><strong>Key Markets:</strong> 30% CN, 13% US, 13% EU, 6% IN</p>
 The 30% China presence is significant - emphasize our global reach as differentiator
-Pie chart for the markets
-Add a graph - thomash thinks users is the best metric to show. we can calculate the percentage of media generations are users and extrapolate into the past based on our current users
 Key growth metrics should be added : 30% MoM media generation
 -->
 
@@ -43,24 +42,23 @@ Key growth metrics should be added : 30% MoM media generation
 # 😖 Problem
 
 ## Developers
-
 * Complex & costly AI infra
 * Keys, auth & billing pain
 * No built‑in monetisation
-
 ## End Users
-
 * Paywalls & forced sign‑ups
 * Data‑privacy worries
 * Limited customisation
+## Ad Providers
+* Struggle to reach indie creator apps
+* Missing access to emerging youth demographic
+* No AI-native targeting options
 
 *The current ecosystem forces painful trade-offs.*
 
 <!--
 SLIDE GUIDANCE:
-- Frame problem as a dual pain point affecting both developers AND users
-- Don't forget the AD providers. They are not reaching the indie creator apps. The money comes from there so they may be more important than the others in terms of priority/ or same importance
-- The problem statement is clear - but could potentially add 1-2 concrete examples of developer/user friction
+- emerging youth demographic is weird maybe.
 - Consider mentioning competition implicitly (without naming) by referencing their limitations (check context/parallels-unity-for-ai-and-others.md for more detail)
 -->
 
@@ -161,6 +159,7 @@ SLIDE GUIDANCE:
 - Ad unit options to consider highlighting: native widgets, brand overlays, performance link ads
 -->
 
+
 ---
 
 # 🛣️ Roadmap
@@ -187,6 +186,7 @@ SLIDE GUIDANCE:
 - Timeline should match the phased of context/roadmap.md
 - Graph could include annotations for key revenue/user milestones
 -->
+
 
 ---
 

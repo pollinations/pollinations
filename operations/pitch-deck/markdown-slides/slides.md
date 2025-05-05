@@ -23,7 +23,7 @@ layout: two-cols
 * 300+ live apps • 13 k Discord • 1.8 k⭐ GitHub
 * **30% MoM user growth**
 
-<img src="/media/piechart_countries.png" alt="Geographic distribution" class="w-64 mx-auto" />
+<img src="/media/piechart_countries_genz.png" alt="Geographic distribution" class="w-64 mx-auto" />
 ::right::
 
 <img src="/media/media_requests_per_day_genz.png" alt="Media Requests Growth" class="w-3/4 mx-auto mb-4" />

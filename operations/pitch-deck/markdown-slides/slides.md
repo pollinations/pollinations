@@ -114,12 +114,10 @@ layout: two-cols
 
 <img src="/media/youth-ad-market.png" alt="Youth Ad Market" class="w-3/4 mx-auto my-4" />
 
-
-
 ::right::
 
-* GenAI creator economy **>\$10 B** TAM
-* GenAI market doubling YoY (Gartner 2025)
+💰 Generative AI creator economy **>\$10 B** TAM
+📈 Generative AI market doubling YoY (Gartner 2025)
 
 ## Two-Sided Market 🔄
 

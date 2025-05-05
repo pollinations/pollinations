@@ -1,0 +1,2 @@
+- everyone becomes a developer (next 12 months)
+- ui free platform

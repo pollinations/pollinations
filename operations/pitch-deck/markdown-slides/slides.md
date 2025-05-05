@@ -201,8 +201,6 @@ SLIDE GUIDANCE:
 | **CEO** | Thomas Haferlach | Sets vision & strategy, drives breakthrough AI R&D |
 | **COO** | Elliot Fouchy | Executes strategy & finance; leads delivery & FP&A |
 
-> 💫 **Founders have shipped creative‑AI products together for 10 years: a tested, high‑trust partnership built on shared vision and execution**
-
 |  |  |  |
 |------|------|--------|
 | **Engineering & Data** (post pre-seed) | Senior ML & infra team | GPU fleet, diffusion models, analytics pipelines |
@@ -216,6 +214,7 @@ SLIDE GUIDANCE:
 
 <!--
 SLIDE GUIDANCE:
+- 💫 **Founders have shipped creative‑AI products together for 10 years: a tested, high‑trust partnership built on shared vision and execution**
 - update all using this file: context/team.md
 - Collaboration: The founders share a long history of collaboration, having worked together on various technology and creative projects for more than a decade, building strong synergy and shared vision.
 -->

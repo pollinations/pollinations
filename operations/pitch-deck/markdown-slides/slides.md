@@ -63,13 +63,13 @@ Become the global, open platform where developers and non-coders alike can easil
 </div>
 <div>
 
-## One-Command App Starter
-```bash
-pollinations-init myapp.com
-```
-- Scaffolds GitHub repo
-- Sets up hosting on GitHub Pages
-- Issues personal token
+## AI App Launchpad
+
+- **One command** scaffolds & deploys your AI app.
+- **Integrated SDK** in your editor for seamless development.
+- **Built-in Monetization:** Activate revenue share, contextual ads, and micro-purchases.
+- **Premium Tiers:** Access higher rate limits, advanced models, and larger context sizes.
+- **Zero-ops hosting** and scaling handled automatically.
 
 </div>
 </div>

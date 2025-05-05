@@ -25,6 +25,7 @@ const models = [
     provider: "Azure",
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
+    tools: true,
   },
   {
     name: "openai-fast",
@@ -35,6 +36,7 @@ const models = [
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
     aliases: "openai-small",
+    tools: true,
   },
   {
     name: "openai-large",
@@ -44,6 +46,7 @@ const models = [
     provider: "Azure",
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
+    tools: true,
   },
   // {
   //   name: "openai-reasoning",
@@ -64,6 +67,7 @@ const models = [
     provider: "Scaleway",
     input_modalities: ["text"],
     output_modalities: ["text"],
+    tools: true,
   },
   {
     name: "llama",
@@ -73,6 +77,7 @@ const models = [
     provider: "Cloudflare",
     input_modalities: ["text"],
     output_modalities: ["text"],
+    tools: false,
   },
   {
     name: "llamascout",
@@ -82,6 +87,7 @@ const models = [
     provider: "Cloudflare",
     input_modalities: ["text"],
     output_modalities: ["text"],
+    tools: false,
   },
   {
     name: "mistral",
@@ -91,6 +97,7 @@ const models = [
     provider: "Cloudflare",
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
+    tools: true,
   },
   {
     name: "unity",
@@ -101,6 +108,7 @@ const models = [
     uncensored: true,
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
+    tools: true,
   },
   {
     name: "mirexa",
@@ -108,6 +116,7 @@ const models = [
     handler: generateTextMirexa,
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
+    tools: true,
   },
   {
     name: "midijourney",
@@ -117,6 +126,7 @@ const models = [
     provider: "Azure",
     input_modalities: ["text"],
     output_modalities: ["text"],
+    tools: true,
   },
   {
     name: "rtist",
@@ -126,6 +136,7 @@ const models = [
     provider: "Azure",
     input_modalities: ["text"],
     output_modalities: ["text"],
+    tools: true,
   },
   {
     name: "searchgpt",
@@ -136,6 +147,7 @@ const models = [
 
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
+    tools: true,
   },
   {
     name: "evil",
@@ -146,6 +158,7 @@ const models = [
     uncensored: true,
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
+    tools: true,
   },
   {
     name: "deepseek-reasoning",
@@ -157,6 +170,7 @@ const models = [
     aliases: "deepseek-r1",
     input_modalities: ["text"],
     output_modalities: ["text"],
+    tools: true,
   },
   // {
   //   name: "deepseek-reasoning-large",
@@ -178,6 +192,7 @@ const models = [
     provider: "Cloudflare",
     input_modalities: ["text", "image", "audio"],
     output_modalities: ["text"],
+    tools: false,
   },
   {
     name: "llama-vision",
@@ -187,6 +202,7 @@ const models = [
     provider: "Cloudflare",
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
+    tools: false,
   },
   // {
   //   name: "pixtral",
@@ -228,6 +244,7 @@ const models = [
     provider: "Modal",
     input_modalities: ["text"],
     output_modalities: ["text"],
+    tools: true,
   },
   {
     name: "hypnosis-tracy",
@@ -237,6 +254,7 @@ const models = [
     provider: "Azure",
     input_modalities: ["text", "audio"],
     output_modalities: ["audio", "text"],
+    tools: true,
   },
   {
     name: "deepseek",
@@ -246,6 +264,7 @@ const models = [
     provider: "DeepSeek",
     input_modalities: ["text"],
     output_modalities: ["text"],
+    tools: false,
   },
   // {
   //   name: "deepseek-reasoning",
@@ -276,6 +295,7 @@ const models = [
     provider: "Scaleway",
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
+    tools: true,
   },
   // {
   //   name: "llama-scaleway",
@@ -311,6 +331,7 @@ const models = [
     provider: "Azure",
     input_modalities: ["text", "image", "audio"],
     output_modalities: ["audio", "text"],
+    tools: true,
   },
 ];
 

@@ -168,25 +168,25 @@ SLIDE GUIDANCE:
 
 ---
 
-# 🛣️ Roadmap (Q3 2025 → Q2 2026)
+# 🛣️ Roadmap (Q3 2025 → Q2 2026)
 
 ```mermaid
 gantt
   dateFormat  Q%q %Y
   axisFormat  %q'Q%y
-  section 12‑Month Plan
-  Observability & Context      :active, a1, 2025-07-01, 90d
-  Rev‑Share + Yield Lift      :a2, 2025-10-01, 90d
-  Seed Raise Kick‑off         :a3, 2026-01-01, 90d
-  Post‑Seed Scale‑up          :a4, 2026-04-01, 90d
+  section 12‑Month Plan
+  Observability & Context      :active, a1, 2025-07-01, 90d
+  Rev‑Share + Yield Lift      :a2, 2025-10-01, 90d
+  Seed Kick‑off         :a3, 2026-01-01, 90d
+  Post‑Seed Scale‑up          :a4, 2026-04-01, 90d
 ```
 
 |    |                                                                    | 
 | --------- | --------------------------------------------------------------------------------- | 
-| **Q3 25** | Real‑time ad‑telemetry • context embeddings • infra cost/gen ↓ 15 %               | 
-| **Q4 25** | Dev wallet + **50 % rev‑share** live • brand‑safety classifier                    | 
-| **Q1 26** | **Seed raise opens** • 6 M MAU • ARR run‑rate **€2 M** • multi‑format ads         |
-| **Q2 26** | Deploy seed capital • SDK v2 • ARR run‑rate **€3 M**                              |
+| **Q3 25** | Real‑time ad‑telemetry • context embeddings • infra cost/gen ↓ 15 %               | 
+| **Q4 25** | Dev wallet + **50 % rev‑share** live • brand‑safety classifier                    | 
+| **Q1 26** | **Seed raise opens** • 6 M MOU • ARR run‑rate **€2 M** • multi‑format ads         |
+| **Q2 26** | Deploy seed capital • SDK v2 • ARR run‑rate **€3 M**                              |
 
 <!--
 SLIDE GUIDANCE:
@@ -206,11 +206,22 @@ SLIDE GUIDANCE:
 | **Engineering & Data** (post pre-seed) | Senior ML & infra team | GPU fleet, diffusion models, analytics pipelines |
 | **Community** (post pre-seed) | Open Source Guild | 100 k OSS developers, 1.7 k⭐ GitHub |
 
-## Raising **\$2.5 – 3 M seed**
+---
 
-* 65 % GPU fleet & infra scale
-* 25 % team growth (devrel, BD)
-* 10 % runway buffer
+# 💰 Raising **\$2.5 – 3 M seed**
+
+| Allocation | Percentage | Purpose |
+|------------|------------|---------|
+| GPU Fleet & Infrastructure | 65% | Scale compute capacity & optimize costs |
+| Team Growth | 25% | Expand devrel & business development |
+| Runway Buffer | 10% | Operational safety net |
+
+<!--
+SLIDE GUIDANCE:
+- Use table format for clearer visualization of fund allocation
+- Add purpose column to provide context for each allocation
+- Keep consistent with financial presentation style
+-->
 
 <!--
 SLIDE GUIDANCE:

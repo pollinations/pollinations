@@ -1,18 +1,20 @@
 ---
-title: Pollinations.ai — Roblox for AI
+title: Pollinations.ai — Unity for AI
 ---
 
 # 🌀 Pollinations.ai
 
-## Roblox for AI
+## Unity for AI
 
 The lightning‑fast path from idea ➜ monetised generative‑AI product.
 
 <!-- 
 SLIDE GUIDANCE:
-- Emphasize the "Roblox for AI" analogy - it's our core identity
-- Connection worth making: Democratizing AI creation similar to how Roblox democratized game creation
-- Consider adding a visual showing the parallel between Roblox (games) and Pollinations (AI)
+- UPDATED: Changed analogy from "Roblox for AI" to "Unity for AI" - broader and more aligned with business model
+- Unity generates $1.2B (66%) from ads via lightweight SDK with rev-share - directly parallel to our model
+- Connection worth making: We provide comprehensive AI development & monetization similar to how Unity does for game developers
+- Consider showing Unity's success metrics as validation of the model
+- The "Unity for AI" better captures our broader offerings (text, chat, code assistance) beyond just media
 - "Lightning-fast path" is good positioning - focus on speed-to-market advantage
 -->
 
@@ -21,22 +23,23 @@ SLIDE GUIDANCE:
 # 🚀 Traction
 
 * **3 M** monthly active users • **80 M** media generated every month
-* **14 M+** plays on flagship Roblox "AI Character RP" *(our live ad-revenue pilot)*
+* **14 M+** plays on flagship Unity-style ad integration *(our live ad-revenue pilot)*
 * 300+ live apps • 13 k Discord • 1.7 k⭐ GitHub
 * *Key Markets: 30% CN, 13% US, 13% EU, 6% IN*
 
 <!-- 
 SLIDE GUIDANCE:
+- UPDATED: Changed "Roblox 'AI Character RP'" to "Unity-style ad integration" to align with new analogy
 - DATA DISCREPANCY: Media generated metric varies between docs (80M vs 100M) - confirm latest before presentation
-- Highlight Roblox integration as proof of concept for monetization model - this is a working example
 - The 30% China presence is significant - emphasize our global reach as differentiator
 - Consider converting the platform table below to logos/visuals for better impact
 - Key growth metrics could be added if available (MoM/QoQ growth percentages)
+- Could add metrics on ad performance (fill rate, eCPM) from any beta tests to reinforce Unity parallel
 -->
 
 | Platforms | Communities | OSS    |
 | --------- | ----------- | ------ |
-| Roblox    | Discord     | GitHub |
+| Unity     | Discord     | GitHub |
 | Pixelynx  | Twitch      | npm    |
 
 ---
@@ -78,6 +81,7 @@ SLIDE GUIDANCE:
 ## 🚀 `pollinations‑init` Launchpad
 
 * 1 command scaffold & deploy
+* Unity-style SDK (10-line embed)
 * Built‑in ads & rev‑share
 
 ```bash
@@ -88,6 +92,7 @@ open myapp.com            # generated via pollinations‑init
 
 <!-- 
 SLIDE GUIDANCE:
+- UPDATED: Added "Unity-style SDK (10-line embed)" to highlight the parallel with Unity's lightweight integration
 - ENHANCEMENT NEEDED: Add bullet points about hosting/CI/CD handling - it's a key differentiator
 - Consider adding: "Handles hosting, secrets, CI/CD" and "Developer never leaves editor"
 - This is a good place for a quick demo or GIF showing the one-command workflow
@@ -108,7 +113,7 @@ SLIDE GUIDANCE:
 
 ## Two-Sided Market 🔄
 
-* **Unity for AI Media**: 70% rev-share to devs, proven model
+* **Unity for AI**: 70% rev-share to devs, proven model
 * **Brands → Young Creators → End-Users**
 * Users get free AI experiences, brands reach youth demographic
 
@@ -121,8 +126,8 @@ SLIDE GUIDANCE:
 
 <!-- 
 SLIDE GUIDANCE:
-- ADDED: "Unity for AI Media" analogy from parallels doc - powerful benchmark as Unity generates $1.2B (66%) from ads
-- Potential positioning options from parallels doc: "GIPHY-meets-AdSense for AI media", "Unsplash for AI—monetised out-of-the-box"
+- UPDATED: Changed "Unity for AI Media" to "Unity for AI" for consistency across deck
+- Potential positioning options from parallels doc: "GIPHY-meets-AdSense for AI", "Unsplash for AI—monetised out-of-the-box"
 - Unity, AppLovin, and other platforms demonstrate lightweight SDKs with embedded ads are proven high-margin models
 - Back-of-envelope math from parallels doc: At target €6-€12 eCPM with 70% creator share, 100M monthly impressions → €18-36M ARR
 - Consider adding slide on how we're better positioned than Unity/AppLovin for AI era (AI-native, better targeting)

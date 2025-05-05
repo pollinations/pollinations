@@ -23,11 +23,12 @@ layout: two-cols
 * 300+ live apps • 13 k Discord • 1.8 k⭐ GitHub
 * **30% MoM user growth**
 
+<img src="/media/piechart_countries.png" alt="Geographic distribution" class="w-64 mx-auto" />
 ::right::
 
-<img src="/media/media_requests_per_day.png" alt="Media Requests Growth" class="w-full mb-4" />
+<img src="/media/media_requests_per_day_genz.png" alt="Media Requests Growth" class="w-3/4 mx-auto mb-4" />
 
-<img src="/media/piechart_countries.png" alt="Geographic distribution" class="w-64 mx-auto" />
+
 <p class="text-center text-xs text-gray-500">Our significant presence in China (30%) demonstrates our global reach</p>
 
 <!--
@@ -37,6 +38,8 @@ The 30% China presence is significant - emphasize our global reach as differenti
 Key growth metrics should be added : 30% MoM media generation
 -->
 
+---
+layout: two-cols
 ---
 
 # 😖 Problem
@@ -52,7 +55,7 @@ Key growth metrics should be added : 30% MoM media generation
 ## Ad Providers
 * Struggle to reach indie creator apps
 * Missing access to emerging youth demographic
-* No AI-native targeting options
+* No AI-native targeting options (more and more content consumed through AI assistants - integrate this nicely)
 
 *The current ecosystem forces painful trade-offs.*
 
@@ -63,35 +66,38 @@ SLIDE GUIDANCE:
 -->
 
 ---
+layout: two-cols
+---
 
-# ✨ The Pollinations Fix
+# ✨ The Pollinations Fix: AI App Factory
 
-## ⚡ Zero‑Friction API
+*   **AI Sets Up:** Launch instantly via assistant.
+*   **You Focus on Frontend:** Build the UI/UX.
+*   **Plug & Play AI:** Simple URLs for media features.
+*   **Backend Handled:** We run infra, scale, & ads.
 
-* Copy‑paste URL → instant media
-* First call free • No ops
+*The easiest path to a live, monetized AI app.*
 
-## 🚀 `pollinations‑init` Launchpad
+::right::
 
-* 1 command scaffold & deploy
-* Unity-style SDK (10-line embed)
-* Built‑in ads & rev‑share
-
-```bash
-# Demo snippet
-curl https://image.pollinations.ai/prompt/galactic%20otter
-open myapp.com            # generated via pollinations‑init
-```
+<img src="/media/pollinations_fix_genz.png" alt="Pollinations Fix Diagram" class="w-mx mx-auto mt-4" />
 
 <!--
 SLIDE GUIDANCE:
-- copy/paste example not the best
-- should we already mention hosting here?
-- Consider adding: "Handles hosting" and "Developer never leaves editor"
-- Explain how our architecture (end-to-end-architecture.md) enables the built-in monetization
-- Mention UI-free approach. futuristic AI assistant integration. integrate into the user's tooling
-- do we need a code example? maybe too technical. or a more exciting one with the output
-- reference context/vision-mission.md
+- Synthesized from Alt 2 & 3.
+- Kept "AI App Factory" (Alt 3).
+- Used "AI Sets Up" (Alt 2/3) + "Launch instantly" (Alt 3 speed).
+- Used "You Focus on Frontend" (Alt 2 developer role).
+- Improved "Plug-in AI" to "Plug & Play AI" + "Simple URLs".
+- Used "Backend Handled" (Alt 2 clarity) + "infra, scale & ads" (Alt 2/3 specifics).
+- Kept strong tagline (Alt 3).
+-->
+
+<!-- SPEAKER NOTES:
+- Developers use their AI coding assistant (integrated with our tools) to bootstrap projects from various starter kits (React, Unity, etc.), automating repo creation, config, and deployment.
+- This frees the developer to concentrate *only* on building the user-facing application.
+- Adding generative AI (image, text, audio) requires just simple HTTPS calls to our Edge APIs.
+- Pollinations manages the entire backend: scalable hosting (e.g., GitHub Pages), CI/CD, model serving, security, auth, usage metering, and the monetization layer (serving ads, managing rev-share payouts). Zero server ops for the dev.
 -->
 
 ---

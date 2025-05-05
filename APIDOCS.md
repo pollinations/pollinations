@@ -1477,7 +1477,16 @@ Generates speech audio from text using the OpenAI compatible endpoint. This meth
 | `messages`   | Yes      | Standard OpenAI message array, containing the text to speak in the `content` of a `user` role message. |         |
 | `private`    | No       | Set to `true` to prevent the response from appearing in the public feed.                               | `false` |
 
-**Return:** Audio file (MP3 format, `Content-Type: audio/mpeg`) 🎧. The response body _is_ the audio data, not JSON.
+**Return:** 
+- By default: Audio file (MP3 format, `Content-Type: audio/mpeg`) 🎧. The response body _is_ the audio data, not JSON.
+- When using chat completions format (see examples below): JSON response with structured data containing the audio, transcript, and conversation ID.
+
+**Response Data Fields:**
+When using the chat completions format, you can retrieve the following fields from the response:
+
+- **`response.message.content.audio.data`**: The Base64-encoded audio file.
+- **`response.message.content.audio.transcript`**: The text transcript of the generated audio.
+- **`response.message.content.audio.id`**: The conversation ID for multi-turn conversations.
 
 **Rate Limits:** (Inherits base text API limits)
 
@@ -1505,36 +1514,81 @@ curl https://text.pollinations.ai/openai \
 ```python
 import requests
 import json
+import base64
 
-url = "https://text.pollinations.ai/openai"
-payload = {
-    "model": "openai-audio",
-    "messages": [
-      {"role": "user", "content": "This is a test of the text to speech generation using Python and the POST method."}
-    ],
-    "voice": "shimmer" # Choose voice
-}
-headers = {"Content-Type": "application/json"}
-output_filename = "generated_audio_post.mp3"
+# Example 1: Get Raw Audio Output
+def get_raw_audio():
+    url = "https://text.pollinations.ai/openai"
+    payload = {
+        "model": "openai-audio",
+        "messages": [
+          {"role": "user", "content": "This is a test of the text to speech generation using Python and the POST method."}
+        ],
+        "voice": "shimmer" # Choose voice
+    }
+    headers = {"Content-Type": "application/json"}
+    output_filename = "generated_audio_post.mp3"
 
-try:
-    response = requests.post(url, headers=headers, json=payload)
-    response.raise_for_status()
-    if 'audio/mpeg' in response.headers.get('Content-Type', ''):
-        with open(output_filename, 'wb') as f:
-            f.write(response.content)
-        print(f"Audio saved successfully as {output_filename}")
-    else:
-        print("Error: Expected audio response, received:")
-        print(f"Content-Type: {response.headers.get('Content-Type')}")
-        print(response.text)
-except requests.exceptions.RequestException as e:
-    print(f"Error making TTS POST request: {e}")
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        if 'audio/mpeg' in response.headers.get('Content-Type', ''):
+            with open(output_filename, 'wb') as f:
+                f.write(response.content)
+            print(f"Audio saved successfully as {output_filename}")
+        else:
+            print("Error: Expected audio response, received:")
+            print(f"Content-Type: {response.headers.get('Content-Type')}")
+            print(response.text)
+    except requests.exceptions.RequestException as e:
+        print(f"Error making TTS POST request: {e}")
+
+# Example 2: Get Structured Response with Audio Data, Transcript, and ID
+def get_structured_response():
+    url = "https://text.pollinations.ai/openai"
+    payload = {
+        "model": "openai-audio",
+        "messages": [
+          {"role": "user", "content": "This is a test of the text to speech with structured response."}
+        ],
+        "voice": "nova",
+        # Request JSON response format instead of raw audio
+        "response_format": {"type": "json_object"}
+    }
+    headers = {"Content-Type": "application/json"}
+
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        data = response.json()
+        
+        # Extract the key fields from the response
+        audio_data = data['choices'][0]['message']['content']['audio']['data']
+        transcript = data['choices'][0]['message']['content']['audio']['transcript']
+        conversation_id = data['choices'][0]['message']['content']['audio']['id']
+        
+        print(f"Conversation ID: {conversation_id}")
+        print(f"Transcript: {transcript}")
+        print(f"Audio data length: {len(audio_data)} characters")
+        
+        # Save the audio data to a file
+        with open("audio_from_base64.mp3", "wb") as f:
+            f.write(base64.b64decode(audio_data))
+            print("Audio data saved as audio_from_base64.mp3")
+            
+        # You can also play the audio directly or use it in your application
+        # ...
+            
+    except requests.exceptions.RequestException as e:
+        print(f"Error making TTS structured request: {e}")
+        if response is not None:
+            print(response.text)
 ```
 
 **JavaScript (Browser `fetch`):**
 
 ```javascript
+// Example 1: Raw Audio Output
 async function generateAudioPost(text, voice = "alloy") {
   const url = "https://text.pollinations.ai/openai";
   const payload = {
@@ -1574,7 +1628,82 @@ async function generateAudioPost(text, voice = "alloy") {
     console.error("Error generating audio via POST:", error);
   }
 }
+
+// Example 2: Get Structured Response with Audio Data, Transcript, and ID
+async function generateAudioWithStructuredData(text, voice = "nova") {
+  const url = "https://text.pollinations.ai/openai";
+  const payload = {
+    model: "openai-audio",
+    messages: [{ role: "user", content: text }],
+    voice: voice,
+    // Request JSON response format instead of raw audio
+    response_format: { type: "json_object" }
+  };
+  
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+    }
+    
+    const data = await response.json();
+    
+    // Extract fields from the response
+    const audioData = data.choices[0].message.content.audio.data;
+    const transcript = data.choices[0].message.content.audio.transcript;
+    const conversationId = data.choices[0].message.content.audio.id;
+    
+    console.log("Conversation ID:", conversationId);
+    console.log("Transcript:", transcript);
+    console.log("Audio data length:", audioData.length, "characters");
+    
+    // Play the audio from base64 data
+    const audioBlob = base64ToBlob(audioData, "audio/mpeg");
+    const audioUrl = URL.createObjectURL(audioBlob);
+    const audio = new Audio(audioUrl);
+    audio.play();
+    
+    // Return the structured data for further processing
+    return {
+      audioData,
+      transcript,
+      conversationId,
+      audioUrl
+    };
+  } catch (error) {
+    console.error("Error generating audio with structured data:", error);
+  }
+}
+
+// Helper function to convert base64 to blob
+function base64ToBlob(base64, mimeType) {
+  const byteCharacters = atob(base64);
+  const byteArrays = [];
+  
+  for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+    const slice = byteCharacters.slice(offset, offset + 512);
+    
+    const byteNumbers = new Array(slice.length);
+    for (let i = 0; i < slice.length; i++) {
+      byteNumbers[i] = slice.charCodeAt(i);
+    }
+    
+    const byteArray = new Uint8Array(byteNumbers);
+    byteArrays.push(byteArray);
+  }
+  
+  return new Blob(byteArrays, { type: mimeType });
+}
+
+// Usage examples:
 // generateAudioPost("Generate speech using the POST method.", "nova");
+// generateAudioWithStructuredData("This is a test of structured audio data response.", "echo");
 ```
 
 </details>

@@ -22,23 +22,16 @@ SLIDE GUIDANCE:
 
 # 🚀 Traction
 
-* **3 M** monthly active users • **80 M** media generated every month
+* **3 M** monthly active users • **100 M** media generated every month
 * **14 M+** plays on flagship Unity-style ad integration *(our live ad-revenue pilot)*
 * 300+ live apps • 13 k Discord • 1.7 k⭐ GitHub
 * *Key Markets: 30% CN, 13% US, 13% EU, 6% IN*
 
-| Platforms | Communities | OSS    |
-| --------- | ----------- | ------ |
-| Unity     | Discord     | GitHub |
-| Pixelynx  | Twitch      | npm    |
-
 <!--
 SLIDE GUIDANCE:
-UPDATED: Changed "Roblox 'AI Character RP'" to "Unity-style ad integration" to align with new analogy
-DATA DISCREPANCY: Media generated metric varies between docs (80M vs 100M) - confirm latest before presentation
 The 30% China presence is significant - emphasize our global reach as differentiator
-Consider converting the platform table below to logos/visuals for better impact
-Key growth metrics could be added if available (MoM/QoQ growth percentages)
+Add a graph
+Key growth metrics should be added : 30% MoM media generation
 Could add metrics on ad performance (fill rate, eCPM) from any beta tests to reinforce Unity parallel
 -->
 
@@ -63,10 +56,9 @@ Could add metrics on ad performance (fill rate, eCPM) from any beta tests to rei
 <!-- 
 SLIDE GUIDANCE:
 - Frame problem as a dual pain point affecting both developers AND users
-- Contrast this with our solution in next slide
+- Don't forget the AD providers. They are not reaching the indie creator apps. The money comes from there so they may be more important than the others in terms of priority/ or same importance
 - The problem statement is clear - but could potentially add 1-2 concrete examples of developer/user friction
-- Emphasize the "forced trade-offs" concept - this sets up our value proposition (no trade-offs needed)
-- Consider mentioning competition implicitly (without naming) by referencing their limitations
+- Consider mentioning competition implicitly (without naming) by referencing their limitations (check context/parallels-unity-for-ai-and-others.md for more detail)
 -->
 
 ---
@@ -92,13 +84,13 @@ open myapp.com            # generated via pollinations‑init
 
 <!-- 
 SLIDE GUIDANCE:
-- UPDATED: Added "Unity-style SDK (10-line embed)" to highlight the parallel with Unity's lightweight integration
-- ENHANCEMENT NEEDED: Add bullet points about hosting/CI/CD handling - it's a key differentiator
-- Consider adding: "Handles hosting, secrets, CI/CD" and "Developer never leaves editor"
-- This is a good place for a quick demo or GIF showing the one-command workflow
+- copy/paste example not the best
+- should we already mention hosting here?
+- Consider adding: "Handles hosting" and "Developer never leaves editor"
 - Explain how our architecture (end-to-end-architecture.md) enables the built-in monetization
-- Consider mentioning the developer stays in their editor - no complex dashboards
-- The curl example is compelling - worth doing this live during presentation
+- Mention UI-free approach. futuristic AI assistant integration. integrate into the user's tooling
+- do we need a code example? maybe too technical. or a more exciting one with the output
+- reference context/vision-mission.md
 -->
 
 ---
@@ -113,25 +105,25 @@ SLIDE GUIDANCE:
 
 ## Two-Sided Market 🔄
 
-* **Unity for AI**: 70% rev-share to devs, proven model
+* **Unity for AI**: 50% rev-share to devs, proven model
 * **Brands → Young Creators → End-Users**
 * Users get free AI experiences, brands reach youth demographic
 
 ## Revenue Streams 💰
 
-1. Contextual ads (CPM \$1–2) - *Live now (€250k ARR)*
+1. Contextual ads (CPM \$1–2) - *Live now*
 2. Micro‑purchases (stickers, tokens) - *Planned Q1 2026*
 3. Premium tiers (SLA, bigger models) - *Planned Q1 2026*
 4. 50% app rev‑share (Roblox style) - *Pilot live*
 
 <!-- 
 SLIDE GUIDANCE:
-- UPDATED: Changed "Unity for AI Media" to "Unity for AI" for consistency across deck
+- source of truth for Revenue Streams is the file: context/roadmap.md
+- untapped / developping market 
 - Potential positioning options from parallels doc: "GIPHY-meets-AdSense for AI", "Unsplash for AI—monetised out-of-the-box"
 - Unity, AppLovin, and other platforms demonstrate lightweight SDKs with embedded ads are proven high-margin models
-- Back-of-envelope math from parallels doc: At target €6-€12 eCPM with 70% creator share, 100M monthly impressions → €18-36M ARR
-- Consider adding slide on how we're better positioned than Unity/AppLovin for AI era (AI-native, better targeting)
-- Potential risk to address: viewability metrics, latency, brand safety (see Risk Map in parallels doc)
+- Consider adding slide on how we're better/differently positioned than Unity/AppLovin for AI era (AI-native, better targeting)
+- Market file to keep as source of truth : context/market-size.md
 -->
 
 ---
@@ -156,9 +148,7 @@ flowchart LR
 
 <!-- 
 SLIDE GUIDANCE:
-- ADDED: Market trend from parallels doc about citizen developers outnumbering professional devs 4:1
-- ADDED: Tech advantage comparable to AppLovin's Axon 2.0 AI engine for ad optimization
-- ADDED: More structured moat descriptions as bullet points for clarity and impact
+- 4× more citizen devs than pros devs is the the beginning of the trend
 - Consider adding from parallels doc: "Anyone who can type a prompt is a potential Pollinations integrator"
 - Could mention Replit's 20M+ users (125% growth in 18 months) as proof of youthful prompt-dev growth
 - Consider adding IDC forecast: 750M new cloud-native apps by 2026 - huge TAM expansion
@@ -187,12 +177,9 @@ Q2 2026  :m3, 2026-04-01, 90d
 
 <!-- 
 SLIDE GUIDANCE:
-- ENHANCEMENT NEEDED: Add more specific technical milestones to timeline
-- Q3 2025: Consider adding "per-app DB, MCP auth, Triton GPU optimization (-40% cost)"
-- Q1 2026: Add "Stripe Connect for payouts, premium tiers, app hosting"
-- Q2 2026: Highlight "richer ad formats (image/audio)"
+- Use context/roadmap.md as source of truth. Update all based on it
 - Connect roadmap to funding requirements - show how seed gets us to Q2 2026
-- Timeline should match the phased monetization approach in overview.md
+- Timeline should match the phased of context/roadmap.md
 - Graph could include annotations for key revenue/user milestones
 -->
 
@@ -215,11 +202,6 @@ SLIDE GUIDANCE:
 
 <!-- 
 SLIDE GUIDANCE:
-- ENHANCEMENT NEEDED: Add COO Elliot Fouchy to team table with superpower
-- DISCREPANCY: Thomas is listed as CEO here but as CTO in overview.md - confirm correct title
-- Consider updating Thomas's superpower to: "Scales research models to products, ex-Amazon AI"
-- Add expected runway note: "~24 months runway to reach monetization v2"
-- Consider mentioning Thomas's personal runway ends Aug 2025 (from Laurent review) as urgency driver
-- Mention EU grant success as credibility proof (~€1.2M secured previously)
-- Emphasize team's complementary skills: technical depth + business execution
+- update all using this file: context/team.md
+- Collaboration: The founders share a long history of collaboration, having worked together on various technology and creative projects for more than a decade, building strong synergy and shared vision.
 -->

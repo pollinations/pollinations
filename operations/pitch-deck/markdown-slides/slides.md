@@ -23,7 +23,7 @@ layout: two-cols
 * 300+ live apps • 13 k Discord • 1.8 k⭐ GitHub
 * **30% MoM user growth**
 
-<img src="/media/piechart_countries.png" alt="Geographic distribution" class="w-64 mx-auto" />
+<img src="/media/piechart_countries_genz.png" alt="Geographic distribution" class="w-64 mx-auto" />
 ::right::
 
 <img src="/media/media_requests_per_day_genz.png" alt="Media Requests Growth" class="w-3/4 mx-auto mb-4" />
@@ -236,6 +236,7 @@ SLIDE GUIDANCE:
 
 <!--
 SLIDE GUIDANCE:
+- 💫 **Founders have shipped creative‑AI products together for 10 years: a tested, high‑trust partnership built on shared vision and execution**
 - update all using this file: context/team.md
 - Collaboration: The founders share a long history of collaboration, having worked together on various technology and creative projects for more than a decade, building strong synergy and shared vision.
 -->

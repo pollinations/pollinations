@@ -1,0 +1,6 @@
+,Payrolls,56000,18.67%,,,,,,,,,,,,
+,ML DevOps / Analytics,52000,17.33%,,,,,,,,,,,,
+,Cloud Computing,150000,50.00%,,,,,,,,,,,,
+,Services Subscription,8400,2.80%,,,,,,,,,,,,
+,Marketing ,11000,3.67%,,,,,,,,,,,,
+,Admin / Operation ,19000,6.33%,,,,,,,,,,,,

@@ -27,14 +27,14 @@ SLIDE GUIDANCE:
 * 300+ live apps • 13 k Discord • 1.7 k⭐ GitHub
 * *Key Markets: 30% CN, 13% US, 13% EU, 6% IN*
 
-<!-- 
+<!--
 SLIDE GUIDANCE:
-- UPDATED: Changed "Roblox 'AI Character RP'" to "Unity-style ad integration" to align with new analogy
-- DATA DISCREPANCY: Media generated metric varies between docs (80M vs 100M) - confirm latest before presentation
-- The 30% China presence is significant - emphasize our global reach as differentiator
-- Consider converting the platform table below to logos/visuals for better impact
-- Key growth metrics could be added if available (MoM/QoQ growth percentages)
-- Could add metrics on ad performance (fill rate, eCPM) from any beta tests to reinforce Unity parallel
+UPDATED: Changed "Roblox 'AI Character RP'" to "Unity-style ad integration" to align with new analogy
+DATA DISCREPANCY: Media generated metric varies between docs (80M vs 100M) - confirm latest before presentation
+The 30% China presence is significant - emphasize our global reach as differentiator
+Consider converting the platform table below to logos/visuals for better impact
+Key growth metrics could be added if available (MoM/QoQ growth percentages)
+Could add metrics on ad performance (fill rate, eCPM) from any beta tests to reinforce Unity parallel
 -->
 
 | Platforms | Communities | OSS    |

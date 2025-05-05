@@ -139,11 +139,10 @@ SLIDE GUIDANCE:
 
 ```mermaid
 flowchart LR
-  A[Blog tutorials] --> B(Discord devs)
+  A[pollinations.ai SDK] --> B(Creators)
   B --> C[SDK installs]
-  C --> D[Published apps]
-  D --> E[User data & ads]
-  E --> B
+  C --> D[User data & ads]
+  D --> B
 ```
 
 ## Market Moats
@@ -196,21 +195,15 @@ SLIDE GUIDANCE:
 
 # 👥 **Team**
 
-### 🚀 **Founders**
-
 |  |  |  |
 |------|------|-------|
-| **CEO** | **Thomas Haferlach** | Sets vision & strategy, drives breakthrough AI R&D |
-| **COO** | **Elliot Fouchy** | Executes strategy & finance; leads delivery & FP&A |
-
-__
-
-### 🛠️ **Pre-Seed Resources**
+| **CEO** | **Thomas Haferlach** | Sets vision & Strategy, Drives breakthrough |
+| **COO** | **Elliot Fouchy** | Executes strategy & Finance; Leads delivery |
 
 |  |  |  |
 |------|------|--------|
-| **🧠 Engineering & Data** | Senior ML & infra team | GPU fleet, diffusion models, analytics pipelines |
-| **🌐 Community** | Open Source Guild | 100k OSS developers, 1.7k⭐ GitHub |
+| **🧠 Engineering & Data** | Senior ML & Infra Team | GPU fleet, Diffusion models, Analytics pipelines |
+| **🌐 Marketing & Community** | Open Source Guild | 100k OSS Developers / ⭐ GitHub |
 
 <!--
 SLIDE GUIDANCE:
@@ -219,9 +212,11 @@ SLIDE GUIDANCE:
 
 ---
 
-# 💰 Raising **\$2.5 – 3 M seed**
+# 💰 Raising
 
-| Allocation | Percentage | Purpose |
+## **€2.5 – 3 M seed**
+
+|  |  |  |
 |------------|------------|---------|
 | GPU Fleet & Infrastructure | 65% | Scale compute capacity & optimize costs |
 | Team Growth | 25% | Expand devrel & business development |

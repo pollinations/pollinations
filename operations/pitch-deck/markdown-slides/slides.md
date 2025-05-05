@@ -108,9 +108,9 @@ SLIDE GUIDANCE:
 
 ## Two-Sided Market 🔄
 
-* **Brands** → **Young Creators** → **End-Users**
-* Creators monetize through 50% rev-share
-* Users get free, innovative AI experiences
+* **Unity for AI Media**: 70% rev-share to devs, proven model
+* **Brands → Young Creators → End-Users**
+* Users get free AI experiences, brands reach youth demographic
 
 ## Revenue Streams 💰
 
@@ -121,14 +121,12 @@ SLIDE GUIDANCE:
 
 <!-- 
 SLIDE GUIDANCE:
-- ADDED: Full TAM/SAM/SOM data from market-size.md with focus on Youth Ad Market
-- ADDED: Two-sided market explanation highlighting the value flow between stakeholders
-- ADDED: Status/timeline labels to each revenue stream for clarity
-- Revenue run-rate (€250k ARR from text ads) is now explicitly mentioned
-- Consider adding a simple flow diagram showing the Brands → Creators → Users value chain
-- The SOM figure ($0.5B) provides a concrete, achievable target that's still impressive
-- Note currency inconsistency between € and $ still exists - standardize before presentation
-- Could consider adding projected 24-month run-rate from overview.md if time allows
+- ADDED: "Unity for AI Media" analogy from parallels doc - powerful benchmark as Unity generates $1.2B (66%) from ads
+- Potential positioning options from parallels doc: "GIPHY-meets-AdSense for AI media", "Unsplash for AI—monetised out-of-the-box"
+- Unity, AppLovin, and other platforms demonstrate lightweight SDKs with embedded ads are proven high-margin models
+- Back-of-envelope math from parallels doc: At target €6-€12 eCPM with 70% creator share, 100M monthly impressions → €18-36M ARR
+- Consider adding slide on how we're better positioned than Unity/AppLovin for AI era (AI-native, better targeting)
+- Potential risk to address: viewability metrics, latency, brand safety (see Risk Map in parallels doc)
 -->
 
 ---
@@ -144,17 +142,23 @@ flowchart LR
   E --> B
 ```
 
-* MIT‑licensed ⚖️  + privacy‑first → **trust moat**
-* Lowest friction wins dev mind‑share → flywheel above already spinning
+## Market Moats
+
+* **Trust Moat:** Open source (MIT) & privacy-first approach
+* **Market Trend:** 4× more citizen devs than pros (Gartner)
+* **Tech Advantage:** Native AI-powered ad targeting (like AppLovin's Axon 2.0)
+* **Network Effect:** More apps → better data → better platform → more apps
 
 <!-- 
 SLIDE GUIDANCE:
-- ENHANCEMENT NEEDED: Strengthen moat description with specific bullet points
-- Consider restructuring as "Trust Moat," "Frictionless DevEx," "Network Effects," and "Technology"
-- For Trust Moat: Highlight open source (MIT) & privacy-first approach
-- For Network Effects: Explain "More apps → better data/platform → more apps" virtuous cycle
-- For Technology: Mention "Scalable Edge AI + unique monetization plugins"
-- Emphasize that this flywheel is already working - provide concrete example if possible
+- ADDED: Market trend from parallels doc about citizen developers outnumbering professional devs 4:1
+- ADDED: Tech advantage comparable to AppLovin's Axon 2.0 AI engine for ad optimization
+- ADDED: More structured moat descriptions as bullet points for clarity and impact
+- Consider adding from parallels doc: "Anyone who can type a prompt is a potential Pollinations integrator"
+- Could mention Replit's 20M+ users (125% growth in 18 months) as proof of youthful prompt-dev growth
+- Consider adding IDC forecast: 750M new cloud-native apps by 2026 - huge TAM expansion
+- Risk mitigation worth mentioning: Edge caching for low latency (200ms p95 SLA target)
+- Ad unit options to consider highlighting: native widgets, brand overlays, performance link ads
 -->
 
 ---

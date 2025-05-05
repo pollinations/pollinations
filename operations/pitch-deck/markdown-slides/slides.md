@@ -162,42 +162,42 @@ SLIDE GUIDANCE:
 
 ---
 
-# 🛣️ Roadmap
+# 🛣️ Roadmap (Q3 2025 → Q2 2026)
 
 ```mermaid
 gantt
-dateFormat  Q%q %Y
-section Milestones
-Q3 2025  :active, m1, 2025-07-01, 90d
-Q1 2026  :m2, 2026-01-01, 90d
-Q2 2026  :m3, 2026-04-01, 90d
+  dateFormat  Q%q %Y
+  axisFormat  %q'Q%y
+  section 12‑Month Plan
+  Observability & Context      :active, a1, 2025-07-01, 90d
+  Rev‑Share + Yield Lift      :a2, 2025-10-01, 90d
+  Seed Raise Kick‑off         :a3, 2026-01-01, 90d
+  Post‑Seed Scale‑up          :a4, 2026-04-01, 90d
 ```
 
-| Milestone | Highlights                              |
-| --------- | --------------------------------------- |
-| **Q3 25** | Core infra • per‑app DB • ad validation |
-| **Q1 26** | Monetisation v1 • 50 % rev‑share        |
-| **Q2 26** | Image/audio ads • dev tools v2          |
+| Quarter   | Focus & KPIs                                                                      | 
+| --------- | --------------------------------------------------------------------------------- | 
+| **Q3 25** | Real‑time ad‑telemetry • context embeddings • infra cost/gen ↓ 15 %               | 
+| **Q4 25** | Dev wallet + **50 % rev‑share** live • brand‑safety classifier                    | 
+| **Q1 26** | **Seed raise opens** • 6 M MAU • ARR run‑rate **€2 M** • multi‑format ads         |
+| **Q2 26** | Deploy seed capital • SDK v2 • ARR run‑rate **€3 M**                              |
 
 <!--
 SLIDE GUIDANCE:
-- Use context/roadmap.md as source of truth. Update all based on it
-- Connect roadmap to funding requirements - show how seed gets us to Q2 2026
-- Timeline should match the phased of context/roadmap.md
-- Graph could include annotations for key revenue/user milestones
 -->
-
 
 ---
 
-# 👥 Team & Seed Ask
+# 👥 Team
 
-| Role   | Who                    | Super‑power                      |
-| ------ | ---------------------- | -------------------------------- |
-| CEO    | **Thomas Haferlach**   | Scales research models to products, ex‑Amazon AI |
-| COO    | **Elliot Fouchy**      | Business execution & EU grants   |
-| CTO    | **Core Dev Squad (4)** | Model & infra wizards            |
-| DevRel | **Open Source Guild**  | 1.7 k⭐ on GitHub                 |
+| Role | Who | Edge |
+|------|-----|------|
+| **CEO** | Thomas Haferlach | Sets vision & strategy, drives breakthrough AI R&D |
+| **COO** | Elliot Fouchy | Executes strategy & finance; leads delivery & FP&A |
+| **Engineering & Data** (post pre-seed) | Senior ML & infra team | GPU fleet, diffusion models, analytics pipelines |
+| **Community** (post pre-seed) | Open Source Guild | 100 k OSS developers, 1.7 k⭐ GitHub |
+
+*Founders have shipped creative‑AI products together for 10 years — a tested, high‑trust partnership.*
 
 ## Raising **\$2.5 – 3 M seed**
 

@@ -112,10 +112,14 @@ layout: two-cols
 
 # 🌍 Market & Business Model
 
-## Market 📊
+<img src="/media/youth-ad-market.png" alt="Youth Ad Market" class="w-3/4 mx-auto my-4" />
 
-* Gen‑AI creator economy **>\$10 B** TAM
-* **Doubling YoY** (Gartner 2025) - *GenAI market*
+
+
+::right::
+
+* GenAI creator economy **>\$10 B** TAM
+* GenAI market doubling YoY (Gartner 2025)
 
 ## Two-Sided Market 🔄
 
@@ -128,9 +132,7 @@ layout: two-cols
 1. Contextual ads (CPM \$1–2) - *Live now*
 2. 50% app rev‑share (Roblox style) - *Pilot live*
 
-::right::
 
-<img src="/media/youth-ad-market.png" alt="Youth Ad Market" class="w-3/4 mx-auto my-4" />
 <!--
 SLIDE GUIDANCE:
 -Extra revenue stream:

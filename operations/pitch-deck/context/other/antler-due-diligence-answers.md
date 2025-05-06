@@ -2,19 +2,19 @@
 
 **Problem Statement (what pain/problem are you solving):**
 
-* Building with AI is complex and expensive for creators, involving infrastructure headaches, authentication issues, and no easy way to monetize viral applications.
+* Building with AI is complex and expensive for creators, involving infrastructure headaches, authentication issues, and no easy way to generate revenue from viral applications.
 * End users face paywalls, have privacy concerns, and desire more customization in AI experiences.
-* Ad providers and brands struggle to reach the youth/Gen Z demographic within AI-native applications.
+* Ad providers and brands struggle to reach the youth/Gen Z demographic within emerging AI applications.
 * The current ecosystem forces painful trade-offs due to friction and silos, preventing an open, creative, and monetizable AI ecosystem.
 
 **Solution (how are you solving it):**
 
 > 2 sided market, ad prodiver missing
 
-* Pollinations.ai provides an "AI App Factory," described as "Unity for AI," which simplifies the process of building and monetizing generative AI products.
+* Pollinations.ai provides an "AI App Factory," described as "Unity for AI," which simplifies the process of building and commercializing generative AI products.
 * The platform offers an end-to-end AI setup with instant integration and auto-configured infrastructure, allowing creators to focus solely on the frontend UI/UX.
 * It provides "Plug & Play AI" through simple URL calls for text, image, and audio features.
-* Pollinations.ai handles the backend infrastructure, scaling, ads, and revenue sharing.
+* Pollinations.ai manages the technical layer, including scaling, ads, and revenue sharing.
 * The mission is to build the dominant AI creation and distribution platform, empowering developers to build, share, and generate income from AI experiences at scale. This is fueled by connecting advertisers to a massive and highly engaged global audience.
 * The vision includes universal AI development (making AI creation accessible to everyone), interface-free creation (a development platform without traditional visual interfaces), and ad-supported state-of-the-art (SOTA) tools to remove cost barriers.
 
@@ -58,7 +58,7 @@
         * Core Edge Services live (Image, Text, Audio Gen APIs + Open Source SDK).
         * Over 300 integrations live, with vibe coders building more than 2 new apps daily.
 * **What is the customer and user value proposition and therefore pain point?**
-    * **Creators (Pain Point):** Complex AI infrastructure, authentication headaches, no built-in/easy monetization for viral apps.
+    * **Creators (Pain Point):** Complex AI infrastructure, authentication headaches, no built-in revenue path for viral apps.
     * **Creators (Value Proposition):** Launch instantly via assistant, focus on frontend/UX, simple plug & play AI, technical foundation handled (infrastructure, scaling, ads, payments), easiest path to a live, profitable AI app.
     * **End Users (Pain Point):** Paywalls everywhere, privacy concerns.
     * **End Users (Value Proposition):** Free access to innovative and engaging AI applications, supported by embedded ads.
@@ -78,12 +78,12 @@
     * Use our scale to optimize models for real-word usage patterns.
 * **Who are your target customers and what is your go to market strategy?**
     * **Target Customers:**
-        * Affiliates/Creators: Developers and hobbyists, particularly "vibe coders".
+        * Affiliates/Creators: The growing community of developers and hobbyists building with AI.
         * Advertisers (Brands): Companies looking to improve their ad targeting and new markets.
     * **Go-to-Market Strategy:**
         * **Community-First Marketing:** Moderate and grow the open-source Discord, run weekly live-build sessions.
           * **Content Marketing & Social Media:** Own social channels (X, Instagram, LinkedIn) with a KPI-driven content calendar.
-        * **Developer Activation:** Launch a Developer Portal, run "First App" challenges, targeted outreach to "Vibe Coders."
+        * **Developer Activation:** Launch a Developer Portal, run "First App" challenges, targeted outreach to the vibe coder community.
         * **Hackathons & Tutorials:** Drive SDK adoption.
         * **Paid Experiments:** Launch Google Ads, Reddit campaigns targeting creator niches.
         * **Referral & Ambassador Programs:** To lower blended CAC.
@@ -141,10 +141,10 @@
 * **Please provide a calculation/estimation of the market (TAM/SAM/SOM)** (Global - 2025 Base)
     * **TAM (Connected Youth):** 948 Million Users; US $247 Billion Annual Ad Spend Potential.
     * **SAM (Digitally Mature Youth):** 600 Million Users; US $99 Billion Annual Ad Spend Potential.
-    * **SOM (Early Vibe Coders):** 5 Million Users; US $0.5 Billion Annual Ad Spend Potential.
+    * **SOM (Early Adopters):** 5 Million Users; US $0.5 Billion Annual Ad Spend Potential.
     * The pitch deck also mentions the Generative AI creator economy TAM is > $10 Billion.
 * **Fragmentation:**
-    * The market has various players focusing on different aspects like GIF APIs (GIPHY), Image CDNs (Unsplash), Game Ad SDKs (Unity, AppLovin), and AI Search with ads (Perplexity). This suggests some fragmentation, with Pollinations aiming to be a unifying platform for AI media monetization.
+    * The market has various players focusing on different aspects like GIF APIs (GIPHY), Image CDNs (Unsplash), Game Ad SDKs (Unity, AppLovin), and AI Search with ads (Perplexity). Pollinations aims to be a unifying platform for AI media distribution.
 * **Barriers to entry:**
     * **Technology and Infrastructure:** Building and scaling AI models and the required infrastructure is complex and costly.
     * **Community and Network Effects:** Establishing a large and active community of creators and users, creating a flywheel effect, is a significant barrier for new entrants.
@@ -196,7 +196,7 @@
     * **Validation:**
         * Explosive growth: >100 million AI media generations per month.
         * 35% month-over-month growth on key metrics like API requests.
-        * Over 300 integrations are live; Vibe coders building >2 new apps daily.
+        * Over 300 integrations are live; creators launching >2 new apps daily.
         * Global reach: Strong adoption in China, US, India, EU.
         * This shows massive community buy-in & product-market fit.
         * Pilots for contextual ads and app rev-share are live.

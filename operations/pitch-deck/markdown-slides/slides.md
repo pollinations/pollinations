@@ -17,7 +17,7 @@ SLIDE GUIDANCE:
 layout: two-cols-header
 ---
 
-# **🚀 Traction**
+# <span class="bg-blue-600 text-white p-2 rounded">**🚀 Traction**</span>
 
 ::left::
 
@@ -40,7 +40,7 @@ SLIDE GUIDANCE:
 layout: two-cols-header
 ---
 
-# **😖 Problem**
+# <span class="bg-red-600 text-white p-2 rounded">**😖 Problem**</span>
 
 ::left::
 
@@ -76,7 +76,7 @@ SLIDE GUIDANCE:
 layout: two-cols-header
 ---
 
-# ✨ The Pollinations Fix: **AI App Factory**
+# <span class="bg-green-600 text-white p-2 rounded">✨ The Pollinations Fix: **AI App Factory**</span>
 
 ::left::
 
@@ -112,7 +112,7 @@ SLIDE GUIDANCE:
 layout: two-cols-header
 ---
 
-# **🌍 Market & Business Model**
+# <span class="bg-purple-600 text-white p-2 rounded">**🌍 Market & Business Model**</span>
 
 ::left::
 
@@ -150,7 +150,7 @@ SLIDE GUIDANCE:
 layout: two-cols
 ---
 
-# 📈 **GTM Flywheel & Moat**
+# <span class="bg-yellow-600 text-white p-2 rounded">📈 **GTM Flywheel & Moat**</span>
 
 * **Trust Moat:** 📖 Open source (MIT) & Privacy-first approach
 * **Market Trend:** 📊 4× More citizen devs than pros (Gartner)
@@ -174,7 +174,7 @@ SLIDE GUIDANCE:
 
 ---
 
-# **🛣️ Roadmap (Q3 2025 → Q2 2026)**
+# <span class="bg-indigo-600 text-white p-2 rounded">**🛣️ Roadmap (Q3 2025 → Q2 2026)**</span>
 
 ```mermaid
 gantt
@@ -200,7 +200,7 @@ SLIDE GUIDANCE:
 
 ---
 
-# 👥 **Team**
+# <span class="bg-pink-600 text-white p-2 rounded">👥 **Team**</span>
 
 |         |                      |                                             |
 | ------- | -------------------- | ------------------------------------------- |
@@ -223,7 +223,7 @@ SLIDE GUIDANCE:
 
 ---
 
-# **💰 Raising**
+# <span class="bg-teal-600 text-white p-2 rounded">**💰 Raising**</span>
 
 ## **€2.5 – 3 M seed**
 

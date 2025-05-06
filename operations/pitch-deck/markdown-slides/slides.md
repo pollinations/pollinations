@@ -16,7 +16,7 @@ Do you think maybe starting the first slide with the name of another company is 
 layout: two-cols
 ---
 
-# 🚀 Traction
+# **🚀 Traction**
 
 * **3 M** monthly active users • **100 M** media generated every month
 * **14 M+** plays on flagship Unity-style ad integration *(our live ad-revenue pilot)*
@@ -42,7 +42,7 @@ Key growth metrics should be added : 30% MoM media generation
 layout: two-cols
 ---
 
-# 😖 Problem
+# **😖 Problem**
 
 ## Developers
 * Complex AI infrastructure
@@ -76,7 +76,7 @@ SLIDE GUIDANCE:
 layout: two-cols
 ---
 
-# ✨ The Pollinations Fix: AI App Factory
+# ✨ The Pollinations Fix ✨ **AI App Factory**
 
 *   **AI Sets Up:** Launch instantly via assistant.
 *   **You Focus on Frontend:** Build the UI/UX.
@@ -110,7 +110,7 @@ SLIDE GUIDANCE:
 layout: two-cols
 ---
 
-# 🌍 Market & Business Model
+# **🌍 Market & Business Model**
 
 <img src="/media/youth-ad-market.png" alt="Youth Ad Market" class="w-3/4 mx-auto my-4" />
 
@@ -147,7 +147,7 @@ SLIDE GUIDANCE:
 layout: two-cols
 ---
 
-# 📈 GTM Flywheel & Moat
+# 📈 **GTM Flywheel & Moat**
 
 
 
@@ -174,7 +174,7 @@ SLIDE GUIDANCE:
 
 ---
 
-# 🛣️ Roadmap (Q3 2025 → Q2 2026)
+# **🛣️ Roadmap (Q3 2025 → Q2 2026)**
 
 ```mermaid
 gantt
@@ -223,7 +223,7 @@ SLIDE GUIDANCE:
 
 ---
 
-# 💰 Raising
+# **💰 Raising**
 
 ## **€2.5 – 3 M seed**
 

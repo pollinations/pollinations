@@ -1,0 +1,13 @@
+name = "pollinations-pitch"
+compatibility_date = "2023-05-01"
+
+[site]
+bucket = "./dist"
+
+[pages]
+pages_build_output_dir = "dist"
+
+[env.production]
+routes = [
+  { pattern = "pitch.pollinations.ai", custom_domain = true }
+]

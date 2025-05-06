@@ -45,6 +45,16 @@ export const projectCategories = [
 const allProjects = {
   toolsInterfaces: [
     {
+      name: "🆕 Polynate",
+      url: "https://polynate.cloudwerx.dev/",
+      description: "AI-powered text and audio content generation platform providing a user-friendly interface for interacting with various AI generation services from Pollinations.ai.",
+      author: "@voodoohop",
+      repo: "https://github.com/CLOUDWERX-DEV/polynate",
+      stars: 1,
+      submissionDate: "2025-05-04",
+      order: 1,
+    },
+    {
       name: "🆕 Echo AI",
       url: "https://3ch0ai.github.io/EchoAI",
       description: "An HTML-based chat interface that leverages Pollinations AI as its core engine for both text and image generation, featuring user authentication, streaming responses, and plan management.",
@@ -82,6 +92,15 @@ const allProjects = {
     },
   ],
   llmIntegrations: [
+    {
+      name: "🆕 Define",
+      url: "https://define-i05a.onrender.com/api/docs/",
+      description: "An AI-powered REST API designed to generate definitions for words or phrases, constrained to a specified target word count. It allows customization of tone, context, and language, delivering precise, context-aware definitions programmatically—ideal for developers and content creators.",
+      author: "@hasanraiyan",
+      repo: "https://github.com/hasanraiyan",
+      submissionDate: "2025-05-06",
+      order: 1,
+    },
     {
       name: "🆕 CoNavic",
       url: "https://github.com/mkantwala/CoNavic/",
@@ -179,16 +198,6 @@ const allProjects = {
       order: 4,
     },
     {
-      name: "🆕 PrivatePollenAI",
-      url: "https://mmojocoder.github.io/PrivatePollenAI/chat.html",
-      description: "A privacy-focused chat assistant app that securely stores data locally, integrates with PollinationAI for text and image generation, features a minimalistic UI, and allows users to choose models and write their own system instructions.",
-      author: "https://github.com/MMojoCoder",
-      repo: "https://github.com/MMojoCoder/PrivatePollenAI",
-      submissionDate: "2025-02-23",
-      stars: 2,
-      order: 4,
-    },
-    {
       name: "🆕 Zelos AI image generator",
       url: "https://websim.ai/@ISWEARIAMNOTADDICTEDTOPILLOW/ai-image-prompt-generator",
       description: "It uses Pollinations for both prompt enhancing and image generation, it was a easy to make project due to pollinations services being easy to use.",
@@ -273,6 +282,7 @@ const allProjects = {
       description: "Dreamscape AI is a creative studio for generating, enhancing, and transforming images, plus conversational AI capabilities with text and voice interfaces, and a deep research tool. The entire site is almost all powered by Pollinations API aside from the image enhancement tools. It generates images, optimizes prompts and creates image titles with the text API, features lots of image styling prompts, also has chat and voice chat with chat memory, and a research tool.",
       author: "@sizzlebop",
       repo: "https://github.com/pinkpixel-dev/dreamscape-ai",
+      stars: 2,
       submissionDate: "2025-05-02",
       order: 1,
     },
@@ -947,6 +957,16 @@ const allProjects = {
     },
   ],
   sdkLibraries: [
+    {
+      name: "🆕 Pollinations Task Master",
+      url: "https://github.com/LousyBook94/pollinations-task-master",
+      description: "A fork of the original task master but uses pollinations instead to be used for free. Has both a CLI and MCP and distributed as an npm package now as \"pollinations-taskmaster\".",
+      author: "@LousyBook94",
+      repo: "https://github.com/LousyBook94/pollinations-task-master",
+      stars: 3,
+      submissionDate: "2025-05-04",
+      order: 2,
+    },
     {
       name: "🆕 Mimir AIP",
       url: "https://mimir-aip.github.io/",

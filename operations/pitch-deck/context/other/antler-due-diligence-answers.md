@@ -97,17 +97,32 @@
         *   **Q2 2026:** Seed Capital Deployed, Contextual Ad Targeting v2, Rich Media Ads (Beta), SDK v1.1.
             *   KPIs: Seed Closed, $2.5M+ ARR Run-Rate, 7M+ MAU, eCPM $4.5+.
 
-**Unit economics:**
+**Monetization Strategy & Unit Economics:**
 
-*   **Revenue Model:** Primarily Ad-Revenue, with a 50% share for creators, as detailed in our Solution.
-*   **Target eCPM:** €6–€12 (rewarded/interstitial, mid-tier markets).
-*   **Revenue Potential:** At 100M monthly impressions and 30% Pollinations take-rate, this implies €1.8M - €3.6M monthly potential for Pollinations.
-*   **Cost Structure (from €300k pre-seed):**
-    *   Personnel (AIOps, Data Scientist, Operations): ~62%.
-    *   Cloud Computing: ~33%.
-    *   Marketing: ~5%.
-*   Currently ≈ $0 ARR (basic text-ad append for unregistered apps - Live PoC).
-*   Goal: $1M ARR run-rate by late Q1 2026.
+*   **A. Core Revenue Engine: Ad-Supported APIs with Creator Revenue Share**
+    *   Pollinations.ai provides free API access; our primary income stream is advertising integrated within or alongside AI-generated media. We commit to a **50% revenue share with developers/creators** whose applications drive ad engagement.
+    *   **Ad Mechanics:** Ads are **contextually relevant** to AI-generated content or app themes, leveraging **AI for intelligent placement/targeting**. Inventory sourced via **direct brand partnerships** and potentially **privacy-focused, developer-centric ad networks**. Formats include native text ads (LLM responses) and unobtrusive image/video overlays.
+
+*   **B. Viability & Developer Incentive**
+    *   **Developer Income Flow:** 1. Dev integrates free API. 2. App attracts End-Users. 3. Relevant, contextual ads served. 4. Revenue generated (eCPM/clicks from Ad Providers). 5. Developer receives 50% revenue.
+    *   **Target eCPM:** €6–€12 (rewarded/interstitial, mid-tier markets).
+    *   **Revenue Potential:** Our platform's >100M monthly generations at target eCPMs and a 30% Pollinations take-rate implies €1.8M - €3.6M monthly potential for Pollinations.
+    *   **Validation:** Creator earning potential is indicated by community successes (e.g., Roblox dev ~$100/day monetizing their Pollinations-powered app via Roblox's system). Our model offers a direct path for similar earnings across many apps.
+    *   **Platform Profitability:** Hinges on scale (proven by current traction) and optimizing ad fill rates/eCPMs. The 50% developer share incentivizes quality traffic, benefiting the ecosystem.
+
+*   **C. Ensuring Fair Use & Quality: Tiered Access & Validation**
+    *   To ensure sustainability, prevent free resource misuse, and maintain valuable ad inventory, we implement a **tiered access and validation system**:
+        *   **Open Access Tier:** Immediate, frictionless API access for building/testing; may have initial rate limits or standard ad placements.
+        *   **Validated Partner Tier:** Apps with genuine user engagement, quality traffic, and brand safety adherence qualify for full 50% revenue share and potentially premium ad inventory. Validation can be automated (usage analytics, quality scores).
+    *   This manages costs while rewarding high-value applications and ensuring advertisers reach engaged audiences.
+
+*   **D. Cost Structure & Financial Goals**
+    *   **Cost Structure (from €300k pre-seed):**
+        *   Personnel (AIOps, Data Scientist, Operations): ~62%.
+        *   Cloud Computing: ~33%.
+        *   Marketing: ~5%.
+    *   Currently ≈ $0 ARR (basic text-ad append for unregistered apps - Live PoC).
+    *   Goal: $1M ARR run-rate by late Q1 2026.
 
 **Market:**
 
@@ -126,9 +141,11 @@
 **Competition:**
 
 1.  **Competitive Landscape:**
-    *   We are positioned against game monetization platforms (Unity Ads, AppLovin), media APIs (GIPHY, Unsplash), and AI Search with ad models (Perplexity).
-    *   Pollinations differentiates through its AI-native focus, broader generative AI application beyond just games or search, and a strong creator income share.
-    *   **Alternatives:** Creators might manually integrate general ad networks, which doesn't solve AI backend/scaling, or use direct deals/subscriptions, which are harder for individual developers to scale. Pollinations aims to automate payouts.
+    *   Pollinations.AI's primary differentiation is its unique model: **completely free, open API access for generative AI, directly coupled with a built-in, shared advertising revenue system for developers.**
+    *   Game monetization platforms (Unity Ads, AppLovin) offer robust ad SDKs but aren't AI-native creation engines nor provide the underlying free generative AI APIs Pollinations does. We are both creation engine *and* monetization layer for diverse AI apps.
+    *   AI model providers (Hugging Face, Replicate) offer API access but via usage-based pricing or subscriptions, creating cost barriers and lacking an integrated income path for apps built on them.
+    *   Ad-supported AI products (Perplexity AI) monetize *their own* end-user product, not an open API ecosystem with shared ad revenue for third-party developers.
+    *   **Our Edge for Developers:** Pollinations provides a frictionless path to both build *and earn* from AI applications, unlike alternatives requiring manual ad integration or lacking AI backend/scaling solutions.
 
 2.  **Closest Competitors Table:**
 

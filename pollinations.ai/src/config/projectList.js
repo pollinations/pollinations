@@ -189,16 +189,6 @@ const allProjects = {
       order: 4,
     },
     {
-      name: "🆕 PrivatePollenAI",
-      url: "https://mmojocoder.github.io/PrivatePollenAI/chat.html",
-      description: "A privacy-focused chat assistant app that securely stores data locally, integrates with PollinationAI for text and image generation, features a minimalistic UI, and allows users to choose models and write their own system instructions.",
-      author: "https://github.com/MMojoCoder",
-      repo: "https://github.com/MMojoCoder/PrivatePollenAI",
-      submissionDate: "2025-02-23",
-      stars: 2,
-      order: 4,
-    },
-    {
       name: "🆕 Zelos AI image generator",
       url: "https://websim.ai/@ISWEARIAMNOTADDICTEDTOPILLOW/ai-image-prompt-generator",
       description: "It uses Pollinations for both prompt enhancing and image generation, it was a easy to make project due to pollinations services being easy to use.",

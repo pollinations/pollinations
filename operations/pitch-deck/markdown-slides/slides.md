@@ -11,12 +11,11 @@ class: text-center
 
 <!--
 SLIDE GUIDANCE:
-- Explain why Pollinations name is not a good fit
+- Explain why Pollinations name is a good fit
 -->
 
 ---
 layout: two-cols-header
-class: text-center
 ---
 
 # <span class="bg-blue-600 text-white p-2 rounded">**🚀 Traction**</span>
@@ -40,24 +39,23 @@ SLIDE GUIDANCE:
 
 ---
 layout: two-cols-header
-class: text-center
 ---
 
 # <span class="bg-red-600 text-white p-2 rounded">**😖 Problem**</span>
 
 ::left::
 
-## Developers
+### **Creator (Affiliate)**
 * Complex AI infrastructure
 * Authentication headaches
 * No built‑in monetisation
 
-## End Users
+### **End Users (Consumer)**
 * Paywalls everywhere
 * Privacy concerns
 * Limited customisation
 
-## Ad Providers
+### **Ad Providers (Brand)**
 * Missing youth demographic
 * No AI-native targeting
 
@@ -77,7 +75,6 @@ SLIDE GUIDANCE:
 
 ---
 layout: two-cols-header
-class: text-center
 ---
 
 # <span class="bg-green-600 text-white p-2 rounded">✨ The Pollinations Fix: **AI App Factory**</span>
@@ -114,7 +111,6 @@ SLIDE GUIDANCE:
 -->
 ---
 layout: two-cols-header
-class: text-center
 ---
 
 # <span class="bg-purple-600 text-white p-2 rounded">**🌍 Market & Business Model**</span>
@@ -162,13 +158,12 @@ In Pollinations.AI’s ecosystem, the core two sides are:
 
 ---
 layout: two-cols
-class: text-center
 ---
 
 # <span class="bg-yellow-600 text-white p-2 rounded">📈 **GTM Flywheel & Moat**</span>
 
 * **Trust Moat:** 📖 Open source (MIT) & Privacy-first approach
-* **Market Trend:** 📊 4× More citizen devs than pros (Gartner)
+* **Market Trend:** 📊 4× More citizen Creators than pros (Gartner)
 * **Tech Advantage:** 🧠 Native AI-powered ad targeting (like AppLovin's Axon 2.0)
 * **Network Effect:** 🔄 More apps → Better data → Better platform → More apps
 

@@ -311,9 +311,9 @@ Become the ubiquitous, **interface-free engine** for AI creation and distributio
 
 *   **Elliot:** "Executing this vision requires the right team."
 *   **Elliot:** "**Founding Team:**
-    *   **Thomas (CEO):** Drives **vision, strategy, breakthrough tech**. Decades of AI & scaling experience.
-    *   **Elliot (COO):** Executes **strategy, finance, delivery**. 20+ years tech/AV, 6+ years AI ops."
-*   **Thomas:** "Our **decade-long collaboration** provides strong synergy."
+    *   **Thomas (CEO):** Drives **vision, strategy, breakthrough tech**. 
+    *   **Elliot (COO):** Executes **strategy, finance, delivery**. "
+*   **Thomas:** "Our **decade-long collaboration** provides strong synergy, backed by decades of AI & scaling experience."
 *   **Thomas:** "**Planned Key Hires (Post-Seed):**
     *   **Engineering & Data:** Senior **AI-Ops & Infra** team for GPU optimization and scaling.
     *   **Marketing & Community:** **Growth & Developer Relations** lead for user acquisition, partnerships, community."

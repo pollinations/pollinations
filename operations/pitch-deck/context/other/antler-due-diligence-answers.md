@@ -2,234 +2,152 @@
 
 **Problem Statement (what pain/problem are you solving):**
 
-* Building with AI is complex and expensive for creators, involving infrastructure headaches, authentication issues, and no easy way to generate revenue from viral applications.
-* End users face paywalls, have privacy concerns, and desire more customization in AI experiences.
-* Ad providers and brands struggle to reach the youth/Gen Z demographic within emerging AI applications.
-* The current ecosystem forces painful trade-offs due to friction and silos, preventing an open, creative, and monetizable AI ecosystem.
+*   Building with AI is currently complex and costly for creators, involving technical hurdles, authentication challenges, and no straightforward way to generate revenue from viral applications.
+*   End users often encounter paywalls, have privacy concerns, and seek more personalized AI experiences.
+*   Advertisers and brands find it difficult to effectively reach the youth/Gen Z demographic within these newer AI-centric applications.
+*   The current landscape presents painful trade-offs due to friction and silos, hindering the development of an open, creative, and financially viable AI ecosystem.
 
 **Solution (how are you solving it):**
 
-> 2 sided market, ad prodiver missing
-
-* Pollinations.ai provides an "AI App Factory," described as "Unity for AI," which simplifies the process of building and commercializing generative AI products.
-* The platform offers an end-to-end AI setup with instant integration and auto-configured infrastructure, allowing creators to focus solely on the frontend UI/UX.
-* It provides "Plug & Play AI" through simple URL calls for text, image, and audio features.
-* Pollinations.ai manages the technical layer, including scaling, ads, and revenue sharing.
-* The mission is to build the dominant AI creation and distribution platform, empowering developers to build, share, and generate income from AI experiences at scale. This is fueled by connecting advertisers to a massive and highly engaged global audience.
-* The vision includes universal AI development (making AI creation accessible to everyone), interface-free creation (a development platform without traditional visual interfaces), and ad-supported state-of-the-art (SOTA) tools to remove cost barriers.
+*   Pollinations.ai provides an "AI App Factory," envisioned as "Unity for AI," simplifying the creation and commercialization of generative AI products.
+*   Our platform offers an end-to-end AI setup with instant integration and auto-configured infrastructure, allowing creators to focus on frontend UI/UX.
+*   We provide "Plug & Play AI" via simple URL calls for text, image, and audio features.
+*   Pollinations.ai manages the entire technical foundation, including scaling, ad serving, and revenue sharing.
+*   Our mission is to build the dominant AI creation and distribution platform, empowering developers to build, share, and generate income from AI experiences at scale, by connecting advertisers to a massive, engaged global audience.
+*   The vision includes universal AI development (making AI creation accessible), interface-free creation (a development platform without traditional visual interfaces), and ad-supported state-of-the-art (SOTA) tools to remove cost barriers.
 
 **Customer Persona (who is the recipient of your solution):**
 
-> address this: vibe coder = indie developers of all ages
-> end user is of all age, not only youth
-> ad provider will reach all end user
-
-* **Creators (Affiliates/Developers):** Developers, hobbyists, indie creators, and a new generation of young programmers who want to build, share, and earn from AI applications. This includes those who can type a prompt, expanding the TAM beyond traditional developers.
-* **End-Users (Consumers):** Everyone, particularly a massive global youth audience, who will use the AI apps created on the platform.
-* **Ad Providers (Brands):** Companies seeking to reach the valuable youth demographic through AI-powered applications.
+*   **Creators (Affiliates/Developers):** Developers, hobbyists, indie creators, and a new generation of young programmers (including "vibe coders") who want to build, share, and earn from AI applications. This encompasses anyone who can type a prompt.
+*   **End-Users (Consumers):** A diverse global audience, particularly youth, who will use the AI apps created on our platform.
+*   **Ad Providers (Brands):** Companies looking to engage with the valuable youth demographic through innovative AI-powered applications.
 
 **Team:**
 
-* **What makes you uniquely qualified to execute this business idea?**
-  > refocus to answer that question better, explain why our skills are related to what we need for pollinations success
-    * The CEO, Thomas Haferlach, is responsible for setting the vision and strategy and driving breakthrough AI R&D.
-    * The COO, Elliot Fouchy, is responsible for translating strategy into execution, managing finance, and leading delivery.
-    * The founders have a decade-long collaboration, building strong synergy and shared vision, backed by AI and scaling experience.
-    * The planned team includes senior AI-Ops & Infra specialists for GPU fleet optimization and scaling, and Growth & Developer Relations personnel.
-* **Operating model of the company/team - where will you base the team, how are you spending time together and which mechanisms they have put in place / will put in place to ensure you keep growing together more closely**
-  > add community (dev, users, moderators)
-    * The company will be primarily based in Berlin, with an office in Lichtenberg that can accommodate at least 6 team members.
-    * Thomas Haferlach and Elliot Fouchy will lead operations from the Berlin office, establishing a strong central presence.
-    * Remote work options will be available depending on talent fit, allowing for a hybrid model that prioritizes in-person collaboration while accessing global talent.
-    * The team structure includes key roles in DevOps, AIOps, Data Scientist, and Growth/Marketing.
+*   **What makes you uniquely qualified to execute this business idea?**
+    *   Thomas Haferlach (CEO) sets the vision, strategy, and drives breakthrough AI R&D, leveraging extensive experience in AI and building scalable platforms.
+    *   Elliot Fouchy (COO) translates strategy into execution, manages finance, and leads delivery, drawing on a strong background in AI operations and project management.
+    *   Our decade-long collaboration has built strong synergy and a shared vision, backed by proven expertise in AI and scaling technology.
+    *   Planned hires include senior AI-Ops & Infra specialists and Growth & Developer Relations personnel to ensure robust technical execution and community expansion.
+*   **Operating model of the company/team - where will you base the team, how are you spending time together and which mechanisms they have put in place / will put in place to ensure you keep growing together more closely**
+    *   The company's primary hub will be Berlin, utilizing an office in Lichtenberg (accommodating at least 6 team members) where Thomas and Elliot will lead operations.
+    *   We will employ a hybrid model, prioritizing in-person collaboration for the core team while offering remote options to access global talent for roles in DevOps, AIOps, Data Science, and Growth/Marketing.
+    *   Our community (developers, users, moderators) is an integral part of our operating model, contributing to platform development and providing crucial feedback.
 
 **Product / Business**:
-> 2 sided market, platform / ad §
 
-* **What is your product and its key features/ What is the product offering and customer target segment (standardization vs luxury)? And what is the status quo of your product today?**
-    * **Product:** An AI creation and distribution platform, "Unity for AI". It provides an API for generative media.
-    * **Key Features:** Instant AI setup via assistant, plug & play AI using simple URLs for media features (image, text, audio), technical infrastructure handling (scaling, ads, payments), and an Open Source SDK.
-    * **Product Offering:** Enables indie developers to build, share, and profit from AI experiences. Focuses on making AI creation accessible, offering cutting-edge tools funded by an advertising model.
-    * **Customer Target Segment:** Primarily "vibe coders" (indie creators and hobbyists), with end-users being a diverse global audience, and advertisers seeking to connect with this demographic. The model emphasizes accessibility over exclusivity.
-    * **Status Quo (as of end Q2 2025/June 2025):**
-        * 3 million MAU, 100 million monthly generations.
-        * Basic PoC text-ad append for *unregistered* apps only - Live).
-        * Authentication - Beta.
-        * Core Edge Services live (Image, Text, Audio Gen APIs + Open Source SDK).
-        * Over 300 integrations live, with vibe coders building more than 2 new apps daily.
-* **What is the customer and user value proposition and therefore pain point?**
-    * **Creators (Pain Point):** Complex AI infrastructure, authentication headaches, no built-in revenue path for viral apps.
-    * **Creators (Value Proposition):** Launch instantly via assistant, focus on frontend/UX, simple plug & play AI, technical foundation handled (infrastructure, scaling, ads, payments), easiest path to a live, profitable AI app.
-    * **End Users (Pain Point):** Paywalls everywhere, privacy concerns.
-    * **End Users (Value Proposition):** Free access to innovative and engaging AI applications, supported by embedded ads.
-    * **Ad Providers/Brands (Pain Point):** Missing context & personalization, limited targeting in emerging AI spaces.
-    * **Ad Providers/Brands (Value Proposition):** Hyper-personalized ads reaching engaged audiences through intelligent, contextual placement.
-* **What is your USP (unique selling proposition)/moat?**
-    * **"Unity for AI":** Simplifies AI app development and revenue generation significantly.
-    * **Circular Economy/Flywheel Effect:** More apps → more users → better data → better platform → more apps. This creates a self-reinforcing growth model.
-    * **Trust Moat:** Open source and privacy-first approach builds trust with developers and users.
-    * **No Paywall**
-    * [reformulate this] **Developer Embeddings:** Developers embedding Pollinations.ai in their open-source repositories and spreading the word organically. [reformulate this]
-* **What can technology actually do for you?**
-    * Enable AI assisted creation (Zero-UI).
-    * Offer cutting-edge AI capabilities (SOTA tools) to creators.
-    * Power AI-driven ad targeting and optimization to maximize yield and relevance.
-    * Leverage aggregated (anonymized) data to improve models, personalize experiences, and provide trends.
-    * Use our scale to optimize models for real-word usage patterns.
-* **Who are your target customers and what is your go to market strategy?**
-    * **Target Customers:**
-        * Affiliates/Creators: The growing community of developers and hobbyists building with AI.
-        * Advertisers (Brands): Companies looking to improve their ad targeting and new markets.
-    * **Go-to-Market Strategy:**
-        * **Community-First Marketing:** Moderate and grow the open-source Discord, run weekly live-build sessions.
-          * **Content Marketing & Social Media:** Own social channels (X, Instagram, LinkedIn) with a KPI-driven content calendar.
-        * **Developer Activation:** Launch a Developer Portal, run "First App" challenges, targeted outreach to the vibe coder community.
-        * **Hackathons & Tutorials:** Drive SDK adoption.
-        * **Paid Experiments:** Launch Google Ads, Reddit campaigns targeting creator niches.
-        * **Referral & Ambassador Programs:** To lower blended CAC.
-        * **Revenue Share Program:** Heavily promote developer payouts to incentivize adoption.
-* **What are principal risks of the business (incl. tech/regulatory) and how will you mitigate these?**
-    * **Viewability metrics:** Lower CPM if not verified. Mitigation: Native widgets + IAB tracking.
-    * **Latency / CLS (Cumulative Layout Shift):** UX penalties. Mitigation: Edge caching, 200 ms p95 SLA.
-    * **Brand-safety:** Advertiser trust issues. Mitigation: Multi-layer filters + human audit.
-    * **Rev-share competitiveness:** Creator churn. Mitigation: Maintain competitive 50% rev-share to creators.
-    * **Regulatory (e.g., EU DSA, COPPA):** Mitigation: Age gating, contextual ads only.
-* **What are major milestones to reach in the next 12m (what and when) incl. reaching MVP?**
-    * The product has surpassed an MVP stage, with core services live and significant user engagement.
-    * **Phase 1: Activate the Flywheel (Q3 2025 – Q2 2026) - 12 Month Plan:**
-        * **Objective:** Prove the core Ad-Revenue model, achieve Seed-Ready metrics (Target: $1M ARR, 15M MAU) by late Q1 2026.
-        * **Q3 2025 (Foundation & Developer Activation):**
-            * Developer Portal v1 launch (Docs, SDK access, basic usage stats).
-            * Ad Telemetry Pipeline for revenue tracking.
-            * Basic Contextual Targeting v1.
-            * KPIs: 500+ Dev Portal Signups, 1k+ SDK Downloads, Ad CTR (unregistered) >5%.
-        * **Q4 2025 (Ad Format Expansion & Payment Prep):**
-            * Multi-Format Ads support (embedded Text & Image ads via SDK).
-            * Brand Safety Filters v1.
-            * Payout System Ready (Stripe Connect POC validated).
-            * KPIs: $300k+ ARR Run-Rate (primarily unregistered), 4M+ MAU, eCPM (unregistered multi-format) $2.5+.
-        * **Q1 2026 (Seed Prep & Developer Program LAUNCH):**
-            * Seed Fundraise Kick-off (Target $2-3M).
-            * Developer Revenue Share Program LAUNCH (50% target share, live payouts).
-            * Self-Serve Advertiser Dashboard (Beta).
-            * Compliance Audit (GDPR/CCPA readiness).
-            * KPIs: Seed Term Sheet Goal, $1M ARR Run-Rate, 15M MAU, 100+ Devs Receiving Payouts.
-        * **Q2 2026 (Post-Seed Scale & Optimization):**
-            * Seed Capital Secured & Deployed.
-            * Contextual Ad Targeting v2.
-            * Rich Media Ads (Audio/Video - Beta).
-            * SDK v1.1.
-            * KPIs: Seed Round Closed, $2.5M+ ARR Run-Rate, 7M+ MAU, eCPM (all formats + v2 targeting) $4.5+.
-    * **Roadmap to concrete usable and competitive offering/product:** The product is already usable with core services live. The 12-month plan focuses on scaling monetization, developer adoption, and ad features to become more competitive.
+*   **What is your product and its key features/ What is the product offering and customer target segment (standardization vs luxury)? And what is the status quo of your product today?**
+    *   **Product:** Pollinations.ai is an AI creation and distribution platform, our "Unity for AI," providing an API for generative media.
+    *   **Key Features:** Instant AI setup via assistant; "Plug & Play AI" using simple URLs for image, text, and audio; backend handling (scaling, ads, payments); Open Source SDK.
+    *   **Product Offering:** Empowers indie developers to build, share, and profit from AI experiences, focusing on accessibility with cutting-edge tools funded by an advertising model.
+    *   **Customer Target Segment:** Primarily indie creators and hobbyists, with end-users being a global audience, and advertisers seeking this demographic. The model emphasizes accessibility.
+    *   **Status Quo (end Q2 2025):**
+        *   3M MAU, >100M monthly generations.
+        *   Basic ad append for unregistered apps (Live PoC).
+        *   Authentication (Beta).
+        *   Core Edge Services (Image, Text, Audio Gen APIs + Open Source SDK) live.
+        *   >300 integrations live, with >2 new community apps built daily.
+*   **What is the customer and user value proposition and therefore pain point?**
+    *   **Creators (Pain):** Complex AI infrastructure, auth headaches, no built-in income path for viral apps.
+        **(Value):** Instant launch via assistant, focus on frontend/UX, simple AI integration, technical foundation handled, easiest path to a live, profitable AI app.
+    *   **End Users (Pain):** Paywalls, privacy concerns.
+        **(Value):** Free access to innovative AI applications, supported by ads.
+    *   **Ad Providers (Pain):** Missing context & personalization, limited targeting in emerging AI spaces.
+        **(Value):** Hyper-personalized ads reaching engaged audiences via intelligent, contextual placement.
+*   **What is your USP (unique selling proposition)/moat?**
+    *   **"Unity for AI":** Dramatically simplifies AI app development and revenue generation.
+    *   **Circular Economy/Flywheel Effect:** Our self-reinforcing growth model (more apps → more users → better data → better platform → more apps).
+    *   **Trust Moat:** Open-source and privacy-first approach builds deep community trust.
+    *   **No Paywall:** Unrestricted access to core functionalities.
+    *   **Organic Ecosystem Growth:** Developers embedding Pollinations.ai in their open-source repositories and organically promoting the platform.
+*   **What can technology actually do for you?**
+    *   Enable AI-assisted creation (Zero-UI).
+    *   Offer cutting-edge AI capabilities (SOTA tools) to creators.
+    *   Power AI-driven ad targeting and optimization.
+    *   Leverage aggregated (anonymized) data for model improvement and trend insights.
+    *   Optimize models for real-world usage patterns based on our scale.
+*   **Who are your target customers and what is your go to market strategy?**
+    *   **Target Customers:**
+        *   Affiliates/Creators: The growing community of developers and hobbyists.
+        *   Advertisers (Brands): Companies seeking improved ad targeting and new markets.
+    *   **Go-to-Market Strategy:**
+        *   **Community-First:** Grow our open-source Discord, run live-build sessions.
+        *   **Content & Social Media:** KPI-driven content calendar across X, Instagram, LinkedIn.
+        *   **Developer Activation:** Launch Developer Portal, "First App" challenges, outreach to indie creators.
+        *   **Events:** Hackathons & tutorials to drive SDK adoption.
+        *   **Paid Experiments:** Google Ads, Reddit campaigns targeting creator niches.
+        *   **Engagement Programs:** Referral & ambassador programs.
+        *   **Revenue Share Promotion:** Heavily promote developer payouts.
+*   **What are principal risks of the business (incl. tech/regulatory) and how will you mitigate these?**
+    *   **Viewability Metrics:** Lower CPM if unverified. Mitigation: Native widgets, IAB tracking.
+    *   **Latency/CLS:** UX penalties. Mitigation: Edge caching, 200 ms p95 SLA.
+    *   **Brand-Safety:** Advertiser trust. Mitigation: Multi-layer filters, human audit.
+    *   **Rev-Share Competitiveness:** Creator churn. Mitigation: Maintain competitive 50% share.
+    *   **Regulatory (EU DSA, COPPA):** Mitigation: Age gating, contextual ads only.
+*   **What are major milestones to reach in the next 12m (what and when) incl. reaching MVP?**
+    *   The product is live with significant user engagement, past an MVP stage.
+    *   **Phase 1: Activate the Flywheel (Q3 2025 – Q2 2026):**
+        *   **Objective:** Prove core Ad-Revenue model, achieve Seed-Ready metrics (Target: $1M ARR, 15M MAU) by late Q1 2026.
+        *   **Q3 2025:** Developer Portal v1, Ad Telemetry Pipeline, Basic Contextual Targeting v1.
+            *   KPIs: 500+ Dev Portal Signups, 1k+ SDK Downloads, Ad CTR >5%.
+        *   **Q4 2025:** Multi-Format Ads support, Brand Safety Filters v1, Payout System Ready (Stripe Connect PoC).
+            *   KPIs: $300k+ ARR Run-Rate, 4M+ MAU, eCPM $2.5+.
+        *   **Q1 2026:** Seed Fundraise Kick-off ($2-3M), Developer Revenue Share Program LAUNCH, Self-Serve Advertiser Dashboard (Beta), Compliance Audit.
+            *   KPIs: Seed Term Sheet, $1M ARR Run-Rate, 15M MAU, 100+ Devs Paid.
+        *   **Q2 2026:** Seed Capital Deployed, Contextual Ad Targeting v2, Rich Media Ads (Beta), SDK v1.1.
+            *   KPIs: Seed Round Closed, $2.5M+ ARR Run-Rate, 7M+ MAU, eCPM $4.5+.
 
 **Unit economics:**
 
-* **Revenue Model:** Primarily Ad-Revenue, with a 50% revenue share model with creators.
-* **Target eCPM:** €6–€12 (rewarded/interstitial mid-tier markets).
-* **Back-of-Envelope Revenue Math:** At 100 million monthly impressions and 30% take-rate for Pollinations, this implies €1.8M - €3.6M per month for Pollinations (the document states €18-36M ARR, which would be €1.5M - €3M per month).
-* **Cost Structure (based on €300k pre-seed allocation):**
-    * Payrolls: 20% (€60,000) (The slide deck fundraising slide differs: AIOps/Data Scientist 50% and Operations 12%, totaling 62% for personnel-related costs from the 300k ask).
-    * ML DevOps / Data Analysis: 30% (€90,000).
-    * Cloud Computing: 33.33% (€100,000).
-    * Marketing: 6.67% (€20,000) (Slide deck: 5%).
-    * Legal / Operation: 10.00% (€30,000).
-* The company is currently at ≈ $0 ARR (basic text-ad append for *unregistered* apps only - Live).
-* The goal is to achieve $1M ARR run-rate by late Q1 2026.
+*   **Revenue Model:** Primarily Ad-Revenue, 50% share with creators.
+*   **Target eCPM:** €6–€12 (rewarded/interstitial, mid-tier markets).
+*   **Revenue Potential:** At 100M monthly impressions and 30% Pollinations take-rate, this implies €1.8M - €3.6M monthly potential for Pollinations.
+*   **Cost Structure (from €300k pre-seed):**
+    *   Personnel (AIOps, Data Scientist, Operations): ~62%.
+    *   Cloud Computing: ~33%.
+    *   Marketing: ~5%.
+*   Currently ≈ $0 ARR (basic text-ad append for unregistered apps - Live PoC).
+*   Goal: $1M ARR run-rate by late Q1 2026.
 
 **Market:**
 
-* **Please provide a calculation/estimation of the market (TAM/SAM/SOM)** (Global - 2025 Base)
-    * **TAM (Connected Youth):** 948 Million Users; US $247 Billion Annual Ad Spend Potential.
-    * **SAM (Digitally Mature Youth):** 600 Million Users; US $99 Billion Annual Ad Spend Potential.
-    * **SOM (Early Adopters):** 5 Million Users; US $0.5 Billion Annual Ad Spend Potential.
-    * The pitch deck also mentions the Generative AI creator economy TAM is > $10 Billion.
-* **Fragmentation:**
-    * The market has various players focusing on different aspects like GIF APIs (GIPHY), Image CDNs (Unsplash), Game Ad SDKs (Unity, AppLovin), and AI Search with ads (Perplexity). Pollinations aims to be a unifying platform for AI media distribution.
-* **Barriers to entry:**
-    * **Technology and Infrastructure:** Building and scaling AI models and the required infrastructure is complex and costly.
-    * **Community and Network Effects:** Establishing a large and active community of creators and users, creating a flywheel effect, is a significant barrier for new entrants.
-    * **Trust:** Building trust with developers and users through open-source and privacy-first approaches.
-* **Market access (channels / contact points to customers & suppliers):**
-    * **Creators (Affiliates):** Accessed via community building (Discord), developer portals, SDKs, hackathons, targeted outreach, content marketing, social media, paid ads, and referral programs.
-    * **Advertisers (Brands):** Accessed via a self-serve advertiser dashboard (beta planned), direct outreach, and partnerships. Pollinations acts as the platform connecting brands to creators' apps.
-    * **End-Users:** Accessed indirectly through the apps and experiences built by creators on the platform.
-* **Trends / Investor sentiment:**
-    * **Market Trend:** Generative AI market is doubling YoY. Gartner forecasts 4x more citizen developers than professional programmers inside enterprises (2023). IDC forecasts 750M new cloud-native apps by 2026.
-    * **AI-assisted coding:** GitHub Copilot writes ~46% of code edits.
-    * **Youthful prompt-dev growth:** Replit > 20M users, +125% in 18 months.
-    * **Investor Sentiment:** API-first media streaming with embedded AI-driven ads is a proven, high-margin model. Lightweight SDKs/CDNs for monetizing creative assets are established (Unity Ads, AppLovin). Native, context-aware ad units plus premium tiers are showing success (Perplexity AI). The "everyone is a developer" wave driven by AI code assistants expands the TAM.
+*   **Market Size Estimation (Global - 2025 Base):**
+    *   **TAM (Connected Youth):** 948M Users; $247B Annual Ad Spend Potential.
+    *   **SAM (Digitally Mature Youth):** 600M Users; $99B Annual Ad Spend Potential.
+    *   **SOM (Early Adopters):** 5M Users; $0.5B Annual Ad Spend Potential.
+    *   Generative AI creator economy TAM also noted as > $10 Billion.
+*   **Fragmentation:** Various players exist (GIPHY, Unsplash, Unity Ads, Perplexity). Pollinations aims to be a unifying platform for AI media distribution.
+*   **Barriers to entry:** Significant tech/infra complexity, establishing community & network effects, building developer trust.
+*   **Market access:**
+    *   **Creators:** Community building, dev portals, SDKs, hackathons, outreach, content marketing, referrals.
+    *   **Advertisers:** Self-serve dashboard, direct outreach, partnerships.
+*   **Trends / Investor sentiment:** GenAI market doubling YoY; 4x more citizen developers (Gartner); 750M new cloud-native apps by 2026 (IDC); AI-assisted coding (GitHub Copilot ~46% edits); Replit >20M users (+125% in 18mo). API-first media streaming with AI ads is a proven model. "Everyone is a developer" wave expands the TAM.
 
 **Competition:**
 
-1.  **Please provide a map of the competitive landscape using a clustering/matrix**
-    * The documents benchmark Pollinations against platforms monetizing creative assets via APIs/SDKs and ads. A direct visual matrix isn't provided, but we can cluster them:
-        * **Game Development & Monetization Platforms:**
-            * **Unity Ads:** Lightweight SDK for rewarded, interstitial, banner ads in mobile games; developers keep ≈ 70%. AI initiative *Unity Vector* for ad targeting.
-            * **AppLovin MAX:** SDK + exchange for programmatic video/playable ads; ≥ 70% to devs. *Axon 2.0 AI engine* for campaign optimization.
-        * **Media/Content APIs & CDNs (with varying monetization for creators):**
-            * **GIPHY:** GIF API with sponsored/branded GIFs in search; no direct creator payouts mentioned for this model.
-            * **Unsplash:** Image CDN with branded photos ranked first; opt-in for photographers for monetization.
-        * **AI-Native Search & Information (with ad integration):**
-            * **Perplexity AI:** AI search with a $20/mo Pro subscription and sponsored follow-up ads/side media tiles; publisher share up to 25%.
-        * **General Ad Networks:**
-            * **Google AdSense:** JS tag for display & video ads; 68% to publishers.
-    * **What are the alternatives for people and how do they actually do it today? With or without invoice?**
-        * Creators currently face complex AI infrastructure, authentication headaches, and no built-in monetization for their apps.
-        * They might try to integrate ads themselves through networks like AdSense, but this doesn't address the AI-specific backend and scaling issues Pollinations solves.
-        * For monetization, they might rely on direct deals, subscriptions, or other methods, which can be harder to implement and scale for individual "vibe coders."
-        * The "invoice" aspect isn't explicitly detailed for current alternatives, but Pollinations aims to automate payouts.
+1.  **Competitive Landscape:**
+    *   Compared to game monetization (Unity Ads, AppLovin), media APIs (GIPHY, Unsplash), and AI Search (Perplexity).
+    *   Pollinations differentiates by being AI-native, offering a broader generative AI focus beyond just games or search, and having a strong creator revenue share.
+    * **Alternatives:** Creators manually integrate ad networks (e.g., AdSense) which doesn't solve AI backend/scaling, or rely on direct deals/subscriptions. Pollinations aims to automate payouts.
 
-2.  **For your closest 3-5 competitors, please fill in this table.**
-    * Information for this table is based on "parallels-unity-for-ai-and-others.md" and general knowledge implied by the context. Specific details like "Year Founded" for all, "Lead Investors," precise "Customer Growth," and "Team" size for competitors are not always available in the provided documents.
+2.  **Closest Competitors Table:**
 
-| Competitor Name | Product / Tech                                                                          | Location | Year Founded | Funding Stage     | Lead Investors        | Customer Growth                                    | Team           | Key Differentiation (for Pollinations)                                                                                                                                            |
-| :-------------- | :-------------------------------------------------------------------------------------- | :------- | :----------- | :---------------- | :-------------------- | :------------------------------------------------- | :------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Unity Ads       | Lightweight SDK for mobile game ads (rewarded, interstitial, banner). AI for targeting. | Global   | 2004 (Unity) | Public (Unity)    | (Post-IPO)            | Large, established in gaming.                      | Large (Unity)  | Pollinations is AI-native from the start, targets broader generative AI apps beyond games, simpler integration for "vibe coders".                                                 |
-| AppLovin MAX    | SDK & exchange for programmatic video/playable ads. AI engine for optimization.         | Global   | 2012         | Public            | (Post-IPO)            | Significant growth in mobile advertising.          | Large          | Pollinations focuses on generative AI media, not just game ads, and aims for a strong creator community with high revenue share.                                                  |
-| Perplexity AI   | AI search engine with sponsored follow-up ads and premium subscription.                 | US       | 2022         | Series B (likely) | (Various VCs)         | Rapid ARR growth ($20M to >$100M run-rate in ~1q). | Growing        | Pollinations is a platform/API for *building* AI experiences with embedded ads, not just an ad-supported end-user product. Offers higher rev-share to creators (50% vs 25%).      |
-| GIPHY (API)     | GIF API with sponsored/branded GIFs in search results.                                  | US       | 2013         | Acquired by Meta  | (Pre-acquisition VCs) | Widely integrated API.                             | Part of Meta   | Pollinations aims to offer direct and significant revenue share to creators of the media, not just brand integration. Focus on diverse AI media.                                  |
-| Google AdSense  | JS tag for display & video ads on websites/apps.                                        | Global   | 2003         | Public (Google)   | (Post-IPO)            | Massive, ubiquitous.                               | Part of Google | Pollinations is AI-media specific, handles backend infra for AI, aims for more native/embedded ad experiences within AI creations, and fosters a specific "vibe coder" community. |
+| Competitor Name | Product / Tech                                                                          | Location | Year Founded | Funding Stage     | Key Differentiation (for Pollinations)                                                                                                                                            |
+| :-------------- | :-------------------------------------------------------------------------------------- | :------- | :----------- | :---------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unity Ads       | Mobile game ad SDK. AI for targeting.                                                   | Global   | 2004 (Unity) | Public (Unity)    | Pollinations is AI-native, targets broader generative AI apps, simpler integration.                                                                                                 |
+| AppLovin MAX    | SDK & exchange for programmatic ads. AI for optimization.                               | Global   | 2012         | Public            | Pollinations focuses on generative AI media, not just game ads, aims for high creator rev-share.                                                                                    |
+| Perplexity AI   | AI search with ads & premium sub.                                                       | US       | 2022         | Series B (likely) | Pollinations is a platform/API for *building* AI experiences, not just an end-user product. Offers higher rev-share (50% vs 25%).                                                |
+| GIPHY (API)     | GIF API with sponsored/branded GIFs.                                                    | US       | 2013         | Acquired          | Pollinations offers direct, significant rev-share to media creators, focuses on diverse AI media.                                                                                   |
+| Google AdSense  | JS tag for display & video ads.                                                         | Global   | 2003         | Public (Google)   | Pollinations is AI-media specific, handles AI backend infra, aims for native ad experiences within AI creations, fosters a specific indie creator community.                             |
 
 **Financial / Traction:**
 
-* **How much and what validation have you done? What hypotheses have you validated/disproved?**
-    * **Validation:**
-        * Explosive growth: >100 million AI media generations per month.
-        * 35% month-over-month growth on key metrics like API requests.
-        * Over 300 integrations are live; creators launching >2 new apps daily.
-        * Global reach: Strong adoption in China, US, India, EU.
-        * This shows massive community buy-in & product-market fit.
-        * Pilots for contextual ads and app rev-share are live.
-    * **Hypotheses Validated (implied):**
-        * There is strong demand for easily integrable generative AI tools.
-        * "Vibe coders" are eager to build and integrate AI media.
-        * The platform can achieve significant global reach.
-    * **Next-Step Checklist (implies ongoing validation):**
-        * Pilot with 5 integrators → measure latency, fill-rate, eCPM.
-        * Launch creator dashboard (impressions, viewability, revenue).
-        * Finalise Stripe Connect sandbox for auto payouts.
-        * On-board 1-2 launch brands for beta creative overlays.
-* **What is your current business traction (e.g. number of LOIs, customers, live testers, …)?**
-    * **Users & Engagement (Baseline - End of Q2 2025):** 3M MAU, 80M monthly generations. (The pitch deck mentions >100M AI media generations per month, which might be a more recent or rounded figure).
-    * **Integrations:** Over 300 live integrations.
-    * **Growth:** 35% Month-over-Month growth on API requests.
-    * **Monetization:** ≈ $0 ARR (Basic text-ad append for *unregistered* apps only - Live).
-    * Specific numbers for LOIs or live testers beyond the user/integration count are not detailed.
-* **“What is your estimated personal financial runway? Please provide an estimate on how long you can build w/o a salary”**
-    * This information is not available in the provided documents.
-* **What is your follow-on fundraising approach (incl. runway/timing)?**
-    * **Current/Pre-Seed:** Raising €300K in Q3 2025.
-        * Use of funds: 50% AIOps/Data Scientist, 33% Cloud Computing, 12% Operations, 5% Marketing (percentages from slide 9, cost-projection.md has slightly different breakdown but similar categories).
-    * **Seed Round:** Plan to raise €2.5 – €3 Million in Q2 2026.
-        * Purpose: To power the "Scale Phase" - build SDK v2, enhance AdTech, drive user acquisition & monetization, expand developer grants & ecosystem, ensure robust infrastructure.
-    * **Runway/Timing:** The pre-seed is to kickstart the "Activate phase" (next 12 months from ~Q3 2025). The seed round is timed for Q2 2026 to fund the subsequent 12-36 month "Scale" phase. The goal is to reach Seed-Ready metrics ($1M ARR, 15M MAU) by late Q1 2026.
+*   **Validation:** >100M monthly AI media generations; 35% MoM growth; >300 live integrations; >2 new apps daily; global reach (China, US, India, EU); live ad/rev-share pilots. This demonstrates product-market fit.
+*   **Business Traction:** As above. Specific LOI/tester numbers beyond this not detailed.
+*   **Personal Financial Runway:** Not available.
+*   **Follow-on Fundraising:** €300K (Q3 2025) for initial activation, then €2.5–€3M Seed (Q2 2026) for scaling. Goal: $1M ARR, 15M MAU by late Q1 2026 to be Seed-Ready.
 
 **Legal:**
 
-* **Is IP (intellectual property) ownership by the company secured? If not, how will it be?**
-    * Pollinations Gmbh (German entity)
-      * is dormant since 3 years.
-      * has
-    *
-* **Has any founder ever been convicted in a court of law, been subject of a formal investigation?**
-    * No.
+*   **IP Ownership:** Pollinations GmbH (German entity) is dormant and being dissolved. Pollinations.AI (the current venture) is being incorporated in Estonia, and this new entity will own all IP.
+*   **Founder Convictions/Investigations:** No.

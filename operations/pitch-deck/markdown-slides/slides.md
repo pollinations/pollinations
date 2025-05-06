@@ -18,18 +18,19 @@ layout: two-cols
 
 # **🚀 Traction**
 
-* **3 M** monthly active users • **100 M** media generated every month
-* **14 M+** plays on flagship Unity-style ad integration *(our live ad-revenue pilot)*
-* 300+ live apps • 13 k Discord • 1.8 k⭐ GitHub
-* **30% MoM user growth**
+<img src="/media/traction_infoslide3.png" alt="Traction" class="w-3/4 mx-auto" />
 
-<img src="/media/piechart_countries_genz.png" alt="Geographic distribution" class="w-64 mx-auto" />
+
 ::right::
 
-<img src="/media/media_requests_per_day_genz.png" alt="Media Requests Growth" class="w-3/4 mx-auto mb-4" />
+<img src="/media/piechart_countries_genz.png" alt="Geographic distribution" class="w-2/4 mx-auto" />
 
 
 <p class="text-center text-xs text-gray-500">Our significant presence in China (30%) demonstrates our global reach</p>
+
+<img src="/media/media_requests_per_day_genz.png" alt="Media Requests Growth" class="w-2/4 mx-auto mb-4" />
+
+
 
 <!--
 SLIDE GUIDANCE:

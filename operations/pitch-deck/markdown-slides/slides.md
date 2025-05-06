@@ -11,7 +11,7 @@ class: text-center
 
 <!--
 SLIDE GUIDANCE:
-- Explain why Pollinations name is not a good fit
+- Explain why Pollinations name is a good fit
 -->
 
 ---

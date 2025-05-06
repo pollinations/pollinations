@@ -1,13 +1,12 @@
 ---
-title: Pollinations.ai — Unity for AI
+title: pollinations.ai — Unity for AI
 ---
 
-# 🌀 Pollinations.ai
+# ![Pollinations.ai Logo](/media/pollinations-ai-logo.png) pollinations.ai
 
 ## Unity for AI
 
-The lightning‑fast path from idea ➜ monetised generative‑AI product.
-
+**The lightning‑fast path from idea ➜ monetized generative‑AI product.**
 <!--
 SLIDE GUIDANCE:
 Do you think maybe starting the first slide with the name of another company is too early? we should focus on pollinations. or it goes in the speaker notes
@@ -107,16 +106,18 @@ SLIDE GUIDANCE:
 - Adding generative AI (image, text, audio) requires just simple HTTPS calls to our Edge APIs.
 - Pollinations manages the entire backend: scalable hosting (e.g., GitHub Pages), CI/CD, model serving, security, auth, usage metering, and the monetization layer (serving ads, managing rev-share payouts). Zero server ops for the dev.
 -->
-
+---
+layout: two-cols
 ---
 
 # 🌍 Market & Business Model
 
-## Market 📊
+<img src="/media/youth-ad-market.png" alt="Youth Ad Market" class="w-3/4 mx-auto my-4" />
 
-* Gen‑AI creator economy **>\$10 B** TAM
-* Youth Ad Market: **\$247 B** TAM → **\$99 B** SAM → **\$0.5 B** SOM
-* Doubling YoY (Gartner 2025) - *GenAI market*
+::right::
+
+💰 Generative AI creator economy **>\$10 B** TAM
+📈 Generative AI market doubling YoY (Gartner 2025)
 
 ## Two-Sided Market 🔄
 
@@ -127,13 +128,14 @@ SLIDE GUIDANCE:
 ## Revenue Streams 💰
 
 1. Contextual ads (CPM \$1–2) - *Live now*
-2. Micro‑purchases (stickers, tokens) - *Planned Q1 2026*
-3. Premium tiers (SLA, bigger models) - *Planned Q1 2026*
-4. 50% app rev‑share (Roblox style) - *Pilot live*
+2. 50% app rev‑share (Roblox style) - *Pilot live*
+
 
 <!--
 SLIDE GUIDANCE:
-- source of truth for Revenue Streams is the file: context/roadmap.md
+-Extra revenue stream:
+   1. Micro‑purchases (stickers, tokens) - *Planned Q1 2026*
+   2. Premium tiers (SLA, bigger models) - *Planned Q1 2026*
 - untapped / developping market
 - Potential positioning options from parallels doc: "GIPHY-meets-AdSense for AI", "Unsplash for AI—monetised out-of-the-box"
 - Unity, AppLovin, and other platforms demonstrate lightweight SDKs with embedded ads are proven high-margin models
@@ -145,20 +147,12 @@ SLIDE GUIDANCE:
 
 # 📈 GTM Flywheel & Moat
 
-```mermaid
-flowchart LR
-  A[pollinations.ai SDK] --> B(Creators)
-  B --> C[SDK installs]
-  C --> D[User data & ads]
-  D --> B
-```
+<img src="/media/fly-wheel.png" alt="Fly Wheel" class="w-3/4 mx-auto my-4" />
 
-## Market Moats
-
-* **Trust Moat:** Open source (MIT) & privacy-first approach
-* **Market Trend:** 4× more citizen devs than pros (Gartner)
-* **Tech Advantage:** Native AI-powered ad targeting (like AppLovin's Axon 2.0)
-* **Network Effect:** More apps → better data → better platform → more apps
+* **Trust Moat:** 📖 Open source (MIT) & Privacy-first approach
+* **Market Trend:** 📊 4× more itizen devs than pros (Gartner)
+* **Tech Advantage:** 🧠 Native AI-powered ad targeting (like AppLovin's Axon 2.0)
+* **Network Effect:** 🔄 More apps → Better data → Better platform → More apps
 
 <!--
 SLIDE GUIDANCE:
@@ -225,9 +219,9 @@ SLIDE GUIDANCE:
 
 |  |  |  |
 |------------|------------|---------|
-| GPU Fleet & Infrastructure | 65% | Scale compute capacity & optimize costs |
-| Team Growth | 25% | Expand devrel & business development |
-| Runway Buffer | 10% | Operational safety net |
+| Infrastructure | 30% | Scale compute capacity & Optimize costs |
+| Team Growth | 50% | Expand team and business development |
+| Buffer | 20% | Operational safety net |
 
 <!--
 SLIDE GUIDANCE:

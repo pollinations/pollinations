@@ -165,7 +165,7 @@ layout: two-cols-header
 *   **Elliot:** "The Business Model is simple and proven, like Unity's ad model:"
 *   **Elliot:** "50% of the revenue goes back to the creators. We provide the platform, they build, we all win."
 *   **Thomas:** "Initial revenue streams: **Contextual ads** and **Affiliate referrals**. Pilots are live."
-*   
+*
 SLIDE GUIDANCE:
 
 * Users get free AI experiences, brands reach youth demographi
@@ -179,7 +179,7 @@ SLIDE GUIDANCE:
 
 In Pollinations.AI’s ecosystem, the core two sides are:
 * **Affiliates (Creators):** developers and hobbyists who embed generative-AI media (with referral links) into their apps ~[Tipalti](https://tipalti.com/en-uk/affiliate-hub/affiliate-network/?utm_source=chatgpt.com)~
-* **Advertisers (Brands):** companies supplying those referral links and paying for conversions 
+* **Advertisers (Brands):** companies supplying those referral links and paying for conversions
 
 **End-user:** Consumer
 **Creator:** Affiliate
@@ -214,16 +214,16 @@ layout: two-cols
 <!--
 *   **Thomas:** "Our model creates a **powerful circular economy**, a flywheel for growth." *(Gesture to diagram)*
 *   **Thomas:** "**Market Trend Driving Us**: The **GenAI market is exploding**, doubling year-over-year."
-*   **Elliot** 
+*   **Elliot**
     * Better data from usage continuously unlocks smarter ad targeting, increasing revenue for everyone.
     * Open Source and Privacy-First builds deep trust with developers and users.
 *   **Thomas:** "More apps built on Pollinations -> attracts more users -> generates better data -> improves the platform -> encourages **even more apps**. It's self-reinforcing."
-*   **Elliot: (optional)** 
+*   **Elliot: (optional)**
     * This isn't just theory – **Unity proved** this ad/rev-share model generates billions.
 
 SLIDE GUIDANCE:
 <img src="/media/circular_economy_genz.png" alt="Fly Wheel" class="w-2/3 mx-auto my-4" />
-- Market trend:  4× More citizen Creators than pros. 
+- Market trend:  4× More citizen Creators than pros.
 - Unity generates $1.2B (66%) from ads via lightweight SDK with rev-share - directly parallel to our model
 - potentially the best slide to add competition
 - one of our principle moats is that devs are embedding us in their open source repositories, making youtube videos, and spreading the word organically. discord bots in many guilds...
@@ -251,22 +251,10 @@ Become the ubiquitous, **assistant-centric** engine for AI creation and distribu
 
 <!--
 
-*   **Thomas:** "Our roadmap focuses on **two clear phases** to capture this market."
-*   **Thomas:** "**Phase 1: Activate (Next 12 Months)**"
-    *   "Launch **Ad Revenue Share** platform wide."
-    *   "**Activate developer community** further with grants & tools."
-    *   "Secure **Seed Funding ($2.5-3M)**."
-    *   "Target: **$1M ARR *annual recurring revenue*, 15M MAU**."
-*   **Elliot**
-    *   In Phase 2 we scale (12-36 Months)
-        *   Release SDK v2 for deeper integrations
-        *   Implement AI-driven Ad Optimization
-        *   Build a truly global community and support its structure
-    *   Main target is a sustainable growth!
-*   **Thomas:** "**Phase 3: Vision**"
-    *   "Become the **ubiquitous engine** for AI creation."
-    *   "Focus on **assistant-centric integration** – AI building AI."
-    *   "The definitive **'Unity for AI Experiences'**."
+*   **Thomas:** "Our roadmap has two clear phases."
+*   **Thomas:** "In Phase 1, Activate, over the next 12 months, we'll launch Ad Revenue Share platform-wide, further activate our developer community with grants and tools, and secure Seed Funding. Our target is $1M ARR and 15M MAU."
+*   **Elliot:** "For Phase 2, Scale, over 12-36 months, we'll release SDK v2 for deeper integrations, implement AI-driven Ad Optimization, and build out our global community structure. The key target here is sustainable growth."
+*   **Thomas:** "Our Vision is to become the ubiquitous, assistant-centric engine for AI creation and distribution, the definitive 'Unity for AI Experiences'."
 
 Baseline – End of Q2 2025 (June 2025)
 • Users & Engagement: 3M MAU · 80M monthly generations
@@ -297,9 +285,9 @@ Become the ubiquitous, **interface-free engine** for AI creation and distributio
 | **CEO** | **Thomas Haferlach** | Sets vision & Strategy, Drives breakthrough |
 | **COO** | **Elliot Fouchy**    | Executes strategy & Finance; Leads delivery |
 
-## 
+##
 
-### **+ 🧠 Engineering & Data**  
+### **+ 🧠 Engineering & Data**
 **Senior AI-Ops & Infra Team** : GPU fleet optimization, Scaling Backend
 
 ### **+ 🌐 Marketing & Community**
@@ -307,9 +295,9 @@ Become the ubiquitous, **interface-free engine** for AI creation and distributio
 
 <!--
 
-*   **Elliot** 
+*   **Elliot**
     * Executing this vision requires the right team
-        *   Thomas, founder and CEO, drives **vision, strategy, breakthrough tech 
+        *   Thomas, founder and CEO, drives **vision, strategy, breakthrough tech
         *   I, as COO, am executing strategy, finance, delivery
         *   Our decade-long collaboration provides strong synergy, backed by AI & scaling experience
 *   **Thomas:** "**Planned Key Hires:**
@@ -327,7 +315,7 @@ layout: two-cols-header
 
 # <span class="bg-teal-600 text-white p-2 rounded">**💰 Raising**</span>
 
-::left:: 
+::left::
 
 ## **🌱 300K** (Q3 2025)
 |  |  |
@@ -349,20 +337,11 @@ layout: two-cols-header
 
 <!--
 
-*   **Elliot:** "To kickstart our Activate phase, we're securing **€300K now (Q3 2025)**."
-*   **Elliot:** "**Immediate Use:**
-    *   **50% AIOps/Data Scientist:** To optimize models and ad targeting in API requests.
-    *   **12% Operations:** Streamlining delivery & finance.
-    *   **5% Marketing:** Early community & brand building."
-*   **Thomas:** "Following that, we'll raise a **€2.5 - €3 Million Seed round in Q2 2026**."
-*   **Thomas:** "**The Seed Round Powers Our Scale Phase:**
-    *   Build SDK v2, enhance AdTech.
-    *   Drive user acquisition & monetization.
-    *   Expand developer grants & ecosystem.
-    *   Ensure robust infrastructure for mass adoption."
-*   **Elliot:** "This funding strategy ensures we can **hit our milestones** and build the leading open platform for generative AI."
+*   **Elliot:** "To kickstart our Activate phase, we're securing €300K now (Q3 2025). This will fund: 50% for an AIOps/Data Scientist to optimize models and ad targeting, 33% for cloud computing, 12% for Operations, and 5% for Marketing."
+*   **Thomas:** "Next, a €2.5 - €3 Million Seed round in Q2 2026 will power our Scale phase. This means investing in Tech & Product like SDK v2 and enhanced AdTech; Growth Engineering to drive user acquisition; Community Focus through expanded developer grants; and Platform Scale with robust infrastructure."
+*   **Elliot:** "This funding strategy ensures we hit milestones and build the leading open platform for generative AI."
 
-*   
+*
 SLIDE GUIDANCE:
 * Tech & Product: SDK v2, AI AdTech, Premium Offerings
 * Growth Engine: Scale Revenue & Global User Base

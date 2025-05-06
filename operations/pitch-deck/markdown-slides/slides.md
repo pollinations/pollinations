@@ -115,10 +115,9 @@ layout: two-cols
 
 <img src="/media/youth-ad-market.png" alt="Youth Ad Market" class="w-3/4 mx-auto my-4" />
 
-::right::
+💰 Generative AI creator economy **$10 B** TAM 📈 Generative AI market doubling YoY (Gartner 2025)
 
-💰 Generative AI creator economy **>\$10 B** TAM
-📈 Generative AI market doubling YoY (Gartner 2025)
+::right::
 
 ## Two-Sided Market 🔄
 
@@ -128,8 +127,8 @@ layout: two-cols
 
 ## Revenue Streams 💰
 
-1. Contextual ads (CPM \$1–2) - *Live now*
-2. 50% app rev‑share (Roblox style) - *Pilot live*
+1. Contextual ads (CPM \$1–2) - *PoC Live*
+2. 50% app rev‑share (Roblox style) - *Pilot Live*
 
 
 <!--

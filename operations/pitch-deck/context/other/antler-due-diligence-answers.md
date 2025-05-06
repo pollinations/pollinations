@@ -47,8 +47,8 @@
 > 2 sided market, platform / ad §
 
 * **What is your product and its key features/ What is the product offering and customer target segment (standardization vs luxury)? And what is the status quo of your product today?**
-    * **Product:** An AI creation and distribution platform, an "AI App Factory" or "Unity for AI". It provides an API for generative media.
-    * **Key Features:** Instant AI setup via assistant, plug & play AI using simple URLs for media features (image, text, audio), backend infrastructure management (scaling, ads, rev-share), and an Open Source SDK.
+    * **Product:** An AI creation and distribution platform, "Unity for AI". It provides an API for generative media.
+    * **Key Features:** Instant AI setup via assistant, plug & play AI using simple URLs for media (image, text, audio), backend infrastructure management (scaling, ads, rev-share), and an Open Source SDK.
     * **Product Offering:** Enables indie vibe coders to build, share, and monetize AI experiences. Focuses on making AI creation accessible, offering SOTA tools funded by an advertising model.
     * **Customer Target Segment:** Primarily "vibe coders" (indie developers, hobbyists), with end-users being a massive global audience, and advertisers (brands) wanting to reach this demographic. The model is geared towards broad accessibility (rather than luxury).
     * **Status Quo (as of end Q2 2025/June 2025):**
@@ -82,7 +82,7 @@
         * Advertisers (Brands): Companies looking to improve their ad targeting and new markets.
     * **Go-to-Market Strategy:**
         * **Community-First Marketing:** Moderate and grow the open-source Discord, run weekly live-build sessions.
-        * **Content Marketing & Social Media:** Own social channels (X, Instagram, LinkedIn) with a KPI-driven content calendar.
+          * **Content Marketing & Social Media:** Own social channels (X, Instagram, LinkedIn) with a KPI-driven content calendar.
         * **Developer Activation:** Launch a Developer Portal, run "First App" challenges, targeted outreach to "Vibe Coders."
         * **Hackathons & Tutorials:** Drive SDK adoption.
         * **Paid Experiments:** Launch Google Ads, Reddit campaigns targeting creator niches.

@@ -207,10 +207,14 @@ SLIDE GUIDANCE:
 | **CEO** | **Thomas Haferlach** | Sets vision & Strategy, Drives breakthrough |
 | **COO** | **Elliot Fouchy** | Executes strategy & Finance; Leads delivery |
 
-|  |  |  |
-|------|------|--------|
-| **🧠 Engineering & Data** | Senior ML & Infra Team | GPU fleet, Diffusion models, Analytics pipelines |
-| **🌐 Marketing & Community** | Open Source Guild | 100k OSS Developers / ⭐ GitHub |
+## 
+
+### **+ 🧠 Engineering & Data**  
+**Senior ML & Infra Team** : GPU fleet optimization, Contextual ad targeting, ML performance metrics
+
+##
+### **+ 🌐 Marketing & Community**
+**Growth & Developer Relations** : User acquisition, Brand partnerships, Discord/GitHub community (13k/1.8k⭐)
 
 <!--
 SLIDE GUIDANCE:

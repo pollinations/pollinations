@@ -314,7 +314,6 @@ Become the ubiquitous, **interface-free engine** for AI creation and distributio
     *   **Thomas (CEO):** Drives **vision, strategy, breakthrough tech**. 
     *   **Elliot (COO):** Executes **strategy, finance, delivery**. "
 *   **Thomas:** "Our **decade-long collaboration** provides strong synergy, backed by decades of AI & scaling experience."
-*   **Thomas:** "**Planned Key Hires (Post-Seed):**
     *   **Engineering & Data:** Senior **AI-Ops & Infra** team for GPU optimization and scaling.
     *   **Marketing & Community:** **Growth & Developer Relations** lead for user acquisition, partnerships, community."
 *   **Elliot:** "We have the core leadership and a clear plan to build a world-class team."
@@ -338,6 +337,8 @@ layout: two-cols-header
 | Cloud Computing | 33% |
 | Operation | 12% |
 | Marketing | 5% |
+
+## Reach out! hello@pollinations.ai
 
 ::right::
 

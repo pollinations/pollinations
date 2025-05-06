@@ -1,5 +1,85 @@
 # Conversation Transcript
 
+## Initial Stakeholder Analysis
+- "What kind of participants in your ecosystem?"
+- "So I guess your primary stakeholder is the developer."
+- "So what exactly do you have for the developer today?"
+- "You kind of, basic stuff like, you have an API and an SDK that gives access to the following models and is for free today."
+- "And that these types of developers have built these types of apps on top of, I think, is missing."
+
+## Value Proposition Clarity
+- "And then from that developer, if that's the key stakeholder, you touch on it somewhat, but why do they use pollinations and not others?"
+- "I think you can kind of just tell it much more user-centric or customer-centric."
+- "And then if then on top the pitch is that you're actually building the and then kind of why do they use you as other solutions you're touching on multiple things but what is it"
+- "So you're saying they don't have the ability to monetize on one hand. On the other hand, you say it's privacy and security. On the third one, you say you don't have to build the layout for authentication."
+- "But you're telling that on different parts of the pitch as well. So I think that needs to be more to the point and clearer."
+
+## Missing Elements
+- "We're not mentioning competitors, and we're also not mentioning some examples because like, so maybe these two things would already help."
+
+## Advertising Network Concerns
+- "And then the second part of what you're building, if I understand correctly, is you're ultimately building an advertising network"
+- "And you're not talking about kind of what it actually takes to build an advertising network at all and how you're going to do that."
+- "And if you will continue to give access to the models that you end up paying for for free to others and you monetize via the ads but I need to understand the unit economics"
+
+## Economic Viability Questions
+- "How do you make sure that this works across the board?"
+- "Because I can, there's some apps that I can build that have an audience that is valuable, where you can actually sell ads for a decent amount of money."
+- "And then I can use a shit ton of your tokens for free in my app and not really have a lot of valuable audience in front of it so there's no valuable advertising inventory that I generate"
+
+## Team Response on Economics
+- "We offer something for free, but at the same time, when your app is not like validated by us, you don't get like these high rates, you don't get like a few things that you don't get that makes the cost for us very limited."
+- "And then for different apps that we realize, okay, this is good for monetization, then we offer all this like monetization plugin, We incentivize them to use those tools."
+- "And then we kind of sub-select. And it can be automated based on just numbers that we get from analytics."
+- "But I think this is where we would target certain apps and not others to give them more credits, more access, more resources."
+
+## Core Business Model Concerns
+- "Because the obvious rebuttal to what you're doing is you're essentially giving other people your cloud credits for free at the moment giving away something for free that will always show traction."
+- "Is there viable business to build on top of that?"
+
+## Market Size Discussion
+- "We were like, oh, do we use the market size of the creative AI gen builders? Or do we use the market size of actually the ads that could be shown to use people that are not shown because all these ads are built but there's no way to put the ads in"
+- "This is why we focused on the we tried at least to focus on the ads because this is where the revenue comes from so the ad is actually the money comes from there and then it's just like going through us to the developer back."
+
+## Business Model Focus
+- "Should we also focus on other potential revenue streams than just focusing on ads? Or would that complicate the pitch?"
+- "Because it sounds like we're trying to do too much. We're trying to do a freemium. We're trying to do an ad product."
+- "I think focus makes sense, so typically when companies at an early stage try to have four different, very different sorts of revenues..."
+- "You have to build four different businesses and you typically die in the complexity."
+- "So I don't know if ads is the best one, but I would not try to in the next 18 months, try to build three different revenue streams. It's not going to get there."
+- "You need to start with one and crack that first."
+
+## Target Audience Confusion
+- "I don't really get entirely the youth ad market. I don't really get that slide."
+- "You're ultimately you're targeting developers that build apps yes those users and customers I guess are skewed towards younger audiences today"
+- "It's like all these new spaces that everyone can build an app that can receive ads. So it's just that it's just exploding because of vibe coding."
+- "And then this is what we wanted to show is like this space, this ad space that is new and that is being created."
+
+## AI-Assisted Development Insight
+- "When you're using an AI assistant these days, these AI assistants nowadays are already, when you ask something a little bit more complex, they're already writing a little bit of code for you and executing it."
+- "So indirectly everyone is becoming a creator of code, you know."
+- "The next step is just, ah, I liked this report you made, can you make a website for me? And suddenly you've created your own little app"
+
+## Market Size Perspective
+- "I think ultimately if what you're saying is that a whole bunch of people will build applications with tons of audiences on your platform and you become the advertising network for that"
+- "I don't think that the market size is the biggest objection but I think then how would I size that"
+- "Ultimately what you're saying is that a whole chunk of the applications of the future will have some sort of GenAI generated media input into them."
+- "Also what we're offering is assistants so multi-turn who can integrate with your UI so kind of a share of all of those applications and then kind of how many eyeballs will those get"
+
+## Presentation Feedback
+- "Each person says one sentence is super hard to follow because you get used to a speaker and then I get interrupted and need to kind of adapt to the new speaker every time."
+- "I think you need to sell yourselves better. You're very modest. None of your bragging rights of great things that you've done in the future are in there"
+- "I think overall somebody who hears this for the first time won't get what you're doing"
+- "I haven't understood yet from this or from our discussion so far, whether building an ad network on this type of thing is a good idea or not."
+
+## Closing
+- "We were thinking of participating in the pitch roast tomorrow. Do you think that's a good idea?"
+- "Yeah, absolutely. Take every opportunity"
+
+---
+
+## Transcript integral 
+
 ## Speaker A
 - Kind of participants in your ecosystem.
 - So I guess your primary stakeholder is the developer.

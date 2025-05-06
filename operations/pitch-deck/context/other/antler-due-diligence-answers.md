@@ -2,10 +2,10 @@
 
 **Problem Statement (what pain/problem are you solving):**
 
-*   **Creators (Developers & Indie Builders):** Face significant hurdles building with AI – high costs, complex technical infrastructure, and frustrating authentication. Critically, even if their AI-powered apps go viral, there's **no straightforward, built-in way to generate revenue** from their creations.
-*   **End-Users:** Often encounter **paywalls** limiting access to innovative AI experiences, alongside valid **privacy concerns** and a desire for more **personalized and customizable** AI tools.
-*   **Advertisers (Brands):** Struggle to effectively reach and engage the valuable youth/Gen Z demographic (and other niche audiences) within the rapidly emerging landscape of **AI-centric applications and creative tools.**
-*   **Ecosystem Inefficiency:** The current landscape forces painful trade-offs, creating **friction and silos** that prevent a truly open, creative, and **financially viable AI ecosystem** from flourishing for independent creators.
+*   Building with AI is currently complex and costly for **Creators**, involving technical hurdles, authentication challenges, and no straightforward way to generate revenue from viral applications.
+*   **End-Users** often encounter paywalls, have privacy concerns, and seek more personalized AI experiences.
+*   **Advertisers (Brands)** find it difficult to effectively reach the youth/Gen Z demographic within these newer AI-centric applications.
+*   The current landscape presents painful trade-offs due to friction and silos, hindering an open, creative, and financially viable AI ecosystem.
 
 **Solution (how are you solving it):**
 
@@ -18,15 +18,15 @@
 
 **Customer Persona (who is the recipient of your solution):**
 
-*   **Creators (Affiliates/Developers):** Developers, hobbyists, indie creators, and a new generation of young programmers (including "vibe coders") who want to build, share, and earn from AI applications. This encompasses anyone who can type a prompt.
+*   **Creators (Primary Stakeholders: Developers, Indie Builders, Hobbyists):** Our central focus is on empowering a diverse group of creators. This includes traditional developers, indie game makers, hobbyists, and the rapidly expanding community of **"vibe coders" – individuals leveraging AI for creative expression, storytelling, and rapid app development, often without deep conventional coding backgrounds.** They all seek to easily build, share, and find income opportunities for their AI-powered applications.
 *   **End-Users (Consumers):** A diverse global audience, particularly youth, who will use the AI apps created on our platform.
 *   **Ad Providers (Brands):** Companies looking to engage with the valuable youth demographic and other user segments through innovative AI-powered applications.
 
 **Team:**
 
 *   **What makes you uniquely qualified to execute this business idea?**
-    *   Thomas Haferlach (CEO) sets the vision, strategy, and drives breakthrough AI R&D, leveraging extensive experience in AI and building scalable platforms.
-    *   Elliot Fouchy (COO) translates strategy into execution, manages finance, and leads delivery, drawing on a strong background in AI operations and project management.
+    *   Thomas Haferlach (CEO) sets the vision, strategy, and drives breakthrough AI R&D. He previously **architected and scaled Pollinations' core media generation pipeline to handle over 100 million monthly requests** and has extensive experience building large-scale AI platforms, including securing €1.2M in EU funding for AI music tech.
+    *   Elliot Fouchy (COO) translates strategy into execution, manages finance, and leads delivery. With a strong background in AI project management and operations, Elliot has experience **managing complex AI product lifecycles from research to production, optimizing deployment workflows for efficiency and scale.**
     *   Our decade-long collaboration has built strong synergy and a shared vision, backed by proven expertise in AI and scaling technology.
     *   Planned hires include senior AI-Ops & Infra specialists and Growth & Developer Relations personnel to ensure robust technical execution and community expansion.
 *   **Operating model of the company/team - where will you base the team, how are you spending time together and which mechanisms they have put in place / will put in place to ensure you keep growing together more closely**

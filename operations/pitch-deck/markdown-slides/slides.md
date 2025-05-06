@@ -184,25 +184,19 @@ SLIDE GUIDANCE:
 
 ---
 
-# <span class="bg-indigo-600 text-white p-2 rounded">**🛣️ Roadmap (Q3 2025 → Q2 2026)**</span>
+# <span class="bg-indigo-600 text-white p-2 rounded">**🛣️ Roadmap: From Activation to Dominance**</span>
 
-```mermaid
-gantt
-  dateFormat  Q%q %Y
-  axisFormat  %q'Q%y
-  section 12‑Month Plan
-  Observability & Context      :active, a1, 2025-07-01, 90d
-  Rev‑Share + Yield Lift      :a2, 2025-10-01, 90d
-  Seed Kick‑off         :a3, 2026-01-01, 90d
-  Post‑Seed Scale‑up          :a4, 2026-04-01, 90d
-```
+## **1️⃣ Activate (Next 12 Mo)**
+**Prove core loop:** Launch Ad Rev Share (Q1'26), Activate Dev Community, Secure Seed Funding ($2.5-3M).
+*Target: $1.2M+ ARR, 5.5M MAU*
 
-|           |                                                                           |
-| --------- | ------------------------------------------------------------------------- |
-| **Q3 25** | Real‑time ad‑telemetry • context embeddings • infra cost/gen ↓ 15 %       |
-| **Q4 25** | Dev wallet + **50 % rev‑share** live • brand‑safety classifier            |
-| **Q1 26** | **Seed raise opens** • 6 M MOU • ARR run‑rate **€2 M** • multi‑format ads |
-| **Q2 26** | Deploy seed capital • SDK v2 • ARR run‑rate **€3 M**                      |
+## **2️⃣ Scale (12-36 Mo)**
+**Expand ecosystem:** SDK v2, Premium Tiers, AI Ad Optimization, Global Community.
+*Target: Sustainable Growth, Diversified Revenue*
+
+## **3️⃣ Dominate (Vision)**
+Become the ubiquitous, **interface-free engine** for AI creation and distribution.
+*The "Unity for AI Experiences"*
 
 <!--
 SLIDE GUIDANCE:

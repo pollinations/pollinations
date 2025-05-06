@@ -339,6 +339,8 @@ layout: two-cols-header
 | Operation | 12% |
 | Marketing | 5% |
 
+## Reach out! hello@pollinations.ai
+
 ::right::
 
 ## **🚀 €2.5 – 3 M seed** (Q2 2026)

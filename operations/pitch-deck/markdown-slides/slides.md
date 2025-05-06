@@ -11,7 +11,7 @@ class: text-center
 
 <!--
 SLIDE GUIDANCE:
-- Explain why Pollinations name is a good fit
+- Do you think maybe starting the first slide with the name of another company is too early? we should focus on pollinations. or it goes in the speaker notes
 -->
 
 ---

@@ -9,7 +9,7 @@
 
 **Solution (how are you solving it):**
 
-> 2 sided market, ad prodiver missing 
+> 2 sided market, ad prodiver missing
 
 * Pollinations.ai provides an "AI App Factory," described as "Unity for AI," which simplifies the process of building and monetizing generative AI products.
 * The platform offers an end-to-end AI setup with instant integration and auto-configured infrastructure, allowing creators to focus solely on the frontend UI/UX.
@@ -44,7 +44,7 @@
     * The team structure includes key roles in DevOps, AIOps, Data Scientist, and Growth/Marketing.
 
 **Product / Business**:
-> 2 sided market, platform / ad §   
+> 2 sided market, platform / ad §
 
 * **What is your product and its key features/ What is the product offering and customer target segment (standardization vs luxury)? And what is the status quo of your product today?**
     * **Product:** An AI creation and distribution platform, an "AI App Factory" or "Unity for AI". It provides an API for generative media.
@@ -92,12 +92,12 @@
     * **Viewability metrics:** Lower CPM if not verified. Mitigation: Native widgets + IAB tracking.
     * **Latency / CLS (Cumulative Layout Shift):** UX penalties. Mitigation: Edge caching, 200 ms p95 SLA.
     * **Brand-safety:** Advertiser trust issues. Mitigation: Multi-layer filters + human audit.
-    * **Rev-share competitiveness:** Creator churn. Mitigation: Match/beat 70% industry norm (the pitch deck mentions a 50% rev-share to creators, while parallels.md mentions 70% target share for dev rev share program and a 70% norm).
+    * **Rev-share competitiveness:** Creator churn. Mitigation: Maintain competitive 50% rev-share to creators.
     * **Regulatory (e.g., EU DSA, COPPA):** Mitigation: Age gating, contextual ads only.
 * **What are major milestones to reach in the next 12m (what and when) incl. reaching MVP?**
     * The product has surpassed an MVP stage, with core services live and significant user engagement.
     * **Phase 1: Activate the Flywheel (Q3 2025 – Q2 2026) - 12 Month Plan:**
-        * **Objective:** Prove the core Ad-Revenue model, achieve Seed-Ready metrics (Target: $1.2M+ ARR, 5M+ MAU) by late Q1 2026.
+        * **Objective:** Prove the core Ad-Revenue model, achieve Seed-Ready metrics (Target: $1M ARR, 15M MAU) by late Q1 2026.
         * **Q3 2025 (Foundation & Developer Activation):**
             * Developer Portal v1 launch (Docs, SDK access, basic usage stats).
             * Ad Telemetry Pipeline for future rev-share.
@@ -110,10 +110,10 @@
             * KPIs: $300k+ ARR Run-Rate (primarily unregistered), 4M+ MAU, eCPM (unregistered multi-format) $2.5+.
         * **Q1 2026 (Seed Prep & Revenue Share LAUNCH):**
             * Seed Fundraise Kick-off (Target $2-3M).
-            * Developer Revenue Share Program LAUNCH (70% target share, live payouts).
+            * Developer Revenue Share Program LAUNCH (50% target share, live payouts).
             * Self-Serve Advertiser Dashboard (Beta).
             * Compliance Audit (GDPR/CCPA readiness).
-            * KPIs: Seed Term Sheet Goal, $1.2M+ ARR Run-Rate, 5.5M+ MAU, 100+ Devs Receiving Payouts. (The pitch deck aims for $1M ARR, 15M MAU in the "Activate" phase)
+            * KPIs: Seed Term Sheet Goal, $1M ARR Run-Rate, 15M MAU, 100+ Devs Receiving Payouts.
         * **Q2 2026 (Post-Seed Scale & Optimization):**
             * Seed Capital Secured & Deployed.
             * Contextual Ad Targeting v2.
@@ -124,10 +124,7 @@
 
 **Unit economics:**
 
-* **Revenue Model:** Primarily Ad-Revenue, with a revenue share model with creators.
-    * The slides.md mentions a 50% revenue share to Creators.
-    * The roadmap.md mentions a target of 70% revenue share for the Developer Revenue Share Program.
-    * parallels-unity-for-ai-and-others.md states a 70% share with creators, with Pollinations keeping 30%.
+* **Revenue Model:** Primarily Ad-Revenue, with a 50% revenue share model with creators.
 * **Target eCPM:** €6–€12 (rewarded/interstitial mid-tier markets).
 * **Back-of-Envelope Revenue Math:** At 100 million monthly impressions and 30% take-rate for Pollinations, this implies €1.8M - €3.6M per month for Pollinations (the document states €18-36M ARR, which would be €1.5M - €3M per month).
 * **Cost Structure (based on €300k pre-seed allocation):**
@@ -137,7 +134,7 @@
     * Marketing: 6.67% (€20,000) (Slide deck: 5%).
     * Legal / Operation: 10.00% (€30,000).
 * The company is currently at ≈ $0 ARR (basic text-ad append for *unregistered* apps only - Live).
-* The goal is to achieve $1.2M+ ARR run-rate by late Q1 2026.
+* The goal is to achieve $1M ARR run-rate by late Q1 2026.
 
 **Market:**
 
@@ -189,7 +186,7 @@
 | :-------------- | :-------------------------------------------------------------------------------------- | :------- | :----------- | :---------------- | :-------------------- | :------------------------------------------------- | :------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Unity Ads       | Lightweight SDK for mobile game ads (rewarded, interstitial, banner). AI for targeting. | Global   | 2004 (Unity) | Public (Unity)    | (Post-IPO)            | Large, established in gaming.                      | Large (Unity)  | Pollinations is AI-native from the start, targets broader generative AI apps beyond games, simpler integration for "vibe coders".                                                 |
 | AppLovin MAX    | SDK & exchange for programmatic video/playable ads. AI engine for optimization.         | Global   | 2012         | Public            | (Post-IPO)            | Significant growth in mobile advertising.          | Large          | Pollinations focuses on generative AI media, not just game ads, and aims for a strong creator community with high revenue share.                                                  |
-| Perplexity AI   | AI search engine with sponsored follow-up ads and premium subscription.                 | US       | 2022         | Series B (likely) | (Various VCs)         | Rapid ARR growth ($20M to >$100M run-rate in ~1q). | Growing        | Pollinations is a platform/API for *building* AI experiences with embedded ads, not just an ad-supported end-user product. Offers higher rev-share to creators (70% vs 25%).      |
+| Perplexity AI   | AI search engine with sponsored follow-up ads and premium subscription.                 | US       | 2022         | Series B (likely) | (Various VCs)         | Rapid ARR growth ($20M to >$100M run-rate in ~1q). | Growing        | Pollinations is a platform/API for *building* AI experiences with embedded ads, not just an ad-supported end-user product. Offers higher rev-share to creators (50% vs 25%).      |
 | GIPHY (API)     | GIF API with sponsored/branded GIFs in search results.                                  | US       | 2013         | Acquired by Meta  | (Pre-acquisition VCs) | Widely integrated API.                             | Part of Meta   | Pollinations aims to offer direct and significant revenue share to creators of the media, not just brand integration. Focus on diverse AI media.                                  |
 | Google AdSense  | JS tag for display & video ads on websites/apps.                                        | Global   | 2003         | Public (Google)   | (Post-IPO)            | Massive, ubiquitous.                               | Part of Google | Pollinations is AI-media specific, handles backend infra for AI, aims for more native/embedded ad experiences within AI creations, and fosters a specific "vibe coder" community. |
 
@@ -225,14 +222,14 @@
         * Use of funds: 50% AIOps/Data Scientist, 33% Cloud Computing, 12% Operations, 5% Marketing (percentages from slide 9, cost-projection.md has slightly different breakdown but similar categories).
     * **Seed Round:** Plan to raise €2.5 – €3 Million in Q2 2026.
         * Purpose: To power the "Scale Phase" - build SDK v2, enhance AdTech, drive user acquisition & monetization, expand developer grants & ecosystem, ensure robust infrastructure.
-    * **Runway/Timing:** The pre-seed is to kickstart the "Activate phase" (next 12 months from ~Q3 2025). The seed round is timed for Q2 2026 to fund the subsequent 12-36 month "Scale" phase. The goal is to reach Seed-Ready metrics ($1.2M+ ARR, 5.5M+ MAU) by late Q1 2026.
+    * **Runway/Timing:** The pre-seed is to kickstart the "Activate phase" (next 12 months from ~Q3 2025). The seed round is timed for Q2 2026 to fund the subsequent 12-36 month "Scale" phase. The goal is to reach Seed-Ready metrics ($1M ARR, 15M MAU) by late Q1 2026.
 
 **Legal:**
 
 * **Is IP (intellectual property) ownership by the company secured? If not, how will it be?**
-    * Pollinations Gmbh (German entity) 
+    * Pollinations Gmbh (German entity)
       * is dormant since 3 years.
       * has
-    * 
+    *
 * **Has any founder ever been convicted in a court of law, been subject of a formal investigation?**
     * No.

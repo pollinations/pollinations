@@ -1,8 +1,9 @@
 ---
 title: pollinations.ai — Unity for AI
+class: text-center
 ---
 
-# ![Pollinations.ai Logo](/media/pollinations-ai-logo.png) pollinations.ai
+# ![Pollinations.ai Logo](/media/pollinations-ai-logo.png)
 
 ## Unity for AI
 
@@ -15,6 +16,7 @@ SLIDE GUIDANCE:
 
 ---
 layout: two-cols-header
+class: text-center
 ---
 
 # <span class="bg-blue-600 text-white p-2 rounded">**🚀 Traction**</span>
@@ -38,6 +40,7 @@ SLIDE GUIDANCE:
 
 ---
 layout: two-cols-header
+class: text-center
 ---
 
 # <span class="bg-red-600 text-white p-2 rounded">**😖 Problem**</span>
@@ -74,6 +77,7 @@ SLIDE GUIDANCE:
 
 ---
 layout: two-cols-header
+class: text-center
 ---
 
 # <span class="bg-green-600 text-white p-2 rounded">✨ The Pollinations Fix: **AI App Factory**</span>
@@ -110,6 +114,7 @@ SLIDE GUIDANCE:
 -->
 ---
 layout: two-cols-header
+class: text-center
 ---
 
 # <span class="bg-purple-600 text-white p-2 rounded">**🌍 Market & Business Model**</span>
@@ -148,6 +153,7 @@ SLIDE GUIDANCE:
 
 ---
 layout: two-cols
+class: text-center
 ---
 
 # <span class="bg-yellow-600 text-white p-2 rounded">📈 **GTM Flywheel & Moat**</span>

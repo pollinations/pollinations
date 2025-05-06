@@ -7,9 +7,10 @@ title: pollinations.ai — Unity for AI
 ## Unity for AI
 
 **The lightning‑fast path from idea ➜ monetized generative‑AI product.**
+
 <!--
 SLIDE GUIDANCE:
-Do you think maybe starting the first slide with the name of another company is too early? we should focus on pollinations. or it goes in the speaker notes
+- Explain why Pollinations name is not a good fit
 -->
 
 ---
@@ -32,8 +33,7 @@ layout: two-cols-header
 <!--
 SLIDE GUIDANCE:
 - Key Markets: 30% CN, 13% US, 13% EU, 6% IN
-The 30% China presence is significant - emphasize our global reach as differentiator
-Key growth metrics should be added : 30% MoM media generation
+- China presence is significant - emphasize our global reach as differentiator
 -->
 
 ---
@@ -136,14 +136,14 @@ layout: two-cols-header
 
 <!--
 SLIDE GUIDANCE:
--Extra revenue stream:
-   1. Micro‑purchases (stickers, tokens) - *Planned Q1 2026*
-   2. Premium tiers (SLA, bigger models) - *Planned Q1 2026*
-- untapped / developping market
+- Exploring extra revenue stream (TBC from Q2 2026)
+   1. Micro‑purchases (stickers, tokens)
+   2. Premium tiers (SLA, bigger models)
+   3. Data monetisation (e.g. user data for training)
+- Untapped / Developping market
 - Potential positioning options from parallels doc: "GIPHY-meets-AdSense for AI", "Unsplash for AI—monetised out-of-the-box"
 - Unity, AppLovin, and other platforms demonstrate lightweight SDKs with embedded ads are proven high-margin models
 - Consider adding slide on how we're better/differently positioned than Unity/AppLovin for AI era (AI-native, better targeting)
-- Market file to keep as source of truth : context/market-size.md
 -->
 
 ---
@@ -151,8 +151,6 @@ layout: two-cols
 ---
 
 # 📈 **GTM Flywheel & Moat**
-
-
 
 * **Trust Moat:** 📖 Open source (MIT) & Privacy-first approach
 * **Market Trend:** 📊 4× More citizen devs than pros (Gartner)
@@ -167,7 +165,6 @@ layout: two-cols
 SLIDE GUIDANCE:
 - Unity generates $1.2B (66%) from ads via lightweight SDK with rev-share - directly parallel to our model
 - potentially the best slide to add competition
-- 4× more citizen devs than pros devs is the the beginning of the trend
 - one of our principle moats is that devs are embedding us in their open source repositories, making youtube videos, and spreading the word organically. discord bots in many guilds...
 - Consider adding from parallels doc: "Anyone who can type a prompt is a potential Pollinations integrator" (maybe previous slide)
 - Consider adding IDC forecast: 750M new cloud-native apps by 2026 - huge TAM expansion (previous slide?)
@@ -221,7 +218,7 @@ SLIDE GUIDANCE:
 
 <!--
 SLIDE GUIDANCE:
-> 10-year partnership shipping creative-AI products: high-trust founders aligned on vision & execution
+- Collaboration: The founders share a long history of collaboration, having worked together on various technology and creative projects for more than a decade, building strong synergy and shared vision.
 -->
 
 ---
@@ -238,14 +235,7 @@ SLIDE GUIDANCE:
 
 <!--
 SLIDE GUIDANCE:
-- Use table format for clearer visualization of fund allocation
 - Add purpose column to provide context for each allocation
 - Keep consistent with financial presentation style
 -->
 
-<!--
-SLIDE GUIDANCE:
-- 💫 **Founders have shipped creative‑AI products together for 10 years: a tested, high‑trust partnership built on shared vision and execution**
-- update all using this file: context/team.md
-- Collaboration: The founders share a long history of collaboration, having worked together on various technology and creative projects for more than a decade, building strong synergy and shared vision.
--->

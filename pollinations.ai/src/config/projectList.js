@@ -93,6 +93,15 @@ const allProjects = {
   ],
   llmIntegrations: [
     {
+      name: "🆕 Define",
+      url: "https://define-i05a.onrender.com/api/docs/",
+      description: "An AI-powered REST API designed to generate definitions for words or phrases, constrained to a specified target word count. It allows customization of tone, context, and language, delivering precise, context-aware definitions programmatically—ideal for developers and content creators.",
+      author: "@hasanraiyan",
+      repo: "https://github.com/hasanraiyan",
+      submissionDate: "2025-05-06",
+      order: 1,
+    },
+    {
       name: "🆕 CoNavic",
       url: "https://github.com/mkantwala/CoNavic/",
       description: "A free, open-source browser extension that brings the power of ChatGPT and browser automation directly to your fingertips. Instantly access AI assistance, manage tabs, and organize bookmarks using natural language all securely within your browser.",

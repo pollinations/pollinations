@@ -218,10 +218,10 @@ layout: two-cols
 <!--
 *   **Thomas:** "Our model creates a **powerful circular economy**, a flywheel for growth." *(Gesture to diagram)*
 *   **Thomas:** "**Market Trend Driving Us**: The **GenAI market is exploding**, doubling year-over-year."
-*   **Elliot:** "**AI-Powered Targeting**: Better data from usage allows **smarter ad targeting**, increasing revenue for everyone."
-*   **Elliot:** "**Trust Moat**: Being **Open Source and Privacy-First** builds deep trust with developers and users."
-*   **Thomas:** "**Community Network Effects**: More apps built on Pollinations -> attracts more users -> generates better data -> improves the platform -> encourages **even more apps**. It's self-reinforcing."
-*   **(Optional - Elliot):** "This isn't just theory – **Unity proved** this ad/rev-share model generates billions."
+*   **Elliot:** "Better data from usage allows **smarter ad targeting**, increasing revenue for everyone."
+*   **Elliot:** "Being **Open Source and Privacy-First** builds deep trust with developers and users."
+*   **Thomas:** "More apps built on Pollinations -> attracts more users -> generates better data -> improves the platform -> encourages **even more apps**. It's self-reinforcing."
+*   **Elliot:** "This isn't just theory – **Unity proved** this ad/rev-share model generates billions."
 
 <img src="/media/circular_economy_genz.png" alt="Fly Wheel" class="w-2/3 mx-auto my-4" />
 

@@ -9,6 +9,8 @@
 
 **Solution (how are you solving it):**
 
+> 2 sided market, ad prodiver missing 
+
 * Pollinations.ai provides an "AI App Factory," described as "Unity for AI," which simplifies the process of building and monetizing generative AI products.
 * The platform offers an end-to-end AI setup with instant integration and auto-configured infrastructure, allowing creators to focus solely on the frontend UI/UX.
 * It provides "Plug & Play AI" through simple URL calls for text, image, and audio features.
@@ -18,6 +20,10 @@
 
 **Customer Persona (who is the recipient of your solution):**
 
+> address this: vibe coder = indie developers of all ages
+> end user is of all age, not only youth
+> ad provider will reach all end user
+
 * **Creators (Affiliates/Developers/Vibe Coders):** Developers, hobbyists, indie developers, and a new generation of young developers ("vibe coders") who want to build, share, and monetize AI applications. This includes those who can type a prompt, expanding the TAM beyond traditional developers.
 * **End-Users (Consumers):** Everyone, particularly a massive global youth audience, who will use the AI apps created on the platform.
 * **Ad Providers (Brands):** Companies seeking to reach the valuable youth demographic through AI-native apps.
@@ -25,54 +31,55 @@
 **Team:**
 
 * **What makes you uniquely qualified to execute this business idea?**
+  > refocus to answer that question better, explain why our skills are related to what we need for pollinations success
     * The CEO, Thomas Haferlach, is responsible for setting the vision and strategy and driving breakthrough AI R&D.
     * The COO, Elliot Fouchy, is responsible for translating strategy into execution, managing finance, and leading delivery.
     * The founders have a decade-long collaboration, building strong synergy and shared vision, backed by AI and scaling experience.
     * The planned team includes senior AI-Ops & Infra specialists for GPU fleet optimization and scaling, and Growth & Developer Relations personnel.
 * **Operating model of the company/team - where will you base the team, how are you spending time together and which mechanisms they have put in place / will put in place to ensure you keep growing together more closely**
+  > add community (dev, users, moderators)
     * The company will be primarily based in Berlin, with an office in Lichtenberg that can accommodate at least 6 team members.
-    * CEO Thomas Haferlach and COO Elliot Fouchy will lead operations from the Berlin office, establishing a strong central presence.
+    * Thomas Haferlach and Elliot Fouchy will lead operations from the Berlin office, establishing a strong central presence.
     * Remote work options will be available depending on talent fit, allowing for a hybrid model that prioritizes in-person collaboration while accessing global talent.
-    * The team structure includes key roles in DevOps, AIOps, Data Scientist, and Growth Marketing, with initial contractor engagements scoped for approximately 6 months and potential conversion after Seed funding.
-    * The initial 12-month plan after the pre-seed round focuses on these mission-critical positions to build core infrastructure and capabilities.
+    * The team structure includes key roles in DevOps, AIOps, Data Scientist, and Growth/Marketing.
 
 **Product / Business**:
+> 2 sided market, platform / ad §   
 
 * **What is your product and its key features/ What is the product offering and customer target segment (standardization vs luxury)? And what is the status quo of your product today?**
     * **Product:** An AI creation and distribution platform, an "AI App Factory" or "Unity for AI". It provides an API for generative media.
-    * **Key Features:** Instant AI setup via assistant, plug & play AI using simple URLs for media features (image, text, audio), backend infrastructure management (scaling, ads, rev-share). Open Source SDK.
-    * **Product Offering:** Enables developers ("vibe coders") to build, share, and monetize AI experiences. Focuses on making AI creation accessible, offering SOTA tools funded by an advertising model.
+    * **Key Features:** Instant AI setup via assistant, plug & play AI using simple URLs for media features (image, text, audio), backend infrastructure management (scaling, ads, rev-share), and an Open Source SDK.
+    * **Product Offering:** Enables indie vibe coders to build, share, and monetize AI experiences. Focuses on making AI creation accessible, offering SOTA tools funded by an advertising model.
     * **Customer Target Segment:** Primarily "vibe coders" (indie developers, hobbyists), with end-users being a massive global audience, and advertisers (brands) wanting to reach this demographic. The model is geared towards broad accessibility (rather than luxury).
     * **Status Quo (as of end Q2 2025/June 2025):**
         * 3 million MAU, 100 million monthly generations.
         * Basic PoC text-ad append for *unregistered* apps only - Live).
-        * Authentication Beta (`pollinations-init` issuing tokens).
+        * Authentication - Beta.
         * Core Edge Services live (Image, Text, Audio Gen APIs + Open Source SDK).
         * Over 300 integrations live, with vibe coders building more than 2 new apps daily.
 * **What is the customer and user value proposition and therefore pain point?**
     * **Creators (Pain Point):** Complex AI infrastructure, authentication headaches, no built-in/easy monetization for viral apps.
     * **Creators (Value Proposition):** Launch instantly via assistant, focus on frontend/UX, simple plug & play AI, backend handled (infra, scale, ads, rev-share), easiest path to a live, monetized AI app. Monetize AI app development skills via revenue-sharing.
-    * **End Users (Pain Point):** Paywalls everywhere, privacy concerns, limited customization.
+    * **End Users (Pain Point):** Paywalls everywhere, privacy concerns.
     * **End Users (Value Proposition):** Free access to innovative and engaging AI applications, supported by embedded ads.
-    * **Ad Providers/Brands (Pain Point):** Missing the youth demographic, no AI-native targeting.
-    * **Ad Providers/Brands (Value Proposition):** Unparalleled access to a young and engaged demographic through AI-powered apps.
+    * **Ad Providers/Brands (Pain Point):** Missing context & personalization, no AI-native targeting.
+    * **Ad Providers/Brands (Value Proposition):** Hyper-personilized ads targeting engaged demographic through AI-powered apps.
 * **What is your USP (unique selling proposition)/moat?**
     * **"Unity for AI":** Simplifies AI app development and monetization significantly.
     * **Circular Economy/Flywheel Effect:** More apps → more users → better data → better platform → more apps. This creates a self-reinforcing growth model.
     * **Trust Moat:** Open source and privacy-first approach builds trust with developers and users.
-    * **Focus on "Vibe Coders":** Empowering a new generation of developers.
-    * **Developer Embeddings:** Developers embedding Pollinations.ai in their open-source repositories and spreading the word organically.
+    * **No Paywall**
+    * [reformulate this] **Developer Embeddings:** Developers embedding Pollinations.ai in their open-source repositories and spreading the word organically. [reformulate this]
 * **What can technology actually do for you?**
-    * Enable interface-free creation, building a development platform entirely without traditional visual interfaces (Zero-UI).
+    * Enable AI assisted creation (Zero-UI).
     * Offer cutting-edge AI capabilities (SOTA tools) to creators.
     * Power AI-driven ad targeting and optimization to maximize yield and relevance.
     * Leverage aggregated (anonymized) data to improve models, personalize experiences, and provide trends.
-    * Develop platform-specific models fine-tuned on real-world usage patterns.
+    * Use our scale to optimize models for real-word usage patterns.
 * **Who are your target customers and what is your go to market strategy?**
     * **Target Customers:**
-        * Affiliates/Creators: Developers and hobbyists, particularly "vibe coders" (young developers).
-        * Advertisers (Brands): Companies looking to reach the youth demographic.
-        * End-Users: A massive global youth audience.
+        * Affiliates/Creators: Developers and hobbyists, particularly "vibe coders".
+        * Advertisers (Brands): Companies looking to improve their ad targeting and new markets.
     * **Go-to-Market Strategy:**
         * **Community-First Marketing:** Moderate and grow the open-source Discord, run weekly live-build sessions.
         * **Content Marketing & Social Media:** Own social channels (X, Instagram, LinkedIn) with a KPI-driven content calendar.
@@ -223,7 +230,9 @@
 **Legal:**
 
 * **Is IP (intellectual property) ownership by the company secured? If not, how will it be?**
-    * The CEO's responsibilities include green-lighting model adoption and IP strategy.
-    * The documents do not explicitly state whether all current IP ownership by the company is formally secured, or detail specific steps on how it will be beyond the CEO's purview.
+    * Pollinations Gmbh (German entity) 
+      * is dormant since 3 years.
+      * has
+    * 
 * **Has any founder ever been convicted in a court of law, been subject of a formal investigation?**
-    * This information is not available in the provided documents.
+    * No.

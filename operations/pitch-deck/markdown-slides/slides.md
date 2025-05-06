@@ -249,21 +249,34 @@ SLIDE GUIDANCE:
 -->
 
 ---
+layout: two-cols-header
+---
 
-# <span class="bg-teal-600 text-white p-2 rounded">**💰 Raising : €2.5 – 3 M seed**</span>
+# <span class="bg-teal-600 text-white p-2 rounded">**💰 Raising**</span>
 
-## **Q3 2025 > Q3 2026**
-|  |  |  |
-|----------|---------|------------|
-| Payrolls | €60,000 | 20% |
-| AIOps / Data Scientist | €90,000 | 30% |
-| Cloud Computing | €100,000 | 30% |
-| Marketing | €20,000 | 10% |
-| Operation | €30,000 | 10% |
+::left:: 
+
+## **🌱 300K** (Q3 2025)
+|  |  |
+|----------|---------|
+| AIOps / Data Scientist | 50% |
+| Cloud Computing | 33% |
+| Operation | 12% |
+| Marketing | 5% |
+
+::right::
+
+## **🚀 €2.5 – 3 M seed** (Q2 2026)
+* Tech & Product
+* Growth Engineering
+* Community Focus
+* Platform Scale
 
 <!--
 SLIDE GUIDANCE:
-- Add purpose column to provide context for each allocation
-- Keep consistent with financial presentation style
+* Tech & Product: SDK v2, AI AdTech, Premium Offerings
+* Growth Engine: Scale Revenue & Global User Base
+* Community Focus: Empower "Vibe Coders," Expand Ecosystem
+* Platform Scale: Robust Infrastructure for Mass Adoption
 -->
 

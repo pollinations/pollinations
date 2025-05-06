@@ -221,9 +221,8 @@ layout: two-cols
 *   **Elliot: (optional)** 
     * This isn't just theory – **Unity proved** this ad/rev-share model generates billions.
 
-<img src="/media/circular_economy_genz.png" alt="Fly Wheel" class="w-2/3 mx-auto my-4" />
-
 SLIDE GUIDANCE:
+<img src="/media/circular_economy_genz.png" alt="Fly Wheel" class="w-2/3 mx-auto my-4" />
 - Market trend:  4× More citizen Creators than pros. 
 - Unity generates $1.2B (66%) from ads via lightweight SDK with rev-share - directly parallel to our model
 - potentially the best slide to add competition
@@ -258,11 +257,12 @@ Become the ubiquitous, **assistant-centric** engine for AI creation and distribu
     *   "**Activate developer community** further with grants & tools."
     *   "Secure **Seed Funding ($2.5-3M)**."
     *   "Target: **$1M ARR *annual recurring revenue*, 15M MAU**."
-*   **Elliot:** "**Phase 2: Scale (12-36 Months)**"
-    *   "Release **SDK v2** for deeper integrations."
-    *   "Implement **AI-driven Ad Optimization**."
-    *   "Build a truly **global community** and support structure."
-    *   "Target: **Sustainable growth** & diversified revenue."
+*   **Elliot**
+    *   In Phase 2 we scale (12-36 Months)
+        *   Release SDK v2 for deeper integrations
+        *   Implement AI-driven Ad Optimization
+        *   Build a truly global community and support its structure
+    *   Main target is a sustainable growth!
 *   **Thomas:** "**Phase 3: Vision**"
     *   "Become the **ubiquitous engine** for AI creation."
     *   "Focus on **assistant-centric integration** – AI building AI."

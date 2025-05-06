@@ -263,15 +263,16 @@ SLIDE GUIDANCE:
 
 ---
 
-# <span class="bg-teal-600 text-white p-2 rounded">**💰 Raising**</span>
+# <span class="bg-teal-600 text-white p-2 rounded">**💰 Raising : €2.5 – 3 M seed**</span>
 
-## **€2.5 – 3 M seed**
-
-|                |     |                                         |
-| -------------- | --- | --------------------------------------- |
-| Infrastructure | 30% | Scale compute capacity & Optimize costs |
-| Team Growth    | 50% | Expand team and business development    |
-| Buffer         | 20% | Operational safety net                  |
+## **Q3 2025 > Q3 2026**
+|  |  |  |
+|----------|---------|------------|
+| Payrolls | €60,000 | 20% |
+| AIOps / Data Scientist | €90,000 | 30% |
+| Cloud Computing | €100,000 | 30% |
+| Marketing | €20,000 | 10% |
+| Operation | €30,000 | 10% |
 
 <!--
 SLIDE GUIDANCE:

@@ -351,18 +351,18 @@ layout: two-cols-header
 
 <!--
 
-*   **Thomas:** "To kickstart our Activate phase, we're securing **€300K now (Q3 2025)**."
-*   **Thomas:** "**Immediate Use:**
+*   **Elliot:** "To kickstart our Activate phase, we're securing **€300K now (Q3 2025)**."
+*   **Elliot:** "**Immediate Use:**
     *   **50% AIOps/Data Scientist:** To optimize models and ad targeting in API requests.
     *   **12% Operations:** Streamlining delivery & finance.
     *   **5% Marketing:** Early community & brand building."
 *   **Thomas:** "Following that, we'll raise a **€2.5 - €3 Million Seed round in Q2 2026**."
-*   **Elliot:** "**The Seed Round Powers Our Scale Phase:**
-    *   **Tech & Product:** Build SDK v2, enhance AdTech.
-    *   **Growth Engineering:** Drive user acquisition & monetization.
-    *   **Community Focus:** Expand developer grants & ecosystem.
-    *   **Platform Scale:** Ensure robust infrastructure for mass adoption."
-*   **Thomas:** "This funding strategy ensures we can **hit our milestones** and build the leading open platform for generative AI."
+*   **Thomas:** "**The Seed Round Powers Our Scale Phase:**
+    *   Build SDK v2, enhance AdTech.
+    *   Drive user acquisition & monetization.
+    *   Expand developer grants & ecosystem.
+    *   Ensure robust infrastructure for mass adoption."
+*   **Elliot:** "This funding strategy ensures we can **hit our milestones** and build the leading open platform for generative AI."
 
 *   
 SLIDE GUIDANCE:

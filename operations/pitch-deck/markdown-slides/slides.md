@@ -156,16 +156,14 @@ layout: two-cols-header
 ## How do we make money? 🔄
 > **Unity for AI**: 50% revenue share to Creators, proven model
 
-
 <!--
-
-*   **Elliot:** "We operate in a **massive, rapidly growing market**."
-*   **Elliot:** "The **Generative AI creator economy** is already a **$10 Billion+ TAM** and doubling YoY." *(Referencing graphic/data point)*
+*   **Elliot:** "We operate in a massive, rapidly growing market."
+*   **Elliot:** "The Generative AI creator economy TAM is already a larger than 10 Billion $, and doubling YoY." *(Referencing graphic/data point)*
 *   **Thomas:** "Our model targets **two key sides**:
     *   **Affiliates (Creators):** Developers/hobbyists embedding our **free AI media APIs**.
     *   **Advertisers (Brands):** Companies reaching the **valuable youth demographic** through these AI apps."
-*   **Elliot:** "The **Business Model** is simple and proven, like **Unity's ad model**:"
-*   **Elliot:** "**50% revenue share** back to the creators. We provide the platform, they build, we *all* win."
+*   **Elliot:** "The Business Model is simple and proven, like Unity's ad model:"
+*   **Elliot:** "50% of the revenue goes back to the creators. We provide the platform, they build, we all win."
 *   **Thomas:** "Initial revenue streams: **Contextual ads** and **Affiliate referrals**. Pilots are live."
 *   
 SLIDE GUIDANCE:

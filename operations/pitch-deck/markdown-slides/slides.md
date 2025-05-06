@@ -60,12 +60,11 @@ The current ecosystem forces <b>painful trade-offs</b>.
 </div>
 
 <!--
-
-*   **Elliot:** "**Creators & Developers**: Building with AI = **complex, expensive**."
-*   **Elliot:** "Face infra headaches, auth issues, and crucially: **NO easy way to MONETIZE** viral apps."
+*   **Elliot:** "Building with AI is complex and expensive."
+*   **Elliot:** "Creators face infra headaches, authentification issues, and crucially: there is NO easy way to monetize viral apps."
 *   **Thomas:** "**End Users**: Hit **paywalls**, have **privacy concerns**, want **more customization**."
 *   **Thomas:** "**Ad Providers/Brands**: Struggle to reach the **youth/Gen Z** demographic in AI-native apps."
-*   **Elliot:** "**Core Issue**: Friction & silos prevent an **open, creative, *and* monetizable** AI ecosystem."
+*   **Elliot:** "The core issue comes from friction & silos, they prevent an open, creative, and monetizable AI ecosystem."
 *   **(Optional - Thomas):** "Example: Kid builds viral AI Discord bot -> makes **$0** today. We fix that."
 
 SLIDE GUIDANCE:

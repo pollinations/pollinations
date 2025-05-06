@@ -220,6 +220,8 @@ layout: two-cols
 *   **Thomas:** "**Community Network Effects**: More apps built on Pollinations -> attracts more users -> generates better data -> improves the platform -> encourages **even more apps**. It's self-reinforcing."
 *   **(Optional - Elliot):** "This isn't just theory – **Unity proved** this ad/rev-share model generates billions."
 
+<img src="/media/circular_economy_genz.png" alt="Fly Wheel" class="w-2/3 mx-auto my-4" />
+
 SLIDE GUIDANCE:
 - Market trend:  4× More citizen Creators than pros. 
 - Unity generates $1.2B (66%) from ads via lightweight SDK with rev-share - directly parallel to our model

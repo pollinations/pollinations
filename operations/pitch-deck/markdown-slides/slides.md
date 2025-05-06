@@ -191,8 +191,8 @@ SLIDE GUIDANCE:
 *Target: $1.2M+ ARR, 5.5M MAU*
 
 ## **2️⃣ Scale (12-36 Mo)**
-**Expand ecosystem:** SDK v2, Premium Tiers, AI Ad Optimization, Global Community.
-*Target: Sustainable Growth, Diversified Revenue*
+**Expand ecosystem:** SDK v2, AI Ad Optimization, Global Community.
+*Target: Sustainable Growth, Diversified Revenue (Premium Tiers, Data Monetisation, In-AppMicro Payments)*
 
 ## **3️⃣ Dominate (Vision)**
 Become the ubiquitous, **interface-free engine** for AI creation and distribution.

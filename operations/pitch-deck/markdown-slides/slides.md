@@ -5,7 +5,7 @@ class: text-center
 
 # ![Pollinations.ai Logo](/media/pollinations-ai-logo.png)
 
-## Unity for AI
+## With AI, Everyone is a developer.
 
 **The lightning‑fast path from idea ➜ monetized generative‑AI product.**
 
@@ -80,6 +80,8 @@ layout: two-cols-header
 # <span class="bg-green-600 text-white p-2 rounded">✨ The Pollinations Fix: **AI App Factory**</span>
 
 ::left::
+
+## Unity for AI
 
 *   **AI Sets Up:** Launch instantly via assistant.
 *   **You Focus on Frontend:** Build the UI/UX.

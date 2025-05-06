@@ -313,11 +313,11 @@ Become the ubiquitous, **interface-free engine** for AI creation and distributio
 *   **Elliot:** "**Founding Team:**
     *   **Thomas (CEO):** Drives **vision, strategy, breakthrough tech**. 
     *   **Elliot (COO):** Executes **strategy, finance, delivery**. "
-*   **Thomas:** "Our **decade-long collaboration** provides strong synergy, backed by decades of AI & scaling experience."
-*   **Thomas:** "**Planned Key Hires (Post-Seed):**
-    *   **Engineering & Data:** Senior **AI-Ops & Infra** team for GPU optimization and scaling.
-    *   **Marketing & Community:** **Growth & Developer Relations** lead for user acquisition, partnerships, community."
-*   **Elliot:** "We have the core leadership and a clear plan to build a world-class team."
+*   **Thomas:** "Our **decade-long collaboration** provides strong synergy, backed by AI & scaling experience."
+*   **Thomas:** "**Planned Key Hires:**
+    *   Senior **AI-Ops & Infra** team for GPU optimization and scaling.
+    *   **Growth & Developer Relations** lead for user acquisition, partnerships, community."
+
 
 SLIDE GUIDANCE:
 - Collaboration: The founders share a long history of collaboration, having worked together on various technology and creative projects for more than a decade, building strong synergy and shared vision.
@@ -348,13 +348,20 @@ layout: two-cols-header
 * Platform Scale
 
 <!--
-*   **Thomas:** "To fuel this acceleration, we are raising a **€2.5 - €3 Million Seed round**."
-*   **Elliot:** "**Use of Funds:**
-    *   **30% Infrastructure:** Scale **compute capacity** (GPUs), optimize cloud costs.
-    *   **50% Team Growth:** Hire key **engineering, growth, and community** talent. Expand business development.
-    *   **20% Buffer:** Maintain **operational flexibility** and safety net."
-*   **Thomas:** "This investment allows us to hit our **Activate phase targets ($1M ARR, 15M MAU)** and solidify our position as the leading open platform for generative AI."
-*   **Elliot:** "We're looking for partners who share our vision for democratizing AI creativity."
+
+*   **Thomas:** "To kickstart our Activate phase, we're securing **€300K now (Q3 2025)**."
+*   **Thomas:** "**Immediate Use:**
+    *   **50% AIOps/Data Scientist:** To optimize models and ad targeting in API requests.
+    *   **12% Operations:** Streamlining delivery & finance.
+    *   **5% Marketing:** Early community & brand building."
+*   **Thomas:** "Following that, we'll raise a **€2.5 - €3 Million Seed round in Q2 2026**."
+*   **Elliot:** "**The Seed Round Powers Our Scale Phase:**
+    *   **Tech & Product:** Build SDK v2, enhance AdTech.
+    *   **Growth Engineering:** Drive user acquisition & monetization.
+    *   **Community Focus:** Expand developer grants & ecosystem.
+    *   **Platform Scale:** Ensure robust infrastructure for mass adoption."
+*   **Thomas:** "This funding strategy ensures we can **hit our milestones** and build the leading open platform for generative AI."
+
 *   
 SLIDE GUIDANCE:
 * Tech & Product: SDK v2, AI AdTech, Premium Offerings

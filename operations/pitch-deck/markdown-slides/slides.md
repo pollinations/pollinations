@@ -190,12 +190,12 @@ gantt
   Post‑Seed Scale‑up          :a4, 2026-04-01, 90d
 ```
 
-|    |                                                                    | 
-| --------- | --------------------------------------------------------------------------------- | 
-| **Q3 25** | Real‑time ad‑telemetry • context embeddings • infra cost/gen ↓ 15 %               | 
-| **Q4 25** | Dev wallet + **50 % rev‑share** live • brand‑safety classifier                    | 
-| **Q1 26** | **Seed raise opens** • 6 M MOU • ARR run‑rate **€2 M** • multi‑format ads         |
-| **Q2 26** | Deploy seed capital • SDK v2 • ARR run‑rate **€3 M**                              |
+|           |                                                                           |
+| --------- | ------------------------------------------------------------------------- |
+| **Q3 25** | Real‑time ad‑telemetry • context embeddings • infra cost/gen ↓ 15 %       |
+| **Q4 25** | Dev wallet + **50 % rev‑share** live • brand‑safety classifier            |
+| **Q1 26** | **Seed raise opens** • 6 M MOU • ARR run‑rate **€2 M** • multi‑format ads |
+| **Q2 26** | Deploy seed capital • SDK v2 • ARR run‑rate **€3 M**                      |
 
 <!--
 SLIDE GUIDANCE:
@@ -205,10 +205,10 @@ SLIDE GUIDANCE:
 
 # 👥 **Team**
 
-|  |  |  |
-|------|------|-------|
+|         |                      |                                             |
+| ------- | -------------------- | ------------------------------------------- |
 | **CEO** | **Thomas Haferlach** | Sets vision & Strategy, Drives breakthrough |
-| **COO** | **Elliot Fouchy** | Executes strategy & Finance; Leads delivery |
+| **COO** | **Elliot Fouchy**    | Executes strategy & Finance; Leads delivery |
 
 ## 
 
@@ -230,11 +230,11 @@ SLIDE GUIDANCE:
 
 ## **€2.5 – 3 M seed**
 
-|  |  |  |
-|------------|------------|---------|
+|                |     |                                         |
+| -------------- | --- | --------------------------------------- |
 | Infrastructure | 30% | Scale compute capacity & Optimize costs |
-| Team Growth | 50% | Expand team and business development |
-| Buffer | 20% | Operational safety net |
+| Team Growth    | 50% | Expand team and business development    |
+| Buffer         | 20% | Operational safety net                  |
 
 <!--
 SLIDE GUIDANCE:

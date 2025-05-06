@@ -111,14 +111,13 @@ layout: two-cols-header
 <img src="/media/pollinations_fix_genz.png" alt="Pollinations Fix Diagram" class="w-mx mx-auto mt-4" />
 
 <!--
-
 *   **Thomas:** "Our solution: The **Pollinations AI App Factory**."
 *   **Thomas:** "Think **Unity for AI**. We make it radically simple."
-*   **Elliot:** "**AI Setup**: Integrate instantly via assistant. Auto-configures infra."
-*   **Elliot:** "**You Focus on Frontend**: Build the cool experience."
+*   **Elliot:** "It's an end-to-end AI setup that enables instant integration on a fully auto-configured infrastructure."
+*   **Elliot:** "Creator solely focus on Frontend, building the cool experience."
 *   **Thomas:** "**Plug & Play AI**: Just add simple **URL calls** for text, image, audio features."
 *   **Thomas:** "**Backend Handled**: We run the **infra, scale it, handle ads & rev share**."
-*   **Elliot:** "It's the **easiest, fastest path** to a live, **monetized AI app**."
+*   **Elliot:** "It's the easiest and fastest path to a live monetized AI app."
 
 SLIDE GUIDANCE:
 - Synthesized from Alt 2 & 3.
@@ -135,6 +134,7 @@ SLIDE GUIDANCE:
 - Adding generative AI (image, text, audio) requires just simple HTTPS calls to our Edge APIs.
 - Pollinations manages the entire backend: scalable hosting (e.g., GitHub Pages), CI/CD, model serving, security, auth, usage metering, and the monetization layer (serving ads, managing rev-share payouts). Zero server ops for the dev.
 -->
+
 ---
 layout: two-cols-header
 ---

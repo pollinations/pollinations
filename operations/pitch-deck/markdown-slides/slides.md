@@ -50,22 +50,13 @@ SLIDE GUIDANCE:
 -->
 
 ---
-layout: two-cols-header
----
 
 # <span class="bg-red-600 text-white p-2 rounded">**😖 Problem**</span>
 
-::left::
-<img src="/media/paintpointsgenz.png" alt="Pain Points Visual" class="w-7/8" />
+<img src="/media/paintpointsgenz.png" alt="Pain Points Visual" class="w-4/6" />
 
 *The current ecosystem forces painful trade-offs.*
 
-::right::
-### **Creator (Affiliate)**
-
-### **End User (Consumer)**
-
-### **Ad Providers (Brand)**
 <!--
 
 *   **Elliot:** "**Creators & Developers**: Building with AI = **complex, expensive**."

@@ -5,13 +5,18 @@ class: text-center
 
 # ![Pollinations.ai Logo](/media/pollinations-ai-logo.png)
 
-## With AI, Everyone is a developer.
+## AI Empowers Everyone to Create
 
 **The lightning‑fast path from idea ➜ monetized generative‑AI product.**
 
 <!--
 SLIDE GUIDANCE:
-- Do you think maybe starting the first slide with the name of another company is too early? we should focus on pollinations. or it goes in the speaker notes
+
+**Concise Talking Points Script:**
+
+*   **(Thomas/Elliot):** "We are **Pollinations.AI**."
+*   **(Thomas/Elliot):** "We believe **AI empowers everyone to create**."
+*   **(Thomas/Elliot):** "Our platform: the **lightning-fast path** from idea to **monetized generative AI product**."
 -->
 
 ---
@@ -30,6 +35,15 @@ layout: two-cols-header
 <img src="/media/piechart_countries_genz.png" alt="Geographic distribution" class="w-mx mx-auto" />
 
 <!--
+**Concise Talking Points Script:**
+
+*   **Thomas:** "We're seeing **explosive growth**."
+*   **Thomas:** "Pollinations powers **>50 MILLION** AI media generations **PER MONTH**."
+*   **Elliot:** "Growth is **>35% Month-over-Month** on key metrics like API requests."
+*   **Elliot:** "**>300 integrations** live – devs building **2+ new apps DAILY**."
+*   **Thomas:** "Truly **global reach**: Strong adoption in **China, US, India**."
+*   **Elliot:** "This shows massive **community buy-in** & **product-market fit** on our free, open infrastructure."
+
 SLIDE GUIDANCE:
 <img src="/media/media_requests_per_day_genz.png" alt="Media Requests Growth" class="w-2/4 mx-auto mb-4" />
 - Key Markets: 30% CN, 13% US, 13% EU, 6% IN
@@ -237,11 +251,10 @@ Become the ubiquitous, **interface-free engine** for AI creation and distributio
 ## 
 
 ### **+ 🧠 Engineering & Data**  
-**Senior ML & Infra Team** : GPU fleet optimization, Contextual ad targeting, ML performance metrics
+**Senior AI-Ops & Infra Team** : GPU fleet optimization, Scaling Backend
 
-##
 ### **+ 🌐 Marketing & Community**
-**Growth & Developer Relations** : User acquisition, Brand partnerships, Discord/GitHub community (13k/1.8k⭐)
+**Growth & Developer Relations** : User acquisition, Brand partnerships, Community
 
 <!--
 SLIDE GUIDANCE:

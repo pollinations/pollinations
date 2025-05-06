@@ -11,6 +11,7 @@ import rtistPrompt from "./personas/rtist.js";
 import evilPrompt from "./personas/evil.js";
 import hypnosisTracyPrompt from "./personas/hypnosisTracy.js";
 import mirexaSystemPrompt from "./personas/mirexa.js";
+import { bidaraSystemPrompt } from "./personas/bidara.js";
 
 
 
@@ -48,10 +49,16 @@ export const evilCommandR = wrapModelWithContext(
   evilPrompt,
   generateTextPortkey,
   "mistral"
-); 
+);
 
 export const generateTextMirexa = wrapModelWithContext(
   mirexaSystemPrompt,
+  generateTextPortkey,
+  "openai-large"
+);
+
+export const bidara = wrapModelWithContext(
+  bidaraSystemPrompt,
   generateTextPortkey,
   "openai-large"
 );

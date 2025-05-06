@@ -12,6 +12,7 @@ import {
   rtist,
   evilCommandR as evilMistral,
   generateTextMirexa,
+  bidara,
 } from "./wrappedModels.js";
 
 // Removed handlers object – call handler functions directly in model definitions
@@ -162,7 +163,7 @@ const models = [
   },
   {
     name: "deepseek-reasoning",
-    description: "MAI-DS-R1",
+    description: "DeepSeek R1 - MAI-DS-R1",
     handler: generateTextPortkey,
     //    details:  "Combines distilled reasoning with advanced contextual understanding.",
     reasoning: true,
@@ -296,6 +297,15 @@ const models = [
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
     tools: true,
+  },
+  {
+    name: "bidara",
+    description: "BIDARA - Biomimetic Designer and Research Assistant by NASA",
+    handler: bidara,
+    //    details:  "Expert in biomimicry, biology, engineering, and design for sustainable solutions.",
+    provider: "Azure",
+    input_modalities: ["text", "image"],
+    output_modalities: ["text"],
   },
   // {
   //   name: "llama-scaleway",

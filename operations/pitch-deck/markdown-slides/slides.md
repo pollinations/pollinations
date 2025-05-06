@@ -35,10 +35,9 @@ layout: two-cols-header
 <img src="/media/piechart_countries_genz.png" alt="Geographic distribution" class="w-mx mx-auto" />
 
 <!--
-**Concise Talking Points Script:**
 
 *   **Thomas:** "We're seeing **explosive growth**."
-*   **Thomas:** "Pollinations powers **>50 MILLION** AI media generations **PER MONTH**."
+*   **Thomas:** "Pollinations powers **>100 MILLION** AI media generations **PER MONTH**."
 *   **Elliot:** "Growth is **>35% Month-over-Month** on key metrics like API requests."
 *   **Elliot:** "**>300 integrations** live – devs building **2+ new apps DAILY**."
 *   **Thomas:** "Truly **global reach**: Strong adoption in **China, US, India**."
@@ -68,6 +67,14 @@ layout: two-cols-header
 
 ### **Ad Providers (Brand)**
 <!--
+
+*   **Elliot:** "**Creators & Developers**: Building with AI = **complex, expensive**."
+*   **Elliot:** "Face infra headaches, auth issues, and crucially: **NO easy way to MONETIZE** viral apps."
+*   **Thomas:** "**End Users**: Hit **paywalls**, have **privacy concerns**, want **more customization**."
+*   **Thomas:** "**Ad Providers/Brands**: Struggle to reach the **youth/Gen Z** demographic in AI-native apps."
+*   **Elliot:** "**Core Issue**: Friction & silos prevent an **open, creative, *and* monetizable** AI ecosystem."
+*   **(Optional - Thomas):** "Example: Kid builds viral AI Discord bot -> makes **$0** today. We fix that."
+
 SLIDE GUIDANCE:
 
 ### **Creator (Affiliate)**
@@ -100,7 +107,7 @@ layout: two-cols-header
 
 ## Unity for AI
 
-*   **AI Sets Up:** Launch instantly via assistant.
+*   **AI setup:** Launch instantly via assistant.
 *   **You Focus on Frontend:** Build the UI/UX.
 *   **Plug & Play AI:** Simple URLs for media features.
 *   **Backend Handled:** We run infra, scale, & ads.
@@ -112,6 +119,15 @@ layout: two-cols-header
 <img src="/media/pollinations_fix_genz.png" alt="Pollinations Fix Diagram" class="w-mx mx-auto mt-4" />
 
 <!--
+
+*   **Thomas:** "Our solution: The **Pollinations AI App Factory**."
+*   **Thomas:** "Think **Unity for AI**. We make it radically simple."
+*   **Elliot:** "**AI Setup**: Integrate instantly via assistant. Auto-configures infra."
+*   **Elliot:** "**You Focus on Frontend**: Build the cool experience."
+*   **Thomas:** "**Plug & Play AI**: Just add simple **URL calls** for text, image, audio features."
+*   **Thomas:** "**Backend Handled**: We run the **infra, scale it, handle ads & rev share**."
+*   **Elliot:** "It's the **easiest, fastest path** to a live, **monetized AI app**."
+
 SLIDE GUIDANCE:
 - Synthesized from Alt 2 & 3.
 - Kept "AI App Factory" (Alt 3).
@@ -120,9 +136,8 @@ SLIDE GUIDANCE:
 - Improved "Plug-in AI" to "Plug & Play AI" + "Simple URLs".
 - Used "Backend Handled" (Alt 2 clarity) + "infra, scale & ads" (Alt 2/3 specifics).
 - Kept strong tagline (Alt 3).
--->
 
-<!-- SPEAKER NOTES:
+
 - Developers use their AI coding assistant (integrated with our tools) to bootstrap projects from various starter kits (React, Unity, etc.), automating repo creation, config, and deployment.
 - This frees the developer to concentrate *only* on building the user-facing application.
 - Adding generative AI (image, text, audio) requires just simple HTTPS calls to our Edge APIs.
@@ -132,7 +147,7 @@ SLIDE GUIDANCE:
 layout: two-cols-header
 ---
 
-# <span class="bg-purple-600 text-white p-2 rounded">**🌍 Market & Business Model **</span>
+# <span class="bg-purple-600 text-white p-2 rounded">**🌍 Market & Business**</span>
 
 ::left::
 
@@ -146,11 +161,21 @@ layout: two-cols-header
 - **Advertisers (Brands)**: companies supply ads
 <br/>
 <br/>
-## Business Model 🔄
+## How do we make money? 🔄
 > **Unity for AI**: 50% revenue share to Creators, proven model
 
 
 <!--
+
+*   **Elliot:** "We operate in a **massive, rapidly growing market**."
+*   **Elliot:** "The **Generative AI creator economy** is already a **$10 Billion+ TAM** and doubling YoY." *(Referencing graphic/data point)*
+*   **Thomas:** "Our model targets **two key sides**:
+    *   **Affiliates (Creators):** Developers/hobbyists embedding our **free AI media APIs**.
+    *   **Advertisers (Brands):** Companies reaching the **valuable youth demographic** through these AI apps."
+*   **Elliot:** "The **Business Model** is simple and proven, like **Unity's ad model**:"
+*   **Elliot:** "**50% revenue share** back to the creators. We provide the platform, they build, we *all* win."
+*   **Thomas:** "Initial revenue streams: **Contextual ads** and **Affiliate referrals**. Pilots are live."
+*   
 SLIDE GUIDANCE:
 
 * Users get free AI experiences, brands reach youth demographi
@@ -197,6 +222,7 @@ layout: two-cols
 <img src="/media/fly-wheel-genz.png" alt="Fly Wheel" class="w-2/3 mx-auto my-4" />
 
 <!--
+
 SLIDE GUIDANCE:
 - Market trend:  4× More citizen Creators than pros. 
 - Unity generates $1.2B (66%) from ads via lightweight SDK with rev-share - directly parallel to our model
@@ -225,6 +251,29 @@ SDK v2, AI Ad Optimization, Global Community.
 Become the ubiquitous, **assistant-centric** engine for AI creation and distribution.
 
 <!--
+
+*   **Thomas:** "Our roadmap focuses on **two clear phases** to capture this market."
+*   **Thomas:** "**Phase 1: Activate (Next 12 Months)**"
+    *   "Launch **Ad Revenue Share** platform wide."
+    *   "**Activate developer community** further with grants & tools."
+    *   "Secure **Seed Funding ($2.5-3M)**."
+    *   "Target: **$1M ARR *annual recurring revenue*, 15M MAU**."
+*   **Elliot:** "**Phase 2: Scale (12-36 Months)**"
+    *   "Release **SDK v2** for deeper integrations."
+    *   "Implement **AI-driven Ad Optimization**."
+    *   "Build a truly **global community** and support structure."
+    *   "Target: **Sustainable growth** & diversified revenue."
+*   **Thomas:** "**Phase 3: Vision**"
+    *   "Become the **ubiquitous engine** for AI creation."
+    *   "Focus on **assistant-centric integration** – AI building AI."
+    *   "The definitive **'Unity for AI Experiences'**."
+
+Baseline – End of Q2 2025 (June 2025)
+• Users & Engagement: 3M MAU · 80M monthly generations
+• Monetization: ≈ $0 ARR (Basic text-ad append for unregistered apps only - Live)
+• Platform: Authentication live (pollinations-init issuing tokens) · Core Edge Services live (Image, Text, Audio Gen APIs + Open Source React SDK)
+
+
 SLIDE GUIDANCE:
 ## **1️⃣ Activate (Next 12 Mo)**
 **Prove core loop:** Launch Ad Rev Share, Activate Dev Community, Secure Seed Funding ($2.5-3M).
@@ -257,6 +306,17 @@ Become the ubiquitous, **interface-free engine** for AI creation and distributio
 **Growth & Developer Relations** : User acquisition, Brand partnerships, Community
 
 <!--
+
+*   **Elliot:** "Executing this vision requires the right team."
+*   **Elliot:** "**Founding Team:**
+    *   **Thomas (CEO):** Drives **vision, strategy, breakthrough tech**. Decades of AI & scaling experience.
+    *   **Elliot (COO):** Executes **strategy, finance, delivery**. 20+ years tech/AV, 6+ years AI ops."
+*   **Thomas:** "Our **decade-long collaboration** provides strong synergy."
+*   **Thomas:** "**Planned Key Hires (Post-Seed):**
+    *   **Engineering & Data:** Senior **AI-Ops & Infra** team for GPU optimization and scaling.
+    *   **Marketing & Community:** **Growth & Developer Relations** lead for user acquisition, partnerships, community."
+*   **Elliot:** "We have the core leadership and a clear plan to build a world-class team."
+
 SLIDE GUIDANCE:
 - Collaboration: The founders share a long history of collaboration, having worked together on various technology and creative projects for more than a decade, building strong synergy and shared vision.
 -->
@@ -275,6 +335,14 @@ SLIDE GUIDANCE:
 | Operation | €30,000 | 10% |
 
 <!--
+*   **Thomas:** "To fuel this acceleration, we are raising a **€2.5 - €3 Million Seed round**."
+*   **Elliot:** "**Use of Funds:**
+    *   **30% Infrastructure:** Scale **compute capacity** (GPUs), optimize cloud costs.
+    *   **50% Team Growth:** Hire key **engineering, growth, and community** talent. Expand business development.
+    *   **20% Buffer:** Maintain **operational flexibility** and safety net."
+*   **Thomas:** "This investment allows us to hit our **Activate phase targets ($1M ARR, 15M MAU)** and solidify our position as the leading open platform for generative AI."
+*   **Elliot:** "We're looking for partners who share our vision for democratizing AI creativity."
+*   
 SLIDE GUIDANCE:
 - Add purpose column to provide context for each allocation
 - Keep consistent with financial presentation style

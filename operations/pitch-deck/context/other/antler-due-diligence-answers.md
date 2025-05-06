@@ -40,15 +40,14 @@
 
 * **What is your product and its key features/ What is the product offering and customer target segment (standardization vs luxury)? And what is the status quo of your product today?**
     * **Product:** An AI creation and distribution platform, an "AI App Factory" or "Unity for AI". It provides an API for generative media.
-    * **Key Features:** Instant AI setup via assistant, plug & play AI using simple URLs for media features (image, text, audio), backend infrastructure management (scaling, ads, rev-share). Open Source React SDK.
+    * **Key Features:** Instant AI setup via assistant, plug & play AI using simple URLs for media features (image, text, audio), backend infrastructure management (scaling, ads, rev-share). Open Source SDK.
     * **Product Offering:** Enables developers ("vibe coders") to build, share, and monetize AI experiences. Focuses on making AI creation accessible, offering SOTA tools funded by an advertising model.
-    * **Customer Target Segment:** Primarily "vibe coders" (young developers, hobbyists), with end-users being a massive global youth audience, and advertisers (brands) wanting to reach this demographic. The model is geared towards broad accessibility rather than luxury.
+    * **Customer Target Segment:** Primarily "vibe coders" (indie developers, hobbyists), with end-users being a massive global audience, and advertisers (brands) wanting to reach this demographic. The model is geared towards broad accessibility (rather than luxury).
     * **Status Quo (as of end Q2 2025/June 2025):**
-        * 3 million MAU, 80 million monthly generations.
-        * Approximately $0 ARR (basic text-ad append for *unregistered* apps only - Live).
-        * Authentication live (`pollinations-init` issuing tokens).
-        * Core Edge Services live (Image, Text, Audio Gen APIs + Open Source React SDK).
-        * 10 FTE (Full-Time Equivalents).
+        * 3 million MAU, 100 million monthly generations.
+        * Basic PoC text-ad append for *unregistered* apps only - Live).
+        * Authentication Beta (`pollinations-init` issuing tokens).
+        * Core Edge Services live (Image, Text, Audio Gen APIs + Open Source SDK).
         * Over 300 integrations live, with vibe coders building more than 2 new apps daily.
 * **What is the customer and user value proposition and therefore pain point?**
     * **Creators (Pain Point):** Complex AI infrastructure, authentication headaches, no built-in/easy monetization for viral apps.

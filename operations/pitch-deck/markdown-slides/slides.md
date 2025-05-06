@@ -35,13 +35,12 @@ layout: two-cols-header
 <img src="/media/piechart_countries_genz.png" alt="Geographic distribution" class="w-mx mx-auto" />
 
 <!--
-
 *   **Thomas:** "We're seeing **explosive growth**."
 *   **Thomas:** "Pollinations powers **>100 MILLION** AI media generations **PER MONTH**."
-*   **Elliot:** "Growth is **>35% Month-over-Month** on key metrics like API requests."
-*   **Elliot:** "**>300 integrations** live – devs building **2+ new apps DAILY**."
+*   **Elliot:** "Growth is 35% Month-over-Month on key metrics like API requests."
+*   **Elliot:** "Over 300 integrations are live – Vibe coders are building more than 2 new apps DAILY."
 *   **Thomas:** "Truly **global reach**: Strong adoption in **China, US, India**."
-*   **Elliot:** "This shows massive **community buy-in** & **product-market fit** on our free, open infrastructure."
+*   **Elliot:** "This shows massive community buy-in & product-market fit."
 
 SLIDE GUIDANCE:
 <img src="/media/media_requests_per_day_genz.png" alt="Media Requests Growth" class="w-2/4 mx-auto mb-4" />
@@ -371,4 +370,3 @@ SLIDE GUIDANCE:
 * Community Focus: Empower "Vibe Coders," Expand Ecosystem
 * Platform Scale: Robust Infrastructure for Mass Adoption
 -->
-

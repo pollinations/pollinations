@@ -53,9 +53,12 @@ SLIDE GUIDANCE:
 
 # <span class="bg-red-600 text-white p-2 rounded">**😖 Problem**</span>
 
-<img src="/media/paintpointsgenz.png" alt="Pain Points Visual" class="w-4/6" />
+<img src="/media/paintpointsgenz.png" alt="Pain Points Visual" class="w-5/7 mx-auto" />
 
-*The current ecosystem forces painful trade-offs.*
+
+<div class="text-center" style="font-size: 24px;">
+The current ecosystem forces <b>painful trade-offs</b>.
+</div>
 
 <!--
 

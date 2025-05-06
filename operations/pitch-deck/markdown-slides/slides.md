@@ -141,6 +141,15 @@ class: text-center
 
 <!--
 SLIDE GUIDANCE:
+In Pollinations.AI’s ecosystem, the core two sides are:
+* **Affiliates (Creators):** developers and hobbyists who embed generative-AI media (with referral links) into their apps ~[Tipalti](https://tipalti.com/en-uk/affiliate-hub/affiliate-network/?utm_source=chatgpt.com)~
+* **Advertisers (Brands):** companies supplying those referral links and paying for conversions 
+
+**End-user:** Consumer
+**Creator:** Affiliate
+**Brand:** Advertiser
+**Us:** Platform
+
 - Exploring extra revenue stream (TBC from Q2 2026)
    1. Micro‑purchases (stickers, tokens)
    2. Premium tiers (SLA, bigger models)

@@ -15,7 +15,7 @@
 * The platform offers an end-to-end AI setup with instant integration and auto-configured infrastructure, allowing creators to focus solely on the frontend UI/UX.
 * It provides "Plug & Play AI" through simple URL calls for text, image, and audio features.
 * Pollinations.ai handles the backend infrastructure, scaling, ads, and revenue sharing.
-* The mission is to build the dominant AI creation and distribution platform, empowering developers ("vibe coders") to build, share, and monetize AI experiences at scale. This is fueled by connecting advertisers to a massive and highly engaged global youth audience.
+* The mission is to build the dominant AI creation and distribution platform, empowering developers to build, share, and generate income from AI experiences at scale. This is fueled by connecting advertisers to a massive and highly engaged global audience.
 * The vision includes universal AI development (making AI creation accessible to everyone), interface-free creation (a development platform without traditional visual interfaces), and ad-supported state-of-the-art (SOTA) tools to remove cost barriers.
 
 **Customer Persona (who is the recipient of your solution):**
@@ -24,9 +24,9 @@
 > end user is of all age, not only youth
 > ad provider will reach all end user
 
-* **Creators (Affiliates/Developers/Vibe Coders):** Developers, hobbyists, indie developers, and a new generation of young developers ("vibe coders") who want to build, share, and monetize AI applications. This includes those who can type a prompt, expanding the TAM beyond traditional developers.
+* **Creators (Affiliates/Developers):** Developers, hobbyists, indie creators, and a new generation of young programmers who want to build, share, and earn from AI applications. This includes those who can type a prompt, expanding the TAM beyond traditional developers.
 * **End-Users (Consumers):** Everyone, particularly a massive global youth audience, who will use the AI apps created on the platform.
-* **Ad Providers (Brands):** Companies seeking to reach the valuable youth demographic through AI-native apps.
+* **Ad Providers (Brands):** Companies seeking to reach the valuable youth demographic through AI-powered applications.
 
 **Team:**
 
@@ -48,9 +48,9 @@
 
 * **What is your product and its key features/ What is the product offering and customer target segment (standardization vs luxury)? And what is the status quo of your product today?**
     * **Product:** An AI creation and distribution platform, "Unity for AI". It provides an API for generative media.
-    * **Key Features:** Instant AI setup via assistant, plug & play AI using simple URLs for media (image, text, audio), backend infrastructure management (scaling, ads, rev-share), and an Open Source SDK.
-    * **Product Offering:** Enables indie vibe coders to build, share, and monetize AI experiences. Focuses on making AI creation accessible, offering SOTA tools funded by an advertising model.
-    * **Customer Target Segment:** Primarily "vibe coders" (indie developers, hobbyists), with end-users being a massive global audience, and advertisers (brands) wanting to reach this demographic. The model is geared towards broad accessibility (rather than luxury).
+    * **Key Features:** Instant AI setup via assistant, plug & play AI using simple URLs for media features (image, text, audio), technical infrastructure handling (scaling, ads, payments), and an Open Source SDK.
+    * **Product Offering:** Enables indie developers to build, share, and profit from AI experiences. Focuses on making AI creation accessible, offering cutting-edge tools funded by an advertising model.
+    * **Customer Target Segment:** Primarily "vibe coders" (indie creators and hobbyists), with end-users being a diverse global audience, and advertisers seeking to connect with this demographic. The model emphasizes accessibility over exclusivity.
     * **Status Quo (as of end Q2 2025/June 2025):**
         * 3 million MAU, 100 million monthly generations.
         * Basic PoC text-ad append for *unregistered* apps only - Live).
@@ -59,13 +59,13 @@
         * Over 300 integrations live, with vibe coders building more than 2 new apps daily.
 * **What is the customer and user value proposition and therefore pain point?**
     * **Creators (Pain Point):** Complex AI infrastructure, authentication headaches, no built-in/easy monetization for viral apps.
-    * **Creators (Value Proposition):** Launch instantly via assistant, focus on frontend/UX, simple plug & play AI, backend handled (infra, scale, ads, rev-share), easiest path to a live, monetized AI app.
+    * **Creators (Value Proposition):** Launch instantly via assistant, focus on frontend/UX, simple plug & play AI, technical foundation handled (infrastructure, scaling, ads, payments), easiest path to a live, profitable AI app.
     * **End Users (Pain Point):** Paywalls everywhere, privacy concerns.
     * **End Users (Value Proposition):** Free access to innovative and engaging AI applications, supported by embedded ads.
-    * **Ad Providers/Brands (Pain Point):** Missing context & personalization, no AI-native targeting.
-    * **Ad Providers/Brands (Value Proposition):** Hyper-personilized ads targeting engaged demographic through AI-powered apps.
+    * **Ad Providers/Brands (Pain Point):** Missing context & personalization, limited targeting in emerging AI spaces.
+    * **Ad Providers/Brands (Value Proposition):** Hyper-personalized ads reaching engaged audiences through intelligent, contextual placement.
 * **What is your USP (unique selling proposition)/moat?**
-    * **"Unity for AI":** Simplifies AI app development and monetization significantly.
+    * **"Unity for AI":** Simplifies AI app development and revenue generation significantly.
     * **Circular Economy/Flywheel Effect:** More apps → more users → better data → better platform → more apps. This creates a self-reinforcing growth model.
     * **Trust Moat:** Open source and privacy-first approach builds trust with developers and users.
     * **No Paywall**

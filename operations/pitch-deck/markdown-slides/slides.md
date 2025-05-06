@@ -121,7 +121,7 @@ layout: two-cols
 
 ## Two-Sided Market 🔄
 
-* **Unity for AI**: 50% rev-share to devs, proven model
+* **Unity for AI**: 50% revenue share to Creators, proven model
 * **Brands → Young Creators → End-Users**
 * Users get free AI experiences, brands reach youth demographic
 
@@ -144,15 +144,21 @@ SLIDE GUIDANCE:
 -->
 
 ---
+layout: two-cols
+---
 
 # 📈 GTM Flywheel & Moat
 
-<img src="/media/fly-wheel.png" alt="Fly Wheel" class="w-3/4 mx-auto my-4" />
+
 
 * **Trust Moat:** 📖 Open source (MIT) & Privacy-first approach
-* **Market Trend:** 📊 4× more itizen devs than pros (Gartner)
+* **Market Trend:** 📊 4× More citizen devs than pros (Gartner)
 * **Tech Advantage:** 🧠 Native AI-powered ad targeting (like AppLovin's Axon 2.0)
 * **Network Effect:** 🔄 More apps → Better data → Better platform → More apps
+
+::right::
+
+<img src="/media/fly-wheel-genz.png" alt="Fly Wheel" class="w-2/3 mx-auto my-4" />
 
 <!--
 SLIDE GUIDANCE:

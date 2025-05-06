@@ -118,7 +118,7 @@ SLIDE GUIDANCE:
 layout: two-cols-header
 ---
 
-# <span class="bg-purple-600 text-white p-2 rounded">**🌍 Market **</span>
+# <span class="bg-purple-600 text-white p-2 rounded">**🌍 Market & Business Model **</span>
 
 ::left::
 
@@ -132,6 +132,7 @@ layout: two-cols-header
 - **Advertisers (Brands)**: companies supply ads
 <br/>
 <br/>
+## Business Model 🔄
 > **Unity for AI**: 50% revenue share to Creators, proven model
 
 
@@ -170,12 +171,12 @@ In Pollinations.AI’s ecosystem, the core two sides are:
 layout: two-cols
 ---
 
-# <span class="bg-yellow-600 text-white p-2 rounded">📈 **GTM Flywheel & Moat**</span>
+# <span class="bg-yellow-600 text-white p-2 rounded">📈 **Circular Economy**</span>
 
-* **Trust Moat:** 📖 Open source (MIT) & Privacy-first approach
-* **Market Trend:** 📊 4× More citizen Creators than pros (Gartner)
-* **Tech Advantage:** 🧠 Native AI-powered ad targeting (like AppLovin's Axon 2.0)
-* **Network Effect:** 🔄 More apps → Better data → Better platform → More apps
+* **Market Trend:** 📊 Gen-AI market doubling YoY
+* **Tech:** 🧠 AI-powered ad targeting
+* **Trust Moat:** 📖 Open source & Privacy-first
+* **Community:** 🔄 More apps → Better data → Better platform → More apps
 
 ::right::
 
@@ -183,6 +184,7 @@ layout: two-cols
 
 <!--
 SLIDE GUIDANCE:
+- Market trend:  4× More citizen Creators than pros. 
 - Unity generates $1.2B (66%) from ads via lightweight SDK with rev-share - directly parallel to our model
 - potentially the best slide to add competition
 - one of our principle moats is that devs are embedding us in their open source repositories, making youtube videos, and spreading the word organically. discord bots in many guilds...
@@ -197,7 +199,21 @@ SLIDE GUIDANCE:
 # <span class="bg-indigo-600 text-white p-2 rounded">**🛣️ Roadmap: From Activation to Dominance**</span>
 
 ## **1️⃣ Activate (Next 12 Mo)**
-**Prove core loop:** Launch Ad Rev Share (Q1'26), Activate Dev Community, Secure Seed Funding ($2.5-3M).
+Launch Ad Rev Share, Activate Dev Community, Secure Seed Funding.
+
+**Target**: $1M ARR, 15M MAU
+
+## **2️⃣ Scale (12-36 Mo)**
+SDK v2, AI Ad Optimization, Global Community.
+
+**Target**: Sustainable Growth
+## **3️⃣ Vision**
+Become the ubiquitous, **assistant-centric** engine for AI creation and distribution.
+
+<!--
+SLIDE GUIDANCE:
+## **1️⃣ Activate (Next 12 Mo)**
+**Prove core loop:** Launch Ad Rev Share, Activate Dev Community, Secure Seed Funding ($2.5-3M).
 *Target: $1.2M+ ARR, 5.5M MAU*
 
 ## **2️⃣ Scale (12-36 Mo)**
@@ -207,9 +223,6 @@ SLIDE GUIDANCE:
 ## **3️⃣ Dominate (Vision)**
 Become the ubiquitous, **interface-free engine** for AI creation and distribution.
 *The "Unity for AI Experiences"*
-
-<!--
-SLIDE GUIDANCE:
 -->
 
 ---

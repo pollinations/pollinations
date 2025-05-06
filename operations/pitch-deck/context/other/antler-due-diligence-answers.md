@@ -59,7 +59,7 @@
         * Over 300 integrations live, with vibe coders building more than 2 new apps daily.
 * **What is the customer and user value proposition and therefore pain point?**
     * **Creators (Pain Point):** Complex AI infrastructure, authentication headaches, no built-in/easy monetization for viral apps.
-    * **Creators (Value Proposition):** Launch instantly via assistant, focus on frontend/UX, simple plug & play AI, backend handled (infra, scale, ads, rev-share), easiest path to a live, monetized AI app. Monetize AI app development skills via revenue-sharing.
+    * **Creators (Value Proposition):** Launch instantly via assistant, focus on frontend/UX, simple plug & play AI, backend handled (infra, scale, ads, rev-share), easiest path to a live, monetized AI app.
     * **End Users (Pain Point):** Paywalls everywhere, privacy concerns.
     * **End Users (Value Proposition):** Free access to innovative and engaging AI applications, supported by embedded ads.
     * **Ad Providers/Brands (Pain Point):** Missing context & personalization, no AI-native targeting.
@@ -87,7 +87,7 @@
         * **Hackathons & Tutorials:** Drive SDK adoption.
         * **Paid Experiments:** Launch Google Ads, Reddit campaigns targeting creator niches.
         * **Referral & Ambassador Programs:** To lower blended CAC.
-        * **Revenue Share Program:** Heavily promote rev-share and developer payouts to incentivize adoption.
+        * **Revenue Share Program:** Heavily promote developer payouts to incentivize adoption.
 * **What are principal risks of the business (incl. tech/regulatory) and how will you mitigate these?**
     * **Viewability metrics:** Lower CPM if not verified. Mitigation: Native widgets + IAB tracking.
     * **Latency / CLS (Cumulative Layout Shift):** UX penalties. Mitigation: Edge caching, 200 ms p95 SLA.
@@ -100,15 +100,15 @@
         * **Objective:** Prove the core Ad-Revenue model, achieve Seed-Ready metrics (Target: $1M ARR, 15M MAU) by late Q1 2026.
         * **Q3 2025 (Foundation & Developer Activation):**
             * Developer Portal v1 launch (Docs, SDK access, basic usage stats).
-            * Ad Telemetry Pipeline for future rev-share.
+            * Ad Telemetry Pipeline for revenue tracking.
             * Basic Contextual Targeting v1.
             * KPIs: 500+ Dev Portal Signups, 1k+ SDK Downloads, Ad CTR (unregistered) >5%.
-        * **Q4 2025 (Ad Format Expansion & Rev-Share Prep):**
+        * **Q4 2025 (Ad Format Expansion & Payment Prep):**
             * Multi-Format Ads support (embedded Text & Image ads via SDK).
             * Brand Safety Filters v1.
-            * Rev-Share Payout System Ready (Stripe Connect POC validated).
+            * Payout System Ready (Stripe Connect POC validated).
             * KPIs: $300k+ ARR Run-Rate (primarily unregistered), 4M+ MAU, eCPM (unregistered multi-format) $2.5+.
-        * **Q1 2026 (Seed Prep & Revenue Share LAUNCH):**
+        * **Q1 2026 (Seed Prep & Developer Program LAUNCH):**
             * Seed Fundraise Kick-off (Target $2-3M).
             * Developer Revenue Share Program LAUNCH (50% target share, live payouts).
             * Self-Serve Advertiser Dashboard (Beta).

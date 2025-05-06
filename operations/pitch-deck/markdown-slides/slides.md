@@ -147,20 +147,12 @@ SLIDE GUIDANCE:
 
 # 📈 GTM Flywheel & Moat
 
-```mermaid
-flowchart LR
-  A[pollinations.ai SDK] --> B(Creators)
-  B --> C[SDK installs]
-  C --> D[User data & ads]
-  D --> B
-```
+<img src="/media/fly-wheel.png" alt="Fly Wheel" class="w-3/4 mx-auto my-4" />
 
-## Market Moats
-
-* **Trust Moat:** Open source (MIT) & privacy-first approach
-* **Market Trend:** 4× more citizen devs than pros (Gartner)
-* **Tech Advantage:** Native AI-powered ad targeting (like AppLovin's Axon 2.0)
-* **Network Effect:** More apps → better data → better platform → more apps
+* **Trust Moat:** 📖 Open source (MIT) & Privacy-first approach
+* **Market Trend:** 📊 4× more itizen devs than pros (Gartner)
+* **Tech Advantage:** 🧠 Native AI-powered ad targeting (like AppLovin's Axon 2.0)
+* **Network Effect:** 🔄 More apps → Better data → Better platform → More apps
 
 <!--
 SLIDE GUIDANCE:

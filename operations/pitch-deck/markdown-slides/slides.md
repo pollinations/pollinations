@@ -13,37 +13,36 @@ Do you think maybe starting the first slide with the name of another company is 
 -->
 
 ---
-layout: two-cols
+layout: two-cols-header
 ---
 
 # **🚀 Traction**
+
+::left::
 
 <img src="/media/traction_infoslide3.png" alt="Traction" class="w-3/4 mx-auto" />
 
 
 ::right::
 
-<img src="/media/piechart_countries_genz.png" alt="Geographic distribution" class="w-2/4 mx-auto" />
-
-
-<p class="text-center text-xs text-gray-500">Our significant presence in China (30%) demonstrates our global reach</p>
-
 <img src="/media/media_requests_per_day_genz.png" alt="Media Requests Growth" class="w-2/4 mx-auto mb-4" />
 
-
+<img src="/media/piechart_countries_genz.png" alt="Geographic distribution" class="w-2/4 mx-auto" />
 
 <!--
 SLIDE GUIDANCE:
-<p class="text-center text-sm mt-2"><strong>Key Markets:</strong> 30% CN, 13% US, 13% EU, 6% IN</p>
+- Key Markets: 30% CN, 13% US, 13% EU, 6% IN
 The 30% China presence is significant - emphasize our global reach as differentiator
 Key growth metrics should be added : 30% MoM media generation
 -->
 
 ---
-layout: two-cols
+layout: two-cols-header
 ---
 
 # **😖 Problem**
+
+::left::
 
 ## Developers
 * Complex AI infrastructure
@@ -61,7 +60,7 @@ layout: two-cols
 
 ::right::
 
-<img src="/media/paintpointsgenz.png" alt="Pain Points Visual" class="w-full" />
+<img src="/media/paintpointsgenz.png" alt="Pain Points Visual" class="w-7/8" />
 
 *The current ecosystem forces painful trade-offs.*
 
@@ -74,10 +73,12 @@ SLIDE GUIDANCE:
 -->
 
 ---
-layout: two-cols
+layout: two-cols-header
 ---
 
-# ✨ The Pollinations Fix ✨ **AI App Factory**
+# ✨ The Pollinations Fix: **AI App Factory**
+
+::left::
 
 *   **AI Sets Up:** Launch instantly via assistant.
 *   **You Focus on Frontend:** Build the UI/UX.
@@ -108,10 +109,12 @@ SLIDE GUIDANCE:
 - Pollinations manages the entire backend: scalable hosting (e.g., GitHub Pages), CI/CD, model serving, security, auth, usage metering, and the monetization layer (serving ads, managing rev-share payouts). Zero server ops for the dev.
 -->
 ---
-layout: two-cols
+layout: two-cols-header
 ---
 
 # **🌍 Market & Business Model**
+
+::left::
 
 <img src="/media/youth-ad-market.png" alt="Youth Ad Market" class="w-3/4 mx-auto my-4" />
 

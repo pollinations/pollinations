@@ -1,13 +1,9 @@
+# Cloudflare Pages configuration
 name = "pollinations-pitch"
 compatibility_date = "2023-05-01"
 
-[site]
-bucket = "./dist"
-
-[pages]
+# This is the key setting needed for Pages
 pages_build_output_dir = "dist"
 
-[env.production]
-routes = [
-  { pattern = "pitch.pollinations.ai", custom_domain = true }
-]
+# Note: Custom domains are configured in the Cloudflare dashboard
+# after deployment, not in the wrangler.toml file

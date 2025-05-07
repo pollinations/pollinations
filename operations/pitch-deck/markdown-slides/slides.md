@@ -239,9 +239,9 @@ SLIDE GUIDANCE:
 # <span class="bg-indigo-600 text-white p-2 rounded">**🛣️ Roadmap: From Activation to Dominance**</span>
 
 ## **1️⃣ Activate (Next 12 Mo)**
-Launch Ad Rev Share, Activate Dev Community, Secure Seed Funding.
+Launch Ad Rev Share, Activate Dev Community, Prove Monetization & Scale Users.
 
-**Target**: $1M ARR, 15M MAU
+**Target**: $1M ARR, 15M MAU, 1000+ Integrated Apps
 
 ## **2️⃣ Scale (12-36 Mo)**
 SDK v2, AI Ad Optimization, Global Community.
@@ -252,8 +252,12 @@ Become the ubiquitous, **assistant-centric** engine for AI creation and distribu
 
 <!--
 
-*   **Thomas:** "Our roadmap has two clear phases."
-*   **Thomas:** "In Phase 1, Activate, over the next 12 months, we'll launch Ad Revenue Share platform-wide, further activate our developer community with grants and tools, and secure Seed Funding. Our target is $1M ARR and 15M MAU."
+*   **Thomas:** "Our roadmap focuses on **three clear phases**."
+*   **Thomas:** "In **Phase 1, Activate (Next 12 Months)**, our focus is on:
+    *   Launching our **Ad Revenue Share** platform-wide.
+    *   Aggressively **scaling our developer community** and the number of **integrated applications**.
+    *   Conclusively **proving our monetization model** at scale.
+    *   Our key targets are **$1M ARR, 15M MAU, and over 1000 integrated apps**."
 *   **Elliot:** "For Phase 2, Scale, over 12-36 months, we'll release SDK v2 for deeper integrations, implement AI-driven Ad Optimization, and build out our global community structure. The key target here is sustainable growth."
 *   **Thomas:** "Our Vision is to become the ubiquitous, assistant-centric engine for AI creation and distribution, the definitive 'Unity for AI Experiences'."
 
@@ -314,29 +318,26 @@ SLIDE GUIDANCE:
 layout: two-cols-header
 ---
 
-# <span class="bg-teal-600 text-white p-2 rounded">**💰 Raising Seed Round**</span>
+# <span class="bg-teal-600 text-white p-2 rounded">**🤝 Partner with Us: Fueling the Future of AI Creation**</span>
 
-::left::
+## To achieve our ambitious roadmap, we will require resources and strategic partnerships focused on:
 
-## Reach out! hello@pollinations.ai
+*   **Accelerating Tech & Product Development** (SDK v2, Advanced AdTech, New AI Modalities)
+*   **Supercharging Growth & Monetization** (Scaling User Acquisition, Optimizing Ad Rev-Share Engine)
+*   **Expanding Our Global Community & Ecosystem** (Developer Grants, Strategic Partnerships)
+*   **Enhancing Platform Scale & Infrastructure** (GPU Capacity, Global Low-Latency Performance)
 
-::right::
-
-## **🚀 €2.5 – 3 M seed** (Q2 2026)
-* Tech & Product Development
-* Growth Engineering & Monetization
-* Community & Ecosystem Expansion
-* Platform Scale & Infrastructure
+## Let's build together: hello@pollinations.ai
 
 <!--
-*   **Thomas:** "To power our **Activate and Scale phases**, we are raising a **€2.5 - €3 Million Seed round**, targeting Q2 2026."
-*   **Elliot:** "This Seed funding will be strategically invested across:
-    *   **Tech & Product Development:** Building our SDK v2, advanced AdTech, and integrating new AI modalities.
-    *   **Growth Engineering & Monetization:** Scaling user acquisition and optimizing our unique ad revenue-sharing engine.
-    *   **Community & Ecosystem Expansion:** Launching developer grants, building global support, and forging strategic partnerships.
-    *   **Platform Scale & Infrastructure:** Significantly expanding GPU capacity and ensuring robust, low-latency global performance."
-*   **Thomas:** "This round is crucial to hit our target of **$1M ARR and 15M MAU**, solidifying Pollinations.AI as the leading open platform for monetized AI creativity."
-*   **Elliot:** "We're looking for partners who share our vision for democratizing AI and building this next-generation creator economy."
+*   **Thomas:** "To fully execute our ambitious roadmap and **aggressively scale** Pollinations.AI, we will be seeking **strategic partnerships and future investment**."
+*   **Elliot:** "This future capital will be key to **investing heavily across these core areas**:
+    *   First, **accelerating our Tech & Product Development**, including our next-gen SDK and advanced AdTech.
+    *   Second, **supercharging Growth & our unique Monetization engine**, scaling user acquisition globally.
+    *   Third, **expanding our Global Community & Ecosystem** through developer grants and strategic alliances.
+    *   And finally, **enhancing our Platform Scale & Infrastructure** with more GPU capacity and ensuring low-latency performance worldwide."
+*   **Thomas:** "These investments are crucial to solidifying Pollinations.AI as the leading open platform for monetized AI creativity and hitting our aggressive growth milestones."
+*   **Elliot:** "We're eager to connect with partners and investors who share our vision for an open, accessible, and creator-centric AI future."
 
 SLIDE GUIDANCE:
 * Tech & Product Development: SDK v2, AI AdTech, Premium Offerings, New AI Modalities

@@ -162,6 +162,8 @@ layout: two-cols-header
 *   **Elliot:** "**How we make money:** Simple, proven model like **Unity Ads**, built for this **new wave of AI creation**:"
 *   **Elliot:** "**50% ad revenue share** goes directly back to creators. We enable, they build, *everyone* earns."
 *   **Thomas:** "**Current Revenue Streams (Pilots Live):** **Contextual ads** & **Affiliate referrals**."
+*   **Elliot:** "**Crucially, time is on our side here.** The **cost per AI media generation is dropping** dramatically each year..."
+*   **Thomas:** "...while **ad revenue potential per interaction remains strong.** This means our **unit economics inherently improve over time**, making our free, ad-supported model increasingly sustainable and powerful."
 *   **Thomas:** "**Anti-Abuse (Reminder):** Our **tiered validation system** ensures ad quality and manages free tier costs."
 *
 SLIDE GUIDANCE:

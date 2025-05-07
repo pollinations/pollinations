@@ -1,4 +1,4 @@
->research
+>**Research**
 
 # AI-Powered Context-Aware Advertising in Indie Apps: 2025 Market Analysis
 

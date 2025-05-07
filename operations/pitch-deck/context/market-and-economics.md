@@ -14,50 +14,72 @@
 
 ---
 
-## Slide 2: Unit Economics, LTV & CAC
+# Unit Economics, LTV & CAC
 
-### 1. Unit Economics
+## 1 · Approach  
 
-| Metric            | Estimate         | Assumptions |
-|-------------------|------------------|-------------|
-| **ARPU (base)**   | $0.0288/year     | 10 interactions/user/month × 10% ad trigger × $4 eCPM × 60% fill × 50% platform share |
-| **COGS**          | $0.0004/month    | Infra cost < $0.002 CPM |
-| **Contribution Margin** | $0.002/month | ARPU – COGS |
-| **ARPU (upside)** | $0.45–$0.50/year | With 30 interactions/month + 2 rewarded videos at $10 eCPM |
+| Parameter | Assumption |
+|-----------|------------|
+| Conversations / End‑User / mo | **30** |
+| Fill‑rate | **100 %** (one Ad Provider creative per conversation) |
+| Ad mix | 50 % text, 50 % rich/image |
+| CTR | **5 %** (both formats) |
+| CPC | \$0.05 (text) · \$0.10 (rich) |
+| eCPM<sub>text</sub> | 0.05 × 0.05 × 1000 = **\$2.50** |
+| eCPM<sub>rich</sub> | 0.05 × 0.10 × 1000 = **\$5.00** |
+| Blended eCPM | \(0.5 · 2.50 + 0.5 · 5.00\) = **\$3.75** |
+| Platform split | 50 % Pollinations · 50 % Creator |
+| Infra cost | **\$0.001** per conversation |
+| Monthly churn | **15 %** ⇒ End‑User lifetime ≈ **6.7 mo** |
 
-### 2. LTV (Lifetime Value)
+## 2 · Base Monetisation  
 
-| Metric         | Estimate  | Assumptions |
-|----------------|-----------|-------------|
-| **Churn Rate** | 15%/month | User lifetime ≈ 6.7 months |
-| **LTV (base)** | $0.16     | CM × 6.7 months |
-| **LTV (upside)**| $1.20    | With ARPU uplift and similar retention |
+| Metric | Formula | Result |
+|--------|---------|--------|
+| Imps / End‑User / mo | 30 × 100 % | **30** |
+| Net revenue / End‑User / mo | 30 × (3.75/1000) × 0.5 | **\$0.056 25** |
+| Cost / End‑User / mo | 30 × 0.001 | **\$0.03** |
+| **Contribution margin / End‑User / mo** | 0.056 25 − 0.03 | **\$0.026 25** |
+| **CM / End‑User / yr** | × 12 | **\$0.315** |
 
-### 3. Developer (Coder) Economics
+## 3 · End‑User LTV  
 
-| Metric            | Estimate   | Assumptions |
-|-------------------|------------|-------------|
-| **Coder MAU**     | 150K       | Users per active developer |
-| **Coder LTV**     | $8.6K      | 150K MAU × $0.16 LTV × 24-month app life |
-| **Coder LTV (upside)** | > $100K | With higher engagement and monetization |
+\[
+\text{LTV} = \text{CM}_{\text{mo}} \times \text{lifetime} = 0.02625 \times 6.7 \approx \mathbf{\$0.175}
+\]
 
-### 4. CAC (Cost to Acquire Developer)
+## 4 · Creator Economics  
 
-| Metric               | Estimate | Assumptions |
-|----------------------|----------|-------------|
-| **Acquisition Budget** | $60K/year | Discord/Twitter ads + hackathons |
-| **Activation Rate**    | 10%       | From 800 signups → 80 active/payout coders |
-| **CAC**                | $750      | $60K ÷ 80 developers |
-| **Acceptable CAC ceiling** | $4.3K | LTV ÷ 3 — target is well below |
+| Assumption | Value |
+|------------|-------|
+| Avg. MAU per Creator | **150 K** |
+| Creator lifetime | **24 mo** |
+| **Creator LTV** | 0.02625 × 150 000 × 24 ≈ **\$94.5 K** |
 
-### 5. Ad-Serving Model Assumptions
+## 5 · CAC (Creator Acquisition)  
 
-| Metric                  | Estimate        | Notes |
-|-------------------------|-----------------|-------|
-| **Trigger Rate**        | 10%             | Ad shown in 1 of 10 user interactions |
-| **Monthly Interactions**| 10/user         | Base engagement level |
-| **Impressions/Month**   | 12M             | 12M MAU × 10 × 10% |
-| **Revenue/Impression**  | ~$0.0012        | $4 eCPM × 60% fill × 50% platform share |
+| Item | Value |
+|------|-------|
+| Annual acquisition budget | **\$12 K** |
+| New active Creators / yr | **9 700** |
+| **CAC per Creator** | **\$1.24** |
+| Acceptable ceiling (LTV ÷ 3) | **\$31.5 K** → **well below** limit |
+
+> **Dominant channel:** low‑cost online hackathons & Discord/social campaigns.
+
+## 6 · Revenue Snapshot  
+
+| MAU | Poll Monthly Rev | Poll Yearly Rev | Poll Monthly CM | Poll Yearly CM |
+|-----|------------------|-----------------|-----------------|----------------|
+| **Current 3 M** | \$168 750 | \$2.03 M | \$78 750 | \$0.95 M |
+| **12‑month 15 M** | \$843 750 | \$10.1 M | \$393 750 | \$4.73 M |
+
+---
+
+### Key Take‑aways
+1. **Positive margin** despite low ARPU, thanks to \$0.001 infra cost.  
+2. **Creator CAC (\$1.24)** is negligible compared with **\$94 K Creator LTV**.  
+3. **Blended eCPM (3.75 $)**—driven by Ad Provider CTR & CPC—is the main revenue lever: small gains flow directly into margin.
 
 ---
 
@@ -71,45 +93,70 @@
 
 ---
 
-## 📘 Explanation of Each Value
+## 📘 Explanation of Each Value 
 
-### Market Sizing
+### Market Sizing  
+- **TAM – Total Addressable Market**   
+  Global spend on AI‑contextual ads (all platforms, 2025). Theoretical upper limit.  
+- **SAM – Serviceable Addressable Market**   
+  Share of TAM reachable through indie apps & web surfaces where Pollinations.AI can integrate (~60 % of TAM).  
+- **Beach‑head Segment**   
+  Rapid‑growth slice of SAM where generative‑AI personalises creative. First target niche.  
+- **SOM (Now)**   
+  Pollinations’ current slice of SAM (≈ \$1 M ARR).  
+- **SOM (Goal)**   
+  Target share by 2027, assuming scale‑up of users & Creator integrations.  
 
-- **TAM (Total Addressable Market)**: The full global spend on AI-contextual ads across all platforms in 2025. Represents the theoretical upper limit of the market.
-- **SAM (Serviceable Addressable Market)**: The portion of TAM that applies to indie apps and web platforms, where Pollinations.AI operates (~60% of TAM).
-- **Beachhead**: A fast-growing segment of SAM where generative AI creates or personalizes ads — the most relevant and high-potential area to focus on first.
-- **SOM (Now)**: The actual market share currently captured by Pollinations.AI (~$1M ARR).
-- **SOM (Goal)**: Target market share by 2027, based on reasonable traction and platform scaling.
+---
 
-### Unit Economics
+### Unit‑Economics (per **End‑User**)  
+| Term | What it means |
+|------|---------------|
+| **Conversations / month** | Avg. chatbot sessions an End‑User starts (baseline = 30). |
+| **Fill Rate** | % of ad requests that return a paid creative (set to **100 %**: one ad per conversation). |
+| **CTR** | Click‑through rate (5 % for both ad types). |
+| **CPC** | Cost an Ad Provider pays per click (text \$0.05, rich \$0.10). |
+| **eCPM (text, rich)** | CTR × CPC × 1000 → \$2.50 (text), \$5.00 (rich). |
+| **Blended eCPM** | Share‑weighted average of the two formats (50 / 50 mix → \$3.75). |
+| **Platform Split** | 50 % Pollinations · 50 % Creator. |
+| **Infra Cost / conversation** | \$0.001 to process & deliver each session. |
+| **Net Revenue / month** | Imps × blended eCPM/1000 × Platform share. |
+| **CM – Contribution Margin / month** | Net revenue − infra cost. |
+| **CM / year** | CM/month × 12. |
 
-- **ARPU (base)**: Average revenue per user per year based on minimal usage (10 events/mo, 10% ad trigger).
-- **COGS**: Cost of goods sold per user — mostly ad infrastructure and cloud compute to serve impressions.
-- **Contribution Margin**: Profit per user after subtracting direct costs — shows how scalable and profitable the business can be.
-- **ARPU (upside)**: Estimated revenue if users engage more and trigger additional, higher-value ad formats like rewarded video.
+---
 
-### LTV (Lifetime Value)
+### LTV – Lifetime Value  
+| Term | What it means |
+|------|---------------|
+| **Monthly Churn** | % of End‑Users who leave each month (15 %). |
+| **User Lifetime** | 1 ÷ Churn ≈ 6.7 months. |
+| **End‑User LTV** | CM/month × User Lifetime (≈ \$0.175 for Pollinations share). |
 
-- **Churn Rate**: The percentage of users who stop using the service each month — used to calculate average user lifetime.
-- **LTV (base)**: The lifetime value of a user at baseline ARPU and average lifetime.
-- **LTV (upside)**: Expected LTV with higher engagement and ad-trigger rate.
+---
 
-### Developer (Coder) Economics
+### Creator Economics  
+| Term | What it means |
+|------|---------------|
+| **Creator MAU** | Avg. monthly active End‑Users one Creator brings (150 K). |
+| **Creator Lifetime** | Expected active period on platform (24 months). |
+| **Creator LTV** | CM/month × Creator MAU × Creator Lifetime (≈ \$94.5 K). |
 
-- **Coder MAU**: The average number of monthly active users associated with one developer integrating the Pollinations.AI SDK/API.
-- **Coder LTV**: The total value generated by one developer over a 24-month period, based on user LTV and MAU per coder.
-- **Coder LTV (upside)**: Increased value if ARPU and engagement improve significantly.
+---
 
-### CAC (Customer Acquisition Cost)
+### CAC – Creator Acquisition Cost
+| Term | What it means |
+|------|---------------|
+| **Acquisition Budget** | Annual spend on Discord/Twitter campaigns & hackathons (\$12 K). |
+| **New Creators / yr** | Expected onboarding volume (9  700). |
+| **CAC per Creator** | Budget ÷ New Creators (≈ \$1.24). |
+| **Acceptable CAC Ceiling** | Rule‑of‑thumb max (Creator LTV ÷ 3 ≈ \$31.5 K). |
 
-- **Acquisition Budget**: The total spend on developer acquisition efforts like hackathons and social ads.
-- **Activation Rate**: The percentage of dev signups that become active payout-eligible coders.
-- **CAC**: The cost to acquire one developer who successfully integrates and monetizes with the platform.
-- **Acceptable CAC ceiling**: A benchmark derived from LTV ÷ 3 — CAC should ideally stay below this to maintain profitability.
+---
 
-### Ad-Serving Model Assumptions
-
-- **Trigger Rate**: The probability of showing an ad when a user interacts with the app — context-aware, set at 10%.
-- **Monthly Interactions**: The average number of interactions per user per month that can trigger ads.
-- **Impressions/Month**: The resulting monthly ad impressions across all users (interactions × trigger rate).
-- **Revenue/Impression**: The net revenue earned per impression shown, after fill rate and platform/developer split.
+### Ad‑Serving Model Glossary  
+- **Ad Provider** – supplies and pays for ads (net of Pollinations/Creator split).  
+- **Creator** – indie dev/team integrating the SDK; receives 50 % of ad revenue.  
+- **End‑User** – person interacting with the chatbot, generating conversations & ad views.  
+- **Impression** – a single ad shown (one per conversation in current design).  
+- **Revenue / Impression** – Blended eCPM ÷ 1000 × Platform share (=\$0.001875 to Pollinations).  

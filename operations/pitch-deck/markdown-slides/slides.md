@@ -7,16 +7,12 @@ class: text-center
 
 ## AI Empowers Everyone to Create
 
-**The lightning‑fast path from idea ➜ monetized generative‑AI product.**
+**The easiest way to build and monetize AI apps with zero upfront cost.**
 
 <!--
-SLIDE GUIDANCE:
-
-**Concise Talking Points Script:**
-
-*   **(Thomas/Elliot):** "We are **Pollinations.AI**."
-*   **(Thomas/Elliot):** "We believe **AI empowers everyone to create**."
-*   **(Thomas/Elliot):** "Our platform: the **lightning-fast path** from idea to **monetized generative AI product**."
+*   **(Thomas):** "We are **Pollinations.AI**."
+*   **(Elliot):** "We believe **AI empowers everyone to create**."
+*   **(Thomas):** "We offer the **easiest way to build *and monetize* AI apps** with **zero upfront cost** and **shared success**."
 -->
 
 ---
@@ -35,12 +31,12 @@ layout: two-cols-header
 <img src="/media/piechart_countries_genz.png" alt="Geographic distribution" class="w-mx mx-auto" />
 
 <!--
-*   **Thomas:** "We're seeing **explosive growth**."
+*   **Thomas:** "And developers agree – we're seeing **explosive growth**."
 *   **Thomas:** "Pollinations powers **>100 MILLION** AI media generations **PER MONTH**."
-*   **Elliot:** "Growth is 35% Month-over-Month on key metrics like API requests."
-*   **Elliot:** "Over 300 integrations are live – Vibe coders are building more than 2 new apps DAILY."
+*   **Elliot:** "Growth is **>35% Month-over-Month** on API requests."
+*   **Elliot:** "**>300 integrations** live – developers building **2+ new apps DAILY**. Including the viral **Roblox game 'AI Character RP'** (10M+ likes), **SillyTavern** for power users, and **Alibaba's Qwen Agent framework.**"
 *   **Thomas:** "Truly **global reach**: Strong adoption in **China, US, India**."
-*   **Elliot:** "This shows massive community buy-in & product-market fit."
+*   **Elliot:** "This traction proves developers value the **ease of building** and see the **potential for shared success** on our free infrastructure."
 
 SLIDE GUIDANCE:
 <img src="/media/media_requests_per_day_genz.png" alt="Media Requests Growth" class="w-2/4 mx-auto mb-4" />
@@ -60,12 +56,11 @@ The current ecosystem forces <b>painful trade-offs</b>.
 </div>
 
 <!--
-*   **Elliot:** "Building with AI is complex and expensive."
-*   **Elliot:** "Creators face infra headaches, authentification issues, and crucially: there is NO easy way to monetize viral apps."
-*   **Thomas:** "**End Users**: Hit **paywalls**, have **privacy concerns**, want **more customization**."
-*   **Thomas:** "**Ad Providers/Brands**: Struggle to reach the **youth/Gen Z** demographic in AI-native apps."
-*   **Elliot:** "The core issue comes from friction & silos, they prevent an open, creative, and monetizable AI ecosystem."
-*   **(Optional - Thomas):** "Example: Kid builds viral AI Discord bot -> makes **$0** today. We fix that."
+*   **Elliot:** "**Creators & Developers**: Building with AI today is **complex and expensive**."
+*   **Elliot:** "They face infra headaches, auth issues, and critically: **NO clear path to MONETIZE** their viral apps."
+*   **Thomas:** "**End Users**: Hit **paywalls**, have **privacy concerns**, want **more creative control**."
+*   **Thomas:** "**Ad Providers/Brands**: Struggle to reach engaged audiences in these **new AI-native spaces**."
+*   **Elliot:** "**Core Issue**: The system is broken. Friction prevents an **open, creative ecosystem where developers can actually *earn* from their success.**"
 
 SLIDE GUIDANCE:
 
@@ -97,27 +92,29 @@ layout: two-cols-header
 
 ::left::
 
-## Unity for AI
+## Build & Monetize Effortlessly
 
 *   **AI setup:** Launch instantly via assistant.
 *   **You Focus on Frontend:** Build the UI/UX.
 *   **Plug & Play AI:** Simple URLs for media features.
-*   **Backend Handled:** We run infra, scale, & ads.
+*   **Backend & Monetization Handled:** We run infra, scale, serve ads & share revenue.
 
-*The easiest path to a live, monetized AI app.*
+*The easiest path to a live, profitable AI app with zero upfront cost.*
 
 ::right::
 
 <img src="/media/pollinations_fix_genz.png" alt="Pollinations Fix Diagram" class="w-mx mx-auto mt-4" />
 
 <!--
-*   **Thomas:** "Our solution: The **Pollinations AI App Factory**."
-*   **Thomas:** "Think **Unity for AI**. We make it radically simple."
-*   **Elliot:** "It's an end-to-end AI setup that enables instant integration on a fully auto-configured infrastructure."
-*   **Elliot:** "Creator solely focus on Frontend, building the cool experience."
-*   **Thomas:** "**Plug & Play AI**: Just add simple **URL calls** for text, image, audio features."
-*   **Thomas:** "**Backend Handled**: We run the **infra, scale it, handle ads & rev share**."
-*   **Elliot:** "It's the easiest and fastest path to a live monetized AI app."
+*   **Thomas:** "Our solution is the **Pollinations AI App Factory** – making it **radically simple to build *and monetize*.**"
+*   **Thomas:** "Think **Unity for AI**, but open and free."
+*   **Elliot:** "**AI Setup:** Integrate instantly. We handle the complex infra configuration."
+*   **Elliot:** "**You Focus on Frontend:** Build the amazing user experience."
+*   **Thomas:** "**Plug & Play AI:** Just add simple **URL calls** for text, image, audio."
+*   **Thomas:** "**Backend & Monetization Handled:** We run the infra, scale it, and crucially, **manage the ad serving and revenue share.**"
+*   **Elliot:** "**How Ads Work:** We integrate relevant, contextual ads. Revenue generated is **split 50/50** with the developer."
+*   **Elliot:** "**Anti-Abuse:** A **tiered system** ensures only validated apps with real engagement access the full revenue share, managing our costs and ensuring quality for advertisers."
+*   **Thomas:** "It's the **easiest path** to launch a **live, profitable AI app** with zero upfront cost."
 
 SLIDE GUIDANCE:
 - Synthesized from Alt 2 & 3.
@@ -157,18 +154,19 @@ layout: two-cols-header
 > **Unity for AI**: 50% revenue share to Creators, proven model
 
 <!--
-*   **Elliot:** "We operate in a massive, rapidly growing market."
-*   **Elliot:** "The Generative AI creator economy TAM is already a larger than 10 Billion $, and doubling YoY." *(Referencing graphic/data point)*
-*   **Thomas:** "Our model targets **two key sides**:
-    *   **Affiliates (Creators):** Developers/hobbyists embedding our **free AI media APIs**.
-    *   **Advertisers (Brands):** Companies reaching the **valuable youth demographic** through these AI apps."
-*   **Elliot:** "The Business Model is simple and proven, like Unity's ad model:"
-*   **Elliot:** "50% of the revenue goes back to the creators. We provide the platform, they build, we all win."
-*   **Thomas:** "Initial revenue streams: **Contextual ads** and **Affiliate referrals**. Pilots are live."
+*   **Elliot:** "We operate in a **massive, rapidly growing market**."
+*   **Elliot:** "The **Generative AI creator economy** is already **>$10 Billion TAM** and doubling YoY." *(Point to graphic)*
+*   **Thomas:** "Our **two-sided market** connects:
+    *   **Creators (Affiliates):** Developers using our **free AI APIs**.
+    *   **Advertisers (Brands):** Reaching engaged audiences, including **youth/Gen Z**, via AI apps."
+*   **Elliot:** "**How we make money:** Simple, proven model like **Unity Ads**:"
+*   **Elliot:** "**50% ad revenue share** goes directly back to creators. We enable, they build, *everyone* earns."
+*   **Thomas:** "**Current Revenue Streams (Pilots Live):** **Contextual ads** (text/image) & **Affiliate referrals**."
+*   **Thomas:** "**Abuse Prevention (Reminder):** Our **tiered validation system** ensures ad quality and manages free tier costs."
 *
 SLIDE GUIDANCE:
 
-* Users get free AI experiences, brands reach youth demographi
+* Users get free AI experiences, brands reach youth demographic
 
 💰 Generative AI creator economy **$10 B** TAM 📈 Generative AI market doubling YoY (Gartner 2025)
 
@@ -190,7 +188,7 @@ In Pollinations.AI’s ecosystem, the core two sides are:
    1. Micro‑purchases (stickers, tokens)
    2. Premium tiers (SLA, bigger models)
    3. Data monetisation (e.g. user data for training)
-- Untapped / Developping market
+- Untapped / Developing market
 - Potential positioning options from parallels doc: "GIPHY-meets-AdSense for AI", "Unsplash for AI—monetised out-of-the-box"
 - Unity, AppLovin, and other platforms demonstrate lightweight SDKs with embedded ads are proven high-margin models
 - Consider adding slide on how we're better/differently positioned than Unity/AppLovin for AI era (AI-native, better targeting)

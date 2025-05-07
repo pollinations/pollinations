@@ -144,25 +144,25 @@ layout: two-cols-header
 
 ::right::
 
-## Two-Sided Market 🔄
+## New Market Opportunity 🔄
 
-- **Affiliates (Creators)**: developers and hobbyists embed gen-Al media
-- **Advertisers (Brands)**: companies supply ads
+- **Creators (Vibe Coders)**: developers & hobbyists building with AI
+- **Advertisers (Brands)**: reaching audiences in novel AI experiences
 <br/>
 <br/>
 ## How do we make money? 🔄
 > **Unity for AI**: 50% revenue share to Creators, proven model
 
 <!--
-*   **Elliot:** "We operate in a **massive, rapidly growing market**."
-*   **Elliot:** "The **Generative AI creator economy** is already **>$10 Billion TAM** and doubling YoY." *(Point to graphic)*
+*   **Elliot:** "We're tapping into a **brand new, explosive market opportunity**."
+*   **Elliot:** "The rise of 'vibe coding' means **everyone is becoming a creator.** This unlocks vast, **new advertising inventory** within millions of new AI apps. The overall GenAI creator economy is already **>$10 Billion TAM** and doubling."
 *   **Thomas:** "Our **two-sided market** connects:
-    *   **Creators (Affiliates):** Developers using our **free AI APIs**.
-    *   **Advertisers (Brands):** Reaching engaged audiences, including **youth/Gen Z**, via AI apps."
-*   **Elliot:** "**How we make money:** Simple, proven model like **Unity Ads**:"
+    *   **Creators (Affiliates):** This growing wave of developers and 'vibe coders' using our **free AI APIs**.
+    *   **Advertisers (Brands):** Reaching engaged audiences in **novel AI-native experiences.** Youth/Gen Z are strong early adopters here, but the audience is broad."
+*   **Elliot:** "**How we make money:** Simple, proven model like **Unity Ads**, built for this **new wave of AI creation**:"
 *   **Elliot:** "**50% ad revenue share** goes directly back to creators. We enable, they build, *everyone* earns."
-*   **Thomas:** "**Current Revenue Streams (Pilots Live):** **Contextual ads** (text/image) & **Affiliate referrals**."
-*   **Thomas:** "**Abuse Prevention (Reminder):** Our **tiered validation system** ensures ad quality and manages free tier costs."
+*   **Thomas:** "**Current Revenue Streams (Pilots Live):** **Contextual ads** & **Affiliate referrals**."
+*   **Thomas:** "**Anti-Abuse (Reminder):** Our **tiered validation system** ensures ad quality and manages free tier costs."
 *
 SLIDE GUIDANCE:
 
@@ -204,6 +204,7 @@ layout: two-cols
 * **Tech:** 🧠 AI-powered ad targeting
 * **Trust Moat:** 📖 Open source & Privacy-first
 * **Community:** 🔄 More apps → Better data → Better platform → More apps
+* **Competitive Edge:** 🏆 Free API + Built-in Revenue Path
 
 ::right::
 
@@ -212,18 +213,20 @@ layout: two-cols
 <!--
 *   **Thomas:** "Our model creates a **powerful circular economy**, a flywheel for growth." *(Gesture to diagram)*
 *   **Thomas:** "**Market Trend Driving Us**: The **GenAI market is exploding**, doubling year-over-year."
-*   **Elliot**
-    * Better data from usage continuously unlocks smarter ad targeting, increasing revenue for everyone.
-    * Open Source and Privacy-First builds deep trust with developers and users.
-*   **Thomas:** "More apps built on Pollinations -> attracts more users -> generates better data -> improves the platform -> encourages **even more apps**. It's self-reinforcing."
-*   **Elliot: (optional)**
-    * This isn't just theory – **Unity proved** this ad/rev-share model generates billions.
+*   **Elliot:** "Better data from usage unlocks **smarter ad targeting**, increasing revenue. **Open Source & Privacy-First** builds developer trust."
+*   **Thomas:** "More apps -> more users -> better data -> better platform -> **even more apps**. It's self-reinforcing."
+*   **Elliot:** "**Differentiation is Key Here:** *(Add Competition Points)*
+    *   "Unlike **AI Model Providers** (OpenAI, Hugging Face), we offer **free access AND a built-in revenue path**."
+    *   "Unlike **Game Monetizers** (Unity Ads), we *are* the **AI creation engine** AND the monetization layer for *all* app types."
+    *   "Unlike **Ad-Supported AI Products** (Perplexity), we empower **third-party developers** with shared revenue, not just monetize our own app."
+*   **Thomas:** "Our unique **Free API + Shared Ad Revenue model** is our core advantage."
+*   **Elliot: (optional)** "And **Unity proved** the underlying ad/rev-share model generates billions."
 
 SLIDE GUIDANCE:
 <img src="/media/circular_economy_genz.png" alt="Fly Wheel" class="w-2/3 mx-auto my-4" />
 - Market trend:  4× More citizen Creators than pros.
 - Unity generates $1.2B (66%) from ads via lightweight SDK with rev-share - directly parallel to our model
-- potentially the best slide to add competition
+- competition points added to differentiate from AI Model Providers, Game Monetizers, and Ad-Supported AI Products
 - one of our principle moats is that devs are embedding us in their open source repositories, making youtube videos, and spreading the word organically. discord bots in many guilds...
 - Consider adding from parallels doc: "Anyone who can type a prompt is a potential Pollinations integrator" (maybe previous slide)
 - Consider adding IDC forecast: 750M new cloud-native apps by 2026 - huge TAM expansion (previous slide?)
@@ -315,23 +318,15 @@ layout: two-cols-header
 
 ::left::
 
-## **🌱 300K** (Q3 2025)
-|  |  |
-|----------|---------|
-| AIOps / Data Scientist | 50% |
-| Cloud Computing | 33% |
-| Operation | 12% |
-| Marketing | 5% |
-
 ## Reach out! hello@pollinations.ai
 
 ::right::
 
 ## **🚀 €2.5 – 3 M seed** (Q2 2026)
-* Tech & Product
-* Growth Engineering
-* Community Focus
-* Platform Scale
+* Tech & Product Development
+* Growth Engineering & Monetization
+* Community & Ecosystem Expansion
+* Platform Scale & Infrastructure
 
 <!--
 

@@ -1,0 +1,115 @@
+# 📊 Pollinations.AI – Market Sizing & Unit Economics
+
+## Slide 1: Market Sizing (TAM, SAM, SOM)
+
+| Metric         | Estimate    | Assumption / Notes |
+|----------------|-------------|---------------------|
+| **TAM**        | $234B       | Global AI-contextual ad spend (2025, industry reports) |
+| **SAM**        | $140B       | 60% of TAM = indie web + in-app inventory |
+| **Beachhead**  | $3.4B       | Generative-AI ads subsegment (~25% YoY growth) |
+| **SOM (Now)**  | $1M ARR     | Based on current monetization (~15M MAU) |
+| **SOM (Goal)** | $70M ARR    | 0.05% of SAM by 2027 |
+
+> **Approach**: Start from total market (TAM), apply indie share (SAM), focus on Gen-AI segment as beachhead. Use current ARR to estimate SOM and growth trajectory.
+
+---
+
+## Slide 2: Unit Economics, LTV & CAC
+
+### 1. Unit Economics
+
+| Metric            | Estimate         | Assumptions |
+|-------------------|------------------|-------------|
+| **ARPU (base)**   | $0.0288/year     | 10 interactions/user/month × 10% ad trigger × $4 eCPM × 60% fill × 50% platform share |
+| **COGS**          | $0.0004/month    | Infra cost < $0.002 CPM |
+| **Contribution Margin** | $0.002/month | ARPU – COGS |
+| **ARPU (upside)** | $0.45–$0.50/year | With 30 interactions/month + 2 rewarded videos at $10 eCPM |
+
+### 2. LTV (Lifetime Value)
+
+| Metric         | Estimate  | Assumptions |
+|----------------|-----------|-------------|
+| **Churn Rate** | 15%/month | User lifetime ≈ 6.7 months |
+| **LTV (base)** | $0.16     | CM × 6.7 months |
+| **LTV (upside)**| $1.20    | With ARPU uplift and similar retention |
+
+### 3. Developer (Coder) Economics
+
+| Metric            | Estimate   | Assumptions |
+|-------------------|------------|-------------|
+| **Coder MAU**     | 150K       | Users per active developer |
+| **Coder LTV**     | $8.6K      | 150K MAU × $0.16 LTV × 24-month app life |
+| **Coder LTV (upside)** | > $100K | With higher engagement and monetization |
+
+### 4. CAC (Cost to Acquire Developer)
+
+| Metric               | Estimate | Assumptions |
+|----------------------|----------|-------------|
+| **Acquisition Budget** | $60K/year | Discord/Twitter ads + hackathons |
+| **Activation Rate**    | 10%       | From 800 signups → 80 active/payout coders |
+| **CAC**                | $750      | $60K ÷ 80 developers |
+| **Acceptable CAC ceiling** | $4.3K | LTV ÷ 3 — target is well below |
+
+### 5. Ad-Serving Model Assumptions
+
+| Metric                  | Estimate        | Notes |
+|-------------------------|-----------------|-------|
+| **Trigger Rate**        | 10%             | Ad shown in 1 of 10 user interactions |
+| **Monthly Interactions**| 10/user         | Base engagement level |
+| **Impressions/Month**   | 12M             | 12M MAU × 10 × 10% |
+| **Revenue/Impression**  | ~$0.0012        | $4 eCPM × 60% fill × 50% platform share |
+
+---
+
+## 💡 Notes
+
+- **Pollinations.AI keeps 50% of ad revenue**, with the other 50% paid to the app developer.
+- **End users are not compensated**, but generate value through contextual engagement.
+- **Costs are minimal at scale** due to lightweight infra and non-intrusive ads.
+- **Scalability is built in**: monetization grows with usage, not capped by user count.
+"""
+
+---
+
+## 📘 Explanation of Each Value
+
+### Market Sizing
+
+- **TAM (Total Addressable Market)**: The full global spend on AI-contextual ads across all platforms in 2025. Represents the theoretical upper limit of the market.
+- **SAM (Serviceable Addressable Market)**: The portion of TAM that applies to indie apps and web platforms, where Pollinations.AI operates (~60% of TAM).
+- **Beachhead**: A fast-growing segment of SAM where generative AI creates or personalizes ads — the most relevant and high-potential area to focus on first.
+- **SOM (Now)**: The actual market share currently captured by Pollinations.AI (~$1M ARR).
+- **SOM (Goal)**: Target market share by 2027, based on reasonable traction and platform scaling.
+
+### Unit Economics
+
+- **ARPU (base)**: Average revenue per user per year based on minimal usage (10 events/mo, 10% ad trigger).
+- **COGS**: Cost of goods sold per user — mostly ad infrastructure and cloud compute to serve impressions.
+- **Contribution Margin**: Profit per user after subtracting direct costs — shows how scalable and profitable the business can be.
+- **ARPU (upside)**: Estimated revenue if users engage more and trigger additional, higher-value ad formats like rewarded video.
+
+### LTV (Lifetime Value)
+
+- **Churn Rate**: The percentage of users who stop using the service each month — used to calculate average user lifetime.
+- **LTV (base)**: The lifetime value of a user at baseline ARPU and average lifetime.
+- **LTV (upside)**: Expected LTV with higher engagement and ad-trigger rate.
+
+### Developer (Coder) Economics
+
+- **Coder MAU**: The average number of monthly active users associated with one developer integrating the Pollinations.AI SDK/API.
+- **Coder LTV**: The total value generated by one developer over a 24-month period, based on user LTV and MAU per coder.
+- **Coder LTV (upside)**: Increased value if ARPU and engagement improve significantly.
+
+### CAC (Customer Acquisition Cost)
+
+- **Acquisition Budget**: The total spend on developer acquisition efforts like hackathons and social ads.
+- **Activation Rate**: The percentage of dev signups that become active payout-eligible coders.
+- **CAC**: The cost to acquire one developer who successfully integrates and monetizes with the platform.
+- **Acceptable CAC ceiling**: A benchmark derived from LTV ÷ 3 — CAC should ideally stay below this to maintain profitability.
+
+### Ad-Serving Model Assumptions
+
+- **Trigger Rate**: The probability of showing an ad when a user interacts with the app — context-aware, set at 10%.
+- **Monthly Interactions**: The average number of interactions per user per month that can trigger ads.
+- **Impressions/Month**: The resulting monthly ad impressions across all users (interactions × trigger rate).
+- **Revenue/Impression**: The net revenue earned per impression shown, after fill rate and platform/developer split.

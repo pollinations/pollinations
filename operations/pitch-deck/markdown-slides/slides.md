@@ -15,34 +15,6 @@ class: text-center
 *   **(Thomas):** "We offer the **easiest way to build *and monetize* AI apps** with **zero upfront cost** and **shared success**."
 -->
 
----
-layout: two-cols-header
----
-
-# <span class="bg-blue-600 text-white p-2 rounded">**🚀 Traction**</span>
-
-::left::
-
-<img src="/media/traction_infoslide3.png" alt="Traction" class="w-mx mx-auto" />
-
-
-::right::
-
-<img src="/media/piechart_countries_genz.png" alt="Geographic distribution" class="w-mx mx-auto" />
-
-<!--
-*   **Thomas:** "And developers agree – we're seeing **explosive growth**."
-*   **Thomas:** "Pollinations powers **>100 MILLION** AI media generations **PER MONTH**."
-*   **Elliot:** "Growth is **>35% Month-over-Month** on API requests."
-*   **Elliot:** "**>300 integrations** live – developers building **2+ new apps DAILY**. Including the viral **Roblox game 'AI Character RP'** (10M+ likes), **SillyTavern** for power users, and **Alibaba's Qwen Agent framework.**"
-*   **Thomas:** "Truly **global reach**: Strong adoption in **China, US, India**."
-*   **Elliot:** "This traction proves developers value the **ease of building** and see the **potential for shared success** on our free infrastructure."
-
-SLIDE GUIDANCE:
-<img src="/media/media_requests_per_day_genz.png" alt="Media Requests Growth" class="w-2/4 mx-auto mb-4" />
-- Key Markets: 30% CN, 13% US, 13% EU, 6% IN
-- China presence is significant - emphasize our global reach as differentiator
--->
 
 ---
 
@@ -130,6 +102,34 @@ SLIDE GUIDANCE:
 - This frees the developer to concentrate *only* on building the user-facing application.
 - Adding generative AI (image, text, audio) requires just simple HTTPS calls to our Edge APIs.
 - Pollinations manages the entire backend: scalable hosting (e.g., GitHub Pages), CI/CD, model serving, security, auth, usage metering, and the monetization layer (serving ads, managing rev-share payouts). Zero server ops for the dev.
+-->
+---
+layout: two-cols-header
+---
+
+# <span class="bg-blue-600 text-white p-2 rounded">**🚀 Traction**</span>
+
+::left::
+
+<img src="/media/traction_infoslide3.png" alt="Traction" class="w-mx mx-auto" />
+
+
+::right::
+
+<img src="/media/piechart_countries_genz.png" alt="Geographic distribution" class="w-mx mx-auto" />
+
+<!--
+*   **Thomas:** "And developers agree – we're seeing **explosive growth**."
+*   **Thomas:** "Pollinations powers **>100 MILLION** AI media generations **PER MONTH**."
+*   **Elliot:** "Growth is **>35% Month-over-Month** on API requests."
+*   **Elliot:** "**>300 integrations** live – developers building **2+ new apps DAILY**. Including the viral **Roblox game 'AI Character RP'** (10M+ likes), **SillyTavern** for power users, and **Alibaba's Qwen Agent framework.**"
+*   **Thomas:** "Truly **global reach**: Strong adoption in **China, US, India**."
+*   **Elliot:** "This traction proves developers value the **ease of building** and see the **potential for shared success** on our free infrastructure."
+
+SLIDE GUIDANCE:
+<img src="/media/media_requests_per_day_genz.png" alt="Media Requests Growth" class="w-2/4 mx-auto mb-4" />
+- Key Markets: 30% CN, 13% US, 13% EU, 6% IN
+- China presence is significant - emphasize our global reach as differentiator
 -->
 
 ---
@@ -225,7 +225,6 @@ layout: two-cols
 *   **Elliot: (optional)** "And **Unity proved** the underlying ad/rev-share model generates billions."
 
 SLIDE GUIDANCE:
-<img src="/media/circular_economy_genz.png" alt="Fly Wheel" class="w-2/3 mx-auto my-4" />
 - Market trend:  4× More citizen Creators than pros.
 - Unity generates $1.2B (66%) from ads via lightweight SDK with rev-share - directly parallel to our model
 - competition points added to differentiate from AI Model Providers, Game Monetizers, and Ad-Supported AI Products
@@ -237,20 +236,26 @@ SLIDE GUIDANCE:
 
 
 ---
+layout: two-cols
+---
 
 # <span class="bg-indigo-600 text-white p-2 rounded">**🛣️ Roadmap: From Activation to Dominance**</span>
 
-## **1️⃣ Activate (Next 12 Mo)**
+### **1️⃣ Activate (Next 12 Mo)**
 Launch Ad Rev Share, Activate Dev Community, Prove Monetization & Scale Users.
 
 **Target**: $1M ARR, 15M MAU, 1000+ Integrated Apps
 
-## **2️⃣ Scale (12-36 Mo)**
+### **2️⃣ Scale (12-36 Mo)**
 SDK v2, AI Ad Optimization, Global Community.
 
 **Target**: Sustainable Growth
-## **3️⃣ Vision**
+### **3️⃣ Vision**
 Become the ubiquitous, **assistant-centric** engine for AI creation and distribution.
+
+::right::
+
+<img src="/media/circular_economy_genz.png" alt="Fly Wheel" class="w-5/6 mx-auto my-4" />
 
 <!--
 

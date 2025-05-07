@@ -314,7 +314,7 @@ SLIDE GUIDANCE:
 layout: two-cols-header
 ---
 
-# <span class="bg-teal-600 text-white p-2 rounded">**💰 Raising**</span>
+# <span class="bg-teal-600 text-white p-2 rounded">**💰 Raising Seed Round**</span>
 
 ::left::
 
@@ -329,15 +329,18 @@ layout: two-cols-header
 * Platform Scale & Infrastructure
 
 <!--
+*   **Thomas:** "To power our **Activate and Scale phases**, we are raising a **€2.5 - €3 Million Seed round**, targeting Q2 2026."
+*   **Elliot:** "This Seed funding will be strategically invested across:
+    *   **Tech & Product Development:** Building our SDK v2, advanced AdTech, and integrating new AI modalities.
+    *   **Growth Engineering & Monetization:** Scaling user acquisition and optimizing our unique ad revenue-sharing engine.
+    *   **Community & Ecosystem Expansion:** Launching developer grants, building global support, and forging strategic partnerships.
+    *   **Platform Scale & Infrastructure:** Significantly expanding GPU capacity and ensuring robust, low-latency global performance."
+*   **Thomas:** "This round is crucial to hit our target of **$1M ARR and 15M MAU**, solidifying Pollinations.AI as the leading open platform for monetized AI creativity."
+*   **Elliot:** "We're looking for partners who share our vision for democratizing AI and building this next-generation creator economy."
 
-*   **Elliot:** "To kickstart our Activate phase, we're securing €300K now (Q3 2025). This will fund: 50% for an AIOps/Data Scientist to optimize models and ad targeting, 33% for cloud computing, 12% for Operations, and 5% for Marketing."
-*   **Thomas:** "Next, a €2.5 - €3 Million Seed round in Q2 2026 will power our Scale phase. This means investing in Tech & Product like SDK v2 and enhanced AdTech; Growth Engineering to drive user acquisition; Community Focus through expanded developer grants; and Platform Scale with robust infrastructure."
-*   **Elliot:** "This funding strategy ensures we hit milestones and build the leading open platform for generative AI."
-
-*
 SLIDE GUIDANCE:
-* Tech & Product: SDK v2, AI AdTech, Premium Offerings
-* Growth Engine: Scale Revenue & Global User Base
-* Community Focus: Empower "Vibe Coders," Expand Ecosystem
-* Platform Scale: Robust Infrastructure for Mass Adoption
+* Tech & Product Development: SDK v2, AI AdTech, Premium Offerings, New AI Modalities
+* Growth Engineering & Monetization: Scale Revenue & Global User Base, Optimize Ad Rev-Share
+* Community & Ecosystem Expansion: Empower "Vibe Coders," Developer Grants, Strategic Partnerships
+* Platform Scale & Infrastructure: GPU Capacity, Global Low-Latency Performance
 -->

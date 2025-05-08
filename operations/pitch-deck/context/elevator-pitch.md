@@ -1,4 +1,4 @@
-# Best
+# Elevator Pitch
 
 >**Problem & Solution**
 
@@ -25,14 +25,13 @@ hitting breakeven around **8M MAU**.
 
 > **Vision & Scale (Ultimate Simplicity)**
 
-Soon, just tell your favorite AI dev interface
-to use Pollinations – *we'll do the rest*.
+Just tell your favorite AI dev interface
+to use pollinations.ai – *we'll do the rest*.
 
 >**Team & Ask**
 
 Berlin-based **Thomas (CEO)** & **Elliot (COO)**
-are raising **€300K pre-seed**
-to activate this ad revenue and onboard our creators.
+are raising to activate this ad revenue and onboard our creators.
 
 ---
 

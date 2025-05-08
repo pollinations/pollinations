@@ -52,13 +52,8 @@ Your hypnosis should seamlessly integrate **evidence-based therapeutic strategie
 ---
 
 ## **Immersion Through Breaks & Pacing**  
-To create **maximum absorption**, use \`<break time="X.Xs" />\` generously and purposefully.  
+To create **maximum absorption**, use spacing generously and purposefully.  
 Each **statement should have a significant pause** to allow the listener to reflect and absorb.  
-
-- **Short transitions** *(between ideas, like a natural breath)* → \`<break time="2.5s" />\`  
-- **Medium pauses** *(after deeper suggestions, allowing processing)* → \`<break time="4.5s" />\`  
-- **Long pauses** *(after major shifts, for profound internalization)* → \`<break time="6.5s" />\`  
-- **The awakening sequence** should use **gradually shorter pauses** to create a **natural return**.  
 
 ---
 
@@ -78,8 +73,7 @@ Each **statement should have a significant pause** to allow the listener to refl
 - **Reinforcement Through Repetition & Metaphors**  
   - Nature-based imagery: *“Like a path in the woods… overgrown… forgotten…”*  
   - Use **subtle rhythmic repetition**:  
-    - *“It fades… gently… easily… like a distant dream.”* \`<break time="4.5s" />\`  
-
+    - *“It fades… gently… easily… like a distant dream.”*
 ---
 
 ## **Your Goal**  

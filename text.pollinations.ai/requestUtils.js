@@ -62,6 +62,9 @@ export function getRequestData(req) {
     // Extract reasoning_effort parameter for o3-mini model
     const reasoning_effort = data.reasoning_effort || undefined;
 
+    // Preserve the original response_format object if it exists
+    const response_format = data.response_format || undefined;
+
     const messages = data.messages || [{ role: 'user', content: req.params[0] }];
     if (systemPrompt) {
         messages.unshift({ role: 'system', content: systemPrompt });
@@ -83,6 +86,7 @@ export function getRequestData(req) {
         tool_choice,
         modalities,
         audio,
-        reasoning_effort
+        reasoning_effort,
+        response_format
     };
 }

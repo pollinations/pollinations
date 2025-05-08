@@ -99,7 +99,8 @@ export function createOpenAICompatibleClient(config) {
                 stream: normalizedOptions.stream,
                 seed: normalizedOptions.seed,
                 max_tokens: normalizedOptions.maxTokens,
-                response_format: normalizedOptions.jsonMode ? { type: 'json_object' } : undefined,
+                // Use the original response_format if provided, otherwise fallback to simple json_object type if jsonMode is true
+                response_format: normalizedOptions.response_format || (normalizedOptions.jsonMode ? { type: 'json_object' } : undefined),
                 tools: normalizedOptions.tools,
                 tool_choice: normalizedOptions.tool_choice,
                 modalities: normalizedOptions.modalities,

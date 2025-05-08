@@ -6,7 +6,7 @@
 
 ## Co‑Founder & Chief Executive Officer (CEO)
 
-*Contact: **Thomas Haferlash***
+*Contact: **Thomas Haferlach***
 
 **Mission**  Own the company vision and ensure Pollinations becomes the default engine for programmable creativity.
 
@@ -28,11 +28,11 @@
 
 ### Core responsibilities
 
-* Convert the CEO’s vision into road‑mapped, resourced projects.
+* Convert the CEO's vision into road‑mapped, resourced projects.
 * Run financial planning & analysis; publish monthly investor dashboards.
 * Oversee product & engineering delivery (backend, frontend, SDK).
 * Manage legal, HR, and vendor relationships; enforce process & compliance.
-* Serve as primary point of contact for strategic partners and enterprise pilots. citeturn1file2
+* Serve as primary point of contact for strategic partners and enterprise pilots. 
 
 ---
 
@@ -45,8 +45,8 @@
 * Architect and maintain cloud infrastructure (Terraform, Kubernetes) on GCP/AWS.
 * Build CI/CD pipelines (GitHub Actions) with automated testing and roll‑backs.
 * Implement observability stack (Prometheus, Grafana, PagerDuty) and manage on‑call.
-* Drive cloud‑cost optimisation; report savings in monthly ops reviews.
-* Own security posture: secrets, IAM, VPC design. citeturn1file4
+* Drive cloud‑cost optimization; report savings in monthly ops reviews.
+* Own security posture: secrets, IAM, VPC design.
 
 ---
 
@@ -59,7 +59,7 @@
 * Build ETL/ELT pipelines feeding training and inference workloads.
 * Serve and version models (Triton/BentoML); enable A/B rollout.
 * Track performance & drift; trigger automated retraining.
-* Analyse large datasets to surface trends; collaborate with Product on experiments. citeturn1file0
+* Analyze large datasets to surface trends; collaborate with Product on experiments.
 
 ---
 
@@ -72,7 +72,7 @@
 * Own analytics instrumentation (GA4, Amplitude) and maintain source‑of‑truth dashboards.
 * Curate and structure the media‑content dataset for future model fine‑tuning.
 * Conduct cohort analyses, LTV/CAC modeling, and churn prediction; present findings monthly.
-* Build lightweight propensity models to personalise the user journey. citeturn1file0
+* Build lightweight propensity models to personalize the user journey. citeturn1file0
 
 ---
 
@@ -88,4 +88,4 @@
 * Roll out referral & ambassador programs to lower blended CAC.
 * Collect community feedback and route insights to Product. citeturn1file1
 
----
+--- 

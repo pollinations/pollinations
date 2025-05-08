@@ -117,7 +117,7 @@
     *   This manages costs while rewarding high-value applications and ensuring advertisers reach engaged audiences.
 
 *   **D. Cost Structure & Financial Goals**
-    *   **Cost Structure (from €300k pre-seed):**
+    *   **Cost Structure (from pre-seed):**
         *   Personnel (AIOps, Data Scientist, Operations): ~62%.
         *   Cloud Computing: ~33%.
         *   Marketing: ~5%.
@@ -168,7 +168,7 @@
     *   **Monetization PoC:** Pilots for contextual ads and app rev-share are live.
 *   **Business Traction:** As detailed above. Specific LOI/tester numbers beyond this are not detailed.
 *   **Personal Financial Runway:** Not available.
-*   **Follow-on Fundraising:** €300K (Q3 2025) for initial activation, then €2.5–€3M Seed (Q2 2026) for scaling. Goal: $1M ARR, 15M MAU by late Q1 2026 to be Seed-Ready.
+*   **Follow-on Fundraising:** Pre-seed for initial activation, then €2.5–€3M Seed (Q2 2026) for scaling. Goal: $1M ARR, 15M MAU by late Q1 2026 to be Seed-Ready.
 
 **Legal:**
 

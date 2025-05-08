@@ -388,12 +388,15 @@ fetch('https://text.pollinations.ai/transcriptions', {
 
 The Pollinations MCP server enables AI assistants like Claude to generate images and audio directly.
 
-## Installation & Usage
+## Available MCP Options
 
-\`\`\`bash
-# Run with npx (no installation required)
-npx @pollinations/model-context-protocol
-\`\`\`
+### Official MCP Server
+- Official Pollinations MCP Server: [@pollinations/model-context-protocol](https://github.com/pollinations/pollinations/tree/master/model-context-protocol)
+
+### Community Alternatives
+- MCPollinations: A community-maintained alternative by Pink Pixel with similar capabilities
+  - [GitHub Repository](https://github.com/pinkpixel-dev/MCPollinations)
+  - [NPM Package](https://www.npmjs.com/package/@pinkpixel/mcpollinations)
 
 ## Features
 
@@ -401,24 +404,6 @@ npx @pollinations/model-context-protocol
 - Create text-to-speech audio with various voice options
 - List available models and capabilities
 - No authentication required
-
-## Example Usage (Node.js)
-
-\`\`\`javascript
-import { generateImageUrl, generateImage, respondAudio, sayText } from '@pollinations/model-context-protocol';
-
-// Generate an image URL
-const imageResult = await generateImageUrl('A beautiful sunset over the ocean', {
-  width: 512,
-  height: 512,
-  model: 'flux.schnell'
-});
-console.log(imageResult.imageUrl);
-
-// Generate audio from text
-const audioResult = await respondAudio('Hello, world!', 'alloy');
-// Audio will be played automatically
-\`\`\`
 
 For more details, see the [MCP Server Documentation](https://github.com/pollinations/pollinations/tree/master/model-context-protocol).`,
     language: "markdown"

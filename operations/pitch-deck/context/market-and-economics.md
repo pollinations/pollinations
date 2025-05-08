@@ -1,85 +1,78 @@
 # 📊 Pollinations.AI – Market Sizing & Unit Economics
 
-## Slide 1: Market Sizing (TAM, SAM, SOM)
+## Slide 1 – Market Sizing (TAM | SAM | SOM)
 
-| Metric         | Estimate    | Assumption / Notes |
-|----------------|-------------|---------------------|
-| **TAM**        | $234B       | Global AI-contextual ad spend (2025, industry reports) |
-| **SAM**        | $140B       | 60% of TAM = indie web + in-app inventory |
-| **Beachhead**  | $3.4B       | Generative-AI ads subsegment (~25% YoY growth) |
-| **SOM (Now)**  | $1M ARR     | Based on current monetization (~15M MAU) |
-| **SOM (Goal)** | $70M ARR    | 0.05% of SAM by 2027 |
+> **Approach:** Industry TAM → Indie SAM → Gen‑AI beach‑head → Map *today*, *latent* (6 mo) and *2027* SOM tiers to concrete traffic & monetisation milestones.
 
-> **Approach**: Start from total market (TAM), apply indie share (SAM), focus on Gen-AI segment as beachhead. Use current ARR to estimate SOM and growth trajectory.
+| Metric | € / \$ | Timeframe | Key assumption / note |
+|--------|--------|-----------|-----------------------|
+| **TAM** | **\$234 B** | 2025 | Global AI‑contextual ad spend (industry analysts). |
+| **SAM** | **\$140 B** | 2025 | ~60 % of TAM reachable via indie web & in‑app inventory. |
+| **Beach‑head segment** | **\$3.4 B** | 2025 | Generative‑AI creatives (≈ 25 % YoY growth). |
+| **SOM – Captured** | **€ 0** | Today | Monetisation switch‑off → no revenue yet. |
+| **SOM – Latent** | **€ 1 M ARR** | **+6 months** | Monetise current 15 M conversations/mo at blended eCPM €3.75 & 50 % share. |
+| **SOM – Target 2027** | **€ 70 M ARR** | 3 yrs | 0.05 % of SAM via MAU & Creator scaling. |
+
+**Latent SOM calculation:**  
+15 M conversations/mo × 1 ad/conv × €3.75 eCPM × 50 % (Pollinations share) ≈ €83 K / mo ⇒ **€1 M ARR** once ad stack is live (ETA ≈ 6 months).
 
 ---
 
-# Unit Economics, LTV & CAC
+## **Slide 2 – Monetisation Model & Core Assumptions**  
 
-## 1 · Approach  
+> **Approach:** model one paid ad per conversation; blend eCPM from CTR × CPC; subtract per‑conversation infra cost.
 
-| Parameter | Assumption |
-|-----------|------------|
-| Conversations / End‑User / mo | **30** |
-| Fill‑rate | **100 %** (one Ad Provider creative per conversation) |
-| Ad mix | 50 % text, 50 % rich/image |
-| CTR | **5 %** (both formats) |
-| CPC | \$0.05 (text) · \$0.10 (rich) |
-| eCPM<sub>text</sub> | 0.05 × 0.05 × 1000 = **\$2.50** |
-| eCPM<sub>rich</sub> | 0.05 × 0.10 × 1000 = **\$5.00** |
-| Blended eCPM | \(0.5 · 2.50 + 0.5 · 5.00\) = **\$3.75** |
-| Platform split | 50 % Pollinations · 50 % Creator |
-| Infra cost | **\$0.001** per conversation |
-| Monthly churn | **15 %** ⇒ End‑User lifetime ≈ **6.7 mo** |
+| Block | Key numbers |
+|-------|-------------|
+| **Engagement** | 30 convs / End‑User / mo. |
+| **Ad Supply (100 % fill)** | 1 paid ad per conversation. |
+| **Ad Mix / Pricing** | • Text: 50 % · eCPM \$2.50 <br>• Rich: 50 % · eCPM \$5.00 <br>• **Blended eCPM \$3.75** |
+| **Revenue Split** | 50 % Pollinations · 50 % Creator. |
+| **Infra Cost** | \$0.001 per conversation. |
+| **Churn ⇒ Lifetime** | 15 % / mo ⇒ 6.7 mo. |
 
-## 2 · Base Monetisation  
+---
 
-| Metric | Formula | Result |
-|--------|---------|--------|
-| Imps / End‑User / mo | 30 × 100 % | **30** |
-| Net revenue / End‑User / mo | 30 × (3.75/1000) × 0.5 | **\$0.056 25** |
-| Cost / End‑User / mo | 30 × 0.001 | **\$0.03** |
-| **Contribution margin / End‑User / mo** | 0.056 25 − 0.03 | **\$0.026 25** |
-| **CM / End‑User / yr** | × 12 | **\$0.315** |
+## **Slide 3 – Unit Economics & End‑User LTV**  
 
-## 3 · End‑User LTV  
+> **Approach:** compute CM per user (revenue − cost) then multiply by user lifetime for LTV.
 
-\[
-\text{LTV} = \text{CM}_{\text{mo}} \times \text{lifetime} = 0.02625 \times 6.7 \approx \mathbf{\$0.175}
-\]
+| Metric (Poll share) | Formula | Result |
+|---------------------|---------|--------|
+| Imps / user / mo | 30 × 100 % | **30** |
+| Net Rev / user / mo | 30 × (3.75/1000) × 0.5 | **\$0.056 25** |
+| Cost / user / mo | 30 × 0.001 | **\$0.03** |
+| **CM / user / mo** | Rev − Cost | **\$0.026 25** |
+| **End‑User LTV** | CM / mo × 6.7 mo | **\$0.175** |
 
-## 4 · Creator Economics  
+---
 
-| Assumption | Value |
-|------------|-------|
-| Avg. MAU per Creator | **150 K** |
-| Creator lifetime | **24 mo** |
-| **Creator LTV** | 0.02625 × 150 000 × 24 ≈ **\$94.5 K** |
+## **Slide 4 – Creator Economics, CAC & Revenue Outlook**  
 
-## 5 · CAC (Creator Acquisition)  
+> **Approach:** scale CM to Creator MAU for Creator LTV, and build CAC bottom‑up from hackathon/social budget.
 
+### Creator LTV  
+* 150 K MAU • 24 mo ⇒ **\$94.5 K**  
+
+### CAC  
 | Item | Value |
 |------|-------|
-| Annual acquisition budget | **\$12 K** |
-| New active Creators / yr | **9 700** |
-| **CAC per Creator** | **\$1.24** |
-| Acceptable ceiling (LTV ÷ 3) | **\$31.5 K** → **well below** limit |
+| Budget | \$12 K / yr |
+| New Creators | 9 700 |
+| **CAC / Creator** | **\$1.24** |
+| Ceiling (LTV ÷ 3) | \$31.5 K → CAC ≪ ceiling |
 
-> **Dominant channel:** low‑cost online hackathons & Discord/social campaigns.
+### Revenue Snapshot (Pollinations share)  
 
-## 6 · Revenue Snapshot  
+| MAU | Monthly Rev | Yearly Rev | Monthly CM | Yearly CM |
+|-----|-------------|-----------|------------|-----------|
+| **3 M (now)** | \$168 K | \$2.0 M | \$78 K | \$0.95 M |
+| **15 M (12 mo)** | \$844 K | \$10.1 M | \$394 K | \$4.73 M |
 
-| MAU | Poll Monthly Rev | Poll Yearly Rev | Poll Monthly CM | Poll Yearly CM |
-|-----|------------------|-----------------|-----------------|----------------|
-| **Current 3 M** | \$168 750 | \$2.03 M | \$78 750 | \$0.95 M |
-| **12‑month 15 M** | \$843 750 | \$10.1 M | \$393 750 | \$4.73 M |
-
----
-
-### Key Take‑aways
-1. **Positive margin** despite low ARPU, thanks to \$0.001 infra cost.  
-2. **Creator CAC (\$1.24)** is negligible compared with **\$94 K Creator LTV**.  
-3. **Blended eCPM (3.75 $)**—driven by Ad Provider CTR & CPC—is the main revenue lever: small gains flow directly into margin.
+**Take‑aways:**  
+1. Positive margin with light ads.  
+2. Creator LTV dwarfs CAC.  
+3. eCPM (CTR × CPC from Ad Providers) is main revenue lever.
 
 ---
 

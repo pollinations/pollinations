@@ -36,7 +36,7 @@ export function getRequestData(req) {
                     data.response_format?.type === 'json_object';
                     
     const seed = data.seed ? parseInt(data.seed, 10) : null;
-    const model = data.model || 'openai';
+    let model = data.model || 'openai';
     const systemPrompt = data.system ? data.system : null;
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
     const isPrivate = req.path?.startsWith('/openai') ? true :
@@ -68,6 +68,11 @@ export function getRequestData(req) {
     const messages = data.messages || [{ role: 'user', content: req.params[0] }];
     if (systemPrompt) {
         messages.unshift({ role: 'system', content: systemPrompt });
+    }
+
+    if (isRobloxReferrer) {
+        log('Roblox referrer detected:', referrer);
+        model="llamascout"
     }
 
     return {

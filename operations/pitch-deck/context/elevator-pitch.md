@@ -1,3 +1,41 @@
+# Best
+
+>**Problem & Solution**
+
+**AI is universal**,
+yet paid APIs and DevOps still *gate-keep innovation*.
+**Pollinations.ai** erases that barrier:
+One SDK call spins up:
+- *Cloud-scale generative media*,
+- *Turnkey hosting*,
+- And a **50/50 ad-revenue plugin**,
+powered by *context-aware ad serving* for high relevance.
+
+> **Traction (Unmonetized Powerhouse)**
+> 
+Our **13,000 Discord creators**
+already drive **3 million monthly end-users**
+generating **100 million AI assets monthly**.
+
+> **Path to Profit**
+
+Our ad stack launches in < 6 months,
+*instantly converting* this traffic to **≈€1M ARR**,
+hitting breakeven around **8M MAU**.
+
+> **Vision & Scale (Ultimate Simplicity)**
+
+Soon, just tell your favorite AI dev interface
+to use Pollinations – *we'll do the rest*.
+
+>**Team & Ask**
+
+Berlin-based **Thomas (CEO)** & **Elliot (COO)**
+are raising **€300K pre-seed**
+to activate this ad revenue and onboard our creators.
+
+---
+
 # v1
 
 **AI is universal, yet paid APIs and DevOps still gate‑keep innovation.** pollinations.ai erases that barrier: one SDK call spins up cloud‑scale generative‑media pipelines, hosting, and a 50/50 ad‑revenue plug‑in.
@@ -14,6 +52,36 @@
 
 Pre‑seed funding activates the rich‑ad stack and finishes Creator onboarding, unleashing the next revenue inflection.
 
+---
+# v2
+
+**AI is everywhere**, but indie creators are locked out by complex backends and API costs. At **Pollinations.ai**, we've already attracted **3 million monthly end-users** and a **13,000-strong Discord community** generating over **100 million AI media assets monthly** – all before full monetization.
+
+We provide a **one-command SDK** for scalable AI media production, hosting, and a straightforward **50/50 ad-revenue share** with creators. Our ad stack goes live in under 6 months, projected to hit **€1M ARR immediately** from existing traffic, with breakeven around 8M MAU.
+
+Berlin-based **Thomas (CEO)** and **Elliot (COO)** are seeking **pre-seed funding** to launch this ad-driven revenue and onboard our vibrant creator base, turning massive engagement into profit.
+
+---
+
+# v3
+
+While **AI transforms societies**, most indie developers can't afford paid APIs or manage complex infrastructure. **Pollinations.ai solves this**: with a **single SDK call**, creators get scalable AI media pipelines, hosting, and critically, embedded ad-monetization with a clear **50/50 revenue split**.
+
+We're not starting from scratch: **13,000 creators** on our Discord already drive **3 million monthly active end-users** and **100 million media generations**. This existing, unmonetized traffic is set to generate **~€1M ARR** within 6 months as our ad-stack launches, hitting breakeven at ~8M MAU.
+
+Led by **Thomas (CEO)** and **Elliot (COO)** in Berlin, we need **pre-seed funding** to activate this ad revenue and scale our creator onboarding, turning vision into a profitable reality.
+
+---
+
+# v4
+
+The '**everyone is a developer**' wave is here, but AI infrastructure remains a bottleneck. **Pollinations.ai** empowers indie creators by turning their favorite coding interface – soon even a microphone – into an **AI app factory**. We handle the scalable AI media, hosting, and provide plugins for ad-driven revenue, splitting it **50/50 with creators**.
+
+The demand is proven: **3 million end-users** engage with **100 million AI assets monthly**, driven by our **13,000 Discord creators**. We're pre-revenue, but our ad-stack launch in under 6 months will immediately tap this, targeting **€1M ARR** and breakeven at ~8M MAU.
+
+Founders **Thomas (CEO)** and **Elliot (COO)** in Berlin are hiring AIOps and Ad Strategists. **Pre-seed funding** will ignite our ad-revenue engine and supercharge creator onboarding for the next growth phase.
+
+---
 
 # v2
 

@@ -63,7 +63,7 @@
 
 1. Validates blending premium tier & native ads.
 2. Shows inside‑content ad unit analogous to Pollinations’ logo/overlay concept.
-3. Demonstrates small rev‑share (25 %) still accepted by publishers—Pollinations’ 70 % creator share will look generous.
+3. Demonstrates small rev‑share (25 %) still accepted by publishers—Pollinations’ 50 % creator share will look generous.
 
 ---
 

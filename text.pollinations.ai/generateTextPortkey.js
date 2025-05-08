@@ -21,6 +21,7 @@ const MODEL_MAPPING = {
     'openai-reasoning': 'o4-mini', // Maps to portkeyConfig['o1-mini'],
     // 'openai-audio': 'gpt-4o-mini-audio-preview',
     'openai-audio': 'gpt-4o-audio-preview',
+    'openai-roblox': 'gpt-4.1-mini-roblox', // Roblox model
     'roblox-rp': 'gpt-4o-mini-roblox-rp', // Roblox roleplay model
     'command-r': 'Cohere-command-r-plus-08-2024-jt', // Cohere Command R Plus model
     'gemini': 'gemini-2.5-flash-preview-04-17',
@@ -72,6 +73,7 @@ const SYSTEM_PROMPTS = {
     'openai': BASE_PROMPTS.conversational,
     'openai-large': BASE_PROMPTS.conversational,
     'openai-xlarge': BASE_PROMPTS.conversational,
+    'openai-roblox': BASE_PROMPTS.conversational,
     'gemini': BASE_PROMPTS.conversational,
     // Cloudflare models
     'llama': BASE_PROMPTS.conversational,
@@ -342,6 +344,11 @@ export const portkeyConfig = {
         process.env.AZURE_OPENAI_ROBLOX_API_KEY,
         process.env.AZURE_OPENAI_ROBLOX_ENDPOINT,
         'gpt-4o-mini'
+    ),
+    'gpt-4.1-mini-roblox': () => createAzureModelConfig(
+        process.env.AZURE_OPENAI_ROBLOX_KEY,
+        process.env.AZURE_OPENAI_ROBLOX_ENDPOINT,
+        'gpt-4.1-mini'
     ),
     'azure-gpt-4.1-mini': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_41_API_KEY,

@@ -195,16 +195,6 @@ const models = [
     output_modalities: ["text"],
     tools: false,
   },
-  {
-    name: "llama-vision",
-    description: "Llama 3.2 11B Vision",
-    handler: generateTextPortkey,
-    //    details:  "Integrates visual inputs with text generation for multimodal tasks.",
-    provider: "Cloudflare",
-    input_modalities: ["text", "image"],
-    output_modalities: ["text"],
-    tools: false,
-  },
   // {
   //   name: "pixtral",
   //   description: "Pixtral 12B",

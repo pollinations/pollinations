@@ -93,6 +93,16 @@ const allProjects = {
   ],
   llmIntegrations: [
     {
+      name: "🆕 Rizqi O Chatbot 🇮🇩",
+      url: "https://chatbot.rizqioliveira.my.id",
+      description: "Rizqi O Chatbot adalah proyek berbasis Pollinations yang menggabungkan tiga fitur utama: chatbot AI, generator gambar AI, dan generator audio AI. Pengguna dapat berinteraksi dalam bentuk teks, menghasilkan gambar dengan berbagai gaya seni dan efek visual, serta membuat audio secara otomatis dari teks. (An AI chatbot, image generator, and audio generator project with support for custom aspect ratios, over 200 art styles & visual effects, and automatic translation from Indonesian to English.)",
+      author: "@ray23-bit",
+      repo: "https://github.com/ray23-bit/Projectenam",
+      submissionDate: "2025-05-08",
+      language: "id-ID",
+      order: 1,
+    },
+    {
       name: "🆕 Define",
       url: "https://define-i05a.onrender.com/api/docs/",
       description: "An AI-powered REST API designed to generate definitions for words or phrases, constrained to a specified target word count. It allows customization of tone, context, and language, delivering precise, context-aware definitions programmatically—ideal for developers and content creators.",

@@ -388,15 +388,19 @@ fetch('https://text.pollinations.ai/transcriptions', {
 
 The Pollinations MCP server enables AI assistants like Claude to generate images and audio directly.
 
-## Available MCP Options
+## Installation & Usage
 
 ### Official MCP Server
-- Official Pollinations MCP Server: [@pollinations/model-context-protocol](https://github.com/pollinations/pollinations/tree/master/model-context-protocol)
+\`\`\`bash
+# Run with npx (no installation required)
+npx @pollinations/model-context-protocol
+\`\`\`
 
 ### Community Alternatives
-- MCPollinations: A community-maintained alternative by Pink Pixel with similar capabilities
+- **MCPollinations**: A community-maintained alternative by Pink Pixel with similar capabilities
   - [GitHub Repository](https://github.com/pinkpixel-dev/MCPollinations)
   - [NPM Package](https://www.npmjs.com/package/@pinkpixel/mcpollinations)
+  - Install with: \`npm install @pinkpixel/mcpollinations\`
 
 ## Features
 

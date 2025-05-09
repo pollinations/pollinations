@@ -122,8 +122,9 @@ const models = [
   },
   {
     name: "mirexa",
-    description: "WithThatWay's Mirexa",
+    description: "Mirexa AI Companion (GPT-4.1)",
     handler: generateTextMirexa,
+    provider: "Azure",
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
     tools: true,

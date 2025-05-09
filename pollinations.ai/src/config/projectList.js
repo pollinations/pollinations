@@ -45,6 +45,16 @@ export const projectCategories = [
 const allProjects = {
   toolsInterfaces: [
     {
+      name: "🆕 KoboldAI",
+      url: "https://koboldai.org/",
+      description: "A browser-based front-end for AI-assisted writing with multiple local & remote AI models, including integration with Pollinations.AI for image generation.",
+      author: "@henk717",
+      repo: "https://github.com/KoboldAI/KoboldAI-Client",
+      stars: 3700,
+      submissionDate: "2025-05-09",
+      order: 1,
+    },
+    {
       name: "🆕 Polynate",
       url: "https://polynate.cloudwerx.dev/",
       description: "AI-powered text and audio content generation platform providing a user-friendly interface for interacting with various AI generation services from Pollinations.ai.",

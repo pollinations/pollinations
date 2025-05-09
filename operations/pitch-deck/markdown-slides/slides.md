@@ -365,9 +365,8 @@ name: index                          <!-- anchor so links work -->
 
 ::left::
 
+- [📊 Pitch Deck](/1) 
 - [📑 Executive Summary](/11)
-- [🗣️ Elevator Pitch](/12)
-- [📊 Pitch Deck](/1)              <!-- link back to deck start -->
 - [🔭 Vision & Mission](/13)
 - [🛣️ Roadmap](/14)
 - [💰 Business Model](/15)
@@ -394,91 +393,84 @@ src: ./docs/01-executive-summary.md
 ---
 layout: default
 class: scroll
-name: 02-elevator-pitch
-src: ./docs/02-elevator-pitch.md
+name: 02-vision-mission
+src: ./docs/02-vision-mission.md
 ---
 
 ---
 layout: default
 class: scroll
-name: 04-vision-mission
-src: ./docs/04-vision-mission.md
+name: 03-roadmap
+src: ./docs/03-roadmap.md
 ---
 
 ---
 layout: default
 class: scroll
-name: 05-roadmap
-src: ./docs/05-roadmap.md
+name: 04-business-model
+src: ./docs/04-business-model.md
 ---
 
 ---
 layout: default
 class: scroll
-name: 06-business-model
-src: ./docs/06-business-model.md
+name: 05-unit-economics
+src: ./docs/05-unit-economics.md
 ---
 
 ---
 layout: default
 class: scroll
-name: 07-unit-economics
-src: ./docs/07-unit-economics.md
+name: 06-financial-model
+src: ./docs/06-financial-model.md
 ---
 
 ---
 layout: default
 class: scroll
-name: 08-financial-model
-src: ./docs/08-financial-model.md
+name: 07-tech-architecture
+src: ./docs/07-tech-architecture.md
 ---
 
 ---
 layout: default
 class: scroll
-name: 09-tech-architecture
-src: ./docs/09-tech-architecture.md
+name: 08-sdk-ad-integration
+src: ./docs/08-sdk-ad-integration.md
 ---
 
 ---
 layout: default
 class: scroll
-name: 10-sdk-ad-integration
-src: ./docs/10-sdk-ad-integration.md
+name: 09-competitive-landscape
+src: ./docs/09-competitive-landscape.md
 ---
 
 ---
 layout: default
 class: scroll
-name: 11-competitive-landscape
-src: ./docs/11-competitive-landscape.md
+name: 10-team
+src: ./docs/10-team.md
 ---
 
 ---
 layout: default
 class: scroll
-name: 12-team
-src: ./docs/12-team.md
+name: 11-risk-register
+src: ./docs/11-risk-register.md
 ---
 
 ---
 layout: default
 class: scroll
-name: 13-risk-register
-src: ./docs/13-risk-register.md
+name: 12-traction-metrics
+src: ./docs/12-traction-metrics.md
 ---
 
 ---
 layout: default
 class: scroll
-name: 14-traction-metrics
-src: ./docs/14-traction-metrics.md
----
-
----
-layout: default
-class: scroll
-name: 15-ecosystem-analysis
-src: ./docs/15-ecosystem-analysis.md
+name: 13-ecosystem-analysis
+src: ./docs/13-ecosystem-analysis.md
 ---
 

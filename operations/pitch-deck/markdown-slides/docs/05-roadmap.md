@@ -1,14 +1,16 @@
-# 🛣️ Pollinations.ai Roadmap (Compressed to Q4 2026)
+<div style="text-align: right; position: absolute; top: 0; right: 0;">
+<a href="/10">⬅️ Back to Index</a>
+</div>
+
+# 🛣️ **Roadmap (2025-2026)**
 
 > **Baseline – End of Q2 2025 (June 2025)**
 > • **Users & Engagement:** 3M MAU (End-Users) · 100K+ monthly generations (by Creators)
 > • **Monetization:** ≈ $0 ARR (Testing ads, preparing for ad-funded tiering launch)
 > • **Platform:** Core APIs, Auth, Basic SDK live.
 > • **Team:** 10 FTE
-
----
-
-## Consolidated Roadmap (Q3 2025 – Q4 2026)
+> 
+## Roadmap (Q3 2025 – Q4 2026)
 
 > **Objective:** Launch ad-funded automatic tiering, add optional Creator Premium Subscriptions and 50/50 Ad Rev-Share, and achieve platform break-even by End of Year 2026.
 

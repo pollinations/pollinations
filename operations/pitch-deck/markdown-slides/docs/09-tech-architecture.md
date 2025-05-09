@@ -1,4 +1,8 @@
-# pollinations.ai **End-to-End Architecture**  (Creator uses a text editor only)
+<div style="text-align: right; position: absolute; top: 0; right: 0;">
+<a href="/10">⬅️ Back to Index</a>
+</div>
+
+# 🏗️ **End-to-End Architecture**  (Creator uses a text editor only)
 
 ```
 IDE / Cursor / VS Code                Pollinations Cloud
@@ -36,8 +40,6 @@ IDE / Cursor / VS Code                Pollinations Cloud
                               └────────────────────────────────────────┘
 ```
 
----
-
 ## **How it works (fully automated)**
 
 1. **In the IDE** the Creator types pollinations-init your-app.com.
@@ -56,7 +58,6 @@ IDE / Cursor / VS Code                Pollinations Cloud
 
 **The Creator never leaves the editor; no dashboard button is required.**
 
----
 
 ## **The pipeline in four sentences**
 
@@ -68,7 +69,6 @@ IDE / Cursor / VS Code                Pollinations Cloud
 
 4. Nightly jobs roll up usage and Ad Revenue. For default apps, they refine the Ad € / Cloud € ratio to update the operational tier. For optional models (from 2026), they also check Creator Premium status and populate the Ad Rev-Share Ledger.
 
----
 
 ## **"Why it matters" — non-technical explanation**
 

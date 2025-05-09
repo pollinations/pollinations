@@ -1,4 +1,8 @@
-# Elevator Pitch
+<div style="text-align: right; position: absolute; top: 0; right: 0;">
+<a href="/10">⬅️ Back to Index</a>
+</div>
+
+# 🗣️ **Elevator Pitch**
 
 >**Problem & Solution**
 
@@ -33,7 +37,7 @@ to use pollinations.ai – *we'll do the rest*.
 Berlin-based **Thomas (CEO)** & **Elliot (COO)**
 are raising (pre-seed) to launch the ad-funded automatic tiering (Phase 1) and prepare for Phase 2 (Creator premium subscriptions & optional 50/50 ad rev-share) in 2027.
 
----
+***
 
 # v1
 
@@ -51,7 +55,7 @@ are raising (pre-seed) to launch the ad-funded automatic tiering (Phase 1) and p
 
 We are raising pre‑seed funding to activate the ad-funded tiering (Phase 1) and pave the way for Phase 2 (Creator premium subscriptions & optional 50/50 ad rev‑share) in 2027.
 
----
+***
 # v2
 
 **AI is everywhere**, but Creators are locked out by complex backends and API costs. At **Pollinations.ai**, we've already attracted **3 million monthly End-Users** and a **13,000-strong Creator community** generating over **100K+ media generations monthly** – all before full monetization.
@@ -60,7 +64,7 @@ We provide a **one-command SDK** for scalable AI media production, hosting, and 
 
 Berlin-based **Thomas (CEO)** and **Elliot (COO)** are seeking pre-seed funding to launch the ad-driven automatic tiering (Phase 1) and enable Phase 2 options (Creator premium subscriptions & optional 50/50 ad revenue sharing) in 2027.
 
----
+***
 
 # v3
 
@@ -70,7 +74,7 @@ We're not starting from scratch: **13,000 Creators** on our Discord already driv
 
 Led by **Thomas (CEO)** and **Elliot (COO)** in Berlin, we are raising pre-seed funding to activate ad-funded tiering (Phase 1) and unlock Phase 2 models (Creator premium subscriptions & optional 50/50 ad rev-share) in 2027.
 
----
+***
 
 # v4
 
@@ -80,7 +84,7 @@ The demand is proven: **3 million End-Users** engage with **100K+ media generati
 
 Founders **Thomas (CEO)** and **Elliot (COO)** in Berlin are hiring AIOps and Ad Strategists. **Pre-seed funding** will ignite our ad-revenue engine for automatic tiering (Phase 1) and set up Phase 2 options (Creator premium subs & optional ad rev-share) for 2027.
 
----
+***
 
 # v2 (reiteration)
 
@@ -106,8 +110,8 @@ AI is now woven into every part of life, yet access to paid APIs and DevOps know
 
 We are raising a **pre‑seed round** to activate the rich ad stack for automatic tiering (Phase 1), finish the Creator‑onboarding toolkit, and prepare for Phase 2 (Creator premium subscriptions & optional 50/50 ad rev-share) in 2027.
 
----
----
+***
+***
 
 # v3 (reiteration)
 
@@ -119,7 +123,7 @@ We are raising a **pre‑seed round** to activate the rich ad stack for automati
 **Our Fix**  
 > One‑line SDK ➜ scalable Generative AI pipelines, turnkey hosting, **and** a model where Ad Revenue automatically unlocks higher Tiers/Limits for Creator apps.
 
----
+***
 
 #### 📈  Traction (today — June 2025)
 - **3 M MAU (End-Users) · 100K+ media generations / month**  
@@ -130,7 +134,7 @@ We are raising a **pre‑seed round** to activate the rich ad stack for automati
   - Open‑source React SDK  
 - Monetization so far: **€0 ARR** (only a basic text‑ad append for unregistered apps)
 
----
+***
 
 #### 💸  Road to Revenue
 | Milestone | Timing | Impact |
@@ -139,12 +143,12 @@ We are raising a **pre‑seed round** to activate the rich ad stack for automati
 | **Break‑even** | ≈ 8 M MAU | Reached when Ad € / Cloud € Ratio ≥ 1 |
 | **Scale‑up** | Post‑break‑even | Infra already built to expand "on demand" |
 
----
+***
 
 #### 🌍  Vision
 Any coding surface—even a microphone—compiles directly to Pollinations infrastructure, so **Creator apps** achieve higher operational Tiers/Limits via ads without Creators ever touching a cloud console.
 
----
+***
 
 #### 👥  Team & Hiring
 | Role | Name | Location |
@@ -154,7 +158,7 @@ Any coding surface—even a microphone—compiles directly to Pollinations infra
 
 - **Open roles:** AIOps Engineer · Digital‑Ads Strategist
 
----
+***
 
 #### 🚀  Ask
 **Pre‑seed funding** to:  

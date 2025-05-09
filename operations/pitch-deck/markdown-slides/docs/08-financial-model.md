@@ -1,4 +1,8 @@
-# 08 Financial Model (Illustrative)
+<div style="text-align: right; position: absolute; top: 0; right: 0;">
+<a href="/10">⬅️ Back to Index</a>
+</div>
+
+# 💹 **Financial Model**
 
 ## Baseline Projection (Ad-Funded Tiering Only - Q3 2025 to Q4 2026)
 
@@ -21,8 +25,6 @@
 *   OpEx grows moderately with team/scale.
 *   Cloud costs per user decrease slightly with scale/optimization.
 *   Break-even (Net Profit > 0) is achieved in Q1 2026 in this scenario based purely on Ad Revenue.
-
----
 
 ## Optional Models Rollout - Financial Impact (from Q2 2026)
 
@@ -54,8 +56,6 @@
 *   *Crucially, the model needs refinement based on real adoption rates of Premium/Rev-Share and their impact on Ad € / Cloud € tiering incentives.*
 
 **Note:** Break-even is achieved when the "Ad € / Cloud € Ratio" is ≥ 1 (i.e., Ad Revenue from Ad Providers via End-User engagement in Creator apps fully covers the platform's Cloud Computing costs). In Phase 1, all ad revenue contributes to covering operational costs and enabling higher tiers/limits for Creator apps, with no direct cash payouts to Creators.
-
----
 
 ## Phase 2 Projection (Illustrative - Q2 2027+)
 

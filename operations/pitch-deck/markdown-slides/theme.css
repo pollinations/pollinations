@@ -1,0 +1,7 @@
+/* styles/theme.css  – scroll helper */
+.slidev-page.scroll,
+.slidev-page.scroll .slidev-layout {   /* hit both wrappers            */
+  max-height: 90vh;                    /* leave room for the footer    */
+  overflow-y: auto !important;         /* force the scrollbar          */
+  padding-right: 1.5rem;
+} 

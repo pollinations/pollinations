@@ -1,8 +1,8 @@
-# 14 Traction Metrics
+<div style="text-align: right; position: absolute; top: 0; right: 0;">
+<a href="/10">⬅️ Back to Index</a>
+</div>
 
-(Placeholder for live metrics)
-
-This document will track key performance indicators over time. Data should be updated regularly (e.g., monthly).
+# 🚀 **Traction Metrics**
 
 **Key Metrics:**
 

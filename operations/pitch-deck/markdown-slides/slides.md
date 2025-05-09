@@ -15,7 +15,6 @@ class: text-center
 *   **(Thomas):** "We offer the **easiest way to build *and monetize* AI apps** with **zero upfront cost** and **shared success**."
 -->
 
-
 ---
 
 # <span class="bg-red-600 text-white p-2 rounded">**😖 Problem**</span>
@@ -177,7 +176,7 @@ SLIDE GUIDANCE:
 1. Contextual ads (CPM \$1–2) - *PoC Live*
 2. 50% app rev‑share (Roblox style) - *Pilot Live*
 
-In Pollinations.AI’s ecosystem, the core two sides are:
+In Pollinations.AI's ecosystem, the core two sides are:
 * **Affiliates (Creators):** developers and hobbyists who embed generative-AI media (with referral links) into their apps ~[Tipalti](https://tipalti.com/en-uk/affiliate-hub/affiliate-network/?utm_source=chatgpt.com)~
 * **Advertisers (Brands):** companies supplying those referral links and paying for conversions
 
@@ -197,11 +196,12 @@ In Pollinations.AI’s ecosystem, the core two sides are:
 -->
 
 ---
-layout: two-cols
+layout: two-cols-header
 ---
 
 # <span class="bg-yellow-600 text-white p-2 rounded">📈 **Circular Economy**</span>
 
+::left::
 * **Market Trend:** 📊 Gen-AI market doubling YoY
 * **Tech:** 🧠 AI-powered ad targeting
 * **Trust Moat:** 📖 Open source & Privacy-first
@@ -236,10 +236,12 @@ SLIDE GUIDANCE:
 
 
 ---
-layout: two-cols
+layout: two-cols-header
 ---
 
 # <span class="bg-indigo-600 text-white p-2 rounded">**🛣️ Roadmap: From Activation to Dominance**</span>
+
+::left::
 
 ### **1️⃣ Activate (Next 12 Mo)**
 Launch Ad Rev Share, Activate Dev Community, Prove Monetization & Scale Users.
@@ -249,7 +251,6 @@ Launch Ad Rev Share, Activate Dev Community, Prove Monetization & Scale Users.
 ### **2️⃣ Scale (12-36 Mo)**
 SDK v2, AI Ad Optimization, Global Community.
 
-**Target**: Sustainable Growth
 ### **3️⃣ Vision**
 Become the ubiquitous, **assistant-centric** engine for AI creation and distribution.
 
@@ -352,3 +353,132 @@ SLIDE GUIDANCE:
 * Community & Ecosystem Expansion: Empower "Vibe Coders," Developer Grants, Strategic Partnerships
 * Platform Scale & Infrastructure: GPU Capacity, Global Low-Latency Performance
 -->
+
+
+
+---                                  <!-- end of deck / start of docs -->
+layout: two-cols-header
+name: index                          <!-- anchor so links work -->
+---
+
+# pollinations.ai - Docs
+
+::left::
+
+- [📑 Executive Summary](/11)
+- [🗣️ Elevator Pitch](/12)
+- [📊 Pitch Deck](/1)              <!-- link back to deck start -->
+- [🔭 Vision & Mission](/13)
+- [🛣️ Roadmap](/14)
+- [💰 Business Model](/15)
+- [📈 Unit Economics](/16)
+- [💹 Financial Model](/17)
+
+::right::
+
+- [🏗️ Tech Architecture](/18)
+- [🔌 SDK & Ad Integration](/19)
+- [🥊 Competitive Landscape](/20)
+- [👥 Team](/21)
+- [⚠️ Risk Register](/22)
+- [🚀 Traction Metrics](/23)
+- [🌍 Ecosystem Analysis](/24)
+
+---
+layout: default
+class: scroll
+name: 01-executive-summary
+src: ./docs/01-executive-summary.md
+---
+
+---
+layout: default
+class: scroll
+name: 02-elevator-pitch
+src: ./docs/02-elevator-pitch.md
+---
+
+---
+layout: default
+class: scroll
+name: 04-vision-mission
+src: ./docs/04-vision-mission.md
+---
+
+---
+layout: default
+class: scroll
+name: 05-roadmap
+src: ./docs/05-roadmap.md
+---
+
+---
+layout: default
+class: scroll
+name: 06-business-model
+src: ./docs/06-business-model.md
+---
+
+---
+layout: default
+class: scroll
+name: 07-unit-economics
+src: ./docs/07-unit-economics.md
+---
+
+---
+layout: default
+class: scroll
+name: 08-financial-model
+src: ./docs/08-financial-model.md
+---
+
+---
+layout: default
+class: scroll
+name: 09-tech-architecture
+src: ./docs/09-tech-architecture.md
+---
+
+---
+layout: default
+class: scroll
+name: 10-sdk-ad-integration
+src: ./docs/10-sdk-ad-integration.md
+---
+
+---
+layout: default
+class: scroll
+name: 11-competitive-landscape
+src: ./docs/11-competitive-landscape.md
+---
+
+---
+layout: default
+class: scroll
+name: 12-team
+src: ./docs/12-team.md
+---
+
+---
+layout: default
+class: scroll
+name: 13-risk-register
+src: ./docs/13-risk-register.md
+---
+
+---
+layout: default
+class: scroll
+name: 14-traction-metrics
+src: ./docs/14-traction-metrics.md
+---
+
+---
+layout: default
+class: scroll
+name: 15-ecosystem-analysis
+src: ./docs/15-ecosystem-analysis.md
+---
+

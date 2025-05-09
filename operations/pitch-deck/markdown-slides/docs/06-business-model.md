@@ -1,4 +1,8 @@
-# 06 Pollinations.AI Business Model
+<div style="text-align: right; position: absolute; top: 0; right: 0;">
+<a href="/10">⬅️ Back to Index</a>
+</div>
+
+# 💰 **Business Model**
 
 ## Overview
 
@@ -49,9 +53,8 @@ Introduces flexibility for Creators seeking alternatives to the default ad-funde
 
 Pollinations uniquely offers a default path where Creators access powerful AI tools and scale their apps **without any direct billing**, purely funded by the ad revenue their apps generate via the automatic tiering system. The optional Premium and Rev-Share models (launching through 2026) add flexibility while retaining the innovative ad-funded core.
 
----
 
-## Glossary
+# Glossary
 
 *   **Creator:** An individual or team (indie developer) using the Pollinations platform and SDK/API to build AI-powered applications.
 *   **End-User:** An individual who interacts with an application built by a Creator on the Pollinations platform.

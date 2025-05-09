@@ -1,4 +1,8 @@
-# 01 Executive Summary: Pollinations.AI
+<div style="text-align: right; position: absolute; top: 0; right: 0;">
+<a href="/10">⬅️ Back to Index</a>
+</div>
+
+# 📑 **Executive Summary**
 
 ## Problem & Solution
 Generative AI is transformative, but access for individual Creators is blocked by complex infrastructure and API costs. Pollinations.ai removes this friction: a **one-command SDK** provides Creators with scalable AI media generation (image, text, audio), turnkey hosting via GitHub Pages, and built-in monetization.

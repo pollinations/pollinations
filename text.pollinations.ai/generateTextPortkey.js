@@ -17,22 +17,22 @@ const MODEL_MAPPING = {
     'openai-fast': 'gpt-4.1-nano',
     'openai': 'gpt-4.1-mini',       // Maps to portkeyConfig['gpt-4o-mini']
     'openai-large': 'azure-gpt-4.1-mini',
-    'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
-    'openai-reasoning': 'o4-mini', // Maps to portkeyConfig['o1-mini'],
+    //'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
+    //'openai-reasoning': 'o4-mini', // Maps to portkeyConfig['o1-mini'],
     // 'openai-audio': 'gpt-4o-mini-audio-preview',
     'openai-audio': 'gpt-4o-audio-preview',
-    'openai-roblox': 'gpt-4.1-mini-roblox', // Roblox model
-    'roblox-rp': 'gpt-4o-mini-roblox-rp', // Roblox roleplay model
-    'command-r': 'Cohere-command-r-plus-08-2024-jt', // Cohere Command R Plus model
-    'gemini': 'gemini-2.5-flash-preview-04-17',
-    'gemini-thinking': 'gemini-2.0-flash-thinking-exp-01-21',
+    //'openai-roblox': 'gpt-4.1-mini-roblox', // Roblox model
+    //'roblox-rp': 'gpt-4o-mini-roblox-rp', // Roblox roleplay model
+    //'command-r': 'Cohere-command-r-plus-08-2024-jt', // Cohere Command R Plus model
+    //'gemini': 'gemini-2.5-flash-preview-04-17',
+    //'gemini-thinking': 'gemini-2.0-flash-thinking-exp-01-21',
     // Cloudflare models
     'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
     'llamascout': '@cf/meta/llama-4-scout-17b-16e-instruct',
     'deepseek-reasoning': 'MAI-DS-R1',
-    'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
+    //'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
     'phi': 'phi-4-instruct',
-    'phi-mini': 'phi-4-mini-instruct',
+    //'phi-mini': 'phi-4-mini-instruct',
     // Scaleway models
     'qwen-coder': 'qwen2.5-coder-32b-instruct',
     'mistral': 'mistral-small-3.1-24b-instruct-2503',  // Updated to use Scaleway Mistral model
@@ -40,9 +40,9 @@ const MODEL_MAPPING = {
     // Modal models
     'hormoz': 'Hormoz-8B',
     // OpenRouter models
-    'claude': 'anthropic/claude-3.5-haiku-20241022',
+    //'claude': 'anthropic/claude-3.5-haiku-20241022',
     // Cloudflare models
-    'qwen-qwq': '@cf/qwen/qwq-32b',
+    //'qwen-qwq': '@cf/qwen/qwq-32b',
     // DeepSeek models
     'deepseek': 'DeepSeek-V3-0324'
 };
@@ -72,30 +72,30 @@ const SYSTEM_PROMPTS = {
     'openai-fast': BASE_PROMPTS.conversational,
     'openai': BASE_PROMPTS.conversational,
     'openai-large': BASE_PROMPTS.conversational,
-    'openai-xlarge': BASE_PROMPTS.conversational,
+    //'openai-xlarge': BASE_PROMPTS.conversational,
     'openai-roblox': BASE_PROMPTS.conversational,
-    'gemini': BASE_PROMPTS.conversational,
+    //'gemini': BASE_PROMPTS.conversational,
     // Cloudflare models
     'llama': BASE_PROMPTS.conversational,
     'deepseek-reasoning-large': BASE_PROMPTS.helpful,
     'deepseek-reasoning': BASE_PROMPTS.conversational,
-    'llamaguard': BASE_PROMPTS.moderation,
+    //'llamaguard': BASE_PROMPTS.moderation,
     'phi': BASE_PROMPTS.conversational,
-    'phi-mini': BASE_PROMPTS.conversational,
+    //'phi-mini': BASE_PROMPTS.conversational,
     // Scaleway models
     'mistral': BASE_PROMPTS.conversational,
     'qwen-coder': BASE_PROMPTS.coding,
-    'gemini-thinking': BASE_PROMPTS.gemini + ' When appropriate, show your reasoning step by step.',
+    //'gemini-thinking': BASE_PROMPTS.gemini + ' When appropriate, show your reasoning step by step.',
     // Modal models
     'hormoz': BASE_PROMPTS.hormoz,
     // OpenRouter models
-    'claude': 'You are Claude, a helpful AI assistant created by Anthropic. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.',
+    //'claude': 'You are Claude, a helpful AI assistant created by Anthropic. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.',
     // Cloudflare models
-    'qwen-qwq': BASE_PROMPTS.conversational,
+    //'qwen-qwq': BASE_PROMPTS.conversational,
     // DeepSeek models
     'deepseek': BASE_PROMPTS.conversational,
     // Cohere models
-    'command-r': BASE_PROMPTS.conversational
+    //'command-r': BASE_PROMPTS.conversational
 };
 
 // Default options

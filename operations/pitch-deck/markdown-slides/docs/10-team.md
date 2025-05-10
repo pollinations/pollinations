@@ -7,78 +7,83 @@ class: scroll
 
 # 👥 **Key Roles & Responsibilities**
 
-*This document outlines the mission‑critical positions for our first 12 months after the pre‑seed round. Roles are listed in descending order of strategic impact. Contractor engagements are scoped at \~6 months with conversion optional once Series A funding is secured.*
+*This document outlines the mission‑critical positions for our first 12 months after the pre‑seed round. Roles are listed in descending order of strategic impact. Contractor engagements are scoped at \~6 months with conversion optional once Series A funding is secured.*
 
-## Co‑Founder & Chief Executive Officer (CEO)
+## Founders
 
-*Contact: **Thomas Haferlach***
+### 🚀 Chief Executive Officer (CEO)
 
-**Mission**  Own the company vision and ensure Pollinations becomes the default engine for programmable creativity.
+**Contact:** Thomas Haferlach
 
-### Core responsibilities
+**Mission:**  Own the company vision and ensure Pollinations becomes the default engine for programmable creativity.
 
+**Core responsibilities:**
 * Set and continuously refine strategy, OKRs, and culture.
 * Lead fundraising, investor relations, and board management.
 * Final sign‑off on finance, commercial, legal, and HR decisions.
 * Champion breakthrough AI R\&D; green‑light model adoption and IP strategy.
-* Act as public face: keynote talks, PR, and thought‑leadership pieces. citeturn1file3
+* Act as public face: keynote talks, PR, and thought‑leadership pieces. citeturn1file3
 
-## Co‑Founder & Chief Operating Officer (COO)
+### ⚙️ Chief Operating Officer (COO)
 
-*Contact: **Elliot Fouchy***
+**Contact:** Elliot Fouchy
 
-**Mission**  Translate strategy into flawless execution—owning day‑to‑day delivery, budget adherence, and team velocity.
+**Mission:**  Translate strategy into flawless execution—owning day‑to‑day delivery, budget adherence, and team velocity.
 
-### Core responsibilities
-
+**Core responsibilities:**
 * Convert the CEO's vision into road‑mapped, resourced projects.
 * Run financial planning & analysis; publish monthly investor dashboards.
 * Oversee product & engineering delivery (backend, frontend, SDK).
 * Manage legal, HR, and vendor relationships; enforce process & compliance.
 * Serve as primary point of contact for strategic partners and enterprise pilots. 
 
-## DevOps / Site Reliability Engineer (Contractor)
+## Hiring Plan & Team Evolution: From Q3 2025 Onwards
 
-**Mission**  Keep the platform fast, secure, and cost‑efficient while enabling a deploy‑on‑every‑commit culture.
+*As Pollinations.ai launches the Associate Tier (Q3 2026 Beta, Q4 2026 GA) and scales towards an ecosystem of 2000+ apps by EOY 2026, our talent needs will concentrate on specialized roles critical for managing a mature, revenue-generating platform with a significant creator revenue-sharing component. The COO will initially absorb product management responsibilities for monetization. The following roles represent urgent and key hires from Q2 2026, ideally as full-time positions to ensure deep expertise and commitment. Financial operations roles will be considered from Q2 2026 onwards.*
 
-### Core responsibilities
+### 🔧 Lead MLOps & Infrastructure Engineer
 
-* Architect and maintain cloud infrastructure (Terraform, Kubernetes) on GCP/AWS.
-* Build CI/CD pipelines (GitHub Actions) with automated testing and roll‑backs.
-* Implement observability stack (Prometheus, Grafana, PagerDuty) and manage on‑call.
-* Drive cloud‑cost optimization; report savings in monthly ops reviews.
-* Own security posture: secrets, IAM, VPC design.
+**Mission:** Ensure robust, scalable, and cost-efficient deployment, monitoring, and iteration of all AI models and their supporting backend infrastructure. Manage and evolve the data analytics pipelines critical for model performance and platform insights.
 
-## MLOps Engineer & Data Analyst (Contractor)
+**Core Responsibilities (Evolved from initial MLOps/DevOps contractors):**
+* Lead the design, implementation, and maintenance of production ML systems (model serving, versioning, A/B testing, automated retraining for SOTA models).
+* Own and optimize the full data lifecycle: ETL/ELT pipelines for training/inference, performance monitoring, drift detection, and cost analysis of model usage.
+* Manage and scale the core backend infrastructure (Kubernetes, databases, APIs) supporting the generative services and ad SDK.
+* Oversee CI/CD, observability (Prometheus, Grafana), and incident response for all production systems.
+* Drive continuous cloud cost optimization across GPU/TPU fleet and general compute/storage.
+* Collaborate closely with Product (COO) and Data Science on model performance analytics and new feature rollouts.
 
-**Mission**  Ship and monitor ML models in production, ensuring data flows power both product features and decision‑making.
+### 🌟 Head of Community & Creator Success
 
-### Core responsibilities
+**Mission:** Foster a vibrant, engaged, and successful creator community. Drive adoption and retention through exceptional onboarding, support, and direct engagement, particularly for higher-tier partners.
 
-* Build ETL/ELT pipelines feeding training and inference workloads.
-* Serve and version models (Triton/BentoML); enable A/B rollout.
-* Track performance & drift; trigger automated retraining.
-* Analyze large datasets to surface trends; collaborate with Product on experiments.
+**Core Responsibilities (Evolved & specialized from initial Growth Marketing & Community Manager):**
+* Develop and execute a comprehensive community engagement strategy across Discord, forums, social media (X, LinkedIn, etc.), and live events/workshops.
+* Design and manage scalable onboarding programs for new developers, especially for Innovator, Partner, and Associate tiers.
+* Act as the primary point of contact and advocate for the creator community, gathering feedback to inform product development (reporting to COO).
+* Develop educational content, best practices, and success stories to help creators maximize their app's potential on Pollinations.
+* Monitor community health, manage moderation, and report on key community KPIs (engagement, growth, sentiment).
+* Coordinate with any marketing efforts on community-facing campaigns and ambassador programs.
 
-## Product Data Scientist (Contractor)
+### 💰 Digital Ads & Monetization Strategist
 
-**Mission**  Turn raw usage data into actionable insights that shape roadmap and growth levers.
+**Mission:** Maximize advertising revenue for both Pollinations.ai and its Associate-tier partners by optimizing the ad tech stack, managing ad network relationships, and implementing data-driven ad strategies.
 
-### Core responsibilities
+**Core Responsibilities (New, critical role for monetization):**
+* Own and manage the Pollinations Ad SDK's performance, including integration with ad networks and mediation platforms (e.g., deploying and optimizing advanced ad mediation, header bidding as per Q3 2026 roadmap).
+* Develop and implement strategies to optimize ad yield (eCPMs, fill rates, viewability) across various ad formats (rich ads, text, rewarded video etc.).
+* Manage relationships with ad providers and networks; negotiate terms and explore new partnerships.
+* Analyze ad performance data to identify trends, opportunities, and areas for improvement; provide regular reporting to leadership (CEO/COO) and relevant Associate partners.
+* Work closely with Product (COO) and Engineering to define requirements for ad-related features and tools (e.g., ROI Dashboard accuracy for ad revenue, ad placement best practices).
+* Ensure compliance with ad industry standards and regulations.
 
-* Own analytics instrumentation (GA4, Amplitude) and maintain source‑of‑truth dashboards.
-* Curate and structure the media‑content dataset for future model fine‑tuning.
-* Conduct cohort analyses, LTV/CAC modeling, and churn prediction; present findings monthly.
-* Build lightweight propensity models to personalize the user journey. citeturn1file0
+### 💸 Finance & Payout Operations Specialist (Q2 2026)
 
-## Growth Marketing & Community Manager (Contractor)
+**Mission:** Ensure accurate and timely financial operations, particularly managing the complexities of the Associate tier revenue-sharing payouts and overall platform financial health.
 
-**Mission**  Drive developer adoption and brand visibility through community‑first marketing.
-
-### Core responsibilities
-
-* Moderate and grow the open‑source Discord; run weekly live‑build sessions.
-* Own social channels (X, Instagram, LinkedIn) with a KPI‑driven content calendar.
-* Launch paid experiments (Google Ads, Reddit) targeting creator niches.
-* Roll out referral & ambassador programs to lower blended CAC.
-* Collect community feedback and route insights to Product. citeturn1file1
+**Core Responsibilities:**
+* Manage the monthly revenue reconciliation and payout process for Associate partners, ensuring accuracy and compliance.
+* Oversee the financial ledger for revenue sharing (as per Q3 2026 roadmap).
+* Assist the COO with financial planning, budgeting, forecasting, and reporting related to ad revenue and operational costs.
+* Manage relationships with payment processors and financial institutions.
+* Develop and maintain internal controls for financial transactions and reporting.

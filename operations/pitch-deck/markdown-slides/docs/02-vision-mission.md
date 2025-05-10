@@ -8,10 +8,8 @@ class: scroll
 # 🔭 **Vision & Mission**
 
 ## 🚀 Mission
-s
-To build the **ad‑funded AI creation and distribution platform**, where Creator apps finance their own growth through in‑app advertising and automatically graduate to higher service tiers—no invoices, credit cards, or payout headaches. From Q4 2026 we will add an **opt‑in 50 / 50 ad‑revenue share** for top‑performing partners, giving Creators a clear path from idea to income without changing their tech stack.
 
-A default, zero‑friction ad‑funded path lets any developer go from idea to profit without credit‑cards or complex pricing. The optional revenue‑share path (Associate tier) rewards top partners while keeping onboarding effortless.
+To build the **ad‑funded AI creation and distribution platform**, where Creator apps finance their own growth through in‑app advertising and automatically graduate to higher service tiers—no invoices, credit cards, or payout headaches. From Q4 2026 we will add an **opt‑in 50 / 50 ad‑revenue share** for top‑performing partners, giving Creators a clear path from idea to income without changing their tech stack.
 
 ## 🌟 Vision (Through 2026)
 
@@ -21,9 +19,9 @@ A default, zero‑friction ad‑funded path lets any developer go from idea to p
 
 * **Sustainable, Flexible Monetisation**
 
-  * **Default Path (Ad‑Funded Tiering)**
+  * **Ad‑Funded Tiering**
     End‑user engagement drives ad revenue, which directly covers GPU costs and unlocks higher rate limits—fully automated.
-  * **Optional Path (Revenue Share, Q4 2026)**
+  * **Revenue Share, Q4 2026**
     Eligible Partner apps can opt into a **50 % share of the ad revenue** they generate, aligning incentives while keeping the service free‑to‑start.
 
 ## 🔄 Creator Economy Engine

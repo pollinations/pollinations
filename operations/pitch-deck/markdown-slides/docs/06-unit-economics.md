@@ -1,4 +1,8 @@
-# 07 Pollinations.AI Unit Economics
+<div style="text-align: right; position: absolute; top: 0; right: 0;">
+<a href="/10">⬅️ Back to Index</a>
+</div>
+
+# 📈 **Unit Economics**
 
 This document outlines the core calculations and assumptions driving Pollinations' monetization model, covering the default Ad-Funded Automatic Tiering model and the optional models (Creator Premium Subscription, 50/50 Ad Revenue Share) targeted for launch during 2026.
 

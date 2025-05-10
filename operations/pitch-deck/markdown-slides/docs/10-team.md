@@ -1,8 +1,10 @@
-# Pollinations.AI — Key Roles & Responsibilities
+<div style="text-align: right; position: absolute; top: 0; right: 0;">
+<a href="/10">⬅️ Back to Index</a>
+</div>
+
+# 👥 **Key Roles & Responsibilities**
 
 *This document outlines the mission‑critical positions for our first 12 months after the pre‑seed round. Roles are listed in descending order of strategic impact. Contractor engagements are scoped at \~6 months with conversion optional once Series A funding is secured.*
-
----
 
 ## Co‑Founder & Chief Executive Officer (CEO)
 
@@ -18,8 +20,6 @@
 * Champion breakthrough AI R\&D; green‑light model adoption and IP strategy.
 * Act as public face: keynote talks, PR, and thought‑leadership pieces. citeturn1file3
 
----
-
 ## Co‑Founder & Chief Operating Officer (COO)
 
 *Contact: **Elliot Fouchy***
@@ -34,8 +34,6 @@
 * Manage legal, HR, and vendor relationships; enforce process & compliance.
 * Serve as primary point of contact for strategic partners and enterprise pilots. 
 
----
-
 ## DevOps / Site Reliability Engineer (Contractor)
 
 **Mission**  Keep the platform fast, secure, and cost‑efficient while enabling a deploy‑on‑every‑commit culture.
@@ -48,8 +46,6 @@
 * Drive cloud‑cost optimization; report savings in monthly ops reviews.
 * Own security posture: secrets, IAM, VPC design.
 
----
-
 ## MLOps Engineer & Data Analyst (Contractor)
 
 **Mission**  Ship and monitor ML models in production, ensuring data flows power both product features and decision‑making.
@@ -60,8 +56,6 @@
 * Serve and version models (Triton/BentoML); enable A/B rollout.
 * Track performance & drift; trigger automated retraining.
 * Analyze large datasets to surface trends; collaborate with Product on experiments.
-
----
 
 ## Product Data Scientist (Contractor)
 
@@ -74,8 +68,6 @@
 * Conduct cohort analyses, LTV/CAC modeling, and churn prediction; present findings monthly.
 * Build lightweight propensity models to personalize the user journey. citeturn1file0
 
----
-
 ## Growth Marketing & Community Manager (Contractor)
 
 **Mission**  Drive developer adoption and brand visibility through community‑first marketing.
@@ -87,5 +79,3 @@
 * Launch paid experiments (Google Ads, Reddit) targeting creator niches.
 * Roll out referral & ambassador programs to lower blended CAC.
 * Collect community feedback and route insights to Product. citeturn1file1
-
---- 

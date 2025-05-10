@@ -1,8 +1,8 @@
-# 14 Traction Metrics
+<div style="text-align: right; position: absolute; top: 0; right: 0;">
+<a href="/10">⬅️ Back to Index</a>
+</div>
 
-(Placeholder for live metrics)
-
-This document will track key performance indicators over time. Data should be updated regularly (e.g., monthly).
+# 🚀 **Traction Metrics**
 
 **Key Metrics:**
 
@@ -32,3 +32,13 @@ This document will track key performance indicators over time. Data should be up
     *   Total Ad Revenue Share Paid to Creators (€)
 
 *(Data to be sourced from internal analytics dashboards)* 
+
+
+
+## 9. Key KPIs (tracked monthly)
+
+* New registered apps
+* Creator → Innovator upgrade rate
+* Number of profitable apps
+* Platform gross margin (%)
+* Total ad revenue per 1 k inference calls

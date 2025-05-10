@@ -223,26 +223,21 @@ SLIDE GUIDANCE:
 layout: two-cols-header
 ---
 
-# <span class="bg-purple-600 text-white p-2 rounded">**🌍 Market & Business**</span>
+# <span class="bg-purple-600 text-white p-2 rounded">**🌍 Market Opportunity**</span>
 
-::left::
+## Market Scale 💰
+* **$247 B TAM** : Global AI-Contextual Ad Spend (2025E)
+* **$140 B SAM** : Indie App/Web AI Ad Inventory
+* **$22 M SOM** : Our Target Net ARR (EOY 2027)
 
-## Youth Ad Market Size
 
-- **$247B** Total Addressable Market (TAM)
-- **$99B** Serviceable Available Market (SAM)
-- **$0.5B** Serviceable Obtainable Market (SOM)
 
-::right::
+## The Pollinations Flywheel 🚀
+* **Empowering Creators ('Vibe Coders')** : Build & monetize innovative AI apps, easily.
+* **Attracting Advertisers (Brands)** : Reach engaged audiences in unique AI contexts.
 
-## New Market Opportunity 🔄
-
-- **Creators (Vibe Coders)**: developers & hobbyists building with AI
-- **Advertisers (Brands)**: reaching audiences in novel AI experiences
-<br/>
-<br/>
 ## How do we make money? 🔄
-> **Unity for AI**: 50% revenue share to Creators, proven model
+-  Enables indie creators to build, deploy, & monetize AI apps, targeting a multi-billion dollar AI-contextual advertising market.
 
 <!--
 *   **Elliot:** "We're tapping into a **brand new, explosive market opportunity**."

@@ -67,11 +67,13 @@ Our MCP (Model Context Protocol) server enables AI assistants like Claude to gen
 npx @pollinations/model-context-protocol
 ```
 
+Community alternatives like [MCPollinations](https://github.com/pinkpixel-dev/MCPollinations) are also available.
+
 AI assistants can:
 - Generate images from text descriptions
 - Create text-to-speech audio with various voice options
 - Play audio responses through the system speakers
-- Access all Pollinations.AI models and services seamlessly
+- Access all Pollinations.AI models and services
 - List available models, voices, and capabilities
 
 For more advanced usage, check out our [API documentation](APIDOCS.md).

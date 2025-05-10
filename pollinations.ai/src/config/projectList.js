@@ -890,6 +890,14 @@ const allProjects = {
   ],
   socialBots: [
     {
+      name: "🆕 🤖 SingodiyaTech bot",
+      url: "https://t.me/Aks7240Bot",
+      description: "This is a Telegram bot with many Advanced ai features.",
+      author: "t.me/Aks979",
+      submissionDate: "2025-05-10",
+      order: 1,
+    },
+    {
       name: "🆕 🤖 Raftar.xyz",
       url: "https://raftar.xyz",
       description: "A Discord multi-purpose bot with over 100+ commands, including AI image generation, ChatGPT, and SearchGPT powered by Pollinations.AI.",

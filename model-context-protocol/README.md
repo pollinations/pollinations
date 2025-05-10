@@ -72,6 +72,10 @@ After installation, restart Claude Desktop and you can use commands like:
 Generate an image of a sunset over the ocean using the Pollinations API.
 ```
 
+## Alternative MCP Implementations
+
+- **MCPollinations**: A community-maintained alternative MCP server supporting similar capabilities. Available at [GitHub](https://github.com/pinkpixel-dev/MCPollinations) and [NPM](https://www.npmjs.com/package/@pinkpixel/mcpollinations).
+
 ## Troubleshooting
 
 ### "AbortController is not defined" Error

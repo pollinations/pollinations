@@ -15,9 +15,50 @@ class: text-center
 -->
 ---
 
+# <span class="bg-blue-500 text-white p-2 rounded">**🎮 Showcase: Roblox Integration**</span>
+
+<div class="grid grid-cols-2 gap-4 mb-4">
+  <div>
+    <img src="/media/roblox_usage.png" alt="Roblox Usage" class="w-2/3 rounded-lg shadow-lg" />
+    <br />
+    <br />
+    <img src="/media/character_rp_top_roblox_ai_game.png" alt="Character RP - Top Roblox AI Game" class="w-full rounded-lg shadow-lg" />
+  </div>
+  <div>
+    <video class="w-full rounded-lg shadow-lg" autoplay loop muted>
+      <source src="/media/roblox_video.mov" type="video/mp4">
+    </video>
+  </div>
+</div>
+
+<!--
+*   **Thomas:** "Let me show you a real-world example of Pollinations in action."
+*   **Thomas:** "This is one of our most popular integrations - a Roblox game called 'AI Character RP' with over 10 million likes and 500,000 monthly active players."
+*   **Elliot:** "What's remarkable here is that the developer simply integrated our API with a few lines of code, and now players can generate AI characters and interact with them in real-time."
+*   **Thomas:** "This is just one example of how developers are using Pollinations to create engaging experiences that would be impossible without our platform."
+*   **Elliot:** "And importantly, this developer is now earning revenue through our ad-sharing model, creating a sustainable business with minimal upfront investment."
+*   **Thomas:** "We're seeing similar success stories across Discord bots, mobile apps, and web platforms - all powered by our simple, accessible API."
+-->
+
+---
+
 # <span class="bg-red-600 text-white p-2 rounded">**😖 Problem**</span>
 
-<img src="../media/paintpointsgenz.png" alt="Pain Points Visual" class="w-5/7 mx-auto" />
+## Key Pain Points
+
+### Creator (Affiliate)
+- Complex AI infrastructure
+- Authentication headaches
+- No built-in monetization
+
+### End User (Consumer) 
+- Paywalls everywhere
+- Privacy concerns
+- Limited customization
+
+### Brand
+- Missing youth demographic
+- No AI-native targeting
 
 
 <div class="text-center" style="font-size: 24px;">
@@ -30,6 +71,13 @@ The current ecosystem forces <b>painful trade-offs</b>.
 *   **Thomas:** "**End Users**: Hit **paywalls**, have **privacy concerns**, want **more creative control**."
 *   **Thomas:** "**Ad Providers/Brands**: Struggle to reach engaged audiences in these **new AI-native spaces**."
 *   **Elliot:** "**Core Issue**: The system is broken. Friction prevents an **open, creative ecosystem where developers can actually *earn* from their success.**"
+
+![Pain Points Visual](../media/paintpointsgenz.png)
+
+* This diagram shows the three key stakeholders (Creator/Affiliate, End-User/Consumer, and Brand) with their respective pain points:
+* Creator side shows "Infra Cost" with server infrastructure and key icon
+* End-User side shows "Privacy" with shield and "FRICTION" text
+* Brand side shows "Reach Gap" with connection and people icons
 
 SLIDE GUIDANCE:
 
@@ -72,11 +120,23 @@ layout: two-cols-header
 
 ::right::
 
-<img src="../media/pollinations_fix_genz.png" alt="Pollinations Fix Diagram" class="w-5/7 mx-auto" />
+## App Creation Flow
+
+1. Developers build front-end with our assistance
+2. We handle complex AI infrastructure
+3. Users get free, creative experiences
+4. Brands connect with youth audience
+5. Revenue is shared through our platform
 
 <!--
 *   **Thomas:** "Our solution is the **Pollinations AI App Factory** – making it **radically simple to build *and monetize*.**"
 *   **Thomas:** "Think **Unity for AI**, but open and free."
+
+![Pollinations Fix Diagram](../media/pollinations_fix_genz.png)
+
+* Shows circular economy flow between Phone/App → End User → Ad Provider → pollinations.ai → Creators
+* End User pays attention (€) to Ad Provider who pays revenue to pollinations.ai
+* pollinations.ai connects back to Creators who build apps used by End Users
 *   **Elliot:** "**AI Setup:** Integrate instantly. We handle the complex infra configuration."
 *   **Elliot:** "**You Focus on Frontend:** Build the amazing user experience."
 *   **Thomas:** "**Plug & Play AI:** Just add simple **URL calls** for text, image, audio."
@@ -108,20 +168,50 @@ layout: two-cols-header
 
 ::left::
 
-<img src="../media/traction_infoslide3.png" alt="Traction" class="w-mx mx-auto" />
+## Key Metrics
+
+- **3M** Monthly Active Users
+- **30%** Month-over-Month growth
+- **14M+** ad plays from pilot program
+- **300+** live applications
+  - 13k Discord members
+  - 1.8k GitHub stars
 
 
 ::right::
 
-<img src="../media/piechart_countries_genz.png" alt="Geographic distribution" class="w-mx mx-auto" />
+## Geographic Distribution
+
+- **30%** China
+- **13%** United States
+- **13%** Europe
+- **6%** India
+- **38%** Rest of World
 
 <!--
 *   **Thomas:** "And developers agree – we're seeing **explosive growth**."
 *   **Thomas:** "Pollinations powers **>100 MILLION** AI media generations **PER MONTH**."
 *   **Elliot:** "Growth is **>35% Month-over-Month** on API requests."
+
+![Traction Metrics](../media/traction_infoslide3.png)
+
+* Shows key metrics in a visually appealing format:
+* 3M MAU (Monthly Active Users)
+* 30% MoM (Month over Month) growth
+* 14M+ ad plays from pilot program
+* 300+ live apps with 13k Discord members and 1.8k GitHub stars
 *   **Elliot:** "**>300 integrations** live – developers building **2+ new apps DAILY**. Including the viral **Roblox game 'AI Character RP'** (10M+ likes), **SillyTavern** for power users, and **Alibaba's Qwen Agent framework.**"
 *   **Thomas:** "Truly **global reach**: Strong adoption in **China, US, India**."
 *   **Elliot:** "This traction proves developers value the **ease of building** and see the **potential for shared success** on our free infrastructure."
+
+![Geographic Distribution](../media/piechart_countries_genz.png)
+
+* Pie chart showing geographic distribution of users:
+* 30% China
+* 13% US
+* 13% EU
+* 6% India
+* 38% Other regions
 
 SLIDE GUIDANCE:
 <img src="../media/media_requests_per_day_genz.png" alt="Media Requests Growth" class="w-2/4 mx-auto mb-4" />
@@ -137,7 +227,11 @@ layout: two-cols-header
 
 ::left::
 
-<img src="../media/youth-ad-market.png" alt="Youth Ad Market" class="w-3/4 mx-auto my-4" />
+## Youth Ad Market Size
+
+- **$247B** Total Addressable Market (TAM)
+- **$99B** Serviceable Available Market (SAM)
+- **$0.5B** Serviceable Obtainable Market (SOM)
 
 ::right::
 
@@ -152,6 +246,13 @@ layout: two-cols-header
 
 <!--
 *   **Elliot:** "We're tapping into a **brand new, explosive market opportunity**."
+
+![Youth Ad Market](../media/youth-ad-market.png)
+
+* Nested circle diagram showing market sizes:
+* Outer circle: $247B TAM (Total Addressable Market)
+* Middle circle: $99B SAM (Serviceable Available Market)
+* Inner circle: $0.5B SOM (Serviceable Obtainable Market)
 *   **Elliot:** "The rise of 'vibe coding' means **everyone is becoming a creator.** This unlocks vast, **new advertising inventory** within millions of new AI apps. The overall GenAI creator economy is already **>$10 Billion TAM** and doubling."
 *   **Thomas:** "Our **two-sided market** connects:
     *   **Creators (Affiliates):** This growing wave of developers and 'vibe coders' using our **free AI APIs**.
@@ -208,10 +309,24 @@ layout: two-cols-header
 
 ::right::
 
-<img src="../media/fly-wheel-genz.png" alt="Fly Wheel" class="w-2/3 mx-auto my-4" />
+## Virtuous Growth Cycle
+
+```
+More Apps → More Users → Better Data → 
+Better Targeting → Higher Revenue → 
+Better Platform → More Apps
+```
+
+This self-reinforcing flywheel creates a powerful circular economy.
 
 <!--
 *   **Thomas:** "Our model creates a **powerful circular economy**, a flywheel for growth." *(Gesture to diagram)*
+
+![Fly Wheel](../media/fly-wheel-genz.png)
+
+* Circular diagram showing the flywheel effect:
+* Shows how more apps lead to more users, leading to better data, better targeting, more revenue, better platform, and back to more apps
+* Illustrates the self-reinforcing nature of the business model
 *   **Thomas:** "**Market Trend Driving Us**: The **GenAI market is exploding**, doubling year-over-year."
 *   **Elliot:** "Better data from usage unlocks **smarter ad targeting**, increasing revenue. **Open Source & Privacy-First** builds developer trust."
 *   **Thomas:** "More apps -> more users -> better data -> better platform -> **even more apps**. It's self-reinforcing."
@@ -254,11 +369,28 @@ Become the ubiquitous, **assistant-centric** engine for AI creation and distribu
 
 ::right::
 
-<img src="../media/circular_economy_genz.png" alt="Fly Wheel" class="w-5/6 mx-auto my-4" />
+## Roadmap Phases
+
+### Phase 1: Activate (Now-12mo)
+- Launch ad rev-share across platform
+- Scale developer community
+- Prove monetization model
+
+### Phase 2: Scale (12-36mo)
+- Deepen integrations with SDK v2
+- Optimize ad targeting with AI
+- Build global community structure
 
 <!--
 
 *   **Thomas:** "Our roadmap focuses on **three clear phases**."
+
+![Circular Economy](../media/circular_economy_genz.png)
+
+* Shows a visual representation of our three-phase roadmap:
+* Phase 1 (Activate): Launch ad revenue sharing, scale developer community, prove model
+* Phase 2 (Scale): SDK v2, AI-driven ad optimization, global expansion
+* Phase 3 (Vision): Become the Unity for AI experiences
 *   **Thomas:** "In **Phase 1, Activate (Next 12 Months)**, our focus is on:
     *   Launching our **Ad Revenue Share** platform-wide.
     *   Aggressively **scaling our developer community** and the number of **integrated applications**.

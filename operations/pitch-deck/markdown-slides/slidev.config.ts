@@ -7,9 +7,7 @@ import { defineConfig } from 'slidev'
 export default defineConfig({
   pages: true,
   theme: 'default', // Assuming 'default' is your intended theme
-  css: [
-    'theme.css',   // <-- only this one
-  ],
+
   // Add any other essential configurations if needed, 
   // but keep it minimal as per instructions.
 }) 

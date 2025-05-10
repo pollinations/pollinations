@@ -1,3 +1,6 @@
+---
+class: scroll
+---
 <div style="text-align: right; position: absolute; top: 0; right: 0;">
 <a href="/10">⬅️ Back to Index</a>
 </div>

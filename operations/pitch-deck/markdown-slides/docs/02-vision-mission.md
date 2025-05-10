@@ -1,3 +1,6 @@
+---
+class: scroll
+---
 <div style="text-align: right; position: absolute; top: 0; right: 0;">
 <a href="/10">⬅️ Back to Index</a>
 </div>
@@ -12,7 +15,7 @@ To build the **dominant ad‑funded AI creation and distribution platform**, whe
 
 * **Universal AI Development** : Democratise multimodal AI so that anyone with an idea can become a **vibe‑coder**—no deep learning PhD required.
 
-* **Interface‑Free Creation** : Deliver a “Zero‑UI” platform where natural‑language prompts and API calls replace complex dashboards, letting Creators focus on the experience, not the tooling.
+* **Interface‑Free Creation** : Deliver a "Zero‑UI" platform where natural‑language prompts and API calls replace complex dashboards, letting Creators focus on the experience, not the tooling.
 
 * **Sustainable, Flexible Monetisation**
 
@@ -25,8 +28,8 @@ To build the **dominant ad‑funded AI creation and distribution platform**, whe
 
 Pollinations equips Creators with three compounding levers:
 
-1. **Free On‑Ramp** – Explorer & Creator tiers mean zero financial barriers to experimentation.
-2. **Auto‑Scaling Via Ads** – When ad € ≥ cloud €, the app upgrades to Innovator/Partner without human review.
-3. **Revenue Participation (2026)** – High‑performing apps unlock a 50 % revenue split, turning side projects into real businesses.
+1. **Free On‑Ramp** – Explorer & Creator tiers mean zero financial barriers to experimentation.
+2. **Auto‑Scaling Via Ads** – When ad € ≥ cloud €, the app upgrades to Innovator/Partner without human review.
+3. **Revenue Participation (2026)** – High‑performing apps unlock a 50 % revenue split, turning side projects into real businesses.
 
 This engine turns curiosity into sustainable products, fuelling a virtuous cycle of more apps, more end‑users, and higher ad yield—benefiting the entire ecosystem.

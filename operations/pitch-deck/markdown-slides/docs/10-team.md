@@ -39,17 +39,17 @@ class: scroll
 
 ## Hiring Plan & Team Evolution: From Q3 2025 Onwards
 
-*As Pollinations.ai launches the Associate Tier (Q3 2026 Beta, Q4 2026 GA) and scales towards an ecosystem of 2000+ apps by EOY 2026, our talent needs will concentrate on specialized roles critical for managing a mature, revenue-generating platform with a significant creator revenue-sharing component. The COO will initially absorb product management responsibilities for monetization. The following roles represent urgent and key hires from Q2 2026, ideally as full-time positions to ensure deep expertise and commitment. Financial operations roles will be considered from Q2 2026 onwards.*
+*As Pollinations.ai launches the Partner Tier (Q3 2026 Beta, Q4 2026 GA) and scales towards an ecosystem of 2000+ apps by EOY 2026, our talent needs will concentrate on specialized roles critical for managing a mature, revenue-generating platform with a significant creator revenue-sharing component. The COO will initially absorb product management responsibilities for monetization. The following roles represent urgent and key hires from Q2 2026, ideally as full-time positions to ensure deep expertise and commitment. Financial operations roles will be considered from Q2 2026 onwards.*
 
 ### 💰 Digital Ads & Monetization Strategist
 
-**Mission:** Maximize advertising revenue for both Pollinations.ai and its Associate-tier partners by optimizing the ad tech stack, managing ad network relationships, and implementing data-driven ad strategies.
+**Mission:** Maximize advertising revenue for both Pollinations.ai and its Partner-tier partners by optimizing the ad tech stack, managing ad network relationships, and implementing data-driven ad strategies.
 
 **Core Responsibilities (New, critical role for monetization):**
 * Own and manage the Pollinations Ad SDK's performance, including integration with ad networks and mediation platforms (e.g., deploying and optimizing advanced ad mediation, header bidding as per Q3 2026 roadmap).
 * Develop and implement strategies to optimize ad yield (eCPMs, fill rates, viewability) across various ad formats (rich ads, text, rewarded video etc.).
 * Manage relationships with ad providers and networks; negotiate terms and explore new partnerships.
-* Analyze ad performance data to identify trends, opportunities, and areas for improvement; provide regular reporting to leadership (CEO/COO) and relevant Associate partners.
+* Analyze ad performance data to identify trends, opportunities, and areas for improvement; provide regular reporting to leadership (CEO/COO) and relevant Partner partners.
 * Work closely with Product (COO) and Engineering to define requirements for ad-related features and tools (e.g., ROI Dashboard accuracy for ad revenue, ad placement best practices).
 * Ensure compliance with ad industry standards and regulations.
 
@@ -71,7 +71,7 @@ class: scroll
 
 **Core Responsibilities (Evolved & specialized from initial Growth Marketing & Community Manager):**
 * Develop and execute a comprehensive community engagement strategy across Discord, forums, social media (X, LinkedIn, etc.), and live events/workshops.
-* Design and manage scalable onboarding programs for new developers, especially for Innovator, Partner, and Associate tiers.
+* Design and manage scalable onboarding programs for new developers, especially for Innovator, Partner, and Partner tiers.
 * Act as the primary point of contact and advocate for the creator community, gathering feedback to inform product development (reporting to COO).
 * Develop educational content, best practices, and success stories to help creators maximize their app's potential on Pollinations.
 * Monitor community health, manage moderation, and report on key community KPIs (engagement, growth, sentiment).
@@ -79,10 +79,10 @@ class: scroll
 
 ### 💸 Finance & Payout Operations Specialist (Q2 2026)
 
-**Mission:** Ensure accurate and timely financial operations, particularly managing the complexities of the Associate tier revenue-sharing payouts and overall platform financial health.
+**Mission:** Ensure accurate and timely financial operations, particularly managing the complexities of the Partner tier revenue-sharing payouts and overall platform financial health.
 
 **Core Responsibilities:**
-* Manage the monthly revenue reconciliation and payout process for Associate partners, ensuring accuracy and compliance.
+* Manage the monthly revenue reconciliation and payout process for Partner tier, ensuring accuracy and compliance.
 * Oversee the financial ledger for revenue sharing (as per Q3 2026 roadmap).
 * Assist the COO with financial planning, budgeting, forecasting, and reporting related to ad revenue and operational costs.
 * Manage relationships with payment processors and financial institutions.

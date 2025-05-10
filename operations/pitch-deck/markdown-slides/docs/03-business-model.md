@@ -24,13 +24,13 @@ Pollinations.AI turns cutting‑edge multimodal AI models into **plug‑and‑pl
 | ---- | ------------- | ----------------------------- | ----------------------------------------------- | -------------------- |
 | 1    | **Explorer**  | Curious devs, hobbyists       | High rate limits, no auth, zero cost            | Production (live)    |
 | 2    | **Creator**   | Early‑stage projects          | Referer, moderate limits, usage analytics    | Beta (Q2 2025)       |
-| 4    | **Inovator**   | Profitable apps | Unlimited usage, SOTA models, rich ad formats, marketplace promo | Q1 2026              |
-| 5    | **Associate** | Strategic rev‑share partners  | All Partner perks + **50/50 ad‑revenue split**  | Q3 2026              |
+| 4    | **Innovator**   | Profitable apps | Unlimited usage, SOTA models, rich ad formats, marketplace promo | Q1 2026              |
+| 5    | **Partner** | Strategic rev‑share partners  | All Partner perks + **50/50 ad‑revenue split**  | Q3 2026              |
 
 ## 4. Revenue Streams
 
 1. **Advertising Revenue (100 %)** – All ad income generated through the Pollinations SDK flows to the platform today.
-2. **Future Revenue Share** – Starting Q4 2026, Associate apps will automatically receive **50 % of the ad revenue** they generate.
+2. **Future Revenue Share** – Starting Q4 2026, Partner apps will automatically receive **50 % of the ad revenue** they generate.
 
 ## 9. Growth Flywheel
 
@@ -47,8 +47,8 @@ Pollinations.AI turns cutting‑edge multimodal AI models into **plug‑and‑pl
 | **2025 Q4** | SDK ads v1, public pricing page                    |
 | **2026 Q1** | Partner early‑access, SOTA models & rich ads       |
 | **2026 Q2** | Partner GA, advanced ad formats                    |
-| **2026 Q3** | Revenue‑share ledger + Associate beta              |
-| **2026 Q4** | Associate tier GA (50/50 split), automated payouts |
+| **2026 Q3** | Revenue‑share ledger + Partner beta              |
+| **2026 Q4** | Partner tier GA (50/50 split), automated payouts |
 
 WE HAVE DSP GIVE US SSP
 

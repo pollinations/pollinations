@@ -25,7 +25,7 @@ The model forecasts a monthly platform gross profit of **€152,500**. This achi
 | **Net Ad Revenue (Platform Pool) per 1,000 Media Units** | **€1.70**                       | After 15% ad network fee. This is the base for Partner share. |
 | **Partner Tier Revenue Share**                | **50% of Net Ad Revenue from Partner App** | Shared after ad network fees are deducted.                    |
 
-## 2. App Tier Distribution & Per-App Economics (Monthly, Rounded Display)
+## 2. App Tier Distribution & Per-App Economics (Monthly)
 
 **Target EOY 2026: 2000 Apps**
 *   **Explorer (Non-Monetized):** 30% (600 apps)
@@ -69,14 +69,7 @@ The model forecasts a monthly platform gross profit of **€152,500**. This achi
 | **Platform Gross Margin (on Net Retained Revenue)**       | **~51%**        |
 | **Platform Gross Margin (on Net Platform-Managed Ad Rev)**| **~36%**        |
 
-## 4. Key Insights & Strategic Implications
-
-*   **Improved Profitability:** Sharing net ad revenue (after ad network fees) with Partners substantially improves Pollinations' gross profit to €152,500 monthly and enhances margins.
-*   **Partner Tier More Attractive to Platform:** The Partner tier now contributes significantly more (€175/app net) to Pollinations, making it a more financially sound top tier for the platform while still being attractive to creators.
-*   **Freemium Sustainability Reinforced:** Increased profits from monetized tiers (combined ~€154.5k net operating income) more comfortably cover free tier costs (€18,000).
-*   **Reduced Risk:** This model is less sensitive to fluctuations in ad network fees directly impacting Pollinations' share from Partner apps, as the fee is deducted before the split.
-
-## 5. Blended End-User LTV (to Pollinations Platform)
+## 4. Blended End-User LTV (to Pollinations Platform)
 
 This calculates the average Lifetime Value an end-user on a *monetized app* (Innovator or Partner) brings to Pollinations.
 

@@ -363,19 +363,20 @@ layout: two-cols-header
 - [🎤 Pitch Deck](/00)
 - [📑 Executive Summary](/11)
 - [🔭 Vision & Mission](/12)
-- [💰 Business Model](13)
-- [🛣️ Roadmap](/14)
-- [💹 Financial Model](15)
-- [👥 Team](/16)
-  
+- [📈 Market Opportunity](/13)
+- [💰 Business Model](/14)
+- [🛣️ Roadmap](/15)
+- [💹 Financial Model](/16)
+
 ::right::
 
-- [🏗️ Tech Architecture](/17)
-- [🔌 SDK & Ad Integration](/18)
-- [⚠️ Risk Register](/19)
-- [🥊 Competitive Landscape](/20)
-- [🚀 Traction Metrics](/21)
-- [🌍 Ecosystem Analysis](/22)
+- [👥 Team](/17)
+- [🏗️ Tech Architecture](/18)
+- [🔌 SDK & Ad Integration](/19)
+- [⚠️ Risk Register](/20)
+- [🥊 Competitive Landscape](/21)
+- [🚀 Traction Metrics](/22)
+- [🌍 Ecosystem Analysis](/23)
 
 ---
 src: ./docs/01-executive-summary.md
@@ -383,6 +384,10 @@ src: ./docs/01-executive-summary.md
 
 ---
 src: ./docs/02-vision-mission.md
+---
+
+---
+src: ./docs/03-market-opportunity.md
 ---
 
 ---

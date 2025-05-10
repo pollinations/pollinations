@@ -5,7 +5,7 @@ import { defineConfig } from 'slidev'
 // const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
-  pages: true,
+  pages: false,
   theme: 'default', // Assuming 'default' is your intended theme
 
   // Add any other essential configurations if needed, 

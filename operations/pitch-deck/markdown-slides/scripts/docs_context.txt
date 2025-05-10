@@ -1,0 +1,319 @@
+# 01-executive-summary.md
+
+---
+class: scroll
+---
+
+<div style="text-align: right; position: absolute; top: 0; right: 0;">
+<a href="/10">⬅️ Back to Index</a>
+</div>
+
+# 📑 **Executive Summary**
+
+## 30‑Second Pitch
+
+**Pollinations.ai** is the *ad‑funded backend* for generative AI. One SDK call gives any developer free, cloud‑scaled media generation and a turnkey ad slot that pays the bills. When an app's ad revenue covers its compute, it graduates to unlimited usage—no pricing tables, no credit cards.
+
+AI is universal, yet paid APIs and DevOps still gate‑keep innovation. Pollinations.ai erases that barrier: one SDK call spins up cloud‑scale generative media, turnkey hosting, and a context‑aware ad plug‑in. Apps that earn ad revenue automatically unlock higher model tiers and looser rate limits—no credit card required.
+
+## One‑Pager
+
+| Section            | Key Points                                                                                                                                         |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Problem**        | Generative AI APIs are pay‑walled and DevOps‑heavy; solo devs and indie studios can't afford to experiment or scale.                               |
+| **Solution**       | A freemium, ad‑supported model: high‑rate, no‑auth API to start; ads inside end‑apps finance GPU time automatically.                               |
+| **Go‑to‑Market**   | 5‑tier ladder (Explorer → Associate). **100 % ad revenue** retained by Pollinations until **Q4 2026**, when top‑tier partners begin a 50/50 split. |
+| **Traction**       | 2.8 k Explorer apps • Creator Beta live (Apr 2025) • 7.5 M images/mo rendered at ≤ $0.002 per image cost.                                         |
+| **Roadmap**        | Innovator GA Q3 2025 → Partner GA Q1 2026 (rich ads, SOTA models) → Associate GA Q4 2026 (revenue share).                                          |
+| **Business Model** | Today: ad CPM × impressions. Year‑end 2026: share top‑line 50 % with Associate partners to accelerate ecosystem growth.                            |
+| **Unit Economics** | Target gross margin 65 % post‑Partner GA; break‑even ad fill CPM ≈ $1.2.                                                                          |
+| **Team**           | Ex‑Google Brain, ETH Zürich, Unity Ads; 12‑person remote core.                                                                                     |
+| **Fundraise**      | Seeking **€4 M Seed** to expand GPU fleet, finalize Partner ad tech, and onboard first Associate cohort.                                           |
+
+### Contact
+
+📧 [hello@pollinations.ai](mailto:hello@pollinations.ai) • 🌐 pollinations.ai
+
+# 02-vision-mission.md
+
+---
+class: scroll
+---
+<div style="text-align: right; position: absolute; top: 0; right: 0;">
+<a href="/10">⬅️ Back to Index</a>
+</div>
+
+# 🔭 **Vision & Mission**
+
+## 🚀 Mission
+
+To build the **dominant ad‑funded AI creation and distribution platform**, where Creator apps finance their own growth through in‑app advertising and automatically graduate to higher service tiers—no invoices, credit cards, or payout headaches. From Q4 2026 we will add an **opt‑in 50 / 50 ad‑revenue share** for top‑performing partners, giving Creators a clear path from idea to income without changing their tech stack.
+
+## 🌟 Vision (Through 2026)
+
+* **Universal AI Development** : Democratise multimodal AI so that anyone with an idea can become a **vibe‑coder**—no deep learning PhD required.
+
+* **Interface‑Free Creation** : Deliver a "Zero‑UI" platform where natural‑language prompts and API calls replace complex dashboards, letting Creators focus on the experience, not the tooling.
+
+* **Sustainable, Flexible Monetisation**
+
+  * **Default Path (Ad‑Funded Tiering)**
+    End‑user engagement drives ad revenue, which directly covers GPU costs and unlocks higher rate limits—fully automated.
+  * **Optional Path (Revenue Share, Q4 2026)**
+    Eligible Partner apps can opt into a **50 % share of the ad revenue** they generate, aligning incentives while keeping the service free‑to‑start.
+
+## 🔄 Creator Economy Engine
+
+Pollinations equips Creators with three compounding levers:
+
+1. **Free On‑Ramp** – Explorer & Creator tiers mean zero financial barriers to experimentation.
+2. **Auto‑Scaling Via Ads** – When ad € ≥ cloud €, the app upgrades to Innovator/Partner without human review.
+3. **Revenue Participation (2026)** – High‑performing apps unlock a 50 % revenue split, turning side projects into real businesses.
+
+This engine turns curiosity into sustainable products, fuelling a virtuous cycle of more apps, more end‑users, and higher ad yield—benefiting the entire ecosystem.
+
+
+# 03-business-model.md
+
+---
+class: scroll
+---
+<div style="text-align: right; position: absolute; top: 0; right: 0;">
+<a href="/10">⬅️ Back to Index</a>
+</div>
+
+# 💰 **Business Model**
+
+## 1. Value Proposition
+
+Pollinations.AI turns cutting‑edge multimodal AI models into **plug‑and‑play APIs** backed by a simple, ad‑supported monetisation engine. We remove the friction of scaling inference and earning revenue—so creators can focus on building apps, games, and experiences.
+
+## 2. Stakeholders
+
+* **Creators** – Developers and small teams building applications on the Pollinations platform.
+* **End‑Users** – People interacting with those applications.
+* **Ad Providers** – Ad networks (e.g., Google AdSense) supplying inventory and paying for impressions/clicks.
+* **Pollinations** – The platform operator orchestrating models, infrastructure, and ads.
+
+## 3. Customer Segmentation & Tier Ladder
+
+| Tier | Name          | Primary User                  | Key Benefits                                    | Planned Availability |
+| ---- | ------------- | ----------------------------- | ----------------------------------------------- | -------------------- |
+| 1    | **Explorer**  | Curious devs, hobbyists       | High rate limits, no auth, zero cost            | Production (live)    |
+| 2    | **Creator**   | Early‑stage projects          | Auth token, moderate limits, usage analytics    | Beta (Q2 2025)       |
+| 3    | **Innovator** | Profitable apps               | Unlimited usage, real‑time cost dashboard       | Q3 2025              |
+| 4    | **Partner**   | Ad‑integrated profitable apps | SOTA models, rich ad formats, marketplace promo | Q1 2026              |
+| 5    | **Associate** | Strategic rev‑share partners  | All Partner perks + **50/50 ad‑revenue split**  | Q4 2026              |
+
+## 4. Revenue Streams
+
+1. **Advertising Revenue (100 %)** – All ad income generated through the Pollinations SDK flows to the platform today.
+2. **Future Revenue Share** – Starting Q4 2026, Associate apps will automatically receive **50 % of the ad revenue** they generate.
+
+## 5. Key Differentiator
+
+A default, **zero‑friction ad‑funded path** lets any developer go from idea to profit without credit‑cards or complex pricing. The optional revenue‑share path (Associate tier) rewards top partners while keeping onboarding effortless.
+
+## 6. Cost Structure
+
+* GPU/TPU inference (≈ 80 % of COGS)
+* Storage & CDN egress
+* Ad‑network fees (\~15 % of ad gross)
+* R&D + Community programmes (hackathons, docs)
+
+## 7. Pricing & Tier Progression
+
+* Public **Pricing Page** compares tiers and explains benefits.
+* **ROI Dashboard** (Creator tier +) surfaces real‑time cost vs ad revenue.
+* **Automatic Tier Unlock** – when an app's ad revenue exceeds its compute cost for 30 consecutive days, it qualifies for the Innovator tier and beyond.
+
+## 8. Incentive Framework
+
+| Mechanism                 | What It Does                                        | Applies To          |
+| ------------------------- | --------------------------------------------------- | ------------------- |
+| **ROI Dashboard**         | Shows cost, ad revenue, and net margin in real time | Creator tier & up   |
+| **Marketplace Promotion** | Higher‑tier apps featured more prominently          | Partner / Associate |
+
+## 9. Growth Flywheel
+
+1. **Explorer → Creator** via frictionless docs & SDK samples.
+2. **Creator → Innovator** prompted by clear profitability insights in the ROI Dashboard.
+3. **Innovator → Partner/Associate** unlocked by ad integration and (from Q4 2026) shared revenue, plus prominent marketplace placement.
+
+## 10. Rollout Timeline
+
+| Quarter     | Milestone                                          |
+| ----------- | -------------------------------------------------- |
+| **2025 Q2** | Creator beta hardening                             |
+| **2025 Q3** | Innovator tier + ROI dashboard                     |
+| **2025 Q4** | SDK ads v1, public pricing page                    |
+| **2026 Q1** | Partner early‑access, SOTA models & rich ads       |
+| **2026 Q2** | Partner GA, advanced ad formats                    |
+| **2026 Q3** | Revenue‑share ledger + Associate beta              |
+| **2026 Q4** | Associate tier GA (50/50 split), automated payouts |
+
+
+
+# 04-roadmap.md
+
+---
+class: scroll
+---
+<div style="text-align: right; position: absolute; top: 0; right: 0;">
+<a href="/10">⬅️ Back to Index</a>
+</div>
+
+# 🛣️ **Roadmap (2025-2026)**
+
+**Current Status (End Q2 2025):** Creator Tier Beta is live and undergoing hardening. Explorer Tier is operational.
+
+**Overall Goal:** Systematically launch all remaining tiers (Innovator, Partner, Associate) and implement the 50/50 ad-revenue share by EOY 2026, creating a self-sustaining ecosystem for AI creators.
+
+### **🗓️ Q3 2025: Launching the Innovator Tier & Early Monetization Insights**
+*Goal: Empower creators with cost transparency and unlock unlimited usage for profitable apps.*
+
+*   **Launch Innovator Tier (GA):**
+    *   Make the Innovator Tier generally available, offering unlimited usage to apps whose ad revenue covers their compute costs.
+    *   Release the **ROI Dashboard**, providing real-time visibility into app compute costs vs. ad revenue generated.
+*   **Begin Ad SDK Integration Testing:** Internal testing and early feedback cycles for the Pollinations Ad SDK.
+
+### **🗓️ Q4 2025: Introducing Direct Ad Monetization & Platform Transparency**
+*Goal: Enable direct ad monetization for apps and provide clear public information on platform tiers.*
+
+*   **Launch Pollinations Ad SDK v1:**
+    *   Release the first version of the Ad SDK, allowing Creator and Innovator tier apps to integrate ads easily.
+    *   All ad revenue initially flows to Pollinations to cover compute and platform costs.
+*   **Publish Public Pricing & Tier Page:** Clearly outline the benefits, requirements, and progression path for all five tiers (Explorer, Creator, Innovator, Partner, Associate).
+*   **Prepare for Partner Tier:** Finalize technical requirements and initial SOTA model selection for the upcoming Partner Tier.
+
+### **🗓️ Q1 2026: Unveiling the Partner Tier & Premium Features**
+*Goal: Offer advanced capabilities and richer ad formats to high-performing, ad-integrated apps.*
+
+*   **Launch Partner Tier (Early Access):**
+    *   Invite top-performing Innovator apps (those successfully monetizing with the Ad SDK) to an Early Access Program for the Partner Tier.
+    *   Provide access to a curated selection of **State-Of-The-Art (SOTA) AI models**.
+    *   Introduce initial **rich ad formats** for higher engagement and CPMs.
+*   **Develop Advanced Ad Mediation Backend:** Begin building infrastructure for multi-network ad mediation to optimize yield.
+
+### **🗓️ Q2 2026: Partner Tier General Availability & Enhanced Ad Tech**
+*Goal: Make the Partner Tier broadly available and significantly improve ad monetization capabilities.*
+
+*   **Launch Partner Tier (GA):**
+    *   Open the Partner Tier to all eligible apps that meet ad revenue and engagement criteria.
+    *   Roll out **advanced ad formats** and improved ad SDK features.
+*   **Internal Testing: Revenue Share Mechanics:** Begin development and internal testing of the revenue-share ledger and payout systems for the upcoming Associate Tier.
+
+### **🗓️ Q3 2026: Building & Beta Testing the Associate (Revenue Share) Tier**
+*Goal: Develop and rigorously test all components for the 50/50 ad-revenue share program.*
+
+*   **Develop Revenue Share Infrastructure:** Build and test the secure ledger and partner wallet system for transparent revenue tracking and automated payouts.
+*   **Launch Associate Tier (Closed Beta):**
+    *   Onboard an initial cohort of high-performing Partner apps (10-15) to the Associate Tier Beta.
+    *   Pilot the **50/50 ad-revenue split** with this cohort, validating the technical and financial processes.
+*   **Release Advanced Ad Mediation:** Deploy multi-network ad mediation and header bidding capabilities to maximize ad revenue for the platform and beta Associate partners.
+*   **Finalize Legal & Operational Frameworks:** Complete Associate Tier agreements and operational procedures for payouts.
+
+### **🗓️ Q4 2026: Full Launch – Associate Tier & 50/50 Revenue Share Program**
+*Goal: Go live with the full 5-tier model, including automated 50/50 ad-revenue sharing, establishing Pollinations.ai as the leading ad-funded AI creation platform.*
+
+*   **General Availability: Associate Tier & 50/50 Ad-Revenue Share:**
+    *   Officially launch the Associate Tier.
+    *   Enable **automated monthly payouts** of the 50% ad-revenue share to all eligible Associate partners.
+*   **Publicly Launch Revenue Share Program:** Announce the program broadly with PR, co-marketing with launch partners, and clear onboarding documentation.
+*   **Enhance Platform Incentives:** Integrate Marketplace ranking to favor and promote apps in Partner and Associate Tiers, especially those generating significant shared revenue.
+*   **Refine Creator Tools:** Roll out advanced cost-observability features (e.g., real-time margin alerts) for Innovator, Partner, and Associate tiers.
+
+**By End of 2026: Pollinations.ai will have a fully operational, five-tier platform, culminating in the Associate Tier where top creators earn a 50% share of the ad revenue they generate. This completes our vision of a self-sustaining ecosystem where AI innovation is funded by its own success.**
+
+# 05-financial-model.md
+
+---
+class: scroll
+---
+<div style="text-align: right; position: absolute; top: 0; right: 0;">
+<a href="/10">⬅️ Back to Index</a>
+</div>
+
+# 💹 **Financial Model**
+
+## Executive Summary
+
+This financial plan models the Pollinations.ai platform based on a diverse ecosystem of 100 applications distributed across various tiers of engagement and monetization. It demonstrates that even with a significant portion of apps operating on free or exploratory tiers, the revenue generated by successful "Innovator" and "Partner" applications can lead to robust platform profitability and a sustainable business model. The model projects a monthly gross profit of **€11,017.50** for a cohort of 100 apps, achieving a gross margin of approximately **58.92%** on monetized revenue.
+
+## 1. Core Platform Assumptions
+
+The following assumptions underpin this financial model:
+
+| Parameter                       | Value                                      | Notes                                     |
+| :------------------------------ | :----------------------------------------- | :---------------------------------------- |
+| Compute Cost per Media Unit     | €0.0005                                    |                                           |
+| Platform Fixed Costs (Monthly)  | €2,000.00                                  | Storage & CDN                             |
+| Ad Impressions per Media Unit   | 10%                                        |                                           |
+| Ad Network Revenue Share        | Pollinations retains 85% of Gross Ad Revenue | 15% fee to ad networks                    |
+| Ad Strategy (Monetizing Tiers)  | Balanced Mix                               | 50% Rewarded Video, 50% Affiliate Ads   |
+| - Net Ad Revenue (Balanced Mix) | €1.70 per 1,000 media units                | After 15% ad network fee                  |
+| - Profit from Balanced Mix      | €1.20 per 1,000 media units                | Net Ad Revenue - Compute Cost (€0.50)     |
+| App Cohort Size for Model     | 100 Apps                                   | For percentage-based distribution         |
+
+## 2. App Tier Distribution & Characteristics
+
+The model assumes a 100-app cohort with the following distribution and per-app monthly characteristics:
+
+| App Tier    | % of Apps | Apps in Cohort | Media Units / App | Compute Cost / App | Est. Net Ad Revenue / App | **Net Contribution / App (to Platform)** |
+| :---------- | :-------- | :------------- | :---------------- | :----------------- | :------------------------ | :--------------------------------------- |
+| Anonymous   | 15%       | 15             | 1,000             | €0.50              | €0.00 (Loss assumed)      | **-€0.50**                               |
+| Creator     | 35%       | 35             | 10,000            | €5.00              | €0.00 (Loss assumed)      | **-€5.00**                               |
+| Innovator   | 35%       | 35             | 100,000           | €50.00             | €170.00 (Balanced Mix)    | **€120.00**                              |
+| Partner     | 15%       | 15             | 500,000           | €250.00            | €850.00 (Balanced Mix)    | **€600.00**                              |
+
+*Note: "Net Contribution / App" is calculated as (Est. Net Ad Revenue / App - Compute Cost / App). For loss-making tiers, it represents the compute cost covered by Pollinations.*
+
+## 3. Platform Aggregated Financials (Monthly, for 100 App Cohort)
+
+### 3.1. Total Media Generation & Compute Costs by Segment
+
+| App Tier    | Total Apps | Total Media Units | Total Compute Cost |
+| :---------- | :--------- | :---------------- | :----------------- |
+| Anonymous   | 15         | 15,000            | €7.50              |
+| Creator     | 35         | 350,000           | €175.00            |
+| Innovator   | 35         | 3,500,000         | €1,750.00          |
+| Partner     | 15         | 7,500,000         | €3,750.00          |
+| **TOTALS**  | **100**    | **11,365,000**    | **€5,682.50**      |
+
+### 3.2. Total Net Contribution by Segment
+
+This reflects the profit (or loss covered by Pollinations) from each app segment.
+
+| App Tier    | Total Apps | Net Contribution / App | Total Net Contribution by Segment |
+| :---------- | :--------- | :--------------------- | :-------------------------------- |
+| Anonymous   | 15         | -€0.50                 | -€7.50                            |
+| Creator     | 35         | -€5.00                 | -€175.00                          |
+| Innovator   | 35         | €120.00                | €4,200.00                         |
+| Partner     | 15         | €600.00                | €9,000.00                         |
+| **TOTAL OPERATING INCOME (before fixed costs)** |        |                        | **€13,017.50**                    |
+
+### 3.3. Platform Profit & Loss Summary (Monthly, for 100 App Cohort)
+
+| Financial Item                                        | Amount        | Notes                                                           |
+| :---------------------------------------------------- | :------------ | :-------------------------------------------------------------- |
+| Total Net Ad Revenue (from Innovator & Partner Tiers) | €18,700.00    | (€170 x 35 apps) + (€850 x 15 apps)                             |
+| Less: Total Platform Compute Costs (all tiers)        | (€5,682.50)   | From Table 3.1                                                  |
+| **Net Operating Income (before fixed costs)**         | **€13,017.50**| Revenue from profitable apps minus compute costs of all apps      |
+| Less: Platform Fixed Costs (Storage/CDN)              | (€2,000.00)   |                                                                 |
+| **PLATFORM GROSS PROFIT**                             | **€11,017.50**|                                                                 |
+|                                                       |               |                                                                 |
+| **Platform Gross Margin (on monetized revenue)**      | **58.92%**    | (€11,017.50 Gross Profit / €18,700.00 Monetized Net Ad Revenue) |
+
+## 4. Key Insights & Strategic Implications
+
+*   **Profitability Drivers:** The "Innovator" and "Partner" tiers are crucial, contributing a combined operating income of €13,200 (€4,200 + €9,000) before their own compute costs are considered as part of total platform compute.
+*   **Freemium Model Viability:** The costs associated with supporting free/exploratory tiers (Anonymous & Creator) amount to €182.50 in compute per month for this cohort. This is a modest investment relative to the substantial profits generated by monetized tiers, validating the freemium approach as a user acquisition funnel.
+*   **Robust Financial Health:** With a 100-app cohort demonstrating this distribution, the platform achieves a strong monthly gross profit of €11,017.50 and a healthy gross margin of nearly 59%. This indicates a sustainable financial model.
+*   **Scalability & Growth:** Increasing the number of apps, especially by fostering growth into the Innovator and Partner tiers, will directly scale profitability. The fixed costs become less impactful as the platform grows.
+*   **Path to Associate Tier:** The strong gross profit generated provides the financial capacity to support future initiatives, including the planned 50/50 revenue share for the "Associate" tier, further incentivizing top creators.
+
+## 5. Conclusion
+
+This multi-tier app ecosystem model demonstrates that Pollinations.ai can achieve significant profitability and financial sustainability. By balancing the support for early-stage creators with effective monetization strategies for successful applications, the platform is well-positioned for growth. The key to continued success lies in effectively guiding applications through the tiers, maximizing the number of high-performing, revenue-generating partners within the ecosystem.
+
+---

@@ -16,17 +16,16 @@ layout: two-cols-header
 - [💰 Business Model](13)
 - [🛣️ Roadmap](/14)
 - [💹 Financial Model](15)
-- [📈 Unit Economics](16)
+- [👥 Team](/16)
   
 ::right::
 
 - [🏗️ Tech Architecture](/17)
 - [🔌 SDK & Ad Integration](/18)
-- [👥 Team](/19)
-- [⚠️ Risk Register](/20)
-- [🥊 Competitive Landscape](/21)
-- [🚀 Traction Metrics](/22)
-- [🌍 Ecosystem Analysis](/23)
+- [⚠️ Risk Register](/19)
+- [🥊 Competitive Landscape](/20)
+- [🚀 Traction Metrics](/21)
+- [🌍 Ecosystem Analysis](/22)
 
 ---
 src: ./docs/01-executive-summary.md
@@ -49,7 +48,7 @@ src: ./docs/05-financial-model.md
 ---
 
 ---
-src: ./docs/06-unit-economics.md
+src: ./docs/10-team.md
 ---
 
 ---
@@ -58,10 +57,6 @@ src: ./docs/07-tech-architecture.md
 
 ---
 src: ./docs/08-sdk-ad-integration.md
----
-
----
-src: ./docs/10-team.md
 ---
 
 ---

@@ -32,3 +32,13 @@
     *   Total Ad Revenue Share Paid to Creators (€)
 
 *(Data to be sourced from internal analytics dashboards)* 
+
+
+
+## 9. Key KPIs (tracked monthly)
+
+* New registered apps
+* Creator → Innovator upgrade rate
+* Number of profitable apps
+* Platform gross margin (%)
+* Total ad revenue per 1 k inference calls

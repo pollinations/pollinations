@@ -1514,13 +1514,6 @@ curl https://text.pollinations.ai/openai \
     ],
     "voice": "echo"
   }'
-
-# To extract and save the audio:
-# 1. Save the JSON response to a file
-# 2. Extract the base64 audio data
-# 3. Decode the base64 data to an MP3 file
-# Example using jq and base64:
-# curl [...same as above...] | jq -r '.choices[0].message.audio.data' | base64 -d > output.mp3
 ```
 
 **Python (`requests`):**

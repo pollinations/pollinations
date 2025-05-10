@@ -28,7 +28,7 @@ class: scroll
 *   **Publish Public Pricing & Tier Page:** Clearly outline the benefits, requirements, and progression path for all five tiers (Explorer, Creator, Innovator, Partner, Associate).
 *   **Prepare for Partner Tier:** Finalize technical requirements and initial SOTA model selection for the upcoming Partner Tier.
 
-### **🗓️ Q1 2026: Unveiling the Partner Tier & Premium Features**
+### **🗓️ Q1 2026: Unveiling the Partner Tier**
 *Goal: Offer advanced capabilities and richer ad formats to high-performing, ad-integrated apps.*
 
 *   **Launch Partner Tier (Early Access):**

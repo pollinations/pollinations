@@ -41,6 +41,18 @@ class: scroll
 
 *As Pollinations.ai launches the Associate Tier (Q3 2026 Beta, Q4 2026 GA) and scales towards an ecosystem of 2000+ apps by EOY 2026, our talent needs will concentrate on specialized roles critical for managing a mature, revenue-generating platform with a significant creator revenue-sharing component. The COO will initially absorb product management responsibilities for monetization. The following roles represent urgent and key hires from Q2 2026, ideally as full-time positions to ensure deep expertise and commitment. Financial operations roles will be considered from Q2 2026 onwards.*
 
+### 💰 Digital Ads & Monetization Strategist
+
+**Mission:** Maximize advertising revenue for both Pollinations.ai and its Associate-tier partners by optimizing the ad tech stack, managing ad network relationships, and implementing data-driven ad strategies.
+
+**Core Responsibilities (New, critical role for monetization):**
+* Own and manage the Pollinations Ad SDK's performance, including integration with ad networks and mediation platforms (e.g., deploying and optimizing advanced ad mediation, header bidding as per Q3 2026 roadmap).
+* Develop and implement strategies to optimize ad yield (eCPMs, fill rates, viewability) across various ad formats (rich ads, text, rewarded video etc.).
+* Manage relationships with ad providers and networks; negotiate terms and explore new partnerships.
+* Analyze ad performance data to identify trends, opportunities, and areas for improvement; provide regular reporting to leadership (CEO/COO) and relevant Associate partners.
+* Work closely with Product (COO) and Engineering to define requirements for ad-related features and tools (e.g., ROI Dashboard accuracy for ad revenue, ad placement best practices).
+* Ensure compliance with ad industry standards and regulations.
+
 ### 🔧 Lead MLOps & Infrastructure Engineer
 
 **Mission:** Ensure robust, scalable, and cost-efficient deployment, monitoring, and iteration of all AI models and their supporting backend infrastructure. Manage and evolve the data analytics pipelines critical for model performance and platform insights.
@@ -64,18 +76,6 @@ class: scroll
 * Develop educational content, best practices, and success stories to help creators maximize their app's potential on Pollinations.
 * Monitor community health, manage moderation, and report on key community KPIs (engagement, growth, sentiment).
 * Coordinate with any marketing efforts on community-facing campaigns and ambassador programs.
-
-### 💰 Digital Ads & Monetization Strategist
-
-**Mission:** Maximize advertising revenue for both Pollinations.ai and its Associate-tier partners by optimizing the ad tech stack, managing ad network relationships, and implementing data-driven ad strategies.
-
-**Core Responsibilities (New, critical role for monetization):**
-* Own and manage the Pollinations Ad SDK's performance, including integration with ad networks and mediation platforms (e.g., deploying and optimizing advanced ad mediation, header bidding as per Q3 2026 roadmap).
-* Develop and implement strategies to optimize ad yield (eCPMs, fill rates, viewability) across various ad formats (rich ads, text, rewarded video etc.).
-* Manage relationships with ad providers and networks; negotiate terms and explore new partnerships.
-* Analyze ad performance data to identify trends, opportunities, and areas for improvement; provide regular reporting to leadership (CEO/COO) and relevant Associate partners.
-* Work closely with Product (COO) and Engineering to define requirements for ad-related features and tools (e.g., ROI Dashboard accuracy for ad revenue, ad placement best practices).
-* Ensure compliance with ad industry standards and regulations.
 
 ### 💸 Finance & Payout Operations Specialist (Q2 2026)
 

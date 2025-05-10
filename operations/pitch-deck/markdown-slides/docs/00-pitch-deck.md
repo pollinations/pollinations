@@ -1,6 +1,7 @@
 ---
 class: text-center
 ---
+
 # ![Pollinations.ai Logo](/media/pollinations-ai-logo.png)
 
 ## AI Empowers Everyone to Create

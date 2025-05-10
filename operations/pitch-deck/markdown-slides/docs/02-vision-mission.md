@@ -8,10 +8,12 @@ class: scroll
 # 🔭 **Vision & Mission**
 
 ## 🚀 Mission
+s
+To build the **ad‑funded AI creation and distribution platform**, where Creator apps finance their own growth through in‑app advertising and automatically graduate to higher service tiers—no invoices, credit cards, or payout headaches. From Q4 2026 we will add an **opt‑in 50 / 50 ad‑revenue share** for top‑performing partners, giving Creators a clear path from idea to income without changing their tech stack.
 
-To build the **dominant ad‑funded AI creation and distribution platform**, where Creator apps finance their own growth through in‑app advertising and automatically graduate to higher service tiers—no invoices, credit cards, or payout headaches. From Q4 2026 we will add an **opt‑in 50 / 50 ad‑revenue share** for top‑performing partners, giving Creators a clear path from idea to income without changing their tech stack.
+A default, zero‑friction ad‑funded path lets any developer go from idea to profit without credit‑cards or complex pricing. The optional revenue‑share path (Associate tier) rewards top partners while keeping onboarding effortless.
 
-## 🌟 Vision (Through 2026)
+## 🌟 Vision (Through 2026)
 
 * **Universal AI Development** : Democratise multimodal AI so that anyone with an idea can become a **vibe‑coder**—no deep learning PhD required.
 

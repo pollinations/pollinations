@@ -8,7 +8,7 @@ class: scroll
 
 <div class="bg-orange-100 p-4 rounded-lg border-l-4 border-orange-500 mb-6">
   <h3 class="text-lg font-bold text-orange-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-orange-800">Creators will easily integrate our Ad SDK, enabling their apps to automatically scale based on ad revenue performance (Ad € / Cloud € ratio). From 2026, they can opt into premium subscriptions or a 50/50 ad revenue share—managed automatically through the platform.</p>
+  <p class="text-orange-800">Creators will easily integrate our Ad SDK, enabling their apps to automatically scale based on ad revenue performance (Ad € / Cloud € ratio). From H2 2026, they can opt into a 50/50 ad revenue share—managed automatically through the platform.</p>
 </div>
 
 # 🔌 **SDK & Ad Integration**

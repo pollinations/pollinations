@@ -163,6 +163,12 @@ layout: two-cols-header
 
 # <span class="bg-blue-600 text-white p-2 rounded">**🚀 Traction**</span>
 
+<div class="flex justify-center items-center h-full">
+  <video class="w-4/5 rounded-lg shadow-lg" autoplay loop muted playbackRate="2">
+    <source src="/media/image-feed-text-feed.mov" type="video/mp4">
+  </video>
+</div>
+
 ::left::
 
 ## Key Metrics
@@ -171,19 +177,8 @@ layout: two-cols-header
 - **30%** Month-over-Month growth
 - **14M+** ad plays from pilot program
 - **300+** live applications
-  - 13k Discord members
-  - 1.8k GitHub stars
-
 
 ::right::
-
-## Geographic Distribution
-
-- **30%** China
-- **13%** United States
-- **13%** Europe
-- **6%** India
-- **38%** Rest of World
 
 <!--
 **Speaking Points - Traction:**
@@ -191,57 +186,29 @@ layout: two-cols-header
   * Processing >100 MILLION media generations monthly
   * 30% month-over-month growth in API requests
   * 3M monthly active users across platform
-  * 14M+ ad plays already from pilot program
 
 * **Developer Adoption:**
   * 300+ live applications integrated with our API
   * 2+ new apps being built daily on our platform
-  * Community: 13K Discord members, 1.8K GitHub stars
 
 * **Success Stories:**
-  * **Roblox Game:** 'AI Character RP' with 10M+ likes, 500K+ MAU, generating revenue 
+  * **Roblox Game:** 'AI Character RP' with 10M+ likes, 2M MAU, generating revenue (how much? what percentage of cost?)
   * **Power Users:** SillyTavern community integration for advanced AI users
   * **Enterprise Adoption:** Integration with Alibaba's Qwen Agent framework
 
-* **Geographic Reach:**
-  * Global distribution: China (30%), US (13%), Europe (13%), India (6%)
-  * Significant China presence differentiates from competitors
-  * Global product with diverse user base
+![Geographic Distribution](../media/piechart_countries_genz.png)
 
 * **Proof of Model:** Traction validates both ease of building and potential for shared success
 
 ![Traction Metrics](../media/traction_infoslide3.png)
 
-* Shows key metrics in a visually appealing format:
-* 3M MAU (Monthly Active Users)
-* 30% MoM (Month over Month) growth
-* 14M+ ad plays from pilot program
-* 300+ live apps with 13k Discord members and 1.8k GitHub stars
-
-![Geographic Distribution](../media/piechart_countries_genz.png)
-
-* Pie chart showing geographic distribution of users:
-* 30% China
-* 13% US
-* 13% EU
-* 6% India
-* 38% Other regions
-
-<img src="../media/media_requests_per_day_genz.png" alt="Media Requests Growth" class="w-2/4 mx-auto mb-4" />
-
-SLIDE GUIDANCE:
-- China presence is significant - emphasize our global reach as differentiator
 -->
 
 ---
 
 # <span class="bg-blue-600 text-white p-2 rounded">**📹 Live API Traffic**</span>
 
-<div class="flex justify-center items-center h-full">
-  <video class="w-max rounded-lg shadow-lg" autoplay loop muted playbackRate="2">
-    <source src="/media/image-feed-text-feed.mov" type="video/mp4">
-  </video>
-</div>
+
 
 <div class="text-center text-xl mt-4">
   <em>Live feed of requests flowing through our APIs in real-time</em>

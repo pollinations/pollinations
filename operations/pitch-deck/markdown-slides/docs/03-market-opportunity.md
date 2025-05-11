@@ -8,7 +8,7 @@ class: scroll
 
 # 📈 Market Opportunity: AI-Powered Advertising for Indie Creators
 
-**pollinations.ai enables indie creators to build, deploy, & monetize AI apps, targeting a multi-billion dollar AI-contextual advertising market.**
+*AI apps, a multi-billion dollar AI-contextual advertising market.*
 
 ## 1. Total Addressable Market (TAM)
 
@@ -58,7 +58,7 @@ class: scroll
     *   Avg. net retained revenue per monetized app to **~€7,350** (platform/eCPM enhancements).
     *   *Captures ~0.016% of $140B SAM.*
 
-**Why This Market Matters for pollinations.ai**
+**Why This Market Matters**
 
 *   **Vast Scale:** Significant revenue potential.
 *   **Direct Alignment:** Serves key indie creator segment.

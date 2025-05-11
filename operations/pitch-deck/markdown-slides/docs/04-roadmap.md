@@ -7,8 +7,6 @@ class: scroll
 
 # 🛣️ **Roadmap (2025-2026)**
 
-**Overall Strategic Goal:** Establish Pollinations.ai as the leading ad-funded AI creation platform by launching a full-featured, multi-tier system culminating in a 50/50 ad-revenue share for top creators by EOY 2026.
-
 ## **Phase 1: Foundation & Initial Monetization (H2 2025)**
 
 *   **Focus:** Empower creators with self-sufficient app monetization (Innovator Tier) and establish initial platform ad revenue.

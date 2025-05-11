@@ -6,9 +6,13 @@ class: scroll
 </div>
 
 # 💹 **Financial Model (EOY 2026 - 2000 Apps, 4 Tiers)**
-
-This model projects Pollinations.ai's performance with a 2,000-application ecosystem across four tiers by EOY 2026, featuring a Partner tier revenue share based on **net ad revenue**.
-The model forecasts a monthly platform gross profit of **€152,500**. This achieves a gross margin of **~51%** on net retained revenue, or **~36%** on net platform-managed ad revenue. The blended Lifetime Value (LTV) of an average monetized end-user to Pollinations is estimated at **€0.14**. This revised revenue share model significantly improves platform profitability.
+This model projects Pollinations.ai's performance by EOY 2026:
+*   **Ecosystem:** 2,000 applications across four tiers.
+*   **Partner Tier:** Revenue share based on **net ad revenue**.
+*   **Forecasted Monthly Platform Gross Profit:** **€152,500**.
+    *   This achieves a gross margin of **~51%** on net retained revenue.
+    *   Alternatively, **~36%** on net platform-managed ad revenue.
+*   **Blended LTV (Monetized End-User to Pollinations):** Estimated at **€0.14**.
 
 ## 1. Core Assumptions
 

@@ -240,7 +240,7 @@ layout: two-cols-header
 
 **MAIN MESSAGE: Billion-Dollar Opportunity**
 
-**REMOVE: Complex market segmentation - focus on the total addressable market**
+::left::    
 
 * **247 B TAM** : Global AI-Contextual Ad Spend (2025)
 * **140 B SAM** : Indie App/Web AI Ad Inventory (2025)
@@ -248,13 +248,12 @@ layout: two-cols-header
 
 **Empower creators, scale through network effects & partnerships, share ad revenue.**
 
-<!--
-* **Market Opportunity:**
-Targeting a $140B (2025) Serviceable Addressable Market in indie app/web AI ad inventory. Our initial beachhead is the $3.4B Generative AI advertising segment, aiming for €22M ARR by EOY 2027.
+::right::
 
-* **Market Potential:**
-Significant opportunity in AI-contextual advertising.
-* **3.4 B SAM** : Beachhead Market : Indie developers using Generative AI
+<!--
+
+* Significant opportunity in AI-contextual advertising.
+* Targeting a $140B (2025) Serviceable Addressable Market in indie app/web AI ad inventory. Our initial beachhead is the $3.4B Generative AI advertising segment, aiming for €22M ARR by EOY 2027.
 
 Add: 
 * Nested circle diagram showing market sizes: TAM, SAM, and SOM.

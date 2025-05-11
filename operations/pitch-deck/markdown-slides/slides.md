@@ -60,7 +60,7 @@ layout: two-cols-header
 layout: two-cols-header
 ---
 
-# <span class="bg-red-600 text-white p-2 rounded">**😖 Problem**</span>
+# <span class="bg-red-600 text-white p-2 rounded">**🔗 The Challenge: A Disconnected AI Ecosystem**</span>
 
 **MAIN MESSAGE: Dev & Brand Barriers**
 
@@ -68,17 +68,19 @@ layout: two-cols-header
 
 ::left::
 
-### App Creator
-- Generative AI APIs are pay‑walled and DevOps‑heavy
-- Solo devs and indie studios struggle to experiment or scale
-- No built-in monetization
+### Solo devs and indie app creators
+- Struggle to experiment or scale
+    - Prohibitive AI access costs
+    - Infrastructure complexity
+- No clear path for monetization
 
 ![Problem: Friction](/media/problem_friction.png)
 
 ::right::
 
 ### Advertiser
-- Struggling to reach engaged audiences in new AI spaces
+- Struggle to reach engaged audiences in new AI apps
+- Miss out on unique contextual advertising opportunities
 
 ![Problem: Reach](/media/problem_reach.png)
 
@@ -342,26 +344,23 @@ layout: two-cols-header
 
 ::left::
 
-::right::
-## Competitive Differentiation
+## Differentiation
 
-<div v-click="1">
 **vs AI Model Providers** (OpenAI, HuggingFace):
 Free access AND built-in revenue path
-</div>
 
-<div v-click="2">
 **vs Game Monetizers** (Unity Ads):
 AI creation engine AND monetization layer
-</div>
 
-<div v-click="3">
 **vs Ad-Supported AI Products** (Perplexity):
 Empower third-party developers with revenue sharing
-</div>
+
+::right::
 
 <!--
 **Speaking Points - Competitive Moat:**
+
+we could try a "yes" / "no" cross table here
 
 ![Fly Wheel](../media/fly-wheel-genz.png)
 
@@ -384,30 +383,17 @@ layout: two-cols-header
 
 ::left::
 
-### **1️⃣ Activate (Next 12 Mo)**
-Launch Ad Rev Share, Activate Dev Community, Prove Monetization & Scale Users.
-
-**Target**: $1M ARR, 15M MAU, 1000+ Integrated Apps
-
-### **2️⃣ Scale (12-36 Mo)**
-SDK v2, AI Ad Optimization, Global Community.
-
-### **3️⃣ Vision**
-Become the ubiquitous, **assistant-centric** engine for AI creation and distribution.
-
-::right::
-
-## Roadmap Phases
-
-### Phase 1: Activate (Now-12mo)
+## **Now : Activate**
 - Launch ad rev-share across platform
 - Scale developer community
 - Prove monetization model
 
-### Phase 2: Scale (12-36mo)
+## **+12mo : Scale**
 - Deepen integrations with SDK v2
 - Optimize ad targeting with AI
 - Build global community structure
+
+::right::
 
 <!--
 **Speaking Points - Roadmap:**
@@ -452,7 +438,7 @@ Become the ubiquitous, **assistant-centric** engine for AI creation and distribu
 
 ---
 
-# <span class="bg-pink-600 text-white p-2 rounded">👥 **Team**</span>
+# <span class="bg-pink-600 text-white p-2 rounded">👥 **Proven Team to Scale Monetization**</span>
 
 **MAIN MESSAGE: Tech+Business Expertise**
 
@@ -463,16 +449,18 @@ Become the ubiquitous, **assistant-centric** engine for AI creation and distribu
 | **CEO** | **Thomas Haferlach** | Sets vision & Strategy, Drives breakthrough |
 | **COO** | **Elliot Fouchy**    | Executes strategy & Finance; Leads delivery |
 
-##
+## **Strategic Hires**
+* Digital Ads & Monetization Strategist
+* MLOps & Infrastructure Engineer
+* Community & Creator Success Manager
+* Finance & Payout Operations Specialist (2026)
 
-### **+ 🧠 Engineering & Data**
-**Senior AI-Ops & Infra Team** : GPU fleet optimization, Scaling Backend
 
-### **+ 🌐 Marketing & Community**
-**Growth & Developer Relations** : User acquisition, Brand partnerships, Community
 
 <!--
 **Speaking Points - Team:**
+
+
 * **Leadership Structure:**
   * Thomas Haferlach (CEO): Drives vision, strategy, and technology
   * Elliot Fouchy (COO): Executes strategy, finance, and delivery
@@ -480,8 +468,10 @@ Become the ubiquitous, **assistant-centric** engine for AI creation and distribu
   * Backed by AI & scaling experience
 
 * **Planned Key Hires:**
-  * Senior AI-Ops & Infra team for GPU optimization and scaling
-  * Growth & Developer Relations lead for user acquisition, partnerships, and community
+### 💰 Digital Ads & Monetization Strategist (H2 2025)  
+### 🔧 Lead MLOps & Infrastructure Engineer (H2 2025)
+### 🌟 Head of Community & Creator Success (H1 2026)
+### 💸 Finance & Payout Operations Specialist (H2 2026)
 
 SLIDE GUIDANCE:
 (Self-explanatory based on speaking points)
@@ -491,13 +481,11 @@ SLIDE GUIDANCE:
 layout: two-cols-header
 ---
 
-# <span class="bg-teal-600 text-white p-2 rounded">**🤝 Partner with Us: Fueling the Future of AI Creation**</span>
-
-**MAIN MESSAGE: Scale AI Monetization**
+# <span class="bg-teal-600 text-white p-2 rounded">**🤝 Let's Scale AI App Monetization**</span>
 
 **REMOVE: Generic partnership language - be specific about investment needs**
 
-## To achieve our ambitious roadmap, we will require resources and strategic partnerships focused on:
+### To achieve our ambitious roadmap, we will require resources and strategic partnerships focused on:
 
 *   **Accelerating Tech & Product Development** (SDK v2, Advanced AdTech, New AI Modalities)
 *   **Supercharging Growth & Monetization** (Scaling User Acquisition, Optimizing Ad Rev-Share Engine)

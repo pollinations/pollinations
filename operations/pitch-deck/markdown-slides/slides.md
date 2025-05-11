@@ -2,6 +2,9 @@
 class: text-center
 ---
 
+**MAIN MESSAGE: Build, Deploy, Profit**
+**REMOVE: Generic mission statement - be more specific about monetization**
+
 # ![Pollinations.ai Logo](/media/pollinations-ai-logo.png)
 
 ## AI Empowers Everyone to Create
@@ -24,6 +27,9 @@ class: text-center
 ---
 
 # <span class="bg-blue-500 text-white p-2 rounded">**🎮 Showcase: Roblox Integration**</span>
+
+**MAIN MESSAGE: Live User Growth**
+**REMOVE: Technical details about integration - focus on numbers and impact**
 
 <div class="grid grid-cols-2 gap-4 mb-4">
   <div>
@@ -50,6 +56,9 @@ layout: two-cols-header
 ---
 
 # <span class="bg-red-600 text-white p-2 rounded">**😖 Problem**</span>
+
+**MAIN MESSAGE: Dev & Brand Barriers**
+**REMOVE: Detailed explanations - keep pain points sharp and relatable**
 
 ::left::
 
@@ -92,6 +101,9 @@ layout: two-cols-header
 ---
 
 # <span class="bg-green-600 text-white p-2 rounded">✨ The Pollinations Fix: **AI App Factory**</span>
+
+**MAIN MESSAGE: Simple API, Revenue**
+**REMOVE: Technical details - focus on ease of use and monetization**
 
 ::left::
 
@@ -138,6 +150,9 @@ layout: two-cols-header
 
 # <span class="bg-pink-600 text-white p-2 rounded">**💬 Showcase: Ad Placement in Responses**</span>
 
+**MAIN MESSAGE: Revenue In Action**
+**REMOVE: Platform-specific details - emphasize the universal ad integration**
+
 <div class="flex justify-center items-center h-full">
   <img src="../media/ai_girlfriend_advert_discord.png" alt="AI Girlfriend Advertisement" class="w-2/4 rounded-lg shadow-lg">
 </div>
@@ -162,6 +177,9 @@ layout: two-cols-header
 ---
 
 # <span class="bg-blue-600 text-white p-2 rounded">**🚀 Traction**</span>
+
+**MAIN MESSAGE: 3M Users Monthly**
+**REMOVE: Minor metrics - highlight growth curve and most impressive numbers**
 
 <div class="flex justify-center items-center h-full">
   <video class="w-4/5 rounded-lg shadow-lg" autoplay loop muted playbackRate="2">
@@ -210,6 +228,9 @@ layout: two-cols-header
 
 # <span class="bg-purple-600 text-white p-2 rounded">**🌍 Market Opportunity**</span>
 
+**MAIN MESSAGE: Billion-Dollar Opportunity**
+**REMOVE: Complex market segmentation - focus on the total addressable market**
+
 ## Market Scale 💰
 * **$247 B TAM** : Global AI-Contextual Ad Spend (2025E)
 * **$140 B SAM** : Indie App/Web AI Ad Inventory
@@ -227,6 +248,9 @@ layout: two-cols-header
 ---
 
 # <span class="bg-purple-600 text-white p-2 rounded">**💰 Business Model**</span>
+
+**MAIN MESSAGE: 50/50 Revenue Share**
+**REMOVE: Complex explanations - focus on the revenue split and unit economics**
 
 ## The Pollinations Flywheel 🚀
 * **Empowering Creators ('Vibe Coders')** : Build & monetize innovative AI apps, easily.
@@ -275,6 +299,9 @@ layout: two-cols-header
 
 # <span class="bg-yellow-600 text-white p-2 rounded">🛡️ **Competitive Moat**</span>
 
+**MAIN MESSAGE: Built-In Monetization**
+**REMOVE: Detailed competitor comparisons - focus on unique monetization advantage**
+
 ::left::
 
 ::right::
@@ -312,6 +339,9 @@ layout: two-cols-header
 ---
 
 # <span class="bg-indigo-600 text-white p-2 rounded">**🛣️ Roadmap: From Activation to Dominance**</span>
+
+**MAIN MESSAGE: Activate, Scale, Dominate**
+**REMOVE: Detailed timeline specifics - focus on key milestones and phases**
 
 ::left::
 
@@ -385,6 +415,9 @@ Become the ubiquitous, **assistant-centric** engine for AI creation and distribu
 
 # <span class="bg-pink-600 text-white p-2 rounded">👥 **Team**</span>
 
+**MAIN MESSAGE: Tech+Business Expertise**
+**REMOVE: Detailed backgrounds - highlight key relevant achievements**
+
 |         |                      |                                             |
 | ------- | -------------------- | ------------------------------------------- |
 | **CEO** | **Thomas Haferlach** | Sets vision & Strategy, Drives breakthrough |
@@ -419,6 +452,9 @@ layout: two-cols-header
 ---
 
 # <span class="bg-teal-600 text-white p-2 rounded">**🤝 Partner with Us: Fueling the Future of AI Creation**</span>
+
+**MAIN MESSAGE: Scale AI Monetization**
+**REMOVE: Generic partnership language - be specific about investment needs**
 
 ## To achieve our ambitious roadmap, we will require resources and strategic partnerships focused on:
 

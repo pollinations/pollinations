@@ -17,13 +17,13 @@ class: scroll
 | Section            | Key Points                                                                                                                                                                |
 | :----------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Problem**        | Generative AI APIs are pay‑walled and DevOps‑heavy; solo devs and indie studios struggle to experiment or scale.                                                            |
-| **Solution**       | A freemium, ad‑supported model: High‑rate, no‑auth API to start; ads inside end‑apps finance GPU time automatically, unlocking higher tiers.                                |
+| **Solution**       | An ad‑supported model: High‑rate, no‑auth API to start; ads inside end‑apps finance GPU time automatically, unlocking higher tiers.                                |
 | **Go‑to‑Market**   | **4‑tier ladder:** Explorer → Creator → Innovator → **Partner**. Pollinations retains 100% ad revenue until **Q3 2026**, when **Partner** tier begins a 50/50 split.             |
 | **Traction**       | **300+** Explorer apps • Creator Beta live (Apr 2025) • **100M+** media/month rendered at **≤ €0.0005 per media unit**. • **13K+** Discord community members.                 |
-| **Roadmap**        | Innovator GA **Q1 2026** (Unlimited usage, SOTA models, rich ads) → **Partner** GA **Q3 2026** (50/50 revenue share).                                                            |
+| **Roadmap**        | Innovator GA **Q3 2025** (Unlimited usage, SOTA models, rich ads) → **Partner** GA **Q3 2026** (50/50 revenue share).                                                            |
 | **Business Model** | Today: Ad impressions drive platform revenue. From **Q3 2026:** Share 50% of top‑line ad revenue with **Partner** tier to accelerate ecosystem growth.                         |
 | **Unit Economics** | Target **~58% gross margin** (on net retained revenue) with **Partner** tier active. Break‑even ad fill eCPM for platform ≈ **€1.20 (gross)** on a per-app basis.                |
-| **Team**           | Ex‑Google Brain, ETH Zürich, Unity Ads; **12‑person** remote core.                                                                                                          |
+| **Team**           | Founders with proven AI platform execution: Scaled core tech to 100M+ monthly requests; experienced in AI product lifecycle management. Lean, 5-person Berlin or remote core planned. |
 | **Fundraise**      | Seeking **€3M Seed** to expand GPU fleet, finalize Innovator/**Partner** ad tech, and onboard the first **Partner** cohort.                                                   |
 
 ### Contact

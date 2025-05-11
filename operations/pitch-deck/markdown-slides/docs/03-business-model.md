@@ -1,22 +1,41 @@
 ---
 class: scroll
 ---
+
 <div style="text-align: right; position: absolute; top: 0; right: 0;">
 <a href="/10">⬅️ Back to Index</a>
 </div>
 
 # 💰 **Business Model**
 
-## 1. Value Proposition
+## The Challenge: A Disconnected AI Ecosystem Stifling Creators & Brands
 
-Pollinations.AI turns cutting‑edge multimodal AI models into **plug‑and‑play APIs** backed by a simple, ad‑supported monetisation engine. We remove the friction of scaling inference and earning revenue—so creators can focus on building apps, games, and experiences.
+*   **Creators & Developers (Supply):** Face prohibitive AI access costs, infrastructure complexity, and no clear path to monetize their innovative AI apps. Many groundbreaking ideas remain unsustainable.
+*   **Ad Providers & Brands (Demand):** Struggle to reach engaged, often younger, audiences within new AI-native applications. They miss out on unique contextual advertising opportunities in these emerging digital spaces.
 
-## 2. Stakeholders
+## Our Solution: The Ad-Funded Bridge
 
-*   **Creators (Supply)** – Developers and small teams building applications on the Pollinations platform.
-*   **Ad Providers (Demand)** – Ad networks (e.g., Google AdSense) supplying inventory and paying for impressions/clicks.
-*   **End‑Users** – People interacting with those applications.
-*   **Pollinations** – The platform operator orchestrating models, infrastructure, and ads.
+Pollinations.AI is the **ad-funded backend and marketplace** connecting AI creators with brands, turning innovative AI apps into sustainable businesses.
+
+**How We Solve It:**
+
+1.  **For Creators: Effortless AI Creation & Monetization**
+    *   **Free, Plug & Play AI:** We provide simple API access to powerful generative AI models, handling all backend complexity (infra, scaling). Developers launch instantly, focusing on UX.
+    *   **Automated, Ad-Funded Scaling:** Our SDK integrates contextual ads. Revenue first covers the app's AI compute costs, enabling free scaling based on user engagement.
+    *   **Shared Success:** Our **Partner Tier (H2 2026)** offers a **50/50 net ad-revenue split**, creating a direct path from idea to income.
+
+2.  **For Brands: Access to Engaged, AI-Native Audiences**
+    *   **New Ad Inventory:** We aggregate a rapidly growing network of unique AI applications, offering brands access to engaged users.
+    *   **Contextual & Scalable:** Brands can deploy relevant ads within these AI experiences, reaching users at moments of high creativity and interaction.
+
+**The Core Value: We make building and monetizing AI apps frictionless and economically viable for creators, while providing brands with novel, effective channels to reach valuable audiences. This creates a self-reinforcing flywheel, fueling the growth of the entire AI creator ecosystem.**
+
+## 1. Stakeholders
+
+*   **Creators (Supply):** Developers and small teams using Pollinations to build and monetize AI applications.
+*   **Ad Providers (Demand):** Brands and ad networks seeking to reach engaged audiences through AI-native app inventory.
+*   **End‑Users:** Individuals interacting with applications built on the Pollinations platform.
+*   **Pollinations:** The platform orchestrating the AI models, infrastructure, ad delivery, and revenue sharing.
 
 ## 3. App Segmentation & Tier Ladder
 
@@ -36,7 +55,7 @@ Pollinations.AI turns cutting‑edge multimodal AI models into **plug‑and‑pl
 
 ## 9. Growth Flywheel
 
-Our growth is driven by a virtuous cycle:
+**The Pollinations Flywheel:** By solving these dual problems, Pollinations.AI creates a virtuous cycle: More developers build innovative apps on our free platform -> This attracts more end-users -> This creates more valuable, AI-native ad inventory -> This attracts brands and ad revenue -> A portion of this revenue is shared back with successful developers, incentivizing further creation and platform growth, while also funding the free tier for new entrants.
 
 1.  **Free Experimentation (Explorer → Creator):** Easy entry and free tools attract a wide developer base. *(Ongoing)*
 2.  **Ad-Funded Scaling (Creator → Innovator):** Successful apps integrate ads, cover their costs, and unlock unlimited usage, SOTA models, and marketplace visibility. *(H2 2025)*
@@ -68,7 +87,7 @@ Our growth is driven by a virtuous cycle:
                             V
                         *********
                         |PARTNER| (Rev-Share)
-                        |Phase 2|
+                        |Phase 3|
                         *********
                             |
                             ▼

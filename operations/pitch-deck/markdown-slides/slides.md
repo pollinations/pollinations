@@ -273,20 +273,20 @@ layout: two-cols-header
     *   Pollinations retains 100% of ad revenue
 
 2.  **SCALE & SELF-FUND (Innovator Tier - H2 2025)**
-    *   Successful apps get unlimited usage / Ad revenue covers compute costs.
+    *   Successful apps get unlimited usage
     *   Pollinations retains 100% of ad revenue
 
 3.  **PROFIT TOGETHER (Partner Tier - H2 2026)**
-    *   Top-performing apps join the Partner program.
-    *   **SHARED SUCCESS:** 50% of Net Ad Revenue goes back to the App Developer.
+    *   Top-performing apps join the Partner program
+    *   50% of Net Ad Revenue goes back to the App
 
 ::right::
 
-
-
-
 <!--
 add media: creator funnel or per app revenue per month numbers
+
+note: Successful apps = ad revenue > compute costs
+
 
 ## The Pollinations Flywheel 🚀
 * **Empowering Creators ('Vibe Coders')** : Build & monetize innovative AI apps, easily.

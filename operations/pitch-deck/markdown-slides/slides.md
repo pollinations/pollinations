@@ -95,51 +95,43 @@ layout: two-cols-header
 
 ::left::
 
-## Creator - Build & Monetize Effortlessly
+## For Creators: AI Apps Made Simple
 
-*   **AI setup:** Launch instantly via assistant.
-*   **You Focus on Frontend:** Build the UI/UX.
-*   **Plug & Play AI:** Simple URLs for media features.
-*   **Backend & Monetization Handled:** We run infra, scale, serve ads & share revenue.
-*The easiest path to a live AI app with zero upfront cost.*
+* **Zero-Cost Launch**
+* **Focus on Frontend**
+* **Built-in Monetization**
+* **Shared Success**
 
-( add free )
+*From idea to income with zero upfront cost*
 
 ::right::
 
-## Advertiser
+## For Advertisers: Reach AI-Native Audiences
 
-
-4. Brands connect with youth audience
+* **Large supply / untapped Ad space**
+* **Contextual Targeting**
 
 <!--
-**Speaking Points - The Pollinations Fix:**
+**Current Slide Content (to speak to each bullet):**
+
+**For Creators:**
+* **Zero-Cost Launch:** Free API access to powerful AI models
+* **Focus on Frontend:** We handle all backend complexity
+* **Built-in Monetization:** Ad revenue covers compute costs first
+* **Shared Success:** 50/50 net ad revenue share (Partner Tier)
+
+**For Advertisers:**
+* **Access to highly engaged Gen-Z and Millennial audiences**
+* **New Ad Inventory:** Access rapidly growing network of AI apps
+* **Contextual Targeting:** AI-powered relevance in new environments
+
+
+
 * **Solution Concept:** "AI App Factory" - simplifies building AND monetizing AI apps
-* **Positioning:** "Unity for AI" but open and free to start
 
-* **Core Components:**
-  * **Instant AI Setup:** Handle complex infrastructure configuration
-  * **Frontend Focus:** Developers concentrate on user experience only
-  * **Plug & Play AI:** Simple URL calls for text, image, audio generation
-  * **Backend Management:** We handle infrastructure, scaling, and operations
-  * **Built-in Monetization:** Ad serving and revenue sharing managed for developers
-
-* **Revenue Model:**
-  * Contextual, relevant ads integrated into user experience
-  * Clean 50/50 revenue split with developers
-  * Tiered validation system ensures quality and manages costs
 
 ![Pollinations Fix Diagram](../media/pollinations_fix_genz.png)
 
-* Shows circular economy flow between Phone/App → End User → Ad Provider → pollinations.ai → Creators
-* End User pays attention (€) to Ad Provider who pays revenue to pollinations.ai
-* pollinations.ai connects back to Creators who build apps used by End Users
-
-SLIDE GUIDANCE:
-- Developers use their AI coding assistant (integrated with our tools) to bootstrap projects from various starter kits (React, Unity, etc.), automating repo creation, config, and deployment.
-- This frees the developer to concentrate *only* on building the user-facing application.
-- Adding generative AI (image, text, audio) requires just simple HTTPS calls to our Edge APIs.
-- Pollinations manages the entire backend: scalable hosting (e.g., GitHub Pages), CI/CD, model serving, security, auth, usage metering, and the monetization layer (serving ads, managing rev-share payouts). Zero server ops for the dev.
 -->
 
 ---

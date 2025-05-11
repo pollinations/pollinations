@@ -45,6 +45,14 @@ export const projectCategories = [
 const allProjects = {
   toolsInterfaces: [
     {
+      name: "🆕 IRINA by visuallink",
+      url: "https://irina-2--trivonca.on.websim.ai/",
+      description: "Lightweight and simple online chat interface powered by pollinations",
+      author: "@thatalgp",
+      submissionDate: "2025-05-11",
+      order: 1,
+    },
+    {
       name: "🆕 Aiphoto智能绘画 🇨🇳",
       url: "https://qiyimg.3d.tc/Aiphoto",
       description: "AI艺术工坊 - 智能绘画生成器。这是一个基于AI的绘画生成工具，可以根据用户输入的中文描述自动生成相应的图片。(An AI art workshop - intelligent painting generator. This is an AI-based painting generation tool that can automatically generate images based on Chinese descriptions input by users.)",

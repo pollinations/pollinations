@@ -81,9 +81,7 @@ layout: two-cols-header
 - Struggle to reach audiences in new AI apps
 - Miss out on contextual advertising opportunities
 
-
-**The current ecosystem forces painful trade-offs**
-
+>### *The current ecosystem forces painful trade-offs*
 
 <!--
 **Speaking Points - Problem:**
@@ -103,31 +101,49 @@ layout: two-cols-header
 layout: two-cols-header
 ---
 
-# <span class="bg-green-600 text-white p-2 rounded">✨ The Pollinations Fix: **AI App Factory**</span>
-
-**MAIN MESSAGE: Simple API, Revenue**
-
-**REMOVE: Technical details - focus on ease of use and monetization**
+# <span class="bg-green-600 text-white p-2 rounded">✨ **AI Creation Meets Monetization**</span>
 
 ::left::
 
-## For Creators: AI Apps Made Simple
+## For Creators | **Build & Monetize AI Instantly**
+- Effortless AI Integration
+- Seamless Ad Monetization
+- Clear Path to Profit
 
-* **Zero-Cost Launch**
-* **Focus on Creativity**
-* **Built-in Monetization**
-* **Shared Success**
+## For Advertisers | **Reach AI-Native Audiences**
 
-*From idea to income with zero upfront cost*
+* Vast, Untapped Ad Space
+* Highly Engaged Users
+* Powerful Contextual Targeting
 
 ::right::
 
-## For Advertisers: Reach AI-Native Audiences
-
-* **Large, untapped ad space**
-* **Contextual targeting**
+>### *From idea to income with zero upfront cost*
 
 <!--
+
+### For Creators: 
+* Effortless AI Integration:
+    * One SDK unlocks powerful generative AI. 
+    * We manage infrastructure & scaling, you innovate on user experience.
+* Seamless Ad Monetization:
+    * Turnkey ad integration via the same SDK. 
+    * Minimal code, diverse formats:
+        * Real-Time Contextual Ads: Native feel, AI-powered relevance.
+        * In-App Rich Media: Engaging video, interactive & display ads.
+        * Affiliate Program Links: Curated offers within your app's flow.
+* Clear Path to Profit:
+    * Ads cover compute costs ➔ Unlock unlimited usage & 50/50 Net Ad Revenue Share (Partner Tier).
+
+* For Advertisers: Reach AI-Native Audiences
+    * Vast, Untapped Ad Inventory:
+        * Access a rapidly growing network of unique AI applications and scale your reach in emerging digital spaces.
+    * Highly Engaged Users:
+        * Connect with audiences (often Gen Z & Millennials) at moments of peak creativity and interaction within AI experiences.
+    * Powerful Contextual Targeting:
+        * Deliver relevant, AI-powered ads within novel AI-driven content, ensuring brand safety and impact.
+
+
 **Current Slide Content (to speak to each bullet):**
 
 **For Creators:**
@@ -267,17 +283,19 @@ layout: two-cols-header
 
 ::left::
 
-1.  **CREATE FOR FREE (Explorer & Creator Tiers)**
-    *   No-cost AI tools & hosting
-    *   Pollinations retains 100% of ad revenue
-
-2.  **SCALE & SELF-FUND (Innovator Tier - H2 2025)**
-    *   Successful apps get unlimited usage
-    *   Pollinations retains 100% of ad revenue
-
-3.  **PROFIT TOGETHER (Partner Tier - H2 2026)**
-    *   Top-performing apps join the Partner program
-    *   50% of Net Ad Revenue goes back to the App
+### **1. 🚀 Create For Free** (Tiers 1 & 2 - Live)
+*   No-cost AI tools, limited usage
+*   Pollinations retains 100% of ad revenue
+<br>
+<br>
+### **2. 📈 Scale & Self-Fund** (Tier 3 - Beta)
+*   Successful apps get unlimited usage
+*   Pollinations retains 100% of ad revenue
+<br>
+<br>
+### **3. 💰 Profit Together** (Tier 4 - 2026)
+*   Top-performing apps join the Partner program
+*   50% of Net Ad Revenue goes back to the App
 
 ::right::
 

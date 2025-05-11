@@ -238,15 +238,13 @@ layout: two-cols-header
 
 # <span class="bg-purple-600 text-white p-2 rounded">**🌍 Tapping the $140B AI-Contextual Ad Market**</span>
 
-**MAIN MESSAGE: Billion-Dollar Opportunity**
-
 ::left::    
 
 * **247 B TAM** : Global AI-Contextual Ad Spend (2025)
 * **140 B SAM** : Indie App/Web AI Ad Inventory (2025)
 * **3.4 B SOM** : Beachhead Market : Indie developers using Generative AI
 
-**Empower creators, scale through network effects & partnerships, share ad revenue.**
+## **Empower creators, scale through network effects & partnerships, share ad revenue.**
 
 ::right::
 

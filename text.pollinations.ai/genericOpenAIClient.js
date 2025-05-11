@@ -329,6 +329,21 @@ export function createOpenAICompatibleClient(config) {
                 }
             }
 
+            // Check if we have a DeepSeek response with reasoning_content but no content
+            if (data.choices && Array.isArray(data.choices) && data.choices.length > 0 && 
+                data.choices[0].message && 
+                data.choices[0].message.reasoning_content && 
+                !data.choices[0].message.content) {
+                
+                log(`[${requestId}] Found DeepSeek response with reasoning_content but no content, fixing format`);
+                
+                // Move reasoning_content to content to ensure compatibility
+                data.choices[0].message.content = data.choices[0].message.reasoning_content;
+                
+                // We can keep reasoning_content as well for backwards compatibility
+                log(`[${requestId}] Moved reasoning_content to content field for compatibility`);
+            }
+
             log(`[${requestId}] Final response:`, JSON.stringify(data, null, 2));
 
             return data;

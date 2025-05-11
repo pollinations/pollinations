@@ -46,29 +46,6 @@ class: text-center
 
 ---
 
-# <span class="bg-pink-600 text-white p-2 rounded">**💬 Showcase: Ad Placement in Responses**</span>
-
-<div class="flex justify-center items-center h-full">
-  <img src="../media/ai_girlfriend_advert_discord.png" alt="AI Girlfriend Advertisement" class="w-2/4 rounded-lg shadow-lg">
-</div>
-
-<div class="text-center text-xl mt-4">
-  <em>Real-world example of ad integration in Discord communities</em>
-</div>
-
-<!--
-**Speaking Points - AI Companion Showcase:**
-* **Revenue Example:** Perfect illustration of our ad-based monetization model in action
-* **Contextual Integration:** Advertisement seamlessly integrated into AI conversation flow
-* **Discovery Path:** Users discover new AI experiences through relevant, non-disruptive ads
-* **Multi-Platform Reach:** Works across Discord, web, mobile platforms with same API
-* **Developer Benefits:** Creator earns revenue through our ad-sharing system
-* **Real-World Impact:** Demonstrates how our platform connects AI experiences to new audiences
-* **User Experience:** Maintains free access to AI capabilities while supporting creators
--->
-
----
-
 # <span class="bg-red-600 text-white p-2 rounded">**😖 Problem**</span>
 
 ## Key Pain Points
@@ -209,6 +186,30 @@ SLIDE GUIDANCE:
 - Adding generative AI (image, text, audio) requires just simple HTTPS calls to our Edge APIs.
 - Pollinations manages the entire backend: scalable hosting (e.g., GitHub Pages), CI/CD, model serving, security, auth, usage metering, and the monetization layer (serving ads, managing rev-share payouts). Zero server ops for the dev.
 -->
+
+---
+
+# <span class="bg-pink-600 text-white p-2 rounded">**💬 Showcase: Ad Placement in Responses**</span>
+
+<div class="flex justify-center items-center h-full">
+  <img src="../media/ai_girlfriend_advert_discord.png" alt="AI Girlfriend Advertisement" class="w-2/4 rounded-lg shadow-lg">
+</div>
+
+<div class="text-center text-xl mt-4">
+  <em>Real-world example of ad integration in Discord communities</em>
+</div>
+
+<!--
+**Speaking Points - AI Companion Showcase:**
+* **Revenue Example:** Perfect illustration of our ad-based monetization model in action
+* **Contextual Integration:** Advertisement seamlessly integrated into AI conversation flow
+* **Discovery Path:** Users discover new AI experiences through relevant, non-disruptive ads
+* **Multi-Platform Reach:** Works across Discord, web, mobile platforms with same API
+* **Developer Benefits:** Creator earns revenue through our ad-sharing system
+* **Real-World Impact:** Demonstrates how our platform connects AI experiences to new audiences
+* **User Experience:** Maintains free access to AI capabilities while supporting creators
+-->
+
 ---
 layout: two-cols-header
 ---

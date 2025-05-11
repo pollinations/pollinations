@@ -1,8 +1,14 @@
 ---
 class: scroll
 ---
+
 <div style="text-align: right; position: absolute; top: 0; right: 0;">
 <a href="/10">⬅️ Back to Index</a>
+</div>
+
+<div class="bg-indigo-100 p-4 rounded-lg border-l-4 border-indigo-500 mb-6">
+  <h3 class="text-lg font-bold text-indigo-800">🌟 Pitch Deck Highlight</h3>
+  <p class="text-indigo-800">Our 2025-2026 roadmap focuses on launching the Innovator tier (unlimited usage, H2 2025), followed by advanced ad tech and a Partner tier beta (H1 2026), culminating in GA of the 50/50 ad-revenue share Partner tier in H2 2026.</p>
 </div>
 
 # 🛣️ **Roadmap (2025-2026)**

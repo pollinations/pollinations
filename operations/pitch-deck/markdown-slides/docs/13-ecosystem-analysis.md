@@ -1,8 +1,14 @@
 ---
 class: scroll
 ---
+
 <div style="text-align: right; position: absolute; top: 0; right: 0;">
 <a href="/10">⬅️ Back to Index</a>
+</div>
+
+<div class="bg-teal-100 p-4 rounded-lg border-l-4 border-teal-500 mb-6">
+  <h3 class="text-lg font-bold text-teal-800">🌟 Pitch Deck Highlight</h3>
+  <p class="text-teal-800">Our ecosystem of 156+ projects (50k+ active users, 20M+ monthly images) is heavily consumer-focused (Visual Creation, Social AI, Entertainment), with 77% showing medium-to-high ad potential. High-profile integrations (e.g., on Roblox with 500k MAU, LobeChat 60k GitHub stars) and ~30% teen/young adult audience validate strong market fit and monetization opportunities.</p>
 </div>
 
 # 🌍 **Ecosystem Analysis**

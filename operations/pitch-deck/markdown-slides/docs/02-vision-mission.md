@@ -1,8 +1,14 @@
 ---
 class: scroll
 ---
+
 <div style="text-align: right; position: absolute; top: 0; right: 0;">
 <a href="/10">⬅️ Back to Index</a>
+</div>
+
+<div class="bg-blue-100 p-4 rounded-lg border-l-4 border-blue-500 mb-6">
+  <h3 class="text-lg font-bold text-blue-800">🌟 Pitch Deck Highlight</h3>
+  <p class="text-blue-800">Our mission is to build the ad-funded AI creation platform where apps finance their own growth. We envision democratizing AI for "vibe-coders" via an interface-free experience, leading to a 50/50 net ad-revenue share for top partners by H2 2026.</p>
 </div>
 
 # 🔭 **Vision & Mission**

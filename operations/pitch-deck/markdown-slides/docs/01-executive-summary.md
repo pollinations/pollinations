@@ -6,6 +6,11 @@ class: scroll
 <a href="/10">⬅️ Back to Index</a>
 </div>
 
+<div class="bg-yellow-100 p-4 rounded-lg border-l-4 border-yellow-500 mb-6">
+  <h3 class="text-lg font-bold text-yellow-800">🌟 Pitch Deck Highlight</h3>
+  <p class="text-yellow-800">Pollinations is the ad-funded backend for generative AI, offering developers free, cloud-scaled media generation and a turnkey ad slot. We're seeking €3M to scale our GPU fleet and launch our Partner tier, which includes a 50/50 ad revenue share from Q3 2026. Current traction: 100M+ media/month at ultra-low cost (€≤0.0005/unit) and a 13K+ Discord community.</p>
+</div>
+
 # 📑 **Executive Summary**
 
 ## 30‑Second Pitch
@@ -28,5 +33,5 @@ class: scroll
 
 ### Contact
 
-📧 [hello@pollinations.ai](mailto:hello@pollinations.ai) • 🌐 pollinations.ai
+📧 [hello@pollinations.ai](mailto:hello@pollinations.ai) • �� pollinations.ai
 

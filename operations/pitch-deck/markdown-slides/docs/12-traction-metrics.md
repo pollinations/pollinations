@@ -1,8 +1,14 @@
 ---
 class: scroll
 ---
+
 <div style="text-align: right; position: absolute; top: 0; right: 0;">
 <a href="/10">⬅️ Back to Index</a>
+</div>
+
+<div class="bg-cyan-100 p-4 rounded-lg border-l-4 border-cyan-500 mb-6">
+  <h3 class="text-lg font-bold text-cyan-800">🌟 Pitch Deck Highlight</h3>
+  <p class="text-cyan-800">In Phase 1 (H2 2025), we'll track creator adoption, AI media generation, Ad SDK integration, and the number of "profitable apps" (Innovator tier where Ad € > Cloud €). Success in Phase 3 (H2 2026) will be measured by Partner tier adoption, total ad revenue shared with creators, and overall platform gross margin.</p>
 </div>
 
 # 🚀 **Key Traction Metrics & KPIs**

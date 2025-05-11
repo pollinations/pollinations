@@ -9,6 +9,8 @@ class: text-center
 **The easiest way to build and monetize AI apps with zero upfront cost.**
 
 <!--
+**Related Docs:** [Executive Summary](/11) | [Vision & Mission](/12)
+
 *   **(Thomas):** "We are **Pollinations.AI**."
 *   **(Elliot):** "We believe **AI empowers everyone to create**."
 *   **(Thomas):** "We offer the **easiest way to build *and monetize* AI apps** with **zero upfront cost** and **shared success**."
@@ -32,6 +34,8 @@ class: text-center
 </div>
 
 <!--
+**Related Docs:** [Ecosystem Analysis](/23) | [Executive Summary](/11)
+
 *   **Thomas:** "Let me show you a real-world example of Pollinations in action."
 *   **Thomas:** "This is one of our most popular integrations - a Roblox game called 'AI Character RP' with over 10 million likes and 500,000 monthly active players."
 *   **Elliot:** "What's remarkable here is that the developer simply integrated our API with a few lines of code, and now players can generate AI characters and interact with them in real-time."
@@ -66,6 +70,8 @@ The current ecosystem forces <b>painful trade-offs</b>.
 </div>
 
 <!--
+**Related Docs:** [Executive Summary](/11) | [Business Model](/14) | [Competitive Landscape](/21)
+
 *   **Elliot:** "**Creators & Developers**: Building with AI today is **complex and expensive**."
 *   **Elliot:** "They face infra headaches, auth issues, and critically: **NO clear path to MONETIZE** their viral apps."
 *   **Thomas:** "**End Users**: Hit **paywalls**, have **privacy concerns**, want **more creative control**."

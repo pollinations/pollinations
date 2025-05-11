@@ -1,8 +1,14 @@
 ---
 class: scroll
 ---
+
 <div style="text-align: right; position: absolute; top: 0; right: 0;">
 <a href="/10">⬅️ Back to Index</a>
+</div>
+
+<div class="bg-amber-100 p-4 rounded-lg border-l-4 border-amber-500 mb-6">
+  <h3 class="text-lg font-bold text-amber-800">🌟 Pitch Deck Highlight</h3>
+  <p class="text-amber-800">We've identified key risks across market adoption, technical execution (e.g., Ad€/Cloud€ accuracy), and operational scaling, with phased mitigation strategies. Initial focus is on launching the Innovator tier with robust Ad SDK v1, then de-risking the Partner revenue share model through careful beta testing and infrastructure development.</p>
 </div>
 
 # ⚠️ **Risk Register & Mitigation Plan**

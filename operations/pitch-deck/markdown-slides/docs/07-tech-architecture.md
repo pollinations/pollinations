@@ -1,8 +1,14 @@
 ---
 class: scroll
 ---
+
 <div style="text-align: right; position: absolute; top: 0; right: 0;">
 <a href="/10">⬅️ Back to Index</a>
+</div>
+
+<div class="bg-gray-100 p-4 rounded-lg border-l-4 border-gray-500 mb-6">
+  <h3 class="text-lg font-bold text-gray-800">🌟 Pitch Deck Highlight</h3>
+  <p class="text-gray-800">Our "Zero-UI" platform automates AI app creation from a single CLI command. Creators stay in their editor while we handle repo setup, CI/CD, and deployment to GitHub Pages. Pollinations' Edge Services manage AI APIs, ad serving, and dynamic tiering based on ad revenue vs. compute cost, making AI app development truly zero-ops.</p>
 </div>
 
 # 🏗️ **End-to-End Architecture**  (Creator uses a text editor only)

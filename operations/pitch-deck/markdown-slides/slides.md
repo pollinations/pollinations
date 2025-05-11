@@ -226,6 +226,28 @@ SLIDE GUIDANCE:
 -->
 
 ---
+
+# <span class="bg-blue-600 text-white p-2 rounded">**📹 Live API Traffic**</span>
+
+<div class="flex justify-center items-center h-full">
+  <video class="w-4/5 rounded-lg shadow-lg" autoplay loop muted playbackRate="2">
+    <source src="/media/image-feed-text-feed.mov" type="video/mp4">
+  </video>
+</div>
+
+<div class="text-center text-xl mt-4">
+  <em>Live feed of requests flowing through our APIs in real-time</em>
+</div>
+
+<!--
+**Thomas:** "This is a live view of our API traffic - each image and text request flowing through our system right now."
+
+**Elliot:** "What you're seeing is the actual usage from our community of developers and their end-users, generating content through our platform in real-time."
+
+**Thomas:** "This visualization represents just a small fraction of the 100+ million media generations we process monthly, showcasing the real-world impact of our platform."
+-->
+
+---
 layout: two-cols-header
 ---
 

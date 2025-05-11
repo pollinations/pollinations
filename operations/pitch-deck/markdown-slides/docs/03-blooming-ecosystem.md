@@ -3,15 +3,15 @@ class: scroll
 ---
 
 <div style="text-align: right; position: absolute; top: 0; right: 0;">
-<a href="/10">⬅️ Back to Index</a>
+<a href="/11">⬅️ Back to Index</a>
 </div>
 
 <div class="bg-teal-100 p-4 rounded-lg border-l-4 border-teal-500 mb-6">
   <h3 class="text-lg font-bold text-teal-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-teal-800">Our ecosystem of 156+ projects (50k+ active users, 20M+ monthly images) is heavily consumer-focused (Visual Creation, Social AI, Entertainment), with 77% showing medium-to-high ad potential. High-profile integrations (e.g., on Roblox with 500k MAU, LobeChat 60k GitHub stars) and ~30% teen/young adult audience validate strong market fit and monetization opportunities.</p>
+  <p class="text-teal-800">Our ecosystem of 156+ projects (100M monthly media) is heavily consumer-focused (Visual Creation, Social AI, Entertainment), with 77% showing medium-to-high ad potential. High-profile integrations (e.g., on Roblox with 500k MAU, LobeChat 60k GitHub stars) and ~30% teen/young adult audience validate strong market fit and monetization opportunities.</p>
 </div>
 
-# 🌍 **Ecosystem Analysis**
+# 🌍 **Blooming Ecosystem**
 
 ## Executive Summary
 
@@ -20,7 +20,7 @@ Analysis of 156 projects in the Pollinations.ai ecosystem reveals:
 - **Strong monetization potential**: 76.9% medium-to-high ad potential, 58.3% targeting mass consumers
 - **Strong teen engagement**: Approximately 30% of projects specifically target teen and young adult demographics
 - **Global adoption**: North America (32.1%), Asia (28.8%), Europe (25.0%)
-- **Significant reach**: 50,000+ active users, 20+ million images generated monthly, 500+ Discord servers
+- **Significant reach**: 50,000+ active users, 20+ million media generated monthly, 500+ Discord servers
 - **Market validation**: High-profile integrations with major open-source projects (151,000+ combined GitHub stars)
 - **Growth pipeline**: Special Bee waitlist (26.3%) shows evolution toward higher-monetization categories
 - **Ecosystem evolution**: Waitlist shows trend toward consumer-facing applications with 12.4% increase in social bots and 12.2% emergence of mobile apps
@@ -143,11 +143,11 @@ Applications with limited traditional advertising potential:
 2. **Backend Services** - No direct user interface; usage-based pricing
 3. **Privacy-Focused Applications** - User expectations of ad-free experience
 
-## Platform Usage Metrics
+## Platform Usage Metrics (from 156 Analyzed Projects)
 
 **Reach:**
 - Over 50,000 active users
-- 20+ million images generated monthly
+- 20+ million media generated monthly
 - 500+ Discord servers using Pollinations-powered bots
 - 10,000+ mobile app downloads
 - 500K+ monthly active players on Roblox games
@@ -212,7 +212,7 @@ Applications with limited traditional advertising potential:
 
 ## Conclusion
 
-Pollinations.ai's ecosystem analysis reveals a thriving community with 156 diverse projects, predominantly focused on consumer applications with high monetization potential. With 50,000+ active users generating 20+ million images monthly, the platform demonstrates significant market traction.
+Pollinations.ai's ecosystem analysis reveals a thriving community with 156 diverse projects, predominantly focused on consumer applications with high monetization potential. With 50,000+ active users generating 20+ million media monthly, the platform demonstrates significant market traction.
 
 The consumer-focused categorization highlights a clear path to monetization across visual creation platforms, conversational AI, interactive entertainment, and mobile applications. Each category presents natural opportunities for ad integration and revenue generation.
 

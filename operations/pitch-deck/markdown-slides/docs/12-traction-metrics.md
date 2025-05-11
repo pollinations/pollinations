@@ -3,22 +3,29 @@ class: scroll
 ---
 
 <div style="text-align: right; position: absolute; top: 0; right: 0;">
-<a href="/10">⬅️ Back to Index</a>
+<a href="/11">⬅️ Back to Index</a>
 </div>
 
 <div class="bg-cyan-100 p-4 rounded-lg border-l-4 border-cyan-500 mb-6">
   <h3 class="text-lg font-bold text-cyan-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-cyan-800">In Phase 1 (H2 2025), we'll track creator adoption, AI media generation, Ad SDK integration, and the number of "profitable apps" (Innovator tier where Ad € > Cloud €). Success in Phase 3 (H2 2026) will be measured by Partner tier adoption, total ad revenue shared with creators, and overall platform gross margin.</p>
+  <p class="text-cyan-800">Building on significant current traction (3M Ecosystem MAU, 100M+ media/month), our phased KPIs track creator adoption, Ad SDK integration, and 'profitable app' growth, leading to Partner tier success and revenue share by H2 2026.</p>
 </div>
 
 # 🚀 **Key Traction Metrics & KPIs**
 
-This document outlines the key traction metrics and Key Performance Indicators (KPIs) Pollinations.ai will track.
+This document outlines the key traction metrics and Key Performance Indicators (KPIs) Pollinations.ai will track. Our strategy is built upon a strong foundation of pre-monetization ecosystem engagement..
+
+**Current Ecosystem Snapshot (Summary):**
+*   **Ecosystem Reach:** ~3M Monthly Active Users (MAU) across all applications.
+*   **Platform Activity:** 100M+ media assets generated monthly.
+*   **Creator Base:** 300+ live applications, 13,000+ Discord community members.
+*   **Key Integrations:** High-profile examples include projects on Roblox (500k MAU) and LobeChat (60k+ GitHub stars).
+*(For a comprehensive analysis of the current ecosystem, please refer to Section 13).*
 
 ## **Phase 1: Foundation & Initial Monetization (H2 2025)**
 
 *   **Focus:** Drive initial developer adoption, encourage experimentation, empower creators with self-sufficient app monetization (Innovator Tier), and establish initial platform ad revenue.
-*   **Key Milestones:** Explorer Tier (Live), Creator Tier (Beta Hardening), Innovator Tier (GA), ROI Dashboard, Ad SDK v1, SOTA Models & Rich Ads for Innovators.
+*   **Key Milestones:** Innovator Tier (GA), ROI Dashboard, Ad SDK v1, SOTA Models & Rich Ads for Innovators. (Explorer Tier Live; Creator Tier Beta Launch Q2 2025).
 
 | Category                            | Metric/KPI                                                                    | Description/Purpose                                                                                  |
 | :---------------------------------- | :---------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------- |

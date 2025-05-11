@@ -3,7 +3,7 @@ class: scroll
 ---
 
 <div style="text-align: right; position: absolute; top: 0; right: 0;">
-<a href="/10">⬅️ Back to Index</a>
+<a href="/11">⬅️ Back to Index</a>
 </div>
 
 <div class="bg-green-100 p-4 rounded-lg border-l-4 border-green-500 mb-6">
@@ -30,7 +30,7 @@ Pollinations.AI is the **ad-funded backend and marketplace** connecting AI creat
     *   **Shared Success:** Our **Partner Tier (H2 2026)** offers a **50/50 net ad-revenue split**, creating a direct path from idea to income.
 
 2.  **For Brands: Access to Engaged, AI-Native Audiences**
-    *   **New Ad Inventory:** We aggregate a rapidly growing network of unique AI applications, offering brands access to engaged users.
+    *   **New Ad Inventory:** We aggregate a rapidly growing network of unique AI applications, offering brands access to a **vast and scalable supply** of engaged users within AI-native contexts.
     *   **Contextual & Scalable:** Brands can deploy relevant ads within these AI experiences, reaching users at moments of high creativity and interaction.
 
 **The Core Value: We make building and monetizing AI apps frictionless and economically viable for creators, while providing brands with novel, effective channels to reach valuable audiences. This creates a self-reinforcing flywheel, fueling the growth of the entire AI creator ecosystem.**
@@ -62,9 +62,9 @@ Pollinations.AI is the **ad-funded backend and marketplace** connecting AI creat
 
 **The Pollinations Flywheel:** By solving these dual problems, Pollinations.AI creates a virtuous cycle: More developers build innovative apps on our free platform -> This attracts more end-users -> This creates more valuable, AI-native ad inventory -> This attracts brands and ad revenue -> A portion of this revenue is shared back with successful developers, incentivizing further creation and platform growth, while also funding the free tier for new entrants.
 
-1.  **Free Experimentation (Explorer → Creator):** Easy entry and free tools attract a wide developer base. *(Ongoing)*
-2.  **Ad-Funded Scaling (Creator → Innovator):** Successful apps integrate ads, cover their costs, and unlock unlimited usage, SOTA models, and marketplace visibility. *(H2 2025)*
-3.  **Revenue Partnership (Innovator → Partner):** Top Innovators share 50/50 in net ad revenue, turning projects into businesses and showcasing platform success. *(H2 2026)*
+1.  **Free Experimentation (Explorer → Creator):** Easy entry and free tools attract a wide developer base, acting as an **investment in future monetizable applications**. *(Ongoing)*
+2.  **Ad-Funded Scaling (Creator → Innovator):** Successful apps integrate ads, cover their costs, and unlock unlimited usage, SOTA models, and **marketplace visibility**. *(H2 2025)*
+3.  **Revenue Partnership (Innovator → Partner):** Top Innovators share 50/50 in net ad revenue, **turning projects into businesses** and showcasing platform success. *(H2 2026)*
 
 ```
         ****************************************

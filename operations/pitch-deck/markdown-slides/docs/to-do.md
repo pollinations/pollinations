@@ -1,4 +1,5 @@
-- WE HAVE INFINITE DSP, LOOKING FOR SSP
-- tier 1 and 2 are investment also, do not forget that, it's not lost money
-- what is good for the slide? facts and numbers
-- ad link 'more info' on each slide
+- roblox MAU
+- ecosystem traction number to be verified
+- It's vital to define "3M MAU" clearly if it's an aggregated ecosystem number. For example: "Total estimated MAU across all applications built on the Pollinations platform: 3M".
+- remove ROI Dashboard - or imporve concept
+- define marketplace concept (pollinations.ai new new website replacing the current)

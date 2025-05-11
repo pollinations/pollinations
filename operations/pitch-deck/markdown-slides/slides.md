@@ -70,7 +70,7 @@ The current ecosystem forces <b>painful trade-offs</b>.
 </div>
 
 <!--
-**Related Docs:** [Executive Summary](/11) | [Business Model](/14) | [Competitive Landscape](/21)
+**Related Docs:** [Executive Summary](/11) | [Business Model](/03) | [Competitive Landscape](/09)
 
 *   **Elliot:** "**Creators & Developers**: Building with AI today is **complex and expensive**."
 *   **Elliot:** "They face infra headaches, auth issues, and critically: **NO clear path to MONETIZE** their viral apps."
@@ -494,22 +494,22 @@ layout: two-cols-header
 ::left::
 
 - [🎤 Pitch Deck](/00)
-- [📑 Executive Summary](/11)
-- [🔭 Vision & Mission](/12)
-- [📈 Market Opportunity](/13)
-- [💰 Business Model](/14)
-- [🛣️ Roadmap](/15)
-- [💹 Financial Model](/16)
+- [📑 Executive Summary](/12)
+- [🔭 Vision & Mission](/13)
+- [📈 Market Opportunity](/14)
+- [🌍 Ecosystem Analysis](/15)
+- [💰 Business Model](/16)
+- [💹 Financial Model](/17)
 
 ::right::
 
-- [👥 Team](/17)
-- [🏗️ Tech Architecture](/18)
-- [🔌 SDK & Ad Integration](/19)
-- [⚠️ Risk Register](/20)
-- [🥊 Competitive Landscape](/21)
-- [🚀 Traction Metrics](/22)
-- [🌍 Ecosystem Analysis](/23)
+- [🛣️ Roadmap](/18)
+- [👥 Team](/19)
+- [🏗️ Tech Architecture](/20)
+- [🔌 SDK & Ad Integration](/21)
+- [⚠️ Risk Register](/22)
+- [🥊 Competitive Landscape](/23)
+- [🚀 KPI & Traction Metrics](/24)
 
 ---
 src: ./docs/01-executive-summary.md
@@ -524,15 +524,19 @@ src: ./docs/03-market-opportunity.md
 ---
 
 ---
+src: ./docs/03-blooming-ecosystem.md
+---
+
+---
 src: ./docs/03-business-model.md
 ---
 
 ---
-src: ./docs/04-roadmap.md
+src: ./docs/05-financial-model.md
 ---
 
 ---
-src: ./docs/05-financial-model.md
+src: ./docs/04-roadmap.md
 ---
 
 ---
@@ -559,6 +563,3 @@ src: ./docs/09-competitive-landscape.md
 src: ./docs/12-traction-metrics.md
 ---
 
----
-src: ./docs/13-ecosystem-analysis.md
----

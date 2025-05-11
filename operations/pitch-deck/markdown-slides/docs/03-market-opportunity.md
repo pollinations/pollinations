@@ -3,7 +3,7 @@ class: scroll
 ---
 
 <div style="text-align: right; position: absolute; top: 0; right: 0;">
-<a href="/10">⬅️ Back to Index</a>
+<a href="/11">⬅️ Back to Index</a>
 </div>
 
 <div class="bg-purple-100 p-4 rounded-lg border-l-4 border-purple-500 mb-6">
@@ -68,4 +68,5 @@ class: scroll
 *   **Vast Scale:** Significant revenue potential.
 *   **Direct Alignment:** Serves key indie creator segment.
 *   **Strong Tailwinds:** GenAI, privacy shifts, creator economy.
+*   **Untapped Inventory:** Our platform unlocks a previously untapped, large-scale inventory of AI-contextual advertising opportunities, effectively providing a continuous new supply for ad providers seeking these niche audiences.
 *   **Proven Model:** Ad-revenue sharing, enhanced by our AI tools.

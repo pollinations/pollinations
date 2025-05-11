@@ -8,7 +8,7 @@ class: scroll
 
 <div class="bg-teal-100 p-4 rounded-lg border-l-4 border-teal-500 mb-6">
   <h3 class="text-lg font-bold text-teal-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-teal-800">Our ecosystem of 156+ projects (50k+ active users, 20M+ monthly images) is heavily consumer-focused (Visual Creation, Social AI, Entertainment), with 77% showing medium-to-high ad potential. High-profile integrations (e.g., on Roblox with 500k MAU, LobeChat 60k GitHub stars) and ~30% teen/young adult audience validate strong market fit and monetization opportunities.</p>
+  <p class="text-teal-800">Our ecosystem of 156+ projects (100M monthly media) is heavily consumer-focused (Visual Creation, Social AI, Entertainment), with 77% showing medium-to-high ad potential. High-profile integrations (e.g., on Roblox with 500k MAU, LobeChat 60k GitHub stars) and ~30% teen/young adult audience validate strong market fit and monetization opportunities.</p>
 </div>
 
 # 🌍 **Ecosystem Analysis**
@@ -143,7 +143,7 @@ Applications with limited traditional advertising potential:
 2. **Backend Services** - No direct user interface; usage-based pricing
 3. **Privacy-Focused Applications** - User expectations of ad-free experience
 
-## Platform Usage Metrics
+## Platform Usage Metrics (from 156 Analyzed Projects)
 
 **Reach:**
 - Over 50,000 active users

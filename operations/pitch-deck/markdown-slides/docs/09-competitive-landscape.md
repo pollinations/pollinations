@@ -15,7 +15,7 @@ class: scroll
 
 ## Snapshot
 
-*   **Pollinations Model:** (Default) Ad-funded automatic tiering for Creators; (Optional, from 2026) Creator Premium Subscriptions & 50/50 Ad Rev-Share.
+*   **Pollinations Model:** Ad-funded automatic tiering for Creators; Partner tier with 50/50 Ad Rev-Share (H2 2026).
 *   **Key Differentiator:** Default free tier for Creators requires no direct payment, with performance scaling based on ad revenue (`Ad € / Cloud €` ratio).
 *   **Comparables:** Unity Ads, AppLovin (Ad Networks); GIPHY, Unsplash (Asset Monetization); Perplexity (Premium + Native Ads).
 
@@ -39,8 +39,8 @@ class: scroll
 | Unity Ads      | SDK            | Rewarded, Interstitial, Banner Ads | Creator keeps ≈ 70%       | Industry standard for high Creator ad rev-share.   |
 | AppLovin MAX   | SDK + Exchange | Programmatic Video/Playable Ads    | ≥ 70% to Creator          | AI optimization boosts eCPM; high Creator share norm. |
 | Google AdSense | JS Tag         | Display & Video Ads                | 68% to Publisher          | Benchmark for payout reliability.                    |
-| **Pollinations (Default)** | **SDK / API**  | **Contextual Ads (via Ad Providers)** | **0% (Tier Upgrades instead)** | **Unique: Free tier funded by 100% Ad Rev capture.** |
-| **Pollinations (Optional '26+)** | **SDK / API** | **Premium Sub OR Ad Rev-Share** | **€ (Premium) / 50% (Ad Rev)** | **Offers choice aligning with industry payout levels.** |
+| **Pollinations (Beta Live)** | **SDK / API**  | **Contextual Ads (via Ad Providers)** | **0% (Tier Upgrades instead)** | **Unique: Free tier funded by 100% Ad Rev capture.** |
+| **Pollinations (from H2 2026)** | **SDK / API** | **Ad Rev-Share** | **50% (Net Ad Rev)** | **Offers choice aligning with industry payout levels, attractive due to unique platform value.** |
 
 ## 3 | Unity Deep‑Dive (Closest Ad Analogy)
 
@@ -67,13 +67,12 @@ class: scroll
 **Relevance to Pollinations:**
 
 1.  Validates blending Creator Premium Subscription & native-style ads.
-2.  Shows viability of lower rev-share percentages in specific contexts (though Pollinations aims higher at 50% for its optional 2026 Ad Rev-Share).
+2.  Shows viability of lower rev-share percentages in specific contexts (though Pollinations aims higher at 50% for its H2 2026 Ad Rev-Share).
 
 ## 6 | Positioning Pollinations for Investors
 
 *   "Unity Ads for generative assets, with a smarter free tier."
 *   "GIPHY/Unsplash meets AdSense for the AI Creator Economy."
-
 
 ## 7 | Alternatives / Complements to Core Models
 
@@ -91,8 +90,7 @@ class: scroll
 | Ad € / Cloud € Inaccuracy | Incorrect Tiering         | Robust monitoring, clear ratio definitions, potential manual overrides.           |
 | Low eCPM / Fill Rate      | Poor Tiering / Rev        | Partner diversity, contextual targeting v2, support multiple ad formats.          |
 | Creator Model Choice      | Cannibalization/Complexity| Clear communication of trade-offs (Tiering vs. Premium vs. Rev-Share).            |
-| Rev‑Share Competitiveness | Creator Churn (from 2026) | Emphasize *optionality* and unique value of default tiering; potentially adjust % later. |
-| Premium Pricing           | Low Adoption (from 2026)  | Tiered pricing, clear value prop (no ads, guaranteed limits).                     |
+| Rev‑Share Competitiveness | Creator Churn (from H2 2026) | Emphasize unique platform value (integrated AI, zero-ops, free tier pathway, ecosystem benefits); potentially adjust % later. |
 | Brand‑Safety              | Ad Provider Trust         | Multi‑layer filters, human audit, clear content policies for Creators.            |
 | Regulatory                | Fines, Operational Changes| Legal counsel, privacy-by-design, age gating, focus on contextual ads.            |
 

@@ -29,7 +29,7 @@ class: scroll
 | **Business Model** | Today: Ad impressions drive platform revenue. From **Q3 2026:** Share 50% of Net Ad Revenue with **Partner** tier to accelerate ecosystem growth.                         |
 | **Unit Economics** | Target **~58% gross margin** (on net retained revenue) with **Partner** tier active. Break‑even ad fill eCPM for platform ≈ **€1.20 (gross)** on a per-app basis.                |
 | **Team**           | Founders with proven AI platform execution: Scaled core tech to 100M+ monthly requests; experienced in AI product lifecycle management. Lean, 5-person Berlin or remote core planned. |
-| **Fundraise**      | Seeking **€3M Seed** to expand GPU fleet, finalize Innovator/**Partner** ad tech, and onboard the first **Partner** cohort.                                                   |
+| **Fundraise**      | Seeking **€3M Seed**. Use of Funds: ~40% GPU & Infrastructure, ~30% R&D/Product (Innovator/Partner tech), ~20% Team Expansion, ~10% GTM & Community (incl. first Partner cohort onboarding). |
 
 ### Contact
 

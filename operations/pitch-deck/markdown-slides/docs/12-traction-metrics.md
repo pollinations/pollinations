@@ -13,7 +13,7 @@ class: scroll
 
 # 🚀 **Key Traction Metrics & KPIs**
 
-This document outlines the key traction metrics and Key Performance Indicators (KPIs) Pollinations.ai will track. Our strategy is built upon a strong foundation of pre-monetization ecosystem engagement..
+This document outlines the key traction metrics and Key Performance Indicators (KPIs) pollinations.ai will track. Our strategy is built upon a strong foundation of pre-monetization ecosystem engagement..
 
 **Current Ecosystem Snapshot (Summary):**
 *   **Ecosystem Reach:** Total estimated ~3M Monthly Active Users (MAU) across all 300+ applications built on Pollinations.
@@ -21,7 +21,6 @@ This document outlines the key traction metrics and Key Performance Indicators (
 *   **Creator Base:** 300+ live applications, 13,000+ Discord community members.
 *   **Key Integrations:** High-profile examples include projects on Roblox (500k MAU) and LobeChat (60k+ GitHub stars).
 A detailed analysis of a subset of 156 projects from this ecosystem provides further specific insights (see Ecosystem Analysis document).
-*(For a comprehensive analysis of the current ecosystem, please refer to Section 13).*
 
 ## **Phase 1: Foundation & Initial Monetization (H2 2025)**
 
@@ -74,5 +73,5 @@ A detailed analysis of a subset of 156 projects from this ecosystem provides fur
 |                                         | 23. Total Ad Revenue Share Paid to Creators (€ via Partner Tier)                  | Direct financial success for top partners; validates the revenue-sharing promise.                                    |
 |                                         | 24. Pollinations' Net Revenue from Partner Apps (€) (After payout)              | Viability of the revenue-sharing model for the platform's own financial health from Partner tier.                  |
 | **Overall Platform Health & Profitability**| 25. Platform Gross Margin (%) *(Primary Indicator)*                             | Overall financial health, incorporating all revenue streams, COGS, and creator payouts.                              |
-|                                         | 26. Blended LTV of Monetized End-User (to Pollinations platform)                | Long-term value generated per monetized end-user, guiding acquisition and retention strategies.                    |
+|                                         | 26. Blended LTV of Monetized End-User (to pollinations.ai platform)                | Long-term value generated per monetized end-user, guiding acquisition and retention strategies.                    |
 |                                         | 27. Creator Churn Rate (Overall and by Tier)                                    | Retention of creators across different stages of their lifecycle on the platform; identifies potential issues.   |

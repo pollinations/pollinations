@@ -17,7 +17,7 @@ class: scroll
 
 ### 🚀 Chief Executive Officer (CEO)
 **Contact:** Thomas Haferlach
-**Mission:** Own company vision, strategy, fundraising, and ensure Pollinations becomes the default engine for programmable creativity. Key decision-maker for major company directions.
+**Mission:** Own company vision, strategy, fundraising, and ensure pollinations.ai becomes the default engine for programmable creativity. Key decision-maker for major company directions.
 
 ### ⚙️ Chief Operating Officer (COO)
 **Contact:** Elliot Fouchy
@@ -26,7 +26,7 @@ class: scroll
 ## Hiring Plan & Team Evolution: Supporting Growth & Monetization
 
 1.  💰 **Digital Ads & Monetization Strategist** (H2 2025)
-    *   **Strategic Focus:** Maximize ad revenue for Pollinations and Partner-tier creators.
+    *   **Strategic Focus:** Maximize ad revenue for pollinations.ai and Partner-tier creators.
     *   **Key Contributions:** Own Ad SDK performance, optimize ad yield (eCPMs, fill rates), manage ad network relationships, and drive data-informed ad strategies. Essential for the success of the ad-funded model and revenue sharing.
 
 2.  🔧 **Lead MLOps & Infrastructure Engineer** (H2 2025)

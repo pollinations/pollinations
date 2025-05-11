@@ -20,7 +20,7 @@ class: scroll
 
 ## Our Solution: The Ad-Funded Bridge
 
-Pollinations.AI is the **ad-funded backend and marketplace** connecting AI creators with brands, turning innovative AI apps into sustainable businesses.
+pollinations.ai is the **ad-funded backend and marketplace** connecting AI creators with brands, turning innovative AI apps into sustainable businesses.
 
 **How We Solve It:**
 
@@ -37,9 +37,9 @@ Pollinations.AI is the **ad-funded backend and marketplace** connecting AI creat
 
 ## 1. Stakeholders
 
-*   **Creators (Supply):** Developers and small teams using Pollinations to build and monetize AI applications.
+*   **Creators (Supply):** Developers and small teams using pollinations.ai to build and monetize AI applications.
 *   **Ad Providers (Demand):** Brands and ad networks seeking to reach engaged audiences through AI-native app inventory.
-*   **End‑Users:** Individuals interacting with applications built on the Pollinations platform.
+*   **End‑Users:** Individuals interacting with applications built on the pollinations.ai platform.
 *   **Pollinations:** The platform orchestrating the AI models, infrastructure, ad delivery, and revenue sharing.
 
 ## 3. App Segmentation & Tier Ladder
@@ -54,13 +54,13 @@ Pollinations.AI is the **ad-funded backend and marketplace** connecting AI creat
 ## 4. Revenue Streams
 
 1.  **Advertising Revenue (Platform Retained):**
-    *   During **Phase 1 (H2 2025)** and **Phase 2 (H1 2026)**, all ad income generated through the Pollinations SDK (v1 & v2) flows to Pollinations to cover platform costs and fund growth.
+    *   During **Phase 1 (H2 2025)** and **Phase 2 (H1 2026)**, all ad income generated through the pollinations.ai SDK (v1 & v2) flows to pollinations.ai to cover platform costs and fund growth.
 2.  **Shared Advertising Revenue (Partner Tier):**
     *   Starting in **Phase 3 (H2 2026)** with the General Availability of the Partner Tier, eligible Partner apps will automatically receive **50% of the Net Ad Revenue** they generate (Net Ad Revenue = Gross Ad Revenue - Ad Network Fees).
 
 ## 9. Growth Flywheel
 
-**The Pollinations Flywheel:** By solving these dual problems, Pollinations.AI creates a virtuous cycle: More developers build innovative apps on our free platform -> This attracts more end-users -> This creates more valuable, AI-native ad inventory -> This attracts brands and ad revenue -> A portion of this revenue is shared back with successful developers, incentivizing further creation and platform growth, while also funding the free tier for new entrants.
+**The pollinations.ai Flywheel:** By solving these dual problems, pollinations.ai creates a virtuous cycle: More developers build innovative apps on our free platform -> This attracts more end-users -> This creates more valuable, AI-native ad inventory -> This attracts brands and ad revenue -> A portion of this revenue is shared back with successful developers, incentivizing further creation and platform growth, while also funding the free tier for new entrants.
 
 1.  **Free Experimentation (Explorer → Creator):** Easy entry and free tools attract a wide developer base, acting as an **investment in future monetizable applications**. *(Ongoing)*
 2.  **Ad-Funded Scaling (Creator → Innovator):** Successful apps integrate ads, cover their costs, and unlock unlimited usage, SOTA models, and **marketplace visibility**. *(H2 2025)*

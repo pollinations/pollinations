@@ -19,14 +19,14 @@ class: scroll
 *   **Key Outcomes:**
     *   Innovator Tier (General Availability) with ROI Dashboard.
     *   Marketplace v1 for app discovery.
-    *   Pollinations Ad SDK v1 launched (platform retains initial revenue).
+    *   pollinations.ai Ad SDK v1 launched (platform retains initial revenue).
     *   Innovator Tier access to SOTA Models & Rich Ad Formats.
 
 ## **Phase 2: Building for Partnership & Advanced Ads (H1 2026)**
 
 *   **Focus:** Develop advanced ad capabilities and the core infrastructure for revenue sharing.
 *   **Key Outcomes:**
-    *   Pollinations Ad SDK v2 with multi-format support.
+    *   pollinations.ai Ad SDK v2 with multi-format support.
     *   Revenue Share Ledger & Payout System developed.
     *   Partner Tier (50/50 revenue share) launched in Closed Beta.
     *   Advanced Ad Mediation backend development initiated.

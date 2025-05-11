@@ -15,7 +15,7 @@ class: scroll
 
 This document will provide a quick-start guide for Creators on:
 
-*   Integrating the Pollinations Ad SDK/plugin into their applications.
+*   Integrating the pollinations.ai Ad SDK/plugin into their applications.
 *   Choosing between default ad-funded tiering or opting into optional models (Premium Subscription or Ad Rev-Share) launching during 2026.
 *   Monitoring their app's performance (relevant metrics like Ad € / Cloud € ratio for tiering) via a Creator Dashboard (to be developed).
 *   Understanding how ad performance influences their app's operational tier and limits in the default model. 

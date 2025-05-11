@@ -14,7 +14,7 @@ class: scroll
 # 🏗️ **End-to-End Architecture**  (Creator uses a text editor only)
 
 ```
-IDE / Cursor / VS Code                Pollinations Cloud
+IDE / Cursor / VS Code                pollinations.ai Cloud
 ┌────────────────────────────┐        ┌────────────────────────┐
 │ 1. Creator's Editor        │  JSON │ 2. Code MCP            │
 │   • pollinations-init cmd ─────────►│  • OAuth w/ GitHub     │
@@ -40,7 +40,7 @@ IDE / Cursor / VS Code                Pollinations Cloud
                                         │runtime calls │plugin scripts
                                         ▼              ▼
                               ┌────────────────────────────────────────┐
-                              │ 6. Pollinations Edge Services          │
+                              │ 6. pollinations.ai Edge Services          │
                               │    • Auth MCP  • Generative AI APIs           │
                               │    • Ad Serving & Rate-Limit Engine   │
                               │    • Usage DB / Ad € & Cloud € Tracking│
@@ -55,12 +55,12 @@ IDE / Cursor / VS Code                Pollinations Cloud
 
 2. The local **MCP SDK** calls **Code MCP** over HTTPS.
 
-3. **Code MCP** authenticates the Creator (Pollinations Auth MCP → GitHub OAuth), **creates a private repo**, copies the *Next-site* starter template into it, adds CNAME, secrets and a ready-made gh-pages.yaml workflow, then pushes the first commit.
+3. **Code MCP** authenticates the Creator (pollinations.ai Auth MCP → GitHub OAuth), **creates a private repo**, copies the *Next-site* starter template into it, adds CNAME, secrets and a ready-made gh-pages.yaml workflow, then pushes the first commit.
 
 4. GitHub **Actions** in that repo automatically build, test and deploy the static site to **GitHub Pages**; the custom domain resolves because Code MCP simultaneously inserted your-app.com ⇄ repo mapping into the Usage DB and triggered DNS/SSL provisioning.
 
 5. When End-Users hit the Creator's site:
-    *   **Default Model (Ad-Funded Tiering):** The front-end calls Pollinations **Generative AI APIs** and loads **ad plugins** (from Ad Providers). Auth MCP meters usage, and the Rate-Limit Engine dynamically adjusts the app's operational tier/limits based on its Ad € / Cloud € ratio.
+    *   **Default Model (Ad-Funded Tiering):** The front-end calls pollinations.ai **Generative AI APIs** and loads **ad plugins** (from Ad Providers). Auth MCP meters usage, and the Rate-Limit Engine dynamically adjusts the app's operational tier/limits based on its Ad € / Cloud € ratio.
     *   **Optional Creator Choices (from 2026):**
         *   If the Creator subscribed to Premium (from Q2 '26): The Creator Premium Billing API confirms status. Rate-Limit Engine applies guaranteed tiers/limits, potentially disabling ads.
         *   If the Creator opted into Ad Rev-Share (from Q4 '26): The Ad Rev-Share Ledger tracks attributable Ad Revenue for payout. Tiering rules may differ.
@@ -81,7 +81,7 @@ IDE / Cursor / VS Code                Pollinations Cloud
 
 ## **"Why it matters" — non-technical explanation**
 
-Pollinations gives Creators a **one-command factory** for AI-powered web apps that serve End-Users:
+pollinations.ai gives Creators a **one-command factory** for AI-powered web apps that serve End-Users:
 
 * **Zero-ops** – Creators stay in their usual code editor; our Control Plane spins up infrastructure, domain, SSL and CI/CD automatically.
 
@@ -95,4 +95,4 @@ Pollinations gives Creators a **one-command factory** for AI-powered web apps th
 
 * **Single source of truth** – All core services (SDKs, templates, **Generative AI APIs**, tiering logic, future billing/ledger) live in one audited repository; every new app forks from that gold master.
 
-In short, Pollinations turns the complex stack into a **SaaS utility**. We capture Ad Revenue and manage app capabilities via dynamic tiering (default). From 2026, we add Creator Premium Subscriptions and optional Creator Ad Rev-share. 
+In short, pollinations.ai turns the complex stack into a **SaaS utility**. We capture Ad Revenue and manage app capabilities via dynamic tiering (default). From 2026, we add Creator Premium Subscriptions and optional Creator Ad Rev-share. 

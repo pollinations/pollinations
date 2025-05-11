@@ -13,7 +13,7 @@ class: scroll
 
 # 🌍 **Blooming Ecosystem**
 
-Analysis of projects within the Pollinations.ai ecosystem reveals key characteristics and trends. High-traffic integrations, such as the AI Character RP Roblox game (a notable driver of monthly active users) and numerous other applications detailed herein, showcase the platform's reach.
+Analysis of projects within the pollinations.ai ecosystem reveals key characteristics and trends. High-traffic integrations, such as the AI Character RP Roblox game (a notable driver of monthly active users) and numerous other applications detailed herein, showcase the platform's reach.
 ## Key Ecosystem Insights
 - **Consumer-focused application landscape**: Visual Creation Platforms (40%), Conversational & Social AI (25%), Interactive Entertainment (15%)
 - **Strong monetization potential**: 76.9% medium-to-high ad potential, 58.3% targeting mass consumers
@@ -99,13 +99,13 @@ Analysis of projects within the Pollinations.ai ecosystem reveals key characteri
 - **Pal Chat**: iOS app integrating with all LLMs including Pollinations
 - **PromptPix**: Android image generation platform with dynamic scrolling interface
 - **FoodAnaly**: AI food analysis application for nutritional understanding
-- **POLLIPAPER**: Dynamic wallpaper app using Pollinations AI
+- **POLLIPAPER**: Dynamic wallpaper app using pollinations.ai AI
 - **CalcuBite AI**: Food image analyzer for calorie and nutrient details
 
 ### Developer & Integration Ecosystem (8%)
 - **ComfyUI-Pollinations**: Custom node for ComfyUI for image generation
 - **MCPollinations**: MCP server enabling AI assistants to generate images and text
-- **Pollinations.ai Python SDK**: Official Python SDK for working with models
+- **pollinations.ai Python SDK**: Official Python SDK for working with models
 - **Node.js Client Library**: TypeScript/Node.js client for accessing services
 
 ## Detailed Monetization Analysis
@@ -155,7 +155,7 @@ Applications with limited traditional advertising potential:
 - Strong presence in gaming and social platforms popular with Gen Z.
 
 **Integration Stats:**
-- A large combined number of GitHub stars across projects using Pollinations reflects developer community adoption.
+- A large combined number of GitHub stars across projects using pollinations.ai reflects developer community adoption.
 - High-profile open-source integrations (GPT4Free, LobeChat, SillyTavern, KoboldAI) showcase technical appeal.
 - Presence across multiple mobile apps and gaming platforms.
 
@@ -209,4 +209,4 @@ Applications with limited traditional advertising potential:
 
 ## Conclusion
 
-This analysis highlights Pollinations.ai's thriving, consumer-focused ecosystem with strong monetization potential. The platform's reach is driven by diverse applications and key integrations, including a Roblox game attracting a large monthly active user base. This diverse ecosystem showcases significant market traction. Clear monetization paths across categories, validated by major open-source integrations and global adoption, strategically position Pollinations.ai for substantial revenue and growth by balancing free, ad-supported access with premium features.
+This analysis highlights pollinations.ai's thriving, consumer-focused ecosystem with strong monetization potential. The platform's reach is driven by diverse applications and key integrations, including a Roblox game attracting a large monthly active user base. This diverse ecosystem showcases significant market traction. Clear monetization paths across categories, validated by major open-source integrations and global adoption, strategically position pollinations.ai for substantial revenue and growth by balancing free, ad-supported access with premium features.

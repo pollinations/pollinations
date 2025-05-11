@@ -22,10 +22,10 @@ Pollinations.AI turns cutting‑edge multimodal AI models into **plug‑and‑pl
 
 | Tier | Name        | Primary User                 | Key Benefits                                                                  | Planned Availability
 | :--- | :---------- | :--------------------------- | :---------------------------------------------------------------------------- | :----------------------------------------- |
-| 1    | **Explorer**| Curious devs, hobbyists      | High rate limits, no auth, zero cost                                          | Production (Live)                          |
-| 2    | **Creator** | Early‑stage projects         | Referer, moderate limits, usage analytics                                     | Beta (Live)                                |
-| 3    | **Innovator**| Profitable apps              | Unlimited usage, ROI Dashboard, SOTA models, Rich Ad Formats, Marketplace v1  | GA (Phase 1 - H2 2025)                     |
-| 4    | **Partner** | Strategic rev‑share partners | All Innovator perks + **50/50 Net Ad‑Revenue Split**, Enhanced Creator Tools | Closed Beta (Phase 2 - H1 2026) <br> GA (Phase 3 - H2 2026) |
+| 1    | **Explorer**| Curious devs, hobbyists      | High rate limits, No authentication, Zero cost                                          | Production (Live)                          |
+| 2    | **Creator** | Early‑stage projects         | Moderate rate limits, Token authentication, Usage analytics                                     | Beta (Live)                                |
+| 3    | **Innovator**| Profitable apps              | Unlimited usage, SOTA models, Rich Ad Formats  | GA (Phase 1 - H2 2025)                     |
+| 4    | **Partner** | Strategic rev‑share partners | All Innovator perks + **50/50 Net Ad‑Revenue Split** | Closed Beta (Phase 2 - H1 2026) <br> GA (Phase 3 - H2 2026) |
 
 ## 4. Revenue Streams
 

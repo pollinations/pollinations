@@ -99,7 +99,7 @@ layout: two-cols-header
 ## For Creators: AI Apps Made Simple
 
 * **Zero-Cost Launch**
-* **Focus on Frontend**
+* **Focus on Creativity**
 * **Built-in Monetization**
 * **Shared Success**
 
@@ -109,8 +109,8 @@ layout: two-cols-header
 
 ## For Advertisers: Reach AI-Native Audiences
 
-* **Large supply / untapped Ad space**
-* **Contextual Targeting**
+* **Large, untapped ad space**
+* **Contextual targeting**
 
 <!--
 **Current Slide Content (to speak to each bullet):**
@@ -162,7 +162,18 @@ layout: two-cols-header
 layout: two-cols-header
 ---
 
-# <span class="bg-blue-600 text-white p-2 rounded">**🚀 Traction**</span>
+# <span class="bg-blue-600 text-white p-2 rounded">**🚀 Traction: Flywheel in Motion**</span>
+
+::left::
+
+- **3M+** Monthly Active End-Users
+- **30%** Month-over-Month Growth
+- **13K+** Discord Community Members
+- **300+** Applications Live
+- **2+** New Apps Built Daily
+- **14M+** Ad impressions from pilot program
+
+::right::
 
 <div class="flex justify-center items-center h-full">
   <video class="w-4/5 rounded-lg shadow-lg" autoplay loop muted playbackRate="2">
@@ -170,23 +181,15 @@ layout: two-cols-header
   </video>
 </div>
 
-::left::
-
-## Key Metrics
-
-- **3M** Monthly Active Users
-- **30%** Month-over-Month growth
-- **14M+** ad plays from pilot program
-- **300+** live applications
-
-::right::
-
 <!--
+
+Traction & KPIs: Current ~3M Ecosystem MAU and 100M+ monthly media generations provide a strong foundation, anchors a flywheel already in motion
 **Speaking Points - Traction:**
 * **Growth Metrics:**
   * Processing >100 MILLION media generations monthly
   * 30% month-over-month growth in API requests
   * 3M monthly active users across platform
+  * 13K+ Discord community members
 
 * **Developer Adoption:**
   * 300+ live applications integrated with our API

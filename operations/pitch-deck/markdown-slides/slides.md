@@ -236,14 +236,24 @@ layout: two-cols-header
 * **$140 B SAM** : Indie App/Web AI Ad Inventory
 * **$22 M SOM** : Our Target Net ARR (EOY 2027)
 
-
-
 ## The Pollinations Flywheel 🚀
 * **Empowering Creators ('Vibe Coders')** : Build & monetize innovative AI apps, easily.
 * **Attracting Advertisers (Brands)** : Reach engaged audiences in unique AI contexts.
 
 ## How do we make money? 🔄
--  Enables indie creators to build, deploy, & monetize AI apps, targeting a multi-billion dollar AI-contextual advertising market.
+* Enables indie creators to build, deploy, & monetize AI apps, targeting a multi-billion dollar AI-contextual advertising market.
+
+<div v-click="1">
+* **Revenue Model:** 50/50 ad revenue share with developers
+</div>
+
+<div v-click="2">
+* **Unit Economics:** 1M MAU → 10M Ad Impressions → $15K Revenue → $7.5K to Developers
+</div>
+
+<div v-click="3">
+* **Live Pilots:** Contextual ads (CPM $1-2), Affiliate referrals
+</div>
 
 <!--
 *   **Elliot:** "We're tapping into a **brand new, explosive market opportunity**."
@@ -299,26 +309,33 @@ In Pollinations.AI's ecosystem, the core two sides are:
 layout: two-cols-header
 ---
 
-# <span class="bg-yellow-600 text-white p-2 rounded">📈 **Circular Economy**</span>
+# <span class="bg-yellow-600 text-white p-2 rounded">🛡️ **Competitive Moat**</span>
 
 ::left::
-* **Market Trend:** 📊 Gen-AI market doubling YoY
-* **Tech:** 🧠 AI-powered ad targeting
-* **Trust Moat:** 📖 Open source & Privacy-first
-* **Community:** 🔄 More apps → Better data → Better platform → More apps
-* **Competitive Edge:** 🏆 Free API + Built-in Revenue Path
+## Unfair Advantages
+
+* **Two-sided network effects:** More apps → better targeting → more revenue
+* **Open source trust moat:** Developer community embedding our code
+* **Unique inventory:** Monetizing contexts no other ad network can reach
+* **Distribution strategy:** Free access drives viral adoption
 
 ::right::
+## Competitive Differentiation
 
-## Virtuous Growth Cycle
+<div v-click="1">
+**vs AI Model Providers** (OpenAI, HuggingFace):
+Free access AND built-in revenue path
+</div>
 
-```
-More Apps → More Users → Better Data → 
-Better Targeting → Higher Revenue → 
-Better Platform → More Apps
-```
+<div v-click="2">
+**vs Game Monetizers** (Unity Ads):
+AI creation engine AND monetization layer
+</div>
 
-This self-reinforcing flywheel creates a powerful circular economy.
+<div v-click="3">
+**vs Ad-Supported AI Products** (Perplexity):
+Empower third-party developers with revenue sharing
+</div>
 
 <!--
 *   **Thomas:** "Our model creates a **powerful circular economy**, a flywheel for growth." *(Gesture to diagram)*

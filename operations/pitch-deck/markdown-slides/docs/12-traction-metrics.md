@@ -3,7 +3,7 @@ class: scroll
 ---
 
 <div style="text-align: right; position: absolute; top: 0; right: 0;">
-<a href="/10">⬅️ Back to Index</a>
+<a href="/11">⬅️ Back to Index</a>
 </div>
 
 <div class="bg-cyan-100 p-4 rounded-lg border-l-4 border-cyan-500 mb-6">
@@ -75,4 +75,3 @@ This document outlines the key traction metrics and Key Performance Indicators (
 | **Overall Platform Health & Profitability**| 25. Platform Gross Margin (%) *(Primary Indicator)*                             | Overall financial health, incorporating all revenue streams, COGS, and creator payouts.                              |
 |                                         | 26. Blended LTV of Monetized End-User (to Pollinations platform)                | Long-term value generated per monetized end-user, guiding acquisition and retention strategies.                    |
 |                                         | 27. Creator Churn Rate (Overall and by Tier)                                    | Retention of creators across different stages of their lifecycle on the platform; identifies potential issues.   |
-```

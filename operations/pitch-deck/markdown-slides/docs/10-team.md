@@ -8,7 +8,7 @@ class: scroll
 
 <div class="bg-pink-100 p-4 rounded-lg border-l-4 border-pink-500 mb-6">
   <h3 class="text-lg font-bold text-pink-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-pink-800">Led by CEO Thomas Haferlach (vision, strategy) and COO Elliot Fouchy (execution, finance), our experienced founding team is complemented by a strategic hiring plan for H2 2025/H1 2026 focusing on Ads & Monetization, MLOps, and Community, with a Finance & Payout specialist for the H2 2026 Partner tier launch.</p>
+  <p class="text-pink-800">Team: Led by CEO Thomas Haferlach & COO Elliot Fouchy, founders with proven AI platform execution. Strategic hires planned in Ads & Monetization, MLOps, Community, and Finance to support our growth and revenue share operations.</p>
 </div>
 
 # 👥 **Team**

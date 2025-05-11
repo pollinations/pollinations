@@ -8,7 +8,7 @@ class: scroll
 
 <div class="bg-teal-100 p-4 rounded-lg border-l-4 border-teal-500 mb-6">
   <h3 class="text-lg font-bold text-teal-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-teal-800">Our ecosystem shows strong consumer focus, with medium-to-high ad potential (77%) and significant teen/young adult engagement (~30%). This is validated by high-profile integrations, such as a Roblox game with substantial monthly active users and LobeChat with 60k GitHub stars.</p>
+  <p class="text-teal-800">Ecosystem Insights: ~3M MAU across 300+ apps, showing strong consumer focus and high ad monetization potential (77% med-high). Key integrations like a Roblox game (1.8M MAU) signal significant, untapped value.</p>
 </div>
 
 # 🌍 **Blooming Ecosystem**

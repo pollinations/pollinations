@@ -8,7 +8,7 @@ class: scroll
 
 <div class="bg-red-100 p-4 rounded-lg border-l-4 border-red-500 mb-6">
   <h3 class="text-lg font-bold text-red-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-red-800">By EOY 2026, with 2000 apps, we project €152,500 monthly gross profit (~51% margin on net retained revenue). The model shows Innovator apps generating €240 net contribution each, and Partner apps €175 (after a €425 creator payout), validating the ad-funded tiering and revenue share.</p>
+  <p class="text-red-800">Financial Projections (EOY 2026 - 2000 Apps): €152.5k monthly gross profit (~51% margin on net retained revenue). Innovator apps yield €240 net platform contribution; Partners €175 (after creator payout), validating model profitability.</p>
 </div>
 
 # 💹 **Financial Model (EOY 2026 - 2000 Apps, 4 Tiers)**

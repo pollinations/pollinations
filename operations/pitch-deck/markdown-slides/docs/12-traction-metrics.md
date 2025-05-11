@@ -8,7 +8,7 @@ class: scroll
 
 <div class="bg-cyan-100 p-4 rounded-lg border-l-4 border-cyan-500 mb-6">
   <h3 class="text-lg font-bold text-cyan-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-cyan-800">Building on significant current traction (3M Ecosystem MAU, 100M+ media/month), our phased KPIs track creator adoption, Ad SDK integration, and 'profitable app' growth, leading to Partner tier success and revenue share by H2 2026.</p>
+  <p class="text-cyan-800">Traction & KPIs: Current ~3M Ecosystem MAU and 100M+ monthly media generations provide a strong foundation. Phased KPIs will track creator adoption, Ad SDK integration, growth of 'profitable apps' (Ad€ > Cloud€), and Partner tier success.</p>
 </div>
 
 # 🚀 **Key Traction Metrics & KPIs**
@@ -19,7 +19,7 @@ This document outlines the key traction metrics and Key Performance Indicators (
 *   **Ecosystem Reach:** Total estimated ~3M Monthly Active Users (MAU) across all 300+ applications built on Pollinations.
 *   **Platform Activity:** 100M+ media assets generated monthly.
 *   **Creator Base:** 300+ live applications, 13,000+ Discord community members.
-*   **Key Integrations:** High-profile examples include projects on Roblox (500k MAU) and LobeChat (60k+ GitHub stars).
+*   **Key Integrations:** High-profile examples include projects on Roblox (1.8M MAU) and LobeChat (60k+ GitHub stars).
 A detailed analysis of a subset of 156 projects from this ecosystem provides further specific insights (see Ecosystem Analysis document).
 
 ## **Phase 1: Foundation & Initial Monetization (H2 2025)**

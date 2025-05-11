@@ -7,66 +7,33 @@ class: scroll
 
 # 🛣️ **Roadmap (2025-2026)**
 
-**Current Status (End Q2 2025):** Explorer Tier is operational. Creator Tier & Innovator Tier Beta versions are live and undergoing hardening.
+**Overall Strategic Goal:** Establish Pollinations.ai as the leading ad-funded AI creation platform by launching a full-featured, multi-tier system culminating in a 50/50 ad-revenue share for top creators by EOY 2026.
 
-**Overall Goal:** Systematically enhance and launch all tiers, culminating in the Partner Tier with a 50/50 ad-revenue share by EOY 2026, creating a self-sustaining ecosystem for AI creators.
+## **Phase 1: Foundation & Initial Monetization (H2 2025)**
 
-### **🗓️ Q3 2025: Innovator Tier GA & Marketplace Launch**
-*Goal: Empower creators with cost transparency, unlock unlimited usage for profitable apps, and launch a discovery platform.*
+*   **Focus:** Empower creators with self-sufficient app monetization (Innovator Tier) and establish initial platform ad revenue.
+*   **Key Outcomes:**
+    *   Innovator Tier (General Availability) with ROI Dashboard.
+    *   Marketplace v1 for app discovery.
+    *   Pollinations Ad SDK v1 launched (platform retains initial revenue).
+    *   Innovator Tier access to SOTA Models & Rich Ad Formats.
 
-| Key Deliverable              | Description/Details                                                                 |
-| :--------------------------- | :---------------------------------------------------------------------------------- |
-| **Innovator Tier (GA)**      | Unlimited usage for apps covering compute costs via ad revenue.                     |
-| ROI Dashboard                | Real-time visibility into app compute costs vs. ad revenue generated.               |
-| **Marketplace Site v1**      | Initial version for app discovery and promotion.                                    |
-| Ad SDK Integration Testing   | Internal testing and early feedback cycles for the Pollinations Ad SDK.             |
+## **Phase 2: Building for Partnership & Advanced Ads (H1 2026)**
 
-### **🗓️ Q4 2025: Initial Ad Monetization & Enhanced Innovator Offerings**
-*Goal: Enable initial ad monetization and provide advanced models & ad formats for Innovator Tier.*
+*   **Focus:** Develop advanced ad capabilities and the core infrastructure for revenue sharing.
+*   **Key Outcomes:**
+    *   Pollinations Ad SDK v2 with multi-format support.
+    *   Revenue Share Ledger & Payout System developed.
+    *   Partner Tier (50/50 revenue share) launched in Closed Beta.
+    *   Advanced Ad Mediation backend development initiated.
 
-| Key Deliverable                        | Description/Details                                                                          |
-| :------------------------------------- | :------------------------------------------------------------------------------------------- |
-| **Pollinations Ad SDK v1**             | Enables ad integration for Creator & Innovator tiers; revenue initially to Pollinations.       |
-| **SOTA Models (Innovator Tier)**       | Access to a curated selection of State-Of-The-Art AI models.                                 |
-| **Rich Ad Formats (Innovator Tier)**   | Initial rollout for higher engagement and CPMs.                                              |
-| Public Pricing & Tier Page           | Clearly outlines benefits and progression for all four tiers.                                |
+## **Phase 3: Full Ecosystem Launch – Revenue Share & Scale (H2 2026)**
 
-### **🗓️ Q1 2026: Advanced Ad SDK & Monetization Tools**
-*Goal: Significantly improve ad monetization capabilities with advanced ad formats and tools.*
+*   **Focus:** Go live with the complete 4-tier platform, including automated 50/50 revenue sharing, and drive adoption.
+*   **Key Outcomes:**
+    *   Partner Tier (General Availability) with 50/50 Ad-Revenue Split.
+    *   Automated monthly payouts for Partner Tier.
+    *   Public launch and promotion of the full Revenue Share Program.
+    *   Enhanced creator tools and marketplace integration for Partner apps.
 
-| Key Deliverable                     | Description/Details                                                                    |
-| :---------------------------------- | :------------------------------------------------------------------------------------- |
-| **Pollinations Ad SDK v2**          | Introduces multi-format ad support (video, interactive, rewarded).                     |
-| Improved Ad SDK Features            | Enhanced integration and performance.                                                  |
-| Advanced Ad Mediation Backend (Dev) | Begin building infrastructure for multi-network ad mediation for future Partner Tier.  |
-
-### **🗓️ Q2 2026: Revenue Share Infrastructure & Partner Tier Beta**
-*Goal: Build the core revenue-sharing system and begin closed beta testing of the Partner Tier.*
-
-| Key Deliverable                               | Description/Details                                                                         |
-| :-------------------------------------------- | :------------------------------------------------------------------------------------------ |
-| **Revenue Share Ledger & Payout System (Dev)**| Build and test secure ledger & partner wallet system for tracking & automated payouts.      |
-| **Partner Tier (Closed Beta)**                | Invite top Innovator apps; pilot 50/50 ad-revenue split, validating processes.              |
-| Advanced Ad Mediation (Internal/Beta)       | Deploy multi-network ad mediation for Partner Tier beta cohort.                             |
-
-### **🗓️ Q3 2026: Partner Tier Beta Hardening & Operational Readiness**
-*Goal: Refine the Partner Tier based on beta feedback and finalize all operational aspects for GA.*
-
-| Key Deliverable                         | Description/Details                                                                         |
-| :-------------------------------------- | :------------------------------------------------------------------------------------------ |
-| **Partner Tier Beta Hardening**         | Iterate on features, rev-share mechanics, & ad performance based on beta feedback.          |
-| Stability & Scalability Checks          | Ensure robustness of revenue share infrastructure.                                          |
-| Legal & Operational Frameworks Finalized| Complete Partner Tier agreements and payout operational procedures.                           |
-| Marketplace Promotion (Beta Partners)   | Feature Partner Tier beta apps prominently.                                                 |
-
-### **🗓️ Q4 2026: Partner Tier GA – Full 50/50 Revenue Share Program**
-*Goal: Go live with the full 4-tier model, including automated 50/50 ad-revenue sharing for Partner Tier, establishing Pollinations.ai as a leading ad-funded AI creation platform.*
-
-| Key Deliverable                                | Description/Details                                                                       |
-| :--------------------------------------------- | :---------------------------------------------------------------------------------------- |
-| **Partner Tier & 50/50 Ad-Revenue Share (GA)** | Official launch; automated monthly 50% ad-revenue share payouts to eligible Partners.     |
-| Public Revenue Share Program Launch          | Broad announcement (PR, co-marketing, documentation).                                     |
-| Full Marketplace Integration                   | Prioritize & promote Partner Tier apps in rankings, especially high revenue-sharing ones. |
-| Advanced Creator Tools                         | Roll out cost-observability & margin alerts for Innovator & Partner tiers.                |
-
-**By End of 2026: Pollinations.ai will feature a streamlined, four-tier platform, culminating in the Partner Tier where top creators earn a 50% share of the ad revenue they generate. This achieves our vision of a self-sustaining ecosystem where AI innovation is funded by its own success.**
+**End State (EOY 2026): A self-sustaining AI creator ecosystem with a clear path to shared revenue.**

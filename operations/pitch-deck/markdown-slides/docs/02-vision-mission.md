@@ -9,27 +9,16 @@ class: scroll
 
 ## 🚀 Mission
 
-To build the **ad‑funded AI creation and distribution platform**, where Creator apps finance their own growth through in‑app advertising and automatically graduate to higher service tiers—no invoices, credit cards, or payout headaches. From Q4 2026 we will add an **opt‑in 50 / 50 ad‑revenue share** for top‑performing partners, giving Creators a clear path from idea to income without changing their tech stack.
+To build the **ad‑funded AI creation and distribution platform**, where Creator apps finance their own growth through in‑app advertising and automatically graduate to higher service tiers—no invoices, credit cards, or payout headaches. From H2 2026 we will add an **opt‑in 50 / 50 net ad‑revenue share** for top‑performing partners, giving Creators a clear path from idea to income without changing their tech stack.
 
-## 🌟 Vision (Through 2026)
+## 🌟 Vision
 
-* **Universal AI Development** : Democratise multimodal AI so that anyone with an idea can become a **vibe‑coder**—no deep learning PhD required.
+*   **Universal AI Development**: Democratise multimodal AI so that anyone with an idea can become a **vibe‑coder**—no deep learning PhD required.
 
-* **Interface‑Free Creation** : Deliver a "Zero‑UI" platform where natural‑language prompts and API calls replace complex dashboards, letting Creators focus on the experience, not the tooling.
+*   **Interface‑Free Creation**: Deliver a "Zero‑UI" platform where natural‑language prompts and API calls replace complex dashboards, letting Creators focus on the experience, not the tooling.
 
-* **Sustainable, Flexible Monetisation**
+*   **Empowering Creator Success through Sustainable Monetisation**:
+    A platform where creators can start for free, automatically scale their applications based on ad-supported success, and ultimately participate in significant revenue sharing. We provide a clear, automated journey from initial idea to a sustainable, income-generating business, all within a single, evolving tech stack.
 
-  * **Ad‑Funded Tiering**
-    End‑user engagement drives ad revenue, which directly covers GPU costs and unlocks higher rate limits—fully automated.
-  * **Revenue Share, Q4 2026**
-    Eligible Partner apps can opt into a **50 % share of the ad revenue** they generate, aligning incentives while keeping the service free‑to‑start.
-
-## 🔄 Creator Economy Engine
-
-Pollinations equips Creators with three compounding levers:
-
-1. **Free On‑Ramp** – Explorer & Creator tiers mean zero financial barriers to experimentation.
-2. **Auto‑Scaling Via Ads** – When ad € ≥ cloud €, the app upgrades to Innovator/Partner without human review.
-3. **Revenue Participation (2026)** – High‑performing apps unlock a 50 % revenue split, turning side projects into real businesses.
-
-This engine turns curiosity into sustainable products, fuelling a virtuous cycle of more apps, more end‑users, and higher ad yield—benefiting the entire ecosystem.
+    *   **Ad‑Funded Tiering (Core Path):** End‑user engagement drives ad revenue, which directly covers GPU costs and unlocks higher service tiers and capabilities—fully automated.
+    *   **Revenue Participation (Partner Tier - H2 2026):** Eligible top-tier Partner apps can opt into a **50% share of the net ad revenue** they generate, creating a powerful incentive and true partnership.

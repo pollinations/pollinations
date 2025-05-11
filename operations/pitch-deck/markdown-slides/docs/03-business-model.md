@@ -13,49 +13,65 @@ Pollinations.AI turns cutting‑edge multimodal AI models into **plug‑and‑pl
 
 ## 2. Stakeholders
 
-* **Creators (Supply)** – Developers and small teams building applications on the Pollinations platform.
-* **Ad Providers (Demand)** – Ad networks (e.g., Google AdSense) supplying inventory and paying for impressions/clicks.
-* **End‑Users** – People interacting with those applications.
-* **Pollinations** – The platform operator orchestrating models, infrastructure, and ads.
+*   **Creators (Supply)** – Developers and small teams building applications on the Pollinations platform.
+*   **Ad Providers (Demand)** – Ad networks (e.g., Google AdSense) supplying inventory and paying for impressions/clicks.
+*   **End‑Users** – People interacting with those applications.
+*   **Pollinations** – The platform operator orchestrating models, infrastructure, and ads.
 
-## 3. Customer Segmentation & Tier Ladder
+## 3. App Segmentation & Tier Ladder
 
-| Tier | Name          | Primary User                  | Key Benefits                                    | Planned Availability |
-| ---- | ------------- | ----------------------------- | ----------------------------------------------- | -------------------- |
-| 1    | **Explorer**  | Curious devs, hobbyists       | High rate limits, no auth, zero cost            | Production (live)    |
-| 2    | **Creator**   | Early‑stage projects          | Referer, moderate limits, usage analytics    | Beta (Q2 2025)       |
-| 4    | **Innovator**   | Profitable apps | Unlimited usage, SOTA models, rich ad formats, marketplace promo | Q1 2026              |
-| 5    | **Partner** | Strategic rev‑share partners  | All Partner perks + **50/50 ad‑revenue split**  | Q3 2026              |
+| Tier | Name        | Primary User                 | Key Benefits                                                                  | Planned Availability
+| :--- | :---------- | :--------------------------- | :---------------------------------------------------------------------------- | :----------------------------------------- |
+| 1    | **Explorer**| Curious devs, hobbyists      | High rate limits, no auth, zero cost                                          | Production (Live)                          |
+| 2    | **Creator** | Early‑stage projects         | Referer, moderate limits, usage analytics                                     | Beta (Live)                                |
+| 3    | **Innovator**| Profitable apps              | Unlimited usage, ROI Dashboard, SOTA models, Rich Ad Formats, Marketplace v1  | GA (Phase 1 - H2 2025)                     |
+| 4    | **Partner** | Strategic rev‑share partners | All Innovator perks + **50/50 Net Ad‑Revenue Split**, Enhanced Creator Tools | Closed Beta (Phase 2 - H1 2026) <br> GA (Phase 3 - H2 2026) |
 
 ## 4. Revenue Streams
 
-1. **Advertising Revenue (100 %)** – All ad income generated through the Pollinations SDK flows to the platform today.
-2. **Future Revenue Share** – Starting Q4 2026, Partner apps will automatically receive **50 % of the ad revenue** they generate.
+1.  **Advertising Revenue (Platform Retained):**
+    *   During **Phase 1 (H2 2025)** and **Phase 2 (H1 2026)**, all ad income generated through the Pollinations SDK (v1 & v2) flows to Pollinations to cover platform costs and fund growth.
+2.  **Shared Advertising Revenue (Partner Tier):**
+    *   Starting in **Phase 3 (H2 2026)** with the General Availability of the Partner Tier, eligible Partner apps will automatically receive **50% of the Net Ad Revenue** they generate (Net Ad Revenue = Gross Ad Revenue - Ad Network Fees).
 
 ## 9. Growth Flywheel
 
-1. **Explorer → Creator** via frictionless docs & SDK samples.
-2. **Creator → Innovator** prompted by clear profitability insights in the ROI Dashboard.
-3. **Innovator → Partner** unlocked by ad integration and (from Q4 2026) shared revenue, plus prominent marketplace placement.
+Our growth is driven by a virtuous cycle:
 
-## 10. Rollout Timeline
+1.  **Free Experimentation (Explorer → Creator):** Easy entry and free tools attract a wide developer base. *(Ongoing)*
+2.  **Ad-Funded Scaling (Creator → Innovator):** Successful apps integrate ads, cover their costs, and unlock unlimited usage, SOTA models, and marketplace visibility. *(H2 2025)*
+3.  **Revenue Partnership (Innovator → Partner):** Top Innovators share 50/50 in net ad revenue, turning projects into businesses and showcasing platform success. *(H2 2026)*
 
-| Quarter     | Milestone                                          |
-| ----------- | -------------------------------------------------- |
-| **2025 Q2** | Creator beta hardening                             |
-| **2025 Q3** | Innovator tier + ROI dashboard                     |
-| **2025 Q4** | SDK ads v1, public pricing page                    |
-| **2026 Q1** | Partner early‑access, SOTA models & rich ads       |
-| **2026 Q2** | Partner GA, advanced ad formats                    |
-| **2026 Q3** | Revenue‑share ledger + Partner beta              |
-| **2026 Q4** | Partner tier GA (50/50 split), automated payouts |
-
-WE HAVE DSP GIVE US SSP
-
-important
-- tier 1 and 2 are investment also, do not forget that, it's not lost money
-- remove extra tier
-- cleanup fluf
-- what is good for the slide? facts and numbers
-- ad link 'more info' on each slide
-- add tom som sam
+```
+        ****************************************
+        |      Many Potential Developers       |
+        ****************************************
+                         ▼ (Free Access)
+             ******************************
+             |        EXPLORER TIER       | (Broadest Entry)
+             |        Status: LIVE        | 
+             ******************************
+                   \                 /
+                    \               /
+                     ***************
+                    | CREATOR TIER | (Early Projects)
+                    | Status: BETA | 
+                     ***************
+                       \           /
+                        \         /
+                         *********
+                        |INNOVATOR| (Profitable Apps)
+                        | Phase 1 |
+                         *********
+                            |
+                            | (Top Performance)
+                            V
+                        *********
+                        |PARTNER| (Rev-Share)
+                        |Phase 2|
+                        *********
+                            |
+                            ▼
+             Ecosystem Growth & New Explorers
+             (Flywheel: Success fuels new starts)
+```

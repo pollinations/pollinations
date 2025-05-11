@@ -230,7 +230,7 @@ SLIDE GUIDANCE:
 # <span class="bg-blue-600 text-white p-2 rounded">**📹 Live API Traffic**</span>
 
 <div class="flex justify-center items-center h-full">
-  <video class="w-4/5 rounded-lg shadow-lg" autoplay loop muted playbackRate="2">
+  <video class="w-mx rounded-lg shadow-lg" autoplay loop muted playbackRate="2">
     <source src="/media/image-feed-text-feed.mov" type="video/mp4">
   </video>
 </div>

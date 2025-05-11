@@ -19,11 +19,11 @@ To build the **ad‑funded AI creation and distribution platform**, where Creato
 
 ## 🌟 Vision
 
-*   **Universal AI Development**: Democratise multimodal AI so that anyone with an idea can become a **vibe‑coder**—no deep learning PhD required.
+*   **Universal AI Development**: Democratize multimodal AI so that anyone with an idea can become a **vibe‑coder**—no deep learning PhD required.
 
 *   **Interface‑Free Creation**: Deliver a "Zero‑UI" platform where natural‑language prompts and API calls replace complex dashboards, letting Creators focus on the experience, not the tooling.
 
-*   **Empowering Creator Success through Sustainable Monetisation**:
+*   **Empowering Creator Success through Sustainable Monetization**:
     A platform where creators can start for free, automatically scale their applications based on ad-supported success, and ultimately participate in significant revenue sharing. We provide a clear, automated journey from initial idea to a sustainable, income-generating business, all within a single, evolving tech stack.
 
     *   **Ad‑Funded Tiering (Core Path):** End‑user engagement drives ad revenue, which directly covers GPU costs and unlocks higher service tiers and capabilities—fully automated.

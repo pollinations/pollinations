@@ -35,6 +35,8 @@ This model projects Pollinations.ai's performance by EOY 2026:
 | **Net Ad Revenue (Platform Pool) per 1,000 Media Units** | **€1.70**                       | After 15% ad network fee. This is the base for Partner share. |
 | **Partner Tier Revenue Share**                | **50% of Net Ad Revenue from Partner App** | Shared after ad network fees are deducted.                    |
 
+*Note on eCPM:* The €20 gross eCPM target is based on comparables and AI-native inventory value. Achieving it involves rich media formats, partner optimization, and direct sales, with ongoing monitoring.
+
 ## 2. App Tier Distribution & Per-App Economics (Monthly)
 
 **Target EOY 2026: 2000 Apps**
@@ -49,6 +51,8 @@ This model projects Pollinations.ai's performance by EOY 2026:
 | Creator     | 600  | 50,000            | 25                     | -                      | -                                               | -                                             | -                              | **-25**                                     |
 | **Innovator** | **500**| 200,000           | 100                    | 400                    | 340                                             | -                                             | 340                            | **240**                                     |
 | **Partner**   | **300**| 500,000           | 250                    | 1,000                  | **850**                                         | **425**                                       | **425**                        | **175**                                     |
+
+*Note on Tier Economics:* Explorer and Creator tiers are strategic investments, fostering growth and feeding higher monetized tiers (Innovator, Partner), ensuring ecosystem health and future revenue.
 
 ## 3. Aggregated Platform Financials (Monthly, Rounded €)
 

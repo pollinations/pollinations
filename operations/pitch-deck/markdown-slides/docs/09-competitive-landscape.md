@@ -40,20 +40,20 @@ class: scroll
 | AppLovin MAX   | SDK + Exchange | Programmatic Video/Playable Ads    | ≥ 70% to Creator          | AI optimization boosts eCPM; high Creator share norm. |
 | Google AdSense | JS Tag         | Display & Video Ads                | 68% to Publisher          | Benchmark for payout reliability.                    |
 | **Pollinations (Beta Live)** | **SDK / API**  | **Contextual Ads (via Ad Providers)** | **0% (Tier Upgrades instead)** | **Unique: Free tier funded by 100% Ad Rev capture.** |
-| **Pollinations (from H2 2026)** | **SDK / API** | **Ad Rev-Share** | **50% (Net Ad Rev)** | **Offers choice aligning with industry payout levels, attractive due to unique platform value.** |
+| **Pollinations (from H2 2026)** | **SDK / API** | **Ad Rev-Share** | **50% (Net Ad Rev)** | **Offers choice; 50% net share attractive due to: integrated free AI backend, zero-ops, unified path to revenue & unique inventory.** |
 
 ## 3 | Unity Deep‑Dive (Closest Ad Analogy)
 
 *   **Revenue:** Heavily reliant on Ads (~66% in 2024).
 *   **Model:** SDK-based ads (rewarded video etc.) with ~70% payout to Creators.
 *   **AI:** Investing in ad optimization (Unity Vector).
-*   **Pollinations Contrast:** Pollinations' default model avoids direct payouts, instead funding tier upgrades with 100% ad revenue capture. Optional rev-share (50%, launching 2026) is lower than Unity's standard but provides choice.
+*   **Pollinations Contrast:** Pollinations' default model avoids direct payouts, instead funding tier upgrades with 100% ad revenue capture. Optional rev-share (50% net, from H2 2026) is lower than Unity's standard, but compelling due to: integrated free AI backend, zero-ops platform, unified path to revenue, & unique inventory.
 
 ## 4 | AppLovin Contrast
 
 *   **AI Focus:** Uses AI (Axon 2.0) for campaign optimization.
 *   **Model:** Mediation platform maximizing yield for Creators (≥ 70% share).
-*   **Pollinations Contrast:** Similar reliance on AI for ad performance, but different default value exchange (tiers vs. cash). Optional 50% share (launching 2026) is less competitive on % but integrated within the AI media platform.
+*   **Pollinations Contrast:** Similar reliance on AI for ad performance. Optional 50% net share (from H2 2026), while a different percentage, is attractive due to: deep AI platform integration, free core services, & unified creation-to-revenue path.
 
 ## 5 | Perplexity AI – Native Ad + Premium Precedent
 

@@ -68,4 +68,5 @@ class: scroll
 *   **Vast Scale:** Significant revenue potential.
 *   **Direct Alignment:** Serves key indie creator segment.
 *   **Strong Tailwinds:** GenAI, privacy shifts, creator economy.
+*   **Untapped Inventory:** Our platform unlocks a previously untapped, large-scale inventory of AI-contextual advertising opportunities, effectively providing a continuous new supply for ad providers seeking these niche audiences.
 *   **Proven Model:** Ad-revenue sharing, enhanced by our AI tools.

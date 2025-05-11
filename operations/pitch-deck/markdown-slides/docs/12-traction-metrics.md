@@ -15,6 +15,8 @@ class: scroll
 
 This document outlines the key traction metrics and Key Performance Indicators (KPIs) Pollinations.ai will track.
 
+**Current Ecosystem Snapshot:** 3M MAU, 100M media/month, 300 apps, and high-profile integrations (e.g., on Roblox with 50k MAU, LobeChat with 60k GitHub stars) demonstrate strong pre-monetization validation and a vibrant community.
+
 ## **Phase 1: Foundation & Initial Monetization (H2 2025)**
 
 *   **Focus:** Drive initial developer adoption, encourage experimentation, empower creators with self-sufficient app monetization (Innovator Tier), and establish initial platform ad revenue.

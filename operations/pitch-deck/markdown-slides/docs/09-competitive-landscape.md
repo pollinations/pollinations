@@ -71,21 +71,8 @@ class: scroll
 
 ## 6 | Positioning Pollinations for Investors
 
-### 6.1 Analogy Menu
-
 *   "Unity Ads for generative assets, with a smarter free tier."
 *   "GIPHY/Unsplash meets AdSense for the AI Creator Economy."
-
-### 6.2 Launch Roadmap (Compressed Timeline)
-
-1.  **Q1 2026:** Ad-funded Dynamic Tiering GA.
-2.  **Q2 2026:** Creator Premium Subscription GA.
-3.  **Q4 2026:** Optional 50/50 Ad Revenue Share GA.
-
-### 6.3 Revenue Model Summary
-
-*   **Default:** 100% Ad Revenue funds platform & automatic tier upgrades for Creators.
-*   **Optional (2026+):** Creators can pay Premium Subs OR opt-in for 50% share of their app's Ad Revenue.
 
 
 ## 7 | Alternatives / Complements to Core Models
@@ -96,8 +83,6 @@ class: scroll
 | Usage‑based API Tiers | Pay‑as‑you‑go calls (no ads/subs)  | Medium (Alternative Premium)    | Different Creator segment       |
 | Licensing Marketplace | Brands buy exclusive assets          | Low (Complexity, scalability) | Possible future exploration     |
 | End-User Tips/Subs    | End-Users pay Creators directly    | Low (Platform bypass)         | Out of scope for Pollinations MVP |
-
-
 
 ## 8 | Risk Map & Mitigations
 
@@ -111,23 +96,9 @@ class: scroll
 | Brand‑Safety              | Ad Provider Trust         | Multi‑layer filters, human audit, clear content policies for Creators.            |
 | Regulatory                | Fines, Operational Changes| Legal counsel, privacy-by-design, age gating, focus on contextual ads.            |
 
-
-
-## 9 | Next‑Step Checklist (Pre-Seed Focus)
-
-1.  Finalize Ad Stack & Dynamic Tiering tech (for Q1 2026 GA).
-2.  Launch Creator Portal with basic stats.
-3.  Secure first Ad Provider partnerships.
-4.  Build internal dashboard for Ad € / Cloud € monitoring.
-5.  Plan & resource feature development (Premium Subs, Rev-Share Systems for Q2-Q4 2026).
-
-
-
 ## Appendix | Key References
 
 * Unity FY‑2024 earnings & Vector announcement
 * AppLovin Axon 2.0 and MAX documentation
 * Gartner citizen‑developer forecast; GitHub Copilot metrics; IDC cloud‑native app projection
 * GIPHY, Unsplash, Replit, Perplexity press releases and investor notes
-
-*(Full citation list available on request – stripped here for clarity.)* 

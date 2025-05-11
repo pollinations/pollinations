@@ -28,3 +28,4 @@ To build the **ad‑funded AI creation and distribution platform**, where Creato
 
     *   **Ad‑Funded Tiering (Core Path):** End‑user engagement drives ad revenue, which directly covers GPU costs and unlocks higher service tiers and capabilities—fully automated.
     *   **Revenue Participation (Partner Tier - H2 2026):** Eligible top-tier Partner apps can opt into a **50% share of the net ad revenue** they generate, creating a powerful incentive and true partnership.
+    *   **Showcasing Creator Talent:** Providing a vibrant Marketplace for creators to gain visibility, reach end-users, and demonstrate the success of their applications.

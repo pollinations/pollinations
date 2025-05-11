@@ -63,7 +63,7 @@ pollinations.ai is the **ad-funded backend and marketplace** connecting AI creat
 **The pollinations.ai Flywheel:** By solving these dual problems, pollinations.ai creates a virtuous cycle: More developers build innovative apps on our free platform -> This attracts more end-users -> This creates more valuable, AI-native ad inventory -> This attracts brands and ad revenue -> A portion of this revenue is shared back with successful developers, incentivizing further creation and platform growth, while also funding the free tier for new entrants.
 
 1.  **Free Experimentation (Explorer → Creator):** Easy entry and free tools attract a wide developer base, acting as an **investment in future monetizable applications**. *(Ongoing)*
-2.  **Ad-Funded Scaling (Creator → Innovator):** Successful apps integrate ads, cover their costs, and unlock unlimited usage, SOTA models, and **marketplace visibility**. *(H2 2025)*
+2.  **Ad-Funded Scaling (Creator → Innovator):** Successful apps integrate ads, cover their costs, and unlock unlimited usage, SOTA models, and **enhanced visibility through the Marketplace, driving app discovery**. *(H2 2025)*
 3.  **Revenue Partnership (Innovator → Partner):** Top Innovators share 50/50 in net ad revenue, **turning projects into businesses** and showcasing platform success. *(H2 2026)*
 
 ```

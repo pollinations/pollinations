@@ -25,7 +25,7 @@ A detailed analysis of a subset of 156 projects from this ecosystem provides fur
 ## **Phase 1: Foundation & Initial Monetization (H2 2025)**
 
 *   **Focus:** Drive initial developer adoption, encourage experimentation, empower creators with self-sufficient app monetization (Innovator Tier), and establish initial platform ad revenue.
-*   **Key Milestones:** Innovator Tier (GA), Ad SDK v1, SOTA Models & Rich Ads for Innovators. (Explorer Tier Live; Creator Tier Beta Launch Q2 2025).
+*   **Key Milestones:** Innovator Tier (GA), Marketplace v1 for app discovery launched, Ad SDK v1, SOTA Models & Rich Ads for Innovators. (Explorer Tier Live; Creator Tier Beta Launch Q2 2025).
 
 | Category                            | Metric/KPI                                                                    | Description/Purpose                                                                                  |
 | :---------------------------------- | :---------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------- |

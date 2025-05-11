@@ -72,7 +72,7 @@ IDE / Cursor / VS Code                pollinations.ai Cloud
 
 1. A single CLI command in the editor sends an MCP request that scaffolds a new GitHub repo for the Creator with all secrets, workflows and domain settings pre-wired.
 
-2. Every commit pushed to that repo triggers GitHub Actions, which build and publish the site to GitHub Pages under the Creator's custom domain, accessible to End-Users.
+2. Every commit pushed to that repo triggers GitHub Actions, which build and publish the site to GitHub Pages under the Creator's custom domain, accessible to End-Users and discoverable via the Pollinations Marketplace.
 
 3. At runtime, the static site talks to Pollinations' edge **Generative AI APIs**. Depending on the Creator's choice (Premium Sub or Ad Rev-Share - from 2026) or the default model, ads are served (or not) and the Rate-Limit Engine manages the app's operational tier.
 
@@ -94,5 +94,6 @@ pollinations.ai gives Creators a **one-command factory** for AI-powered web apps
     *   (From 2026) Creators gain choices: pay Premium for guarantees OR opt-into direct Ad Revenue sharing.
 
 * **Single source of truth** – All core services (SDKs, templates, **Generative AI APIs**, tiering logic, future billing/ledger) live in one audited repository; every new app forks from that gold master.
+* **Broadened Reach:** Creator apps gain exposure through the Pollinations Marketplace, connecting them with a wider audience and showcasing innovation within the ecosystem.
 
 In short, pollinations.ai turns the complex stack into a **SaaS utility**. We capture Ad Revenue and manage app capabilities via dynamic tiering (default). From 2026, we add Creator Premium Subscriptions and optional Creator Ad Rev-share. 

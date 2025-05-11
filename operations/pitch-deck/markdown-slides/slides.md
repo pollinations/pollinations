@@ -299,6 +299,32 @@ layout: two-cols-header
 
 ::right::
 
+```
+               Many Potential Developers       
+                         ▼ (Free Access)
+             ******************************
+             |        EXPLORER TIER       | 
+             ******************************
+                   \                 /
+                    \               /
+                     ***************
+                    | CREATOR TIER | (Early Projects)
+                     ***************
+                       \           /
+                        \         /
+                         *********
+                        |INNOVATOR| (Profitable Apps)
+                         *********
+                            | (Top Performance)
+                            V
+                        *********
+                        |PARTNER| (Rev-Share)
+                        *********
+                            |
+                            ▼
+             Ecosystem Growth & New Explorers
+```
+
 <!--
 add media: creator funnel or per app revenue per month numbers
 

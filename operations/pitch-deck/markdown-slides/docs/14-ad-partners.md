@@ -16,18 +16,6 @@ Pollinations has strong ad space "supply" but needs partners for advertiser "dem
 | [Nexad](https://www.nex.ad/) | AI-native Ads | • Real-time generation<br>• Context-aware targeting<br>• Personalized content | Not disclosed | Abotify API | $6M seed (2025)<br>• Investors: Prosus, a16z<br>• Partners: iAsk.Ai, Moescape.ai | To research |
 | [Adzedek](https://www.adzedek.com/) | GPT Ad Marketplace | • Custom GPT monetization<br>• Contextual placement<br>• Sponsored results | 75% to publishers<br>25% to Adzedek | Direct | Operational<br>• Focus on OpenAI GPT Store | To research |
 
-## Evaluation Criteria
-
-| Category | Description | Priority |
-|----------|-------------|----------|
-| **AI/LLM Specialization** | Understanding of AI application contexts | High |
-| **Integration Simplicity** | Compatible SDK/API with minimal friction | High |
-| **Revenue Metrics** | Competitive CPM/CPC rates and fill rates | Medium |
-| **Brand Safety** | Content appropriateness mechanisms | Medium |
-| **Analytics** | Comprehensive reporting capabilities | Medium |
-| **Revenue Share** | Favorable terms for publishers | High |
-| **Technical Support** | Implementation assistance and documentation | Low |
-
 ## Outreach Template
 
 ```

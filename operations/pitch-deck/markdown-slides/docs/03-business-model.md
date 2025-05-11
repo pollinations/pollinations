@@ -8,7 +8,7 @@ class: scroll
 
 <div class="bg-green-100 p-4 rounded-lg border-l-4 border-green-500 mb-6">
   <h3 class="text-lg font-bold text-green-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-green-800">We bridge the gap between AI creators needing monetization and brands seeking AI-native audiences. Our ad-funded model offers free AI access, automated scaling via in-app ads, and culminates in a 50/50 net ad-revenue split for Partner-tier apps (H2 2026), creating a powerful growth flywheel.</p>
+  <p class="text-green-800">Business Model: A tiered ladder where apps automatically graduate by covering compute via ads. Platform revenue (100% retained initially) transitions to a 50/50 net ad-revenue split for top Partners (H2 2026), creating a growth flywheel.</p>
 </div>
 
 # 💰 **Business Model**

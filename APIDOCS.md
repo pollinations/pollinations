@@ -1477,7 +1477,24 @@ Generates speech audio from text using the OpenAI compatible endpoint. This meth
 | `messages`   | Yes      | Standard OpenAI message array, containing the text to speak in the `content` of a `user` role message. |         |
 | `private`    | No       | Set to `true` to prevent the response from appearing in the public feed.                               | `false` |
 
-**Return:** Audio file (MP3 format, `Content-Type: audio/mpeg`) 🎧. The response body _is_ the audio data, not JSON.
+**Return:** JSON response containing audio data encoded in base64 format 🎧. The response follows the OpenAI audio API format with a structure like:
+```json
+{
+  "choices": [
+    {
+      "content_filter_results": {...},
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "audio": {
+          "data": "BASE64_ENCODED_AUDIO_DATA..."
+        }
+      }
+    }
+  ]
+}
+```
+For detailed usage guide, see [OpenAI Audio Documentation](https://platform.openai.com/docs/guides/audio/audio-generation?example=audio-out).
 
 **Rate Limits:** (Inherits base text API limits)
 
@@ -1487,7 +1504,7 @@ Generates speech audio from text using the OpenAI compatible endpoint. This meth
 **cURL:**
 
 ```bash
-# Save output directly to an MP3 file
+# Get JSON response with base64-encoded audio
 curl https://text.pollinations.ai/openai \
   -H "Content-Type: application/json" \
   -d '{
@@ -1496,8 +1513,7 @@ curl https://text.pollinations.ai/openai \
       {"role": "user", "content": "Hello from Pollinations AI! This audio was generated via POST."}
     ],
     "voice": "echo"
-  }' \
-  --output generated_audio_post.mp3
+  }'
 ```
 
 **Python (`requests`):**
@@ -1505,6 +1521,7 @@ curl https://text.pollinations.ai/openai \
 ```python
 import requests
 import json
+import base64
 
 url = "https://text.pollinations.ai/openai"
 payload = {
@@ -1520,14 +1537,26 @@ output_filename = "generated_audio_post.mp3"
 try:
     response = requests.post(url, headers=headers, json=payload)
     response.raise_for_status()
-    if 'audio/mpeg' in response.headers.get('Content-Type', ''):
+    
+    # Parse the JSON response
+    response_data = response.json()
+    
+    # Extract the base64-encoded audio data
+    try:
+        audio_data_base64 = response_data['choices'][0]['message']['audio']['data']
+        
+        # Decode the base64 data to binary
+        audio_binary = base64.b64decode(audio_data_base64)
+        
+        # Write the binary audio data to a file
         with open(output_filename, 'wb') as f:
-            f.write(response.content)
+            f.write(audio_binary)
         print(f"Audio saved successfully as {output_filename}")
-    else:
-        print("Error: Expected audio response, received:")
-        print(f"Content-Type: {response.headers.get('Content-Type')}")
-        print(response.text)
+        
+    except (KeyError, IndexError) as e:
+        print(f"Error extracting audio data from response: {e}")
+        print("Response structure:", json.dumps(response_data, indent=2))
+        
 except requests.exceptions.RequestException as e:
     print(f"Error making TTS POST request: {e}")
 ```
@@ -1549,26 +1578,49 @@ async function generateAudioPost(text, voice = "alloy") {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+    
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(
         `HTTP error! status: ${response.status}, message: ${errorText}`
       );
     }
-    if (response.headers.get("Content-Type")?.includes("audio/mpeg")) {
-      const audioBlob = await response.blob();
+    
+    // Parse the JSON response
+    const responseData = await response.json();
+    
+    try {
+      // Extract the base64-encoded audio data
+      const audioBase64 = responseData.choices[0].message.audio.data;
+      
+      // Convert base64 to binary data
+      // First, create a binary string from the base64 data
+      const binaryString = atob(audioBase64);
+      
+      // Convert the binary string to a Uint8Array
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      
+      // Create a blob from the bytes
+      const audioBlob = new Blob([bytes], { type: "audio/mpeg" });
       const audioUrl = URL.createObjectURL(audioBlob);
+      
+      // Play the audio
       const audio = new Audio(audioUrl);
       audio.play();
       console.log("Audio generated and playing.");
-    } else {
-      const errorText = await response.text();
-      console.error(
-        "Expected audio, received:",
-        response.headers.get("Content-Type"),
-        errorText
-      );
-      throw new Error("API did not return audio content.");
+      
+      // Optional: Download the audio file
+      // const downloadLink = document.createElement('a');
+      // downloadLink.href = audioUrl;
+      // downloadLink.download = 'generated_audio.mp3';
+      // downloadLink.click();
+      
+    } catch (error) {
+      console.error("Error processing audio data:", error);
+      console.error("Response structure:", responseData);
     }
   } catch (error) {
     console.error("Error generating audio via POST:", error);

@@ -45,6 +45,16 @@ export const projectCategories = [
 const allProjects = {
   toolsInterfaces: [
     {
+      name: "🆕 Aiphoto智能绘画 🇨🇳",
+      url: "https://qiyimg.3d.tc/Aiphoto",
+      description: "AI艺术工坊 - 智能绘画生成器。这是一个基于AI的绘画生成工具，可以根据用户输入的中文描述自动生成相应的图片。(An AI art workshop - intelligent painting generator. This is an AI-based painting generation tool that can automatically generate images based on Chinese descriptions input by users.)",
+      author: "@zhikanyeye",
+      repo: "https://github.com/zhikanyeye/Aiphoto",
+      submissionDate: "2025-05-10",
+      language: "zh-CN",
+      order: 1,
+    },
+    {
       name: "🆕 KoboldAI",
       url: "https://koboldai.org/",
       description: "A browser-based front-end for AI-assisted writing with multiple local & remote AI models, including integration with Pollinations.AI for image generation.",
@@ -879,6 +889,14 @@ const allProjects = {
     },
   ],
   socialBots: [
+    {
+      name: "🆕 🤖 SingodiyaTech bot",
+      url: "https://t.me/Aks7240Bot",
+      description: "This is a Telegram bot with many Advanced ai features.",
+      author: "t.me/Aks979",
+      submissionDate: "2025-05-10",
+      order: 1,
+    },
     {
       name: "🆕 🤖 Raftar.xyz",
       url: "https://raftar.xyz",

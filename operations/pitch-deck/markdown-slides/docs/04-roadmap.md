@@ -17,7 +17,7 @@ class: scroll
 
 *   **Focus:** Empower creators with self-sufficient app monetization (Innovator Tier) and establish initial platform ad revenue.
 *   **Key Outcomes:**
-    *   Innovator Tier (General Availability) with ROI Dashboard.
+    *   Innovator Tier (General Availability).
     *   Marketplace v1 for app discovery.
     *   pollinations.ai Ad SDK v1 launched (platform retains initial revenue).
     *   Innovator Tier access to SOTA Models & Rich Ad Formats.

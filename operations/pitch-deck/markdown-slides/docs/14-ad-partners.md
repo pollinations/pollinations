@@ -1,3 +1,16 @@
+---
+class: scroll
+---
+
+<div style="text-align: right; position: absolute; top: 0; right: 0;">
+<a href="/11">⬅️ Back to Index</a>
+</div>
+
+<div class="bg-cyan-100 p-4 rounded-lg border-l-4 border-cyan-500 mb-6">
+  <h3 class="text-lg font-bold text-cyan-800">🌟 Pitch Deck Highlight</h3>
+  <p class="text-cyan-800">We're establishing strategic partnerships with specialized AI ad networks to maximize monetization potential. Our unique ad-funded model enables creators to scale based on Ad € / Cloud € ratio, with plans to offer a 50/50 net revenue share for Partner tier creators in H2 2026.</p>
+</div>
+
 # 🤝 Ad Partners
 
 Tracking potential partnerships with ad networks to monetize our AI application ecosystem.

@@ -507,9 +507,10 @@ layout: two-cols-header
 - [👥 Team](/19)
 - [🏗️ Tech Architecture](/20)
 - [🔌 SDK & Ad Integration](/21)
-- [⚠️ Risk Register](/22)
-- [🥊 Competitive Landscape](/23)
-- [🚀 KPI & Traction Metrics](/24)
+- [🤝 Add Partners](/22)
+- [⚠️ Risk Register](/23)
+- [🥊 Competitive Landscape](/24)
+- [🚀 KPI & Traction Metrics](/25)
 
 ---
 src: ./docs/01-executive-summary.md
@@ -549,6 +550,10 @@ src: ./docs/07-tech-architecture.md
 
 ---
 src: ./docs/08-sdk-ad-integration.md
+---
+
+---
+src: ./docs/14-ad-partners.md
 ---
 
 ---

@@ -1,5 +1,5 @@
 - roblox MAU
-- ecosystem traction number to be verified
-- It's vital to define "3M MAU" clearly if it's an aggregated ecosystem number. For example: "Total estimated MAU across all applications built on the Pollinations platform: 3M".
 - remove ROI Dashboard - or imporve concept
 - define marketplace concept (pollinations.ai new new website replacing the current)
+- tighten 'premium' feature concept
+- update pollinations.ai name

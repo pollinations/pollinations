@@ -16,10 +16,11 @@ class: scroll
 This document outlines the key traction metrics and Key Performance Indicators (KPIs) Pollinations.ai will track. Our strategy is built upon a strong foundation of pre-monetization ecosystem engagement..
 
 **Current Ecosystem Snapshot (Summary):**
-*   **Ecosystem Reach:** ~3M Monthly Active Users (MAU) across all applications.
+*   **Ecosystem Reach:** Total estimated ~3M Monthly Active Users (MAU) across all 300+ applications built on Pollinations.
 *   **Platform Activity:** 100M+ media assets generated monthly.
 *   **Creator Base:** 300+ live applications, 13,000+ Discord community members.
 *   **Key Integrations:** High-profile examples include projects on Roblox (500k MAU) and LobeChat (60k+ GitHub stars).
+A detailed analysis of a subset of 156 projects from this ecosystem provides further specific insights (see Ecosystem Analysis document).
 *(For a comprehensive analysis of the current ecosystem, please refer to Section 13).*
 
 ## **Phase 1: Foundation & Initial Monetization (H2 2025)**

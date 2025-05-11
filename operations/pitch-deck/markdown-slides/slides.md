@@ -39,7 +39,6 @@ class: text-center
 * **Scale:** 10M+ likes, 250K monthly active players on 'AI Character RP' game
 * **Integration Ease:** Developer integrated our API with minimal code
 * **User Value:** Players generate AI characters and interact in real-time
-* **Revenue Model In Action:** Developer earns through our ad-sharing model 
 * **Broader Application:** Similar success across Discord bots, mobile apps, web platforms
 -->
 
@@ -82,11 +81,6 @@ The current ecosystem forces <b>painful trade-offs</b>.
   * Authentication implementation challenges
   * Critical gap: No clear monetization path for successful apps
 
-* **End-User Pain Points:**
-  * Paywalls limiting access to AI capabilities
-  * Privacy concerns with handling of data
-  * Limited customization and creative control
-
 * **Ad Provider/Brand Pain Points:**
   * Struggling to reach engaged audiences in new AI spaces
   * Missing youth demographic - particularly Gen Z
@@ -94,33 +88,15 @@ The current ecosystem forces <b>painful trade-offs</b>.
 
 * **Core Market Problem:** System friction prevents an open ecosystem where developers can earn from success
 
-* **Three-Sided Market Challenge:** Need solution addressing all stakeholders simultaneously
-
 ![Pain Points Visual](../media/paintpointsgenz.png)
 
-* This diagram shows the three key stakeholders (Creator/Affiliate, End-User/Consumer, and Brand) with their respective pain points:
+* This diagram shows the two key stakeholders (Creator/Affiliate and Brand) with their respective pain points:
 * Creator side shows "Infra Cost" with server infrastructure and key icon
-* End-User side shows "Privacy" with shield and "FRICTION" text
 * Brand side shows "Reach Gap" with connection and people icons
 
 SLIDE GUIDANCE:
 
-### **Creator (Affiliate)**
-* Complex AI infrastructure
-* Authentication headaches
-* No built‑in monetization
-
-### **End Users (Consumer)**
-* Paywalls everywhere
-* Privacy concerns
-* Limited customization
-
-### **Ad Providers (Brand)**
-* Missing youth demographic
-* No AI-native targeting
-
 - Frame problem as a dual pain point affecting both developers AND users
-- Don't forget the AD providers. They are not reaching the indie creator apps. The money comes from there so they may be more important than the others in terms of priority/ or same importance
 - The problem statement is clear - but could potentially add 1-2 concrete examples of developer/user friction
 - Consider mentioning competition implicitly (without naming) by referencing their limitations (check context/parallels-unity-for-ai-and-others.md for more detail)
 -->

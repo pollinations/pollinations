@@ -249,44 +249,25 @@ layout: two-cols-header
 </div>
 
 <!--
-* **Creator Economy Trend:** Rise of 'vibe coding' expands the creator pool.
-* **New Ad Inventory:** Unlocking new advertising inventory within millions of new AI apps.
-* **GenAI Market Size:** Overall GenAI creator economy already >$10 Billion TAM and doubling.
+We make building and monetizing AI apps frictionless and economically viable for creators, while providing brands with novel, effective channels to reach valuable audiences. This creates a self-reinforcing flywheel, fueling the growth of the entire AI creator ecosystem.
 
-* **Two-Sided Market Model:**
-  * **Creators (Affiliates):** Growing wave of developers and 'vibe coders' using our free AI APIs
-  * **Advertisers (Brands):** Reaching engaged audiences in novel AI-native experiences
-  * **Target Audience:** Youth/Gen Z are strong early adopters, but the audience is broad
-
-* **Revenue Model:** Simple, proven model like Unity Ads, built for this new wave of AI creation
-* **Revenue Sharing:** 50% ad revenue share goes directly back to creators - we enable, they build, everyone earns
-* **Current Revenue Streams:** Contextual ads & Affiliate referrals pilots are live (as shown on slide)
+1 Free Experimentation (Explorer → Creator): Easy entry and free tools attract a wide developer base, acting as an investment in future monetizable applications. (Ongoing)
+2 Ad-Funded Scaling (Creator → Innovator): Successful apps integrate ads, cover their costs, and unlock unlimited usage, SOTA models, and enhanced visibility through the Marketplace, driving app discovery. (H2 2025)
+3 Revenue Partnership (Innovator → Partner): Top Innovators share 50/50 in net ad revenue, turning projects into businesses and showcasing platform success. (H2 2026)
 
 * **Economic Advantages:**
   * Cost per AI media generation is dropping each year
   * Ad revenue potential per interaction remains strong
   * Unit economics improve over time, making our free, ad-supported model increasingly sustainable
 
-* **Risk Management:** Tiered validation system ensures ad quality and manages free tier costs
-
-SLIDE GUIDANCE:
-
-In Pollinations.AI's ecosystem, the core two sides are:
-* **Affiliates (Creators):** developers and hobbyists who embed generative-AI media (with referral links) into their apps
-* **Advertisers (Brands):** companies supplying those referral links and paying for conversions
-
 **End-user:** Consumer
 **Creator:** Affiliate
 **Brand:** Advertiser
 **Us:** Platform
 
-- Exploring extra revenue stream (TBC from Q2 2026)
-   1. Micro‑purchases (stickers, tokens)
-   2. Premium tiers (SLA, bigger models)
-   3. Data monetization (e.g. user data for training)
-- Potential positioning options from parallels doc: "GIPHY-meets-AdSense for AI", "Unsplash for AI—monetized out-of-the-box"
-- Unity, AppLovin, and other platforms demonstrate lightweight SDKs with embedded ads are proven high-margin models
-- Consider adding slide on how we're better/differently positioned than Unity/AppLovin for AI era (AI-native, better targeting)
+note: this flywheel description may be better than the one we have on the slide. find a nice way to separate it between slide and speaker notes.
+Flywheel: By solving these dual problems, pollinations.ai creates a virtuous cycle: More developers build innovative apps on our free platform -> This attracts more end-users -> This creates more valuable, AI-native ad inventory -> This attracts brands and ad revenue -> A portion of this revenue is shared back with successful developers, incentivizing further creation and platform growth, while also funding the free tier for new entrants.
+
 -->
 
 ---
@@ -296,12 +277,6 @@ layout: two-cols-header
 # <span class="bg-yellow-600 text-white p-2 rounded">🛡️ **Competitive Moat**</span>
 
 ::left::
-## Unfair Advantages
-
-* **Two-sided network effects:** More apps → better targeting → more revenue
-* **Open source trust moat:** Developer community embedding our code
-* **Unique inventory:** Monetizing contexts no other ad network can reach
-* **Distribution strategy:** Free access drives viral adoption
 
 ::right::
 ## Competitive Differentiation
@@ -323,33 +298,13 @@ Empower third-party developers with revenue sharing
 
 <!--
 **Speaking Points - Competitive Moat:**
-* **Business Model Advantage:** Our model creates a circular economy, a flywheel for growth.
 
 ![Fly Wheel](../media/fly-wheel-genz.png)
 
-* Circular diagram showing the flywheel effect:
-* More apps lead to more users, leading to better data, better targeting, more revenue, better platform, and back to more apps.
-* Illustrates the self-reinforcing nature of the business model.
-
-* **Market Tailwind:** The GenAI market is doubling year-over-year.
-* **Data Advantage:** Better usage data unlocks smarter ad targeting, increasing revenue.
 * **Trust Factor:** Open Source & Privacy-First approach builds developer trust.
-
-* **Key Competitive Differentiators (as on slide):**
-  * **vs AI Model Providers (OpenAI, Hugging Face):** We offer free access AND a built-in revenue path.
-  * **vs Game Monetizers (Unity Ads):** We are the AI creation engine AND the monetization layer for all app types.
-  * **vs Ad-Supported AI Products (Perplexity):** We empower third-party developers with shared revenue, not just monetize our own app.
 
 * **Core Advantage:** Our unique Free API + Shared Ad Revenue model is our fundamental differentiator.
 * **Proven Model:** Unity has proven the underlying ad/rev-share model generates billions.
-
-SLIDE GUIDANCE:
-- Market trend: 4× More citizen Creators than pros.
-- Unity generates $1.2B (66%) from ads via lightweight SDK with rev-share - directly parallel to our model.
-- One of our principle moats: developers embedding us in their open source repositories, making YouTube videos, and spreading the word organically (e.g., Discord bots in many guilds).
-- Consider adding from parallels doc: "Anyone who can type a prompt is a potential Pollinations integrator" (maybe previous slide).
-- Consider adding IDC forecast: 750M new cloud-native apps by 2026 - huge TAM expansion (previous slide?).
-- Ad unit options to consider highlighting: native widgets, brand overlays, performance link ads.
 -->
 
 

@@ -205,29 +205,6 @@ layout: two-cols-header
 -->
 
 ---
-
-# <span class="bg-blue-600 text-white p-2 rounded">**📹 Live API Traffic**</span>
-
-
-
-<div class="text-center text-xl mt-4">
-  <em>Live feed of requests flowing through our APIs in real-time</em>
-</div>
-
-<!--
-**Speaking Points - Live API Traffic:**
-* **Visual Explanation:** Live view of real-time image and text API requests.
-* **Usage Context:** Shows real-time usage by developers and their end-users.
-* **Scale Context:** This visualization represents just a small fraction of the 100+ million media generations processed monthly
-
-**Ad/Demand Strategy Details:**
-* **AI-Native Ad Partnerships**: Working with Garlic, Nexad, and Unframe - specialized in contextual ad delivery for AI content
-* **Integration Methods**: JavaScript SDK embedding for web apps, native widgets for mobile/desktop
-* **Current Pilot Partners**: Contextual ads (CPM $1-2) and affiliate referrals with targeted conversion tracking
-* **Revenue Flow**: End users engage with relevant ads, advertisers pay for impressions/conversions, we split revenue 50/50 with developers
--->
-
----
 layout: two-cols-header
 ---
 
@@ -237,6 +214,19 @@ layout: two-cols-header
 * **$247 B TAM** : Global AI-Contextual Ad Spend (2025E)
 * **$140 B SAM** : Indie App/Web AI Ad Inventory
 * **$22 M SOM** : Our Target Net ARR (EOY 2027)
+
+<!--
+**Speaking Points - Market Opportunity:**
+* **Market Potential:** Significant opportunity in AI-contextual advertising.
+
+![Youth Ad Market](../media/youth-ad-market.png)
+
+* Nested circle diagram showing market sizes: TAM, SAM, and SOM.
+-->
+
+---
+
+# <span class="bg-purple-600 text-white p-2 rounded">**💰 Business Model**</span>
 
 ## The Pollinations Flywheel 🚀
 * **Empowering Creators ('Vibe Coders')** : Build & monetize innovative AI apps, easily.
@@ -258,13 +248,6 @@ layout: two-cols-header
 </div>
 
 <!--
-**Speaking Points - Market Opportunity:**
-* **Market Potential:** Significant opportunity in AI-contextual advertising.
-
-![Youth Ad Market](../media/youth-ad-market.png)
-
-* Nested circle diagram showing market sizes: TAM, SAM, and SOM.
-
 * **Creator Economy Trend:** Rise of 'vibe coding' expands the creator pool.
 * **New Ad Inventory:** Unlocking new advertising inventory within millions of new AI apps.
 * **GenAI Market Size:** Overall GenAI creator economy already >$10 Billion TAM and doubling.

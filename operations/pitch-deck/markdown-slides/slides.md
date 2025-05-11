@@ -236,24 +236,30 @@ Traction & KPIs: Current ~3M Ecosystem MAU and 100M+ monthly media generations p
 layout: two-cols-header
 ---
 
-# <span class="bg-purple-600 text-white p-2 rounded">**🌍 Market Opportunity**</span>
+# <span class="bg-purple-600 text-white p-2 rounded">**🌍 Tapping the $140B AI-Contextual Ad Market**</span>
 
 **MAIN MESSAGE: Billion-Dollar Opportunity**
 
 **REMOVE: Complex market segmentation - focus on the total addressable market**
 
-## Market Scale 💰
-* **$247 B TAM** : Global AI-Contextual Ad Spend (2025E)
-* **$140 B SAM** : Indie App/Web AI Ad Inventory
-* **$22 M SOM** : Our Target Net ARR (EOY 2027)
+* **247 B TAM** : Global AI-Contextual Ad Spend (2025)
+* **140 B SAM** : Indie App/Web AI Ad Inventory (2025)
+* **3.4 B SAM** : Beachhead Market : Indie developers using Generative AI
+* **22 M SOM** : Our Target Net ARR (2027)
+
+**Empower creators, scale through network effects & partnerships, share ad revenue.**
 
 <!--
-**Speaking Points - Market Opportunity:**
-* **Market Potential:** Significant opportunity in AI-contextual advertising.
+* **Market Opportunity:**
+Targeting a $140B (2025) Serviceable Addressable Market in indie app/web AI ad inventory. Our initial beachhead is the $3.4B Generative AI advertising segment, aiming for €22M ARR by EOY 2027.
 
-![Youth Ad Market](../media/youth-ad-market.png)
+* **Market Potential:**
+Significant opportunity in AI-contextual advertising.
+* **3.4 B SAM** : Beachhead Market : Indie developers using Generative AI
 
+Add: 
 * Nested circle diagram showing market sizes: TAM, SAM, and SOM.
+![Youth Ad Market](../media/youth-ad-market.png)
 -->
 
 ---

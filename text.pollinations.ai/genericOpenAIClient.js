@@ -1,14 +1,14 @@
-import fetch from 'node-fetch';
-import debug from 'debug';
+import fetch from "node-fetch";
+import debug from "debug";
 import {
-    validateAndNormalizeMessages, 
-    cleanNullAndUndefined,
-    ensureSystemMessage,
-    generateRequestId,
-    cleanUndefined,
-    normalizeOptions,
-    convertSystemToUserMessages
-} from './textGenerationUtils.js';
+  validateAndNormalizeMessages,
+  cleanNullAndUndefined,
+  ensureSystemMessage,
+  generateRequestId,
+  cleanUndefined,
+  normalizeOptions,
+  convertSystemToUserMessages,
+} from "./textGenerationUtils.js";
 
 /**
  * Creates a client function for OpenAI-compatible APIs
@@ -27,322 +27,372 @@ import {
  * @returns {Function} - Client function that handles API requests
  */
 export function createOpenAICompatibleClient(config) {
-    const {
-        endpoint,
-        authHeaderName = 'Authorization',
-        authHeaderValue,
-        modelMapping = {},
-        systemPrompts = {},
-        defaultOptions = {},
-        providerName = 'unknown',
-        formatResponse = null,
-        additionalHeaders = {},
-        transformRequest = null,
-        supportsSystemMessages = true
-    } = config;
+  const {
+    endpoint,
+    authHeaderName = "Authorization",
+    authHeaderValue,
+    modelMapping = {},
+    systemPrompts = {},
+    defaultOptions = {},
+    providerName = "unknown",
+    formatResponse = null,
+    additionalHeaders = {},
+    transformRequest = null,
+    supportsSystemMessages = true,
+  } = config;
 
-    const log = debug(`pollinations:${providerName.toLowerCase()}`);
-    const errorLog = debug(`pollinations:${providerName.toLowerCase()}:error`);
+  const log = debug(`pollinations:${providerName.toLowerCase()}`);
+  const errorLog = debug(`pollinations:${providerName.toLowerCase()}:error`);
 
-    // Return the client function
-    return async function(messages, options = {}) {
-        const startTime = Date.now();
-        const requestId = generateRequestId();
-        
-        log(`[${requestId}] Starting ${providerName} generation request`, {
-            timestamp: new Date().toISOString(),
-            messageCount: messages?.length || 0,
-            options
-        });
+  // Return the client function
+  return async function (messages, options = {}) {
+    const startTime = Date.now();
+    const requestId = generateRequestId();
 
-        try {
-            // Check if API key is available
-            if (!authHeaderValue()) {
-                throw new Error(`${providerName} API key is not set`);
-            }
+    log(`[${requestId}] Starting ${providerName} generation request`, {
+      timestamp: new Date().toISOString(),
+      messageCount: messages?.length || 0,
+      options,
+    });
 
-            // Normalize options with defaults
-            const normalizedOptions = normalizeOptions(options, defaultOptions);
-            
-            // Determine which model to use
-            const modelKey = normalizedOptions.model;
-            const modelName = modelMapping[modelKey] || modelMapping[Object.keys(modelMapping)[0]];
-            
-            // Validate and normalize messages
-            const validatedMessages = validateAndNormalizeMessages(messages);
-            
-            // Determine if the model supports system messages
-            let supportsSystem = supportsSystemMessages;
-            if (typeof supportsSystemMessages === 'function') {
-                supportsSystem = supportsSystemMessages(normalizedOptions);
-            }
-            
-            // Process messages based on system message support
-            let processedMessages;
-            if (supportsSystem) {
-                // Ensure system message is present if the model supports it
-                const defaultSystemPrompt = systemPrompts[modelKey] || null;
-                processedMessages = ensureSystemMessage(validatedMessages, normalizedOptions, defaultSystemPrompt);
-            } else {
-                // For models that don't support system messages, convert them to user messages
-                log(`[${requestId}] Model ${modelName} doesn't support system messages, converting to user messages`);
-                const defaultSystemPrompt = systemPrompts[modelKey] || null;
-                const messagesWithSystem = ensureSystemMessage(validatedMessages, normalizedOptions, defaultSystemPrompt);
-                processedMessages = convertSystemToUserMessages(messagesWithSystem);
-            }
-            
-            // Build request body
-            const requestBody = {
-                model: modelName,
-                messages: processedMessages,
-                temperature: normalizedOptions.temperature,
-                stream: normalizedOptions.stream,
-                seed: normalizedOptions.seed,
-                max_tokens: normalizedOptions.maxTokens,
-                // Use the original response_format if provided, otherwise fallback to simple json_object type if jsonMode is true
-                response_format: normalizedOptions.response_format || (normalizedOptions.jsonMode ? { type: 'json_object' } : undefined),
-                tools: normalizedOptions.tools,
-                tool_choice: normalizedOptions.tool_choice,
-                modalities: normalizedOptions.modalities,
-                audio: normalizedOptions.audio,
-            };
+    try {
+      // Check if API key is available
+      if (!authHeaderValue()) {
+        throw new Error(`${providerName} API key is not set`);
+      }
 
-            // Clean undefined and null values
-            const cleanedRequestBody = cleanNullAndUndefined(requestBody);
-            log(`[${requestId}] Cleaned request body (removed null and undefined values):`, 
-                JSON.stringify(cleanedRequestBody, null, 2));
+      // Normalize options with defaults
+      const normalizedOptions = normalizeOptions(options, defaultOptions);
 
-            // Apply custom request transformation if provided
-            const finalRequestBody = transformRequest
-                ? await transformRequest(cleanedRequestBody)
-                : cleanedRequestBody;
-    
+      // Determine which model to use
+      const modelKey = normalizedOptions.model;
+      const modelName =
+        modelMapping[modelKey] || modelMapping[Object.keys(modelMapping)[0]];
 
-            log(`[${requestId}] Sending request to ${providerName} API`, {
-                timestamp: new Date().toISOString(),
-                model: cleanedRequestBody.model,
-                maxTokens: cleanedRequestBody.max_tokens,
-                temperature: cleanedRequestBody.temperature
-            });
+      // Validate and normalize messages
+      const validatedMessages = validateAndNormalizeMessages(messages);
 
-            log(`[${requestId}] Final request body:`, JSON.stringify(finalRequestBody, null, 2));
+      // Determine if the model supports system messages
+      let supportsSystem = supportsSystemMessages;
+      if (typeof supportsSystemMessages === "function") {
+        supportsSystem = supportsSystemMessages(normalizedOptions);
+      }
 
-            // Determine the endpoint URL
-            const endpointUrl = typeof endpoint === 'function' 
-                ? endpoint(modelName, normalizedOptions) 
-                : endpoint;
+      // Process messages based on system message support
+      let processedMessages;
+      if (supportsSystem) {
+        // Ensure system message is present if the model supports it
+        const defaultSystemPrompt = systemPrompts[modelKey] || null;
+        processedMessages = ensureSystemMessage(
+          validatedMessages,
+          normalizedOptions,
+          defaultSystemPrompt,
+        );
+      } else {
+        // For models that don't support system messages, convert them to user messages
+        log(
+          `[${requestId}] Model ${modelName} doesn't support system messages, converting to user messages`,
+        );
+        const defaultSystemPrompt = systemPrompts[modelKey] || null;
+        const messagesWithSystem = ensureSystemMessage(
+          validatedMessages,
+          normalizedOptions,
+          defaultSystemPrompt,
+        );
+        processedMessages = convertSystemToUserMessages(messagesWithSystem);
+      }
 
-            // Prepare headers
-            const headers = {
-                [authHeaderName]: authHeaderValue(),
-                "Content-Type": "application/json",
-                ...additionalHeaders,
-                ...(finalRequestBody._additionalHeaders || {})
-            };
-            
-            // Remove the _additionalHeaders property from the request body as it's not part of the API
-            if (finalRequestBody._additionalHeaders) {
-                delete finalRequestBody._additionalHeaders;
-            }
+      // Build request body
+      const requestBody = {
+        model: modelName,
+        messages: processedMessages,
+        temperature: normalizedOptions.temperature,
+        stream: normalizedOptions.stream,
+        seed: normalizedOptions.seed,
+        max_tokens: normalizedOptions.maxTokens,
+        // Use the original response_format if provided, otherwise fallback to simple json_object type if jsonMode is true
+        response_format:
+          normalizedOptions.response_format ||
+          (normalizedOptions.jsonMode ? { type: "json_object" } : undefined),
+        tools: normalizedOptions.tools,
+        tool_choice: normalizedOptions.tool_choice,
+        modalities: normalizedOptions.modalities,
+        audio: normalizedOptions.audio,
+      };
 
-            log(`[${requestId}] Request headers:`, headers);
+      // Clean undefined and null values
+      const cleanedRequestBody = cleanNullAndUndefined(requestBody);
+      log(
+        `[${requestId}] Cleaned request body (removed null and undefined values):`,
+        JSON.stringify(cleanedRequestBody, null, 2),
+      );
 
-            log(`[${requestId}] Sending request to ${providerName} API at ${endpointUrl}`);
+      // Apply custom request transformation if provided
+      const finalRequestBody = transformRequest
+        ? await transformRequest(cleanedRequestBody)
+        : cleanedRequestBody;
 
-            log(`[${requestId}] Request body:`, JSON.stringify(finalRequestBody, null, 2));
-            // Make API request
-            const response = await fetch(endpointUrl, {
-                method: "POST",
-                headers,
-                body: JSON.stringify(finalRequestBody)
-            });
+      log(`[${requestId}] Sending request to ${providerName} API`, {
+        timestamp: new Date().toISOString(),
+        model: cleanedRequestBody.model,
+        maxTokens: cleanedRequestBody.max_tokens,
+        temperature: cleanedRequestBody.temperature,
+      });
 
-            // Handle streaming response
-            if (normalizedOptions.stream) {
-                log(`[${requestId}] Streaming response from ${providerName} API, status: ${response.status}, statusText: ${response.statusText}`);
-                const responseHeaders = Object.fromEntries([...response.headers.entries()]);
-                
-                // Check if the response is successful for streaming
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    let errorDetails = null;
-                    try {
-                        errorDetails = JSON.parse(errorText);
-                    } catch (e) {
-                        errorDetails = errorText;
-                    }
+      log(
+        `[${requestId}] Final request body:`,
+        JSON.stringify(finalRequestBody, null, 2),
+      );
 
-                    // Check if this is a content filter error
-                    const isContentFilterError = 
-                        (errorDetails?.error?.code === 'content_filter') || 
-                        (errorText.includes('content management policy')) ||
-                        (errorText.includes('content policy')) ||
-                        (errorText.includes('content filter'));
+      // Determine the endpoint URL
+      const endpointUrl =
+        typeof endpoint === "function"
+          ? endpoint(modelName, normalizedOptions)
+          : endpoint;
 
-                    // Build a cleaner error message
-                    let errorMessage;
-                    if (isContentFilterError) {
-                        errorMessage = "Content policy violation detected";
-                    } else {
-                        // Replace provider name references with "Pollinations"
-                        errorMessage = `${response.status} ${response.statusText}`;
-                    }
+      // Prepare headers
+      const headers = {
+        [authHeaderName]: authHeaderValue(),
+        "Content-Type": "application/json",
+        ...additionalHeaders,
+        ...(finalRequestBody._additionalHeaders || {}),
+      };
 
-                    const error = new Error(errorMessage);
-                    error.status = response.status;
-                    error.details = errorDetails;
-                    
-                    // For tracking, still keep provider info internally
-                    error.originalProvider = providerName;
-                    error.provider = "Pollinations";
-                    error.model = modelName;
-                    error.isContentFilterError = isContentFilterError;
-                    
-                    throw error;
-                }
-                
-                log(`[${requestId}] Creating streaming response object for ${providerName}`);
-                
-                // Check if the response is SSE (text/event-stream)
-                log(`[${requestId}] Streaming response headers:`, responseHeaders);
-                
-                return {
-                    id: `${providerName.toLowerCase()}-${requestId}`,
-                    object: 'chat.completion.chunk',
-                    created: Math.floor(startTime / 1000),
-                    model: modelName,
-                    stream: true,
-                    responseStream: response.body, // This is the raw stream that will be proxied
-                    providerName,
-                    choices: [{ delta: { content: '' }, finish_reason: null, index: 0 }],
-                    error: !response.ok ? { message: `${providerName} API error: ${response.status} ${response.statusText}` } : undefined
-                };
-            }
+      // Remove the _additionalHeaders property from the request body as it's not part of the API
+      if (finalRequestBody._additionalHeaders) {
+        delete finalRequestBody._additionalHeaders;
+      }
 
-            log(`[${requestId}] Received response from ${providerName} API`, {
-                timestamp: new Date().toISOString(),
-                status: response.status,
-                statusText: response.statusText,
-                headers: Object.fromEntries([...response.headers.entries()])
-            });
+      log(`[${requestId}] Request headers:`, headers);
 
-            // Handle error responses
-            if (!response.ok) {
-                const errorText = await response.text();
-                let errorDetails = null;
-                try {
-                    errorDetails = JSON.parse(errorText);
-                } catch (e) {
-                    errorDetails = errorText;
-                }
+      log(
+        `[${requestId}] Sending request to ${providerName} API at ${endpointUrl}`,
+      );
 
-                // Check if this is a content filter error
-                const isContentFilterError = 
-                    (errorDetails?.error?.code === 'content_filter') || 
-                    (errorText.includes('content management policy')) ||
-                    (errorText.includes('content policy')) ||
-                    (errorText.includes('content filter'));
+      log(
+        `[${requestId}] Request body:`,
+        JSON.stringify(finalRequestBody, null, 2),
+      );
+      // Make API request
+      const response = await fetch(endpointUrl, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(finalRequestBody),
+      });
 
-                // Build a cleaner error message
-                let errorMessage;
-                if (isContentFilterError) {
-                    errorMessage = "Content policy violation detected";
-                } else {
-                    // Replace provider name references with "Pollinations"
-                    errorMessage = `${response.status} ${response.statusText}`;
-                }
+      // Handle streaming response
+      if (normalizedOptions.stream) {
+        log(
+          `[${requestId}] Streaming response from ${providerName} API, status: ${response.status}, statusText: ${response.statusText}`,
+        );
+        const responseHeaders = Object.fromEntries([
+          ...response.headers.entries(),
+        ]);
 
-                const error = new Error(errorMessage);
-                error.status = response.status;
-                error.details = errorDetails;
-                
-                // For tracking, still keep provider info internally
-                error.originalProvider = providerName;
-                error.provider = "Pollinations";
-                error.model = modelName;
-                error.isContentFilterError = isContentFilterError;
-                
-                throw error;
-            }
+        // Check if the response is successful for streaming
+        if (!response.ok) {
+          const errorText = await response.text();
+          let errorDetails = null;
+          try {
+            errorDetails = JSON.parse(errorText);
+          } catch (e) {
+            errorDetails = errorText;
+          }
 
-            // Parse response
-            const data = await response.json();
-            log(`[${requestId}] Parsed JSON response:`, JSON.stringify(data).substring(0, 500) + '...');
-            const completionTime = Date.now() - startTime;
+          // Check if this is a content filter error
+          const isContentFilterError =
+            errorDetails?.error?.code === "content_filter" ||
+            errorText.includes("content management policy") ||
+            errorText.includes("content policy") ||
+            errorText.includes("content filter");
 
-            log(`[${requestId}] Successfully generated text`, {
-                timestamp: new Date().toISOString(),
-                completionTimeMs: completionTime,
-                modelUsed: data.model || modelName,
-                promptTokens: data.usage?.prompt_tokens,
-                completionTokens: data.usage?.completion_tokens,
-                totalTokens: data.usage?.total_tokens
-            });
+          // Build a cleaner error message
+          let errorMessage;
+          if (isContentFilterError) {
+            errorMessage = "Content policy violation detected";
+          } else {
+            // Replace provider name references with "Pollinations"
+            errorMessage = `${response.status} ${response.statusText}`;
+          }
 
-            // Use custom response formatter if provided
-            if (formatResponse) {
-                return formatResponse(data, requestId, startTime, modelName);
-            }
+          const error = new Error(errorMessage);
+          error.status = response.status;
+          error.details = errorDetails;
 
-            // Default response formatting
-            // Ensure the response has all expected fields
-            if (!data.id) {
-                log(`[${requestId}] Adding missing id field to response`);
-                
-                data.id = `${providerName.toLowerCase()}-${requestId}`;
-            }
-            
-            if (!data.object) {
-                data.object = 'chat.completion';
-            }
-            
-            if (!data.usage) {
-                data.usage = {
-                    prompt_tokens: 0,
-                    completion_tokens: 0,
-                    total_tokens: 0
-                };
-            }
-            
-            // Correctly set the finish_reason to "length" when max_tokens limit is reached
-            if (data.choices && Array.isArray(data.choices) && data.choices.length > 0) {
-                // Check if we hit the max tokens limit
-                const maxTokens = cleanedRequestBody.max_tokens;
-                const completionTokens = data.usage?.completion_tokens;
-                
-                // If completion tokens are close to max tokens (within 5 tokens) or 
-                // if the model reached the max token limit and finish_reason isn't already set
-                if (maxTokens && completionTokens && 
-                    (completionTokens >= maxTokens - 5 || 
-                     (data.choices[0].finish_reason === null || data.choices[0].finish_reason === 'stop'))) {
-                    
-                    // Log potential truncation
-                    log(`[${requestId}] Possible response truncation detected. Max tokens: ${maxTokens}, Completion tokens: ${completionTokens}`);
-                    
-                    // For cloudflare and other providers that might not correctly set finish_reason
-                    if (modelName && (modelName.includes('@cf/') || modelName.includes('llamaguard'))) {
-                        if (completionTokens >= maxTokens - 10) {
-                            log(`[${requestId}] Setting finish_reason to "length" for Cloudflare model response`);
-                            data.choices[0].finish_reason = 'length';
-                        }
-                    }
-                }
-            }
+          // For tracking, still keep provider info internally
+          error.originalProvider = providerName;
+          error.provider = "Pollinations";
+          error.model = modelName;
+          error.isContentFilterError = isContentFilterError;
 
-            log(`[${requestId}] Final response:`, JSON.stringify(data, null, 2));
-
-            return data;
-        } catch (error) {
-            errorLog(`[${requestId}] Error in text generation`, {
-                timestamp: new Date().toISOString(),
-                error: error.message,
-                name: error.name,
-                stack: error.stack,
-                completionTimeMs: Date.now() - startTime
-            });
-            
-            // Simply throw the error
-            throw error;
+          throw error;
         }
-    };
+
+        log(
+          `[${requestId}] Creating streaming response object for ${providerName}`,
+        );
+
+        // Check if the response is SSE (text/event-stream)
+        log(`[${requestId}] Streaming response headers:`, responseHeaders);
+
+        return {
+          id: `${providerName.toLowerCase()}-${requestId}`,
+          object: "chat.completion.chunk",
+          created: Math.floor(startTime / 1000),
+          model: modelName,
+          stream: true,
+          responseStream: response.body, // This is the raw stream that will be proxied
+          providerName,
+          choices: [{ delta: { content: "" }, finish_reason: null, index: 0 }],
+          error: !response.ok
+            ? {
+                message: `${providerName} API error: ${response.status} ${response.statusText}`,
+              }
+            : undefined,
+        };
+      }
+
+      log(`[${requestId}] Received response from ${providerName} API`, {
+        timestamp: new Date().toISOString(),
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries([...response.headers.entries()]),
+      });
+
+      // Handle error responses
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorDetails = null;
+        try {
+          errorDetails = JSON.parse(errorText);
+        } catch (e) {
+          errorDetails = errorText;
+        }
+
+        // Check if this is a content filter error
+        const isContentFilterError =
+          errorDetails?.error?.code === "content_filter" ||
+          errorText.includes("content management policy") ||
+          errorText.includes("content policy") ||
+          errorText.includes("content filter");
+
+        // Build a cleaner error message
+        let errorMessage;
+        if (isContentFilterError) {
+          errorMessage = "Content policy violation detected";
+        } else {
+          // Replace provider name references with "Pollinations"
+          errorMessage = `${response.status} ${response.statusText}`;
+        }
+
+        const error = new Error(errorMessage);
+        error.status = response.status;
+        error.details = errorDetails;
+
+        // For tracking, still keep provider info internally
+        error.originalProvider = providerName;
+        error.provider = "Pollinations";
+        error.model = modelName;
+        error.isContentFilterError = isContentFilterError;
+
+        throw error;
+      }
+
+      // Parse response
+      const data = await response.json();
+      log(
+        `[${requestId}] Parsed JSON response:`,
+        JSON.stringify(data).substring(0, 500) + "...",
+      );
+      const completionTime = Date.now() - startTime;
+
+      log(`[${requestId}] Successfully generated text`, {
+        timestamp: new Date().toISOString(),
+        completionTimeMs: completionTime,
+        modelUsed: data.model || modelName,
+        promptTokens: data.usage?.prompt_tokens,
+        completionTokens: data.usage?.completion_tokens,
+        totalTokens: data.usage?.total_tokens,
+      });
+
+      // Use custom response formatter if provided
+      if (formatResponse) {
+        return formatResponse(data, requestId, startTime, modelName);
+      }
+
+      // Default response formatting
+      // Ensure the response has all expected fields
+      if (!data.id) {
+        log(`[${requestId}] Adding missing id field to response`);
+
+        data.id = `${providerName.toLowerCase()}-${requestId}`;
+      }
+
+      if (!data.object) {
+        data.object = "chat.completion";
+      }
+
+      if (!data.usage) {
+        data.usage = {
+          prompt_tokens: 0,
+          completion_tokens: 0,
+          total_tokens: 0,
+        };
+      }
+
+      // Correctly set the finish_reason to "length" when max_tokens limit is reached
+      if (
+        data.choices &&
+        Array.isArray(data.choices) &&
+        data.choices.length > 0
+      ) {
+        // Check if we hit the max tokens limit
+        const maxTokens = cleanedRequestBody.max_tokens;
+        const completionTokens = data.usage?.completion_tokens;
+
+        // If completion tokens are close to max tokens (within 5 tokens) or
+        // if the model reached the max token limit and finish_reason isn't already set
+        if (
+          maxTokens &&
+          completionTokens &&
+          (completionTokens >= maxTokens - 5 ||
+            data.choices[0].finish_reason === null ||
+            data.choices[0].finish_reason === "stop")
+        ) {
+          // Log potential truncation
+          log(
+            `[${requestId}] Possible response truncation detected. Max tokens: ${maxTokens}, Completion tokens: ${completionTokens}`,
+          );
+
+          // For cloudflare and other providers that might not correctly set finish_reason
+          if (
+            modelName &&
+            (modelName.includes("@cf/") || modelName.includes("llamaguard"))
+          ) {
+            if (completionTokens >= maxTokens - 10) {
+              log(
+                `[${requestId}] Setting finish_reason to "length" for Cloudflare model response`,
+              );
+              data.choices[0].finish_reason = "length";
+            }
+          }
+        }
+      }
+
+      log(`[${requestId}] Final response:`, JSON.stringify(data, null, 2));
+
+      return data;
+    } catch (error) {
+      errorLog(`[${requestId}] Error in text generation`, {
+        timestamp: new Date().toISOString(),
+        error: error.message,
+        name: error.name,
+        stack: error.stack,
+        completionTimeMs: Date.now() - startTime,
+      });
+
+      // Simply throw the error
+      throw error;
+    }
+  };
 }

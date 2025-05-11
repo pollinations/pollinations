@@ -1,21 +1,21 @@
 // lime: '#FFE801',
 
-export const SHOW_PROMPT_TOOLTIP = false; 
+export const SHOW_PROMPT_TOOLTIP = false
 
 export const Colors = {
-  lime: '#ecf874', 
-  offwhite: '#c7d4d6',
-  offblack: '#110518', 
-  offblack2: '#181A2C',
-  gray1: '#B3B3B3',
-  gray2: '#8A8A8A',
-  special: 'rgb(191,64,64)',
-};
+  lime: "#ecf874",
+  offwhite: "#c7d4d6",
+  offblack: "#110518",
+  offblack2: "#181A2C",
+  gray1: "#B3B3B3",
+  gray2: "#8A8A8A",
+  special: "rgb(191,64,64)",
+}
 
 export const Fonts = {
-  title: 'Maven Pro',
-  headline: 'Mako',
-  parameter: 'Duru Sans',
+  title: "Maven Pro",
+  headline: "Mako",
+  parameter: "Duru Sans",
 }
 
 // Step 1: Create a new mapping object for section backgrounds
@@ -25,7 +25,7 @@ export const SectionBG = {
     gradient: false,
   },
   hero: {
-    color: Colors.offwhite, 
+    color: Colors.offwhite,
     gradient: false,
   },
   news: {
@@ -63,5 +63,5 @@ export const SectionBG = {
   footer: {
     color: Colors.offwhite,
     gradient: false,
-  }
+  },
 }

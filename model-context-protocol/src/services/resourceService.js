@@ -4,8 +4,8 @@
  * Functions and schemas for handling resources and prompts
  */
 
-import { createMCPResponse, createTextContent } from '../utils/coreUtils.js';
-import { z } from 'zod';
+import { createMCPResponse, createTextContent } from "../utils/coreUtils.js";
+import { z } from "zod";
 
 /**
  * Lists available resources
@@ -20,47 +20,45 @@ async function listResources() {
         uri: "pollinations:image-models",
         name: "Image Generation Models",
         description: "Models available for generating images from text prompts",
-        mimeType: "application/json"
+        mimeType: "application/json",
       },
       {
         uri: "pollinations:text-models",
         name: "Text Generation Models",
         description: "Models available for generating text responses",
-        mimeType: "application/json"
+        mimeType: "application/json",
       },
       {
         uri: "pollinations:audio-voices",
         name: "Audio Voices",
         description: "Voices available for text-to-speech conversion",
-        mimeType: "application/json"
-      }
+        mimeType: "application/json",
+      },
     ],
     templates: [
       {
         uriTemplate: "pollinations:image/{prompt}",
         name: "Generate Image",
         description: "Generate an image from a text prompt",
-        mimeType: "image/jpeg"
+        mimeType: "image/jpeg",
       },
       {
         uriTemplate: "pollinations:text/{prompt}",
         name: "Generate Text",
         description: "Generate text from a prompt",
-        mimeType: "text/plain"
+        mimeType: "text/plain",
       },
       {
         uriTemplate: "pollinations:audio/{text}",
         name: "Generate Audio",
         description: "Convert text to speech",
-        mimeType: "audio/mpeg"
-      }
-    ]
+        mimeType: "audio/mpeg",
+      },
+    ],
   };
 
   // Return the response in MCP format using utility functions
-  return createMCPResponse([
-    createTextContent(resourcesData, true)
-  ]);
+  return createMCPResponse([createTextContent(resourcesData, true)]);
 }
 
 /**
@@ -78,8 +76,8 @@ async function listPrompts() {
         examples: [
           "A beautiful sunset over the ocean",
           "A futuristic city with flying cars",
-          "A serene forest landscape with a waterfall"
-        ]
+          "A serene forest landscape with a waterfall",
+        ],
       },
       {
         id: "text-generation",
@@ -87,8 +85,8 @@ async function listPrompts() {
         examples: [
           "Write a short story about a robot",
           "Explain quantum computing in simple terms",
-          "Create a recipe for chocolate chip cookies"
-        ]
+          "Create a recipe for chocolate chip cookies",
+        ],
       },
       {
         id: "audio-generation",
@@ -96,16 +94,14 @@ async function listPrompts() {
         examples: [
           "Welcome to Pollinations, where creativity blooms!",
           "The quick brown fox jumps over the lazy dog",
-          "In a world where AI powers creativity..."
-        ]
-      }
-    ]
+          "In a world where AI powers creativity...",
+        ],
+      },
+    ],
   };
 
   // Return the response in MCP format using utility functions
-  return createMCPResponse([
-    createTextContent(promptsData, true)
-  ]);
+  return createMCPResponse([createTextContent(promptsData, true)]);
 }
 
 /**
@@ -113,16 +109,16 @@ async function listPrompts() {
  */
 export const resourceTools = [
   [
-    'listResources',
-    'List available resources from the Pollinations API',
+    "listResources",
+    "List available resources from the Pollinations API",
     {},
-    listResources
+    listResources,
   ],
-  
+
   [
-    'listPrompts',
-    'List available example prompts from the Pollinations API',
+    "listPrompts",
+    "List available example prompts from the Pollinations API",
     {},
-    listPrompts
-  ]
+    listPrompts,
+  ],
 ];

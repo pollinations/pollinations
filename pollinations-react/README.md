@@ -20,12 +20,12 @@ The usePollinationsText hook allows you to generate text from Pollinations' API 
     import { usePollinationsText } from '@pollinations/react';
 
     const HaikuComponent = () => {
-      const text = usePollinationsText('Write a short haiku about Pollinations.AI', { 
+      const text = usePollinationsText('Write a short haiku about Pollinations.AI', {
         seed: 42,
         model: 'mistral',
         systemPrompt: 'You are a poetic AI assistant.'
       });
-      
+
       return (
         <div>
           {text ? <p>{text}</p> : <p>Loading...</p>}
@@ -87,8 +87,8 @@ The usePollinationsChat hook allows you to generate chat responses from Pollinat
       const [input, setInput] = useState('');
       const { sendUserMessage, messages } = usePollinationsChat([
         { role: "system", content: "You are a helpful assistant" }
-      ], { 
-        seed: 42, 
+      ], {
+        seed: 42,
         jsonMode: false,
         model: 'mistral'
       });

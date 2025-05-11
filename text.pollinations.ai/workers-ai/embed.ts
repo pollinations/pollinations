@@ -1,14 +1,14 @@
-import { WORKERS_AI } from '../../globals';
-import { EmbedParams, EmbedResponse } from '../../types/embedRequestBody';
-import { ErrorResponse, ProviderConfig } from '../types';
+import { WORKERS_AI } from "../../globals";
+import { EmbedParams, EmbedResponse } from "../../types/embedRequestBody";
+import { ErrorResponse, ProviderConfig } from "../types";
 import {
   generateErrorResponse,
   generateInvalidProviderResponseError,
-} from '../utils';
+} from "../utils";
 
 export const WorkersAiEmbedConfig: ProviderConfig = {
   input: {
-    param: 'text',
+    param: "text",
     required: true,
     transform: (params: EmbedParams): string[] => {
       if (Array.isArray(params.input)) {
@@ -31,19 +31,19 @@ interface WorkersAiErrorResponse {
 }
 
 export const WorkersAiErrorResponseTransform: (
-  response: WorkersAiErrorResponse
+  response: WorkersAiErrorResponse,
 ) => ErrorResponse | undefined = (response) => {
-  if ('errors' in response) {
+  if ("errors" in response) {
     return generateErrorResponse(
       {
         message: response.errors
           ?.map((error) => `Error ${error.code}:${error.message}`)
-          .join(', '),
+          .join(", "),
         type: null,
         param: null,
         code: null,
       },
-      WORKERS_AI
+      WORKERS_AI,
     );
   }
 
@@ -70,28 +70,28 @@ export const WorkersAiEmbedResponseTransform: (
   _responseHeaders: Headers,
   _strictOpenAiCompliance: boolean,
   _gatewayRequestUrl: string,
-  gatewayRequest: Params
+  gatewayRequest: Params,
 ) => EmbedResponse | ErrorResponse = (
   response,
   responseStatus,
   _responseHeaders,
   _strictOpenAiCompliance,
   _gatewayRequestUrl,
-  gatewayRequest
+  gatewayRequest,
 ) => {
   if (responseStatus !== 200) {
     const errorResponse = WorkersAiErrorResponseTransform(
-      response as WorkersAiErrorResponse
+      response as WorkersAiErrorResponse,
     );
     if (errorResponse) return errorResponse;
   }
 
-  const model = (gatewayRequest.model as string) || '';
-  if ('result' in response) {
+  const model = (gatewayRequest.model as string) || "";
+  if ("result" in response) {
     return {
-      object: 'list',
+      object: "list",
       data: response.result.data.map((embedding, index) => ({
-        object: 'embedding',
+        object: "embedding",
         embedding: embedding,
         index: index,
       })),

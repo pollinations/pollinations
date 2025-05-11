@@ -82,51 +82,51 @@ const Projects = () => {
 
   return (
     <SectionContainer backgroundConfig={SectionBG.project}>
-        <SectionSubContainer>
-          <SectionTitle title={PROJECT_TITLE} />
-        </SectionSubContainer>
+      <SectionSubContainer>
+        <SectionTitle title={PROJECT_TITLE} />
+      </SectionSubContainer>
 
-        <SectionSubContainer>
-          <SectionHeadlineStyle>
-            <LLMTextManipulator text={PROJECT_CTO_1} transforms={[rephrase, emojify, noLink]} />
-          </SectionHeadlineStyle>
-        </SectionSubContainer>
-        <SectionSubContainer paddingBottom="0em">
-          <Box sx={{ width: "auto", height: "100px" }}>
-            <GeneralButton
-              handleClick={handleSubmitButtonClick}
-              textColor={Colors.offwhite}
-              borderColor={Colors.offwhite}
-              fontSize="2em"
-              backgroundColor={Colors.offblack}
-              style={{
-                fontSize: "1.5rem",
-                fontFamily: Fonts.title,
-                fontWeight: 600,
-              }}
-            >
-              <OpenInNewIcon style={{ marginRight: "8px", width: "32px", height: "32px" }} />
-              {PROJECT_BUTTON}
-            </GeneralButton>
-          </Box>
-        </SectionSubContainer>
-        <SectionSubContainer>
-          <SectionHeadlineStyle>
-            <LLMTextManipulator text={PROJECT_SUBTITLE} transforms={[rephrase, emojify, noLink]} />
-          </SectionHeadlineStyle>
-        </SectionSubContainer>
-        <SectionSubContainer paddingBottom="4em">
-          <TabSelector
-            items={projectCategories}
-            selectedKey={selectedCategory}
-            onSelectTab={handleCategoryClick}
-            trackingCategory="project"
-            trackingAction="select_project_category"
-            getButtonBackground={getButtonBackgroundColor}
-            getButtonTextColor={getButtonTextColor}
-          />
-          <ProjectsRender projectList={projects[selectedCategory]} classes={classes} />
-        </SectionSubContainer>
+      <SectionSubContainer>
+        <SectionHeadlineStyle>
+          <LLMTextManipulator text={PROJECT_CTO_1} transforms={[rephrase, emojify, noLink]} />
+        </SectionHeadlineStyle>
+      </SectionSubContainer>
+      <SectionSubContainer paddingBottom="0em">
+        <Box sx={{ width: "auto", height: "100px" }}>
+          <GeneralButton
+            handleClick={handleSubmitButtonClick}
+            textColor={Colors.offwhite}
+            borderColor={Colors.offwhite}
+            fontSize="2em"
+            backgroundColor={Colors.offblack}
+            style={{
+              fontSize: "1.5rem",
+              fontFamily: Fonts.title,
+              fontWeight: 600,
+            }}
+          >
+            <OpenInNewIcon style={{ marginRight: "8px", width: "32px", height: "32px" }} />
+            {PROJECT_BUTTON}
+          </GeneralButton>
+        </Box>
+      </SectionSubContainer>
+      <SectionSubContainer>
+        <SectionHeadlineStyle>
+          <LLMTextManipulator text={PROJECT_SUBTITLE} transforms={[rephrase, emojify, noLink]} />
+        </SectionHeadlineStyle>
+      </SectionSubContainer>
+      <SectionSubContainer paddingBottom="4em">
+        <TabSelector
+          items={projectCategories}
+          selectedKey={selectedCategory}
+          onSelectTab={handleCategoryClick}
+          trackingCategory="project"
+          trackingAction="select_project_category"
+          getButtonBackground={getButtonBackgroundColor}
+          getButtonTextColor={getButtonTextColor}
+        />
+        <ProjectsRender projectList={projects[selectedCategory]} classes={classes} />
+      </SectionSubContainer>
     </SectionContainer>
   )
 }

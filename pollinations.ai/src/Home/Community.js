@@ -7,7 +7,11 @@
 
 import { Colors, Fonts } from "../config/global.js"
 import AsciiArtGenerator from "../components/AsciiArtGenerator.js"
-import { SectionContainer, SectionSubContainer, SectionMainContent } from "../components/SectionContainer.js"
+import {
+  SectionContainer,
+  SectionSubContainer,
+  SectionMainContent,
+} from "../components/SectionContainer.js"
 import {
   COMMUNITY_SUBTITLE,
   COMMUNITY_DISCORD_CTO,
@@ -17,12 +21,7 @@ import {
   COMMUNITY_GITHUB_CTO,
   ASCII_APP_TOOLTIP,
 } from "../config/copywrite.js"
-import {
-  emojify,
-  rephrase,
-  responsive,
-  noLink
-} from "../config/llmTransforms.js"
+import { emojify, rephrase, responsive, noLink } from "../config/llmTransforms.js"
 import Grid from "@mui/material/Grid2" // v5 Grid2
 import SectionTitle from "../components/SectionTitle.js"
 import { SectionHeadlineStyle } from "../components/SectionContainer.js"
@@ -43,8 +42,8 @@ const Community = () => {
   const handleDiscordButtonClick = (e) => {
     e.preventDefault()
     trackEvent({
-      action: 'click_discord',
-      category: 'community',
+      action: "click_discord",
+      category: "community",
     })
     window.open("https://discord.gg/k9F7SyTgqn", "_blank")
   }
@@ -52,8 +51,8 @@ const Community = () => {
   const handleGithubButtonClick = (e) => {
     e.preventDefault()
     trackEvent({
-      action: 'click_github',
-      category: 'community',
+      action: "click_github",
+      category: "community",
     })
     window.open("https://github.com/pollinations/pollinations", "_blank")
   }
@@ -61,8 +60,8 @@ const Community = () => {
   const handleAsciiArtClick = (e) => {
     e.preventDefault()
     trackEvent({
-      action: 'click_ascii', 
-      category: 'community',
+      action: "click_ascii",
+      category: "community",
     })
     window.open("https://pollinations.github.io/hive/main/llm-feedback/", "_blank")
   }
@@ -103,18 +102,17 @@ const Community = () => {
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle color={Colors.offwhite}>
-          <LLMTextManipulator text={COMMUNITY_SUBTITLE} transforms={[rephrase, responsive, emojify, noLink]} />
+          <LLMTextManipulator
+            text={COMMUNITY_SUBTITLE}
+            transforms={[rephrase, responsive, emojify, noLink]}
+          />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer paddingBottom="0em">
         <Grid container spacing={4} justifyContent="space-between">
           {communityPlatforms.map((platform, index) => (
             <Grid key={index} size={{ xs: 6, md: 6 }}>
-              <Grid
-                container
-                direction="column"
-                gap="1em"
-              >
+              <Grid container direction="column" gap="1em">
                 <Grid
                   sx={{
                     display: "flex",
@@ -162,8 +160,11 @@ const Community = () => {
                     textAlign: "center",
                   }}
                 >
-                  <SectionHeadlineStyle color={Colors.offwhite} fontSize="1.2em" >
-                    <LLMTextManipulator text={platform.subtitle} transforms={[rephrase, emojify, responsive, noLink]} />
+                  <SectionHeadlineStyle color={Colors.offwhite} fontSize="1.2em">
+                    <LLMTextManipulator
+                      text={platform.subtitle}
+                      transforms={[rephrase, emojify, responsive, noLink]}
+                    />
                   </SectionHeadlineStyle>
                 </Grid>
               </Grid>
@@ -174,22 +175,19 @@ const Community = () => {
           title={<LLMTextManipulator text={ASCII_APP_TOOLTIP} transforms={[rephrase, emojify, noLink]} />}
           interactive
         > */}
-          <SectionSubContainer paddingBottom="2em">
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                maxWidth: "400px",
-              }}
-              // onClick={handleAsciiArtClick}
-            >
-              <AsciiArtGenerator
-                width="100px"
-                style={{ fontWeight: "bold", color: Colors.lime }}
-              />
-            </Box>
-          </SectionSubContainer>
+        <SectionSubContainer paddingBottom="2em">
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              maxWidth: "400px",
+            }}
+            // onClick={handleAsciiArtClick}
+          >
+            <AsciiArtGenerator width="100px" style={{ fontWeight: "bold", color: Colors.lime }} />
+          </Box>
+        </SectionSubContainer>
         {/* </CustomTooltip> */}
       </SectionSubContainer>
     </SectionContainer>

@@ -40,7 +40,13 @@ export const TextFeed = memo(({ mode }) => {
   const [sharedModel, setSharedModel] = useState("openai")
 
   // Hooks
-  const { entry: slideshowEntry, onNewEntry, stop, error, connectionStatus } = useTextSlideshow(mode)
+  const {
+    entry: slideshowEntry,
+    onNewEntry,
+    stop,
+    error,
+    connectionStatus,
+  } = useTextSlideshow(mode)
 
   const { entriesGenerated } = useTextFeedLoader(onNewEntry, setLastEntry)
 
@@ -199,7 +205,11 @@ export const TextFeed = memo(({ mode }) => {
         {/* Model Info (Feed mode only) */}
         {toggleValue === "feed" && entry?.response && (
           <SectionSubContainer paddingBottom="0em">
-            <ModelInfo model={entry.parameters?.model} referrer={entry.parameters?.referrer} itemType="text" />
+            <ModelInfo
+              model={entry.parameters?.model}
+              referrer={entry.parameters?.referrer}
+              itemType="text"
+            />
           </SectionSubContainer>
         )}
       </SectionSubContainer>

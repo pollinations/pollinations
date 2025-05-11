@@ -9,29 +9,29 @@ import { ThemeProvider } from "@mui/material/styles"
 import { theme } from "./styles/theme"
 
 const ReferralRedirect = () => {
-  const [searchParams] = useSearchParams();
-  const topic = searchParams.get('topic');
+  const [searchParams] = useSearchParams()
+  const topic = searchParams.get("topic")
 
   useEffect(() => {
     // Track the referral event
     trackEvent({
-      action: 'referral_visit',
+      action: "referral_visit",
       category: topic,
-      label: topic || 'unknown',
+      label: topic || "unknown",
       value: topic,
-    });
+    })
 
     // Redirect to home page after 3 seconds to ensure tracking is registered
     const redirectTimeout = setTimeout(() => {
-      window.location.href = 'https://pollinations.ai';
-    }, 3000);
+      window.location.href = "https://pollinations.ai"
+    }, 3000)
 
     // Cleanup timeout if component unmounts
-    return () => clearTimeout(redirectTimeout);
-  }, [topic]);
+    return () => clearTimeout(redirectTimeout)
+  }, [topic])
 
-  return null; // Component doesn't render anything
-};
+  return null // Component doesn't render anything
+}
 
 const AppRoutes = [
   {

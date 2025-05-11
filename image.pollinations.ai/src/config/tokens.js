@@ -1,5 +1,5 @@
-import 'dotenv/config';
-import { parse } from 'url';
+import "dotenv/config";
+import { parse } from "url";
 
 /**
  * Gets the valid tokens from environment variables
@@ -8,7 +8,11 @@ import { parse } from 'url';
  */
 function getValidTokens() {
   if (!process.env.VALID_TOKENS) return new Set();
-  return new Set(process.env.VALID_TOKENS.split(',').map(token => token.trim()).filter(Boolean));
+  return new Set(
+    process.env.VALID_TOKENS.split(",")
+      .map((token) => token.trim())
+      .filter(Boolean),
+  );
 }
 
 /**
@@ -36,10 +40,15 @@ export function extractToken(req) {
 
   // Check Authorization header
   const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
+  if (authHeader && authHeader.startsWith("Bearer ")) {
     return authHeader.substring(7);
   }
 
   // Check custom header
-  return req.headers['x-pollinations-token'] || req.headers['referer'] || req.headers['referrer'] ||null;
+  return (
+    req.headers["x-pollinations-token"] ||
+    req.headers["referer"] ||
+    req.headers["referrer"] ||
+    null
+  );
 }

@@ -365,7 +365,7 @@ export const availableModels = models.map((model) => {
 export function findModelByName(modelName) {
   return (
     availableModels.find(
-      (model) => model.name === modelName || model.aliases === modelName
+      (model) => model.name === modelName || model.aliases === modelName,
     ) || availableModels.find((model) => model.name === "openai")
   ); // Default to openai
 }

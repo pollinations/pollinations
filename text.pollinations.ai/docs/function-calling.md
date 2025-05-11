@@ -29,13 +29,13 @@ const weatherTools = [
         properties: {
           location: {
             type: "string",
-            description: "The location to get weather for"
-          }
+            description: "The location to get weather for",
+          },
         },
-        required: ["location"]
-      }
-    }
-  }
+        required: ["location"],
+      },
+    },
+  },
 ];
 ```
 
@@ -45,12 +45,12 @@ When calling the client, include the function definitions in the options:
 
 ```javascript
 const messages = [
-  { role: 'user', content: 'What\'s the weather like in Paris?' }
+  { role: "user", content: "What's the weather like in Paris?" },
 ];
 
 const options = {
   tools: weatherTools,
-  tool_choice: 'auto'  // Let the model decide when to call the function
+  tool_choice: "auto", // Let the model decide when to call the function
 };
 
 const response = await client(messages, options);
@@ -63,21 +63,21 @@ Check if the model called a function and handle it:
 ```javascript
 if (response.choices[0].message.tool_calls) {
   const toolCalls = response.choices[0].message.tool_calls;
-  
+
   for (const toolCall of toolCalls) {
-    if (toolCall.function.name === 'get_weather') {
+    if (toolCall.function.name === "get_weather") {
       const args = JSON.parse(toolCall.function.arguments);
       const weatherData = await getWeatherData(args.location);
-      
+
       // Add the function result to messages
       messages.push(response.choices[0].message);
       messages.push({
         tool_call_id: toolCall.id,
-        role: 'tool',
+        role: "tool",
         name: toolCall.function.name,
-        content: weatherData
+        content: weatherData,
       });
-      
+
       // Make another request with the function result
       const finalResponse = await client(messages, options);
       return finalResponse;
@@ -104,25 +104,28 @@ export const OPENROUTER_TOOLS = {
           properties: {
             location: {
               type: "string",
-              description: "The location to get weather for"
-            }
+              description: "The location to get weather for",
+            },
           },
-          required: ["location"]
-        }
-      }
-    }
-  ]
+          required: ["location"],
+        },
+      },
+    },
+  ],
 };
 
 // Example function to use function calling
-export async function generateTextWithFunctions(messages, toolType = 'weather') {
+export async function generateTextWithFunctions(
+  messages,
+  toolType = "weather",
+) {
   const tools = OPENROUTER_TOOLS[toolType] || [];
-  
+
   const response = await generateTextOpenRouter(messages, {
     tools,
-    tool_choice: 'auto'
+    tool_choice: "auto",
   });
-  
+
   return response;
 }
 ```
@@ -179,13 +182,13 @@ When the model calls a function, the response will include a `tool_calls` array 
             type: "function",
             function: {
               name: "get_weather",
-              arguments: "{\"location\":\"Paris\"}"
-            }
-          }
-        ]
-      }
-    }
-  ]
+              arguments: '{"location":"Paris"}',
+            },
+          },
+        ],
+      },
+    },
+  ];
 }
 ```
 

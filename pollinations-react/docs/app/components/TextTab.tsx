@@ -1,38 +1,54 @@
-import React, { useState } from 'react'
-import { usePollinationsText } from '@pollinations/react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import ReactMarkdown from 'react-markdown'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import { Copy } from 'lucide-react'
-import { useFetchModels } from '../hooks/useFetchModels'
-import { Textarea } from "@/components/ui/textarea"
+import React, { useState } from "react";
+import { usePollinationsText } from "@pollinations/react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { Copy } from "lucide-react";
+import { useFetchModels } from "../hooks/useFetchModels";
+import { Textarea } from "@/components/ui/textarea";
 
 interface TextModel {
-  name: string
-  type: 'chat' | 'completion'
-  censored: boolean
+  name: string;
+  type: "chat" | "completion";
+  censored: boolean;
 }
 
 export default function TextGenerationForm() {
-  const [textPrompt, setTextPrompt] = useState("Write a haiku about artificial intelligence")
-  const [textSeed, setTextSeed] = useState<number>(42)
-  const [selectedTextModel, setSelectedTextModel] = useState<string>('openai')
-  const { textModels } = useFetchModels()
-  const [systemPrompt, setSystemPrompt] = useState<string>("You are a helpful AI assistant.")
+  const [textPrompt, setTextPrompt] = useState(
+    "Write a haiku about artificial intelligence",
+  );
+  const [textSeed, setTextSeed] = useState<number>(42);
+  const [selectedTextModel, setSelectedTextModel] = useState<string>("openai");
+  const { textModels } = useFetchModels();
+  const [systemPrompt, setSystemPrompt] = useState<string>(
+    "You are a helpful AI assistant.",
+  );
 
-  const [activePrompt, setActivePrompt] = useState(textPrompt)
+  const [activePrompt, setActivePrompt] = useState(textPrompt);
   const [activeSettings, setActiveSettings] = useState({
     seed: textSeed,
     model: selectedTextModel,
-    systemPrompt
-  })
+    systemPrompt,
+  });
 
-  const textResult = usePollinationsText(activePrompt, activeSettings)
+  const textResult = usePollinationsText(activePrompt, activeSettings);
 
   const getTextCode = (): string => {
     return `
@@ -55,29 +71,30 @@ const TextComponent = () => {
 };
 
 export default TextComponent;
-    `
-  }
+    `;
+  };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
+    navigator.clipboard
+      .writeText(text)
       .then(() => {
-        console.log('Code copied to clipboard')
+        console.log("Code copied to clipboard");
         // You can add a toast notification here if you want
       })
-      .catch(err => {
-        console.error('Failed to copy code: ', err)
-      })
-  }
+      .catch((err) => {
+        console.error("Failed to copy code: ", err);
+      });
+  };
 
   const handleApplyChanges = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
-    setActivePrompt(textPrompt)
+    e.preventDefault();
+    setActivePrompt(textPrompt);
     setActiveSettings({
       seed: textSeed,
       model: selectedTextModel,
-      systemPrompt
-    })
-  }
+      systemPrompt,
+    });
+  };
 
   return (
     <Card className="bg-slate-800 text-slate-100">
@@ -114,12 +131,17 @@ export default TextComponent;
                 value={selectedTextModel}
                 onValueChange={setSelectedTextModel}
               >
-                <SelectTrigger id="textModel" className="bg-slate-700 text-slate-100">
+                <SelectTrigger
+                  id="textModel"
+                  className="bg-slate-700 text-slate-100"
+                >
                   <SelectValue placeholder="Select a model" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 text-slate-100">
                   {textModels.map((model: TextModel) => (
-                    <SelectItem key={model.name} value={model.name}>{model.name}</SelectItem>
+                    <SelectItem key={model.name} value={model.name}>
+                      {model.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -130,14 +152,16 @@ export default TextComponent;
                 id="textSeed"
                 type="number"
                 value={textSeed}
-                onChange={(e) => setTextSeed(Math.max(1, Number(e.target.value)))}
+                onChange={(e) =>
+                  setTextSeed(Math.max(1, Number(e.target.value)))
+                }
                 min={1}
                 className="bg-slate-700 text-slate-100"
               />
             </div>
           </div>
           <div className="flex justify-end">
-            <Button 
+            <Button
               type="button"
               onClick={handleApplyChanges}
               className="bg-blue-500 hover:bg-blue-600 transition-colors"
@@ -158,7 +182,11 @@ export default TextComponent;
           <div>
             <h3 className="text-lg font-semibold mb-2">Code Preview:</h3>
             <div className="relative">
-              <SyntaxHighlighter language="typescript" style={oneDark} className="rounded-md">
+              <SyntaxHighlighter
+                language="typescript"
+                style={oneDark}
+                className="rounded-md"
+              >
                 {getTextCode()}
               </SyntaxHighlighter>
               <Button
@@ -174,5 +202,5 @@ export default TextComponent;
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }

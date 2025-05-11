@@ -12,23 +12,25 @@ Welcome to the Pollinations React Playground! This project showcases a React com
 - **Effortless Copy & Paste**: Easily copy code snippets with a click for quick testing.
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices.
 
-
 ## Installation
 
 To install and run the project, follow these steps:
 
 1. **Clone this repository**:
+
    ```bash
    git clone https://github.com/diogo-karma/pollinations-react-doc
    cd pollinations-react-doc
    ```
 
 2. **Install the necessary dependencies**:
+
    ```bash
    npm install # or yarn install or bun install or pnpm install
    ```
 
 3. **Run the development server**:
+
    ```bash
    npm run dev # or yarn dev or bun dev or pnpm dev
    ```
@@ -69,15 +71,15 @@ This project is open-source and available under the [MIT License](./LICENSE).
 
 ## TODO
 
-- [X] Real-time updates for available models.
-- [X] Model selection for text generation.
-- [X] Image size selection.
-- [X] Seed selection options.
-- [X] Model selection for image generation.
-- [X] "Copy Code" button.
-- [X] Markdown rendering for better visualization.
-- [X] Documentation for hooks.
-- [X] Preview functionality in the hooks documentation.
+- [x] Real-time updates for available models.
+- [x] Model selection for text generation.
+- [x] Image size selection.
+- [x] Seed selection options.
+- [x] Model selection for image generation.
+- [x] "Copy Code" button.
+- [x] Markdown rendering for better visualization.
+- [x] Documentation for hooks.
+- [x] Preview functionality in the hooks documentation.
 - [ ] Add `onChange` functionality with debounce.
 - [ ] Document all parameters for components and hooks.
 - [ ] Loading indicators for asynchronous actions.

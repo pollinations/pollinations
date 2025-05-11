@@ -3,7 +3,6 @@ import { Colors, Fonts } from "../config/global"
 import { useTheme } from "@mui/material/styles"
 import useMediaQuery from "@mui/material/useMediaQuery"
 
-
 export const SectionContainer = styled.div`
   width: 100%;
   display: flex;
@@ -12,17 +11,15 @@ export const SectionContainer = styled.div`
     We'll read from props.backgroundConfig — which includes {color, image, gradient}.
   */
   background-color: ${(props) =>
-    props.backgroundConfig?.color
-      ? props.backgroundConfig.color
-      : "transparent"};
+    props.backgroundConfig?.color ? props.backgroundConfig.color : "transparent"};
 
   background-image: ${(props) => {
-    const { image, gradient } = props.backgroundConfig || {};
-    if (!image) return "none";
+    const { image, gradient } = props.backgroundConfig || {}
+    if (!image) return "none"
     if (gradient) {
-      return `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.9)), url(${image})`;
+      return `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.9)), url(${image})`
     }
-    return `url(${image})`;
+    return `url(${image})`
   }};
 
   background-size: cover;
@@ -32,7 +29,7 @@ export const SectionContainer = styled.div`
   flex-direction: column;
   align-items: center;
   padding: ${(props) => props.padding || "1em"};
-    ${({ theme }) => theme.breakpoints.down('md')} {
+  ${({ theme }) => theme.breakpoints.down("md")} {
     padding: 1em 1em;
   }
   z-index: ${(props) => props.zIndex || "-1"};
@@ -67,7 +64,7 @@ export const SectionTitleStyle = styled.div`
   letter-spacing: 0.1em;
   line-height: 1em;
   text-align: center;
-  ${({ theme }) => theme.breakpoints.down('md')} {
+  ${({ theme }) => theme.breakpoints.down("md")} {
     font-size: ${(props) => props.fontSize || "4em"};
   }
 `
@@ -80,7 +77,7 @@ export const SectionHeadlineStyle = styled.div`
   font-weight: 500;
   text-align: ${(props) => props.textAlign || "center"};
   justify-content: ${(props) => props.justifyContent || "center"};
-  ${({ theme }) => theme.breakpoints.down('md')} {
+  ${({ theme }) => theme.breakpoints.down("md")} {
     font-size: ${(props) => props.fontSize || "1.5em"};
   }
 `

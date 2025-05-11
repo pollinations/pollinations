@@ -51,7 +51,7 @@ const Supporter = () => {
   // Image component with hover effect
   const SupporterImage = ({ company }) => {
     const [isHovered, setIsHovered] = useState(false)
-    
+
     const imageStyle = {
       width: imageDimension,
       height: imageDimension,

@@ -9,7 +9,9 @@
  * @returns {string} - The client IP address or 'unknown'
  */
 export function getClientIp(request) {
-  return request?.headers?.get('cf-connecting-ip') || 
-         request?.headers?.get('x-forwarded-for')?.split(',')[0] || 
-         'unknown';
+  return (
+    request?.headers?.get("cf-connecting-ip") ||
+    request?.headers?.get("x-forwarded-for")?.split(",")[0] ||
+    "unknown"
+  );
 }

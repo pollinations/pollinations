@@ -23,7 +23,7 @@ export function CodeExamples({ image = {} }) {
 
   const handleCopy = (text, index) => {
     copyToClipboard(text)
-      .then(success => {
+      .then((success) => {
         if (success) {
           console.log("Code copied to clipboard!")
           setCopiedIndex(index)
@@ -32,7 +32,7 @@ export function CodeExamples({ image = {} }) {
           console.warn("Failed to copy code to clipboard")
         }
       })
-      .catch(error => {
+      .catch((error) => {
         console.error("Error copying to clipboard:", error)
       })
   }
@@ -51,21 +51,21 @@ export function CodeExamples({ image = {} }) {
   const imageToUse = image?.imageURL ? image : defaultImage
 
   // Create formatted tab items with title and key using the category field
-  const formattedTabs = codeExampleTabs.map(tab => ({
+  const formattedTabs = codeExampleTabs.map((tab) => ({
     key: tab,
-    title: CODE_EXAMPLES[tab].category
+    title: CODE_EXAMPLES[tab].category,
   }))
 
   return (
     <SectionSubContainer style={{ backgroundColor: "transparent", paddingBottom: "0em" }}>
-      <TabSelector 
+      <TabSelector
         items={formattedTabs}
         selectedKey={codeExampleTabs[tabValue]}
         onSelectTab={handleTabChange}
         trackingCategory="integrate"
         trackingAction="select_code_category"
       />
-      
+
       <>
         {codeExampleTabs.map((key, index) => {
           if (tabValue !== index) return null
@@ -79,29 +79,23 @@ export function CodeExamples({ image = {} }) {
                 <IconButton
                   onClick={() => handleCopy(text, index)}
                   sx={{
-                    textAlign: 'left',
+                    textAlign: "left",
                     color: Colors.offwhite,
                     fontFamily: Fonts.title,
                     fontWeight: 600,
-                    textTransform: 'uppercase',
-                    marginLeft: '1em',
-                    fontSize: '1em',
-                    '&:hover': {
-                      backgroundColor: 'transparent',
+                    textTransform: "uppercase",
+                    marginLeft: "1em",
+                    fontSize: "1em",
+                    "&:hover": {
+                      backgroundColor: "transparent",
                       color: copiedIndex === index ? Colors.offwhite : Colors.lime,
                     },
                   }}
                 >
-                  {copiedIndex === index ? (
-                    <b>COPIED! ✅</b>
-                  ) : (
-                    <b>COPY</b>
-                  )}
+                  {copiedIndex === index ? <b>COPIED! ✅</b> : <b>COPY</b>}
                 </IconButton>
               </Box>
-              <SectionSubContainer
-                paddingBottom="0em"
-              >
+              <SectionSubContainer paddingBottom="0em">
                 <CodeBlock
                   text={text}
                   language={language}

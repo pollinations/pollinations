@@ -59,6 +59,7 @@ The server will return the HTML content directly, which can be rendered in a bro
 ## System Prompt
 
 The system prompt instructs the model to:
+
 - Return a single, complete HTML file
 - Start with <!DOCTYPE html> and end with </html>
 - Include all necessary CSS inline within a <style> tag
@@ -72,6 +73,7 @@ To deploy this service to websim.pollinations.ai:
 1. Make sure the service is working correctly locally using Wrangler
 
 2. Deploy using Wrangler:
+
    ```bash
    # Install Wrangler globally (if not already installed)
    npm install -g wrangler
@@ -83,6 +85,7 @@ To deploy this service to websim.pollinations.ai:
    Wrangler will automatically create the necessary DNS records for the custom domain (websim.pollinations.ai) as specified in your wrangler.toml file.
 
 Once deployed, you can access the service at:
+
 ```
 https://websim.pollinations.ai/Create a simple calculator with HTML, CSS, and JavaScript
 ```

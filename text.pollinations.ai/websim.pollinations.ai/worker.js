@@ -16,7 +16,7 @@ Please include open-graph metatags and use a Pollinations image for the thumbnai
 export default {
   async fetch(request) {
     return handleRequest(request);
-  }
+  },
 };
 
 /**
@@ -26,7 +26,7 @@ export default {
  */
 async function handleRequest(request) {
   // Handle CORS preflight requests
-  if (request.method === 'OPTIONS') {
+  if (request.method === "OPTIONS") {
     return handleCorsPreflightRequest();
   }
 
@@ -40,9 +40,9 @@ async function handleRequest(request) {
   // Extract prompt from path
   const prompt = extractPromptFromPath(path);
   if (!prompt) {
-    return new Response('Pass a prompt after /', {
+    return new Response("Pass a prompt after /", {
       status: 400,
-      headers: getCorsHeaders()
+      headers: getCorsHeaders(),
     });
   }
 
@@ -56,9 +56,9 @@ async function handleRequest(request) {
  */
 function getCorsHeaders() {
   return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
   };
 }
 
@@ -69,12 +69,12 @@ function getCorsHeaders() {
 function handleCorsPreflightRequest() {
   const headers = {
     ...getCorsHeaders(),
-    'Access-Control-Max-Age': '86400', // 24 hours
+    "Access-Control-Max-Age": "86400", // 24 hours
   };
 
   return new Response(null, {
     status: 204,
-    headers
+    headers,
   });
 }
 
@@ -86,25 +86,25 @@ function handleCorsPreflightRequest() {
  */
 function processPath(path, request) {
   // Quick filters for common non-content requests
-  if (path === '/favicon.ico' || path.startsWith('/.')) {
-    return new Response('Not found', {
+  if (path === "/favicon.ico" || path.startsWith("/.")) {
+    return new Response("Not found", {
       status: 404,
-      headers: getCorsHeaders()
+      headers: getCorsHeaders(),
     });
   }
 
   // Enforce trailing slash only if there are 2 or less slashes in the path
   if (shouldRedirectWithTrailingSlash(path)) {
     const redirectUrl = new URL(request.url);
-    redirectUrl.pathname += '/';
+    redirectUrl.pathname += "/";
 
     // Create a new response with the same status and redirect URL, but with CORS headers
     return new Response(null, {
       status: 301,
       headers: {
         ...getCorsHeaders(),
-        'Location': redirectUrl.toString()
-      }
+        Location: redirectUrl.toString(),
+      },
     });
   }
 
@@ -117,7 +117,7 @@ function processPath(path, request) {
  * @returns {boolean} Whether to redirect
  */
 function shouldRedirectWithTrailingSlash(path) {
-  if (path === '/' || path.endsWith('/')) {
+  if (path === "/" || path.endsWith("/")) {
     return false;
   }
 
@@ -134,7 +134,7 @@ function shouldRedirectWithTrailingSlash(path) {
  * @returns {string} The extracted prompt
  */
 function extractPromptFromPath(path) {
-  return path.slice(1, path.endsWith('/') ? -1 : undefined);
+  return path.slice(1, path.endsWith("/") ? -1 : undefined);
 }
 
 /**
@@ -149,13 +149,13 @@ async function generateHtml(prompt) {
   if (!upstream.ok || !upstream.body) {
     return new Response(`Upstream error ${upstream.status}`, {
       status: 502,
-      headers: getCorsHeaders()
+      headers: getCorsHeaders(),
     });
   }
 
   // Process the stream
   const htmlStream = upstream.body
-    .pipeThrough(new TextDecoderStream())  // bytes ➜ text
+    .pipeThrough(new TextDecoderStream()) // bytes ➜ text
     .pipeThrough(createSseToHtmlTransformer())
     .pipeThrough(createHtmlGateTransformer())
     .pipeThrough(new TextEncoderStream()); // text ➜ bytes
@@ -163,11 +163,11 @@ async function generateHtml(prompt) {
   // Return the response with CORS headers
   return new Response(htmlStream, {
     headers: {
-      'Content-Type':     'text/html; charset=utf-8',
-      'Content-Encoding': 'identity',
-      'Cache-Control':    'no-cache',
-      ...getCorsHeaders()
-    }
+      "Content-Type": "text/html; charset=utf-8",
+      "Content-Encoding": "identity",
+      "Cache-Control": "no-cache",
+      ...getCorsHeaders(),
+    },
   });
 }
 
@@ -177,17 +177,17 @@ async function generateHtml(prompt) {
  * @returns {Promise<Response>} The upstream response
  */
 function fetchFromTextApi(prompt) {
-  return fetch('https://text.pollinations.ai/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  return fetch("https://text.pollinations.ai/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model:   'openai-large',
-      stream:  true,
-      messages:[
-        { role: 'system', content: systemPrompt },
-        { role: 'user',   content: prompt }
-      ]
-    })
+      model: "openai-large",
+      stream: true,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: prompt },
+      ],
+    }),
   });
 }
 
@@ -197,21 +197,23 @@ function fetchFromTextApi(prompt) {
  */
 function createSseToHtmlTransformer() {
   return new TransformStream({
-    start() { this.buf=''; },
+    start() {
+      this.buf = "";
+    },
     transform(chunk, ctrl) {
       this.buf += chunk;
-      const lines = this.buf.split('\n');
+      const lines = this.buf.split("\n");
       this.buf = lines.pop();
       for (let l of lines) {
         l = l.trim();
-        if (!l || l === 'data: [DONE]') continue;
-        if (l.startsWith('data:')) l = l.slice(5).trim();
+        if (!l || l === "data: [DONE]") continue;
+        if (l.startsWith("data:")) l = l.slice(5).trim();
         try {
           const html = JSON.parse(l).choices?.[0]?.delta?.content;
           if (html) ctrl.enqueue(html);
         } catch {}
       }
-    }
+    },
   });
 }
 
@@ -222,23 +224,23 @@ function createSseToHtmlTransformer() {
 function createHtmlGateTransformer() {
   return new TransformStream({
     start() {
-      this.prefixBuf = '';
+      this.prefixBuf = "";
       this.afterOpen = false;
-      this.done      = false;
-      this.tailBuf   = '';
+      this.done = false;
+      this.tailBuf = "";
     },
     transform(chunk, ctrl) {
-      if (this.done) return;                        // ignore the rest
+      if (this.done) return; // ignore the rest
 
       let text = chunk;
       if (!this.afterOpen) {
         this.prefixBuf += text;
         const lower = this.prefixBuf.toLowerCase();
-        const idx   = lower.indexOf('<html');
-        if (idx === -1) return;                     // still waiting
+        const idx = lower.indexOf("<html");
+        if (idx === -1) return; // still waiting
         // found <html …>
         this.afterOpen = true;
-        text = this.prefixBuf.slice(idx);           // drop everything before it
+        text = this.prefixBuf.slice(idx); // drop everything before it
         this.prefixBuf = null;
       }
 
@@ -247,8 +249,7 @@ function createHtmlGateTransformer() {
 
       // keep last few KB to look for closing tag
       this.tailBuf = (this.tailBuf + text).slice(-8192);
-      if (this.tailBuf.toLowerCase().includes('</html>'))
-        this.done = true;                           // stop further output
-    }
+      if (this.tailBuf.toLowerCase().includes("</html>")) this.done = true; // stop further output
+    },
   });
 }

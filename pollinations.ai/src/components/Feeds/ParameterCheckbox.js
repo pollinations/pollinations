@@ -10,7 +10,7 @@ import { trackEvent } from "../../config/analytics"
 
 /**
  * Reusable component for checkbox parameter inputs with consistent styling
- * 
+ *
  * @param {Object} props
  * @param {string} props.label - Checkbox label
  * @param {boolean} props.checked - Current checkbox value
@@ -37,25 +37,23 @@ export function ParameterCheckbox({
     borderColorHover: Colors.lime,
     labelColor: Colors.gray2,
     checkboxColorOn: Colors.offwhite,
-    checkboxColorOff: Colors.offwhite
+    checkboxColorOff: Colors.offwhite,
   }
-  
 
-  
   const typographyStyles = {
     label: {
       color: defaultStyles.labelColor,
       fontSize: "0.9em",
       fontFamily: Fonts.parameter,
       textAlign: "left",
-      width: "100%"
+      width: "100%",
     },
   }
 
   const handleChange = (e) => {
     const newValue = e.target.checked
     onChange(newValue)
-    
+
     if (typeof trackEvent === "function") {
       trackEvent({
         action: `change_${paramName}`,
@@ -69,12 +67,7 @@ export function ParameterCheckbox({
     <>
       {tooltipText ? (
         <CustomTooltip
-          title={
-            <LLMTextManipulator
-              text={tooltipText}
-              transforms={[rephrase, emojify, noLink]}
-            />
-          }
+          title={<LLMTextManipulator text={tooltipText} transforms={[rephrase, emojify, noLink]} />}
           interactive
         >
           <Typography component="div" variant="body" sx={typographyStyles.label}>
@@ -99,7 +92,7 @@ export function ParameterCheckbox({
           borderRadius: "0em",
           "&:hover": {
             borderColor: defaultStyles.borderColorHover,
-          }
+          },
         }}
       >
         <Checkbox
@@ -112,7 +105,7 @@ export function ParameterCheckbox({
               sx={{
                 color: defaultStyles.checkboxColorOff,
                 fontSize: "1.8em",
-                padding: "2px"
+                padding: "2px",
               }}
             />
           }
@@ -121,7 +114,7 @@ export function ParameterCheckbox({
               sx={{
                 color: defaultStyles.checkboxColorOn,
                 fontSize: "1.8em",
-                padding: "2px"
+                padding: "2px",
               }}
             />
           }
@@ -129,4 +122,4 @@ export function ParameterCheckbox({
       </Box>
     </>
   )
-} 
+}

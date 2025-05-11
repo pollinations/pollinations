@@ -289,3 +289,6 @@ text.pollinations.ai/v2/
 .netlify
 model-context-protocol/mcp-server-sqlite-npx/
 model-context-protocol/github-app-auth/.dev.vars
+
+# Mentat specific files
+.mentat/venv/

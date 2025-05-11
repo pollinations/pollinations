@@ -63,11 +63,13 @@ npx @pollinations/model-context-protocol install-claude-mcp
 ```
 
 This script will automatically:
+
 - Find the Claude Desktop configuration file for your OS
 - Add the Pollinations MCP server to the configuration
 - Configure it to use npx for easy updates
 
 After installation, restart Claude Desktop and you can use commands like:
+
 ```
 Generate an image of a sunset over the ocean using the Pollinations API.
 ```
@@ -89,10 +91,13 @@ ReferenceError: AbortController is not defined
 This is usually caused by running on an older version of Node.js (below version 16.0.0). Try one of these solutions:
 
 1. **Update Node.js** (recommended):
+
    - Update to Node.js 16.0.0 or newer
 
 2. **Use our polyfill** (automatic in version 1.0.6+):
+
    - Update to the latest version of the package:
+
    ```bash
    npm install -g @pollinations/model-context-protocol@latest
    # or run with npx
@@ -131,6 +136,7 @@ The MCP server provides the following tools:
 ## Changelog
 
 ### Version 1.0.7
+
 - Simplified architecture by removing HTTP server components
 - Transitioned to stdio-only transport following MCP best practices
 - Removed authentication server (moved to separate github-app-auth service)
@@ -138,6 +144,7 @@ The MCP server provides the following tools:
 - Updated documentation to reflect the new architecture
 
 ### Version 1.0.6
+
 - Added compatibility with Node.js versions 14.0.0 and later
 - Added AbortController polyfill for Node.js versions below 16.0.0
 - Fixed "AbortController is not defined" error
@@ -146,6 +153,7 @@ The MCP server provides the following tools:
 - Enhanced documentation with system requirements and installation options
 
 ### Version 1.0.5
+
 - Initial public release
 
 ## License

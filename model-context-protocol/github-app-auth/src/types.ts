@@ -27,7 +27,7 @@ export interface AuthSession {
   session_id: string;
   github_user_id?: string;
   state: string;
-  status: 'pending' | 'complete' | 'error';
+  status: "pending" | "complete" | "error";
   created_at?: string;
 }
 

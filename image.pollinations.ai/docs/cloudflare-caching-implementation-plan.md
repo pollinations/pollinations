@@ -62,9 +62,15 @@ Create a consistent functional interface for both cache implementations:
 ```javascript
 // Example structure (not actual implementation)
 export const createCache = (config) => ({
-  isImageCached: (prompt, extraParams) => { /* implementation */ },
-  getCachedImage: (prompt, extraParams) => { /* implementation */ },
-  cacheImage: (prompt, extraParams, bufferPromiseCreator) => { /* implementation */ }
+  isImageCached: (prompt, extraParams) => {
+    /* implementation */
+  },
+  getCachedImage: (prompt, extraParams) => {
+    /* implementation */
+  },
+  cacheImage: (prompt, extraParams, bufferPromiseCreator) => {
+    /* implementation */
+  },
 });
 
 export const createCloudflareCache = (config) => {
@@ -90,10 +96,12 @@ Add environment variables to control caching behavior:
 #### Files to Modify:
 
 1. `src/cacheGeneratedImages.js`:
+
    - Add cache adapter pattern
    - Integrate with CloudflareCache when enabled
 
 2. `src/index.js`:
+
    - Initialize cache with configuration
    - No changes to existing cache usage patterns
 
@@ -103,6 +111,7 @@ Add environment variables to control caching behavior:
 #### New Files to Create:
 
 1. `src/cloudflareCache.js`:
+
    - Implementation of CloudflareCache adapter
    - Methods for text embedding generation, similarity search, and R2 storage
 
@@ -154,6 +163,7 @@ To ensure system reliability, implement fallbacks:
 Based on the estimated 50 million images per month (instead of the initial 3-4 million estimate):
 
 ### Updated Usage Parameters
+
 - 50 million images per month
 - Average image size: 100KB
 - Each image read approximately 10 times
@@ -162,14 +172,17 @@ Based on the estimated 50 million images per month (instead of the initial 3-4 m
 ### 1. Cloudflare R2 Storage Costs
 
 **Data Storage:**
+
 - Monthly storage: 5,000GB
 - Storage cost: (5,000GB - 10GB) × $0.015/GB = $74.85 ≈ $75/month
 
 **Class A Operations (Writes):**
+
 - Total write operations: 50 million
 - Cost: (50 million - 1 million) × $4.50/million = 49 million × $4.50/million = $220.50 ≈ $225/month
 
 **Class B Operations (Reads):**
+
 - Total read operations: 50 million × 10 reads = 500 million
 - Cost: (500 million - 10 million) × $0.36/million = 490 million × $0.36/million = $176.40 ≈ $180/month
 
@@ -178,11 +191,13 @@ Based on the estimated 50 million images per month (instead of the initial 3-4 m
 ### 2. Cloudflare Vectorize Costs
 
 **Vector Storage:**
+
 - Assuming 512-dimensional embeddings
 - Total stored vector dimensions: 50 million × 512 = 25,600,000,000
 - Cost: (25,600,000,000 / 100,000,000) × $0.05 = $12.80/month
 
 **Vector Queries:**
+
 - Total queried vector dimensions: 50 million × 512 = 25,600,000,000
 - Cost: (25,600,000,000 / 1,000,000) × $0.01 = $256/month
 
@@ -191,12 +206,14 @@ Based on the estimated 50 million images per month (instead of the initial 3-4 m
 ### 3. Cloudflare Workers Costs
 
 **Requests:**
+
 - Total requests: 50 million
 - Workers Paid Plan includes 10 million requests; additional at $0.30/million
 - Additional requests: 40 million
 - Cost: 40 million × $0.30/million = $12/month
 
 **CPU Time:**
+
 - Assuming 10ms per request
 - Total CPU time: 50 million × 10ms = 500,000,000ms
 - Workers Paid Plan includes 30 million CPU ms; additional at $0.02/million ms

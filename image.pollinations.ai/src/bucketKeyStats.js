@@ -1,9 +1,9 @@
-import { writeFileSync } from 'fs';
-import Table from 'cli-table3';
-import debug from 'debug';
-import { generalImageQueue } from './generalImageQueue.js';
+import { writeFileSync } from "fs";
+import Table from "cli-table3";
+import debug from "debug";
+import { generalImageQueue } from "./generalImageQueue.js";
 
-const logStats = debug('pollinations:stats');
+const logStats = debug("pollinations:stats");
 
 // Initialize an object to track images requested and returned per bucket key
 export let bucketKeyStats = {};
@@ -12,43 +12,68 @@ export let requestTimestamps = []; // Array to store timestamps of image request
 export let imageReturnTimestamps = []; // Array to store timestamps of returned images
 
 export const printQueueStatus = () => {
-  requestTimestamps = requestTimestamps.filter(timestamp => Date.now() - timestamp < 60000);
-  imageReturnTimestamps = imageReturnTimestamps.filter(timestamp => Date.now() - timestamp < 60000);
+  requestTimestamps = requestTimestamps.filter(
+    (timestamp) => Date.now() - timestamp < 60000,
+  );
+  imageReturnTimestamps = imageReturnTimestamps.filter(
+    (timestamp) => Date.now() - timestamp < 60000,
+  );
 
-  const batchHead = ['Bucket Key', 'Jobs', 'Requests', 'Returns'];
+  const batchHead = ["Bucket Key", "Jobs", "Requests", "Returns"];
   const batchTable = new Table({
     head: batchHead,
     colWidths: [20, 10, 10, 10],
   });
 
-  const imageHead = ['Requests', 'Returned', 'Q-Size', 'Q-Pending', 'Q-Utilization'];
+  const imageHead = [
+    "Requests",
+    "Returned",
+    "Q-Size",
+    "Q-Pending",
+    "Q-Utilization",
+  ];
   const imageTable = new Table({
     head: imageHead,
     colWidths: [10, 10, 10, 10, 10],
   });
 
-  currentJobs.forEach(batch => {
-    const bucketKeyStatsRow = bucketKeyStats[batch.bucketKey] || { requested: 0, returned: 0 };
-    batchTable.push([batch.bucketKey, batch.jobs.length, bucketKeyStatsRow.requested, bucketKeyStatsRow.returned]);
+  currentJobs.forEach((batch) => {
+    const bucketKeyStatsRow = bucketKeyStats[batch.bucketKey] || {
+      requested: 0,
+      returned: 0,
+    };
+    batchTable.push([
+      batch.bucketKey,
+      batch.jobs.length,
+      bucketKeyStatsRow.requested,
+      bucketKeyStatsRow.returned,
+    ]);
   });
 
   const queueSize = generalImageQueue.size;
   const queuePending = generalImageQueue.pending;
   // const queueUtilization = ((queueSize + queuePending) / (2 * generalImageQueue.concurrency) * 100).toFixed(2);
-  imageTable.push([requestTimestamps.length, imageReturnTimestamps.length, queueSize, queuePending, `N/I%`]);
+  imageTable.push([
+    requestTimestamps.length,
+    imageReturnTimestamps.length,
+    queueSize,
+    queuePending,
+    `N/I%`,
+  ]);
 
   logStats(batchTable.toString());
   logStats(imageTable.toString());
 
   // construct simple string tables for file writing
-  const fileBatchTableHeaders = batchHead.join(',');
-  const fileBatchTable = batchTable.map(row => row.join(',')).join('\n');
-  const fileImageTableHeaders = imageHead.join(',');
-  const fileImageTable = imageTable.map(row => row.join(',')).join('\n');
+  const fileBatchTableHeaders = batchHead.join(",");
+  const fileBatchTable = batchTable.map((row) => row.join(",")).join("\n");
+  const fileImageTableHeaders = imageHead.join(",");
+  const fileImageTable = imageTable.map((row) => row.join(",")).join("\n");
 
   // Write tables to a file
   // writeFileSync('tableLogs.txt', `${fileBatchTableHeaders}\n${fileBatchTable}\n${fileImageTableHeaders}\n${fileImageTable}`);
-}; let jobCounts = [];
+};
+let jobCounts = [];
 
 export const countJobs = (average = false) => {
   const currentCount = currentJobs.reduce((acc, batch) => {

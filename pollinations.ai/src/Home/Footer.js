@@ -24,21 +24,21 @@ const Footer = () => {
     copyToClipboard("hello@pollinations.ai")
       .then(() => {
         trackEvent({
-          action: 'click_email',
-          category: 'footer',
+          action: "click_email",
+          category: "footer",
         })
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
       })
-      .catch(error => {
+      .catch((error) => {
         console.error("Error copying email to clipboard:", error)
       })
   }
 
   const handleTermsLinkClick = () => {
     trackEvent({
-      action: 'click_terms',
-      category: 'footer',
+      action: "click_terms",
+      category: "footer",
     })
   }
 

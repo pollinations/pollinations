@@ -23,6 +23,7 @@ The system follows the "thin proxy" design principle and integrates seamlessly w
 ### Prerequisites
 
 1. GitHub OAuth Application
+
    - Create a new OAuth App at https://github.com/settings/developers
    - Set the callback URL to `https://flow.pollinations.ai/github/callback`
    - Note your Client ID and Client Secret
@@ -39,10 +40,12 @@ The system follows the "thin proxy" design principle and integrates seamlessly w
 ### Deployment
 
 1. Set up DNS for flow.pollinations.ai
+
    - Create a new DNS entry pointing to your server
    - Configure HTTPS (recommended using Cloudflare or Let's Encrypt)
 
 2. Start the Authentication Server
+
    ```
    # For production
    npm run start-auth
@@ -58,11 +61,13 @@ The system follows the "thin proxy" design principle and integrates seamlessly w
 ### Option 1: Referrer-Based Authentication
 
 1. User initiates authentication via an MCP tool
+
    - The system provides a GitHub authentication URL
    - User completes GitHub authentication
    - After authentication, the user receives a session ID
 
 2. User manages whitelisted domains (referrers) through MCP tools
+
    - By default, text.pollinations.ai and image.pollinations.ai are whitelisted
    - User can add or remove domains using the MCP tools
 
@@ -74,6 +79,7 @@ The system follows the "thin proxy" design principle and integrates seamlessly w
 ### Option 2: Token-Based Authentication
 
 1. User initiates authentication via an MCP tool
+
    - After authentication, the system generates a Pollinations access token
    - Token is returned via MCP tool
 
@@ -93,7 +99,7 @@ Check if a session is authenticated with GitHub.
 
 ```javascript
 {
-  sessionId: "github:12345678"  // The GitHub session ID
+  sessionId: "github:12345678"; // The GitHub session ID
 }
 ```
 
@@ -103,7 +109,7 @@ Get the GitHub OAuth URL for authentication.
 
 ```javascript
 {
-  returnUrl: "https://example.com"  // Optional URL to redirect to after authentication
+  returnUrl: "https://example.com"; // Optional URL to redirect to after authentication
 }
 ```
 
@@ -113,7 +119,7 @@ Get the Pollinations access token for an authenticated user.
 
 ```javascript
 {
-  sessionId: "github:12345678"  // The GitHub session ID
+  sessionId: "github:12345678"; // The GitHub session ID
 }
 ```
 
@@ -123,7 +129,7 @@ List authorized referrers for a user.
 
 ```javascript
 {
-  sessionId: "github:12345678"  // The GitHub session ID
+  sessionId: "github:12345678"; // The GitHub session ID
 }
 ```
 
@@ -156,6 +162,7 @@ The authentication server exposes minimal endpoints required for the OAuth flow:
 ### OAuth Endpoints
 
 - **GET /github/login**
+
   - Initiates the GitHub OAuth flow
   - Query parameters:
     - `returnUrl`: URL to redirect to after successful authentication (optional)
@@ -168,6 +175,7 @@ The authentication server exposes minimal endpoints required for the OAuth flow:
 ### Verification Endpoints
 
 - **POST /api/auth/verify-token**
+
   - Verifies if a token is valid
   - Body: `{ "token": "poll_token" }`
 
@@ -178,16 +186,19 @@ The authentication server exposes minimal endpoints required for the OAuth flow:
 ## Security Considerations
 
 - **Token Security**:
+
   - Store GitHub tokens securely server-side
   - Generate Pollinations tokens using cryptographically secure methods
   - Consider adding token encryption at rest for production
 
 - **Referrer Validation**:
+
   - Implement strict validation of Origin/Referer headers
   - Be aware that referrer headers can be spoofed
   - Use this as a convenience feature, not as the sole security mechanism
 
 - **CSRF Protection**:
+
   - Use state parameters to prevent cross-site request forgery
   - Validate all state tokens before completing authentication
 

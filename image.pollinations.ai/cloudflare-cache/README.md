@@ -2,13 +2,14 @@
 
 This Cloudflare Worker handles image caching and analytics for the Pollinations image service.
 
-## Configuration 
+## Configuration
 
 The worker uses `wrangler.toml` for configuration and environment variables for sensitive data.
 
 ### Setup Instructions
 
 1. Make sure your `.env` file is set up in the root directory with the following variables:
+
    ```
    GA_MEASUREMENT_ID=your-ga-measurement-id
    GA_API_SECRET=your-ga-api-secret
@@ -16,6 +17,7 @@ The worker uses `wrangler.toml` for configuration and environment variables for 
    ```
 
 2. Deploy the worker:
+
    ```bash
    cd cloudflare-cache
    npx wrangler login  # First time only, opens browser for authentication
@@ -23,6 +25,7 @@ The worker uses `wrangler.toml` for configuration and environment variables for 
    ```
 
    Alternatively, you can use the deployment script which will:
+
    - Load your environment variables from .env
    - Create the R2 bucket if it doesn't exist
    - Create .dev.vars file for local development
@@ -44,6 +47,7 @@ echo "GA_API_SECRET=your-ga-api-secret" >> .dev.vars
 ```
 
 Run the worker locally:
+
 ```bash
 npm run dev
 ```
@@ -71,6 +75,7 @@ npx wrangler tail
 ## Overview
 
 The implementation follows the "thin proxy" design principle:
+
 - Minimal processing of requests and responses
 - Direct forwarding of requests to the origin service when needed
 - Simple caching logic using URL paths and query parameters as keys
@@ -79,11 +84,13 @@ The implementation follows the "thin proxy" design principle:
 ## How It Works
 
 1. **Request Flow**:
+
    - Incoming request → Worker → Check R2 cache → Serve cached image OR proxy to origin
    - For cache misses, the response is stored in R2 for future requests
    - Analytics events are sent at key points in the process
 
 2. **Caching Strategy**:
+
    - Uses URL path and query parameters as cache keys
    - Skips caching for non-image responses or when `no-cache` parameter is present
    - Sets appropriate cache headers for CDN optimization
@@ -96,6 +103,7 @@ The implementation follows the "thin proxy" design principle:
 ## Cost Efficiency
 
 This implementation is designed to be cost-efficient:
+
 - Zero egress fees from Cloudflare R2
 - Automatic CDN distribution
 - Simple caching logic with minimal overhead
@@ -118,7 +126,9 @@ To ensure analytics work properly, you need to set these environment variables:
 These variables are automatically configured during deployment through GitHub Actions using repository secrets. However, if you need to set them manually, you can use one of these methods:
 
 ### Option 1: Edit wrangler.toml directly
+
 Uncomment and set the values in the `[vars]` section of wrangler.toml:
+
 ```toml
 [vars]
 GA_MEASUREMENT_ID = "G-XXXXXXXXXX"  # Replace with your GA4 measurement ID
@@ -126,12 +136,14 @@ GA_API_SECRET = "XXXXXXXXXX"        # Replace with your GA4 API secret
 ```
 
 ### Option 2: Use Wrangler CLI
+
 ```bash
 wrangler secret put GA_MEASUREMENT_ID
 wrangler secret put GA_API_SECRET
 ```
 
 ### Option 3: Set in Cloudflare Dashboard
+
 Go to Workers & Pages > pollinations-image-cache > Settings > Variables > Add variable
 
 These should be the same values used in the main image.pollinations.ai service to ensure consistent analytics tracking.

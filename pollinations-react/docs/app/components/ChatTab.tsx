@@ -1,54 +1,70 @@
-import React, { useState } from 'react'
-import { usePollinationsChat } from '@pollinations/react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Copy, Send, Flower, Bird } from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import { useFetchModels } from '../hooks/useFetchModels'
+import React, { useState } from "react";
+import { usePollinationsChat } from "@pollinations/react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Copy, Send, Flower, Bird } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { useFetchModels } from "../hooks/useFetchModels";
 
 export default function ChatComponent() {
-  const { textModels } = useFetchModels()
-  const [selectedTextModel, setSelectedTextModel] = useState<string>(textModels[0]?.name || 'openai')
-  const [chatPrompt, setChatPrompt] = useState("")
-  const [systemMessage, setSystemMessage] = useState<string>("You are a helpful AI assistant.")
-  const [chatSeed, setChatSeed] = useState<number>(42)
-  const [chatModel, setChatModel] = useState<string>(selectedTextModel)
+  const { textModels } = useFetchModels();
+  const [selectedTextModel, setSelectedTextModel] = useState<string>(
+    textModels[0]?.name || "openai",
+  );
+  const [chatPrompt, setChatPrompt] = useState("");
+  const [systemMessage, setSystemMessage] = useState<string>(
+    "You are a helpful AI assistant.",
+  );
+  const [chatSeed, setChatSeed] = useState<number>(42);
+  const [chatModel, setChatModel] = useState<string>(selectedTextModel);
 
   // Add states for active values
-  const [activeSystemMessage, setActiveSystemMessage] = useState(systemMessage)
+  const [activeSystemMessage, setActiveSystemMessage] = useState(systemMessage);
   const [activeSettings, setActiveSettings] = useState({
     seed: chatSeed,
-    model: chatModel
-  })
+    model: chatModel,
+  });
 
   // Create a new chat instance when system message or settings change
   const { sendUserMessage, messages } = usePollinationsChat(
-    [{ role: "system", content: activeSystemMessage }], 
-    activeSettings
-  )
+    [{ role: "system", content: activeSystemMessage }],
+    activeSettings,
+  );
 
   const handleApplySettings = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
-    setActiveSystemMessage(systemMessage)
+    e.preventDefault();
+    setActiveSystemMessage(systemMessage);
     setActiveSettings({
       seed: chatSeed,
-      model: chatModel
-    })
-  }
+      model: chatModel,
+    });
+  };
 
   const handleSendMessage = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
+    e.preventDefault();
     if (chatPrompt.trim()) {
-      sendUserMessage(chatPrompt)
-      setChatPrompt('')
+      sendUserMessage(chatPrompt);
+      setChatPrompt("");
     }
-  }
+  };
 
   const getChatCode = (): string => {
     return `
@@ -107,19 +123,20 @@ const ChatComponent = () => {
 };
 
 export default ChatComponent;
-    `
-  }
+    `;
+  };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
+    navigator.clipboard
+      .writeText(text)
       .then(() => {
-        console.log('Code copied to clipboard')
+        console.log("Code copied to clipboard");
         // You can add a toast notification here if you want
       })
-      .catch(err => {
-        console.error('Failed to copy code: ', err)
-      })
-  }
+      .catch((err) => {
+        console.error("Failed to copy code: ", err);
+      });
+  };
 
   return (
     <Card className="bg-slate-800 text-slate-100">
@@ -142,16 +159,18 @@ export default ChatComponent;
           <div className="flex space-x-4">
             <div className="flex-1">
               <Label htmlFor="chatModel">Model</Label>
-              <Select
-                value={chatModel}
-                onValueChange={setChatModel}
-              >
-                <SelectTrigger id="chatModel" className="w-full bg-slate-700 text-slate-100">
+              <Select value={chatModel} onValueChange={setChatModel}>
+                <SelectTrigger
+                  id="chatModel"
+                  className="w-full bg-slate-700 text-slate-100"
+                >
                   <SelectValue placeholder="Select a model" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 text-slate-100">
                   {textModels.map((model) => (
-                    <SelectItem key={model.name} value={model.name}>{model.name}</SelectItem>
+                    <SelectItem key={model.name} value={model.name}>
+                      {model.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -162,14 +181,16 @@ export default ChatComponent;
                 id="chatSeed"
                 type="number"
                 value={chatSeed}
-                onChange={(e) => setChatSeed(Math.max(1, Number(e.target.value)))}
+                onChange={(e) =>
+                  setChatSeed(Math.max(1, Number(e.target.value)))
+                }
                 min={1}
                 className="w-full bg-slate-700 text-slate-100"
               />
             </div>
           </div>
           <div className="flex justify-end">
-            <Button 
+            <Button
               type="button"
               onClick={handleApplySettings}
               className="bg-blue-500 hover:bg-blue-600 transition-colors"
@@ -179,12 +200,23 @@ export default ChatComponent;
           </div>
           <div className="h-64 overflow-y-auto bg-slate-700 p-4 rounded-md space-y-4">
             {messages.map((msg: any, index: number) => (
-              <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[70%] p-3 rounded-lg ${
-                  msg.role === 'user' ? 'bg-blue-100 text-blue-900' : 'bg-gray-100 text-gray-900'
-                }`}>
+              <div
+                key={index}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[70%] p-3 rounded-lg ${
+                    msg.role === "user"
+                      ? "bg-blue-100 text-blue-900"
+                      : "bg-gray-100 text-gray-900"
+                  }`}
+                >
                   <span className="mr-2">
-                    {msg.role === 'user' ? <Bird className="inline-block w-4 h-4" /> : <Flower className="inline-block w-4 h-4" />}
+                    {msg.role === "user" ? (
+                      <Bird className="inline-block w-4 h-4" />
+                    ) : (
+                      <Flower className="inline-block w-4 h-4" />
+                    )}
                   </span>
                   <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
@@ -199,13 +231,13 @@ export default ChatComponent;
               className="w-full bg-slate-700 text-slate-100 flex-grow"
               rows={3}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   handleSendMessage(e as any);
                 }
               }}
             />
-            <Button 
+            <Button
               onClick={handleSendMessage}
               className="bg-blue-500 hover:bg-blue-600 transition-colors"
             >
@@ -215,7 +247,11 @@ export default ChatComponent;
           <div>
             <h3 className="text-lg font-semibold mb-2">Code Preview:</h3>
             <div className="relative">
-              <SyntaxHighlighter language="typescript" style={oneDark} className="rounded-md">
+              <SyntaxHighlighter
+                language="typescript"
+                style={oneDark}
+                className="rounded-md"
+              >
                 {getChatCode()}
               </SyntaxHighlighter>
               <Button
@@ -231,5 +267,5 @@ export default ChatComponent;
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }

@@ -15,8 +15,8 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
   const handleImageClick = (e) => {
     e.preventDefault()
     trackEvent({
-      action: 'click_image',
-      category: 'feed',
+      action: "click_image",
+      category: "feed",
     })
     window.open(image["imageURL"], "_blank")
   }
@@ -61,7 +61,7 @@ const ImageStyle = styled.img`
   max-width: 100%;
   object-fit: contain;
 
-  ${({ theme }) => theme.breakpoints.down('md')} {
+  ${({ theme }) => theme.breakpoints.down("md")} {
     height: 400px;
   }
 `

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 interface TextModel {
   name: string;
-  type: 'chat' | 'completion';
+  type: "chat" | "completion";
   censored: boolean;
 }
 
@@ -16,18 +16,18 @@ export function useFetchModels() {
     const fetchModels = async () => {
       try {
         const [textResponse, imageResponse] = await Promise.all([
-          fetch('https://text.pollinations.ai/models'),
-          fetch('https://image.pollinations.ai/models')
+          fetch("https://text.pollinations.ai/models"),
+          fetch("https://image.pollinations.ai/models"),
         ]);
         const textData: TextModel[] = await textResponse.json();
         const imageData: ImageModel[] = await imageResponse.json();
         setTextModels(textData);
         setImageModels(imageData);
       } catch (error) {
-        console.error('Error fetching models:', error);
+        console.error("Error fetching models:", error);
         // Fallback models
-        setTextModels([{ name: 'openai', type: 'chat', censored: false }]);
-        setImageModels(['flux']);
+        setTextModels([{ name: "openai", type: "chat", censored: false }]);
+        setImageModels(["flux"]);
       }
     };
     fetchModels();

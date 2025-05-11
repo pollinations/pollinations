@@ -4,14 +4,18 @@
  * Functions and schemas for interacting with the Pollinations Audio API
  */
 
-import fs from 'fs';
-import path from 'path';
-import os from 'os';
-import { createMCPResponse, createTextContent, buildUrl } from '../utils/coreUtils.js';
-import { z } from 'zod';
+import fs from "fs";
+import path from "path";
+import os from "os";
+import {
+  createMCPResponse,
+  createTextContent,
+  buildUrl,
+} from "../utils/coreUtils.js";
+import { z } from "zod";
 
 // Constants
-const AUDIO_API_BASE_URL = 'https://text.pollinations.ai';
+const AUDIO_API_BASE_URL = "https://text.pollinations.ai";
 
 /**
  * Generates an audio response to a text prompt using the Pollinations Text API
@@ -26,17 +30,24 @@ const AUDIO_API_BASE_URL = 'https://text.pollinations.ai';
  * @returns {Promise<Object>} - MCP response object with the audio data
  */
 async function respondAudio(params) {
-  const { prompt, voice = "alloy", format = "mp3", voiceInstructions, audioPlayer, tempDir } = params;
+  const {
+    prompt,
+    voice = "alloy",
+    format = "mp3",
+    voiceInstructions,
+    audioPlayer,
+    tempDir,
+  } = params;
 
-  if (!prompt || typeof prompt !== 'string') {
-    throw new Error('Prompt is required and must be a string');
+  if (!prompt || typeof prompt !== "string") {
+    throw new Error("Prompt is required and must be a string");
   }
 
   // Prepare the query parameters
   const queryParams = {
-    model: 'openai-audio',
+    model: "openai-audio",
     voice,
-    format
+    format,
   };
 
   // Prepare the prompt
@@ -48,7 +59,11 @@ async function respondAudio(params) {
   }
 
   // Build the URL using the utility function
-  const url = buildUrl(AUDIO_API_BASE_URL, encodeURIComponent(finalPrompt), queryParams);
+  const url = buildUrl(
+    AUDIO_API_BASE_URL,
+    encodeURIComponent(finalPrompt),
+    queryParams,
+  );
 
   try {
     // Fetch the audio from the URL
@@ -62,28 +77,36 @@ async function respondAudio(params) {
     const audioBuffer = await response.arrayBuffer();
 
     // Convert the ArrayBuffer to a base64 string
-    const base64Data = Buffer.from(audioBuffer).toString('base64');
+    const base64Data = Buffer.from(audioBuffer).toString("base64");
 
     // Determine the mime type from the format
-    const mimeType = `audio/${format === 'mp3' ? 'mpeg' : format}`;
+    const mimeType = `audio/${format === "mp3" ? "mpeg" : format}`;
 
     // Play the audio if an audio player is provided
     if (audioPlayer) {
       const tempDirPath = tempDir || os.tmpdir();
-      await playAudio(base64Data, mimeType, 'respond_audio', audioPlayer, tempDirPath);
+      await playAudio(
+        base64Data,
+        mimeType,
+        "respond_audio",
+        audioPlayer,
+        tempDirPath,
+      );
     }
 
     // Return the response in MCP format
     return createMCPResponse([
       {
-        type: 'audio',
+        type: "audio",
         data: base64Data,
-        mimeType
+        mimeType,
       },
-      createTextContent(`Generated audio response for prompt: "${prompt}"\n\nVoice: ${voice}\nFormat: ${format}`)
+      createTextContent(
+        `Generated audio response for prompt: "${prompt}"\n\nVoice: ${voice}\nFormat: ${format}`,
+      ),
     ]);
   } catch (error) {
-    console.error('Error generating audio:', error);
+    console.error("Error generating audio:", error);
     throw error;
   }
 }
@@ -101,17 +124,24 @@ async function respondAudio(params) {
  * @returns {Promise<Object>} - MCP response object with the audio data
  */
 async function sayText(params) {
-  const { text, voice = "alloy", format = "mp3", voiceInstructions, audioPlayer, tempDir } = params;
+  const {
+    text,
+    voice = "alloy",
+    format = "mp3",
+    voiceInstructions,
+    audioPlayer,
+    tempDir,
+  } = params;
 
-  if (!text || typeof text !== 'string') {
-    throw new Error('Text is required and must be a string');
+  if (!text || typeof text !== "string") {
+    throw new Error("Text is required and must be a string");
   }
 
   // Prepare the query parameters
   const queryParams = {
-    model: 'openai-audio',
+    model: "openai-audio",
     voice,
-    format
+    format,
   };
 
   // Prepare the prompt with the verbatim instruction
@@ -123,7 +153,11 @@ async function sayText(params) {
   }
 
   // Build the URL using the utility function
-  const url = buildUrl(AUDIO_API_BASE_URL, encodeURIComponent(finalPrompt), queryParams);
+  const url = buildUrl(
+    AUDIO_API_BASE_URL,
+    encodeURIComponent(finalPrompt),
+    queryParams,
+  );
 
   try {
     // Fetch the audio from the URL
@@ -137,28 +171,36 @@ async function sayText(params) {
     const audioBuffer = await response.arrayBuffer();
 
     // Convert the ArrayBuffer to a base64 string
-    const base64Data = Buffer.from(audioBuffer).toString('base64');
+    const base64Data = Buffer.from(audioBuffer).toString("base64");
 
     // Determine the mime type from the format
-    const mimeType = `audio/${format === 'mp3' ? 'mpeg' : format}`;
+    const mimeType = `audio/${format === "mp3" ? "mpeg" : format}`;
 
     // Play the audio if an audio player is provided
     if (audioPlayer) {
       const tempDirPath = tempDir || os.tmpdir();
-      await playAudio(base64Data, mimeType, 'say_text', audioPlayer, tempDirPath);
+      await playAudio(
+        base64Data,
+        mimeType,
+        "say_text",
+        audioPlayer,
+        tempDirPath,
+      );
     }
 
     // Return the response in MCP format
     return createMCPResponse([
       {
-        type: 'audio',
+        type: "audio",
         data: base64Data,
-        mimeType
+        mimeType,
       },
-      createTextContent(`Generated audio for text: "${text}"\n\nVoice: ${voice}\nFormat: ${format}`)
+      createTextContent(
+        `Generated audio for text: "${text}"\n\nVoice: ${voice}\nFormat: ${format}`,
+      ),
     ]);
   } catch (error) {
-    console.error('Error generating audio:', error);
+    console.error("Error generating audio:", error);
     throw error;
   }
 }
@@ -171,7 +213,7 @@ async function sayText(params) {
  */
 async function listAudioVoices(params) {
   try {
-    const url = buildUrl(AUDIO_API_BASE_URL, 'models');
+    const url = buildUrl(AUDIO_API_BASE_URL, "models");
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -181,29 +223,25 @@ async function listAudioVoices(params) {
     const models = await response.json();
 
     // Find the openai-audio model and extract its voices
-    const audioModel = models.find(model => model.name === 'openai-audio');
+    const audioModel = models.find((model) => model.name === "openai-audio");
 
     let voices;
     if (audioModel && Array.isArray(audioModel.voices)) {
       voices = audioModel.voices;
     } else {
       // Default voices if we can't find the list
-      voices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+      voices = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"];
     }
 
     // Return the response in MCP format using utility functions
-    return createMCPResponse([
-      createTextContent(voices, true)
-    ]);
+    return createMCPResponse([createTextContent(voices, true)]);
   } catch (error) {
-    console.error('Error listing audio voices:', error);
+    console.error("Error listing audio voices:", error);
     // Return default voices if there's an error
-    const defaultVoices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+    const defaultVoices = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"];
 
     // Return the response in MCP format using utility functions
-    return createMCPResponse([
-      createTextContent(defaultVoices, true)
-    ]);
+    return createMCPResponse([createTextContent(defaultVoices, true)]);
   }
 }
 
@@ -226,24 +264,24 @@ function playAudio(audioData, mimeType, prefix, audioPlayer, tempDir) {
     try {
       const format = getFormatFromMimeType(mimeType);
       const tempFile = path.join(tempDir, `${prefix}_${Date.now()}.${format}`);
-      fs.writeFileSync(tempFile, Buffer.from(audioData, 'base64'));
+      fs.writeFileSync(tempFile, Buffer.from(audioData, "base64"));
 
       audioPlayer.play(tempFile, (err) => {
         if (err) {
-          console.error('Error playing audio:', err);
+          console.error("Error playing audio:", err);
         }
 
         // Clean up temp file after playing
         try {
           fs.unlinkSync(tempFile);
         } catch (e) {
-          console.error('Error removing temp file:', e);
+          console.error("Error removing temp file:", e);
         }
 
         resolve();
       });
     } catch (error) {
-      console.error('Error playing audio:', error);
+      console.error("Error playing audio:", error);
       reject(error);
     }
   });
@@ -257,16 +295,16 @@ function playAudio(audioData, mimeType, prefix, audioPlayer, tempDir) {
  */
 function getFormatFromMimeType(mimeType) {
   switch (mimeType) {
-    case 'audio/mpeg':
-      return 'mp3';
-    case 'audio/wav':
-      return 'wav';
-    case 'audio/ogg':
-      return 'ogg';
-    case 'audio/aac':
-      return 'aac';
+    case "audio/mpeg":
+      return "mp3";
+    case "audio/wav":
+      return "wav";
+    case "audio/ogg":
+      return "ogg";
+    case "audio/aac":
+      return "aac";
     default:
-      return 'mp3'; // Default to MP3
+      return "mp3"; // Default to MP3
   }
 }
 
@@ -275,33 +313,50 @@ function getFormatFromMimeType(mimeType) {
  */
 export const audioTools = [
   [
-    'respondAudio',
-    'Generate an audio response to a text prompt',
+    "respondAudio",
+    "Generate an audio response to a text prompt",
     {
-      prompt: z.string().describe('The text prompt to respond to with audio'),
-      voice: z.string().optional().describe('Voice to use for audio generation (default: "alloy")'),
-      format: z.string().optional().describe('Format of the audio (mp3, wav, etc.)'),
-      voiceInstructions: z.string().optional().describe('Additional instructions for voice character/style (e.g., "Speak with enthusiasm" or "Use a calm tone")')
+      prompt: z.string().describe("The text prompt to respond to with audio"),
+      voice: z
+        .string()
+        .optional()
+        .describe('Voice to use for audio generation (default: "alloy")'),
+      format: z
+        .string()
+        .optional()
+        .describe("Format of the audio (mp3, wav, etc.)"),
+      voiceInstructions: z
+        .string()
+        .optional()
+        .describe(
+          'Additional instructions for voice character/style (e.g., "Speak with enthusiasm" or "Use a calm tone")',
+        ),
     },
-    respondAudio
+    respondAudio,
   ],
-  
+
   [
-    'sayText',
-    'Generate speech that says the provided text verbatim',
+    "sayText",
+    "Generate speech that says the provided text verbatim",
     {
-      text: z.string().describe('The text to speak verbatim'),
-      voice: z.string().optional().describe('Voice to use for audio generation (default: "alloy")'),
-      format: z.string().optional().describe('Format of the audio (mp3, wav, etc.)'),
-      voiceInstructions: z.string().optional().describe('Additional instructions for voice character/style (e.g., "Speak with enthusiasm" or "Use a calm tone")')
+      text: z.string().describe("The text to speak verbatim"),
+      voice: z
+        .string()
+        .optional()
+        .describe('Voice to use for audio generation (default: "alloy")'),
+      format: z
+        .string()
+        .optional()
+        .describe("Format of the audio (mp3, wav, etc.)"),
+      voiceInstructions: z
+        .string()
+        .optional()
+        .describe(
+          'Additional instructions for voice character/style (e.g., "Speak with enthusiasm" or "Use a calm tone")',
+        ),
     },
-    sayText
+    sayText,
   ],
-  
-  [
-    'listAudioVoices',
-    'List available audio voices',
-    {},
-    listAudioVoices
-  ]
+
+  ["listAudioVoices", "List available audio voices", {}, listAudioVoices],
 ];

@@ -1,14 +1,14 @@
 import cld from "cld";
 // import { detectEnglish } from './langDetect.js';
 import fetch from "node-fetch";
-import AsyncLock from 'async-lock';
+import AsyncLock from "async-lock";
 import { getNextTranslationServerUrl } from "./availableServers.js";
-import debug from 'debug';
+import debug from "debug";
 
 const lock = new AsyncLock();
-const logError = debug('pollinations:error');
-const logPerf = debug('pollinations:perf');
-const logTranslate = debug('pollinations:translate');
+const logError = debug("pollinations:error");
+const logPerf = debug("pollinations:perf");
+const logTranslate = debug("pollinations:translate");
 
 export async function detectLanguage(promptAnyLanguage) {
   const controller = new AbortController();
@@ -25,9 +25,9 @@ export async function detectLanguage(promptAnyLanguage) {
 
 export async function translateIfNecessary(promptAnyLanguage) {
   // convert underscores and - etc to spaces
-  promptAnyLanguage = promptAnyLanguage.replace(/[-_]/g, ' ');
+  promptAnyLanguage = promptAnyLanguage.replace(/[-_]/g, " ");
 
-  return lock.acquire('translate', async () => {
+  return lock.acquire("translate", async () => {
     promptAnyLanguage = "" + promptAnyLanguage;
     try {
       const translateStart = Date.now();
@@ -38,7 +38,10 @@ export async function translateIfNecessary(promptAnyLanguage) {
       }
 
       const controller = new AbortController();
-      const translatePromise = fetchTranslation(promptAnyLanguage, controller.signal);
+      const translatePromise = fetchTranslation(
+        promptAnyLanguage,
+        controller.signal,
+      );
       const timeoutPromise = new Promise((resolve) => {
         setTimeout(() => {
           controller.abort();
@@ -49,11 +52,21 @@ export async function translateIfNecessary(promptAnyLanguage) {
       const result = await Promise.race([translatePromise, timeoutPromise]);
 
       if (result) {
-        logTranslate("translate input", promptAnyLanguage, "translateResult", result);
+        logTranslate(
+          "translate input",
+          promptAnyLanguage,
+          "translateResult",
+          result,
+        );
         const translatedPrompt = result.translatedText;
         const translateEnd = Date.now();
         logPerf(`Translation duration: ${translateEnd - translateStart}ms`);
-        logTranslate("translated prompt to english ", promptAnyLanguage, "---", translatedPrompt);
+        logTranslate(
+          "translated prompt to english ",
+          promptAnyLanguage,
+          "---",
+          translatedPrompt,
+        );
 
         return translatedPrompt + "\n\n" + promptAnyLanguage;
       } else {
@@ -72,10 +85,10 @@ async function fetchDetection(promptAnyLanguage, signal) {
     const result = await fetch(`${host}/detect`, {
       method: "POST",
       body: JSON.stringify({
-        q: promptAnyLanguage
+        q: promptAnyLanguage,
       }),
       headers: { "Content-Type": "application/json" },
-      signal
+      signal,
     });
 
     const resultJson = await result.json();
@@ -95,10 +108,10 @@ async function fetchTranslation(promptAnyLanguage, signal) {
       body: JSON.stringify({
         q: promptAnyLanguage,
         source: "auto",
-        target: "en"
+        target: "en",
       }),
       headers: { "Content-Type": "application/json" },
-      signal
+      signal,
     });
 
     const resultJson = await result.json();
@@ -113,12 +126,12 @@ async function fetchTranslation(promptAnyLanguage, signal) {
 // Function to sanitize a string to ensure it contains valid UTF-8 characters
 export function sanitizeString(str) {
   if (!str) return str;
-  
+
   logTranslate("sanitizeString", str);
-  
+
   // Only remove control characters while preserving valid Unicode characters
   const sanitized = str.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
-  
+
   logTranslate("sanitized", sanitized);
   return sanitized;
 }

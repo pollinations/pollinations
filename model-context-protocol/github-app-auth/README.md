@@ -41,22 +41,23 @@ sequenceDiagram
 
 ## API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/start` | GET | Initiates OAuth flow |
-| `/callback` | GET | OAuth callback |
-| `/status/:sessionId` | GET | Authentication status |
-| `/api/user/:githubUserId/domains` | GET | Get user's allowlisted domains |
-| `/api/user/:githubUserId/domains` | PUT | Update user's allowlisted domains |
-| `/app/link` | POST | Links GitHub App installation |
-| `/token/:userId` | GET | Returns valid GitHub token |
-| `/health` | GET | Health check endpoint |
+| Endpoint                          | Method | Description                       |
+| --------------------------------- | ------ | --------------------------------- |
+| `/start`                          | GET    | Initiates OAuth flow              |
+| `/callback`                       | GET    | OAuth callback                    |
+| `/status/:sessionId`              | GET    | Authentication status             |
+| `/api/user/:githubUserId/domains` | GET    | Get user's allowlisted domains    |
+| `/api/user/:githubUserId/domains` | PUT    | Update user's allowlisted domains |
+| `/app/link`                       | POST   | Links GitHub App installation     |
+| `/token/:userId`                  | GET    | Returns valid GitHub token        |
+| `/health`                         | GET    | Health check endpoint             |
 
 ## Database Schema
 
 The database schema is defined in `schema.sql` and includes:
 
 ### Users Table
+
 ```sql
 CREATE TABLE IF NOT EXISTS users (
   github_user_id TEXT PRIMARY KEY,
@@ -69,6 +70,7 @@ CREATE TABLE IF NOT EXISTS users (
 ```
 
 ### Auth Sessions Table
+
 ```sql
 CREATE TABLE IF NOT EXISTS auth_sessions (
   id TEXT PRIMARY KEY,
@@ -110,6 +112,7 @@ CREATE TABLE IF NOT EXISTS auth_sessions (
 ### Running Locally
 
 Start the development server:
+
 ```bash
 npm run dev
 ```
@@ -121,11 +124,13 @@ The server will be available at http://localhost:8787.
 The project includes several types of tests:
 
 1. Run all tests:
+
    ```bash
    npm test
    ```
 
 2. Run OAuth flow test (requires manual interaction):
+
    ```bash
    npm run test:oauth
    ```
@@ -138,12 +143,14 @@ The project includes several types of tests:
 ## Deployment
 
 1. Set up the required secrets in Cloudflare:
+
    ```bash
    # Set the GitHub Client Secret as a Cloudflare secret
    echo "your_client_secret" | npx wrangler secret put GITHUB_CLIENT_SECRET --name github-app-auth
    ```
 
 2. Configure the custom domain in wrangler.toml:
+
    ```toml
    # Custom Domain configuration
    [[routes]]
@@ -152,11 +159,13 @@ The project includes several types of tests:
    ```
 
 3. Deploy the worker:
+
    ```bash
    npm run deploy
    ```
 
 4. Create the D1 database in production:
+
    ```bash
    npx wrangler d1 create github_auth --production
    npx wrangler d1 execute github_auth --file=schema.sql --production

@@ -1,25 +1,25 @@
-import urldecode from 'urldecode';
-import http from 'http';
-import { parse } from 'url';
-import PQueue from 'p-queue';
-import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
-import { createAndReturnImageCached } from './createAndReturnImages.js';
-import { makeParamsSafe } from './makeParamsSafe.js';
-import { cacheImage } from './cacheGeneratedImages.js';
-import { normalizeAndTranslatePrompt } from './normalizeAndTranslatePrompt.js';
-import { countJobs } from './generalImageQueue.js';
-import { getIp } from './getIp.js';
-import sleep from 'await-sleep';
-import { MODELS } from './models.js';
-import { countFluxJobs } from './availableServers.js';
-import { handleRegisterEndpoint } from './availableServers.js';
-import debug from 'debug';
-import { createProgressTracker } from './progressBar.js';
-import { extractToken, isValidToken } from './config/tokens.js';
+import urldecode from "urldecode";
+import http from "http";
+import { parse } from "url";
+import PQueue from "p-queue";
+import { registerFeedListener, sendToFeedListeners } from "./feedListeners.js";
+import { createAndReturnImageCached } from "./createAndReturnImages.js";
+import { makeParamsSafe } from "./makeParamsSafe.js";
+import { cacheImage } from "./cacheGeneratedImages.js";
+import { normalizeAndTranslatePrompt } from "./normalizeAndTranslatePrompt.js";
+import { countJobs } from "./generalImageQueue.js";
+import { getIp } from "./getIp.js";
+import sleep from "await-sleep";
+import { MODELS } from "./models.js";
+import { countFluxJobs } from "./availableServers.js";
+import { handleRegisterEndpoint } from "./availableServers.js";
+import debug from "debug";
+import { createProgressTracker } from "./progressBar.js";
+import { extractToken, isValidToken } from "./config/tokens.js";
 
-const logError = debug('pollinations:error');
-const logApi = debug('pollinations:api');
-const logAuth = debug('pollinations:auth');
+const logError = debug("pollinations:error");
+const logApi = debug("pollinations:api");
+const logAuth = debug("pollinations:auth");
 
 export let currentJobs = [];
 
@@ -46,12 +46,12 @@ const incrementIpViolations = (ip) => {
  * @param {Object} res - The response object.
  */
 const setCORSHeaders = (res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-}
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+};
 
-/** 
+/**
  * @async
  * @function
  * @param {Object} req - The request object.
@@ -67,17 +67,19 @@ const preMiddleware = async function (pathname, req, res) {
   }
 
   if (!pathname.startsWith("/prompt")) {
-    res.writeHead(404, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      error: 'Not Found',
-      message: 'The requested endpoint was not found',
-      path: pathname
-    }));
+    res.writeHead(404, { "Content-Type": "application/json" });
+    res.end(
+      JSON.stringify({
+        error: "Not Found",
+        message: "The requested endpoint was not found",
+        path: pathname,
+      }),
+    );
     return false;
   }
 
   return true;
-}
+};
 
 /**
  * @async
@@ -85,97 +87,122 @@ const preMiddleware = async function (pathname, req, res) {
  * @param {Object} params - The parameters object.
  * @returns {Promise<void>}
  */
-const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer, progress, requestId }) => {
+const imageGen = async ({
+  req,
+  timingInfo,
+  originalPrompt,
+  safeParams,
+  referrer,
+  progress,
+  requestId,
+}) => {
   const ip = getIp(req);
-  
+
   // Check if IP is blocked
   if (isIpBlocked(ip)) {
-    throw new Error(`Your IP ${ip} has been temporarily blocked due to multiple content violations`);
+    throw new Error(
+      `Your IP ${ip} has been temporarily blocked due to multiple content violations`,
+    );
   }
 
   try {
-    timingInfo.push({ step: 'Start processing', timestamp: Date.now() });
-    
+    timingInfo.push({ step: "Start processing", timestamp: Date.now() });
+
     // Prompt processing
-    progress.updateBar(requestId, 20, 'Prompt', 'Normalizing...');
-    const { prompt, wasPimped, wasTransformedForBadDomain } = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams, referrer);
-    progress.updateBar(requestId, 30, 'Prompt', 'Normalized');
-    
+    progress.updateBar(requestId, 20, "Prompt", "Normalizing...");
+    const { prompt, wasPimped, wasTransformedForBadDomain } =
+      await normalizeAndTranslatePrompt(
+        originalPrompt,
+        req,
+        timingInfo,
+        safeParams,
+        referrer,
+      );
+    progress.updateBar(requestId, 30, "Prompt", "Normalized");
+
     // For bad domains, log that we're using the transformed prompt
     if (wasTransformedForBadDomain) {
       logApi("prompt transformed for bad domain, using alternative:", prompt);
     }
-    
+
     // Use the processed prompt for generation
     const generationPrompt = prompt;
-    
+
     logApi("display prompt", prompt);
     logApi("generation prompt", generationPrompt);
     logApi("safeParams", safeParams);
 
     // Server selection and image generation
-    progress.updateBar(requestId, 40, 'Server', 'Selecting optimal server...');
-    progress.updateBar(requestId, 50, 'Generation', 'Preparing...');
-    
-    const { buffer, ...maturity } = await createAndReturnImageCached(generationPrompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId, wasTransformedForBadDomain);
+    progress.updateBar(requestId, 40, "Server", "Selecting optimal server...");
+    progress.updateBar(requestId, 50, "Generation", "Preparing...");
 
-    progress.updateBar(requestId, 50, 'Generation', 'Starting generation');
+    const { buffer, ...maturity } = await createAndReturnImageCached(
+      generationPrompt,
+      safeParams,
+      countFluxJobs(),
+      originalPrompt,
+      progress,
+      requestId,
+      wasTransformedForBadDomain,
+    );
 
-    progress.updateBar(requestId, 95, 'Finalizing', 'Processing complete');
-    timingInfo.push({ step: 'Generation completed.', timestamp: Date.now() });
+    progress.updateBar(requestId, 50, "Generation", "Starting generation");
 
-    progress.updateBar(requestId, 100, 'Complete', 'Generation successful');
+    progress.updateBar(requestId, 95, "Finalizing", "Processing complete");
+    timingInfo.push({ step: "Generation completed.", timestamp: Date.now() });
+
+    progress.updateBar(requestId, 100, "Complete", "Generation successful");
     progress.stop();
 
     // Safety checks
     if (maturity.isChild && maturity.isMature) {
       logApi("isChild and isMature, delaying response by 15 seconds");
-      progress.updateBar(requestId, 85, 'Safety', 'Additional review...');
+      progress.updateBar(requestId, 85, "Safety", "Additional review...");
       await sleep(5000);
     }
-    progress.updateBar(requestId, 90, 'Safety', 'Check complete');
+    progress.updateBar(requestId, 90, "Safety", "Check complete");
 
-    timingInfo.push({ step: 'Image returned', timestamp: Date.now() });
+    timingInfo.push({ step: "Image returned", timestamp: Date.now() });
 
     const imageURL = `https://image.pollinations.ai${req.url}`;
 
     // Cache and feed updates
-    progress.updateBar(requestId, 95, 'Cache', 'Updating feed...');
+    progress.updateBar(requestId, 95, "Cache", "Updating feed...");
     // if (!safeParams.nofeed) {
     //   if (!(maturity.isChild && maturity.isMature)) {
-        // Create a clean object with consistent data types
-        const feedData = {
-          // Start with properly sanitized parameters
-          ...safeParams,
-          concurrentRequests: countFluxJobs(),
-          imageURL,
-          // Always use the display prompt which will be original prompt for bad domains
-          prompt,
-          // Extract only the specific properties we need from maturity, ensuring boolean types
-          isChild: !!maturity.isChild,
-          isMature: !!maturity.isMature,
-          // Include maturity as a nested object for backward compatibility
-          maturity,
-          timingInfo: relativeTiming(timingInfo),
-          // ip: getIp(req),
-          status: "end_generating",
-          referrer,
-          // Use original wasPimped for normal domains, never for bad domains
-          wasPimped,
-          nsfw: !!(maturity.isChild || maturity.isMature),
-          private: !!safeParams.nofeed,
-          token: extractToken(req) && extractToken(req).slice(0, 2) + "..."
-        };
-        
-        sendToFeedListeners(feedData, { saveAsLastState: true });
-      // }
+    // Create a clean object with consistent data types
+    const feedData = {
+      // Start with properly sanitized parameters
+      ...safeParams,
+      concurrentRequests: countFluxJobs(),
+      imageURL,
+      // Always use the display prompt which will be original prompt for bad domains
+      prompt,
+      // Extract only the specific properties we need from maturity, ensuring boolean types
+      isChild: !!maturity.isChild,
+      isMature: !!maturity.isMature,
+      // Include maturity as a nested object for backward compatibility
+      maturity,
+      timingInfo: relativeTiming(timingInfo),
+      // ip: getIp(req),
+      status: "end_generating",
+      referrer,
+      // Use original wasPimped for normal domains, never for bad domains
+      wasPimped,
+      nsfw: !!(maturity.isChild || maturity.isMature),
+      private: !!safeParams.nofeed,
+      token: extractToken(req) && extractToken(req).slice(0, 2) + "...",
+    };
+
+    sendToFeedListeners(feedData, { saveAsLastState: true });
     // }
-    progress.updateBar(requestId, 100, 'Cache', 'Updated');
-    
+    // }
+    progress.updateBar(requestId, 100, "Cache", "Updated");
+
     // Complete main progress
-    progress.completeBar(requestId, 'Image generation complete');
+    progress.completeBar(requestId, "Image generation complete");
     progress.stop();
-    
+
     return { buffer, ...maturity };
   } catch (error) {
     // Check if this was a prohibited content error
@@ -183,23 +210,25 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
       const violations = incrementIpViolations(ip);
       if (violations >= MAX_VIOLATIONS) {
         await sleep(10000);
-        throw new Error(`Your IP ${ip} has been temporarily blocked due to multiple content violations`);
+        throw new Error(
+          `Your IP ${ip} has been temporarily blocked due to multiple content violations`,
+        );
       }
     }
     // Handle errors gracefully in progress bars
-    progress.errorBar(requestId, 'Generation failed');
+    progress.errorBar(requestId, "Generation failed");
     progress.stop();
-    
+
     // Log detailed error information
-    console.error('Image generation failed:', {
+    console.error("Image generation failed:", {
       error: error.message,
       stack: error.stack,
       requestId,
       prompt: originalPrompt,
       params: safeParams,
-      referrer
+      referrer,
     });
-    
+
     throw error;
   }
 };
@@ -218,132 +247,168 @@ const checkCacheAndGenerate = async (req, res) => {
 
   if (!needsProcessing) return;
 
-  const originalPrompt = urldecode(pathname.split("/prompt/")[1] || "random_prompt");
+  const originalPrompt = urldecode(
+    pathname.split("/prompt/")[1] || "random_prompt",
+  );
   const { ...safeParams } = makeParamsSafe(query);
-  const referrer = query.headers?.referer || 
-                  query.headers?.referrer || 
-                  query.headers?.Referer || 
-                  query.headers?.Referrer || 
-                  req.headers?.referer || 
-                  req.headers?.referrer || 
-                  req.headers?.['referer'] || 
-                  req.headers?.['referrer'] || 
-                  req.headers?.origin;
+  const referrer =
+    query.headers?.referer ||
+    query.headers?.referrer ||
+    query.headers?.Referer ||
+    query.headers?.Referrer ||
+    req.headers?.referer ||
+    req.headers?.referrer ||
+    req.headers?.["referer"] ||
+    req.headers?.["referrer"] ||
+    req.headers?.origin;
   const requestId = Math.random().toString(36).substring(7);
   const progress = createProgressTracker().startRequest(requestId);
-  progress.updateBar(requestId, 0, 'Starting', 'Request received');
+  progress.updateBar(requestId, 0, "Starting", "Request received");
 
   logApi("Request details:", { originalPrompt, safeParams, referrer });
 
-  let timingInfo = [];  // Moved outside try block
-  
+  let timingInfo = []; // Moved outside try block
+
   try {
     // Cache the generated image
-    const bufferAndMaturity = await cacheImage(originalPrompt, safeParams, async () => {
-      const ip = getIp(req);
+    const bufferAndMaturity = await cacheImage(
+      originalPrompt,
+      safeParams,
+      async () => {
+        const ip = getIp(req);
 
-      progress.updateBar(requestId, 10, 'Queueing', 'Request queued');
-      timingInfo = [{ step: 'Request received and queued.', timestamp: Date.now() }];
-      // sendToFeedListeners({ 
-      //   ...safeParams, 
-      //   prompt: originalPrompt, 
-      //   ip: getIp(req), status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer, token: extractToken(req) && extractToken(req).slice(0, 2) + "..." });
+        progress.updateBar(requestId, 10, "Queueing", "Request queued");
+        timingInfo = [
+          { step: "Request received and queued.", timestamp: Date.now() },
+        ];
+        // sendToFeedListeners({
+        //   ...safeParams,
+        //   prompt: originalPrompt,
+        //   ip: getIp(req), status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer, token: extractToken(req) && extractToken(req).slice(0, 2) + "..." });
 
-      const generateImage = async () => {
-        timingInfo.push({ step: 'Start generating job', timestamp: Date.now() });
-        const result = await imageGen({ 
-          req, 
-          timingInfo, 
-          originalPrompt, 
-          safeParams, 
-          referrer,
-          progress,
-          requestId 
-        });
-        timingInfo.push({ step: 'End generating job', timestamp: Date.now() });
-        return result;
-      };
+        const generateImage = async () => {
+          timingInfo.push({
+            step: "Start generating job",
+            timestamp: Date.now(),
+          });
+          const result = await imageGen({
+            req,
+            timingInfo,
+            originalPrompt,
+            safeParams,
+            referrer,
+            progress,
+            requestId,
+          });
+          timingInfo.push({
+            step: "End generating job",
+            timestamp: Date.now(),
+          });
+          return result;
+        };
 
-      // Check for valid token to bypass queue
-      const token = extractToken(req);
-      const hasValidToken = isValidToken(token);
-      if (hasValidToken) {
-        logAuth('Queue bypass granted for token:', token);
-        progress.updateBar(requestId, 20, 'Priority', 'Token authenticated');
-        
-        // Skip queue for valid tokens
-        timingInfo.push({ step: 'Token authenticated - bypassing queue', timestamp: Date.now() });
-        return generateImage();
-      }
+        // Check for valid token to bypass queue
+        const token = extractToken(req);
+        const hasValidToken = isValidToken(token);
+        if (hasValidToken) {
+          logAuth("Queue bypass granted for token:", token);
+          progress.updateBar(requestId, 20, "Priority", "Token authenticated");
 
-      let queueExisted = false;
-      if (!ipQueue[ip]) {
-        ipQueue[ip] = new PQueue({ concurrency: 1, interval: 10000, intervalCap:1 });
-      } else {
-        queueExisted = true;
-      }
+          // Skip queue for valid tokens
+          timingInfo.push({
+            step: "Token authenticated - bypassing queue",
+            timestamp: Date.now(),
+          });
+          return generateImage();
+        }
 
-      progress.updateBar(requestId, 20, 'Queueing', 'Checking cache');
+        let queueExisted = false;
+        if (!ipQueue[ip]) {
+          ipQueue[ip] = new PQueue({
+            concurrency: 1,
+            interval: 10000,
+            intervalCap: 1,
+          });
+        } else {
+          queueExisted = true;
+        }
 
-      const result = await ipQueue[ip].add(async () => {
-        if (queueExisted && countJobs() > 2) {
-          const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
-          const queuePosition = Math.min(40, queueSize);
-          const progressPercent = 30 + Math.floor((40 - queuePosition) / 40 * 20); // Maps position 40->30%, 0->50%
+        progress.updateBar(requestId, 20, "Queueing", "Checking cache");
 
-          progress.updateBar(requestId, progressPercent, 'Queueing', `Queue position: ${queuePosition}`);
-          logApi("queueExisted", queueExisted, "for ip", ip, " sleeping a little", queueSize);
-          
-          if (queueSize >= 8) {
-            progress.errorBar(requestId, 'Queue full');
-            progress.stop();
-            throw new Error("queue full");
+        const result = await ipQueue[ip].add(async () => {
+          if (queueExisted && countJobs() > 2) {
+            const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
+            const queuePosition = Math.min(40, queueSize);
+            const progressPercent =
+              30 + Math.floor(((40 - queuePosition) / 40) * 20); // Maps position 40->30%, 0->50%
+
+            progress.updateBar(
+              requestId,
+              progressPercent,
+              "Queueing",
+              `Queue position: ${queuePosition}`,
+            );
+            logApi(
+              "queueExisted",
+              queueExisted,
+              "for ip",
+              ip,
+              " sleeping a little",
+              queueSize,
+            );
+
+            if (queueSize >= 8) {
+              progress.errorBar(requestId, "Queue full");
+              progress.stop();
+              throw new Error("queue full");
+            }
+
+            progress.setQueued(queueSize);
+            await sleep(100);
           }
 
-          progress.setQueued(queueSize);
-          await sleep(100);
+          progress.setProcessing();
+          return generateImage();
+        });
+
+        // if the queue is empty and none pending or processing we can delete the queue
+        if (ipQueue[ip].size === 0 && ipQueue[ip].pending === 0) {
+          delete ipQueue[ip];
         }
-        
-        progress.setProcessing();
-        return generateImage();
-      });
 
-      // if the queue is empty and none pending or processing we can delete the queue
-      if (ipQueue[ip].size === 0 && ipQueue[ip].pending === 0) {
-        delete ipQueue[ip];
-      }
-
-      return result;
-    });
-
+        return result;
+      },
+    );
 
     res.writeHead(200, {
-      'Content-Type': 'image/jpeg',
-      'Cache-Control': 'public, max-age=31536000, immutable',
+      "Content-Type": "image/jpeg",
+      "Cache-Control": "public, max-age=31536000, immutable",
     });
     res.write(bufferAndMaturity.buffer);
     res.end();
 
     logApi("Generation complete:", { originalPrompt, safeParams, referrer });
-
   } catch (error) {
     logError("Error generating image:", error);
-    progress.errorBar(requestId, error.message || 'Internal Server Error');
+    progress.errorBar(requestId, error.message || "Internal Server Error");
     progress.stop();
-    
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      error: 'Internal Server Error',
-      message: error.message || 'An error occurred while processing your request',
-      details: error.details || {},
-      timingInfo,
-      requestId,
-      requestParameters: {
-        prompt: originalPrompt,
-        ...safeParams,
-        referrer
-      }
-    }));
+
+    res.writeHead(500, { "Content-Type": "application/json" });
+    res.end(
+      JSON.stringify({
+        error: "Internal Server Error",
+        message:
+          error.message || "An error occurred while processing your request",
+        details: error.details || {},
+        timingInfo,
+        requestId,
+        requestParameters: {
+          prompt: originalPrompt,
+          ...safeParams,
+          referrer,
+        },
+      }),
+    );
   }
 };
 
@@ -354,14 +419,19 @@ const server = http.createServer((req, res) => {
   const parsedUrl = parse(req.url, true);
   const pathname = parsedUrl.pathname;
 
-  if (pathname === '/.well-known/acme-challenge/w7JbAPtwFN_ntyNHudgKYyaZ7qiesTl4LgFa4fBr1DuEL_Hyd4O3hdIviSop1S3G') {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('w7JbAPtwFN_ntyNHudgKYyaZ7qiesTl4LgFa4fBr1DuEL_Hyd4O3hdIviSop1S3G.r54qAqCZSs4xyyeamMffaxyR1FWYVb5OvwUh8EcrhpI');
+  if (
+    pathname ===
+    "/.well-known/acme-challenge/w7JbAPtwFN_ntyNHudgKYyaZ7qiesTl4LgFa4fBr1DuEL_Hyd4O3hdIviSop1S3G"
+  ) {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end(
+      "w7JbAPtwFN_ntyNHudgKYyaZ7qiesTl4LgFa4fBr1DuEL_Hyd4O3hdIviSop1S3G.r54qAqCZSs4xyyeamMffaxyR1FWYVb5OvwUh8EcrhpI",
+    );
     return;
   }
 
-  if (pathname === '/crossdomain.xml') {
-    res.writeHead(200, { 'Content-Type': 'application/xml' });
+  if (pathname === "/crossdomain.xml") {
+    res.writeHead(200, { "Content-Type": "application/xml" });
     res.end(`<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">
 <cross-domain-policy>
@@ -370,23 +440,23 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (pathname === '/models') {
-    res.writeHead(200, { 
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0'
+  if (pathname === "/models") {
+    res.writeHead(200, {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+      Pragma: "no-cache",
+      Expires: "0",
     });
     res.end(JSON.stringify(Object.keys(MODELS)));
     return;
   }
 
-  if (pathname === '/register') {
-    res.writeHead(200, { 
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0'
+  if (pathname === "/register") {
+    res.writeHead(200, {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+      Pragma: "no-cache",
+      Expires: "0",
     });
     handleRegisterEndpoint(req, res);
     return;
@@ -400,12 +470,12 @@ server.setTimeout(300000, (socket) => {
   socket.destroy();
 });
 
-server.on('connection', (socket) => {
-  socket.on('timeout', () => {
+server.on("connection", (socket) => {
+  socket.on("timeout", () => {
     socket.destroy();
   });
 
-  socket.on('error', (error) => {
+  socket.on("error", (error) => {
     socket.destroy();
   });
 });
@@ -413,9 +483,9 @@ server.on('connection', (socket) => {
 server.listen(process.env.PORT || 16384);
 
 function relativeTiming(timingInfo) {
-  return timingInfo.map(info => ({
+  return timingInfo.map((info) => ({
     ...info,
-    timestamp: info.timestamp - timingInfo[0].timestamp
+    timestamp: info.timestamp - timingInfo[0].timestamp,
   }));
 }
 
@@ -425,5 +495,5 @@ function relativeTiming(timingInfo) {
  * @returns {string} - The sanitized file name.
  */
 const sanitizeFileName = (prompt) => {
-  return prompt.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-}
+  return prompt.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+};

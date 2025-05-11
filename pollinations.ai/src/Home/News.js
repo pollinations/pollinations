@@ -14,8 +14,8 @@ export default function News() {
   const handleAccordionChange = (event, isExpanded) => {
     if (isExpanded) {
       trackEvent({
-        action: 'click_accordion',
-        category: 'news',
+        action: "click_accordion",
+        category: "news",
       })
     }
   }
@@ -35,12 +35,12 @@ export default function News() {
           margin: 0,
           padding: 0,
           borderRadius: "2em !important",
-          '&:before': {
-            display: 'none',
+          "&:before": {
+            display: "none",
           },
-          '.MuiAccordion-region': {
-            borderBottomLeftRadius: '2em',
-            borderBottomRightRadius: '2em',
+          ".MuiAccordion-region": {
+            borderBottomLeftRadius: "2em",
+            borderBottomRightRadius: "2em",
           },
         }}
         onChange={handleAccordionChange}
@@ -52,36 +52,39 @@ export default function News() {
             "&:hover": {
               backgroundColor: `${Colors.special}99`,
             },
-            borderRadius: '0em',
-            '&.Mui-expanded': {
+            borderRadius: "0em",
+            "&.Mui-expanded": {
               borderBottomLeftRadius: 0,
               borderBottomRightRadius: 0,
             },
-            '& .MuiAccordionSummary-expandIconWrapper': {
-              transform: 'scale(2.0)',
-              '&.Mui-expanded': {
-                transform: 'rotate(180deg) scale(2.0) translateX(0.2em)',
-              }
+            "& .MuiAccordionSummary-expandIconWrapper": {
+              transform: "scale(2.0)",
+              "&.Mui-expanded": {
+                transform: "rotate(180deg) scale(2.0) translateX(0.2em)",
+              },
             },
           }}
-          expandIcon={<ArrowDownwardIcon style={{ color: Colors.offwhite, fontSize: '1.5rem', marginRight: '0.2em' }} />}
+          expandIcon={
+            <ArrowDownwardIcon
+              style={{ color: Colors.offwhite, fontSize: "1.5rem", marginRight: "0.2em" }}
+            />
+          }
           aria-controls="panel1-content"
           id="panel1-header"
         >
           <SectionHeadlineStyle
             color={Colors.offwhite}
             maxWidth="95%"
-            style={{ fontSize: "1.8em", fontFamily: Fonts.headline, marginLeft: '0.6em' }}
+            style={{ fontSize: "1.8em", fontFamily: Fonts.headline, marginLeft: "0.6em" }}
             textAlign="left"
             onClick={handleClickAccordionSummary}
           >
             <LLMTextManipulator text={NEWS_TITLE} transforms={[rephrase, emojify]} />
           </SectionHeadlineStyle>
         </AccordionSummary>
-        <AccordionDetails 
-          sx={{ 
+        <AccordionDetails
+          sx={{
             backgroundColor: Colors.offblack,
-
           }}
         >
           <SectionHeadlineStyle

@@ -4,11 +4,15 @@
  * Functions and schemas for interacting with the Pollinations Text API
  */
 
-import { createMCPResponse, createTextContent, buildUrl } from '../utils/coreUtils.js';
-import { z } from 'zod';
+import {
+  createMCPResponse,
+  createTextContent,
+  buildUrl,
+} from "../utils/coreUtils.js";
+import { z } from "zod";
 
 // Constants
-const TEXT_API_BASE_URL = 'https://text.pollinations.ai';
+const TEXT_API_BASE_URL = "https://text.pollinations.ai";
 
 /**
  * Generates text from a prompt using the Pollinations Text API
@@ -26,8 +30,8 @@ const TEXT_API_BASE_URL = 'https://text.pollinations.ai';
 async function generateText(params) {
   const { prompt, model = "openai", options = {} } = params;
 
-  if (!prompt || typeof prompt !== 'string') {
-    throw new Error('Prompt is required and must be a string');
+  if (!prompt || typeof prompt !== "string") {
+    throw new Error("Prompt is required and must be a string");
   }
 
   const { seed, systemPrompt, json, isPrivate } = options;
@@ -37,8 +41,8 @@ async function generateText(params) {
     model,
     seed,
     ...(systemPrompt && { system: encodeURIComponent(systemPrompt) }),
-    ...(json && { json: 'true' }),
-    ...(isPrivate && { private: 'true' })
+    ...(json && { json: "true" }),
+    ...(isPrivate && { private: "true" }),
   };
 
   // Construct the URL
@@ -57,11 +61,9 @@ async function generateText(params) {
     const textResponse = await response.text();
 
     // Return the response in MCP format
-    return createMCPResponse([
-      createTextContent(textResponse)
-    ]);
+    return createMCPResponse([createTextContent(textResponse)]);
   } catch (error) {
-    console.error('Error generating text:', error);
+    console.error("Error generating text:", error);
     throw error;
   }
 }
@@ -74,7 +76,7 @@ async function generateText(params) {
  */
 async function listTextModels(params) {
   try {
-    const url = buildUrl(TEXT_API_BASE_URL, 'models');
+    const url = buildUrl(TEXT_API_BASE_URL, "models");
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -84,11 +86,9 @@ async function listTextModels(params) {
     const models = await response.json();
 
     // Return the response in MCP format
-    return createMCPResponse([
-      createTextContent({ models }, true)
-    ]);
+    return createMCPResponse([createTextContent({ models }, true)]);
   } catch (error) {
-    console.error('Error listing text models:', error);
+    console.error("Error listing text models:", error);
     throw error;
   }
 }
@@ -98,25 +98,37 @@ async function listTextModels(params) {
  */
 export const textTools = [
   [
-    'generateText',
-    'Generate text from a prompt using the Pollinations Text API',
+    "generateText",
+    "Generate text from a prompt using the Pollinations Text API",
     {
-      prompt: z.string().describe('The text prompt to generate a response for'),
-      model: z.string().optional().describe('Model to use for text generation (default: "openai")'),
-      options: z.object({
-        seed: z.number().optional().describe('Seed for reproducible results'),
-        systemPrompt: z.string().optional().describe('Optional system prompt to set the behavior of the AI'),
-        json: z.boolean().optional().describe('Set to true to receive response in JSON format'),
-        isPrivate: z.boolean().optional().describe('Set to true to prevent the response from appearing in the public feed')
-      }).optional().describe('Additional options for text generation')
+      prompt: z.string().describe("The text prompt to generate a response for"),
+      model: z
+        .string()
+        .optional()
+        .describe('Model to use for text generation (default: "openai")'),
+      options: z
+        .object({
+          seed: z.number().optional().describe("Seed for reproducible results"),
+          systemPrompt: z
+            .string()
+            .optional()
+            .describe("Optional system prompt to set the behavior of the AI"),
+          json: z
+            .boolean()
+            .optional()
+            .describe("Set to true to receive response in JSON format"),
+          isPrivate: z
+            .boolean()
+            .optional()
+            .describe(
+              "Set to true to prevent the response from appearing in the public feed",
+            ),
+        })
+        .optional()
+        .describe("Additional options for text generation"),
     },
-    generateText
+    generateText,
   ],
-  
-  [
-    'listTextModels',
-    'List available text models',
-    {},
-    listTextModels
-  ]
+
+  ["listTextModels", "List available text models", {}, listTextModels],
 ];

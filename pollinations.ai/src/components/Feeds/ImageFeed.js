@@ -49,7 +49,7 @@ export const ImageFeed = memo(({ mode }) => {
   const { imagesGenerated } = useFeedLoader(onNewImage, setLastImage, mode)
 
   // Determine the current image to display based on mode
-  const currentImage = toggleValue === 'feed' ? slideshowImage : image;
+  const currentImage = toggleValue === "feed" ? slideshowImage : image
 
   // Effects
   useEffect(() => {
@@ -117,30 +117,29 @@ export const ImageFeed = memo(({ mode }) => {
       const baseParams = modifiedImageParams || (image ? { ...image } : {})
 
       if (param === "prompt") {
-         setModifiedImageParams(prevParams => ({
-           ...(prevParams || baseParams),
-           prompt: value,
-         }));
-         return;
+        setModifiedImageParams((prevParams) => ({
+          ...(prevParams || baseParams),
+          prompt: value,
+        }))
+        return
       } else {
-        setModifiedImageParams(prevParams => ({
+        setModifiedImageParams((prevParams) => ({
           ...(prevParams || baseParams),
           [param]: value,
-        }));
+        }))
       }
 
       if (toggleValue !== "edit") {
-        handleToggleChange(null, "edit");
+        handleToggleChange(null, "edit")
       }
     },
     [toggleValue, handleToggleChange, image, modifiedImageParams]
-  );
+  )
 
   // Rendering - REMOVED SectionContainer and SectionMainContent wrappers
   // REMOVED Title Section
   return (
     <Box>
-
       {/* Subheading / LLM Banner */}
       <SectionSubContainer>
         <SectionHeadlineStyle>
@@ -157,17 +156,13 @@ export const ImageFeed = memo(({ mode }) => {
         />
       </SectionSubContainer>
       {/* Main Content Section */}
-      <SectionSubContainer
-        paddingBottom="4em"
-        alignItems="stretch"
-        sx={{ maxWidth: "900px" }}
-      >
+      <SectionSubContainer paddingBottom="4em" alignItems="stretch" sx={{ maxWidth: "900px" }}>
         {currentImage?.imageURL && (
           <Box
             sx={{
-                width: "100%",
-                display: "flex",
-                flexDirection: "column",
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
             }}
           >
             {/* Option Switch (Feed vs Edit) */}
@@ -182,26 +177,22 @@ export const ImageFeed = memo(({ mode }) => {
             </Box>
 
             {/* Prompt Display */}
-            <Box
-              width="100%"
-              maxWidth="1000px"
-              mb={1}
-            >
+            <Box width="100%" maxWidth="1000px" mb={1}>
               <PromptDisplay
                 itemType="image"
                 item={currentImage}
                 isLoading={isLoading}
                 isEditMode={toggleValue === "edit"}
                 onPromptChange={(newPrompt) => {
-                  setUserEditedPrompt(newPrompt);
-                  handleParamChange("prompt", newPrompt);
+                  setUserEditedPrompt(newPrompt)
+                  handleParamChange("prompt", newPrompt)
                 }}
                 onEditModeSwitch={() => handleToggleChange(null, "edit")}
                 setIsInputChanged={setIsInputChanged}
                 promptTooltip={IMAGE_FEED_TOOLTIP_PROMPT}
                 backgroundColor={Colors.offblack2}
                 sharedPrompt={toggleValue === "edit" ? userEditedPrompt : undefined}
-                style={{ width: '100%', minWidth: '100%' }}
+                style={{ width: "100%", minWidth: "100%" }}
               />
             </Box>
 
@@ -223,9 +214,9 @@ export const ImageFeed = memo(({ mode }) => {
                 />
               </Box>
             )}
-            
+
             {/* Image Display - moved inside the same Box as PromptDisplay */}
-            <Box width="100%" maxWidth="1000px" >
+            <Box width="100%" maxWidth="1000px">
               <ImageDisplay image={currentImage} isLoading={isLoading} />
             </Box>
           </Box>
@@ -233,7 +224,7 @@ export const ImageFeed = memo(({ mode }) => {
 
         {/* If no image is currently available, show loader. */}
         {!currentImage?.imageURL && (
-          <SectionSubContainer width="100%" >
+          <SectionSubContainer width="100%">
             <CircularProgress sx={{ color: Colors.lime }} />
           </SectionSubContainer>
         )}
@@ -241,7 +232,11 @@ export const ImageFeed = memo(({ mode }) => {
         {/* If we're in "feed" mode and have an image, show model info. */}
         {toggleValue === "feed" && currentImage?.imageURL && (
           <SectionSubContainer paddingBottom="0em" width="100%">
-            <ModelInfo model={currentImage.model} referrer={currentImage.referrer} itemType="image" />
+            <ModelInfo
+              model={currentImage.model}
+              referrer={currentImage.referrer}
+              itemType="image"
+            />
           </SectionSubContainer>
         )}
       </SectionSubContainer>

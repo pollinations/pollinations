@@ -1,16 +1,16 @@
-import React from "react";
-import { GeneralButton } from "../GeneralButton";
-import { Colors, Fonts } from "../../config/global";
-import { noLink } from "../../config/llmTransforms";
-import { Box } from "@mui/material";
-import { LLMTextManipulator } from "../LLMTextManipulator";
+import React from "react"
+import { GeneralButton } from "../GeneralButton"
+import { Colors, Fonts } from "../../config/global"
+import { noLink } from "../../config/llmTransforms"
+import { Box } from "@mui/material"
+import { LLMTextManipulator } from "../LLMTextManipulator"
 
-export function FeedEditSwitch({ 
-  toggleValue, 
-  handleToggleChange, 
-  isLoading, 
+export function FeedEditSwitch({
+  toggleValue,
+  handleToggleChange,
+  isLoading,
   feedModeText1,
-  feedModeText2 
+  feedModeText2,
 }) {
   const sharedButtonStyles = {
     height: "70px",
@@ -22,13 +22,13 @@ export function FeedEditSwitch({
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
-  };
+  }
 
   return (
-    <Box 
-      sx={{ 
-        display: "flex", 
-        width: "100%", 
+    <Box
+      sx={{
+        display: "flex",
+        width: "100%",
         justifyContent: "center",
       }}
     >
@@ -51,5 +51,5 @@ export function FeedEditSwitch({
         <LLMTextManipulator text={feedModeText2} transforms={[noLink]} />
       </GeneralButton>
     </Box>
-  );
-} 
+  )
+}

@@ -20,8 +20,8 @@ const handleDiscordButtonClick = (e) => {
   e.preventDefault()
   // Track the click event
   trackEvent({
-    action: 'click_discord',
-    category: 'hero',
+    action: "click_discord",
+    category: "hero",
   })
   window.open("https://discord.gg/k9F7SyTgqn", "_blank")
 }
@@ -30,8 +30,8 @@ const handleGithubButtonClick = (e) => {
   e.preventDefault()
   // Track the click event
   trackEvent({
-    action: 'click_github',
-    category: 'hero',
+    action: "click_github",
+    category: "hero",
   })
   window.open("https://github.com/pollinations/pollinations", "_blank")
 }
@@ -40,52 +40,53 @@ const handleEmailButtonClick = (e) => {
   e.preventDefault()
   // Track the click event
   trackEvent({
-    action: 'click_email',
-    category: 'hero',
+    action: "click_email",
+    category: "hero",
   })
 }
 
 const Hero = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
-  
+
   useEffect(() => {
     // Check if the Ko-fi script already exists
-    const kofiScriptSrc = 'https://storage.ko-fi.com/cdn/scripts/overlay-widget.js';
-    const existingScript = document.querySelector(`script[src="${kofiScriptSrc}"]`);
+    const kofiScriptSrc = "https://storage.ko-fi.com/cdn/scripts/overlay-widget.js"
+    const existingScript = document.querySelector(`script[src="${kofiScriptSrc}"]`)
 
     // Only add the script if it doesn't already exist
     if (!existingScript) {
-      const script = document.createElement('script');
-      script.src = kofiScriptSrc;
-      script.async = true;
+      const script = document.createElement("script")
+      script.src = kofiScriptSrc
+      script.async = true
       script.onload = () => {
         // Initialize Ko-fi widget after script is loaded
-        if (window.kofiWidgetOverlay) { // Check if object exists before using
-          window.kofiWidgetOverlay.draw('pollinationsai', {
-            'type': 'floating-chat',
-            'floating-chat.donateButton.text': 'Tip Us',
-            'floating-chat.donateButton.background-color': '#d9534f',
-            'floating-chat.donateButton.text-color': '#fff'
-          });
+        if (window.kofiWidgetOverlay) {
+          // Check if object exists before using
+          window.kofiWidgetOverlay.draw("pollinationsai", {
+            type: "floating-chat",
+            "floating-chat.donateButton.text": "Tip Us",
+            "floating-chat.donateButton.background-color": "#d9534f",
+            "floating-chat.donateButton.text-color": "#fff",
+          })
         }
-      };
-      document.body.appendChild(script);
+      }
+      document.body.appendChild(script)
     } else {
       // If script exists, ensure the widget is drawn (in case component remounted after script loaded but before widget drawn)
-      if (window.kofiWidgetOverlay && typeof window.kofiWidgetOverlay.draw === 'function') {
-        window.kofiWidgetOverlay.draw('pollinationsai', {
-            'type': 'floating-chat',
-            'floating-chat.donateButton.text': 'Tip Us',
-            'floating-chat.donateButton.background-color': '#d9534f',
-            'floating-chat.donateButton.text-color': '#fff'
-          });
+      if (window.kofiWidgetOverlay && typeof window.kofiWidgetOverlay.draw === "function") {
+        window.kofiWidgetOverlay.draw("pollinationsai", {
+          type: "floating-chat",
+          "floating-chat.donateButton.text": "Tip Us",
+          "floating-chat.donateButton.background-color": "#d9534f",
+          "floating-chat.donateButton.text-color": "#fff",
+        })
       }
     }
 
     // Cleanup function removed as the check prevents duplicate scripts
     // and removing might interfere if other components rely on the script
-  }, []); // Empty dependency array means this effect runs once on mount
+  }, []) // Empty dependency array means this effect runs once on mount
   return (
     <SectionContainer backgroundConfig={SectionBG.hero}>
       {/* <SvgArtGenerator width="1920px" height="100px"></SvgArtGenerator> */}
@@ -101,7 +102,7 @@ const Hero = () => {
       </SectionSubContainer>
       {/* <SvgArtGallery /> */}
       <SectionSubContainer>
-        <Grid container spacing={2} justifyContent={isMobile ? "center" : "flex-end"} >
+        <Grid container spacing={2} justifyContent={isMobile ? "center" : "flex-end"}>
           <Grid size={12}>
             <SectionHeadlineStyle
               maxWidth="1000px"

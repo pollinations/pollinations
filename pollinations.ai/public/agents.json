@@ -231,7 +231,21 @@
               "required": false,
               "schema": {
                 "type": "string",
-                "enum": ["alloy", "echo", "fable", "onyx", "nova", "shimmer", "coral", "verse", "ballad", "ash", "sage", "amuch", "dan"],
+                "enum": [
+                  "alloy",
+                  "echo",
+                  "fable",
+                  "onyx",
+                  "nova",
+                  "shimmer",
+                  "coral",
+                  "verse",
+                  "ballad",
+                  "ash",
+                  "sage",
+                  "amuch",
+                  "dan"
+                ],
                 "default": "nova"
               }
             },
@@ -591,7 +605,21 @@
                     "voice": {
                       "type": "string",
                       "description": "The voice to use for generation",
-                      "enum": ["alloy", "echo", "fable", "onyx", "nova", "shimmer", "coral", "verse", "ballad", "ash", "sage", "amuch", "dan"],
+                      "enum": [
+                        "alloy",
+                        "echo",
+                        "fable",
+                        "onyx",
+                        "nova",
+                        "shimmer",
+                        "coral",
+                        "verse",
+                        "ballad",
+                        "ash",
+                        "sage",
+                        "amuch",
+                        "dan"
+                      ],
                       "default": "nova"
                     },
                     "response_format": {
@@ -815,8 +843,8 @@
         },
         "body": {
           "messages": [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": "What is artificial intelligence?"}
+            { "role": "system", "content": "You are a helpful assistant." },
+            { "role": "user", "content": "What is artificial intelligence?" }
           ],
           "model": "mistral",
           "seed": 42

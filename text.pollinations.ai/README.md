@@ -15,11 +15,13 @@ This repository contains the source code for the Pollinations.ai Text Generation
 ## Installation
 
 1. Clone this repository:
+
    ```
    git clone https://github.com/pollinations/pollinations
    ```
 
 2. Install dependencies:
+
    ```
    cd pollinations/text.pollinations.ai
    npm install

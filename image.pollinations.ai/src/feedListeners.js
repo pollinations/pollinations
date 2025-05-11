@@ -1,8 +1,8 @@
-import { parse } from 'url';
-import debug from 'debug';
-import { isMature } from './utils/mature.js';
+import { parse } from "url";
+import debug from "debug";
+import { isMature } from "./utils/mature.js";
 
-const logFeed = debug('pollinations:feed');
+const logFeed = debug("pollinations:feed");
 
 let feedListeners = [];
 let lastStates = [];
@@ -13,23 +13,23 @@ export const registerFeedListener = async (req, res) => {
   const { query } = parse(req.url, true);
 
   // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive'
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
   });
 
   // add listener to feedListeners - NSFW parameter is now ignored
   feedListeners = [...feedListeners, { res }];
 
   // remove listener when connection closes
-  req.on('close', () => {
+  req.on("close", () => {
     // remove listener from feedListeners
-    feedListeners = feedListeners.filter(listener => listener.res !== res);
+    feedListeners = feedListeners.filter((listener) => listener.res !== res);
   });
 
   const pastResults = parseInt(query.past_results) || 20;
@@ -45,26 +45,27 @@ export const sendToFeedListeners = (data, options = {}) => {
   if (data?.prompt && !data?.isMature) {
     data.isMature = isMature(data.prompt);
   }
-  
+
   if (options.saveAsLastState) {
     lastStates.push(data);
   }
-  feedListeners.forEach(listener => sendToListener(listener.res, data));
+  feedListeners.forEach((listener) => sendToListener(listener.res, data));
 };
 
 function sendToListener(listener, data) {
   // Always filter out mature content regardless of client preferences
   if (
-    data?.private || 
-    data?.nsfw || 
-    data?.isChild || 
-    data?.isMature || 
-    data?.maturity?.nsfw || 
-    data?.maturity?.isChild || 
-    data?.maturity?.isMature || 
+    data?.private ||
+    data?.nsfw ||
+    data?.isChild ||
+    data?.isMature ||
+    data?.maturity?.nsfw ||
+    data?.maturity?.isChild ||
+    data?.maturity?.isMature ||
     (data?.prompt && isMature(data?.prompt))
-  ) return;
-  
+  )
+    return;
+
   logFeed("data", data);
   return listener.write(`data: ${JSON.stringify(data)}\n\n`);
 }

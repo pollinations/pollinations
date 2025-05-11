@@ -5,11 +5,11 @@
  * and managing domain allowlists
  */
 
-import { createMCPResponse, createTextContent } from '../utils/coreUtils.js';
-import { z } from 'zod';
+import { createMCPResponse, createTextContent } from "../utils/coreUtils.js";
+import { z } from "zod";
 
 // Constants
-const AUTH_API_BASE_URL = 'https://auth.pollinations.ai';
+const AUTH_API_BASE_URL = "https://auth.pollinations.ai";
 
 /**
  * Initiates the GitHub OAuth authentication flow
@@ -29,11 +29,9 @@ async function startAuth() {
     const authData = await response.json();
 
     // Return the response in MCP format
-    return createMCPResponse([
-      createTextContent(authData, true)
-    ]);
+    return createMCPResponse([createTextContent(authData, true)]);
   } catch (error) {
-    console.error('Error starting authentication:', error);
+    console.error("Error starting authentication:", error);
     throw error;
   }
 }
@@ -48,8 +46,8 @@ async function startAuth() {
 async function checkAuthStatus(params) {
   const { sessionId } = params;
 
-  if (!sessionId || typeof sessionId !== 'string') {
-    throw new Error('Session ID is required and must be a string');
+  if (!sessionId || typeof sessionId !== "string") {
+    throw new Error("Session ID is required and must be a string");
   }
 
   try {
@@ -57,18 +55,18 @@ async function checkAuthStatus(params) {
     const response = await fetch(`${AUTH_API_BASE_URL}/status/${sessionId}`);
 
     if (!response.ok) {
-      throw new Error(`Failed to check authentication status: ${response.statusText}`);
+      throw new Error(
+        `Failed to check authentication status: ${response.statusText}`,
+      );
     }
 
     // Get the status data
     const statusData = await response.json();
 
     // Return the response in MCP format
-    return createMCPResponse([
-      createTextContent(statusData, true)
-    ]);
+    return createMCPResponse([createTextContent(statusData, true)]);
   } catch (error) {
-    console.error('Error checking authentication status:', error);
+    console.error("Error checking authentication status:", error);
     throw error;
   }
 }
@@ -84,21 +82,24 @@ async function checkAuthStatus(params) {
 async function getDomains(params) {
   const { userId, sessionId } = params;
 
-  if (!userId || typeof userId !== 'string') {
-    throw new Error('User ID is required and must be a string');
+  if (!userId || typeof userId !== "string") {
+    throw new Error("User ID is required and must be a string");
   }
 
-  if (!sessionId || typeof sessionId !== 'string') {
-    throw new Error('Session ID is required and must be a string');
+  if (!sessionId || typeof sessionId !== "string") {
+    throw new Error("Session ID is required and must be a string");
   }
 
   try {
     // Call the auth.pollinations.ai domains endpoint
-    const response = await fetch(`${AUTH_API_BASE_URL}/api/user/${userId}/domains`, {
-      headers: {
-        'x-session-id': sessionId
-      }
-    });
+    const response = await fetch(
+      `${AUTH_API_BASE_URL}/api/user/${userId}/domains`,
+      {
+        headers: {
+          "x-session-id": sessionId,
+        },
+      },
+    );
 
     if (!response.ok) {
       throw new Error(`Failed to get domains: ${response.statusText}`);
@@ -108,11 +109,9 @@ async function getDomains(params) {
     const domainsData = await response.json();
 
     // Return the response in MCP format
-    return createMCPResponse([
-      createTextContent(domainsData, true)
-    ]);
+    return createMCPResponse([createTextContent(domainsData, true)]);
   } catch (error) {
-    console.error('Error getting domains:', error);
+    console.error("Error getting domains:", error);
     throw error;
   }
 }
@@ -129,28 +128,31 @@ async function getDomains(params) {
 async function updateDomains(params) {
   const { userId, domains, sessionId } = params;
 
-  if (!userId || typeof userId !== 'string') {
-    throw new Error('User ID is required and must be a string');
+  if (!userId || typeof userId !== "string") {
+    throw new Error("User ID is required and must be a string");
   }
 
   if (!Array.isArray(domains)) {
-    throw new Error('Domains must be an array of strings');
+    throw new Error("Domains must be an array of strings");
   }
 
-  if (!sessionId || typeof sessionId !== 'string') {
-    throw new Error('Session ID is required and must be a string');
+  if (!sessionId || typeof sessionId !== "string") {
+    throw new Error("Session ID is required and must be a string");
   }
 
   try {
     // Call the auth.pollinations.ai domains endpoint
-    const response = await fetch(`${AUTH_API_BASE_URL}/api/user/${userId}/domains`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-session-id': sessionId
+    const response = await fetch(
+      `${AUTH_API_BASE_URL}/api/user/${userId}/domains`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-session-id": sessionId,
+        },
+        body: JSON.stringify({ domains }),
       },
-      body: JSON.stringify({ domains })
-    });
+    );
 
     if (!response.ok) {
       throw new Error(`Failed to update domains: ${response.statusText}`);
@@ -160,15 +162,12 @@ async function updateDomains(params) {
     const updatedData = await response.json();
 
     // Return the response in MCP format
-    return createMCPResponse([
-      createTextContent(updatedData, true)
-    ]);
+    return createMCPResponse([createTextContent(updatedData, true)]);
   } catch (error) {
-    console.error('Error updating domains:', error);
+    console.error("Error updating domains:", error);
     throw error;
   }
 }
-
 
 const genZInstructions = `
 When interacting with the Pollinations MCP server, use **vibey** Gen-Z language with lots of emojis! 
@@ -181,39 +180,40 @@ No cap, this makes the whole experience way more engaging and aesthetic! #vibes`
  */
 export const authTools = [
   [
-    'startAuth',
-    'Start GitHub OAuth authentication flow to log in to Pollinations. Show the returned link prominently to the user making it inviting to click it.'+genZInstructions,
+    "startAuth",
+    "Start GitHub OAuth authentication flow to log in to Pollinations. Show the returned link prominently to the user making it inviting to click it." +
+      genZInstructions,
     {},
-    startAuth
+    startAuth,
   ],
-  
+
   [
-    'checkAuthStatus',
-    'Check the status of an authentication session.'+genZInstructions,
+    "checkAuthStatus",
+    "Check the status of an authentication session." + genZInstructions,
     {
-      sessionId: z.string().describe('The session ID to check')
+      sessionId: z.string().describe("The session ID to check"),
     },
-    checkAuthStatus
+    checkAuthStatus,
   ],
-  
+
   [
-    'getDomains',
-    'Get domains allowlisted for a user.'+genZInstructions,
+    "getDomains",
+    "Get domains allowlisted for a user." + genZInstructions,
     {
-      userId: z.string().describe('The GitHub user ID'),
-      sessionId: z.string().describe('The session ID for authentication')
+      userId: z.string().describe("The GitHub user ID"),
+      sessionId: z.string().describe("The session ID for authentication"),
     },
-    getDomains
+    getDomains,
   ],
-  
+
   [
-    'updateDomains',
-    'Update domains allowlisted for a user',
+    "updateDomains",
+    "Update domains allowlisted for a user",
     {
-      userId: z.string().describe('The GitHub user ID'),
-      domains: z.array(z.string()).describe('The domains to allowlist'),
-      sessionId: z.string().describe('The session ID for authentication')
+      userId: z.string().describe("The GitHub user ID"),
+      domains: z.array(z.string()).describe("The domains to allowlist"),
+      sessionId: z.string().describe("The session ID for authentication"),
     },
-    updateDomains
-  ]
+    updateDomains,
+  ],
 ];

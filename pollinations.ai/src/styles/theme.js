@@ -1,5 +1,5 @@
-import { createTheme } from '@mui/material/styles';
-import { Colors, Fonts } from '../config/global';
+import { createTheme } from "@mui/material/styles"
+import { Colors, Fonts } from "../config/global"
 
 /**
  * Custom theme for Material UI components
@@ -7,7 +7,7 @@ import { Colors, Fonts } from '../config/global';
  */
 export const theme = createTheme({
   palette: {
-    mode: 'dark',
+    mode: "dark",
     primary: {
       main: Colors.lime,
     },
@@ -48,7 +48,7 @@ export const theme = createTheme({
     },
     button: {
       fontFamily: Fonts.parameter,
-      textTransform: 'none',
+      textTransform: "none",
     },
   },
   components: {
@@ -60,14 +60,14 @@ export const theme = createTheme({
         contained: {
           backgroundColor: Colors.lime,
           color: Colors.offblack,
-          '&:hover': {
+          "&:hover": {
             backgroundColor: `${Colors.lime}cc`,
           },
         },
         outlined: {
           borderColor: Colors.lime,
           color: Colors.lime,
-          '&:hover': {
+          "&:hover": {
             borderColor: Colors.lime,
             backgroundColor: `${Colors.lime}22`,
           },
@@ -77,14 +77,14 @@ export const theme = createTheme({
     MuiTextField: {
       styleOverrides: {
         root: {
-          '& .MuiOutlinedInput-root': {
-            '& fieldset': {
+          "& .MuiOutlinedInput-root": {
+            "& fieldset": {
               borderColor: `${Colors.lime}66`,
             },
-            '&:hover fieldset': {
+            "&:hover fieldset": {
               borderColor: `${Colors.lime}aa`,
             },
-            '&.Mui-focused fieldset': {
+            "&.Mui-focused fieldset": {
               borderColor: Colors.lime,
             },
           },
@@ -105,4 +105,4 @@ export const theme = createTheme({
       },
     },
   },
-}); 
+})

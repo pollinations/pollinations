@@ -50,10 +50,8 @@ export async function sendToAnalytics(request, name, params = {}, env) {
     }
 
     // Get client information - check URL params first, then headers
-    const referrer = 
-      request.headers.get("referer") || 
-      request.headers.get("referrer") || 
-      "";
+    const referrer =
+      request.headers.get("referer") || request.headers.get("referrer") || "";
     const userAgent = request.headers.get("user-agent") || "";
     const language = request.headers.get("accept-language") || "";
     const clientIP = getClientIp(request) || "::1";
@@ -77,12 +75,15 @@ export async function sendToAnalytics(request, name, params = {}, env) {
       events: [
         {
           name: name,
-          params: processedParams
+          params: processedParams,
         },
       ],
     };
 
-    console.log(`[Analytics] Sending ${name} event to Google Analytics:`, payload);
+    console.log(
+      `[Analytics] Sending ${name} event to Google Analytics:`,
+      payload,
+    );
 
     // Send to Google Analytics
     const response = await fetch(
@@ -93,7 +94,7 @@ export async function sendToAnalytics(request, name, params = {}, env) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
-      }
+      },
     );
 
     console.log(`[Analytics] Response for ${name} event:`, response);
@@ -112,16 +113,16 @@ export async function sendToAnalytics(request, name, params = {}, env) {
  */
 function processParameters(params) {
   const result = {};
-  
+
   // Process all parameters
   for (const [key, value] of Object.entries(params)) {
     // Skip undefined/null values
     if (value === undefined || value === null) {
       continue;
     }
-    
+
     // Handle nested safeParams object
-    if (key === 'safeParams' && typeof value === 'object') {
+    if (key === "safeParams" && typeof value === "object") {
       // Extract properties from safeParams and add them directly
       for (const [nestedKey, nestedValue] of Object.entries(value)) {
         if (nestedValue !== undefined && nestedValue !== null) {
@@ -133,19 +134,20 @@ function processParameters(params) {
       }
       continue;
     }
-    
+
     // Process regular parameters - just pass through with string truncation
     result[key] = processValue(value);
   }
-  
+
   // Set defaults for important parameters if they're missing
-  if (!('model' in result)) result.model = 'flux';
-  if (!('width' in result)) result.width = 1024;
-  if (!('height' in result)) result.height = 1024;
-  if (!('seed' in result)) result.seed = 42;
-  if (!('negative_prompt' in result)) result.negative_prompt = 'worst quality, blurry';
-  if (!('cacheStatus' in result)) result.cacheStatus = 'unknown';
-  
+  if (!("model" in result)) result.model = "flux";
+  if (!("width" in result)) result.width = 1024;
+  if (!("height" in result)) result.height = 1024;
+  if (!("seed" in result)) result.seed = 42;
+  if (!("negative_prompt" in result))
+    result.negative_prompt = "worst quality, blurry";
+  if (!("cacheStatus" in result)) result.cacheStatus = "unknown";
+
   return result;
 }
 
@@ -156,10 +158,10 @@ function processParameters(params) {
  */
 function processValue(value) {
   // Only truncate strings, pass everything else through as-is
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     return value.substring(0, MAX_STRING_LENGTH);
   }
-  
+
   // Return all other values as-is
   return value;
 }

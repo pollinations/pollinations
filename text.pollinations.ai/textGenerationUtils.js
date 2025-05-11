@@ -1,7 +1,7 @@
-import debug from 'debug';
+import debug from "debug";
 
-const log = debug('pollinations:utils');
-const errorLog = debug('pollinations:utils:error');
+const log = debug("pollinations:utils");
+const errorLog = debug("pollinations:utils:error");
 
 /**
  * Validates and ensures each message has required properties
@@ -10,21 +10,21 @@ const errorLog = debug('pollinations:utils:error');
  */
 export function validateAndNormalizeMessages(messages) {
   if (!Array.isArray(messages) || messages.length === 0) {
-    throw new Error('Messages must be a non-empty array');
+    throw new Error("Messages must be a non-empty array");
   }
-  
-  return messages.map(msg => {
+
+  return messages.map((msg) => {
     // Create a base message with required properties
     const normalizedMsg = {
-      role: msg.role || 'user',
-      content: msg.content || ''
+      role: msg.role || "user",
+      content: msg.content || "",
     };
-    
+
     // Preserve properties needed for function calling
     if (msg.tool_call_id) normalizedMsg.tool_call_id = msg.tool_call_id;
     if (msg.name) normalizedMsg.name = msg.name;
     if (msg.tool_calls) normalizedMsg.tool_calls = msg.tool_calls;
-    
+
     return normalizedMsg;
   });
 }
@@ -38,16 +38,19 @@ export function convertSystemToUserMessages(messages) {
   if (!Array.isArray(messages) || messages.length === 0) {
     return messages;
   }
-  
-  log('Converting system messages to user messages');
-  
-  return messages.map(msg => {
-    if (msg.role === 'system') {
-      log('Converting system message to user message:', msg.content.substring(0, 50) + '...');
+
+  log("Converting system messages to user messages");
+
+  return messages.map((msg) => {
+    if (msg.role === "system") {
+      log(
+        "Converting system message to user message:",
+        msg.content.substring(0, 50) + "...",
+      );
       return {
         ...msg,
-        role: 'user',
-        content: `System instruction: ${msg.content}`
+        role: "user",
+        content: `System instruction: ${msg.content}`,
       };
     }
     return msg;
@@ -61,16 +64,27 @@ export function convertSystemToUserMessages(messages) {
  * @param {string} defaultSystemPrompt - Default system prompt to use if none exists
  * @returns {Array} - Messages array with system message
  */
-export function ensureSystemMessage(messages, options, defaultSystemPrompt = 'You are a helpful assistant.') {
+export function ensureSystemMessage(
+  messages,
+  options,
+  defaultSystemPrompt = "You are a helpful assistant.",
+) {
   // If there's already a system message, or if defaultSystemPrompt is null/undefined, don't add one
-  if (messages.some(message => message.role === 'system') || defaultSystemPrompt === null || defaultSystemPrompt === undefined) {
+  if (
+    messages.some((message) => message.role === "system") ||
+    defaultSystemPrompt === null ||
+    defaultSystemPrompt === undefined
+  ) {
     // Still handle jsonMode for existing system messages
     if (options.jsonMode) {
-      return messages.map(message => {
-        if (message.role === 'system' && !message.content.toLowerCase().includes('json')) {
+      return messages.map((message) => {
+        if (
+          message.role === "system" &&
+          !message.content.toLowerCase().includes("json")
+        ) {
           return {
             ...message,
-            content: `${message.content} Respond with JSON.`
+            content: `${message.content} Respond with JSON.`,
           };
         }
         return message;
@@ -78,13 +92,13 @@ export function ensureSystemMessage(messages, options, defaultSystemPrompt = 'Yo
     }
     return messages;
   }
-  
+
   // Add a system message with appropriate content
   const systemContent = options.jsonMode
-    ? 'Respond in simple JSON format'
+    ? "Respond in simple JSON format"
     : defaultSystemPrompt;
-  
-  return [{ role: 'system', content: systemContent }, ...messages];
+
+  return [{ role: "system", content: systemContent }, ...messages];
 }
 
 /**
@@ -95,37 +109,58 @@ export function ensureSystemMessage(messages, options, defaultSystemPrompt = 'Yo
  */
 export function normalizeOptions(options = {}, defaults = {}) {
   const normalized = { ...defaults, ...options };
-  
+
   // Handle streaming option - ensure it's properly normalized to a boolean
   if (normalized.stream !== undefined) {
     // Convert string 'true' to boolean true
-    if (normalized.stream === 'true' || normalized.stream === '1' || normalized.stream === 'yes') {
+    if (
+      normalized.stream === "true" ||
+      normalized.stream === "1" ||
+      normalized.stream === "yes"
+    ) {
       normalized.stream = true;
-      log('Normalized stream option from string "%s" to boolean true', options.stream);
-    } else if (normalized.stream === 'false' || normalized.stream === '0' || normalized.stream === 'no') {
+      log(
+        'Normalized stream option from string "%s" to boolean true',
+        options.stream,
+      );
+    } else if (
+      normalized.stream === "false" ||
+      normalized.stream === "0" ||
+      normalized.stream === "no"
+    ) {
       normalized.stream = false;
-      log('Normalized stream option from string "%s" to boolean false', options.stream);
+      log(
+        'Normalized stream option from string "%s" to boolean false',
+        options.stream,
+      );
     } else {
       normalized.stream = Boolean(normalized.stream);
-      log('Normalized stream option from "%s" to boolean %s', options.stream, normalized.stream);
+      log(
+        'Normalized stream option from "%s" to boolean %s',
+        options.stream,
+        normalized.stream,
+      );
     }
   } else {
     normalized.stream = false;
-    log('Stream option not provided, defaulting to false');
+    log("Stream option not provided, defaulting to false");
   }
 
   // Log the normalized stream option for debugging
   if (normalized.stream) {
-    log('Streaming mode enabled, original value: %s, normalized: %s', 
-      options.stream, normalized.stream);
+    log(
+      "Streaming mode enabled, original value: %s, normalized: %s",
+      options.stream,
+      normalized.stream,
+    );
   }
-  
+
   // Handle special cases for common options
   if (normalized.temperature !== undefined) {
     // Ensure temperature is within valid range (0-2)
     normalized.temperature = Math.max(0, Math.min(2, normalized.temperature));
   }
-  
+
   // // Handle maxTokens parameter
   // if (normalized.maxTokens === undefined) {
   //   // If not provided, use default value
@@ -138,12 +173,12 @@ export function normalizeOptions(options = {}, defaults = {}) {
   // } else {
   //   log('Using maxTokens value: %d', normalized.maxTokens);
   // }
-  
-  if (typeof normalized.seed === 'number') {
+
+  if (typeof normalized.seed === "number") {
     // Ensure seed is an integer
     normalized.seed = Math.floor(normalized.seed);
   }
-  
+
   return normalized;
 }
 
@@ -158,47 +193,47 @@ export function formatToOpenAIResponse(response, modelName) {
   if (response.choices && Array.isArray(response.choices)) {
     return response;
   }
-  
+
   // If it's an error response, return it directly
   if (response.error) {
     return response;
   }
-  
+
   // Create a message object based on the response
   let message = {
-    role: 'assistant'
+    role: "assistant",
   };
-  
+
   // Handle different response formats
-  if (typeof response === 'string') {
+  if (typeof response === "string") {
     message.content = response;
   } else if (response.tool_calls) {
     // If the response has tool_calls, include them in the message
     message.tool_calls = response.tool_calls;
-    message.content = response.content || '';
+    message.content = response.content || "";
   } else {
     // For other object responses, stringify them
     message.content = JSON.stringify(response);
   }
-  
+
   // Create a basic OpenAI-compatible response structure
   return {
     id: `pllns_${Date.now().toString(36)}`,
-    object: 'chat.completion',
+    object: "chat.completion",
     created: Date.now(),
     model: modelName,
     choices: [
       {
         message,
-        finish_reason: 'stop',
-        index: 0
-      }
+        finish_reason: "stop",
+        index: 0,
+      },
     ],
     usage: {
       prompt_tokens: 0,
       completion_tokens: 0,
-      total_tokens: 0
-    }
+      total_tokens: 0,
+    },
   };
 }
 
@@ -217,8 +252,8 @@ export function generateRequestId() {
  */
 export function cleanUndefined(obj) {
   const cleaned = { ...obj };
-  Object.keys(cleaned).forEach(key =>
-    cleaned[key] === undefined && delete cleaned[key]
+  Object.keys(cleaned).forEach(
+    (key) => cleaned[key] === undefined && delete cleaned[key],
   );
   return cleaned;
 }
@@ -229,39 +264,51 @@ export function cleanUndefined(obj) {
  * @returns {Object} - Object without undefined or null values
  */
 export function cleanNullAndUndefined(obj) {
-  log(`Cleaning null and undefined values from object keys: ${Object.keys(obj).join(', ')}`);
-  
+  log(
+    `Cleaning null and undefined values from object keys: ${Object.keys(obj).join(", ")}`,
+  );
+
   // Handle non-objects and null/undefined
   if (obj === null || obj === undefined) {
-    log('Input is null or undefined, returning as is');
+    log("Input is null or undefined, returning as is");
     return obj;
   }
-  
-  if (typeof obj !== 'object' || Array.isArray(obj)) {
-    log(`Input is not an object (type: ${typeof obj}, isArray: ${Array.isArray(obj)}), returning as is`);
+
+  if (typeof obj !== "object" || Array.isArray(obj)) {
+    log(
+      `Input is not an object (type: ${typeof obj}, isArray: ${Array.isArray(obj)}), returning as is`,
+    );
     return obj;
   }
-  
+
   const cleaned = { ...obj };
-  
+
   // Track removed properties for logging
   const removedProps = [];
-  
-  Object.keys(cleaned).forEach(key => {
+
+  Object.keys(cleaned).forEach((key) => {
     // Never clean modalities or audio properties
-    if (key === 'modalities' || key === 'audio') {
+    if (key === "modalities" || key === "audio") {
       return;
     }
 
     if (cleaned[key] === undefined || cleaned[key] === null) {
-      removedProps.push(`${key}: ${cleaned[key] === null ? 'null' : 'undefined'}`);
-      log(`Removing property ${key} with ${cleaned[key] === null ? 'null' : 'undefined'} value`);
+      removedProps.push(
+        `${key}: ${cleaned[key] === null ? "null" : "undefined"}`,
+      );
+      log(
+        `Removing property ${key} with ${cleaned[key] === null ? "null" : "undefined"} value`,
+      );
       delete cleaned[key];
-    } else if (typeof cleaned[key] === 'object' && cleaned[key] !== null && !Array.isArray(cleaned[key])) {
+    } else if (
+      typeof cleaned[key] === "object" &&
+      cleaned[key] !== null &&
+      !Array.isArray(cleaned[key])
+    ) {
       // Recursively clean nested objects
       log(`Recursively cleaning nested object at key: ${key}`);
       const cleanedNestedObj = cleanNullAndUndefined(cleaned[key]);
-      
+
       // If the cleaned nested object has no properties, remove it entirely
       if (cleanedNestedObj && Object.keys(cleanedNestedObj).length === 0) {
         removedProps.push(`${key}: (empty object after cleaning)`);
@@ -272,9 +319,11 @@ export function cleanNullAndUndefined(obj) {
       }
     }
   });
-  
-  log(`Removed properties: ${removedProps.length > 0 ? removedProps.join(', ') : 'none'}`);
-  log(`Cleaned object now has keys: ${Object.keys(cleaned).join(', ')}`);
+
+  log(
+    `Removed properties: ${removedProps.length > 0 ? removedProps.join(", ") : "none"}`,
+  );
+  log(`Cleaned object now has keys: ${Object.keys(cleaned).join(", ")}`);
   return cleaned;
 }
 
@@ -284,16 +333,16 @@ export function cleanNullAndUndefined(obj) {
  * @param {string} providerName - Provider name
  * @returns {Object} - Standardized error response
  */
-export function createErrorResponse(error, providerName = 'unknown') {
+export function createErrorResponse(error, providerName = "unknown") {
   errorLog(`Error in ${providerName} provider:`, error);
-  
+
   return {
     error: {
-      message: error.message || 'An unexpected error occurred',
+      message: error.message || "An unexpected error occurred",
       code: error.code || 500,
       metadata: {
-        provider_name: providerName
-      }
-    }
+        provider_name: providerName,
+      },
+    },
   };
 }

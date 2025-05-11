@@ -40,16 +40,18 @@ export const GeneralButton = React.forwardRef(function GeneralButton(
       borderColor: borderColor ? `${borderColor}B3` : "none", // 70% opacity
       filter: "brightness(105%)",
     },
-    "&::after": isLoading ? {
-      content: '""',
-      position: "absolute",
-      bottom: 0,
-      left: 0,
-      height: "2px",
-      backgroundColor: textColor || borderColor || "transparent",
-      animation: "loadingProgress 1.5s infinite ease-in-out",
-      width: "100%",
-    } : {},
+    "&::after": isLoading
+      ? {
+          content: '""',
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          height: "2px",
+          backgroundColor: textColor || borderColor || "transparent",
+          animation: "loadingProgress 1.5s infinite ease-in-out",
+          width: "100%",
+        }
+      : {},
     "@keyframes loadingProgress": {
       "0%": { width: "0%", left: "0%" },
       "50%": { width: "100%", left: "0%" },

@@ -8,7 +8,7 @@ import { trackEvent } from "../../config/analytics"
 
 /**
  * Reusable component for number parameter inputs with consistent styling
- * 
+ *
  * @param {Object} props
  * @param {string} props.label - Input label
  * @param {string|number} props.value - Current input value
@@ -29,20 +29,20 @@ export function ParameterNumberInput({
   paramName,
   setIsInputChanged,
   category = "feed",
-  styles = {}
+  styles = {},
 }) {
   // Default styling constants
   const defaultStyles = {
     backgroundColor: Colors.offblack,
     textColor: Colors.offwhite,
-    labelColor: Colors.offwhite
+    labelColor: Colors.offwhite,
   }
-  
+
   // Merge default styles with custom styles
   const mergedStyles = { ...defaultStyles, ...styles }
-  
+
   const paramTextSize = { xs: "1.5em", md: "1.1em" }
-  
+
   const typographyStyles = {
     label: {
       color: mergedStyles.labelColor,
@@ -67,18 +67,13 @@ export function ParameterNumberInput({
   }
 
   // Ensure value is always a valid controlled input value
-  const safeValue = value !== undefined && value !== null ? value : '';
-  
+  const safeValue = value !== undefined && value !== null ? value : ""
+
   return (
     <>
       {tooltipText ? (
         <CustomTooltip
-          title={
-            <LLMTextManipulator
-              text={tooltipText}
-              transforms={[rephrase, emojify, noLink]}
-            />
-          }
+          title={<LLMTextManipulator text={tooltipText} transforms={[rephrase, emojify, noLink]} />}
           interactive
         >
           <Typography component="div" variant="body" sx={typographyStyles.label}>
@@ -103,22 +98,21 @@ export function ParameterNumberInput({
           onFocus={onFocus}
           onBlur={handleBlur}
           type="number"
-
           InputProps={{
             sx: {
               fontSize: paramTextSize,
               fontFamily: Fonts.parameter,
               height: "60px",
               "& .MuiOutlinedInput-notchedOutline": {
-                border: "none"
+                border: "none",
               },
               "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
                 WebkitAppearance: "none",
-                margin: 0
+                margin: 0,
               },
               "& input[type=number]": {
-                MozAppearance: "textfield"
-              }
+                MozAppearance: "textfield",
+              },
             },
           }}
           sx={{ width: "100%" }}
@@ -126,4 +120,4 @@ export function ParameterNumberInput({
       </Box>
     </>
   )
-} 
+}

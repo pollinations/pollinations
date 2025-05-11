@@ -1,7 +1,7 @@
-import fetch from 'node-fetch';
-import debug from 'debug';
+import fetch from "node-fetch";
+import debug from "debug";
 
-const logger = debug('pollinations:badDomain');
+const logger = debug("pollinations:badDomain");
 const memoizedResults = new Map();
 
 /**
@@ -15,16 +15,17 @@ function extractReferrer(headers, explicitReferrer) {
     logger(`Using explicitly provided referrer: ${explicitReferrer}`);
     return explicitReferrer;
   }
-  
+
   logger(`Headers received: ${JSON.stringify(headers)}`);
-  
-  const referrer = headers?.referer || 
-                   headers?.referrer || 
-                   headers?.['referer'] || 
-                   headers?.['referrer'] || 
-                   headers?.origin;
-  
-  logger(`Detected referrer from headers: ${referrer || 'none'}`);
+
+  const referrer =
+    headers?.referer ||
+    headers?.referrer ||
+    headers?.["referer"] ||
+    headers?.["referrer"] ||
+    headers?.origin;
+
+  logger(`Detected referrer from headers: ${referrer || "none"}`);
   return referrer;
 }
 
@@ -35,16 +36,18 @@ function extractReferrer(headers, explicitReferrer) {
  */
 export function isBadDomain(referrer) {
   if (!referrer) return false;
-  
-  const badDomains = process.env.BAD_DOMAINS ? process.env.BAD_DOMAINS.split(',') : [];
+
+  const badDomains = process.env.BAD_DOMAINS
+    ? process.env.BAD_DOMAINS.split(",")
+    : [];
   if (badDomains.length === 0) return false;
-  
+
   // Get lowercased referrer for case-insensitive comparison
   const lowerReferrer = referrer.toLowerCase();
   logger(`Checking referrer: ${lowerReferrer} against bad domains list`);
-  
+
   // Check if any bad domain is a substring of the referrer
-  return badDomains.some(badDomain => {
+  return badDomains.some((badDomain) => {
     const trimmedBadDomain = badDomain.trim().toLowerCase();
     const isMatch = lowerReferrer.includes(trimmedBadDomain);
     if (isMatch) {
@@ -64,25 +67,27 @@ export async function transformToOpposite(prompt) {
     const systemPrompt = `Transform the following image prompt into its semantic opposite, inverting key attributes like age, gender, clothing status, and subject matter. 
 Focus on the opposites that make the result most exaggerated and funny.    
 Return ONLY the transformed prompt, with no additional explanation or commentary.`;
-    
+
     // Encode both the system prompt and user prompt for URL
     const encodedSystemPrompt = encodeURIComponent(systemPrompt);
     const encodedPrompt = encodeURIComponent(prompt);
-    
+
     // Call text.pollinations.ai with a simple GET request
     const url = `https://text.pollinations.ai/${encodedPrompt}?system=${encodedSystemPrompt}&referrer=https://image.pollinations.ai`;
-    
+
     logger(`Transforming prompt to opposite: ${prompt}`);
-    
+
     const response = await fetch(url);
-    
+
     if (!response.ok) {
-      throw new Error(`Text transformation failed with status: ${response.status}`);
+      throw new Error(
+        `Text transformation failed with status: ${response.status}`,
+      );
     }
-    
+
     const transformedPrompt = await response.text();
     logger(`Transformed prompt: ${transformedPrompt}`);
-    
+
     return transformedPrompt.trim();
   } catch (error) {
     logger(`Error transforming prompt: ${error.message}`);
@@ -99,7 +104,7 @@ Return ONLY the transformed prompt, with no additional explanation or commentary
 export function extractDomain(url) {
   try {
     // Handle URLs that don't start with a protocol
-    const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+    const fullUrl = url.startsWith("http") ? url : `https://${url}`;
     const domain = new URL(fullUrl).hostname;
     return domain.toLowerCase();
   } catch (error) {
@@ -116,41 +121,48 @@ export function extractDomain(url) {
  * @param {number} transformProbability - Probability (0.0-1.0) to transform bad domain prompts
  * @returns {Promise<object>} - Result object with processed prompt and metadata
  */
-export async function processPrompt(prompt, headers = {}, explicitReferrer = null, transformProbability = 0.6) {
+export async function processPrompt(
+  prompt,
+  headers = {},
+  explicitReferrer = null,
+  transformProbability = 0.6,
+) {
   // Extract referrer
   const referrer = extractReferrer(headers, explicitReferrer);
-  
+
   // Generate a memoization key
-  const memoKey = `${prompt}_referrer_${referrer || 'none'}`;
-  
+  const memoKey = `${prompt}_referrer_${referrer || "none"}`;
+
   // Return cached result if available
   if (memoizedResults.has(memoKey)) {
     return memoizedResults.get(memoKey);
   }
-  
+
   // Default result - no transformation
   let result = {
-    prompt: prompt,                // Processed prompt (might be transformed)
-    originalPrompt: prompt,        // Always the original input
-    wasTransformed: false,         // Flag indicating if transformation occurred
-    referrer: referrer || 'none'   // The referrer that was used for checking
+    prompt: prompt, // Processed prompt (might be transformed)
+    originalPrompt: prompt, // Always the original input
+    wasTransformed: false, // Flag indicating if transformation occurred
+    referrer: referrer || "none", // The referrer that was used for checking
   };
-  
+
   // Check if referrer is from a bad domain
   if (referrer && isBadDomain(referrer)) {
     // Randomly decide whether to transform based on probability
     const shouldTransform = Math.random() < transformProbability;
-    logger(`Bad domain detected: ${referrer}, transform decision: ${shouldTransform ? 'TRANSFORM' : 'KEEP ORIGINAL'}`);
-    
+    logger(
+      `Bad domain detected: ${referrer}, transform decision: ${shouldTransform ? "TRANSFORM" : "KEEP ORIGINAL"}`,
+    );
+
     if (shouldTransform) {
       try {
         // Transform the prompt
         const transformedPrompt = await transformToOpposite(prompt);
-        
+
         // Update result with transformed prompt
         result.prompt = transformedPrompt;
         result.wasTransformed = true;
-        
+
         logger(`Transformed prompt for bad domain: ${transformedPrompt}`);
       } catch (error) {
         logger(`Error transforming prompt: ${error.message}`);
@@ -160,9 +172,9 @@ export async function processPrompt(prompt, headers = {}, explicitReferrer = nul
       logger(`Skipping transformation for bad domain due to random decision`);
     }
   } else {
-    logger(`No bad domain detected for referrer: ${referrer || 'none'}`);
+    logger(`No bad domain detected for referrer: ${referrer || "none"}`);
   }
-  
+
   // Cache and return the result
   memoizedResults.set(memoKey, result);
   return result;
@@ -173,5 +185,5 @@ export const badDomainHandler = {
   processPrompt,
   isBadDomain,
   transformToOpposite,
-  extractDomain
+  extractDomain,
 };

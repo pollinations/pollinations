@@ -1,4 +1,4 @@
-const shorten = (str) => (str.length > 60 ? str.slice(0, 60) + "..." : str);
+const shorten = (str) => (str.length > 60 ? str.slice(0, 60) + "..." : str)
 
 const CODE_EXAMPLES = {
   api_cheatsheet: {
@@ -30,7 +30,7 @@ List Models: \`GET https://text.pollinations.ai/models\`
 Image Feed: \`GET https://image.pollinations.ai/feed\`
 Text Feed: \`GET https://text.pollinations.ai/feed\`
 *\\* required parameter*`,
-    language: "markdown"
+    language: "markdown",
   },
   llm_prompt: {
     category: "LLM Prompt",
@@ -44,7 +44,7 @@ where {description} is:
 {sceneDetailed}%20{adjective}%20{charactersDetailed}%20{visualStyle}%20{genre}%20{artistReference}
   
 Make sure the prompts in the URL are encoded. Don't quote the generated markdown or put any code box around it.`,
-    language: "markdown"
+    language: "markdown",
   },
   llm_prompt_chat: {
     category: "LLM Prompt Chat",
@@ -84,7 +84,7 @@ Make sure the prompts in the URL are encoded. Don't quote the generated markdown
   ![{description}](https://image.pollinations.ai/prompt/{description}?width={width}&height={height})
   *{description}*
   `,
-    language: "markdown"
+    language: "markdown",
   },
   markdown: {
     category: "Markdown",
@@ -98,7 +98,7 @@ Model: **${model || "flux"}**
 
 # Image
 ![Generative Image](${imageURL})`,
-    language: "markdown"
+    language: "markdown",
   },
   react: {
     category: "React",
@@ -125,7 +125,7 @@ const GeneratedImageComponent = () => {
 
 export default GeneratedImageComponent;
 `,
-    language: "javascript"
+    language: "javascript",
   },
   html: {
     category: "HTML",
@@ -146,7 +146,7 @@ export default GeneratedImageComponent;
   </body>
 </html>
 `,
-    language: "html"
+    language: "html",
   },
   rust: {
     category: "Rust",
@@ -192,7 +192,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 [dependencies]
 reqwest = { version = "0.11", features =["blocking", "json"] }
   `,
-    language: "rust"
+    language: "rust",
   },
   nodejs: {
     category: "Node.js",
@@ -265,7 +265,7 @@ async function generateAudio() {
 
 generateAudio();
 `,
-    language: "javascript"
+    language: "javascript",
   },
   python: {
     category: "Python",
@@ -313,7 +313,7 @@ model.Generate(
     save=True
 )
 `,
-    language: "python"
+    language: "python",
   },
   feed_endpoints: {
     category: "Feed Endpoints",
@@ -354,7 +354,7 @@ eventSource.onmessage = function(event) {
 };
 \`\`\`
 `,
-    language: "markdown"
+    language: "markdown",
   },
   audio: {
     category: "Audio",
@@ -380,7 +380,7 @@ fetch('https://text.pollinations.ai/transcriptions', {
 .then(response => response.json())
 .then(data => console.log(data.text));
 \`\`\``,
-    language: "markdown"
+    language: "markdown",
   },
   mcp_server: {
     category: "MCP Server",
@@ -410,8 +410,8 @@ npx @pollinations/model-context-protocol
 - No authentication required
 
 For more details, see the [MCP Server Documentation](https://github.com/pollinations/pollinations/tree/master/model-context-protocol).`,
-    language: "markdown"
-  }
-};
+    language: "markdown",
+  },
+}
 
-export default CODE_EXAMPLES;
+export default CODE_EXAMPLES

@@ -1,4 +1,4 @@
-import { vi } from 'vitest'
+import { vi } from "vitest";
 
 // Mock translations for testing
 const mockTranslations = {
@@ -8,28 +8,29 @@ const mockTranslations = {
   "Une belle fleur rouge": "A beautiful red flower",
   "Ein blauer Schmetterling": "A blue butterfly",
   "Una montaña nevada": "A snowy mountain",
-  "یک پرنده قرمز زیبا در پنجره کلیسا": "A beautiful red bird in the church window"
-}
+  "یک پرنده قرمز زیبا در پنجره کلیسا":
+    "A beautiful red bird in the church window",
+};
 
 export const mockTranslate = async (text) => {
   // Return original text if it's English or contains special tokens
-  if (text.includes('--') || /^[a-zA-Z0-9\s.,!?-]+$/.test(text)) {
-    return text
+  if (text.includes("--") || /^[a-zA-Z0-9\s.,!?-]+$/.test(text)) {
+    return text;
   }
-  
+
   // Return mock translation or original text if not found
-  return mockTranslations[text] || text
-}
+  return mockTranslations[text] || text;
+};
 
 export const setupTranslationMock = () => {
   // Mock translateIfNecessary
-  vi.mock('../../src/translateIfNecessary.js', () => ({
+  vi.mock("../../src/translateIfNecessary.js", () => ({
     translateIfNecessary: async (text) => mockTranslate(text),
-    sanitizeString: (str) => str // Simply return the string as-is for testing
-  }))
-  
+    sanitizeString: (str) => str, // Simply return the string as-is for testing
+  }));
+
   // Mock normalizeAndTranslatePrompt
-  vi.mock('../../src/normalizeAndTranslatePrompt.js', () => ({
-    normalizeAndTranslatePrompt: async (text) => mockTranslate(text)
-  }))
-}
+  vi.mock("../../src/normalizeAndTranslatePrompt.js", () => ({
+    normalizeAndTranslatePrompt: async (text) => mockTranslate(text),
+  }));
+};

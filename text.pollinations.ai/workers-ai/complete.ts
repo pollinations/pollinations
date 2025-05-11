@@ -1,26 +1,26 @@
-import { Params } from '../../types/requestBody';
-import { CompletionResponse, ErrorResponse, ProviderConfig } from '../types';
-import { WORKERS_AI } from '../../globals';
+import { Params } from "../../types/requestBody";
+import { CompletionResponse, ErrorResponse, ProviderConfig } from "../types";
+import { WORKERS_AI } from "../../globals";
 import {
   generateErrorResponse,
   generateInvalidProviderResponseError,
-} from '../utils';
+} from "../utils";
 
 export const WorkersAiCompleteConfig: ProviderConfig = {
   prompt: {
-    param: 'prompt',
+    param: "prompt",
     transform: (params: Params) => `\n\nHuman: ${params.prompt}\n\nAssistant:`,
     required: true,
   },
   stream: {
-    param: 'stream',
+    param: "stream",
     default: false,
   },
   raw: {
-    param: 'raw',
+    param: "raw",
   },
   max_tokens: {
-    param: 'max_tokens',
+    param: "max_tokens",
   },
 };
 
@@ -49,19 +49,19 @@ interface WorkersAiCompleteStreamResponse {
 }
 
 export const WorkersAiErrorResponseTransform: (
-  response: WorkersAiErrorResponse
+  response: WorkersAiErrorResponse,
 ) => ErrorResponse | undefined = (response) => {
-  if ('errors' in response) {
+  if ("errors" in response) {
     return generateErrorResponse(
       {
         message: response.errors
           ?.map((error) => `Error ${error.code}:${error.message}`)
-          .join(', '),
+          .join(", "),
         type: null,
         param: null,
         code: null,
       },
-      WORKERS_AI
+      WORKERS_AI,
     );
   }
 
@@ -74,35 +74,35 @@ export const WorkersAiCompleteResponseTransform: (
   responseHeaders: Headers,
   strictOpenAiCompliance: boolean,
   gatewayRequestUrl: string,
-  gatewayRequest: Params
+  gatewayRequest: Params,
 ) => CompletionResponse | ErrorResponse = (
   response,
   responseStatus,
   _responseHeaders,
   _strictOpenAiCompliance,
   _gatewayRequestUrl,
-  gatewayRequest
+  gatewayRequest,
 ) => {
   if (responseStatus !== 200) {
     const errorResponse = WorkersAiErrorResponseTransform(
-      response as WorkersAiErrorResponse
+      response as WorkersAiErrorResponse,
     );
     if (errorResponse) return errorResponse;
   }
 
-  if ('result' in response) {
+  if ("result" in response) {
     return {
       id: Date.now().toString(),
-      object: 'text_completion',
+      object: "text_completion",
       created: Math.floor(Date.now() / 1000),
-      model: gatewayRequest.model || '',
+      model: gatewayRequest.model || "",
       provider: WORKERS_AI,
       choices: [
         {
           text: response.result.response,
           index: 0,
           logprobs: null,
-          finish_reason: '',
+          finish_reason: "",
         },
       ],
     };
@@ -116,39 +116,39 @@ export const WorkersAiCompleteStreamChunkTransform: (
   fallbackId: string,
   _streamState: Record<string, any>,
   strictOpenAiCompliance: boolean,
-  gatewayRequest: Params
+  gatewayRequest: Params,
 ) => string | undefined = (
   responseChunk,
   fallbackId,
   _streamState,
   strictOpenAiCompliance,
-  gatewayRequest
+  gatewayRequest,
 ) => {
   let chunk = responseChunk.trim();
 
-  if (chunk.startsWith('data: [DONE]')) {
-    return 'data: [DONE]\n\n';
+  if (chunk.startsWith("data: [DONE]")) {
+    return "data: [DONE]\n\n";
   }
 
-  chunk = chunk.replace(/^data: /, '');
+  chunk = chunk.replace(/^data: /, "");
   chunk = chunk.trim();
 
   const parsedChunk: WorkersAiCompleteStreamResponse = JSON.parse(chunk);
   return (
     `data: ${JSON.stringify({
       id: fallbackId,
-      object: 'text_completion',
+      object: "text_completion",
       created: Math.floor(Date.now() / 1000),
-      model: gatewayRequest.model || '',
+      model: gatewayRequest.model || "",
       provider: WORKERS_AI,
       choices: [
         {
           text: parsedChunk.response,
           index: 0,
           logprobs: null,
-          finish_reason: '',
+          finish_reason: "",
         },
       ],
-    })}` + '\n\n'
+    })}` + "\n\n"
   );
 };

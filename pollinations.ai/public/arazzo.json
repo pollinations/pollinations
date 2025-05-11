@@ -252,7 +252,21 @@
           "required": false,
           "type": "string",
           "in": "query",
-          "enum": ["alloy", "echo", "fable", "onyx", "nova", "shimmer", "coral", "verse", "ballad", "ash", "sage", "amuch", "dan"],
+          "enum": [
+            "alloy",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "shimmer",
+            "coral",
+            "verse",
+            "ballad",
+            "ash",
+            "sage",
+            "amuch",
+            "dan"
+          ],
           "default": "nova"
         },
         {
@@ -627,7 +641,21 @@
         "output_modalities": ["audio", "text"],
         "vision": true,
         "audio": true,
-        "voices": ["alloy", "echo", "fable", "onyx", "nova", "shimmer", "coral", "verse", "ballad", "ash", "sage", "amuch", "dan"]
+        "voices": [
+          "alloy",
+          "echo",
+          "fable",
+          "onyx",
+          "nova",
+          "shimmer",
+          "coral",
+          "verse",
+          "ballad",
+          "ash",
+          "sage",
+          "amuch",
+          "dan"
+        ]
       }
     ],
     "image": [

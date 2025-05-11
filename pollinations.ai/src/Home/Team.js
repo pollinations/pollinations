@@ -18,9 +18,7 @@ const Team = () => {
       <SectionSubContainer>
         {TEAM_MEMBERS.map((member, index) => (
           <SectionSubContainer key={index}>
-            <SectionHeadlineStyle color={Colors.offwhite}>
-              {member.name}
-            </SectionHeadlineStyle>
+            <SectionHeadlineStyle color={Colors.offwhite}>{member.name}</SectionHeadlineStyle>
             <p>{member.function}</p>
             <img src={process.env.PUBLIC_URL + member.image} alt={member.name} />
           </SectionSubContainer>

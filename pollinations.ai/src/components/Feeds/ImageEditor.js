@@ -59,31 +59,30 @@ export const ImageEditor = memo(function ImageEditor({
     seed: 0,
     enhance: false,
     nologo: false,
-    model: "flux"
-  }) 
+    model: "flux",
+  })
   const imageParamsRef = useRef(imageParams) // Reference to current state for use in callbacks
   const initializedRef = useRef(false) // Track if we've initialized from props
 
   // ─── EFFECTS ─────────────────────────────────────────────────────────────────
   // Load image parameters into local state whenever `image` changes
   useEffect(() => {
-   
     // Only set parameters from image if:
     // 1. We haven't initialized yet, or
     // 2. The image URL has changed (indicating a completely new image)
     if (!initializedRef.current || (image && image.imageURL !== imageParamsRef.current.imageURL)) {
-      setImageParams(prevParams => ({
+      setImageParams((prevParams) => ({
         ...prevParams,
-        ...(image || {})
-      }));
-      initializedRef.current = true;
+        ...(image || {}),
+      }))
+      initializedRef.current = true
     } else if (image && image.prompt !== imageParamsRef.current.prompt) {
       // Always update the prompt value when it changes in the parent
-      console.log("Updating prompt from parent:", image.prompt);
-      setImageParams(prevParams => ({
+      console.log("Updating prompt from parent:", image.prompt)
+      setImageParams((prevParams) => ({
         ...prevParams,
-        prompt: image.prompt
-      }));
+        prompt: image.prompt,
+      }))
     }
   }, [image])
 
@@ -180,7 +179,7 @@ export const ImageEditor = memo(function ImageEditor({
       if (!isStopped) {
         stop(true)
       }
-      console.log(`Changing parameter ${param} to:`, value);
+      console.log(`Changing parameter ${param} to:`, value)
       setImageParams((prevParams) => ({
         ...prevParams,
         [param]: value,
@@ -196,16 +195,16 @@ export const ImageEditor = memo(function ImageEditor({
    */
   const handleSubmit = useCallback(() => {
     const currentImageParams = imageParamsRef.current
-    
+
     // Always use the most up-to-date prompt from props if available
     // This ensures edited prompts from the parent are picked up
     const finalParams = {
       ...currentImageParams,
       prompt: image?.prompt || currentImageParams.prompt || "",
     }
-    
+
     const imageURL = getImageURL(finalParams)
-    
+
     // Make sure to include all necessary parameters, especially prompt
     updateImage({
       ...finalParams,

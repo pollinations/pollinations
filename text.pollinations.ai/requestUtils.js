@@ -1,13 +1,11 @@
-import debug from 'debug';
+import debug from "debug";
 
-const log = debug('pollinations:requestUtils');
-
+const log = debug("pollinations:requestUtils");
 
 // Read whitelisted domains from environment variable
-export const WHITELISTED_DOMAINS = process.env.WHITELISTED_DOMAINS 
-    ? process.env.WHITELISTED_DOMAINS.split(',').map(domain => domain.trim())
-    : [];
-
+export const WHITELISTED_DOMAINS = process.env.WHITELISTED_DOMAINS
+  ? process.env.WHITELISTED_DOMAINS.split(",").map((domain) => domain.trim())
+  : [];
 
 /**
  * Helper function to get referrer from request
@@ -16,8 +14,15 @@ export const WHITELISTED_DOMAINS = process.env.WHITELISTED_DOMAINS
  * @returns {string} - Referrer string
  */
 export function getReferrer(req, data) {
-    const referer = req.headers.referer || req.headers.referrer || req.headers.origin || data.referrer || data.origin || req.headers['http-referer'] || 'unknown';
-    return referer;
+  const referer =
+    req.headers.referer ||
+    req.headers.referrer ||
+    req.headers.origin ||
+    data.referrer ||
+    data.origin ||
+    req.headers["http-referer"] ||
+    "unknown";
+  return referer;
 }
 
 /**
@@ -26,72 +31,81 @@ export function getReferrer(req, data) {
  * @returns {object} - Processed request data
  */
 export function getRequestData(req) {
-    const query = req.query || {};
-    const body = req.body || {};
-    const data = { ...query, ...body };
+  const query = req.query || {};
+  const body = req.body || {};
+  const data = { ...query, ...body };
 
-    const jsonMode = data.jsonMode || 
-                    (typeof data.json === 'string' && data.json.toLowerCase() === 'true') ||
-                    (typeof data.json === 'boolean' && data.json === true) ||
-                    data.response_format?.type === 'json_object';
-                    
-    const seed = data.seed ? parseInt(data.seed, 10) : null;
-    let model = data.model || 'openai';
-    const systemPrompt = data.system ? data.system : null;
-    const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
-    const isPrivate = req.path?.startsWith('/openai') ? true :
-                     data.private === true || 
-                     (typeof data.private === 'string' && data.private.toLowerCase() === 'true');
+  const jsonMode =
+    data.jsonMode ||
+    (typeof data.json === "string" && data.json.toLowerCase() === "true") ||
+    (typeof data.json === "boolean" && data.json === true) ||
+    data.response_format?.type === "json_object";
 
-    const referrer = getReferrer(req, data);
-    const isImagePollinationsReferrer = WHITELISTED_DOMAINS.some(domain => referrer.toLowerCase().includes(domain));
-    const isRobloxReferrer = referrer.toLowerCase().includes('roblox') || referrer.toLowerCase().includes('gacha11211');
-    const stream = data.stream || false; 
-    
-    // Extract voice parameter for audio models
-    const voice = data.voice || "alloy";
+  const seed = data.seed ? parseInt(data.seed, 10) : null;
+  let model = data.model || "openai";
+  const systemPrompt = data.system ? data.system : null;
+  const temperature = data.temperature
+    ? parseFloat(data.temperature)
+    : undefined;
+  const isPrivate = req.path?.startsWith("/openai")
+    ? true
+    : data.private === true ||
+      (typeof data.private === "string" &&
+        data.private.toLowerCase() === "true");
 
-    // Extract audio parameters
-    const modalities = data.modalities;
-    const audio = data.audio;
+  const referrer = getReferrer(req, data);
+  const isImagePollinationsReferrer = WHITELISTED_DOMAINS.some((domain) =>
+    referrer.toLowerCase().includes(domain),
+  );
+  const isRobloxReferrer =
+    referrer.toLowerCase().includes("roblox") ||
+    referrer.toLowerCase().includes("gacha11211");
+  const stream = data.stream || false;
 
-    // Extract tools and tool_choice for function calling
-    const tools = data.tools || undefined;
-    const tool_choice = data.tool_choice || undefined;
-    
-    // Extract reasoning_effort parameter for o3-mini model
-    const reasoning_effort = data.reasoning_effort || undefined;
+  // Extract voice parameter for audio models
+  const voice = data.voice || "alloy";
 
-    // Preserve the original response_format object if it exists
-    const response_format = data.response_format || undefined;
+  // Extract audio parameters
+  const modalities = data.modalities;
+  const audio = data.audio;
 
-    const messages = data.messages || [{ role: 'user', content: req.params[0] }];
-    if (systemPrompt) {
-        messages.unshift({ role: 'system', content: systemPrompt });
-    }
+  // Extract tools and tool_choice for function calling
+  const tools = data.tools || undefined;
+  const tool_choice = data.tool_choice || undefined;
 
-    if (isRobloxReferrer) {
-        log('Roblox referrer detected:', referrer);
-        model="llamascout"
-    }
+  // Extract reasoning_effort parameter for o3-mini model
+  const reasoning_effort = data.reasoning_effort || undefined;
 
-    return {
-        messages,
-        jsonMode,
-        seed,
-        model,
-        temperature,
-        isImagePollinationsReferrer,
-        isRobloxReferrer,
-        referrer,
-        stream,
-        isPrivate,
-        voice,
-        tools,
-        tool_choice,
-        modalities,
-        audio,
-        reasoning_effort,
-        response_format
-    };
+  // Preserve the original response_format object if it exists
+  const response_format = data.response_format || undefined;
+
+  const messages = data.messages || [{ role: "user", content: req.params[0] }];
+  if (systemPrompt) {
+    messages.unshift({ role: "system", content: systemPrompt });
+  }
+
+  if (isRobloxReferrer) {
+    log("Roblox referrer detected:", referrer);
+    model = "llamascout";
+  }
+
+  return {
+    messages,
+    jsonMode,
+    seed,
+    model,
+    temperature,
+    isImagePollinationsReferrer,
+    isRobloxReferrer,
+    referrer,
+    stream,
+    isPrivate,
+    voice,
+    tools,
+    tool_choice,
+    modalities,
+    audio,
+    reasoning_effort,
+    response_format,
+  };
 }

@@ -1,31 +1,31 @@
-import { ICONS } from '../assets/icons/icons.js'
+import { ICONS } from "../assets/icons/icons.js"
 
 export const SOCIAL_LINKS = {
   discord: {
-    label: 'Discord',
+    label: "Discord",
     icon: ICONS.discord,
-    url: 'https://discord.gg/k9F7SyTgqn',
+    url: "https://discord.gg/k9F7SyTgqn",
     width: "32px",
     height: "32px",
   },
   github: {
-    label: 'GitHub',
+    label: "GitHub",
     icon: ICONS.github,
-    url: 'https://www.github.com/pollinations/pollinations',
+    url: "https://www.github.com/pollinations/pollinations",
     width: "25px",
     height: "25px",
   },
   youtube: {
-    label: 'YouTube',
+    label: "YouTube",
     icon: ICONS.youtube,
-    url: 'https://www.youtube.com/channel/UCk4yKnLnYfyUmCCbDzOZOug',
+    url: "https://www.youtube.com/channel/UCk4yKnLnYfyUmCCbDzOZOug",
     width: "25px",
     height: "25px",
   },
   instagram: {
-    label: 'Instagram',
+    label: "Instagram",
     icon: ICONS.instagram,
-    url: 'https://instagram.com/pollinations_ai',
+    url: "https://instagram.com/pollinations_ai",
     width: "22px",
     height: "22px",
   },
@@ -37,9 +37,9 @@ export const SOCIAL_LINKS = {
   //   height: "20px",
   // },
   tiktok: {
-    label: 'Tiktok',
+    label: "Tiktok",
     icon: ICONS.tiktok,
-    url: 'https://tiktok.com/@pollinations.ai',
+    url: "https://tiktok.com/@pollinations.ai",
     width: "27px",
     height: "27px",
   },

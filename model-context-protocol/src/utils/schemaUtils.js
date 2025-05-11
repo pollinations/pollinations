@@ -2,7 +2,7 @@
  * Utilities for schema conversion and validation
  */
 
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * Converts a JSON Schema object to a Zod schema
@@ -15,21 +15,21 @@ export function createZodSchemaFromJsonSchema(jsonSchema) {
   }
 
   const zodSchema = {};
-  
+
   for (const [key, prop] of Object.entries(jsonSchema.properties)) {
     let zodProp;
-    
+
     switch (prop.type) {
-      case 'string':
+      case "string":
         zodProp = z.string();
         break;
-      case 'number':
+      case "number":
         zodProp = z.number();
         break;
-      case 'boolean':
+      case "boolean":
         zodProp = z.boolean();
         break;
-      case 'object':
+      case "object":
         if (prop.properties) {
           zodProp = createZodSchemaFromJsonSchema(prop);
         } else {
@@ -39,17 +39,17 @@ export function createZodSchemaFromJsonSchema(jsonSchema) {
       default:
         zodProp = z.any();
     }
-    
+
     if (prop.description) {
       zodProp = zodProp.describe(prop.description);
     }
-    
+
     if (jsonSchema.required && jsonSchema.required.includes(key)) {
       zodSchema[key] = zodProp;
     } else {
       zodSchema[key] = zodProp.optional();
     }
   }
-  
+
   return z.object(zodSchema);
 }

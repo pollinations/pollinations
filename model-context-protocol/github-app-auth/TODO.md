@@ -27,6 +27,7 @@ The current implementation provides a basic GitHub OAuth flow with the following
 ### Design Principles
 
 The implementation follows Pollinations' "thin proxy" design principle:
+
 - Minimal data transformation
 - Direct pass-through of responses
 - Simple error handling
@@ -46,22 +47,20 @@ The current implementation uses only GitHub OAuth. The next step is to integrate
 
 ```typescript
 // Example JWT signing for GitHub App (to be implemented)
-import * as jose from 'jose';
+import * as jose from "jose";
 
 async function createJWT(appId: string, privateKey: string): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const payload = {
-    iat: now - 60,  // Issued 60 seconds ago
+    iat: now - 60, // Issued 60 seconds ago
     exp: now + 600, // Expires in 10 minutes
-    iss: appId      // GitHub App ID
+    iss: appId, // GitHub App ID
   };
-  
-  const alg = 'RS256';
+
+  const alg = "RS256";
   const key = await jose.importPKCS8(privateKey, alg);
-  
-  return await new jose.SignJWT(payload)
-    .setProtectedHeader({ alg })
-    .sign(key);
+
+  return await new jose.SignJWT(payload).setProtectedHeader({ alg }).sign(key);
 }
 ```
 
@@ -75,22 +74,22 @@ Add support for domain allowlisting to control which domains can use a user's Gi
 
 ```typescript
 // Example domain allowlist endpoint (to be implemented)
-if (path === '/domains') {
+if (path === "/domains") {
   // Get user ID from authentication
   const userId = getUserIdFromAuth(request);
-  
-  if (request.method === 'GET') {
+
+  if (request.method === "GET") {
     // Return the user's domain allowlist
     const domains = await getDomainAllowlist(env.DB, userId);
     return new Response(JSON.stringify({ domains }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { "Content-Type": "application/json" },
     });
-  } else if (request.method === 'POST') {
+  } else if (request.method === "POST") {
     // Add a domain to the allowlist
     const { domain } = await request.json();
     await addDomainToAllowlist(env.DB, userId, domain);
     return new Response(JSON.stringify({ success: true }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { "Content-Type": "application/json" },
     });
   }
 }
@@ -101,12 +100,14 @@ if (path === '/domains') {
 Consider options for real-time status updates:
 
 #### Option A: Polling (Current Implementation)
+
 - ✅ Simple to implement and maintain
 - ✅ Aligns with "thin proxy" design principle
 - ✅ Works with all clients without special handling
 - ❌ Less efficient for real-time updates
 
 #### Option B: Server-Sent Events (SSE)
+
 - ✅ More efficient for real-time updates
 - ✅ One-way communication from server to client
 - ❌ Adds complexity to the server implementation
@@ -116,38 +117,38 @@ If implementing SSE, the endpoint would look like:
 
 ```typescript
 // Example SSE endpoint (potential implementation)
-if (path.startsWith('/events/')) {
-  const sessionId = path.split('/').pop();
-  
+if (path.startsWith("/events/")) {
+  const sessionId = path.split("/").pop();
+
   // Set up SSE headers
   const headers = {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive'
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
   };
-  
+
   // Create a readable stream for events
   const stream = new ReadableStream({
     start(controller) {
       // Send initial connection message
       controller.enqueue(`data: ${JSON.stringify({ connected: true })}\n\n`);
-      
+
       // Set up a function to check for status changes
       const checkStatus = async () => {
         const status = await getSessionStatus(env.DB, sessionId);
         controller.enqueue(`data: ${JSON.stringify(status)}\n\n`);
-        
-        if (status.status === 'completed') {
+
+        if (status.status === "completed") {
           controller.close();
         } else {
           setTimeout(checkStatus, 1000);
         }
       };
-      
+
       checkStatus();
-    }
+    },
   });
-  
+
   return new Response(stream, { headers });
 }
 ```
@@ -195,12 +196,14 @@ Improve testing and documentation:
 To deploy this worker to production:
 
 1. Set up the required secrets in the Cloudflare dashboard:
+
    - `GITHUB_CLIENT_ID`
    - `GITHUB_CLIENT_SECRET`
    - `GITHUB_APP_ID` (for GitHub App integration)
    - `GITHUB_APP_PRIVATE_KEY` (for GitHub App integration)
 
 2. Deploy the worker:
+
    ```bash
    npx wrangler deploy
    ```
@@ -216,6 +219,7 @@ To deploy this worker to production:
 To run the worker locally:
 
 1. Create a `.dev.vars` file with the required environment variables:
+
    ```
    GITHUB_CLIENT_ID=your_client_id
    GITHUB_CLIENT_SECRET=your_client_secret
@@ -223,11 +227,13 @@ To run the worker locally:
    ```
 
 2. Initialize the database:
+
    ```bash
    npm run db:init
    ```
 
 3. Start the worker:
+
    ```bash
    npm run dev
    ```

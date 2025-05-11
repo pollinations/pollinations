@@ -1,5 +1,5 @@
 // Import from the consolidated affiliates.js file
-import { affiliatesData } from '../../affiliate/affiliates.js';
+import { affiliatesData } from "../../affiliate/affiliates.js";
 
 // Function to generate markdown from the JSON data
 function generateMarkdownFromJSON(affiliatesData) {
@@ -9,30 +9,30 @@ Use this information to determine which affiliate campaign is most relevant to t
 `;
 
   // Add each affiliate to the markdown
-  affiliatesData.forEach(affiliate => {
+  affiliatesData.forEach((affiliate) => {
     markdown += `\n## ${affiliate.name}\n\n`;
     markdown += `- **ID**: ${affiliate.id}\n`;
     markdown += `- **Product**: ${affiliate.product}\n`;
-    
+
     if (affiliate.description) {
       markdown += `- **Description**: ${affiliate.description}\n`;
     }
-    
+
     markdown += `- **Audience**: ${affiliate.audience}\n`;
-    markdown += `- **Categories**: ${affiliate.categories.join(', ')}\n`;
-    
+    markdown += `- **Categories**: ${affiliate.categories.join(", ")}\n`;
+
     if (affiliate.tags) {
-      markdown += `- **Tags**: ${Array.isArray(affiliate.tags) ? affiliate.tags.join(',') : affiliate.tags}\n`;
+      markdown += `- **Tags**: ${Array.isArray(affiliate.tags) ? affiliate.tags.join(",") : affiliate.tags}\n`;
     }
-    
+
     if (affiliate.nsfw) {
       markdown += `- **NSFW**: Yes\n`;
     }
-    
+
     if (affiliate.ad_text) {
       markdown += `- **Ad Text**: ${affiliate.ad_text}\n`;
     }
-    
+
     // Add weight information as Priority for weighted affiliates
     if (affiliate.weight !== undefined) {
       markdown += `- **Priority**: ${affiliate.weight} (Higher values indicate higher priority)\n`;

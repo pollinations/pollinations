@@ -21,13 +21,13 @@ flowchart TD
     L --> N[Return Image]
     N --> O[Worker Caches Image]
     O --> C
-    
+
     subgraph "Cloudflare Worker (image.pollinations.ai)"
         B
         C
         O
     end
-    
+
     subgraph "Origin Service (image-origin.pollinations.ai)"
         D
         E
@@ -41,12 +41,12 @@ flowchart TD
         M
         N
     end
-    
+
     subgraph "Safety Checks"
         H
         K
     end
-    
+
     subgraph "Image Processing"
         I
         L
@@ -56,6 +56,7 @@ flowchart TD
 ### Components
 
 1. **Cloudflare Worker (image.pollinations.ai)**
+
    - Serves as the entry point for all image requests
    - Checks R2 storage for cached images
    - Forwards requests to the origin service when needed
@@ -63,6 +64,7 @@ flowchart TD
    - Preserves client IP addresses for rate limiting
 
 2. **Origin Service (image-origin.pollinations.ai)**
+
    - Handles the actual image generation
    - Implements safety checks and content moderation
    - Processes and transforms images
@@ -85,12 +87,15 @@ flowchart TD
 1. Install automatic1111's [webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui/)
 
 2. Run with:
+
    ```bash
    ./webui.sh --api [--xformers]
    ```
+
    (xformers for speed up)
 
 3. Run the origin server (will listen on port 16384 by default):
+
    ```bash
    mkdir -p /tmp/stableDiffusion_cache
    npm install
@@ -105,20 +110,24 @@ flowchart TD
 ### Cloudflare Worker Setup
 
 1. Navigate to the cloudflare-cache directory:
+
    ```bash
    cd cloudflare-cache
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Configure wrangler.toml:
+
    - Set `ORIGIN_HOST` to `image-origin.pollinations.ai`
    - Configure R2 bucket binding for `IMAGE_BUCKET`
 
 4. Deploy the worker:
+
    ```bash
    npx wrangler deploy
    ```
@@ -130,6 +139,7 @@ flowchart TD
 ## Rate Limiting
 
 The origin service implements strict IP-based rate limiting (1 request per 10 seconds per IP). The Cloudflare Worker properly forwards the client's IP address through the following headers:
+
 - x-forwarded-for
 - x-real-ip
 - cf-connecting-ip
@@ -139,6 +149,7 @@ This ensures that rate limiting works correctly based on the original client's I
 ## Design Principles
 
 The system follows a "thin proxy" design principle:
+
 - Minimal processing in the worker
 - Direct forwarding of requests
 - No transformation of responses

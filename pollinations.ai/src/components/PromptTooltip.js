@@ -1,6 +1,6 @@
 import React from "react"
 import { Tooltip, Typography, Box } from "@mui/material"
-import { withStyles } from "@mui/styles" 
+import { withStyles } from "@mui/styles"
 import { SHOW_PROMPT_TOOLTIP } from "../config/global"
 
 import { Colors } from "../config/global"
@@ -44,7 +44,11 @@ const PromptTooltip = ({ title, children, seed = null }) => {
             <strong>Prompt:</strong> {title}
           </Typography>
           {seed !== null && (
-            <Typography component="div" variant="caption" style={{ fontStyle: "italic", marginTop: "0.3em" }}>
+            <Typography
+              component="div"
+              variant="caption"
+              style={{ fontStyle: "italic", marginTop: "0.3em" }}
+            >
               <strong>Seed:</strong> {seed}
             </Typography>
           )}

@@ -1,20 +1,26 @@
-import fetch from 'node-fetch';
-import { fileTypeFromBuffer } from 'file-type';
-import { addPollinationsLogoWithImagemagick, getLogoPath } from './imageOperations.js';
-import { MODELS } from './models.js';
-import { fetchFromLeastBusyFluxServer, getNextTurboServerUrl } from './availableServers.js';
-import debug from 'debug';
-import { checkContent } from './llamaguard.js';
+import fetch from "node-fetch";
+import { fileTypeFromBuffer } from "file-type";
+import {
+  addPollinationsLogoWithImagemagick,
+  getLogoPath,
+} from "./imageOperations.js";
+import { MODELS } from "./models.js";
+import {
+  fetchFromLeastBusyFluxServer,
+  getNextTurboServerUrl,
+} from "./availableServers.js";
+import debug from "debug";
+import { checkContent } from "./llamaguard.js";
 
-const logError = debug('pollinations:error');
-const logPerf = debug('pollinations:perf');
-const logOps = debug('pollinations:ops');
-const logCloudflare = debug('pollinations:cloudflare');
+const logError = debug("pollinations:error");
+const logPerf = debug("pollinations:perf");
+const logOps = debug("pollinations:ops");
+const logCloudflare = debug("pollinations:cloudflare");
 
-import { writeExifMetadata } from './writeExifMetadata.js';
-import { sanitizeString } from './translateIfNecessary.js';
-import sharp from 'sharp';
-import sleep from 'await-sleep';
+import { writeExifMetadata } from "./writeExifMetadata.js";
+import { sanitizeString } from "./translateIfNecessary.js";
+import sharp from "sharp";
+import sleep from "await-sleep";
 
 // const TURBO_SERVER_URL = 'http://54.91.176.109:5003/generate';
 let total_start_time = Date.now();
@@ -64,27 +70,35 @@ export const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
     logOps("concurrent requests", concurrentRequests, "safeParams", safeParams);
 
     // Linear scaling of steps between 6 (at concurrentRequests=2) and 1 (at concurrentRequests=36)
-    const steps = Math.max(1, Math.round(4 - ((concurrentRequests - 2) * (3 - 1)) / (10 - 2)));
+    const steps = Math.max(
+      1,
+      Math.round(4 - ((concurrentRequests - 2) * (3 - 1)) / (10 - 2)),
+    );
     logOps("calculated_steps", steps);
 
     prompt = sanitizeString(prompt);
-    
+
     // Calculate scaled dimensions
-    const { scaledWidth, scaledHeight, scalingFactor } = calculateScaledDimensions(
-      safeParams.width, 
-      safeParams.height
-    );
+    const { scaledWidth, scaledHeight, scalingFactor } =
+      calculateScaledDimensions(safeParams.width, safeParams.height);
 
     const body = {
-      "prompts": [prompt],
-      "width": scaledWidth,
-      "height": scaledHeight,
-      "seed": safeParams.seed,
-      "negative_prompt": safeParams.negative_prompt,
-      "steps": steps
+      prompts: [prompt],
+      width: scaledWidth,
+      height: scaledHeight,
+      seed: safeParams.seed,
+      negative_prompt: safeParams.negative_prompt,
+      steps: steps,
     };
 
-    logOps("calling prompt", body.prompts, "width", body.width, "height", body.height);
+    logOps(
+      "calling prompt",
+      body.prompts,
+      "width",
+      body.width,
+      "height",
+      body.height,
+    );
 
     // Start timing for fetch
     const fetch_start_time = Date.now();
@@ -93,11 +107,14 @@ export const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
     let response;
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        const fetchFunction = safeParams.model === "turbo" ? fetchFromTurboServer : fetchFromLeastBusyFluxServer;
+        const fetchFunction =
+          safeParams.model === "turbo"
+            ? fetchFromTurboServer
+            : fetchFromLeastBusyFluxServer;
         response = await fetchFunction({
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(body),
         });
@@ -107,7 +124,7 @@ export const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
       } catch (error) {
         logError(`Fetch attempt ${attempt} failed: ${error.message}`);
         if (attempt === 3) throw error;
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
       }
     }
 
@@ -131,7 +148,9 @@ export const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
 
     const jsonResponse = await response.json();
 
-    const { image, ...rest } = Array.isArray(jsonResponse) ? jsonResponse[0] : jsonResponse;
+    const { image, ...rest } = Array.isArray(jsonResponse)
+      ? jsonResponse[0]
+      : jsonResponse;
 
     if (!image) {
       logError("image is null");
@@ -140,14 +159,14 @@ export const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
 
     logOps("decoding base64 image");
 
-    const buffer = Buffer.from(image, 'base64');
+    const buffer = Buffer.from(image, "base64");
 
     // Resize back to original dimensions if scaling was applied
     if (scalingFactor > 1) {
       const resizedBuffer = await sharp(buffer)
         .resize(safeParams.width, safeParams.height, {
-          fit: 'fill',
-          withoutEnlargement: false
+          fit: "fill",
+          withoutEnlargement: false,
         })
         .jpeg()
         .toBuffer();
@@ -158,13 +177,12 @@ export const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
     const jpegBuffer = await sharp(buffer)
       .jpeg({
         quality: 90,
-        mozjpeg: true
+        mozjpeg: true,
       })
       .toBuffer();
     return { buffer: jpegBuffer, ...rest };
-
   } catch (e) {
-    logError('Error in callComfyUI:', e);
+    logError("Error in callComfyUI:", e);
     throw e;
   }
 };
@@ -177,11 +195,16 @@ export const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
  * @param {Object} [additionalParams={}] - Additional parameters specific to the model
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
  */
-async function callCloudflareModel(prompt, safeParams, modelPath, additionalParams = {}) {
+async function callCloudflareModel(
+  prompt,
+  safeParams,
+  modelPath,
+  additionalParams = {},
+) {
   const { accountId, apiToken } = getCloudflareCredentials();
-  
+
   if (!accountId || !apiToken) {
-    throw new Error('Cloudflare credentials not configured');
+    throw new Error("Cloudflare credentials not configured");
   }
 
   // Limit prompt to 2048 characters
@@ -199,51 +222,75 @@ async function callCloudflareModel(prompt, safeParams, modelPath, additionalPara
     width: width,
     height: height,
     seed: safeParams.seed || Math.floor(Math.random() * 1000000),
-    ...additionalParams
+    ...additionalParams,
   };
 
-  logCloudflare(`Cloudflare ${modelPath} request body:`, JSON.stringify(requestBody, null, 2));
+  logCloudflare(
+    `Cloudflare ${modelPath} request body:`,
+    JSON.stringify(requestBody, null, 2),
+  );
 
   const response = await fetch(url, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Authorization': `Bearer ${apiToken}`,
-      'Content-Type': 'application/json'
+      Authorization: `Bearer ${apiToken}`,
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify(requestBody)
+    body: JSON.stringify(requestBody),
   });
 
   // Check if response is successful
   if (!response.ok) {
     const errorText = await response.text();
-    logError(`Cloudflare ${modelPath} API request failed, status:`, response.status, 'response:', errorText);
-    logError(`Cloudflare ${modelPath} API request headers:`, JSON.stringify(Object.fromEntries([...response.headers]), null, 2));
-    throw new Error(`Cloudflare ${modelPath} API request failed with status ${response.status}: ${errorText}`);
+    logError(
+      `Cloudflare ${modelPath} API request failed, status:`,
+      response.status,
+      "response:",
+      errorText,
+    );
+    logError(
+      `Cloudflare ${modelPath} API request headers:`,
+      JSON.stringify(Object.fromEntries([...response.headers]), null, 2),
+    );
+    throw new Error(
+      `Cloudflare ${modelPath} API request failed with status ${response.status}: ${errorText}`,
+    );
   }
 
   // Check content type to determine how to handle the response
-  const contentType = response.headers.get('content-type');
+  const contentType = response.headers.get("content-type");
   let imageBuffer;
 
-  if (contentType && contentType.includes('image/')) {
+  if (contentType && contentType.includes("image/")) {
     // Direct binary image response (typical for SDXL)
-    logCloudflare(`Received binary image from Cloudflare ${modelPath} with content type: ${contentType}`);
+    logCloudflare(
+      `Received binary image from Cloudflare ${modelPath} with content type: ${contentType}`,
+    );
     imageBuffer = await response.buffer();
     logCloudflare(`Image buffer size: ${imageBuffer.length} bytes`);
   } else {
     // JSON response with base64 encoded image (typical for Flux)
     const data = await response.json();
-    logCloudflare(`Received JSON response from Cloudflare ${modelPath}:`, JSON.stringify(data, null, 2));
+    logCloudflare(
+      `Received JSON response from Cloudflare ${modelPath}:`,
+      JSON.stringify(data, null, 2),
+    );
     if (!data.success) {
-      logError(`Cloudflare ${modelPath} API request failed, full response:`, data);
-      throw new Error(data.errors?.[0]?.message || `Cloudflare ${modelPath} API request failed`);
+      logError(
+        `Cloudflare ${modelPath} API request failed, full response:`,
+        data,
+      );
+      throw new Error(
+        data.errors?.[0]?.message ||
+          `Cloudflare ${modelPath} API request failed`,
+      );
     }
     if (!data.result?.image) {
-      throw new Error('No image in response');
+      throw new Error("No image in response");
     }
-    imageBuffer = Buffer.from(data.result.image, 'base64');
+    imageBuffer = Buffer.from(data.result.image, "base64");
   }
-  
+
   return { buffer: imageBuffer, isMature: false, isChild: false };
 }
 
@@ -254,7 +301,12 @@ async function callCloudflareModel(prompt, safeParams, modelPath, additionalPara
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
  */
 async function callCloudflareFlux(prompt, safeParams) {
-  return callCloudflareModel(prompt, safeParams, 'black-forest-labs/flux-1-schnell', { steps: 4 });
+  return callCloudflareModel(
+    prompt,
+    safeParams,
+    "black-forest-labs/flux-1-schnell",
+    { steps: 4 },
+  );
 }
 
 /**
@@ -264,7 +316,11 @@ async function callCloudflareFlux(prompt, safeParams) {
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
  */
 async function callCloudflareSDXL(prompt, safeParams) {
-  return callCloudflareModel(prompt, safeParams, 'bytedance/stable-diffusion-xl-lightning');
+  return callCloudflareModel(
+    prompt,
+    safeParams,
+    "bytedance/stable-diffusion-xl-lightning",
+  );
 }
 
 /**
@@ -280,30 +336,38 @@ async function callCloudflareDreamshaper(prompt, safeParams) {
     if (safeParams.seed && safeParams.seed !== 42) {
       modifiedPrompt = `${prompt}, seed:${safeParams.seed}`;
     }
-    
+
     // Create a minimal params object with only width and height
     const dreamshaperParams = {
       width: safeParams.width || 1024,
-      height: safeParams.height || 1024
+      height: safeParams.height || 1024,
     };
-    
+
     // Create a modified safeParams without the seed
     const modifiedSafeParams = { ...safeParams };
     delete modifiedSafeParams.seed;
-    
+
     // Call the model with the minimal parameters
-    logCloudflare(`Using Dreamshaper with prompt: ${modifiedPrompt} and parameters:`, JSON.stringify(dreamshaperParams, null, 2));
-    const result = await callCloudflareModel(modifiedPrompt, modifiedSafeParams, 'lykon/dreamshaper-8-lcm', dreamshaperParams);
+    logCloudflare(
+      `Using Dreamshaper with prompt: ${modifiedPrompt} and parameters:`,
+      JSON.stringify(dreamshaperParams, null, 2),
+    );
+    const result = await callCloudflareModel(
+      modifiedPrompt,
+      modifiedSafeParams,
+      "lykon/dreamshaper-8-lcm",
+      dreamshaperParams,
+    );
     return result;
   } catch (error) {
     // Log detailed error information
-    logError('Dreamshaper detailed error:', error);
+    logError("Dreamshaper detailed error:", error);
     if (error.response) {
       try {
         const responseText = await error.response.text();
-        logError('Dreamshaper response text:', responseText);
+        logError("Dreamshaper response text:", responseText);
       } catch (textError) {
-        logError('Could not get response text:', textError.message);
+        logError("Could not get response text:", textError.message);
       }
     }
     throw error;
@@ -336,26 +400,26 @@ function getCloudflareCredentials() {
  * @returns {string} - The closest aspect ratio as a string.
  */
 export function calculateClosestAspectRatio(width, height) {
-  const aspectRatio = width / height
+  const aspectRatio = width / height;
   const ratios = {
-    '1:1': 1,
-    '4:3': 4/3,
-    '16:9': 16/9,
-    '3:2': 3/2
-  }
+    "1:1": 1,
+    "4:3": 4 / 3,
+    "16:9": 16 / 9,
+    "3:2": 3 / 2,
+  };
 
-  let closestRatio = '1:1'
-  let minDiff = Math.abs(aspectRatio - 1)
+  let closestRatio = "1:1";
+  let minDiff = Math.abs(aspectRatio - 1);
 
   for (const [ratio, value] of Object.entries(ratios)) {
-    const diff = Math.abs(aspectRatio - value)
+    const diff = Math.abs(aspectRatio - value);
     if (diff < minDiff) {
-      minDiff = diff
-      closestRatio = ratio
+      minDiff = diff;
+      closestRatio = ratio;
     }
   }
 
-  return closestRatio
+  return closestRatio;
 }
 
 /**
@@ -366,7 +430,7 @@ export function calculateClosestAspectRatio(width, height) {
 export async function convertToJpeg(buffer) {
   try {
     const fileType = await fileTypeFromBuffer(buffer);
-    if (!fileType || (fileType.ext !== 'jpg' && fileType.ext !== 'jpeg')) {
+    if (!fileType || (fileType.ext !== "jpg" && fileType.ext !== "jpeg")) {
       const result = await sharp(buffer).jpeg().toBuffer();
       return result;
     }
@@ -387,53 +451,88 @@ export async function convertToJpeg(buffer) {
  * @param {boolean} wasTransformedForBadDomain - Flag indicating if the prompt was transformed due to bad domain.
  * @returns {Promise<{buffer: Buffer, isChild: boolean, isMature: boolean}>}
  */
-export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests, originalPrompt, progress, requestId, wasTransformedForBadDomain = false) {
+export async function createAndReturnImageCached(
+  prompt,
+  safeParams,
+  concurrentRequests,
+  originalPrompt,
+  progress,
+  requestId,
+  wasTransformedForBadDomain = false,
+) {
   try {
     // Update generation progress
-    if (progress) progress.updateBar(requestId, 60, 'Generation', 'Calling API...');
+    if (progress)
+      progress.updateBar(requestId, 60, "Generation", "Calling API...");
     let bufferAndMaturity;
 
     // Try Cloudflare Flux first if model is 'flux'
-    if (safeParams.model === 'flux') {
+    if (safeParams.model === "flux") {
       try {
-        if (progress) progress.updateBar(requestId, 30, 'Processing', 'Trying Cloudflare Flux...');
+        if (progress)
+          progress.updateBar(
+            requestId,
+            30,
+            "Processing",
+            "Trying Cloudflare Flux...",
+          );
         bufferAndMaturity = await callCloudflareFlux(prompt, safeParams);
       } catch (error) {
-        logError('Cloudflare Flux failed, trying Dreamshaper:', error.message);
+        logError("Cloudflare Flux failed, trying Dreamshaper:", error.message);
         try {
-          if (progress) progress.updateBar(requestId, 35, 'Processing', 'Trying Cloudflare Dreamshaper...');
-          bufferAndMaturity = await callCloudflareDreamshaper(prompt, safeParams);
+          if (progress)
+            progress.updateBar(
+              requestId,
+              35,
+              "Processing",
+              "Trying Cloudflare Dreamshaper...",
+            );
+          bufferAndMaturity = await callCloudflareDreamshaper(
+            prompt,
+            safeParams,
+          );
         } catch (dreamshaperError) {
-          logError('Cloudflare Dreamshaper failed:', dreamshaperError.message);
+          logError("Cloudflare Dreamshaper failed:", dreamshaperError.message);
           // Removed the specific Turbo fallback block
           // The code will now fall through to the general ComfyUI call below if Dreamshaper fails
         }
       }
     }
     if (!bufferAndMaturity)
-      bufferAndMaturity = await callComfyUI(prompt, safeParams, concurrentRequests);
+      bufferAndMaturity = await callComfyUI(
+        prompt,
+        safeParams,
+        concurrentRequests,
+      );
 
-    if (progress) progress.updateBar(requestId, 70, 'Generation', 'API call complete');
-    if (progress) progress.updateBar(requestId, 75, 'Processing', 'Checking safety...');
+    if (progress)
+      progress.updateBar(requestId, 70, "Generation", "API call complete");
+    if (progress)
+      progress.updateBar(requestId, 75, "Processing", "Checking safety...");
 
     logError("bufferAndMaturity", bufferAndMaturity);
 
     // Get initial values from model
-    let isMature = bufferAndMaturity?.isMature || bufferAndMaturity?.has_nsfw_concept;
+    let isMature =
+      bufferAndMaturity?.isMature || bufferAndMaturity?.has_nsfw_concept;
     const concept = bufferAndMaturity?.concept;
-    let isChild = bufferAndMaturity?.isChild || Object.values(concept?.special_scores || {})?.slice(1).some(score => score > -0.05);
+    let isChild =
+      bufferAndMaturity?.isChild ||
+      Object.values(concept?.special_scores || {})
+        ?.slice(1)
+        .some((score) => score > -0.05);
 
     // // Check with LlamaGuard and override if necessary
     // try {
 
     //     const llamaguardResult = await checkContent(prompt);
-        
+
     //     // Override safety flags if LlamaGuard detects issues
     //     if (llamaguardResult.isMature) {
     //         isMature = true;
     //         log('LlamaGuard detected mature content, overriding isMature to true');
     //     }
-        
+
     //     if (llamaguardResult.isChild) {
     //         isChild = true;
     //         log('LlamaGuard detected child exploitation content, overriding isChild to true');
@@ -447,28 +546,43 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
 
     // Throw error if NSFW content is detected and safe mode is enabled
     if (safeParams.safe && isMature) {
-      throw new Error("NSFW content detected. This request cannot be fulfilled when safe mode is enabled.");
+      throw new Error(
+        "NSFW content detected. This request cannot be fulfilled when safe mode is enabled.",
+      );
     }
 
-    if (progress) progress.updateBar(requestId, 80, 'Processing', 'Adding logo...');
+    if (progress)
+      progress.updateBar(requestId, 80, "Processing", "Adding logo...");
     const logoPath = getLogoPath(safeParams, isChild, isMature);
-    let bufferWithLegend = !logoPath ? bufferAndMaturity.buffer : await addPollinationsLogoWithImagemagick(bufferAndMaturity.buffer, logoPath, safeParams);
+    let bufferWithLegend = !logoPath
+      ? bufferAndMaturity.buffer
+      : await addPollinationsLogoWithImagemagick(
+          bufferAndMaturity.buffer,
+          logoPath,
+          safeParams,
+        );
 
-    if (progress) progress.updateBar(requestId, 85, 'Processing', 'Converting format...');
+    if (progress)
+      progress.updateBar(requestId, 85, "Processing", "Converting format...");
     // Convert the buffer to JPEG if it is not already in JPEG format
     bufferWithLegend = await convertToJpeg(bufferWithLegend);
 
-    if (progress) progress.updateBar(requestId, 90, 'Processing', 'Writing metadata...');
+    if (progress)
+      progress.updateBar(requestId, 90, "Processing", "Writing metadata...");
     const { buffer: _buffer, ...maturity } = bufferAndMaturity;
-    
+
     // Metadata preparation - handle bad domain transformation
     // When a prompt was transformed due to bad domain, always use the original prompt in metadata
     // This ensures clients never see the transformed prompt
-    const metadataObj = wasTransformedForBadDomain ? 
-      { ...safeParams, prompt: originalPrompt, originalPrompt } : 
-      { prompt, originalPrompt, ...safeParams };
-    
-    bufferWithLegend = await writeExifMetadata(bufferWithLegend, metadataObj, maturity);
+    const metadataObj = wasTransformedForBadDomain
+      ? { ...safeParams, prompt: originalPrompt, originalPrompt }
+      : { prompt, originalPrompt, ...safeParams };
+
+    bufferWithLegend = await writeExifMetadata(
+      bufferWithLegend,
+      metadataObj,
+      maturity,
+    );
 
     // if isChild is true and isMature is true throw a content is prohibited error
     // if (isChild && isMature) {
@@ -476,7 +590,7 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
     // }
     return { buffer: bufferWithLegend, isChild, isMature };
   } catch (error) {
-    logError('Error in createAndReturnImageCached:', error);
+    logError("Error in createAndReturnImageCached:", error);
     throw error;
   }
 }

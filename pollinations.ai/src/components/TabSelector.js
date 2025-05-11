@@ -1,13 +1,13 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { Box, useMediaQuery, useTheme } from "@mui/material";
-import { Colors, Fonts } from "../config/global";
-import { GeneralButton } from "./GeneralButton";
-import { trackEvent } from "../config/analytics";
+import React, { useEffect, useState, useMemo } from "react"
+import { Box, useMediaQuery, useTheme } from "@mui/material"
+import { Colors, Fonts } from "../config/global"
+import { GeneralButton } from "./GeneralButton"
+import { trackEvent } from "../config/analytics"
 
 /**
  * A reusable component for displaying tab buttons with a flexible layout
  * where each button takes just the width it needs.
- * 
+ *
  * @param {Object} props
  * @param {Array} props.items - Array of tab items to display
  * @param {string} props.selectedKey - The currently selected tab key
@@ -28,68 +28,72 @@ const TabSelector = ({
   getButtonTextColor,
   buttonStyle = {},
 }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
-  
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"))
+
   // Helper to get item key consistently
-  const getItemKey = item => item.key || item;
-  
+  const getItemKey = (item) => item.key || item
+
   // Initialize with first item if items exist and no selection provided
-  const defaultKey = items.length > 0 ? getItemKey(items[0]) : null;
-  
+  const defaultKey = items.length > 0 ? getItemKey(items[0]) : null
+
   // Internal state to track selection when parent doesn't provide one
-  const [internalSelectedKey, setInternalSelectedKey] = useState(selectedKey || defaultKey);
-  
+  const [internalSelectedKey, setInternalSelectedKey] = useState(selectedKey || defaultKey)
+
   // Use parent selection if provided, otherwise use internal selection
-  const effectiveSelectedKey = selectedKey || internalSelectedKey;
+  const effectiveSelectedKey = selectedKey || internalSelectedKey
 
   // Update internal selection when items change and no selection exists
   useEffect(() => {
     if (items.length > 0 && !effectiveSelectedKey) {
-      const firstItemKey = getItemKey(items[0]);
-      setInternalSelectedKey(firstItemKey);
-      onSelectTab?.(firstItemKey);
+      const firstItemKey = getItemKey(items[0])
+      setInternalSelectedKey(firstItemKey)
+      onSelectTab?.(firstItemKey)
     }
-  }, [items, effectiveSelectedKey, onSelectTab]);
+  }, [items, effectiveSelectedKey, onSelectTab])
 
   // Style functions with defaults
-  const getBgColor = useMemo(() => 
-    getButtonBackground || (itemKey => 
-      effectiveSelectedKey === itemKey ? Colors.lime : Colors.offblack2
-    ), [getButtonBackground, effectiveSelectedKey]);
+  const getBgColor = useMemo(
+    () =>
+      getButtonBackground ||
+      ((itemKey) => (effectiveSelectedKey === itemKey ? Colors.lime : Colors.offblack2)),
+    [getButtonBackground, effectiveSelectedKey]
+  )
 
-  const getTextColor = useMemo(() => 
-    getButtonTextColor || (itemKey => 
-      effectiveSelectedKey === itemKey ? Colors.offblack : Colors.lime
-    ), [getButtonTextColor, effectiveSelectedKey]);
+  const getTextColor = useMemo(
+    () =>
+      getButtonTextColor ||
+      ((itemKey) => (effectiveSelectedKey === itemKey ? Colors.offblack : Colors.lime)),
+    [getButtonTextColor, effectiveSelectedKey]
+  )
 
-  const handleTabClick = itemKey => {
-    setInternalSelectedKey(itemKey);
-    onSelectTab?.(itemKey);
+  const handleTabClick = (itemKey) => {
+    setInternalSelectedKey(itemKey)
+    onSelectTab?.(itemKey)
     trackEvent({
       action: trackingAction,
       category: trackingCategory,
       value: itemKey,
-    });
-  };
+    })
+  }
 
   // Extract commonly used styles
   const containerStyle = {
-    maxWidth: "1000px", 
-    width: "100%", 
-    marginLeft: "auto", 
-    marginRight: "auto", 
+    maxWidth: "1000px",
+    width: "100%",
+    marginLeft: "auto",
+    marginRight: "auto",
     marginBottom: "2em",
     display: "flex",
     flexWrap: "wrap",
     justifyContent: "center",
-    gap: "10px"
-  };
+    gap: "10px",
+  }
 
-  const getButtonStyles = itemKey => {
-    const isSelected = effectiveSelectedKey === itemKey;
-    
+  const getButtonStyles = (itemKey) => {
+    const isSelected = effectiveSelectedKey === itemKey
+
     return {
       minWidth: isMobile ? "100px" : "120px",
       fontFamily: Fonts.title,
@@ -105,13 +109,13 @@ const TabSelector = ({
       whiteSpace: "nowrap",
       flexGrow: isMobile ? 1 : 0,
       ...buttonStyle,
-    };
-  };
+    }
+  }
 
   return (
     <Box sx={containerStyle}>
-      {items.map(item => {
-        const itemKey = getItemKey(item);
+      {items.map((item) => {
+        const itemKey = getItemKey(item)
         return (
           <GeneralButton
             key={itemKey}
@@ -122,10 +126,10 @@ const TabSelector = ({
           >
             {item.title || item}
           </GeneralButton>
-        );
+        )
       })}
     </Box>
-  );
-};
+  )
+}
 
-export default TabSelector; 
+export default TabSelector

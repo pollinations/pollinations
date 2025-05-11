@@ -4,11 +4,16 @@
  * Functions and schemas for interacting with the Pollinations Image API
  */
 
-import { createMCPResponse, createTextContent, createImageContent, buildUrl } from '../utils/coreUtils.js';
-import { z } from 'zod';
+import {
+  createMCPResponse,
+  createTextContent,
+  createImageContent,
+  buildUrl,
+} from "../utils/coreUtils.js";
+import { z } from "zod";
 
 // Constants
-const IMAGE_API_BASE_URL = 'https://image.pollinations.ai';
+const IMAGE_API_BASE_URL = "https://image.pollinations.ai";
 
 /**
  * Internal function to generate an image URL without MCP formatting
@@ -18,12 +23,7 @@ const IMAGE_API_BASE_URL = 'https://image.pollinations.ai';
  * @returns {Object} - Object containing the image URL and metadata
  */
 async function _generateImageUrlInternal(prompt, options = {}) {
-  const {
-    model,
-    seed,
-    width = 1024,
-    height = 1024,
-  } = options;
+  const { model, seed, width = 1024, height = 1024 } = options;
 
   // Construct the URL with query parameters
   const encodedPrompt = encodeURIComponent(prompt);
@@ -39,7 +39,7 @@ async function _generateImageUrlInternal(prompt, options = {}) {
     width,
     height,
     model,
-    seed
+    seed,
   };
 }
 
@@ -58,17 +58,15 @@ async function _generateImageUrlInternal(prompt, options = {}) {
 async function generateImageUrl(params) {
   const { prompt, options = {} } = params;
 
-  if (!prompt || typeof prompt !== 'string') {
-    throw new Error('Prompt is required and must be a string');
+  if (!prompt || typeof prompt !== "string") {
+    throw new Error("Prompt is required and must be a string");
   }
 
   // Generate the image URL and metadata
   const result = await _generateImageUrlInternal(prompt, options);
 
   // Return the response in MCP format
-  return createMCPResponse([
-    createTextContent(result, true)
-  ]);
+  return createMCPResponse([createTextContent(result, true)]);
 }
 
 /**
@@ -86,8 +84,8 @@ async function generateImageUrl(params) {
 async function generateImage(params) {
   const { prompt, options = {} } = params;
 
-  if (!prompt || typeof prompt !== 'string') {
-    throw new Error('Prompt is required and must be a string');
+  if (!prompt || typeof prompt !== "string") {
+    throw new Error("Prompt is required and must be a string");
   }
 
   // First, generate the image URL (but don't use the MCP response format)
@@ -105,26 +103,28 @@ async function generateImage(params) {
     const imageBuffer = await response.arrayBuffer();
 
     // Convert the ArrayBuffer to a base64 string
-    const base64Data = Buffer.from(imageBuffer).toString('base64');
+    const base64Data = Buffer.from(imageBuffer).toString("base64");
 
     // Determine the mime type from the response headers or default to image/jpeg
-    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    const contentType = response.headers.get("content-type") || "image/jpeg";
 
     const metadata = {
       prompt: urlResult.prompt,
       width: urlResult.width,
       height: urlResult.height,
       model: urlResult.model,
-      seed: urlResult.seed
+      seed: urlResult.seed,
     };
 
     // Return the response in MCP format
     return createMCPResponse([
       createImageContent(base64Data, contentType),
-      createTextContent(`Generated image from prompt: "${prompt}"\n\nImage metadata: ${JSON.stringify(metadata, null, 2)}`)
+      createTextContent(
+        `Generated image from prompt: "${prompt}"\n\nImage metadata: ${JSON.stringify(metadata, null, 2)}`,
+      ),
     ]);
   } catch (error) {
-    console.error('Error generating image:', error);
+    console.error("Error generating image:", error);
     throw error;
   }
 }
@@ -137,7 +137,7 @@ async function generateImage(params) {
  */
 async function listImageModels(params) {
   try {
-    const url = buildUrl(IMAGE_API_BASE_URL, 'models');
+    const url = buildUrl(IMAGE_API_BASE_URL, "models");
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -147,11 +147,9 @@ async function listImageModels(params) {
     const models = await response.json();
 
     // Return the response in MCP format
-    return createMCPResponse([
-      createTextContent(models, true)
-    ]);
+    return createMCPResponse([createTextContent(models, true)]);
   } catch (error) {
-    console.error('Error listing image models:', error);
+    console.error("Error listing image models:", error);
     throw error;
   }
 }
@@ -161,39 +159,56 @@ async function listImageModels(params) {
  */
 export const imageTools = [
   [
-    'generateImageUrl',
-    'Generate an image URL from a text prompt',
+    "generateImageUrl",
+    "Generate an image URL from a text prompt",
     {
-      prompt: z.string().describe('The text description of the image to generate'),
-      options: z.object({
-        model: z.string().optional().describe('Model name to use for generation'),
-        seed: z.number().optional().describe('Seed for reproducible results'),
-        width: z.number().optional().describe('Width of the generated image'),
-        height: z.number().optional().describe('Height of the generated image')
-      }).optional().describe('Additional options for image generation')
+      prompt: z
+        .string()
+        .describe("The text description of the image to generate"),
+      options: z
+        .object({
+          model: z
+            .string()
+            .optional()
+            .describe("Model name to use for generation"),
+          seed: z.number().optional().describe("Seed for reproducible results"),
+          width: z.number().optional().describe("Width of the generated image"),
+          height: z
+            .number()
+            .optional()
+            .describe("Height of the generated image"),
+        })
+        .optional()
+        .describe("Additional options for image generation"),
     },
-    generateImageUrl
+    generateImageUrl,
   ],
-  
+
   [
-    'generateImage',
-    'Generate an image and return the base64-encoded data',
+    "generateImage",
+    "Generate an image and return the base64-encoded data",
     {
-      prompt: z.string().describe('The text description of the image to generate'),
-      options: z.object({
-        model: z.string().optional().describe('Model name to use for generation'),
-        seed: z.number().optional().describe('Seed for reproducible results'),
-        width: z.number().optional().describe('Width of the generated image'),
-        height: z.number().optional().describe('Height of the generated image')
-      }).optional().describe('Additional options for image generation')
+      prompt: z
+        .string()
+        .describe("The text description of the image to generate"),
+      options: z
+        .object({
+          model: z
+            .string()
+            .optional()
+            .describe("Model name to use for generation"),
+          seed: z.number().optional().describe("Seed for reproducible results"),
+          width: z.number().optional().describe("Width of the generated image"),
+          height: z
+            .number()
+            .optional()
+            .describe("Height of the generated image"),
+        })
+        .optional()
+        .describe("Additional options for image generation"),
     },
-    generateImage
+    generateImage,
   ],
-  
-  [
-    'listImageModels',
-    'List available image models',
-    {},
-    listImageModels
-  ]
+
+  ["listImageModels", "List available image models", {}, listImageModels],
 ];

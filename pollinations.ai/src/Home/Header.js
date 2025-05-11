@@ -126,10 +126,7 @@ const Header = () => {
             alignItems: "center",
           }}
         >
-          <AboutUsButton
-            handleClick={handleAboutUsClick}
-            isLoading={false}
-          >
+          <AboutUsButton handleClick={handleAboutUsClick} isLoading={false}>
             <AboutUsIcon src={ICONS.linkedin} wrapper="span" aria-label="linkedin-icon" />
             About Us
           </AboutUsButton>

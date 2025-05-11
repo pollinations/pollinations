@@ -23,8 +23,8 @@ export const Integration = () => {
   const handleGithubButtonClick = (e) => {
     e.preventDefault()
     trackEvent({
-      action: 'click_apidocs',
-      category: 'integrate',
+      action: "click_apidocs",
+      category: "integrate",
     })
     window.open("https://github.com/pollinations/pollinations/blob/master/APIDOCS.md", "_blank")
   }

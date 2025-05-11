@@ -37,6 +37,7 @@
 ## Testing Strategy
 
 1. **For Each Change**:
+
    - Run specific tests for the modified module
    - Run integration tests
    - Run full test suite

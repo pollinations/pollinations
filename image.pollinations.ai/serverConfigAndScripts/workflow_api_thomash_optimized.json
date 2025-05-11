@@ -2,10 +2,7 @@
   "6": {
     "inputs": {
       "text": "elaborate circuit board spelling out \"supported by on black background\"",
-      "clip": [
-        "38",
-        0
-      ]
+      "clip": ["38", 0]
     },
     "class_type": "CLIPTextEncode",
     "_meta": {
@@ -14,14 +11,8 @@
   },
   "8": {
     "inputs": {
-      "samples": [
-        "31",
-        0
-      ],
-      "vae": [
-        "39",
-        0
-      ]
+      "samples": ["31", 0],
+      "vae": ["39", 0]
     },
     "class_type": "VAEDecode",
     "_meta": {
@@ -31,10 +22,7 @@
   "9": {
     "inputs": {
       "filename_prefix": "ComfyUI",
-      "images": [
-        "8",
-        0
-      ]
+      "images": ["8", 0]
     },
     "class_type": "SaveImage",
     "_meta": {
@@ -60,22 +48,10 @@
       "sampler_name": "euler",
       "scheduler": "simple",
       "denoise": 1,
-      "model": [
-        "37",
-        0
-      ],
-      "positive": [
-        "6",
-        0
-      ],
-      "negative": [
-        "33",
-        0
-      ],
-      "latent_image": [
-        "27",
-        0
-      ]
+      "model": ["37", 0],
+      "positive": ["6", 0],
+      "negative": ["33", 0],
+      "latent_image": ["27", 0]
     },
     "class_type": "KSampler",
     "_meta": {
@@ -85,10 +61,7 @@
   "33": {
     "inputs": {
       "text": "",
-      "clip": [
-        "38",
-        0
-      ]
+      "clip": ["38", 0]
     },
     "class_type": "CLIPTextEncode",
     "_meta": {

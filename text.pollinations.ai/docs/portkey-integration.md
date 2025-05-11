@@ -28,6 +28,7 @@ PORTKEY_PROVIDER=openai  # Default provider (optional)
 ```
 
 Notes:
+
 - `PORTKEY_API_KEY`: This is your provider's API key (e.g., OpenAI, Anthropic) that Portkey will forward
 - `PORTKEY_PROVIDER`: (Optional) Default provider to use. Supported values include: openai, anthropic, mistral, google, etc.
 
@@ -39,12 +40,12 @@ You'll need to have valid API keys for any providers you want to use through Por
 
 The following models are available through the Portkey integration:
 
-| Model Name | Description | Provider |
-|------------|-------------|----------|
-| portkey-gpt4 | GPT-4 via local Portkey gateway | OpenAI |
-| portkey-claude | Claude 3 Opus via local Portkey gateway | Anthropic |
-| portkey-llama | Llama 3 70B via local Portkey gateway | Meta |
-| portkey-mistral | Mistral Large via local Portkey gateway | Mistral |
+| Model Name      | Description                             | Provider  |
+| --------------- | --------------------------------------- | --------- |
+| portkey-gpt4    | GPT-4 via local Portkey gateway         | OpenAI    |
+| portkey-claude  | Claude 3 Opus via local Portkey gateway | Anthropic |
+| portkey-llama   | Llama 3 70B via local Portkey gateway   | Meta      |
+| portkey-mistral | Mistral Large via local Portkey gateway | Mistral   |
 
 ## Using the API
 
@@ -52,21 +53,19 @@ You can use these models like any other model in the text.pollinations.ai API:
 
 ```javascript
 // Example using fetch
-fetch('http://localhost:16385/openai', {
-  method: 'POST',
+fetch("http://localhost:16385/openai", {
+  method: "POST",
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
   body: JSON.stringify({
-    model: 'portkey-gpt4',
-    messages: [
-      { role: 'user', content: 'Hello, who are you?' }
-    ],
-    temperature: 0.7
-  })
+    model: "portkey-gpt4",
+    messages: [{ role: "user", content: "Hello, who are you?" }],
+    temperature: 0.7,
+  }),
 })
-.then(response => response.json())
-.then(data => console.log(data));
+  .then((response) => response.json())
+  .then((data) => console.log(data));
 ```
 
 ## Advanced Configuration

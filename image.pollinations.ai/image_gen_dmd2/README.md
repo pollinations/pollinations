@@ -4,11 +4,11 @@ Few-step Text-to-Image Generation.
 
 ![image/jpeg](docs/teaser.jpg)
 
-> [**Improved Distribution Matching Distillation for Fast Image Synthesis**](https://tianweiy.github.io/dmd2/),            
-> Tianwei Yin, Michaël Gharbi, Taesung Park, Richard Zhang, Eli Shechtman, Frédo Durand, William T. Freeman        
-> *arXiv technical report ([arXiv 2405.14867](https://arxiv.org/abs/2405.14867))*  
+> [**Improved Distribution Matching Distillation for Fast Image Synthesis**](https://tianweiy.github.io/dmd2/),  
+> Tianwei Yin, Michaël Gharbi, Taesung Park, Richard Zhang, Eli Shechtman, Frédo Durand, William T. Freeman  
+> _arXiv technical report ([arXiv 2405.14867](https://arxiv.org/abs/2405.14867))_
 
-## Contact 
+## Contact
 
 Feel free to contact us if you have any questions about the paper!
 
@@ -45,9 +45,9 @@ exceptional visual quality among few-step methods.
 ## Environment Setup
 
 ```.bash
-# In conda env 
-conda create -n dmd2 python=3.8 -y 
-conda activate dmd2 
+# In conda env
+conda create -n dmd2 python=3.8 -y
+conda activate dmd2
 
 pip install --upgrade anyio
 pip install torch==2.0.1  torchvision==0.15.2
@@ -60,7 +60,7 @@ python setup.py  develop
 To reproduce our ImageNet results, run:
 
 ```.bash
-python -m demo.imagenet_example  --checkpoint_path IMAGENET_CKPT_PATH 
+python -m demo.imagenet_example  --checkpoint_path IMAGENET_CKPT_PATH
 ```
 
 To try our text-to-image generation demo, run:
@@ -73,15 +73,15 @@ python -m demo.text_to_image_sdxl --checkpoint_path SDXL_CKPT_PATH --precision b
 # Higher speed (roughly 2x) by using float16 and a Tiny VAE from [madebyollin](https://huggingface.co/madebyollin/taesdxl)
 python -m demo.text_to_image_sdxl --checkpoint_path SDXL_CKPT_PATH --use_tiny_vae --precision float16
 
-# 1 step 
+# 1 step
 python -m demo.text_to_image_sdxl --num_step 1 --checkpoint_path SDXL_CKPT_PATH --precision bfloat16 --conditioning_timestep 399
 ```
 
-Pretrained models can be found in [ImageNet](experiments/imagenet/README.md) and [SDXL](experiments/sdxl/README.md). 
+Pretrained models can be found in [ImageNet](experiments/imagenet/README.md) and [SDXL](experiments/sdxl/README.md).
 
-## Training and Evaluation 
+## Training and Evaluation
 
-### ImageNet-64x64 
+### ImageNet-64x64
 
 Please refer to [ImageNet-64x64](experiments/imagenet/README.md) for details.
 
@@ -89,7 +89,7 @@ Please refer to [ImageNet-64x64](experiments/imagenet/README.md) for details.
 
 Please refer to [SDXL](experiments/sdxl/README.md) for details.
 
-### SDv1.5 
+### SDv1.5
 
 Please refer to [SDv1.5](experiments/sdv1.5/README.md) for details.
 
@@ -97,11 +97,11 @@ Please refer to [SDv1.5](experiments/sdv1.5/README.md) for details.
 
 Improved Distribution Matching Distillation is released under [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](LICENSE.md).
 
-## Known Issues 
+## Known Issues
 
 - [ ] Current FSDP for SDXL training is really slow; help is greatly appreciated!
 
-## Citation 
+## Citation
 
 If you find DMD2 useful or relevant to your research, please kindly cite our papers:
 
@@ -125,7 +125,6 @@ If you find DMD2 useful or relevant to your research, please kindly cite our pap
 
 [EDM](https://github.com/NVlabs/edm/tree/main) for [dnnlib](dnnlib), [torch_utils](torch_utils) and [edm](third_party/edm) folders.
 
-## Acknowledgments 
+## Acknowledgments
 
 This work was done while Tianwei Yin was a full-time student at MIT. It was developed based on our reimplementation of the original DMD paper. This work was supported by the National Science Foundation under Cooperative Agreement PHY-2019786 (The NSF AI Institute for Artificial Intelligence and Fundamental Interactions, http://iaifi.org/), by NSF Grant 2105819, by NSF CISE award 1955864, and by funding from Google, GIST, Amazon, and Quanta Computer.
-

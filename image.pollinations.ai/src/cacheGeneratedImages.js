@@ -1,14 +1,14 @@
-import crypto from 'crypto';
-import fs from 'fs/promises';
-import { existsSync, mkdirSync } from 'fs';
-import path from 'path';
-import debug from 'debug';
+import crypto from "crypto";
+import fs from "fs/promises";
+import { existsSync, mkdirSync } from "fs";
+import path from "path";
+import debug from "debug";
 
-const MAX_CACHE_SIZE = process.env.NODE_ENV === 'test' ? 2 : 500000;
+const MAX_CACHE_SIZE = process.env.NODE_ENV === "test" ? 2 : 500000;
 const memCache = new Map(); // Using Map to maintain insertion order for LRU
 
-const logError = debug('pollinations:error');
-const logCache = debug('pollinations:cache');
+const logError = debug("pollinations:error");
+const logCache = debug("pollinations:cache");
 
 // Function to generate a cache path
 const generateCachePath = (prompt, extraParams) => {
@@ -16,16 +16,32 @@ const generateCachePath = (prompt, extraParams) => {
     prompt = "random prompt";
   }
 
-  const sanitizedPrompt = prompt.replaceAll("/", "_").replaceAll(" ", "_")
-    .replaceAll("?", "_").replaceAll("!", "_").replaceAll(":", "_")
-    .replaceAll(";", "_").replaceAll("(", "_").replaceAll(")", "_")
-    .replaceAll("'", "_").replaceAll('"', "_").replaceAll('"', "_")
-    .replaceAll("'", "_").replaceAll("...", "_").replaceAll("-", "_")
-    .replaceAll("\"", "_").replaceAll("\\", "_").replaceAll("*", "_")
+  const sanitizedPrompt = prompt
+    .replaceAll("/", "_")
+    .replaceAll(" ", "_")
+    .replaceAll("?", "_")
+    .replaceAll("!", "_")
+    .replaceAll(":", "_")
+    .replaceAll(";", "_")
+    .replaceAll("(", "_")
+    .replaceAll(")", "_")
+    .replaceAll("'", "_")
+    .replaceAll('"', "_")
+    .replaceAll('"', "_")
+    .replaceAll("'", "_")
+    .replaceAll("...", "_")
+    .replaceAll("-", "_")
+    .replaceAll('"', "_")
+    .replaceAll("\\", "_")
+    .replaceAll("*", "_")
     .slice(0, 50)
     .toLowerCase();
 
-  const hash = crypto.createHash('md5').update(prompt + JSON.stringify(extraParams)).digest("hex").slice(0, 4);
+  const hash = crypto
+    .createHash("md5")
+    .update(prompt + JSON.stringify(extraParams))
+    .digest("hex")
+    .slice(0, 4);
   return `${sanitizedPrompt}_${hash}.jpg`;
 };
 

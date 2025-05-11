@@ -49,8 +49,8 @@ npm run test:pattern -- "**/tool*.test.js"
 Tests that make API calls may take longer to complete. The timeout for these tests is set to 60-120 seconds in most integration test files using:
 
 ```javascript
-test.beforeEach(t => {
-    t.timeout(60000); // 60 seconds in milliseconds
+test.beforeEach((t) => {
+  t.timeout(60000); // 60 seconds in milliseconds
 });
 ```
 

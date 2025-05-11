@@ -33,7 +33,15 @@ const useFetchModels = () => {
         debug("Error fetching models:", err)
         setError(err.message)
         // Fallback to default models if fetch fails
-        setModels(["flux", "flux-pro", "flux-realism", "flux-anime", "flux-3d", "flux-cablyai", "turbo"])
+        setModels([
+          "flux",
+          "flux-pro",
+          "flux-realism",
+          "flux-anime",
+          "flux-3d",
+          "flux-cablyai",
+          "turbo",
+        ])
       })
       .finally(() => {
         setLoading(false)

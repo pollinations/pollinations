@@ -5,6 +5,7 @@ This document outlines how to fully automate the setup of the Cloudflare infrast
 ## Current Setup
 
 Currently, our setup involves:
+
 1. **Cloudflare Tunnel** - Set up via scripts
 2. **Cloudflare Worker** - Deployed via Wrangler but with custom domain added manually
 3. **Cloudflare R2 Bucket** - Created manually in the dashboard
@@ -163,22 +164,22 @@ sudo systemctl start cloudflared
 # Create DNS record using Cloudflare API
 if [ -f ~/.cloudflare-credentials ]; then
     source ~/.cloudflare-credentials
-    
+
     echo "Creating DNS record for ${HOSTNAME}..."
     # Get zone ID for the domain
     ZONE_RESPONSE=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${DOMAIN}" \
          -H "Authorization: Bearer $CF_API_TOKEN" \
          -H "Content-Type: application/json")
-    
+
     ZONE_ID=$(echo "$ZONE_RESPONSE" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
-    
+
     if [ -n "$ZONE_ID" ]; then
         # Create CNAME record
         DNS_RESPONSE=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
              -H "Authorization: Bearer $CF_API_TOKEN" \
              -H "Content-Type: application/json" \
              --data "{\"type\":\"CNAME\",\"name\":\"$SUBDOMAIN\",\"content\":\"${TUNNEL_ID}.cfargotunnel.com\",\"ttl\":1,\"proxied\":true}")
-        
+
         if echo "$DNS_RESPONSE" | grep -q '"success":true'; then
             echo "DNS record created successfully"
         else
@@ -289,6 +290,7 @@ echo "R2 bucket: $BUCKET_NAME is configured for caching"
 To run these scripts, you'll need:
 
 1. **Cloudflare API Token** - With permissions for:
+
    - R2 Storage:Edit
    - Workers:Edit
    - DNS:Edit
@@ -301,14 +303,17 @@ To run these scripts, you'll need:
 ## Implementation Notes
 
 1. **Security Considerations**:
+
    - API tokens should be stored securely
    - Consider using environment variables instead of files for credentials
 
 2. **Error Handling**:
+
    - These scripts include basic error handling but should be enhanced for production use
    - Add idempotency to prevent duplicate resource creation
 
 3. **Thin Proxy Principle**:
+
    - The worker implementation follows the "thin proxy" design principle
    - Minimal processing with direct forwarding
    - IP forwarding is maintained for rate limiting (1 request per 10 seconds per IP)
@@ -320,14 +325,17 @@ To run these scripts, you'll need:
 ## Future Improvements
 
 1. **Terraform Implementation**:
+
    - Consider migrating to Terraform for infrastructure as code
    - Cloudflare provider supports most of these resources
 
 2. **CI/CD Integration**:
+
    - Add GitHub Actions workflows to automate deployment
    - Include automatic testing of the worker
 
 3. **Monitoring Setup**:
+
    - Add scripts to set up Cloudflare Analytics
    - Configure alerting for errors or high traffic
 

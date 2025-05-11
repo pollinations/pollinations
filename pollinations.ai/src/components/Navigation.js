@@ -6,7 +6,7 @@ const Navigation = () => {
       <a href="#text-feed">Text Feed</a>
       {/* ... other navigation items ... */}
     </nav>
-  );
-};
+  )
+}
 
-export default Navigation; 
+export default Navigation

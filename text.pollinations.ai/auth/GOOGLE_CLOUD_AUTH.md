@@ -21,6 +21,7 @@ sudo ./setup-google-cloud-auth.sh
 ```
 
 The script will guide you through the following steps:
+
 1. Installing the Google Cloud CLI
 2. Initializing gcloud and setting your project
 3. Creating or selecting a service account
@@ -32,6 +33,7 @@ The script will guide you through the following steps:
 If you prefer to set up manually, follow these steps:
 
 1. **Install Google Cloud CLI**:
+
    ```bash
    # Add the Cloud SDK distribution URI as a package source
    echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
@@ -44,6 +46,7 @@ If you prefer to set up manually, follow these steps:
    ```
 
 2. **Authenticate and set project**:
+
    ```bash
    # Log in to Google Cloud
    gcloud auth login
@@ -53,6 +56,7 @@ If you prefer to set up manually, follow these steps:
    ```
 
 3. **Create a service account and key**:
+
    ```bash
    # Create service account
    gcloud iam service-accounts create vertex-ai-client --display-name="Vertex AI Client"
@@ -66,7 +70,7 @@ If you prefer to set up manually, follow these steps:
    mkdir -p credentials
    gcloud iam service-accounts keys create credentials/google_vertex_key.json \
      --iam-account=vertex-ai-client@YOUR_PROJECT_ID.iam.gserviceaccount.com
-   
+
    # Set secure permissions
    chmod 600 credentials/google_vertex_key.json
    ```
@@ -91,7 +95,7 @@ The application uses a dedicated module (`googleCloudAuth.js`) to handle Google 
 To use the authentication module in your code:
 
 ```javascript
-import googleCloudAuth from './googleCloudAuth.js';
+import googleCloudAuth from "./googleCloudAuth.js";
 
 // Get the current token
 const token = googleCloudAuth.getToken();

@@ -4,7 +4,7 @@ Tracking potential partnerships with ad networks to monetize our AI application 
 
 ## Strategy
 
-Pollinations has strong ad space "supply" but needs partners for advertiser "demand" during early growth.
+pollinations.ai has strong ad space "supply" but needs partners for advertiser "demand" during early growth.
 
 ## Current Prospects
 
@@ -43,11 +43,11 @@ Pollinations has strong ad space "supply" but needs partners for advertiser "dem
 ## Outreach Template
 
 ```
-Subject: Pollinations.AI - AI-Native Ad Network Partnership
+Subject: pollinations.ai - AI-Native Ad Network Partnership
 
 Dear [Contact],
 
-I'm [Name], [Position] at Pollinations.AI. Our ecosystem of AI applications reaches [X million] MAU across [Y] apps.
+I'm [Name], [Position] at pollinations.ai. Our ecosystem of AI applications reaches [X million] MAU across [Y] apps.
 
 We're seeking to partner with [Company] to monetize our growing AI-native ad inventory. Our platform powers [app types] with strong engagement among [demographics].
 

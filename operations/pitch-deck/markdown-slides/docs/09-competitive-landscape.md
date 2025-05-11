@@ -8,14 +8,14 @@ class: scroll
 
 <div class="bg-lime-100 p-4 rounded-lg border-l-4 border-lime-500 mb-6">
   <h3 class="text-lg font-bold text-lime-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-lime-800">Unlike paywalled AI APIs or ad networks lacking deep AI integration, Pollinations offers a unique "Unity Ads for generative AI" model. Our default ad-funded free tier (upgrading based on Ad € / Cloud € ratio) and optional 50/50 rev-share (from 2026) directly address the creator monetization gap, tapping into the expanding "citizen creator" market.</p>
+  <p class="text-lime-800">Unlike paywalled AI APIs or ad networks lacking deep AI integration, pollinations.ai offers a unique "Unity Ads for generative AI" model. Our default ad-funded free tier (upgrading based on Ad € / Cloud € ratio) and optional 50/50 rev-share (from 2026) directly address the creator monetization gap, tapping into the expanding "citizen creator" market.</p>
 </div>
 
 # 🥊 **Competitive Landscape & Parallels**
 
 ## Snapshot
 
-*   **Pollinations Model:** Ad-funded automatic tiering for Creators; Partner tier with 50/50 Ad Rev-Share (H2 2026).
+*   **pollinations.ai Model:** Ad-funded automatic tiering for Creators; Partner tier with 50/50 Ad Rev-Share (H2 2026).
 *   **Key Differentiator:** Default free tier for Creators requires no direct payment, with performance scaling based on ad revenue (`Ad € / Cloud €` ratio).
 *   **Comparables:** Unity Ads, AppLovin (Ad Networks); GIPHY, Unsplash (Asset Monetization); Perplexity (Premium + Native Ads).
 
@@ -28,32 +28,32 @@ class: scroll
 | Youthful prompt‑Creator growth                      | Replit > 20M users, +125% in 18 months          |
 | App demand explosion                                | IDC forecasts 750M new cloud‑native apps by 2026 |
 
-**Implication:** The addressable market for Creator tools like Pollinations is expanding rapidly beyond traditional developers.
+**Implication:** The addressable market for Creator tools like pollinations.ai is expanding rapidly beyond traditional developers.
 
 ## 2 | Benchmarks for API / SDK Monetization
 
-| Platform       | Distribution   | Monetization Model                 | Creator Payout / Share    | Pollinations Comparison Key Lesson                     |
+| Platform       | Distribution   | Monetization Model                 | Creator Payout / Share    | pollinations.ai Comparison Key Lesson                     |
 | -------------- | -------------- | ---------------------------------- | ------------------------- | ---------------------------------------------------- |
 | GIPHY          | GIF API        | Sponsored/branded GIFs             | None                      | Simple ad integration in media possible.             |
 | Unsplash       | Image CDN      | Branded photos / API tiers         | Opt‑in (photographers)    | Native branding viable; Tiered API access common.    |
 | Unity Ads      | SDK            | Rewarded, Interstitial, Banner Ads | Creator keeps ≈ 70%       | Industry standard for high Creator ad rev-share.   |
 | AppLovin MAX   | SDK + Exchange | Programmatic Video/Playable Ads    | ≥ 70% to Creator          | AI optimization boosts eCPM; high Creator share norm. |
 | Google AdSense | JS Tag         | Display & Video Ads                | 68% to Publisher          | Benchmark for payout reliability.                    |
-| **Pollinations (Beta Live)** | **SDK / API**  | **Contextual Ads (via Ad Providers)** | **0% (Tier Upgrades instead)** | **Unique: Free tier funded by 100% Ad Rev capture.** |
-| **Pollinations (from H2 2026)** | **SDK / API** | **Ad Rev-Share** | **50% (Net Ad Rev)** | **Offers choice; 50% net share attractive due to: integrated free AI backend, zero-ops, unified path to revenue & unique inventory.** |
+| **pollinations.ai (Beta Live)** | **SDK / API**  | **Contextual Ads (via Ad Providers)** | **0% (Tier Upgrades instead)** | **Unique: Free tier funded by 100% Ad Rev capture.** |
+| **pollinations.ai (from H2 2026)** | **SDK / API** | **Ad Rev-Share** | **50% (Net Ad Rev)** | **Offers choice; 50% net share attractive due to: integrated free AI backend, zero-ops, unified path to revenue & unique inventory.** |
 
 ## 3 | Unity Deep‑Dive (Closest Ad Analogy)
 
 *   **Revenue:** Heavily reliant on Ads (~66% in 2024).
 *   **Model:** SDK-based ads (rewarded video etc.) with ~70% payout to Creators.
 *   **AI:** Investing in ad optimization (Unity Vector).
-*   **Pollinations Contrast:** Pollinations' default model avoids direct payouts, instead funding tier upgrades with 100% ad revenue capture. Optional rev-share (50% net, from H2 2026) is lower than Unity's standard, but compelling due to: integrated free AI backend, zero-ops platform, unified path to revenue, & unique inventory.
+*   **pollinations.ai Contrast:** Pollinations' default model avoids direct payouts, instead funding tier upgrades with 100% ad revenue capture. Optional rev-share (50% net, from H2 2026) is lower than Unity's standard, but compelling due to: integrated free AI backend, zero-ops platform, unified path to revenue, & unique inventory.
 
 ## 4 | AppLovin Contrast
 
 *   **AI Focus:** Uses AI (Axon 2.0) for campaign optimization.
 *   **Model:** Mediation platform maximizing yield for Creators (≥ 70% share).
-*   **Pollinations Contrast:** Similar reliance on AI for ad performance. Optional 50% net share (from H2 2026), while a different percentage, is attractive due to: deep AI platform integration, free core services, & unified creation-to-revenue path.
+*   **pollinations.ai Contrast:** Similar reliance on AI for ad performance. Optional 50% net share (from H2 2026), while a different percentage, is attractive due to: deep AI platform integration, free core services, & unified creation-to-revenue path.
 
 ## 5 | Perplexity AI – Native Ad + Premium Precedent
 
@@ -67,9 +67,9 @@ class: scroll
 **Relevance to Pollinations:**
 
 1.  Validates blending Creator Premium Subscription & native-style ads.
-2.  Shows viability of lower rev-share percentages in specific contexts (though Pollinations aims higher at 50% for its H2 2026 Ad Rev-Share).
+2.  Shows viability of lower rev-share percentages in specific contexts (though pollinations.ai aims higher at 50% for its H2 2026 Ad Rev-Share).
 
-## 6 | Positioning Pollinations for Investors
+## 6 | Positioning pollinations.ai for Investors
 
 *   "Unity Ads for generative assets, with a smarter free tier."
 *   "GIPHY/Unsplash meets AdSense for the AI Creator Economy."
@@ -81,7 +81,7 @@ class: scroll
 | Brand Overlays        | Logo/product in generated asset      | High (Post-MVP enhancement)     | Native feel, higher eCPM potential |
 | Usage‑based API Tiers | Pay‑as‑you‑go calls (no ads/subs)  | Medium (Alternative Premium)    | Different Creator segment       |
 | Licensing Marketplace | Brands buy exclusive assets          | Low (Complexity, scalability) | Possible future exploration     |
-| End-User Tips/Subs    | End-Users pay Creators directly    | Low (Platform bypass)         | Out of scope for Pollinations MVP |
+| End-User Tips/Subs    | End-Users pay Creators directly    | Low (Platform bypass)         | Out of scope for pollinations.ai MVP |
 
 ## 8 | Risk Map & Mitigations
 

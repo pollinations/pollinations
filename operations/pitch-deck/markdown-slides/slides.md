@@ -244,8 +244,7 @@ layout: two-cols-header
 
 * **247 B TAM** : Global AI-Contextual Ad Spend (2025)
 * **140 B SAM** : Indie App/Web AI Ad Inventory (2025)
-* **3.4 B SAM** : Beachhead Market : Indie developers using Generative AI
-* **22 M SOM** : Our Target Net ARR (2027)
+* **3.4 B SOM** : Beachhead Market : Indie developers using Generative AI
 
 **Empower creators, scale through network effects & partnerships, share ad revenue.**
 

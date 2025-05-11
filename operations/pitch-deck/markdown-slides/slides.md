@@ -18,8 +18,11 @@ class: text-center
 * **Value Proposition:** The easiest way to build AND monetize AI apps
 * **Key Differentiators:** Zero upfront cost, shared success model
 -->
----
 
+
+---
+layout: two-cols-header
+---
 # What do we do?
 
 ## Example 1?
@@ -75,8 +78,6 @@ layout: two-cols-header
 - Struggling to reach engaged audiences in new AI spaces
 
 ![Problem: Reach](/media/problem_reach.png)
-
-:::
 
 <div class="text-center" style="font-size: 24px;">
 The current ecosystem forces <b>painful trade-offs</b>.

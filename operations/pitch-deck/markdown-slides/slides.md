@@ -60,33 +60,30 @@ layout: two-cols-header
 layout: two-cols-header
 ---
 
-# <span class="bg-red-600 text-white p-2 rounded">**🔗 The Challenge: A Disconnected AI Ecosystem**</span>
-
-**MAIN MESSAGE: Dev & Brand Barriers**
-
-**REMOVE: Detailed explanations - keep pain points sharp and relatable**
+# <span class="bg-red-600 text-white p-2 rounded">**🔗 The Challenge: A Disconnected App Ecosystem**</span>
 
 ::left::
 
-### Solo devs and indie app creators
+![Problem: Friction](/media/problem_friction.png)
+
+## **Solo devs | Indie creators**
 - Struggle to experiment or scale
     - Prohibitive AI access costs
     - Infrastructure complexity
 - No clear path for monetization
 
-![Problem: Friction](/media/problem_friction.png)
 
 ::right::
 
-### Advertiser
-- Struggle to reach engaged audiences in new AI apps
-- Miss out on unique contextual advertising opportunities
-
 ![Problem: Reach](/media/problem_reach.png)
 
-<div class="text-center" style="font-size: 24px;">
-The current ecosystem forces <b>painful trade-offs</b>.
-</div>
+## **Ad Providers | Brands**
+- Struggle to reach audiences in new AI apps
+- Miss out on contextual advertising opportunities
+
+
+**The current ecosystem forces painful trade-offs**
+
 
 <!--
 **Speaking Points - Problem:**

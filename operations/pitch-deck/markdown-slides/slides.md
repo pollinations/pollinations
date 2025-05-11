@@ -36,7 +36,7 @@ class: text-center
 <!--
 **Speaking Points - Roblox Showcase:**
 * **Concrete Example:** Real-world application in high-growth gaming platform
-* **Scale:** 10M+ likes, 250K monthly active players on 'AI Character RP' game
+* **Scale:** 10M+ likes, 1.8M monthly active players on 'AI Character RP' game
 * **Integration Ease:** Developer integrated our API with minimal code
 * **User Value:** Players generate AI characters and interact in real-time
 * **Revenue Model In Action:** Developer earns through our ad-sharing model 
@@ -260,7 +260,7 @@ layout: two-cols-header
   * Community: 13K Discord members, 1.8K GitHub stars
 
 * **Success Stories:**
-  * **Roblox Game:** 'AI Character RP' with 10M+ likes, 500K+ MAU, generating revenue 
+  * **Roblox Game:** 'AI Character RP' with 10M+ likes, 1.8M + MAU, generating revenue 
   * **Power Users:** SillyTavern community integration for advanced AI users
   * **Enterprise Adoption:** Integration with Alibaba's Qwen Agent framework
 

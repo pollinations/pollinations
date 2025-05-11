@@ -240,9 +240,11 @@ layout: two-cols-header
 
 ::left::    
 
-* **247 B TAM** : Global AI-Contextual Ad Spend (2025)
-* **140 B SAM** : Indie App/Web AI Ad Inventory (2025)
-* **3.4 B SOM** : Beachhead Market : Indie developers using Generative AI
+**247 B TAM** : Global AI-Contextual Ad Spend
+
+**140 B SAM** : Indie App/Web AI Ad Inventory
+
+**3.4 B SOM** : Beachhead Market : Indie developers using Generative AI
 
 ## **Empower creators, scale through network effects & partnerships, share ad revenue.**
 
@@ -259,12 +261,32 @@ Add:
 -->
 
 ---
+layout: two-cols-header
+---
 
-# <span class="bg-purple-600 text-white p-2 rounded">**💰 Business Model**</span>
+# <span class="bg-purple-600 text-white p-2 rounded">**💰 From Free Tools to Shared Profits**</span>
 
-**MAIN MESSAGE: 50/50 Revenue Share**
+::left::
 
-**REMOVE: Complex explanations - focus on the revenue split and unit economics**
+1.  **CREATE FOR FREE (Explorer & Creator Tiers)**
+    *   No-cost AI tools & hosting
+    *   Pollinations retains 100% of ad revenue
+
+2.  **SCALE & SELF-FUND (Innovator Tier - H2 2025)**
+    *   Successful apps get unlimited usage / Ad revenue covers compute costs.
+    *   Pollinations retains 100% of ad revenue
+
+3.  **PROFIT TOGETHER (Partner Tier - H2 2026)**
+    *   Top-performing apps join the Partner program.
+    *   **SHARED SUCCESS:** 50% of Net Ad Revenue goes back to the App Developer.
+
+::right::
+
+
+
+
+<!--
+add media: creator funnel or per app revenue per month numbers
 
 ## The Pollinations Flywheel 🚀
 * **Empowering Creators ('Vibe Coders')** : Build & monetize innovative AI apps, easily.
@@ -285,7 +307,8 @@ Add:
 * **Live Pilots:** Contextual ads (CPM $1-2), Affiliate referrals
 </div>
 
-<!--
+
+
 We make building and monetizing AI apps frictionless and economically viable for creators, while providing brands with novel, effective channels to reach valuable audiences. This creates a self-reinforcing flywheel, fueling the growth of the entire AI creator ecosystem.
 
 1 Free Experimentation (Explorer → Creator): Easy entry and free tools attract a wide developer base, acting as an investment in future monetizable applications. (Ongoing)

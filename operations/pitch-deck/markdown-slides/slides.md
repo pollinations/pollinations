@@ -36,15 +36,18 @@ class: text-center
 <!--
 **Speaking Points - Roblox Showcase:**
 * **Concrete Example:** Real-world application in high-growth gaming platform
-* **Scale:** 10M+ likes, 500K monthly active players on 'AI Character RP' game
+* **Scale:** 10M+ likes, 250K monthly active players on 'AI Character RP' game
 * **Integration Ease:** Developer integrated our API with minimal code
 * **User Value:** Players generate AI characters and interact in real-time
 * **Revenue Model In Action:** Developer earns through our ad-sharing model 
-* **Business Sustainability:** Created successful business with minimal upfront investment
 * **Broader Application:** Similar success across Discord bots, mobile apps, web platforms
 -->
 
 ---
+layout: two-cols-header
+---
+
+::left::
 
 # <span class="bg-red-600 text-white p-2 rounded">**😖 Problem**</span>
 
@@ -68,6 +71,9 @@ class: text-center
 <div class="text-center" style="font-size: 24px;">
 The current ecosystem forces <b>painful trade-offs</b>.
 </div>
+
+::right::
+
 
 <!--
 **Speaking Points - Problem:**

@@ -9,11 +9,11 @@ class: text-center
 **The easiest way to build and monetize AI apps with zero upfront cost.**
 
 <!--
-**Related Docs:** [Executive Summary](/11) | [Vision & Mission](/12)
-
-*   **(Thomas):** "We are **Pollinations.AI**."
-*   **(Elliot):** "We believe **AI empowers everyone to create**."
-*   **(Thomas):** "We offer the **easiest way to build *and monetize* AI apps** with **zero upfront cost** and **shared success**."
+**Speaking Points:**
+* **Introduction:** We are Pollinations.AI
+* **Mission:** AI empowers everyone to create
+* **Value Proposition:** The easiest way to build AND monetize AI apps
+* **Key Differentiators:** Zero upfront cost, shared success model
 -->
 ---
 
@@ -34,14 +34,37 @@ class: text-center
 </div>
 
 <!--
-**Related Docs:** [Ecosystem Analysis](/23) | [Executive Summary](/11)
+**Speaking Points - Roblox Showcase:**
+* **Concrete Example:** Real-world application in high-growth gaming platform
+* **Scale:** 10M+ likes, 500K monthly active players on 'AI Character RP' game
+* **Integration Ease:** Developer integrated our API with minimal code
+* **User Value:** Players generate AI characters and interact in real-time
+* **Revenue Model In Action:** Developer earns through our ad-sharing model 
+* **Business Sustainability:** Created successful business with minimal upfront investment
+* **Broader Application:** Similar success across Discord bots, mobile apps, web platforms
+-->
 
-*   **Thomas:** "Let me show you a real-world example of Pollinations in action."
-*   **Thomas:** "This is one of our most popular integrations - a Roblox game called 'AI Character RP' with over 10 million likes and 500,000 monthly active players."
-*   **Elliot:** "What's remarkable here is that the developer simply integrated our API with a few lines of code, and now players can generate AI characters and interact with them in real-time."
-*   **Thomas:** "This is just one example of how developers are using Pollinations to create engaging experiences that would be impossible without our platform."
-*   **Elliot:** "And importantly, this developer is now earning revenue through our ad-sharing model, creating a sustainable business with minimal upfront investment."
-*   **Thomas:** "We're seeing similar success stories across Discord bots, mobile apps, and web platforms - all powered by our simple, accessible API."
+---
+
+# <span class="bg-pink-600 text-white p-2 rounded">**💬 Showcase: Ad Placement in Responses**</span>
+
+<div class="flex justify-center items-center h-full">
+  <img src="../media/ai_girlfriend_advert_discord.png" alt="AI Girlfriend Advertisement" class="w-2/4 rounded-lg shadow-lg">
+</div>
+
+<div class="text-center text-xl mt-4">
+  <em>Real-world example of ad integration in Discord communities</em>
+</div>
+
+<!--
+**Speaking Points - AI Companion Showcase:**
+* **Revenue Example:** Perfect illustration of our ad-based monetization model in action
+* **Contextual Integration:** Advertisement seamlessly integrated into AI conversation flow
+* **Discovery Path:** Users discover new AI experiences through relevant, non-disruptive ads
+* **Multi-Platform Reach:** Works across Discord, web, mobile platforms with same API
+* **Developer Benefits:** Creator earns revenue through our ad-sharing system
+* **Real-World Impact:** Demonstrates how our platform connects AI experiences to new audiences
+* **User Experience:** Maintains free access to AI capabilities while supporting creators
 -->
 
 ---
@@ -70,13 +93,25 @@ The current ecosystem forces <b>painful trade-offs</b>.
 </div>
 
 <!--
-**Related Docs:** [Executive Summary](/11) | [Business Model](/03) | [Competitive Landscape](/09)
+**Speaking Points - Problem:**
+* **Creator & Developer Pain Points:**
+  * Complex and expensive AI infrastructure
+  * Authentication implementation challenges
+  * Critical gap: No clear monetization path for successful apps
 
-*   **Elliot:** "**Creators & Developers**: Building with AI today is **complex and expensive**."
-*   **Elliot:** "They face infra headaches, auth issues, and critically: **NO clear path to MONETIZE** their viral apps."
-*   **Thomas:** "**End Users**: Hit **paywalls**, have **privacy concerns**, want **more creative control**."
-*   **Thomas:** "**Ad Providers/Brands**: Struggle to reach engaged audiences in these **new AI-native spaces**."
-*   **Elliot:** "**Core Issue**: The system is broken. Friction prevents an **open, creative ecosystem where developers can actually *earn* from their success.**"
+* **End-User Pain Points:**
+  * Paywalls limiting access to AI capabilities
+  * Privacy concerns with handling of data
+  * Limited customization and creative control
+
+* **Ad Provider/Brand Pain Points:**
+  * Struggling to reach engaged audiences in new AI spaces
+  * Missing youth demographic - particularly Gen Z
+  * No AI-native targeting mechanisms
+
+* **Core Market Problem:** System friction prevents an open ecosystem where developers can earn from success
+
+* **Three-Sided Market Challenge:** Need solution addressing all stakeholders simultaneously
 
 ![Pain Points Visual](../media/paintpointsgenz.png)
 
@@ -135,21 +170,29 @@ layout: two-cols-header
 5. Revenue is shared through our platform
 
 <!--
-*   **Thomas:** "Our solution is the **Pollinations AI App Factory** – making it **radically simple to build *and monetize*.**"
-*   **Thomas:** "Think **Unity for AI**, but open and free."
+**Speaking Points - The Pollinations Fix:**
+* **Solution Concept:** "AI App Factory" - radically simplifies building AND monetizing AI apps
+* **Positioning:** "Unity for AI" but open and free to start
+
+* **Core Components:**
+  * **Instant AI Setup:** Handle complex infrastructure configuration
+  * **Frontend Focus:** Developers concentrate on user experience only
+  * **Plug & Play AI:** Simple URL calls for text, image, audio generation
+  * **Backend Management:** We handle infrastructure, scaling, and operations
+  * **Built-in Monetization:** Ad serving and revenue sharing managed for developers
+
+* **Revenue Model:**
+  * Contextual, relevant ads integrated into user experience
+  * Clean 50/50 revenue split with developers
+  * Tiered validation system ensures quality and manages costs
+
+* **Value Proposition:** Easiest path to launch profitable AI apps with zero upfront cost
 
 ![Pollinations Fix Diagram](../media/pollinations_fix_genz.png)
 
 * Shows circular economy flow between Phone/App → End User → Ad Provider → pollinations.ai → Creators
 * End User pays attention (€) to Ad Provider who pays revenue to pollinations.ai
 * pollinations.ai connects back to Creators who build apps used by End Users
-*   **Elliot:** "**AI Setup:** Integrate instantly. We handle the complex infra configuration."
-*   **Elliot:** "**You Focus on Frontend:** Build the amazing user experience."
-*   **Thomas:** "**Plug & Play AI:** Just add simple **URL calls** for text, image, audio."
-*   **Thomas:** "**Backend & Monetization Handled:** We run the infra, scale it, and crucially, **manage the ad serving and revenue share.**"
-*   **Elliot:** "**How Ads Work:** We integrate relevant, contextual ads. Revenue generated is **split 50/50** with the developer."
-*   **Elliot:** "**Anti-Abuse:** A **tiered system** ensures only validated apps with real engagement access the full revenue share, managing our costs and ensuring quality for advertisers."
-*   **Thomas:** "It's the **easiest path** to launch a **live, profitable AI app** with zero upfront cost."
 
 SLIDE GUIDANCE:
 - Synthesized from Alt 2 & 3.
@@ -195,9 +238,31 @@ layout: two-cols-header
 - **38%** Rest of World
 
 <!--
-*   **Thomas:** "And developers agree – we're seeing **explosive growth**."
-*   **Thomas:** "Pollinations powers **>100 MILLION** AI media generations **PER MONTH**."
-*   **Elliot:** "Growth is **>35% Month-over-Month** on API requests."
+**Speaking Points - Traction:**
+* **KEY INVESTOR PRIORITY:** Emphasize concrete success stories and proof points
+
+* **Growth Metrics:**
+  * Processing >100 MILLION media generations monthly
+  * 30% month-over-month growth in API requests
+  * 3M monthly active users across platform
+  * 14M+ ad plays already from pilot program
+
+* **Developer Adoption:**
+  * 300+ live applications integrated with our API
+  * 2+ new apps being built daily on our platform
+  * Community: 13K Discord members, 1.8K GitHub stars
+
+* **Success Stories:**
+  * **Roblox Game:** 'AI Character RP' with 10M+ likes, 500K+ MAU, generating revenue 
+  * **Power Users:** SillyTavern community integration for advanced AI users
+  * **Enterprise Adoption:** Integration with Alibaba's Qwen Agent framework
+
+* **Geographic Reach:**
+  * Global distribution: China (30%), US (13%), Europe (13%), India (6%)
+  * Significant China presence differentiates from competitors
+  * Truly global product with diverse user base
+
+* **Proof of Model:** Traction validates both ease of building and potential for shared success
 
 ![Traction Metrics](../media/traction_infoslide3.png)
 
@@ -206,9 +271,6 @@ layout: two-cols-header
 * 30% MoM (Month over Month) growth
 * 14M+ ad plays from pilot program
 * 300+ live apps with 13k Discord members and 1.8k GitHub stars
-*   **Elliot:** "**>300 integrations** live – developers building **2+ new apps DAILY**. Including the viral **Roblox game 'AI Character RP'** (10M+ likes), **SillyTavern** for power users, and **Alibaba's Qwen Agent framework.**"
-*   **Thomas:** "Truly **global reach**: Strong adoption in **China, US, India**."
-*   **Elliot:** "This traction proves developers value the **ease of building** and see the **potential for shared success** on our free infrastructure."
 
 ![Geographic Distribution](../media/piechart_countries_genz.png)
 
@@ -218,6 +280,8 @@ layout: two-cols-header
 * 13% EU
 * 6% India
 * 38% Other regions
+
+<img src="../media/media_requests_per_day_genz.png" alt="Media Requests Growth" class="w-2/4 mx-auto mb-4" />
 
 SLIDE GUIDANCE:
 <img src="../media/media_requests_per_day_genz.png" alt="Media Requests Growth" class="w-2/4 mx-auto mb-4" />
@@ -230,7 +294,7 @@ SLIDE GUIDANCE:
 # <span class="bg-blue-600 text-white p-2 rounded">**📹 Live API Traffic**</span>
 
 <div class="flex justify-center items-center h-full">
-  <video class="w-mx rounded-lg shadow-lg" autoplay loop muted playbackRate="2">
+  <video class="w-max rounded-lg shadow-lg" autoplay loop muted playbackRate="2">
     <source src="/media/image-feed-text-feed.mov" type="video/mp4">
   </video>
 </div>
@@ -240,11 +304,16 @@ SLIDE GUIDANCE:
 </div>
 
 <!--
-**Thomas:** "This is a live view of our API traffic - each image and text request flowing through our system right now."
+**Speaking Points - Live API Traffic:**
+* **Visual Explanation:** This is a live view of API traffic showing real-time image and text requests flowing through our system
+* **Usage Context:** Demonstrates actual usage from our community of developers and their end-users in real-time
+* **Scale Context:** This visualization represents just a small fraction of the 100+ million media generations processed monthly
 
-**Elliot:** "What you're seeing is the actual usage from our community of developers and their end-users, generating content through our platform in real-time."
-
-**Thomas:** "This visualization represents just a small fraction of the 100+ million media generations we process monthly, showcasing the real-world impact of our platform."
+**Ad/Demand Strategy Details (KEY INVESTOR PRIORITY):**
+* **AI-Native Ad Partnerships**: Working with Garlic, Nexad, and Unframe - specialized in contextual ad delivery for AI content
+* **Integration Methods**: JavaScript SDK embedding for web apps, native widgets for mobile/desktop
+* **Current Pilot Partners**: Contextual ads (CPM $1-2) and affiliate referrals with targeted conversion tracking
+* **Revenue Flow**: End users engage with relevant ads, advertisers pay for impressions/conversions, we split revenue 50/50 with developers
 -->
 
 ---
@@ -278,7 +347,8 @@ layout: two-cols-header
 </div>
 
 <!--
-*   **Elliot:** "We're tapping into a **brand new, explosive market opportunity**."
+**Speaking Points - Market Opportunity:**
+* **Market Potential:** Tapping into a brand new, explosive market opportunity
 
 ![Youth Ad Market](../media/youth-ad-market.png)
 
@@ -286,17 +356,27 @@ layout: two-cols-header
 * Outer circle: $247B TAM (Total Addressable Market)
 * Middle circle: $99B SAM (Serviceable Available Market)
 * Inner circle: $0.5B SOM (Serviceable Obtainable Market)
-*   **Elliot:** "The rise of 'vibe coding' means **everyone is becoming a creator.** This unlocks vast, **new advertising inventory** within millions of new AI apps. The overall GenAI creator economy is already **>$10 Billion TAM** and doubling."
-*   **Thomas:** "Our **two-sided market** connects:
-    *   **Creators (Affiliates):** This growing wave of developers and 'vibe coders' using our **free AI APIs**.
-    *   **Advertisers (Brands):** Reaching engaged audiences in **novel AI-native experiences.** Youth/Gen Z are strong early adopters here, but the audience is broad."
-*   **Elliot:** "**How we make money:** Simple, proven model like **Unity Ads**, built for this **new wave of AI creation**:"
-*   **Elliot:** "**50% ad revenue share** goes directly back to creators. We enable, they build, *everyone* earns."
-*   **Thomas:** "**Current Revenue Streams (Pilots Live):** **Contextual ads** & **Affiliate referrals**."
-*   **Elliot:** "**Crucially, time is on our side here.** The **cost per AI media generation is dropping** dramatically each year..."
-*   **Thomas:** "...while **ad revenue potential per interaction remains strong.** This means our **unit economics inherently improve over time**, making our free, ad-supported model increasingly sustainable and powerful."
-*   **Thomas:** "**Anti-Abuse (Reminder):** Our **tiered validation system** ensures ad quality and manages free tier costs."
-*
+
+* **Creator Economy Trend:** The rise of 'vibe coding' means everyone is becoming a creator
+* **New Ad Inventory:** Unlocking vast new advertising inventory within millions of new AI apps
+* **GenAI Market Size:** Overall GenAI creator economy already >$10 Billion TAM and doubling
+
+* **Two-Sided Market Model:**
+  * **Creators (Affiliates):** Growing wave of developers and 'vibe coders' using our free AI APIs
+  * **Advertisers (Brands):** Reaching engaged audiences in novel AI-native experiences
+  * **Target Audience:** Youth/Gen Z are strong early adopters, but the audience is broad
+
+* **Revenue Model:** Simple, proven model like Unity Ads, built for this new wave of AI creation
+* **Revenue Sharing:** 50% ad revenue share goes directly back to creators - we enable, they build, everyone earns
+* **Current Revenue Streams:** Contextual ads & Affiliate referrals pilots are live
+
+* **Economic Advantages:**
+  * Cost per AI media generation is dropping dramatically each year
+  * Ad revenue potential per interaction remains strong
+  * Unit economics inherently improve over time, making our free, ad-supported model increasingly sustainable
+
+* **Risk Management:** Tiered validation system ensures ad quality and manages free tier costs
+
 SLIDE GUIDANCE:
 
 * Users get free AI experiences, brands reach youth demographic
@@ -360,22 +440,27 @@ Empower third-party developers with revenue sharing
 </div>
 
 <!--
-*   **Thomas:** "Our model creates a **powerful circular economy**, a flywheel for growth." *(Gesture to diagram)*
+**Speaking Points - Competitive Moat:**
+* **Business Model Advantage:** Our model creates a powerful circular economy, a flywheel for growth
 
 ![Fly Wheel](../media/fly-wheel-genz.png)
 
 * Circular diagram showing the flywheel effect:
 * Shows how more apps lead to more users, leading to better data, better targeting, more revenue, better platform, and back to more apps
 * Illustrates the self-reinforcing nature of the business model
-*   **Thomas:** "**Market Trend Driving Us**: The **GenAI market is exploding**, doubling year-over-year."
-*   **Elliot:** "Better data from usage unlocks **smarter ad targeting**, increasing revenue. **Open Source & Privacy-First** builds developer trust."
-*   **Thomas:** "More apps -> more users -> better data -> better platform -> **even more apps**. It's self-reinforcing."
-*   **Elliot:** "**Differentiation is Key Here:** *(Add Competition Points)*
-    *   "Unlike **AI Model Providers** (OpenAI, Hugging Face), we offer **free access AND a built-in revenue path**."
-    *   "Unlike **Game Monetizers** (Unity Ads), we *are* the **AI creation engine** AND the monetization layer for *all* app types."
-    *   "Unlike **Ad-Supported AI Products** (Perplexity), we empower **third-party developers** with shared revenue, not just monetize our own app."
-*   **Thomas:** "Our unique **Free API + Shared Ad Revenue model** is our core advantage."
-*   **Elliot: (optional)** "And **Unity proved** the underlying ad/rev-share model generates billions."
+
+* **Market Tailwind:** The GenAI market is exploding, doubling year-over-year
+* **Data Advantage:** Better usage data unlocks smarter ad targeting, increasing revenue
+* **Trust Factor:** Open Source & Privacy-First approach builds developer trust
+* **Self-Reinforcing Growth:** More apps -> more users -> better data -> better platform -> even more apps
+
+* **Key Competitive Differentiators:**
+  * **vs AI Model Providers (OpenAI, Hugging Face):** We offer free access AND a built-in revenue path
+  * **vs Game Monetizers (Unity Ads):** We are the AI creation engine AND the monetization layer for all app types
+  * **vs Ad-Supported AI Products (Perplexity):** We empower third-party developers with shared revenue, not just monetize our own app
+
+* **Core Advantage:** Our unique Free API + Shared Ad Revenue model is our fundamental differentiator
+* **Proven Model:** Unity has proven the underlying ad/rev-share model generates billions
 
 SLIDE GUIDANCE:
 - Market trend:  4× More citizen Creators than pros.
@@ -422,8 +507,8 @@ Become the ubiquitous, **assistant-centric** engine for AI creation and distribu
 - Build global community structure
 
 <!--
-
-*   **Thomas:** "Our roadmap focuses on **three clear phases**."
+**Speaking Points - Roadmap:**
+* **Strategic Approach:** Our roadmap focuses on three clear phases with specific milestones
 
 ![Circular Economy](../media/circular_economy_genz.png)
 
@@ -431,15 +516,24 @@ Become the ubiquitous, **assistant-centric** engine for AI creation and distribu
 * Phase 1 (Activate): Launch ad revenue sharing, scale developer community, prove model
 * Phase 2 (Scale): SDK v2, AI-driven ad optimization, global expansion
 * Phase 3 (Vision): Become the Unity for AI experiences
-*   **Thomas:** "In **Phase 1, Activate (Next 12 Months)**, our focus is on:
-    *   Launching our **Ad Revenue Share** platform-wide.
-    *   Aggressively **scaling our developer community** and the number of **integrated applications**.
-    *   Conclusively **proving our monetization model** at scale.
-    *   Our key targets are **$1M ARR, 15M MAU, and over 1000 integrated apps**."
-*   **Elliot:** "For Phase 2, Scale, over 12-36 months, we'll release SDK v2 for deeper integrations, implement AI-driven Ad Optimization, and build out our global community structure. The key target here is sustainable growth."
-*   **Thomas:** "Our Vision is to become the ubiquitous, assistant-centric engine for AI creation and distribution, the definitive 'Unity for AI Experiences'."
 
-Baseline – End of Q2 2025 (June 2025)
+* **Phase 1: Activate (Next 12 Months):**
+  * Launch Ad Revenue Share platform-wide
+  * Aggressively scale developer community and integrated applications
+  * Conclusively prove monetization model at scale
+  * Key targets: $1M ARR, 15M MAU, 1000+ integrated apps
+
+* **Phase 2: Scale (12-36 Months):**
+  * Release SDK v2 for deeper integrations
+  * Implement AI-driven Ad Optimization
+  * Build out global community structure
+  * Target: Sustainable growth
+
+* **Vision Phase:**
+  * Become the ubiquitous, assistant-centric engine for AI creation and distribution
+  * Achieve position as the definitive 'Unity for AI Experiences'
+
+**Baseline – End of Q2 2025 (June 2025):**
 • Users & Engagement: 3M MAU · 80M monthly generations
 • Monetization: ≈ $0 ARR (Basic text-ad append for unregistered apps only - Live)
 • Platform: Authentication live (pollinations-init issuing tokens) · Core Edge Services live (Image, Text, Audio Gen APIs + Open Source React SDK)
@@ -477,16 +571,16 @@ Become the ubiquitous, **interface-free engine** for AI creation and distributio
 **Growth & Developer Relations** : User acquisition, Brand partnerships, Community
 
 <!--
+**Speaking Points - Team:**
+* **Leadership Structure:**
+  * Thomas Haferlach (CEO): Drives vision, strategy, and breakthrough technology
+  * Elliot Fouchy (COO): Executes strategy, finance, and delivery
+  * Strong foundation built on decade-long collaboration and synergy
+  * Backed by AI & scaling experience
 
-*   **Elliot**
-    * Executing this vision requires the right team
-        *   Thomas, founder and CEO, drives **vision, strategy, breakthrough tech
-        *   I, as COO, am executing strategy, finance, delivery
-        *   Our decade-long collaboration provides strong synergy, backed by AI & scaling experience
-*   **Thomas:** "**Planned Key Hires:**
-    *   Senior **AI-Ops & Infra** team for GPU optimization and scaling.
-    *   **Growth & Developer Relations** lead for user acquisition, partnerships, community."
-
+* **Planned Key Hires:**
+  * Senior AI-Ops & Infra team for GPU optimization and scaling
+  * Growth & Developer Relations lead for user acquisition, partnerships, and community
 
 SLIDE GUIDANCE:
 - Collaboration: The founders share a long history of collaboration, having worked together on various technology and creative projects for more than a decade, building strong synergy and shared vision.
@@ -508,14 +602,18 @@ layout: two-cols-header
 ## Let's build together: hello@pollinations.ai
 
 <!--
-*   **Thomas:** "To fully execute our ambitious roadmap and **aggressively scale** Pollinations.AI, we will be seeking **strategic partnerships and future investment**."
-*   **Elliot:** "This future capital will be key to **investing heavily across these core areas**:
-    *   First, **accelerating our Tech & Product Development**, including our next-gen SDK and advanced AdTech.
-    *   Second, **supercharging Growth & our unique Monetization engine**, scaling user acquisition globally.
-    *   Third, **expanding our Global Community & Ecosystem** through developer grants and strategic alliances.
-    *   And finally, **enhancing our Platform Scale & Infrastructure** with more GPU capacity and ensuring low-latency performance worldwide."
-*   **Thomas:** "These investments are crucial to solidifying Pollinations.AI as the leading open platform for monetized AI creativity and hitting our aggressive growth milestones."
-*   **Elliot:** "We're eager to connect with partners and investors who share our vision for an open, accessible, and creator-centric AI future."
+**Speaking Points - Partner with Us:**
+* **Strategic Vision:** To fully execute our ambitious roadmap and aggressively scale Pollinations.AI, we will be seeking strategic partnerships and future investment
+
+* **Key Investment Areas:**
+  * **Tech & Product Development:** Next-gen SDK, advanced AdTech, new AI modalities
+  * **Growth & Monetization Engine:** Scaling user acquisition globally, optimizing ad revenue sharing
+  * **Global Community & Ecosystem:** Developer grants, strategic alliances, community building
+  * **Platform Scale & Infrastructure:** Enhanced GPU capacity, global low-latency performance
+
+* **Strategic Importance:** These investments are crucial to solidifying Pollinations.AI as the leading open platform for monetized AI creativity and hitting our aggressive growth milestones
+
+* **Partnership Vision:** Eager to connect with partners and investors who share our vision for an open, accessible, and creator-centric AI future
 
 SLIDE GUIDANCE:
 * Tech & Product Development: SDK v2, AI AdTech, Premium Offerings, New AI Modalities

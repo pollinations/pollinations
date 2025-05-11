@@ -6,7 +6,7 @@ class: text-center
 
 ## AI Empowers Everyone to Create
 
-**The easiest way to build and monetize AI apps with zero upfront cost.**
+**Unlocking AI App Monetization at Scale**
 
 <!--
 **Speaking Points:**
@@ -15,6 +15,12 @@ class: text-center
 * **Value Proposition:** The easiest way to build AND monetize AI apps
 * **Key Differentiators:** Zero upfront cost, shared success model
 -->
+---
+
+# What do we do?
+
+## Example 1?
+
 ---
 
 # <span class="bg-blue-500 text-white p-2 rounded">**🎮 Showcase: Roblox Integration**</span>
@@ -36,69 +42,49 @@ class: text-center
 <!--
 **Speaking Points - Roblox Showcase:**
 * **Concrete Example:** Real-world application in high-growth gaming platform
-* **Scale:** 10M+ likes, 250K monthly active players on 'AI Character RP' game
-* **Integration Ease:** Developer integrated our API with minimal code
 * **User Value:** Players generate AI characters and interact in real-time
-* **Broader Application:** Similar success across Discord bots, mobile apps, web platforms
 -->
 
 ---
 layout: two-cols-header
 ---
 
-::left::
-
 # <span class="bg-red-600 text-white p-2 rounded">**😖 Problem**</span>
 
-## Key Pain Points
+::left::
 
-### Creator (Affiliate)
-- Complex AI infrastructure
-- Authentication headaches
+### App Creator
+- Generative AI APIs are pay‑walled and DevOps‑heavy
+- Solo devs and indie studios struggle to experiment or scale
 - No built-in monetization
 
-### End User (Consumer) 
-- Paywalls everywhere
-- Privacy concerns
-- Limited customization
+![Problem: Friction](/media/problem_friction.png)
 
-### Brand
-- Missing youth demographic
-- No AI-native targeting
+::right::
 
+### Advertiser
+- Struggling to reach engaged audiences in new AI spaces
+
+![Problem: Reach](/media/problem_reach.png)
+
+:::
 
 <div class="text-center" style="font-size: 24px;">
 The current ecosystem forces <b>painful trade-offs</b>.
 </div>
 
-::right::
-
-
 <!--
 **Speaking Points - Problem:**
 * **Creator & Developer Pain Points:**
   * Complex and expensive AI infrastructure
-  * Authentication implementation challenges
   * Critical gap: No clear monetization path for successful apps
 
 * **Ad Provider/Brand Pain Points:**
-  * Struggling to reach engaged audiences in new AI spaces
+
   * Missing youth demographic - particularly Gen Z
   * No AI-native targeting mechanisms
 
-* **Core Market Problem:** System friction prevents an open ecosystem where developers can earn from success
-
-![Pain Points Visual](../media/paintpointsgenz.png)
-
-* This diagram shows the two key stakeholders (Creator/Affiliate and Brand) with their respective pain points:
-* Creator side shows "Infra Cost" with server infrastructure and key icon
-* Brand side shows "Reach Gap" with connection and people icons
-
-SLIDE GUIDANCE:
-
-- Frame problem as a dual pain point affecting both developers AND users
-- The problem statement is clear - but could potentially add 1-2 concrete examples of developer/user friction
-- Consider mentioning competition implicitly (without naming) by referencing their limitations (check context/parallels-unity-for-ai-and-others.md for more detail)
+* **Core Market Problem:** System friction prevents an open ecosystem where developers can earn from success (make this into a short phrase that covers both creators and advertisers - the message to take away from this slide)
 -->
 
 ---
@@ -109,24 +95,22 @@ layout: two-cols-header
 
 ::left::
 
-## Build & Monetize Effortlessly
+## Creator - Build & Monetize Effortlessly
 
 *   **AI setup:** Launch instantly via assistant.
 *   **You Focus on Frontend:** Build the UI/UX.
 *   **Plug & Play AI:** Simple URLs for media features.
 *   **Backend & Monetization Handled:** We run infra, scale, serve ads & share revenue.
+*The easiest path to a live AI app with zero upfront cost.*
 
-*The easiest path to a live, profitable AI app with zero upfront cost.*
+( add free )
 
 ::right::
 
-## App Creation Flow
+## Advertiser
 
-1. Developers build front-end with our assistance
-2. We handle complex AI infrastructure
-3. Users get free, creative experiences
+
 4. Brands connect with youth audience
-5. Revenue is shared through our platform
 
 <!--
 **Speaking Points - The Pollinations Fix:**

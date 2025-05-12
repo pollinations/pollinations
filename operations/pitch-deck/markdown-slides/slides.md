@@ -221,14 +221,14 @@ layout: two-cols-header
 ## **3M+** Monthly Active End-Users
 ## **100M+** Media Gen/Month
 #
->- **30%** Month-o-Month Growth
->- **14M+ Ad impressions** from pilot program
+>#### - **30%** Month-o-Month Growth
+>#### - **14M+ Ad impressions** from pilot program
 
 <br>
 
 ## **300+** Apps Live | **2+** Built Daily
->- **13K+** Discord Community Members
->- **2M MAU** on a trending Roblox Game
+>#### - **13K+** Discord Community Members
+>#### - **2M MAU** on a trending Roblox Game
 
 ::right::
 

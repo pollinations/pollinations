@@ -1,5 +1,7 @@
 ---
 class: text-center
+themeConfig:
+  colorSchema: light
 ---
 
 **MAIN MESSAGE: Build, Deploy, Profit**

@@ -111,12 +111,9 @@ export async function resizeImage(buffer, width, height) {
 * @returns {string|null} - The path to the logo file or null if no logo should be added.
 */
 export function getLogoPath(safeParams, isChild, isMature) {
-    // TEMPORARY TEST: Force logo on all images for analytics testing
-    // Original code:
     if (!MODELS[safeParams.model].type.startsWith('meoow') && (safeParams["nologo"] || safeParams["nofeed"] || isChild || isMature)) {
         return null;
     }
-    // Simplified: No more meoow requests, so always return the standard logo
     return 'logo.png';
 }
 

@@ -1,0 +1,65 @@
+
+  <svg width="800" height="400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400">
+    <!-- Font -->
+    <style>
+      text {
+        font-family: Arial, Helvetica, sans-serif;
+        fill: #333;
+      }
+      .tick-text {
+        font-size: 13px;
+        font-weight: bold;
+      }
+    </style>
+    
+    <!-- Define clip path to prevent overflow -->
+    <defs>
+      <clipPath id="chart-area">
+        <rect x="60" y="30" width="700" height="310" />
+      </clipPath>
+    </defs>
+    
+    <!-- X-Axis -->
+    <line x1="60" y1="340" x2="760" y2="340" stroke="#555" stroke-width="1.5" />
+    
+      <line x1="60" y1="340" x2="60" y2="345" stroke="#555" />
+      <text x="60" y="360" text-anchor="middle" font-size="13" font-weight="bold" font-family="Arial, Helvetica, sans-serif">2023-01</text>
+    
+      <line x1="170.5263157894737" y1="340" x2="170.5263157894737" y2="345" stroke="#555" />
+      <text x="170.5263157894737" y="360" text-anchor="middle" font-size="13" font-weight="bold" font-family="Arial, Helvetica, sans-serif">2023-04</text>
+    
+      <line x1="281.0526315789474" y1="340" x2="281.0526315789474" y2="345" stroke="#555" />
+      <text x="281.0526315789474" y="360" text-anchor="middle" font-size="13" font-weight="bold" font-family="Arial, Helvetica, sans-serif">2023-07</text>
+    
+      <line x1="391.5789473684211" y1="340" x2="391.5789473684211" y2="345" stroke="#555" />
+      <text x="391.5789473684211" y="360" text-anchor="middle" font-size="13" font-weight="bold" font-family="Arial, Helvetica, sans-serif">2023-10</text>
+    
+      <line x1="502.1052631578948" y1="340" x2="502.1052631578948" y2="345" stroke="#555" />
+      <text x="502.1052631578948" y="360" text-anchor="middle" font-size="13" font-weight="bold" font-family="Arial, Helvetica, sans-serif">2024-01</text>
+    
+      <line x1="612.6315789473684" y1="340" x2="612.6315789473684" y2="345" stroke="#555" />
+      <text x="612.6315789473684" y="360" text-anchor="middle" font-size="13" font-weight="bold" font-family="Arial, Helvetica, sans-serif">2024-04</text>
+    
+      <line x1="723.1578947368422" y1="340" x2="723.1578947368422" y2="345" stroke="#555" />
+      <text x="723.1578947368422" y="360" text-anchor="middle" font-size="13" font-weight="bold" font-family="Arial, Helvetica, sans-serif">2024-07</text>
+    
+    
+    <!-- Y-Axis -->
+    <line x1="60" y1="340" x2="60" y2="30" stroke="#555" stroke-width="1.5" />
+    
+      <line x1="55" y1="340" x2="60" y2="340" stroke="#555" />
+      <line x1="55" y1="278" x2="60" y2="278" stroke="#555" />
+      <text x="50" y="283" text-anchor="end" font-size="13" font-weight="bold" font-family="Arial, Helvetica, sans-serif">16</text>
+      <line x1="55" y1="216" x2="60" y2="216" stroke="#555" />
+      <text x="50" y="221" text-anchor="end" font-size="13" font-weight="bold" font-family="Arial, Helvetica, sans-serif">32</text>
+      <line x1="55" y1="154" x2="60" y2="154" stroke="#555" />
+      <text x="50" y="159" text-anchor="end" font-size="13" font-weight="bold" font-family="Arial, Helvetica, sans-serif">48</text>
+      <line x1="55" y1="92" x2="60" y2="92" stroke="#555" />
+      <text x="50" y="97" text-anchor="end" font-size="13" font-weight="bold" font-family="Arial, Helvetica, sans-serif">64</text>
+      <line x1="55" y1="30" x2="60" y2="30" stroke="#555" />
+      <text x="50" y="35" text-anchor="end" font-size="13" font-weight="bold" font-family="Arial, Helvetica, sans-serif">80</text>
+    
+    <!-- Data Line - black and bold -->
+    <path d="M 60 301.25 L 96.84210526315789 281.875 L 133.68421052631578 293.5 L 170.5263157894737 270.25 L 207.3684210526316 254.75 L 244.21052631578948 243.125 L 281.0526315789474 223.75 L 317.89473684210526 231.5 L 354.7368421052632 204.375 L 391.5789473684211 185 L 428.42105263157896 192.75 L 465.2631578947369 165.625 L 502.1052631578948 146.25 L 538.9473684210527 154 L 575.7894736842105 126.875 L 612.6315789473684 107.5 L 649.4736842105264 88.125 L 686.3157894736843 68.75 L 723.1578947368422 49.375 L 760 30" fill="none" stroke="black" stroke-width="3" stroke-linejoin="round" clip-path="url(#chart-area)" />
+  </svg>
+  

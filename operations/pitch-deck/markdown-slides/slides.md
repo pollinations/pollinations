@@ -414,7 +414,8 @@ we could try a "yes" / "no" cross table here
 
 
 
-
+---
+layout: two-cols-header
 ---
 
 # <span class="bg-pink-600 text-white p-2 rounded">**👥 Experienced Team to Scale Monetization**</span>
@@ -429,8 +430,10 @@ we could try a "yes" / "no" cross table here
 | **COO** | **Elliot Fouchy**    | Executes strategy & Finance; Leads delivery |
 
 ## **Strategic Hires**
+::left::
 * Digital Ads & Monetization Strategist
 * MLOps & Infrastructure Engineer
+::right::
 * Community & Creator Success Manager
 * Finance & Payout Operations Specialist (2026)
 

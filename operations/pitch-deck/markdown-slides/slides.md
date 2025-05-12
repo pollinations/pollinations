@@ -1,5 +1,4 @@
 ---
----
 class: text-center
 colorSchema: light
 themeConfig:
@@ -25,13 +24,19 @@ themeConfig:
 
 
 ---
-layout: two-cols-header
+class: text-center
 ---
-::left::
 
 # <span class="bg-gray-600 text-white p-2 rounded">**What Do We Do?**</span>
 
-::right::
+<div class="flex justify-center">
+  <video class="w-2/3 rounded-lg shadow-lg" autoplay loop muted>
+    <source src="/media/pixpal-language-ad.mov" type="video/mp4">
+  </video>
+</div>
+---
+
+# <span class="bg-gray-600 text-white p-2 rounded">**What Do We Do?**</span>
 
 <video class="w-full rounded-lg shadow-lg" autoplay loop muted>
   <source src="/media/traction-pollinations-ecosystem.mp4" type="video/mp4">

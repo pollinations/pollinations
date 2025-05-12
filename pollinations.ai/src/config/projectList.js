@@ -78,7 +78,7 @@ const allProjects = {
       name: "🆕 KoboldAI",
       url: "https://koboldai.net/",
       description: "A browser-based front-end for AI-assisted writing with multiple local & remote AI models, including integration with Pollinations.AI for image generation.",
-      author: "@henk717",
+      author: "@lostruins",
       repo: "https://github.com/LostRuins/lite.koboldai.net",
       stars: 3700,
       submissionDate: "2025-05-09",

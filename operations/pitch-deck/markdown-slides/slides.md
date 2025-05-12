@@ -385,13 +385,73 @@ Flywheel: By solving these dual problems, pollinations.ai creates a virtuous cyc
 layout: two-cols-header
 ---
 
-# <span class="bg-yellow-600 text-white p-2 rounded">**🛡️ Competitive Moat**</span>
+# <span class="bg-yellow-600 text-white p-2 rounded">**🛡️ Where the Competition Stops, We Monetize**</span>
 
-**MAIN MESSAGE: Built-In Monetization**
+<div class="mb-10"></div>
 
-**REMOVE: Detailed competitor comparisons - focus on unique monetization advantage**
+# 🚀 Our Differentiation
 
-::left::
+<table>
+  <thead>
+    <tr>
+      <th>Feature</th>
+      <th>Pollinations</th>
+      <th>Hugging Face</th>
+      <th>RunwayML</th>
+      <th>Roblox</th>
+      <th>GIPHY</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Open & Free API</td>
+      <td>✅</td>
+      <td>✅</td>
+      <td>❌</td>
+      <td>❌</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td>No Login Required</td>
+      <td>✅</td>
+      <td>❌</td>
+      <td>❌</td>
+      <td>❌</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td>Multi-modal (Text, Img, Audio)</td>
+      <td>✅</td>
+      <td>✅</td>
+      <td>🟡 Visual Only</td>
+      <td>❌</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td>Frictionless Embeds</td>
+      <td>✅</td>
+      <td>❌</td>
+      <td>❌</td>
+      <td>❌</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td>Ad-Based Monetization</td>
+      <td>✅ (Planned)</td>
+      <td>❌</td>
+      <td>❌</td>
+      <td>✅</td>
+      <td>✅</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+<!--
+**Speaking Points - Competitive Moat:**
 
 # Differentiation
 
@@ -403,11 +463,6 @@ AI creation engine AND monetization layer
 
 **vs Ad-Supported AI Products** (Perplexity):
 Empower third-party developers with revenue sharing
-
-::right::
-
-<!--
-**Speaking Points - Competitive Moat:**
 
 we could try a "yes" / "no" cross table here
 

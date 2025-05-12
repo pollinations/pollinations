@@ -218,25 +218,33 @@ layout: two-cols-header
 
 ::left::
 
+![Media Generated Growth](/media/traction-media-generated-6mo.png)
+
 ## **3M+** Monthly Active End-Users
 ## **100M+** Media Gen/Month
 #
 >#### - **30%** Month-o-Month Growth
 >#### - **14M+ Ad impressions** from pilot program
 
-<br>
+::right::
 
+#
 ## **300+** Apps Live | **2+** Built Daily
+#
 >#### - **13K+** Discord Community Members
 >#### - **2M MAU** on a trending Roblox Game
 
-::right::
+<br> 
 
-<div class="flex justify-center items-center h-full">
-  <video class="w-4/5 rounded-lg shadow-lg" autoplay loop muted playbackRate="2">
+<div class="flex justify-center items-center">
+  <video class="w-5/5 rounded-lg shadow-lg" autoplay loop muted playbackRate="2">
     <source src="/media/image-feed-text-feed.mov" type="video/mp4">
   </video>
 </div>
+
+
+
+
 
 <!--
 

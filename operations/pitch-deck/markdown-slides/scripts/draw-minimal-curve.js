@@ -36,7 +36,7 @@ async function readCSV(filePath) {
 
 function createSVG(x, y) {
   // SVG dimensions
-  const width = 400;
+  const width = 800;
   const height = 400;
   const margin = { top: 30, right: 40, bottom: 60, left: 60 };
   const graphWidth = width - margin.left - margin.right;
@@ -46,15 +46,18 @@ function createSVG(x, y) {
   const maxY = Math.max(...y);
   const minY = 0; // Start from zero
   
+  // Set fixed max Y value to 5M for consistent scale
+  const fixedMaxY = 5000000;
+  
   // Calculate scales
   const xScale = graphWidth / (x.length - 1);
-  const yScale = graphHeight / (maxY - minY);
+  const yScale = graphHeight / fixedMaxY;
   
   // Create SVG path
   let pathData = '';
   for (let i = 0; i < x.length; i++) {
     const xPos = margin.left + (i * xScale);
-    const yPos = height - margin.bottom - ((y[i] - minY) * yScale);
+    const yPos = height - margin.bottom - (y[i] * yScale);
     
     if (i === 0) {
       pathData += `M ${xPos} ${yPos}`;
@@ -63,33 +66,34 @@ function createSVG(x, y) {
     }
   }
   
-  // Create x-axis ticks (show every 3rd tick for clarity)
+  // Create x-axis ticks with month labels (Nov 2024 to Apr 2025)
+  const monthIndices = [0, 30, 60, 90, 120, 150, 180]; // Approximate day indices for each month
+  const monthLabels = ["Jan 2025", "Feb 2025", "Mar 2025", "Apr 2025", "May 2025"];
+  
   let xTicks = '';
-  for (let i = 0; i < x.length; i += 3) {
-    const xPos = margin.left + (i * xScale);
-    const yPos = height - margin.bottom;
-    xTicks += `
-      <line x1="${xPos}" y1="${yPos}" x2="${xPos}" y2="${yPos + 5}" stroke="#555" />
-      <text x="${xPos}" y="${yPos + 20}" text-anchor="middle" font-size="13" font-weight="bold" font-family="Arial, Helvetica, sans-serif">${x[i].substring(0, 7)}</text>
-    `;
+  for (let i = 0; i < monthIndices.length - 1; i++) {
+    const idx = monthIndices[i];
+    if (idx < x.length) {
+      const xPos = margin.left + (idx * xScale);
+      const yPos = height - margin.bottom;
+      xTicks += `
+        <line x1="${xPos}" y1="${yPos}" x2="${xPos}" y2="${yPos + 5}" stroke="#555" />
+        <text x="${xPos}" y="${yPos + 20}" text-anchor="middle" font-size="13" font-weight="bold" font-family="Arial, Helvetica, sans-serif">${monthLabels[i]}</text>
+      `;
+    }
   }
   
-  // Create y-axis ticks
-  const tickCount = 5;
+  // Create y-axis ticks with fixed 1M, 2M, 3M, 4M, 5M markers
+  const fixedYValues = [1000000, 2000000, 3000000, 4000000, 5000000];
   let yTicks = '';
-  for (let i = 0; i <= tickCount; i++) {
-    const value = minY + ((maxY - minY) * (i / tickCount));
-    const yPos = height - margin.bottom - ((value - minY) * yScale);
+  
+  for (const value of fixedYValues) {
+    const yPos = height - margin.bottom - (value * yScale);
     
-    // Add the tick line for all ticks
     yTicks += `
-      <line x1="${margin.left - 5}" y1="${yPos}" x2="${margin.left}" y2="${yPos}" stroke="#555" />`;
-    
-    // Only add the text label if this is not the first tick (i.e., not 0)
-    if (i > 0) {
-      yTicks += `
-      <text x="${margin.left - 10}" y="${yPos + 5}" text-anchor="end" font-size="13" font-weight="bold" font-family="Arial, Helvetica, sans-serif">${Math.round(value)}</text>`;
-    }
+      <line x1="${margin.left - 5}" y1="${yPos}" x2="${margin.left}" y2="${yPos}" stroke="#555" />
+      <text x="${margin.left - 10}" y="${yPos + 5}" text-anchor="end" font-size="13" font-weight="bold" font-family="Arial, Helvetica, sans-serif">${(value / 1000000)}M</text>
+    `;
   }
   
   // Build the complete SVG

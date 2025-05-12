@@ -44,8 +44,190 @@ export const projectCategories = [
 
 const allProjects = {
   toolsInterfaces: [
+
     {
-      name: "🆕 MVKProject Nexus API",
+      name: "🆕 tgpt",
+      url: "https://github.com/aandrew-me/tgpt",
+      description: "AI Chatbots in terminal without needing API keys - a command-line interface for AI that appeals to developers and terminal users.",
+      author: "@aandrew-me",
+      repo: "https://github.com/aandrew-me/tgpt",
+      submissionDate: "2025-05-10",
+      order: 1,
+    },
+    {
+      name: "🆕 NetSim",
+      url: "https://netsim.us.to/",
+      description: "websim.ai clone that's actually good",
+      author: "@kennet678",
+      submissionDate: "2025-04-15",
+      order: 1,
+    },
+    {
+      name: "🆕 B&W SVG Generator",
+      url: "https://fluxsvggenerator.streamlit.app/",
+      description: "Uses Flux (through pollinations) and potrace to create B&W Vector files",
+      author: "@pointsguy118",
+      submissionDate: "2025-04-15",
+      order: 1,
+    },
+    {
+      name: "🆕 Imagen",
+      url: "https://altkriz.github.io/imagen/",
+      description: "A beautiful web interface for generating images using Pollinations.ai API with only the \"flux\" and \"turbo\" models.",
+      author: "@altkriz",
+      repo: "https://github.com/altkriz/imagen",
+      stars: 3,
+      submissionDate: "2025-04-13",
+      order: 2,
+    },
+    {
+      name: "🆕 DominiSigns",
+      description: "Avatar Translator for Dominican Sign Language that uses artificial intelligence to translate text and audio into Dominican sign language (LSRD), creating a communication bridge for approximately 100,000 deaf people in the Dominican Republic.",
+      author: "@cmunozdev",
+      repo: "https://github.com/cmunozdev/DominiSigns",
+      stars: 3,
+      submissionDate: "2025-04-06",
+      order: 2,
+    },
+    {
+      name: "🆕 WordPress AI Vision Block",
+      url: "https://wordpress.org/plugins/ai-vision-block/",
+      description: "A custom WordPress Gutenberg block that allows you to generate images using the Pollinations API. Simply enter a prompt, and the AI will generate an image for you. Once the post is saved, the image is automatically stored in the WordPress Media Library.",
+      author: "mahmood-asadi",
+      repo: "https://github.com/mahmood-asadi/ai-vision-block",
+      stars: 5,
+      submissionDate: "2025-03-31",
+      order: 2,
+    },
+    {
+      name: "🆕 toai.chat",
+      url: "https://toai.chat",
+      description: "An AI chat service that operates exclusively via Curl commands, specifically designed for users working in terminal environments without the need for a standalone AI client.",
+      author: "kevin@kevin1986.com",
+      repo: "https://github.com/Veallym0n/toai.chat",
+      stars: 2,
+      submissionDate: "2025-03-27",
+      hidden: true,
+      order: 5,
+    },
+    {
+      name: "🆕 Elixpo Art Chrome Extension",
+      url: "https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh",
+      description: "It uses the pollinations image endpoint to generate an image with `boltning` as the model in 4 types of aspect ratios and themes with prompt engineering thus transforming selected texts into art smoothly with a disposable GUI in web.",
+      author: "Ayushman Bhatacharya",
+      repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter/tree/main/Elixpo%20Chrome%20%20Extension",
+      stars: 8,
+      submissionDate: "2025-03-14",
+      order: 4,
+    },
+    {
+      name: "🆕 Pollinations Feed",
+      url: "https://elixpoart.vercel.app/src/feed",
+      description: "Builds a bentro grid UI which integrates with the pollinations realtime SSE feed to show case art generation, with virtual DOM update to reduce lag and optimization.",
+      author: "Ayushman Bhattacharya",
+      repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter",
+      stars: 8,
+      submissionDate: "2025-03-14",
+      order: 3,
+    },
+    {
+      name: "🆕 Pollinations.ai Model Comparison",
+      url: "https://endemicmedia.github.io/FLARE/llm-comparison-tool/",
+      description: "An interactive tool designed to compare outputs from various large language models with customizable timeout settings and real-time testing capabilities.",
+      author: "https://github.com/dseeker",
+      repo: "https://github.com/EndemicMedia",
+      submissionDate: "2025-02-16",
+      order: 4,
+    },
+    {
+      name: "🆕 Anime AI Generation",
+      url: "https://www.animeaigeneration.com/",
+      description: "Create professional-quality anime characters with powerful AI technology. No artistic skills required.",
+      author: "@shreyas281898",
+      submissionDate: "2025-02-11",
+      order: 3,
+    },
+    {
+      name: "🆕 Pollinations.DIY",
+      url: "https://pollinations.diy",
+      description: "A browser-based coding environment based on bolt.diy, featuring integrated Pollinations AI services, visual code editing, and project management tools.",
+      author: "@thomash_pollinations",
+      repo: "https://github.com/pollinations/pollinations.diy",
+      stars: 5,
+      order: 1,
+    },
+    {
+      name: "Pal Chat",
+      url: "https://apps.apple.com/us/app/pal-chat-ai-chat-client/id6447545085?platform=iphone",
+      description: "An iOS app that integrates with all LLMs including Pollinations AI models in one unified simple interface.",
+      author: "https://x.com/pallavmac",
+      order: 1,
+    },
+    {
+      name: "Pollinator Android App",
+      url: "https://github.com/g-aggarwal/Pollinator",
+      description: "An open-source Android app for text-to-image generation.",
+      author: "@gaurav_87680",
+      order: 2,
+    },
+    {
+      name: "Own-AI",
+      url: "https://own-ai.pages.dev/",
+      description: "An AI text-to-image generator.",
+      author: "Sujal Goswami",
+      order: 3,
+    },
+    {
+      name: "JustBuildThings",
+      url: "https://justbuildthings.com",
+      description: "A collection of AI tools for image generation, character chat, and writing.",
+      author: "rasit",
+      order: 1,
+    },
+    {
+      name: "Elixpo-Art",
+      url: "https://elixpoart.vercel.app",
+      description: "A web interface for easy image generation with theme selection.",
+      author: "Ayushman Bhattacharya",
+      order: 1,
+    },
+    {
+      name: "Image Gen - Uncensored Edition",
+      url: "https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2",
+      description: "A powerful image generation assistant on HuggingChat.",
+      author: "@DeFactOfficial",
+      order: 1,
+    },
+    {
+      name: "Free AI Chatbot & Image Generator",
+      url: "https://freeaichat.app",
+      description: "A mobile app for unlimited AI chat and image generation.",
+      author: "@andreas_11",
+      order: 2,
+    },
+    {
+      name: "JCode Website Builder",
+      url: "https://jcode-ai-website-bulder.netlify.app/",
+      description: "A website generator using Pollinations text API.",
+      author: "@rtxpower",
+      order: 3,
+    },
+    {
+      name: "Server Status Dashboards",
+      url: "https://www.ai-ministries.com/serverstatus.html",
+      description: "Real-time monitoring dashboards for Pollinations text and image servers.",
+      author: "@tolerantone",
+      order: 1,
+    },
+    {
+      name: "Websim",
+      url: "https://websim.ai/c/bXsmNE96e3op5rtUS",
+      description: "A web simulation tool that integrates Pollinations.ai.",
+      author: "@thomash",
+      order: 2,
+    },
+    {
+      name: "MVKProject Nexus API",
       url: "https://nexus.adonis-except.xyz/",
       description: "An API platform specializing in artificial intelligence services: AI Chat Interaction with models like ChatGPT, Gemini, DeepSeek, and Meta AI, AI Image Generation powered by Pollinations, and AI Image Analysis for content description and insights.",
       author: "@DarknessDEVV",
@@ -56,7 +238,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 IRINA by visuallink",
+      name: "IRINA by visuallink",
       url: "https://irina-2--trivonca.on.websim.ai/",
       description: "Lightweight and simple online chat interface powered by pollinations",
       author: "@thatalgp",
@@ -64,7 +246,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Aiphoto智能绘画 🇨🇳",
+      name: "Aiphoto智能绘画 🇨🇳",
       url: "https://qiyimg.3d.tc/Aiphoto",
       description: "AI艺术工坊 - 智能绘画生成器。这是一个基于AI的绘画生成工具，可以根据用户输入的中文描述自动生成相应的图片。(An AI art workshop - intelligent painting generator. This is an AI-based painting generation tool that can automatically generate images based on Chinese descriptions input by users.)",
       author: "@zhikanyeye",
@@ -75,7 +257,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 KoboldAI",
+      name: "KoboldAI",
       url: "https://koboldai.net/",
       description: "A browser-based front-end for AI-assisted writing with multiple local & remote AI models, including integration with Pollinations.AI for image generation.",
       author: "@lostruins",
@@ -85,7 +267,7 @@ const allProjects = {
       order: 0,
     },
     {
-      name: "🆕 Polynate",
+      name: "Polynate",
       url: "https://polynate.cloudwerx.dev/",
       description: "AI-powered text and audio content generation platform providing a user-friendly interface for interacting with various AI generation services from Pollinations.ai.",
       author: "@voodoohop",
@@ -95,7 +277,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Echo AI",
+      name: "Echo AI",
       url: "https://3ch0ai.github.io/EchoAI",
       description: "An HTML-based chat interface that leverages Pollinations AI as its core engine for both text and image generation, featuring user authentication, streaming responses, and plan management.",
       author: "@3ch0AI",
@@ -104,7 +286,7 @@ const allProjects = {
       order: 2,
     },
     {
-      name: "🆕 Pollinations.ai Enhancer",
+      name: "Pollinations.ai Enhancer",
       url: "https://greasyfork.org/en/scripts/534183-pollinations-ai-enhancer",
       description: "Enhances the user experience on pollinations.ai pages by improving content readability, adding convenient download options, and providing easy access to generation metadata.",
       author: "@fisven",
@@ -122,7 +304,7 @@ const allProjects = {
       order: 2,
     },
     {
-      name: "🆕 VibeCoder",
+      name: "VibeCoder",
       url: "https://vibecoderbyaashir.netlify.app/",
       description: "A web app for coding with vibes, created using Pollinations.AI Open Source API without coding syntax.",
       author: "@Aashir__Shaikh",
@@ -133,7 +315,7 @@ const allProjects = {
   ],
   llmIntegrations: [
     {
-      name: "🆕 BullShi3ldAi",
+      name: "BullShi3ldAi",
       url: "https://bullshield.onrender.com/",
       description: "A frontend-based AI interface designed to deliver a smooth, multimodal, and visually engaging user experience with conversational AI, image generation, and more.",
       author: "@BullShieldTeck",
@@ -143,7 +325,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Just Build Things",
+      name: "Just Build Things",
       url: "https://justbuildthings.com",
       description: "A collection of free AI tools including AI chat, writing tools, image generation, image analysis, text-to-speech, and speech-to-text.",
       author: "rasit",
@@ -152,7 +334,7 @@ const allProjects = {
       order: 2,
     },
     {
-      name: "🆕 Rizqi O Chatbot 🇮🇩",
+      name: "Rizqi O Chatbot 🇮🇩",
       url: "https://chatbot.rizqioliveira.my.id",
       description: "Rizqi O Chatbot adalah proyek berbasis Pollinations yang menggabungkan tiga fitur utama: chatbot AI, generator gambar AI, dan generator audio AI. Pengguna dapat berinteraksi dalam bentuk teks, menghasilkan gambar dengan berbagai gaya seni dan efek visual, serta membuat audio secara otomatis dari teks. (An AI chatbot, image generator, and audio generator project with support for custom aspect ratios, over 200 art styles & visual effects, and automatic translation from Indonesian to English.)",
       author: "@ray23-bit",
@@ -163,7 +345,7 @@ const allProjects = {
       order: 3,
     },
     {
-      name: "🆕 Mirexa AI",
+      name: "Mirexa AI",
       url: "https://mirexa.vercel.app",
       description: "A friendly AI companion for chatting, creating, and exploring with no sign-ups or fees required. Features image generation, story brainstorming, real-time web search, and voice messaging.",
       author: "zxzata18@gmail.com",
@@ -172,7 +354,7 @@ const allProjects = {
     },
 
     {
-      name: "🆕 Define",
+      name: "Define",
       url: "https://define-i05a.onrender.com/api/docs/",
       description: "An AI-powered REST API designed to generate definitions for words or phrases, constrained to a specified target word count. It allows customization of tone, context, and language, delivering precise, context-aware definitions programmatically—ideal for developers and content creators.",
       author: "@hasanraiyan",
@@ -181,7 +363,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 CoNavic",
+      name: "CoNavic",
       url: "https://github.com/mkantwala/CoNavic/",
       description: "A free, open-source browser extension that brings the power of ChatGPT and browser automation directly to your fingertips. Instantly access AI assistance, manage tabs, and organize bookmarks using natural language all securely within your browser.",
       author: "@mkantwala",
@@ -191,7 +373,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 imggen.top 🇨🇳",
+      name: "imggen.top 🇨🇳",
       url: "https://www.imggen.top/",
       description: "Create stunning AI-generated images in seconds with our free AI image generator. No login required, unlimited generations, powered by FLUX model.",
       author: "lipengliang2012@163.com",
@@ -200,14 +382,14 @@ const allProjects = {
       order: 4,
     },
     {
-      name: "🆕 Aura Chat bot",
+      name: "Aura Chat bot",
       description: "A chat bot integrating Pollinations API for text and image generation.",
       author: "@Py-Phoenix-PJS",
       submissionDate: "2025-04-26",
       order: 1,
     },
     {
-      name: "🆕 FoodAnaly",
+      name: "FoodAnaly",
       url: "https://foodanaly.vercel.app/",
       description: "An AI application for food analysis that uses advanced artificial intelligence technology to help users understand food ingredients, nutritional value, and health impacts. Provides food safety analysis, nutritional health assessment, sports and fitness analysis, visual display, alternative recommendations, and practical insights for different dietary habits.",
       author: "liukang0120@163.com",
@@ -215,7 +397,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 OkeyAI",
+      name: "OkeyAI",
       url: "https://chat.okeymeta.com.ng",
       description: "An LLM created by Africans to understand and have cultural awareness of African contexts and languages, OkeyAI outperforms many LLM models based on size and intelligence, OkeyMeta uses pollination image generating API to train it's LLM (OkeyAI) on images in real time.",
       author: "@okeymeta",
@@ -224,7 +406,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 🤖 DesmondBot",
+      name: "🤖 DesmondBot",
       url: "https://swedish-innocent-teeth-majority.trycloudflare.com",
       description: "A snarky bot based on Llama that is 100% free, powered by the Pollinations text API and OpenWebUI. Other models are available as well.",
       author: "@mcgdj",
@@ -232,7 +414,7 @@ const allProjects = {
       order: 2,
     },
     {
-      name: "🆕 DreamBig - Generative AI Playground",
+      name: "DreamBig - Generative AI Playground",
       url: "https://dreambiglabs.vercel.app/",
       description: "Interactive AI playground with chat, image generation, and voice responses for creative exploration.",
       author: "@opzzxsprinta._999",
@@ -240,7 +422,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Goalani",
+      name: "Goalani",
       url: "https://goalani.com",
       description: "Voice-enabled AI fitness coach. Using only your voice, you can communicate with the agent to manage your fitness and nutrition. Features weight tracking, exercise logging, food tracking with AI-generated images, and agent customization.",
       author: "goalani.app@gmail.com",
@@ -248,7 +430,7 @@ const allProjects = {
       order: 3,
     },
     {
-      name: "🆕 IMyself AI 🇨🇳",
+      name: "IMyself AI 🇨🇳",
       url: "https://openai.lmyself.top/",
       description: "我们提供高质量的AI生成服务，包括图像生成、文本生成、音频生成和语音转文本服务， 让您轻松创建各种创意内容。 (We provide high-quality AI generation services, including image generation, text generation, audio generation, and speech to text services, allowing you to easily create various creative content.)",
       author: "Shadownc",
@@ -257,7 +439,7 @@ const allProjects = {
       order: 5,
     },
     {
-      name: "🆕 FreeAI 🇨🇳",
+      name: "FreeAI 🇨🇳",
       url: "https://freeai.aihub.ren/",
       description: "An AI application platform based on Pollinations.AI API, providing free and unlimited AI chat assistant, image generation, and voice synthesis services.",
       author: "@Azad-sl",
@@ -268,7 +450,7 @@ const allProjects = {
       order: 2,
     },
     {
-      name: "🆕 AI Unlimited Customizable Feature Module 🇨🇳",
+      name: "AI Unlimited Customizable Feature Module 🇨🇳",
       url: "https://getquicker.net/Sharedaction?code=9ac738ed-a4b2-4ded-933c-08dd5f710a8b&fromMyShare=true",
       description: "This project provides a free API interface supporting various text and image generation models, including OpenAI's GPT-4, Gemini 2.0, etc. Users can access these models without an API key to perform text generation, image generation, translation, text polishing, and more.",
       author: "https://linux.do/u/s_s/summary",
@@ -277,7 +459,7 @@ const allProjects = {
       order: 4,
     },
     {
-      name: "🆕 Zelos AI image generator",
+      name: "Zelos AI image generator",
       url: "https://websim.ai/@ISWEARIAMNOTADDICTEDTOPILLOW/ai-image-prompt-generator",
       description: "It uses Pollinations for both prompt enhancing and image generation, it was a easy to make project due to pollinations services being easy to use.",
       author: "https://www.roblox.com/users/4361935306/profile",
@@ -285,7 +467,7 @@ const allProjects = {
       order: 2,
     },
     {
-      name: "🆕 MiReXa AI",
+      name: "MiReXa AI",
       url: "https://mirexa.vercel.app",
       description: "A state-of-the-art chatbot integrating multiple LLMs with advanced features including audio generation, image generation, mathematical proficiency, and real-time web search.",
       author: "@withthatway",
@@ -305,7 +487,7 @@ const allProjects = {
       description: "An open-source, modern-design ChatGPT/LLMs UI/Framework with speech-synthesis, multi-modal, and extensible plugin system.",
       repo: "https://github.com/lobehub/lobe-chat",
       stars: 59000,
-      order: 1,
+      order: 2,
     },
     {
       name: "Qwen-Agent",
@@ -336,7 +518,7 @@ const allProjects = {
       author: "xtekky",
       repo: "https://github.com/xtekky/gpt4free",
       stars: 64100,
-      order: 1,
+      order: 2,
     },
     {
       name: "Unity AI Lab",
@@ -356,7 +538,7 @@ const allProjects = {
   ],
   creativeApps: [
     {
-      name: "🆕 Infinite World: AI game",
+      name: "Infinite World: AI game",
       url: "https://wuxiangs.pages.dev/",
       description: "An interactive graphic story game where player choices shape the world, using Pollinations APIs for text and image generation.",
       author: "jiektan6",
@@ -365,7 +547,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Generative AI Images Gallery",
+      name: "Generative AI Images Gallery",
       url: "http://ai.kochini.com",
       description: "A gallery of AI-generated images created from text prompts.",
       author: "Michael Kochiashvili",
@@ -374,7 +556,7 @@ const allProjects = {
       order: 4,
     },
     {
-      name: "🆕 Free AI Image Generator",
+      name: "Free AI Image Generator",
       url: "https://free-ai-image-generator.vercel.app/",
       description: "A free platform for transforming text prompts into high-quality images without requiring an account or design expertise.",
       author: "@zahidulhaque",
@@ -382,7 +564,7 @@ const allProjects = {
       order: 3,
     },
     {
-      name: "🆕 Modern AI Image Generator",
+      name: "Modern AI Image Generator",
       url: "https://imageai.techlasiya.com",
       description: "A web-based AI image generator with unlimited generations, 150+ image styles, and multiple customization options.",
       author: "@techlasiya",
@@ -390,7 +572,7 @@ const allProjects = {
       order: 2,
     },
     {
-      name: "🆕 MyPicGen",
+      name: "MyPicGen",
       url: "https://pic.941125.eu.org",
       description: "A tool for content creators to generate images for video thumbnails.",
       author: "yolob4268",
@@ -399,7 +581,7 @@ const allProjects = {
       order: 6,
     },
     {
-      name: "🆕 Children's Picture Books Plugin",
+      name: "Children's Picture Books Plugin",
       url: "https://www.coze.cn/store/plugin/7499512842995974194",
       description: "A plugin for creating children's picture books using Pollinations API to transform creative concepts into captivating picture book content.",
       author: "stopbar",
@@ -408,7 +590,7 @@ const allProjects = {
       order: 5,
     },
     {
-      name: "🆕 Free AI Chatbot & Image Generator",
+      name: "Free AI Chatbot & Image Generator",
       url: "https://play.google.com/store/apps/details?id=com.aichatbot.free",
       description: "A free AI Chatbot and Image Generator mobile app powered by pollinations.ai, available on the Google Play Store.",
       author: "@Aditya_Yadav",
@@ -416,7 +598,7 @@ const allProjects = {
       order: 7,
     },
     {
-      name: "🆕 Neurix 🇷🇺",
+      name: "Neurix 🇷🇺",
       url: "https://neurix.ru",
       description: "A website offering easy and free access to various neural networks, with multi-language support planned. Provides a platform for accessing various AI models, including Pollinations.",
       author: "@Igroshka",
@@ -425,7 +607,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Snapgen.io",
+      name: "Snapgen.io",
       url: "https://snapgen.io",
       description: "A free AI image generation website with a clean and professional interface, offering high-quality image generation without requiring API keys.",
       author: "tharindu@tsoft-llc.com",
@@ -433,7 +615,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Dreamscape AI",
+      name: "Dreamscape AI",
       url: "https://dreamscape.pinkpixel.dev",
       description: "Dreamscape AI is a creative studio for generating, enhancing, and transforming images, plus conversational AI capabilities with text and voice interfaces, and a deep research tool. The entire site is almost all powered by Pollinations API aside from the image enhancement tools. It generates images, optimizes prompts and creates image titles with the text API, features lots of image styling prompts, also has chat and voice chat with chat memory, and a research tool.",
       author: "@sizzlebop",
@@ -443,7 +625,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 PollinateAI",
+      name: "PollinateAI",
       url: "https://pollinateai.vercel.app",
       description: "PollinateAI is an image generation platform that aims to ease the stress of graphic and visual designers in delivering inspirations for their work. Regular consumers are also welcomed.",
       author: "@Auspicious14",
@@ -453,7 +635,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 🎨 WebGeniusAI",
+      name: "🎨 WebGeniusAI",
       url: "https://logise.neocities.org/webgeniusai",
       description: "AI tool that generates HTML websites with visuals from Pollinations.",
       author: "@logise",
@@ -461,14 +643,14 @@ const allProjects = {
       order: 1
     },
     {
-      name: "🆕 NailsGen",
+      name: "NailsGen",
       url: "https://www.nailsgen.com/",
       description: "Create beautiful nail art designs with AI. Generate unique nail art designs with different styles and colors.",
       author: "lipengliang2012@163.com",
       submissionDate: "2025-04-30"
     },
     {
-      name: "🆕 ImageGen AI Image",
+      name: "ImageGen AI Image",
       url: "https://imagegen.narendradwivedi.org",
       description: "A web application that utilizes Pollinations.AI API to generate images based on user-defined descriptions, with features like prompt enhancement, customizable image settings, and image download.",
       author: "https://www.linkedin.com/in/narendradwivedi",
@@ -476,7 +658,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 RuangRiung AI Image 🇮🇩",
+      name: "RuangRiung AI Image 🇮🇩",
       url: "https://ruangriung.my.id",
       description: "RuangRiung AI Image Generator ideal untuk seniman digital, desainer, atau siapa pun yang ingin mengeksplorasi kreativitas dengan bantuan AI. Tersedia dalam bahasa Inggris dan Indonesia, website ini menggabungkan fungsionalitas lengkap dengan desain yang elegan dan responsif. (RuangRiung AI Image Generator is ideal for digital artists, designers, or anyone who wants to explore creativity with AI assistance. Available in English and Indonesian, this website combines complete functionality with an elegant and responsive design.)",
       author: "@ruangriung",
@@ -486,7 +668,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 BlackWave",
+      name: "BlackWave",
       url: "https://blackwave.studio/",
       description: "An AI image generator that creates unique images from text prompts. Fast, easy and free!",
       author: "@metimol",
@@ -494,7 +676,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Generator Text AI 🇮🇩",
+      name: "Generator Text AI 🇮🇩",
       url: "https://app.ariftirtana.my.id/",
       description: "Generator Teks AI canggih dengan berbagai model AI seperti OpenAI, Llama, Mistral, dan DeepSeek. Hasilkan jawaban instan, dukung mode gelap/fokus, riwayat percakapan, dan contoh pertanyaan acak. Alat sempurna untuk kreativitas dan produktivitas. (Advanced AI Text Generator with various AI models like OpenAI, Llama, Mistral, and DeepSeek. Generate instant answers, support dark/focus mode, conversation history, and random question examples. Perfect tool for creativity and productivity.)",
       author: "@ayick13",
@@ -505,7 +687,7 @@ const allProjects = {
       order: 2,
     },
     {
-      name: "🆕 🌱 Strain Navigator",
+      name: "🌱 Strain Navigator",
       url: "https://www.strainnavigator.com/",
       description: "A collection of tools to help Growers, Breeders & Seed Bankers. Free & Open Source powered by Pollinations.ai.",
       author: "@Tolerable",
@@ -515,7 +697,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 MalaysiaPrompt 🇲🇾",
+      name: "MalaysiaPrompt 🇲🇾",
       url: "https://malaysiaprompt.rf.gd/",
       description: "A free and fun platform for creating unique AI-generated images. No fancy skills needed – just your ideas and a few clicks to bring them to life. Features image generation, text-to-prompt conversion, and image-to-text capabilities.",
       author: "@enciksnow",
@@ -525,7 +707,7 @@ const allProjects = {
       order: 3,
     },
     {
-      name: "🆕 Generator AI Image 🇮🇩",
+      name: "Generator AI Image 🇮🇩",
       url: "https://kenthir.my.id/advanced-generator/",
       description: "Advanced AI Image Generator adalah platform inovatif yang memungkinkan Anda membuat gambar digital menakjubkan dengan kecerdasan buatan by pollinations.ai. Dengan dukungan berbagai model AI canggih seperti DALL·E 3, Stable Diffusion, dan Flux-Default. (An innovative platform that allows you to create amazing digital images with artificial intelligence powered by pollinations.ai. Supports various advanced AI models like DALL-E 3, Stable Diffusion, and Flux-Default.)",
       author: "@kenthirai",
@@ -534,7 +716,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Pollinations.ai Image Generation (for Frame)",
+      name: "Pollinations.ai Image Generation (for Frame)",
       url: "https://github.com/CitizenOneX/frame_pollinations",
       description: "A Flutter application that listens for image generation prompts, requests images from Pollinations.AI, and displays them on the Frame wearable device. Users can use voice commands to generate images and save/share them using the device's sharing mechanism.",
       author: "CitizenOneX",
@@ -544,7 +726,7 @@ const allProjects = {
       order: 3,
     },
     {
-      name: "🆕 Podcast #1500",
+      name: "Podcast #1500",
       url: "https://open.spotify.com/show/1wu4ngb1dclyTwoNN4cZzK",
       description: "Podcast project powered by pollinations, featuring dialogues among LLMs. First episode features 3o-mini and DeepSeek R1 70B talking about Vibe Coding.",
       author: "@brain.diver",
@@ -552,7 +734,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 LAHGen",
+      name: "LAHGen",
       url: "https://image.aixboost.com/",
       description: "An advanced AI-driven text-to-image generation platform designed to provide users with high-quality and realistic AI-generated images based on textual prompts. The platform allows users to generate unlimited AI images for free, leveraging cutting-edge AI models to produce stunning visual outputs in various artistic styles.",
       author: "working7816@gmail.com",
@@ -837,189 +1019,6 @@ const allProjects = {
       url: "https://ai-bloom.vercel.app/",
       description: "A minimal creative showcase of AI-powered content generation.",
       author: "@diepdo1810",
-      order: 2,
-    },
-  ],
-  toolsInterfaces: [
-    {
-      name: "🆕 tgpt",
-      url: "https://github.com/aandrew-me/tgpt",
-      description: "AI Chatbots in terminal without needing API keys - a command-line interface for AI that appeals to developers and terminal users.",
-      author: "@aandrew-me",
-      repo: "https://github.com/aandrew-me/tgpt",
-      submissionDate: "2025-05-10",
-      order: 1,
-    },
-    {
-      name: "🆕 NetSim",
-      url: "https://netsim.us.to/",
-      description: "websim.ai clone that's actually good",
-      author: "@kennet678",
-      submissionDate: "2025-04-15",
-      order: 1,
-    },
-    {
-      name: "🆕 B&W SVG Generator",
-      url: "https://fluxsvggenerator.streamlit.app/",
-      description: "Uses Flux (through pollinations) and potrace to create B&W Vector files",
-      author: "@pointsguy118",
-      submissionDate: "2025-04-15",
-      order: 1,
-    },
-    {
-      name: "🆕 Imagen",
-      url: "https://altkriz.github.io/imagen/",
-      description: "A beautiful web interface for generating images using Pollinations.ai API with only the \"flux\" and \"turbo\" models.",
-      author: "@altkriz",
-      repo: "https://github.com/altkriz/imagen",
-      stars: 3,
-      submissionDate: "2025-04-13",
-      order: 2,
-    },
-    {
-      name: "🆕 DominiSigns",
-      description: "Avatar Translator for Dominican Sign Language that uses artificial intelligence to translate text and audio into Dominican sign language (LSRD), creating a communication bridge for approximately 100,000 deaf people in the Dominican Republic.",
-      author: "@cmunozdev",
-      repo: "https://github.com/cmunozdev/DominiSigns",
-      stars: 3,
-      submissionDate: "2025-04-06",
-      order: 2,
-    },
-    {
-      name: "🆕 WordPress AI Vision Block",
-      url: "https://wordpress.org/plugins/ai-vision-block/",
-      description: "A custom WordPress Gutenberg block that allows you to generate images using the Pollinations API. Simply enter a prompt, and the AI will generate an image for you. Once the post is saved, the image is automatically stored in the WordPress Media Library.",
-      author: "mahmood-asadi",
-      repo: "https://github.com/mahmood-asadi/ai-vision-block",
-      stars: 5,
-      submissionDate: "2025-03-31",
-      order: 2,
-    },
-    {
-      name: "🆕 toai.chat",
-      url: "https://toai.chat",
-      description: "An AI chat service that operates exclusively via Curl commands, specifically designed for users working in terminal environments without the need for a standalone AI client.",
-      author: "kevin@kevin1986.com",
-      repo: "https://github.com/Veallym0n/toai.chat",
-      stars: 2,
-      submissionDate: "2025-03-27",
-      hidden: true,
-      order: 5,
-    },
-    {
-      name: "🆕 Elixpo Art Chrome Extension",
-      url: "https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh",
-      description: "It uses the pollinations image endpoint to generate an image with `boltning` as the model in 4 types of aspect ratios and themes with prompt engineering thus transforming selected texts into art smoothly with a disposable GUI in web.",
-      author: "Ayushman Bhatacharya",
-      repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter/tree/main/Elixpo%20Chrome%20%20Extension",
-      stars: 8,
-      submissionDate: "2025-03-14",
-      order: 4,
-    },
-    {
-      name: "🆕 Pollinations Feed",
-      url: "https://elixpoart.vercel.app/src/feed",
-      description: "Builds a bentro grid UI which integrates with the pollinations realtime SSE feed to show case art generation, with virtual DOM update to reduce lag and optimization.",
-      author: "Ayushman Bhattacharya",
-      repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter",
-      stars: 8,
-      submissionDate: "2025-03-14",
-      order: 3,
-    },
-    {
-      name: "🆕 Pollinations.ai Model Comparison",
-      url: "https://endemicmedia.github.io/FLARE/llm-comparison-tool/",
-      description: "An interactive tool designed to compare outputs from various large language models with customizable timeout settings and real-time testing capabilities.",
-      author: "https://github.com/dseeker",
-      repo: "https://github.com/EndemicMedia",
-      submissionDate: "2025-02-16",
-      order: 4,
-    },
-    {
-      name: "🆕 Anime AI Generation",
-      url: "https://www.animeaigeneration.com/",
-      description: "Create professional-quality anime characters with powerful AI technology. No artistic skills required.",
-      author: "@shreyas281898",
-      submissionDate: "2025-02-11",
-      order: 3,
-    },
-    {
-      name: "🆕 Pollinations.DIY",
-      url: "https://pollinations.diy",
-      description: "A browser-based coding environment based on bolt.diy, featuring integrated Pollinations AI services, visual code editing, and project management tools.",
-      author: "@thomash_pollinations",
-      repo: "https://github.com/pollinations/pollinations.diy",
-      stars: 5,
-      order: 1,
-    },
-    {
-      name: "Pal Chat",
-      url: "https://apps.apple.com/us/app/pal-chat-ai-chat-client/id6447545085?platform=iphone",
-      description: "An iOS app that integrates with all LLMs including Pollinations AI models in one unified simple interface.",
-      author: "https://x.com/pallavmac",
-      order: 1,
-    },
-    {
-      name: "Pollinator Android App",
-      url: "https://github.com/g-aggarwal/Pollinator",
-      description: "An open-source Android app for text-to-image generation.",
-      author: "@gaurav_87680",
-      order: 2,
-    },
-    {
-      name: "Own-AI",
-      url: "https://own-ai.pages.dev/",
-      description: "An AI text-to-image generator.",
-      author: "Sujal Goswami",
-      order: 3,
-    },
-    {
-      name: "JustBuildThings",
-      url: "https://justbuildthings.com",
-      description: "A collection of AI tools for image generation, character chat, and writing.",
-      author: "rasit",
-      order: 1,
-    },
-    {
-      name: "Elixpo-Art",
-      url: "https://elixpoart.vercel.app",
-      description: "A web interface for easy image generation with theme selection.",
-      author: "Ayushman Bhattacharya",
-      order: 1,
-    },
-    {
-      name: "Image Gen - Uncensored Edition",
-      url: "https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2",
-      description: "A powerful image generation assistant on HuggingChat.",
-      author: "@DeFactOfficial",
-      order: 1,
-    },
-    {
-      name: "Free AI Chatbot & Image Generator",
-      url: "https://freeaichat.app",
-      description: "A mobile app for unlimited AI chat and image generation.",
-      author: "@andreas_11",
-      order: 2,
-    },
-    {
-      name: "JCode Website Builder",
-      url: "https://jcode-ai-website-bulder.netlify.app/",
-      description: "A website generator using Pollinations text API.",
-      author: "@rtxpower",
-      order: 3,
-    },
-    {
-      name: "Server Status Dashboards",
-      url: "https://www.ai-ministries.com/serverstatus.html",
-      description: "Real-time monitoring dashboards for Pollinations text and image servers.",
-      author: "@tolerantone",
-      order: 1,
-    },
-    {
-      name: "Websim",
-      url: "https://websim.ai/c/bXsmNE96e3op5rtUS",
-      description: "A web simulation tool that integrates Pollinations.ai.",
-      author: "@thomash",
       order: 2,
     },
   ],
@@ -1325,24 +1324,14 @@ export const projects = {
 };
 
 /**
- * Remove the "🆕" emoji from project names that:
- * 1. Have a submission date older than 15 days
- * 2. Have no submission date at all
+ * Check if a project should be marked as new based on its submission date
+ * A project is considered new if it was submitted within the last 15 days
  *
  * @param {Object} project - The project object
- * @returns {Object} - Project with potentially modified name
+ * @returns {boolean} - True if the project should be marked as new
  */
-const processProjectName = (project) => {
-  const result = { ...project };
-  
-  // If the project has no submissionDate or it's older than 15 days, remove the "🆕" emoji
-  if (!result.submissionDate || isOlderThan15Days(result.submissionDate)) {
-    if (result.name && result.name.includes("🆕")) {
-      result.name = result.name.replace("🆕", "").trim();
-    }
-  }
-  
-  return result;
+const isNewProject = (project) => {
+  return project.submissionDate && !isOlderThan15Days(project.submissionDate);
 };
 
 /**
@@ -1376,8 +1365,8 @@ const isOlderThan15Days = (dateString) => {
 const sortProjectsByOrderAndStars = (projects) => {
   return [...projects].sort((a, b) => {
     // First compare by order (lower order comes first)
-    const orderA = a.order || 3; // Default to middle order (3) if not specified
-    const orderB = b.order || 3;
+    const orderA = typeof a.order === 'number' ? a.order : 3; // Default to middle order (3) if not specified
+    const orderB = typeof b.order === 'number' ? b.order : 3;
     
     if (orderA !== orderB) {
       return orderA - orderB;
@@ -1413,9 +1402,9 @@ const organizeFeaturedProjects = (sourceProjects) => {
     // First, collect all projects in this category
     const categoryProjects = [];
     
-    // Find the top 5 projects with order=1, prioritizing by stars and then recency
+    // Find projects with order <= 1, prioritizing by stars and then recency
     const order1Projects = sourceProjects[category]
-      .filter(project => (project.order === 1 || project.order === "1") && !project.hidden)
+      .filter(project => project.order <= 1 && !project.hidden)
       .sort((a, b) => {
         // First sort by stars (higher stars first)
         const starsA = a.stars || 0;
@@ -1430,7 +1419,7 @@ const organizeFeaturedProjects = (sourceProjects) => {
         const dateB = b.submissionDate ? new Date(b.submissionDate) : new Date(0);
         return dateB - dateA;
       })
-      .slice(0, 3); // Take top 3
+      .slice(0, 5); // Take top 3
     
     // Create a set of project names that should be featured
     const featuredProjectNames = new Set(order1Projects.map(project => 
@@ -1443,11 +1432,14 @@ const organizeFeaturedProjects = (sourceProjects) => {
         return;
       }
       
-      // Process the project name (remove 🆕 if necessary)
-      const processedProject = processProjectName(project);
+      // Check if project is new and add isNew flag
+      const processedProject = {
+        ...project,
+        isNew: isNewProject(project)
+      };
       
-      // Get normalized name without emoji for checking
-      const normalizedName = processedProject.name.replace("🆕", "").trim();
+      // Get name for checking
+      const normalizedName = project.name;
 
       // Update featured flag based only on being in the top 5 order=1 projects
       if (featuredProjectNames.has(normalizedName)) {
@@ -1483,7 +1475,7 @@ const organizeFeaturedProjects = (sourceProjects) => {
 
 // Generate the organized projects
 const organizedProjects = organizeFeaturedProjects(allProjects);
-
+console.log("organizedProjects", organizedProjects);
 // Export the final projects object
 Object.keys(projects).forEach(category => {
   projects[category] = organizedProjects[category];

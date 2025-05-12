@@ -303,7 +303,7 @@ const renderProjectLink = (project) => {
         },
       }}
     >
-      {project.name}
+      {project.isNew ? `🆕 ${project.name}` : project.name}
     </Link>
   )
 }

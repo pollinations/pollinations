@@ -197,22 +197,23 @@ layout: two-cols-header
 layout: two-cols-header
 ---
 
-# <span class="bg-blue-600 text-white p-2 rounded">**🚀 Traction: Flywheel in Motion**</span>
-
-::left::
-
-- **3M+** Monthly Active End-Users
-- **30%** Month-over-Month Growth
-- **13K+** Discord Community Members
-- **300+** Applications Live
-- **2+** New Apps Built Daily
-- **14M+** Ad impressions from pilot program
-
-::right::
+# <span class="bg-blue-600 text-white p-2 rounded">**🚀 Traction: Flywheel Already in Motion**</span>
 
 **MAIN MESSAGE: 3M Users Monthly**
 
 **REMOVE: Minor metrics - highlight growth curve and most impressive numbers**
+
+::left::
+
+## **3M+** Monthly Active End-Users
+- **100M+** Media Generations per Month
+- **30%** Month-o-Month Growth
+- **14M+ Ad impressions** from pilot program
+
+## **300+** Apps Live | **2+** Built Daily
+- **13K+** Discord Community Members
+
+::right::
 
 <div class="flex justify-center items-center h-full">
   <video class="w-4/5 rounded-lg shadow-lg" autoplay loop muted playbackRate="2">

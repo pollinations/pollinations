@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "slidev",
     "build": "slidev build",
-    "export": "slidev export"
+    "export": "slidev export",
+    "deploy": "slidev build && npx wrangler pages deploy dist"
   },
   "keywords": [],
   "author": "",

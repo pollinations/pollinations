@@ -1,7 +1,5 @@
 ---
 class: text-center
-themeConfig:
-  colorSchema: light
 ---
 
 **MAIN MESSAGE: Build, Deploy, Profit**
@@ -72,28 +70,27 @@ layout: two-cols-header
 
 ::left::
 
-<img src="/media/problem_friction.png" alt="Problem: Friction" class="w-1/3" />
+![Problem: Friction](/media/problem_friction.png)
 
-# **Indie Developers**
-#
-## ❌ Struggle to Experiment or Scale
-#
-## 💰 No Clear Path for Monetization
+## **Solo devs | Indie creators**
+- Struggle to experiment or scale
+    - Prohibitive AI access costs
+    - Infrastructure complexity
+- No clear path for monetization
+
 
 ::right::
 
-<img src="/media/problem_reach.png" alt="Problem: Reach" class="w-1/3" />
+![Problem: Reach](/media/problem_reach.png)
 
-# **Advertisers**
-## ❌ Struggle to Reach Audiences in New AI Apps
-#
-## 📉 Miss Out on Contextual Advertising Opportunities
-
-<!--
-**Speaking Points - Problem:**
+## **Ad Providers | Brands**
+- Struggle to reach audiences in new AI apps
+- Miss out on contextual advertising opportunities
 
 ># *The current ecosystem forces painful trade-offs*
 
+<!--
+**Speaking Points - Problem:**
 * **Creator & Developer Pain Points:**
   * Complex and expensive AI infrastructure
   * Critical gap: No clear monetization path for successful apps
@@ -427,7 +424,7 @@ layout: two-cols-header
       <td>Multi-modal (Text, Img, Audio)</td>
       <td>✅</td>
       <td>✅</td>
-      <td>🟡&nbsp;&nbsp;&nbsp; Visual Only</td>
+      <td>🟡 Visual Only</td>
       <td>❌</td>
       <td>❌</td>
     </tr>
@@ -441,7 +438,7 @@ layout: two-cols-header
     </tr>
     <tr>
       <td>Ad-Based Monetization</td>
-      <td>✅&nbsp;&nbsp;&nbsp;(2026)</td>
+      f<td>✅&nbsp;&nbsp;&nbsp;(2026)</td>
       <td>❌</td>
       <td>❌</td>
       <td>✅</td>
@@ -449,6 +446,10 @@ layout: two-cols-header
     </tr>
   </tbody>
 </table>
+
+
+
+
 
 <!--
 **Speaking Points - Competitive Moat:**
@@ -498,15 +499,11 @@ layout: two-cols-header
 
 ::right::
 
-## **Strategic Hires** (Now)
-#
->#### **1. 💰 Digital Ads & Monetization Strategist**
->#### **2. 🔧 MLOps & Infrastructure Engineer**
-#
->#### **3. 👥 Community & Creator Success Manager**
->#### **Kalam Al-Hajj** : A seasoned innovator to empower creators and accelerate their growth.
-#
->#### **4. 📊 Finance & Payout Operations Specialist** (from 2026)
+>## **Strategic Hires** (2025-2026)
+>#### 1. Digital Ads & Monetization Strategist
+>#### 2. MLOps & Infrastructure Engineer
+>#### 3. Community & Creator Success Manager
+>#### 4. Finance & Payout Operations Specialist
 
 <!--
 **Speaking Points - Team:**
@@ -589,10 +586,10 @@ layout: two-cols-header
 - [🌍 Ecosystem Analysis](/17)
 - [💰 Business Model](/18)
 - [💹 Financial Model](/19)
+- [🛣️ Roadmap](/20)
 
 ::right::
 
-- [🛣️ Roadmap](/20)
 - [👥 Team](/21)
 - [🏗️ Tech Architecture](/22)
 - [🔌 SDK & Ad Integration](/23)
@@ -600,6 +597,7 @@ layout: two-cols-header
 - [⚠️ Risk Register](/25)
 - [🥊 Competitive Landscape](/26)
 - [🚀 KPI & Traction Metrics](/27)
+- [🔍 Due Diligence](/28)
 
 ---
 src: ./docs/01-executive-summary.md
@@ -655,4 +653,8 @@ src: ./docs/09-competitive-landscape.md
 
 ---
 src: ./docs/12-traction-metrics.md
+---
+
+---
+src: ./docs/16-due-diligence.md
 ---

@@ -165,6 +165,7 @@ const allProjects = {
       description: "A lightweight web UI for AI text generation with 100K+ monthly users, offering a clean interface for text generation and now image generation using Pollinations.",
       author: "@LostRuins",
       repo: "https://github.com/LostRuins/lite.koboldai.net",
+      stars: 117,
       submissionDate: "2025-05-10",
       order: 1,
     },

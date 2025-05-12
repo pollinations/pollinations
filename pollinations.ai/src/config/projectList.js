@@ -159,16 +159,7 @@ const allProjects = {
       submissionDate: "2025-05-10",
       order: 4,
     },
-    {
-      name: "🆕 KoboldAI Lite",
-      url: "https://koboldai.net",
-      description: "A lightweight web UI for AI text generation with 100K+ monthly users, offering a clean interface for text generation and now image generation using Pollinations.",
-      author: "@LostRuins",
-      repo: "https://github.com/LostRuins/lite.koboldai.net",
-      stars: 117,
-      submissionDate: "2025-05-10",
-      order: 1,
-    },
+
     {
       name: "🆕 Define",
       url: "https://define-i05a.onrender.com/api/docs/",
@@ -1023,7 +1014,6 @@ const allProjects = {
   ],
   socialBots: [
     {
-<<<<<<< HEAD
       name: "🆕 Aura Chat Bot",
       description: "A chat bot integrating Pollinations API for text and image generation.",
       author: "@Py-Phoenix-PJS",
@@ -1046,16 +1036,14 @@ const allProjects = {
       order: 2,
     },
     {
-=======
       name: "🆕 🤖 SingodiyaTech bot",
       url: "https://t.me/Aks7240Bot",
       description: "This is a Telegram bot with many Advanced ai features.",
       author: "t.me/Aks979",
       submissionDate: "2025-05-10",
-      order: 1,
+      order: 4,
     },
     {
->>>>>>> 9e93dc7c7f18646f446698c1017e3324b7a5ded3
       name: "🆕 🤖 Raftar.xyz",
       url: "https://raftar.xyz",
       description: "A Discord multi-purpose bot with over 100+ commands, including AI image generation, ChatGPT, and SearchGPT powered by Pollinations.AI.",

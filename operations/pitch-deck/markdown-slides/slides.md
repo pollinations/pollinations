@@ -289,17 +289,17 @@ layout: two-cols-header
 
 ::left::
 
-### **1. 🚀 Create For Free** (Tiers 1 & 2 - Live)
+### **1. 🚀 Create For Free** (Live)
 *   No-cost AI tools, limited usage
 *   Pollinations retains 100% of ad revenue
 <br>
 <br>
-### **2. 📈 Scale & Self-Fund** (Tier 3 - Beta)
+### **2. 📈 Scale & Self-Fund** (Beta)
 *   Successful apps get unlimited usage
 *   Pollinations retains 100% of ad revenue
 <br>
 <br>
-### **3. 💰 Profit Together** (Tier 4 - 2026)
+### **3. 💰 Profit Together** (2026)
 *   Top-performing apps join the Partner program
 *   50% of Net Ad Revenue goes back to the App
 

@@ -305,40 +305,41 @@ layout: two-cols-header
 
 ::left::
 
-## **1. 🚀 Create For Free** (Live)
-*   No-cost AI tools, limited usage
-*   Pollinations retains 100% of ad revenue
+## **1 🚀 Create For Free** (Live)
+#
+>#### - No-cost AI tools, limited usage
+>#### - Pollinations retains 100% of ad revenue
+
 <br>
-## **2. 📈 Scale & Self-Fund** (Beta)
-*   Successful apps get unlimited usage
-*   Pollinations retains 100% of ad revenue
+
+## **2 📈 Scale & Self-Fund** (Beta)
+#
+>#### - Successful apps get unlimited usage
+>#### - Pollinations retains 100% of ad revenue
+
 <br>
-## **3. 💰 Profit Together** (2026)
-*   Top-performing apps join the Partner program
-*   50% of Net Ad Revenue goes back to the App
+
+## **3 💰 Profit Together** (2026)
+#
+>#### - Top-performing apps join the Partner tier
+>#### - 50% of Ad Revenue goes back to the App
 
 ::right::
 
 ```
-             Many Potential Developers       
-                         ▼ (Free Access)
+      Many Potential Developers (Free Access)        
+                         ▼ 
           ******************************
-          |           EXPLORER         | 
-                  |    CREATOR   | (Early Projects)
-                   ***************
-                    \           /
-                     \         /
-                      *********
-                     |INNOVATOR| (Profitable Apps)
-                      *********
-                         | (Top Performance)
-                         V
-                     *********
-                     |PARTNER| (Rev-Share)
-                     *********
-                         |
+           \         EXPLORER         / (Early Projects)
+            **************************
+             \       CREATOR        / (Registered Apps)
+              **********************
+               \    INNOVATOR     / (Profitable Apps)
+                ******************
+                 \   PARTNER    / Top Performance App
+                  **************     (Rev-Share)
                          ▼
-          Ecosystem Growth & New Explorers
+        Ecosystem Growth & New Explorers
 ```
 
 <!--

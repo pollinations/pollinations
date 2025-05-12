@@ -45,6 +45,35 @@ export const projectCategories = [
 const allProjects = {
   toolsInterfaces: [
     {
+      name: "🆕 IRINA by visuallink",
+      url: "https://irina-2--trivonca.on.websim.ai/",
+      description: "Lightweight and simple online chat interface powered by pollinations",
+      author: "@thatalgp",
+      submissionDate: "2025-05-11",
+      order: 1,
+    },
+    {
+      name: "🆕 Aiphoto智能绘画 🇨🇳",
+      url: "https://qiyimg.3d.tc/Aiphoto",
+      description: "AI艺术工坊 - 智能绘画生成器。这是一个基于AI的绘画生成工具，可以根据用户输入的中文描述自动生成相应的图片。(An AI art workshop - intelligent painting generator. This is an AI-based painting generation tool that can automatically generate images based on Chinese descriptions input by users.)",
+      author: "@zhikanyeye",
+      repo: "https://github.com/zhikanyeye/Aiphoto",
+      stars: 1,
+      submissionDate: "2025-05-10",
+      language: "zh-CN",
+      order: 1,
+    },
+    {
+      name: "🆕 KoboldAI",
+      url: "https://koboldai.net/",
+      description: "A browser-based front-end for AI-assisted writing with multiple local & remote AI models, including integration with Pollinations.AI for image generation.",
+      author: "@henk717",
+      repo: "https://github.com/LostRuins/lite.koboldai.net",
+      stars: 3700,
+      submissionDate: "2025-05-09",
+      order: 1,
+    },
+    {
       name: "🆕 Polynate",
       url: "https://polynate.cloudwerx.dev/",
       description: "AI-powered text and audio content generation platform providing a user-friendly interface for interacting with various AI generation services from Pollinations.ai.",
@@ -112,19 +141,30 @@ const allProjects = {
       order: 2,
     },
     {
-      name: "🆕 KoboldAI Lite",
-      url: "https://koboldai.net",
-      description: "A lightweight web UI for AI text generation with 100K+ monthly users, offering a clean interface for text generation and now image generation using Pollinations.",
-      author: "@LostRuins",
-      repo: "https://github.com/LostRuins/lite.koboldai.net",
-      submissionDate: "2025-05-10",
-      order: 1,
+      name: "🆕 Rizqi O Chatbot 🇮🇩",
+      url: "https://chatbot.rizqioliveira.my.id",
+      description: "Rizqi O Chatbot adalah proyek berbasis Pollinations yang menggabungkan tiga fitur utama: chatbot AI, generator gambar AI, dan generator audio AI. Pengguna dapat berinteraksi dalam bentuk teks, menghasilkan gambar dengan berbagai gaya seni dan efek visual, serta membuat audio secara otomatis dari teks. (An AI chatbot, image generator, and audio generator project with support for custom aspect ratios, over 200 art styles & visual effects, and automatic translation from Indonesian to English.)",
+      author: "@ray23-bit",
+      repo: "https://github.com/ray23-bit/Projectenam",
+      stars: 1,
+      submissionDate: "2025-05-08",
+      language: "id-ID",
+      order: 3,
     },
     {
       name: "🆕 Mirexa AI",
       url: "https://mirexa.vercel.app",
       description: "A friendly AI companion for chatting, creating, and exploring with no sign-ups or fees required. Features image generation, story brainstorming, real-time web search, and voice messaging.",
       author: "zxzata18@gmail.com",
+      submissionDate: "2025-05-10",
+      order: 4,
+    },
+    {
+      name: "🆕 KoboldAI Lite",
+      url: "https://koboldai.net",
+      description: "A lightweight web UI for AI text generation with 100K+ monthly users, offering a clean interface for text generation and now image generation using Pollinations.",
+      author: "@LostRuins",
+      repo: "https://github.com/LostRuins/lite.koboldai.net",
       submissionDate: "2025-05-10",
       order: 1,
     },
@@ -981,6 +1021,7 @@ const allProjects = {
   ],
   socialBots: [
     {
+<<<<<<< HEAD
       name: "🆕 Aura Chat Bot",
       description: "A chat bot integrating Pollinations API for text and image generation.",
       author: "@Py-Phoenix-PJS",
@@ -1003,6 +1044,16 @@ const allProjects = {
       order: 2,
     },
     {
+=======
+      name: "🆕 🤖 SingodiyaTech bot",
+      url: "https://t.me/Aks7240Bot",
+      description: "This is a Telegram bot with many Advanced ai features.",
+      author: "t.me/Aks979",
+      submissionDate: "2025-05-10",
+      order: 1,
+    },
+    {
+>>>>>>> 9e93dc7c7f18646f446698c1017e3324b7a5ded3
       name: "🆕 🤖 Raftar.xyz",
       url: "https://raftar.xyz",
       description: "A Discord multi-purpose bot with over 100+ commands, including AI image generation, ChatGPT, and SearchGPT powered by Pollinations.AI.",

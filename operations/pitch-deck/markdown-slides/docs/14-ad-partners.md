@@ -1,4 +1,13 @@
-# 🤝 Ad Partners
+<div style="text-align: right; position: absolute; top: 0; right: 0;">
+<a href="/13">⬅️ Back to Index</a>
+</div>
+
+<div class="bg-purple-100 p-4 rounded-lg border-l-4 border-purple-500 mb-6">
+  <h3 class="text-lg font-bold text-purple-800">🌟 Pitch Deck Highlight</h3>
+  <p class="text-purple-800">Ad Partnerships: Strategic relationships with AI-native ad networks will drive monetization. We're prioritizing partners who offer contextual targeting, interactive formats to maximize Ad€ while maintaining excellent user experience.</p>
+</div>
+
+# 🤝 **Ad Partners**
 
 Tracking potential partnerships with ad networks to monetize our AI application ecosystem.
 

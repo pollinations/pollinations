@@ -95,7 +95,7 @@ const affiliates = [
     blockedCountries: ["CN", "IR", "KP", "SY", "CU"],
     trackingLink: "https://go.sjv.io/c/6058776/2774941/30752",
     triggerWords: ["ai chatbot", "character ai", "virtual companion", "ai chat", "realistic ai", "custom ai character", "talk to ai"],
-    weight: 2.0
+    weight: 1.0
   },
   // {
   //   id: "lovemy",

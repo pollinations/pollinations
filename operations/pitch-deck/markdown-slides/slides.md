@@ -81,7 +81,7 @@ layout: two-cols-header
 - Struggle to reach audiences in new AI apps
 - Miss out on contextual advertising opportunities
 
->### *The current ecosystem forces painful trade-offs*
+># *The current ecosystem forces painful trade-offs*
 
 <!--
 **Speaking Points - Problem:**
@@ -105,12 +105,14 @@ layout: two-cols-header
 
 ::left::
 
-## For Creators | **Build & Monetize AI Instantly**
+## For Creators
+## **Build & Monetize AI Instantly**
 - Effortless AI Integration
 - Seamless Ad Monetization
 - Clear Path to Profit
 
-## For Advertisers | **Reach AI-Native Audiences**
+## For Advertisers
+## **Reach AI-Native Audiences**
 
 * Vast, Untapped Ad Space
 * Highly Engaged Users
@@ -118,7 +120,7 @@ layout: two-cols-header
 
 ::right::
 
->### *From idea to income with zero upfront cost*
+># *From idea to income with zero upfront cost*
 
 <!--
 
@@ -206,7 +208,7 @@ layout: two-cols-header
 ::left::
 
 ## **3M+** Monthly Active End-Users
-- **100M+** Media Generations per Month
+## **100M+** Media Gen/Month
 - **30%** Month-o-Month Growth
 - **14M+ Ad impressions** from pilot program
 
@@ -476,8 +478,8 @@ layout: two-cols-header
 
 ::right::
 
-## Contact
-### ***hello@pollinations.ai***
+>## Contact
+>### ***hello@pollinations.ai***
 
 <!--
 

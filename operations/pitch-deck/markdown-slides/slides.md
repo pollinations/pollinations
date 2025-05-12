@@ -470,14 +470,14 @@ layout: two-cols-header
 - Prove monetization model
 
 ## +12mo | **Scale**
-- Deepen integrations with SDK v2
+- Deepen ad integrations with SDK v2
 - Optimize ad targeting with AI
 - Build global community structure
 
 ::right::
 
 ## Contact
-### hello@pollinations.ai
+### ***hello@pollinations.ai***
 
 <!--
 

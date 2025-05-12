@@ -45,6 +45,17 @@ export const projectCategories = [
 const allProjects = {
   toolsInterfaces: [
     {
+      name: "🆕 MVKProject Nexus API",
+      url: "https://nexus.adonis-except.xyz/",
+      description: "An API platform specializing in artificial intelligence services: AI Chat Interaction with models like ChatGPT, Gemini, DeepSeek, and Meta AI, AI Image Generation powered by Pollinations, and AI Image Analysis for content description and insights.",
+      author: "@DarknessDEVV",
+      repo: "https://github.com/DarknessDEVV/-mvkproject-nexus",
+      stars: 1,
+      npmPackage: "@mvkproject/nexus",
+      submissionDate: "2025-05-12",
+      order: 1,
+    },
+    {
       name: "🆕 IRINA by visuallink",
       url: "https://irina-2--trivonca.on.websim.ai/",
       description: "Lightweight and simple online chat interface powered by pollinations",

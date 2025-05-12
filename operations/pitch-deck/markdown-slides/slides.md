@@ -216,20 +216,19 @@ layout: two-cols-header
 
 # <span class="bg-blue-600 text-white p-2 rounded">**🚀 Traction: Flywheel Already in Motion**</span>
 
-**MAIN MESSAGE: 3M Users Monthly**
-
-**REMOVE: Minor metrics - highlight growth curve and most impressive numbers**
-
 ::left::
 
 ## **3M+** Monthly Active End-Users
 ## **100M+** Media Gen/Month
-- **30%** Month-o-Month Growth
-- **14M+ Ad impressions** from pilot program
+#
+>- **30%** Month-o-Month Growth
+>- **14M+ Ad impressions** from pilot program
+
+<br>
 
 ## **300+** Apps Live | **2+** Built Daily
-- **13K+** Discord Community Members
-- **2M MAU** on a trending Roblox Game
+>- **13K+** Discord Community Members
+>- **2M MAU** on a trending Roblox Game
 
 ::right::
 
@@ -274,20 +273,19 @@ layout: two-cols-header
 
 ::left::    
 
-## **247B** TAM
-### - *Global AI-Contextual Ad Spend*
-#
-## **3.4B** SAM
-### - *GenAI in Advertising segment*
-#
-## **SOM : 22M ARR**
-### - *Indie developers using Generative AI for apps, monetized via our platform*
-### ***(2027 target)***
+# ***Massive scale for AI-driven ad monetization***
 
 ::right::
 
-># *Massive scale for AI-driven ad monetization*
-
+## **247B** TAM
+>### *Global AI-Contextual Ad Spend*
+#
+## **3.4B** SAM
+>### *GenAI in Advertising segment*
+#
+## **SOM : 22M ARR**
+>### *Indie developers using Generative AI for apps, monetized via our platform*
+>### ***(2027 target)***
 
 <!--
 

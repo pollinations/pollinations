@@ -1,0 +1,224 @@
+# Tokens to add to .env files (2025-05-10)
+
+## Issue #1553: [Special Bee Request]: Neurix
+Token: neurix.ru
+Issue URL: https://github.com/pollinations/pollinations/issues/1553
+Project Description: Website offering easy and free access to various neural networks
+Project URL: https://neurix.ru
+
+## Issue #1607: [Special Bee Request]: Raftar.xyz
+Token: raftar.xyz
+Issue URL: https://github.com/pollinations/pollinations/issues/1607
+Project Description: Discord user app + guild app offering 120+ commands with over 10,000+ user installs and 650+ guild installs
+Project URL: https://raftar.xyz
+
+## Issue #1663: [Special Bee Request]: Free AI Chatbot & Image Generator
+Token: freeaichat
+Issue URL: https://github.com/pollinations/pollinations/issues/1663
+Project Description: A free AI Chatbot and Image Generator app powered by pollinations.ai
+Project URL: https://play.google.com/store/apps/details?id=com.aichatbot.free
+
+## Issue #1714: [Special Bee Request]: StoryTelling
+Token: storytelling-app
+Issue URL: https://github.com/pollinations/pollinations/issues/1714
+Project Description: Mobile app for generating stories with AI images and text-to-speech
+Project URL: N/A
+
+## Issue #1779: [Special Bee Request]: AI Gatos
+Token: aigatos
+Issue URL: https://github.com/pollinations/pollinations/issues/1779
+Project Description: AI Gatos project (AItão)
+Project URL: N/A
+
+## Issue #1619: [Special Bee Request]: Empowerverse
+Token: image.empowerverse.org
+Issue URL: https://github.com/pollinations/pollinations/issues/1619
+Project Description: Hub of multiple projects using Pollinations AI to generate cover images for devotion series and video generation
+Project URL: N/A
+
+## Issue #1758: [Special Bee Request]: mypicgen
+Token: pic.941125.eu.org
+Issue URL: https://github.com/pollinations/pollinations/issues/1758
+Project Description: Image generation for video thumbnails for content creation
+Project URL: N/A
+
+## Issue #1562: [Special Bee Request]: ElxrAI
+Token: elxrai
+Issue URL: https://github.com/pollinations/pollinations/issues/1562
+Project Description: ElxrAI lovable.dev clone
+Project URL: N/A
+
+## Issue #1755: [Special Bee Request]: AI Image Generator [ROBLOX]
+Token: l4nd3n
+Issue URL: https://github.com/pollinations/pollinations/issues/1755
+Project Description: AI Image Generator for Roblox that integrates with Pollinations APIs
+Project URL: N/A (Roblox platform)
+
+## Issue #1534: Science Encyclopedia
+Token: science-encyclopedia
+Issue URL: https://github.com/pollinations/pollinations/issues/1534
+Project Description: Automation of scientific writing
+Project URL: N/A
+
+## Issue #1655: [Special Bee Request]: Bullnium
+Token: bullnium
+Issue URL: https://github.com/pollinations/pollinations/issues/1655
+Project Description: AI educational tool for children and people learning artificial intelligence
+Project URL: https://ai.bullnium.com
+
+## Issue #1572: [Special Bee Request]: AI Live
+Token: ailive
+Issue URL: https://github.com/pollinations/pollinations/issues/1572
+Project Description: Voice-activated assistant that responds to spoken queries while analyzing screen content
+Project URL: N/A (GitHub: https://github.com/ayushkumarghosh/AI-Live)
+
+## Issue #1574: [Special Bee Request]: imag1ne
+Token: imag1ne_app
+Issue URL: https://github.com/pollinations/pollinations/issues/1574
+Project Description: Updated image generation app with multi-image generation and prompt enhancer
+Project URL: Not built yet
+
+## Issue #1581: [Special Bee Request]: Afghanistan Educational Platform
+Token: afghanistan-educational
+Issue URL: https://github.com/pollinations/pollinations/issues/1581
+Project Description: Non-profit educational platform for students in Afghanistan
+Project URL: N/A
+
+## Issue #1592: [Special Bee Request]: Domain verification (Pixpal)
+Token: pixpal
+Issue URL: https://github.com/pollinations/pollinations/issues/1592
+Project Description: Chat with images using text and image generation
+Project URL: https://pixpal.chat
+
+## Issue #1489: [Special Bee Request]: Mirexa AI
+Token: mirexa
+Issue URL: https://github.com/pollinations/pollinations/issues/1489
+Project Description: AI companion for chat, image generation, and web search
+Project URL: https://mirexa.vercel.app
+
+## Issue #1615: [Special Bee Request]: Elixpo Art
+Token: elixpoart
+Issue URL: https://github.com/pollinations/pollinations/issues/1615
+Project Description: Web interface to create thematic images from prompts
+Project URL: https://elixpoart.vercel.app
+
+## Issue #1658: [Special Bee Request]: Discord Bot (Ommivore)
+Token: ommivore
+Issue URL: https://github.com/pollinations/pollinations/issues/1658
+Project Description: Discord bot with AI text responses and image generation
+Project URL: N/A (Discord Bot)
+
+## Issue #1818: [Special Bee Request]: justbuildthings
+Token: justbuildthings
+Issue URL: https://github.com/pollinations/pollinations/issues/1818
+Project Description: Collection of free tools including AI chat, image generation, and more
+Project URL: https://justbuildthings.com
+
+## Issue #1831: [Special Bee Request]: requesting "ai.kochini" referrer
+Token: ai.kochini
+Issue URL: https://github.com/pollinations/pollinations/issues/1831
+Project Description: Gallery of AI-generated images generated on request by a text string
+Project URL: http://ai.kochini.com
+
+## Issue #1839: [Special Bee Request]: Mr. Kaks Discord Bot
+Token: KaksBot
+Issue URL: https://github.com/pollinations/pollinations/issues/1839
+Project Description: Multi-purpose Discord bot using Gemini AI and Pollinations image generation
+Project URL: N/A (Private Discord Bot)
+
+## Issue #1870: [Special Bee Request]: Dreamscape AI
+Token: dreamscape
+Issue URL: https://github.com/pollinations/pollinations/issues/1870
+Project Description: AI-powered research assistant, image generation, and chat interfaces
+Project URL: https://dreamscape.pinkpixel.dev
+
+## Issue #1899: [Special Bee Request]: KoboldAI Lite
+Token: koboldai
+Issue URL: https://github.com/pollinations/pollinations/issues/1899
+Project Description: A free and open source, zero dependency web UI for LLM backends
+Project URL: https://koboldai.net
+
+## Issue #1905: [Special Bee Request]: tgpt
+Token: tgpt
+Issue URL: https://github.com/pollinations/pollinations/issues/1905
+Project Description: AI Chatbots in terminal without needing API keys
+Project URL: https://github.com/aandrew-me/tgpt
+
+## Issue #1712: [Special Bee Request]: Free AI Image Generator
+Token: free-ai-image-generator
+Issue URL: https://github.com/pollinations/pollinations/issues/1712
+Project Description: Free AI image generation platform
+Project URL: https://free-ai-image-generator.vercel.app/
+
+## Issue #1694: [Special Bee Request]: Infinite World: AI game
+Token: wuxiangs
+Issue URL: https://github.com/pollinations/pollinations/issues/1694
+Project Description: Using AI to generate interactive graphic stories
+Project URL: https://wuxiangs.pages.dev/
+
+## Issue #1589: [Special Bee Request]: AI Chat Bot
+Token: MieAiBot
+Issue URL: https://github.com/pollinations/pollinations/issues/1589
+Project Description: Telegram AI Chat Bot for chat and image generation
+Project URL: N/A
+
+## Already processed issues (tokens already in .env files)
+- mirexa (Issue #1489)
+
+## Summary of Tokens to Add
+
+### For text.pollinations.ai/.env (WHITELISTED_DOMAINS)
+- koboldai
+- tgpt
+- dreamscape
+- justbuildthings
+- ommivore
+- elixpoart
+- mirexa
+- ai.kochini
+- free-ai-image-generator
+- wuxiangs
+- MieAiBot
+- pixpal
+- afghanistan-educational
+- imag1ne_app
+- ailive
+- bullnium
+- science-encyclopedia
+- l4nd3n
+- elxrai
+- pic.941125.eu.org
+- image.empowerverse.org
+- aigatos
+- storytelling-app
+- freeaichat
+- raftar.xyz
+- neurix.ru
+
+### For image.pollinations.ai/.env (VALID_TOKENS)
+- koboldai
+- tgpt
+- dreamscape
+- KaksBot
+- ommivore
+- elixpoart
+- mirexa
+- ai.kochini
+- free-ai-image-generator
+- wuxiangs
+- MieAiBot
+- pixpal
+- afghanistan-educational
+- imag1ne_app
+- ailive
+- bullnium
+- science-encyclopedia
+- l4nd3n
+- elxrai
+- pic.941125.eu.org
+- image.empowerverse.org
+- aigatos
+- storytelling-app
+- freeaichat
+- raftar.xyz
+- neurix.ru

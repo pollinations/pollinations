@@ -1,5 +1,7 @@
 ---
 class: text-center
+themeConfig:
+  colorSchema: light
 ---
 
 **MAIN MESSAGE: Build, Deploy, Profit**
@@ -70,27 +72,28 @@ layout: two-cols-header
 
 ::left::
 
-![Problem: Friction](/media/problem_friction.png)
+<img src="/media/problem_friction.png" alt="Problem: Friction" class="w-1/3" />
 
-## **Solo devs | Indie creators**
-- Struggle to experiment or scale
-    - Prohibitive AI access costs
-    - Infrastructure complexity
-- No clear path for monetization
-
+# **Indie Developers**
+#
+## ❌ Struggle to Experiment or Scale
+#
+## 💰 No Clear Path for Monetization
 
 ::right::
 
-![Problem: Reach](/media/problem_reach.png)
+<img src="/media/problem_reach.png" alt="Problem: Reach" class="w-1/3" />
 
-## **Ad Providers | Brands**
-- Struggle to reach audiences in new AI apps
-- Miss out on contextual advertising opportunities
-
-># *The current ecosystem forces painful trade-offs*
+# **Advertisers**
+## ❌ Struggle to Reach Audiences in New AI Apps
+#
+## 📉 Miss Out on Contextual Advertising Opportunities
 
 <!--
 **Speaking Points - Problem:**
+
+># *The current ecosystem forces painful trade-offs*
+
 * **Creator & Developer Pain Points:**
   * Complex and expensive AI infrastructure
   * Critical gap: No clear monetization path for successful apps
@@ -385,13 +388,70 @@ Flywheel: By solving these dual problems, pollinations.ai creates a virtuous cyc
 layout: two-cols-header
 ---
 
-# <span class="bg-yellow-600 text-white p-2 rounded">**🛡️ Competitive Moat**</span>
+# <span class="bg-yellow-600 text-white p-2 rounded">**🛡️ Where the Competition Stops, We Monetize**</span>
 
-**MAIN MESSAGE: Built-In Monetization**
+<div class="mb-10"></div>
 
-**REMOVE: Detailed competitor comparisons - focus on unique monetization advantage**
+## 🚀 From Prompt to Profit: The Context-Aware AI Platform
+#
 
-::left::
+<table>
+  <thead>
+    <tr>
+      <th>Feature</th>
+      <th><b>pollinations.ai</b></th>
+      <th>Hugging Face</th>
+      <th>RunwayML</th>
+      <th>Roblox</th>
+      <th>GIPHY</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Open & Free API</td>
+      <td>✅</td>
+      <td>✅</td>
+      <td>❌</td>
+      <td>❌</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td>No Login Required</td>
+      <td>✅</td>
+      <td>❌</td>
+      <td>❌</td>
+      <td>❌</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td>Multi-modal (Text, Img, Audio)</td>
+      <td>✅</td>
+      <td>✅</td>
+      <td>🟡&nbsp;&nbsp;&nbsp; Visual Only</td>
+      <td>❌</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td>Frictionless Embeds</td>
+      <td>✅</td>
+      <td>❌</td>
+      <td>❌</td>
+      <td>❌</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td>Ad-Based Monetization</td>
+      <td>✅&nbsp;&nbsp;&nbsp;(2026)</td>
+      <td>❌</td>
+      <td>❌</td>
+      <td>✅</td>
+      <td>✅</td>
+    </tr>
+  </tbody>
+</table>
+
+<!--
+**Speaking Points - Competitive Moat:**
 
 # Differentiation
 
@@ -403,11 +463,6 @@ AI creation engine AND monetization layer
 
 **vs Ad-Supported AI Products** (Perplexity):
 Empower third-party developers with revenue sharing
-
-::right::
-
-<!--
-**Speaking Points - Competitive Moat:**
 
 we could try a "yes" / "no" cross table here
 
@@ -437,15 +492,21 @@ layout: two-cols-header
 ### Executes strategy & Finance
 ### Leads delivery & operations
 
+#
+
+<img src="/media/team-collaboration.png" alt="Team Collaboration" class="w-1/3" />
+
 ::right::
 
->## **Strategic Hires** (2025-2026)
->#### 1. Digital Ads & Monetization Strategist
->#### 2. MLOps & Infrastructure Engineer
->#### 3. Community & Creator Success Manager
->#### 4. Finance & Payout Operations Specialist
-
-<img src="/media/team-collaboration.png" alt="Team Collaboration" class="w-1/2" />
+## **Strategic Hires** (Now)
+#
+>#### **1. 💰 Digital Ads & Monetization Strategist**
+>#### **2. 🔧 MLOps & Infrastructure Engineer**
+#
+>#### **3. 👥 Community & Creator Success Manager**
+>#### **Kalam Al-Hajj** : A seasoned innovator to empower creators and accelerate their growth.
+#
+>#### **4. 📊 Finance & Payout Operations Specialist** (from 2026)
 
 <!--
 **Speaking Points - Team:**
@@ -462,8 +523,9 @@ layout: two-cols-header
 ### 🌟 Head of Community & Creator Success (H1 2026)
 ### 💸 Finance & Payout Operations Specialist (H2 2026)
 
-SLIDE GUIDANCE:
-(Self-explanatory based on speaking points)
+<!--
+**Speaking Points**
+- 6+ years fully dedicated to AI product R&D
 -->
 
 ---
@@ -521,23 +583,23 @@ layout: two-cols-header
 ::left::
 
 - [🎤 Pitch Deck](/00)
-- [📑 Executive Summary](/12)
-- [🔭 Vision & Mission](/13)
-- [📈 Market Opportunity](/14)
-- [🌍 Ecosystem Analysis](/15)
-- [💰 Business Model](/16)
-- [💹 Financial Model](/17)
+- [📑 Executive Summary](/14)
+- [🔭 Vision & Mission](/15)
+- [📈 Market Opportunity](/16)
+- [🌍 Ecosystem Analysis](/17)
+- [💰 Business Model](/18)
+- [💹 Financial Model](/19)
 
 ::right::
 
-- [🛣️ Roadmap](/18)
-- [👥 Team](/19)
-- [🏗️ Tech Architecture](/20)
-- [🔌 SDK & Ad Integration](/21)
-- [🤝 Add Partners](/22)
-- [⚠️ Risk Register](/23)
-- [🥊 Competitive Landscape](/24)
-- [🚀 KPI & Traction Metrics](/25)
+- [🛣️ Roadmap](/20)
+- [👥 Team](/21)
+- [🏗️ Tech Architecture](/22)
+- [🔌 SDK & Ad Integration](/23)
+- [🤝 Add Partners](/24)
+- [⚠️ Risk Register](/25)
+- [🥊 Competitive Landscape](/26)
+- [🚀 KPI & Traction Metrics](/27)
 
 ---
 src: ./docs/01-executive-summary.md

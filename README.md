@@ -296,6 +296,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 MVKProject Nexus API | An API platform specializing in artificial intelligence services: AI Chat Interaction with models like ChatGPT, Gemini, DeepSeek, and Meta AI, AI Image Generation powered by Pollinations, and AI Image Analysis for content description and insights. | @DarknessDEVV | [Website](https://nexus.adonis-except.xyz/), [GitHub](https://github.com/DarknessDEVV/-mvkproject-nexus) - ⭐ 1, [NPM](https://www.npmjs.com/package/@mvkproject/nexus) |
 | 🆕 IRINA by visuallink | Lightweight and simple online chat interface powered by pollinations | @thatalgp | [Website](https://irina-2--trivonca.on.websim.ai/) |
 | 🆕 KoboldAI | A browser-based front-end for AI-assisted writing with multiple local & remote AI models, including integration with Pollinations.AI for image generation | @henk717 | [Website](https://koboldai.net/), [GitHub](https://github.com/LostRuins/lite.koboldai.net) - ⭐ 3.7k |
 | 🆕 Polynate | AI-powered text and audio content generation platform providing a user-friendly interface for interacting with various AI generation services from Pollinations.ai | @voodoohop | [Website](https://polynate.cloudwerx.dev/), [GitHub](https://github.com/CLOUDWERX-DEV/polynate) - ⭐ 1 |

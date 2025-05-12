@@ -300,29 +300,25 @@ layout: two-cols-header
 ::right::
 
 ```
-               Many Potential Developers       
+             Many Potential Developers       
                          ▼ (Free Access)
-             ******************************
-             |        EXPLORER TIER       | 
-             ******************************
-                   \                 /
-                    \               /
-                     ***************
-                    | CREATOR TIER | (Early Projects)
-                     ***************
-                       \           /
-                        \         /
-                         *********
-                        |INNOVATOR| (Profitable Apps)
-                         *********
-                            | (Top Performance)
-                            V
-                        *********
-                        |PARTNER| (Rev-Share)
-                        *********
-                            |
-                            ▼
-             Ecosystem Growth & New Explorers
+          ******************************
+          |           EXPLORER         | 
+                  |    CREATOR   | (Early Projects)
+                   ***************
+                    \           /
+                     \         /
+                      *********
+                     |INNOVATOR| (Profitable Apps)
+                      *********
+                         | (Top Performance)
+                         V
+                     *********
+                     |PARTNER| (Rev-Share)
+                     *********
+                         |
+                         ▼
+          Ecosystem Growth & New Explorers
 ```
 
 <!--

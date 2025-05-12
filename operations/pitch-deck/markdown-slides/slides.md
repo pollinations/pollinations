@@ -1,5 +1,7 @@
 ---
 class: text-center
+colorSchema: light
+themeConfig:
 ---
 
 **MAIN MESSAGE: Build, Deploy, Profit**
@@ -22,15 +24,21 @@ class: text-center
 
 
 ---
-layout: two-cols-header
+class: text-center
 ---
-::left::
 
 # <span class="bg-gray-600 text-white p-2 rounded">**What Do We Do?**</span>
 
-::right::
+<div class="flex justify-center">
+  <video class="w-2/3 rounded-lg shadow-lg" autoplay loop muted>
+    <source src="/media/pixpal-language-ad.mov" type="video/mp4">
+  </video>
+</div>
+---
 
-<video class="w-full rounded-lg shadow-lg" autoplay loop muted>
+# <span class="bg-gray-600 text-white p-2 rounded">**What Do We Do?**</span>
+
+<video class="w-1/2 rounded-lg shadow-lg" autoplay loop muted>
   <source src="/media/traction-pollinations-ecosystem.mp4" type="video/mp4">
 </video>
 
@@ -517,8 +525,9 @@ layout: two-cols-header
 
 # **Strategic Hires** (Now)
 #
->#### **1 💰 Digital Ads & Monetization Strategist**
->#### **2 🔧 MLOps & Infrastructure Engineer**
+>#### **1. 💰 Digital Ads & Monetization Strategist** (with focus on brand partnerships)
+#
+>#### **2. 🔧 MLOps & Infrastructure Engineer**
 #
 >#### **3 👥 Community & Creator Success Manager: Kalam Al-Hajj**
 >#### Seasoned innovator to empower creators and accelerate growth

@@ -493,13 +493,13 @@ layout: two-cols-header
 
 ::left::
 
-## **Thomas Haferlach** CEO
-### Sets vision & Strategy
-### Drives breakthrough innovation
+# **Thomas Haferlach** CEO
+### 🔭 Sets vision & Strategy
+### 💡 Drives breakthrough innovation
 #
-## **Elliot Fouchy** COO
-### Executes strategy & Finance
-### Leads delivery & operations
+# **Elliot Fouchy** COO
+### 🚀 Executes strategy & Finance
+### 🛠️ Leads delivery & operations
 
 #
 
@@ -507,7 +507,7 @@ layout: two-cols-header
 
 ::right::
 
-## **Strategic Hires** (Now)
+# **Strategic Hires** (Now)
 #
 >#### **1 💰 Digital Ads & Monetization Strategist**
 >#### **2 🔧 MLOps & Infrastructure Engineer**

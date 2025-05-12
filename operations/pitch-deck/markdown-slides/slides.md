@@ -78,7 +78,7 @@ layout: two-cols-header
 <img src="/media/problem_friction.png" alt="Problem: Friction" class="w-1/3 rounded-lg shadow-lg" />
 
 #
-# **Indie Developers**
+# **App Creators**
 ### 🧪 Struggle to experiment or scale
 #
 ### 💰 No clear path for monetization
@@ -116,25 +116,26 @@ layout: two-cols-header
 ---
 
 # <span class="bg-green-600 text-white p-2 rounded">**✨ The Fix : AI Creation Meets Monetization**</span>
+<br>
 
 ::left::
-
-## For Creators
+# 
+## 👩‍💻 For Creators
 ## **Build & Monetize AI Instantly**
-- Effortless AI Integration
-- Seamless Ad Monetization
-- Clear Path to Profit
+### - Effortless AI Integration
+### - Seamless Ad Monetization
+### - Clear Path to Profit
+<br>
 
-## For Advertisers
+## 🏢 For Advertisers
 ## **Reach AI-Native Audiences**
-
-* Vast, Untapped Ad Space
-* Highly Engaged Users
-* Powerful Contextual Targeting
+### - Vast, Untapped Ad Space
+### - Highly Engaged Users
+### - Powerful Contextual Targeting
 
 ::right::
 
-># *From idea to income with zero upfront cost*
+># ***From idea to income with zero upfront cost*** 💰
 
 <!--
 

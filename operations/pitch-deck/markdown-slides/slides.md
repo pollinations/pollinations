@@ -397,7 +397,7 @@ layout: two-cols-header
 
 <div class="mb-10"></div>
 
-## 🚀 From Prompt to Profit: The Context-Aware AI Platform
+## 🚀 **From Prompt to Profit: The Context-Aware AI Platform**
 #
 
 <table>
@@ -507,11 +507,15 @@ layout: two-cols-header
 
 ::right::
 
->## **Strategic Hires** (2025-2026)
->#### 1. Digital Ads & Monetization Strategist
->#### 2. MLOps & Infrastructure Engineer
->#### 3. Community & Creator Success Manager
->#### 4. Finance & Payout Operations Specialist
+## **Strategic Hires** (Now)
+#
+>#### **1 💰 Digital Ads & Monetization Strategist**
+>#### **2 🔧 MLOps & Infrastructure Engineer**
+#
+>#### **3 👥 Community & Creator Success Manager: Kalam Al-Hajj**
+>#### Seasoned innovator to empower creators and accelerate growth
+#
+>#### **4 📊 Finance & Payout Operations Specialist** (planned 2026)
 
 <!--
 **Speaking Points - Team:**

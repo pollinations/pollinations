@@ -260,13 +260,14 @@ layout: two-cols-header
 ::left::    
 
 ## **247B** TAM
-- *Global AI-Contextual Ad Spend*
+### - *Global AI-Contextual Ad Spend*
 #
 ## **3.4B** SAM
-- *GenAI in Advertising segment*
+### - *GenAI in Advertising segment*
 #
-## **SOM : 22M ARR** (2027 target)
-- *Indie developers using Generative AI for apps, monetized via our platform*
+## **SOM : 22M ARR**
+### - *Indie developers using Generative AI for apps, monetized via our platform*
+### ***(2027 target)***
 
 ::right::
 
@@ -420,28 +421,28 @@ layout: two-cols-header
 
 # <span class="bg-pink-600 text-white p-2 rounded">**👥 Experienced Team to Scale Monetization**</span>
 
-**MAIN MESSAGE: Tech+Business Expertise**
-
-**REMOVE: Detailed backgrounds - highlight key relevant achievements**
-
-|         |                      |                                             |
-| ------- | -------------------- | ------------------------------------------- |
-| **CEO** | **Thomas Haferlach** | Sets vision & Strategy, Drives breakthrough |
-| **COO** | **Elliot Fouchy**    | Executes strategy & Finance; Leads delivery |
-
-## **Strategic Hires**
 ::left::
-* Digital Ads & Monetization Strategist
-* MLOps & Infrastructure Engineer
+
+## **Thomas Haferlach** CEO
+### Sets vision & Strategy
+### Drives breakthrough innovation
+#
+## **Elliot Fouchy** COO
+### Executes strategy & Finance
+### Leads delivery & operations
+
 ::right::
-* Community & Creator Success Manager
-* Finance & Payout Operations Specialist (2026)
 
+>## **Strategic Hires** (2025-2026)
+>#### 1. Digital Ads & Monetization Strategist
+>#### 2. MLOps & Infrastructure Engineer
+>#### 3. Community & Creator Success Manager
+>#### 4. Finance & Payout Operations Specialist
 
+<img src="/media/team-collaboration.png" alt="Team Collaboration" class="w-1/2" />
 
 <!--
 **Speaking Points - Team:**
-
 
 * **Leadership Structure:**
   * Thomas Haferlach (CEO): Drives vision, strategy, and technology
@@ -468,14 +469,14 @@ layout: two-cols-header
 ::left::
 
 # Now | **Activate**
-- Launch ad rev-share across platform
-- Scale developer community
-- Prove monetization model
-
-## +12mo | **Scale**
-- Deepen ad integrations with SDK v2
-- Optimize ad targeting with AI
-- Build global community structure
+### - Launch ad rev-share across platform
+### - Scale developer community
+### - Prove monetization model
+#
+# +12mo | **Scale**
+### - Deepen ad integrations with SDK v2
+### - Optimize ad targeting with AI
+### - Build global community structure
 
 ::right::
 

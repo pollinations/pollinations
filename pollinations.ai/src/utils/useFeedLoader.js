@@ -59,7 +59,7 @@ export function useFeedLoader(onNewImage, setLastImage, mode) {
 }
 
 function estimateGeneratedImages() {
-  const launchDate = 1738974161902;
+  const launchDate = 1745974161902;
   const now = Date.now();
   const differenceInSeconds = (now - launchDate) / 1000;
   // Multiply rate by 5 as per issue #1793 (from 23.78 to 118.9)

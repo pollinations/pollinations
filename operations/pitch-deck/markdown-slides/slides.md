@@ -119,23 +119,23 @@ layout: two-cols-header
 <br>
 
 ::left::
-# 
-## 👩‍💻 For Creators
+
+# 👩‍💻 Creators
 ## **Build & Monetize AI Instantly**
-### - Effortless AI Integration
-### - Seamless Ad Monetization
-### - Clear Path to Profit
+>### - Effortless AI Integration
+>### - Seamless Ad Monetization
+>### - Clear Path to Profit
 <br>
 
-## 🏢 For Advertisers
+# 🏢 Advertisers
 ## **Reach AI-Native Audiences**
-### - Vast, Untapped Ad Space
-### - Highly Engaged Users
-### - Powerful Contextual Targeting
+>### - Vast, Untapped Ad Space
+>### - Highly Engaged Users
+>### - Powerful Contextual Targeting
 
 ::right::
 
-># ***From idea to income with zero upfront cost*** 💰
+# ***From idea to income with zero upfront cost*** 💰
 
 <!--
 

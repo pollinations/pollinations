@@ -30,15 +30,15 @@ class: text-center
 # <span class="bg-gray-600 text-white p-2 rounded">**What Do We Do?**</span>
 
 <div class="flex justify-center">
-  <video class="w-2/3 rounded-lg shadow-lg" autoplay loop muted>
-    <source src="/media/pixpal-language-ad.mov" type="video/mp4">
+  <video class="w-2/3 rounded-lg shadow-lg" autoplay loop muted controls>
+    <source src="/media/pixpal-language-ad-compressed.mov" type="video/mp4">
   </video>
 </div>
 ---
 
 # <span class="bg-gray-600 text-white p-2 rounded">**What Do We Do?**</span>
 
-<video class="w-1/2 rounded-lg shadow-lg" autoplay loop muted>
+<video class="w-1/2 rounded-lg shadow-lg" autoplay loop muted controls>
   <source src="/media/traction-pollinations-ecosystem.mp4" type="video/mp4">
 </video>
 

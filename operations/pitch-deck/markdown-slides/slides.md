@@ -1,7 +1,7 @@
 ---
 class: text-center
+colorSchema: light
 themeConfig:
-  colorSchema: light
 ---
 
 **MAIN MESSAGE: Build, Deploy, Profit**
@@ -500,7 +500,8 @@ layout: two-cols-header
 
 ## **Strategic Hires** (Now)
 #
->#### **1. 💰 Digital Ads & Monetization Strategist**
+>#### **1. 💰 Growth & Marketing specialist** (with focus on brand partnerships)
+#
 >#### **2. 🔧 MLOps & Infrastructure Engineer**
 #
 >#### **3. 👥 Community & Creator Success Manager**

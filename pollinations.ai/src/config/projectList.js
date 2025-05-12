@@ -388,6 +388,7 @@ const allProjects = {
     },
     {
       name: "🆕 MyPicGen",
+      url: "https://pic.941125.eu.org",
       description: "A tool for content creators to generate images for video thumbnails.",
       author: "yolob4268",
       email: "yolob4268@gmail.com",

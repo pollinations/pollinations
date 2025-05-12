@@ -66,34 +66,42 @@ layout: two-cols-header
 layout: two-cols-header
 ---
 
-# <span class="bg-red-600 text-white p-2 rounded">**🔗 The Challenge: A Disconnected App Ecosystem**</span>
+# <span class="bg-red-600 text-white p-2 rounded">**🔗 Challenge: A Disconnected App Ecosystem**</span>
+<br>
+
+## ***The current ecosystem forces painful trade-offs*** 😞
+
+#
 
 ::left::
 
-![Problem: Friction](/media/problem_friction.png)
+<img src="/media/problem_friction.png" alt="Problem: Friction" class="w-1/3 rounded-lg shadow-lg" />
 
-## **Solo devs | Indie creators**
-- Struggle to experiment or scale
-    - Prohibitive AI access costs
-    - Infrastructure complexity
-- No clear path for monetization
-
+#
+# **Indie Developers**
+### 🧪 Struggle to experiment or scale
+#
+### 💰 No clear path for monetization
 
 ::right::
 
-![Problem: Reach](/media/problem_reach.png)
+<img src="/media/problem_reach.png" alt="Problem: Reach" class="w-1/3 rounded-lg shadow-lg" />
 
-## **Ad Providers | Brands**
-- Struggle to reach audiences in new AI apps
-- Miss out on contextual advertising opportunities
+#
 
-># *The current ecosystem forces painful trade-offs*
+
+# **Advertisers**
+### 🎯 Struggle to reach audiences in new AI apps
+#
+### 💸 Miss out on contextual advertising opportunities
 
 <!--
 **Speaking Points - Problem:**
 * **Creator & Developer Pain Points:**
   * Complex and expensive AI infrastructure
   * Critical gap: No clear monetization path for successful apps
+  * Prohibitive AI access costs
+  * Infrastructure complexity
 
 * **Ad Provider/Brand Pain Points:**
 

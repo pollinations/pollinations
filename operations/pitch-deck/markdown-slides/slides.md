@@ -546,14 +546,14 @@ layout: two-cols-header
 ::left::
 
 # Now | **Activate**
-### - Launch ad rev-share across platform
-### - Scale developer community
-### - Prove monetization model
+>### - Launch ad rev-share across platform
+>### - Scale developer community
+>### - Prove monetization model
 #
 # +12mo | **Scale**
-### - Rich ad integrations
-### - Optimize ad targeting with AI
-### - Build global community structure
+>### - Rich ad integrations
+>### - Optimize ad targeting with AI
+>### - Build global community structure
 
 ::right::
 

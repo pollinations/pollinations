@@ -36,7 +36,7 @@ async function readCSV(filePath) {
 
 function createSVG(x, y) {
   // SVG dimensions
-  const width = 800;
+  const width = 400;
   const height = 400;
   const margin = { top: 30, right: 40, bottom: 60, left: 60 };
   const graphWidth = width - margin.left - margin.right;

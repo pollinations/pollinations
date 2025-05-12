@@ -177,7 +177,7 @@ layout: two-cols-header
 **REMOVE: Platform-specific details - emphasize the universal ad integration**
 
 <div class="flex justify-center items-center h-full">
-  <img src="../media/ai_girlfriend_advert_discord.png" alt="AI Girlfriend Advertisement" class="w-2/4 rounded-lg shadow-lg">
+  <img src="/media/ai_girlfriend_advert_discord.png" alt="AI Girlfriend Advertisement" class="w-2/4 rounded-lg shadow-lg">
 </div>
 
 <div class="text-center text-xl mt-4">

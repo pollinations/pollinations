@@ -24,9 +24,15 @@ class: text-center
 ---
 layout: two-cols-header
 ---
-# What do we do?
+::left::
 
-## Example 1?
+# <span class="bg-gray-600 text-white p-2 rounded">**What Do We Do?**</span>
+
+::right::
+
+<video class="w-full rounded-lg shadow-lg" autoplay loop muted>
+  <source src="/media/traction-pollinations-ecosystem.mp4" type="video/mp4">
+</video>
 
 ---
 

@@ -38,7 +38,7 @@ class: text-center
 
 # <span class="bg-gray-600 text-white p-2 rounded">**What Do We Do?**</span>
 
-<video class="w-full rounded-lg shadow-lg" autoplay loop muted>
+<video class="w-1/2 rounded-lg shadow-lg" autoplay loop muted>
   <source src="/media/traction-pollinations-ecosystem.mp4" type="video/mp4">
 </video>
 

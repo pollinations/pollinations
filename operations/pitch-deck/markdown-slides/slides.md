@@ -1,4 +1,5 @@
 ---
+---
 class: text-center
 colorSchema: light
 themeConfig:
@@ -68,35 +69,42 @@ layout: two-cols-header
 layout: two-cols-header
 ---
 
-# <span class="bg-red-600 text-white p-2 rounded">**🔗 The Challenge: A Disconnected App Ecosystem**</span>
+# <span class="bg-red-600 text-white p-2 rounded">**🔗 Challenge: A Disconnected App Ecosystem**</span>
+<br>
+
+## ***The current ecosystem forces painful trade-offs*** 😞
+
+#
 
 ::left::
 
-<img src="/media/problem_friction.png" alt="Problem: Friction" class="w-1/3" />
+<img src="/media/problem_friction.png" alt="Problem: Friction" class="w-1/3 rounded-lg shadow-lg" />
 
-# **Indie Developers**
 #
-## ❌ Struggle to Experiment or Scale
+# **App Creators**
+### 🧪 Struggle to experiment or scale
 #
-## 💰 No Clear Path for Monetization
+### 💰 No clear path for monetization
 
 ::right::
 
-<img src="/media/problem_reach.png" alt="Problem: Reach" class="w-1/3" />
+<img src="/media/problem_reach.png" alt="Problem: Reach" class="w-1/3 rounded-lg shadow-lg" />
+
+#
+
 
 # **Advertisers**
-## ❌ Struggle to Reach Audiences in New AI Apps
+### 🎯 Struggle to reach audiences in new AI apps
 #
-## 📉 Miss Out on Contextual Advertising Opportunities
+### 💸 Miss out on contextual advertising opportunities
 
 <!--
 **Speaking Points - Problem:**
-
-># *The current ecosystem forces painful trade-offs*
-
 * **Creator & Developer Pain Points:**
   * Complex and expensive AI infrastructure
   * Critical gap: No clear monetization path for successful apps
+  * Prohibitive AI access costs
+  * Infrastructure complexity
 
 * **Ad Provider/Brand Pain Points:**
 
@@ -111,25 +119,26 @@ layout: two-cols-header
 ---
 
 # <span class="bg-green-600 text-white p-2 rounded">**✨ The Fix : AI Creation Meets Monetization**</span>
+<br>
 
 ::left::
 
-## For Creators
+# 👩‍💻 Creators
 ## **Build & Monetize AI Instantly**
-- Effortless AI Integration
-- Seamless Ad Monetization
-- Clear Path to Profit
+>### - Effortless AI Integration
+>### - Seamless Ad Monetization
+>### - Clear Path to Profit
+<br>
 
-## For Advertisers
+# 🏢 Advertisers
 ## **Reach AI-Native Audiences**
-
-* Vast, Untapped Ad Space
-* Highly Engaged Users
-* Powerful Contextual Targeting
+>### - Vast, Untapped Ad Space
+>### - Highly Engaged Users
+>### - Powerful Contextual Targeting
 
 ::right::
 
-># *From idea to income with zero upfront cost*
+# ***From idea to income with zero upfront cost*** 💰
 
 <!--
 
@@ -210,20 +219,19 @@ layout: two-cols-header
 
 # <span class="bg-blue-600 text-white p-2 rounded">**🚀 Traction: Flywheel Already in Motion**</span>
 
-**MAIN MESSAGE: 3M Users Monthly**
-
-**REMOVE: Minor metrics - highlight growth curve and most impressive numbers**
-
 ::left::
 
 ## **3M+** Monthly Active End-Users
 ## **100M+** Media Gen/Month
-- **30%** Month-o-Month Growth
-- **14M+ Ad impressions** from pilot program
+#
+>#### - **30%** Month-o-Month Growth
+>#### - **14M+ Ad impressions** from pilot program
+
+<br>
 
 ## **300+** Apps Live | **2+** Built Daily
-- **13K+** Discord Community Members
-- **2M MAU** on a trending Roblox Game
+>#### - **13K+** Discord Community Members
+>#### - **2M MAU** on a trending Roblox Game
 
 ::right::
 
@@ -268,20 +276,19 @@ layout: two-cols-header
 
 ::left::    
 
-## **247B** TAM
-### - *Global AI-Contextual Ad Spend*
-#
-## **3.4B** SAM
-### - *GenAI in Advertising segment*
-#
-## **SOM : 22M ARR**
-### - *Indie developers using Generative AI for apps, monetized via our platform*
-### ***(2027 target)***
+# ***Massive scale for AI-driven ad monetization***
 
 ::right::
 
-># *Massive scale for AI-driven ad monetization*
-
+## **247B** TAM
+>### *Global AI-Contextual Ad Spend*
+#
+## **3.4B** SAM
+>### *GenAI in Advertising segment*
+#
+## **SOM : 22M ARR**
+>### *Indie developers using Generative AI for apps, monetized via our platform*
+>### ***(2027 target)***
 
 <!--
 
@@ -301,40 +308,41 @@ layout: two-cols-header
 
 ::left::
 
-## **1. 🚀 Create For Free** (Live)
-*   No-cost AI tools, limited usage
-*   Pollinations retains 100% of ad revenue
+## **1 🚀 Create For Free** (Live)
+#
+>#### - No-cost AI tools, limited usage
+>#### - Pollinations retains 100% of ad revenue
+
 <br>
-## **2. 📈 Scale & Self-Fund** (Beta)
-*   Successful apps get unlimited usage
-*   Pollinations retains 100% of ad revenue
+
+## **2 📈 Scale & Self-Fund** (Beta)
+#
+>#### - Successful apps get unlimited usage
+>#### - Pollinations retains 100% of ad revenue
+
 <br>
-## **3. 💰 Profit Together** (2026)
-*   Top-performing apps join the Partner program
-*   50% of Net Ad Revenue goes back to the App
+
+## **3 💰 Profit Together** (2026)
+#
+>#### - Top-performing apps join the Partner tier
+>#### - 50% of Ad Revenue goes back to the App
 
 ::right::
 
 ```
-             Many Potential Developers       
-                         ▼ (Free Access)
+      Many Potential Developers (Free Access)        
+                         ▼ 
           ******************************
-          |           EXPLORER         | 
-                  |    CREATOR   | (Early Projects)
-                   ***************
-                    \           /
-                     \         /
-                      *********
-                     |INNOVATOR| (Profitable Apps)
-                      *********
-                         | (Top Performance)
-                         V
-                     *********
-                     |PARTNER| (Rev-Share)
-                     *********
-                         |
+           \         EXPLORER         / (Early Projects)
+            **************************
+             \       CREATOR        / (Registered Apps)
+              **********************
+               \    INNOVATOR     / (Profitable Apps)
+                ******************
+                 \   PARTNER    / Top Performance App
+                  **************     (Rev-Share)
                          ▼
-          Ecosystem Growth & New Explorers
+        Ecosystem Growth & New Explorers
 ```
 
 <!--
@@ -392,7 +400,7 @@ layout: two-cols-header
 
 <div class="mb-10"></div>
 
-## 🚀 From Prompt to Profit: The Context-Aware AI Platform
+## 🚀 **From Prompt to Profit: The Context-Aware AI Platform**
 #
 
 <table>
@@ -427,7 +435,7 @@ layout: two-cols-header
       <td>Multi-modal (Text, Img, Audio)</td>
       <td>✅</td>
       <td>✅</td>
-      <td>🟡&nbsp;&nbsp;&nbsp; Visual Only</td>
+      <td>🟡 Visual Only</td>
       <td>❌</td>
       <td>❌</td>
     </tr>
@@ -441,7 +449,7 @@ layout: two-cols-header
     </tr>
     <tr>
       <td>Ad-Based Monetization</td>
-      <td>✅&nbsp;&nbsp;&nbsp;(2026)</td>
+      f<td>✅&nbsp;&nbsp;&nbsp;(2026)</td>
       <td>❌</td>
       <td>❌</td>
       <td>✅</td>
@@ -449,6 +457,10 @@ layout: two-cols-header
     </tr>
   </tbody>
 </table>
+
+
+
+
 
 <!--
 **Speaking Points - Competitive Moat:**
@@ -484,13 +496,13 @@ layout: two-cols-header
 
 ::left::
 
-## **Thomas Haferlach** CEO
-### Sets vision & Strategy
-### Drives breakthrough innovation
+# **Thomas Haferlach** CEO
+### 🔭 Sets vision & Strategy
+### 💡 Drives breakthrough innovation
 #
-## **Elliot Fouchy** COO
-### Executes strategy & Finance
-### Leads delivery & operations
+# **Elliot Fouchy** COO
+### 🚀 Executes strategy & Finance
+### 🛠️ Leads delivery & operations
 
 #
 
@@ -498,16 +510,16 @@ layout: two-cols-header
 
 ::right::
 
-## **Strategic Hires** (Now)
+# **Strategic Hires** (Now)
 #
->#### **1. 💰 Growth & Marketing specialist** (with focus on brand partnerships)
+>#### **1. 💰 Digital Ads & Monetization Strategist** (with focus on brand partnerships)
 #
 >#### **2. 🔧 MLOps & Infrastructure Engineer**
 #
->#### **3. 👥 Community & Creator Success Manager**
->#### **Kalam Al-Hajj** : A seasoned innovator to empower creators and accelerate their growth.
+>#### **3 👥 Community & Creator Success Manager: Kalam Al-Hajj**
+>#### Seasoned innovator to empower creators and accelerate growth
 #
->#### **4. 📊 Finance & Payout Operations Specialist** (from 2026)
+>#### **4 📊 Finance & Payout Operations Specialist** (planned 2026)
 
 <!--
 **Speaking Points - Team:**
@@ -538,14 +550,14 @@ layout: two-cols-header
 ::left::
 
 # Now | **Activate**
-### - Launch ad rev-share across platform
-### - Scale developer community
-### - Prove monetization model
+>### - Launch ad rev-share across platform
+>### - Scale developer community
+>### - Prove monetization model
 #
 # +12mo | **Scale**
-### - Rich ad integrations
-### - Optimize ad targeting with AI
-### - Build global community structure
+>### - Rich ad integrations
+>### - Optimize ad targeting with AI
+>### - Build global community structure
 
 ::right::
 
@@ -590,10 +602,10 @@ layout: two-cols-header
 - [🌍 Ecosystem Analysis](/17)
 - [💰 Business Model](/18)
 - [💹 Financial Model](/19)
+- [🛣️ Roadmap](/20)
 
 ::right::
 
-- [🛣️ Roadmap](/20)
 - [👥 Team](/21)
 - [🏗️ Tech Architecture](/22)
 - [🔌 SDK & Ad Integration](/23)
@@ -601,6 +613,7 @@ layout: two-cols-header
 - [⚠️ Risk Register](/25)
 - [🥊 Competitive Landscape](/26)
 - [🚀 KPI & Traction Metrics](/27)
+- [🔍 Due Diligence](/28)
 
 ---
 src: ./docs/01-executive-summary.md
@@ -656,4 +669,8 @@ src: ./docs/09-competitive-landscape.md
 
 ---
 src: ./docs/12-traction-metrics.md
+---
+
+---
+src: ./docs/16-due-diligence.md
 ---

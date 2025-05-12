@@ -5,5 +5,9 @@ compatibility_date = "2023-05-01"
 # This is the key setting needed for Pages
 pages_build_output_dir = "dist"
 
-# Note: Custom domains are configured in the Cloudflare dashboard
-# after deployment, not in the wrangler.toml file
+# Production deployment configuration
+[env.production]
+environment = "production"
+
+# Production branch configuration - this tells wrangler which branch is production
+production_branch = "1900-pitch-deck"

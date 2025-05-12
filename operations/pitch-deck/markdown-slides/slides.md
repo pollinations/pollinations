@@ -101,7 +101,7 @@ layout: two-cols-header
 layout: two-cols-header
 ---
 
-# <span class="bg-green-600 text-white p-2 rounded">✨ **AI Creation Meets Monetization**</span>
+# <span class="bg-green-600 text-white p-2 rounded">**✨ The Fix : AI Creation Meets Monetization**</span>
 
 ::left::
 
@@ -279,7 +279,7 @@ Add:
 layout: two-cols-header
 ---
 
-# <span class="bg-purple-600 text-white p-2 rounded">**💰 From Free Tools to Shared Profits**</span>
+# <span class="bg-purple-600 text-white p-2 rounded">**💰 How? From Free Tools to Shared Profits**</span>
 
 ::left::
 
@@ -376,7 +376,7 @@ Flywheel: By solving these dual problems, pollinations.ai creates a virtuous cyc
 layout: two-cols-header
 ---
 
-# <span class="bg-yellow-600 text-white p-2 rounded">🛡️ **Competitive Moat**</span>
+# <span class="bg-yellow-600 text-white p-2 rounded">**🛡️ Competitive Moat**</span>
 
 **MAIN MESSAGE: Built-In Monetization**
 
@@ -415,7 +415,7 @@ we could try a "yes" / "no" cross table here
 
 ---
 
-# <span class="bg-pink-600 text-white p-2 rounded">👥 **Proven Team to Scale Monetization**</span>
+# <span class="bg-pink-600 text-white p-2 rounded">**👥 Experienced Team to Scale Monetization**</span>
 
 **MAIN MESSAGE: Tech+Business Expertise**
 
@@ -458,32 +458,32 @@ SLIDE GUIDANCE:
 layout: two-cols-header
 ---
 
-# <span class="bg-teal-600 text-white p-2 rounded">**🤝 Let's Scale AI App Monetization**</span>
+# <span class="bg-teal-600 text-white p-2 rounded">**🤝 Fueling the AI App Monetization Revolution**</span>
 
-**REMOVE: Generic partnership language - be specific about investment needs**
+::left::
 
-### To achieve our ambitious roadmap, we will require resources and strategic partnerships focused on:
-
-*   **Accelerating Tech & Product Development** (SDK v2, Advanced AdTech, New AI Modalities)
-*   **Supercharging Growth & Monetization** (Scaling User Acquisition, Optimizing Ad Rev-Share Engine)
-*   **Expanding Our Global Community & Ecosystem** (Developer Grants, Strategic Partnerships)
-*   **Enhancing Platform Scale & Infrastructure** (GPU Capacity, Global Low-Latency Performance)
-
-## hello@pollinations.ai
-
-<!--
-
-Roadmap: 
-## **Now : Activate**
+# Now | **Activate**
 - Launch ad rev-share across platform
 - Scale developer community
 - Prove monetization model
 
-## **+12mo : Scale**
+## +12mo | **Scale**
 - Deepen integrations with SDK v2
 - Optimize ad targeting with AI
 - Build global community structure
 
+::right::
+
+## Contact
+### hello@pollinations.ai
+
+<!--
+
+### Activation Phase (Now): 
+This funding is critical to fully launch our ad revenue-sharing model, rapidly scale our developer community, and conclusively prove the viability and profitability of our unique approach.
+
+### Scaling Phase (+12 Months): 
+We will then leverage this foundation to deepen integrations, refine our AI-driven ad targeting, and establish a dominant global community presence.
 
 **Speaking Points - Partner with Us:**
 * **Strategic Vision:** To execute our roadmap and scale Pollinations.AI, we seek strategic partnerships and future investment.

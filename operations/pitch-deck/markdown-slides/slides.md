@@ -226,33 +226,37 @@ layout: two-cols-header
 
 ::left::
 
-![Media Generated Growth](/media/traction-media-generated-6mo.png)
-
 ## **3M+** Monthly Active End-Users
 ## **100M+** Media Gen/Month
 #
 >#### - **30%** Month-o-Month Growth
 >#### - **14M+ Ad impressions** from pilot program
 
-::right::
+<br>
 
-#
 ## **300+** Apps Live | **2+** Built Daily
 #
 >#### - **13K+** Discord Community Members
 >#### - **2M MAU** on a trending Roblox Game
 
-<br> 
+::right::
+
+<div class="text-center">Media Generated per Day</div>
 
 <div class="flex justify-center items-center">
-  <video class="w-5/5 rounded-lg shadow-lg" autoplay loop muted playbackRate="2">
-    <source src="/media/image-feed-text-feed.mov" type="video/mp4">
-  </video>
+  <img src="/media/traction-media-generated-6mo.png" alt="Media Generated Growth" class="w-6/7 rounded-lg shadow-lg">
 </div>
 
 
+<br>
 
+<div class="text-center">Real-Time Requests</div>
 
+<div class="flex justify-center items-center">
+  <video class="w-6/7 rounded-lg shadow-lg" autoplay loop muted playbackRate="2">
+    <source src="/media/image-feed-text-feed.mov" type="video/mp4">
+  </video>
+</div>
 
 <!--
 

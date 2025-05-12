@@ -31,7 +31,7 @@ class: text-center
 
 <div class="flex justify-center">
   <video class="w-2/3 rounded-lg shadow-lg" autoplay loop muted controls>
-    <source src="/media/pixpal-language-ad-compressed.mov" type="video/mp4">
+    <source src="/media/pixpal-language-ad.mp4" type="video/mp4">
   </video>
 </div>
 ---
@@ -235,13 +235,25 @@ layout: two-cols-header
 <br>
 
 ## **300+** Apps Live | **2+** Built Daily
+#
 >#### - **13K+** Discord Community Members
 >#### - **2M MAU** on a trending Roblox Game
 
 ::right::
 
-<div class="flex justify-center items-center h-full">
-  <video class="w-4/5 rounded-lg shadow-lg" autoplay loop muted playbackRate="2">
+<div class="text-center">Media Generated per Day</div>
+
+<div class="flex justify-center items-center">
+  <img src="/media/traction-media-generated-6mo.png" alt="Media Generated Growth" class="w-6/7 rounded-lg shadow-lg">
+</div>
+
+
+<br>
+
+<div class="text-center">Real-Time Requests</div>
+
+<div class="flex justify-center items-center">
+  <video class="w-6/7 rounded-lg shadow-lg" autoplay loop muted playbackRate="2">
     <source src="/media/image-feed-text-feed.mov" type="video/mp4">
   </video>
 </div>

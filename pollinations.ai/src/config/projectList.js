@@ -82,7 +82,7 @@ const allProjects = {
       repo: "https://github.com/LostRuins/lite.koboldai.net",
       stars: 3700,
       submissionDate: "2025-05-09",
-      order: 1,
+      order: 0,
     },
     {
       name: "🆕 Polynate",

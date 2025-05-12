@@ -389,13 +389,14 @@ layout: two-cols-header
 
 <div class="mb-10"></div>
 
-# 🚀 Our Differentiation
+## 🚀 From Prompt to Profit: The Context-Aware AI Platform
+#
 
 <table>
   <thead>
     <tr>
       <th>Feature</th>
-      <th>Pollinations</th>
+      <th><b>pollinations.ai</b></th>
       <th>Hugging Face</th>
       <th>RunwayML</th>
       <th>Roblox</th>
@@ -423,7 +424,7 @@ layout: two-cols-header
       <td>Multi-modal (Text, Img, Audio)</td>
       <td>✅</td>
       <td>✅</td>
-      <td>🟡 Visual Only</td>
+      <td>🟡&nbsp;&nbsp;&nbsp; Visual Only</td>
       <td>❌</td>
       <td>❌</td>
     </tr>
@@ -437,7 +438,7 @@ layout: two-cols-header
     </tr>
     <tr>
       <td>Ad-Based Monetization</td>
-      <td>✅ (Planned)</td>
+      <td>✅&nbsp;&nbsp;&nbsp;(2026)</td>
       <td>❌</td>
       <td>❌</td>
       <td>✅</td>
@@ -492,6 +493,10 @@ layout: two-cols-header
 ### Executes strategy & Finance
 ### Leads delivery & operations
 
+#
+
+<img src="/media/team-collaboration.png" alt="Team Collaboration" class="w-1/3" />
+
 ::right::
 
 >## **Strategic Hires** (2025-2026)
@@ -499,8 +504,6 @@ layout: two-cols-header
 >#### 2. MLOps & Infrastructure Engineer
 >#### 3. Community & Creator Success Manager
 >#### 4. Finance & Payout Operations Specialist
-
-<img src="/media/team-collaboration.png" alt="Team Collaboration" class="w-1/2" />
 
 <!--
 **Speaking Points - Team:**
@@ -517,8 +520,9 @@ layout: two-cols-header
 ### 🌟 Head of Community & Creator Success (H1 2026)
 ### 💸 Finance & Payout Operations Specialist (H2 2026)
 
-SLIDE GUIDANCE:
-(Self-explanatory based on speaking points)
+<!--
+**Speaking Points**
+- 6+ years fully dedicated to AI product R&D
 -->
 
 ---

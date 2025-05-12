@@ -70,27 +70,28 @@ layout: two-cols-header
 
 ::left::
 
-![Problem: Friction](/media/problem_friction.png)
+<img src="/media/problem_friction.png" alt="Problem: Friction" class="w-1/3" />
 
-## **Solo devs | Indie creators**
-- Struggle to experiment or scale
-    - Prohibitive AI access costs
-    - Infrastructure complexity
-- No clear path for monetization
-
+# **Indie Developers**
+#
+## ❌ Struggle to Experiment or Scale
+#
+## 💰 No Clear Path for Monetization
 
 ::right::
 
-![Problem: Reach](/media/problem_reach.png)
+<img src="/media/problem_reach.png" alt="Problem: Reach" class="w-1/3" />
 
-## **Ad Providers | Brands**
-- Struggle to reach audiences in new AI apps
-- Miss out on contextual advertising opportunities
-
-># *The current ecosystem forces painful trade-offs*
+# **Advertisers**
+## ❌ Struggle to Reach Audiences in New AI Apps
+#
+## 📉 Miss Out on Contextual Advertising Opportunities
 
 <!--
 **Speaking Points - Problem:**
+
+># *The current ecosystem forces painful trade-offs*
+
 * **Creator & Developer Pain Points:**
   * Complex and expensive AI infrastructure
   * Critical gap: No clear monetization path for successful apps

@@ -370,7 +370,6 @@ We make building and monetizing AI apps frictionless and economically viable for
 
 note: this flywheel description may be better than the one we have on the slide. find a nice way to separate it between slide and speaker notes.
 Flywheel: By solving these dual problems, pollinations.ai creates a virtuous cycle: More developers build innovative apps on our free platform -> This attracts more end-users -> This creates more valuable, AI-native ad inventory -> This attracts brands and ad revenue -> A portion of this revenue is shared back with successful developers, incentivizing further creation and platform growth, while also funding the free tier for new entrants.
-
 -->
 
 ---
@@ -412,70 +411,7 @@ we could try a "yes" / "no" cross table here
 -->
 
 
----
-layout: two-cols-header
----
 
-# <span class="bg-indigo-600 text-white p-2 rounded">**🛣️ Roadmap: From Activation to Dominance**</span>
-
-**MAIN MESSAGE: Activate, Scale, Dominate**
-
-**REMOVE: Detailed timeline specifics - focus on key milestones and phases**
-
-::left::
-
-## **Now : Activate**
-- Launch ad rev-share across platform
-- Scale developer community
-- Prove monetization model
-
-## **+12mo : Scale**
-- Deepen integrations with SDK v2
-- Optimize ad targeting with AI
-- Build global community structure
-
-::right::
-
-<!--
-**Speaking Points - Roadmap:**
-* **Strategic Approach:** Our roadmap focuses on three clear phases with specific milestones.
-
-![Circular Economy](../media/circular_economy_genz.png)
-* (If applicable) Visual shows our three-phase roadmap: Activate, Scale, Vision.
-
-* **Phase 1: Activate (Next 12 Months):**
-  * Launch Ad Revenue Share platform-wide
-  * Scale developer community and integrated applications
-  * Prove monetization model at scale
-  * Key targets: $1M ARR, 15M MAU, 1000+ integrated apps (as on slide)
-
-* **Phase 2: Scale (12-36 Months):**
-  * Release SDK v2 for deeper integrations
-  * Implement AI-driven Ad Optimization
-  * Build out global community structure
-  * Target: Sustainable growth
-
-* **Vision Phase:**
-  * Become the ubiquitous, assistant-centric engine for AI creation and distribution
-  * Achieve position as the definitive 'Unity for AI Experiences'
-
-**Baseline – End of Q2 2025 (June 2025):**
-• Users & Engagement: 3M MAU · 80M monthly generations
-• Monetization: ≈ $0 ARR (Basic text-ad append for unregistered apps only - Live)
-• Platform: Authentication live (pollinations-init issuing tokens) · Core Edge Services live (Image, Text, Audio Gen APIs + Open Source React SDK)
-
-
-SLIDE GUIDANCE:
-## **1️⃣ Activate (Next 12 Mo)**
-**Prove core loop.** Additional focus: Secure Seed Funding ($2.5-3M). (Targets as per slide: $1M ARR, 15M MAU, 1000+ Apps).
-
-## **2️⃣ Scale (12-36 Mo)**
-**Expand ecosystem.** Additional focus: Diversified Revenue (Premium Tiers, Data Monetization, In-App Micro Payments).
-
-## **3️⃣ Vision**
-Become the ubiquitous, **assistant-centric** engine for AI creation and distribution. (Aligns with slide vision)
-*The "Unity for AI Experiences"*
--->
 
 ---
 
@@ -533,9 +469,22 @@ layout: two-cols-header
 *   **Expanding Our Global Community & Ecosystem** (Developer Grants, Strategic Partnerships)
 *   **Enhancing Platform Scale & Infrastructure** (GPU Capacity, Global Low-Latency Performance)
 
-## Let's build together: hello@pollinations.ai
+## hello@pollinations.ai
 
 <!--
+
+Roadmap: 
+## **Now : Activate**
+- Launch ad rev-share across platform
+- Scale developer community
+- Prove monetization model
+
+## **+12mo : Scale**
+- Deepen integrations with SDK v2
+- Optimize ad targeting with AI
+- Build global community structure
+
+
 **Speaking Points - Partner with Us:**
 * **Strategic Vision:** To execute our roadmap and scale Pollinations.AI, we seek strategic partnerships and future investment.
 

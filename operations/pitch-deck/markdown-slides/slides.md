@@ -212,6 +212,7 @@ layout: two-cols-header
 
 ## **300+** Apps Live | **2+** Built Daily
 - **13K+** Discord Community Members
+- **2M MAU** on a trending Roblox Game
 
 ::right::
 
@@ -252,19 +253,23 @@ Traction & KPIs: Current ~3M Ecosystem MAU and 100M+ monthly media generations p
 layout: two-cols-header
 ---
 
-# <span class="bg-purple-600 text-white p-2 rounded">**🌍 Tapping the $140B AI-Contextual Ad Market**</span>
+# <span class="bg-purple-600 text-white p-2 rounded">**🌍 Tapping the $3.4B AI-Contextual Ad Market**</span>
 
 ::left::    
 
-**247 B TAM** : Global AI-Contextual Ad Spend
-
-**140 B SAM** : Indie App/Web AI Ad Inventory
-
-**3.4 B SOM** : Beachhead Market : Indie developers using Generative AI
-
-## **Empower creators, scale through network effects & partnerships, share ad revenue.**
+## **247B** TAM
+- *Global AI-Contextual Ad Spend*
+#
+## **3.4B** SAM
+- *GenAI in Advertising segment*
+#
+## **SOM : 22M ARR** (2027 target)
+- *Indie developers using Generative AI for apps, monetized via our platform*
 
 ::right::
+
+># *Massive scale for AI-driven ad monetization*
+
 
 <!--
 

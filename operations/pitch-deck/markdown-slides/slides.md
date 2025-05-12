@@ -447,10 +447,6 @@ layout: two-cols-header
   </tbody>
 </table>
 
-
-
-
-
 <!--
 **Speaking Points - Competitive Moat:**
 
@@ -499,11 +495,15 @@ layout: two-cols-header
 
 ::right::
 
->## **Strategic Hires** (2025-2026)
->#### 1. Digital Ads & Monetization Strategist
->#### 2. MLOps & Infrastructure Engineer
->#### 3. Community & Creator Success Manager
->#### 4. Finance & Payout Operations Specialist
+## **Strategic Hires** (Now)
+#
+>#### **1. 💰 Digital Ads & Monetization Strategist**
+>#### **2. 🔧 MLOps & Infrastructure Engineer**
+#
+>#### **3. 👥 Community & Creator Success Manager**
+>#### **Kalam Al-Hajj** : A seasoned innovator to empower creators and accelerate their growth.
+#
+>#### **4. 📊 Finance & Payout Operations Specialist** (from 2026)
 
 <!--
 **Speaking Points - Team:**

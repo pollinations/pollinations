@@ -25,22 +25,39 @@ themeConfig:
 
 ---
 class: text-center
+layout: center
 ---
 
 # <span class="bg-gray-600 text-white p-2 rounded">**What Do We Do?**</span>
 
+---
+class: text-center
+---
+
 <div class="flex justify-center">
-  <video class="w-2/3 rounded-lg shadow-lg" autoplay loop muted controls>
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
     <source src="/media/pixpal-language-ad.mp4" type="video/mp4">
   </video>
 </div>
+
+
+---
+layout: two-cols-header
 ---
 
-# <span class="bg-gray-600 text-white p-2 rounded">**What Do We Do?**</span>
+::left::
 
-<video class="w-1/2 rounded-lg shadow-lg" autoplay loop muted controls>
+<video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
   <source src="/media/traction-pollinations-ecosystem.mp4" type="video/mp4">
 </video>
+
+::right::
+
+<video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
+  <source src="/media/traction-pollinations-ecosystem.mp4" type="video/mp4">
+</video>
+
+
 
 ---
 

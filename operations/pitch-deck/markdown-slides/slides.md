@@ -299,15 +299,14 @@ layout: two-cols-header
 <br>
 
 
-**247B TAM** 🌐  
+## **247B TAM** 🌐  
 Global AI-Contextual Ad Spend
 
-**3.4B SAM** 📣  
+## **3.4B SAM** 📣  
 GenAI in Advertising segment
 
-**22M ARR** 💻  
-(2027 target)
-Indie developers using Generative AI for apps, monetized via our platform
+## **22M ARR** (2027)💻  
+Indie AI-native apps
 
 ::right::
 
@@ -364,49 +363,26 @@ layout: two-cols-header
 
 <!--
 ## Speaker Notes for Slide 9: Business Model
-*   Our 3-step journey:
-    1.  **Create For Free** (Live).
-    2.  **Scale & Self-Fund** (Beta): Ads cover costs -> unlimited app use.
-    3.  **Profit Together** (2026): Top apps get 50/50 net ad revenue split.
-*   A win-win model.
+* **3-Step Journey Explained:**
+    1. **Create For Free (Live):** Easy entry with free tools attracts a wide developer base
+    2. **Scale & Self-Fund (H2 2025):** Successful apps integrate ads, cover costs, unlock unlimited usage
+    3. **Profit Together (H2 2026):** Strategic retention through 50/50 revenue sharing
+
+* **Key Benefits:**
+    * Prevents platform churn by growing *with* successful creators
+    * Incentivizes high-quality, high-traffic app creation
+    * Improves unit economics over time as AI costs decrease
+
+* **Note:** Successful apps = ad revenue > compute costs
 ## End
-
-*   "Phase 3, 'Profit Together,' is crucial for long-term success. Top-performing apps join our Partner Tier."
-*   "They receive a **50% share of the net ad revenue** they help generate."
-*   "This isn't just about sharing; it's **strategic retention.** It ensures our biggest successes grow *with* us, not away to other platforms, preventing churn."
-*   "This model **directly incentivizes the creation of high-quality, high-traffic apps,** fueling the entire ecosystem."
-
-
-## **1 🚀 Create For Free** (Live)
-#
->#### - No-cost AI tools, limited usage
->#### - Pollinations retains 100% of ad revenue
-
-<br>
-
-## **2 📈 Scale & Self-Fund** (Beta)
-#
->#### - Successful apps get unlimited usage
->#### - Pollinations retains 100% of ad revenue
-
-<br>
-
-## **3 💰 Profit Together** (2026)
-#
->#### - Top-performing apps join the Partner tier
->#### - 50% of Ad Revenue goes back to the App
-
-add media: creator funnel or per app revenue per month numbers
-
-note: Successful apps = ad revenue > compute costs
 
 
 ## The Pollinations Flywheel 🚀
-* **Empowering Creators ('Vibe Coders')** : Build & monetize innovative AI apps, easily.
-* **Attracting Advertisers (Brands)** : Reach engaged audiences in unique AI contexts.
+* **Empowering Creators:** Build & monetize innovative AI apps
+* **Attracting Advertisers:** Reach engaged audiences in AI contexts
 
 ## How do we make money? 🔄
-* Enables indie creators to build, deploy, & monetize AI apps, targeting a multi-billion dollar AI-contextual advertising market.
+* Multi-billion dollar AI-contextual advertising market
 
 <div v-click="1">
 * **Revenue Model:** 50/50 ad revenue share with developers
@@ -420,26 +396,9 @@ note: Successful apps = ad revenue > compute costs
 * **Live Pilots:** Contextual ads (CPM $1-2), Affiliate referrals
 </div>
 
-
-
-We make building and monetizing AI apps frictionless and economically viable for creators, while providing brands with novel, effective channels to reach valuable audiences. This creates a self-reinforcing flywheel, fueling the growth of the entire AI creator ecosystem.
-
-1 Free Experimentation (Explorer → Creator): Easy entry and free tools attract a wide developer base, acting as an investment in future monetizable applications. (Ongoing)
-2 Ad-Funded Scaling (Creator → Innovator): Successful apps integrate ads, cover their costs, and unlock unlimited usage, SOTA models, and enhanced visibility through the Marketplace, driving app discovery. (H2 2025)
-3 Revenue Partnership (Innovator → Partner): Top Innovators share 50/50 in net ad revenue, turning projects into businesses and showcasing platform success. (H2 2026)
-
-* **Economic Advantages:**
-  * Cost per AI media generation is dropping each year
-  * Ad revenue potential per interaction remains strong
-  * Unit economics improve over time, making our free, ad-supported model increasingly sustainable
-
-**End-user:** Consumer
-**Creator:** Affiliate
-**Brand:** Advertiser
-**Us:** Platform
-
-note: this flywheel description may be better than the one we have on the slide. find a nice way to separate it between slide and speaker notes.
-Flywheel: By solving these dual problems, pollinations.ai creates a virtuous cycle: More developers build innovative apps on our free platform -> This attracts more end-users -> This creates more valuable, AI-native ad inventory -> This attracts brands and ad revenue -> A portion of this revenue is shared back with successful developers, incentivizing further creation and platform growth, while also funding the free tier for new entrants.
+<!--
+Flywheel: More developers build on our free platform → More end-users → More AI-native ad inventory → More ad revenue → Revenue shared with developers → Platform growth
+-->
 -->
 
 ---

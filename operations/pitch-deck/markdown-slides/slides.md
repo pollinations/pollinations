@@ -107,12 +107,11 @@ src: ./docs/17-one-pager.md
 class: text-center
 ---
 
-**REMOVE: Generic mission statement - be more specific about monetization**
-
 # ![Pollinations.ai Logo](/media/pollinations-ai-logo.png)
 
 ## Spark Creation, Unlock Ad Revenue
 
+**Start building with [pollinations.ai](https://pollinations.ai)**
 <!--
 
 ## Speaker Notes for Slide 1: Title Slide
@@ -156,7 +155,8 @@ layout: two-cols-header
 # **Advertisers**
 ### 🎯 Struggle to reach audiences in new AI apps
 #
-### 💸  Generic ads lacking context & personalization
+### 💸 Wasted ad spend with minimal conversion
+
 
 <!--
 ## Speaker Notes for Slide 2: Problem Statement

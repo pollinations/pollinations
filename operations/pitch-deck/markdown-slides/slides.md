@@ -2,8 +2,6 @@
 layout: two-cols-header
 ---
 
-<!-- Slide 1: Documentation Index -->
-
 # pollinations.ai - Docs
 
 ::left::
@@ -95,13 +93,7 @@ src: ./docs/08-sdk-ad-integration.md
 src: ./docs/16-due-diligence.md
 ---
 
-<!--- ---
-src: ./docs/17-one-pager.md
---- -->
 
-<!-- Pitch starts here -->
-
-<!-- Slide 1: Title Slide -->
 
 ---
 class: text-center
@@ -122,8 +114,6 @@ class: text-center
 ## End
 
 -->
-
-<!-- Slide 2: Problem Slide -->
 
 ---
 layout: two-cols-header
@@ -174,8 +164,6 @@ layout: two-cols-header
 
 -->
 
-<!-- Slide 3: Solution -->
-
 ---
 layout: two-cols-header
 ---
@@ -218,8 +206,6 @@ layout: two-cols-header
 
 -->
 
-<!-- Slide 4: Product Showcase Apps Cohort-->
-
 ---
 layout: two-cols
 ---
@@ -259,8 +245,6 @@ layout: two-cols
 ## End
 -->
 
-<!-- Slide 5: Product Showcase - Ad -->
-
 ---
 class: text-center
 ---
@@ -279,8 +263,6 @@ class: text-center
 *   Simple, effective, built-in.
 ## End
 -->
-
-<!-- Slide 6: Product Showcase - Roblox -->
 
 ---
 layout: two-cols
@@ -321,8 +303,6 @@ layout: two-cols
 ## End
 
 -->
-
-<!-- Slide 4: Traction -->
 
 ---
 layout: two-cols-header
@@ -384,8 +364,6 @@ layout: two-cols-header
 
 -->
 
-<!-- Slide 9: Market Opportunity -->
-
 ---
 layout: two-cols-header
 ---
@@ -427,8 +405,6 @@ Indie AI-native apps
 
 <img src="/media/market-tam-sam-som.png" alt="Market: TAM, SAM, SOM" class="w-7/8 rounded-lg shadow-lg" />
 -->
-
-<!-- Slide 10: Business Model -->
 
 ---
 layout: two-cols-header
@@ -493,8 +469,6 @@ flowchart TB
 * **Live Pilots:** Contextual ads (CPM $1-2), Affiliate referrals
 
 -->
-
-<!-- Slide 11: Competition -->
 
 ---
 layout: two-cols-header
@@ -571,8 +545,6 @@ Empower third-party developers with revenue sharing
 
 -->
 
-<!-- Slide 12: Team -->
-
 ---
 layout: two-cols-header
 ---
@@ -615,8 +587,6 @@ layout: two-cols-header
 ## End
 
 -->
-
-<!-- Slide 13: Call to Action -->
 
 ---
 layout: two-cols-header

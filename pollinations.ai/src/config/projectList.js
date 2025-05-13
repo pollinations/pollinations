@@ -129,6 +129,92 @@ const allProjects = {
       description: "websim.ai clone that's actually good",
       author: "@kennet678",
       submissionDate: "2025-04-15",
+      order: 1,
+    },
+  ],
+  toolsInterfaces: [
+
+    {
+      name: "VibeCoder",
+      description: "A conversational coding environment that lets you create applications by describing them in natural language.",
+      author: "@Aashir__Shaikh",
+      authorUrl: "https://x.com/Aashir__Shaikh",
+      submissionDate: "2025-03-25",
+      order: 1,
+    },
+    {
+      name: "Pollinations MCP Server",
+      url: "https://github.com/pollinations/model-context-protocol",
+      description: "A Model Context Protocol server that enables AI-assisted development through natural language interaction with Pollinations' multimodal services.",
+      author: "@thomash",
+      repo: "https://github.com/pollinations/model-context-protocol",
+      stars: 42,
+      submissionDate: "2025-05-01",
+      order: 1,
+    },
+    {
+      name: "Pollinations Task Master",
+      url: "https://github.com/LousyBook94/pollinations-task-master",
+      description: "A task management system that uses AI to help break down and organize development tasks through natural language interaction.",
+      author: "@LousyBook94",
+      repo: "https://github.com/LousyBook94/pollinations-task-master",
+      submissionDate: "2025-05-12",
+      stars: 3,
+      order: 1,
+    },
+    {
+      name: "Qwen-Agent",
+      url: "https://github.com/QwenLM/Qwen-Agent",
+      description: "A framework for developing agentic LLM applications.",
+      repo: "https://github.com/QwenLM/Qwen-Agent",
+      stars: 6600,
+      order: 1,
+    },
+    {
+      name: "JCode Website Builder",
+      url: "https://jcode-ai-website-bulder.netlify.app/",
+      description: "A website generator using Pollinations text API.",
+      author: "@rtxpower",
+      order: 1,
+    },
+    {
+      name: "Define",
+      url: "https://define-i05a.onrender.com/api/docs/",
+      description: "An AI-powered REST API designed to generate definitions for words or phrases, constrained to a specified target word count. It allows customization of tone, context, and language, delivering precise, context-aware definitions programmatically—ideal for developers and content creators.",
+      author: "@hasanraiyan",
+      repo: "https://github.com/hasanraiyan",
+      submissionDate: "2025-05-06",
+      order: 1,
+    },
+    {
+      name: "WebGeniusAI",
+      url: "https://webgeniusai.netlify.app/",
+      description: "AI tool that generates HTML websites with visuals from Pollinations.",
+      author: "@Aashir__Shaikh",
+      submissionDate: "2025-04-15",
+      order: 1,
+    },
+    {
+      name: "Pollinations.DIY",
+      url: "https://pollinations.diy",
+      description: "A browser-based coding environment based on bolt.diy, featuring integrated Pollinations AI services, visual code editing, and project management tools.",
+      author: "@thomash",
+      submissionDate: "2025-03-01",
+      order: 1,
+    },
+    {
+      name: "Websim",
+      url: "https://websim.ai/c/bXsmNE96e3op5rtUS",
+      description: "A web simulation tool that integrates Pollinations.ai.",
+      author: "@thomash",
+      order: 2,
+    },
+    {
+      name: "🆕 NetSim",
+      url: "https://netsim.us.to/",
+      description: "websim.ai clone that's actually good",
+      author: "@kennet678",
+      submissionDate: "2025-04-15",
       order: 2,
     },
   ],
@@ -274,13 +360,14 @@ const allProjects = {
       order: 4,
     },
     {
-      name: "🆕 Pollinations.DIY",
-      url: "https://pollinations.diy",
-      description: "A browser-based coding environment based on bolt.diy, featuring integrated Pollinations AI services, visual code editing, and project management tools.",
-      author: "@thomash",
-      submissionDate: "2025-03-01",
+      name: "🆕 Anime AI Generation",
+      url: "https://www.animeaigeneration.com/",
+      description: "Create professional-quality anime characters with powerful AI technology. No artistic skills required.",
+      author: "@shreyas281898",
+      submissionDate: "2025-02-11",
       order: 3,
     },
+
     {
       name: "🆕 Anime Character Generator",
       url: "https://elixpoart.vercel.app/src/character",
@@ -310,6 +397,7 @@ const allProjects = {
       author: "@andreas_11",
       order: 2,
     },
+
     {
       name: "Server Status Dashboards",
       url: "https://www.ai-ministries.com/serverstatus.html",
@@ -317,6 +405,7 @@ const allProjects = {
       author: "@tolerantone",
       order: 1,
     },
+
     {
       name: "MVKProject Nexus API",
       url: "https://nexus.adonis-except.xyz/",
@@ -363,15 +452,10 @@ const allProjects = {
       submissionDate: "2025-04-27",
       order: 1,
     },
-    {
-      name: "VibeCoder",
-      url: "https://vibecoderbyaashir.netlify.app/",
-      description: "A web app for coding with vibes, created using Pollinations.AI Open Source API without coding syntax.",
-      author: "@Aashir__Shaikh",
-      authorUrl: "https://x.com/Aashir__Shaikh",
-      submissionDate: "2025-03-25",
-      order: 1,
-    },
+
+
+  ],
+  llmIntegrations: [
     {
       name: "🆕 Pollinations.AI Enhancer",
       url: "https://github.com/fisventurous/pollinationsai-enhancer",
@@ -411,16 +495,6 @@ const allProjects = {
     },
 
 
-    {
-      name: "🆕 CoNavic",
-      url: "https://github.com/mkantwala/CoNavic/",
-      description: "A browser extension for AI-assisted browser automation.",
-      author: "@mkantwala",
-      repo: "https://github.com/mkantwala/CoNavic",
-      stars: 0,
-      submissionDate: "2025-05-06",
-      order: 1,
-    },
     {
       name: "🆕 Foodie AI",
       url: "https://foodie-ai.vercel.app/",

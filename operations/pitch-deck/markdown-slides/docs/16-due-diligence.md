@@ -27,7 +27,7 @@
 
 - **Automated Scaling**: Ad revenue covers AI compute costs (GPU time), allowing apps to graduate to higher tiers with unlimited usage based on the `Ad € / Cloud €` ratio.
 
-- **Path to Income**: The **Partner Tier** (launching H2 2026) offers a **50/50 split of *net* ad revenue**, providing a direct path from idea to income.
+- **Path to Income**: The **Nectar tier** (launching H2 2026) offers a **50/50 split of *net* ad revenue**, providing a direct path from idea to income.
 
 - **For Ad Providers**: We aggregate a network of unique AI applications, offering scalable access to engaged users.
 
@@ -80,9 +80,9 @@
   - Turnkey ad slot integration.
   - Automated tier progression based on `Ad € / Cloud €` ratio.
   - "Zero-Ops" development via automated setup and deployment.
-  - 4-tier ladder (Explorer → Creator → Innovator → Partner).
+  - 3-tier ladder (Seed → Flower → Nectar).
 - **Customer Target**: Primarily indie creators seeking accessibility and monetization path.
-- **Status**: Explorer Tier (Live), Creator Tier (Beta, launched Q2 2025).
+- **Status**: Seed & Flower tier (launched Q2 2025)
 - **Current Traction**:
   - ~3M ecosystem MAU
   - 100M+ media generated monthly
@@ -126,7 +126,7 @@
 #
 - Utilize the **4-tier ladder** to attract creators with free entry.
 - Drive app discovery via the **Marketplace** (new public website).
-- Graduate successful apps to Innovator and Partner tiers.
+- Graduate successful apps to Flower and Nectar tiers.
 - Onboard **Ad Partners** to monetize the generated inventory.
 - Foster the **developer community** (e.g., via Discord).
 #
@@ -134,10 +134,10 @@
 
 | Risk Category | Challenges | Mitigation |
 |---------------|------------|------------|
-| **Market** | Slow adoption, low ad eCPM/fill rates | Free tiers, Marketplace discovery, Ad SDK improvements, Partner diversification |
+| **Market** | Slow adoption, low ad eCPM/fill rates | Free tiers, Marketplace discovery, Ad SDK improvements, Nectar tier apps diversification |
 | **Technical** | Tracking issues, infrastructure costs, model performance | Robust monitoring, cost optimization, rate limiting, SOTA model access |
 | **Operational** | Brand safety, Ad Fraud, payout execution | Ad network controls, clear policies, secure ledger/payout system |
-| **Financial** | Profitability challenges, GPU cost volatility | Focus on Innovator/Partner economics, Ad SDK adoption, cost optimizations |
+| **Financial** | Profitability challenges, GPU cost volatility | Focus on Flower/Nectar economics, Ad SDK adoption, cost optimizations |
 | **Competitive** | Different rev-share models | Emphasize unique value prop, adjust share if needed |
 | **Regulatory** | Compliance (privacy, ads) | Legal counsel, privacy-by-design, contextual ads |
 
@@ -146,15 +146,15 @@
 ### Key Milestones (Next 12 Months)
 #
 - **H2 2025**:
-  - Innovator Tier (General Availability)
+  - Flower tier (General Availability)
   - Marketplace v1 Launch
   - Ad SDK v1 Launch
-  - SOTA Models & Rich Ad Formats for Innovators
+  - SOTA Models & Rich Ad Formats for Flowers
 #
 - **H1 2026**:
   - Ad SDK v2 (multi-format support)
   - Revenue Share Ledger & Payout System
-  - Partner Tier (50/50 split) in Closed Beta
+  - Nectar tier (50/50 split) in Closed Beta
   - Advanced Ad Mediation backend development
 
 <br>
@@ -165,9 +165,9 @@
 #
 - **Primary Revenue**: Advertising via integrated Ad SDK.
 - **Tier Structure**:
-  - **Explorer/Creator**: Strategic cost, generate usage data.
-  - **Innovator** (GA H2 2025): Ad revenue covers compute; Pollinations retains 100% of net revenue beyond costs.
-  - **Partner** (GA H2 2026): 50/50 split of *net* ad revenue after compute costs.
+  - **Seed**: Strategic cost, generate usage data.
+  - **Flower** (GA H2 2025): Ad revenue covers compute; Pollinations retains 100% of net revenue beyond costs.
+  - **Nectar** (GA H2 2026): 50/50 split of *net* ad revenue after compute costs.
 #
 ### Unit Economics (EOY 2026 Model)
 #
@@ -176,9 +176,9 @@
 - **Ad Network Fee**: 15%.
 - **Net Ad Revenue**: €1.70 per 1k media units.
 - **Monthly Contribution Per App**:
-  - Innovator: €240
-  - Partner: €175 (after 50% creator payout)
-- **Platform Gross Margin Target**: ~51% (with Partner tier).
+  - Flower: €240
+  - Nectar: €175 (after 50% creator payout)
+- **Platform Gross Margin Target**: ~51% (with Nectar tier).
 - **Blended LTV**: €0.14 per monetized end-user.
 #
 ### Financial Targets
@@ -217,7 +217,6 @@
 - Tiered free access.
 - Marketplace discovery.
 - Community building.
-- Ad Partner onboarding.
 
 <br>
 
@@ -257,7 +256,7 @@
 - **Key Integrations**:
   - Roblox integration with 1.8M MAU
   - LobeChat (60k+ GitHub stars)
-- **Platform Status**: Explorer tier live, Creator tier in Beta
+- **Platform Status**: Seed and Flower tier live
 #
 ### Financials
 #
@@ -265,7 +264,7 @@
 - **Fundraise**: Seeking **€3M Seed** round.
 - **Use of Funds**:
   - ~40% GPU & Infrastructure
-  - ~30% R&D/Product (Innovator/Partner tech)
+  - ~30% R&D/Product (Flower/Nectar tech)
   - ~20% Team Expansion
   - ~10% GTM & Community
 - **ARR Targets**:

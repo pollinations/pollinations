@@ -15,7 +15,7 @@ class: scroll
 
 ## 🚀 Mission
 
-To build the **ad‑funded AI creation and distribution platform**, where Creator apps finance their own growth through in‑app advertising and automatically graduate to higher service tiers—no invoices, credit cards, or payout headaches. From H2 2026 we will add an **opt‑in 50 / 50 net ad‑revenue share** for top‑performing partners, giving Creators a clear path from idea to income without changing their tech stack.
+To build the **ad‑funded AI creation and distribution platform**, where Creator apps finance their own growth through in‑app advertising and automatically graduate to higher service tiers—no invoices, credit cards, or payout headaches. From H2 2026 we will add an **opt‑in 50 / 50 net ad‑revenue share** for top‑performing apps, giving Creators a clear path from idea to income without changing their tech stack.
 
 ## 🌟 Vision
 
@@ -27,5 +27,5 @@ To build the **ad‑funded AI creation and distribution platform**, where Creato
     A platform where creators can start for free, automatically scale their applications based on ad-supported success, and ultimately participate in significant revenue sharing. We provide a clear, automated journey from initial idea to a sustainable, income-generating business, all within a single, evolving tech stack.
 
     *   **Ad‑Funded Tiering (Core Path):** End‑user engagement drives ad revenue, which directly covers GPU costs and unlocks higher service tiers and capabilities—fully automated.
-    *   **Revenue Participation (Partner Tier - H2 2026):** Eligible top-tier Partner apps can opt into a **50% share of the net ad revenue** they generate, creating a powerful incentive and true partnership.
+    *   **Revenue Participation (Nectar tier - H2 2026):** Eligible top-tier Nectar apps can opt into a **50% share of the net ad revenue** they generate, creating a powerful incentive and true partnership.
     *   **Showcasing Creator Talent:** Providing a vibrant Marketplace for creators to gain visibility, reach end-users, and demonstrate the success of their applications.

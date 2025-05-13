@@ -15,7 +15,7 @@ class: scroll
 
 ## Snapshot
 
-*   **pollinations.ai Model:** Ad-funded automatic tiering for Creators; Partner tier with 50/50 Ad Rev-Share (H2 2026).
+*   **pollinations.ai Model:** Ad-funded automatic tiering for Creators; Nectar tier with 50/50 Ad Rev-Share (H2 2026).
 *   **Key Differentiator:** Default free tier for Creators requires no direct payment, with performance scaling based on ad revenue (`Ad € / Cloud €` ratio).
 *   **Comparables:** Unity Ads, AppLovin (Ad Networks); GIPHY, Unsplash (Asset Monetization); Perplexity (Premium + Native Ads).
 
@@ -39,7 +39,7 @@ class: scroll
 | Unity Ads      | SDK            | Rewarded, Interstitial, Banner Ads | Creator keeps ≈ 70%       | Industry standard for high Creator ad rev-share.   |
 | AppLovin MAX   | SDK + Exchange | Programmatic Video/Playable Ads    | ≥ 70% to Creator          | AI optimization boosts eCPM; high Creator share norm. |
 | Google AdSense | JS Tag         | Display & Video Ads                | 68% to Publisher          | Benchmark for payout reliability.                    |
-| **pollinations.ai (Beta Live)** | **SDK / API**  | **Contextual Ads (via Ad Providers)** | **0% (Tier Upgrades instead)** | **Unique: Free tier funded by 100% Ad Rev capture.** |
+| **pollinations.ai (Beta Live)** | **SDK / API**  | **Contextual Ads (via Ad Providers)** | **0% (tier Upgrades instead)** | **Unique: Free tier funded by 100% Ad Rev capture.** |
 | **pollinations.ai (from H2 2026)** | **SDK / API** | **Ad Rev-Share** | **50% (Net Ad Rev)** | **Offers choice; 50% net share attractive due to: integrated free AI backend, zero-ops, unified path to revenue & unique inventory.** |
 
 ## 3 | Unity Deep‑Dive (Closest Ad Analogy)
@@ -88,7 +88,7 @@ class: scroll
 | Risk                      | Impact                    | Mitigation Strategy                                                               |
 | ------------------------- | ------------------------- | --------------------------------------------------------------------------------- |
 | Ad € / Cloud € Inaccuracy | Incorrect Tiering         | Robust monitoring, clear ratio definitions, potential manual overrides.           |
-| Low eCPM / Fill Rate      | Poor Tiering / Rev        | Partner diversity, contextual targeting v2, support multiple ad formats.          |
+| Low eCPM / Fill Rate      | Poor Tiering / Rev        | Nectar tier diversity, contextual targeting v2, support multiple ad formats.          |
 | Creator Model Choice      | Cannibalization/Complexity| Clear communication of trade-offs (Tiering vs. Premium vs. Rev-Share).            |
 | Rev‑Share Competitiveness | Creator Churn (from H2 2026) | Emphasize unique platform value (integrated AI, zero-ops, free tier pathway, ecosystem benefits); potentially adjust % later. |
 | Brand‑Safety              | Ad Provider Trust         | Multi‑layer filters, human audit, clear content policies for Creators.            |

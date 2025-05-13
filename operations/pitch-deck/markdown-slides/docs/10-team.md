@@ -26,7 +26,7 @@ class: scroll
 ## Hiring Plan & Team Evolution: Supporting Growth & Monetization
 
 1.  💰 **Digital Ads & Monetization Strategist** (H2 2025)
-    *   **Strategic Focus:** Maximize ad revenue for pollinations.ai and Partner-tier creators.
+    *   **Strategic Focus:** Maximize ad revenue for pollinations.ai and Nectar-tier creators.
     *   **Key Contributions:** Own Ad SDK performance, optimize ad yield (eCPMs, fill rates), manage ad network relationships, and drive data-informed ad strategies. Essential for the success of the ad-funded model and revenue sharing.
 
 2.  🔧 **Lead MLOps & Infrastructure Engineer** (H2 2025)
@@ -35,7 +35,7 @@ class: scroll
 
 3.  🌟 **Head of Community & Creator Success** (H1 2026)
     *   **Strategic Focus:** Cultivate a thriving creator ecosystem and drive platform adoption/retention.
-    *   **Key Contributions:** Lead community engagement, design creator onboarding (especially for Innovator/Partner tiers), gather product feedback, and champion creator needs. Vital for user growth and platform loyalty.
+    *   **Key Contributions:** Lead community engagement, design creator onboarding (especially for Flower/Nectar tiers), gather product feedback, and champion creator needs. Vital for user growth and platform loyalty.
 4.  💸 **Finance & Payout Operations Specialist** (H2 2026)
-    *   **Strategic Focus:** Ensure accurate financial operations and manage Partner tier revenue-sharing payouts.
-    *   **Key Contributions:** Oversee revenue reconciliation, manage the Partner payout system and ledger, assist with financial planning/reporting for ad revenue, and maintain financial controls. Critical for trust and operational integrity of the revenue share program.
+    *   **Strategic Focus:** Ensure accurate financial operations and manage Nectar tier revenue-sharing payouts.
+    *   **Key Contributions:** Oversee revenue reconciliation, manage the Nectar payout system and ledger, assist with financial planning/reporting for ad revenue, and maintain financial controls. Critical for trust and operational integrity of the revenue share program.

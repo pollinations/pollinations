@@ -825,7 +825,19 @@ async function generateTextBasedOnModel(messages, options) {
         }
         
         // Apply Roblox-specific fix if needed
-        const processedMessages = handleRobloxSpecificFix(messages, model);
+        const robloxFixedMessages = handleRobloxSpecificFix(messages, model);
+        
+        // Remove p-ads marker from messages to prevent it from affecting the LLM context
+        const processedMessages = robloxFixedMessages.map(msg => {
+            if (msg.content && typeof msg.content === 'string') {
+                // Remove the p-ads marker from the message content
+                return {
+                    ...msg,
+                    content: msg.content.replace(/p-ads/g, '')
+                };
+            }
+            return msg;
+        });
         
         // Log the messages being sent
         log('Sending messages to model handler:', JSON.stringify(processedMessages.map(m => ({ role: m.role, content: typeof m.content === 'string' ? m.content.substring(0, 50) + '...' : '[non-string content]' }))));

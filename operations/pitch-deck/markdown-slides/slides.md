@@ -357,9 +357,14 @@ layout: two-cols-header
 ## **3. Profit Together** 💰 (2026)
 
 ::right::
-<div class="flex justify-center">
-  <img src="/media/business-flywheel.png" alt="Business Flywheel" class="w-6/7 rounded-lg shadow-lg" />
-</div>
+
+```mermaid
+flowchart TB
+    A([CREATORS]) --> B
+    B[SEED<br/><small>EARLY PROJECTS</small>] --> C
+    C[FLOWER<br/><small>PROFITABLE APPS</small>] --> D
+    D[NECTAR<br/><small>REV-SHARE</small>]
+```
 
 <!--
 ## Speaker Notes for Slide 9: Business Model
@@ -380,6 +385,8 @@ layout: two-cols-header
 ## The Pollinations Flywheel 🚀
 * **Empowering Creators:** Build & monetize innovative AI apps
 * **Attracting Advertisers:** Reach engaged audiences in AI contexts
+
+<img src="/media/business-flywheel.png" alt="Business Flywheel" class="w-6/7 rounded-lg shadow-lg" />
 
 ## How do we make money? 🔄
 * Multi-billion dollar AI-contextual advertising market
@@ -523,15 +530,15 @@ layout: two-cols-header
 ::left::
 
 # 🚀 Now | **Activate**
->### - Launch ad rev-share across platform
->### - Scale developer community
->### - Prove monetization model
+>### - Seeds -> Flowers
+>### - Roll out monetization model
+>### - Rich ads
 
 <br>
 <br>
 
 # 📈 +12mo | **Scale**
->### - Rich ad integrations
+>### - Launch ad rev-share across platform
 >### - Optimize ad targeting with AI
 >### - Build global community structure
 

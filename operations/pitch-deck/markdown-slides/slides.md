@@ -5,6 +5,8 @@ themeConfig:
   background: "#FFFFFF"
 ---
 
+<!-- Slide 1: Title Slide -->
+
 **REMOVE: Generic mission statement - be more specific about monetization**
 
 # ![Pollinations.ai Logo](/media/pollinations-ai-logo.png)
@@ -49,7 +51,6 @@ layout: two-cols-header
 
 #
 
-
 # **Advertisers**
 ### 🎯 Struggle to reach audiences in new AI apps
 #
@@ -71,27 +72,11 @@ layout: two-cols-header
 * **Core Market Problem:** System friction prevents an open ecosystem where developers can earn from success (make this into a short phrase that covers both creators and advertisers - the message to take away from this slide)
 -->
 
-**MAIN MESSAGE: Build, Deploy, Profit**
-
-**REMOVE: Generic mission statement - be more specific about monetization**
-
-# ![Pollinations.ai Logo](/media/pollinations-ai-logo.png)
-
-## AI Empowers Everyone to Create
-
-**Unlocking AI App Monetization at Scale**
-
-<!--
-**Speaking Points:**
-* **Introduction:** We are Pollinations.AI
-* **Mission:** AI empowers everyone to create
-* **Value Proposition:** The easiest way to build AND monetize AI apps
-* **Key Differentiators:** Zero upfront cost, shared success model
--->
-
 ---
 layout: two-cols-header
 ---
+
+<!-- Slide 3: Solution -->
 
 # <span class="bg-green-600 text-white p-2 rounded">**✨ The Fix : AI Creation Meets Monetization**</span>
 <br>
@@ -120,7 +105,6 @@ layout: two-cols-header
 </div>
 
 <!--
-
 
 ### For Creators: 
 * Effortless AI Integration:
@@ -166,24 +150,74 @@ layout: two-cols-header
 
 -->
 
+---
+layout: two-cols
+---
+
+<!-- Slide 4: Product Showcase Apps Cohort-->
+
+<div class="mx-2">
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted>
+    <source src="/media/what-do-we-do_slideshow-1.mp4" type="video/mp4">
+  </video>
+
+  <div class="mb-4"></div>
+
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted>
+    <source src="/media/what-do-we-do_slideshow-2.mp4" type="video/mp4">
+  </video>
+</div>
+
+::right::
+
+<div class="mx-2">
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
+    <source src="/media/what-do-we-do_slideshow-3.mp4" type="video/mp4">
+  </video>
+
+  <div class="mb-4"></div>
+
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
+    <source src="/media/what-do-we-do_slideshow-4.mp4" type="video/mp4">
+  </video>
+</div>
 
 ---
-layout: two-cols-header 
+class: text-center
 ---
 
-# <span class="bg-blue-500 text-white p-2 rounded">**🎮 Showcase: Roblox Integration**</span>
+<!-- Slide 5: Product Showcase - Ad -->
 
-::left::
+<div class="flex justify-center">
+  <video class="w-full rounded-lg shadow-lg max-h-[70vh] object-contain" autoplay noloop muted>
+    <source src="/media/pixpal-language-ad.mp4" type="video/mp4">
+  </video>
+</div>
 
-## 🏆 **Number 1** AI Game in Roblox
-#
-## 👍 **10M+** likes
-#
+---
+layout: two-cols
+---
+
+<!-- Slide 6: Product Showcase - Roblox -->
+
+# **🎮 Roblox Integration**
+# (rev-share case study)
+
+<br>
+<br>
+
+## 🏆 Roblox **#1 AI Game**
+
+<br>
+
 ## 👥 **2M** MAU
-#
+ 
+<br>
+
 ## 💰 **$150/day** revenue
 
 ::right::
+
 <div class="flex justify-center items-center h-full">
   <video class="w-4/4 rounded-lg shadow-lg" autoplay loop muted>
     <source src="/media/roblox_video.mov" type="video/mp4">
@@ -199,6 +233,8 @@ layout: two-cols-header
 ---
 layout: two-cols-header
 ---
+
+<!-- Slide 4: Traction -->
 
 # <span class="bg-blue-600 text-white p-2 rounded">**🚀 Traction: Flywheel Already in Motion**</span>
 
@@ -268,51 +304,10 @@ Traction & KPIs: Current ~3M Ecosystem MAU and 100M+ monthly media generations p
 
 
 ---
-class: text-center
----
-
-<div class="flex justify-center">
-  <video class="w-full rounded-lg shadow-lg max-h-[70vh] object-contain" autoplay noloop muted>
-    <source src="/media/pixpal-language-ad.mp4" type="video/mp4">
-  </video>
-</div>
-
----
 layout: two-cols-header
 ---
 
-::left::
-
-<div class="mx-2">
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted>
-    <source src="/media/what-do-we-do_slideshow-1.mp4" type="video/mp4">
-  </video>
-
-  <div class="mb-4"></div>
-
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted>
-    <source src="/media/what-do-we-do_slideshow-2.mp4" type="video/mp4">
-  </video>
-</div>
-
-::right::
-
-<div class="mx-2">
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
-    <source src="/media/what-do-we-do_slideshow-3.mp4" type="video/mp4">
-  </video>
-
-  <div class="mb-4"></div>
-
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
-    <source src="/media/what-do-we-do_slideshow-4.mp4" type="video/mp4">
-  </video>
-</div>
-
-
----
-layout: two-cols-header
----
+<!-- Slide 9: Market Opportunity -->
 
 # <span class="bg-purple-600 text-white p-2 rounded">**🌍 Tapping the $3.4B AI-Contextual Ad Market**</span>
 
@@ -347,6 +342,8 @@ Add:
 ---
 layout: two-cols-header
 ---
+
+<!-- Slide 10: Business Model -->
 
 # <span class="bg-purple-600 text-white p-2 rounded">**💰 How? From Free Tools to Shared Profits**</span>
 
@@ -444,6 +441,8 @@ Flywheel: By solving these dual problems, pollinations.ai creates a virtuous cyc
 layout: two-cols-header
 ---
 
+<!-- Slide 11: Competition -->
+
 # <span class="bg-yellow-600 text-white p-2 rounded">**🛡️ Competition**</span>
 
 <div class="mb-10"></div>
@@ -525,6 +524,8 @@ we could try a "yes" / "no" cross table here
 layout: two-cols-header
 ---
 
+<!-- Slide 12: Team -->
+
 # <span class="bg-pink-600 text-white p-2 rounded">**👥 Experienced Team to Scale Monetization**</span>
 
 ::left::
@@ -576,6 +577,8 @@ layout: two-cols-header
 ---
 layout: two-cols-header
 ---
+
+<!-- Slide 13: Call to Action -->
 
 # <span class="bg-teal-600 text-white p-2 rounded">**🤝 Fueling the AI App Monetization Revolution**</span>
 
@@ -629,6 +632,8 @@ SLIDE GUIDANCE:
 ---
 layout: two-cols-header
 ---
+
+<!-- Slide 14: Documentation Links -->
 
 # pollinations.ai - Docs
 

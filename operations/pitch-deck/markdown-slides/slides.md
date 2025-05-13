@@ -385,22 +385,9 @@ layout: two-cols-header
 >#### - 50% of Ad Revenue goes back to the App
 
 ::right::
-
-```
-      Many Potential Developers (Free Access)        
-                         ▼ 
-          ******************************
-           \         EXPLORER         / (Early Projects)
-            **************************
-             \       CREATOR        / (Registered Apps)
-              **********************
-               \    INNOVATOR     / (Profitable Apps)
-                ******************
-                 \   PARTNER    / Top Performance App
-                  **************     (Rev-Share)
-                         ▼
-        Ecosystem Growth & New Explorers
-```
+<div class="flex justify-center">
+  <img src="/media/business-flywheel.png" alt="Business Flywheel" class="w-6/7 rounded-lg shadow-lg" />
+</div>
 
 <!--
 add media: creator funnel or per app revenue per month numbers

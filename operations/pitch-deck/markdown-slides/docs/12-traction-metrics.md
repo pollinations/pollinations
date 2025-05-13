@@ -6,12 +6,11 @@ class: scroll
 <a href="/1">⬅️ Back to Index</a>
 </div>
 
-<div class="bg-cyan-100 p-4 rounded-lg border-l-4 border-cyan-500 mb-6">
-  <h3 class="text-lg font-bold text-cyan-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-cyan-800">Traction & KPIs: Current ~3M Ecosystem MAU and 100M+ monthly media generations provide a strong foundation. Phased KPIs will track creator adoption, Ad SDK integration, growth of 'profitable apps' (Ad€ > Cloud€), and Nectar tier success.</p>
-</div>
-
 # 🚀 **Key Traction Metrics & KPIs**
+
+<div class="bg-cyan-100 p-1 pl-6 pr-6 rounded-lg border-l-4 border-cyan-500 mb-6">
+  <p class="text-cyan-800">Traction &amp; KPIs: Current <strong><em>~3M Ecosystem MAU</em></strong> and <strong><em>100M+ monthly media generations</em></strong> provide a <em>strong foundation</em>. <em>Phased KPIs</em> will track <strong><em>creator adoption, Ad SDK integration, growth of 'profitable apps' (Ad€ &gt; Cloud€), and Nectar tier success.</em></strong></p>
+</div>
 
 This document outlines the key traction metrics and Key Performance Indicators (KPIs) pollinations.ai will track. Our strategy is built upon a strong foundation of pre-monetization ecosystem engagement..
 

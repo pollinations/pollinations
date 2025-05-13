@@ -6,12 +6,11 @@ class: scroll
 <a href="/1">⬅️ Back to Index</a>
 </div>
 
-<div class="bg-amber-100 p-4 rounded-lg border-l-4 border-amber-500 mb-6">
-  <h3 class="text-lg font-bold text-amber-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-amber-800">Risk Management: Key risks (market adoption, technical execution, scaling) identified with phased mitigation plans. We're proactively de-risking the model through robust Ad SDK development and staged Nectar tier rollout.</p>
-</div>
-
 # ⚠️ **Risk Register & Mitigation Plan**
+
+<div class="bg-amber-100 p-1 pl-6 pr-6 rounded-lg border-l-4 border-amber-500 mb-6">
+  <p class="text-amber-800">Risk Management: <strong><em>Key risks</em></strong> (market adoption, technical execution, scaling) identified with <em>phased mitigation plans</em>. We're <strong><em>proactively de-risking the model</em></strong> through <em>robust Ad SDK development</em> and <em>staged Nectar tier rollout</em>.</p>
+</div>
 
 ## **Phase 1: Foundation & Initial Monetization (H2 2025)**
 *Focus: Launching core monetized tier (Flower), Ad SDK v1, and driving initial adoption.*

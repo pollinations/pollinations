@@ -6,12 +6,11 @@ class: scroll
 <a href="/1">⬅️ Back to Index</a>
 </div>
 
-<div class="bg-gray-100 p-4 rounded-lg border-l-4 border-gray-500 mb-6">
-  <h3 class="text-lg font-bold text-gray-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-gray-800">Tech Architecture: A 'Zero-UI, Zero-Ops' platform. Creators use a single CLI command for automated app setup, CI/CD, and deployment. Our Edge Services manage AI APIs, ad serving, and dynamic tiering (Ad€/Cloud€ ratio).</p>
-</div>
+# 🏗️ **End-to-End Architecture**
 
-# 🏗️ **End-to-End Architecture**  (Creator uses a text editor only)
+<div class="bg-gray-100 p-1 pl-6 pr-6 rounded-lg border-l-4 border-gray-500 mb-6">
+  <p class="text-gray-800">Tech Architecture: A <strong><em>'Zero-UI, Zero-Ops' platform</em></strong>. Creators use a <em>single CLI command</em> for <strong><em>automated app setup, CI/CD, and deployment</em></strong>. Our <em>Edge Services</em> manage AI APIs, ad serving, and <strong><em>dynamic tiering (Ad€/Cloud€ ratio).</em></strong></p>
+</div>
 
 ```
 IDE / Cursor / VS Code                pollinations.ai Cloud

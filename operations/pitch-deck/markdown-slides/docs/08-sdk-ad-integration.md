@@ -6,12 +6,12 @@ class: scroll
 <a href="/1">⬅️ Back to Index</a>
 </div>
 
-<div class="bg-orange-100 p-4 rounded-lg border-l-4 border-orange-500 mb-6">
-  <h3 class="text-lg font-bold text-orange-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-orange-800">SDK & Ad Integration: Creators easily integrate our Ad SDK, enabling their apps to *automatically* scale based on ad revenue performance. This seamless process underpins free access and the path to future revenue sharing.</p>
-</div>
 
 # 🔌 **SDK & Ad Integration**
+
+<div class="bg-orange-100 p-1 pl-6 pr-6 rounded-lg border-l-4 border-orange-500 mb-6">
+  <p class="text-orange-800">SDK &amp; Ad Integration: Creators <em>easily integrate our Ad SDK</em>, enabling their apps to <strong><em>automatically scale based on ad revenue performance</em></strong>. This <em>seamless process</em> underpins <strong><em>free access</em></strong> and the path to <strong><em>future revenue sharing.</em></strong></p>
+</div>
 
 This document will provide a quick-start guide for Creators on:
 

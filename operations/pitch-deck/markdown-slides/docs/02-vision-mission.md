@@ -6,12 +6,11 @@ class: scroll
 <a href="/1">⬅️ Back to Index</a>
 </div>
 
-<div class="bg-blue-100 p-4 rounded-lg border-l-4 border-blue-500 mb-6">
-  <h3 class="text-lg font-bold text-blue-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-blue-800">Our Vision: Democratize AI creation for 'vibe-coders' through a Zero-UI platform, empowering them to build sustainable, income-generating applications without needing deep technical expertise.</p>
-</div>
-
 # 🔭 **Vision & Mission**
+
+<div class="bg-blue-100 p-1 pl-6 pr-6 rounded-lg border-l-4 border-blue-500 mb-6">
+  <p class="text-blue-800">Our Vision: <strong><em>Democratize AI creation</em></strong> for <em>'vibe-coders'</em> through a <strong><em>Zero-UI platform</em></strong>, empowering them to build <strong><em>sustainable, income-generating applications</em></strong> without needing deep technical expertise.</p>
+</div>
 
 ## 🚀 Mission
 

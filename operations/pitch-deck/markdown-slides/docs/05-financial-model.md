@@ -6,12 +6,12 @@ class: scroll
 <a href="/1">⬅️ Back to Index</a>
 </div>
 
-<div class="bg-red-100 p-4 rounded-lg border-l-4 border-red-500 mb-6">
-  <h3 class="text-lg font-bold text-red-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-red-800">Financial Projections (EOY 2026 - 2000 Apps): €152.5k monthly gross profit (~51% margin on net retained revenue). Flower apps yield €240 net platform contribution; Nectar apps €175 (after creator payout), validating model profitability. Net monthly profit projected at €112.5k after personnel costs.</p>
+# 💹 **Financial Model (EOY 2026 - 2000 Apps, 3 Tiers)**
+
+<div class="bg-red-100 p-1 pl-6 pr-6 rounded-lg border-l-4 border-red-500 mb-6">
+  <p class="text-red-800">Financial Projections (EOY 2026 - 2000 Apps): <strong><em>€152.5k monthly gross profit (~51% margin on net retained revenue)</em></strong>. <em>Flower apps yield €240 net platform contribution; Nectar apps €175 (after creator payout)</em>, validating model profitability. <strong><em>Net monthly profit projected at €112.5k</em></strong> after personnel costs.</p>
 </div>
 
-# 💹 **Financial Model (EOY 2026 - 2000 Apps, 3 Tiers)**
 This model projects pollinations.ai's performance by EOY 2026:
 *   **Ecosystem:** 2,000 applications across three tiers.
 *   **Nectar tier:** Revenue share based on **net ad revenue**.

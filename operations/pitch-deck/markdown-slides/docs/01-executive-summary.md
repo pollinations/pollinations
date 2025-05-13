@@ -6,12 +6,11 @@ class: scroll
 <a href="/1">⬅️ Back to Index</a>
 </div>
 
-<div class="bg-yellow-100 p-4 rounded-lg border-l-4 border-yellow-500 mb-6">
-  <h3 class="text-lg font-bold text-yellow-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-yellow-800">pollinations.ai: The ad-funded backend for generative AI. We provide free, cloud-scaled media generation & a turnkey ad slot, enabling apps to self-fund compute and unlock a 50/50 net ad revenue share (Nectar tier, H2 2026). Current traction: ~3M ecosystem MAU, 100M+ media/month.</p>
-</div>
-
 # 📑 **Executive Summary**
+
+<div class="bg-yellow-100 p-1 pl-6 pr-6 pl-6 pr-6 rounded-lg border-l-4 border-yellow-500 mb-6">
+  <p class="text-yellow-800">The <em>ad-funded backend</em> for generative AI. We provide <strong><em>free, cloud-scaled media generation</em></strong> &amp; a <em>turnkey ad slot</em>, enabling apps to <strong><em>self-fund compute</em></strong> and unlock a <strong><em>50/50 net ad revenue share</em></strong> (Nectar tier, H2 2026). Current traction: <strong><em>~3M ecosystem MAU, 100M+ media/month.</em></strong></p>
+</div>
 
 ## 30‑Second Pitch
 

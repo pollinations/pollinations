@@ -6,12 +6,11 @@ class: scroll
 <a href="/1">⬅️ Back to Index</a>
 </div>
 
-<div class="bg-purple-100 p-4 rounded-lg border-l-4 border-purple-500 mb-6">
-  <h3 class="text-lg font-bold text-purple-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-purple-800">Market Opportunity: Targeting a $140B (2025) Serviceable Addressable Market in indie app/web AI ad inventory. Our initial beachhead is the $3.4B Generative AI advertising segment, aiming for €22M ARR by EOY 2027.</p>
-</div>
-
 # 📈 **Market Opportunity**
+
+<div class="bg-purple-100 p-1 pl-6 pr-6 rounded-lg border-l-4 border-purple-500 mb-6">
+  <p class="text-purple-800">Market Opportunity: Targeting a <strong><em>$140B (2025) Serviceable Addressable Market</em></strong> in <em>indie app/web AI ad inventory</em>. Our initial beachhead is the <strong><em>$3.4B Generative AI advertising segment</em></strong>, aiming for <strong><em>€22M ARR by EOY 2027.</em></strong></p>
+</div>
 
 *AI apps, a multi-billion dollar AI-contextual advertising market.*
 

@@ -6,12 +6,11 @@ class: scroll
 <a href="/1">⬅️ Back to Index</a>
 </div>
 
-<div class="bg-green-100 p-4 rounded-lg border-l-4 border-green-500 mb-6">
-  <h3 class="text-lg font-bold text-green-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-green-800">Business Model: A tiered ladder where apps automatically graduate by covering compute via ads. Platform revenue (100% retained initially) transitions to a 50/50 net ad-revenue split for top apps (H2 2026), creating a growth flywheel.</p>
-</div>
-
 # 💰 **Business Model**
+
+<div class="bg-green-100 p-1 pl-6 pr-6 rounded-lg border-l-4 border-green-500 mb-6">
+  <p class="text-green-800">Business Model: A <em>tiered ladder</em> where apps <strong><em>automatically graduate by covering compute via ads</em></strong>. Platform revenue (<strong><em>100% retained initially</em></strong>) transitions to a <strong><em>50/50 net ad-revenue split</em></strong> for top apps (H2 2026), creating a <em>growth flywheel</em>.</p>
+</div>
 
 ## The Challenge: A Disconnected AI Ecosystem Stifling Creators & Brands
 

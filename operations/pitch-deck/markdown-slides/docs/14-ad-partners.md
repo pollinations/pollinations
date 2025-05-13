@@ -2,12 +2,11 @@
 <a href="/1">⬅️ Back to Index</a>
 </div>
 
-<div class="bg-purple-100 p-4 rounded-lg border-l-4 border-purple-500 mb-6">
-  <h3 class="text-lg font-bold text-purple-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-purple-800">Ad Partnerships: Strategic relationships with AI-native ad networks will drive monetization. We're prioritizing partners who offer contextual targeting, interactive formats to maximize Ad€ while maintaining excellent user experience.</p>
-</div>
-
 # 🤝 **Ad Partners**
+
+<div class="bg-purple-100 p-1 pl-6 pr-6 rounded-lg border-l-4 border-purple-500 mb-6">
+  <p class="text-purple-800">Ad Partnerships: <strong><em>Strategic relationships with AI-native ad networks</em></strong> will drive <em>monetization</em>. We're prioritizing partners who offer <strong><em>contextual targeting, interactive formats</em></strong> to maximize <em>Ad€</em> while maintaining <strong><em>excellent user experience.</em></strong></p>
+</div>
 
 Tracking potential partnerships with ad networks to monetize our AI application ecosystem.
 

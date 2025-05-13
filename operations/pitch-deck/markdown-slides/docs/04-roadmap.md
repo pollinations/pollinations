@@ -6,12 +6,11 @@ class: scroll
 <a href="/1">⬅️ Back to Index</a>
 </div>
 
-<div class="bg-indigo-100 p-4 rounded-lg border-l-4 border-indigo-500 mb-6">
-  <h3 class="text-lg font-bold text-indigo-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-indigo-800">Roadmap: Phased launch to strategically build monetization capabilities: Flower tier (self-funded apps, H2 2025), advanced ad tech development (H1 2026), culminating in the full Nectar tier with revenue sharing (H2 2026).</p>
-</div>
-
 # 🛣️ **Roadmap (2025-2026)**
+
+<div class="bg-indigo-100 p-1 pl-6 pr-6 rounded-lg border-l-4 border-indigo-500 mb-6">
+  <p class="text-indigo-800">Roadmap: <em>Phased launch</em> to strategically build monetization capabilities: <strong><em>Flower tier (self-funded apps, H2 2025)</em></strong>, <em>advanced ad tech development (H1 2026)</em>, culminating in the <strong><em>full Nectar tier with revenue sharing (H2 2026).</em></strong></p>
+</div>
 
 ## **Phase 1: Foundation & Initial Monetization (H2 2025)**
 

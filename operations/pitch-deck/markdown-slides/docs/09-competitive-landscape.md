@@ -6,12 +6,11 @@ class: scroll
 <a href="/1">⬅️ Back to Index</a>
 </div>
 
-<div class="bg-lime-100 p-4 rounded-lg border-l-4 border-lime-500 mb-6">
-  <h3 class="text-lg font-bold text-lime-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-lime-800">Competitive Edge: We're "Unity Ads for Generative AI." Our unique ad-funded free tier (scaling based on app performance) and integrated path to revenue directly address the creator monetization gap often missed by paywalled APIs or generic ad networks.</p>
-</div>
-
 # 🥊 **Competitive Landscape & Parallels**
+
+<div class="bg-lime-100 p-1 pl-6 pr-6 rounded-lg border-l-4 border-lime-500 mb-6">
+  <p class="text-lime-800">Competitive Edge: We're <strong><em>"Unity Ads for Generative AI."</em></strong> Our <em>unique ad-funded free tier</em> (scaling based on app performance) and <strong><em>integrated path to revenue</em></strong> directly address the <em>creator monetization gap</em> often missed by paywalled APIs or generic ad networks.</p>
+</div>
 
 ## Snapshot
 

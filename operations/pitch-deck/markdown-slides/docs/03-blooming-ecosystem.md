@@ -6,12 +6,12 @@ class: scroll
 <a href="/1">⬅️ Back to Index</a>
 </div>
 
-<div class="bg-teal-100 p-4 rounded-lg border-l-4 border-teal-500 mb-6">
-  <h3 class="text-lg font-bold text-teal-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-teal-800">Ecosystem Insights: ~3M MAU across 300+ apps, showing strong consumer focus and high ad monetization potential (77% med-high). Key integrations like a Roblox game (1.8M MAU) signal significant, untapped value.</p>
+# 🌍 **Blooming Ecosystem**
+
+<div class="bg-teal-100 p-1 pl-6 pr-6 rounded-lg border-l-4 border-teal-500 mb-6">
+  <p class="text-teal-800">Ecosystem Insights: <strong><em>~3M MAU across 300+ apps</em></strong>, showing <em>strong consumer focus</em> and <strong><em>high ad monetization potential (77% med-high)</em></strong>. Key integrations like a <em>Roblox game (1.8M MAU)</em> signal <strong><em>significant, untapped value.</em></strong></p>
 </div>
 
-# 🌍 **Blooming Ecosystem**
 
 Analysis of projects within the pollinations.ai ecosystem reveals key characteristics and trends. High-traffic integrations, such as the AI Character RP Roblox game (a notable driver of monthly active users) and numerous other applications detailed herein, showcase the platform's reach.
 ## Key Ecosystem Insights

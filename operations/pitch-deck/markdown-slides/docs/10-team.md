@@ -6,12 +6,12 @@ class: scroll
 <a href="/1">⬅️ Back to Index</a>
 </div>
 
-<div class="bg-pink-100 p-4 rounded-lg border-l-4 border-pink-500 mb-6">
-  <h3 class="text-lg font-bold text-pink-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-pink-800">Team: Led by CEO Thomas Haferlach & COO Elliot Fouchy, founders with proven AI platform execution. Strategic hires planned in Ads & Monetization, MLOps, Community, and Finance to support our growth and revenue share operations.</p>
+# 👥 **Team**
+
+<div class="bg-pink-100 p-1 pl-6 pr-6 rounded-lg border-l-4 border-pink-500 mb-6">
+  <p class="text-pink-800">Team: Led by <strong><em>CEO Thomas Haferlach &amp; COO Elliot Fouchy</em></strong>, founders with <em>proven AI platform execution</em>. <strong><em>Strategic hires planned</em></strong> in Ads &amp; Monetization, MLOps, Community, and Finance to support our <em>growth and revenue share operations</em>.</p>
 </div>
 
-# 👥 **Team**
 
 ## Founders
 

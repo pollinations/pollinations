@@ -8,7 +8,7 @@ class: scroll
 
 <div class="bg-green-100 p-4 rounded-lg border-l-4 border-green-500 mb-6">
   <h3 class="text-lg font-bold text-green-800">🌟 Pitch Deck Highlight</h3>
-  <p class="text-green-800">Business Model: A tiered ladder where apps automatically graduate by covering compute via ads. Platform revenue (100% retained initially) transitions to a 50/50 net ad-revenue split for top Partners (H2 2026), creating a growth flywheel.</p>
+  <p class="text-green-800">Business Model: A tiered ladder where apps automatically graduate by covering compute via ads. Platform revenue (100% retained initially) transitions to a 50/50 net ad-revenue split for top apps (H2 2026), creating a growth flywheel.</p>
 </div>
 
 # 💰 **Business Model**
@@ -27,7 +27,7 @@ pollinations.ai is the **ad-funded backend and marketplace** connecting AI creat
 1.  **For Creators: Effortless AI Creation & Monetization**
     *   **Free, Plug & Play AI:** We provide simple API access to powerful generative AI models, handling all backend complexity (infra, scaling). Developers launch instantly, focusing on UX.
     *   **Automated, Ad-Funded Scaling:** Our SDK integrates contextual ads. Revenue first covers the app's AI compute costs, enabling free scaling based on user engagement.
-    *   **Shared Success:** Our **Partner Tier (H2 2026)** offers a **50/50 net ad-revenue split**, creating a direct path from idea to income.
+    *   **Shared Success:** Our **Nectar tier (H2 2026)** offers a **50/50 net ad-revenue split**, creating a direct path from idea to income.
 
 2.  **For Brands: Access to Engaged, AI-Native Audiences**
     *   **New Ad Inventory:** We aggregate a rapidly growing network of unique AI applications, offering brands access to a **vast and scalable supply** of engaged users within AI-native contexts.
@@ -42,60 +42,47 @@ pollinations.ai is the **ad-funded backend and marketplace** connecting AI creat
 *   **End‑Users:** Individuals interacting with applications built on the pollinations.ai platform.
 *   **Pollinations:** The platform orchestrating the AI models, infrastructure, ad delivery, and revenue sharing.
 
-## 3. App Segmentation & Tier Ladder
+## 3. App Segmentation & tier Ladder
 
 | Tier | Name        | Primary User                 | Key Benefits                                                                  | Planned Availability
 | :--- | :---------- | :--------------------------- | :---------------------------------------------------------------------------- | :----------------------------------------- |
-| 1    | **Explorer**| Curious devs, hobbyists      | High rate limits, No authentication, Zero cost                                          | Production (Live)                          |
-| 2    | **Creator** | Early‑stage projects         | Moderate rate limits, Token authentication, Usage analytics                                     | Beta (Live)                                |
-| 3    | **Innovator**| Profitable apps              | Unlimited usage, SOTA models, Rich Ad Formats  | GA (Phase 1 - H2 2025)                     |
-| 4    | **Partner** | Strategic rev‑share partners | All Innovator perks + **50/50 Net Ad‑Revenue Split** | Closed Beta (Phase 2 - H1 2026) <br> GA (Phase 3 - H2 2026) |
+| 1    | **Seed** | Early‑stage projects         | Moderate rate limits, Ads                                     | Beta (Live)                                |
+| 3    | **Flower**| Profitable apps              | Unlimited usage, SOTA models, Rich Ad Formats  | GA (Phase 1 - H2 2025)                     |
+| 4    | **Nectar** | Strategic rev‑share partners | All Flower perks + **50/50 Net Ad‑Revenue Split** | Closed Beta (Phase 2 - H1 2026) <br> GA (Phase 3 - H2 2026) |
 
 ## 4. Revenue Streams
 
 1.  **Advertising Revenue (Platform Retained):**
     *   During **Phase 1 (H2 2025)** and **Phase 2 (H1 2026)**, all ad income generated through the pollinations.ai SDK (v1 & v2) flows to pollinations.ai to cover platform costs and fund growth.
-2.  **Shared Advertising Revenue (Partner Tier):**
-    *   Starting in **Phase 3 (H2 2026)** with the General Availability of the Partner Tier, eligible Partner apps will automatically receive **50% of the Net Ad Revenue** they generate (Net Ad Revenue = Gross Ad Revenue - Ad Network Fees).
+2.  **Shared Advertising Revenue (Nectar tier):**
+    *   Starting in **Phase 3 (H2 2026)** with the General Availability of the Nectar tier, eligible Nectar apps will automatically receive **50% of the Net Ad Revenue** they generate (Net Ad Revenue = Gross Ad Revenue - Ad Network Fees).
 
 ## 9. Growth Flywheel
 
 **The pollinations.ai Flywheel:** By solving these dual problems, pollinations.ai creates a virtuous cycle: More developers build innovative apps on our free platform -> This attracts more end-users -> This creates more valuable, AI-native ad inventory -> This attracts brands and ad revenue -> A portion of this revenue is shared back with successful developers, incentivizing further creation and platform growth, while also funding the free tier for new entrants.
 
-1.  **Free Experimentation (Explorer → Creator):** Easy entry and free tools attract a wide developer base, acting as an **investment in future monetizable applications**. *(Ongoing)*
-2.  **Ad-Funded Scaling (Creator → Innovator):** Successful apps integrate ads, cover their costs, and unlock unlimited usage, SOTA models, and **enhanced visibility through the Marketplace, driving app discovery**. *(H2 2025)*
-3.  **Revenue Partnership (Innovator → Partner):** Top Innovators share 50/50 in net ad revenue, **turning projects into businesses** and showcasing platform success. *(H2 2026)*
+1.  **Free Experimentation (Seed tier):** Easy entry and free tools attract a wide developer base, acting as an **investment in future monetizable applications**. *(Ongoing)*
+2.  **Ad-Funded Scaling (Flower tier):** Successful apps integrate ads, cover their costs, and unlock unlimited usage, SOTA models, and **enhanced visibility through the Marketplace, driving app discovery**. *(H2 2025)*
+3.  **Revenue Partnership (Nectar):** Top Flowers share 50/50 in net ad revenue, **turning projects into businesses** and showcasing platform success. *(H2 2026)*
 
 ```
-        ****************************************
-        |      Many Potential Developers       |
-        ****************************************
-                         ▼ (Free Access)
-             ******************************
-             |        EXPLORER TIER       | (Broadest Entry)
-             |        Status: LIVE        | 
-             ******************************
-                   \                 /
-                    \               /
-                     ***************
-                    | CREATOR TIER | (Early Projects)
-                    | Status: BETA | 
-                     ***************
-                       \           /
-                        \         /
-                         *********
-                        |INNOVATOR| (Profitable Apps)
-                        | Phase 1 |
-                         *********
-                            |
-                            | (Top Performance)
-                            V
-                        *********
-                        |PARTNER| (Rev-Share)
-                        |Phase 3|
-                        *********
-                            |
-                            ▼
-             Ecosystem Growth & New Explorers
-             (Flywheel: Success fuels new starts)
+         Many Potential Developers (Free Access)      
+                          ▼ 
+             ****************************
+             |        SEED (beta)       | (Early projects)
+             ****************************
+              \                        /
+               \                      /
+                \                    / 
+                 ********************
+                 |      FLOWER      | (Profitable Apps)
+                 ********************
+                  \                 /
+                   \               /
+                     \     ▼      /
+                      **********
+                      | NECTAR | (Top Performance Apps)
+                      **********     (Rev-Share)
+                          ▼
+           Ecosystem Growth & New Explorers
 ```

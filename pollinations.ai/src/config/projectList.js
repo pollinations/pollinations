@@ -457,6 +457,16 @@ const allProjects = {
   ],
   llmIntegrations: [
     {
+      name: "🆕 MoneyPrinterTurbo",
+      url: "https://github.com/harry0703/MoneyPrinterTurbo",
+      description: "Simply provide a topic or keyword for a video, and it will automatically generate the video copy, video materials, video subtitles, and video background music before synthesizing a high-definition short video. Integrates Pollinations' text generation service to create engaging and relevant video scripts.",
+      author: "@harry0703",
+      repo: "https://github.com/harry0703/MoneyPrinterTurbo",
+      stars: 32186,
+      submissionDate: "2025-05-13",
+      order: 1,
+    },
+    {
       name: "🆕 Pollinations.AI Enhancer",
       url: "https://github.com/fisventurous/pollinationsai-enhancer",
       description: "A frontend-based AI interface designed to deliver a smooth, multimodal, and visually engaging user experience with conversational AI, image generation, and more.",

@@ -298,7 +298,16 @@ layout: two-cols-header
 
 <br>
 
-<img src="/media/market-tam-sam-som.png" alt="Market: TAM, SAM, SOM" class="w-7/8 rounded-lg shadow-lg" />
+
+**247B TAM** 🌐  
+Global AI-Contextual Ad Spend
+
+**3.4B SAM** 📣  
+GenAI in Advertising segment
+
+**22M ARR** 💻  
+(2027 target)
+Indie developers using Generative AI for apps, monetized via our platform
 
 ::right::
 
@@ -320,12 +329,7 @@ layout: two-cols-header
 *   Perfectly positioned for explosive growth.
 ## End
 
-* Significant opportunity in AI-contextual advertising.
-* Targeting a $140B (2025) Serviceable Addressable Market in indie app/web AI ad inventory. Our initial beachhead is the $3.4B Generative AI advertising segment, aiming for €22M ARR by EOY 2027.
-
-Add: 
-* Nested circle diagram showing market sizes: TAM, SAM, and SOM.
-![Youth Ad Market](../media/youth-ad-market.png)
+<img src="/media/market-tam-sam-som.png" alt="Market: TAM, SAM, SOM" class="w-7/8 rounded-lg shadow-lg" />
 -->
 
 ---

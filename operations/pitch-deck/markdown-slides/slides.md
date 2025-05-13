@@ -26,7 +26,7 @@ themeConfig:
 layout: two-cols-header
 ---
 
-# <span class="bg-red-600 text-white p-2 rounded">**🔗 Challenge: A Disconnected App Ecosystem**</span>
+# <span class="bg-red-600 text-white p-2 rounded">**🔗 Challenge**</span>
 <br>
 
 ## ***The current ecosystem forces painful trade-offs*** 😞
@@ -368,6 +368,12 @@ layout: two-cols-header
 </div>
 
 <!--
+
+*   "Phase 3, 'Profit Together,' is crucial for long-term success. Top-performing apps join our Partner Tier."
+*   "They receive a **50% share of the net ad revenue** they help generate."
+*   "This isn't just about sharing; it's **strategic retention.** It ensures our biggest successes grow *with* us, not away to other platforms, preventing churn."
+*   "This model **directly incentivizes the creation of high-quality, high-traffic apps,** fueling the entire ecosystem."
+
 
 ## **1 🚀 Create For Free** (Live)
 #

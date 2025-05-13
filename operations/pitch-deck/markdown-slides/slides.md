@@ -53,7 +53,7 @@ layout: two-cols-header
 # **Advertisers**
 ### 🎯 Struggle to reach audiences in new AI apps
 #
-### 💸 Miss out on contextual advertising opportunities
+### 💸  Generic ads lacking context & personalization
 
 <!--
 ## Speaker Notes for Slide 2: Problem Statement
@@ -91,7 +91,7 @@ layout: two-cols-header
 # 🏢 Advertisers
 ## **Reach AI-Natives**
 >### - Untapped Ad Space
->### - AI-Powered Targeting
+>### - Context-Aware & Dynamic
 
 ::right::
 

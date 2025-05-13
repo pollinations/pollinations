@@ -93,7 +93,9 @@ src: ./docs/08-sdk-ad-integration.md
 src: ./docs/16-due-diligence.md
 ---
 
+---
 
+# Pitch Deck
 
 ---
 class: text-center

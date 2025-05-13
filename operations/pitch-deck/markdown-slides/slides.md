@@ -35,11 +35,10 @@ class: text-center
 ---
 
 <div class="flex justify-center">
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
+  <video class="w-full rounded-lg shadow-lg" autoplay noloop muted>
     <source src="/media/pixpal-language-ad.mp4" type="video/mp4">
   </video>
 </div>
-
 
 ---
 layout: two-cols-header
@@ -48,13 +47,13 @@ layout: two-cols-header
 ::left::
 
 <div class="mx-2">
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted>
     <source src="/media/what-do-we-do_slideshow-1.mp4" type="video/mp4">
   </video>
 
   <div class="mb-4"></div>
 
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted>
     <source src="/media/what-do-we-do_slideshow-2.mp4" type="video/mp4">
   </video>
 </div>
@@ -74,25 +73,26 @@ layout: two-cols-header
 </div>
 
 ---
+layout: two-cols-header 
+---
 
 # <span class="bg-blue-500 text-white p-2 rounded">**🎮 Showcase: Roblox Integration**</span>
 
-**MAIN MESSAGE: Live User Growth**
+::left::
 
-**REMOVE: Technical details about integration - focus on numbers and impact**
+## 🏆 **Number 1** AI Game in Roblox
+#
+## 👍 **10M+** likes
+#
+## 👥 **2M** MAU
+#
+## 💰 **$150/day** revenue
 
-<div class="grid grid-cols-2 gap-4 mb-4">
-  <div>
-    <img src="/media/roblox_usage.png" alt="Roblox Usage" class="w-2/3 rounded-lg shadow-lg" />
-    <br />
-    <br />
-    <img src="/media/character_rp_top_roblox_ai_game.png" alt="Character RP - Top Roblox AI Game" class="w-full rounded-lg shadow-lg" />
-  </div>
-  <div>
-    <video class="w-full rounded-lg shadow-lg" autoplay loop muted>
-      <source src="/media/roblox_video.mov" type="video/mp4">
-    </video>
-  </div>
+::right::
+<div class="flex justify-center items-center h-full">
+  <video class="w-4/4 rounded-lg shadow-lg" autoplay loop muted>
+    <source src="/media/roblox_video.mov" type="video/mp4">
+  </video>
 </div>
 
 <!--
@@ -493,7 +493,7 @@ layout: two-cols-header
     </tr>
     <tr>
       <td>Ad-Based Monetization</td>
-      f<td>✅&nbsp;&nbsp;&nbsp;(2026)</td>
+      <td>✅&nbsp;&nbsp;&nbsp;(2026)</td>
       <td>❌</td>
       <td>❌</td>
       <td>✅</td>
@@ -501,10 +501,6 @@ layout: two-cols-header
     </tr>
   </tbody>
 </table>
-
-
-
-
 
 <!--
 **Speaking Points - Competitive Moat:**
@@ -529,8 +525,6 @@ we could try a "yes" / "no" cross table here
 * **Core Advantage:** Our unique Free API + Shared Ad Revenue model is our fundamental differentiator.
 * **Proven Model:** Unity has proven the underlying ad/rev-share model generates billions.
 -->
-
-
 
 ---
 layout: two-cols-header

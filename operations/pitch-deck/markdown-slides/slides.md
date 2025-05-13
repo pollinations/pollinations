@@ -24,18 +24,6 @@ themeConfig:
 *   Zero upfront cost, shared success.
 ## End
 
-## Speaking Points:
-- We're Pollinations.ai.
-- AI empowers everyone to create.
-- Our mission: Easy to build and monetize AI apps.
-- Zero upfront cost, shared success.
-## End
-
-
-* **Introduction:** We are Pollinations.AI
-* **Mission:** AI empowers everyone to create
-* **Value Proposition:** The easiest way to build AND monetize AI apps
-* **Key Differentiators:** Zero upfront cost, shared success model
 -->
 
 
@@ -73,7 +61,6 @@ layout: two-cols-header
 
 <!--
 ## Speaker Notes for Slide 2: Problem Statement
-*   Current AI app world: broken.
 *   Creators: high costs, no clear path to earn.
 *   Advertisers: can't reach engaged AI-native audiences.
 *   It's a lose-lose.
@@ -86,12 +73,6 @@ layout: two-cols-header
   * Prohibitive AI access costs
   * Infrastructure complexity
 
-* **Ad Provider/Brand Pain Points:**
-
-  * Missing youth demographic - particularly Gen Z
-  * No AI-native targeting mechanisms
-
-* **Core Market Problem:** System friction prevents an open ecosystem where developers can earn from success (make this into a short phrase that covers both creators and advertisers - the message to take away from this slide)
 -->
 
 ---
@@ -106,17 +87,15 @@ layout: two-cols-header
 ::left::
 
 # 👩‍💻 Creators
-## **Build & Monetize AI Instantly**
+## **Build & Monetize**
 >### - Effortless AI Integration
->### - Seamless Ad Monetization
 >### - Clear Path to Profit
 <br>
 
 # 🏢 Advertisers
-## **Reach AI-Native Audiences**
->### - Vast, Untapped Ad Space
->### - Highly Engaged Users
->### - Powerful Contextual Targeting
+## **Reach AI-Natives**
+>### - Untapped Ad Space
+>### - AI-Powered Targeting
 
 ::right::
 
@@ -128,50 +107,13 @@ layout: two-cols-header
 
 <!--
 ## Speaker Notes for Slide 3: Solution
-*   Pollinations.ai fixes this.
 *   **Creators:** Effortless AI, clear path idea-to-income, starts free.
-*   **Advertisers:** Untapped ad space, engaged users (often younger) in creative AI.
-## End
-
-### For Creators: 
-* Effortless AI Integration:
-    * One SDK unlocks powerful generative AI. 
     * We manage infrastructure & scaling, you innovate on user experience.
-* Seamless Ad Monetization:
-    * Turnkey ad integration via the same SDK. 
-    * Minimal code, diverse formats:
-        * Real-Time Contextual Ads: Native feel, AI-powered relevance.
-        * In-App Rich Media: Engaging video, interactive & display ads.
-        * Affiliate Program Links: Curated offers within your app's flow.
-* Clear Path to Profit:
     * Ads cover compute costs ➔ Unlock unlimited usage & 50/50 Net Ad Revenue Share (Partner Tier).
-
-* For Advertisers: Reach AI-Native Audiences
-    * Vast, Untapped Ad Inventory:
-        * Access a rapidly growing network of unique AI applications and scale your reach in emerging digital spaces.
-    * Highly Engaged Users:
-        * Connect with audiences (often Gen Z & Millennials) at moments of peak creativity and interaction within AI experiences.
-    * Powerful Contextual Targeting:
-        * Deliver relevant, AI-powered ads within novel AI-driven content, ensuring brand safety and impact.
-
-
-**Current Slide Content (to speak to each bullet):**
-
-**For Creators:**
-* **Zero-Cost Launch:** Free API access to powerful AI models
 * **Focus on Frontend:** We handle all backend complexity
-* **Built-in Monetization:** Ad revenue covers compute costs first
-* **Shared Success:** 50/50 net ad revenue share (Partner Tier)
-
-**For Advertisers:**
 * **Access to highly engaged Gen-Z and Millennial audiences**
 * **New Ad Inventory:** Access rapidly growing network of AI apps
-* **Contextual Targeting:** AI-powered relevance in new environments
-
-
-
-* **Solution Concept:** "AI App Factory" - simplifies building AND monetizing AI apps
-
+## End
 
 ![Pollinations Fix Diagram](../media/pollinations_fix_genz.png)
 
@@ -275,12 +217,10 @@ layout: two-cols
     *   #1 AI game on Roblox.
     *   2 million monthly users.
     *   Already earning $150/day.
-*   Proves our model works (pre-full launch).
+* **User Value:** Players generate AI characters and interact in real-time
+*   Proof of nectar model (pre-full launch).
 ## End
 
-**Speaking Points - Roblox Showcase:**
-* **Concrete Example:** Real-world application in high-growth gaming platform
-* **User Value:** Players generate AI characters and interact in real-time
 -->
 
 ---
@@ -334,30 +274,12 @@ layout: two-cols-header
     *   3M+ monthly end-users.
     *   100M+ media generations/month.
     *   Growing 30% MoM.
-*   300+ apps live, 13k+ community.
+*   300+ apps live (+3 every day), 14k engaged discord community.
 *   Huge organic demand.
+* **Proof of Model:** Traction validates both ease of building and potential for shared success
 ## End
 
-Traction & KPIs: Current ~3M Ecosystem MAU and 100M+ monthly media generations provide a strong foundation, anchors a flywheel already in motion
-**Speaking Points - Traction:**
-* **Growth Metrics:**
-  * Processing >100 MILLION media generations monthly
-  * 30% month-over-month growth in API requests
-  * 3M monthly active users across platform
-  * 13K+ Discord community members
-
-* **Developer Adoption:**
-  * 300+ live applications integrated with our API
-  * 2+ new apps being built daily on our platform
-
-* **Success Stories:**
-  * **Roblox Game:** 'AI Character RP' with 10M+ likes, 2M MAU, generating revenue (how much? what percentage of cost?)
-  * **Power Users:** SillyTavern community integration for advanced AI users
-  * **Enterprise Adoption:** Integration with Alibaba's Qwen Agent framework
-
 ![Geographic Distribution](../media/piechart_countries_genz.png)
-
-* **Proof of Model:** Traction validates both ease of building and potential for shared success
 
 ![Traction Metrics](../media/traction_infoslide3.png)
 
@@ -376,7 +298,15 @@ layout: two-cols-header
 
 <br>
 
-<img src="/media/market-tam-sam-som.png" alt="Market: TAM, SAM, SOM" class="w-7/8 rounded-lg shadow-lg" />
+
+## **247B TAM** 🌐  
+Global AI-Contextual Ad Spend
+
+## **3.4B SAM** 📣  
+GenAI in Advertising segment
+
+## **22M ARR** (2027)💻  
+Indie AI-native apps
 
 ::right::
 
@@ -398,12 +328,7 @@ layout: two-cols-header
 *   Perfectly positioned for explosive growth.
 ## End
 
-* Significant opportunity in AI-contextual advertising.
-* Targeting a $140B (2025) Serviceable Addressable Market in indie app/web AI ad inventory. Our initial beachhead is the $3.4B Generative AI advertising segment, aiming for €22M ARR by EOY 2027.
-
-Add: 
-* Nested circle diagram showing market sizes: TAM, SAM, and SOM.
-![Youth Ad Market](../media/youth-ad-market.png)
+<img src="/media/market-tam-sam-som.png" alt="Market: TAM, SAM, SOM" class="w-7/8 rounded-lg shadow-lg" />
 -->
 
 ---
@@ -438,49 +363,26 @@ layout: two-cols-header
 
 <!--
 ## Speaker Notes for Slide 9: Business Model
-*   Our 3-step journey:
-    1.  **Create For Free** (Live).
-    2.  **Scale & Self-Fund** (Beta): Ads cover costs -> unlimited app use.
-    3.  **Profit Together** (2026): Top apps get 50/50 net ad revenue split.
-*   A win-win model.
+* **3-Step Journey Explained:**
+    1. **Create For Free (Live):** Easy entry with free tools attracts a wide developer base
+    2. **Scale & Self-Fund (H2 2025):** Successful apps integrate ads, cover costs, unlock unlimited usage
+    3. **Profit Together (H2 2026):** Strategic retention through 50/50 revenue sharing
+
+* **Key Benefits:**
+    * Prevents platform churn by growing *with* successful creators
+    * Incentivizes high-quality, high-traffic app creation
+    * Improves unit economics over time as AI costs decrease
+
+* **Note:** Successful apps = ad revenue > compute costs
 ## End
-
-*   "Phase 3, 'Profit Together,' is crucial for long-term success. Top-performing apps join our Partner Tier."
-*   "They receive a **50% share of the net ad revenue** they help generate."
-*   "This isn't just about sharing; it's **strategic retention.** It ensures our biggest successes grow *with* us, not away to other platforms, preventing churn."
-*   "This model **directly incentivizes the creation of high-quality, high-traffic apps,** fueling the entire ecosystem."
-
-
-## **1 🚀 Create For Free** (Live)
-#
->#### - No-cost AI tools, limited usage
->#### - Pollinations retains 100% of ad revenue
-
-<br>
-
-## **2 📈 Scale & Self-Fund** (Beta)
-#
->#### - Successful apps get unlimited usage
->#### - Pollinations retains 100% of ad revenue
-
-<br>
-
-## **3 💰 Profit Together** (2026)
-#
->#### - Top-performing apps join the Partner tier
->#### - 50% of Ad Revenue goes back to the App
-
-add media: creator funnel or per app revenue per month numbers
-
-note: Successful apps = ad revenue > compute costs
 
 
 ## The Pollinations Flywheel 🚀
-* **Empowering Creators ('Vibe Coders')** : Build & monetize innovative AI apps, easily.
-* **Attracting Advertisers (Brands)** : Reach engaged audiences in unique AI contexts.
+* **Empowering Creators:** Build & monetize innovative AI apps
+* **Attracting Advertisers:** Reach engaged audiences in AI contexts
 
 ## How do we make money? 🔄
-* Enables indie creators to build, deploy, & monetize AI apps, targeting a multi-billion dollar AI-contextual advertising market.
+* Multi-billion dollar AI-contextual advertising market
 
 <div v-click="1">
 * **Revenue Model:** 50/50 ad revenue share with developers
@@ -494,26 +396,9 @@ note: Successful apps = ad revenue > compute costs
 * **Live Pilots:** Contextual ads (CPM $1-2), Affiliate referrals
 </div>
 
-
-
-We make building and monetizing AI apps frictionless and economically viable for creators, while providing brands with novel, effective channels to reach valuable audiences. This creates a self-reinforcing flywheel, fueling the growth of the entire AI creator ecosystem.
-
-1 Free Experimentation (Explorer → Creator): Easy entry and free tools attract a wide developer base, acting as an investment in future monetizable applications. (Ongoing)
-2 Ad-Funded Scaling (Creator → Innovator): Successful apps integrate ads, cover their costs, and unlock unlimited usage, SOTA models, and enhanced visibility through the Marketplace, driving app discovery. (H2 2025)
-3 Revenue Partnership (Innovator → Partner): Top Innovators share 50/50 in net ad revenue, turning projects into businesses and showcasing platform success. (H2 2026)
-
-* **Economic Advantages:**
-  * Cost per AI media generation is dropping each year
-  * Ad revenue potential per interaction remains strong
-  * Unit economics improve over time, making our free, ad-supported model increasingly sustainable
-
-**End-user:** Consumer
-**Creator:** Affiliate
-**Brand:** Advertiser
-**Us:** Platform
-
-note: this flywheel description may be better than the one we have on the slide. find a nice way to separate it between slide and speaker notes.
-Flywheel: By solving these dual problems, pollinations.ai creates a virtuous cycle: More developers build innovative apps on our free platform -> This attracts more end-users -> This creates more valuable, AI-native ad inventory -> This attracts brands and ad revenue -> A portion of this revenue is shared back with successful developers, incentivizing further creation and platform growth, while also funding the free tier for new entrants.
+<!--
+Flywheel: More developers build on our free platform → More end-users → More AI-native ad inventory → More ad revenue → Revenue shared with developers → Platform growth
+-->
 -->
 
 ---

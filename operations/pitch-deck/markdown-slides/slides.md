@@ -7,8 +7,6 @@ themeConfig:
 
 <!-- Slide 1: Title Slide -->
 
-**REMOVE: Generic mission statement - be more specific about monetization**
-
 # ![Pollinations.ai Logo](/media/pollinations-ai-logo.png)
 
 ## Spark Creation, Unlock Ad Revenue
@@ -42,9 +40,9 @@ layout: two-cols-header
 
 #
 # **App Creators**
-### 🧪 Struggle to experiment or scale
+### 🧪 Struggle to experiment and scale
 #
-### 💰 No clear path for monetization
+### 💰 Struggle to monetize
 
 ::right::
 

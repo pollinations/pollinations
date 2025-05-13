@@ -143,9 +143,9 @@ layout: two-cols-header
 
 #
 # **App Creators**
-### 🧪 Struggle to experiment or scale
+### 🧪 Struggle to experiment and scale
 #
-### 💰 No clear path for monetization
+### 💰 Struggle to monetize
 
 ::right::
 

@@ -2,6 +2,7 @@
 class: text-center
 colorSchema: light
 themeConfig:
+  background: "#FFFFFF"
 ---
 
 **REMOVE: Generic mission statement - be more specific about monetization**
@@ -20,84 +21,6 @@ themeConfig:
 * **Key Differentiators:** Zero upfront cost, shared success model
 -->
 
-
----
-class: text-center
-layout: center
----
-
-# <span class="bg-orange-600 text-white p-2 rounded text-6xl">**WHAT DO WE DO?**</span>
-
----
-class: text-center
----
-
-<div class="flex justify-center">
-  <video class="w-full rounded-lg shadow-lg max-h-[70vh] object-contain" autoplay noloop muted>
-    <source src="/media/pixpal-language-ad.mp4" type="video/mp4">
-  </video>
-</div>
-
----
-layout: two-cols-header
----
-
-::left::
-
-<div class="mx-2">
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted>
-    <source src="/media/what-do-we-do_slideshow-1.mp4" type="video/mp4">
-  </video>
-
-  <div class="mb-4"></div>
-
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted>
-    <source src="/media/what-do-we-do_slideshow-2.mp4" type="video/mp4">
-  </video>
-</div>
-
-::right::
-
-<div class="mx-2">
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
-    <source src="/media/what-do-we-do_slideshow-3.mp4" type="video/mp4">
-  </video>
-
-  <div class="mb-4"></div>
-
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
-    <source src="/media/what-do-we-do_slideshow-4.mp4" type="video/mp4">
-  </video>
-</div>
-
----
-layout: two-cols-header 
----
-
-# <span class="bg-blue-500 text-white p-2 rounded">**🎮 Showcase: Roblox Integration**</span>
-
-::left::
-
-## 🏆 **Number 1** AI Game in Roblox
-#
-## 👍 **10M+** likes
-#
-## 👥 **2M** MAU
-#
-## 💰 **$150/day** revenue
-
-::right::
-<div class="flex justify-center items-center h-full">
-  <video class="w-4/4 rounded-lg shadow-lg" autoplay loop muted>
-    <source src="/media/roblox_video.mov" type="video/mp4">
-  </video>
-</div>
-
-<!--
-**Speaking Points - Roblox Showcase:**
-* **Concrete Example:** Real-world application in high-growth gaming platform
-* **User Value:** Players generate AI characters and interact in real-time
--->
 
 ---
 layout: two-cols-header
@@ -148,6 +71,24 @@ layout: two-cols-header
 * **Core Market Problem:** System friction prevents an open ecosystem where developers can earn from success (make this into a short phrase that covers both creators and advertisers - the message to take away from this slide)
 -->
 
+**MAIN MESSAGE: Build, Deploy, Profit**
+
+**REMOVE: Generic mission statement - be more specific about monetization**
+
+# ![Pollinations.ai Logo](/media/pollinations-ai-logo.png)
+
+## AI Empowers Everyone to Create
+
+**Unlocking AI App Monetization at Scale**
+
+<!--
+**Speaking Points:**
+* **Introduction:** We are Pollinations.AI
+* **Mission:** AI empowers everyone to create
+* **Value Proposition:** The easiest way to build AND monetize AI apps
+* **Key Differentiators:** Zero upfront cost, shared success model
+-->
+
 ---
 layout: two-cols-header
 ---
@@ -179,6 +120,7 @@ layout: two-cols-header
 </div>
 
 <!--
+
 
 ### For Creators: 
 * Effortless AI Integration:
@@ -224,31 +166,78 @@ layout: two-cols-header
 
 -->
 
+
+
+---
+class: text-center
 ---
 
-# <span class="bg-pink-600 text-white p-2 rounded">**💬 Showcase: Ad Placement in Responses**</span>
-
-**MAIN MESSAGE: Revenue In Action**
-
-**REMOVE: Platform-specific details - emphasize the universal ad integration**
-
-<div class="flex justify-center items-center h-full">
-  <img src="/media/ai_girlfriend_advert_discord.png" alt="AI Girlfriend Advertisement" class="w-2/4 rounded-lg shadow-lg">
+<div class="flex justify-center">
+  <video class="w-full rounded-lg shadow-lg max-h-[70vh] object-contain" autoplay noloop muted>
+    <source src="/media/pixpal-language-ad.mp4" type="video/mp4">
+  </video>
 </div>
 
-<div class="text-center text-xl mt-4">
-  <em>Real-world example of ad integration in Discord communities</em>
+---
+layout: two-cols-header
+---
+
+::left::
+
+<div class="mx-2">
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted>
+    <source src="/media/what-do-we-do_slideshow-1.mp4" type="video/mp4">
+  </video>
+
+  <div class="mb-4"></div>
+
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted>
+    <source src="/media/what-do-we-do_slideshow-2.mp4" type="video/mp4">
+  </video>
+</div>
+
+::right::
+
+<div class="mx-2">
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
+    <source src="/media/what-do-we-do_slideshow-3.mp4" type="video/mp4">
+  </video>
+
+  <div class="mb-4"></div>
+
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
+    <source src="/media/what-do-we-do_slideshow-4.mp4" type="video/mp4">
+  </video>
+</div>
+
+
+---
+layout: two-cols-header 
+---
+
+# <span class="bg-blue-500 text-white p-2 rounded">**🎮 Showcase: Roblox Integration**</span>
+
+::left::
+
+## 🏆 **Number 1** AI Game in Roblox
+#
+## 👍 **10M+** likes
+#
+## 👥 **2M** MAU
+#
+## 💰 **$150/day** revenue
+
+::right::
+<div class="flex justify-center items-center h-full">
+  <video class="w-4/4 rounded-lg shadow-lg" autoplay loop muted>
+    <source src="/media/roblox_video.mov" type="video/mp4">
+  </video>
 </div>
 
 <!--
-**Speaking Points - AI Companion Showcase:**
-* **Revenue Example:** Illustrates our ad-based monetization model in action
-* **Contextual Integration:** Advertisement seamlessly integrated into AI conversation flow
-* **Discovery Path:** Users discover new AI experiences through relevant, non-disruptive ads
-* **Multi-Platform Reach:** Works across Discord, web, mobile platforms with same API
-* **Developer Benefits:** Creator earns revenue through our ad-sharing system
-* **Real-World Impact:** Demonstrates how our platform connects AI experiences to new audiences
-* **User Experience:** Maintains free access to AI capabilities while supporting creators
+**Speaking Points - Roblox Showcase:**
+* **Concrete Example:** Real-world application in high-growth gaming platform
+* **User Value:** Players generate AI characters and interact in real-time
 -->
 
 ---
@@ -364,6 +353,23 @@ layout: two-cols-header
 ::left::
 
 ## **1 🚀 Create For Free** (Live)
+
+<br>
+
+## **2 📈 Scale & Self-Fund** (Beta)
+
+<br>
+
+## **3 💰 Profit Together** (2026)
+
+::right::
+<div class="flex justify-center">
+  <img src="/media/business-flywheel.png" alt="Business Flywheel" class="w-6/7 rounded-lg shadow-lg" />
+</div>
+
+<!--
+
+## **1 🚀 Create For Free** (Live)
 #
 >#### - No-cost AI tools, limited usage
 >#### - Pollinations retains 100% of ad revenue
@@ -382,12 +388,6 @@ layout: two-cols-header
 >#### - Top-performing apps join the Partner tier
 >#### - 50% of Ad Revenue goes back to the App
 
-::right::
-<div class="flex justify-center">
-  <img src="/media/business-flywheel.png" alt="Business Flywheel" class="w-6/7 rounded-lg shadow-lg" />
-</div>
-
-<!--
 add media: creator funnel or per app revenue per month numbers
 
 note: Successful apps = ad revenue > compute costs
@@ -438,12 +438,10 @@ Flywheel: By solving these dual problems, pollinations.ai creates a virtuous cyc
 layout: two-cols-header
 ---
 
-# <span class="bg-yellow-600 text-white p-2 rounded">**🛡️ Where the Competition Stops, We Monetize**</span>
+# <span class="bg-yellow-600 text-white p-2 rounded">**🛡️ Competition**</span>
 
 <div class="mb-10"></div>
 
-## 🚀 **From Prompt to Profit: The Context-Aware AI Platform**
-#
 
 <table>
   <thead>
@@ -451,7 +449,6 @@ layout: two-cols-header
       <th>Feature</th>
       <th><b>pollinations.ai</b></th>
       <th>Hugging Face</th>
-      <th>RunwayML</th>
       <th>Roblox</th>
       <th>GIPHY</th>
     </tr>
@@ -462,13 +459,11 @@ layout: two-cols-header
       <td>✅</td>
       <td>✅</td>
       <td>❌</td>
-      <td>❌</td>
       <td>✅</td>
     </tr>
     <tr>
       <td>No Login Required</td>
       <td>✅</td>
-      <td>❌</td>
       <td>❌</td>
       <td>❌</td>
       <td>✅</td>
@@ -477,28 +472,24 @@ layout: two-cols-header
       <td>Multi-modal (Text, Img, Audio)</td>
       <td>✅</td>
       <td>✅</td>
-      <td>🟡 Visual Only</td>
       <td>❌</td>
       <td>❌</td>
-    </tr>
-    <tr>
-      <td>Frictionless Embeds</td>
-      <td>✅</td>
-      <td>❌</td>
-      <td>❌</td>
-      <td>❌</td>
-      <td>✅</td>
     </tr>
     <tr>
       <td>Ad-Based Monetization</td>
       <td>✅&nbsp;&nbsp;&nbsp;(2026)</td>
-      <td>❌</td>
       <td>❌</td>
       <td>✅</td>
       <td>✅</td>
     </tr>
   </tbody>
 </table>
+
+<br>
+<br>
+
+## *From Prompt to Profit: The Context-Aware AI Platform*
+
 
 <!--
 **Speaking Points - Competitive Moat:**
@@ -538,7 +529,7 @@ layout: two-cols-header
 #
 ## **Elliot Fouchy** COO
 ### 🚀 Executes strategy & Finance
-### 🛠️ Leads delivery & operations
+### 🛠️ Leads delivery & Operations
 
 #
 
@@ -546,16 +537,15 @@ layout: two-cols-header
 
 ::right::
 
-## **Strategic Hires** (Now)
+## **Strategic Hires**
 #
-#### **1️⃣ Digital Ads & Monetization Strategist** (with focus on brand partnerships)
+### **1️⃣ Growth and Marketing Specialist**
 #
-#### **2️⃣ MLOps & Infrastructure Engineer**
+### **2️⃣ MLOps & Infrastructure Lead**
 #
-#### **3️⃣ Community & Creator Success Manager:**
-#### *Kalam Al-Hajj* : Seasoned innovator to empower creators and accelerate growth
+### **3️⃣ Community & Games Lead**
 #
->#### **4️⃣ Finance & Payout Operations Specialist** (planned 2026)
+### **4️⃣ Rev Share Specialist** (2026) 
 
 <!--
 **Speaking Points - Team:**

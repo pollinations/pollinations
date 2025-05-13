@@ -331,19 +331,21 @@ layout: two-cols-header
 
 ::left::    
 
-# ***Massive scale for AI-driven ad monetization***
+<br>
+
+<img src="/media/market-tam-sam-som.png" alt="Market: TAM, SAM, SOM" class="w-7/8 rounded-lg shadow-lg" />
 
 ::right::
 
-## **247B** TAM
->### *Global AI-Contextual Ad Spend*
-#
-## **3.4B** SAM
->### *GenAI in Advertising segment*
-#
-## **SOM : 22M ARR**
->### *Indie developers using Generative AI for apps, monetized via our platform*
->### ***(2027 target)***
+<br>
+
+<div class="text-center">
+  <h2><em>Massive scale for <br> <strong>AI-driven ad monetization</strong></em></h2>
+<br>
+  <div class="flex justify-center">
+    <img src="/media/market-growth.png" alt="Paintpoints" class="w-5/8 rounded-lg shadow-lg" />
+  </div>
+</div>
 
 <!--
 

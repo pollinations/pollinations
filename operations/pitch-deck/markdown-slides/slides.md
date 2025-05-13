@@ -225,13 +225,13 @@ layout: two-cols
 ---
 
 <div class="mx-2">
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted>
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted onloadedmetadata="this.currentTime = Math.random() * this.duration; this.playbackRate = 2.0;">
     <source src="/media/what-do-we-do_slideshow-1.mp4" type="video/mp4">
   </video>
 
   <div class="mb-4"></div>
 
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted>
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted onloadedmetadata="this.currentTime = Math.random() * this.duration; this.playbackRate = 2.0;">
     <source src="/media/what-do-we-do_slideshow-2.mp4" type="video/mp4">
   </video>
 </div>
@@ -239,13 +239,13 @@ layout: two-cols
 ::right::
 
 <div class="mx-2">
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls onloadedmetadata="this.currentTime = Math.random() * this.duration; this.playbackRate = 2.0;">
     <source src="/media/what-do-we-do_slideshow-3.mp4" type="video/mp4">
   </video>
 
   <div class="mb-4"></div>
 
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls onloadedmetadata="this.currentTime = Math.random() * this.duration; this.playbackRate = 2.0;">
     <source src="/media/what-do-we-do_slideshow-4.mp4" type="video/mp4">
   </video>
 </div>

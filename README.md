@@ -303,6 +303,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 Imagemate AI | A powerful image generation app designed to turn your imagination into stunning visuals with the help of advanced artificial intelligence. Built using the Pollinations AI API, Imagemate AI allows users to input a text prompt and instantly receive AI-generated images that match the description. | @Shanto-Islam | [Play Store](https://play.google.com/store/apps/details?id=com.madameweb.imgmate) |
 | 🆕 MVKProject Nexus API | An API platform specializing in artificial intelligence services: AI Chat Interaction with models like ChatGPT, Gemini, DeepSeek, and Meta AI, AI Image Generation powered by Pollinations, and AI Image Analysis for content description and insights. | @DarknessDEVV | [Website](https://nexus.adonis-except.xyz/), [GitHub](https://github.com/DarknessDEVV/-mvkproject-nexus) - ⭐ 1, [NPM](https://www.npmjs.com/package/@mvkproject/nexus) |
 | 🆕 IRINA by visuallink | Lightweight and simple online chat interface powered by pollinations | @thatalgp | [Website](https://irina-2--trivonca.on.websim.ai/) |
 | 🆕 KoboldAI | A browser-based front-end for AI-assisted writing with multiple local & remote AI models, including integration with Pollinations.AI for image generation | @henk717 | [Website](https://koboldai.net/), [GitHub](https://github.com/LostRuins/lite.koboldai.net) - ⭐ 3.7k |

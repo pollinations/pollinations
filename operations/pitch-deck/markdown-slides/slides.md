@@ -647,24 +647,24 @@ layout: two-cols-header
 ::left::
 
 - [🎤 Pitch Deck](/00)
-- [📑 Executive Summary](/14)
-- [🔭 Vision & Mission](/15)
-- [📈 Market Opportunity](/16)
-- [🌍 Ecosystem Analysis](/17)
-- [💰 Business Model](/18)
-- [💹 Financial Model](/19)
-- [🛣️ Roadmap](/20)
+- [📑 Executive Summary](/16)
+- [🔭 Vision & Mission](/17)
+- [📈 Market Opportunity](/18)
+- [🌍 Ecosystem Analysis](/19)
+- [💰 Business Model](/20)
+- [💹 Financial Model](/21)
+- [🛣️ Roadmap](/22)
 
 ::right::
 
-- [👥 Team](/21)
-- [🏗️ Tech Architecture](/22)
-- [🔌 SDK & Ad Integration](/23)
-- [🤝 Add Partners](/24)
-- [⚠️ Risk Register](/25)
-- [🥊 Competitive Landscape](/26)
-- [🚀 KPI & Traction Metrics](/27)
-- [🔍 Due Diligence](/28)
+- [👥 Team](/23)
+- [🏗️ Tech Architecture](/24)
+- [🔌 SDK & Ad Integration](/25)
+- [🤝 Add Partners](/26)
+- [⚠️ Risk Register](/27)
+- [🥊 Competitive Landscape](/28)
+- [🚀 KPI & Traction Metrics](/29)
+- [🔍 Due Diligence](/30)
 
 ---
 src: ./docs/01-executive-summary.md

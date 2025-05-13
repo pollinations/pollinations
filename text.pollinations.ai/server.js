@@ -292,10 +292,17 @@ async function handleRequest(req, res, requestData) {
         });
 
         if (requestData.stream) {
-            log('Sending streaming response with sendAsOpenAIStream');
             // Add requestData to completion object for access in streaming ad wrapper
             completion.requestData = requestData;
-            sendAsOpenAIStream(res, completion, req);
+            
+            // For GET requests, use plain text streaming
+            if (req.method === 'GET') {
+                log('Sending streaming response with sendAsPlainTextStream for GET request');
+                sendAsPlainTextStream(res, completion, req);
+            } else {
+                log('Sending streaming response with sendAsOpenAIStream');
+                sendAsOpenAIStream(res, completion, req);
+            }
         } else {
             if (req.method === 'GET') {
                 sendContentResponse(res, completion);
@@ -795,6 +802,146 @@ if (completion) {
         }] 
     })}\n\n`);
     res.write('data: [DONE]\n\n');
+    res.end();
+}
+
+// Function to stream plain text responses without using OpenAI's SSE format
+function sendAsPlainTextStream(res, completion, req = null) {
+    log('sendAsPlainTextStream called with completion type:', typeof completion);
+    if (completion) {
+        log('Completion properties:', {
+            hasStream: completion.stream,
+            hasResponseStream: !!completion.responseStream,
+            isCachedStream: !!completion.cachedStream,
+            errorPresent: !!completion.error
+        });
+    }
+    
+    // Set headers for plain text streaming
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Transfer-Encoding', 'chunked');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+    
+    // Handle error responses in streaming mode
+    if (completion.error) {
+        errorLog('Error detected in streaming request, sending plain text error');
+        res.write('Error: ' + (completion.error.message || 'An error occurred'));
+        res.end();
+        return;
+    }
+    
+    // Handle streaming response from the API
+    const responseStream = completion.responseStream;
+    log('Got streaming response from API, provider:', completion.providerName);
+    
+    // If we have a responseStream, try to proxy it
+    if (responseStream) {
+        log('Attempting to proxy plain text stream to client');
+        
+        // For Node.js Readable streams
+        if (responseStream.pipe) {
+            log('Using transform stream for plain text output');
+            
+            // Get messages from the request data
+            const messages = req ? (
+                // Try to get messages from different sources
+                (req.body && req.body.messages) || 
+                (req.requestData && req.requestData.messages) || 
+                (completion.requestData && completion.requestData.messages) ||
+                []
+            ) : [];
+            
+            // Create a transform stream that extracts text content from OpenAI format
+            const { Transform } = require('stream');
+            const plainTextTransform = new Transform({
+                objectMode: true,
+                transform(chunk, encoding, callback) {
+                    try {
+                        // Convert chunk to string if it's a Buffer
+                        const chunkStr = Buffer.isBuffer(chunk) ? chunk.toString('utf8') : chunk;
+                        
+                        // If the chunk is already plain text, push it as is
+                        if (!chunkStr.startsWith('data:')) {
+                            this.push(chunkStr);
+                            return callback();
+                        }
+                        
+                        // Parse SSE format: split by double newlines and process 'data:' lines
+                        const lines = chunkStr.split('\n\n');
+                        for (const line of lines) {
+                            if (line.startsWith('data:') && line !== 'data: [DONE]') {
+                                try {
+                                    // Extract content from OpenAI format
+                                    const data = JSON.parse(line.slice(5));
+                                    if (data.choices && data.choices[0]) {
+                                        const delta = data.choices[0].delta;
+                                        if (delta && delta.content) {
+                                            this.push(delta.content);
+                                        }
+                                    }
+                                } catch (e) {
+                                    // If JSON parsing fails, push the raw line without 'data:' prefix
+                                    const content = line.slice(5).trim();
+                                    if (content && content !== '[DONE]') {
+                                        this.push(content);
+                                    }
+                                }
+                            }
+                        }
+                        callback();
+                    } catch (error) {
+                        callback(error);
+                    }
+                }
+            });
+            
+            // Check if we have messages and should process the stream for ads
+            if (req && messages.length > 0) {
+                log('Processing plain text stream for ads with', messages.length, 'messages');
+                
+                // Create a wrapped stream that will add ads at the end
+                const wrappedStream = createStreamingAdWrapper(
+                    responseStream, 
+                    req, 
+                    messages
+                );
+                
+                // Pipe through the transform stream to convert to plain text
+                wrappedStream
+                    .pipe(plainTextTransform)
+                    .pipe(res);
+                
+                // Handle client disconnect
+                if (req) req.on('close', () => {
+                    log('Client disconnected from plain text stream');
+                    if (plainTextTransform.destroy) plainTextTransform.destroy();
+                    if (wrappedStream.destroy) wrappedStream.destroy();
+                    if (responseStream.destroy) responseStream.destroy();
+                });
+            } else {
+                // Pipe through the transform stream without ad processing
+                log('Directly piping to plain text transform stream');
+                responseStream
+                    .pipe(plainTextTransform)
+                    .pipe(res);
+                
+                // Handle client disconnect
+                if (req) req.on('close', () => {
+                    log('Client disconnected from plain text stream');
+                    if (plainTextTransform.destroy) plainTextTransform.destroy();
+                    if (responseStream.destroy) responseStream.destroy();
+                });
+            }
+            
+            return;
+        }
+    }
+    
+    // If we get here, we couldn't handle the stream properly
+    log('Could not handle plain text stream properly, falling back to default response');
+    res.write('Streaming response could not be processed.');
     res.end();
 }
 

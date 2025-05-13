@@ -195,9 +195,10 @@ AFFILIATE ID:`;
  * @param {string} affiliateId - The ID of the affiliate to generate an ad for
  * @param {string} content - The original content to match language with
  * @param {Array} messages - The original messages for context
+ * @param {boolean} markerFound - Whether the p-ads marker was found
  * @returns {Promise<string|null>} - The ad string or null if generation failed
  */
-export async function generateAffiliateAd(affiliateId, content = '', messages = []) {
+export async function generateAffiliateAd(affiliateId, content = '', messages = [], markerFound = false) {
     if (!affiliateId) {
         log('No affiliate ID provided for ad generation');
         return null;
@@ -236,32 +237,38 @@ export async function generateAffiliateAd(affiliateId, content = '', messages = 
             log(`No specific text for ${affiliateId}, using generic ad text.`);
         }
 
-        // Detect language and translate ad text if content is provided
+        // First, contextualize and translate ad text if content is provided
         if (content && content.trim().length > 0) {
-            // Use the entire content for language detection instead of just a snippet
-            const sampleText = content;
+            // Collect context from the conversation
+            const lastMessages = messages.slice(-3).map(m => m.content || "").filter(Boolean);
+            const conversationContext = [...lastMessages, content].join("\n");
 
-            // Use LLM to detect language and translate
-            const translationPrompt = `
-You are a professional translator. First, detect the language of the provided text sample.
+
+            // Create a prompt that adapts the ad to the conversation context
+            const contextualPrompt = `
+You are an expert advertising copywriter who creates short, concise, and highly personalized ads based on conversation context.
 
 IMPORTANT INSTRUCTIONS:
-1. If the detected language is English, respond with "ENGLISH" followed by the original advertisement text unchanged.
-2. If the detected language is NOT English, translate the advertisement to match that language and respond with the language name followed by the translated text.
-3. Return your response in this exact format: "LANGUAGE_NAME: translated_text"
-4. Preserve any markdown links in the format [text](url)
-5. Do not add any explanations or additional text
+1. First, analyze the conversation context to understand the topic, style, and specific details (like language being discussed, technologies mentioned, etc.)
+2. Create a SHORT and CONCISE advertisement that is highly relevant to this specific conversation
+3. Maximum length should be 1 sentence - brevity is essential
+4. Make the ad feel targeted and personalized to the conversation topic
+5. Preserve the existing markdown links in the format [text](url) - these MUST remain intact
+6. Match the language of the conversation (translate if needed)
+7. Use a direct, engaging tone with specific references to the conversation topic
+8. Return your response in this exact format: "LANGUAGE_NAME: your_contextualized_ad_text"
+9. Remember. The shorter and more personal, the sweeter.
 
-TEXT FOR LANGUAGE DETECTION:
-${sampleText}
+CONVERSATION CONTEXT:
+${conversationContext}
 
-ADVERTISEMENT TO TRANSLATE:
+ORIGINAL ADVERTISEMENT TO ADAPT:
 ${adTextSource}
 
 RESPONSE:`;
 
             try {
-                const completion = await generateTextPortkey([{ role: "user", content: translationPrompt }]);
+                const completion = await generateTextPortkey([{role:"system", content: "You are an expert advertising copywriter who creates short, concise, and highly personalized ads based on conversation context."}, { role: "user", content: contextualPrompt }]);
                 const response = completion.choices[0]?.message?.content?.trim();
 
                 if (response && response.length > 0) {
@@ -269,18 +276,18 @@ RESPONSE:`;
                     if (response.toUpperCase().startsWith('ENGLISH:')) {
                         // Keep original text, strip the "ENGLISH:" prefix
                         adTextSource = response.substring(8).trim();
-                        log(`Content detected as English, keeping original ad text for ${affiliate.name} (${affiliateId})`);
+                        log(`Content detected as English, contextualized ad text for ${affiliate.name} (${affiliateId})`);
                     } else {
                         // Extract language and translated text
                         const colonIndex = response.indexOf(':');
                         if (colonIndex > 0) {
                             const detectedLanguage = response.substring(0, colonIndex).trim();
                             adTextSource = response.substring(colonIndex + 1).trim();
-                            log(`Translated ad for ${affiliate.name} (${affiliateId}) to ${detectedLanguage}`);
+                            log(`Contextualized and translated ad for ${affiliate.name} (${affiliateId}) to ${detectedLanguage}`);
                         } else {
                             // If format is unexpected, use the response as is
                             adTextSource = response;
-                            log(`Received unformatted translation for ${affiliate.name} (${affiliateId})`);
+                            log(`Received unformatted contextualized ad for ${affiliate.name} (${affiliateId})`);
                         }
                     }
                 }
@@ -289,11 +296,39 @@ RESPONSE:`;
                 // Continue with original text if translation fails
             }
         }
+        
+        // Now generate image with the final ad text if markerFound is true
+        let imageUrl = '';
+        if (markerFound) {
+            // Generate image prompt based on affiliate data and final ad text
+            // Extract meaningful text from ad text (remove markdown and links)
+            const cleanAdText = adTextSource.replace(/\[(.*?)\]\(.*?\)/g, '$1').substring(0, 120).trim();
+            
+            // Generate a simple prompt based on the actual ad content with ad text at the end
+            const imagePrompt = `${affiliate.name} ${affiliate.product || ''}, professional advertisement design, high quality, ${cleanAdText}`;
+            
+            // Encode the image prompt for URL
+            const encodedImagePrompt = encodeURIComponent(imagePrompt);
+            
+            // Create image URL with appropriate dimensions - square and smaller as requested
+            const imageSize = 120; // Square size
+            imageUrl = `https://image.pollinations.ai/prompt/${encodedImagePrompt}?width=${imageSize}&height=${imageSize}&nologo=true`;
+            
+            log(`Generated thumbnail image for ${affiliate.name} (${affiliateId}) with ad text context`);
+        }
 
-        // Format the final ad - single approach for all types
-        const adText = `\n\n---\n${adTextSource}`;
-
-        log(`Generated ad for ${affiliate.name} (${affiliateId})`);
+        // Format the final ad - with or without image based on markerFound
+        let adText;
+        if (markerFound && imageUrl) {
+            // Format with image for p-ads marker
+            adText = `\n\n---\n<div style="display: flex; align-items: center; margin-top: 10px; margin-bottom: 10px;">\n<img src="${imageUrl}" alt="${affiliate.name}" style="margin-right: 15px; border-radius: 5px; width: 120px; height: 120px; object-fit: cover;"/>\n<div>${adTextSource}</div>\n</div>`;
+            log(`Generated ad with thumbnail for ${affiliate.name} (${affiliateId})`);
+        } else {
+            // Standard format without image
+            adText = `\n\n---\n${adTextSource}`;
+            log(`Generated standard ad for ${affiliate.name} (${affiliateId})`);
+        }
+        
         return adText;
     } catch (error) {
         errorLog(`Error generating affiliate ad: ${error.message}`);

@@ -301,7 +301,7 @@ async function generateAdForContent(content, req, messages, markerFound = false,
                 }
 
                 // Generate the ad string for Ko-fi
-                const adString = await generateAffiliateAd("kofi", content, messages);
+                const adString = await generateAffiliateAd("kofi", content, messages, markerFound || detectedMarker);
 
                 if (adString) {
                     // Extract info for analytics
@@ -346,13 +346,13 @@ async function generateAdForContent(content, req, messages, markerFound = false,
         // If affiliate data is found, generate the ad string
         if (affiliateData) {
             // Pass content and messages to enable language matching
-            const adString = await generateAffiliateAd(affiliateData.id, content, messages);
+            const adString = await generateAffiliateAd(affiliateData.id, content, messages, markerFound || detectedMarker);
 
             // If ad generation failed but we should force an ad (p-ads marker present)
             if (!adString && shouldForceAd) {
                 log('Ad generation failed, but p-ads marker is present. Using Ko-fi as fallback.');
                 // Try with Ko-fi as a fallback
-                const kofiAdString = await generateAffiliateAd("kofi", content, messages);
+                const kofiAdString = await generateAffiliateAd("kofi", content, messages, markerFound || detectedMarker);
 
                 if (kofiAdString && req) {
                     // Extract info for analytics

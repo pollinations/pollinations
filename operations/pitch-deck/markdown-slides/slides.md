@@ -24,18 +24,6 @@ themeConfig:
 *   Zero upfront cost, shared success.
 ## End
 
-## Speaking Points:
-- We're Pollinations.ai.
-- AI empowers everyone to create.
-- Our mission: Easy to build and monetize AI apps.
-- Zero upfront cost, shared success.
-## End
-
-
-* **Introduction:** We are Pollinations.AI
-* **Mission:** AI empowers everyone to create
-* **Value Proposition:** The easiest way to build AND monetize AI apps
-* **Key Differentiators:** Zero upfront cost, shared success model
 -->
 
 
@@ -73,7 +61,6 @@ layout: two-cols-header
 
 <!--
 ## Speaker Notes for Slide 2: Problem Statement
-*   Current AI app world: broken.
 *   Creators: high costs, no clear path to earn.
 *   Advertisers: can't reach engaged AI-native audiences.
 *   It's a lose-lose.
@@ -86,12 +73,6 @@ layout: two-cols-header
   * Prohibitive AI access costs
   * Infrastructure complexity
 
-* **Ad Provider/Brand Pain Points:**
-
-  * Missing youth demographic - particularly Gen Z
-  * No AI-native targeting mechanisms
-
-* **Core Market Problem:** System friction prevents an open ecosystem where developers can earn from success (make this into a short phrase that covers both creators and advertisers - the message to take away from this slide)
 -->
 
 ---
@@ -106,17 +87,15 @@ layout: two-cols-header
 ::left::
 
 # 👩‍💻 Creators
-## **Build & Monetize AI Instantly**
+## **Build & Monetize**
 >### - Effortless AI Integration
->### - Seamless Ad Monetization
 >### - Clear Path to Profit
 <br>
 
 # 🏢 Advertisers
-## **Reach AI-Native Audiences**
->### - Vast, Untapped Ad Space
->### - Highly Engaged Users
->### - Powerful Contextual Targeting
+## **Reach AI-Natives**
+>### - Untapped Ad Space
+>### - AI-Powered Targeting
 
 ::right::
 
@@ -128,50 +107,16 @@ layout: two-cols-header
 
 <!--
 ## Speaker Notes for Slide 3: Solution
-*   Pollinations.ai fixes this.
 *   **Creators:** Effortless AI, clear path idea-to-income, starts free.
-*   **Advertisers:** Untapped ad space, engaged users (often younger) in creative AI.
+    * We manage infrastructure & scaling, you innovate on user experience.
+    * Ads cover compute costs ➔ Unlock unlimited usage & 50/50 Net Ad Revenue Share (Partner Tier).
+* **Focus on Frontend:** We handle all backend complexity
+*   **Advertisers:** Untapped ad space, engaged users in creative AI.
 ## End
 
-### For Creators: 
-* Effortless AI Integration:
-    * One SDK unlocks powerful generative AI. 
-    * We manage infrastructure & scaling, you innovate on user experience.
-* Seamless Ad Monetization:
-    * Turnkey ad integration via the same SDK. 
-    * Minimal code, diverse formats:
-        * Real-Time Contextual Ads: Native feel, AI-powered relevance.
-        * In-App Rich Media: Engaging video, interactive & display ads.
-        * Affiliate Program Links: Curated offers within your app's flow.
-* Clear Path to Profit:
-    * Ads cover compute costs ➔ Unlock unlimited usage & 50/50 Net Ad Revenue Share (Partner Tier).
 
-* For Advertisers: Reach AI-Native Audiences
-    * Vast, Untapped Ad Inventory:
-        * Access a rapidly growing network of unique AI applications and scale your reach in emerging digital spaces.
-    * Highly Engaged Users:
-        * Connect with audiences (often Gen Z & Millennials) at moments of peak creativity and interaction within AI experiences.
-    * Powerful Contextual Targeting:
-        * Deliver relevant, AI-powered ads within novel AI-driven content, ensuring brand safety and impact.
-
-
-**Current Slide Content (to speak to each bullet):**
-
-**For Creators:**
-* **Zero-Cost Launch:** Free API access to powerful AI models
-* **Focus on Frontend:** We handle all backend complexity
-* **Built-in Monetization:** Ad revenue covers compute costs first
-* **Shared Success:** 50/50 net ad revenue share (Partner Tier)
-
-**For Advertisers:**
 * **Access to highly engaged Gen-Z and Millennial audiences**
 * **New Ad Inventory:** Access rapidly growing network of AI apps
-* **Contextual Targeting:** AI-powered relevance in new environments
-
-
-
-* **Solution Concept:** "AI App Factory" - simplifies building AND monetizing AI apps
-
 
 ![Pollinations Fix Diagram](../media/pollinations_fix_genz.png)
 

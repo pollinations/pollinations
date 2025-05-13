@@ -4,8 +4,6 @@ colorSchema: light
 themeConfig:
 ---
 
-**MAIN MESSAGE: Build, Deploy, Profit**
-
 **REMOVE: Generic mission statement - be more specific about monetization**
 
 # ![Pollinations.ai Logo](/media/pollinations-ai-logo.png)

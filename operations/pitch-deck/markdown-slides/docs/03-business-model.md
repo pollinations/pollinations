@@ -47,8 +47,8 @@ pollinations.ai is the **ad-funded backend and marketplace** connecting AI creat
 | Tier | Name        | Primary User                 | Key Benefits                                                                  | Planned Availability
 | :--- | :---------- | :--------------------------- | :---------------------------------------------------------------------------- | :----------------------------------------- |
 | 1    | **Seed** | Early‑stage projects         | Moderate rate limits, Ads                                     | Beta (Live)                                |
-| 3    | **Flower**| Profitable apps              | Unlimited usage, SOTA models, Rich Ad Formats  | GA (Phase 1 - H2 2025)                     |
-| 4    | **Nectar** | Strategic rev‑share partners | All Flower perks + **50/50 Net Ad‑Revenue Split** | Closed Beta (Phase 2 - H1 2026) <br> GA (Phase 3 - H2 2026) |
+| 2    | **Flower**| Profitable apps              | Unlimited usage, SOTA models, Rich Ad Formats  | GA (Phase 1 - H2 2025)                     |
+| 3    | **Nectar** | Strategic rev‑share partners | All Flower perks + **50/50 Net Ad‑Revenue Split** | Closed Beta (Phase 2 - H1 2026) <br> GA (Phase 3 - H2 2026) |
 
 ## 4. Revenue Streams
 

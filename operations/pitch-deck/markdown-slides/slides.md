@@ -540,11 +540,11 @@ layout: two-cols-header
 
 ::left::
 
-# **Thomas Haferlach** CEO
+## **Thomas Haferlach** CEO
 ### 🔭 Sets vision & Strategy
 ### 💡 Drives breakthrough innovation
 #
-# **Elliot Fouchy** COO
+## **Elliot Fouchy** COO
 ### 🚀 Executes strategy & Finance
 ### 🛠️ Leads delivery & operations
 
@@ -554,16 +554,16 @@ layout: two-cols-header
 
 ::right::
 
-# **Strategic Hires** (Now)
+## **Strategic Hires** (Now)
 #
->#### **1. 💰 Digital Ads & Monetization Strategist** (with focus on brand partnerships)
+#### **1️⃣ Digital Ads & Monetization Strategist** (with focus on brand partnerships)
 #
->#### **2. 🔧 MLOps & Infrastructure Engineer**
+#### **2️⃣ MLOps & Infrastructure Engineer**
 #
->#### **3 👥 Community & Creator Success Manager: Kalam Al-Hajj**
->#### Seasoned innovator to empower creators and accelerate growth
+#### **3️⃣ Community & Creator Success Manager:**
+#### *Kalam Al-Hajj* : Seasoned innovator to empower creators and accelerate growth
 #
->#### **4 📊 Finance & Payout Operations Specialist** (planned 2026)
+>#### **4️⃣ Finance & Payout Operations Specialist** (planned 2026)
 
 <!--
 **Speaking Points - Team:**
@@ -593,20 +593,27 @@ layout: two-cols-header
 
 ::left::
 
-# Now | **Activate**
+# 🚀 Now | **Activate**
 >### - Launch ad rev-share across platform
 >### - Scale developer community
 >### - Prove monetization model
-#
-# +12mo | **Scale**
+
+<br>
+<br>
+
+# 📈 +12mo | **Scale**
 >### - Rich ad integrations
 >### - Optimize ad targeting with AI
 >### - Build global community structure
 
 ::right::
 
->## Contact
->### ***hello@pollinations.ai***
+<div class="flex justify-end items-end h-full">
+  <div>
+    <h2 class="text-right">Contact</h2>
+    <h3 class="text-right"><em><strong>hello@pollinations.ai</strong></em></h3>
+  </div>
+</div>
 
 <!--
 

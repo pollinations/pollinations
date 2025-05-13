@@ -35,7 +35,7 @@ class: text-center
 ---
 
 <div class="flex justify-center">
-  <video class="w-full rounded-lg shadow-lg" autoplay noloop muted>
+  <video class="w-full rounded-lg shadow-lg max-h-[70vh] object-contain" autoplay noloop muted>
     <source src="/media/pixpal-language-ad.mp4" type="video/mp4">
   </video>
 </div>

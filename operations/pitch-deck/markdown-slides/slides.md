@@ -111,12 +111,9 @@ layout: two-cols-header
     * We manage infrastructure & scaling, you innovate on user experience.
     * Ads cover compute costs ➔ Unlock unlimited usage & 50/50 Net Ad Revenue Share (Partner Tier).
 * **Focus on Frontend:** We handle all backend complexity
-*   **Advertisers:** Untapped ad space, engaged users in creative AI.
-## End
-
-
 * **Access to highly engaged Gen-Z and Millennial audiences**
 * **New Ad Inventory:** Access rapidly growing network of AI apps
+## End
 
 ![Pollinations Fix Diagram](../media/pollinations_fix_genz.png)
 
@@ -220,12 +217,10 @@ layout: two-cols
     *   #1 AI game on Roblox.
     *   2 million monthly users.
     *   Already earning $150/day.
-*   Proves our model works (pre-full launch).
+* **User Value:** Players generate AI characters and interact in real-time
+*   Proof of nectar model (pre-full launch).
 ## End
 
-**Speaking Points - Roblox Showcase:**
-* **Concrete Example:** Real-world application in high-growth gaming platform
-* **User Value:** Players generate AI characters and interact in real-time
 -->
 
 ---
@@ -279,30 +274,12 @@ layout: two-cols-header
     *   3M+ monthly end-users.
     *   100M+ media generations/month.
     *   Growing 30% MoM.
-*   300+ apps live, 13k+ community.
+*   300+ apps live (+3 every day), 14k engaged discord community.
 *   Huge organic demand.
+* **Proof of Model:** Traction validates both ease of building and potential for shared success
 ## End
 
-Traction & KPIs: Current ~3M Ecosystem MAU and 100M+ monthly media generations provide a strong foundation, anchors a flywheel already in motion
-**Speaking Points - Traction:**
-* **Growth Metrics:**
-  * Processing >100 MILLION media generations monthly
-  * 30% month-over-month growth in API requests
-  * 3M monthly active users across platform
-  * 13K+ Discord community members
-
-* **Developer Adoption:**
-  * 300+ live applications integrated with our API
-  * 2+ new apps being built daily on our platform
-
-* **Success Stories:**
-  * **Roblox Game:** 'AI Character RP' with 10M+ likes, 2M MAU, generating revenue (how much? what percentage of cost?)
-  * **Power Users:** SillyTavern community integration for advanced AI users
-  * **Enterprise Adoption:** Integration with Alibaba's Qwen Agent framework
-
 ![Geographic Distribution](../media/piechart_countries_genz.png)
-
-* **Proof of Model:** Traction validates both ease of building and potential for shared success
 
 ![Traction Metrics](../media/traction_infoslide3.png)
 

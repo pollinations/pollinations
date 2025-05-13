@@ -305,6 +305,15 @@ const allProjects = {
   ],
   toolsInterfaces: [
     {
+      name: "🆕 Imagemate AI",
+      url: "https://play.google.com/store/apps/details?id=com.madameweb.imgmate",
+      description: "Imagemate AI is a powerful image generation app designed to turn your imagination into stunning visuals with the help of advanced artificial intelligence. Built using the Pollinations AI API, Imagemate AI allows users to input a text prompt and instantly receive AI-generated images that match the description.",
+      author: "@Shanto-Islam",
+      authorEmail: "msin.shanto.islam@gmail.com",
+      submissionDate: "2025-05-13",
+      order: 1,
+    },
+    {
       name: "🆕 tgpt",
       url: "https://github.com/aandrew-me/tgpt",
       description: "AI Chatbots in terminal without needing API keys - a command-line interface for AI that appeals to developers and terminal users.",

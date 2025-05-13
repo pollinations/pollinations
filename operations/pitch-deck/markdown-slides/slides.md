@@ -357,9 +357,14 @@ layout: two-cols-header
 ## **3. Profit Together** 💰 (2026)
 
 ::right::
-<div class="flex justify-center">
-  <img src="/media/business-flywheel.png" alt="Business Flywheel" class="w-6/7 rounded-lg shadow-lg" />
-</div>
+
+```mermaid
+flowchart TB
+    A([CREATORS]) --> B
+    B[SEED<br/><small>EARLY PROJECTS</small>] --> C
+    C[FLOWER<br/><small>PROFITABLE APPS</small>] --> D
+    D[NECTAR<br/><small>REV-SHARE</small>]
+```
 
 <!--
 ## Speaker Notes for Slide 9: Business Model
@@ -381,24 +386,15 @@ layout: two-cols-header
 * **Empowering Creators:** Build & monetize innovative AI apps
 * **Attracting Advertisers:** Reach engaged audiences in AI contexts
 
+<img src="/media/business-flywheel.png" alt="Business Flywheel" class="w-6/7 rounded-lg shadow-lg" />
+
 ## How do we make money? 🔄
 * Multi-billion dollar AI-contextual advertising market
 
-<div v-click="1">
 * **Revenue Model:** 50/50 ad revenue share with developers
-</div>
-
-<div v-click="2">
 * **Unit Economics:** 1M MAU → 10M Ad Impressions → $15K Revenue → $7.5K to Developers
-</div>
-
-<div v-click="3">
 * **Live Pilots:** Contextual ads (CPM $1-2), Affiliate referrals
-</div>
 
-<!--
-Flywheel: More developers build on our free platform → More end-users → More AI-native ad inventory → More ad revenue → Revenue shared with developers → Platform growth
--->
 -->
 
 ---
@@ -468,27 +464,14 @@ layout: two-cols-header
 *   We take creators from prompt to profit.
 ## End
 
-**Speaking Points - Competitive Moat:**
-
-# Differentiation
-
-**vs AI Model Providers** (OpenAI, HuggingFace):
+**vs AI Model Providers** (OpenAI, HugingFace):
 Free access AND built-in revenue path
-
-**vs Game Monetizers** (Unity Ads):
-AI creation engine AND monetization layer
 
 **vs Ad-Supported AI Products** (Perplexity):
 Empower third-party developers with revenue sharing
 
-we could try a "yes" / "no" cross table here
-
-![Fly Wheel](../media/fly-wheel-genz.png)
-
 * **Trust Factor:** Open Source & Privacy-First approach builds developer trust.
 
-* **Core Advantage:** Our unique Free API + Shared Ad Revenue model is our fundamental differentiator.
-* **Proven Model:** Unity has proven the underlying ad/rev-share model generates billions.
 -->
 
 ---
@@ -529,27 +512,11 @@ layout: two-cols-header
 ## Speaker Notes for Slide 11: Team
 *   Thomas (CEO): Drives vision.
 *   Elliot (COO): Focused on execution.
+* 6+ years fully dedicated to AI product R&D
 *   Scaled tech before.
 *   Hiring for: growth, MLOps, community, rev-share.
 ## End
 
-**Speaking Points - Team:**
-
-* **Leadership Structure:**
-  * Thomas Haferlach (CEO): Drives vision, strategy, and technology
-  * Elliot Fouchy (COO): Executes strategy, finance, and delivery
-  * Strong foundation built on decade-long collaboration and synergy
-  * Backed by AI & scaling experience
-
-* **Planned Key Hires:**
-### 💰 Digital Ads & Monetization Strategist (H2 2025)  
-### 🔧 Lead MLOps & Infrastructure Engineer (H2 2025)
-### 🌟 Head of Community & Creator Success (H1 2026)
-### 💸 Finance & Payout Operations Specialist (H2 2026)
-
-<!--
-**Speaking Points**
-- 6+ years fully dedicated to AI product R&D
 -->
 
 ---
@@ -563,15 +530,15 @@ layout: two-cols-header
 ::left::
 
 # 🚀 Now | **Activate**
->### - Launch ad rev-share across platform
->### - Scale developer community
->### - Prove monetization model
+>### - Seeds -> Flowers
+>### - Roll out monetization model
+>### - Rich ads
 
 <br>
 <br>
 
 # 📈 +12mo | **Scale**
->### - Rich ad integrations
+>### - Launch ad rev-share across platform
 >### - Optimize ad targeting with AI
 >### - Build global community structure
 

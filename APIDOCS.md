@@ -977,11 +977,7 @@ def transcribe_audio(audio_path, question="Transcribe this audio"):
         response = requests.post(url, headers=headers, json=payload)
         response.raise_for_status()
         result = response.json()
-        transcription = (
-        result.get('choices', [{}])[0]
-              .get('message', {})
-              .get('audio', {})
-              .get('transcript'))
+        transcription = result['choices'][0]['message']['audio']['transcript']
         return transcription
     except requests.exceptions.RequestException as e:
         print(f"Error transcribing audio: {e}")
@@ -1056,7 +1052,7 @@ async function transcribeAudio(audioFile, question = "Transcribe this audio") {
     }
 
     const result = await response.json();
-    const transcription = result?.choices?.[0]?.message?.audio.transcript;
+    const transcription = result.choices[0].message.audio.transcript;
     console.log("Transcription:", transcription);
     // Display the result
     // document.getElementById('transcript-result').textContent = transcription;

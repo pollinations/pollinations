@@ -1,11 +1,113 @@
 ---
-class: text-center
-colorSchema: light
-themeConfig:
-  background: "#FFFFFF"
+layout: two-cols-header
 ---
 
+<!-- Slide 1: Documentation Index -->
+
+# pollinations.ai - Docs
+
+::left::
+
+- [📑 Executive Summary](/2)
+- [🔭 Vision & Mission](/3)
+- [💰 Business Model](/4)
+- [💹 Financial Model](/5)
+- [🛣️ Roadmap](/6)
+- [👥 Team](/7)
+
+<br>
+
+- [🔍 Due Diligence](/16)
+<!--- [📝 One-Pager](/17) -->
+- [🎤 Pitch Deck](/18)
+
+::right::
+
+- [📈 Market Opportunity](/8)
+- [🌍 Ecosystem Analysis](/9)
+- [🤝 Add Partners](/10)
+- [⚠️ Risk Register](/11)
+- [🥊 Competitive Landscape](/12)
+- [🚀 KPI & Traction Metrics](/13)
+
+<br>
+
+- [🏗️ Tech Architecture](/14)
+- [🔌 SDK & Ad Integration](/15)
+
+---
+src: ./docs/01-executive-summary.md
+---
+
+---
+src: ./docs/02-vision-mission.md
+---
+
+---
+src: ./docs/03-business-model.md
+---
+
+---
+src: ./docs/05-financial-model.md
+---
+
+---
+src: ./docs/04-roadmap.md
+---
+
+---
+src: ./docs/10-team.md
+---
+
+---
+src: ./docs/03-market-opportunity.md
+---
+
+---
+src: ./docs/03-blooming-ecosystem.md
+---
+
+---
+src: ./docs/14-ad-partners.md
+---
+
+---
+src: ./docs/11-risk-register.md
+---
+
+---
+src: ./docs/09-competitive-landscape.md
+---
+
+---
+src: ./docs/12-traction-metrics.md
+---
+
+---
+src: ./docs/07-tech-architecture.md
+---
+
+---
+src: ./docs/08-sdk-ad-integration.md
+---
+
+---
+src: ./docs/16-due-diligence.md
+---
+
+<!--- ---
+src: ./docs/17-one-pager.md
+--- -->
+
+<!-- Pitch starts here -->
+
 <!-- Slide 1: Title Slide -->
+
+---
+class: text-center
+---
+
+**REMOVE: Generic mission statement - be more specific about monetization**
 
 # ![Pollinations.ai Logo](/media/pollinations-ai-logo.png)
 
@@ -22,6 +124,7 @@ themeConfig:
 
 -->
 
+<!-- Slide 2: Problem Slide -->
 
 ---
 layout: two-cols-header
@@ -71,11 +174,11 @@ layout: two-cols-header
 
 -->
 
+<!-- Slide 3: Solution -->
+
 ---
 layout: two-cols-header
 ---
-
-<!-- Slide 3: Solution -->
 
 # <span class="bg-green-600 text-white p-2 rounded">**✨ The Fix : AI Creation Meets Monetization**</span>
 <br>
@@ -115,11 +218,11 @@ layout: two-cols-header
 
 -->
 
+<!-- Slide 4: Product Showcase Apps Cohort-->
+
 ---
 layout: two-cols
 ---
-
-<!-- Slide 4: Product Showcase Apps Cohort-->
 
 <div class="mx-2">
   <video class="w-full rounded-lg shadow-lg" autoplay loop muted>
@@ -156,11 +259,11 @@ layout: two-cols
 ## End
 -->
 
+<!-- Slide 5: Product Showcase - Ad -->
+
 ---
 class: text-center
 ---
-
-<!-- Slide 5: Product Showcase - Ad -->
 
 <div class="flex justify-center">
   <video class="w-full rounded-lg shadow-lg max-h-[70vh] object-contain" autoplay noloop muted>
@@ -177,11 +280,11 @@ class: text-center
 ## End
 -->
 
+<!-- Slide 6: Product Showcase - Roblox -->
+
 ---
 layout: two-cols
 ---
-
-<!-- Slide 6: Product Showcase - Roblox -->
 
 # **🎮 Roblox Integration**
 # (rev-share case study)
@@ -219,11 +322,11 @@ layout: two-cols
 
 -->
 
+<!-- Slide 4: Traction -->
+
 ---
 layout: two-cols-header
 ---
-
-<!-- Slide 4: Traction -->
 
 # <span class="bg-blue-600 text-white p-2 rounded">**🚀 Traction: Flywheel Already in Motion**</span>
 
@@ -281,19 +384,17 @@ layout: two-cols-header
 
 -->
 
+<!-- Slide 9: Market Opportunity -->
 
 ---
 layout: two-cols-header
 ---
 
-<!-- Slide 9: Market Opportunity -->
-
 # <span class="bg-purple-600 text-white p-2 rounded">**🌍 Tapping the $3.4B AI-Contextual Ad Market**</span>
 
-::left::    
+::left::
 
 <br>
-
 
 ## **247B TAM** 🌐  
 Global AI-Contextual Ad Spend
@@ -327,11 +428,11 @@ Indie AI-native apps
 <img src="/media/market-tam-sam-som.png" alt="Market: TAM, SAM, SOM" class="w-7/8 rounded-lg shadow-lg" />
 -->
 
+<!-- Slide 10: Business Model -->
+
 ---
 layout: two-cols-header
 ---
-
-<!-- Slide 10: Business Model -->
 
 # <span class="bg-purple-600 text-white p-2 rounded">**💰 How? From Free Tools to Shared Profits**</span>
 
@@ -393,11 +494,11 @@ flowchart TB
 
 -->
 
+<!-- Slide 11: Competition -->
+
 ---
 layout: two-cols-header
 ---
-
-<!-- Slide 11: Competition -->
 
 # <span class="bg-yellow-600 text-white p-2 rounded">**🛡️ Competition**</span>
 
@@ -470,11 +571,11 @@ Empower third-party developers with revenue sharing
 
 -->
 
+<!-- Slide 12: Team -->
+
 ---
 layout: two-cols-header
 ---
-
-<!-- Slide 12: Team -->
 
 # <span class="bg-pink-600 text-white p-2 rounded">**👥 Experienced Team to Scale Monetization**</span>
 
@@ -515,11 +616,11 @@ layout: two-cols-header
 
 -->
 
+<!-- Slide 13: Call to Action -->
+
 ---
 layout: two-cols-header
 ---
-
-<!-- Slide 13: Call to Action -->
 
 # <span class="bg-teal-600 text-white p-2 rounded">**🤝 Fueling the AI App Monetization Revolution**</span>
 
@@ -575,94 +676,4 @@ SLIDE GUIDANCE:
 *   **Growth & Monetization:** Scaling revenue & global user base, optimizing Ad Rev-Share engine.
 *   **Community & Ecosystem Expansion:** Empowering "Vibe Coders," Developer Grants, Strategic Partnerships.
 *   **Platform Scale & Infrastructure:** Enhanced GPU Capacity, Global Low-Latency Performance.
---> 
-
----
-layout: two-cols-header
----
-
-<!-- Slide 14: Documentation Links -->
-
-# pollinations.ai - Docs
-
-::left::
-
-- [🎤 Pitch Deck](/00)
-- [📑 Executive Summary](/16)
-- [🔭 Vision & Mission](/17)
-- [📈 Market Opportunity](/18)
-- [🌍 Ecosystem Analysis](/19)
-- [💰 Business Model](/20)
-- [💹 Financial Model](/21)
-- [🛣️ Roadmap](/22)
-
-::right::
-
-- [👥 Team](/23)
-- [🏗️ Tech Architecture](/24)
-- [🔌 SDK & Ad Integration](/25)
-- [🤝 Add Partners](/26)
-- [⚠️ Risk Register](/27)
-- [🥊 Competitive Landscape](/28)
-- [🚀 KPI & Traction Metrics](/29)
-- [🔍 Due Diligence](/30)
-
----
-src: ./docs/01-executive-summary.md
----
-
----
-src: ./docs/02-vision-mission.md
----
-
----
-src: ./docs/03-market-opportunity.md
----
-
----
-src: ./docs/03-blooming-ecosystem.md
----
-
----
-src: ./docs/03-business-model.md
----
-
----
-src: ./docs/05-financial-model.md
----
-
----
-src: ./docs/04-roadmap.md
----
-
----
-src: ./docs/10-team.md
----
-
----
-src: ./docs/07-tech-architecture.md
----
-
----
-src: ./docs/08-sdk-ad-integration.md
----
-
----
-src: ./docs/14-ad-partners.md
----
-
----
-src: ./docs/11-risk-register.md
----
-
----
-src: ./docs/09-competitive-landscape.md
----
-
----
-src: ./docs/12-traction-metrics.md
----
-
----
-src: ./docs/16-due-diligence.md
----
+-->

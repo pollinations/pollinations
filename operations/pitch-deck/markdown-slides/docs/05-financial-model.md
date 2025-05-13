@@ -3,7 +3,7 @@ class: scroll
 ---
 
 <div style="text-align: right; position: absolute; top: 0; right: 0;">
-<a href="/15">⬅️ Back to Index</a>
+<a href="/1">⬅️ Back to Index</a>
 </div>
 
 <div class="bg-red-100 p-4 rounded-lg border-l-4 border-red-500 mb-6">

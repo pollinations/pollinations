@@ -47,17 +47,31 @@ layout: two-cols-header
 
 ::left::
 
-<video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
-  <source src="/media/traction-pollinations-ecosystem.mp4" type="video/mp4">
-</video>
+<div class="mx-2">
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
+    <source src="/media/what-do-we-do_slideshow-1.mp4" type="video/mp4">
+  </video>
+
+  <div class="mb-4"></div>
+
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
+    <source src="/media/what-do-we-do_slideshow-2.mp4" type="video/mp4">
+  </video>
+</div>
 
 ::right::
 
-<video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
-  <source src="/media/traction-pollinations-ecosystem.mp4" type="video/mp4">
-</video>
+<div class="mx-2">
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
+    <source src="/media/what-do-we-do_slideshow-3.mp4" type="video/mp4">
+  </video>
 
+  <div class="mb-4"></div>
 
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
+    <source src="/media/what-do-we-do_slideshow-4.mp4" type="video/mp4">
+  </video>
+</div>
 
 ---
 

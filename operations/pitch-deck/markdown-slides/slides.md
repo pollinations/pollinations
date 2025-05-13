@@ -11,9 +11,7 @@ themeConfig:
 
 # ![Pollinations.ai Logo](/media/pollinations-ai-logo.png)
 
-## AI Empowers Everyone to Create
-
-**Unlocking AI App Monetization at Scale**
+## Spark Creation, Unlock Ad Revenue
 
 <!--
 

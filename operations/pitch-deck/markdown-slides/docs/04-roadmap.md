@@ -33,7 +33,7 @@ class: scroll
 
 ## **Phase 3: Full Ecosystem Launch – Revenue Share & Scale (H2 2026)**
 
-*   **Focus:** Go live with the complete 4-tier platform, including automated 50/50 revenue sharing, and drive adoption.
+*   **Focus:** Go live with the complete 3-tier platform, including automated 50/50 revenue sharing, and drive adoption.
 *   **Key Outcomes:**
     *   Nectar tier (General Availability) with 50/50 Ad-Revenue Split.
     *   Automated monthly payouts for Nectar tier.

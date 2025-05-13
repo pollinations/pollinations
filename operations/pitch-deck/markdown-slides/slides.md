@@ -28,7 +28,7 @@ class: text-center
 layout: center
 ---
 
-# <span class="bg-gray-600 text-white p-2 rounded">**What Do We Do?**</span>
+# <span class="bg-orange-600 text-white p-2 rounded text-6xl">**WHAT DO WE DO?**</span>
 
 ---
 class: text-center
@@ -174,7 +174,11 @@ layout: two-cols-header
 
 ::right::
 
-# ***From idea to income with zero upfront cost*** 💰
+<div class="flex flex-col items-center justify-center h-full">
+  <img src="/media/solution-bridge.png" alt="Solution: Bridge" class="w-2/3 rounded-lg shadow-lg" mb='5'/>
+  
+  <h3 class="text-center">From idea to income <br>with zero upfront cost 💰</h3>
+</div>
 
 <!--
 

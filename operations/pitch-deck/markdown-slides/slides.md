@@ -175,9 +175,9 @@ layout: two-cols-header
 ::right::
 
 <div class="flex flex-col items-center justify-center h-full">
-  <img src="/media/solution-bridge.png" alt="Solution: Bridge" class="w-2/3 rounded-lg shadow-lg" mb='5'/>
+  <img src="/media/solution-bridge.png" alt="Solution: Bridge" class="w-3/4 rounded-lg shadow-lg" mb='5'/>
   
-  <h3 class="text-center">From idea to income <br>with zero upfront cost 💰</h3>
+  <h3 class="text-center">From <strong><em>idea</em></strong> to <strong><em>income</em></strong> <br>with <strong><em>zero</em></strong> upfront cost 💰</h3>
 </div>
 
 <!--
@@ -267,6 +267,9 @@ layout: two-cols-header
 >#### - **30%** Month-o-Month Growth
 >#### - **14M+ Ad impressions** from pilot program
 
+<br>
+<br>
+<br>
 <br>
 
 ## **300+** Apps Live | **2+** Built Daily

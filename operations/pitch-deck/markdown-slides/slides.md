@@ -167,50 +167,6 @@ layout: two-cols-header
 -->
 
 
-
----
-class: text-center
----
-
-<div class="flex justify-center">
-  <video class="w-full rounded-lg shadow-lg max-h-[70vh] object-contain" autoplay noloop muted>
-    <source src="/media/pixpal-language-ad.mp4" type="video/mp4">
-  </video>
-</div>
-
----
-layout: two-cols-header
----
-
-::left::
-
-<div class="mx-2">
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted>
-    <source src="/media/what-do-we-do_slideshow-1.mp4" type="video/mp4">
-  </video>
-
-  <div class="mb-4"></div>
-
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted>
-    <source src="/media/what-do-we-do_slideshow-2.mp4" type="video/mp4">
-  </video>
-</div>
-
-::right::
-
-<div class="mx-2">
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
-    <source src="/media/what-do-we-do_slideshow-3.mp4" type="video/mp4">
-  </video>
-
-  <div class="mb-4"></div>
-
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
-    <source src="/media/what-do-we-do_slideshow-4.mp4" type="video/mp4">
-  </video>
-</div>
-
-
 ---
 layout: two-cols-header 
 ---
@@ -309,6 +265,50 @@ Traction & KPIs: Current ~3M Ecosystem MAU and 100M+ monthly media generations p
 ![Traction Metrics](../media/traction_infoslide3.png)
 
 -->
+
+
+---
+class: text-center
+---
+
+<div class="flex justify-center">
+  <video class="w-full rounded-lg shadow-lg max-h-[70vh] object-contain" autoplay noloop muted>
+    <source src="/media/pixpal-language-ad.mp4" type="video/mp4">
+  </video>
+</div>
+
+---
+layout: two-cols-header
+---
+
+::left::
+
+<div class="mx-2">
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted>
+    <source src="/media/what-do-we-do_slideshow-1.mp4" type="video/mp4">
+  </video>
+
+  <div class="mb-4"></div>
+
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted>
+    <source src="/media/what-do-we-do_slideshow-2.mp4" type="video/mp4">
+  </video>
+</div>
+
+::right::
+
+<div class="mx-2">
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
+    <source src="/media/what-do-we-do_slideshow-3.mp4" type="video/mp4">
+  </video>
+
+  <div class="mb-4"></div>
+
+  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
+    <source src="/media/what-do-we-do_slideshow-4.mp4" type="video/mp4">
+  </video>
+</div>
+
 
 ---
 layout: two-cols-header

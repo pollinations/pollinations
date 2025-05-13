@@ -16,7 +16,22 @@ themeConfig:
 **Unlocking AI App Monetization at Scale**
 
 <!--
-**Speaking Points:**
+
+## Speaker Notes for Slide 1: Title Slide
+*   We're Pollinations.ai.
+*   AI empowers everyone to create.
+*   Our mission: Easy to build *and* monetize AI apps.
+*   Zero upfront cost, shared success.
+## End
+
+## Speaking Points:
+- We're Pollinations.ai.
+- AI empowers everyone to create.
+- Our mission: Easy to build and monetize AI apps.
+- Zero upfront cost, shared success.
+## End
+
+
 * **Introduction:** We are Pollinations.AI
 * **Mission:** AI empowers everyone to create
 * **Value Proposition:** The easiest way to build AND monetize AI apps
@@ -59,6 +74,13 @@ layout: two-cols-header
 ### 💸 Miss out on contextual advertising opportunities
 
 <!--
+## Speaker Notes for Slide 2: Problem Statement
+*   Current AI app world: broken.
+*   Creators: high costs, no clear path to earn.
+*   Advertisers: can't reach engaged AI-native audiences.
+*   It's a lose-lose.
+## End
+
 **Speaking Points - Problem:**
 * **Creator & Developer Pain Points:**
   * Complex and expensive AI infrastructure
@@ -107,6 +129,11 @@ layout: two-cols-header
 </div>
 
 <!--
+## Speaker Notes for Slide 3: Solution
+*   Pollinations.ai fixes this.
+*   **Creators:** Effortless AI, clear path idea-to-income, starts free.
+*   **Advertisers:** Untapped ad space, engaged users (often younger) in creative AI.
+## End
 
 ### For Creators: 
 * Effortless AI Integration:
@@ -184,6 +211,15 @@ layout: two-cols
   </video>
 </div>
 
+<!--
+## Speaker Notes for Slide 4: Product Showcase Apps Cohort
+*   See what's built on Pollinations:
+    *   Diverse, creative AI apps.
+    *   Art tools, interactive AI.
+*   The power of accessible AI.
+## End
+-->
+
 ---
 class: text-center
 ---
@@ -195,6 +231,15 @@ class: text-center
     <source src="/media/pixpal-language-ad.mp4" type="video/mp4">
   </video>
 </div>
+
+<!--
+## Speaker Notes for Slide 5: Product Showcase - Ad
+*   Monetization in action:
+    *   Seamless, contextual ad in an app.
+*   How apps self-fund & move to profit-share.
+*   Simple, effective, built-in.
+## End
+-->
 
 ---
 layout: two-cols
@@ -227,6 +272,14 @@ layout: two-cols
 </div>
 
 <!--
+## Speaker Notes for Slide 6: Product Showcase - Roblox
+*   Standout success:
+    *   #1 AI game on Roblox.
+    *   2 million monthly users.
+    *   Already earning $150/day.
+*   Proves our model works (pre-full launch).
+## End
+
 **Speaking Points - Roblox Showcase:**
 * **Concrete Example:** Real-world application in high-growth gaming platform
 * **User Value:** Players generate AI characters and interact in real-time
@@ -278,6 +331,14 @@ layout: two-cols-header
 </div>
 
 <!--
+## Speaker Notes for Slide 7: Traction
+*   Our flywheel is spinning hard:
+    *   3M+ monthly end-users.
+    *   100M+ media generations/month.
+    *   Growing 30% MoM.
+*   300+ apps live, 13k+ community.
+*   Huge organic demand.
+## End
 
 Traction & KPIs: Current ~3M Ecosystem MAU and 100M+ monthly media generations provide a strong foundation, anchors a flywheel already in motion
 **Speaking Points - Traction:**
@@ -332,6 +393,12 @@ layout: two-cols-header
 </div>
 
 <!--
+## Speaker Notes for Slide 8: Market Opportunity
+*   Massive opportunity:
+    *   Targeting $3.4B AI-contextual ad market (2025).
+    *   Within $140B serviceable market.
+*   Perfectly positioned for explosive growth.
+## End
 
 * Significant opportunity in AI-contextual advertising.
 * Targeting a $140B (2025) Serviceable Addressable Market in indie app/web AI ad inventory. Our initial beachhead is the $3.4B Generative AI advertising segment, aiming for €22M ARR by EOY 2027.
@@ -351,15 +418,20 @@ layout: two-cols-header
 
 ::left::
 
-## **1 🚀 Create For Free** (Live)
-
+<br>
 <br>
 
-## **2 📈 Scale & Self-Fund** (Beta)
+## **1. Create For Free**  🚀 (Live)
 
 <br>
+<br>
 
-## **3 💰 Profit Together** (2026)
+## **2. Scale & Self-Fund** 📈 (Beta)
+
+<br>
+<br>
+
+## **3. Profit Together** 💰 (2026)
 
 ::right::
 <div class="flex justify-center">
@@ -367,6 +439,13 @@ layout: two-cols-header
 </div>
 
 <!--
+## Speaker Notes for Slide 9: Business Model
+*   Our 3-step journey:
+    1.  **Create For Free** (Live).
+    2.  **Scale & Self-Fund** (Beta): Ads cover costs -> unlimited app use.
+    3.  **Profit Together** (2026): Top apps get 50/50 net ad revenue split.
+*   A win-win model.
+## End
 
 ## **1 🚀 Create For Free** (Live)
 #
@@ -442,12 +521,10 @@ layout: two-cols-header
 # <span class="bg-yellow-600 text-white p-2 rounded">**🛡️ Competition**</span>
 
 <div class="mb-10"></div>
-
-
 <table>
   <thead>
     <tr>
-      <th>Feature</th>
+      <th><b></b></th>
       <th><b>pollinations.ai</b></th>
       <th>Hugging Face</th>
       <th>Roblox</th>
@@ -456,28 +533,28 @@ layout: two-cols-header
   </thead>
   <tbody>
     <tr>
-      <td>Open & Free API</td>
+      <td><b>Open & Free API</b></td>
       <td>✅</td>
       <td>✅</td>
       <td>❌</td>
       <td>✅</td>
     </tr>
     <tr>
-      <td>No Login Required</td>
+      <td><b>No Login Required</b></td>
       <td>✅</td>
       <td>❌</td>
       <td>❌</td>
       <td>✅</td>
     </tr>
     <tr>
-      <td>Multi-modal (Text, Img, Audio)</td>
+      <td><b>Multi-modal (Text, Img, Audio)</b></td>
       <td>✅</td>
       <td>✅</td>
       <td>❌</td>
       <td>❌</td>
     </tr>
     <tr>
-      <td>Ad-Based Monetization</td>
+      <td><b>Ad-Based Monetization</b></td>
       <td>✅&nbsp;&nbsp;&nbsp;(2026)</td>
       <td>❌</td>
       <td>✅</td>
@@ -489,10 +566,19 @@ layout: two-cols-header
 <br>
 <br>
 
-## *From Prompt to Profit: The Context-Aware AI Platform*
+## **From Prompt to Profit:** *The Context-Aware AI Platform*
 
 
 <!--
+## Speaker Notes for Slide 10: Competition
+*   Unique offering:
+    *   Free open API, no login to start.
+    *   Multi-modal AI.
+    *   Built-in ad monetization & rev-share.
+*   "Unity Ads for Generative AI," but smarter.
+*   We take creators from prompt to profit.
+## End
+
 **Speaking Points - Competitive Moat:**
 
 # Differentiation
@@ -551,6 +637,13 @@ layout: two-cols-header
 ### **4️⃣ Rev Share Specialist** (2026) 
 
 <!--
+## Speaker Notes for Slide 11: Team
+*   Thomas (CEO): Drives vision.
+*   Elliot (COO): Focused on execution.
+*   Scaled tech before.
+*   Hiring for: growth, MLOps, community, rev-share.
+## End
+
 **Speaking Points - Team:**
 
 * **Leadership Structure:**
@@ -603,6 +696,13 @@ layout: two-cols-header
 </div>
 
 <!--
+## Speaker Notes for Slide 12: Call to Action
+*   Our plan:
+    *   **Now:** Activate ad rev-share, scale community, prove model.
+    *   **Next 12 months:** Scale with richer ad tech, global community.
+*   Revolutionizing AI app monetization.
+*   Let's talk: **hello@pollinations.ai**.
+## End
 
 ### Activation Phase (Now): 
 This funding is critical to fully launch our ad revenue-sharing model, rapidly scale our developer community, and conclusively prove the viability and profitability of our unique approach.

@@ -214,19 +214,29 @@ layout: two-cols-header
 
 
 ---
-layout: two-cols-header 
+layout: two-cols-header
 ---
 
-# <span class="bg-blue-500 text-white p-2 rounded">**🎮 Showcase: Roblox Integration**</span>
+# **🎮 Roblox Integration (Rev-Share Pilot)**
 
 ::left::
 
-## 🏆 **Number 1** AI Game in Roblox
-#
-## 👍 **10M+** likes
-#
+<br>
+<br>
+<br>
+
+## 🏆 Roblox **#1 AI Game**
+
+<br>
+
+## 👍 **10M+** Likes
+
+<br>
+
 ## 👥 **2M** MAU
-#
+ 
+<br>
+
 ## 💰 **$150/day** revenue
 
 ::right::

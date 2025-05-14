@@ -36,13 +36,15 @@
 | 2031 |         768.00 |         48.00 |              288.00 |                       **432.00** |            56 % |
 
 ## **3. Per‑App Contribution (FY27 example)**
-#
 
 | Metric                                                 |    Value |
 | ------------------------------------------------------ | -------: |
-| Ad impressions / app / month                           |     30 k |
-| Gross ad €                                             |     €210 |
-| Net to Pollinations after compute & 30 % creator share | **€126** |
+| Ad impressions / app / month                           |     30 k |
+| Gross ad €                                             |     €504 |
+| GPU compute cost                                       |     -€72 |
+| Net profit after compute                               |     €432 |
+| App revenue share (50%)                                |     €216  |
+| Net to Pollinations (50%)                              |  **€216** |
 
 ## **4. Unit‑Economics Sensitivity**
 #

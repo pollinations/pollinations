@@ -95,7 +95,7 @@ src: ./docs/16-due-diligence.md
 
 ---
 
-# Pitch Deck
+# **Picth Deck**
 
 ---
 class: text-center
@@ -519,13 +519,13 @@ layout: two-cols-header
 ::right::
 
 ## **Strategic Hires**
-#
-#### 📈 Growth and Marketing Specialist
-#
-#### 🛠️ MLOps & Infrastructure Lead
-#
-#### 🎮 Community & Games Lead
-#
+>#
+>#### 📈 Growth and Marketing Specialist
+>#
+>#### 🛠️ MLOps & Infrastructure Lead
+>#
+>#### 🎮 Community & Games Lead
+>#
 
 <!--
 ## Team

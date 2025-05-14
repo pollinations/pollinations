@@ -498,49 +498,35 @@ layout: two-cols-header
 -->
 
 ---
-layout: two-cols-header
+
+**Slide 8: Team**
+
 ---
 
-# <span class="bg-pink-600 text-white p-2 rounded">**👥 Experienced Team to Scale Monetization**</span>
+# <span class="bg-pink-600 text-white p-2 rounded">👥 **Team**</span>
 
-::left::
+|         |                      |                                                                                                |
+| ------- | -------------------- | ---------------------------------------------------------------------------------------------- |
+| **CEO** | **Thomas Haferlach** | **Visionary AI Architect & Platform Scaler** (8+ yrs GenAI, Ex-Amazon, EU Funding Winner)        |
+| **COO** | **Elliot Fouchy**    | **AI Operations & Product Scaling Specialist** (6+ yrs AI Ops, Built Efficient AI Infra)         |
 
-## **Thomas Haferlach** CEO
-### 🔭 One line
+##
 
-<img src="/media/amazon_logo.png" alt="Amazon" class="w-1/6 inline" style="opacity: 1;" /> &nbsp;&nbsp;&nbsp; <img src="/media/sun-logo.png" alt="Sun" class="w-1/6 inline" style="opacity: 1;" />
+### **+ 🧠 Engineering & Data**
+**Senior AI-Ops & Infra Team** : GPU fleet optimization, Scaling Backend
 
-#
+### **+ 🌐 Marketing & Community**
+**Growth & Developer Relations** : User acquisition, Brand partnerships, Community
 
-<br>
+<!-- SPEAKER NOTES (Revised) -->
+**Concise Talking Points Script:**
 
-## **Elliot Fouchy** COO
-### 🚀 One line
-
-#
-
-::right::
-
-## **H2 2025 Hire**
-#
->#
->#### 🤝 **Kalam** (Incoming)
->#### Head of Community & Creator Success
->#
->#### 📈 Growth and Marketing Specialist
->#
->#### 🛠️ MLOps & Infrastructure Lead
->#
-
-<!--
-## Team
-*   Who we are:
-*   Thomas (CEO): Vision, strategy, tech innovation.
-*   Elliot (COO): Execution, finance, operations.
-*   Years of collaboration. Deep AI R&D (6+ years). Scaled tech previously.
-*   Strategic Hires: Growth/Marketing, MLOps/Infra, Community/Games, (later) Rev Share Specialist.
-## End
--->
+*   **Elliot:** "Executing this ambitious vision requires a uniquely qualified team."
+*   **Elliot:** "I'm Elliot, the COO. I focus on **AI operations and product scaling**, with over 6 years specifically in AI, leading project delivery and building efficient operational infrastructure for rapidly growing tech platforms."
+*   **Thomas:** "And I'm Thomas, the CEO. I drive our **vision and breakthrough tech**. I'm a **visionary AI architect with 8+ years in generative AI**, having previously **scaled platforms to over 100 million monthly requests**. I'm also ex-Amazon and earlier **secured €1.2M in EU funding for AI music technology**."
+*   **Elliot:** "Our **decade-long collaboration**, forged building creative tech projects, means we have deep synergy and a proven ability to execute together."
+*   **Thomas:** "**Planned Key Hires** will bring in specialized expertise: Senior **AI-Ops & Infra** talent for GPU optimization and a **Growth & Developer Relations** lead to supercharge our community and ad network adoption."
+<!-- END SPEAKER NOTES -->
 
 ---
 layout: two-cols-header

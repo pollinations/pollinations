@@ -501,27 +501,35 @@ layout: two-cols-header
 
 ::left::
 
-## 🔭 **Thomas Haferlach** CEO
-### - Sets vision & Strategy
-### - Drives breakthrough innovation
-#
-## 🚀 **Elliot Fouchy** COO
-### - Executes strategy & Finance
-### - Leads delivery & Operations
+## **Thomas Haferlach** CEO
+### 🔭 One line
+
+<img src="/media/amazon_logo.png" alt="Amazon" class="w-1/6 inline" style="opacity: 1;" /> &nbsp;&nbsp;&nbsp; <img src="/media/sun-logo.png" alt="Sun" class="w-1/6 inline" style="opacity: 1;" />
 
 #
 
-<img src="/media/team-collaboration.png" alt="Team Collaboration" class="w-1/3" />
+<br>
+
+## **Elliot Fouchy** COO
+### 🚀 One line
+
+#
+
+<div class="flex justify-left">
+  <img src="/media/team-collaboration.png" alt="Team Collaboration" class="w-1/4" />
+</div>
 
 ::right::
 
-## **Strategic Hires**
+## **Strategic Team**
+#
+>#
+>#### 🤝 **Kalam** (Incoming)
+>#### Head of Community & Creator Success
 >#
 >#### 📈 Growth and Marketing Specialist
 >#
 >#### 🛠️ MLOps & Infrastructure Lead
->#
->#### 🎮 Community & Games Lead
 >#
 
 <!--

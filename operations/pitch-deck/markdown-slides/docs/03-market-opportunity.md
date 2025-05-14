@@ -21,7 +21,7 @@ class: scroll
   </ul>
 </div>
 
-# 1. TAM — Total Addressable Market (2025)
+# **1. TAM — Total Addressable Market (2025)**
 
 All ad spend that can appear *inside third‑party mobile apps & independent websites* (outside Meta/TikTok/YouTube walled gardens).
 
@@ -37,7 +37,7 @@ All ad spend that can appear *inside third‑party mobile apps & independent web
 
 <br>
 
-# 2. SAM — Serviceable Addressable Market (2025)
+# **2. SAM — Serviceable Addressable Market (2025)**
 
 The chunk of TAM that flows through plug‑and‑play monetisation SDKs—the exact slot Pollinations occupies.
 
@@ -55,7 +55,7 @@ Assuming 6 % YoY growth ⇒ **SAM 2025 ≈ \$23 B** (\$21.7 B + 6% YoY, prudentl
 
 <br>
 
-# 3. SOM — Serviceable Obtainable Market (Pollinations)
+# **3. SOM — Serviceable Obtainable Market (Pollinations)**
 
 *Simplified revenue path built from current usage metrics. Figures represent net revenue potential.*
 

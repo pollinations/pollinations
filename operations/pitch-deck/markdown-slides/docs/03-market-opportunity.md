@@ -9,63 +9,60 @@ class: scroll
 # 📈 **Market Opportunity**
 
 <div class="bg-purple-100 p-1 pl-6 pr-6 rounded-lg border-l-4 border-purple-500 mb-6">
-  <p class="text-purple-800">Market Opportunity: Targeting a <strong><em>$140B (2025) Serviceable Addressable Market</em></strong> in <em>indie app/web AI ad inventory</em>. Our initial beachhead is the <strong><em>$3.4B Generative AI advertising segment</em></strong>, aiming for <strong><em>€22M ARR by EOY 2027.</em></strong></p>
+  <p class="text-purple-800">Market Opportunity: Targeting a <strong><em>$218B (2025) Total Addressable Market</em></strong> in <em>mobile & web ad spend</em> with a <strong><em>$20B Serviceable Addressable Market</em></strong> in <em>SDK-integrated inventory</em>. Our path to capture is <strong><em>€30M net ARR by EOY 2027</em></strong> through monetizing Gen-AI app inventory.</p>
 </div>
 
-*AI apps, a multi-billion dollar AI-contextual advertising market.*
+## 1. TAM — Total Addressable Market
 
-## 1. Total Addressable Market (TAM)
+**Definition** All global ad dollars that can appear *inside third‑party mobile apps & independent websites* (i.e., outside the "walled gardens" of Meta, TikTok, YouTube).
 
-**Global AI-powered contextual advertising spend.**
+| Bucket                                   | 2025 Spend    | Source                                                                    |
+| ---------------------------------------- | ------------- | ------------------------------------------------------------------------- |
+| Mobile in‑app advertising                | **\$218 B**   | [eMarketer Digital Ad Spending Worldwide 2025](https://www.emarketer.com) |
+| Web display & native (independent sites) | \$56 B        | [IAB Internet Ad Revenue Report 2024](https://www.iab.com)                |
+| **Subtotal**                             | **\$274 B**   |                                                                           |
+| Minus walled‑garden share (≈ 20 %)       | −\$56 B       | eMarketer                                                                 |
+| **TAM 2025**                             | **≈ \$218 B** |                                                                           |
 
-*   **Size (2025):** **$234 Billion**
-*   **Source:** Industry Analyst Consensus.
-*   **Growth:** ~10.5% YoY (broader contextual ads).
-*   **Significance:** Massive scale for AI-driven ad monetization.
+> *Even a 0.01 % share equals a €200 M gross revenue business.*
 
-## 2. Serviceable Addressable Market (SAM)
+## 2. SAM — Serviceable Addressable Market
 
-**TAM portion reachable via indie developer app/web inventory.**
+**Definition** The portion of TAM that flows through *plug‑and‑play monetisation SDKs*—the exact slot where the Pollinations SDK lives.
 
-*   **Size (2025):** **$140 Billion** (~60% of TAM)
-*   **Rationale:**
-    *   Indie apps: vast majority, mostly free & ad-monetized.
-    *   In-app ad spend (~$390B in 2025) dominated by indie inventory.
-    *   Indies adopt AI ad tech; privacy shifts boost contextual.
-*   **Relevance:** Our direct playing field.
+| SDK network (FY‑2024)                            | Net revenue | Take‑rate | **Gross advertiser spend** | Source                                                  |
+| ------------------------------------------------ | ----------- | --------- | -------------------------- | ------------------------------------------------------- |
+| AppLovin (MAX + AppDiscovery)                    | \$3.22 B    | 25 %      | \$12.9 B                   | [AppLovin 2024 10‑K](https://investors.applovin.com)    |
+| Unity Ads (Grow)                                 | \$1.20 B    | 25 %      | \$4.8 B                    | [Unity 2024 10‑K](https://investors.unity.com)          |
+| Digital Turbine / AdColony / Fyber               | \$0.54 B    | 25 %      | \$2.2 B                    | [Digital Turbine 2024 10‑K](https://digitalturbine.com) |
+| Long‑tail SDKs (ironSource, Chartboost, Vungle…) | —           | —         | \~ \$1.8 B                 | Analyst synthesis                                       |
+| **SAM 2024**                                     |             |           | **\~ \$21.7 B**            |                                                         |
 
-## 3. Beachhead Market (Initial Focus)
+Assuming 6 % YoY growth ⇒ **SAM 2025 ≈ \$23 B**. Rounded conservatively to **≈ \$20 B**.
 
-**SAM portion reachable via indie developers using Generative AI for apps.**
+> *We're not inventing a new budget—SDK pipes already carry > \$20 B each year.*
 
-*   **Size (2025):** **$3.4 Billion** (GenAI in Advertising segment)
-*   **Growth:** ~25% CAGR.
-*   **Rationale:**
-    *   Aligns with Pollinations' core GenAI strength.
-    *   Indies pioneer innovative GenAI apps.
-    *   Targets "young vibe coder" creator economy.
-*   **Relevance:** Focused, high-growth entry point.
 
-## 4. Serviceable Obtainable Market (SOM) - Targets
+## 3. SOM — Serviceable Obtainable Market
 
-**Pollinations' net retained Annual Recurring Revenue (ARR) from SAM/Beachhead capture.**
-*Our strategy: Empower creators, scale through network effects & partnerships, share ad revenue.*
+**Definition** Net revenue Pollinations can secure within 36 months, based on current traction.
 
-*   **Current:** **€0 ARR** (Pre-monetization).
-*   **Latent (+6 Mo. Post-Launch):** **€1M ARR**
-    *   *Driver:* Monetize existing user base (15M monthly interactions).
-*   **Near-Term (EOY 2026):** **€3.5M ARR**
-    *   *Driver:* 2,000 apps platformed (40% monetized), initial revenue optimization.
-*   **Mid-Term (EOY 2027):** **€22M ARR**
-    *   *Driver:* Scale to **6,000 apps** (3x EOY 2026).
-    *   **50% monetization rate** (3,000 monetized apps).
-    *   Avg. net retained revenue per monetized app to **~€7,350** (platform/eCPM enhancements).
-    *   *Captures ~0.016% of $140B SAM.*
+| Lever                          | FY26 (Jul 25–Jun 26) | FY27      | FY28 H1            |
+| ------------------------------ | -------------------- | --------- | ------------------ |
+| Gen‑AI apps live on platform   | 2 000                | 10 000     | 15 000              |
+| % with ads turned on           | 50 %                 | 70 %      | 75 %               |
+| Avg. ad impressions / app / mo | 30 k                 | 75 k      | 100 k               |
+| Platform-wide eCPM             | €5.0                 | €7.0      | €8.0               |
+| Pollinations share of ad €     | 70 %                 | 70 %      | 70 %               |
+| **Net ARR (EOY)**              | **€1.3 M**           | **€30 M** | **€71 M run-rate** |
 
-**Why This Market Matters**
+*Sensitivity*: every €1 change in eCPM shifts FY27 ARR by ± €3.2 M.
 
-*   **Vast Scale:** Significant revenue potential.
-*   **Direct Alignment:** Serves key indie creator segment.
-*   **Strong Tailwinds:** GenAI, privacy shifts, creator economy.
-*   **Untapped Inventory:** Our platform unlocks a previously untapped, large-scale inventory of AI-contextual advertising opportunities, effectively providing a continuous new supply for ad providers seeking these niche audiences.
-*   **Proven Model:** Ad-revenue sharing, enhanced by our AI tools.
+> *We hit €30 M while capturing < 0.15 % of SAM—credible, capital-efficient.*
+
+## Speaker Highlights (40 s riff)
+
+1. **"Ceiling"** — \$218 B in mobile + web ad spend outside walled gardens.
+2. **"Slice we plug into"** — \$20 B already flowing through Unity/AppLovin‑style SDKs.
+3. **"Our bite"** — Convert Gen-AI render events into €30 M net ARR by 2027 (that's < 0.15 % of SAM).
+4. **"Flywheel"** — Higher eCPM → bigger creator payouts → more Gen-AI apps → compounding inventory—all without a sales team.

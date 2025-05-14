@@ -372,8 +372,6 @@ Indie inventory reachable via drop‑in monetization tooling
 
 <div class="text-center flex flex-col justify-center items-center h-full">
   <h2 class="bg-purple-100 p-4 rounded-lg"><em>Every new Gen‑AI app<br>turns cost into ad revenue<br>via a single line of code</em></h2>
-  <br>
-  <h1><strong>📈 ~20 % YoY market growth 🚀</strong></h1>
 </div>
 
 <!--

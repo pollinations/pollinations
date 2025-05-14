@@ -356,35 +356,34 @@ layout: two-cols-header
 
 <br>
 
-## **$218 B TAM** 🌐  
-Mobile + web ad spend **outside** Meta / TikTok / YouTube (2025)
+## **\$218 B TAM** 🌐
 
-## **$20 B SAM** 📣  
-Indie inventory reachable via Unity‑/AppLovin‑style monetisation SDKs
+Mobile + web ad spend **outside** walled gardens (2025)
 
-## **€27 M Net ARR** (EOY 2027) 💻  
-Share **after** GPU cost & creator rev‑share  
-<sub>→ **0.13 %** of SAM — plenty of headroom</sub>
+## **\$20 B SAM** 📣
+
+Indie inventory reachable via drop‑in monetization tooling
+
+## **€768 M Net ARR** (FY 31 run‑rate) 💻
+
+>#### **3.8 %** of SAM — massive runway
 
 ::right::
 
 <div class="text-center flex flex-col justify-center items-center h-full">
-  <h2 class="bg-purple-100 p-4 rounded-lg"><em>AI‑driven ad monetization<br>scales with every new<br> Gen-AI app</em></h2>
+  <h2 class="bg-purple-100 p-4 rounded-lg"><em>Every new Gen‑AI app<br>turns cost into ad revenue<br>via a single line of code</em></h2>
   <br>
-  <h1><strong>📈 ~20 % YoY market growth 🚀</strong></h1>
+  <h1><strong>📈 ~20 % YoY market growth 🚀</strong></h1>
 </div>
 
 <!--
-## Market
-**Massive pool** $218 B in mobile+web ad spend outside the walled gardens.
-
-**Reachable slice** $20 B flows through SDK pipes indies already use.
-
-**Our bite** We convert Gen‑AI renders into €27 M net ARR by 2027 (0.13 % share) even after GPU and creator payouts.
-
-**Flywheel** More apps ⇒ more impressions ⇒ higher eCPM — growth without a sales team.
-## End
+Market notes
+1. €218 B mobile‑web ad pool outside the giants.
+2. €20 B already flows through SDK pipes our plug‑in taps.
+3. Scaling to 200 k Gen‑AI apps → €768 M net ARR (3.8 % of SAM) post compute & rev‑share.
+4. Ads autofund GPU, creators earn 50 %; we grow impressions, eCPM, and share—no sales team required.
 -->
+
 
 ---
 layout: two-cols-header

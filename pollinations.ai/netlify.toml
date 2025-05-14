@@ -7,6 +7,12 @@
   status = 200
   force = true
 
+[[redirects]]
+  from = "/t/*"
+  to = "/.netlify/functions/track/:splat"
+  status = 200
+  force = true
+
 # Ensure Netlify preserves the React router paths
 [[redirects]]
   from = "/*"

@@ -357,13 +357,13 @@ layout: two-cols-header
 <br>
 
 ## **247B TAM** 🌐  
-Global AI-Contextual Ad Spend
+Mobile + web ad spend outside walled gardens (2025)
 
 ## **3.4B SAM** 📣  
-GenAI in Advertising segment
+Indie inventory accessible via monetization SDKs
 
-## **22M ARR** (2027)💻  
-Indie AI-native apps
+## **€27M Net ARR** (EOY 2027) 💻  
+*pollinations.ai* share **after** compute & rev‑share
 
 ::right::
 
@@ -372,12 +372,16 @@ Indie AI-native apps
 <div class="text-center">
   <h2><em>Massive scale for <br> <strong>AI-driven ad monetization</strong></em></h2>
 <br>
-  <div class="flex justify-center">
-    <img src="/media/market-growth.png" alt="Paintpoints" class="w-5/8 rounded-lg shadow-lg" />
-  </div>
+  <h1><strong>📈 20% Growth YOY 🚀</strong></h1>
 </div>
 
 <!--
+
+	1.	“Massive pool” – 247 B in mobile + web ad spend that’s outside the big walled gardens.
+	2.	“Our reachable slice” – 3.4 B already moving through Unity/AppLovin‑style SDKs that every indie plugs in.
+	3.	“Pollinations’ bite” – we turn Gen‑AI renders into ads worth €22 M net ARR by 2027, even after cloud GPU and creator rev‑share.
+	4.	“Why it scales” – same SDK slot → more AI apps → more impressions → higher eCPM — flywheel growth without a sales team.
+
 ## Speaker Notes for Slide 8: Market Opportunity
 *   Market: Massive & fast-growing.
 *   Focus: "GenAI in Advertising" - $3.4B segment.

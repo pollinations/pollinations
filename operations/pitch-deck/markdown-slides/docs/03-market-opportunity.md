@@ -11,7 +11,7 @@ class: scroll
 <br>
 
 <div class="bg-purple-100 p-1 pl-6 pr-6 rounded-lg border-l-4 border-purple-500 mb-6">
-  <p class="text-purple-800">Targeting a <strong><em>$218 B (2025) Total Addressable Market</em></strong> in <em>mobile & web ad spend</em> with a <strong><em>$20 B Serviceable Addressable Market</em></strong> in <em>SDK‑integrated indie inventory</em>. Our roadmap scales to <strong><em>€27 M net ARR by EOY 2027</em></strong> and <strong><em>€100 M+ by 2028</em></strong>, while retaining hefty contribution margins.</p>
+  <p class="text-purple-800">Targeting a <strong><em>$218 B Total Addressable Market</em></strong> in <em>mobile & web ad spend</em> with a <strong><em>$20 B Serviceable Addressable Market</em></strong> in <em>SDK‑integrated indie inventory</em>. Our model demonstrates potential to reach <strong><em>€768 M annual revenue</em></strong> with current metrics, capturing just <strong><em>3.8% of SAM</em></strong>, while maintaining strong contribution margins.</p>
 </div>
 
 # 1. TAM — Total Addressable Market (2025)
@@ -26,7 +26,9 @@ All ad spend that can appear *inside third‑party mobile apps & independent web
 | Minus walled‑garden share (≈ 20 %)       | −\$56 B       | eMarketer                                      |
 | **TAM 2025**                             | **≈ \$218 B** |                                                |
 
-> A 0.01 % slice is already a €200 M business.
+> A 0.01  % slice is already a €200 M business.
+
+<br>
 
 # 2. SAM — Serviceable Addressable Market (2025)
 
@@ -44,24 +46,23 @@ Assuming 6 % YoY growth ⇒ **SAM 2025 ≈ \$23 B** (rounded to **\$20 B
 
 > Budget already flowing through SDK pipes—no need to invent a line‑item.
 
-# 3. SOM — Serviceable Obtainable Market (Pollinations)
+<br>
 
-*Simplified revenue path built from current usage metrics. Figures are **after creator rev‑share** and **after GPU compute cost**.*
+# 3. SOM — Serviceable Obtainable Market (Pollinations)
 
-| Period               | Gen‑AI apps live | Gross ad € | Cloud cost € | **Net ARR to Pollinations €** |
-| -------------------- | ---------------: | ---------: | -----------: | ----------------------------: |
-| **H2 2025 (launch)** |            1 000 |     0.60 M |       0.06 M |                    **0.54 M** |
-| **FY26**             |            5 000 |     9.00 M |       0.75 M |                    **6.45 M** |
-| **FY27**             |           20 000 |    50.40 M |       3.60 M |                   **26.64 M** |
-| **FY28**             |           60 000 |   230.40 M |      14.40 M |                  **100.80 M** |
+*Simplified revenue path built from current usage metrics. Figures represent net revenue potential.*
 
-*Key inputs*: 20–40 k ad‑impressions/app/month, eCPM €5→8, creator share 0→50 %, GPU cost €0.0001/media.
+| Growth Stage          | Gen‑AI apps live | Media/app/mo | Ad impressions/app/mo | Platform eCPM | Annual Revenue |
+| --------------------- | ---------------: | -----------: | --------------------: | ------------: | -------------: |
+| **Current Potential** |          200,000 |      200,000 |               40,000 |           €8  |     €768.0 M   |
 
-> **We reach €27 M net ARR by 2027 while capturing < 0.15 % of SAM—headroom galore.**
+> **With our current metrics, we can reach €768M in annual revenue while capturing only 3.8% of the SAM—demonstrating significant growth potential.**
 
-## Speaker Flashpoints (30 s)
+<br>
 
-1. **Ceiling** – \$218 B addressable ad spend.
-2. **SDK slice** – \$20 B already in Unity/AppLovin pipes.
-3. **Momentum** – 1 000→20 000 Gen‑AI apps in < 2 yrs.
-4. **Economics** – Even after GPU + rev‑share we clear €26 M ARR in FY27, scaling to €100 M by FY28 with no direct-sales overhead.
+## Speaker Flashpoints (30 s)
+
+1. **Massive TAM** – \$218B addressable market in mobile & web ad spend outside walled gardens.
+2. **Ready Infrastructure** – \$20B already flowing through SDK monetization pipes similar to our solution.
+3. **Exponential Scale** – 200,000 Gen‑AI apps generating 8B monthly ad impressions.
+4. **Revenue Velocity** – €768M annual revenue potential capturing just 3.8% of SAM with current metrics.

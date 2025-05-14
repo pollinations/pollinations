@@ -9,6 +9,10 @@ class: scroll
 # 🔭 **Vision & Mission**
 
 <div class="bg-blue-100 p-1 pl-6 pr-6 rounded-lg border-l-4 border-blue-500 mb-6">
+  <p class="text-blue-800"><strong>Pollinations.AI</strong> is a trusted platform and toolkit that empowers a vibrant community of (indie/vibe) developers to easily build and integrate generative AI into their applications. We then partner with specialized ad-tech companies/agencies to help these developers monetize the unique, untapped ad inventory created within these AI-native apps.</p>
+</div>
+
+<div class="bg-blue-100 p-1 pl-6 pr-6 rounded-lg border-l-4 border-blue-500 mb-6">
   <p class="text-blue-800">Our Vision: <strong><em>Democratize AI creation</em></strong> for <em>'vibe-coders'</em> through a <strong><em>Zero-UI platform</em></strong>, empowering them to build <strong><em>sustainable, income-generating applications</em></strong> without needing deep technical expertise.</p>
 </div>
 

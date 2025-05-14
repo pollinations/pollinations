@@ -36,7 +36,7 @@ class: scroll
 
 ## 3. Beachhead Market (Initial Focus)
 
-**SAM segment: Indie developers using Generative AI for apps, monetized via our platform.**
+**SAM portion reachable via indie developers using Generative AI for apps.**
 
 *   **Size (2025):** **$3.4 Billion** (GenAI in Advertising segment)
 *   **Growth:** ~25% CAGR.

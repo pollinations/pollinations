@@ -105,4 +105,23 @@ Audio ads often follow CPM or CPV:
 
 ---
 
-❓ Any questions? Feel free to ask if you'd like examples with real numbers or a deeper dive into auction dynamics!
+## Average Revenue Benchmarks by Ad Model
+
+Below is a summary table showing typical average revenue rates (“unit rates”) and their equivalent eCPM (revenue per 1,000 impressions) for each ad model. Note that actual results vary by app category, region, and demand source.
+
+| Ad Model                      | Unit Rate                                  | eCPM Equivalent                      | Sources |
+|-------------------------------|--------------------------------------------|--------------------------------------|---------|
+| Impression (Banner CPM)       | $0.50–$1.20 (≈$0.85 average) per 1,000 impressions | $0.85 per 1,000 impressions          |         |
+| Impression (Interstitial CPM) | $3.43 per 1,000 impressions                | $3.43 per 1,000 impressions          |         |
+| Click-Through (Display CPC)   | $0.63 per click                            | $2.90 eCPM (at 0.46% CTR)            |         |
+| Text Ads (Search CPC)         | $2.69 per click                            | $85.52 eCPM (at 3.17% CTR)           |         |
+| Video (Rewarded CPV)          | $10.00 per 1,000 views                     | $10.00 per 1,000 views               |         |
+| Audio (Podcast CPM)           | $22.50 per 1,000 listens                   | $22.50 per 1,000 listens             |         |
+| Affiliate (CPA)               | $48.96 per conversion                      | $979.20 eCPM (at 2% conversion rate) |         |
+
+*   **Banner & Interstitial:** Serve as the low- and mid-range on the CPM spectrum—banners average below $1, interstitials around $3.
+*   **CPC Models:** Display clicks pay around $0.63 each, yielding an eCPM near $2.90 given a typical 0.46% CTR; search‐style text ads pay higher CPC (≈$2.69), with eCPM around $85.
+*   **Video & Audio:** Rewarded video remains one of the highest-yielding in-app formats at $10 eCPM; podcast/audio ads command premium CPMs of $20–$25 (≈$22.50 average).
+*   **Affiliate (CPA):** Performance‐based, averaging about $49 per conversion; with a 2% conversion rate on impressions, that translates to an effective $979 eCPM—reflecting the high value of each completed action.
+
+These benchmarks are broad averages—your own eCPMs may be higher or lower based on geography, app category, seasonality, and ad network performance.

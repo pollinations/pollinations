@@ -107,7 +107,7 @@ class: text-center
 
 **Start building with [pollinations.ai](https://pollinations.ai)**
 <!--
-## Speaker Notes for Slide 1: Title Slide
+## Title Slide
 *   Pollinations.ai.
 *   AI: empowers *everyone* to create.
 *   Our mission: Easy build *and* monetize AI apps.
@@ -149,7 +149,7 @@ layout: two-cols-header
 
 
 <!--
-## Speaker Notes for Slide 2: Problem Statement
+## Problem Statement
 *   Current AI building: tough for creators.
 *   High costs, complex tech. Monetization? A puzzle.
 *   Advertisers: struggle to reach new AI app audiences.
@@ -186,7 +186,7 @@ layout: two-cols-header
 </div>
 
 <!--
-## Speaker Notes for Slide 3: Solution
+##  Solution
 *   Pollinations: we bridge this gap.
 *   Creators: Effortless AI. Focus on UX, we handle backend. Clear path: idea to income, starts free.
 *   How? Ads cover initial compute. Success -> Partner Tier, 50/50 net ad revenue.
@@ -226,7 +226,7 @@ layout: two-cols
 </div>
 
 <!--
-## Speaker Notes for Slide 4: Product Showcase Apps Cohort
+## Product Showcase Apps Cohort
 *   What's being built? Diverse apps.
 *   Art tools, interactive AI, storytellers, chatbots, in-game experiences.
 *   Videos show variety, creativity. Power of accessible AI.
@@ -244,7 +244,7 @@ class: text-center
 </div>
 
 <!--
-## Speaker Notes for Slide 5: Product Showcase - Ad
+## Product Showcase - Ad
 *   Monetization in action: This is key.
 *   Seamless, contextual ad. Integrated right into an app.
 *   Non-intrusive, relevant.
@@ -281,7 +281,7 @@ layout: two-cols
 </div>
 
 <!--
-## Speaker Notes for Slide 6: Product Showcase - Roblox
+## Product Showcase - Roblox
 *   Standout success: Roblox integration.
 *   "AI Character RP" - #1 AI game on Roblox.
 *   2M monthly active users. Deeply engaged.
@@ -334,7 +334,7 @@ layout: two-cols-header
 </div>
 
 <!--
-## Speaker Notes for Slide 7: Traction
+## Traction
 *   Not just an idea: Flywheel is spinning.
 *   3M+ monthly *end-users*.
 *   100M+ AI media generations (text, image, audio) monthly.
@@ -350,43 +350,39 @@ layout: two-cols-header
 layout: two-cols-header
 ---
 
-# <span class="bg-purple-600 text-white p-2 rounded">**🌍 Tapping the $3.4B AI-Contextual Ad Market**</span>
+# <span class="bg-purple-600 text-white p-2 rounded">**🌍 $20 B of Ads, One Drop‑In Line of Code**</span>
 
 ::left::
 
 <br>
 
-## **247B TAM** 🌐  
-Mobile + web ad spend outside walled gardens (2025)
+## **$218 B TAM** 🌐  
+Mobile + web ad spend **outside** Meta / TikTok / YouTube (2025)
 
-## **3.4B SAM** 📣  
-Indie inventory accessible via monetization SDKs
+## **$20 B SAM** 📣  
+Indie inventory reachable via Unity‑/AppLovin‑style monetisation SDKs
 
-## **€27M Net ARR** (EOY 2027) 💻  
-*pollinations.ai* share **after** compute & rev‑share
+## **€27 M Net ARR** (EOY 2027) 💻  
+Share **after** GPU cost & creator rev‑share  
+<sub>→ **0.13 %** of SAM — plenty of headroom</sub>
 
 ::right::
 
-<br>
-
-<div class="text-center">
-  <h2><em>Massive scale for <br> <strong>AI-driven ad monetization</strong></em></h2>
-<br>
-  <h1><strong>📈 20% Growth YOY 🚀</strong></h1>
+<div class="text-center flex flex-col justify-center items-center h-full">
+  <h2 class="bg-purple-100 p-4 rounded-lg"><em>AI‑driven ad monetization<br>scales with every new<br> Gen-AI app</em></h2>
+  <br>
+  <h1><strong>📈 ~20 % YoY market growth 🚀</strong></h1>
 </div>
 
 <!--
+## Market
+**Massive pool** $218 B in mobile+web ad spend outside the walled gardens.
 
-	1.	“Massive pool” – 247 B in mobile + web ad spend that’s outside the big walled gardens.
-	2.	“Our reachable slice” – 3.4 B already moving through Unity/AppLovin‑style SDKs that every indie plugs in.
-	3.	“Pollinations’ bite” – we turn Gen‑AI renders into ads worth €22 M net ARR by 2027, even after cloud GPU and creator rev‑share.
-	4.	“Why it scales” – same SDK slot → more AI apps → more impressions → higher eCPM — flywheel growth without a sales team.
+**Reachable slice** $20 B flows through SDK pipes indies already use.
 
-## Speaker Notes for Slide 8: Market Opportunity
-*   Market: Massive & fast-growing.
-*   Focus: "GenAI in Advertising" - $3.4B segment.
-*   Goal: Capture indie AI-native app ad opportunity.
-*   Graph: AI-driven ad monetization surging. Aiming for $22M ARR by 2027.
+**Our bite** We convert Gen‑AI renders into €27 M net ARR by 2027 (0.13 % share) even after GPU and creator payouts.
+
+**Flywheel** More apps ⇒ more impressions ⇒ higher eCPM — growth without a sales team.
 ## End
 -->
 
@@ -490,7 +486,7 @@ layout: two-cols-header
 
 
 <!--
-## Speaker Notes for Slide 10: Competition
+## Competition
 *   How we stand out:
 *   Model providers (Hugging Face): Great tech, no built-in revenue path for free users.
 *   Platforms (Roblox): Monetization, but closed ecosystems.
@@ -533,7 +529,7 @@ layout: two-cols-header
 ### **4️⃣ Rev Share Specialist** (2026) 
 
 <!--
-## Speaker Notes for Slide 11: Team
+## Team
 *   Who we are:
 *   Thomas (CEO): Vision, strategy, tech innovation.
 *   Elliot (COO): Execution, finance, operations.

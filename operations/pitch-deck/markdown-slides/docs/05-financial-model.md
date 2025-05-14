@@ -20,8 +20,6 @@ class: scroll
 * **Gross margin on net retained revenue:** **\~ 88 %**
 * **Blended LTV / monetised end‑user:** **\~ €0.14**
 
----
-
 ## 1. Core Input Levers
 
 | Lever                       |    FY25 |    FY26 |    FY27 |    FY28 |
@@ -35,8 +33,6 @@ class: scroll
 
 <sub>¹ Creators who opt‑in receive **50 % of their net ad revenue**. The weighted % rises as more “super‑trend” apps adopt rev‑share.</sub>
 
----
-
 ## 2. Yearly P\&L (after compute & creator payouts)
 
 | Year | Gross ARR (€M) | GPU Cost (€M) | Creator Payout (€M) | **Net ARR to Pollinations (€M)** | Net Margin after compute |
@@ -46,8 +42,6 @@ class: scroll
 | 2027 |          50.40 |          3.60 |               14.04 |                        **32.76** |                     65 % |
 | 2028 |         230.40 |         14.40 |               86.40 |                       **129.60** |                     56 % |
 
----
-
 ## 3. Per‑App Contribution (FY27 example)
 
 | Metric                                                 |    Value |
@@ -56,13 +50,9 @@ class: scroll
 | Gross ad €                                             |     €210 |
 | Net to Pollinations after compute & 30 % creator share | **€137** |
 
----
-
 ## 4. Unit‑Economics Sensitivity
 
 * **Every +€1 in eCPM** ⇒ +€4.7 M to FY27 Net ARR.
 * **Every +10 k apps in FY28** ⇒ +€21.6 M run‑rate.
-
----
 
 <sub>Personnel cost assumed €40 k/month (6‑person team). Overhead covers storage/CDN (≈ €2 k). GPU cost and ad‑fill already baked into Net ARR.</sub>

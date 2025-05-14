@@ -36,7 +36,7 @@ const affiliates = [
     blockedCountries: ["CN", "RU", "IR", "KP", "SY", "CU", "BY", "TM", "AE", "SA", "EG", "VN"],
     trackingLink: "https://nordvpn.sjv.io/c/6058776/432264/7452",
     triggerWords: ["VPN", "privacy", "online security", "secure browsing", "internet privacy", "encryption", "IP hiding", "private network", "cybersecurity", "data protection"],
-    weight: 1.7
+    weight: 1.0
   },
   // {
   //   id: "1548053",
@@ -243,7 +243,8 @@ const affiliates = [
     categories: ["Internet Service Provider", "Software"],
     blockedCountries: ["CN", "RU", "IR", "KP", "SY", "CU", "BY", "TM", "AE", "SA", "EG", "VN"],
     trackingLink: "https://iproyal.sjv.io/c/6058776/1281667/15731",
-    triggerWords: ["proxy", "security", "privacy", "online", "anonymous", "data protection", "internet security"]
+    triggerWords: ["proxy", "security", "privacy", "online", "anonymous", "data protection", "internet security"],
+    weight: 1.3
   },
   {
     id: "1826593",

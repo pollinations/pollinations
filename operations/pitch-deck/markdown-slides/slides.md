@@ -504,13 +504,13 @@ layout: two-cols-header
 
 ::left::
 
-## **Thomas Haferlach** CEO
-### 🔭 Sets vision & Strategy
-### 💡 Drives breakthrough innovation
+## 🔭 **Thomas Haferlach** CEO
+### - Sets vision & Strategy
+### - Drives breakthrough innovation
 #
-## **Elliot Fouchy** COO
-### 🚀 Executes strategy & Finance
-### 🛠️ Leads delivery & Operations
+## 🚀 **Elliot Fouchy** COO
+### - Executes strategy & Finance
+### - Leads delivery & Operations
 
 #
 
@@ -520,13 +520,12 @@ layout: two-cols-header
 
 ## **Strategic Hires**
 #
-### **1️⃣ Growth and Marketing Specialist**
+#### 📈 Growth and Marketing Specialist
 #
-### **2️⃣ MLOps & Infrastructure Lead**
+#### 🛠️ MLOps & Infrastructure Lead
 #
-### **3️⃣ Community & Games Lead**
+#### 🎮 Community & Games Lead
 #
-### **4️⃣ Rev Share Specialist** (2026) 
 
 <!--
 ## Team

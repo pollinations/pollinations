@@ -356,44 +356,40 @@ layout: two-cols-header
 
 <br>
 
-## **$218 B TAM** 🌐  
-Mobile + web ad spend **outside** Meta / TikTok / YouTube (2025)
+## **\$218 B TAM** 🌐
 
-## **$20 B SAM** 📣  
-Indie inventory reachable via Unity‑/AppLovin‑style monetisation SDKs
+Mobile + web ad spend **outside** walled gardens (2025)
 
-## **€27 M Net ARR** (EOY 2027) 💻  
-Share **after** GPU cost & creator rev‑share  
-<sub>→ **0.13 %** of SAM — plenty of headroom</sub>
+## **\$20 B SAM** 📣
+
+Indie inventory reachable via drop‑in monetization tooling
+
+## **€768 M Net ARR** (FY 31 run‑rate) 💻
+
+>#### **3.8 %** of SAM — massive runway
 
 ::right::
 
 <div class="text-center flex flex-col justify-center items-center h-full">
-  <h2 class="bg-purple-100 p-4 rounded-lg"><em>AI‑driven ad monetization<br>scales with every new<br> Gen-AI app</em></h2>
-  <br>
-  <h1><strong>📈 ~20 % YoY market growth 🚀</strong></h1>
+  <h2 class="bg-purple-100 p-4 rounded-lg"><em>Every new Gen‑AI app<br>turns cost into ad revenue<br>via a single line of code</em></h2>
 </div>
 
 <!--
-## Market
-**Massive pool** $218 B in mobile+web ad spend outside the walled gardens.
-
-**Reachable slice** $20 B flows through SDK pipes indies already use.
-
-**Our bite** We convert Gen‑AI renders into €27 M net ARR by 2027 (0.13 % share) even after GPU and creator payouts.
-
-**Flywheel** More apps ⇒ more impressions ⇒ higher eCPM — growth without a sales team.
-## End
+Market notes
+1. €218 B mobile‑web ad pool outside the giants.
+2. €20 B already flows through SDK pipes our plug‑in taps.
+3. Scaling to 200 k Gen‑AI apps → €768 M net ARR (3.8 % of SAM) post compute & rev‑share.
+4. Ads autofund GPU, creators earn 50 %; we grow impressions, eCPM, and share—no sales team required.
 -->
 
+
 ---
-layout: two-cols-header
+layout: two-cols
 ---
 
-# <span class="bg-purple-600 text-white p-2 rounded">**💰 How? From Free Tools to Shared Profits**</span>
+# <span class="bg-purple-600 text-white p-2 rounded">**💰 From Prompt to Profit**</span>
 
-::left::
-
+<br>
 <br>
 <br>
 
@@ -411,6 +407,12 @@ layout: two-cols-header
 
 ::right::
 
+<div class="flex justify-center items-center h-full">
+  <img src="/media/tier-ladder.png" alt="Media Generated Growth" class="w-3/5 rounded-lg shadow-lg">
+</div>
+
+<!--
+
 ```mermaid
 flowchart TB
     A([CREATORS]) --> B
@@ -419,7 +421,6 @@ flowchart TB
     D[NECTAR<br/><small>REV-SHARE</small>]
 ```
 
-<!--
 ## Speaker Notes for Slide 9: Business Model
 *   Our financial model: 3-step journey.
 *   1. **Create For Free (Live):** Free tools, wide developer base. Our investment.
@@ -504,27 +505,31 @@ layout: two-cols-header
 
 ::left::
 
-## 🔭 **Thomas Haferlach** CEO
-### - Sets vision & Strategy
-### - Drives breakthrough innovation
-#
-## 🚀 **Elliot Fouchy** COO
-### - Executes strategy & Finance
-### - Leads delivery & Operations
+## **Thomas Haferlach** CEO
+### 🔭 One line
+
+<img src="/media/amazon_logo.png" alt="Amazon" class="w-1/6 inline" style="opacity: 1;" /> &nbsp;&nbsp;&nbsp; <img src="/media/sun-logo.png" alt="Sun" class="w-1/6 inline" style="opacity: 1;" />
 
 #
 
-<img src="/media/team-collaboration.png" alt="Team Collaboration" class="w-1/3" />
+<br>
+
+## **Elliot Fouchy** COO
+### 🚀 One line
+
+#
 
 ::right::
 
-## **Strategic Hires**
+## **H2 2025 Hire**
+#
+>#
+>#### 🤝 **Kalam** (Incoming)
+>#### Head of Community & Creator Success
 >#
 >#### 📈 Growth and Marketing Specialist
 >#
 >#### 🛠️ MLOps & Infrastructure Lead
->#
->#### 🎮 Community & Games Lead
 >#
 
 <!--
@@ -545,34 +550,33 @@ layout: two-cols-header
 
 ::left::
 
-# 🚀 Now | **Activate**
->### - Seeds -> Flowers
->### - Roll out monetization model
->### - Rich ads
+# 🚀 Now | Activate
+### - Ship **Native Ad Toolkit**  
+### - Launch **Polli  Assistant**  
+### - Expand **Nectar pilot** (Roblox → more apps)  
+### - Onboard **Contextual-Ad Partners**  
+### - Start **Project Hosting**
 
 <br>
-<br>
-
-# 📈 +12mo | **Scale**
->### - Launch ad rev-share across platform
->### - Optimize ad targeting with AI
->### - Build global community structure
 
 ::right::
 
-<div class="flex justify-end items-end h-full">
-  <div>
-    <h2 class="text-right">Contact</h2>
-    <h3 class="text-right"><em><strong>hello@pollinations.ai</strong></em></h3>
-  </div>
-</div>
+# 📈 +12 mo | Scale
+### - **Nectar GA** with 50 / 50 rev-share  
+### - **Monthly payouts + Ecosystem Fund**  
+### - **Dynamic & interactive ad formats** 
+### - **Global creator community programs**  
+
+<br>
 
 <!--
-## Speaker Notes for Slide 12: Call to Action
-*   Our Plan:
-*   **Now (Activate):** Turn "Seed" projects into "Flower" apps. Roll out self-funding monetization. Enable richer ads. Funding critical here.
-*   **+12 Months (Scale):** Full ad rev-share platform-wide. Optimize AI ad targeting. Build global community.
-*   Revolutionizing AI app monetization – making it accessible.
-*   Let's talk. hello@pollinations.ai.
+## Roadmap / Call to Action
+	•	Opening: “We’re in activation mode right now—turning Seeds into revenue-generating Flowers and lighting up the ad engine.”
+	•	Point 1: Native Ad Toolkit ships this half, giving devs plug-and-play monetization inside Gen-AI responses.
+	•	Point 2: New website & Leaderboard surface top apps, boosting discovery and social proof.
+	•	Point 3: Nectar pilot already live in Roblox—expanding to more titles to validate rev-share.
+	•	Point 4: Early contextual-ad partners (Garlic, Nexad) lock in demand.
+	•	Scale Year: Over the next 12 months we flip the switch: Nectar GA with automated 50/50 payouts, richer ad formats everywhere, ecosystem fund to accelerate dev growth, and a global community framework to keep talent engaged.
+	•	Close: “Clear path from activation to scalable, shared revenue — let’s build it together.”
 ## End
 -->

@@ -237,11 +237,9 @@ layout: two-cols
 class: text-center
 ---
 
-<div class="flex justify-center">
-  <video class="w-full rounded-lg shadow-lg max-h-[70vh] object-contain" autoplay noloop muted controls>
-    <source src="/media/pixpal-language-ad.mp4" type="video/mp4">
-  </video>
-</div>
+<video class="w-full h-full rounded-lg shadow-lg" autoplay noloop muted controls>
+  <source src="/media/pixpal-language-ad.mp4" type="video/mp4">
+</video>
 
 <!--
 ## Product Showcase - Ad
@@ -267,10 +265,6 @@ layout: two-cols
 <br>
 
 ## 👥 **2M** MAU
- 
-<br>
-
-## 💰 **$150/day** revenue
 
 ::right::
 
@@ -287,6 +281,7 @@ layout: two-cols
 *   2M monthly active users. Deeply engaged.
 *   Already earning: ~$150/day for dev (we get a share).
 *   Real-world proof of our model.
+*   💰 **$150/day** revenue
 ## End
 -->
 

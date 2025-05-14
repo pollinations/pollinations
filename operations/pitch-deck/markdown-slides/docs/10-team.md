@@ -12,24 +12,22 @@ class: scroll
   <p class="text-pink-800"><strong>Execution‑proven founders with complementary expertise</strong> — one commercial growth leader, one deep‑tech builder — backed by a lean hiring plan that fills the few gaps we still have.</p>
 </div>
 
-## Founders at a glance
-
 |                             | **Thomas Haferlach**                                                                                                                                                              | **Elliot Fouchy**                                                                                                                                                                                               |
 | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Role**                    | Chief Executive Officer (CEO)                                                                                                                                                     | Chief Operating Officer (COO)                                                                                                                                                                                   |
 | **Core Focus**              | Vision, product‑market fit, fundraising, strategic partnerships                                                                                                                   | Day‑to‑day execution, platform engineering, creator operations                                                                                                                                                  |
 
----
-
-## Current Gaps & Hiring Roadmap
+## **Current Gaps & Hiring Roadmap**
 
 | Role                                                       | Why we need it                                                                                              | Timing      |
 | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------- |
 | **Lead MLOps / Infra Engineer**                            | Harden model‑serving pipeline as we scale to 10× traffic and add video                                      | **H2 2025** |
 | **Community & Creator Success – Kalam (incoming)** | Champion creator onboarding & engagement; drive feedback loop; lead teen‑facing XR/UGC initiatives          | **H2 2025** |
 
-### - **Kalam** (Head of Community & Creator Success)
+<br>
 
+### 🌟 **Kalam** (Head of Community & Creator Success)
+#
 * **Startup Acceleration & Investment:** Led programs at **Startupbootcamp Israel**, **Marathon Artists Lab**, and **European Pioneers** for games, music & media startups.
 * **Corporate Innovation:** Directed venture & AI‑driven hackdays at **Native Instruments**.
 * **XR / UGC Entrepreneurship:** Founded **Sound Obsessed** & **INXSPACE**, pioneering music‑AI experiences in Roblox, Fortnite & Minecraft.

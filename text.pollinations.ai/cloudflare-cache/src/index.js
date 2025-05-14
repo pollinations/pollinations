@@ -244,6 +244,10 @@ export default {
       if (!originResp.ok) {
         // If the origin response is not OK, just return it without caching
         logMain('Origin response not OK (%d), skipping cache', originResp.status);
+        
+        // Ensure CORS headers are present for error responses
+        clientHdrs.set('access-control-allow-origin', '*');
+        
         return new Response(originResp.body, {
           status: originResp.status,
           statusText: originResp.statusText,

@@ -492,9 +492,7 @@ layout: two-cols-header
 -->
 
 ---
-
-**Slide 8: Team**
-
+layout: two-cols-header
 ---
 
 # <span class="bg-pink-600 text-white p-2 rounded">👥 **Team**</span>
@@ -512,7 +510,7 @@ layout: two-cols-header
 ### **+ 🌐 Marketing & Community**
 **Growth & Developer Relations** : User acquisition, Brand partnerships, Community
 
-<!-- SPEAKER NOTES (Revised) -->
+<!--
 **Concise Talking Points Script:**
 
 *   **Elliot:** "Executing this ambitious vision requires a uniquely qualified team."

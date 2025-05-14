@@ -322,17 +322,6 @@ layout: two-cols-header
   <img src="/media/traction-media-generated-6mo.png" alt="Media Generated Growth" class="w-6/7 rounded-lg shadow-lg">
 </div>
 
-
-<br>
-
-<div class="text-center">Real-Time Requests</div>
-
-<div class="flex justify-center items-center">
-  <video class="w-6/7 rounded-lg shadow-lg" autoplay loop muted playbackRate="2">
-    <source src="/media/image-feed-text-feed.mov" type="video/mp4">
-  </video>
-</div>
-
 <!--
 ## Traction
 *   Not just an idea: Flywheel is spinning.

@@ -9,10 +9,12 @@ class: scroll
 # 📈 **Market Opportunity**
 
 <div class="bg-purple-100 p-1 pl-6 pr-6 rounded-lg border-l-4 border-purple-500 mb-6">
-  <p class="text-purple-800">Market Opportunity: Targeting a <strong><em>$218B (2025) Total Addressable Market</em></strong> in <em>mobile & web ad spend</em> with a <strong><em>$20B Serviceable Addressable Market</em></strong> in <em>SDK-integrated inventory</em>. Our path to capture is <strong><em>€57M net ARR by EOY 2027</em></strong> through monetizing Gen-AI app inventory.</p>
+  <p class="text-purple-800">Targeting a <strong><em>$218B (2025) Total Addressable Market</em></strong> in <em>mobile & web ad spend</em> with a <strong><em>$20B Serviceable Addressable Market</em></strong> in <em>SDK-integrated inventory</em>. Our path to capture is <strong><em>€57M net ARR by EOY 2027</em></strong> through monetizing Gen-AI app inventory.</p>
 </div>
 
-## 1. TAM — Total Addressable Market
+<br>
+
+# **1. TAM — Total Addressable Market**
 
 **Definition** All global ad dollars that can appear *inside third‑party mobile apps & independent websites* (i.e., outside the "walled gardens" of Meta, TikTok, YouTube).
 
@@ -26,7 +28,9 @@ class: scroll
 
 > *Even a 0.01  % share equals a €200 M gross revenue business.*
 
-## 2. SAM — Serviceable Addressable Market
+<br>
+
+# **2. SAM — Serviceable Addressable Market**
 
 **Definition** The portion of TAM that flows through *plug‑and‑play monetisation SDKs*—the exact slot where the Pollinations SDK lives.
 
@@ -42,8 +46,9 @@ Assuming 6 % YoY growth ⇒ **SAM 2025 ≈ \$23 B**. Rounded conservativ
 
 > *We're not inventing a new budget—SDK pipes already carry > \$20 B each year.*
 
+<br>
 
-## 3. SOM — Serviceable Obtainable Market
+# **3. SOM — Serviceable Obtainable Market**
 
 **Definition** Net revenue Pollinations can secure within 36 months, based on current traction.
 
@@ -63,7 +68,9 @@ Assuming 6 % YoY growth ⇒ **SAM 2025 ≈ \$23 B**. Rounded conservativ
 
 > *We hit €57 M while capturing < 0.3 % of SAM—credible, capital-efficient.*
 
-## Speaker Highlights (40 s riff)
+<br>
+
+# **Speaker Highlights (40 s riff)**
 
 1. **"Ceiling"** — \$218 B in mobile + web ad spend outside walled gardens.
 2. **"Slice we plug into"** — \$20 B already flowing through Unity/AppLovin‑style SDKs.

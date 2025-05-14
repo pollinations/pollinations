@@ -123,29 +123,24 @@ layout: two-cols-header
 <br>
 
 ## ***The current ecosystem forces painful trade-offs*** 😞
-
 #
 
 ::left::
 
-<img src="/media/problem_friction.png" alt="Problem: Friction" class="w-1/3 rounded-lg shadow-lg" />
+<img src="/media/problem_friction.png" alt="Problem: Friction" class="w-1/5 rounded-lg shadow-lg" />
 
 #
-# **App Creators**
-### 🧪 Struggle to experiment and scale
-#
-### 💰 Struggle to monetize
+# **App Creator**
+### 🧪 High costs, complex tech. Monetization? A puzzle.
 
 ::right::
 
-<img src="/media/problem_reach.png" alt="Problem: Reach" class="w-1/3 rounded-lg shadow-lg" />
+<img src="/media/problem_reach.png" alt="Problem: Reach" class="w-1/5 rounded-lg shadow-lg" />
 
 #
 
-# **Advertisers**
-### 🎯 Struggle to reach audiences in new AI apps
-#
-### 💸 Wasted ad spend with minimal conversion
+# **Advertiser**
+### 💸 Struggle to reach audiences in new AI apps
 
 
 <!--

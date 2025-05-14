@@ -384,13 +384,12 @@ Market notes
 
 
 ---
-layout: two-cols-header
+layout: two-cols
 ---
 
-# <span class="bg-purple-600 text-white p-2 rounded">**💰 How? From Free Tools to Shared Profits**</span>
+# <span class="bg-purple-600 text-white p-2 rounded">**💰 From Prompt to Profit**</span>
 
-::left::
-
+<br>
 <br>
 <br>
 
@@ -408,6 +407,12 @@ layout: two-cols-header
 
 ::right::
 
+<div class="flex justify-center items-center h-full">
+  <img src="/media/tier-ladder.png" alt="Media Generated Growth" class="w-3/5 rounded-lg shadow-lg">
+</div>
+
+<!--
+
 ```mermaid
 flowchart TB
     A([CREATORS]) --> B
@@ -416,7 +421,6 @@ flowchart TB
     D[NECTAR<br/><small>REV-SHARE</small>]
 ```
 
-<!--
 ## Speaker Notes for Slide 9: Business Model
 *   Our financial model: 3-step journey.
 *   1. **Create For Free (Live):** Free tools, wide developer base. Our investment.

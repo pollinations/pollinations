@@ -554,34 +554,33 @@ layout: two-cols-header
 
 ::left::
 
-# 🚀 Now | **Activate**
->### - Seeds -> Flowers
->### - Roll out monetization model
->### - Rich ads
+# 🚀 Now | Activate
+### - Ship **Native Ad Toolkit**  
+### - Launch **Polli  Assistant**  
+### - Expand **Nectar pilot** (Roblox → more apps)  
+### - Onboard **Contextual-Ad Partners**  
+### - Start **Project Hosting**
 
 <br>
-<br>
-
-# 📈 +12mo | **Scale**
->### - Launch ad rev-share across platform
->### - Optimize ad targeting with AI
->### - Build global community structure
 
 ::right::
 
-<div class="flex justify-end items-end h-full">
-  <div>
-    <h2 class="text-right">Contact</h2>
-    <h3 class="text-right"><em><strong>hello@pollinations.ai</strong></em></h3>
-  </div>
-</div>
+# 📈 +12 mo | Scale
+### - **Nectar GA** with 50 / 50 rev-share  
+### - **Monthly payouts + Ecosystem Fund**  
+### - **Dynamic & interactive ad formats** 
+### - **Global creator community programs**  
+
+<br>
 
 <!--
-## Speaker Notes for Slide 12: Call to Action
-*   Our Plan:
-*   **Now (Activate):** Turn "Seed" projects into "Flower" apps. Roll out self-funding monetization. Enable richer ads. Funding critical here.
-*   **+12 Months (Scale):** Full ad rev-share platform-wide. Optimize AI ad targeting. Build global community.
-*   Revolutionizing AI app monetization – making it accessible.
-*   Let's talk. hello@pollinations.ai.
+## Roadmap / Call to Action
+	•	Opening: “We’re in activation mode right now—turning Seeds into revenue-generating Flowers and lighting up the ad engine.”
+	•	Point 1: Native Ad Toolkit ships this half, giving devs plug-and-play monetization inside Gen-AI responses.
+	•	Point 2: New website & Leaderboard surface top apps, boosting discovery and social proof.
+	•	Point 3: Nectar pilot already live in Roblox—expanding to more titles to validate rev-share.
+	•	Point 4: Early contextual-ad partners (Garlic, Nexad) lock in demand.
+	•	Scale Year: Over the next 12 months we flip the switch: Nectar GA with automated 50/50 payouts, richer ad formats everywhere, ecosystem fund to accelerate dev growth, and a global community framework to keep talent engaged.
+	•	Close: “Clear path from activation to scalable, shared revenue — let’s build it together.”
 ## End
 -->

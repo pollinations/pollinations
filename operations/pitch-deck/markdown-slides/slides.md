@@ -352,27 +352,21 @@ layout: two-cols-header
 
 # <span class="bg-purple-600 text-white p-2 rounded">**🌍 $20 B of Ads, One Drop‑In Line of Code**</span>
 
-::left::
+<br>
+<br>
+
+## **€218 B** TAM 🌐
+### Mobile + Web Ad Spend **Outside** Walled Gardens (2025)
 
 <br>
 
-## **\$218 B TAM** 🌐
+## **€20 B** SAM 📣
+### Ad spend on Indie Apps
 
-Mobile + web ad spend **outside** walled gardens (2025)
+<br> 
 
-## **\$20 B SAM** 📣
-
-Indie inventory reachable via drop‑in monetization tooling
-
-## **€768 M Net ARR** (FY 31 run‑rate) 💻
-
->#### **3.8 %** of SAM — massive runway
-
-::right::
-
-<div class="text-center flex flex-col justify-center items-center h-full">
-  <h2 class="bg-purple-100 p-4 rounded-lg"><em>Every new Gen‑AI app<br>turns cost into ad revenue<br>via a single line of code</em></h2>
-</div>
+# **€768 M** SOM 💻
+### **3.8 %** of SAM — massive runway
 
 <!--
 Market notes
@@ -566,3 +560,5 @@ layout: two-cols-header
 	•	Close: “Clear path from activation to scalable, shared revenue — let’s build it together.”
 ## End
 -->
+
+

@@ -39,7 +39,7 @@ All ad spend that can appear *inside third‑party mobile apps & independent web
 
 # **2. SAM — Serviceable Addressable Market (2025)**
 
-The chunk of TAM that flows through plug‑and‑play monetisation SDKs—the exact slot Pollinations occupies.
+The chunk of TAM that flows through plug‑and‑play monetization SDKs—the exact slot Pollinations occupies.
 
 | SDK‑network (FY 2024)                             | Net rev. | Take‑rate | **Gross spend** | Source                    |
 | ------------------------------------------------- | -------- | --------- | --------------- | ------------------------- |
@@ -64,4 +64,3 @@ Assuming 6 % YoY growth ⇒ **SAM 2025 ≈ \$23 B** (\$21.7 B + 6% YoY, prudentl
 | **Projected FY31 Potential** |          200,000 |      200,000 |               40,000 |           €8  |     €768.0 M   |
 
 > **With our current metrics, we can reach €768M in annual revenue while capturing only 3.8% of the 2025 SAM (€20B at 1:1 exchange)—demonstrating significant growth potential against an even larger future market.**
-

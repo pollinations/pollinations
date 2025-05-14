@@ -352,27 +352,21 @@ layout: two-cols-header
 
 # <span class="bg-purple-600 text-white p-2 rounded">**🌍 $20 B of Ads, One Drop‑In Line of Code**</span>
 
-::left::
+<br>
+<br>
+
+## **€218 B** TAM 🌐
+### Mobile + Web Ad Spend **Outside** Walled Gardens (2025)
 
 <br>
 
-## **\$218 B TAM** 🌐
+## **€20 B** SAM 📣
+### Ad spend on Indie Apps
 
-Mobile + web ad spend **outside** walled gardens (2025)
+<br> 
 
-## **\$20 B SAM** 📣
-
-Indie inventory reachable via drop‑in monetization tooling
-
-## **€768 M Net ARR** (FY 31 run‑rate) 💻
-
->#### **3.8 %** of SAM — massive runway
-
-::right::
-
-<div class="text-center flex flex-col justify-center items-center h-full">
-  <h2 class="bg-purple-100 p-4 rounded-lg"><em>Every new Gen‑AI app<br>turns cost into ad revenue<br>via a single line of code</em></h2>
-</div>
+# **€768 M** SOM 💻
+### **3.8 %** of SAM — massive runway
 
 <!--
 Market notes
@@ -428,72 +422,6 @@ flowchart TB
 *   3. **Profit Together (2026):** Top apps: 50/50 net ad revenue share. Turns projects into businesses. Key for creator retention.
 *   Benefits: Prevents churn, incentivizes quality, unit economics improve as AI costs drop.
 *   Unit Economics Example: 1M MAU -> ~10M ad impressions. At $1.50 CPM -> $15K revenue. Stage 3: $7.5K to developer.
-## End
--->
-
----
-layout: two-cols-header
----
-
-# <span class="bg-yellow-600 text-white p-2 rounded">**🛡️ Competition**</span>
-
-<div class="mb-10"></div>
-<table>
-  <thead>
-    <tr>
-      <th><b></b></th>
-      <th><b>pollinations.ai</b></th>
-      <th>Hugging Face</th>
-      <th>Roblox</th>
-      <th>GIPHY</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><b>Open & Free API</b></td>
-      <td>✅</td>
-      <td>✅</td>
-      <td>❌</td>
-      <td>✅</td>
-    </tr>
-    <tr>
-      <td><b>No Login Required</b></td>
-      <td>✅</td>
-      <td>❌</td>
-      <td>❌</td>
-      <td>✅</td>
-    </tr>
-    <tr>
-      <td><b>Multi-modal (Text, Img, Audio)</b></td>
-      <td>✅</td>
-      <td>✅</td>
-      <td>❌</td>
-      <td>❌</td>
-    </tr>
-    <tr>
-      <td><b>Ad-Based Monetization</b></td>
-      <td>✅   (2026)</td>
-      <td>❌</td>
-      <td>✅</td>
-      <td>✅</td>
-    </tr>
-  </tbody>
-</table>
-
-<br>
-<br>
-
-## **From Prompt to Profit:** *The Context-Aware AI Platform*
-
-
-<!--
-## Competition
-*   How we stand out:
-*   Model providers (Hugging Face): Great tech, no built-in revenue path for free users.
-*   Platforms (Roblox): Monetization, but closed ecosystems.
-*   Pollinations: Open & Free API (no login to start) + Multi-modal AI + *Built-in ad monetization & rev-share*.
-*   Think "Unity Ads for GenAI" - broader, smarter, context-aware.
-*   We take creators: Prompt to Profit.
 ## End
 -->
 
@@ -580,3 +508,5 @@ layout: two-cols-header
 	•	Close: “Clear path from activation to scalable, shared revenue — let’s build it together.”
 ## End
 -->
+
+

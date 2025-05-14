@@ -519,13 +519,9 @@ layout: two-cols-header
 
 #
 
-<div class="flex justify-left">
-  <img src="/media/team-collaboration.png" alt="Team Collaboration" class="w-1/4" />
-</div>
-
 ::right::
 
-## **Strategic Team**
+## **H2 2025 Hire**
 #
 >#
 >#### 🤝 **Kalam** (Incoming)

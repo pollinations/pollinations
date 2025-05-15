@@ -295,7 +295,6 @@ layout: two-cols
 ---
 
 # **🎮 Roblox Integration**
-# (rev-share case study)
 
 <br>
 <br>
@@ -305,6 +304,13 @@ layout: two-cols
 <br>
 
 ## 👥 **2M** MAU
+
+<br>
+
+<div class="bg-white inline-block px-4 py-2 rounded-lg border-2 border-[#fc9432]">
+  <h2><img src="/media/tier-nectar-logo-no-text.png" alt="Nectar Logo" style="height: 2em; vertical-align: middle;"> <strong class="text-[#fc9432]">Nectar</strong></h2>
+  <h3>Rev-share case study</h3>
+</div>
 
 ::right::
 

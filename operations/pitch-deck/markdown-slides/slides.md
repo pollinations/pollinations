@@ -278,11 +278,11 @@ layout: two-cols
   </div>
   
   <div class="w-6/10 ml-auto">
-    <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
+    <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls onloadedmetadata="this.playbackRate = 2.0;">
       <source src="/media/pokemon-image-gen-2x-compressed.mp4" type="video/mp4">
     </video>
   </div>
-</div>
+
 
 <!--
 ## Creator Story

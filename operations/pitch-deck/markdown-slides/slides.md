@@ -124,8 +124,6 @@ layout: two-cols-header
 
 ::left::
 
-<br>
-
 <img src="/media/problem_friction.png" alt="Problem: Friction" class="w-1/4 rounded-lg shadow-lg" />
 
 #
@@ -134,11 +132,11 @@ layout: two-cols-header
 
 ### 💰 Monetization Blindspot
 #
-### 🔧 Lack of AI-Specific Tools 
-
-::right::
+### 🔧 Lack of AI-Specific Tools
 
 <br>
+
+::right::
 
 <img src="/media/problem_reach.png" alt="Problem: Reach" class="w-1/4 rounded-lg shadow-lg" />
 
@@ -149,6 +147,8 @@ layout: two-cols-header
 ### 🍀 Fragmented & Unique Inventory
 #
 ### 📊 Low Engagement with Generic Ads
+
+<br>
 
 <!--
 ## Problem - Two Sides of the Same Coin
@@ -282,13 +282,18 @@ layout: two-cols
 # 💬 **Pixpal.Chat** (web app)
 
 <br>
+<br>
+<br>
 
-## **_#1 on Bing_** and various AI assistants for **image generation** 🖼️
+# **_#1 on Bing_** 
+## and various AI assistants for
+## **image generation** 🖼️
 
 <br>
 
-<div class="bg-red-500 text-white p-2 rounded-lg inline-block">
-  <h3 class="m-0"><strong>AI-Personalized</strong> ad integration 🎯</h3>
+<div class="bg-orange-500 text-white p-4 rounded-lg inline-block">
+  <h2 class="m-0"><strong>AI-Personalized</strong></h2>
+  <h2 class="m-0"><strong>Ad Integration 🎯</strong></h2>
 </div>
 
 ::left::
@@ -399,9 +404,10 @@ layout: two-cols-header
 layout: two-cols-header
 ---
 
-# <span class="bg-purple-600 text-white p-2 rounded">**🌍 $20 B of Ads, One Drop‑In Line of Code**</span>
+# <span class="bg-orange-600 text-white p-2 rounded">**🌍 $20 B of Ads, One Drop‑In Line of Code**</span>
 
-<br>
+::left::
+
 <br>
 
 ## **€218 B** TAM 🌐
@@ -419,6 +425,13 @@ layout: two-cols-header
 # **€768 M** SOM 💻
 ### **3.8 %** of SAM → **massive runway**
 </div>
+
+::right::
+
+<div class="flex justify-center items-center">
+  <img src="/media/tam-sam-som.png" alt="TAM SAM SOM Visualization" class="w-6/7 rounded-lg shadow-lg">
+</div>
+
 
 
 <!--
@@ -541,26 +554,35 @@ layout: two-cols-header
 layout: two-cols-header
 ---
 
-# <span class="bg-teal-600 text-white p-2 rounded">**🤝 Ask**</span>
+# <span class="bg-teal-600 text-white p-2 rounded">**🤝 We are raising - reach out: hello@pollinations.ai**</span>
 
 ::left::
 
-# 🚀 Now | Activate
-### - Ship **Native Ad Toolkit**  
-### - Launch **Polli  Assistant**  
-### - Expand **Nectar pilot** (Roblox → more apps)  
-### - Onboard **Contextual-Ad Partners**  
-### - Start **Project Hosting**
+# 🚀 **Now | Activate**
+### - Native Ad Toolkit
+#
+### - Flower GA
+#
+### - Nectar pilot
+#
+### - Contextual-Ad Partners
+#
+### - Project Hosting
+#
+### - Polli Assistant
 
 <br>
 
 ::right::
 
-# 📈 +12 mo | Scale
-### - **Nectar GA** with 50 / 50 rev-share  
-### - **Monthly payouts + Ecosystem Fund**  
-### - **Dynamic & interactive ad formats** 
-### - **Global creator community programs**  
+# 📈 **+12 mo | Scale**
+### - Nectar GA
+#
+### - Monthly payouts
+#
+### - Ecosystem Fund
+#
+### - Dynamic & interactive ad formats
 
 <br>
 

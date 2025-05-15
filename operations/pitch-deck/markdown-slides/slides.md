@@ -109,6 +109,8 @@ class: text-center flex flex-col justify-center items-center h-full
 
 <!--
 ## Title Slide
+* "Pollinations.ai provides the AI infrastructure and tools for our vibrant community to easily build generative AI apps."
+* "We then partner with specialized Ad Tech companies to help them monetize the unique, untapped ad inventory these apps create."
 * Hi everyone, I'm Thomas from **Pollinations.ai**
 * We're building **AI infrastructure** that powers **community creation**
 * Our unique angle? **Monetization** through **Ad Tech Partners**
@@ -128,7 +130,7 @@ layout: two-cols-header
 
 #
 
-# **Indie/Vibe Coder: Barriers to AI Creation & Profit**
+# **Indie/Vibe Coders:**
 
 ### ⚙️ **Complex AI Access & High Costs** 
 #
@@ -142,7 +144,7 @@ layout: two-cols-header
 
 #
 
-# **Advertisers & Ad Tech: Untapped AI Frontier**
+# **Advertisers & Ad Tech**
 
 ### 🍀 Fragmented & Unique AI Inventory
 #
@@ -426,6 +428,8 @@ layout: two-cols-header
 ### **3.8 %** of SAM → **massive runway**
 </div>
 
+
+
 ::right::
 
 <div class="flex justify-center items-center">
@@ -440,6 +444,7 @@ layout: two-cols-header
 *   SAM: €20B (Indie App Ad Spend reachable via SDKs).
 *   SOM: €768M (Our potential from AI-native apps).
 *   Our infra + ad partners tap this growing market.
+*   **We're Unity Ads for Gen‑AI micro‑apps** - Unity scaled ads from 0 → $1.6 B in revenue with similar developer base.
 ## End
 -->
 

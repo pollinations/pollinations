@@ -123,32 +123,42 @@ layout: two-cols-header
 
 ::left::
 
-<img src="/media/problem_friction.png" alt="Problem: Friction" class="w-1/3 rounded-lg shadow-lg" />
+<br>
+
+<img src="/media/problem_friction.png" alt="Problem: Friction" class="w-1/4 rounded-lg shadow-lg" />
+
+#
 
 # **Indie/Vibe Coder**
 
-- **💰 Monetization Blindspot:** Traditional ads don't fit dynamic AI interactions; direct deals unfeasible for most
-
-- **🔧 Lack of AI-Specific Tools:** Integrating ads contextually into generative content is hard
+### 💰 Monetization Blindspot
+#
+### 🔧 Lack of AI-Specific Tools 
 
 ::right::
 
-<img src="/media/problem_reach.png" alt="Problem: Reach" class="w-1/3 rounded-lg shadow-lg" />
+<br>
+
+<img src="/media/problem_reach.png" alt="Problem: Reach" class="w-1/4 rounded-lg shadow-lg" />
+
+#
 
 # **Advertisers & Ad Tech: Untapped AI Frontier**
 
-- **🌎 Reaching Niche AI Audiences:** Users are in new AI-native apps, hard to target effectively
-
-- **🍀 Fragmented & Unique Inventory:** Thousands of diverse AI apps, no unified way to place contextual ads
-
-- **📊 Low Engagement with Generic Ads:** Standard banners miss the mark in rich AI experiences
-
-
+### 🍀 Fragmented & Unique Inventory
+#
+### 📊 Low Engagement with Generic Ads
 
 <!--
-## Problem Statement
-
 **SPEAKER NOTES FOR CHALLENGE SLIDE:**
+# **Indie/Vibe Coder**
+- **💰 Monetization Blindspot:** Traditional ads don't fit dynamic AI interactions; direct deals unfeasible for most
+- **🔧 Lack of AI-Specific Tools:** Integrating ads contextually into generative content is hard
+# **Advertisers & Ad Tech: Untapped AI Frontier**
+- **🌎 Reaching Niche AI Audiences:** Users are in new AI-native apps, hard to target effectively
+- **🍀 Fragmented & Unique Inventory:** Thousands of diverse AI apps, no unified way to place contextual ads
+- **📊 Low Engagement with Generic Ads:** Standard banners miss the mark in rich AI experiences
+
 *   AI App Challenges:
 *   **Creators:** Costly AI, complex monetization for dynamic content.
 *   **Advertisers/Ad Tech:** Untapped AI frontier, fragmented, generic ads ineffective.

@@ -404,9 +404,10 @@ layout: two-cols-header
 layout: two-cols-header
 ---
 
-# <span class="bg-purple-600 text-white p-2 rounded">**🌍 $20 B of Ads, One Drop‑In Line of Code**</span>
+# <span class="bg-orange-600 text-white p-2 rounded">**🌍 $20 B of Ads, One Drop‑In Line of Code**</span>
 
-<br>
+::left::
+
 <br>
 
 ## **€218 B** TAM 🌐
@@ -424,6 +425,13 @@ layout: two-cols-header
 # **€768 M** SOM 💻
 ### **3.8 %** of SAM → **massive runway**
 </div>
+
+::right::
+
+<div class="flex justify-center items-center">
+  <img src="/media/tam-sam-som.png" alt="TAM SAM SOM Visualization" class="w-6/7 rounded-lg shadow-lg">
+</div>
+
 
 
 <!--

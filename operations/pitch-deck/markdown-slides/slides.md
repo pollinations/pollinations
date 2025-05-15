@@ -124,36 +124,37 @@ layout: two-cols-header
 
 ::left::
 
-<img src="/media/problem_friction.png" alt="Problem: Friction" class="w-1/5 rounded-lg shadow-lg" />
+<img src="/media/problem_friction.png" alt="Problem: Friction" class="w-1/3 rounded-lg shadow-lg" />
 
-#
 # **Indie/Vibe Coder**
-## 🧪 High costs, complex tech. Monetization?
+
+- **💰 Monetization Blindspot:** Traditional ads don't fit dynamic AI interactions; direct deals unfeasible for most
+
+- **🔧 Lack of AI-Specific Tools:** Integrating ads contextually into generative content is hard
 
 ::right::
 
-<img src="/media/problem_reach.png" alt="Problem: Reach" class="w-1/5 rounded-lg shadow-lg" />
+<img src="/media/problem_reach.png" alt="Problem: Reach" class="w-1/3 rounded-lg shadow-lg" />
 
-#
-# **Advertiser**
-## 🧩 Fragmented inventory
+# **Advertisers & Ad Tech: Untapped AI Frontier**
+
+- **🌎 Reaching Niche AI Audiences:** Users are in new AI-native apps, hard to target effectively
+
+- **🍀 Fragmented & Unique Inventory:** Thousands of diverse AI apps, no unified way to place contextual ads
+
+- **📊 Low Engagement with Generic Ads:** Standard banners miss the mark in rich AI experiences
 
 
 
 <!--
 ## Problem Statement
 
-**Indie/Vibe Coder**
-### 🧪 High costs, complex tech. Monetization? Creativity Capped.
+**SPEAKER NOTES FOR CHALLENGE SLIDE:**
+"The AI app boom creates new challenges:"
+"For Creators: AI is costly, and monetizing dynamic AI content with generic ads is ineffective or technically difficult."
+"For Advertisers & the Ad Ecosystem: They're missing engaged users in this new AI frontier. It's fragmented, and standard ads don't leverage the rich context of AI interactions."
+"This is the specific problem Pollinations solves."
 
-**Advertiser**
-## 🧩 Fragmented inventory
-Tens of thousands of micro-apps; too small for direct buys.
-*   Current AI building: tough for creators.
-*   High costs, complex tech. Monetization? A puzzle.
-*   Advertisers: struggle to reach new AI app audiences.
-*   Result: lose-lose for both.
-## End
 -->
 
 ---

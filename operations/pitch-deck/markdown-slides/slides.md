@@ -191,7 +191,7 @@ layout: two-cols
 <div class="font-bold text-purple-600 mb-1">Pollinations Integrates Ad Solutions</div>
 <div class="text-center">⬇️</div>
 
-<div class="font-bold text-amber-600">Revenue Generated & Shared (50/50)</div>
+<div class="font-bold text-amber-600">Revenue Generated & Shared</div>
 </div>
 
 <div class="text-center">From <strong><em>idea</em></strong> to <strong><em>income</em></strong> with <strong><em>zero</em></strong> upfront cost 💰</div>

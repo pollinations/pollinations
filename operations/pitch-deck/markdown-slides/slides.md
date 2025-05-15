@@ -266,13 +266,9 @@ layout: two-cols
 
 <div class="flex flex-col items-center">
   
-  <video class="w-3/4 rounded-lg shadow-lg" autoplay loop muted controls onloadedmetadata="this.playbackRate = 2.0;">
+  <video class="w-2/3 rounded-lg shadow-lg" autoplay loop muted controls onloadedmetadata="this.playbackRate = 2.0;">
     <source src="/media/pokemon-image-gen-2x-compressed.mp4" type="video/mp4">
   </video>
-  
-  <div class="text-lg mt-4 text-gray-700 italic">
-    <p>From idea to working application in minutes with Pollinations.ai</p>
-  </div>
 </div>
 
 <!--

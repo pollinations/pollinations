@@ -303,12 +303,11 @@ text
 
 <!--
 ## Product Showcase - Ad Integration
-* Let me show you our **AI-driven monetization** in action
-* In this community app called **Pixpal**, users are having natural conversations
-* Watch how our AI **analyzes the conversational context** in real-time
-* Now see how our system works with ad partners to deliver a **hyper-contextual ad**
-* Notice the **dynamically AI-generated image** and **targeted offer** - perfectly matched to the conversation
-* This approach is **smart**, **non-intrusive**, and **incredibly effective** for both users and advertisers
+* Pixpal, a community app using our infra, is **#1 on Bing** for 'AI Chat with Images'
+* Here's our AI monetization: User asks about Greece in Pixpal
+* Pollinations' AI **analyzes context**. Our system, with ad partners like **Garlic/Nex.ad**, delivers a **hyper-contextual ad**
+* Note the **dynamically AI-generated image** (e.g., Santorini) and **targeted partner offer** (e.g., TalkPal)
+* This approach is **smart**, **non-intrusive**, and **incredibly effective**. This is how creators will monetize
 ## End
 -->
 

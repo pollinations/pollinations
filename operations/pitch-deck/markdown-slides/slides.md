@@ -308,17 +308,25 @@ text
 layout: two-cols
 ---
 
-# **🎮 Roblox Integration**
-# (rev-share case study)
+# 🎯 **Contextual & Personalized Ad dropped Real-Time**
+
+---
+layout: two-cols
+---
+
+# **🎮 Roblox Case Study**
+# (Revenue Share Success)
 
 <br>
 <br>
 
-<div class="bg-pink-400 text-white p-4 rounded-lg inline-block">
-  <h2 class="m-0"><strong>🏆 Roblox #1 AI Game</strong></h2>
-  <br>
-  <h2 class="m-0">👥 <strong>2M</strong> MAU</h2>
-</div>
+# 🏆 ***#1 on Roblox***
+## AI Game Category
+
+<br>
+<br>
+
+# 👥 **2M+** Monthly Active Users
 
 ::right::
 

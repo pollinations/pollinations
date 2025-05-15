@@ -265,11 +265,8 @@ layout: two-cols
 # **Creator Story: Pokémon Image Generation**
 
 <div class="flex flex-col items-center">
-  <div class="text-xl mb-4">
-    <p>Watch how creators use our platform to build engaging AI applications</p>
-  </div>
   
-  <video class="w-4/5 rounded-lg shadow-lg" autoplay loop muted controls>
+  <video class="w-3/4 rounded-lg shadow-lg" autoplay loop muted controls onloadedmetadata="this.playbackRate = 2.0;">
     <source src="/media/pokemon-image-gen-2x-compressed.mp4" type="video/mp4">
   </video>
   

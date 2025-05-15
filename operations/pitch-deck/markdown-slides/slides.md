@@ -269,7 +269,43 @@ layout: two-cols
     *   (Shows platform power & creativity).
 ## End
 -->
+@ -0,0 +1,33 @@
+---
 
+# **Our Cloud Architecture**
+
+<div class="bg-blue-100 p-4 rounded-lg shadow-lg mb-4">
+  <h3 class="m-0">🔌 <strong>Scalable Infrastructure</strong> powering our ecosystem</h3>
+</div>
+
+```mermaid
+flowchart LR
+    Q["Messaging Platforms<br/>Discord, Telegram, WhatsApp"] --> L1["image.pollinations.ai"]
+    N["30+ Mobile and Web Apps"] --> L1 & L2["text.pollinations.ai"]
+    A["pollinations.ai Website"] --> L1 & L2
+    R["AI Agents<br/>Qwen, Sillytavern"] --> L1
+    AI["AI Assistants<br/>Claude"] --> MCP["MCP Server"]
+    MCP --> L1
+    L1 --> B["Image Generation Service"]
+    B --> F["Prompt Enhancement, Translation & Safety"]
+    F --> D["FLUX Image Models"]
+    L2 --> P["News/Search"]
+    L2 --> SC["Scaleway"]
+    L2 --> DS["Deepseek API"]
+    L2 --> G["Azure"]
+    L2 --> CF["Cloudflare AI"]
+    SC --> QW["Qwen"] & LL["Llama"]
+    G --> OP["OpenAI"] & CL["Claude"]
+    CF --> MI["Mistral"] & CFL["Llama Models"]
+```
+
+<!--
+## Our Architecture
+* This is the technical foundation that powers everything you've seen
+* Our architecture is designed for scale, reliability, and flexibility
+* We connect diverse client applications to the best AI models through our services
+* This modular design allows us to integrate new models and services quickly
+-->
 ---
 layout: two-cols-header
 ---

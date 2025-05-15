@@ -131,7 +131,6 @@ layout: two-cols-header
 #
 
 # **Indie/Vibe Coder** 
-## Barriers to AI Creation & Profit
 #
 ### ⚙️ **Complex AI Access & High Costs**
 #
@@ -146,7 +145,6 @@ layout: two-cols-header
 #
 
 # **Advertisers & Ad Tech**
-## Untapped AI Frontier
 #
 ### 🍀 **Fragmented & Unique AI Inventory**
 #
@@ -158,11 +156,13 @@ layout: two-cols-header
 ## Problem - Two Sides of the Same Coin
 
 **For Indie/Vibe Coders:**
+*Barriers to AI Creation & Profit*
 * These devs face a real **monetization blindspot** - traditional ads just **don't work** in AI interactions
 * They lack **specialized tools** to integrate ads naturally into their **generative content**
 * Result? Amazing apps with **no sustainable business model**
 
 **For Advertisers & Ad Tech:**
+*Untapped AI Frontier*
 * They're struggling to reach these valuable **AI-native audiences** effectively
 * The inventory is incredibly **fragmented** - thousands of diverse AI apps with **no unified access**
 * Their standard banner ads completely **miss the mark** in these rich AI experiences

@@ -542,26 +542,35 @@ layout: two-cols-header
 layout: two-cols-header
 ---
 
-# <span class="bg-teal-600 text-white p-2 rounded">**🤝 Ask**</span>
+# <span class="bg-teal-600 text-white p-2 rounded">**🤝 We are raising - reach out: hello@pollinations.ai**</span>
 
 ::left::
 
-# 🚀 Now | Activate
-### - Ship **Native Ad Toolkit**  
-### - Launch **Polli  Assistant**  
-### - Expand **Nectar pilot** (Roblox → more apps)  
-### - Onboard **Contextual-Ad Partners**  
-### - Start **Project Hosting**
+# 🚀 **Now | Activate**
+### - Native Ad Toolkit
+#
+### - Flower GA
+#
+### - Nectar pilot
+#
+### - Contextual-Ad Partners
+#
+### - Project Hosting
+#
+### - Polli Assistant
 
 <br>
 
 ::right::
 
-# 📈 +12 mo | Scale
-### - **Nectar GA** with 50 / 50 rev-share  
-### - **Monthly payouts + Ecosystem Fund**  
-### - **Dynamic & interactive ad formats** 
-### - **Global creator community programs**  
+# 📈 **+12 mo | Scale**
+### - Nectar GA
+#
+### - Monthly payouts
+#
+### - Ecosystem Fund
+#
+### - Dynamic & interactive ad formats
 
 <br>
 

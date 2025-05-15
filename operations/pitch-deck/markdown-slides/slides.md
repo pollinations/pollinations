@@ -190,22 +190,22 @@ layout: two-cols-header
 ::right::
 
 <div class="bg-blue-100 p-4 rounded-lg shadow-lg mb-2 text-center">
-<div class="font-bold text-blue-600">Developers Create Apps with AI Media</div>
+<div class="font-bold text-blue-600 text-xl">Developers Create Apps with AI Media</div>
 </div>
-<div class="text-center font-bold text-2xl">↓</div>
+<div class="text-center font-bold text-xl">↓</div>
 
 <div class="bg-green-100 p-4 rounded-lg shadow-lg mb-2 text-center">
-<div class="font-bold text-green-600">Apps Attract & Engage Users</div>
+<div class="font-bold text-green-600 text-xl">Apps Attract & Engage Users</div>
 </div>
-<div class="text-center font-bold text-2xl">↓</div>
+<div class="text-center font-bold text-xl">↓</div>
 
 <div class="bg-purple-100 p-4 rounded-lg shadow-lg mb-2 text-center">
-<div class="font-bold text-purple-600">pollinations.ai Integrates Ad Solutions</div>
+<div class="font-bold text-purple-600 text-xl">pollinations.ai Integrates Ad Solutions</div>
 </div>
-<div class="text-center font-bold text-2xl">↓</div>
+<div class="text-center font-bold text-xl">↓</div>
 
 <div class="bg-amber-100 p-4 rounded-lg shadow-lg mb-2 text-center">
-<div class="font-bold text-amber-600">Revenue Generated & Shared</div>
+<div class="font-bold text-amber-600 text-xl">Revenue Generated & Shared</div>
 </div>
 
 <!--
@@ -272,13 +272,13 @@ layout: two-cols
 <br>
 
 # **_#1 on Bing_** 
-## and various AI assistants for
-## **image generation** 🖼️
+## and various assistants for
+## **AI image generation** 🖼️
 
 <br>
 
 <div class="bg-orange-500 text-white p-4 rounded-lg inline-block">
-  <h2 class="m-0"><strong>AI-Personalized</strong></h2>
+  <h2 class="m-0"><strong>Contextual & Personalized</strong></h2>
   <h2 class="m-0"><strong>Ad Integration 🎯</strong></h2>
 </div>
 
@@ -441,13 +441,11 @@ layout: two-cols
 
 <br>
 
-<div class="bg-gray-100 p-4 rounded-lg shadow-lg mb-4">
-  <div class="text-3xl mb-2"><strong>1.</strong> Create For Free 🚀 (Live)</div>
-  <div class="text-3xl mb-2"><strong>2.</strong> Scale & Self-Fund 📈 (Beta)</div>
-  <div class="text-3xl"><strong>3.</strong> Profit Together 💰 (2026)</div>
-</div>
+**Key Unit Economics (per 1k Media Generations – FY2027)**
 
-
+✓ Est. Ad Revenue (Net via Partners):      ~€1.40  
+✓ Est. AI Compute Cost:                   ~€0.20  
+✓ Net Revenue (Post Cloud & Nectar):     ~€0.84  
 
 <div class="bg-purple-100 p-4 rounded-lg shadow-lg mb-4">
   <div class="font-bold text-3xl">💼 Example: Mirexa app</div>

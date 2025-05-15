@@ -361,28 +361,29 @@ layout: two-cols-header
 ::left::
 
 #
-## **3M+** Monthly Active End-Users
-## **100M+** Media Gen/Month
+## 👥 **3M+** Monthly Active End-Users
+## 🎨 **100M+** Media Gen/Month
 #
 <div class="bg-gray-200 text-black p-2 rounded-lg inline-block">
-  <h3 class="m-0"><strong>30%</strong> Month-o-Month Growth</h3>
-  <h3 class="m-0"><strong>14M+</strong> Ad impressions from pilot program</h3>
+  <h3 class="m-0">📈 <strong>30%</strong> Month-o-Month Growth</h3>
+  <h3 class="m-0">📱 <strong>14M+</strong> Ad Impressions (pilot)</h3>
 </div>
 
 <br>
 <br>
 
-## **300+** Apps Live | **2+** Built Daily
+## 🚀 **300+** Apps Live
+## ⚡ **2+** Built Daily
 #
 <div class="bg-gray-200 text-black p-2 rounded-lg inline-block">
-  <h3 class="m-0"><strong>13K+</strong> Discord Community Members</h3>
+  <h3 class="m-0">💬 <strong>13K+</strong> Discord Community Members</h3>
 </div>
 
 ::right::
 
 #
 
-<div class="text-center">Media Generated per Day</div>
+<div class="text-center">📊 Media Generated per Day</div>
 
 <div class="flex justify-center items-center">
   <img src="/media/traction-media-generated-6mo.png" alt="Media Generated Growth" class="w-6/7 rounded-lg shadow-lg">
@@ -507,29 +508,46 @@ layout: two-cols-header
 
 # <span class="bg-black text-white p-2 rounded">👥 **Team**</span>
 
-::left::
+<br>
 
-<div class="bg-gray-100 p-3 rounded-lg mb-4 w-5/6">
-  <h2 class="font-bold"><strong>Thomas Haferlach - CTO</strong></h2>
-  <p><strong>🔭 AI Architect & Platform Scaler</strong></p>
-  <h4>8+ yrs GenAI, Ex-Amazon, EU Funding Winner</h4>
-  <div class="flex justify-end">
-    <img src="/media/amazon_logo.png" alt="Amazon" class="w-1/6 inline" style="opacity: 1;" /> &nbsp;&nbsp;&nbsp; <img src="/media/sun-logo.png" alt="Sun" class="w-1/6 inline" style="opacity: 1;" />
+<div class="flex flex-col md:flex-row gap-6 mb-6 justify-center items-stretch">
+  <div class="bg-gray-100 p-5 rounded-lg w-full md:w-1/2 flex-1 shadow-md border-l-4 border-blue-500">
+    <div class="flex items-center mb-3">
+      <img src="/media/2.png" alt="Thomas Haferlach" class="w-25 h-25 rounded-full mr-4 border-2 border-gray-300 shadow" />
+      <div>
+        <h2 class="font-bold text-xl mb-1">Thomas Haferlach</h2>
+        <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold inline-block">CTO</div>
+        <p class="text-2xl text-gray-700">8+ yrs GenAI, Ex-Amazon, EU Funding Winner</p>
+      </div>
+    </div>
+    <div class="flex justify-end mt-3">
+      <img src="/media/amazon_logo.png" alt="Amazon" class="h-5 mr-3 opacity-70" />
+      <img src="/media/sun-logo.png" alt="Sun" class="h-5 opacity-70" />
+    </div>
+  </div>
+
+  <div class="bg-gray-100 p-5 rounded-lg w-full md:w-1/2 flex-1 shadow-md border-l-4 border-green-500">
+    <div class="flex items-center mb-3">
+      <img src="/media/1.png" alt="Elliot Fouchy" class="w-25 h-25 rounded-full mr-4 border-2 border-gray-300 shadow" />
+      <div>
+        <h2 class="font-bold text-xl mb-1">Elliot Fouchy</h2>
+        <div class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold inline-block">COO</div>
+        <p class="text-2xl text-gray-700">6+ yrs AI Ops, Built Efficient AI Infra</p>
+      </div>
+    </div>
   </div>
 </div>
 
-<div class="bg-gray-100 p-3 rounded-lg w-5/6">
-  <h2 class="font-bold"><strong>Elliot Fouchy - COO</strong></h2>
-  <p><strong>⚙️ AI Operations & Product</strong></p>
-  <h4>6+ yrs AI Ops, Built Efficient AI Infra</h4>
-</div>
+<br>
+
+## 🔍 **Planned Hires**
+
+::left::
+
+### **1.** MLOps & Infrastructure Lead 🛠️ 
 
 ::right::
 
-# 🔍 **Planned Hires**
-
-### **1.** MLOps & Infrastructure Lead 🛠️ 
-#
 ### **2.** Community & Creator Success 👥
 ### 🤝 **Kalam** (Incoming)
 
@@ -546,6 +564,10 @@ layout: two-cols-header
 -
 **Lead MLOps / Infra Engineer** (H2 2025): GPU fleet optimization, Scaling Backend, Model-serving pipeline
 **Kalam** (Head of Community & Creator Success, H2 2025): Creator onboarding, XR/UGC initiatives, User acquisition
+
+      <p><strong>⚙️ AI Operations & Product</strong></p>
+      <p><strong>🔭 AI Architect & Platform Scaler</strong></p>
+
 
 ## End
 -->

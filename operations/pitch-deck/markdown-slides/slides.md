@@ -273,12 +273,19 @@ layout: two-cols
 -->
 
 ---
-class: text-center
+layout: two-cols
 ---
 
-<div class="flex justify-between items-center w-full">
-  <img src="/media/pixpal_ai_chat_images_bing.png" class="w-[48%] rounded-lg shadow-lg" alt="Pixpal AI chat with Bing">
-  <img src="/media/pixpal_ai_chat_with_images.png" class="w-[48%] rounded-lg shadow-lg" alt="Pixpal AI chat with images">
+# **🎯 Personalized Ad Integration**
+
+::left::
+
+text
+
+::right::
+
+<div class="flex justify-center items-center h-full">
+  <img src="/media/pixpal_ai_chat_with_images.png" class="w-2/3 rounded-lg shadow-lg" alt="Pixpal AI chat with images">
 </div>
 
 <!--

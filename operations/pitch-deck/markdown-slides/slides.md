@@ -534,6 +534,9 @@ layout: two-cols-header
         <p class="text-2xl text-gray-700">6+ yrs AI Ops, Built Efficient AI Infra</p>
       </div>
     </div>
+    <div class="flex justify-end mt-3">
+      <img src="/media/julien.png" alt="Julien" class="h-[70px] opacity-90" />
+    </div>
   </div>
 </div>
 

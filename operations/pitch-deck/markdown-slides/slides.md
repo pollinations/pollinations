@@ -153,32 +153,41 @@ layout: two-cols-header
 -->
 
 ---
-layout: two-cols-header
+layout: two-cols
 ---
 
-# <span class="bg-green-600 text-white p-2 rounded">**✨ The Fix : AI Creation Meets Monetization**</span>
-<br>
+# <span class="bg-green-600 text-white p-2 rounded">**✨ The Fix**</span>
 
-::left::
+<h2>👩‍💻 Creators</h2>
+<h3 class="font-bold">Build & Monetize</h3>
 
-# 👩‍💻 Creators
-## **Build & Monetize**
->### - Effortless AI Integration
->### - Clear Path to Profit
-<br>
+- **Effortless AI Integration**
+- **Clear Path to Profit**
 
-# 🏢 Advertisers
-## **Reach AI-Natives**
->### - Untapped Ad Space
->### - Context-Aware & Dynamic
+<h2>🏢 Advertisers</h2>
+<h3 class="font-bold">Reach AI-Natives</h3>
+
+- **Untapped Ad Space**
+- **Context-Aware & Dynamic**
 
 ::right::
 
-<div class="flex flex-col items-center justify-center h-full">
-  <img src="/media/solution-bridge.png" alt="Solution: Bridge" class="w-3/4 rounded-lg shadow-lg" mb='5'/>
-  
-  <h3 class="text-center">From <strong><em>idea</em></strong> to <strong><em>income</em></strong> <br>with <strong><em>zero</em></strong> upfront cost 💰</h3>
+# AI Creation Meets Monetization
+
+<div class="bg-gray-100 p-4 rounded-lg shadow-lg mb-4">
+<div class="font-bold text-blue-600 mb-1">Developers Create Apps with AI Media</div>
+<div class="text-center">⬇️</div>
+
+<div class="font-bold text-green-600 mb-1">Apps Attract & Engage Users</div>
+<div class="text-center">⬇️</div>
+
+<div class="font-bold text-purple-600 mb-1">Pollinations Integrates Ad Solutions</div>
+<div class="text-center">⬇️</div>
+
+<div class="font-bold text-amber-600">Revenue Generated & Shared (50/50)</div>
 </div>
+
+<div class="text-center">From <strong><em>idea</em></strong> to <strong><em>income</em></strong> with <strong><em>zero</em></strong> upfront cost 💰</div>
 
 <!--
 ##  Solution

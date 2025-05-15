@@ -262,19 +262,25 @@ layout: two-cols
 
 ---
 
-# **Creator Story: Pokémon Image Generation**
+# **🎮 Creator Story: Pokémon Image Generation**
 
-<div class="flex flex-col items-center">
-  <div class="text-xl mb-4">
-    <p>Watch how creators use our platform to build engaging AI applications</p>
+<div class="flex">
+  <div class="w-4/10 pt-4 pr-4 flex flex-col justify-start">
+    <div class="text-3xl mb-8">
+      <p>Watch how <strong>creators</strong> 🎨<br><br>
+      Use our <strong>platform</strong><br><br>
+      To <strong>build</strong> engaging<br><br>
+      <strong>AI applications</strong> ✨</p>
+    </div>
+    <div class="bg-purple-100 text-purple-800 font-semibold py-2 px-4 rounded-lg shadow-md inline-block" style="max-width: 70%;">
+      <p class="m-0">⚡️ From idea to working application in minutes with <strong>pollinations.ai</strong></p>
+    </div>
   </div>
   
-  <video class="w-4/5 rounded-lg shadow-lg" autoplay loop muted controls>
-    <source src="/media/pokemon-image-gen-2x-compressed.mp4" type="video/mp4">
-  </video>
-  
-  <div class="text-lg mt-4 text-gray-700 italic">
-    <p>From idea to working application in minutes with Pollinations.ai</p>
+  <div class="w-6/10 ml-auto">
+    <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls>
+      <source src="/media/pokemon-image-gen-2x-compressed.mp4" type="video/mp4">
+    </video>
   </div>
 </div>
 
@@ -443,20 +449,29 @@ layout: two-cols
 
 <br>
 <br>
+
+<div class="text-4xl font-bold">
+  <span class="italic">#1 on Roblox</span>
+</div>
+<div class="text-3xl">
+  🏆 AI Game Category
+</div>
+
 <br>
 
-# 🏆 ***#1 on Roblox***
-## AI Game Category
+<div class="text-4xl font-bold">
+  <span class="italic">2M+</span>
+</div>
+<div class="text-3xl">
+  👥 Monthly Active Users
+</div>
 
 <br>
-
-# 👥 **2M+** MAU
-
 <br>
 
 <div class="flex gap-4 items-center">
-  <img src="/media/roblox-logo.png" alt="Roblox Logo" class="w-25 h-25">
-  <img src="/media/logo_llama.png" alt="Roblox Logo" class="h-25">
+  <img src="/media/roblox-logo.png" alt="Roblox Logo" class="w-15">
+  <img src="/media/logo_llama.png" alt="Roblox Logo" class="h-15">
 </div>
 
 ::right::

@@ -376,12 +376,13 @@ flowchart TD
 * This modular design allows us to integrate new models and services quickly
 -->
 ---
-layout: two-cols-header
+layout: two-cols
 ---
 
 # 💬 **Pixpal.Chat** (web app)
 
-::left::
+<br>
+<br>
 
 <div class="relative">
   <div v-click-hide="1" class="absolute top-0 left-0">
@@ -411,17 +412,14 @@ layout: two-cols-header
 
 <div style="margin-top: 180px" class="flex gap-4 items-center">
   <img src="/media/logo_mistral.png" alt="Mistral AI Logo" class="h-15">
-  <img src="/media/logo_llama.png" alt="Meta AI Logo" class="h-15">
+  <img src="/media/logo_llama.png" alt="Meta AI Logo" class="h-20">
 </div>
-
-<br>
-<br>
 
 ::right::
 
-<div class="flex justify-center relative">
-  <img v-click-hide="1" src="/media/pixpal-1.png" class="w-3/3 rounded-lg shadow-lg absolute top-0 left-0" alt="Pixpal AI chat with images">
-  <img v-click="1" src="/media/pixpal-2.png" class="w-3/3 rounded-lg shadow-lg absolute top-0 left-0" alt="Pixpal AI chat with contextual ad">
+<div class="flex justify-center items-center relative h-full">
+  <img v-click-hide="1" src="/media/pixpal-1.png" class="w-3/3 rounded-lg shadow-lg absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" alt="Pixpal AI chat with images">
+  <img v-click="1" src="/media/pixpal-2.png" class="w-3/3 rounded-lg shadow-lg absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" alt="Pixpal AI chat with contextual ad">
 </div>
 
 <br>
@@ -470,8 +468,8 @@ layout: two-cols
 <br>
 
 <div class="flex gap-4 items-center">
-  <img src="/media/roblox-logo.png" alt="Roblox Logo" class="w-15">
-  <img src="/media/logo_llama.png" alt="Roblox Logo" class="h-15">
+  <img src="/media/roblox-logo.png" alt="Roblox Logo" class="w-20">
+  <img src="/media/logo_llama.png" alt="Roblox Logo" class="h-20">
 </div>
 
 ::right::

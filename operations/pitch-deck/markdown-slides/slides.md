@@ -521,7 +521,7 @@ layout: two-cols-header
 layout: two-cols-header
 ---
 
-# <span class="bg-teal-600 text-white p-2 rounded">**🤝 Fueling the AI App Monetization Revolution**</span>
+# <span class="bg-teal-600 text-white p-2 rounded">**🤝 Ask**</span>
 
 ::left::
 

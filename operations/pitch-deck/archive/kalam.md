@@ -1,5 +1,3 @@
-# Pollinations x Games
-
 ## 🎮 Slide Title: **Strategic Advisor – XR Game Worlds & UGC Platforms**
 
 ### **Positioning Statement:**
@@ -27,3 +25,5 @@ As an advisor transitioning into a formal role, Kalam will lead Pollinations' ne
 - **Strategic Planning:** Collaborate with Pollinations' leadership to define a roadmap for the XR game worlds initiative.
 - **Team Formation:** Assemble a cross-functional team to execute the vision, encompassing product development, marketing, and community engagement.
 - **Investor Engagement:** Utilize the upcoming pitch deck to showcase the strategic direction and attract investment aligned with the new focus area.
+
+https://www.linkedin.com/in/kalamishere/

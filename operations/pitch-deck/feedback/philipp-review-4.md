@@ -1,3 +1,46 @@
+# Key Feedback Summary
+
+## Pitch Flow & Clarity
+- Need clearer explanation of value proposition for developers
+- Make the monetization journey more straightforward and upfront
+- Better explain why developers choose pollinations.ai
+- Add visual examples of how easy it is to get started
+- Start pitch earlier with what you actually do - elevator pitch needs work
+
+## Business Model Concerns
+- Revenue share model needs better explanation
+- Concern about long-term viability for successful apps
+- Need precedent examples of similar models working
+- Current approach (rev-share at top tier) is opposite of typical models like Shopify
+
+## Community & Traction
+- Should highlight Discord community numbers more prominently
+- Need to showcase current advertising experiments and results
+- Add concrete examples of successful apps and their economics
+
+## Unit Economics
+- Need clear example calculations showing:
+  - Infrastructure costs
+  - Monetization potential
+  - Revenue split between platform and creators
+- Add real-world example of a current app's economics
+
+## Presentation Improvements
+- Add timeline/roadmap with more visual elements
+- Include customer stories and demos
+- Fix incorrect metrics (e.g., 14M admin pressures)
+- Better explain ad network partnerships and revenue sharing structure
+
+## Positive Notes
+- Good solo presentation
+- Improved clarity in some areas
+- Customer stories and demos are well integrated
+- Seed/Flower tier structure is clear
+
+---
+
+## Original Transcript
+
 Well, all times um, trying to be more precise. Um, I think
 
 Um, The flow of hey, we are building.

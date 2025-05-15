@@ -96,8 +96,10 @@ class: text-center flex flex-col justify-center items-center h-full
 # ![Pollinations.ai Logo](/media/pollinations-ai-logo.png)
 
 ## Spark Creation, Unlock Ad Revenue
-
-**Start building with [pollinations.ai](https://pollinations.ai)**
+#
+<div class="bg-yellow-400 hover:bg-yellow-400 text-black font-bold py-2 px-4 rounded-2xl shadow-lg inline-block transition-colors duration-200">
+  <a href="https://pollinations.ai" class="no-underline">🐝 Start building with pollinations.ai</a>
+</div>
 
 <!--
 ## Title Slide
@@ -262,7 +264,7 @@ layout: two-cols
 -->
 
 ---
-layout: two-cols
+layout: two-cols-header
 ---
 
 # 💬 **Pixpal.Chat** (web app)
@@ -271,25 +273,44 @@ layout: two-cols
 <br>
 <br>
 
-# **_#1 on Bing_** 
-## and various assistants for
-## **AI image generation** 🖼️
-
-<br>
-
-<div class="bg-orange-500 text-white p-4 rounded-lg inline-block">
-  <h2 class="m-0"><strong>Contextual & Personalized</strong></h2>
-  <h2 class="m-0"><strong>Ad Integration 🎯</strong></h2>
-</div>
-
 ::left::
 
-text
+<div class="relative">
+  <div v-click-hide="1" class="absolute top-0 left-0">
+    <div class="text-4xl font-bold">
+      <span class="italic">#1 on Bing</span>
+    </div>
+    <div class="text-3xl">
+      and various assistants for
+    </div>
+    <div class="text-3xl font-bold">
+      AI image generation 🖼️
+    </div>
+  </div>
+
+  <div v-click="1" class="absolute top-0 left-0">
+    <div class="text-4xl font-bold">
+      <span class="italic">Contextual & Personalized</span>
+    </div>
+    <div class="text-3xl">
+      Ad Integration
+    </div>
+    <div class="text-3xl font-bold">
+      🎯
+    </div>
+  </div>
+</div>
+
+<div style="margin-top: 180px">
+  <img src="/media/logo_mistral.png" alt="Mistral AI Logo" class="h-20">
+  <img src="/media/logo_llama.png" alt="Meta AI Logo" class="h-20">
+</div>
 
 ::right::
 
-<div class="flex justify-center items-center h-full">
-  <img src="/media/pixpal_ai_chat_with_images.png" class="w-2/3 rounded-lg shadow-lg" alt="Pixpal AI chat with images">
+<div class="flex justify-center items-center w-8/8 relative">
+  <img v-click-hide="1" src="/media/pixpal-1.png" class="w-3/3 rounded-lg shadow-lg absolute top-0 left-0" alt="Pixpal AI chat with images">
+  <img v-click="1" src="/media/pixpal-2.png" class="w-4/3 rounded-lg shadow-lg absolute top-0 left-0" alt="Pixpal AI chat with contextual ad">
 </div>
 
 <!--
@@ -301,12 +322,6 @@ text
 * This approach is **smart**, **non-intrusive**, and **incredibly effective**. This is how creators will monetize
 ## End
 -->
-
----
-layout: two-cols
----
-
-# 🎯 **Contextual & Personalized Ad dropped Real-Time**
 
 ---
 layout: two-cols
@@ -331,7 +346,7 @@ layout: two-cols
 
 <div class="flex gap-4 items-center">
   <img src="/media/roblox-logo.png" alt="Roblox Logo" class="w-25 h-25">
-  <img src="/media/roblox-logo.png" alt="Roblox Logo" class="w-25 h-25">
+  <img src="/media/logo_llama.png" alt="Roblox Logo" class="h-25">
 </div>
 
 ::right::
@@ -368,7 +383,6 @@ layout: two-cols-header
 #
 <div class="bg-gray-200 text-black p-2 rounded-lg inline-block">
   <h3 class="m-0">📈 <strong>30%</strong> Month-o-Month Growth</h3>
-  <h3 class="m-0">📱 <strong>14M+</strong> Ad Impressions (pilot)</h3>
 </div>
 
 <br>
@@ -509,7 +523,10 @@ layout: two-cols
 layout: two-cols-header
 ---
 
-# <span class="bg-black text-white p-2 rounded">👥 **Team**</span>
+<div class="flex items-center justify-between gap-4">
+  <h1><span class="bg-black text-white p-2 rounded"><strong>👥 Team</strong></span></h1>
+  <img src="/media/pollinations-ai-logo.png" alt="Pollinations AI Logo" class="h-15">
+</div>
 
 <br>
 

@@ -7,14 +7,8 @@ When handling project submission issues:
 1. Add new projects to the appropriate section in:
    - README.md under the "Projects Using Pollinations.AI" section
    - pollinations.ai/src/config/projectList.js in the corresponding category array
-   - add a UTF8 icon highlighting them as new additions
 
-2. The "🆕" (NEW) emoji:
-   - Add this emoji to mark new project submissions
-   - The emoji will be automatically removed after 15 days from the submission date
-   - Projects without a submission date will not have the NEW emoji
-
-3. Project Entry Format:
+2. Project Entry Format:
    ```javascript
    {
      name: "Project Name",
@@ -29,19 +23,19 @@ When handling project submission issues:
    }
    ```
 
-4. Project Ordering Rules:
+3. Project Ordering Rules:
    - In the README.md file, projects should be ordered within their categories:
      - First by the `order` parameter (lower values first: 1, 2, 3, 4, 5)
      - Then by GitHub star count (higher star counts first)
      - For projects with the same order and no stars, use the submission date if there is one, if not keep the order as it is.
    - In the website rendering, the projectList.js order will be dynamically sorted using the same criteria so the actual order in the projectList.js file should not be changed
 
-5. Hiding Broken Projects:
+4. Hiding Broken Projects:
    - Use the `hidden: true` parameter to mark projects that are broken or no longer maintained
    - Projects with this flag will not be displayed in the README.md project listings
    - They will still remain in the projectList.js as the source of truth
 
-6. GitHub Star Counts:
+5. GitHub Star Counts:
    - For projects with GitHub repositories, add their star count as a `stars` property:
      ```javascript
      {
@@ -61,7 +55,7 @@ When handling project submission issues:
      ```
    - The star count will be displayed on the project page next to the GitHub link
 
-7. Categories:
+6. Categories:
    - LLM Integrations
    - Creative & Interactive Applications
    - Tools & Interfaces
@@ -69,15 +63,15 @@ When handling project submission issues:
    - SDK & Libraries
    - Tutorials
 
-8. Add appropriate UTF-8 icons to titles where relevant (🤖 for bots, 🎨 for creative apps, etc.)
+7. Add appropriate UTF-8 icons to titles where relevant (🤖 for bots, 🎨 for creative apps, etc.)
 
-9.  For projects in non-English languages:
+8. For projects in non-English languages:
    - Add a country flag emoji to the project name (e.g., 🇨🇳 for Chinese, 🇪🇸 for Spanish)
    - Include the "language" field in the project entry with the appropriate language code
    - Add an English translation of the description in parentheses when possible
    - This helps users easily identify and filter projects by language
 
-10. When creating a commit for project submissions, always add attribution to the issue creator using a Co-authored-by line in the commit message:
+9. When creating a commit for project submissions, always add attribution to the issue creator using a Co-authored-by line in the commit message:
     ```
     Add [Project Name] to project list
 

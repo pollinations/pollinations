@@ -6,7 +6,7 @@ layout: two-cols-header
 
 ::left::
 
-- [🎤 Pitch Deck](/18)
+- [🎤 Pitch Deck](/17)
 - [📑 Executive Summary](/2)
 - [🔭 Vision & Mission](/3)
 - [💰 Business Model](/4)
@@ -16,7 +16,7 @@ layout: two-cols-header
 
 <br>
 
-- [🔍 Due Diligence](/16)
+- [🔍 Due Diligence](/15)
 <!--- [📝 One-Pager](/17) -->
 
 ::right::
@@ -27,11 +27,7 @@ layout: two-cols-header
 - [⚠️ Risk Register](/11)
 - [🥊 Competitive Landscape](/12)
 - [🚀 KPI & Traction Metrics](/13)
-
-<br>
-
 - [🏗️ Tech Architecture](/14)
-- [🔌 SDK & Ad Integration](/15)
 
 ---
 src: ./docs/01-executive-summary.md
@@ -83,10 +79,6 @@ src: ./docs/12-traction-metrics.md
 
 ---
 src: ./docs/07-tech-architecture.md
----
-
----
-src: ./docs/08-sdk-ad-integration.md
 ---
 
 ---

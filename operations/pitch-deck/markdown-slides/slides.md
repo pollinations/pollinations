@@ -411,7 +411,7 @@ layout: two-cols-header
 
 <br> 
 
-<div class="bg-red-100 p-4 rounded-lg inline-block">
+<div class="bg-gray-100 p-4 rounded-lg inline-block">
 
 # **€768 M** SOM 💻
 ### **3.8 %** of SAM → **massive runway**
@@ -472,20 +472,33 @@ layout: two-cols
 layout: two-cols-header
 ---
 
-# <span class="bg-pink-600 text-white p-2 rounded">👥 **Team**</span>
+# <span class="bg-black text-white p-2 rounded">👥 **Team**</span>
 
-|         |                      |                                                                                                |
-| ------- | -------------------- | ---------------------------------------------------------------------------------------------- |
-| **CEO** | **Thomas Haferlach** | **Visionary AI Architect & Platform Scaler** (8+ yrs GenAI, Ex-Amazon, EU Funding Winner)        |
-| **COO** | **Elliot Fouchy**    | **AI Operations & Product Scaling Specialist** (6+ yrs AI Ops, Built Efficient AI Infra)         |
+::left::
 
-##
+<div class="bg-gray-100 p-3 rounded-lg mb-4 w-5/6">
+  <h2 class="font-bold"><strong>Thomas Haferlach - CTO</strong></h2>
+  <p><strong>🔭 AI Architect & Platform Scaler</strong></p>
+  <h4>8+ yrs GenAI, Ex-Amazon, EU Funding Winner</h4>
+  <div class="flex justify-end">
+    <img src="/media/amazon_logo.png" alt="Amazon" class="w-1/6 inline" style="opacity: 1;" /> &nbsp;&nbsp;&nbsp; <img src="/media/sun-logo.png" alt="Sun" class="w-1/6 inline" style="opacity: 1;" />
+  </div>
+</div>
 
-### **+ 🧠 Engineering & Data**
-**Senior AI-Ops & Infra Team** : GPU fleet optimization, Scaling Backend
+<div class="bg-gray-100 p-3 rounded-lg w-5/6">
+  <h2 class="font-bold"><strong>Elliot Fouchy - COO</strong></h2>
+  <p><strong>⚙️ AI Operations & Product</strong></p>
+  <h4>6+ yrs AI Ops, Built Efficient AI Infra</h4>
+</div>
 
-### **+ 🌐 Marketing & Community**
-**Growth & Developer Relations** : User acquisition, Brand partnerships, Community
+::right::
+
+# 🔍 **Planned Hires**
+
+### **1.** MLOps & Infrastructure Lead 🛠️ 
+#
+### **2.** Community & Creator Success 👥
+### 🤝 **Kalam** (Incoming)
 
 <!--
 ## Team - Experience Where It Matters Most
@@ -497,6 +510,10 @@ layout: two-cols-header
 * Our next key hire will be an **Ad Tech Partner Manager** to scale our monetization with expert partners
 * We're also building out specialized teams for **AI-Ops/Infrastructure** and **Growth/Developer Relations**
 * This team has the perfect mix of **AI technical expertise** and **business scaling experience**
+-
+**Lead MLOps / Infra Engineer** (H2 2025): GPU fleet optimization, Scaling Backend, Model-serving pipeline
+**Kalam** (Head of Community & Creator Success, H2 2025): Creator onboarding, XR/UGC initiatives, User acquisition
+
 ## End
 -->
 

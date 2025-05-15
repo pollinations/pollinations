@@ -6,6 +6,7 @@ layout: two-cols-header
 
 ::left::
 
+- [🎤 Pitch Deck](/18)
 - [📑 Executive Summary](/2)
 - [🔭 Vision & Mission](/3)
 - [💰 Business Model](/4)
@@ -17,7 +18,6 @@ layout: two-cols-header
 
 - [🔍 Due Diligence](/16)
 <!--- [📝 One-Pager](/17) -->
-- [🎤 Pitch Deck](/18)
 
 ::right::
 
@@ -128,11 +128,11 @@ layout: two-cols-header
 
 #
 
-# **Indie/Vibe Coder**
+# **Indie/Vibe Coder: Barriers to AI Creation & Profit**
 
-### 💰 Monetization Blindspot
+### ⚙️ **Complex AI Access & High Costs** 
 #
-### 🔧 Lack of AI-Specific Tools
+### 💰 **Monetization Blindspot for AI Content**
 
 <br>
 
@@ -144,9 +144,9 @@ layout: two-cols-header
 
 # **Advertisers & Ad Tech: Untapped AI Frontier**
 
-### 🍀 Fragmented & Unique Inventory
+### 🍀 Fragmented & Unique AI Inventory
 #
-### 📊 Low Engagement with Generic Ads
+### 📊 Generic Ads Don't Fit AI Context
 
 <br>
 

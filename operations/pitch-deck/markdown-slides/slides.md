@@ -272,8 +272,8 @@ layout: two-cols
       To <strong>build</strong> engaging<br><br>
       <strong>AI applications</strong> ✨</p>
     </div>
-    <div class="bg-purple-100 text-purple-800 font-semibold py-2 px-4 rounded-lg shadow-md inline-block" style="max-width: 70%;">
-      <p class="m-0">⚡️ From idea to working application in minutes with <strong>pollinations.ai</strong></p>
+    <div class="bg-gradient-to-r from-purple-500 to-purple-400 text-white font-bold py-3 px-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 inline-block transform hover:scale-105" style="max-width: 70%;">
+      <p class="m-0 text-lg">✨ Turn your AI dreams into reality in minutes with <span class="text-yellow-300">pollinations.ai</span> 🚀</p>
     </div>
   </div>
   
@@ -282,7 +282,7 @@ layout: two-cols
       <source src="/media/pokemon-image-gen-2x-compressed.mp4" type="video/mp4">
     </video>
   </div>
-
+</div>
 
 <!--
 ## Creator Story

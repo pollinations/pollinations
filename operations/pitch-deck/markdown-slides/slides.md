@@ -167,47 +167,68 @@ layout: two-cols-header
 -->
 
 ---
-layout: two-cols
+layout: two-cols-header
 ---
 
-# <span class="bg-green-600 text-white p-2 rounded">**✨ The Fix**</span>
+# <span class="bg-green-600 text-white p-2 rounded">**✨ AI Creation Meets Monetization**</span>
 
-<h2>👩‍💻 Creators</h2>
-<h3 class="font-bold">Build & Monetize</h3>
+<br> 
+
+::left::
 
 # 👩‍💻 Indie/Vibe Coder
-## **Build & Monetize**
->### - Effortless AI Integration
->### - Clear Path to Profit
+### **→ Build & Monetize**
+
 <br>
 
-<h2>🏢 Advertisers</h2>
-<h3 class="font-bold">Reach AI-Natives</h3>
+<br>
 
-- **Untapped Ad Space**
-- **Context-Aware & Dynamic**
+# 🏢 Advertisers
+### **→ Reach AI-Natives**
+
+<br>
+
+<div class="flex justify-left space-x-4 mb-2">
+  <img src="/media/ad-partner-garlic.png" alt="Garlic Partner" class="h-10">
+  <img src="/media/ad-partner-nexad.png" alt="Nexad Partner" class="h-10">
+</div>
 
 ::right::
 
-# AI Creation Meets Monetization
+<div class="bg-blue-100 p-4 rounded-lg shadow-lg mb-2 text-center">
+<div class="font-bold text-blue-600">Developers Create Apps with AI Media</div>
+</div>
+<div class="text-center font-bold text-2xl">↓</div>
 
-<div class="bg-gray-100 p-4 rounded-lg shadow-lg mb-4">
-<div class="font-bold text-blue-600 mb-1">Developers Create Apps with AI Media</div>
-<div class="text-center">⬇️</div>
+<div class="bg-green-100 p-4 rounded-lg shadow-lg mb-2 text-center">
+<div class="font-bold text-green-600">Apps Attract & Engage Users</div>
+</div>
+<div class="text-center font-bold text-2xl">↓</div>
 
-<div class="font-bold text-green-600 mb-1">Apps Attract & Engage Users</div>
-<div class="text-center">⬇️</div>
+<div class="bg-purple-100 p-4 rounded-lg shadow-lg mb-2 text-center">
+<div class="font-bold text-purple-600">Pollinations Integrates Ad Solutions</div>
+</div>
+<div class="text-center font-bold text-2xl">↓</div>
 
-<div class="font-bold text-purple-600 mb-1">Pollinations Integrates Ad Solutions</div>
-<div class="text-center">⬇️</div>
-
+<div class="bg-amber-100 p-4 rounded-lg shadow-lg mb-2 text-center">
 <div class="font-bold text-amber-600">Revenue Generated & Shared</div>
 </div>
 
-<div class="text-center">From <strong><em>idea</em></strong> to <strong><em>income</em></strong> with <strong><em>zero</em></strong> upfront cost 💰</div>
-
 <!--
 ##  Solution
+- From idea to income with zero upfront cost 💰
+
+# 👩‍💻 Indie/Vibe Coder
+### **Build & Monetize**
+#### • Effortless AI Integration
+#### • Clear Path to Profit
+<br>
+
+# 🏢 Advertisers
+### **Reach AI-Natives**
+#### • Untapped Ad Space
+#### • Context-Aware & Dynamic
+
 *   Our Fix: Infrastructure for AI creation.
 *   Monetization via expert Ad Partners (diagram shows flow).
 *   Creators: Easy build, self-fund scale (Flower H2 '25).

@@ -124,7 +124,7 @@ const allProjects = {
       order: 2,
     },
     {
-      name: "🆕 NetSim",
+      name: "NetSim",
       url: "https://netsim.us.to/",
       description: "websim.ai clone that's actually good",
       author: "@kennet678",
@@ -210,7 +210,7 @@ const allProjects = {
       order: 2,
     },
     {
-      name: "🆕 NetSim",
+      name: "NetSim",
       url: "https://netsim.us.to/",
       description: "websim.ai clone that's actually good",
       author: "@kennet678",
@@ -295,7 +295,7 @@ const allProjects = {
       order: 2,
     },
     {
-      name: "🆕 NetSim",
+      name: "NetSim",
       url: "https://netsim.us.to/",
       description: "websim.ai clone that's actually good",
       author: "@kennet678",
@@ -305,7 +305,7 @@ const allProjects = {
   ],
   toolsInterfaces: [
     {
-      name: "🆕 Imagemate AI",
+      name: "Imagemate AI",
       url: "https://play.google.com/store/apps/details?id=com.madameweb.imgmate",
       description: "Imagemate AI is a powerful image generation app designed to turn your imagination into stunning visuals with the help of advanced artificial intelligence. Built using the Pollinations AI API, Imagemate AI allows users to input a text prompt and instantly receive AI-generated images that match the description.",
       author: "@Shanto-Islam",
@@ -314,7 +314,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 tgpt",
+      name: "tgpt",
       url: "https://github.com/aandrew-me/tgpt",
       description: "AI Chatbots in terminal without needing API keys - a command-line interface for AI that appeals to developers and terminal users.",
       author: "@aandrew-me",
@@ -323,7 +323,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 B&W SVG Generator",
+      name: "B&W SVG Generator",
       url: "https://fluxsvggenerator.streamlit.app/",
       description: "Uses Flux (through pollinations) and potrace to create B&W Vector files",
       author: "@pointsguy118",
@@ -331,7 +331,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Imagen",
+      name: "Imagen",
       url: "https://altkriz.github.io/imagen/",
       description: "A beautiful web interface for generating images using Pollinations.ai API with only the \"flux\" and \"turbo\" models.",
       author: "@altkriz",
@@ -341,7 +341,7 @@ const allProjects = {
       order: 2,
     },
     {
-      name: "🆕 DominiSigns",
+      name: "DominiSigns",
       url: "https://github.com/mahmood-asadi/ai-vision-block",
       description: "A custom WordPress Gutenberg block that allows you to generate images using the Pollinations API. Simply enter a prompt, and the AI will generate an image for you. Once the post is saved, the image is automatically stored in the WordPress Media Library.",
       author: "mahmood-asadi",
@@ -351,7 +351,7 @@ const allProjects = {
       order: 2,
     },
     {
-      name: "🆕 toai.chat",
+      name: "toai.chat",
       url: "https://toai.chat",
       description: "An iOS app that integrates with all LLMs including Pollinations AI models in one unified simple interface.",
       author: "Ayushman Bhatacharya",
@@ -361,7 +361,7 @@ const allProjects = {
       order: 4,
     },
     {
-      name: "🆕 Pollinations Feed",
+      name: "Pollinations Feed",
       url: "https://elixpoart.vercel.app/src/feed",
       description: "A feed of images generated using Pollinations.ai, with options to like, share, and download.",
       author: "Ayushman Bhattacharya",
@@ -369,7 +369,7 @@ const allProjects = {
       order: 4,
     },
     {
-      name: "🆕 Anime AI Generation",
+      name: "Anime AI Generation",
       url: "https://www.animeaigeneration.com/",
       description: "Create professional-quality anime characters with powerful AI technology. No artistic skills required.",
       author: "@shreyas281898",
@@ -378,7 +378,7 @@ const allProjects = {
     },
 
     {
-      name: "🆕 Anime Character Generator",
+      name: "Anime Character Generator",
       url: "https://elixpoart.vercel.app/src/character",
       description: "Create professional-quality anime characters with powerful AI technology. No artistic skills required.",
       author: "@shreyas281898",
@@ -466,7 +466,7 @@ const allProjects = {
   ],
   llmIntegrations: [
     {
-      name: "🆕 MoneyPrinterTurbo",
+      name: "MoneyPrinterTurbo",
       url: "https://github.com/harry0703/MoneyPrinterTurbo",
       description: "Simply provide a topic or keyword for a video, and it will automatically generate the video copy, video materials, video subtitles, and video background music before synthesizing a high-definition short video. Integrates Pollinations' text generation service to create engaging and relevant video scripts.",
       author: "@harry0703",
@@ -476,7 +476,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Pollinations.AI Enhancer",
+      name: "Pollinations.AI Enhancer",
       url: "https://github.com/fisventurous/pollinationsai-enhancer",
       description: "A frontend-based AI interface designed to deliver a smooth, multimodal, and visually engaging user experience with conversational AI, image generation, and more.",
       author: "@fisven",
@@ -515,7 +515,7 @@ const allProjects = {
 
 
     {
-      name: "🆕 Foodie AI",
+      name: "Foodie AI",
       url: "https://foodie-ai.vercel.app/",
       description: "An AI application for food analysis that uses advanced artificial intelligence technology to help users understand food ingredients, nutritional value, and health impacts. Provides food safety analysis, nutritional health assessment, sports and fitness analysis, visual display, alternative recommendations, and practical insights for different dietary habits.",
       author: "@Aashir__Shaikh",
@@ -523,7 +523,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 LobeChat",
+      name: "LobeChat",
       url: "https://github.com/lobehub/lobe-chat",
       description: "An open-source, modern-design ChatGPT/LLMs UI/Framework with speech-synthesis, multi-modal, and extensible plugin system.",
       author: "@arvinxx",
@@ -533,7 +533,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Pollinations.AI 中文",
+      name: "Pollinations.AI 中文",
       url: "https://pollinations.vercel.app",
       description: "我们提供高质量的AI生成服务，包括图像生成、文本生成、音频生成和语音转文本服务， 让您轻松创建各种创意内容。 (We provide high-quality AI generation services, including image generation, text generation, audio generation, and speech to text services, allowing you to easily create various creative content.)",
       author: "@pollinations",
@@ -541,7 +541,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Quicker Pollinations AI",
+      name: "Quicker Pollinations AI",
       url: "https://getquicker.net/Sharedaction?code=9ac738ed-a4b2-4ded-933c-08dd5f710a8b&fromMyShare=true",
       description: "This project provides a free API interface supporting various text and image generation models, including OpenAI's GPT-4, Gemini 2.0, etc. Users can access these models without an API key to perform text generation, image generation, translation, text polishing, and more.",
       author: "https://linux.do/u/s_s/summary",
@@ -582,7 +582,7 @@ const allProjects = {
     },
 
     {
-      name: "🆕 Pollinations Chatbot",
+      name: "Pollinations Chatbot",
       url: "https://pollinations-chatbot.vercel.app/",
       description: "A chat bot integrating Pollinations API for text and image generation.",
       author: "@Aashir__Shaikh",
@@ -590,7 +590,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 OkeyMeta",
+      name: "OkeyMeta",
       url: "https://okeymeta.com",
       description: "An LLM created by Africans to understand and have cultural awareness of African contexts and languages, OkeyAI outperforms many LLM models based on size and intelligence, OkeyMeta uses pollination image generating API to train it's LLM (OkeyAI) on images in real time.",
       author: "@okeymeta",
@@ -598,7 +598,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Snarky Bot",
+      name: "Snarky Bot",
       url: "https://snarkybot.vercel.app/",
       description: "A snarky bot based on Llama that is 100% free, powered by the Pollinations text API and OpenWebUI. Other models are available as well.",
       author: "@snarkybot",
@@ -606,7 +606,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Pollinations AI Playground",
+      name: "Pollinations AI Playground",
       url: "https://pollinations-ai-playground.vercel.app/",
       description: "An AI application platform based on Pollinations.AI API, providing free and unlimited AI chat assistant, image generation, and voice synthesis services.",
       author: "@playground",
@@ -614,7 +614,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Pollinations AI Free API",
+      name: "Pollinations AI Free API",
       url: "https://pollinations-ai-free-api.vercel.app/",
       description: "This project provides a free API interface supporting various text and image generation models, including OpenAI's GPT-4, Gemini 2.0, etc. Users can access these models without an API key to perform text generation, image generation, translation, text polishing, and more.",
       author: "@freeapi",
@@ -622,7 +622,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Pollinations AI Chatbot",
+      name: "Pollinations AI Chatbot",
       url: "https://pollinations-ai-chatbot.vercel.app/",
       description: "A chat bot integrating Pollinations API for text and image generation.",
       author: "@chatbot",
@@ -630,7 +630,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Pollinations AI Image Generator",
+      name: "Pollinations AI Image Generator",
       url: "https://pollinations-ai-image-generator.vercel.app/",
       description: "An AI-powered image generation platform for Android designed to create stunning visuals from text prompts. Features dynamic image generation as users scroll, save to gallery, favorites, and a user-friendly interface.",
       author: "@imagegen",
@@ -638,7 +638,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Herramientas IA",
+      name: "Herramientas IA",
       url: "https://herramientas.ia",
       description: "Tools designed with Pollinations.AI and the DescartesJS editor, including tools from other Pollinations.AI community members.",
       author: "@herramientas",
@@ -646,7 +646,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Pollinations AI Video Generator",
+      name: "Pollinations AI Video Generator",
       url: "https://pollinations-ai-video-generator.vercel.app/",
       description: "An open-source video generation system using AI.",
       author: "@videogen",
@@ -654,7 +654,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Pollinations AI Game",
+      name: "Pollinations AI Game",
       url: "https://pollinations-ai-game.vercel.app/",
       description: "A Hitchhiker's Guide to the Galaxy themed LLM-based elevator game.",
       author: "@game",
@@ -699,7 +699,7 @@ const allProjects = {
   ],
   socialBots: [
     {
-      name: "🆕 Aura Chat Bot",
+      name: "Aura Chat Bot",
       description: "A chat bot integrating Pollinations API for text and image generation.",
       author: "@Py-Phoenix-PJS",
       email: "itznarutotamilan007@gmail.com",
@@ -707,21 +707,21 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Quick AI & Jolbak",
+      name: "Quick AI & Jolbak",
       description: "Discord bots providing AI services to users in Iran who have limited access to AI tools like Claude, ChatGPT, and Gemini.",
       author: "@d__mx",
       submissionDate: "2025-05-12",
       order: 3,
     },
     {
-      name: "🆕 AI Image Generator [ROBLOX]",
+      name: "AI Image Generator [ROBLOX]",
       description: "An image generator on Roblox that integrates with Pollinations APIs for text and image generation, processing images pixel by pixel.",
       author: "@mr.l4nd3n",
       submissionDate: "2025-05-12",
       order: 2,
     },
     {
-      name: "🆕 🤖 SingodiyaTech bot",
+      name: "🤖 SingodiyaTech bot",
       url: "https://t.me/Aks7240Bot",
       description: "This is a Telegram bot with many Advanced ai features.",
       author: "t.me/Aks979",
@@ -729,7 +729,7 @@ const allProjects = {
       order: 4,
     },
     {
-      name: "🆕 🤖 Raftar.xyz",
+      name: "🤖 Raftar.xyz",
       url: "https://raftar.xyz",
       description: "A Discord multi-purpose bot with over 100+ commands, including AI image generation, ChatGPT, and SearchGPT powered by Pollinations.AI.",
       author: "@goodgamerhere",
@@ -737,7 +737,7 @@ const allProjects = {
       order: 4,
     },
     {
-      name: "🆕 AlphaLLM - AI Discord Bot",
+      name: "AlphaLLM - AI Discord Bot",
       url: "https://alphallm.fr.nf",
       description: "Discord bot that uses several APIs (Pollinations AI and Cerebras AI), to offer a variety of features, including advanced text generation with a history of your conversations, image and voice generation.",
       author: "@the_yerminator",
@@ -747,7 +747,7 @@ const allProjects = {
       order: 5,
     },
     {
-      name: "🆕 🤖 pollinations-tg-bot 🇨🇳",
+      name: "🤖 pollinations-tg-bot 🇨🇳",
       url: "https://t.me/AipolBot",
       description: "A Telegram bot deployed on Cloudflare Workers that allows users to generate images, convert text to speech, transcribe voice messages, chat with AI models, and more through the Pollinations API.",
       author: "@Shadownc",
@@ -766,7 +766,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 Gacha",
+      name: "Gacha",
       url: "https://shapes.inc/gacha-gachu/public",
       description: "A versatile AI chat-bot and image generator powered by Pollinations.AI, featuring web search, image generation with model selection, and character-aware image generation through !webgen command.",
       author: "@_dr_misterio_",
@@ -774,7 +774,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 One Word",
+      name: "One Word",
       url: "https://t.me/OdnoSlovoBot",
       description: "A Telegram bot for a word-matching game where players try to write the same word simultaneously, featuring image generation from game words using Pollinations.AI.",
       author: "@Dimaq21",
@@ -827,7 +827,7 @@ const allProjects = {
   ],
   sdkLibraries: [
     {
-      name: "🆕 Mimir AIP",
+      name: "Mimir AIP",
       url: "https://mimir-aip.github.io/",
       description: "An open-source AI pipeline framework designed to simplify the integration and orchestration of various AI models and services. The platform provides a modular architecture that allows developers to easily build, test, and deploy AI-powered applications with support for Pollinations.ai as a provider.",
       author: "@pipeline",
@@ -835,7 +835,7 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 ai/teens worldwide",
+      name: "ai/teens worldwide",
       url: "https://aiteens.worldwide.pollinations.ai",
       description: "Session 2: ai/teens worldwide conference exploring the forces shaping AI today, diving into governance, virtual connections, and decision-making with voices from multiple European cities.",
       author: "@aiteens",

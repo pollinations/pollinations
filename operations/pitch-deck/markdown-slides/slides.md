@@ -276,10 +276,6 @@ layout: two-cols-header
 
 # 💬 **Pixpal.Chat** (web app)
 
-<br>
-<br>
-<br>
-
 ::left::
 
 <div class="relative">
@@ -308,17 +304,23 @@ layout: two-cols-header
   </div>
 </div>
 
-<div style="margin-top: 180px">
-  <img src="/media/logo_mistral.png" alt="Mistral AI Logo" class="h-20">
-  <img src="/media/logo_llama.png" alt="Meta AI Logo" class="h-20">
+<div style="margin-top: 180px" class="flex gap-4 items-center">
+  <img src="/media/logo_mistral.png" alt="Mistral AI Logo" class="h-15">
+  <img src="/media/logo_llama.png" alt="Meta AI Logo" class="h-15">
 </div>
+
+<br>
+<br>
 
 ::right::
 
-<div class="flex justify-center items-center w-8/8 relative">
+<div class="flex justify-center relative">
   <img v-click-hide="1" src="/media/pixpal-1.png" class="w-3/3 rounded-lg shadow-lg absolute top-0 left-0" alt="Pixpal AI chat with images">
-  <img v-click="1" src="/media/pixpal-2.png" class="w-4/3 rounded-lg shadow-lg absolute top-0 left-0" alt="Pixpal AI chat with contextual ad">
+  <img v-click="1" src="/media/pixpal-2.png" class="w-3/3 rounded-lg shadow-lg absolute top-0 left-0" alt="Pixpal AI chat with contextual ad">
 </div>
+
+<br>
+<br>
 
 <!--
 ## Product Showcase - Ad Integration
@@ -349,7 +351,9 @@ layout: two-cols
 
 <br>
 
-# 👥 **2M+** Monthly Active Users
+# 👥 **2M+** MAU
+
+<br>
 
 <div class="flex gap-4 items-center">
   <img src="/media/roblox-logo.png" alt="Roblox Logo" class="w-25 h-25">
@@ -384,8 +388,7 @@ layout: two-cols-header
 
 ::left::
 
-#
-## 👥 **3M+** Monthly Active End-Users
+## 👥 **3M+** Mo Active End-Users
 ## 🎨 **100M+** Media Gen/Month
 #
 <div class="bg-gray-200 text-black p-2 rounded-lg inline-block">
@@ -398,19 +401,20 @@ layout: two-cols-header
 ## 🚀 **300+** Apps Live
 ## ⚡ **2+** Built Daily
 #
+
 <div class="bg-gray-200 text-black p-2 rounded-lg inline-block">
   <h3 class="m-0">💬 <strong>13K+</strong> Discord Community</h3>
 </div>
 
 ::right::
 
+<div class="flex justify-center items-center">
+  <img src="/media/traction-media-generated-6mo.png" alt="Media Generated Growth" class="w-8/8 rounded-lg shadow-lg">
+</div>
+
 #
 
 <div class="text-center">📊 Media Generated per Day</div>
-
-<div class="flex justify-center items-center">
-  <img src="/media/traction-media-generated-6mo.png" alt="Media Generated Growth" class="w-6/7 rounded-lg shadow-lg">
-</div>
 
 <!--
 ## Traction - Our Flywheel is Already Spinning
@@ -477,32 +481,49 @@ layout: two-cols
 # <span class="bg-purple-600 text-white p-2 rounded">**💰 From Prompt to Profit**</span>
 
 <br>
+<br>
+<br>
 
-**Key Unit Economics (per 1k Media Generations – FY2027)**
-
-✓ Est. Ad Revenue (Net via Partners):      ~€1.40  
-✓ Est. AI Compute Cost:                   ~€0.20  
-✓ Net Revenue (Post Cloud & Nectar):     ~€0.84  
-
-<div class="bg-purple-100 p-4 rounded-lg shadow-lg mb-4">
-  <div class="font-bold text-3xl">💼 Example: Mirexa app</div>
-  <div class="text-2xl">(Text/Image Generator)</div>
-  <div class="grid grid-cols-2 gap-4 mt-2">
-    <div>
-      <div class="font-semibold">720K</div>
-      <div class="text-sm">Media/Month</div>
+<div class="bg-purple-100 p-4 rounded-lg shadow-lg mb-4 relative" style="min-height: 240px;">
+  <div v-click-hide="1" class="absolute top-0 left-0 right-0 bottom-0 p-4">
+    <div class="font-bold text-3xl">💼 Example: Mirexa app</div>
+    <div class="text-2xl">(Text/Image Generator)</div>
+    <div class="grid grid-cols-2 gap-4 mt-4">
+      <div>
+        <div class="font-semibold text-xl">720K</div>
+        <div class="text-base">Media/Month</div>
+      </div>
+      <div>
+        <div class="font-semibold text-xl">144K</div>
+        <div class="text-base">Ad Impressions/Month</div>
+      </div>
+      <div>
+        <div class="font-semibold text-xl">€5</div>
+        <div class="text-base">eCPM</div>
+      </div>
+      <div>
+        <div class="font-semibold text-xl text-green-600">€324</div>
+        <div class="text-base">Monthly Creator Revenue</div>
+      </div>
     </div>
-    <div>
-      <div class="font-semibold">144K</div>
-      <div class="text-sm">Ad Impressions/Month</div>
-    </div>
-    <div>
-      <div class="font-semibold">€5</div>
-      <div class="text-sm">eCPM</div>
-    </div>
-    <div>
-      <div class="font-semibold text-green-600">€324</div>
-      <div class="text-sm">Monthly Creator Revenue</div>
+  </div>
+  
+  <div v-click="1" class="absolute top-0 left-0 right-0 bottom-0 p-4">
+    <div class="font-bold text-3xl">💰 Key Unit Economics</div>
+    <div class="text-2xl">(per 1k Media Generations – 2027)</div>
+    <div class="mt-4">
+      <div class="flex justify-between items-center mb-2">
+        <div class="font-semibold">Ad Revenue (Net via Partners):</div>
+        <div class="font-bold">~€1.40</div>
+      </div>
+      <div class="flex justify-between items-center mb-2">
+        <div class="font-semibold">AI Compute Cost:</div>
+        <div class="font-bold">~€0.20</div>
+      </div>
+      <div class="flex justify-between items-center mb-2 text-green-600 font-bold">
+        <div>Net Revenue (Post Cloud & Nectar):</div>
+        <div>~€0.84</div>
+      </div>
     </div>
   </div>
 </div>
@@ -514,7 +535,9 @@ layout: two-cols
 </div>
 
 <!--
-## From Prompt to Profit - Our 3-Step Creator Journey
+### From Prompt to Profit
+
+#### Overview
 * Let me walk you through our clear **3-step journey** for creators
 * Step 1 - **Seed** (Live Today): We provide completely **free tools** and **ad-supported compute** through our partners
 * This **removes all barriers** to entry and helps creators get started immediately
@@ -523,6 +546,13 @@ layout: two-cols
 * Step 3 - **Nectar** (H2 '26): For top-performing apps, we introduce a **50/50 net ad revenue share** from our partner revenue
 * To put this in perspective: With 1M MAU and a $1.50 CPM, that's about **$13.5K net monthly revenue**, with **$6.75K going directly** to the developer
 * This creates a **sustainable ecosystem** where **everyone wins** - creators, advertisers, and Pollinations
+
+#### Unit economics
+- **Each 1,000 media units generate €1.40** in ad revenue via contextual placements.
+- **AI compute costs remain low at €0.20**, thanks to model efficiency at scale.
+- After creator share, we retain **€0.84 net per 1k outputs**.
+- This margin **covers infra in real-time** and scales linearly with demand.
+- **Value is shared** with creators without compromising platform profitability.
 ## End
 -->
 

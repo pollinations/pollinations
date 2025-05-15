@@ -235,28 +235,20 @@ layout: two-cols-header
 layout: two-cols
 ---
 
-<div class="mx-2">
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted onloadedmetadata="this.currentTime = Math.random() * this.duration; this.playbackRate = 2.0;">
-    <source src="/media/what-do-we-do_slideshow-1.mp4" type="video/mp4">
-  </video>
+# 🚀 **Developer Adoption, It's Real.**
 
-  <div class="mb-4"></div>
-
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted onloadedmetadata="this.currentTime = Math.random() * this.duration; this.playbackRate = 2.0;">
-    <source src="/media/what-do-we-do_slideshow-2.mp4" type="video/mp4">
-  </video>
-</div>
+<img src="/media/git-star-history.png" alt="GitHub Star History" class="w-6/7 rounded-lg shadow-lg">
 
 ::right::
 
 <div class="mx-2">
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls onloadedmetadata="this.currentTime = Math.random() * this.duration; this.playbackRate = 2.0;">
+  <video class="w-1/1 rounded-lg shadow-lg" autoplay loop muted controls onloadedmetadata="this.currentTime = Math.random() * this.duration; this.playbackRate = 2.0;">
     <source src="/media/what-do-we-do_slideshow-3.mp4" type="video/mp4">
   </video>
 
   <div class="mb-4"></div>
 
-  <video class="w-full rounded-lg shadow-lg" autoplay loop muted controls onloadedmetadata="this.currentTime = Math.random() * this.duration; this.playbackRate = 2.0;">
+  <video class="w-1/1 rounded-lg shadow-lg" autoplay loop muted controls onloadedmetadata="this.currentTime = Math.random() * this.duration; this.playbackRate = 2.0;">
     <source src="/media/what-do-we-do_slideshow-4.mp4" type="video/mp4">
   </video>
 </div>
@@ -569,8 +561,6 @@ layout: two-cols-header
 
       <p><strong>⚙️ AI Operations & Product</strong></p>
       <p><strong>🔭 AI Architect & Platform Scaler</strong></p>
-
-
 ## End
 -->
 

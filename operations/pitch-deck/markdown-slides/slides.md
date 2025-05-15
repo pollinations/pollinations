@@ -109,9 +109,10 @@ class: text-center flex flex-col justify-center items-center h-full
 
 <!--
 ## Title Slide
-*   Pollinations.ai: AI Infra, Community Creation.
-*   Monetization via Ad Tech Partners.
-*   Phased path: shared success.
+* Hi everyone, I'm Thomas from **Pollinations.ai**
+* We're building **AI infrastructure** that powers **community creation**
+* Our unique angle? **Monetization** through **Ad Tech Partners**
+* Today I'll show you our **phased path** to **shared success**
 ## End
 -->
 
@@ -150,16 +151,19 @@ layout: two-cols-header
 ### 📊 Low Engagement with Generic Ads
 
 <!--
-**Indie/Vibe Coder**
-- **💰 Monetization Blindspot:** Traditional ads don't fit dynamic AI interactions
-- **🔧 Lack of AI-Specific Tools:** Integrating ads contextually into generative content is hard
+## Problem - Two Sides of the Same Coin
 
-**Advertisers & Ad Tech: Untapped AI Frontier**
-- **🌎 Reaching AI Audiences:** Users are in new AI-native apps, hard to target effectively
-- **🍀 Fragmented Inventory:** Thousands of diverse AI apps, no unified way to place contextual ads
-- **📊 Low Engagement with Generic Ads:** Standard banners miss the mark in rich AI experiences
+**For Indie/Vibe Coders:**
+* These devs face a real **monetization blindspot** - traditional ads just **don't work** in AI interactions
+* They lack **specialized tools** to integrate ads naturally into their **generative content**
+* Result? Amazing apps with **no sustainable business model**
 
-**Key Takeaway:** Pollinations solves this AI-native monetization gap.
+**For Advertisers & Ad Tech:**
+* They're struggling to reach these valuable **AI-native audiences** effectively
+* The inventory is incredibly **fragmented** - thousands of diverse AI apps with **no unified access**
+* Their standard banner ads completely **miss the mark** in these rich AI experiences
+
+**Key Takeaway:** This gap is exactly what **Pollinations solves** - connecting both sides of this AI-native ecosystem.
 -->
 
 ---
@@ -211,20 +215,23 @@ layout: two-cols-header
 </div>
 
 <!--
-## Solution
-- **From idea to income with zero upfront cost** 💰
+## Solution - Connecting Creation with Monetization
+
+**Our Core Value Proposition:**
+* We take creators from **idea to income** with **zero upfront cost** - this is crucial
+* Look at this flow diagram - it shows exactly how we **connect all the pieces**
 
 **For Indie/Vibe Coders:**
-- Effortless AI integration with clear path to profit
-- Build apps that self-fund their own compute costs
-- Future: 50/50 revenue sharing (Nectar, H2 '26)
+* We make **AI integration effortless** while providing a **clear path to profit**
+* Their apps can actually **self-fund** their own compute costs - game changer!
+* And in 2026, we'll launch **Nectar** with **50/50 revenue sharing** for top performers
 
 **For Advertisers:**
-- Access to untapped AI-native audiences
-- Context-aware dynamic ad placements
-- Higher engagement than traditional formats
+* We're opening access to these previously **untapped AI-native audiences**
+* Our **context-aware dynamic ad placements** fit naturally in AI experiences
+* This drives **much higher engagement** than traditional ad formats
 
-**The Flow:** Infrastructure for AI creation → Monetization via expert Ad Partners → Revenue sharing
+**In short:** We build the **infrastructure**, partner with **ad experts**, and **everyone shares** in the success
 ## End
 -->
 
@@ -285,11 +292,13 @@ text
 </div>
 
 <!--
-## Product Showcase - Ad
-"Here's our AI-driven monetization. In a community app like Pixpal..."
-"...Pollinations' AI analyzes conversational context..."
-"...and our system, with our ad partners, delivers a hyper-contextual ad, featuring a dynamically AI-generated image and a targeted offer."
-"This is smart, non-intrusive, and effective."
+## Product Showcase - Ad Integration
+* Let me show you our **AI-driven monetization** in action
+* In this community app called **Pixpal**, users are having natural conversations
+* Watch how our AI **analyzes the conversational context** in real-time
+* Now see how our system works with ad partners to deliver a **hyper-contextual ad**
+* Notice the **dynamically AI-generated image** and **targeted offer** - perfectly matched to the conversation
+* This approach is **smart**, **non-intrusive**, and **incredibly effective** for both users and advertisers
 ## End
 -->
 
@@ -318,11 +327,14 @@ layout: two-cols
 </div>
 
 <!--
-## Product Showcase - Roblox
-*   Community success: "AI Character RP" on Roblox.
-*   2M MAU: proves engagement our infra enables.
-*   Monetization: via Roblox platform.
-*   Our custom rev-share w/ dev: pilots Nectar model.
+## Roblox Case Study - Real Revenue Sharing in Action
+* Let me share a powerful **real-world example** of our model working today
+* This is "AI Character RP" - currently the **#1 AI game** on Roblox
+* It's reached an impressive **2M monthly active users** - real validation of what our infrastructure enables
+* The monetization happens through the **Roblox platform** itself
+* We've established a **custom revenue-sharing arrangement** with the developer
+* This is essentially **piloting our Nectar model** that we'll roll out more broadly
+* It proves our concept works in the **real world**, with **real users** and **real revenue**
 ## End
 -->
 
@@ -359,11 +371,14 @@ layout: two-cols-header
 </div>
 
 <!--
-## Traction
-*   Flywheel spinning: 3M+ MAU, 100M+ media/month.
-*   Organic growth: 30% MoM. 300+ community apps.
-*   Text generations (1.3M/day) > images now.
-*   Ad pilot: [X impressions/Y timeframe] - learning fast.
+## Traction - Our Flywheel is Already Spinning
+* Our flywheel is not just theoretical - it's **already in full motion**
+* We've reached **3M+ monthly active users** generating over **100M pieces of media** per month
+* We're seeing consistent **organic growth of 30%** month-over-month
+* Our community has built over **300 apps**, with **2+ new ones** launching daily
+* **Text generations** have actually surpassed images - now at **1.3M per day**
+* Our ad pilot program has already delivered **14M impressions** - and we're learning fast
+* This traction **validates our model** and shows we're solving a **real need** in the market
 ## End
 -->
 
@@ -427,12 +442,15 @@ layout: two-cols
 </div>
 
 <!--
-## From Prompt to Profit
-*   Our 3-step creator journey:
-*   1. **Seed (Live):** Free tools, ad-supported compute (via partners).
-*   2. **Flower (H2 '25):** Apps self-fund compute via ads. Pollinations earns platform revenue (from partners). Better models/limits.
-*   3. **Nectar (H2 '26):** Top apps: 50/50 Net Ad Rev-Share (from partner revenue).
-*   (Optional if time: Unit Econ: 1M MAU, $1.50 CPM -> ~$13.5K net/mo -> ~$6.75K to dev via Nectar).
+## From Prompt to Profit - Our 3-Step Creator Journey
+* Let me walk you through our clear **3-step journey** for creators
+* Step 1 - **Seed** (Live Today): We provide completely **free tools** and **ad-supported compute** through our partners
+* This **removes all barriers** to entry and helps creators get started immediately
+* Step 2 - **Flower** (H2 '25): Apps begin to **self-fund** their own compute costs through ad revenue
+* At this stage, Pollinations earns **platform revenue** from our partners, and creators get **better models** and **higher limits**
+* Step 3 - **Nectar** (H2 '26): For top-performing apps, we introduce a **50/50 net ad revenue share** from our partner revenue
+* To put this in perspective: With 1M MAU and a $1.50 CPM, that's about **$13.5K net monthly revenue**, with **$6.75K going directly** to the developer
+* This creates a **sustainable ecosystem** where **everyone wins** - creators, advertisers, and Pollinations
 ## End
 -->
 
@@ -456,11 +474,15 @@ layout: two-cols-header
 **Growth & Developer Relations** : User acquisition, Brand partnerships, Community
 
 <!--
-## Team
-*   **Thomas (CEO):** 8+ yrs GenAI, Scaled platform >100M req/mo, Ex-Amazon AI, EU funding winner. (AI Architect, Platform Scaler).
-*   **Elliot (COO):** 6+ yrs AI Ops, Built efficient AI infra for scale-ups. (AI Ops, Product Scaling).
-*   **Key Hire:** Ad Tech Partner Manager – scales monetization with expert partners.
-*   (Plus: AI-Ops/Infra, Growth/DevRel).
+## Team - Experience Where It Matters Most
+* I'm Thomas, the CEO - I bring **8+ years of generative AI** experience
+* I've scaled platforms to over **100M requests per month** and worked at **Amazon AI**
+* I also won **EU funding** for previous AI projects - I know how to **build and scale**
+* My co-founder Elliot is our COO with **6+ years of AI operations** experience
+* He's built **efficient AI infrastructure** for multiple scale-ups - crucial for our model
+* Our next key hire will be an **Ad Tech Partner Manager** to scale our monetization with expert partners
+* We're also building out specialized teams for **AI-Ops/Infrastructure** and **Growth/Developer Relations**
+* This team has the perfect mix of **AI technical expertise** and **business scaling experience**
 ## End
 -->
 
@@ -492,14 +514,22 @@ layout: two-cols-header
 <br>
 
 <!--
-## Fueling the AI App Monetization Revolution
-*   **Now (Activate):**
-    *   Ship Native Ad Toolkit (for partner integration).
-    *   Onboard Ad Monetization Partners (e.g., Garlic).
-    *   Expand Nectar pilot (beyond Roblox).
-*   **+12 Months (Scale):**
-    *   Nectar GA (50/50 rev-share via partners).
-    *   Dynamic ad formats (via partners).
-    *   Grow global creator ecosystem & programs.
+## Roadmap - Fueling the AI App Monetization Revolution
+* Let me share our clear roadmap to fuel this **AI app monetization revolution**
+
+* **Right Now - Activation Phase:**
+  * We're shipping our **Native Ad Toolkit** for seamless partner integration
+  * We're launching **Polli Assistant** to make creation even easier
+  * We're expanding our **Nectar pilot** beyond Roblox to more app types
+  * We're onboarding specialized **Contextual-Ad Partners** like Garlic
+  * We're starting **Project Hosting** to further reduce barriers to entry
+
+* **Next 12 Months - Scaling Phase:**
+  * We'll launch **Nectar GA** with the **50/50 revenue sharing** model
+  * We'll implement **monthly payouts** and create an **Ecosystem Fund**
+  * We'll introduce **dynamic and interactive ad formats** with our partners
+  * We'll build **global creator community programs** to drive adoption
+
+* This roadmap systematically **builds our flywheel** and creates **value for all stakeholders**
 ## End
 -->

@@ -249,9 +249,10 @@ layout: two-cols
 class: text-center
 ---
 
-<video class="w-full h-full rounded-lg shadow-lg" autoplay noloop muted controls>
-  <source src="/media/pixpal-language-ad.mp4" type="video/mp4">
-</video>
+<div class="flex justify-between items-center w-full">
+  <img src="/media/pixpal_ai_chat_images_bing.png" class="w-[48%] rounded-lg shadow-lg" alt="Pixpal AI chat with Bing">
+  <img src="/media/pixpal_ai_chat_with_images.png" class="w-[48%] rounded-lg shadow-lg" alt="Pixpal AI chat with images">
+</div>
 
 <!--
 ## Product Showcase - Ad

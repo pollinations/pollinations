@@ -95,10 +95,10 @@ src: ./docs/16-due-diligence.md
 
 ---
 
-# **Picth Deck**
+# **Pitch Deck**
 
 ---
-class: text-center
+class: text-center flex flex-col justify-center items-center h-full
 ---
 
 # ![Pollinations.ai Logo](/media/pollinations-ai-logo.png)
@@ -106,6 +106,7 @@ class: text-center
 ## Spark Creation, Unlock Ad Revenue
 
 **Start building with [pollinations.ai](https://pollinations.ai)**
+
 <!--
 ## Title Slide
 *   Pollinations.ai.
@@ -120,31 +121,34 @@ layout: two-cols-header
 ---
 
 # <span class="bg-red-600 text-white p-2 rounded">**🔗 Challenge**</span>
-<br>
-
-## ***The current ecosystem forces painful trade-offs*** 😞
-#
 
 ::left::
 
 <img src="/media/problem_friction.png" alt="Problem: Friction" class="w-1/5 rounded-lg shadow-lg" />
 
 #
-# **App Creator**
-### 🧪 High costs, complex tech. Monetization? A puzzle.
+# **Indie/Vibe Coder**
+## 🧪 High costs, complex tech. Monetization?
 
 ::right::
 
 <img src="/media/problem_reach.png" alt="Problem: Reach" class="w-1/5 rounded-lg shadow-lg" />
 
 #
-
 # **Advertiser**
-### 💸 Struggle to reach audiences in new AI apps
+## 🧩 Fragmented inventory
+
 
 
 <!--
 ## Problem Statement
+
+**Indie/Vibe Coder**
+### 🧪 High costs, complex tech. Monetization? Creativity Capped.
+
+**Advertiser**
+## 🧩 Fragmented inventory
+Tens of thousands of micro-apps; too small for direct buys.
 *   Current AI building: tough for creators.
 *   High costs, complex tech. Monetization? A puzzle.
 *   Advertisers: struggle to reach new AI app audiences.
@@ -161,8 +165,11 @@ layout: two-cols
 <h2>👩‍💻 Creators</h2>
 <h3 class="font-bold">Build & Monetize</h3>
 
-- **Effortless AI Integration**
-- **Clear Path to Profit**
+# 👩‍💻 Indie/Vibe Coder
+## **Build & Monetize**
+>### - Effortless AI Integration
+>### - Clear Path to Profit
+<br>
 
 <h2>🏢 Advertisers</h2>
 <h3 class="font-bold">Reach AI-Natives</h3>

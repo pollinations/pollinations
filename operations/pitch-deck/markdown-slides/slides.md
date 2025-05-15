@@ -101,11 +101,9 @@ class: text-center flex flex-col justify-center items-center h-full
 
 <!--
 ## Title Slide
-* "Pollinations.ai provides the AI infrastructure and tools for our vibrant community to easily build generative AI apps."
-* "We then partner with specialized Ad Tech companies to help them monetize the unique, untapped ad inventory these apps create."
 * Hi everyone, I'm Thomas from **Pollinations.ai**
-* We're building **AI infrastructure** that powers **community creation**
-* Our unique angle? **Monetization** through **Ad Tech Partners**
+* "**Pollinations.ai** provides the **AI platform** for our vibrant community to easily build **gen AI apps**."
+* "We partner with specialized **Ad Tech** companies to **monetize** the unique, untapped **ad inventory**."
 * Today I'll show you our **phased path** to **shared success**
 ## End
 -->
@@ -555,7 +553,7 @@ layout: two-cols-header
 ## Team - Experience Where It Matters Most
 * I'm Thomas, the CEO - I bring **8+ years of generative AI** experience
 * I've scaled platforms to over **100M requests per month** and worked at **Amazon AI**
-* I also won **EU funding** for previous AI projects - I know how to **build and scale**
+* I also won **1.2m EU funding** for previous AI projects - I know how to **build and scale**
 * My co-founder Elliot is our COO with **6+ years of AI operations** experience
 * He's built **efficient AI infrastructure** for multiple scale-ups - crucial for our model
 * Our next key hire will be an **Ad Tech Partner Manager** to scale our monetization with expert partners

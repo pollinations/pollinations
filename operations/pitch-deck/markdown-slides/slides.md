@@ -120,7 +120,7 @@ class: text-center flex flex-col justify-center items-center h-full
 layout: two-cols-header
 ---
 
-# <span class="bg-red-600 text-white p-2 rounded">**🔗 Problem**</span>
+# <span class="bg-red-600 text-white p-2 rounded">**🔗 Problem : Fragmented, Unfunded AI**</span>
 
 ::left::
 
@@ -128,9 +128,10 @@ layout: two-cols-header
 
 #
 
-# **Indie/Vibe Coder: Barriers to AI Creation & Profit**
-
-### ⚙️ **Complex AI Access & High Costs** 
+# **Indie/Vibe Coder** 
+## Barriers to AI Creation & Profit
+#
+### ⚙️ **Complex AI Access & High Costs**
 #
 ### 💰 **Monetization Blindspot for AI Content**
 
@@ -142,11 +143,12 @@ layout: two-cols-header
 
 #
 
-# **Advertisers & Ad Tech: Untapped AI Frontier**
-
-### 🍀 Fragmented & Unique AI Inventory
+# **Advertisers & Ad Tech**
+## Untapped AI Frontier
 #
-### 📊 Generic Ads Don't Fit AI Context
+### 🍀 **Fragmented & Unique AI Inventory**
+#
+### 📊 **Generic Ads Don't Fit AI Context**
 
 <br>
 
@@ -376,7 +378,7 @@ layout: two-cols-header
 ## ⚡ **2+** Built Daily
 #
 <div class="bg-gray-200 text-black p-2 rounded-lg inline-block">
-  <h3 class="m-0">💬 <strong>13K+</strong> Discord Community Members</h3>
+  <h3 class="m-0">💬 <strong>13K+</strong> Discord Community</h3>
 </div>
 
 ::right::

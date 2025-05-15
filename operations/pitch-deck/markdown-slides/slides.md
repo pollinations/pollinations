@@ -156,7 +156,7 @@ layout: two-cols-header
 
 **Advertisers & Ad Tech: Untapped AI Frontier**
 - **🌎 Reaching AI Audiences:** Users are in new AI-native apps, hard to target effectively
-- **🍀 Fragmented & Unique Inventory:** Thousands of diverse AI apps, no unified way to place contextual ads
+- **🍀 Fragmented Inventory:** Thousands of diverse AI apps, no unified way to place contextual ads
 - **📊 Low Engagement with Generic Ads:** Standard banners miss the mark in rich AI experiences
 
 **Key Takeaway:** Pollinations solves this AI-native monetization gap.
@@ -211,24 +211,20 @@ layout: two-cols-header
 </div>
 
 <!--
-Solution
-- From idea to income with zero upfront cost 💰
+## Solution
+- **From idea to income with zero upfront cost** 💰
 
-👩‍💻 Indie/Vibe Coder
-### **Build & Monetize**
-#### • Effortless AI Integration
-#### • Clear Path to Profit
-<br>
+**For Indie/Vibe Coders:**
+- Effortless AI integration with clear path to profit
+- Build apps that self-fund their own compute costs
+- Future: 50/50 revenue sharing (Nectar, H2 '26)
 
-# 🏢 Advertisers
-### **Reach AI-Natives**
-#### • Untapped Ad Space
-#### • Context-Aware & Dynamic
+**For Advertisers:**
+- Access to untapped AI-native audiences
+- Context-aware dynamic ad placements
+- Higher engagement than traditional formats
 
-*   Our Fix: Infrastructure for AI creation.
-*   Monetization via expert Ad Partners (diagram shows flow).
-*   Creators: Easy build, self-fund scale (Flower H2 '25).
-*   Future: Nectar (50/50 rev-share, H2 '26).
+**The Flow:** Infrastructure for AI creation → Monetization via expert Ad Partners → Revenue sharing
 ## End
 -->
 
@@ -295,6 +291,7 @@ layout: two-cols
 ---
 
 # **🎮 Roblox Integration**
+# (rev-share case study)
 
 <br>
 <br>
@@ -304,13 +301,6 @@ layout: two-cols
 <br>
 
 ## 👥 **2M** MAU
-
-<br>
-
-<div class="bg-white inline-block px-4 py-2 rounded-lg border-2 border-[#fc9432]">
-  <h2><img src="/media/tier-nectar-logo-no-text.png" alt="Nectar Logo" style="height: 2em; vertical-align: middle;"> <strong class="text-[#fc9432]">Nectar</strong></h2>
-  <h3>Rev-share case study</h3>
-</div>
 
 ::right::
 

@@ -260,6 +260,33 @@ layout: two-cols
   </video>
 </div>
 
+---
+
+# **Creator Story: Pokémon Image Generation**
+
+<div class="flex flex-col items-center">
+  <div class="text-xl mb-4">
+    <p>Watch how creators use our platform to build engaging AI applications</p>
+  </div>
+  
+  <video class="w-4/5 rounded-lg shadow-lg" autoplay loop muted controls>
+    <source src="/media/pokemon-image-gen-2x-compressed.mp4" type="video/mp4">
+  </video>
+  
+  <div class="text-lg mt-4 text-gray-700 italic">
+    <p>From idea to working application in minutes with Pollinations.ai</p>
+  </div>
+</div>
+
+<!--
+## Creator Story
+* This is a real example of how creators use our platform
+* They can quickly build engaging AI applications with minimal effort
+* Our infrastructure handles all the complexity, letting them focus on creativity
+* This creates unique ad inventory opportunities in these engaging experiences
+-->
+
+
 <!--
 ## Product Showcase Apps Cohort
 *   Community builds diverse apps on our infra.

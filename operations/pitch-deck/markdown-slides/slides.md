@@ -206,7 +206,7 @@ layout: two-cols-header
 <div class="text-center font-bold text-2xl">↓</div>
 
 <div class="bg-purple-100 p-4 rounded-lg shadow-lg mb-2 text-center">
-<div class="font-bold text-purple-600">Pollinations Integrates Ad Solutions</div>
+<div class="font-bold text-purple-600">pollinations.ai Integrates Ad Solutions</div>
 </div>
 <div class="text-center font-bold text-2xl">↓</div>
 
@@ -279,7 +279,7 @@ layout: two-cols
 layout: two-cols
 ---
 
-# 💬 **Pixpal.Chat**
+# 💬 **Pixpal.Chat** (web app)
 
 <br>
 
@@ -288,7 +288,7 @@ layout: two-cols
 <br>
 
 <div class="bg-red-500 text-white p-2 rounded-lg inline-block">
-  <h3 class="m-0">Personalized ad integration 🎯</h3>
+  <h3 class="m-0"><strong>AI-Personalized</strong> ad integration 🎯</h3>
 </div>
 
 ::left::
@@ -321,11 +321,11 @@ layout: two-cols
 <br>
 <br>
 
-## 🏆 Roblox **#1 AI Game**
-
-<br>
-
-## 👥 **2M** MAU
+<div class="bg-pink-400 text-white p-4 rounded-lg inline-block">
+  <h2 class="m-0"><strong>🏆 Roblox #1 AI Game</strong></h2>
+  <br>
+  <h2 class="m-0">👥 <strong>2M</strong> MAU</h2>
+</div>
 
 ::right::
 
@@ -355,23 +355,27 @@ layout: two-cols-header
 
 ::left::
 
+#
 ## **3M+** Monthly Active End-Users
 ## **100M+** Media Gen/Month
 #
->#### - **30%** Month-o-Month Growth
->#### - **14M+ Ad impressions** from pilot program
+<div class="bg-gray-200 text-black p-2 rounded-lg inline-block">
+  <h3 class="m-0"><strong>30%</strong> Month-o-Month Growth</h3>
+  <h3 class="m-0"><strong>14M+</strong> Ad impressions from pilot program</h3>
+</div>
 
-<br>
-<br>
 <br>
 <br>
 
 ## **300+** Apps Live | **2+** Built Daily
 #
->#### - **13K+** Discord Community Members
->#### - **2M MAU** on a trending Roblox Game
+<div class="bg-gray-200 text-black p-2 rounded-lg inline-block">
+  <h3 class="m-0"><strong>13K+</strong> Discord Community Members</h3>
+</div>
 
 ::right::
+
+#
 
 <div class="text-center">Media Generated per Day</div>
 
@@ -433,20 +437,37 @@ layout: two-cols
 # <span class="bg-purple-600 text-white p-2 rounded">**💰 From Prompt to Profit**</span>
 
 <br>
-<br>
-<br>
 
-## **1. Create For Free**  🚀 (Live)
+<div class="bg-gray-100 p-4 rounded-lg shadow-lg mb-4">
+  <div class="text-3xl mb-2"><strong>1.</strong> Create For Free 🚀 (Live)</div>
+  <div class="text-3xl mb-2"><strong>2.</strong> Scale & Self-Fund 📈 (Beta)</div>
+  <div class="text-3xl"><strong>3.</strong> Profit Together 💰 (2026)</div>
+</div>
 
-<br>
-<br>
 
-## **2. Scale & Self-Fund** 📈 (Beta)
 
-<br>
-<br>
-
-## **3. Profit Together** 💰 (2026)
+<div class="bg-purple-100 p-4 rounded-lg shadow-lg mb-4">
+  <div class="font-bold text-3xl">💼 Example: Mirexa app</div>
+  <div class="text-2xl">(Text/Image Generator)</div>
+  <div class="grid grid-cols-2 gap-4 mt-2">
+    <div>
+      <div class="font-semibold">720K</div>
+      <div class="text-sm">Media/Month</div>
+    </div>
+    <div>
+      <div class="font-semibold">144K</div>
+      <div class="text-sm">Ad Impressions/Month</div>
+    </div>
+    <div>
+      <div class="font-semibold">€5</div>
+      <div class="text-sm">eCPM</div>
+    </div>
+    <div>
+      <div class="font-semibold text-green-600">€324</div>
+      <div class="text-sm">Monthly Creator Revenue</div>
+    </div>
+  </div>
+</div>
 
 ::right::
 

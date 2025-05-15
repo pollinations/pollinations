@@ -442,8 +442,8 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "🆕 LiteAI",
-      url: "https://github.com/LostRuins/lite.koboldai.net",
+      name: "KoboldAI Lite",
+      url: "https://koboldai.net",
       description: "A lightweight AI framework for text generation and chat.",
       author: "@lostruins",
       repo: "https://github.com/LostRuins/lite.koboldai.net",
@@ -452,7 +452,7 @@ const allProjects = {
       order: 0,
     },
     {
-      name: "🆕 Polynate",
+      name: "Polynate",
       url: "https://polynate.cloudwerx.dev/",
       description: "AI-powered text and audio content generation platform providing a user-friendly interface for interacting with various AI generation services from Pollinations.ai.",
       author: "@fisven",
@@ -856,6 +856,8 @@ export const projects = {
   featured: [],
   vibeCoding: [],
   llmIntegrations: [],
+  creativeApps: [],  // Add this
+  toolsInterfaces: [], // Add this
   socialBots: [],
   sdkLibraries: [],
   tutorials: [],

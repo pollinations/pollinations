@@ -396,8 +396,12 @@ layout: two-cols-header
 
 <br> 
 
-# **€768 M** SOM 💻
-### **3.8 %** of SAM — massive runway
+<div class="bg-red-100 p-4 rounded-lg inline-block">
+
+# **€768 M** SOM 💻
+### **3.8 %** of SAM → **massive runway**
+</div>
+
 
 <!--
 ## Market

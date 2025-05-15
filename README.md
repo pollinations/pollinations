@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/pollinations-pollinations-badge.png)](https://mseep.ai/app/pollinations-pollinations)
+
 # [Pollinations.AI](https://pollinations.ai)
 
 ---

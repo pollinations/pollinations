@@ -119,7 +119,7 @@ class: text-center flex flex-col justify-center items-center h-full
 layout: two-cols-header
 ---
 
-# <span class="bg-red-600 text-white p-2 rounded">**🔗 Challenge**</span>
+# <span class="bg-red-600 text-white p-2 rounded">**🔗 Problem**</span>
 
 ::left::
 
@@ -150,20 +150,16 @@ layout: two-cols-header
 ### 📊 Low Engagement with Generic Ads
 
 <!--
-**SPEAKER NOTES FOR CHALLENGE SLIDE:**
-# **Indie/Vibe Coder**
-- **💰 Monetization Blindspot:** Traditional ads don't fit dynamic AI interactions; direct deals unfeasible for most
+**Indie/Vibe Coder**
+- **💰 Monetization Blindspot:** Traditional ads don't fit dynamic AI interactions
 - **🔧 Lack of AI-Specific Tools:** Integrating ads contextually into generative content is hard
-# **Advertisers & Ad Tech: Untapped AI Frontier**
-- **🌎 Reaching Niche AI Audiences:** Users are in new AI-native apps, hard to target effectively
+
+**Advertisers & Ad Tech: Untapped AI Frontier**
+- **🌎 Reaching AI Audiences:** Users are in new AI-native apps, hard to target effectively
 - **🍀 Fragmented & Unique Inventory:** Thousands of diverse AI apps, no unified way to place contextual ads
 - **📊 Low Engagement with Generic Ads:** Standard banners miss the mark in rich AI experiences
 
-*   AI App Challenges:
-*   **Creators:** Costly AI, complex monetization for dynamic content.
-*   **Advertisers/Ad Tech:** Untapped AI frontier, fragmented, generic ads ineffective.
-*   Pollinations solves this AI-native gap.
-## End
+**Key Takeaway:** Pollinations solves this AI-native monetization gap.
 -->
 
 ---
@@ -215,10 +211,10 @@ layout: two-cols-header
 </div>
 
 <!--
-##  Solution
+Solution
 - From idea to income with zero upfront cost 💰
 
-# 👩‍💻 Indie/Vibe Coder
+👩‍💻 Indie/Vibe Coder
 ### **Build & Monetize**
 #### • Effortless AI Integration
 #### • Clear Path to Profit
@@ -287,7 +283,6 @@ class: text-center
 
 <!--
 ## Product Showcase - Ad
-**SPEAKER NOTES FOR PRODUCT SHOWCASE - AD SLIDE:**
 "Here's our AI-driven monetization. In a community app like Pixpal..."
 "...Pollinations' AI analyzes conversational context..."
 "...and our system, with our ad partners, delivers a hyper-contextual ad, featuring a dynamically AI-generated image and a targeted offer."

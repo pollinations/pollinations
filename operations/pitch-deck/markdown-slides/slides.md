@@ -174,9 +174,14 @@ layout: two-cols-header
 
 # 👩‍💻 Indie/Vibe Coder
 ### **→ Build & Monetize**
+#
+<div class="flex justify-left space-x-4 mb-2">
+  <img src="/media/logo_koboldai.png" alt="KoboldAI Logo" class="h-10">
+  <img src="/media/logo_lobe.png" alt="Lobe Logo" class="h-10">
+  <img src="/media/logo_quen.png" alt="Quen Logo" class="h-10">
+</div>
 
 <br>
-
 <br>
 
 # 🏢 Advertisers
@@ -185,9 +190,11 @@ layout: two-cols-header
 <br>
 
 <div class="flex justify-left space-x-4 mb-2">
-  <img src="/media/ad-partner-garlic.png" alt="Garlic Partner" class="h-10">
-  <img src="/media/ad-partner-nexad.png" alt="Nexad Partner" class="h-10">
+  <img src="/media/ad-partner-garlic.png" alt="Garlic Partner" class="h-8">
+  <img src="/media/ad-partner-nexad.png" alt="Nexad Partner" class="h-8">
 </div>
+  <img src="/media/logo_google_ad_sense.png" alt="Ad-sense Partner" class="h-12">
+
 
 ::right::
 

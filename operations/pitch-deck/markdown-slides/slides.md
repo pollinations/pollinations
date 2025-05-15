@@ -313,8 +313,12 @@ layout: two-cols
 ---
 
 # **🎮 Roblox Case Study**
-# (Revenue Share Success)
 
+<div class="bg-pink-400 text-white p-2 rounded-lg inline-block mb-4">
+  <h2 class="m-0"><strong>Revenue Share Success</strong></h2>
+</div>
+
+<br>
 <br>
 <br>
 
@@ -322,9 +326,13 @@ layout: two-cols
 ## AI Game Category
 
 <br>
-<br>
 
 # 👥 **2M+** Monthly Active Users
+
+<div class="flex gap-4 items-center">
+  <img src="/media/roblox-logo.png" alt="Roblox Logo" class="w-25 h-25">
+  <img src="/media/roblox-logo.png" alt="Roblox Logo" class="w-25 h-25">
+</div>
 
 ::right::
 

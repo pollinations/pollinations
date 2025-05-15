@@ -272,7 +272,17 @@ layout: two-cols
 layout: two-cols
 ---
 
-# **🎯 Personalized Ad Integration**
+# 💬 **Pixpal.Chat**
+
+<br>
+
+## **_#1 on Bing_** and various AI assistants for **image generation** 🖼️
+
+<br>
+
+<div class="bg-red-500 text-white p-2 rounded-lg inline-block">
+  <h3 class="m-0">Personalized ad integration 🎯</h3>
+</div>
 
 ::left::
 

@@ -97,7 +97,7 @@ class: text-center flex flex-col justify-center items-center h-full
 
 ## Spark Creation, Unlock Ad Revenue
 #
-<div class="bg-yellow-400 hover:bg-yellow-400 text-black font-bold py-2 px-4 rounded-2xl shadow-lg inline-block transition-colors duration-200">
+<div class="bg-yellow-300 hover:bg-yellow-400 text-black font-bold py-2 px-4 rounded-2xl shadow-lg inline-block transition-colors duration-200">
   <a href="https://pollinations.ai" class="no-underline">🐝 Start building with pollinations.ai</a>
 </div>
 
@@ -269,34 +269,70 @@ layout: two-cols
     *   (Shows platform power & creativity).
 ## End
 -->
-@ -0,0 +1,33 @@
+
 ---
 
-# **Our Cloud Architecture**
+# **☁️ Our Cloud Architecture**
 
-<div class="bg-blue-100 p-4 rounded-lg shadow-lg mb-4">
-  <h3 class="m-0">🔌 <strong>Scalable Infrastructure</strong> powering our ecosystem</h3>
+<div class="bg-pink-100 p-2 mb-5 rounded-lg shadow-lg inline-block">
+  <h3 class="m-0"><strong>Scalable Infrastructure</strong> powering our ecosystem 🔌</h3>
 </div>
 
 ```mermaid
-flowchart LR
-    Q["Messaging Platforms<br/>Discord, Telegram, WhatsApp"] --> L1["image.pollinations.ai"]
-    N["30+ Mobile and Web Apps"] --> L1 & L2["text.pollinations.ai"]
-    A["pollinations.ai Website"] --> L1 & L2
-    R["AI Agents<br/>Qwen, Sillytavern"] --> L1
-    AI["AI Assistants<br/>Claude"] --> MCP["MCP Server"]
-    MCP --> L1
-    L1 --> B["Image Generation Service"]
-    B --> F["Prompt Enhancement, Translation & Safety"]
-    F --> D["FLUX Image Models"]
-    L2 --> P["News/Search"]
-    L2 --> SC["Scaleway"]
-    L2 --> DS["Deepseek API"]
-    L2 --> G["Azure"]
-    L2 --> CF["Cloudflare AI"]
-    SC --> QW["Qwen"] & LL["Llama"]
-    G --> OP["OpenAI"] & CL["Claude"]
-    CF --> MI["Mistral"] & CFL["Llama Models"]
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '14px', 'nodeSpacing': 10, 'rankSpacing': 25}}}%%
+flowchart TD
+    subgraph Clients[<b style='font-size:18px'>Clients</b>]
+    Q["<b>Messaging Platforms</b>"] 
+    N["<b>30+ Apps</b>"] 
+    A["<b>Website</b>"] 
+    R["<b>AI Agents</b>"] 
+    AI["<b>AI Assistants</b>"]
+    end
+    
+    subgraph APIs[<b style='font-size:18px'>APIs</b>]
+    L1["<b>image.api</b>"]
+    L2["<b>text.api</b>"]
+    MCP["<b>MCP Server</b>"]
+    end
+    
+    subgraph Services[<b style='font-size:18px'>Services</b>]
+    B["<b>Image Generation</b>"]
+    F["<b>Prompt Enhancement</b>"]
+    D["<b>FLUX Models</b>"]
+    P["<b>News/Search</b>"]
+    end
+    
+    subgraph Providers[<b style='font-size:18px'>Providers</b>]
+    SC["<b>Scaleway</b>"]
+    DS["<b>Deepseek</b>"]
+    G["<b>Azure</b>"]
+    CF["<b>Cloudflare AI</b>"]
+    end
+    
+    subgraph Models[<b style='font-size:18px'>Models</b>]
+    QW["<b>Qwen</b>"] 
+    LL["<b>Llama</b>"]
+    OP["<b>OpenAI</b>"] 
+    CL["<b>Claude</b>"]
+    MI["<b>Mistral</b>"] 
+    CFL["<b>Llama Models</b>"]
+    end
+    
+    Q & N & A & R --> L1
+    N & A --> L2
+    AI --> MCP --> L1
+    L1 --> B --> F --> D
+    L2 --> P & SC & DS & G & CF
+    SC --> QW & LL
+    G --> OP & CL
+    CF --> MI & CFL
+    
+    %% Styling
+    classDef default fill:#FCE7F3,stroke:#DB2777,stroke-width:1px,color:#831843,rx:10,ry:10
+    classDef container fill:#ECFDF5,stroke:#059669,stroke-width:2px,color:#065F46,rx:15,ry:15
+    
+    class Q,N,A,R,AI,L1,L2,MCP,B,F,D,P,SC,DS,G,CF,QW,LL,OP,CL,MI,CFL default
+    class Clients,APIs,Services,Providers,Models container
 ```
 
 <!--

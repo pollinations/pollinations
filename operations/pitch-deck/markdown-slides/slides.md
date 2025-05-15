@@ -306,16 +306,32 @@ text
 layout: two-cols
 ---
 
-# **🎮 Roblox Integration**
-# (rev-share case study)
+# 🎯 **Contextual & Personalized Ad dropped Real-Time**
+
+---
+layout: two-cols
+---
+
+# **🎮 Roblox Case Study**
+
+<div class="bg-pink-400 text-white p-2 rounded-lg inline-block mb-4">
+  <h2 class="m-0"><strong>Revenue Share Success</strong></h2>
+</div>
 
 <br>
 <br>
+<br>
 
-<div class="bg-pink-400 text-white p-4 rounded-lg inline-block">
-  <h2 class="m-0"><strong>🏆 Roblox #1 AI Game</strong></h2>
-  <br>
-  <h2 class="m-0">👥 <strong>2M</strong> MAU</h2>
+# 🏆 ***#1 on Roblox***
+## AI Game Category
+
+<br>
+
+# 👥 **2M+** Monthly Active Users
+
+<div class="flex gap-4 items-center">
+  <img src="/media/roblox-logo.png" alt="Roblox Logo" class="w-25 h-25">
+  <img src="/media/roblox-logo.png" alt="Roblox Logo" class="w-25 h-25">
 </div>
 
 ::right::

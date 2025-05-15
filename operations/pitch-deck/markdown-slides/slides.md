@@ -280,11 +280,11 @@ layout: two-cols
 
 ```mermaid
 flowchart LR
-    Q["Messaging Platforms\nDiscord, Telegram, WhatsApp"] --> L1["image.pollinations.ai"]
+    Q["Messaging Platforms<br/>Discord, Telegram, WhatsApp"] --> L1["image.pollinations.ai"]
     N["30+ Mobile and Web Apps"] --> L1 & L2["text.pollinations.ai"]
     A["pollinations.ai Website"] --> L1 & L2
-    R["AI Agents\nQwen, Sillytavern"] --> L1
-    AI["AI Assistants\nClaude"] --> MCP["MCP Server"]
+    R["AI Agents<br/>Qwen, Sillytavern"] --> L1
+    AI["AI Assistants<br/>Claude"] --> MCP["MCP Server"]
     MCP --> L1
     L1 --> B["Image Generation Service"]
     B --> F["Prompt Enhancement, Translation & Safety"]

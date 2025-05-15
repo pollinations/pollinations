@@ -124,8 +124,6 @@ layout: two-cols-header
 
 ::left::
 
-<br>
-
 <img src="/media/problem_friction.png" alt="Problem: Friction" class="w-1/4 rounded-lg shadow-lg" />
 
 #
@@ -134,11 +132,11 @@ layout: two-cols-header
 
 ### 💰 Monetization Blindspot
 #
-### 🔧 Lack of AI-Specific Tools 
-
-::right::
+### 🔧 Lack of AI-Specific Tools
 
 <br>
+
+::right::
 
 <img src="/media/problem_reach.png" alt="Problem: Reach" class="w-1/4 rounded-lg shadow-lg" />
 
@@ -149,6 +147,8 @@ layout: two-cols-header
 ### 🍀 Fragmented & Unique Inventory
 #
 ### 📊 Low Engagement with Generic Ads
+
+<br>
 
 <!--
 ## Problem - Two Sides of the Same Coin
@@ -282,13 +282,18 @@ layout: two-cols
 # 💬 **Pixpal.Chat** (web app)
 
 <br>
+<br>
+<br>
 
-## **_#1 on Bing_** and various AI assistants for **image generation** 🖼️
+# **_#1 on Bing_** 
+## and various AI assistants for
+## **image generation** 🖼️
 
 <br>
 
-<div class="bg-red-500 text-white p-2 rounded-lg inline-block">
-  <h3 class="m-0"><strong>AI-Personalized</strong> ad integration 🎯</h3>
+<div class="bg-orange-500 text-white p-4 rounded-lg inline-block">
+  <h2 class="m-0"><strong>AI-Personalized</strong></h2>
+  <h2 class="m-0"><strong>Ad Integration 🎯</strong></h2>
 </div>
 
 ::left::

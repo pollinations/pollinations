@@ -258,10 +258,9 @@ layout: two-cols
 <div class="flex">
   <div class="w-4/10 pt-4 pr-4 flex flex-col justify-start">
     <div class="text-3xl mb-8">
-      <p>Watch how <strong>creators</strong> 🎨<br><br>
-      Use our <strong>platform</strong><br><br>
+      <p>Watch how easy it is for a <strong>creator</strong> 🎨<br><br>
       To <strong>build</strong> engaging<br><br>
-      <strong>AI applications</strong> ✨</p>
+      AI applications<strong>in seconds</strong> ✨</p>
     </div>
     <div class="bg-gradient-to-r from-purple-500 to-purple-400 text-white font-bold py-3 px-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 inline-block transform hover:scale-105" style="max-width: 70%;">
       <p class="m-0 text-lg">✨ Turn your AI dreams into reality in minutes with <span class="text-yellow-300">pollinations.ai</span> 🚀</p>

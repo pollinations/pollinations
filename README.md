@@ -252,6 +252,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 AI YouTube Shorts Generator | Python desktop app that automates YouTube Shorts creation with AI-generated scripts, voiceovers (via ElevenLabs), and visuals using Pollinations API. Designed for content creators, educators, and marketers to produce high-quality short videos quickly without manual editing. | @Sami-Alsahabany | SamiAlsahabany@outlook.com |
 | 🆕 Dreamscape AI | A creative studio for generating, enhancing, and transforming images, plus conversational AI capabilities with text and voice interfaces, and a deep research tool. | @sizzlebop | [Website](https://dreamscape.pinkpixel.dev), [GitHub](https://github.com/pinkpixel-dev/dreamscape-ai) |
 | 🆕 PollinateAI | An image generation platform that aims to ease the stress of graphic and visual designers in delivering inspirations for their work. Regular consumers are also welcomed. | @Auspicious14 | [Website](https://pollinateai.vercel.app), [GitHub](https://github.com/Auspicious14/image-generator-fe.git) |
 | 🆕 WebGeniusAI | AI tool that generates HTML websites with visuals from Pollinations. | @logise | [Website](https://logise.neocities.org/webgeniusai) |

@@ -669,6 +669,19 @@ layout: two-cols
 - After creator share, we retain **€0.84 net per 1k outputs**.
 - This margin **covers infra in real-time** and scales linearly with demand.
 - **Value is shared** with creators without compromising platform profitability.
+
+#### Extra UE
+- **LTV/CAC ≈ 25x in FY27**, driven by open-source virality and zero paid acquisition.
+- Developers convert through self-serve tools, docs, Discord, and GitHub — not ads.
+- Even factoring in DevRel and community costs, payback is nearly instant.
+- Scaling happens at the app level, not per-user — so margin expands with usage.
+
+- Net Revenue per App/Year: €626 (from table)
+- Lifetime (App stays active): 2 years (conservative)
+- LTV per App: €1,252
+- CAC per App (e.g. devrel) : €50 (Discord, hackathons, docs, demos)
+- LTV/CAC Ratio: ~25x
+
 ## End
 -->
 

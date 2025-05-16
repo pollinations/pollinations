@@ -103,7 +103,8 @@ class: text-center flex flex-col justify-center items-center h-full
 
 <!--
 * Hi everyone, I'm Thomas from **Pollinations.ai**
-* AI allows **Everyone can be a coder**. If you are interacting with ChatGPT, you are **coding in natural language**. 
+* AI allows **Everyone to be a coder**. Interacting with ChatGPT is **coding in natural language**.
+* A prompt is the **source code** for AI applications.
 * "We provide the **AI platform** for our vibrant community to easily build **gen AI apps**."
 * "We partner with specialized **Ad Tech** companies to **monetize** the unique, untapped **ad inventory** provided by these apps."
 * "Today I'll show you our **phased path** to **shared success**"
@@ -146,12 +147,12 @@ layout: two-cols-header
 <!--
 * "The GenAI boom creates distinct problems:"
 * **"For Indie Coders (left):**
-  * "First: **Complex AI access**, high **costs**, limited model variety. **Stifles creation**."
-  * "Second: If they build, a **monetization blindspot**. Traditional ads **fail** in dynamic AI content; AI-specific tools **lacking**."
+  * "**Complex AI access**, high **costs**, limited model variety.**Stifles creation**."
+  * "If they build, a **monetization blindspot**. AI-specific tools **lacking**."
 * **"For Advertisers & Ad Tech (right):**
-  * "An **untapped AI frontier**, but **fragmented, unique AI inventory** is hard to access."
-  * "And **generic ads don't fit AI context**, leading to **poor engagement**."
-* "This fundamental **disconnect** – difficult creation & access vs. ineffective monetization & reach – **Pollinations solves**."
+  * "An **untapped AI frontier**, but **fragmented AI inventory** is hard to access."
+  * "And **generic ads don't fit AI context**, leading to **poor engagement**."
+* "**Pollinations solves** the **disconnect** between **difficult creation & access** vs. **ineffective monetization & reach**"
 -->
 
 ---
@@ -214,17 +215,15 @@ layout: two-cols-header
 
 **Our Core Value Proposition:**
 * We take creators from **idea to income** with **zero upfront cost** - this is crucial
-* Look at this flow diagram - it shows exactly how we **connect all the pieces**
 
 **For Indie/Vibe Coders:**
 * We make **AI integration effortless** while providing a **clear path to profit**
-* Their apps can actually **self-fund** their own compute costs - game changer!
-* And in 2026, we'll launch **Nectar** with **50/50 revenue sharing** for top performers
+* Their apps can **self-fund** their own compute costs through our ads!
+* Un 2026, we'll launch **Nectar** with **50/50 revenue sharing** for top performers
 
 **For Advertisers:**
-* We're opening access to these previously **untapped AI-native audiences**
-* Our **context-aware dynamic ad placements** fit naturally in AI experiences
-* This drives **much higher engagement** than traditional ad formats
+* We're opening access to these previously **untapped AI-native audiences** through **context-aware dynamic ad placements**
+* This drives much **higher engagement** than traditional ad formats
 
 **In short:** We build the **infrastructure**, partner with **ad experts**, and **everyone shares** in the success
 ## End

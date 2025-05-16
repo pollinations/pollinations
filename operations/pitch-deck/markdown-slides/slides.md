@@ -102,12 +102,11 @@ class: text-center flex flex-col justify-center items-center h-full
 </div>
 
 <!--
-## Title Slide
 * Hi everyone, I'm Thomas from **Pollinations.ai**
-* "**Pollinations.ai** provides the **AI platform** for our vibrant community to easily build **gen AI apps**."
-* "We partner with specialized **Ad Tech** companies to **monetize** the unique, untapped **ad inventory**."
-* Today I'll show you our **phased path** to **shared success**
-## End
+* AI allows **Everyone can be a coder**. If you are interacting with ChatGPT, you are **coding in natural language**. 
+* "We provide the **AI platform** for our vibrant community to easily build **gen AI apps**."
+* "We partner with specialized **Ad Tech** companies to **monetize** the unique, untapped **ad inventory** provided by these apps."
+* "Today I'll show you our **phased path** to **shared success**"
 -->
 
 ---
@@ -145,21 +144,14 @@ layout: two-cols-header
 <br>
 
 <!--
-## Problem - Two Sides of the Same Coin
-
-**For Indie/Vibe Coders:**
-*Barriers to AI Creation & Profit*
-* These devs face a real **monetization blindspot** - traditional ads just **don't work** in AI interactions
-* They lack **specialized tools** to integrate ads naturally into their **generative content**
-* Result? Amazing apps with **no sustainable business model**
-
-**For Advertisers & Ad Tech:**
-*Untapped AI Frontier*
-* They're struggling to reach these valuable **AI-native audiences** effectively
-* The inventory is incredibly **fragmented** - thousands of diverse AI apps with **no unified access**
-* Their standard banner ads completely **miss the mark** in these rich AI experiences
-
-**Key Takeaway:** This gap is exactly what **Pollinations solves** - connecting both sides of this AI-native ecosystem.
+* "The GenAI boom creates distinct problems:"
+* **"For Indie Coders (left):**
+  * "First: **Complex AI access**, high **costs**, limited model variety. **Stifles creation**."
+  * "Second: If they build, a **monetization blindspot**. Traditional ads **fail** in dynamic AI content; AI-specific tools **lacking**."
+* **"For Advertisers & Ad Tech (right):**
+  * "An **untapped AI frontier**, but **fragmented, unique AI inventory** is hard to access."
+  * "And **generic ads don't fit AI context**, leading to **poor engagement**."
+* "This fundamental **disconnect** – difficult creation & access vs. ineffective monetization & reach – **Pollinations solves**."
 -->
 
 ---
@@ -218,7 +210,7 @@ layout: two-cols-header
 </div>
 
 <!--
-## Solution - Connecting Creation with Monetization
+**Solution - Connecting Creation with Monetization**
 
 **Our Core Value Proposition:**
 * We take creators from **idea to income** with **zero upfront cost** - this is crucial

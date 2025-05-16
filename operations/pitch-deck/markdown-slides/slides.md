@@ -567,12 +567,26 @@ layout: two-cols-header
 
 
 <!--
-## Market
+### Market
 *   TAM: €218B (Mobile/Web ads outside giants).
 *   SAM: €20B (Indie App Ad Spend reachable via SDKs).
 *   SOM: €768M (Our potential from AI-native apps).
 *   Our infra + ad partners tap this growing market.
 *   **We're Unity Ads for Gen‑AI micro‑apps** - Unity scaled ads from 0 → $1.6 B in revenue with similar developer base.
+  
+#### In Short
+- We’re targeting a €218B ad market — mobile and web ads outside the big platforms.
+- Our real focus is a €20B slice: indie apps that can use SDKs like ours.
+- From that, we aim to capture €768M through Gen-AI micro-apps.
+- Think Unity Ads — they scaled from 0 to $1.6B. We’re doing the same, but for AI.
+
+#### Longer
+- The total market we’re going after is huge — €218 billion in mobile and web ad spend, outside of the major platforms like Meta and TikTok.
+- Our serviceable market is about €20 billion — that’s the indie apps where Unity-style SDKs can realistically plug in and monetize.
+- From that, we’ve scoped out a clear beachhead: €768 million — that’s our share of AI-native apps, where we believe we can have the strongest impact.
+- We are confident because we’re doing for Gen-AI micro-apps what Unity Ads did for mobile games — and they went from zero to over $1.6 billion in ad revenue, serving a very similar type of long-tail developer base.
+- We’ve got the infrastructure and getting ready with ad-tech partners in place to tap this fast-growing space.
+
 ## End
 -->
 

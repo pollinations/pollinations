@@ -466,6 +466,14 @@ const allProjects = {
   ],
   llmIntegrations: [
     {
+      name: "Anisurge",
+      url: "https://anisurge.me",
+      description: "A free anime streaming app with a public chat feature that allows users to chat with AI characters powered by Pollinations AI.",
+      author: "@iotserver24",
+      submissionDate: "2025-05-16",
+      order: 1,
+    },
+    {
       name: "MoneyPrinterTurbo",
       url: "https://github.com/harry0703/MoneyPrinterTurbo",
       description: "Simply provide a topic or keyword for a video, and it will automatically generate the video copy, video materials, video subtitles, and video background music before synthesizing a high-definition short video. Integrates Pollinations' text generation service to create engaging and relevant video scripts.",

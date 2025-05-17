@@ -7,6 +7,8 @@ import debug from 'debug';
 import { checkContent } from './llamaguard.js';
 import { writeExifMetadata } from './writeExifMetadata.js';
 import { sanitizeString } from './translateIfNecessary.js';
+import { getAvailableServers } from './availableServers.js';
+import { extractToken, isValidToken } from './config/tokens.js';
 import sharp from 'sharp';
 import sleep from 'await-sleep';
 import dotenv from 'dotenv';
@@ -17,6 +19,36 @@ dotenv.config();
 // Loggers
 const logError = debug('pollinations:error');
 const logPerf = debug('pollinations:perf');
+
+/**
+ * Checks if a referrer is from an approved domain
+ * @param {string} referrer - The referrer URL
+ * @returns {boolean} - Whether the referrer is approved
+ */
+const isApprovedReferrer = (referrer) => {
+  if (!referrer) return false;
+  
+  // List of approved domains that can use the GPT Image model
+  const approvedDomains = [
+    'pollinations.ai',
+    'image.pollinations.ai',
+    'flow.pollinations.ai',
+    'localhost'
+  ];
+  
+  try {
+    // Extract domain from referrer
+    const url = new URL(referrer);
+    const domain = url.hostname;
+    
+    // Check if domain or any parent domain is in the approved list
+    return approvedDomains.some(approvedDomain => 
+      domain === approvedDomain || domain.endsWith(`.${approvedDomain}`));
+  } catch (error) {
+    // If URL parsing fails, check if the raw referrer contains any approved domain
+    return approvedDomains.some(domain => referrer.includes(domain));
+  }
+};
 const logOps = debug('pollinations:ops');
 const logCloudflare = debug('pollinations:cloudflare');
 
@@ -426,9 +458,10 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
       n: 1
     };
     
-    // Add seed if provided
+    // Note: Azure GPT Image API doesn't support the 'seed' parameter
+    // We'll log the seed for reference but not include it in the request
     if (safeParams.seed) {
-      requestBody.seed = safeParams.seed;
+      logCloudflare(`Seed value ${safeParams.seed} not supported by Azure GPT Image API, ignoring`);
     }
     
     logCloudflare('Calling Azure GPT Image API with params:', requestBody);
@@ -479,17 +512,26 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
  * @param {number} concurrentRequests - Number of concurrent requests
  * @param {Object} progress - Progress tracking object
  * @param {string} requestId - Request ID for progress tracking
+ * @param {boolean} hasValidToken - Whether the request has a valid token
+ * @param {string} referrer - The request referrer
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean, [key: string]: any}>}
  */
-const generateImage = async (prompt, safeParams, concurrentRequests, progress, requestId) => {
+const generateImage = async (prompt, safeParams, concurrentRequests, progress, requestId, hasValidToken, referrer) => {
   // Model selection strategy using a more functional approach
   if (safeParams.model === 'gptimage') {
-    try {
-      updateProgress(progress, requestId, 30, 'Processing', 'Trying Azure GPT Image...');
-      return await callAzureGPTImage(prompt, safeParams);
-    } catch (error) {
-      logError('Azure GPT Image failed, falling back to default model:', error.message);
+    // Restrict GPT Image model to users with valid tokens or approved referrers
+    if (!hasValidToken && !isApprovedReferrer(referrer)) {
+      logError('Access to GPT Image model denied - requires valid token or approved referrer');
+      progress.updateBar(requestId, 35, 'Auth', 'GPT Image requires authorization');
       // Fall through to next model
+    } else {
+      try {
+        updateProgress(progress, requestId, 30, 'Processing', 'Trying Azure GPT Image...');
+        return await callAzureGPTImage(prompt, safeParams);
+      } catch (error) {
+        logError('Azure GPT Image failed, falling back to default model:', error.message);
+        // Fall through to next model
+      }
     }
   }
   
@@ -581,15 +623,20 @@ const processImageBuffer = async (buffer, maturityFlags, safeParams, metadataObj
  * @param {Object} progress - Progress tracking object.
  * @param {string} requestId - Request ID for progress tracking.
  * @param {boolean} wasTransformedForBadDomain - Flag indicating if the prompt was transformed due to bad domain.
+ * @param {string} token - The authentication token (optional).
+ * @param {string} referrer - The request referrer (optional).
  * @returns {Promise<{buffer: Buffer, isChild: boolean, isMature: boolean}>}
  */
-export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests, originalPrompt, progress, requestId, wasTransformedForBadDomain = false) {
+export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests, originalPrompt, progress, requestId, wasTransformedForBadDomain = false, token = null, referrer = null) {
   try {
     // Update generation progress
     updateProgress(progress, requestId, 60, 'Generation', 'Calling API...');
     
+    // Check if token is valid
+    const hasValidToken = token ? isValidToken(token) : false;
+    
     // Generate the image using the appropriate model
-    const result = await generateImage(prompt, safeParams, concurrentRequests, progress, requestId);
+    const result = await generateImage(prompt, safeParams, concurrentRequests, progress, requestId, hasValidToken, referrer);
     updateProgress(progress, requestId, 70, 'Generation', 'API call complete');
     updateProgress(progress, requestId, 75, 'Processing', 'Checking safety...');
     

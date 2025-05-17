@@ -5,21 +5,22 @@ import { MODELS } from './models.js';
 import { fetchFromLeastBusyFluxServer, getNextTurboServerUrl } from './availableServers.js';
 import debug from 'debug';
 import { checkContent } from './llamaguard.js';
+import { writeExifMetadata } from './writeExifMetadata.js';
+import { sanitizeString } from './translateIfNecessary.js';
+import sharp from 'sharp';
+import sleep from 'await-sleep';
+import dotenv from 'dotenv';
 
+// Load environment variables
+dotenv.config();
+
+// Loggers
 const logError = debug('pollinations:error');
 const logPerf = debug('pollinations:perf');
 const logOps = debug('pollinations:ops');
 const logCloudflare = debug('pollinations:cloudflare');
 
-import { writeExifMetadata } from './writeExifMetadata.js';
-import { sanitizeString } from './translateIfNecessary.js';
-import sharp from 'sharp';
-import sleep from 'await-sleep';
-
-// const TURBO_SERVER_URL = 'http://54.91.176.109:5003/generate';
-let total_start_time = Date.now();
-let accumulated_fetch_duration = 0;
-
+// Constants
 const TARGET_PIXEL_COUNT = 1024 * 1024; // 1 megapixel
 
 /**
@@ -377,6 +378,201 @@ export async function convertToJpeg(buffer) {
 }
 
 /**
+ * Updates progress bar if progress object is available
+ * @param {Object} progress - Progress tracking object
+ * @param {string} requestId - Request ID for progress tracking
+ * @param {number} percentage - Progress percentage
+ * @param {string} stage - Current stage of processing
+ * @param {string} message - Progress message
+ */
+const updateProgress = (progress, requestId, percentage, stage, message) => {
+  if (progress) {
+    progress.updateBar(requestId, percentage, stage, message);
+  }
+};
+
+/**
+ * Calls the Azure GPT Image API to generate images
+ * @param {string} prompt - The prompt for image generation
+ * @param {Object} safeParams - The parameters for image generation
+ * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
+ */
+export const callAzureGPTImage = async (prompt, safeParams) => {
+  try {
+    const apiKey = process.env.AZURE_API_KEY;
+    if (!apiKey) {
+      throw new Error('Azure API key not found in environment variables');
+    }
+
+    // Map safeParams to Azure API parameters
+    const size = `${safeParams.width}x${safeParams.height}`;
+    
+    // Determine quality based on safeParams or use medium as default
+    const quality = safeParams.quality || 'medium';
+    
+    // Set output format to png for best quality
+    const outputFormat = 'png';
+    
+    // Default compression to 100 (best quality)
+    const outputCompression = 100;
+    
+    // Build request body
+    const requestBody = {
+      prompt: sanitizeString(prompt),
+      size,
+      quality,
+      output_format: outputFormat,
+      output_compression: outputCompression,
+      n: 1
+    };
+    
+    // Add seed if provided
+    if (safeParams.seed) {
+      requestBody.seed = safeParams.seed;
+    }
+    
+    logCloudflare('Calling Azure GPT Image API with params:', requestBody);
+    
+    const response = await fetch(
+      'https://thoma-mab1yuam-westus3.openai.azure.com/openai/deployments/gpt-image-1/images/generations?api-version=2025-04-01-preview',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify(requestBody)
+      }
+    );
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Azure GPT Image API error: ${response.status} ${errorText}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.data || !data.data[0] || !data.data[0].b64_json) {
+      throw new Error('Invalid response from Azure GPT Image API');
+    }
+    
+    // Convert base64 to buffer
+    const imageBuffer = Buffer.from(data.data[0].b64_json, 'base64');
+    
+    // Azure doesn't provide content safety information directly, so we'll set defaults
+    // In a production environment, you might want to use a separate content moderation service
+    return {
+      buffer: imageBuffer,
+      isMature: false,  // Default assumption
+      isChild: false,   // Default assumption
+    };
+  } catch (error) {
+    logError('Error calling Azure GPT Image API:', error);
+    throw error;
+  }
+};
+
+/**
+ * Generates an image using the appropriate model based on safeParams
+ * @param {string} prompt - The prompt for image generation
+ * @param {Object} safeParams - Parameters for image generation
+ * @param {number} concurrentRequests - Number of concurrent requests
+ * @param {Object} progress - Progress tracking object
+ * @param {string} requestId - Request ID for progress tracking
+ * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean, [key: string]: any}>}
+ */
+const generateImage = async (prompt, safeParams, concurrentRequests, progress, requestId) => {
+  // Model selection strategy using a more functional approach
+  if (safeParams.model === 'gptimage') {
+    try {
+      updateProgress(progress, requestId, 30, 'Processing', 'Trying Azure GPT Image...');
+      return await callAzureGPTImage(prompt, safeParams);
+    } catch (error) {
+      logError('Azure GPT Image failed, falling back to default model:', error.message);
+      // Fall through to next model
+    }
+  }
+  
+  if (safeParams.model === 'flux') {
+    try {
+      updateProgress(progress, requestId, 30, 'Processing', 'Trying Cloudflare Flux...');
+      return await callCloudflareFlux(prompt, safeParams);
+    } catch (error) {
+      logError('Cloudflare Flux failed, trying Dreamshaper:', error.message);
+      try {
+        updateProgress(progress, requestId, 35, 'Processing', 'Trying Cloudflare Dreamshaper...');
+        return await callCloudflareDreamshaper(prompt, safeParams);
+      } catch (dreamshaperError) {
+        logError('Cloudflare Dreamshaper failed:', dreamshaperError.message);
+        // Fall through to ComfyUI
+      }
+    }
+  }
+  
+  // Default fallback to ComfyUI
+  return await callComfyUI(prompt, safeParams, concurrentRequests);
+};
+
+/**
+ * Extracts and normalizes maturity flags from image generation result
+ * @param {Object} result - The image generation result
+ * @returns {{isMature: boolean, isChild: boolean}}
+ */
+const extractMaturityFlags = (result) => {
+  const isMature = result?.isMature || result?.has_nsfw_concept;
+  const concept = result?.concept;
+  const isChild = result?.isChild || 
+    Object.values(concept?.special_scores || {})?.slice(1).some(score => score > -0.05);
+  
+  return { isMature, isChild };
+};
+
+/**
+ * Prepares metadata object based on prompt information and bad domain status
+ * @param {string} prompt - The processed prompt
+ * @param {string} originalPrompt - The original prompt before transformations
+ * @param {Object} safeParams - Parameters for image generation
+ * @param {boolean} wasTransformedForBadDomain - Flag indicating if prompt was transformed
+ * @returns {Object} - Metadata object
+ */
+const prepareMetadata = (prompt, originalPrompt, safeParams, wasTransformedForBadDomain) => {
+  // When a prompt was transformed due to bad domain, always use the original prompt in metadata
+  // This ensures clients never see the transformed prompt
+  return wasTransformedForBadDomain ? 
+    { ...safeParams, prompt: originalPrompt, originalPrompt } : 
+    { prompt, originalPrompt, ...safeParams };
+};
+
+/**
+ * Processes the image buffer with logo, format conversion, and metadata
+ * @param {Buffer} buffer - The raw image buffer
+ * @param {Object} maturityFlags - Object containing isMature and isChild flags
+ * @param {Object} safeParams - Parameters for image generation
+ * @param {Object} metadataObj - Metadata to embed in the image
+ * @param {Object} maturity - Additional maturity information
+ * @param {Object} progress - Progress tracking object
+ * @param {string} requestId - Request ID for progress tracking
+ * @returns {Promise<Buffer>} - The processed image buffer
+ */
+const processImageBuffer = async (buffer, maturityFlags, safeParams, metadataObj, maturity, progress, requestId) => {
+  const { isMature, isChild } = maturityFlags;
+  
+  // Add logo
+  updateProgress(progress, requestId, 80, 'Processing', 'Adding logo...');
+  const logoPath = getLogoPath(safeParams, isChild, isMature);
+  let processedBuffer = !logoPath ? buffer : 
+    await addPollinationsLogoWithImagemagick(buffer, logoPath, safeParams);
+  
+  // Convert format
+  updateProgress(progress, requestId, 85, 'Processing', 'Converting format...');
+  processedBuffer = await convertToJpeg(processedBuffer);
+  
+  // Add metadata
+  updateProgress(progress, requestId, 90, 'Processing', 'Writing metadata...');
+  return await writeExifMetadata(processedBuffer, metadataObj, maturity);
+};
+
+/**
  * Creates and returns images with optional logo and metadata, checking for NSFW content.
  * @param {string} prompt - The prompt for image generation.
  * @param {Object} safeParams - Parameters for image generation.
@@ -390,91 +586,39 @@ export async function convertToJpeg(buffer) {
 export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests, originalPrompt, progress, requestId, wasTransformedForBadDomain = false) {
   try {
     // Update generation progress
-    if (progress) progress.updateBar(requestId, 60, 'Generation', 'Calling API...');
-    let bufferAndMaturity;
-
-    // Try Cloudflare Flux first if model is 'flux'
-    if (safeParams.model === 'flux') {
-      try {
-        if (progress) progress.updateBar(requestId, 30, 'Processing', 'Trying Cloudflare Flux...');
-        bufferAndMaturity = await callCloudflareFlux(prompt, safeParams);
-      } catch (error) {
-        logError('Cloudflare Flux failed, trying Dreamshaper:', error.message);
-        try {
-          if (progress) progress.updateBar(requestId, 35, 'Processing', 'Trying Cloudflare Dreamshaper...');
-          bufferAndMaturity = await callCloudflareDreamshaper(prompt, safeParams);
-        } catch (dreamshaperError) {
-          logError('Cloudflare Dreamshaper failed:', dreamshaperError.message);
-          // Removed the specific Turbo fallback block
-          // The code will now fall through to the general ComfyUI call below if Dreamshaper fails
-        }
-      }
-    }
-    if (!bufferAndMaturity)
-      bufferAndMaturity = await callComfyUI(prompt, safeParams, concurrentRequests);
-
-    if (progress) progress.updateBar(requestId, 70, 'Generation', 'API call complete');
-    if (progress) progress.updateBar(requestId, 75, 'Processing', 'Checking safety...');
-
-    logError("bufferAndMaturity", bufferAndMaturity);
-
-    // Get initial values from model
-    let isMature = bufferAndMaturity?.isMature || bufferAndMaturity?.has_nsfw_concept;
-    const concept = bufferAndMaturity?.concept;
-    let isChild = bufferAndMaturity?.isChild || Object.values(concept?.special_scores || {})?.slice(1).some(score => score > -0.05);
-
-    // // Check with LlamaGuard and override if necessary
-    // try {
-
-    //     const llamaguardResult = await checkContent(prompt);
-        
-    //     // Override safety flags if LlamaGuard detects issues
-    //     if (llamaguardResult.isMature) {
-    //         isMature = true;
-    //         log('LlamaGuard detected mature content, overriding isMature to true');
-    //     }
-        
-    //     if (llamaguardResult.isChild) {
-    //         isChild = true;
-    //         log('LlamaGuard detected child exploitation content, overriding isChild to true');
-    //     }
-    // } catch (error) {
-    //     logError('LlamaGuard check failed:', error);
-    //     // Continue with original model classifications if LlamaGuard fails
-    // }
-
+    updateProgress(progress, requestId, 60, 'Generation', 'Calling API...');
+    
+    // Generate the image using the appropriate model
+    const result = await generateImage(prompt, safeParams, concurrentRequests, progress, requestId);
+    updateProgress(progress, requestId, 70, 'Generation', 'API call complete');
+    updateProgress(progress, requestId, 75, 'Processing', 'Checking safety...');
+    
+    // Extract maturity flags
+    const maturityFlags = extractMaturityFlags(result);
+    const { isMature, isChild } = maturityFlags;
     logError("isMature", isMature, "concepts", isChild);
-
-    // Throw error if NSFW content is detected and safe mode is enabled
+    
+    // Safety check
     if (safeParams.safe && isMature) {
       throw new Error("NSFW content detected. This request cannot be fulfilled when safe mode is enabled.");
     }
-
-    if (progress) progress.updateBar(requestId, 80, 'Processing', 'Adding logo...');
-    const logoPath = getLogoPath(safeParams, isChild, isMature);
-    let bufferWithLegend = !logoPath ? bufferAndMaturity.buffer : await addPollinationsLogoWithImagemagick(bufferAndMaturity.buffer, logoPath, safeParams);
-
-    if (progress) progress.updateBar(requestId, 85, 'Processing', 'Converting format...');
-    // Convert the buffer to JPEG if it is not already in JPEG format
-    bufferWithLegend = await convertToJpeg(bufferWithLegend);
-
-    if (progress) progress.updateBar(requestId, 90, 'Processing', 'Writing metadata...');
-    const { buffer: _buffer, ...maturity } = bufferAndMaturity;
     
-    // Metadata preparation - handle bad domain transformation
-    // When a prompt was transformed due to bad domain, always use the original prompt in metadata
-    // This ensures clients never see the transformed prompt
-    const metadataObj = wasTransformedForBadDomain ? 
-      { ...safeParams, prompt: originalPrompt, originalPrompt } : 
-      { prompt, originalPrompt, ...safeParams };
+    // Prepare metadata
+    const { buffer: _buffer, ...maturity } = result;
+    const metadataObj = prepareMetadata(prompt, originalPrompt, safeParams, wasTransformedForBadDomain);
     
-    bufferWithLegend = await writeExifMetadata(bufferWithLegend, metadataObj, maturity);
-
-    // if isChild is true and isMature is true throw a content is prohibited error
-    // if (isChild && isMature) {
-    //   throw new Error("Content is prohibited");
-    // }
-    return { buffer: bufferWithLegend, isChild, isMature };
+    // Process the image buffer
+    const processedBuffer = await processImageBuffer(
+      result.buffer,
+      maturityFlags,
+      safeParams,
+      metadataObj,
+      maturity,
+      progress,
+      requestId
+    );
+    
+    return { buffer: processedBuffer, isChild, isMature };
   } catch (error) {
     logError('Error in createAndReturnImageCached:', error);
     throw error;

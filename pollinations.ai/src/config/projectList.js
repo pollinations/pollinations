@@ -434,6 +434,15 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "AI Chat",
+      url: "https://aichat.narendradwivedi.org",
+      description: "A Windows desktop application that brings multiple AI models together in one simple, intuitive interface. Features saving/loading conversations, image generation, image explanation from URLs, and voice responses with different voices.",
+      author: "@narendradwivedi",
+      authorUrl: "https://www.linkedin.com/in/narendradwivedi",
+      submissionDate: "2025-05-16",
+      order: 1,
+    },
+    {
       name: "Aiphoto智能绘画 🇨🇳",
       url: "https://qiyimg.3d.tc/Aiphoto",
       description: "AI艺术工坊 - 智能绘画生成器。这是一个基于AI的绘画生成工具，可以根据用户输入的中文描述自动生成相应的图片。(An AI art workshop - intelligent painting generator. This is an AI-based painting generation tool that can automatically generate images based on Chinese descriptions input by users.)",

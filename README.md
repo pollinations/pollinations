@@ -253,6 +253,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 AI Chat | A Windows desktop application that brings multiple AI models together in one simple, intuitive interface. Built for productivity, creativity, and learning, users can chat with different models, save/load conversations, generate images, explain images from URLs, and hear responses with different voices. | @narendradwivedi | [Website](https://aichat.narendradwivedi.org), [LinkedIn](https://www.linkedin.com/in/narendradwivedi) |
 | 🆕 Dreamscape AI | A creative studio for generating, enhancing, and transforming images, plus conversational AI capabilities with text and voice interfaces, and a deep research tool. | @sizzlebop | [Website](https://dreamscape.pinkpixel.dev), [GitHub](https://github.com/pinkpixel-dev/dreamscape-ai) |
 | 🆕 PollinateAI | An image generation platform that aims to ease the stress of graphic and visual designers in delivering inspirations for their work. Regular consumers are also welcomed. | @Auspicious14 | [Website](https://pollinateai.vercel.app), [GitHub](https://github.com/Auspicious14/image-generator-fe.git) |
 | 🆕 WebGeniusAI | AI tool that generates HTML websites with visuals from Pollinations. | @logise | [Website](https://logise.neocities.org/webgeniusai) |

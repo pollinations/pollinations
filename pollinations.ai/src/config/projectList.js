@@ -475,6 +475,16 @@ const allProjects = {
   ],
   llmIntegrations: [
     {
+      name: "Match-cut video ai",
+      url: "https://video-gen.megavault.in",
+      description: "This AI generates video from text in match-cut text style, uses pollinations llm to generate nearby text, and supports API integration.",
+      author: "@r3ap3redit",
+      repo: "https://github.com/iotserver24/match-cut-ai",
+      stars: 0,
+      submissionDate: "2025-05-18",
+      order: 1,
+    },
+    {
       name: "Anisurge",
       url: "https://anisurge.me",
       description: "A free anime streaming app with a public chat feature that allows users to chat with AI characters powered by Pollinations AI.",

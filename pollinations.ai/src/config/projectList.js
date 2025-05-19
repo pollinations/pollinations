@@ -435,6 +435,15 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "FoldaScan",
+      url: "https://fs.wen.bar",
+      description: "Use Natural Language to \"Converse\" with Your Codebase, Folda-Scan Smart Project Q&A, powered by advanced vectorization technology, allows you to easily understand complex code, pinpoint information, and offers unprecedented convenience for AI collaboration.",
+      author: "@0010skn",
+      repo: "https://github.com/0010skn/WebFS-Toolkit-Local-Folder-Scan-Monitor-Versioning-AI-Prep",
+      submissionDate: "2025-05-19",
+      order: 1,
+    },
+    {
       name: "Favorite Puzzles",
       url: "https://radbrothers.com/games/favorite-puzzles/",
       description: "A jigsaw puzzles game for Android, iOS, and web that uses Pollinations feed as one of the sources of images for puzzles. Features puzzle generation using neural networks, customizable difficulty levels from 6 to 1200 pieces, multiple game modes, and the ability to create puzzles from your own images.",

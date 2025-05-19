@@ -26,6 +26,8 @@ const MODEL_MAPPING = {
     //'command-r': 'Cohere-command-r-plus-08-2024-jt', // Cohere Command R Plus model
     //'gemini': 'gemini-2.5-flash-preview-04-17',
     //'gemini-thinking': 'gemini-2.0-flash-thinking-exp-01-21',
+    // Azure Grok model
+    'grok': 'azure-grok',
     // Cloudflare models
     'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
     'llamascout': '@cf/meta/llama-4-scout-17b-16e-instruct',
@@ -72,6 +74,8 @@ const SYSTEM_PROMPTS = {
     'openai-fast': BASE_PROMPTS.conversational,
     'openai': BASE_PROMPTS.conversational,
     'openai-large': BASE_PROMPTS.conversational,
+    // Grok model
+    'grok': BASE_PROMPTS.conversational,
     //'openai-xlarge': BASE_PROMPTS.conversational,
     'openai-roblox': BASE_PROMPTS.conversational,
     //'gemini': BASE_PROMPTS.conversational,
@@ -124,12 +128,12 @@ const baseAzureConfig = {
  * @param {string} modelName - Model name to use if not extracted from endpoint
  * @returns {Object} - Azure model configuration
  */
-function createAzureModelConfig(apiKey, endpoint, modelName) {
-    const deploymentId = extractDeploymentName(endpoint) || modelName;
+function createAzureModelConfig(apiKey, endpoint, modelName, resourceName = null) {
+    const deploymentId = extractDeploymentName(endpoint) || modelName; 
     return {
         ...baseAzureConfig,
         'azure-api-key': apiKey,
-        'azure-resource-name': extractResourceName(endpoint),
+        'azure-resource-name': resourceName || extractResourceName(endpoint),
         'azure-deployment-id': deploymentId,
         'azure-api-version': extractApiVersion(endpoint),
         'azure-model-name': deploymentId,
@@ -300,10 +304,23 @@ function createOpenRouterModelConfig(additionalConfig = {}) {
 }
 
 
+// console.error("azurrreee", createAzureModelConfig(
+//     process.env.AZURE_GROK_API_KEY,
+//     process.env.AZURE_GROK_ENDPOINT,
+//     'grok-3'
+// ));
+// process.exit(1);
 
 
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
+    // Azure Grok model configuration
+    'azure-grok': () => createAzureModelConfig(
+        process.env.AZURE_GROK_API_KEY,
+        process.env.AZURE_GROK_ENDPOINT,
+        'grok-3',
+        'thomash-grok-resource'
+    ),
     // Azure OpenAI model configurations
     'gpt-4.1-nano': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_NANO_API_KEY,
@@ -519,12 +536,6 @@ export const generateTextPortkey = createOpenAICompatibleClient({
                 }
             }
 
-            // Special handling for o1-mini model which requires max_completion_tokens instead of max_tokens
-            if (modelName === 'o1-mini' && requestBody.max_tokens) {
-                log(`Converting max_tokens to max_completion_tokens for o1-mini model`);
-                requestBody.max_completion_tokens = requestBody.max_tokens;
-                delete requestBody.max_tokens;
-            }
 
             return requestBody;
         } catch (error) {

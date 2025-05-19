@@ -172,21 +172,9 @@ export function createOpenAICompatibleClient(config) {
                         errorDetails = errorText;
                     }
 
-                    // Check if this is a content filter error
-                    const isContentFilterError = 
-                        (errorDetails?.error?.code === 'content_filter') || 
-                        (errorText.includes('content management policy')) ||
-                        (errorText.includes('content policy')) ||
-                        (errorText.includes('content filter'));
-
+                
                     // Build a cleaner error message
-                    let errorMessage;
-                    if (isContentFilterError) {
-                        errorMessage = "Content policy violation detected";
-                    } else {
-                        // Replace provider name references with "Pollinations"
-                        errorMessage = `${response.status} ${response.statusText}`;
-                    }
+                    const errorMessage = `${response.status} ${response.statusText}`;
 
                     const error = new Error(errorMessage);
                     error.status = response.status;
@@ -196,7 +184,6 @@ export function createOpenAICompatibleClient(config) {
                     error.originalProvider = providerName;
                     error.provider = "Pollinations";
                     error.model = modelName;
-                    error.isContentFilterError = isContentFilterError;
                     
                     throw error;
                 }
@@ -236,21 +223,9 @@ export function createOpenAICompatibleClient(config) {
                     errorDetails = errorText;
                 }
 
-                // Check if this is a content filter error
-                const isContentFilterError = 
-                    (errorDetails?.error?.code === 'content_filter') || 
-                    (errorText.includes('content management policy')) ||
-                    (errorText.includes('content policy')) ||
-                    (errorText.includes('content filter'));
 
                 // Build a cleaner error message
-                let errorMessage;
-                if (isContentFilterError) {
-                    errorMessage = "Content policy violation detected";
-                } else {
-                    // Replace provider name references with "Pollinations"
-                    errorMessage = `${response.status} ${response.statusText}`;
-                }
+                const errorMessage = `${response.status} ${response.statusText}`;
 
                 const error = new Error(errorMessage);
                 error.status = response.status;
@@ -260,7 +235,6 @@ export function createOpenAICompatibleClient(config) {
                 error.originalProvider = providerName;
                 error.provider = "Pollinations";
                 error.model = modelName;
-                error.isContentFilterError = isContentFilterError;
                 
                 throw error;
             }

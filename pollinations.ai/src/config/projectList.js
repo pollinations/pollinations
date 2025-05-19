@@ -435,6 +435,14 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "Favorite Puzzles",
+      url: "https://radbrothers.com/games/favorite-puzzles/",
+      description: "A jigsaw puzzles game for Android, iOS, and web that uses Pollinations feed as one of the sources of images for puzzles. Features puzzle generation using neural networks, customizable difficulty levels from 6 to 1200 pieces, multiple game modes, and the ability to create puzzles from your own images.",
+      author: "contact@radbrothers.com",
+      submissionDate: "2025-05-19",
+      order: 1,
+    },
+    {
       name: "AI Chat",
       url: "https://aichat.narendradwivedi.org",
       description: "A Windows desktop application that brings multiple AI models together in one simple, intuitive interface. Features saving/loading conversations, image generation, image explanation from URLs, and voice responses with different voices.",

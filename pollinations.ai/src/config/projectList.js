@@ -319,6 +319,7 @@ const allProjects = {
       description: "AI Chatbots in terminal without needing API keys - a command-line interface for AI that appeals to developers and terminal users.",
       author: "@aandrew-me",
       repo: "https://github.com/aandrew-me/tgpt",
+      stars: 2560,
       submissionDate: "2025-05-10",
       order: 1,
     },

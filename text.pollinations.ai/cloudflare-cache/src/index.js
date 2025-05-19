@@ -120,7 +120,7 @@ export default {
       const originResp = await proxyRequest(request, env);
       
       // Don't cache error responses
-      if (originResp.status >= 400) {
+      if (originResp.status >= 401) {
         log('cache', `Not caching error response with status ${originResp.status}`);
         return originResp;
       }

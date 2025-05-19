@@ -218,6 +218,7 @@ Pollinations.AI is used in various projects, including:
 
 | Project | Description | Creator | Links |
 |---------|-------------|---------|-------|
+| 🆕 The Promised Pen | A free, feature-rich novel writing application that helps writers organize stories, characters, and worlds. Uses Pollinations AI for generating chapter summaries, rewriting text based on context, and generating new content based on previous chapters and character information. | @soryn.san | [Website](https://promisedpen.app) |
 | 🆕 Match-cut video ai | This AI generates video from text in match-cut text style, uses pollinations llm to generate nearby text, and supports API integration. | @r3ap3redit | [Website](https://video-gen.megavault.in), [GitHub](https://github.com/iotserver24/match-cut-ai) |
 | 🆕 Anisurge | A free anime streaming app with a public chat feature that allows users to chat with AI characters powered by Pollinations AI. | @iotserver24 | [Website](https://anisurge.me), [Download APK](https://bucket.anisurge.me/2.23.4-1/Anisurge-universal.apk) |
 | 🆕 MoneyPrinterTurbo | Simply provide a topic or keyword for a video, and it will automatically generate the video copy, video materials, video subtitles, and video background music before synthesizing a high-definition short video. Integrates Pollinations' text generation service to create engaging and relevant video scripts. | @harry0703 | [GitHub](https://github.com/harry0703/MoneyPrinterTurbo) - ⭐ 32.1k |

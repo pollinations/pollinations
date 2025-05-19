@@ -509,6 +509,14 @@ const allProjects = {
   ],
   llmIntegrations: [
     {
+      name: "The Promised Pen",
+      url: "https://promisedpen.app",
+      description: "A free, feature-rich novel writing application that helps writers organize stories, characters, and worlds. Uses Pollinations AI for generating chapter summaries, rewriting text based on context, and generating new content based on previous chapters and character information.",
+      author: "@soryn.san",
+      submissionDate: "2025-05-19",
+      order: 1,
+    },
+    {
       name: "Match-cut video ai",
       url: "https://video-gen.megavault.in",
       description: "This AI generates video from text in match-cut text style, uses pollinations llm to generate nearby text, and supports API integration.",

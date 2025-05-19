@@ -7,7 +7,6 @@ import debug from 'debug';
 import { checkContent } from './llamaguard.js';
 import { writeExifMetadata } from './writeExifMetadata.js';
 import { sanitizeString } from './translateIfNecessary.js';
-import { getAvailableServers } from './availableServers.js';
 import { extractToken, isValidToken } from './config/tokens.js';
 import sharp from 'sharp';
 import sleep from 'await-sleep';
@@ -33,27 +32,21 @@ const isApprovedReferrer = (referrer) => {
     'pollinations.ai',
     'image.pollinations.ai',
     'flow.pollinations.ai',
-    'localhost'
+    'localhost',
   ];
   
-  try {
-    // Extract domain from referrer
-    const url = new URL(referrer);
-    const domain = url.hostname;
-    
-    // Check if domain or any parent domain is in the approved list
-    return approvedDomains.some(approvedDomain => 
-      domain === approvedDomain || domain.endsWith(`.${approvedDomain}`));
-  } catch (error) {
-    // If URL parsing fails, check if the raw referrer contains any approved domain
-    return approvedDomains.some(domain => referrer.includes(domain));
-  }
+  return approvedDomains.some(approvedDomain => referrer.includes(approvedDomain));
 };
+
 const logOps = debug('pollinations:ops');
 const logCloudflare = debug('pollinations:cloudflare');
 
 // Constants
 const TARGET_PIXEL_COUNT = 1024 * 1024; // 1 megapixel
+
+// Performance tracking variables
+let total_start_time = Date.now();
+let accumulated_fetch_duration = 0;
 
 /**
  * Calculates scaled dimensions while maintaining aspect ratio
@@ -443,18 +436,19 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
     const quality = safeParams.quality || 'medium';
     
     // Set output format to png for best quality
-    const outputFormat = 'png';
+    const outputFormat = 'jpeg';
     
     // Default compression to 100 (best quality)
-    const outputCompression = 100;
+    const outputCompression = 70;
     
     // Build request body
     const requestBody = {
       prompt: sanitizeString(prompt),
-      size,
+      size:"auto",
       quality,
       output_format: outputFormat,
       output_compression: outputCompression,
+      // background: "transparent",
       n: 1
     };
     
@@ -467,7 +461,7 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
     logCloudflare('Calling Azure GPT Image API with params:', requestBody);
     
     const response = await fetch(
-      'https://thoma-mab1yuam-westus3.openai.azure.com/openai/deployments/gpt-image-1/images/generations?api-version=2025-04-01-preview',
+      'https://thoma-mavchbzc-uaenorth.openai.azure.com/openai/deployments/gpt-image-1-2/images/generations?api-version=2025-04-01-preview',
       {
         method: 'POST',
         headers: {
@@ -521,16 +515,19 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
   if (safeParams.model === 'gptimage') {
     // Restrict GPT Image model to users with valid tokens or approved referrers
     if (!hasValidToken && !isApprovedReferrer(referrer)) {
-      logError('Access to GPT Image model denied - requires valid token or approved referrer');
+      logError('Access to GPT Image model requires token or approved referrer. Please request a token at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml');
       progress.updateBar(requestId, 35, 'Auth', 'GPT Image requires authorization');
-      // Fall through to next model
+      throw new Error('Access to GPT Image model requires token or approved referrer. Please request a token at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml');      
     } else {
+      // For gptimage model, always throw errors instead of falling back
+      updateProgress(progress, requestId, 30, 'Processing', 'Trying Azure GPT Image...');
       try {
-        updateProgress(progress, requestId, 30, 'Processing', 'Trying Azure GPT Image...');
         return await callAzureGPTImage(prompt, safeParams);
       } catch (error) {
-        logError('Azure GPT Image failed, falling back to default model:', error.message);
-        // Fall through to next model
+        // Log the error but don't fall back - propagate it to the caller
+        logError('Azure GPT Image failed:', error.message);
+        progress.updateBar(requestId, 35, 'Error', 'GPT Image API error');
+        throw error;
       }
     }
   }

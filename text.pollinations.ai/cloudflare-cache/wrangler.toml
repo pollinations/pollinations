@@ -10,6 +10,9 @@ bucket_name = "pollinations-text"
 # Environment variables
 [vars]
 ORIGIN_HOST = "text-origin.pollinations.ai"
+#ORIGIN_HOST ="http://163.172.149.24:16385"
+# Enable debug logging (set to "true" to enable, "false" to disable)
+DEBUG = "cache:*"
 
 # Increase limits for long-running operations
 # This requires a paid Workers Unbound plan
@@ -17,5 +20,8 @@ ORIGIN_HOST = "text-origin.pollinations.ai"
 cpu_ms = 30000  # 30 seconds CPU time (max for Workers Unbound)
 
 # Configure logging
+[observability]
+enabled = true      # Enable logs for local development
+
 [observability.logs]
-enabled = true
+invocation_logs = true

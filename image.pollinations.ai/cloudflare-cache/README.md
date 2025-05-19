@@ -1,6 +1,72 @@
-# Pollinations Image Cache with Cloudflare R2 + CDN
+# Pollinations Image Cache
 
-This directory contains a simple implementation of a caching layer for the Pollinations image generation service using Cloudflare R2 for storage and Cloudflare's global CDN for delivery.
+This Cloudflare Worker handles image caching and analytics for the Pollinations image service.
+
+## Configuration 
+
+The worker uses `wrangler.toml` for configuration and environment variables for sensitive data.
+
+### Setup Instructions
+
+1. Make sure your `.env` file is set up in the root directory with the following variables:
+   ```
+   GA_MEASUREMENT_ID=your-ga-measurement-id
+   GA_API_SECRET=your-ga-api-secret
+   CLOUDFLARE_ACCOUNT_ID=your-cloudflare-account-id
+   ```
+
+2. Deploy the worker:
+   ```bash
+   cd cloudflare-cache
+   npx wrangler login  # First time only, opens browser for authentication
+   npx wrangler deploy
+   ```
+
+   Alternatively, you can use the deployment script which will:
+   - Load your environment variables from .env
+   - Create the R2 bucket if it doesn't exist
+   - Create .dev.vars file for local development
+   - Deploy the worker
+
+   ```bash
+   cd cloudflare-cache
+   ./deploy.sh
+   ```
+
+### Local Development
+
+For local development, you need a `.dev.vars` file which will be automatically created by the `deploy.sh` script, or you can create it manually:
+
+```bash
+# Create .dev.vars file manually
+echo "GA_MEASUREMENT_ID=your-ga-measurement-id" > .dev.vars
+echo "GA_API_SECRET=your-ga-api-secret" >> .dev.vars
+```
+
+Run the worker locally:
+```bash
+npm run dev
+```
+
+### Important Security Notes
+
+- The `.env` file should not be committed to version control
+- The `.gitignore` file is configured to exclude `.dev.vars`
+- Wrangler will automatically use environment variables from `.env` when deploying
+
+## Development
+
+To run the worker locally for development:
+
+```bash
+npx wrangler dev
+```
+
+To view logs from the deployed worker:
+
+```bash
+npx wrangler tail
+```
 
 ## Overview
 
@@ -9,51 +75,6 @@ The implementation follows the "thin proxy" design principle:
 - Direct forwarding of requests to the origin service when needed
 - Simple caching logic using URL paths and query parameters as keys
 - Analytics tracking to ensure all image requests are properly monitored
-
-## Quick Setup
-
-Run the setup script to create the R2 bucket and deploy the worker:
-
-```bash
-./setup.sh
-```
-
-This script will:
-1. Install Wrangler if needed
-2. Log in to Cloudflare (browser authentication)
-3. Create the R2 bucket if it doesn't exist
-4. Deploy the worker
-
-That's it! Your Cloudflare Worker will now cache images in R2 and serve them through Cloudflare's CDN.
-
-## Manual Setup (Alternative)
-
-If you prefer to set things up manually:
-
-1. Install Wrangler CLI:
-   ```
-   npm install -g wrangler
-   ```
-
-2. Login to Cloudflare:
-   ```
-   wrangler login
-   ```
-
-3. Create the R2 bucket:
-   ```
-   wrangler r2 bucket create pollinations-images
-   ```
-
-4. Install dependencies:
-   ```
-   npm install
-   ```
-
-5. Deploy the worker:
-   ```
-   npm run deploy
-   ```
 
 ## How It Works
 

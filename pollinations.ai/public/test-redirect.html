@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirect Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-link {
+            display: block;
+            margin: 15px 0;
+            padding: 10px 15px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #333;
+        }
+        .test-link:hover {
+            background-color: #e0e0e0;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Redirect Test Page</h1>
+    <p>This page contains test links for the redirect functionality with analytics tracking.</p>
+    
+    <div class="section">
+        <h2>Test Redirect Links</h2>
+        <a href="/redirect/lovemy" class="test-link">Test Redirect to Lovemy.ai</a>
+        <a href="/redirect/hentai" class="test-link">Test Redirect to AIHentaiChat.com</a>
+    </div>
+    
+    <div class="section">
+        <h2>Test with Custom URLs</h2>
+        <a href="/redirect/custom?url=https://example.com" class="test-link">Test Redirect to Example.com</a>
+        <a href="/redirect/google?url=https://google.com" class="test-link">Test Redirect to Google.com</a>
+    </div>
+    
+    <div class="section">
+        <h2>Notes</h2>
+        <p>When clicking these links:</p>
+        <ol>
+            <li>The redirect function should log an analytics event</li>
+            <li>You should be redirected to the target URL</li>
+            <li>Check the Netlify Functions logs for analytics information</li>
+        </ol>
+    </div>
+</body>
+</html>

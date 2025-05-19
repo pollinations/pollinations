@@ -1,241 +1,257 @@
-/**
- * Utility functions for caching text responses in Cloudflare R2
- * Following the "thin proxy" design principle - keeping logic simple and minimal
- */
+import stringify from 'fast-json-stable-stringify';
+import debug from 'debug';
 
-/**
- * Generate a consistent cache key from URL and request body
- * @param {URL} url - The URL object
- * @param {Object} requestBody - The request body (for POST requests)
- * @returns {string} - The cache key
- */
-export function generateCacheKey(url, requestBody = null) {
-  // Normalize the URL by sorting query parameters
-  const normalizedUrl = new URL(url);
-  const params = Array.from(normalizedUrl.searchParams.entries())
-    .sort(([keyA], [keyB]) => keyA.localeCompare(keyB));
-  
-  // Clear and re-add sorted parameters
-  normalizedUrl.search = '';
-  params.forEach(([key, value]) => {
-    // Skip certain parameters that shouldn't affect caching
-    if (!['nofeed', 'no-cache'].includes(key)) {
-      // Include 'stream' parameter in the cache key to differentiate streaming and non-streaming requests
-      normalizedUrl.searchParams.append(key, value);
+// Initialize debug loggers
+const logKey = debug('cache:key');
+const logCache = debug('cache:cache');
+const logMeta = debug('cache:meta');
+
+const COMMON = ['model','seed','stream','temperature','max_tokens','top_p',
+                'frequency_penalty','presence_penalty','stop','logit_bias'];
+const GET_ONLY  = ['prompt','json','system'];
+const POST_ONLY = ['messages','functions','function_call',
+                   'tools','tool_choice','response_format'];
+
+/* -------- key generation (unchanged) ------------------------------------ */
+export async function generateCacheKey(url, body=null) {
+  const u  = new URL(url);
+  const qp = {};
+
+  logKey('Generating cache key for URL: %s', u.toString());
+  logKey('URL path length: %d', u.pathname.length);
+
+  // Log body details
+  if (body) {
+    logKey('Request body type: %s', typeof body);
+    logKey('Request body keys: %o', Object.keys(body));
+
+    // Check for messages array
+    if (body.messages && Array.isArray(body.messages)) {
+      logKey('Messages count: %d', body.messages.length);
+
+      // Log the length of each message content
+      body.messages.forEach((msg, idx) => {
+        if (msg.content) {
+          logKey('Message %d role: %s, content length: %d',
+            idx, msg.role, msg.content.length);
+        }
+      });
+    }
+
+    logKey('Request body preview: %s', JSON.stringify(body).substring(0, 200) + '...');
+  }
+
+  [...COMMON, ...GET_ONLY].forEach(p => {
+    const vals = u.searchParams.getAll(p);
+    if (vals.length) {
+      logKey('Found query param: %s with %d values', p, vals.length);
+      qp[p] = vals.map(v =>
+        v === '' || v === 'true' ? true :
+        v === 'false' ? false :
+        Number.isFinite(+v) ? +v : v
+      ).sort();
     }
   });
-  
-  // Get the full path with query parameters
-  const fullPath = normalizedUrl.pathname + normalizedUrl.search;
-  
-  // For POST requests, include relevant parts of the request body in the cache key
-  let bodyHash = '';
-  if (requestBody) {
-    try {
-      // Extract only the parts of the request body that affect the response
-      const relevantBodyParts = {
-        messages: requestBody.messages,
-        model: requestBody.model,
-        temperature: requestBody.temperature,
-        max_tokens: requestBody.max_tokens,
-        top_p: requestBody.top_p,
-        frequency_penalty: requestBody.frequency_penalty,
-        presence_penalty: requestBody.presence_penalty,
-      };
-      
-      // Create a hash of the relevant body parts
-      bodyHash = '-' + createHash(JSON.stringify(relevantBodyParts));
-    } catch (error) {
-      console.error('Error creating body hash:', error);
+
+  const bodyPick = {};
+  if (body) [...COMMON, ...POST_ONLY].forEach(f => {
+    if (body[f] !== undefined) {
+      logKey('Including body field: %s', f);
+      bodyPick[f] = body[f];
+    }
+  });
+
+  // Log the size of the bodyPick object
+  logKey('Body pick size: %d', JSON.stringify(bodyPick).length);
+
+  const canon = u.pathname +
+                (Object.keys(qp).length ? '?' + stringify(qp) : '') +
+                stringify(bodyPick);
+
+  logKey('Canonical string length: %d', canon.length);
+  logKey('Canonical string for hashing (preview): %s', canon.substring(0, 100) + '...');
+
+  const digest = await crypto.subtle.digest('SHA-256',
+                    new TextEncoder().encode(canon));
+  const key = [...new Uint8Array(digest)]
+          .map(b => b.toString(16).padStart(2,'0')).join('');
+
+  logKey('Generated cache key: %s', key);
+  return key;
+}
+
+/* -------- response caching --------------------------------------------- */
+const TRIM = 512;
+const sanitize = v =>
+  v === undefined || v === null ? undefined
+    : String(typeof v === 'object' ? JSON.stringify(v) : v).slice(0, TRIM);
+
+/**
+ * Create metadata object for the cached response
+ */
+function createMetadata(resp, url='', req=null, responseSize=0) {
+  const ct = resp.headers.get('content-type') || '';
+  const wasStreaming = ct.startsWith('text/event-stream');
+
+  logMeta('Creating metadata for %s response', wasStreaming ? 'streaming' : 'non-streaming');
+
+  /* ---- build metadata object in a generic way ---- */
+  const meta = {
+    originalUrl : sanitize(url),
+    cachedAt    : new Date().toISOString(),
+    isStreaming : wasStreaming.toString(),
+    responseSize: responseSize
+  };
+
+  // Store important response headers
+  const importantHeaders = [
+    'content-type',
+    'content-encoding',
+    'transfer-encoding',
+    'vary',
+    'cache-control'
+  ];
+
+  importantHeaders.forEach(h => {
+    const val = resp.headers.get(h);
+    // Skip cache-control: no-cache header
+    if (h === 'cache-control' && val === 'no-cache') {
+      logMeta('Skipping cache-control: no-cache header in metadata');
+      return;
+    }
+    if (val) {
+      meta[`response_${h.replace(/-/g,'_')}`] = sanitize(val);
+      logMeta('Added response header to metadata: %s = %s', h, val);
+    }
+  });
+
+  // chosen request headers
+  ['cf-connecting-ip','x-forwarded-for','user-agent',
+   'referer','referrer','accept-language','cf-ray'].forEach(h => {
+      const val = req?.headers.get(h);
+      if (val) {
+        meta[h.replace(/-/g,'_')] = sanitize(val);
+        logMeta('Added request header to metadata: %s', h);
+      }
+  });
+  meta.method = req?.method;
+
+  // flatten request.cf (primitives only)
+  const cf = req?.cf || {};
+  for (const [k,v] of Object.entries(cf)) {
+    if (typeof v !== 'object' || v === null) {
+      meta[k] = sanitize(v);
+      logMeta('Added CF property to metadata: %s', k);
     }
   }
-  
-  // Create a hash of the full URL for uniqueness
-  const urlHash = createHash(fullPath);
-  
-  // Replace problematic characters in the path
-  const safePath = fullPath.replace(/[\/\s\?=&]/g, '_');
-  
-  // Combine path with hash, ensuring it fits within a safe limit (1000 bytes)
-  // Allow 20 chars for the hash and hyphen
-  const maxPathLength = 980;
-  const trimmedPath = safePath.length > maxPathLength 
-    ? safePath.substring(0, maxPathLength) 
-    : safePath;
-    
-  return `${trimmedPath}-${urlHash}${bodyHash}`;
+
+  // stringify botManagement & detectionIds if present
+  if (cf.botManagement)   meta.botManagement   = sanitize(cf.botManagement);
+  if (cf.detectionIds)    meta.detectionIds    = sanitize(cf.detectionIds);
+
+  logMeta('Metadata created with %d properties', Object.keys(meta).length);
+  return { meta, contentType: ct, wasStreaming };
 }
 
 /**
- * Create a simple hash of a string
- * @param {string} str - The string to hash
- * @returns {string} - The hashed string
+ * Cache a streaming response in R2
+ * Collects all chunks and uploads them as a single object
  */
-function createHash(str) {
-  // Simple hash function
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  
-  // Convert to hex string (8 characters should be sufficient)
-  return Math.abs(hash).toString(16).substring(0, 8);
-}
+export async function uploadStreamToR2(stream, bucket, key, resp, url='', req=null) {
+  logCache('Caching streaming response for key: %s', key);
 
-/**
- * Store a response in R2
- * @param {string} cacheKey - The cache key
- * @param {Response} response - The response to cache
- * @param {Object} env - The environment object
- * @param {string} originalUrl - The original URL that was requested
- * @param {Request} request - The original request object
- * @returns {Promise<boolean>} - Whether the caching was successful
- */
-export async function cacheResponse(cacheKey, response, env, originalUrl, request) {
   try {
-    // Store the text response in R2 using the cache key directly
-    const responseBuffer = await response.arrayBuffer();
-    
-    // Get client information from request
-    const clientIp = request?.headers?.get('cf-connecting-ip') || 
-                   request?.headers?.get('x-forwarded-for')?.split(',')[0] || 
-                   'unknown';
-    
-    // Get additional client information
-    const userAgent = request?.headers?.get('user-agent') || '';
-    const referer = request?.headers?.get('referer') || request?.headers?.get('referrer') ||'';
-    const acceptLanguage = request?.headers?.get('accept-language') || '';
-    
-    // Get request-specific information
-    const method = request?.method || 'GET';
-    const requestTime = new Date().toISOString();
-    const requestId = request?.headers?.get('cf-ray') || '';  // Cloudflare Ray ID uniquely identifies the request
-    
-    // Helper function to sanitize and limit string length
-    const sanitizeValue = (value, maxLength = 256, key = null) => {
-      if (value === undefined || value === null) return undefined;
-      if (typeof value === 'string') return value.substring(0, maxLength);
-      if (Array.isArray(value)) {
-        return value.map(item => sanitizeValue(item, maxLength));
+    // Create metadata
+    const { meta, contentType } = createMetadata(resp, url, req);
+
+    // Collect all chunks
+    const chunks = [];
+    let totalSize = 0;
+    const reader = stream.getReader();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      // Skip empty chunks
+      if (!value || value.length === 0) continue;
+
+      totalSize += value.byteLength;
+      chunks.push(value);
+
+      // Log less frequently to reduce verbosity
+      if (chunks.length % 10 === 0) {
+        logCache('Collected %d chunks, total size so far: %d bytes', chunks.length, totalSize);
       }
-      if (typeof value === 'object') {
-        // Special case for detectionIds - stringify it
-        if (key === 'detectionIds') {
-          try {
-            return JSON.stringify(value);
-          } catch (e) {
-            return undefined;
-          }
-        }
-        // Skip other objects
-        return undefined;
-      }
-      return value;
-    };
-    
-    // Filter CF data to exclude object values
-    const filterCfData = (cf) => {
-      if (!cf) return {};
-      
-      const filtered = {};
-      for (const [key, value] of Object.entries(cf)) {
-        // Skip botManagement as we'll handle it separately
-        if (key === 'botManagement') continue;
-        
-        // Only include non-object values or special cases
-        if (typeof value !== 'object' || value === null) {
-          filtered[key] = sanitizeValue(value, 256, key);
-        } else if (key === 'detectionIds') {
-          // Special case for detectionIds
-          try {
-            filtered[key] = JSON.stringify(value);
-          } catch (e) {
-            // Skip if can't stringify
-          }
-        }
-      }
-      return filtered;
-    };
-    
-    // Filter botManagement to exclude object values
-    const filterBotManagement = (botManagement) => {
-      if (!botManagement) return {};
-      
-      const filtered = {};
-      for (const [key, value] of Object.entries(botManagement)) {
-        // Only include non-object values except for detectionIds
-        if (typeof value !== 'object' || value === null) {
-          filtered[key] = sanitizeValue(value, 256, key);
-        } else if (key === 'detectionIds') {
-          // Special case for detectionIds
-          try {
-            filtered[key] = JSON.stringify(value);
-          } catch (e) {
-            // Skip if can't stringify
-          }
-        }
-      }
-      return filtered;
-    };
-    
-    // Create metadata object with content type and original URL
-    const metadata = {
-      httpMetadata: {
-        contentType: response.headers.get('content-type') || 'application/json; charset=utf-8',
-        contentEncoding: response.headers.get('content-encoding'),
-        contentDisposition: response.headers.get('content-disposition'),
-        contentLanguage: response.headers.get('content-language'),
-        cacheControl: response.headers.get('cache-control'),
-        // Store if this is a streaming response
-        isStreaming: response.headers.get('content-type')?.includes('text/event-stream') ? 'true' : 'false'
-      },
-      customMetadata: {
-        // Essential metadata
-        originalUrl: originalUrl || '',
-        cachedAt: new Date().toISOString(),
-        clientIp: clientIp,
-        
-        // Client information (with length limits)
-        userAgent: userAgent.substring(0, 256), 
-        referer: referer.substring(0, 256),
-        acceptLanguage: acceptLanguage.substring(0, 64),
-        
-        // Request-specific information
-        method,
-        requestTime,
-        requestId,
-        
-        // Cloudflare information - spread filtered cf data
-        ...filterCfData(request?.cf),
-        
-        // Bot Management information if available
-        ...filterBotManagement(request?.cf?.botManagement)
-      }
-    };
-    
-    // Remove undefined values from httpMetadata
-    Object.keys(metadata.httpMetadata).forEach(key => {
-      if (metadata.httpMetadata[key] === undefined || metadata.httpMetadata[key] === null) {
-        delete metadata.httpMetadata[key];
-      }
+    }
+
+    // Combine all chunks into a single buffer
+    logCache('Combining %d chunks, total size: %d bytes', chunks.length, totalSize);
+    const combinedChunks = new Uint8Array(totalSize);
+    let offset = 0;
+    for (const chunk of chunks) {
+      combinedChunks.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+
+    // Update metadata with final size
+    meta.responseSize = totalSize;
+
+    // Upload the combined buffer
+    logCache('Uploading to R2, key: %s, size: %d bytes', key, totalSize);
+    await bucket.put(key, combinedChunks, {
+      httpMetadata: { contentType },
+      customMetadata: meta
     });
-    
-    // Remove empty values from customMetadata to save space
-    Object.keys(metadata.customMetadata).forEach(key => {
-      if (!metadata.customMetadata[key]) {
-        delete metadata.customMetadata[key];
-      }
-    });
-    
-    // Store the object with metadata
-    await env.TEXT_BUCKET.put(cacheKey, responseBuffer, metadata);
-    
-    console.log(`Cached text response for key ${cacheKey}`);
-    return true;
+
+    logCache('Upload complete for key: %s', key);
+    return { success: true, size: totalSize };
   } catch (error) {
-    console.error('Error caching response:', error);
-    return false;
+    logCache('Error caching streaming response: %o', error);
+    throw error; // Re-throw to be handled by the caller
+  }
+}
+
+/** Store body + flexible metadata in R2 */
+export async function cacheResponse(bucket, key, resp, url='', req=null) {
+  logCache('Caching response for key: %s', key);
+  logCache('URL being cached: %s', url);
+
+  try {
+    const clone = resp.clone();
+    const ct = clone.headers.get('content-type') || '';
+    const wasStreaming = ct.startsWith('text/event-stream');
+
+    logCache('Content type: %s, Streaming: %s', ct, wasStreaming);
+
+    // Log headers at debug level
+    logCache('Response headers:');
+    for (const [name, value] of clone.headers.entries()) {
+      logCache('  %s: %s', name, value);
+    }
+
+    // For non-streaming responses, use the traditional approach
+    if (!wasStreaming) {
+      const buf = await clone.arrayBuffer();
+      logCache('Response size (bytes): %d', buf.byteLength);
+
+      const { meta } = createMetadata(clone, url, req, buf.byteLength);
+
+      logCache('Putting object in bucket with key: %s', key);
+      await bucket.put(key, buf, {
+        httpMetadata: { contentType: ct },
+        customMetadata: meta
+      });
+      logCache('Successfully cached response for key: %s', key);
+    } else {
+      // For streaming responses, we don't do anything here
+      // The streaming upload is handled separately in the main handler
+      logCache('Streaming response detected - caching will be handled separately');
+    }
+
+    return resp;
+  } catch (error) {
+    logCache('Error caching response: %o', error);
+    throw error; // Re-throw to be handled by the caller
   }
 }

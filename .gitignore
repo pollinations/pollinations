@@ -144,7 +144,6 @@ tmp
 # Jetbrains
 .idea
 venv
-output/
 prompts.txt
 image_gen/venv
 image_gen/output/
@@ -231,6 +230,7 @@ web_modules/
 .env.test.local
 .env.production.local
 .env.local
+.env.production
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -285,3 +285,7 @@ cursor-party/
 .aider*
 data/
 text.pollinations.ai/v2/
+# Local Netlify folder
+.netlify
+model-context-protocol/mcp-server-sqlite-npx/
+model-context-protocol/github-app-auth/.dev.vars

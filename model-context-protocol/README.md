@@ -1,172 +1,152 @@
-# Pollinations MCP Server
+# Pollinations Multimodal MCP Server
 
-A Model Context Protocol (MCP) server for the Pollinations Image API that enables AI assistants like Claude to generate images directly.
+A Model Context Protocol (MCP) server for the Pollinations APIs that enables AI assistants like Claude to generate images, text, and audio directly. This server follows the "thin proxy" design principle, focusing on minimal data transformation and direct communication through stdio.
 
 ## Features
 
 - Generate image URLs from text prompts
 - Generate actual images and return them as base64-encoded data
-- List available image generation models
-- No authentication required
+- Generate text responses from text prompts
+- Generate audio (text-to-speech) from text prompts
+- List available image and text generation models
+- STDIO transport for easy integration with MCP clients
 - Simple and lightweight
 - Compatible with the Model Context Protocol (MCP)
 
-![MCP Server Interface](https://github.com/user-attachments/assets/f0f8b3b5-f798-482b-a00c-ea931c706c93)
+## System Requirements
 
-## Installation
+- **Node.js**: Version 14.0.0 or higher
+  - For best performance, we recommend Node.js 16.0.0 or higher
+  - Node.js versions below 16 use an AbortController polyfill
 
-### Local Installation
+## Quick Start
 
-```bash
-# Clone the repository
-git clone https://github.com/pollinations/pollinations.git
-cd pollinations/mcp
-
-# Install dependencies
-npm install
-```
-
-### NPX Installation
-
-You can also run the MCP server directly using npx without installing it:
+The easiest way to use the MCP server:
 
 ```bash
-npx pollinations-mcp
+# Run directly with npx (no installation required)
+npx @pollinations/model-context-protocol
 ```
 
-This will start the MCP server immediately, making it available for use with Claude Desktop or other MCP clients.
-
-## Usage as a Node.js Library
-
-### Import the functions
-
-```javascript
-import { generateImageUrl, generateImage, listModels } from './src/index.js';
-```
-
-### Generate an image URL
-
-```javascript
-const imageUrl = await generateImageUrl('A beautiful sunset over the ocean', {
-  width: 512,
-  height: 512,
-  model: 'flux.schnell',  // optional
-  seed: 42                // optional
-});
-
-console.log(imageUrl);
-// Output: { url: 'https://pollinations.ai/p/...', metadata: { ... } }
-```
-
-### Generate an image (returns base64-encoded data)
-
-```javascript
-const imageData = await generateImage('A cute cat playing with a ball of yarn', {
-  width: 512,
-  height: 512,
-  model: 'flux.schnell',  // optional
-  seed: 42                // optional
-});
-
-console.log(imageData);
-// Output: { 
-//   data: 'base64-encoded-image-data', 
-//   mimeType: 'image/jpeg', 
-//   metadata: { ... } 
-// }
-```
-
-### List available models
-
-```javascript
-const models = await listModels();
-console.log(models);
-// Output: { models: ['flux.schnell', 'flux.default', ...] }
-```
-
-## Running the MCP Server
-
-The MCP server can be run directly from the command line:
+If you prefer to install it globally:
 
 ```bash
-# Make the server executable
-chmod +x pollinations-mcp-server.js
+# Install globally
+npm install -g @pollinations/model-context-protocol
 
 # Run the server
-./pollinations-mcp-server.js
+pollinations-mcp
 ```
 
-The server communicates using the MCP protocol over stdin/stdout, making it compatible with MCP clients like Claude Desktop.
+## Transport
 
-## Testing the MCP Client
-
-A test script is included to verify that the MCP client is working correctly:
+The MCP server exclusively uses STDIO transport, which is ideal for local integrations and command-line tools:
 
 ```bash
-# Make the test script executable
-chmod +x test-mcp-client.js
-
-# Run the test script
-./test-mcp-client.js
+# Run with STDIO transport
+npx @pollinations/model-context-protocol
 ```
 
-This will test all three functions (generateImageUrl, generateImage, and listModels) and save a test image to the `test-output` directory.
+For MCP clients, connect using:
 
-## Integration with Claude Desktop
+```bash
+npx supergateway --stdio -- pollinations-mcp
+```
 
-For detailed instructions on how to install and use the Pollinations MCP server with Claude Desktop, see the [Claude Installation Guide](./CLAUDE_INSTALLATION.md).
+## Claude Desktop Integration
 
-## Implementation Details
+To install the MCP server in Claude Desktop:
 
-The MCP server is implemented using the Model Context Protocol SDK and provides three main tools:
+```bash
+# Run the installation script
+npx @pollinations/model-context-protocol install-claude-mcp
+```
 
-1. `generateImageUrl`: Generates an image URL from a text prompt
-2. `generateImage`: Generates an image and returns the base64-encoded data
-3. `listModels`: Lists available image generation models
+This script will automatically:
+- Find the Claude Desktop configuration file for your OS
+- Add the Pollinations MCP server to the configuration
+- Configure it to use npx for easy updates
 
-The server follows the "thin proxy" design principle, with minimal processing of the data between the client and the Pollinations API.
+After installation, restart Claude Desktop and you can use commands like:
+```
+Generate an image of a sunset over the ocean using the Pollinations API.
+```
 
-## API Reference
+## Alternative MCP Implementations
 
-### generateImageUrl(prompt, options)
+- **MCPollinations**: A community-maintained alternative MCP server supporting similar capabilities. Available at [GitHub](https://github.com/pinkpixel-dev/MCPollinations) and [NPM](https://www.npmjs.com/package/@pinkpixel/mcpollinations).
 
-Generates an image URL from a text prompt.
+## Troubleshooting
 
-**Parameters:**
-- `prompt` (string): The text description of the image to generate
-- `options` (object, optional):
-  - `model` (string, optional): Model name to use for generation
-  - `seed` (number, optional): Seed for reproducible results
-  - `width` (number, optional): Width of the generated image
-  - `height` (number, optional): Height of the generated image
+### "AbortController is not defined" Error
 
-**Returns:**
-- `url` (string): URL to the generated image
-- `metadata` (object): Additional information about the generated image
+If you encounter this error when running the MCP server:
 
-### generateImage(prompt, options)
+```
+ReferenceError: AbortController is not defined
+```
 
-Generates an image from a text prompt and returns the image data.
+This is usually caused by running on an older version of Node.js (below version 16.0.0). Try one of these solutions:
 
-**Parameters:**
-- `prompt` (string): The text description of the image to generate
-- `options` (object, optional):
-  - `model` (string, optional): Model name to use for generation
-  - `seed` (number, optional): Seed for reproducible results
-  - `width` (number, optional): Width of the generated image
-  - `height` (number, optional): Height of the generated image
+1. **Update Node.js** (recommended):
+   - Update to Node.js 16.0.0 or newer
 
-**Returns:**
-- `data` (string): Base64-encoded image data
-- `mimeType` (string): MIME type of the image (e.g., 'image/jpeg')
-- `metadata` (object): Additional information about the generated image
+2. **Use our polyfill** (automatic in version 1.0.6+):
+   - Update to the latest version of the package:
+   ```bash
+   npm install -g @pollinations/model-context-protocol@latest
+   # or run with npx
+   npx @pollinations/model-context-protocol@latest
+   ```
 
-### listModels()
+3. **Install AbortController manually**:
+   - If for some reason the polyfill doesn't work:
+   ```bash
+   npm install node-abort-controller
+   ```
 
-Lists available image generation models.
+### Check Your Node.js Version
 
-**Returns:**
-- `models` (array): List of available model names
+To check your current Node.js version:
+
+```bash
+node --version
+```
+
+If it shows a version lower than 16.0.0, consider upgrading for best compatibility.
+
+## Available Tools
+
+The MCP server provides the following tools:
+
+### Content Generation
+
+1. `generateImageUrl` - Generates an image URL from a text prompt
+2. `generateImage` - Generates an image and returns it as base64-encoded data
+3. `respondAudio` - Generates an audio response to a text prompt
+4. `sayText` - Generates speech that says the provided text verbatim
+5. `generateText` - Generates text from a prompt using text models
+6. `listModels` - Lists available models for image or text generation
+
+## Changelog
+
+### Version 1.0.7
+- Simplified architecture by removing HTTP server components
+- Transitioned to stdio-only transport following MCP best practices
+- Removed authentication server (moved to separate github-app-auth service)
+- Reduced dependencies for a smaller, more focused package
+- Updated documentation to reflect the new architecture
+
+### Version 1.0.6
+- Added compatibility with Node.js versions 14.0.0 and later
+- Added AbortController polyfill for Node.js versions below 16.0.0
+- Fixed "AbortController is not defined" error
+- Improved error handling and reporting
+- Added troubleshooting guide in README
+- Enhanced documentation with system requirements and installation options
+
+### Version 1.0.5
+- Initial public release
 
 ## License
 

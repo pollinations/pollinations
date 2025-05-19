@@ -7,7 +7,7 @@
 
 import { Colors, Fonts } from "../config/global.js"
 import AsciiArtGenerator from "../components/AsciiArtGenerator.js"
-import { SectionContainer, SectionSubContainer } from "../components/SectionContainer.js"
+import { SectionContainer, SectionSubContainer, SectionMainContent } from "../components/SectionContainer.js"
 import {
   COMMUNITY_SUBTITLE,
   COMMUNITY_DISCORD_CTO,
@@ -106,7 +106,7 @@ const Community = () => {
           <LLMTextManipulator text={COMMUNITY_SUBTITLE} transforms={[rephrase, responsive, emojify, noLink]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
-      <SectionSubContainer>
+      <SectionSubContainer paddingBottom="0em">
         <Grid container spacing={4} justifyContent="space-between">
           {communityPlatforms.map((platform, index) => (
             <Grid key={index} size={{ xs: 6, md: 6 }}>
@@ -136,7 +136,7 @@ const Community = () => {
                     textColor={Colors.offwhite}
                     fontSize={isXs ? "1.5em" : "2.5em"}
                     borderColor={Colors.offwhite}
-                    style={{ fontFamily: Fonts.title }}
+                    style={{ fontFamily: Fonts.parameter }}
                   >
                     <ReactSVG
                       src={getPlatformIcon(platform.platform)}
@@ -170,20 +170,19 @@ const Community = () => {
             </Grid>
           ))}
         </Grid>
-        <CustomTooltip
+        {/* <CustomTooltip
           title={<LLMTextManipulator text={ASCII_APP_TOOLTIP} transforms={[rephrase, emojify, noLink]} />}
           interactive
-        >
-          <SectionSubContainer>
+        > */}
+          <SectionSubContainer paddingBottom="2em">
             <Box
               sx={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                cursor: "pointer",
                 maxWidth: "400px",
               }}
-              onClick={handleAsciiArtClick}
+              // onClick={handleAsciiArtClick}
             >
               <AsciiArtGenerator
                 width="100px"
@@ -191,7 +190,7 @@ const Community = () => {
               />
             </Box>
           </SectionSubContainer>
-        </CustomTooltip>
+        {/* </CustomTooltip> */}
       </SectionSubContainer>
     </SectionContainer>
   )

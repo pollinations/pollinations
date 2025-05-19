@@ -19,8 +19,37 @@ const AboutUsIcon = styled(ReactSVG)(() => ({
   width: "20px",
   height: "20px",
   marginRight: "0.5em",
+  color: Colors.offblack,
   "& svg": {
-    fill: Colors.offwhite,
+    fill: Colors.offblack,
+    transition: "fill 0.6s",
+  },
+}))
+
+// About Us button with hover styles
+const AboutUsButton = styled(GeneralButton)(() => ({
+  fontSize: "1em",
+  fontFamily: Fonts.title,
+  fontWeight: 600,
+  marginRight: "1em",
+  borderRadius: "3em",
+  height: "40px",
+  minHeight: "40px",
+  display: "flex",
+  alignItems: "center",
+  minWidth: "150px",
+  border: `2px solid ${Colors.offblack}`,
+  color: Colors.offblack,
+  transition: "color 0.3s, background-color 0.3s",
+  "& svg path": {
+    transition: "fill 0.3s",
+  },
+  "&:hover": {
+    color: "white",
+    backgroundColor: Colors.offblack,
+    "& svg path": {
+      fill: "white",
+    },
   },
 }))
 
@@ -97,27 +126,13 @@ const Header = () => {
             alignItems: "center",
           }}
         >
-          <GeneralButton
+          <AboutUsButton
             handleClick={handleAboutUsClick}
             isLoading={false}
-            backgroundColor={Colors.offblack}
-            textColor={Colors.offwhite}
-            style={{
-              fontSize: "1em",
-              fontFamily: Fonts.title,
-              fontWeight: 600,
-              marginRight: "1em",
-              borderRadius: "3em",
-              height: "40px",
-              minHeight: "40px",
-              display: "flex",
-              alignItems: "center",
-              minWidth: "150px",
-            }}
           >
             <AboutUsIcon src={ICONS.linkedin} wrapper="span" aria-label="linkedin-icon" />
             About Us
-          </GeneralButton>
+          </AboutUsButton>
           <SocialLinks medium gap="1em" invert location="header" />
         </Box>
       </Box>

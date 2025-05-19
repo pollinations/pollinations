@@ -17,27 +17,26 @@ export const HERO_INTRO =
 
 
 export const HERO_CTO = 
-  "Talk to us, reach out. "
+  "Talk to us, reach out."
 
 export const HERO_EMAIL_BUTTON = "hello@pollinations.ai"
 export const HERO_GITHUB_LINK = "README.md"
-export const HERO_DISCORD_LINK = "Join on Discord"
+export const HERO_DISCORD_LINK = "Join on Discord (do not use markdown link formatting)"
 
 export const NEWS_TITLE = 
   "**Last update**" + newsList.split("\n")[0];
 
 export const NEWS_LIST = newsList.split("\n").slice(1).join("\n")
 
-export const IMAGE_FEED_SUBTITLE =
-  "Real-time feed of our image API endpoint"
+export const IMAGE_FEED_SUBTITLE = "See what others are creating in real-time"
 
 
-export const IMAGE_FEED_TITLE = "Live Feed"
+export const IMAGE_FEED_TITLE = "Image Feed"
 export const IMAGE_FEED_MODE1 = "Watch";
 export const IMAGE_FEED_MODE2 = "Try";
 export const IMAGE_EDIT_BUTTON_ON = "Imagine";
-export const IMAGE_EDIT_BUTTON_OFF = "Imagine";
-export const IMAGE_FEED_TOOLTIP_PROMPT = "describe the image to generate.";
+export const IMAGE_EDIT_BUTTON_OFF = "Write the 'Imagine' word only";
+export const IMAGE_FEED_TOOLTIP_PROMPT = "Prompt";
 
 export const IMAGE_FEED_TOOLTIP_MODEL = "Select the text-to-image model."
 export const IMAGE_FEED_TOOLTIP_WIDTH = 
@@ -114,7 +113,14 @@ export const FOOTER_TERMS_CONDITIONS_LINK = "Terms & Conditions";
 export const FOOTER_TERMS_CONDITIONS = "Welcome to Pollinations.AI services empower harness AI technology creation interaction digital media. consent terms review attentively Acceptance Terms accessing Pollinations.AI confirm understanding agreement Terms Privacy Policy disagree advised not to use services offers AI - powered tools digital media retain ownership responsibility content encourage review licenses open - source models Content utilized commercial purposes legality ethical standards Pollinations.AI store user - content personal data stored user privacy information User Conduct Pollinations.AI ethically legally agree not Engage illegal activities violate local laws Infringe third - party rights intellectual property Disseminate malicious software data access probe services Prohibition of Unauthorized Materials services generate Celebrity Deepfakes Creating materials celebrities politicians public figures prohibited Child Sexual Abuse Material CSAM forbidden produce CSAM content under 18 years applies to fictional real - life subjects Intellectual Property content using Pollinations.AI crucial respect licenses open - source models content used for commercial purposes advise checking licenses for restrictions Pollinations.AI GmbH claims no intellectual property rights content Modification amend terms services after accept revised terms Governing Law subject to laws Germany conflict of laws principles Privacy Policy paramount outlines practices collection use protection sharing information Information collect details collect Discord IDs Usage Information anonymously track services experience without Cookies Tracking Technologies collect information deliver maintain refine services communication notices safeguard security integrity legal requirements. Sharing not for sale. share data with third parties service providers defend rights safety. Safeguards protect against unauthorized access changes destruction. Changes Privacy Policy update policy occasionally. GDPR and Data Processing Terms: Pollinations.AI is fully compliant with the General Data Protection Regulation (GDPR). Our API processes data transiently without storing personal data. Analytics data, such as referrer URLs collected via GA4, is anonymized and aggregated solely for service improvement. Data is encrypted in transit, and no personal data is retained. A Data Processing Agreement (DPA) outlining our GDPR compliance is available upon request. Data subject requests are managed in accordance with GDPR standards. For any inquiries, please contact hello@pollinations.ai - Use a beautifully structured markwon format";
 
 export const FOOTER_CLOSE = "Close";
-export const FOOTER_INFO = " 2025 Pollinations.AI - An open source AI startup based in Berlin"
+export const FOOTER_INFO_1 = "© 2025 pollinations.ai"
+export const FOOTER_INFO_2 = "Open source AI innovation from Berlin"
 
 export const ASCII_ART_PROMPT = (width, height) =>
   `Unicode/Ascii Art inspired by elegant, minimal Egyptian gods and mystical pyramids. ${width} width x ${height} height characters. Incorporate hieroglyphs and maintain a lot of empty space. Return only the characters, no other text or quotes.`
+
+// Text Feed Section
+export const TEXT_FEED_TITLE = "Text Feed";
+export const TEXT_FEED_SUBTITLE = "Real-time feed of Pollinations.AI's text API endpoints";
+export const TEXT_FEED_MODE1 = "Watch";
+export const TEXT_FEED_MODE2 = "Try";

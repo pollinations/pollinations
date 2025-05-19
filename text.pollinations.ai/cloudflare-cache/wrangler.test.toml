@@ -1,0 +1,21 @@
+name = "text-cache-test"
+main = "src/index.test.js"
+compatibility_date = "2023-09-04"
+compatibility_flags = ["nodejs_compat"]
+account_id = ""
+
+[[r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "text-cache-test"
+
+# Environment variables
+[vars]
+#ORIGIN_HOST ="http://163.172.149.24:16385"
+ORIGIN_HOST = "text-origin.pollinations.ai"
+
+DEBUG = "cache:*"
+
+# Add KV for cache control if needed
+# [[kv_namespaces]]
+# binding = "CACHE_CONTROL"
+# id = ""

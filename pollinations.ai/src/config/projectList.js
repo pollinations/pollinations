@@ -443,6 +443,14 @@ const allProjects = {
       order: 1,
     },
     {
+      name: "AI YouTube Shorts Generator",
+      description: "Python desktop app that automates YouTube Shorts creation with AI-generated scripts, voiceovers (via ElevenLabs), and visuals using Pollinations API. Designed for content creators, educators, and marketers to produce high-quality short videos quickly without manual editing.",
+      author: "@Sami-Alsahabany",
+      authorEmail: "SamiAlsahabany@outlook.com",
+      submissionDate: "2025-05-16",
+      order: 1,
+    },
+    {
       name: "AI Chat",
       url: "https://aichat.narendradwivedi.org",
       description: "A Windows desktop application that brings multiple AI models together in one simple, intuitive interface. Features saving/loading conversations, image generation, image explanation from URLs, and voice responses with different voices.",

@@ -305,6 +305,14 @@ const allProjects = {
   ],
   toolsInterfaces: [
     {
+      name: "Pollin-Coder",
+      url: "https://pollin-coder.megavault.in",
+      description: "A free AI-powered website builder that lets anyone create a clean site just by describing it. It uses Pollinations AI to generate the content and layout instantly.",
+      author: "@r3ap3redit",
+      submissionDate: "2025-05-19",
+      order: 1,
+    },
+    {
       name: "Imagemate AI",
       url: "https://play.google.com/store/apps/details?id=com.madameweb.imgmate",
       description: "Imagemate AI is a powerful image generation app designed to turn your imagination into stunning visuals with the help of advanced artificial intelligence. Built using the Pollinations AI API, Imagemate AI allows users to input a text prompt and instantly receive AI-generated images that match the description.",

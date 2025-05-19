@@ -47,7 +47,7 @@ async function handleRequest(request) {
   }
 
   // Generate HTML from prompt
-  return generateHtml(prompt);
+  return generateHtml(prompt, request);
 }
 
 /**
@@ -140,11 +140,15 @@ function extractPromptFromPath(path) {
 /**
  * Generate HTML from a prompt by calling the text API
  * @param {string} prompt - The user prompt
+ * @param {Request} request - The original request
  * @returns {Response} The HTML response
  */
-async function generateHtml(prompt) {
+async function generateHtml(prompt, request) {
+  // Get URL for query parameters
+  const url = new URL(request.url);
+  
   // Make upstream request to text API
-  const upstream = await fetchFromTextApi(prompt);
+  const upstream = await fetchFromTextApi(prompt, url);
 
   if (!upstream.ok || !upstream.body) {
     return new Response(`Upstream error ${upstream.status}`, {
@@ -174,14 +178,18 @@ async function generateHtml(prompt) {
 /**
  * Fetch HTML generation from the text API
  * @param {string} prompt - The user prompt
+ * @param {URL} url - The URL object with query parameters
  * @returns {Promise<Response>} The upstream response
  */
-function fetchFromTextApi(prompt) {
+function fetchFromTextApi(prompt, url) {
+  // Get model from query parameter or use default
+  const model = url.searchParams.get('model') || 'openai-large';
+  
   return fetch('https://text.pollinations.ai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model:   'openai-large',
+      model,
       stream:  true,
       messages:[
         { role: 'system', content: systemPrompt },

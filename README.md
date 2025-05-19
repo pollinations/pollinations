@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/pollinations-pollinations-badge.png)](https://mseep.ai/app/pollinations-pollinations)
+
 # [Pollinations.AI](https://pollinations.ai)
 
 ---
@@ -42,6 +44,12 @@
 
 ## 🚀 Getting Started
 
+### Featured Projects
+
+| Project | Description | Creator | Links |
+|---------|-------------|---------|-------|
+| 🆕 KoboldAI | A browser-based front-end for AI-assisted writing with multiple local & remote AI models, including integration with Pollinations.AI for image generation | @lostruins | [Website](https://koboldai.net/), [GitHub](https://github.com/LostRuins/lite.koboldai.net) - ⭐ 3.7k |
+
 ### Image Generation
 
 1. Visit [https://pollinations.ai](https://pollinations.ai)
@@ -67,11 +75,13 @@ Our MCP (Model Context Protocol) server enables AI assistants like Claude to gen
 npx @pollinations/model-context-protocol
 ```
 
+Community alternatives like [MCPollinations](https://github.com/pinkpixel-dev/MCPollinations) are also available.
+
 AI assistants can:
 - Generate images from text descriptions
 - Create text-to-speech audio with various voice options
 - Play audio responses through the system speakers
-- Access all Pollinations.AI models and services seamlessly
+- Access all Pollinations.AI models and services
 - List available models, voices, and capabilities
 
 For more advanced usage, check out our [API documentation](APIDOCS.md).
@@ -208,6 +218,9 @@ Pollinations.AI is used in various projects, including:
 
 | Project | Description | Creator | Links |
 |---------|-------------|---------|-------|
+| 🆕 Match-cut video ai | This AI generates video from text in match-cut text style, uses pollinations llm to generate nearby text, and supports API integration. | @r3ap3redit | [Website](https://video-gen.megavault.in), [GitHub](https://github.com/iotserver24/match-cut-ai) |
+| 🆕 Anisurge | A free anime streaming app with a public chat feature that allows users to chat with AI characters powered by Pollinations AI. | @iotserver24 | [Website](https://anisurge.me), [Download APK](https://bucket.anisurge.me/2.23.4-1/Anisurge-universal.apk) |
+| 🆕 MoneyPrinterTurbo | Simply provide a topic or keyword for a video, and it will automatically generate the video copy, video materials, video subtitles, and video background music before synthesizing a high-definition short video. Integrates Pollinations' text generation service to create engaging and relevant video scripts. | @harry0703 | [GitHub](https://github.com/harry0703/MoneyPrinterTurbo) - ⭐ 32.1k |
 | 🆕 Rizqi O Chatbot 🇮🇩 | Rizqi O Chatbot adalah proyek berbasis Pollinations yang menggabungkan tiga fitur utama: chatbot AI, generator gambar AI, dan generator audio AI. (An AI chatbot, image generator, and audio generator project with support for custom aspect ratios, over 200 art styles & visual effects, and automatic translation from Indonesian to English.) | @ray23-bit | [Website](https://chatbot.rizqioliveira.my.id), [GitHub](https://github.com/ray23-bit/Projectenam) |
 | 🆕 Define | An AI-powered REST API designed to generate definitions for words or phrases, constrained to a specified target word count. It allows customization of tone, context, and language, delivering precise, context-aware definitions programmatically—ideal for developers and content creators. | @hasanraiyan | [Website](https://define-i05a.onrender.com/api/docs/) |
 | 🆕 CoNavic | A free, open-source browser extension that brings the power of ChatGPT and browser automation directly to your fingertips. Instantly access AI assistance, manage tabs, and organize bookmarks using natural language all securely within your browser. | @mkantwala | [GitHub](https://github.com/mkantwala/CoNavic/) - ⭐ 1 |
@@ -224,6 +237,7 @@ Pollinations.AI is used in various projects, including:
 | 🆕 FreeAI 🇨🇳 | An AI application platform based on Pollinations.AI API, providing free and unlimited AI chat assistant, image generation, and voice synthesis services | @Azad-sl | [Website](https://freeai.aihub.ren/), [GitHub](https://github.com/Azad-sl/FreeAI) - ⭐ 44 |
 | 🆕 AI Unlimited Customizable Feature Module 🇨🇳 | This project provides a free API interface supporting various text and image generation models, including OpenAI's GPT-4, Gemini 2.0, etc. Users can access these models without an API key to perform text generation, image generation, translation, text polishing, and more | [S_S](https://linux.do/u/s_s/summary) | [Website](https://getquicker.net/Sharedaction?code=9ac738ed-a4b2-4ded-933c-08dd5f710a8b&fromMyShare=true) |
 | 🆕 Zelos AI image generator | It uses Pollinations for both prompt enhancing and image generation, it was a easy to make project due to pollinations services being easy to use | [Roblox Profile](https://www.roblox.com/users/4361935306/profile) | [Website](https://websim.ai/@ISWEARIAMNOTADDICTEDTOPILLOW/ai-image-prompt-generator) |
+| 🆕 Aiphoto智能绘画 🇨🇳 | AI艺术工坊 - 智能绘画生成器。这是一个基于AI的绘画生成工具，可以根据用户输入的中文描述自动生成相应的图片。(An AI art workshop - intelligent painting generator. This is an AI-based painting generation tool that can automatically generate images based on Chinese descriptions input by users.) | @zhikanyeye | [Website](https://qiyimg.3d.tc/Aiphoto), [GitHub](https://github.com/zhikanyeye/Aiphoto) |
 | 🆕 MiReXa AI | A state-of-the-art chatbot integrating multiple LLMs with advanced features including audio generation, image generation, mathematical proficiency, and real-time web search | withthatway | [Website](https://mirexa.vercel.app) |
 | gpt4free | The official gpt4free repository - various collection of powerful language models | xtekky | [GitHub](https://github.com/xtekky/gpt4free) - ⭐ 64.1k |
 | LobeChat | An open-source, modern-design ChatGPT/LLMs UI/Framework with speech-synthesis, multi-modal, and extensible plugin system | - | [Website](https://lobehub.com/plugins/pollinations-drawing), [GitHub](https://github.com/lobehub/lobe-chat) - ⭐ 59k |
@@ -240,6 +254,8 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 AI YouTube Shorts Generator | Python desktop app that automates YouTube Shorts creation with AI-generated scripts, voiceovers (via ElevenLabs), and visuals using Pollinations API. Designed for content creators, educators, and marketers to produce high-quality short videos quickly without manual editing. | @Sami-Alsahabany | SamiAlsahabany@outlook.com |
+| 🆕 AI Chat | A Windows desktop application that brings multiple AI models together in one simple, intuitive interface. Built for productivity, creativity, and learning, users can chat with different models, save/load conversations, generate images, explain images from URLs, and hear responses with different voices. | @narendradwivedi | [Website](https://aichat.narendradwivedi.org), [LinkedIn](https://www.linkedin.com/in/narendradwivedi) |
 | 🆕 Dreamscape AI | A creative studio for generating, enhancing, and transforming images, plus conversational AI capabilities with text and voice interfaces, and a deep research tool. | @sizzlebop | [Website](https://dreamscape.pinkpixel.dev), [GitHub](https://github.com/pinkpixel-dev/dreamscape-ai) |
 | 🆕 PollinateAI | An image generation platform that aims to ease the stress of graphic and visual designers in delivering inspirations for their work. Regular consumers are also welcomed. | @Auspicious14 | [Website](https://pollinateai.vercel.app), [GitHub](https://github.com/Auspicious14/image-generator-fe.git) |
 | 🆕 WebGeniusAI | AI tool that generates HTML websites with visuals from Pollinations. | @logise | [Website](https://logise.neocities.org/webgeniusai) |
@@ -293,7 +309,10 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
-| 🆕 KoboldAI | A browser-based front-end for AI-assisted writing with multiple local & remote AI models, including integration with Pollinations.AI for image generation | @henk717 | [Website](https://koboldai.org/), [GitHub](https://github.com/KoboldAI/KoboldAI-Client) - ⭐ 3.7k |
+| 🆕 Imagemate AI | A powerful image generation app designed to turn your imagination into stunning visuals with the help of advanced artificial intelligence. Built using the Pollinations AI API, Imagemate AI allows users to input a text prompt and instantly receive AI-generated images that match the description. | @Shanto-Islam | [Play Store](https://play.google.com/store/apps/details?id=com.madameweb.imgmate) |
+| 🆕 MVKProject Nexus API | An API platform specializing in artificial intelligence services: AI Chat Interaction with models like ChatGPT, Gemini, DeepSeek, and Meta AI, AI Image Generation powered by Pollinations, and AI Image Analysis for content description and insights. | @DarknessDEVV | [Website](https://nexus.adonis-except.xyz/), [GitHub](https://github.com/DarknessDEVV/-mvkproject-nexus) - ⭐ 1, [NPM](https://www.npmjs.com/package/@mvkproject/nexus) |
+| 🆕 IRINA by visuallink | Lightweight and simple online chat interface powered by pollinations | @thatalgp | [Website](https://irina-2--trivonca.on.websim.ai/) |
+| 🆕 KoboldAI | A browser-based front-end for AI-assisted writing with multiple local & remote AI models, including integration with Pollinations.AI for image generation | @henk717 | [Website](https://koboldai.net/), [GitHub](https://github.com/LostRuins/lite.koboldai.net) - ⭐ 3.7k |
 | 🆕 Polynate | AI-powered text and audio content generation platform providing a user-friendly interface for interacting with various AI generation services from Pollinations.ai | @voodoohop | [Website](https://polynate.cloudwerx.dev/), [GitHub](https://github.com/CLOUDWERX-DEV/polynate) - ⭐ 1 |
 | 🆕 Echo AI | An HTML-based chat interface that leverages Pollinations AI as its core engine for both text and image generation, featuring user authentication, streaming responses, and plan management | @3ch0AI | [Website](https://3ch0ai.github.io/EchoAI), [GitHub](https://github.com/3ch0AI/EchoAI) |
 | 🆕 Pollinations.ai Enhancer | Enhances the user experience on pollinations.ai pages by improving content readability, adding convenient download options, and providing easy access to generation metadata | @fisven | [Website](https://greasyfork.org/en/scripts/534183-pollinations-ai-enhancer), [GitHub](https://github.com/fisventurous/pollinationsai-enhancer) |
@@ -324,6 +343,7 @@ Pollinations.AI is used in various projects, including:
 
 | Bot | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 🤖 SingodiyaTech bot | This is a Telegram bot with many Advanced ai features | t.me/Aks979 | [Telegram](https://t.me/Aks7240Bot) |
 | 🆕 🤖 Raftar.xyz | A Discord multi-purpose bot with over 100+ commands, including AI image generation, ChatGPT, and SearchGPT powered by Pollinations.AI | @goodgamerhere | [Website](https://raftar.xyz) |
 | 🆕 Gacha | A versatile AI chat-bot and image generator powered by Pollinations.AI, featuring web search, image generation with model selection, and character-aware image generation through !webgen command | @_dr_misterio_ | [Website](https://shapes.inc/gacha-gachu/public), [Install](https://shapes.inc/gacha-gachu/install) |
 | Discord Bot | A Discord bot for generating images based on user prompts | @Zngzy | [Discord](https://discord.gg/D9xGg8mq3D), [GitHub](https://github.com/Zingzy/pollinations.ai-bot) |

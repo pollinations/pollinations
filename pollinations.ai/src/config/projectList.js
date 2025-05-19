@@ -435,6 +435,14 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "Favorite Puzzles",
+      url: "https://radbrothers.com/games/favorite-puzzles/",
+      description: "A jigsaw puzzles game for Android, iOS, and web that uses Pollinations feed as one of the sources of images for puzzles. Features puzzle generation using neural networks, customizable difficulty levels from 6 to 1200 pieces, multiple game modes, and the ability to create puzzles from your own images.",
+      author: "contact@radbrothers.com",
+      submissionDate: "2025-05-19",
+      order: 1,
+    },
+    {
       name: "AI YouTube Shorts Generator",
       description: "Python desktop app that automates YouTube Shorts creation with AI-generated scripts, voiceovers (via ElevenLabs), and visuals using Pollinations API. Designed for content creators, educators, and marketers to produce high-quality short videos quickly without manual editing.",
       author: "@Sami-Alsahabany",

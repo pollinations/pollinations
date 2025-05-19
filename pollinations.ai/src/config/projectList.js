@@ -760,6 +760,16 @@ const allProjects = {
   ],
   socialBots: [
     {
+      name: "🤖 PolliBot",
+      url: "https://github.com/mrMeowMurk/PolliBot",
+      description: "A powerful Telegram bot for interacting with Pollinations.ai API, providing a convenient interface for generating images and text using various AI models.",
+      author: "@mrMeowMurk",
+      repo: "https://github.com/mrMeowMurk/PolliBot",
+      stars: 1,
+      submissionDate: "2025-05-19",
+      order: 1,
+    },
+    {
       name: "Aura Chat Bot",
       description: "A chat bot integrating Pollinations API for text and image generation.",
       author: "@Py-Phoenix-PJS",

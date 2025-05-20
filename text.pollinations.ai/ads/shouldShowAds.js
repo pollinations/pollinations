@@ -1,8 +1,34 @@
 import { getRequestData } from '../requestUtils.js';
 import { REDIRECT_BASE_URL } from './adLlmMapper.js';
-import { contentContainsTriggerWords, REFERRAL_LINK_PROBABILITY } from './initRequestFilter.js';
 import { REQUIRE_MARKDOWN, markdownRegex } from './adUtils.js';
+import { affiliatesData } from '../../affiliate/affiliates.js';
 
+// Create a flattened list of all trigger words from all affiliates
+const ALL_TRIGGER_WORDS = affiliatesData.reduce((words, affiliate) => {
+    if (affiliate.triggerWords && Array.isArray(affiliate.triggerWords)) {
+        return [...words, ...affiliate.triggerWords];
+    }
+    return words;
+}, []);
+
+// Function to check if content contains any trigger words
+function contentContainsTriggerWords(content) {
+    if (!content || typeof content !== 'string') {
+        return false;
+    }
+
+    // Convert content to lowercase for case-insensitive matching
+    const lowercaseContent = content.toLowerCase();
+
+    // Check if content contains any trigger word (case insensitive)
+    return ALL_TRIGGER_WORDS.some(word =>
+        lowercaseContent.includes(word.toLowerCase())
+    );
+}
+
+
+// Probability of adding referral links (10%)
+const REFERRAL_LINK_PROBABILITY = 0.05;
 
 const TEST_ADS_MARKER = "p-ads";
 

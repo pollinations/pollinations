@@ -9,33 +9,8 @@ const log = debug('pollinations:adfilter');
 const errorLog = debug('pollinations:adfilter:error');
 
 
-// Probability of adding referral links (10%)
-export const REFERRAL_LINK_PROBABILITY = 0.07;
-
 // Flag for testing ads with a specific marker
 
-// Create a flattened list of all trigger words from all affiliates
-const ALL_TRIGGER_WORDS = affiliatesData.reduce((words, affiliate) => {
-    if (affiliate.triggerWords && Array.isArray(affiliate.triggerWords)) {
-        return [...words, ...affiliate.triggerWords];
-    }
-    return words;
-}, []);
-
-// Function to check if content contains any trigger words
-export function contentContainsTriggerWords(content) {
-    if (!content || typeof content !== 'string') {
-        return false;
-    }
-
-    // Convert content to lowercase for case-insensitive matching
-    const lowercaseContent = content.toLowerCase();
-
-    // Check if content contains any trigger word (case insensitive)
-    return ALL_TRIGGER_WORDS.some(word =>
-        lowercaseContent.includes(word.toLowerCase())
-    );
-}
 
 // Function to get user's country code from request
 function getUserCountry(req) {

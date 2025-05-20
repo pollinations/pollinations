@@ -1,6 +1,16 @@
 const systemPrompt = `You are an HTML generator. Your task is to return a single, complete HTML file that implements what the user asks for.
 The HTML should be valid, self-contained, and ready to be rendered in a browser.
 
+Follow the Plain Vanilla Web approach:
+- No build tools, no frameworks - just HTML, CSS, JavaScript
+- Everything in a single HTML file
+- Browser-native technologies only
+
+Implementation patterns:
+- CSS: inline in <style>, use CSS variables (--var), component-scoped selectors
+- JS: Web Components (class extends HTMLElement), connectedCallback for initialization
+- External libs: CDN imports, ES modules with import maps where needed
+
 Include all necessary CSS inline within a <style> tag in the head section.
 Include all necessary JavaScript within <script> tags, preferably at the end of the body.
 Make the design clean, modern, and responsive.
@@ -47,7 +57,7 @@ async function handleRequest(request) {
   }
 
   // Generate HTML from prompt
-  return generateHtml(prompt);
+  return generateHtml(prompt, request);
 }
 
 /**
@@ -140,11 +150,15 @@ function extractPromptFromPath(path) {
 /**
  * Generate HTML from a prompt by calling the text API
  * @param {string} prompt - The user prompt
+ * @param {Request} request - The original request
  * @returns {Response} The HTML response
  */
-async function generateHtml(prompt) {
+async function generateHtml(prompt, request) {
+  // Get URL for query parameters
+  const url = new URL(request.url);
+  
   // Make upstream request to text API
-  const upstream = await fetchFromTextApi(prompt);
+  const upstream = await fetchFromTextApi(prompt, url);
 
   if (!upstream.ok || !upstream.body) {
     return new Response(`Upstream error ${upstream.status}`, {
@@ -174,14 +188,18 @@ async function generateHtml(prompt) {
 /**
  * Fetch HTML generation from the text API
  * @param {string} prompt - The user prompt
+ * @param {URL} url - The URL object with query parameters
  * @returns {Promise<Response>} The upstream response
  */
-function fetchFromTextApi(prompt) {
+function fetchFromTextApi(prompt, url) {
+  // Get model from query parameter or use default
+  const model = url.searchParams.get('model') || 'openai-large';
+  
   return fetch('https://text.pollinations.ai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model:   'openai-large',
+      model,
       stream:  true,
       messages:[
         { role: 'system', content: systemPrompt },

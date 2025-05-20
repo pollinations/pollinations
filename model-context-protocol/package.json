@@ -1,14 +1,14 @@
 {
   "name": "@pollinations/model-context-protocol",
-  "version": "1.0.11",
+  "version": "1.0.15",
   "description": "Model Context Protocol (MCP) server for Pollinations AI services using stdio transport",
   "type": "module",
   "bin": {
-    "pollinations-mcp": "./pollinations-mcp"
+    "pollinations-mcp": "./pollinations-mcp.js"
   },
   "files": [
     "src/**/*",
-    "pollinations-mcp",
+    "pollinations-mcp.js",
     "README.md",
     "LICENSE"
   ],
@@ -16,7 +16,7 @@
     "test": "node test-mcp-client.js",
     "test:integration": "vitest run tests/integration",
     "test:integration:watch": "vitest watch tests/integration",
-    "start": "node ./pollinations-mcp"
+    "start": "node src/index.js"
   },
   "keywords": [
     "pollinations",

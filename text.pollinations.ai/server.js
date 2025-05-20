@@ -618,13 +618,13 @@ app.post('/v1/chat/completions', async (req, res) => {
 
 function sendAsOpenAIStream(res, completion, req = null) {
     log('sendAsOpenAIStream called with completion type:', typeof completion);
-if (completion) {
-    log('Completion properties:', {
-        hasStream: completion.stream,
-        hasResponseStream: !!completion.responseStream,
-        errorPresent: !!completion.error
-    });
-}
+    if (completion) {
+        log('Completion properties:', {
+            hasStream: completion.stream,
+            hasResponseStream: !!completion.responseStream,
+            errorPresent: !!completion.error
+        });
+    }
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     // Set standard SSE headers
     res.setHeader('Cache-Control', 'no-cache');

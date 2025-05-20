@@ -142,9 +142,14 @@ function shouldShowAds(content, messages = [], req = null) {
         }
     }
 
-    // Skip ad generation if content is too short
-    if (!content || typeof content !== 'string' || content.length < 100) {
-        return { shouldShowAd: false, markerFound: false };
+    // // Skip ad generation if content is too short
+    // if (!content || typeof content !== 'string' || content.length < 100) {
+    //     return { shouldShowAd: false, markerFound: false };
+    // }
+
+    if (!content) {
+        log('No content found, using messages instead');
+        content = messages?.map(msg => msg.content).join('\n');
     }
 
     // Skip if content does not have markdown-like formatting, unless we're testing

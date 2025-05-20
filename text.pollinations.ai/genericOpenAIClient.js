@@ -10,6 +10,8 @@ import {
     convertSystemToUserMessages
 } from './textGenerationUtils.js';
 
+import { createSseStreamConverter } from './sseStreamConverter.js';
+
 /**
  * Creates a client function for OpenAI-compatible APIs
  * @param {Object} config - Configuration for the client
@@ -35,7 +37,7 @@ export function createOpenAICompatibleClient(config) {
         systemPrompts = {},
         defaultOptions = {},
         providerName = 'unknown',
-        formatResponse = null,
+        formatResponse = (x) => x,
         additionalHeaders = {},
         transformRequest = null,
         supportsSystemMessages = true
@@ -193,17 +195,44 @@ export function createOpenAICompatibleClient(config) {
                 // Check if the response is SSE (text/event-stream)
                 log(`[${requestId}] Streaming response headers:`, responseHeaders);
                 
+                let streamToReturn = response.body;
+                if (response.body) {
+                    // Map each SSE event chunk's delta through formatResponse
+                    streamToReturn = response.body.pipe(
+                        createSseStreamConverter((json) => {
+                            // Defensive: extract delta from OpenAI chunk
+                            let delta = json?.choices?.[0]?.delta;
+                            if (!delta) return json; // fallback: passthrough
+                            // Some formatResponse expect the full chunk, some just the delta
+                            // We'll pass the delta as the first arg, and the full chunk as second if needed
+                            let mapped = formatResponse(delta, json);
+                            // If formatResponse returns null/undefined, fallback to original delta
+                            if (mapped == null) mapped = delta;
+                            // Re-wrap in OpenAI chunk structure for downstream
+                            return {
+                                ...json,
+                                choices: [
+                                    {
+                                        ...json.choices[0],
+                                        delta: mapped
+                                    }
+                                ]
+                            };
+                        })
+                    );
+                }
                 return {
                     id: `${providerName.toLowerCase()}-${requestId}`,
                     object: 'chat.completion.chunk',
                     created: Math.floor(startTime / 1000),
                     model: modelName,
                     stream: true,
-                    responseStream: response.body, // This is the raw stream that will be proxied
+                    responseStream: streamToReturn, // This is the (possibly transformed) stream
                     providerName,
                     choices: [{ delta: { content: '' }, finish_reason: null, index: 0 }],
                     error: !response.ok ? { message: `${providerName} API error: ${response.status} ${response.statusText}` } : undefined
                 };
+
             }
 
             log(`[${requestId}] Received response from ${providerName} API`, {
@@ -254,9 +283,10 @@ export function createOpenAICompatibleClient(config) {
             });
 
             // Use custom response formatter if provided
-            if (formatResponse) {
-                return formatResponse(data, requestId, startTime, modelName);
-            }
+            // Pass only choices[0] to formatResponse, reconstruct after
+            const originalChoice = data.choices && data.choices[0] ? data.choices[0] : {};
+            const formattedChoice = formatResponse(originalChoice, requestId, startTime, modelName);
+
 
             // Default response formatting
             // Ensure the response has all expected fields
@@ -270,38 +300,12 @@ export function createOpenAICompatibleClient(config) {
                 data.object = 'chat.completion';
             }
             
-            if (!data.usage) {
-                data.usage = {
-                    prompt_tokens: 0,
-                    completion_tokens: 0,
-                    total_tokens: 0
-                };
-            }
-            
-            // Correctly set the finish_reason to "length" when max_tokens limit is reached
-            if (data.choices && Array.isArray(data.choices) && data.choices.length > 0) {
-                // Check if we hit the max tokens limit
-                const maxTokens = cleanedRequestBody.max_tokens;
-                const completionTokens = data.usage?.completion_tokens;
-                
-                // If completion tokens are close to max tokens (within 5 tokens) or 
-                // if the model reached the max token limit and finish_reason isn't already set
-                if (maxTokens && completionTokens && 
-                    (completionTokens >= maxTokens - 5 || 
-                     (data.choices[0].finish_reason === null || data.choices[0].finish_reason === 'stop'))) {
-                    
-                    // Log potential truncation
-                    log(`[${requestId}] Possible response truncation detected. Max tokens: ${maxTokens}, Completion tokens: ${completionTokens}`);
-                    
-                    // For cloudflare and other providers that might not correctly set finish_reason
-                    if (modelName && (modelName.includes('@cf/') || modelName.includes('llamaguard'))) {
-                        if (completionTokens >= maxTokens - 10) {
-                            log(`[${requestId}] Setting finish_reason to "length" for Cloudflare model response`);
-                            data.choices[0].finish_reason = 'length';
-                        }
-                    }
-                }
-            }
+
+            // Reconstruct the response object with the formatted choice
+            return {
+                ...data,
+                choices: [formattedChoice]
+            };
 
             log(`[${requestId}] Final response:`, JSON.stringify(data, null, 2));
 

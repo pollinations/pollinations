@@ -296,12 +296,15 @@ function createOpenRouterModelConfig(additionalConfig = {}) {
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
     // Azure Grok model configuration
-    'azure-grok': () => createAzureModelConfig(
-        process.env.AZURE_GROK_API_KEY,
-        process.env.AZURE_GROK_ENDPOINT,
-        'grok-3',
-        'thomash-grok-resource'
-    ),
+    'azure-grok': () => {
+        const  modelIndex = Math.floor(Math.random() * 9) + 2; // 2-9;  
+        return createAzureModelConfig(
+            process.env.AZURE_GROK_API_KEY,
+            process.env.AZURE_GROK_ENDPOINT,
+            `grok-3-${modelIndex}`,
+            'thomash-grok-resource'
+    );
+    },
     // Azure OpenAI model configurations
     'gpt-4.1-nano': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_NANO_API_KEY,
@@ -524,13 +527,17 @@ export const generateTextPortkey = createOpenAICompatibleClient({
             throw error;
         }
     },
-    formatResponse: (response) => {
+    formatResponse: (message) => {
         // fix deepseek-v3 response
-        if (!response.choices[0].message.content && response.choices[0].message.reasoning_content) {
-            response.choices[0].message.content = response.choices[0].message.reasoning_content;
-            response.choices[0].message.reasoning_content = null;
+        if (!message.content && message.reasoning_content) {
+            message.content = message.reasoning_content;
+            message.reasoning_content = null;
         }
-        return response;
+        if (message.content && message.reasoning_content) {
+            message.content = `<think>${message.reasoning_content}</think>${message.content}`;
+            message.reasoning_content = null;
+        }
+        return message;
     },
 
     // Model mapping, system prompts, and default options

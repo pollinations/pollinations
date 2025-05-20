@@ -10,8 +10,6 @@ import app, {
     processRequest,
     getQueue
 } from '../server.js';
-import { setInCache, createHashKey } from '../cache.js';
-import { getReferrer } from '../requestUtils.js';
 
 // Increase timeout for all tests
 test.beforeEach(t => {

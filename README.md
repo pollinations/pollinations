@@ -29,7 +29,7 @@
 - 🔒 **Simplicity and privacy:** No logins, no keys, no data stored
 - 🖼️ **Embed like any normal image or text**
 - 🎵 **Audio generation:** Text-to-speech and speech-to-text capabilities
-- 🌍 Over **50,000 active users** and > **_20 million images generated per month_**
+- 🌍 Free AI image and text generation APIs
 - 🤝 Used by various **open-source LLMs**, **bots**, and **communities**
 - 🎣 **_Easy-to-use React hooks_** ([React Hooks Examples](https://react-hooks.pollinations.ai/))
 - 🤖 **Autonomous Development:** Features implemented by our MentatBot coding assistant through GitHub issues

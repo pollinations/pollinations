@@ -240,16 +240,10 @@ async function handleRequest(req, res, requestData) {
             
             if (!isAudioResponse) {
                 try {
-                    let processedContent = completion.choices[0].message.content;
-                    
-                    // First check for NSFW content in entire conversation
-                    // processedContent = await processNSFWReferralLinks({
-                    //     messages: requestData.messages,
-                    //     responseContent: processedContent
-                    // }, req);
+                    const content = completion.choices[0].message.content;
                     
                     // Then process regular referral links
-                    processedContent = await processRequestForAds(processedContent, req, requestData.messages);
+                    const processedContent = await processRequestForAds(content, req, requestData.messages);
                     
                     completion.choices[0].message.content = processedContent;
                 } catch (error) {

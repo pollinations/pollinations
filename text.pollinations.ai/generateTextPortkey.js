@@ -1,7 +1,6 @@
 import dotenv from 'dotenv';
 import { createOpenAICompatibleClient } from './genericOpenAIClient.js';
 import debug from 'debug';
-import { execSync } from 'child_process';
 import googleCloudAuth from './auth/googleCloudAuth.js';
 import { extractApiVersion, extractDeploymentName, extractResourceName, generatePortkeyHeaders } from './portkeyUtils.js';
 import { findModelByName } from './availableModels.js';
@@ -38,7 +37,6 @@ const MODEL_MAPPING = {
     // Scaleway models
     'qwen-coder': 'qwen2.5-coder-32b-instruct',
     'mistral': 'mistral-small-3.1-24b-instruct-2503',  // Updated to use Scaleway Mistral model
-    'deepseek-reasoning-large': 'deepseek-r1-distill-llama-70b',
     // Modal models
     'hormoz': 'Hormoz-8B',
     // OpenRouter models
@@ -81,7 +79,6 @@ const SYSTEM_PROMPTS = {
     //'gemini': BASE_PROMPTS.conversational,
     // Cloudflare models
     'llama': BASE_PROMPTS.conversational,
-    'deepseek-reasoning-large': BASE_PROMPTS.helpful,
     'deepseek-reasoning': BASE_PROMPTS.conversational,
     //'llamaguard': BASE_PROMPTS.moderation,
     'phi': BASE_PROMPTS.conversational,
@@ -190,15 +187,6 @@ const baseOpenRouterConfig = {
     'max-tokens': 4096,
 };
 
-// Base configuration for Groq models
-const baseGroqConfig = {
-    provider: 'groq',
-    'custom-host': 'https://api.groq.com/openai/v1',
-    authKey: process.env.GROQ_API_KEY,
-    // Set default max_tokens to 4096
-    'max-tokens': 4096,
-};
-
 // DeepSeek model configuration
 const baseDeepSeekConfig = {
     provider: 'openai',
@@ -303,13 +291,6 @@ function createOpenRouterModelConfig(additionalConfig = {}) {
     };
 }
 
-
-// console.error("azurrreee", createAzureModelConfig(
-//     process.env.AZURE_GROK_API_KEY,
-//     process.env.AZURE_GROK_ENDPOINT,
-//     'grok-3'
-// ));
-// process.exit(1);
 
 
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
@@ -542,6 +523,14 @@ export const generateTextPortkey = createOpenAICompatibleClient({
             errorLog('Error in request transformation:', error);
             throw error;
         }
+    },
+    formatResponse: (response) => {
+        // fix deepseek-v3 response
+        if (!response.choices[0].message.content && response.choices[0].message.reasoning_content) {
+            response.choices[0].message.content = response.choices[0].message.reasoning_content;
+            response.choices[0].message.reasoning_content = null;
+        }
+        return response;
     },
 
     // Model mapping, system prompts, and default options

@@ -267,6 +267,16 @@ const models = [
     output_modalities: ["text"],
     tools: false,
   },
+  {
+    name: "grok",
+    description: "xAi Grok-3",
+    handler: generateTextPortkey,
+    //    details:  "Grok model from xAI hosted on Azure, known for its conversational abilities and reasoning.",
+    provider: "Azure",
+    input_modalities: ["text"],
+    output_modalities: ["text"],
+    tools: true,
+  },
   // {
   //   name: "deepseek-reasoning",
   //   description: "DeepSeek R1 - Full",

@@ -1,7 +1,6 @@
 import dotenv from 'dotenv';
 import { createOpenAICompatibleClient } from './genericOpenAIClient.js';
 import debug from 'debug';
-import { execSync } from 'child_process';
 import googleCloudAuth from './auth/googleCloudAuth.js';
 import { extractApiVersion, extractDeploymentName, extractResourceName, generatePortkeyHeaders } from './portkeyUtils.js';
 import { findModelByName } from './availableModels.js';
@@ -26,6 +25,8 @@ const MODEL_MAPPING = {
     //'command-r': 'Cohere-command-r-plus-08-2024-jt', // Cohere Command R Plus model
     //'gemini': 'gemini-2.5-flash-preview-04-17',
     //'gemini-thinking': 'gemini-2.0-flash-thinking-exp-01-21',
+    // Azure Grok model
+    'grok': 'azure-grok',
     // Cloudflare models
     'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
     'llamascout': '@cf/meta/llama-4-scout-17b-16e-instruct',
@@ -36,7 +37,6 @@ const MODEL_MAPPING = {
     // Scaleway models
     'qwen-coder': 'qwen2.5-coder-32b-instruct',
     'mistral': 'mistral-small-3.1-24b-instruct-2503',  // Updated to use Scaleway Mistral model
-    'deepseek-reasoning-large': 'deepseek-r1-distill-llama-70b',
     // Modal models
     'hormoz': 'Hormoz-8B',
     // OpenRouter models
@@ -72,12 +72,13 @@ const SYSTEM_PROMPTS = {
     'openai-fast': BASE_PROMPTS.conversational,
     'openai': BASE_PROMPTS.conversational,
     'openai-large': BASE_PROMPTS.conversational,
+    // Grok model
+    'grok': BASE_PROMPTS.conversational,
     //'openai-xlarge': BASE_PROMPTS.conversational,
     'openai-roblox': BASE_PROMPTS.conversational,
     //'gemini': BASE_PROMPTS.conversational,
     // Cloudflare models
     'llama': BASE_PROMPTS.conversational,
-    'deepseek-reasoning-large': BASE_PROMPTS.helpful,
     'deepseek-reasoning': BASE_PROMPTS.conversational,
     //'llamaguard': BASE_PROMPTS.moderation,
     'phi': BASE_PROMPTS.conversational,
@@ -124,12 +125,12 @@ const baseAzureConfig = {
  * @param {string} modelName - Model name to use if not extracted from endpoint
  * @returns {Object} - Azure model configuration
  */
-function createAzureModelConfig(apiKey, endpoint, modelName) {
-    const deploymentId = extractDeploymentName(endpoint) || modelName;
+function createAzureModelConfig(apiKey, endpoint, modelName, resourceName = null) {
+    const deploymentId = extractDeploymentName(endpoint) || modelName; 
     return {
         ...baseAzureConfig,
         'azure-api-key': apiKey,
-        'azure-resource-name': extractResourceName(endpoint),
+        'azure-resource-name': resourceName || extractResourceName(endpoint),
         'azure-deployment-id': deploymentId,
         'azure-api-version': extractApiVersion(endpoint),
         'azure-model-name': deploymentId,
@@ -182,15 +183,6 @@ const baseOpenRouterConfig = {
     provider: 'openai',
     'custom-host': 'https://openrouter.ai/api/v1',
     authKey: process.env.OPENROUTER_API_KEY,
-    // Set default max_tokens to 4096
-    'max-tokens': 4096,
-};
-
-// Base configuration for Groq models
-const baseGroqConfig = {
-    provider: 'groq',
-    'custom-host': 'https://api.groq.com/openai/v1',
-    authKey: process.env.GROQ_API_KEY,
     // Set default max_tokens to 4096
     'max-tokens': 4096,
 };
@@ -301,9 +293,15 @@ function createOpenRouterModelConfig(additionalConfig = {}) {
 
 
 
-
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
+    // Azure Grok model configuration
+    'azure-grok': () => createAzureModelConfig(
+        process.env.AZURE_GROK_API_KEY,
+        process.env.AZURE_GROK_ENDPOINT,
+        'grok-3',
+        'thomash-grok-resource'
+    ),
     // Azure OpenAI model configurations
     'gpt-4.1-nano': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_NANO_API_KEY,
@@ -519,18 +517,20 @@ export const generateTextPortkey = createOpenAICompatibleClient({
                 }
             }
 
-            // Special handling for o1-mini model which requires max_completion_tokens instead of max_tokens
-            if (modelName === 'o1-mini' && requestBody.max_tokens) {
-                log(`Converting max_tokens to max_completion_tokens for o1-mini model`);
-                requestBody.max_completion_tokens = requestBody.max_tokens;
-                delete requestBody.max_tokens;
-            }
 
             return requestBody;
         } catch (error) {
             errorLog('Error in request transformation:', error);
             throw error;
         }
+    },
+    formatResponse: (response) => {
+        // fix deepseek-v3 response
+        if (!response.choices[0].message.content && response.choices[0].message.reasoning_content) {
+            response.choices[0].message.content = response.choices[0].message.reasoning_content;
+            response.choices[0].message.reasoning_content = null;
+        }
+        return response;
     },
 
     // Model mapping, system prompts, and default options

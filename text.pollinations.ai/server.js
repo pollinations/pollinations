@@ -240,16 +240,10 @@ async function handleRequest(req, res, requestData) {
             
             if (!isAudioResponse) {
                 try {
-                    let processedContent = completion.choices[0].message.content;
-                    
-                    // First check for NSFW content in entire conversation
-                    // processedContent = await processNSFWReferralLinks({
-                    //     messages: requestData.messages,
-                    //     responseContent: processedContent
-                    // }, req);
+                    const content = completion.choices[0].message.content;
                     
                     // Then process regular referral links
-                    processedContent = await processRequestForAds(processedContent, req, requestData.messages);
+                    const processedContent = await processRequestForAds(content, req, requestData.messages);
                     
                     completion.choices[0].message.content = processedContent;
                 } catch (error) {
@@ -346,11 +340,6 @@ export async function sendErrorResponse(res, req, error, requestData, statusCode
     if (error.details) {
         errorResponse.details = error.details;
     }
-    // Content filter errors get special handling
-    if (error.isContentFilterError) {
-        errorResponse.error = "Content policy violation detected";
-        errorResponse.content_policy = true;
-    }
 
     // Extract client information (for logs only)
     const clientInfo = {
@@ -382,7 +371,6 @@ export async function sendErrorResponse(res, req, error, requestData, statusCode
             message: error.message,
             status: responseStatus,
             details: error.details,
-            isContentFilterError: error.isContentFilterError
         },
         model: error.model || requestData?.model || 'unknown',
         provider: error.provider || 'Pollinations',
@@ -396,7 +384,6 @@ export async function sendErrorResponse(res, req, error, requestData, statusCode
     await sendToAnalytics(req, 'textGenerationError', {
         error: error.message,
         errorType: error.name,
-        isContentFilterError: error.isContentFilterError,
         statusCode: responseStatus,
         model: requestData?.model
     });

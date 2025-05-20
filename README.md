@@ -255,6 +255,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 MASala | Multi-Agent AI That Cooks Up Recipes Just for You ~ From fridge to feast, MASALA plans it all. | @Naman009 | [GitHub](https://github.com/Naman009/MASala) - ⭐ 1 |
 | 🆕 Emojiall AI Drawing Platform | A platform focused on allowing users to draw pictures according to their own requirements with many preset styles and themes. Part of Emojiall, which has other text-based AI features like Emoji translation to text, Emoji recommender, and Emoji chatbot. | @James-Qi | [Website](https://art.emojiall.com) |
 | 🆕 FoldaScan | Use Natural Language to "Converse" with Your Codebase, Folda-Scan Smart Project Q&A, powered by advanced vectorization technology, allows you to easily understand complex code, pinpoint information, and offers unprecedented convenience for AI collaboration. | @0010skn | [Website](https://fs.wen.bar), [GitHub](https://github.com/0010skn/WebFS-Toolkit-Local-Folder-Scan-Monitor-Versioning-AI-Prep) |
 | 🆕 🎮 Favorite Puzzles | A jigsaw puzzles game for Android, iOS, and web that uses Pollinations feed as one of the sources of images for puzzles. Features puzzle generation using neural networks, customizable difficulty levels from 6 to 1200 pieces, multiple game modes, and the ability to create puzzles from your own images. | contact@radbrothers.com | [Website](https://radbrothers.com/games/favorite-puzzles/) |

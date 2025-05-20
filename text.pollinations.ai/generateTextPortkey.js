@@ -525,10 +525,15 @@ export const generateTextPortkey = createOpenAICompatibleClient({
         }
     },
     formatResponse: (response) => {
+        const message = response.choices[0].message;
         // fix deepseek-v3 response
-        if (!response.choices[0].message.content && response.choices[0].message.reasoning_content) {
-            response.choices[0].message.content = response.choices[0].message.reasoning_content;
-            response.choices[0].message.reasoning_content = null;
+        if (!message.content && message.reasoning_content) {
+            message.content = message.reasoning_content;
+            message.reasoning_content = null;
+        }
+        if (message.content && message.reasoning_content) {
+            message.content = `<think>${message.reasoning_content}</think>${message.content}`;
+            message.reasoning_content = null;
         }
         return response;
     },

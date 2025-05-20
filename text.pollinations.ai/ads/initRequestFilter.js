@@ -1,30 +1,18 @@
 import debug from 'debug';
 import { sendToAnalytics } from '../sendToAnalytics.js';
-import { findRelevantAffiliate, generateAffiliateAd, extractReferralLinkInfo } from './adLlmMapper.js';
+import { findRelevantAffiliate, generateAffiliateAd, extractReferralLinkInfo, REDIRECT_BASE_URL } from './adLlmMapper.js';
 import { logAdInteraction } from './adLogger.js';
 import { affiliatesData } from '../../affiliate/affiliates.js';
-import { createStreamingAdWrapper } from './streamingAdWrapper.js';
 import { shouldShowAds } from './shouldShowAds.js';
-import { shouldProceedWithAd, sendAdSkippedAnalytics } from './adUtils.js';
-
-
-export const log = debug('pollinations:adfilter');
+import { shouldProceedWithAd , sendAdSkippedAnalytics} from './adUtils.js';
+const log = debug('pollinations:adfilter');
 const errorLog = debug('pollinations:adfilter:error');
 
-// Regular expression to detect markdown formatting in content
-export const markdownRegex = /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`.*\`)|(?:\>.*)|(?:\-\s.*)|(?:\d\.\s.*)/;
 
 // Probability of adding referral links (10%)
 export const REFERRAL_LINK_PROBABILITY = 0.07;
 
 // Flag for testing ads with a specific marker
-export const TEST_ADS_MARKER = "p-ads";
-
-// Whether to require markdown for ad processing
-export const REQUIRE_MARKDOWN = true;
-
-// Parse bad domains from environment variable (comma-separated list)
-export const BAD_DOMAINS = process.env.BAD_DOMAINS ? process.env.BAD_DOMAINS.split(',').map(domain => domain.trim().toLowerCase()) : [];
 
 // Create a flattened list of all trigger words from all affiliates
 const ALL_TRIGGER_WORDS = affiliatesData.reduce((words, affiliate) => {
@@ -34,7 +22,6 @@ const ALL_TRIGGER_WORDS = affiliatesData.reduce((words, affiliate) => {
     return words;
 }, []);
 
-import generateAdForContent from './generateAdForContent.js';
 // Function to check if content contains any trigger words
 export function contentContainsTriggerWords(content) {
     if (!content || typeof content !== 'string') {
@@ -73,7 +60,7 @@ function getUserCountry(req) {
     return null;
 }
 
-
+export async function generateAdForContent(content, req, messages, markerFound = false, isStreaming = false) {
     // Log the function call with details
     log(`generateAdForContent called with isStreaming=${isStreaming}, markerFound=${markerFound}, content length=${content ? content.length : 0}`);
 

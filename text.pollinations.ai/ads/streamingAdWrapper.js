@@ -5,7 +5,7 @@ import { logAdInteraction } from './adLogger.js';
 
 const log = debug('pollinations:adfilter');
 const errorLog = debug('pollinations:adfilter:error');
-import generateAdForContent from './generateAdForContent.js';
+import { generateAdForContent } from './initRequestFilter.js';
 import { sendAdSkippedAnalytics } from './adUtils.js';
 import { shouldShowAds } from './shouldShowAds.js';
 /**

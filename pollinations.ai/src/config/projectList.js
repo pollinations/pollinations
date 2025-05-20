@@ -443,6 +443,16 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "MASala",
+      url: "https://github.com/Naman009/MASala",
+      description: "Multi-Agent AI That Cooks Up Recipes Just for You ~ From fridge to feast, MASALA plans it all.",
+      author: "@Naman009",
+      repo: "https://github.com/Naman009/MASala",
+      stars: 1,
+      submissionDate: "2025-05-20",
+      order: 1,
+    },
+    {
       name: "Emojiall AI Drawing Platform",
       url: "https://art.emojiall.com",
       description: "A platform focused on allowing users to draw pictures according to their own requirements with many preset styles and themes. Part of Emojiall, which has other text-based AI features like Emoji translation to text, Emoji recommender, and Emoji chatbot.",

@@ -1,29 +1,30 @@
-import { generateTextPortkey } from '../generateTextPortkey.js';
 import debug from 'debug';
 import { sendToAnalytics } from '../sendToAnalytics.js';
-import { getRequestData } from '../requestUtils.js';
-import { findRelevantAffiliate, generateAffiliateAd, extractReferralLinkInfo, REDIRECT_BASE_URL } from './adLlmMapper.js';
+import { findRelevantAffiliate, generateAffiliateAd, extractReferralLinkInfo } from './adLlmMapper.js';
 import { logAdInteraction } from './adLogger.js';
 import { affiliatesData } from '../../affiliate/affiliates.js';
 import { createStreamingAdWrapper } from './streamingAdWrapper.js';
+import { shouldShowAds } from './shouldShowAds.js';
+import { shouldProceedWithAd, sendAdSkippedAnalytics } from './adUtils.js';
 
-const log = debug('pollinations:adfilter');
+
+export const log = debug('pollinations:adfilter');
 const errorLog = debug('pollinations:adfilter:error');
 
 // Regular expression to detect markdown formatting in content
-const markdownRegex = /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`.*\`)|(?:\>.*)|(?:\-\s.*)|(?:\d\.\s.*)/;
+export const markdownRegex = /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`.*\`)|(?:\>.*)|(?:\-\s.*)|(?:\d\.\s.*)/;
 
 // Probability of adding referral links (10%)
-const REFERRAL_LINK_PROBABILITY = 0.07;
+export const REFERRAL_LINK_PROBABILITY = 0.07;
 
 // Flag for testing ads with a specific marker
-const TEST_ADS_MARKER = "p-ads";
+export const TEST_ADS_MARKER = "p-ads";
 
 // Whether to require markdown for ad processing
-const REQUIRE_MARKDOWN = true;
+export const REQUIRE_MARKDOWN = true;
 
 // Parse bad domains from environment variable (comma-separated list)
-const BAD_DOMAINS = process.env.BAD_DOMAINS ? process.env.BAD_DOMAINS.split(',').map(domain => domain.trim().toLowerCase()) : [];
+export const BAD_DOMAINS = process.env.BAD_DOMAINS ? process.env.BAD_DOMAINS.split(',').map(domain => domain.trim().toLowerCase()) : [];
 
 // Create a flattened list of all trigger words from all affiliates
 const ALL_TRIGGER_WORDS = affiliatesData.reduce((words, affiliate) => {
@@ -33,8 +34,9 @@ const ALL_TRIGGER_WORDS = affiliatesData.reduce((words, affiliate) => {
     return words;
 }, []);
 
+import generateAdForContent from './generateAdForContent.js';
 // Function to check if content contains any trigger words
-function contentContainsTriggerWords(content) {
+export function contentContainsTriggerWords(content) {
     if (!content || typeof content !== 'string') {
         return false;
     }
@@ -71,163 +73,7 @@ function getUserCountry(req) {
     return null;
 }
 
-// Extracted utility functions
-function shouldShowAds(content, messages = [], req = null) {
-    // Check for the test marker first - if found, immediately return true
-    let markerFound = false;
 
-    // Check for marker in content
-    if (content && typeof content === 'string') {
-        markerFound = content.includes(TEST_ADS_MARKER);
-
-        // If marker is found, force ad display regardless of other conditions
-        if (markerFound) {
-            log('Test marker "p-ads" found in content, forcing ad display regardless of other conditions');
-            return { shouldShowAd: true, markerFound: true, forceAd: true };
-        }
-    }
-
-    // Also check for marker in messages (important for streaming case)
-    if (!markerFound && messages && messages.length > 0) {
-        // Convert all message contents to strings for consistent checking
-        const messageContents = messages.map(msg => {
-            if (!msg) return '';
-            if (typeof msg.content === 'string') return msg.content;
-            if (msg.content) return JSON.stringify(msg.content);
-            return '';
-        });
-
-        // Check if any message contains the marker
-        markerFound = messageContents.some(content => content.includes(TEST_ADS_MARKER));
-
-        if (markerFound) {
-            log('Test marker "p-ads" found in messages, forcing ad display regardless of other conditions');
-            return { shouldShowAd: true, markerFound: true, forceAd: true };
-        }
-    }
-
-    // Get request data for referrer check
-    const requestData = getRequestData(req);
-
-    // Special handling for bad domains in referrer
-    if (requestData && requestData.referrer && requestData.referrer !== 'unknown' && BAD_DOMAINS.length > 0) {
-        const referrerLower = requestData.referrer.toLowerCase();
-
-        // Check if referrer contains any bad domain
-        const isBadDomain = BAD_DOMAINS.some(domain => referrerLower.includes(domain));
-
-        if (isBadDomain) {
-            log(`Bad domain detected in referrer: ${requestData.referrer}, forcing 100% ad probability`);
-            return { shouldShowAd: true, markerFound: true, isBadDomain: true };
-        }
-    }
-
-    // Skip ad processing if referrer is from roblox or image.pollinations.ai
-    if (requestData && requestData.referrer && requestData.referrer !== 'unknown' && (requestData.referrer?.includes('roblox') || requestData.referrer?.includes('image.pollinations.ai'))) {
-        // log('Skipping ad processing due to referrer presence:', requestData.referrer);
-        return { shouldShowAd: false, markerFound: false };
-    }
-
-    // Check if an ad already exists in the conversation history
-    if (messages && messages.length > 0) {
-        // Look for the redirect URL pattern in any of the messages
-        const hasExistingAd = messages.some(msg => {
-            if (!msg.content || typeof msg.content !== 'string') return false;
-            return msg.content.includes(REDIRECT_BASE_URL);
-        });
-
-        if (hasExistingAd) {
-            log('Ad already exists in conversation history, skipping additional ad');
-            return { shouldShowAd: false, markerFound: false, adAlreadyExists: true };
-        }
-    }
-
-    // // Skip ad generation if content is too short
-    // if (!content || typeof content !== 'string' || content.length < 100) {
-    //     return { shouldShowAd: false, markerFound: false };
-    // }
-
-    if (!content) {
-        log('No content found, using messages instead');
-        content = messages?.map(msg => msg.content).join('\n');
-    }
-
-    // Skip if content does not have markdown-like formatting, unless we're testing
-    // This helps distinguish actual text responses from other formats like code
-    if (REQUIRE_MARKDOWN && !markdownRegex.test(content) && !content.includes(TEST_ADS_MARKER)) {
-        log('Skipping ad processing due to lack of markdown formatting');
-        return { shouldShowAd: false, markerFound: false };
-    }
-
-    // Check for trigger words in content or messages
-    let triggerWordsFound = false;
-    if (content) {
-        triggerWordsFound = contentContainsTriggerWords(content);
-    }
-    if (!triggerWordsFound && messages && messages.length > 0) {
-        triggerWordsFound = messages.some(msg =>
-            msg.content && contentContainsTriggerWords(msg.content)
-        );
-    }
-
-    // If marker is not found, use the default probability
-    const effectiveProbability = markerFound
-        ? 1.0 // 100% probability for marker found
-        : triggerWordsFound
-            ? REFERRAL_LINK_PROBABILITY * 2 // Triple probability for trigger words
-            : REFERRAL_LINK_PROBABILITY;
-
-    if (markerFound) {
-        log('Test marker "p-ads" found, using 100% probability');
-    } else if (triggerWordsFound) {
-        log(`Trigger words found in content, using triple probability (${(REFERRAL_LINK_PROBABILITY * 3).toFixed(2)})`);
-    }
-
-    // Random check - only process based on the effective probability
-    const shouldShowAd = Math.random() <= effectiveProbability;
-
-    return { shouldShowAd, markerFound };
-}
-
-/**
- * Send analytics about skipped ads
- * @param {object} req - Express request object for analytics
- * @param {string} reason - Reason why the ad was skipped
- * @param {boolean} isStreaming - Whether this is a streaming request
- * @param {object} additionalData - Any additional data to include
- */
-export function sendAdSkippedAnalytics(req, reason, isStreaming = false, additionalData = {}) {
-    if (!req) return;
-
-    log(`Ad skipped: ${reason}, streaming: ${isStreaming}`);
-
-    sendToAnalytics(req, 'ad_skipped', {
-        reason,
-        streaming: isStreaming,
-        ...additionalData
-    });
-}
-
-function shouldProceedWithAd(content, markerFound) {
-    // If no content, skip ad processing
-    if (!content) {
-        return false;
-    }
-
-    // Skip if content is too short (less than 50 characters)
-    if (content.length < 50) {
-        return false;
-    }
-
-    // If markdown is required and not found, skip (unless marker is present)
-    if (REQUIRE_MARKDOWN && !markerFound && !markdownRegex.test(content)) {
-        return false;
-    }
-
-    return true;
-}
-
-async function generateAdForContent(content, req, messages, markerFound = false, isStreaming = false) {
     // Log the function call with details
     log(`generateAdForContent called with isStreaming=${isStreaming}, markerFound=${markerFound}, content length=${content ? content.length : 0}`);
 
@@ -505,45 +351,6 @@ async function generateAdForContent(content, req, messages, markerFound = false,
     }
 }
 
-function formatAdAsSSE(adString) {
-    try {
-        // Log that we're formatting an ad as SSE
-        log(`Formatting ad as SSE: ${adString.substring(0, 50)}${adString.length > 50 ? '...' : ''}`);
-
-        // Create a proper SSE message with the ad content
-        // This should be in the format expected by the client
-
-        // Create a delta object similar to what the API would return
-        const deltaObject = {
-            id: `ad_${Date.now()}`,
-            object: 'chat.completion.chunk',
-            created: Math.floor(Date.now() / 1000),
-            model: 'ad-system',
-            choices: [
-                {
-                    index: 0,
-                    delta: {
-                        content: `\n\n${adString}`
-                    },
-                    finish_reason: null
-                }
-            ]
-        };
-
-        // Format as SSE
-        const formattedSSE = `data: ${JSON.stringify(deltaObject)}\n\n`;
-
-        // Log the formatted SSE (truncated for brevity)
-        log(`Formatted SSE (truncated): ${formattedSSE.substring(0, 100)}${formattedSSE.length > 100 ? '...' : ''}`);
-
-        return formattedSSE;
-    } catch (error) {
-        errorLog(`Error formatting ad as SSE: ${error.message}`);
-        errorLog(`Error stack: ${error.stack}`);
-        return '';
-    }
-}
-
 /**
  * Process content and add referral links if markdown is detected
  * @param {string} content - The output content to process
@@ -603,266 +410,4 @@ export async function processRequestForAds(content, req, messages = []) {
 
     // We've already sent the ad_skipped analytics in generateAdForContent
     return content;
-}
-
-/**
- * Creates a streaming wrapper that adds an ad at the end of the stream
- * This maintains the thin proxy approach for most of the stream
- * @param {Stream} responseStream - The original response stream from the API
- * @param {object} req - Express request object for analytics
- * @param {Array} messages - The input messages
- * @returns {Stream} - A transformed stream that will add an ad at the end
- */
-// moved to streamingAdWrapper.js
-// export function createStreamingAdWrapper(responseStream, req, messages = []) {
-    if (!responseStream || !responseStream.pipe) {
-        log('Invalid stream provided to createStreamingAdWrapper');
-        if (req) {
-            sendAdSkippedAnalytics(req, 'invalid_stream', true);
-        }
-        return responseStream;
-    }
-
-    const { shouldShowAd, markerFound, adAlreadyExists, forceAd } = shouldShowAds(null, messages, req);
-
-    // If p-ads marker was found, set forceAd flag
-    const shouldForceAd = forceAd || false;
-
-    // Only check for existing ads if we're not forcing an ad
-    if (adAlreadyExists && !shouldForceAd) {
-        log('Ad already exists in conversation history, skipping streaming ad');
-        if (req) {
-            sendAdSkippedAnalytics(req, 'ad_already_exists', true);
-        }
-        return responseStream;
-    }
-
-    // Only skip if we're not forcing an ad
-    if (!shouldShowAd && !shouldForceAd) {
-        // We've already sent the ad_skipped analytics in shouldShowAds
-        return responseStream;
-    }
-
-    log('Creating streaming ad wrapper' + (shouldForceAd ? ' (forced by p-ads)' : ''));
-
-    // Log the messages for debugging
-    if (messages && messages.length > 0) {
-        log(`Processing streaming with ${messages.length} messages`);
-        // Log the first message content (truncated for brevity)
-        const firstMessageContent = messages[0].content;
-        if (typeof firstMessageContent === 'string') {
-            log(`First message content (truncated): ${firstMessageContent.substring(0, 100)}${firstMessageContent.length > 100 ? '...' : ''}`);
-        } else if (firstMessageContent) {
-            log(`First message content is not a string: ${typeof firstMessageContent}`);
-        }
-    } else {
-        log('No messages provided to streaming ad wrapper');
-    }
-
-    // Collect the content to analyze for affiliate matching
-    let collectedContent = '';
-    let isDone = false;
-
-    // Log when we start collecting content
-    log('Starting to collect content from stream chunks');
-
-    // Create a transform stream that will:
-    // 1. Pass through all chunks unchanged
-    // 2. Collect content for analysis
-    // 3. Add an ad after the [DONE] message
-    const streamTransformer = new Transform({
-        objectMode: true,
-        transform(chunk, _encoding, callback) {
-            // Convert chunk to string
-            const chunkStr = chunk.toString();
-
-            // Check if this is the [DONE] message
-            if (chunkStr.includes('data: [DONE]')) {
-                isDone = true;
-
-                // Process the collected content and add an ad
-                generateAdForContent(collectedContent, req, messages, markerFound, true)
-                    .then(adString => {
-                        if (adString) {
-                            // Format the ad as a proper SSE message
-                            const adChunk = formatAdAsSSE(adString);
-
-                            // Push the ad chunk before the [DONE] message
-                            this.push(adChunk);
-                        } else if (shouldForceAd) {
-                            // If we're forcing an ad but none was generated, create a generic Ko-fi ad
-                            log('No ad generated but p-ads marker is present. Creating generic Ko-fi ad for streaming.');
-                            const genericKofiAd = "\n\n---\nPowered by Pollinations.AI free text APIs. [Support our mission](https://pollinations.ai/redirect/kofi) to keep AI accessible for everyone.";
-                            const adChunk = formatAdAsSSE(genericKofiAd);
-
-                            // Push the ad chunk before the [DONE] message
-                            this.push(adChunk);
-
-                            if (req) {
-                                // Log the ad interaction with metadata
-                                logAdInteraction({
-                                    timestamp: new Date().toISOString(),
-                                    ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
-                                    affiliate_id: "kofi",
-                                    affiliate_name: "Support Pollinations on Ko-fi",
-                                    topic: "streaming_fallback",
-                                    streaming: true,
-                                    referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
-                                    user_agent: req.headers['user-agent'] || 'unknown'
-                                });
-
-                                // Send analytics for the ad impression
-                                sendToAnalytics(req, 'ad_impression', {
-                                    affiliate_id: "kofi",
-                                    affiliate_name: "Support Pollinations on Ko-fi",
-                                    topic: "streaming_fallback",
-                                    streaming: true,
-                                    forced: true,
-                                    fallback: true
-                                });
-                            }
-                        } else {
-                            // We've already sent the ad_skipped analytics in generateAdForContent
-                        }
-
-                        // Push the [DONE] message
-                        this.push(chunk);
-                        callback();
-                    })
-                    .catch(error => {
-                        errorLog('Error processing streaming ad:', error);
-
-                        if (shouldForceAd) {
-                            // If error occurs but we should force an ad, create a generic Ko-fi ad
-                            log('Error occurred, but p-ads marker is present. Creating generic Ko-fi ad for streaming.');
-                            const genericKofiAd = "\n\n---\nPowered by Pollinations.AI free text APIs. [Support our mission](https://pollinations.ai/redirect/kofi) to keep AI accessible for everyone.";
-                            const adChunk = formatAdAsSSE(genericKofiAd);
-
-                            // Push the ad chunk before the [DONE] message
-                            this.push(adChunk);
-
-                            if (req) {
-                                // Log the ad interaction with metadata
-                                logAdInteraction({
-                                    timestamp: new Date().toISOString(),
-                                    ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
-                                    affiliate_id: "kofi",
-                                    affiliate_name: "Support Pollinations on Ko-fi",
-                                    topic: "error_streaming_fallback",
-                                    streaming: true,
-                                    referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
-                                    user_agent: req.headers['user-agent'] || 'unknown'
-                                });
-
-                                // Send analytics for the ad impression
-                                sendToAnalytics(req, 'ad_impression', {
-                                    affiliate_id: "kofi",
-                                    affiliate_name: "Support Pollinations on Ko-fi",
-                                    topic: "error_streaming_fallback",
-                                    streaming: true,
-                                    forced: true,
-                                    error: error.message
-                                });
-                            }
-                        } else if (req) {
-                            sendAdSkippedAnalytics(req, 'error', true, {
-                                error_message: error.message
-                            });
-                        }
-
-                        // Push the [DONE] message
-                        this.push(chunk);
-                        callback();
-                    });
-            } else {
-                // For normal chunks, extract the content and pass through unchanged
-                if (!isDone) {
-                    try {
-                        // Try to extract content from the SSE data
-                        // First, try the standard SSE format with data: prefix
-                        const contentMatches = chunkStr.match(/data: (.*?)(?:\n\n|$)/g);
-
-                        if (contentMatches && contentMatches.length > 0) {
-                            // Process each match (there might be multiple data: lines in one chunk)
-                            for (const match of contentMatches) {
-                                const dataContent = match.replace(/^data: /, '').trim();
-
-                                if (dataContent) {
-                                    try {
-                                        // Try to parse as JSON first
-                                        const data = JSON.parse(dataContent);
-
-                                        // Handle different response formats
-                                        if (data.choices && data.choices.length > 0) {
-                                            // Standard OpenAI format
-                                            const choice = data.choices[0];
-
-                                            if (choice.delta && choice.delta.content) {
-                                                // Streaming format with delta
-                                                collectedContent += choice.delta.content;
-                                            } else if (choice.message && choice.message.content) {
-                                                // Non-streaming format with message
-                                                collectedContent += choice.message.content;
-                                            } else if (choice.text) {
-                                                // Older API format
-                                                collectedContent += choice.text;
-                                            }
-                                        } else if (data.content) {
-                                            // Simple content field
-                                            collectedContent += data.content;
-                                        } else if (typeof data === 'string') {
-                                            // Direct string response
-                                            collectedContent += data;
-                                        }
-                                    } catch (e) {
-                                        // If not valid JSON, treat as plain text
-                                        // This handles cases where the response is not JSON
-                                        if (dataContent !== '[DONE]') {
-                                            collectedContent += dataContent;
-                                        }
-                                    }
-                                }
-                            }
-                        } else {
-                            // If no data: prefix found, try to use the chunk as is
-                            // This is a fallback for non-standard SSE formats
-                            const plainText = chunkStr.trim();
-                            if (plainText && !plainText.includes('[DONE]')) {
-                                try {
-                                    // Try to parse as JSON
-                                    const data = JSON.parse(plainText);
-                                    if (data.choices && data.choices[0]) {
-                                        if (data.choices[0].delta && data.choices[0].delta.content) {
-                                            collectedContent += data.choices[0].delta.content;
-                                        } else if (data.choices[0].message && data.choices[0].message.content) {
-                                            collectedContent += data.choices[0].message.content;
-                                        }
-                                    }
-                                } catch (e) {
-                                    // If not JSON, use as plain text
-                                    collectedContent += plainText;
-                                }
-                            }
-                        }
-
-                        // Log collected content periodically (every 500 chars)
-                        if (collectedContent.length % 500 < 10) {
-                            log(`Collected content length: ${collectedContent.length} chars`);
-                        }
-                    } catch (e) {
-                        // Log but don't fail on content extraction errors
-                        errorLog(`Error extracting content from stream chunk: ${e.message}`);
-                    }
-                }
-
-                // Pass through the chunk unchanged
-                this.push(chunk);
-                callback();
-            }
-        }
-    });
-
-    // Pipe the original stream through our transformer
-    // function body moved to streamingAdWrapper.js
-    return null;
 }

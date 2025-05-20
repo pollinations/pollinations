@@ -11,7 +11,8 @@ import { availableModels } from './availableModels.js';
 import { getHandler } from './availableModels.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
-import { processRequestForAds, createStreamingAdWrapper } from './ads/initRequestFilter.js';
+import { processRequestForAds } from './ads/initRequestFilter.js';
+import { createStreamingAdWrapper } from './ads/streamingAdWrapper.js';
 import { getRequestData, getReferrer, WHITELISTED_DOMAINS } from './requestUtils.js';
 
 // Load environment variables

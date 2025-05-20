@@ -296,12 +296,15 @@ function createOpenRouterModelConfig(additionalConfig = {}) {
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
     // Azure Grok model configuration
-    'azure-grok': () => createAzureModelConfig(
-        process.env.AZURE_GROK_API_KEY,
-        process.env.AZURE_GROK_ENDPOINT,
-        'grok-3',
-        'thomash-grok-resource'
-    ),
+    'azure-grok': () => {
+        const  modelIndex = Math.floor(Math.random() * 9) + 2; // 2-9;  
+        return createAzureModelConfig(
+            process.env.AZURE_GROK_API_KEY,
+            process.env.AZURE_GROK_ENDPOINT,
+            `grok-3-${modelIndex}`,
+            'thomash-grok-resource'
+    );
+    },
     // Azure OpenAI model configurations
     'gpt-4.1-nano': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_NANO_API_KEY,

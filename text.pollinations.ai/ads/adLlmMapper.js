@@ -1,7 +1,6 @@
 import debug from 'debug';
-import { affiliateMarkdown, affiliatesData } from "./affiliate_prompt.js";
+import { affiliatesData } from "./affiliate_prompt.js";
 import { generateTextPortkey } from '../generateTextPortkey.js';
-import { logAdInteraction } from './adLogger.js';
 
 // Base URL for affiliate redirects
 export const REDIRECT_BASE_URL = 'https://pollinations.ai/redirect/';
@@ -258,6 +257,7 @@ IMPORTANT INSTRUCTIONS:
 7. Use a direct, engaging tone with specific references to the conversation topic
 8. Return your response in this exact format: "LANGUAGE_NAME: your_contextualized_ad_text"
 9. Remember. The shorter and more personal, the sweeter.
+10. Do not change the link format. Use simple markdown links.
 
 CONVERSATION CONTEXT:
 ${conversationContext}

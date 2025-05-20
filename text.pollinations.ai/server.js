@@ -11,8 +11,8 @@ import { availableModels } from './availableModels.js';
 import { getHandler } from './availableModels.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
-import { getFromCache, setInCache, createHashKey } from './cache.js';
-import { processRequestForAds, createStreamingAdWrapper } from './ads/initRequestFilter.js';
+import { processRequestForAds } from './ads/initRequestFilter.js';
+import { createStreamingAdWrapper } from './ads/streamingAdWrapper.js';
 import { getRequestData, getReferrer, WHITELISTED_DOMAINS } from './requestUtils.js';
 
 // Load environment variables
@@ -195,21 +195,6 @@ async function handleRequest(req, res, requestData) {
         const requestId = generatePollinationsId();
         const completion = await generateTextBasedOnModel(requestData.messages, requestData);
         
-        // Log completion details (but not the full content for streaming responses)
-        if (requestData.stream && completion.stream) {
-            log("Streaming completion: %O", {
-                id: completion.id,
-                model: completion.model,
-                stream: completion.stream,
-                providerName: completion.providerName,
-                hasResponseStream: !!completion.responseStream,
-                hasError: !!completion.error,
-            });
-        } else {
-
-            log("Completion: %s", JSON.stringify(completion, null, 2));
-        }
-        
         // Ensure completion has the request ID
         completion.id = requestId;
         
@@ -254,14 +239,7 @@ async function handleRequest(req, res, requestData) {
 
         const responseText = completion.stream ? 'Streaming response' : (completion.choices?.[0]?.message?.content || '');
 
-        const cacheKey = createHashKey(requestData);
         
-        // Only cache non-streaming responses
-        if (completion.stream) {
-            log('Skipping cache for streaming response');
-        } else {
-            setInCache(cacheKey, completion);
-        }
         log('Generated response', responseText);
         
         // Extract token usage data
@@ -278,7 +256,6 @@ async function handleRequest(req, res, requestData) {
         await sendToAnalytics(req, 'textGenerated', {
             ...requestData,
             success: true,
-            cached: false,
             responseLength: responseText?.length,
             streamMode: requestData.stream,
             plainTextMode: req.method === 'GET',
@@ -498,49 +475,6 @@ export async function processRequest(req, res, requestData) {
     //     }
     // }
 
-    const cacheKey = createHashKey(requestData);
-
-    // Check cache first
-    const cachedResponse = getFromCache(cacheKey);
-    // Skip cache for streaming requests
-    if (cachedResponse && !requestData.stream) {
-        log('Cache hit for key:', cacheKey);
-        log('Using cached response');
-        
-        log('Cached response properties:', {
-            hasStream: cachedResponse.stream,
-            hasChoices: !!cachedResponse.choices,
-            hasError: !!cachedResponse.error,
-            hasResponseStream: !!cachedResponse.responseStream
-        });
-        
-        // Extract token usage data from cached response
-        const cachedTokenUsage = cachedResponse.usage || {};
-        
-        // Track cache hit in analytics
-        await sendToAnalytics(req, 'textCached', {
-            ...requestData,
-            success: true,
-            cached: true,
-            responseLength: cachedResponse?.choices?.[0]?.message?.content?.length,
-            streamMode: false,
-            plainTextMode: req.method === 'GET',
-            cacheKey: cacheKey,
-            ...cachedTokenUsage
-        });
-
-        if (req.method === 'GET') {
-            sendContentResponse(res, cachedResponse);
-        } else if (req.path === '/') {
-            // For POST requests to the root path, also send plain text
-            sendContentResponse(res, cachedResponse);
-        } else {
-            sendOpenAIResponse(res, cachedResponse);
-        }
-        return;
-    } else if (requestData.stream && cachedResponse) {
-        log('Skipping cache for streaming request');
-    }
     
     if (isIPBlocked(ip)) {
         errorLog('Blocked IP:', ip);
@@ -685,14 +619,13 @@ app.post('/v1/chat/completions', async (req, res) => {
 
 function sendAsOpenAIStream(res, completion, req = null) {
     log('sendAsOpenAIStream called with completion type:', typeof completion);
-if (completion) {
-    log('Completion properties:', {
-        hasStream: completion.stream,
-        hasResponseStream: !!completion.responseStream,
-        isCachedStream: !!completion.cachedStream,
-        errorPresent: !!completion.error
-    });
-}
+    if (completion) {
+        log('Completion properties:', {
+            hasStream: completion.stream,
+            hasResponseStream: !!completion.responseStream,
+            errorPresent: !!completion.error
+        });
+    }
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     // Set standard SSE headers
     res.setHeader('Cache-Control', 'no-cache');

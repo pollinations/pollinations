@@ -278,7 +278,7 @@ const affiliates = [
     blockedCountries: ["CN", "IR", "KP", "SY", "CU", "RU"],
     trackingLink: "https://getwren.ai?via=397623",
     triggerWords: ["business intelligence", "data analytics", "GenBI", "AI analytics", "data visualization", "SQL", "spreadsheets", "dashboards", "data insights", "business data"],
-    weight: 1.3
+    weight: 1.0
   },
   {
     id: "2699274",

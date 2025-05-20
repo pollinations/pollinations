@@ -443,6 +443,15 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "Emojiall AI Drawing Platform",
+      url: "https://art.emojiall.com",
+      description: "A platform focused on allowing users to draw pictures according to their own requirements with many preset styles and themes. Part of Emojiall, which has other text-based AI features like Emoji translation to text, Emoji recommender, and Emoji chatbot.",
+      author: "@James-Qi",
+      authorEmail: "qijingsong@gmail.com",
+      submissionDate: "2025-05-20",
+      order: 1,
+    },
+    {
       name: "FoldaScan",
       url: "https://fs.wen.bar",
       description: "Use Natural Language to \"Converse\" with Your Codebase, Folda-Scan Smart Project Q&A, powered by advanced vectorization technology, allows you to easily understand complex code, pinpoint information, and offers unprecedented convenience for AI collaboration.",

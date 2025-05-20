@@ -597,7 +597,6 @@ export { createStreamingAdWrapper } from './streamingAdWrapper.js';
 
 // Export necessary functions for external use
 export {
-    processRequestForAds,
     shouldShowAds,
     generateAdForContent,
     formatAdAsSSE

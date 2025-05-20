@@ -20,6 +20,11 @@ export function createSseStreamConverter(mapper) {
         const dataLine = match[2].trim();
         lastIndex = eventRegex.lastIndex;
         if (!dataLine) continue;
+        if (dataLine === '[DONE]') {
+          // Forward the DONE event as-is
+          this.push('data: [DONE]\n\n');
+          continue;
+        }
         let parsed;
         try {
           parsed = JSON.parse(dataLine);
@@ -45,7 +50,9 @@ export function createSseStreamConverter(mapper) {
       // Handle any remaining buffered data
       if (buffer.trim()) {
         let dataLine = buffer.replace(/^data:/, '').trim();
-        if (dataLine) {
+        if (dataLine === '[DONE]') {
+          this.push('data: [DONE]\n\n');
+        } else if (dataLine) {
           try {
             const parsed = JSON.parse(dataLine);
             const mapped = mapper(parsed);

@@ -670,17 +670,11 @@ layout: two-cols
 - This margin **covers infra in real-time** and scales linearly with demand.
 - **Value is shared** with creators without compromising platform profitability.
 
-#### Extra UE
-- **LTV/CAC ≈ 25x in FY27**, driven by open-source virality and zero paid acquisition.
-- Developers convert through self-serve tools, docs, Discord, and GitHub — not ads.
-- Even factoring in DevRel and community costs, payback is nearly instant.
-- Scaling happens at the app level, not per-user — so margin expands with usage.
-
-- Net Revenue per App/Year: €626 (from table)
-- Lifetime (App stays active): 2 years (conservative)
-- LTV per App: €1,252
-- CAC per App (e.g. devrel) : €50 (Discord, hackathons, docs, demos)
-- LTV/CAC Ratio: ~25x
+- **Net Revenue per App/Year**: €626 (from table)
+- **Lifetime** (App stays active): 2 years (conservative)
+- **LTV per App**: €1,252
+- **CAC per App** (e.g. devrel): €50 (Discord, hackathons, docs, demos)
+- **LTV/CAC Ratio**: ~25x
 
 ## End
 -->
@@ -702,7 +696,7 @@ layout: two-cols-header
       <img src="/media/2.png" alt="Thomas Haferlach" class="w-25 h-25 rounded-full mr-4 border-2 border-gray-300 shadow" />
       <div>
         <h2 class="font-bold text-xl mb-1">Thomas Haferlach</h2>
-        <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold inline-block">CTO</div>
+        <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold inline-block">CEO</div>
         <p class="text-2xl text-gray-700">8+ yrs GenAI, Ex-Amazon, EU Funding Winner</p>
       </div>
     </div>
@@ -742,15 +736,9 @@ layout: two-cols-header
 * I also won **1.2m EU funding** for previous AI projects - I know how to **build and scale**
 * My co-founder Elliot is our COO with **6+ years of AI operations** experience
 * He's built **efficient AI infrastructure** for multiple scale-ups - crucial for our model
-* Our next key hire will be an **Ad Tech Partner Manager** to scale our monetization with expert partners
-* We're also building out specialized teams for **AI-Ops/Infrastructure** and **Growth/Developer Relations**
-* This team has the perfect mix of **AI technical expertise** and **business scaling experience**
--
-**Lead MLOps / Infra Engineer** (H2 2025): GPU fleet optimization, Scaling Backend, Model-serving pipeline
-**Kalam** (Head of Community & Creator Success, H2 2025): Creator onboarding, XR/UGC initiatives, User acquisition
+* **Lead MLOps / Infra Engineer** (H2 2025): GPU fleet optimization, Scaling Backend, Model-serving pipeline
+* **Kalam** (Head of Community & Creator Success, H2 2025): Creator onboarding, XR/UGC initiatives, User acquisition
 
-      <p><strong>⚙️ AI Operations & Product</strong></p>
-      <p><strong>🔭 AI Architect & Platform Scaler</strong></p>
 ## End
 -->
 

@@ -270,7 +270,7 @@ const checkCacheAndGenerate = async (req, res) => {
       // Check for valid token to bypass queue
       const token = extractToken(req);
       const hasValidToken = isValidToken(token);
-      if (hasValidToken) {
+      if (hasValidToken && safeParams.model !== "gptimage") {
         logAuth('Queue bypass granted for token:', token);
         progress.updateBar(requestId, 20, 'Priority', 'Token authenticated');
         

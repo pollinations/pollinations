@@ -6,18 +6,17 @@ layout: two-cols-header
 
 ::left::
 
-- [🎤 Pitch Deck](/17)
+- [📝 One-Pager](/16)
+- [🎤 Pitch Deck](/18)
+
+<br>
+
 - [📑 Executive Summary](/2)
 - [🔭 Vision & Mission](/3)
 - [💰 Business Model](/4)
 - [💹 Financial Model](/5)
 - [🛣️ Roadmap](/6)
 - [👥 Team](/7)
-
-<br>
-
-- [🔍 Due Diligence](/15)
-<!--- [📝 One-Pager](/17) -->
 
 ::right::
 
@@ -28,6 +27,11 @@ layout: two-cols-header
 - [🥊 Competitive Landscape](/12)
 - [🚀 KPI & Traction Metrics](/13)
 - [🏗️ Tech Architecture](/14)
+
+<br>
+
+- [🔍 Due Diligence](/15)
+
 
 ---
 src: ./docs/01-executive-summary.md
@@ -84,6 +88,10 @@ src: ./docs/07-tech-architecture.md
 ---
 src: ./docs/16-due-diligence.md
 ---
+
+---
+
+<img src="/media/pollinations.ai - One Pager (May 2025).png" alt="Pollinations.ai One Pager" class="w-full rounded-lg shadow-lg">
 
 ---
 

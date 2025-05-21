@@ -2,6 +2,8 @@ import fetch from 'node-fetch';
 import { fileTypeFromBuffer } from 'file-type';
 import { addPollinationsLogoWithImagemagick, getLogoPath } from './imageOperations.js';
 import { MODELS } from './models.js';
+import FormData from 'form-data';
+import fs from 'fs';
 import { fetchFromLeastBusyFluxServer, getNextTurboServerUrl } from './availableServers.js';
 import debug from 'debug';
 import { checkContent } from './llamaguard.js';
@@ -417,16 +419,31 @@ const updateProgress = (progress, requestId, percentage, stage, message) => {
 };
 
 /**
- * Calls the Azure GPT Image API to generate images
- * @param {string} prompt - The prompt for image generation
- * @param {Object} safeParams - The parameters for image generation
+ * Calls the Azure GPT Image API to generate or edit images
+ * @param {string} prompt - The prompt for image generation or editing
+ * @param {Object} safeParams - The parameters for image generation or editing
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
  */
 export const callAzureGPTImage = async (prompt, safeParams) => {
   try {
-    const apiKey = process.env.AZURE_API_KEY;
-    if (!apiKey) {
-      throw new Error('Azure API key not found in environment variables');
+    // Randomly select between the two available endpoints
+    const endpointIndex = Math.floor(Math.random() * 2) + 1; // Generates either 1 or 2
+    
+    const apiKey = process.env[`GPT_IMAGE_${endpointIndex}_AZURE_API_KEY`];
+    let endpoint = process.env[`GPT_IMAGE_${endpointIndex}_ENDPOINT`];
+    
+    if (!apiKey || !endpoint) {
+      throw new Error(`Azure API key or endpoint ${endpointIndex} not found in environment variables`);
+    }
+    
+    // Check if we need to use the edits endpoint instead of generations
+    const isEditMode = safeParams.image !== null;
+    if (isEditMode) {
+      // Replace 'generations' with 'edits' in the endpoint URL
+      endpoint = endpoint.replace('/images/generations', '/images/edits');
+      logCloudflare(`Using Azure endpoint ${endpointIndex} in edit mode`);
+    } else {
+      logCloudflare(`Using Azure endpoint ${endpointIndex} in generation mode`);
     }
 
     // Map safeParams to Azure API parameters
@@ -448,9 +465,12 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
       quality,
       output_format: outputFormat,
       output_compression: outputCompression,
-      // background: "transparent",
+      moderation: "low",
       n: 1
     };
+    
+    // We'll only use the requestBody for generation mode
+    // For edit mode, we'll use FormData instead
     
     // Note: Azure GPT Image API doesn't support the 'seed' parameter
     // We'll log the seed for reference but not include it in the request
@@ -460,17 +480,91 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
     
     logCloudflare('Calling Azure GPT Image API with params:', requestBody);
     
-    const response = await fetch(
-      'https://thoma-mavchbzc-uaenorth.openai.azure.com/openai/deployments/gpt-image-1-2/images/generations?api-version=2025-04-01-preview',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify(requestBody)
+    let response;
+    
+    if (isEditMode) {
+      // For edit mode, always use FormData (multipart/form-data)
+      const formData = new FormData();
+      
+      // Add the prompt
+      formData.append('prompt', sanitizeString(prompt));
+      
+      // Handle the image based on its type
+      try {
+        if (typeof safeParams.image === 'string') {
+          if (safeParams.image.startsWith('data:')) {
+            // Handle base64 image
+            const base64Data = safeParams.image.split(',')[1];
+            const buffer = Buffer.from(base64Data, 'base64');
+            formData.append('image', buffer, { filename: 'image.png' });
+          } else if (safeParams.image.startsWith('http')) {
+            // Handle image URL - fetch it first
+            logCloudflare(`Fetching image from URL: ${safeParams.image}`);
+            const imageResponse = await fetch(safeParams.image);
+            if (!imageResponse.ok) {
+              throw new Error(`Failed to fetch image from URL: ${imageResponse.status} ${imageResponse.statusText}`);
+            }
+            const buffer = await imageResponse.buffer();
+            formData.append('image', buffer, { filename: 'image.png' });
+          } else {
+            // Handle local file path
+            logCloudflare(`Reading image from file: ${safeParams.image}`);
+            const imageBuffer = fs.readFileSync(safeParams.image);
+            formData.append('image', imageBuffer, { filename: 'image.png' });
+          }
+        } else if (Buffer.isBuffer(safeParams.image)) {
+          // Handle buffer directly
+          formData.append('image', safeParams.image, { filename: 'image.png' });
+        } else {
+          throw new Error('Unsupported image format for editing');
+        }
+      } catch (error) {
+        logError('Error processing image for editing:', error);
+        throw new Error(`Failed to process image: ${error.message}`);
       }
-    );
+      
+      // Add other parameters
+      formData.append('quality', quality);
+      formData.append('n', '1');
+      
+      // Log the endpoint and headers for debugging
+      logCloudflare(`Sending edit request to endpoint: ${endpoint}`);
+      
+      // Get the headers from formData
+      const formHeaders = formData.getHeaders();
+      
+      // Add the authorization header
+      response = await fetch(
+        endpoint,
+        {
+          method: 'POST',
+          headers: {
+            ...formHeaders,
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: formData
+        }
+      );
+      
+      logCloudflare(`Edit request response status: ${response.status}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        logError('Edit request failed with response:', errorText);
+      }
+    } else {
+      // Standard JSON request for generation
+      response = await fetch(
+        endpoint,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify(requestBody)
+        }
+      );
+    }
     
     if (!response.ok) {
       const errorText = await response.text();

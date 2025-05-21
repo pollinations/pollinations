@@ -2,10 +2,10 @@ import { MODELS } from './models.js';
 
 /**
  * Sanitizes and adjusts parameters for image generation.
- * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string, safe: boolean|string }} params
+ * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string, safe: boolean|string, quality: string, image: string|null }} params
  * @returns {Object} - The sanitized parameters.
  */
-export const makeParamsSafe = ({ width = null, height = null, seed, model = "flux", enhance, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false, safe = false, private:isPrivate = false }) => {
+export const makeParamsSafe = ({ width = null, height = null, seed, model = "flux", enhance, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false, safe = false, private:isPrivate = false, quality = 'medium', image = null }) => {
     // Sanitize boolean parameters - always return a boolean value
     const sanitizeBoolean = (value) => {
         // If it's already a boolean, return it directly
@@ -49,5 +49,11 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
         height = Math.floor(height * ratio);
     }
 
-    return { width, height, seed, model, enhance, nologo, negative_prompt, nofeed, safe };
+    // Validate quality parameter - only allow specific values
+    const validQualities = ['low', 'medium', 'high', 'hd'];
+    if (!validQualities.includes(quality)) {
+        quality = 'medium';
+    }
+
+    return { width, height, seed, model, enhance, nologo, negative_prompt, nofeed, safe, quality, image };
 };

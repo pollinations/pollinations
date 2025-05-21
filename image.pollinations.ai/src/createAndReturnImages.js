@@ -533,6 +533,9 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
       // Get the headers from formData
       const formHeaders = formData.getHeaders();
       
+      // Create a clone of the formData for potential retries or debugging
+      // This is important because FormData can only be consumed once
+      
       // Add the authorization header
       response = await fetch(
         endpoint,
@@ -547,10 +550,6 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
       );
       
       logCloudflare(`Edit request response status: ${response.status}`);
-      if (!response.ok) {
-        const errorText = await response.text();
-        logError('Edit request failed with response:', errorText);
-      }
     } else {
       // Standard JSON request for generation
       response = await fetch(
@@ -567,8 +566,15 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
     }
     
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Azure GPT Image API error: ${response.status} ${errorText}`);
+      // Clone the response before consuming its body
+      const errorResponse = response.clone();
+      try {
+        const errorText = await errorResponse.text();
+        throw new Error(`Azure GPT Image API error: ${response.status} ${errorText}`);
+      } catch (textError) {
+        // If we can't read the response as text, just throw with the status
+        throw new Error(`Azure GPT Image API error: ${response.status}`);
+      }
     }
     
     const data = await response.json();

@@ -593,16 +593,6 @@ const allProjects = {
       order: 3,
     },
     {
-      name: "Mirexa AI",
-      url: "https://mirexa.vercel.app",
-      description: "A friendly AI companion for chatting, creating, and exploring with no sign-ups or fees required. Features image generation, story brainstorming, real-time web search, and voice messaging.",
-      author: "zxzata18@gmail.com",
-      submissionDate: "2025-05-10",
-      order: 4,
-    },
-
-
-    {
       name: "Foodie AI",
       url: "https://foodie-ai.vercel.app/",
       description: "An AI application for food analysis that uses advanced artificial intelligence technology to help users understand food ingredients, nutritional value, and health impacts. Provides food safety analysis, nutritional health assessment, sports and fitness analysis, visual display, alternative recommendations, and practical insights for different dietary habits.",
@@ -646,10 +636,10 @@ const allProjects = {
       order: 2,
     },
     {
-      name: "MiReXa AI",
+      name: "Mirexa AI Chat",
       url: "https://mirexa.vercel.app",
-      description: "A state-of-the-art chatbot integrating multiple LLMs with advanced features including audio generation, image generation, mathematical proficiency, and real-time web search.",
-      author: "@withthatway",
+      description: "A state-of-the-art AI chatbot that seamlessly integrates multiple LLMs with advanced multimodal capabilities. Features comprehensive text generation, sophisticated image creation and image-to-image transformation, audio generation, mathematical problem solving, and real-time web search functionality.",
+      author: "[WithThatWay on GitHub](https://github.com/withthatway)",
       submissionDate: "2025-02-07",
       order: 2,
     },

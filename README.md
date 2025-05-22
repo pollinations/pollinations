@@ -3,8 +3,8 @@
 
 # [Pollinations.AI](https://pollinations.ai)
 </p>
+
 <div style="max-width: 1000px; margin: 0 auto; text-align: center;">
----
 
 ## 🆕 Latest News
 

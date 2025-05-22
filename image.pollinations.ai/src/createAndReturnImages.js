@@ -555,10 +555,10 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
       const errorResponse = response.clone();
       try {
         const errorText = await errorResponse.text();
-        throw new Error(`Azure GPT Image API error: ${response.status} ${errorText}`);
+        throw new Error(`Azure GPT Image API error: ${response.status} - error ${errorText}`);
       } catch (textError) {
         // If we can't read the response as text, just throw with the status
-        throw new Error(`Azure GPT Image API error: ${response.status}`);
+        throw textError;
       }
     }
     

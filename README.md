@@ -3,7 +3,7 @@
   <h1><a href="https://pollinations.ai">Pollinations.AI</a></h1>
 </div>
 
-<div align="center">
+
 
 ## 🆕 Latest News
 
@@ -486,4 +486,4 @@ Made with ❤️ by the Pollinations.AI team
 <!-- prettier-ignore-end -->
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
-</div>
+

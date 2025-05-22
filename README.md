@@ -3,7 +3,7 @@
   <h1><a href="https://pollinations.ai">Pollinations.AI</a></h1>
 </div>
 
-<div style="max-width: 1000px; margin: 0 auto; text-align: center;">
+<div style="text-align: center; max-width: 1000px; margin: 0 auto;">
 
 ## 🆕 Latest News
 

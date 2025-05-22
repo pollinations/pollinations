@@ -1,8 +1,7 @@
-<p align="center">
+<div align="center">
   <img src="assets/pollinations_ai_logo_image_black.png" alt="Pollinations.AI Logo" width="320"/>
-
-# [Pollinations.AI](https://pollinations.ai)
-</p>
+  <h1><a href="https://pollinations.ai">Pollinations.AI</a></h1>
+</div>
 
 <div style="max-width: 1000px; margin: 0 auto; text-align: center;">
 

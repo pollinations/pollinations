@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="assets/pollinations_ai_logo_image_black.png" alt="Pollinations.AI Logo" width="320"/>
+
 # [Pollinations.AI](https://pollinations.ai)
 
 ---
@@ -482,3 +485,4 @@ Made with ❤️ by the Pollinations.AI team
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
 <!-- ALL-CONTRIBUTORS-LIST:END -->
+</p>

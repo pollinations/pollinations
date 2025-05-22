@@ -23,6 +23,7 @@ import { createSseStreamConverter } from './sseStreamConverter.js';
  * @param {Object} config.defaultOptions - Default options for the client
  * @param {string} config.providerName - Name of the provider (for logging and errors)
  * @param {Function} config.formatResponse - Optional function to format the response
+ * @param {Function} config.postProcessResponse - Optional function to post-process the entire response object
  * @param {Object} config.additionalHeaders - Optional additional headers to include in requests
  * @param {boolean|Function} config.supportsSystemMessages - Whether the API supports system messages (default: true)
  *                                                          Can be a function that receives options and returns boolean
@@ -38,6 +39,7 @@ export function createOpenAICompatibleClient(config) {
         defaultOptions = {},
         providerName = 'unknown',
         formatResponse = (x) => x,
+        postProcessResponse = (x) => x,
         additionalHeaders = {},
         transformRequest = null,
         supportsSystemMessages = true
@@ -221,7 +223,9 @@ export function createOpenAICompatibleClient(config) {
                         })
                     );
                 }
-                return {
+                
+                // Create the basic response object
+                const streamResponse = {
                     id: `${providerName.toLowerCase()}-${requestId}`,
                     object: 'chat.completion.chunk',
                     created: Math.floor(startTime / 1000),
@@ -232,6 +236,10 @@ export function createOpenAICompatibleClient(config) {
                     choices: [{ delta: { content: '' }, finish_reason: null, index: 0 }],
                     error: !response.ok ? { message: `${providerName} API error: ${response.status} ${response.statusText}` } : undefined
                 };
+                
+                // Apply any post-processing to the streaming response
+                log(`[${requestId}] Applying post-processing to streaming response`);
+                return postProcessResponse(streamResponse, finalRequestBody);
 
             }
 
@@ -302,14 +310,18 @@ export function createOpenAICompatibleClient(config) {
             
 
             // Reconstruct the response object with the formatted choice
-            return {
+            const finalResponse = {
                 ...data,
                 choices: [formattedChoice]
             };
 
-            log(`[${requestId}] Final response:`, JSON.stringify(data, null, 2));
+            log(`[${requestId}] Applying post-processing to non-streaming response`);
+            // Apply any post-processing to the response
+            const processedResponse = postProcessResponse(finalResponse, finalRequestBody);
 
-            return data;
+            log(`[${requestId}] Final response:`, JSON.stringify(processedResponse, null, 2));
+
+            return processedResponse;
         } catch (error) {
             errorLog(`[${requestId}] Error in text generation`, {
                 timestamp: new Date().toISOString(),

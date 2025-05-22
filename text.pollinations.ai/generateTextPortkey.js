@@ -4,6 +4,7 @@ import debug from 'debug';
 import googleCloudAuth from './auth/googleCloudAuth.js';
 import { extractApiVersion, extractDeploymentName, extractResourceName, generatePortkeyHeaders } from './portkeyUtils.js';
 import { findModelByName } from './availableModels.js';
+import { createReasoningStreamWrapper } from './reasoningStreamWrapper.js';
 
 dotenv.config();
 
@@ -520,6 +521,8 @@ export const generateTextPortkey = createOpenAICompatibleClient({
                 }
             }
 
+            // Store whether this is a reasoning model for use in postProcessResponse
+            requestBody._isReasoningModel = modelName === 'MAI-DS-R1' || modelConfig?.reasoning === true;
 
             return requestBody;
         } catch (error) {
@@ -527,8 +530,20 @@ export const generateTextPortkey = createOpenAICompatibleClient({
             throw error;
         }
     },
+    // Post-process the complete response object, including the streaming response if applicable
+    postProcessResponse: (response, requestBody) => {
+        // For streaming responses from reasoning models, apply the reasoning stream wrapper
+        if (response?.stream && (requestBody._isReasoningModel || requestBody.model === 'MAI-DS-R1')) {
+            log(`Applying reasoning stream wrapper for model: ${requestBody.model}`);
+            // Replace the responseStream with our wrapped version
+            response.responseStream = createReasoningStreamWrapper(response.responseStream, {
+                model: requestBody.model
+            });
+        }
+        return response;
+    },
     formatResponse: (message) => {
-        // fix deepseek-v3 response
+        // For non-streaming responses, format the reasoning content with think tags
         if (!message.content && message.reasoning_content) {
             message.content = message.reasoning_content;
             message.reasoning_content = null;

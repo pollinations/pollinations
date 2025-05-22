@@ -492,12 +492,6 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
       // Handle the image based on its type
       try {
         if (typeof safeParams.image === 'string') {
-          if (safeParams.image.startsWith('data:')) {
-            // Handle base64 image
-            const base64Data = safeParams.image.split(',')[1];
-            const buffer = Buffer.from(base64Data, 'base64');
-            formData.append('image', buffer, { filename: 'image.png' });
-          } else if (safeParams.image.startsWith('http')) {
             // Handle image URL - fetch it first
             logCloudflare(`Fetching image from URL: ${safeParams.image}`);
             const imageResponse = await fetch(safeParams.image);
@@ -506,15 +500,6 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
             }
             const buffer = await imageResponse.buffer();
             formData.append('image', buffer, { filename: 'image.png' });
-          } else {
-            // Handle local file path
-            logCloudflare(`Reading image from file: ${safeParams.image}`);
-            const imageBuffer = fs.readFileSync(safeParams.image);
-            formData.append('image', imageBuffer, { filename: 'image.png' });
-          }
-        } else if (Buffer.isBuffer(safeParams.image)) {
-          // Handle buffer directly
-          formData.append('image', safeParams.image, { filename: 'image.png' });
         } else {
           throw new Error('Unsupported image format for editing');
         }

@@ -252,7 +252,7 @@ Generates text based on a simple prompt.
 | `seed`     | No       | Seed for reproducible results.                                                             |                           |          |
 | `json`     | No       | Set to `true` to receive the response formatted as a JSON string.                          | `true` / `false`          | `false`  |
 | `system`   | No       | System prompt to guide AI behavior. Should be URL-encoded.                                 |                           |          |
-| `stream`   | No       | Set to `true` for streaming responses via Server-Sent Events (SSE). Handle `data:` chunks. | `true` / `false`          | `false`  |
+| `stream`   | No       | Set to `true` for streaming responses. For GET requests, returns a plain text stream. For POST requests, uses Server-Sent Events (SSE) format. | `true` / `false`          | `false`  |
 | `private`  | No       | Set to `true` to prevent the response from appearing in the public feed.                   | `true` / `false`          | `false`  |
 | `referrer` | No\*     | Referrer URL/Identifier. See [Referrer Section](#referrer-).                               |                           |          |
 
@@ -277,8 +277,13 @@ curl "https://text.pollinations.ai/Write%20a%20short%20poem%20about%20robots?mod
 # Get JSON response
 curl "https://text.pollinations.ai/What%20is%20AI?json=true"
 
-# Streaming response (raw SSE output)
+# Streaming plain text response via GET (returns simple text stream)
 curl -N "https://text.pollinations.ai/Tell%20me%20a%20very%20long%20story?stream=true"
+
+# Streaming SSE response via POST (returns OpenAI-compatible SSE format)
+curl -N -X POST "https://text.pollinations.ai/" \
+  -H "Content-Type: application/json" \
+  -d '{"messages":[{"role":"user","content":"Tell me a very long story"}],"stream":true}'
 ```
 
 **Python (`requests`):**
@@ -322,6 +327,84 @@ try:
 
 except requests.exceptions.RequestException as e:
     print(f"Error fetching text: {e}")
+```
+
+**Python Streaming Examples:**
+
+```python
+import requests
+import urllib.parse
+import json
+
+# Plain text streaming (GET request)
+def stream_text_get():
+    prompt = "Tell me a story about a robot"
+    encoded_prompt = urllib.parse.quote(prompt)
+    url = f"https://text.pollinations.ai/{encoded_prompt}?stream=true"
+    
+    try:
+        # Stream response with requests
+        with requests.get(url, stream=True) as response:
+            response.raise_for_status()
+            
+            # GET streaming returns plain text chunks directly
+            print("Streaming plain text response:")
+            full_response = ""
+            for chunk in response.iter_content(chunk_size=1024, decode_unicode=True):
+                if chunk:
+                    print(chunk, end='', flush=True)  # Print each chunk as it arrives
+                    full_response += chunk
+            
+            print("\n\nComplete response:", full_response)
+            
+    except requests.exceptions.RequestException as e:
+        print(f"Error in streaming: {e}")
+
+# SSE streaming (POST request - OpenAI format)
+def stream_text_post():
+    url = "https://text.pollinations.ai/"
+    payload = {
+        "messages": [{"role": "user", "content": "Tell me a story about a robot"}],
+        "stream": True
+    }
+    
+    try:
+        # Stream SSE response with requests
+        with requests.post(url, json=payload, stream=True) as response:
+            response.raise_for_status()
+            
+            # POST streaming returns SSE format (data: {...}\n\n)
+            print("Streaming SSE response:")
+            full_response = ""
+            for line in response.iter_lines(decode_unicode=True):
+                if line:
+                    if line.startswith('data:'):
+                        content = line[5:].strip()  # Remove 'data:' prefix
+                        
+                        # Check for SSE end signal
+                        if content == '[DONE]':
+                            print("\n[Stream Complete]")
+                            break
+                            
+                        # Parse OpenAI format JSON
+                        try:
+                            data = json.loads(content)
+                            delta = data.get('choices', [{}])[0].get('delta', {})
+                            if 'content' in delta:
+                                text = delta['content']
+                                print(text, end='', flush=True)
+                                full_response += text
+                        except json.JSONDecodeError:
+                            print(f"[Error parsing JSON: {content}]")
+            
+            print("\n\nComplete response:", full_response)
+            
+    except requests.exceptions.RequestException as e:
+        print(f"Error in streaming: {e}")
+
+# Run examples
+# stream_text_get()  # For plain text streaming via GET
+# stream_text_post() # For SSE streaming via POST
 ```
 
 **JavaScript (Browser `fetch`):**
@@ -368,8 +451,139 @@ fetchText("List 3 popular dog breeds", {
   model: "mistral",
   json: "true", // Get result as JSON string
 });
+```
 
-// Note: For stream=true, see dedicated streaming example under POST section
+**JavaScript Streaming Examples:**
+
+```javascript
+// GET streaming (plain text)
+async function streamTextGet() {
+  const prompt = "Tell me a story about a robot";
+  const encodedPrompt = encodeURIComponent(prompt);
+  const url = `https://text.pollinations.ai/${encodedPrompt}?stream=true`;
+  
+  try {
+    console.log("Starting plain text stream request...");
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    // Create a reader to read the stream chunks
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+    
+    // Create output element (or use console for testing)
+    const outputElement = document.getElementById('output') || {
+      textContent: '',
+      appendChild: () => {}
+    };
+    
+    // Process the stream chunk by chunk
+    while (true) {
+      const { done, value } = await reader.read();
+      
+      if (done) {
+        console.log("Stream complete");
+        break;
+      }
+      
+      // Decode the chunk as UTF-8 text
+      const chunk = decoder.decode(value, { stream: true });
+      fullText += chunk;
+      
+      // Update the UI with new content
+      outputElement.textContent = fullText;
+      
+      // For debug: log chunks
+      console.log("Received chunk:", chunk);
+    }
+    
+    console.log("Final complete text:", fullText);
+  } catch (error) {
+    console.error("Error in GET streaming:", error);
+  }
+}
+
+// POST streaming (OpenAI SSE format)
+async function streamTextPost() {
+  const url = "https://text.pollinations.ai/";
+  
+  try {
+    console.log("Starting SSE stream request...");
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: 'Tell me a story about a robot' }],
+        stream: true
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    // Create a reader to read the stream chunks
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+    
+    // Create output element (or use console for testing)
+    const outputElement = document.getElementById('output') || {
+      textContent: '',
+      appendChild: () => {}
+    };
+    
+    // Process the SSE stream
+    while (true) {
+      const { done, value } = await reader.read();
+      
+      if (done) {
+        console.log("Stream complete");
+        break;
+      }
+      
+      // Decode the chunk and process SSE format
+      const chunk = decoder.decode(value, { stream: true });
+      
+      // Parse SSE data: split by double newlines and process 'data:' lines
+      const lines = chunk.split('\n\n');
+      for (const line of lines) {
+        if (line.startsWith('data:') && line !== 'data: [DONE]') {
+          try {
+            // Extract content from OpenAI format
+            const data = JSON.parse(line.slice(5));
+            if (data.choices && data.choices[0]) {
+              const delta = data.choices[0].delta;
+              if (delta && delta.content) {
+                fullText += delta.content;
+                // Update the UI with new content
+                outputElement.textContent = fullText;
+              }
+            }
+          } catch (e) {
+            console.error("Error parsing JSON:", e);
+          }
+        } else if (line === 'data: [DONE]') {
+          console.log("Received [DONE] signal");
+        }
+      }
+    }
+    
+    console.log("Final complete text:", fullText);
+  } catch (error) {
+    console.error("Error in POST streaming:", error);
+  }
+}
+
+// Run examples
+// streamTextGet();  // For plain text streaming via GET
+// streamTextPost(); // For SSE streaming via POST
 ```
 
 </details>

@@ -528,6 +528,16 @@ const allProjects = {
   ],
   llmIntegrations: [
     {
+      name: "🖥️ Windows Walker",
+      url: "https://github.com/SuperShivam5000/windows-walker",
+      description: "Windows Walker – What Copilot for Windows should have been. AI-powered Windows assistant that translates voice/text commands into real system actions using PowerShell. Powered by ChatGPT + PowerShell in an Electron UI.",
+      author: "@supershivam",
+      repo: "https://github.com/SuperShivam5000/windows-walker",
+      stars: 3,
+      submissionDate: "2025-05-22",
+      order: 1,
+    },
+    {
       name: "The Promised Pen",
       url: "https://promisedpen.app",
       description: "A free, feature-rich novel writing application that helps writers organize stories, characters, and worlds. Uses Pollinations AI for generating chapter summaries, rewriting text based on context, and generating new content based on previous chapters and character information.",

@@ -1,0 +1,21 @@
+{
+  "name": "github-auth-simple",
+  "version": "1.0.0",
+  "description": "Simple GitHub OAuth proxy for Pollinations",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "bash deploy.sh production",
+    "deploy:prod": "ENV_FILE=.dev.vars.prod bash deploy.sh production",
+    "deploy:local": "ENV_FILE=.dev.vars.local bash deploy.sh local",
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "@cloudflare/workers-types": "^4.20241218.0",
+    "jose": "^5.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "wrangler": "^4.16.1"
+  }
+}

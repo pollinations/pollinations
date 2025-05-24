@@ -51,6 +51,16 @@ export const generateHTML = () => `<!DOCTYPE html>
         
         // Initialize on page load
         window.addEventListener('load', function() {
+            // Add event delegation for domain removal
+            document.addEventListener('click', function(event) {
+                const target = event.target;
+                if (target && target.classList.contains('remove-domain')) {
+                    const domain = target.getAttribute('data-domain');
+                    if (domain) {
+                        removeDomain(domain);
+                    }
+                }
+            });
             const params = new URLSearchParams(window.location.search);
             const token = params.get('token');
             const username = params.get('username');
@@ -208,9 +218,9 @@ export const generateHTML = () => `<!DOCTYPE html>
             if (currentDomains.length > 0) {
                 domainHtml = '<strong>🌐 Allowed Domains:</strong><div style="margin-top:10px">';
                 for (const domain of currentDomains) {
-                    // Use double quotes for HTML attributes to avoid escaping issues
+                    // Use data attributes instead of inline onclick handlers
                     domainHtml += '<span class="domain-item">' + domain + 
-                        '<span class="remove-domain" onclick="removeDomain(\"' + domain + '\")">&times;</span></span>';
+                        '<span class="remove-domain" data-domain="' + domain + '">&times;</span></span>';
                 }
                 domainHtml += '</div>';
             } else {

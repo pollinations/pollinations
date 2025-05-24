@@ -787,6 +787,16 @@ const allProjects = {
   ],
   socialBots: [
     {
+      name: "🤖 AdvanceChatGptBot",
+      url: "https://t.me/AdvChatGptBot",
+      description: "A powerful AI-driven Telegram bot that brings cutting-edge artificial intelligence features to your fingertips. Features GPT-4o and GPT-4o-mini, DALL-E Model, OCR and Google Voice2Text. Uses Pollinations through @gpt4free Python lib.",
+      author: "@techycsr",
+      repo: "https://github.com/TechyCSR/AdvAITelegramBot",
+      stars: 4,
+      submissionDate: "2025-05-24",
+      order: 1,
+    },
+    {
       name: "🤖 PolliBot",
       url: "https://github.com/mrMeowMurk/PolliBot",
       description: "A powerful Telegram bot for interacting with Pollinations.ai API, providing a convenient interface for generating images and text using various AI models.",

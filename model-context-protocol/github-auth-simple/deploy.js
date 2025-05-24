@@ -39,8 +39,9 @@ if (missingVars.length > 0) {
   process.exit(1);
 }
 
-// Build the deploy command
-let deployCommand = 'npx wrangler deploy --env production';
+// Build the deploy command with full path to npx
+const npxPath = '/Users/thomash/.nvm/versions/node/v20.19.0/bin/npx';
+let deployCommand = `${npxPath} wrangler deploy --env production`;
 
 // Add environment variables to the command
 Object.entries(envVars).forEach(([key, value]) => {
@@ -56,7 +57,8 @@ console.log('Deploying with environment variables from .dev.vars...');
 
 try {
   // Execute the deploy command
-  execSync(deployCommand, { stdio: 'inherit' });
+  // Use shell: true to allow the shell to handle the command
+  execSync(deployCommand, { stdio: 'inherit', shell: true });
   console.log('Deployment completed successfully!');
 } catch (error) {
   console.error('Deployment failed:', error.message);

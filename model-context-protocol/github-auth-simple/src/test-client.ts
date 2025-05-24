@@ -270,7 +270,7 @@ const TEST_CLIENT_HTML = `<!DOCTYPE html>
 </head>
 <body>
     <div class="container">
-        <h1 class="emoji-title"><span>🐝</span> Pollinations.AI Auth <span>🌸</span> <span class="production-badge">BUILT-IN</span></h1>
+        <h1 class="emoji-title"><span>🐝</span> Pollinations.AI Auth <span>🌸</span></h1>
         
         <div id="auth-section">
             <h2>✨ 1. Authentication</h2>
@@ -380,8 +380,7 @@ const TEST_CLIENT_HTML = `<!DOCTYPE html>
                     
                     let userHtml = '<strong>User Info:</strong><br>' +
                         '🆔 ID: ' + data.github_user_id + '<br>' +
-                        '👤 Username: ' + data.username + '<br>' +
-                        '<em>(Note: This is a simplified auth service - only basic user info is stored)</em>';
+                        '👤 Username: ' + data.username;
                     
                     showStatus('user-info', userHtml, 'info');
                     

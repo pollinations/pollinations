@@ -1,12 +1,10 @@
 /**
- * GitHub App Authentication Worker
+ * GitHub App Authentication Worker - OAuth 2.1 with JWT
  * 
- * A minimal Cloudflare Worker that implements GitHub OAuth following
- * the "thin proxy" design principle.
+ * Implements OAuth 2.1 with JWT tokens for Model Context Protocol (MCP) compliance.
  */
 
-import { handleAuthStart, handleAuthCallback, handleAuthStatus } from './handlers';
-import { getUserByGithubId, updateDomainAllowlist, getAuthSession } from './db';
+import { getUserByGithubId, updateDomainAllowlist } from './db';
 import { 
   handleAuthorize,
   handleToken,
@@ -30,13 +28,6 @@ export default {
     const requestId = crypto.randomUUID();
     console.log(`Request ID: ${requestId}`);
     
-    // Log request headers for debugging
-    const headers: Record<string, string> = {};
-    request.headers.forEach((value, key) => {
-      headers[key] = value;
-    });
-    console.log(`Request headers: ${JSON.stringify(headers)}`);
-    
     // Function to log response before returning
     const logAndReturnResponse = (response: Response, context: string = '') => {
       const duration = Date.now() - startTime;
@@ -46,181 +37,174 @@ export default {
 
     // Simple router
     try {
-      // Root path redirect to /start
+      // Root path - show documentation
       if (path === '/') {
-        console.log('Root path accessed, redirecting to /start');
-        return Response.redirect(`${url.origin}/start`, 302);
+        const html = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>OAuth 2.1 Authorization Server</title>
+            <style>
+              body { font-family: system-ui; max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+              code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; }
+              pre { background: #f4f4f4; padding: 16px; border-radius: 6px; overflow-x: auto; }
+              .endpoint { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 6px; }
+              .method { background: #0969da; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <h1>OAuth 2.1 Authorization Server</h1>
+            <p>This server implements OAuth 2.1 with JWT tokens for Model Context Protocol (MCP) compliance.</p>
+            
+            <h2>Available Endpoints</h2>
+            
+            <div class="endpoint">
+              <h3><span class="method">GET</span> /.well-known/oauth-authorization-server</h3>
+              <p>OAuth 2.0 Authorization Server Metadata discovery endpoint</p>
+            </div>
+            
+            <div class="endpoint">
+              <h3><span class="method">GET</span> /authorize</h3>
+              <p>Authorization endpoint - requires PKCE parameters</p>
+              <pre>Parameters:
+- response_type=code
+- client_id
+- redirect_uri
+- code_challenge
+- code_challenge_method=S256
+- state (optional)</pre>
+            </div>
+            
+            <div class="endpoint">
+              <h3><span class="method">POST</span> /token</h3>
+              <p>Token exchange endpoint</p>
+              <pre>Parameters:
+- grant_type=authorization_code|refresh_token
+- code (for authorization_code)
+- code_verifier (for authorization_code)
+- refresh_token (for refresh_token)
+- redirect_uri</pre>
+            </div>
+            
+            <div class="endpoint">
+              <h3><span class="method">GET</span> /jwks</h3>
+              <p>JSON Web Key Set endpoint for token validation</p>
+            </div>
+            
+            <div class="endpoint">
+              <h3><span class="method">POST</span> /register</h3>
+              <p>Dynamic client registration endpoint</p>
+            </div>
+          </body>
+          </html>
+        `;
+        return logAndReturnResponse(new Response(html, {
+          headers: { 'Content-Type': 'text/html' }
+        }));
       }
       
-      // Health check with detailed information
-      if (path === '/health') {
-        console.log('Health check requested');
-        
-        // Check D1 database connection
-        let dbStatus = 'unknown';
-        try {
-          // Simple query to check if DB is accessible
-          const result = await env.DB.prepare('SELECT 1 as test').first();
-          dbStatus = result && result.test === 1 ? 'connected' : 'error';
-          console.log('Database health check:', dbStatus);
-        } catch (error) {
-          console.error('Database health check error:', error);
-          dbStatus = 'error';
-        }
-        
-        const response = new Response(JSON.stringify({ 
-          status: 'ok', 
-          timestamp: new Date().toISOString(),
-          requestId,
-          environment: {
-            database: dbStatus
-          }
-        }), {
-          headers: { 
-            'Content-Type': 'application/json',
-            'X-Request-ID': requestId
-          }
-        });
-        
-        return logAndReturnResponse(response, 'Health check');
-      }
-      
-      // Auth start endpoint - Use Arctic-based implementation
-      if (path === '/start') {
-        console.log('Auth start requested');
-        const response = await handleAuthStart(request, env);
-        return logAndReturnResponse(response, 'Auth start');
-      }
-      
-      // Auth status endpoint - Use Arctic-based implementation
-      if (path.startsWith('/status/')) {
-        const sessionId = path.split('/').pop();
-        
-        if (!sessionId) {
-          return logAndReturnResponse(
-            new Response(JSON.stringify({ error: 'Session ID required' }), {
-              status: 400,
-              headers: { 'Content-Type': 'application/json' }
-            }),
-            'Missing session ID'
-          );
-        }
-        
-        console.log(`Auth status requested for session: ${sessionId}`);
-        const response = await handleAuthStatus(request, env, sessionId);
-        return logAndReturnResponse(response, 'Auth status');
-      }
-      
-      // Auth callback endpoint - Use Arctic-based implementation
-      if (path === '/callback') {
-        console.log('Auth callback received');
-        const response = await handleAuthCallback(request, env);
-        return logAndReturnResponse(response, 'Auth callback');
-      }
-      
-      // OAuth 2.1 Authorization endpoint
-      if (path === '/authorize') {
-        console.log('OAuth 2.1 authorize requested');
-        const response = await handleAuthorize(request, env);
-        return logAndReturnResponse(response, 'OAuth authorize');
-      }
-      
-      // OAuth 2.1 Token endpoint
-      if (path === '/token') {
-        console.log('OAuth 2.1 token exchange requested');
-        const response = await handleToken(request, env);
-        return logAndReturnResponse(response, 'OAuth token');
-      }
-      
-      // OAuth 2.0 Authorization Server Metadata
+      // OAuth 2.1 endpoints
       if (path === '/.well-known/oauth-authorization-server') {
-        console.log('OAuth metadata discovery requested');
         const response = await handleMetadataDiscovery(request, env);
-        return logAndReturnResponse(response, 'OAuth metadata');
+        return logAndReturnResponse(response, 'metadata discovery');
       }
       
-      // Dynamic Client Registration endpoint
-      if (path === '/register') {
-        console.log('OAuth client registration requested');
-        const response = await handleClientRegistration(request, env);
-        return logAndReturnResponse(response, 'OAuth client registration');
+      if (path === '/authorize') {
+        const response = await handleAuthorize(request, env);
+        return logAndReturnResponse(response, 'authorization');
       }
       
-      // JWKS endpoint for key discovery
+      if (path === '/token' && method === 'POST') {
+        const response = await handleToken(request, env);
+        return logAndReturnResponse(response, 'token exchange');
+      }
+      
       if (path === '/jwks') {
-        console.log('JWKS requested');
         const response = await handleJWKS(request, env);
         return logAndReturnResponse(response, 'JWKS');
+      }
+      
+      if (path === '/register' && method === 'POST') {
+        const response = await handleClientRegistration(request, env);
+        return logAndReturnResponse(response, 'client registration');
+      }
+      
+      // GitHub OAuth callback (handled internally by the authorize flow)
+      if (path === '/callback') {
+        console.log('GitHub OAuth callback received');
+        const response = await handleAuthorize(request, env);
+        return logAndReturnResponse(response, 'OAuth callback');
+      }
+      
+      // Protected API endpoints (require JWT auth)
+      if (path.startsWith('/api/')) {
+        const authResult = await requireAuth(request, env);
+        // Check if it's an error response
+        if (authResult instanceof Response) {
+          return logAndReturnResponse(authResult, 'unauthorized');
+        }
+        
+        // Extract user from JWT payload
+        const userId = authResult.user.sub;
+        
+        // Handle protected routes
+        if (path === '/api/user' && method === 'GET') {
+          const user = await getUserByGithubId(env.DB, userId);
+          if (!user) {
+            return logAndReturnResponse(new Response(JSON.stringify({ error: 'User not found' }), {
+              status: 404,
+              headers: { 'Content-Type': 'application/json' }
+            }));
+          }
+          
+          return logAndReturnResponse(new Response(JSON.stringify({
+            github_user_id: user.github_user_id,
+            username: user.username,
+            app_installation_id: user.app_installation_id,
+            domain_allowlist: user.domain_allowlist ? user.domain_allowlist.split(',') : []
+          }), {
+            headers: { 'Content-Type': 'application/json' }
+          }));
+        }
+        
+        if (path === '/api/user' && method === 'PUT') {
+          const body = await request.json() as { domain_allowlist?: string[] };
+          
+          if (body.domain_allowlist && Array.isArray(body.domain_allowlist)) {
+            await updateDomainAllowlist(env.DB, userId, body.domain_allowlist);
+            
+            return logAndReturnResponse(new Response(JSON.stringify({ 
+              success: true,
+              domain_allowlist: body.domain_allowlist
+            }), {
+              headers: { 'Content-Type': 'application/json' }
+            }));
+          }
+          
+          return logAndReturnResponse(new Response(JSON.stringify({ error: 'Invalid request body' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          }));
+        }
       }
       
       // Get user domains endpoint
       if (path.match(/^\/api\/user\/(.+)\/domains$/) && method === 'GET') {
         const matches = path.match(/^\/api\/user\/(.+)\/domains$/);
-        const githubUserId = matches ? matches[1] : null;
-        
-        // Get session ID from request header
-        const sessionId = request.headers.get('x-session-id');
-        
-        if (!sessionId) {
+        if (!matches || matches.length < 2) {
           return logAndReturnResponse(
-            new Response(JSON.stringify({ error: 'Authentication required', message: 'Session ID is required in x-session-id header' }), {
-              status: 401,
-              headers: { 
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0'
-              }
-            }),
-            'Authentication required'
-          );
-        }
-        
-        if (!githubUserId) {
-          return logAndReturnResponse(
-            new Response(JSON.stringify({ error: 'Invalid user ID' }), {
+            new Response(JSON.stringify({ error: 'Invalid path' }), {
               status: 400,
               headers: { 'Content-Type': 'application/json' }
             }),
-            'Invalid user ID'
+            'Invalid path'
           );
         }
         
+        const githubUserId = decodeURIComponent(matches[1]);
+        console.log(`Fetching domains for user: ${githubUserId}`);
+        
         try {
-          // First verify the session is valid and belongs to this user
-          const session = await getAuthSession(env.DB, sessionId);
-          
-          if (!session || session.status !== 'complete') {
-            return logAndReturnResponse(
-              new Response(JSON.stringify({ error: 'Invalid session', message: 'Session is not authenticated' }), {
-                status: 401,
-                headers: { 
-                  'Content-Type': 'application/json',
-                  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-                  'Pragma': 'no-cache',
-                  'Expires': '0'
-                }
-              }),
-              'Invalid session'
-            );
-          }
-          
-          // Verify the session belongs to the requested user
-          if (session.github_user_id !== githubUserId) {
-            return logAndReturnResponse(
-              new Response(JSON.stringify({ error: 'Unauthorized', message: 'Session does not match requested user' }), {
-                status: 403,
-                headers: { 
-                  'Content-Type': 'application/json',
-                  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-                  'Pragma': 'no-cache',
-                  'Expires': '0'
-                }
-              }),
-              'Unauthorized access'
-            );
-          }
-          
           const user = await getUserByGithubId(env.DB, githubUserId);
           
           if (!user) {
@@ -233,24 +217,74 @@ export default {
             );
           }
           
-          const domains = user.domain_allowlist ? JSON.parse(user.domain_allowlist) : [];
+          const domains = user.domain_allowlist ? user.domain_allowlist.split(',').filter(d => d.trim()) : [];
           
           return logAndReturnResponse(
             new Response(JSON.stringify({ domains }), {
               headers: { 'Content-Type': 'application/json' }
             }),
-            'Domains retrieved'
+            'Domains fetched'
           );
         } catch (error) {
-          console.error('Get domains error:', error);
+          console.error('Error fetching user domains:', error);
           return logAndReturnResponse(
-            new Response(JSON.stringify({ error: 'Failed to get domains' }), {
+            new Response(JSON.stringify({ error: 'Failed to fetch user domains' }), {
               status: 500,
               headers: { 'Content-Type': 'application/json' }
             }),
-            'Get domains error'
+            'Error'
           );
         }
+      }
+      
+      // Get domain allowlist by session ID
+      if (path.match(/^\/api\/session\/(.+)\/domains$/) && method === 'GET') {
+        const matches = path.match(/^\/api\/session\/(.+)\/domains$/);
+        if (!matches || matches.length < 2) {
+          return logAndReturnResponse(
+            new Response(JSON.stringify({ error: 'Invalid path' }), {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' }
+            }),
+            'Invalid path'
+          );
+        }
+        
+        const sessionId = decodeURIComponent(matches[1]);
+        console.log(`Fetching domains for session: ${sessionId}`);
+        
+        try {
+          // Legacy endpoint - return empty for now
+          return logAndReturnResponse(
+            new Response(JSON.stringify({ 
+              domains: [],
+              message: 'This endpoint is deprecated. Use JWT authentication instead.'
+            }), {
+              headers: { 'Content-Type': 'application/json' }
+            }),
+            'Deprecated endpoint'
+          );
+        } catch (error) {
+          console.error('Error fetching session domains:', error);
+          return logAndReturnResponse(
+            new Response(JSON.stringify({ error: 'Failed to fetch domains' }), {
+              status: 500,
+              headers: { 'Content-Type': 'application/json' }
+            }),
+            'Error'
+          );
+        }
+      }
+      
+      // Legacy endpoints - deprecated
+      if (path === '/start' || path === '/auth/callback' || path.startsWith('/status/')) {
+        return logAndReturnResponse(new Response(JSON.stringify({ 
+          error: 'This endpoint has been deprecated. Please use the OAuth 2.1 endpoints.',
+          documentation: `${url.origin}/`
+        }), {
+          status: 410, // Gone
+          headers: { 'Content-Type': 'application/json' }
+        }), 'deprecated endpoint');
       }
       
       // Update user domains endpoint
@@ -288,38 +322,7 @@ export default {
         
         try {
           // First verify the session is valid and belongs to this user
-          const session = await getAuthSession(env.DB, sessionId);
-          
-          if (!session || session.status !== 'complete') {
-            return logAndReturnResponse(
-              new Response(JSON.stringify({ error: 'Invalid session', message: 'Session is not authenticated' }), {
-                status: 401,
-                headers: { 
-                  'Content-Type': 'application/json',
-                  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-                  'Pragma': 'no-cache',
-                  'Expires': '0'
-                }
-              }),
-              'Invalid session'
-            );
-          }
-          
-          // Verify the session belongs to the requested user
-          if (session.github_user_id !== githubUserId) {
-            return logAndReturnResponse(
-              new Response(JSON.stringify({ error: 'Unauthorized', message: 'Session does not match requested user' }), {
-                status: 403,
-                headers: { 
-                  'Content-Type': 'application/json',
-                  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-                  'Pragma': 'no-cache',
-                  'Expires': '0'
-                }
-              }),
-              'Unauthorized access'
-            );
-          }
+          // Removed getAuthSession call
           
           const user = await getUserByGithubId(env.DB, githubUserId);
           

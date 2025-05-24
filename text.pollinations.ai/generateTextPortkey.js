@@ -15,7 +15,7 @@ const MODEL_MAPPING = {
     // Azure OpenAI models
     'openai-fast': 'gpt-4.1-nano',
     'openai': 'gpt-4.1-mini',       // Maps to portkeyConfig['gpt-4o-mini']
-    'openai-large': 'azure-gpt-4.1-mini',
+    'openai-large': 'azure-gpt-4.1',
     //'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
     //'openai-reasoning': 'o4-mini', // Maps to portkeyConfig['o1-mini'],
     // 'openai-audio': 'gpt-4o-mini-audio-preview',
@@ -296,15 +296,12 @@ function createOpenRouterModelConfig(additionalConfig = {}) {
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
     // Azure Grok model configuration
-    'azure-grok': () => {
-        const  modelIndex = Math.floor(Math.random() * 9) + 2; // 2-9;  
-        return createAzureModelConfig(
+    'azure-grok': () =>  createAzureModelConfig(
             process.env.AZURE_GROK_API_KEY,
             process.env.AZURE_GROK_ENDPOINT,
-            `grok-3-${modelIndex}`,
-            'thomash-grok-resource'
-    );
-    },
+            `grok-3-mini`,
+            'pollinations-safety'
+    ),
     // Azure OpenAI model configurations
     'gpt-4.1-nano': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_NANO_API_KEY,
@@ -351,10 +348,10 @@ export const portkeyConfig = {
         process.env.AZURE_OPENAI_ROBLOX_ENDPOINT,
         'gpt-4.1-mini'
     ),
-    'azure-gpt-4.1-mini': () => createAzureModelConfig(
+    'azure-gpt-4.1': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_41_API_KEY,
         process.env.AZURE_OPENAI_41_ENDPOINT,
-        'gpt-4.1-mini'
+        'gpt-4.1'
     ),
     'azure-gpt-4.1-xlarge': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_XLARGE_API_KEY,

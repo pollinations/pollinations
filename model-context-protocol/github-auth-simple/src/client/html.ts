@@ -29,7 +29,7 @@ export const generateHTML = () => `<!DOCTYPE html>
         </div>
         
         <div id="domain-section" class="hidden">
-            <h2>🌐 3. Domain Management</h2>
+            <h2>🌐 3. Referrer/Domain Management</h2>
             <div class="input-group">
                 <input type="text" id="new-domain" placeholder="example.com">
                 <button onclick="addDomain()">Add Domain</button>

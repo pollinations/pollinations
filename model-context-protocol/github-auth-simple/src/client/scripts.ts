@@ -309,7 +309,7 @@ async function generateApiToken() {
             const data = await response.json();
             apiToken = data.token;
             
-            showStatus('token-info', '<strong>✅ New API Token Generated:</strong><br><code>' + apiToken + '</code><br><em>Save this token! It will not be shown again.</em> 🔐', 'success');
+            showStatus('token-info', '<strong>✅ New API Token Generated:</strong><br><code>' + apiToken + '</code><br><em>Save this token!</em> 🔐', 'success');
         } else {
             showStatus('token-info', '❌ Error: ' + response.statusText, 'error');
         }

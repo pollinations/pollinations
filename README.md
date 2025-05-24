@@ -351,6 +351,7 @@ Pollinations.AI is used in various projects, including:
 
 | Bot | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 🤖 AdvanceChatGptBot | A powerful AI-driven Telegram bot that brings cutting-edge artificial intelligence features to your fingertips. Features GPT-4o and GPT-4o-mini, DALL-E Model, OCR and Google Voice2Text. Uses Pollinations through @gpt4free Python lib. | @techycsr | [Telegram](https://t.me/AdvChatGptBot), [GitHub](https://github.com/TechyCSR/AdvAITelegramBot) - ⭐ 4 |
 | 🆕 🤖 PolliBot | A powerful Telegram bot for interacting with Pollinations.ai API, providing a convenient interface for generating images and text using various AI models | @mrMeowMurk | [GitHub](https://github.com/mrMeowMurk/PolliBot) - ⭐ 1 |
 | 🆕 🤖 SingodiyaTech bot | This is a Telegram bot with many Advanced ai features | t.me/Aks979 | [Telegram](https://t.me/Aks7240Bot) |
 | 🆕 🤖 Raftar.xyz | A Discord multi-purpose bot with over 100+ commands, including AI image generation, ChatGPT, and SearchGPT powered by Pollinations.AI | @goodgamerhere | [Website](https://raftar.xyz) |

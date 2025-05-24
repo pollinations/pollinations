@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
+    "secure-deploy": "node deploy.js",
     "test": "node test.js"
   },
   "dependencies": {
@@ -14,6 +15,6 @@
   },
   "devDependencies": {
     "typescript": "^5.3.3",
-    "wrangler": "^3.0.0"
+    "wrangler": "^4.16.1"
   }
 }

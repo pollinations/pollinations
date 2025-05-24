@@ -2,7 +2,8 @@ import * as jose from 'jose';
 import type { Env } from './types';
 
 export async function createJWT(userId: string, username: string, env: Env): Promise<string> {
-  const secret = new TextEncoder().encode(env.JWT_SECRET);
+  const secretKey = env.JWT_SECRET;
+  const secret = new TextEncoder().encode(secretKey);
   
   const jwt = await new jose.SignJWT({
     sub: userId,
@@ -18,10 +19,12 @@ export async function createJWT(userId: string, username: string, env: Env): Pro
 
 export async function verifyJWT(token: string, env: Env): Promise<jose.JWTPayload | null> {
   try {
-    const secret = new TextEncoder().encode(env.JWT_SECRET);
+    const secretKey = env.JWT_SECRET;
+    const secret = new TextEncoder().encode(secretKey);
     const { payload } = await jose.jwtVerify(token, secret);
     return payload;
-  } catch {
+  } catch (error) {
+    console.error('JWT verification failed:', error);
     return null;
   }
 }

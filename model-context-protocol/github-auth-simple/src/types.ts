@@ -10,9 +10,7 @@ export interface Env {
 export interface User {
   github_user_id: string;
   username: string;
-  avatar_url?: string;
-  email?: string;
-  domain_allowlist?: string[];
+  // Removed optional fields that aren't in the database schema
 }
 
 export interface GitHubUser {

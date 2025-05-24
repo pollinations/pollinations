@@ -1,22 +1,18 @@
 import type { User } from './types';
+import type { D1Database } from '@cloudflare/workers-types';
 
+// Ultra-simplified user management - only store github_user_id and username
 export async function upsertUser(db: D1Database, user: Partial<User> & { github_user_id: string }): Promise<User> {
-  const allowlist = user.domain_allowlist ? JSON.stringify(user.domain_allowlist) : null;
-  
+  // Minimal query with only essential fields
   await db.prepare(`
-    INSERT INTO users (github_user_id, username, avatar_url, email, domain_allowlist)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO users (github_user_id, username)
+    VALUES (?, ?)
     ON CONFLICT(github_user_id) DO UPDATE SET
       username = excluded.username,
-      avatar_url = excluded.avatar_url,
-      email = excluded.email,
       updated_at = CURRENT_TIMESTAMP
   `).bind(
     user.github_user_id,
-    user.username!,
-    user.avatar_url || null,
-    user.email || null,
-    allowlist
+    user.username!
   ).run();
   
   return getUser(db, user.github_user_id) as Promise<User>;
@@ -24,30 +20,64 @@ export async function upsertUser(db: D1Database, user: Partial<User> & { github_
 
 export async function getUser(db: D1Database, userId: string): Promise<User | null> {
   const result = await db.prepare(`
-    SELECT * FROM users WHERE github_user_id = ?
+    SELECT github_user_id, username FROM users WHERE github_user_id = ?
   `).bind(userId).first();
   
   if (!result) return null;
   
+  // Return only the essential fields
   return {
-    ...result,
-    domain_allowlist: result.domain_allowlist ? JSON.parse(result.domain_allowlist as string) : []
+    github_user_id: result.github_user_id as string,
+    username: result.username as string
   } as User;
 }
 
+// Domain management functions
 export async function updateDomainAllowlist(db: D1Database, userId: string, domains: string[]): Promise<void> {
+  // First delete existing domains for this user
   await db.prepare(`
-    UPDATE users SET 
-      domain_allowlist = ?,
-      updated_at = CURRENT_TIMESTAMP
-    WHERE github_user_id = ?
-  `).bind(JSON.stringify(domains), userId).run();
+    DELETE FROM domains WHERE user_id = ?
+  `).bind(userId).run();
+  
+  // Then insert new domains
+  if (domains.length > 0) {
+    // Create a prepared statement for domain insertion
+    const stmt = db.prepare(`
+      INSERT INTO domains (user_id, domain) VALUES (?, ?)
+    `);
+    
+    // Insert each domain
+    for (const domain of domains) {
+      await stmt.bind(userId, domain).run();
+    }
+  }
+  
+  console.log(`Updated domains for user ${userId}: ${domains.join(', ')}`);
+}
+
+export async function getDomains(db: D1Database, userId: string): Promise<string[]> {
+  console.log(`Getting domains for user ${userId}`);
+  
+  try {
+    const results = await db.prepare(`
+      SELECT domain FROM domains WHERE user_id = ?
+    `).bind(userId).all();
+    
+    console.log('Domain query results:', JSON.stringify(results));
+    
+    return (results.results || []).map(row => row.domain as string);
+  } catch (error) {
+    console.error('Error getting domains:', error);
+    return [];
+  }
 }
 
 export async function isDomainAllowed(db: D1Database, userId: string, domain: string): Promise<boolean> {
-  const user = await getUser(db, userId);
-  if (!user || !user.domain_allowlist) return false;
-  return user.domain_allowlist.includes(domain);
+  const result = await db.prepare(`
+    SELECT 1 FROM domains WHERE user_id = ? AND domain = ?
+  `).bind(userId, domain).first();
+  
+  return !!result;
 }
 
 // OAuth state management

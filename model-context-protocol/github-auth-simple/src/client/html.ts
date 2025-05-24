@@ -108,7 +108,8 @@ export const generateHTML = () => `<!DOCTYPE html>
         
         // Start authentication
         function startAuth() {
-            const redirectUri = encodeURIComponent(API_BASE + '/test-client');
+            // Use the current path as the redirect URI (works for both / and /test-client)
+            const redirectUri = encodeURIComponent(window.location.href);
             window.location.href = API_BASE + '/authorize?redirect_uri=' + redirectUri;
         }
         

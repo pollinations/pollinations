@@ -32,7 +32,10 @@ export default {
       // Route handling
       switch (url.pathname) {
         case '/':
-          return new Response('GitHub Auth Simple', { headers: corsHeaders });
+          // Serve the test client at the root path
+          return new Response(TEST_CLIENT_HTML, { 
+            headers: { ...corsHeaders, 'Content-Type': 'text/html' } 
+          });
           
         case '/test-client':
           return new Response(TEST_CLIENT_HTML, { 

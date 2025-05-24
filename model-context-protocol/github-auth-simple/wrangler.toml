@@ -1,0 +1,34 @@
+name = "github-auth-simple"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[dev]
+port = 3000
+
+[[d1_databases]]
+binding = "DB"
+database_name = "github_auth"
+database_id = "4145d600-1df6-44a2-9769-5d5f731deb77"
+
+# Environment variables declaration with placeholders
+# These will be overridden by secrets in the Cloudflare dashboard
+[vars]
+GITHUB_CLIENT_ID = "placeholder"
+GITHUB_CLIENT_SECRET = "placeholder"
+JWT_SECRET = "placeholder"
+
+[env.production]
+name = "github-auth-simple"
+route = { pattern = "auth.pollinations.ai/*", zone_name = "pollinations.ai" }
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "github_auth"
+database_id = "4145d600-1df6-44a2-9769-5d5f731deb77"
+
+# Environment variables for production with placeholders
+# These will be overridden by secrets in the Cloudflare dashboard
+[env.production.vars]
+GITHUB_CLIENT_ID = "placeholder"
+GITHUB_CLIENT_SECRET = "placeholder"
+JWT_SECRET = "placeholder"

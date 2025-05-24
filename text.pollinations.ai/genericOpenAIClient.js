@@ -1,5 +1,6 @@
 import fetch from 'node-fetch';
 import debug from 'debug';
+import dotenv from 'dotenv';
 import {
     validateAndNormalizeMessages, 
     cleanNullAndUndefined,
@@ -11,6 +12,9 @@ import {
 } from './textGenerationUtils.js';
 
 import { createSseStreamConverter } from './sseStreamConverter.js';
+
+// Load Helicone configuration
+dotenv.config({ path: '.env.helicone' });
 
 /**
  * Creates a client function for OpenAI-compatible APIs
@@ -130,7 +134,7 @@ export function createOpenAICompatibleClient(config) {
             log(`[${requestId}] Final request body:`, JSON.stringify(finalRequestBody, null, 2));
 
             // Determine the endpoint URL
-            const endpointUrl = typeof endpoint === 'function' 
+            let endpointUrl = typeof endpoint === 'function' 
                 ? endpoint(modelName, normalizedOptions) 
                 : endpoint;
 
@@ -146,10 +150,69 @@ export function createOpenAICompatibleClient(config) {
             if (finalRequestBody._additionalHeaders) {
                 delete finalRequestBody._additionalHeaders;
             }
+            
+            // Check if Helicone is enabled
+            const heliconeEnabled = process.env.HELICONE_ENABLED === 'true';
+            const heliconeApiKey = process.env.HELICONE_API_KEY;
+            
+            if (heliconeEnabled && heliconeApiKey) {
+                log(`[${requestId}] Helicone logging is enabled, routing request through Helicone proxy`);
+                
+                // Determine which Helicone proxy endpoint to use based on the provider
+                let heliconeBaseUrl = 'https://oai.hconeai.com/v1';
+                
+                // Check if this is an Azure OpenAI endpoint
+                if (endpointUrl.includes('azure.com')) {
+                    // Extract the deployment name from the endpoint URL if present
+                    const deploymentMatch = endpointUrl.match(/\/deployments\/([^\/]+)/i);
+                    const deploymentName = deploymentMatch ? deploymentMatch[1] : null;
+                    
+                    if (deploymentName) {
+                        log(`[${requestId}] Using Helicone Azure OpenAI proxy with deployment: ${deploymentName}`);
+                        // Add Helicone Azure-specific headers
+                        headers['Helicone-OpenAI-Api-Base'] = endpointUrl.split('/deployments')[0];
+                        headers['Helicone-Azure-Deployment-Id'] = deploymentName;
+                    }
+                } else if (endpointUrl.includes('anthropic')) {
+                    // Use Anthropic-specific Helicone proxy
+                    heliconeBaseUrl = 'https://anthropic.hconeai.com/v1';
+                    log(`[${requestId}] Using Helicone Anthropic proxy`);
+                }
+                
+                // Add Helicone authentication and tracking headers
+                headers['Helicone-Auth'] = `Bearer ${heliconeApiKey}`;
+                headers['Helicone-Property-Source'] = 'text.pollinations.ai';
+                headers['Helicone-Property-Model'] = modelName;
+                
+                // Add user and session identifiers if available in options
+                if (normalizedOptions.user) {
+                    headers['Helicone-User-Id'] = normalizedOptions.user;
+                }
+                if (normalizedOptions.sessionId) {
+                    headers['Helicone-Property-Session-Id'] = normalizedOptions.sessionId;
+                }
+                
+                // Replace the endpoint with Helicone proxy
+                // For Azure, we'll keep the original endpoint but add Helicone headers
+                if (!endpointUrl.includes('azure.com')) {
+                    // Extract the path from the original endpoint
+                    const urlObj = new URL(endpointUrl);
+                    const pathWithQuery = urlObj.pathname + urlObj.search;
+                    
+                    // Construct the new Helicone proxy URL
+                    endpointUrl = `${heliconeBaseUrl}${pathWithQuery}`;
+                    log(`[${requestId}] Routing through Helicone proxy: ${endpointUrl}`);
+                }
+            }
 
             log(`[${requestId}] Request headers:`, headers);
 
             log(`[${requestId}] Sending request to ${providerName} API at ${endpointUrl}`);
+            
+            // Log if we're using Helicone
+            if (process.env.HELICONE_ENABLED === 'true' && process.env.HELICONE_API_KEY) {
+                log(`[${requestId}] Request is being logged by Helicone`);
+            }
 
             log(`[${requestId}] Request body:`, JSON.stringify(finalRequestBody, null, 2));
             // Make API request

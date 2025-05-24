@@ -108,3 +108,49 @@ export async function cleanupOldStates(db: D1Database): Promise<void> {
     WHERE created_at < datetime('now', '-10 minutes')
   `).run();
 }
+
+// API token management functions
+export async function generateApiToken(db: D1Database, userId: string): Promise<string> {
+  // Generate a shorter, more user-friendly token (16 characters)
+  // This creates a base64 string and takes the first 16 characters
+  const buffer = new Uint8Array(12); // 12 bytes = 16 base64 characters
+  crypto.getRandomValues(buffer);
+  const token = btoa(String.fromCharCode(...buffer))
+    .replace(/\+/g, '-') // Replace + with - (URL safe)
+    .replace(/\//g, '_') // Replace / with _ (URL safe)
+    .replace(/=/g, '')   // Remove padding
+    .substring(0, 16);   // Ensure exactly 16 characters
+  
+  // First delete any existing tokens for this user
+  await deleteApiTokens(db, userId);
+  
+  // Insert the new token
+  await db.prepare(`
+    INSERT INTO api_tokens (token, user_id)
+    VALUES (?, ?)
+  `).bind(token, userId).run();
+  
+  return token;
+}
+
+export async function getApiToken(db: D1Database, userId: string): Promise<string | null> {
+  const result = await db.prepare(`
+    SELECT token FROM api_tokens WHERE user_id = ?
+  `).bind(userId).first();
+  
+  return result ? (result.token as string) : null;
+}
+
+export async function deleteApiTokens(db: D1Database, userId: string): Promise<void> {
+  await db.prepare(`
+    DELETE FROM api_tokens WHERE user_id = ?
+  `).bind(userId).run();
+}
+
+export async function validateApiToken(db: D1Database, token: string): Promise<string | null> {
+  const result = await db.prepare(`
+    SELECT user_id FROM api_tokens WHERE token = ?
+  `).bind(token).first();
+  
+  return result ? (result.user_id as string) : null;
+}

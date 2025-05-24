@@ -1,6 +1,6 @@
 import type { Env } from './types';
 import { createJWT, verifyJWT, extractBearerToken } from './jwt';
-import { upsertUser, getUser, updateDomainAllowlist, getDomains, isDomainAllowed, saveOAuthState, getOAuthState, deleteOAuthState, cleanupOldStates } from './db';
+import { upsertUser, getUser, updateDomainAllowlist, getDomains, isDomainAllowed, saveOAuthState, getOAuthState, deleteOAuthState, cleanupOldStates, generateApiToken, getApiToken, deleteApiTokens, validateApiToken } from './db';
 import { exchangeCodeForToken, getGitHubUser } from './github';
 
 // Define the TEST_CLIENT_HTML directly to avoid module issues
@@ -58,6 +58,13 @@ export default {
           
         case '/api/check-domain':
           return handleCheckDomain(request, env, corsHeaders);
+          
+        case '/api/token':
+          if (request.method === 'GET') {
+            return handleGetApiToken(request, env, corsHeaders);
+          } else if (request.method === 'POST') {
+            return handleGenerateApiToken(request, env, corsHeaders);
+          }
       }
       
       return createErrorResponse(404, 'Resource not found', corsHeaders);
@@ -257,5 +264,65 @@ function createErrorResponse(status: number, message: string, headers: Record<st
   }), {
     status,
     headers: { ...headers, 'Content-Type': 'application/json' }
+  });
+}
+
+async function handleGetApiToken(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  const url = new URL(request.url);
+  const userId = url.searchParams.get('user_id');
+  
+  if (!userId) {
+    return createErrorResponse(400, 'Missing required parameter: user_id', corsHeaders);
+  }
+  
+  // Verify auth
+  const token = extractBearerToken(request);
+  if (!token) {
+    return createErrorResponse(401, 'Unauthorized', corsHeaders);
+  }
+  
+  const payload = await verifyJWT(token, env);
+  if (!payload || payload.sub !== userId) {
+    return createErrorResponse(403, 'Forbidden', corsHeaders);
+  }
+  
+  // Get the user's API token
+  const apiToken = await getApiToken(env.DB, userId);
+  
+  return new Response(JSON.stringify({ 
+    token: apiToken,
+    has_token: !!apiToken
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+async function handleGenerateApiToken(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  const url = new URL(request.url);
+  const userId = url.searchParams.get('user_id');
+  
+  if (!userId) {
+    return createErrorResponse(400, 'Missing required parameter: user_id', corsHeaders);
+  }
+  
+  // Verify auth
+  const token = extractBearerToken(request);
+  if (!token) {
+    return createErrorResponse(401, 'Unauthorized', corsHeaders);
+  }
+  
+  const payload = await verifyJWT(token, env);
+  if (!payload || payload.sub !== userId) {
+    return createErrorResponse(403, 'Forbidden', corsHeaders);
+  }
+  
+  // Generate a new API token
+  const apiToken = await generateApiToken(env.DB, userId);
+  
+  return new Response(JSON.stringify({ 
+    token: apiToken,
+    generated: true
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }

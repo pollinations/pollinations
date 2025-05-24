@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Path to .dev.vars file
-const devVarsPath = path.join(__dirname, '.dev.vars');
+const devVarsPath = path.join(__dirname, '.dev.vars.prod');
 
 // Check if .dev.vars exists
 if (!fs.existsSync(devVarsPath)) {

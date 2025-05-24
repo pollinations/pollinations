@@ -460,8 +460,10 @@ const TEST_CLIENT_HTML = `<!DOCTYPE html>
             if (currentDomains.length > 0) {
                 domainHtml = '<strong>🌐 Allowed Domains:</strong><div style="margin-top:10px">';
                 for (const domain of currentDomains) {
+                    // Properly escape the domain for use in the onclick attribute
+                    const escapedDomain = domain.replace(/'/g, "\\'");
                     domainHtml += '<span class="domain-item">' + domain + 
-                        ' <button class="remove-btn" onclick="removeDomain(\'' + domain + '\')">&times;</button></span>';
+                        ' <button class="remove-btn" onclick="removeDomain(\'' + escapedDomain + '\')">&times;</button></span>';
                 }
                 domainHtml += '</div>';
             } else {

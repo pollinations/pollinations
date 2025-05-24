@@ -458,12 +458,10 @@ const TEST_CLIENT_HTML = `<!DOCTYPE html>
             let domainHtml = '';
             
             if (currentDomains.length > 0) {
-                domainHtml = '<strong>🌐 Allowed Domains:</strong><div style="margin-top:10px">';
+                domainHtml = '<strong>🌐 Allowed Domains:</strong><div style="margin-top:10px" id="domain-list">';
                 for (const domain of currentDomains) {
-                    // Properly escape the domain for use in the onclick attribute
-                    const escapedDomain = domain.replace(/'/g, "\\'");
                     domainHtml += '<span class="domain-item">' + domain + 
-                        ' <button class="remove-btn" onclick="removeDomain(\'' + escapedDomain + '\')">&times;</button></span>';
+                        ' <button class="remove-btn" data-domain="' + domain + '">&times;</button></span>';
                 }
                 domainHtml += '</div>';
             } else {
@@ -471,6 +469,22 @@ const TEST_CLIENT_HTML = `<!DOCTYPE html>
             }
             
             showStatus('domain-info', domainHtml, 'info');
+            
+            // Add event listeners to the remove buttons after they're added to the DOM
+            setTimeout(() => {
+                const domainList = document.getElementById('domain-list');
+                if (domainList) {
+                    domainList.addEventListener('click', function(event) {
+                        const target = event.target as HTMLElement;
+                        if (target.classList.contains('remove-btn')) {
+                            const domain = target.getAttribute('data-domain');
+                            if (domain) {
+                                removeDomain(domain);
+                            }
+                        }
+                    });
+                }
+            }, 0);
         }
         
         // Add domain

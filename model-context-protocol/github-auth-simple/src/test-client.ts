@@ -201,7 +201,8 @@ const TEST_CLIENT_HTML = `<!DOCTYPE html>
         }
         
         .domain-item { 
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
             padding: 6px 12px;
             margin: 5px 5px 5px 0;
             font-weight: 600;
@@ -211,6 +212,26 @@ const TEST_CLIENT_HTML = `<!DOCTYPE html>
             background: white;
             border: 2px solid var(--color-accent);
             animation: domain-shift 8s infinite alternate;
+        }
+        
+        .remove-btn {
+            background: transparent;
+            color: #ff3b5c;
+            border: none;
+            margin-left: 8px;
+            padding: 0 6px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .remove-btn:hover {
+            background: rgba(255, 59, 92, 0.1);
+            transform: scale(1.2);
         }
         
         @keyframes domain-shift {
@@ -274,7 +295,8 @@ const TEST_CLIENT_HTML = `<!DOCTYPE html>
         
         <div id="auth-section">
             <h2>✨ 1. Authentication</h2>
-            <button onclick="startAuth()">Login with GitHub</button>
+            <button id="auth-button" onclick="startAuth()">Login with GitHub</button>
+            <button id="logout-button" onclick="logout()" class="hidden">Logout</button>
             <div id="auth-status" class="status"></div>
         </div>
         
@@ -320,6 +342,10 @@ const TEST_CLIENT_HTML = `<!DOCTYPE html>
                 document.getElementById('user-section').classList.remove('hidden');
                 document.getElementById('domain-section').classList.remove('hidden');
                 
+                // Toggle auth buttons
+                document.getElementById('auth-button').classList.add('hidden');
+                document.getElementById('logout-button').classList.remove('hidden');
+                
                 // Store in localStorage for persistence
                 localStorage.setItem('github_auth_token', token);
                 localStorage.setItem('github_username', username);
@@ -345,6 +371,10 @@ const TEST_CLIENT_HTML = `<!DOCTYPE html>
                     
                     document.getElementById('user-section').classList.remove('hidden');
                     document.getElementById('domain-section').classList.remove('hidden');
+                    
+                    // Toggle auth buttons
+                    document.getElementById('auth-button').classList.add('hidden');
+                    document.getElementById('logout-button').classList.remove('hidden');
                     
                     // Automatically load user info, domains and token
                     getUserInfo();
@@ -423,14 +453,15 @@ const TEST_CLIENT_HTML = `<!DOCTYPE html>
             }
         }
         
-        // Display domains
+        // Display domains with remove buttons
         function displayDomains() {
             let domainHtml = '';
             
             if (currentDomains.length > 0) {
                 domainHtml = '<strong>🌐 Allowed Domains:</strong><div style="margin-top:10px">';
                 for (const domain of currentDomains) {
-                    domainHtml += '<span class="domain-item">' + domain + '</span>';
+                    domainHtml += '<span class="domain-item">' + domain + 
+                        ' <button class="remove-btn" onclick="removeDomain(\'' + domain + '\')">&times;</button></span>';
                 }
                 domainHtml += '</div>';
             } else {
@@ -536,6 +567,59 @@ const TEST_CLIENT_HTML = `<!DOCTYPE html>
             } catch (error) {
                 showStatus('token-info', '❌ Error: ' + error.message, 'error');
             }
+        }
+        
+        // Remove domain
+        async function removeDomain(domainToRemove) {
+            if (!authToken || !userId) {
+                showStatus('domain-info', '❌ Get user info first', 'error');
+                return;
+            }
+            
+            // Filter out the domain to remove
+            const newDomains = currentDomains.filter(domain => domain !== domainToRemove);
+            
+            try {
+                const response = await fetch(API_BASE + '/api/domains?user_id=' + userId, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + authToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ domains: newDomains })
+                });
+                
+                if (response.ok) {
+                    currentDomains = newDomains;
+                    displayDomains();
+                } else {
+                    showStatus('domain-info', '❌ Error: ' + response.statusText, 'error');
+                }
+            } catch (error) {
+                showStatus('domain-info', '❌ Error: ' + error.message, 'error');
+            }
+        }
+        
+        // Logout function
+        function logout() {
+            // Clear stored data
+            localStorage.removeItem('github_auth_token');
+            localStorage.removeItem('github_username');
+            localStorage.removeItem('github_user_id');
+            
+            // Reset variables
+            authToken = null;
+            userId = null;
+            currentDomains = [];
+            apiToken = null;
+            
+            // Update UI
+            document.getElementById('auth-button').classList.remove('hidden');
+            document.getElementById('logout-button').classList.add('hidden');
+            document.getElementById('user-section').classList.add('hidden');
+            document.getElementById('domain-section').classList.add('hidden');
+            
+            showStatus('auth-status', 'Logged out successfully', 'info');
         }
         
         // Show status

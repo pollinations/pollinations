@@ -1,0 +1,17 @@
+name = "github-auth-simple"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "github_auth"
+database_id = "4145d600-1df6-44a2-9769-5d5f731deb77"
+
+[env.production]
+name = "github-auth-simple"
+route = { pattern = "auth.pollinations.ai/*", zone_name = "pollinations.ai" }
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "github_auth"
+database_id = "4145d600-1df6-44a2-9769-5d5f731deb77"

@@ -1,0 +1,4 @@
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+JWT_SECRET=your_jwt_secret_at_least_32_chars
+REDIRECT_URI=http://localhost:8787/callback

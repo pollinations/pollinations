@@ -7,6 +7,14 @@
 
 import { handleAuthStart, handleAuthCallback, handleAuthStatus } from './handlers';
 import { getUserByGithubId, updateDomainAllowlist, getAuthSession } from './db';
+import { 
+  handleAuthorize,
+  handleToken,
+  handleMetadataDiscovery,
+  handleClientRegistration
+} from './auth/oauth-handlers';
+import { requireAuth } from './auth/jwt';
+import { handleJWKS } from './auth/jwks';
 import type { Env } from './types';
 
 export default {
@@ -108,6 +116,41 @@ export default {
         console.log('Auth callback received');
         const response = await handleAuthCallback(request, env);
         return logAndReturnResponse(response, 'Auth callback');
+      }
+      
+      // OAuth 2.1 Authorization endpoint
+      if (path === '/authorize') {
+        console.log('OAuth 2.1 authorize requested');
+        const response = await handleAuthorize(request, env);
+        return logAndReturnResponse(response, 'OAuth authorize');
+      }
+      
+      // OAuth 2.1 Token endpoint
+      if (path === '/token') {
+        console.log('OAuth 2.1 token exchange requested');
+        const response = await handleToken(request, env);
+        return logAndReturnResponse(response, 'OAuth token');
+      }
+      
+      // OAuth 2.0 Authorization Server Metadata
+      if (path === '/.well-known/oauth-authorization-server') {
+        console.log('OAuth metadata discovery requested');
+        const response = await handleMetadataDiscovery(request, env);
+        return logAndReturnResponse(response, 'OAuth metadata');
+      }
+      
+      // Dynamic Client Registration endpoint
+      if (path === '/register') {
+        console.log('OAuth client registration requested');
+        const response = await handleClientRegistration(request, env);
+        return logAndReturnResponse(response, 'OAuth client registration');
+      }
+      
+      // JWKS endpoint for key discovery
+      if (path === '/jwks') {
+        console.log('JWKS requested');
+        const response = await handleJWKS(request, env);
+        return logAndReturnResponse(response, 'JWKS');
       }
       
       // Get user domains endpoint

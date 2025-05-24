@@ -52,6 +52,49 @@ sequenceDiagram
 | `/token/:userId` | GET | Returns valid GitHub token |
 | `/health` | GET | Health check endpoint |
 
+## OAuth 2.1 / MCP Compliant Endpoints
+
+This service now supports OAuth 2.1 compliant authorization for Model Context Protocol (MCP) clients:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/authorize` | GET | OAuth 2.1 authorization endpoint (requires PKCE) |
+| `/token` | POST | Token exchange endpoint |
+| `/.well-known/oauth-authorization-server` | GET | OAuth 2.0 Authorization Server Metadata |
+| `/register` | POST | Dynamic Client Registration |
+| `/jwks` | GET | JSON Web Key Set endpoint |
+
+### JWT-Based Authorization Flow
+
+1. **Authorization Request**: Client initiates flow with PKCE parameters
+   ```
+   GET /authorize?response_type=code&client_id=CLIENT_ID&redirect_uri=REDIRECT_URI
+       &code_challenge=CHALLENGE&code_challenge_method=S256&state=STATE
+   ```
+
+2. **Token Exchange**: Exchange authorization code for JWT tokens
+   ```
+   POST /token
+   Content-Type: application/x-www-form-urlencoded
+   
+   grant_type=authorization_code&code=CODE&code_verifier=VERIFIER&redirect_uri=REDIRECT_URI
+   ```
+
+3. **Token Response**: Receive JWT access and refresh tokens
+   ```json
+   {
+     "access_token": "eyJ...",
+     "token_type": "Bearer",
+     "expires_in": 3600,
+     "refresh_token": "eyJ..."
+   }
+   ```
+
+4. **Using JWT Tokens**: Include in Authorization header
+   ```
+   Authorization: Bearer eyJ...
+   ```
+
 ## Database Schema
 
 The database schema is defined in `schema.sql` and includes:

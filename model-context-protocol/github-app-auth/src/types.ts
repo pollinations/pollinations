@@ -10,6 +10,7 @@ export interface Env {
   GITHUB_APP_PRIVATE_KEY: string;
   GITHUB_APP_ID: string;
   REDIRECT_URI: string;
+  JWT_SECRET?: string; // For JWT token signing
 }
 
 export interface User {

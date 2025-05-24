@@ -207,8 +207,9 @@ export const generateHTML = () => `<!DOCTYPE html>
             if (currentDomains.length > 0) {
                 domainHtml = '<strong>🌐 Allowed Domains:</strong><div style="margin-top:10px">';
                 for (const domain of currentDomains) {
+                    // Use double quotes for HTML attributes to avoid escaping issues
                     domainHtml += '<span class="domain-item">' + domain + 
-                        '<span class="remove-domain" onclick="removeDomain(\'' + domain + '\')">×</span></span>';
+                        '<span class="remove-domain" onclick="removeDomain(\"' + domain + '\")">&times;</span></span>';
                 }
                 domainHtml += '</div>';
             } else {

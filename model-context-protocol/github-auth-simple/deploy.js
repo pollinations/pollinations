@@ -31,7 +31,7 @@ devVarsContent.split('\n').forEach(line => {
 });
 
 // Check required environment variables
-const requiredVars = ['GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET', 'JWT_SECRET'];
+const requiredVars = ['GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET', 'JWT_SECRET', 'ADMIN_API_KEY'];
 const missingVars = requiredVars.filter(varName => !envVars[varName]);
 
 if (missingVars.length > 0) {

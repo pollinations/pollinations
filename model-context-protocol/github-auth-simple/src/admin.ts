@@ -6,9 +6,14 @@ import type { Env } from './types';
  * Uses a simple hardcoded API key from environment variables
  */
 export async function handleAdminDatabaseDump(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
-  // Verify admin API key
+  // Verify admin API key - check both header and URL parameter
+  const url = new URL(request.url);
+  const apiKeyParam = url.searchParams.get('api_key');
   const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ') || authHeader.slice(7) !== env.ADMIN_API_KEY) {
+  const headerApiKey = authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  
+  // Check if either the header or parameter contains a valid API key
+  if ((apiKeyParam !== env.ADMIN_API_KEY) && (headerApiKey !== env.ADMIN_API_KEY)) {
     return new Response(JSON.stringify({
       error: true,
       message: 'Unauthorized: Invalid admin API key'

@@ -91,7 +91,7 @@ export function shouldShowAds(content, messages = [], req = null) {
     }
 
     // Skip ad processing if referrer is from roblox or image.pollinations.ai
-    if (requestData && requestData.referrer && requestData.referrer !== 'unknown' && (requestData.referrer?.includes('roblox') || requestData.referrer?.includes('image.pollinations.ai'))) {
+    if (requestData && requestData.referrer && requestData.referrer !== 'unknown' && (requestData.referrer?.includes('v1_rblx_access') || requestData.referrer?.includes('image.pollinations.ai'))) {
         // log('Skipping ad processing due to referrer presence:', requestData.referrer);
         return { shouldShowAd: false, markerFound: false };
     }

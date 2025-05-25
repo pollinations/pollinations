@@ -1,0 +1,26 @@
+{
+  "name": "@pollinations/shared-auth",
+  "version": "1.0.0",
+  "description": "Shared authentication utilities for Pollinations services",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./auth-utils": "./auth-utils.js",
+    "./config": "./config.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  },
+  "keywords": [
+    "authentication",
+    "pollinations",
+    "shared",
+    "utilities"
+  ],
+  "author": "Pollinations",
+  "license": "ISC"
+}

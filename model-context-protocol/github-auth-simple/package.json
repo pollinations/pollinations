@@ -7,7 +7,7 @@
     "dev": "wrangler dev",
     "deploy": "bash deploy.sh production",
     "deploy:prod": "ENV_FILE=.dev.vars.prod bash deploy.sh production",
-    "deploy:local": "ENV_FILE=.dev.vars.local bash deploy.sh local",
+    "deploy:local": "ENV_FILE=.dev.vars bash deploy.sh local",
     "test": "node test.js"
   },
   "dependencies": {

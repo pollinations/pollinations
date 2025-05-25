@@ -9,7 +9,7 @@ const devVarsPath = path.join(__dirname, '.dev.vars.prod');
 
 // Check if .dev.vars exists
 if (!fs.existsSync(devVarsPath)) {
-  console.error('Error: .dev.vars file not found!');
+  console.error('Error: .dev.vars.prod file not found!');
   process.exit(1);
 }
 
@@ -53,7 +53,7 @@ Object.entries(envVars).forEach(([key, value]) => {
   }
 });
 
-console.log('Deploying with environment variables from .dev.vars...');
+console.log('Deploying with environment variables from .dev.vars.prod...');
 
 try {
   // Execute the deploy command

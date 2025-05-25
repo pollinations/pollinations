@@ -165,7 +165,7 @@ The handling of referrers and tokens across text.pollinations.ai and image.polli
 ### 4.2 Long-term Improvements
 
 1. **Unified Authentication System**:
-   - Implement proper JWT-based user authentication
+   - Implement proper token-based authentication
    - Consistent token validation across services
    - Rate limiting based on authenticated users
 
@@ -184,140 +184,6 @@ The handling of referrers and tokens across text.pollinations.ai and image.polli
    - Consistent naming conventions
    - Proper TypeScript interfaces
 
-## 5. Environment Variables Summary
-
-### text.pollinations.ai
-- `WHITELISTED_DOMAINS` - Domains that bypass queue
-- `GA_MEASUREMENT_ID` - Google Analytics ID
-- `GA_API_SECRET` - Google Analytics secret
-- Various API keys for AI providers
-
-### image.pollinations.ai
-- `VALID_TOKENS` - Comma-separated list of valid tokens
-- `BAD_DOMAINS` - Comma-separated list of domains to transform
-- `CLOUDFLARE_API_TOKEN` - For Cloudflare AI models
-- `CLOUDFLARE_ACCOUNT_ID` - Cloudflare account
-
-## 6. auth.pollinations.ai - Future Authentication Service
-
-### 6.1 Overview
-
-The auth.pollinations.ai service represents a modern, clean approach to authentication that could serve as the foundation for unified authentication across all Pollinations services. It implements:
-
-- **GitHub OAuth Flow**: Primary authentication method
-- **JWT Token System**: Standard JWT tokens with 24-hour expiration
-- **Domain Allowlist Management**: Per-user domain restrictions
-- **API Token Generation**: Simple 16-character tokens for service access
-
-### 6.2 Key Features
-
-**Authentication Flow:**
-1. GitHub OAuth authentication (`/authorize` → `/callback`)
-2. JWT token generation for session management
-3. API token generation for service-to-service authentication
-
-**Token Implementation:**
-```typescript
-// JWT Token Creation (24-hour expiration)
-const jwt = await new jose.SignJWT({
-  sub: userId,
-  username,
-})
-  .setProtectedHeader({ alg: 'HS256' })
-  .setIssuedAt()
-  .setExpirationTime('24h')
-  .sign(secret);
-
-// API Token Generation (16-character, URL-safe)
-const buffer = new Uint8Array(12);
-crypto.getRandomValues(buffer);
-const token = btoa(String.fromCharCode(...buffer))
-  .replace(/\+/g, '-')
-  .replace(/\//g, '_')
-  .replace(/=/g, '')
-  .substring(0, 16);
-```
-
-**Endpoints:**
-- `GET /authorize?redirect_uri=...` - Start OAuth flow
-- `GET /callback` - GitHub OAuth callback
-- `GET /api/user` - Get current user (JWT required)
-- `GET /api/domains?user_id=...` - Get domain allowlist
-- `POST /api/domains?user_id=...` - Update domain allowlist
-- `GET /api/check-domain?user_id=...&domain=...` - Check domain access
-- `GET /api/token?user_id=...` - Get API token
-- `POST /api/token?user_id=...` - Generate new API token
-
-### 6.3 Database Schema
-
-```sql
--- Simplified user storage
-CREATE TABLE users (
-  github_user_id TEXT PRIMARY KEY,
-  username TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- API tokens for service access
-CREATE TABLE api_tokens (
-  token TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(github_user_id)
-);
-
--- Domain allowlist (replacing referrer checks)
-CREATE TABLE domains (
-  user_id TEXT,
-  domain TEXT,
-  PRIMARY KEY (user_id, domain),
-  FOREIGN KEY (user_id) REFERENCES users(github_user_id)
-);
-```
-
-### 6.4 Integration Strategy
-
-**For text.pollinations.ai:**
-1. Replace referrer-based whitelisting with domain allowlist checks
-2. Use API tokens instead of environment-based token lists
-3. Implement JWT validation for user requests
-4. Migrate from service-specific auth to centralized system
-
-**For image.pollinations.ai:**
-1. Replace hardcoded approved domains with database lookups
-2. Migrate from comma-separated VALID_TOKENS to API token validation
-3. Use domain allowlist instead of bad domain checks
-4. Implement proper user authentication for queue bypass
-
-**Benefits of Migration:**
-- **Centralized Authentication**: Single source of truth for user identity
-- **Dynamic Configuration**: No more hardcoded domain lists
-- **Better Security**: Proper OAuth flow instead of referrer checks
-- **User Management**: Actual user accounts with permissions
-- **Scalability**: Database-backed instead of environment variables
-
-### 6.5 Referrer Handling in auth.pollinations.ai
-
-**Current State**: The service does NOT use referrers for authentication or access control at all. This is the correct approach.
-
-**Domain Management**: Instead of referrer checking, it uses:
-- Explicit domain allowlists per user
-- Database-backed domain validation
-- No reliance on spoofable headers
-
-This represents the ideal pattern that should be adopted by both text and image services.
-
-## Conclusion
-
-The current implementation mixes authentication, analytics, and access control concerns across both services with inconsistent patterns. A refactoring effort is needed to:
-1. Separate referrer usage (analytics only) from authentication (tokens only)
-2. Standardize extraction and validation logic
-3. Implement proper security measures
-4. Create shared utilities to reduce code duplication
-
-This will make the system more maintainable, secure, and easier to understand.
-
 ## 7. Recommendations
 
 1. **Immediate Actions:**
@@ -326,87 +192,41 @@ This will make the system more maintainable, secure, and easier to understand.
    - Remove referrer fallback in image.pollinations.ai token extraction
    - Implement proper logging for all authentication attempts
 
-2. **Short-term Improvements:**
+2. **Authentication Strategy:**
+   - **Frontend Apps (no backend)**: Use referrer-based identification + IP-based queuing
+   - **Backend Apps**: Use token-based authentication with no queuing
+   - Maintain simple token validation (string comparison)
+   - No JWT implementation needed for text/image APIs
+
+3. **Short-term Improvements:**
    - Create unified token validation middleware
-   - Implement rate limiting based on user tokens instead of IP
-   - Add proper JWT token support to image.pollinations.ai
-   - Create clear separation between analytics and access control
+   - Standardize token extraction (Authorization header, x-pollinations-token, query param)
+   - Implement token-based usage tracking (no queue for token requests)
+   - Clear separation: referrers for analytics/identification, tokens for authentication
 
-3. **Long-term Strategy:**
-   - Migrate both services to use auth.pollinations.ai
-   - Implement proper user management system
-   - Use OAuth flows for third-party integrations
-   - Remove all referrer-based authentication
-
-## 8. Additional Findings from Comprehensive Search
-
-### 8.1 IP-Based Access Control
-
-Both services implement IP-based blocking and rate limiting:
-
-**text.pollinations.ai:**
-- Queue system per IP address using `p-queue` library
-- IP extraction from multiple headers (x-forwarded-for, x-real-ip, cf-connecting-ip)
-- IP-based analytics tracking
-- Queue bypass logic combined with referrer checks
-
-**image.pollinations.ai:**
-- In-memory IP violation tracking
-- IP blocking for safety violations
-- IP-based rate limiting (10 violations = 30 min block)
-- Cloudflare Worker forwards client IP headers
-
-### 8.2 Authentication Header Patterns
-
-**Bearer Token Usage:**
-- image.pollinations.ai: Supports Bearer tokens in Authorization header
-- text.pollinations.ai: Uses Bearer tokens for external API calls (Portkey, Azure, etc.)
-- Both services use Bearer format but for different purposes
-
-**Custom Headers:**
-- `x-pollinations-token`: Custom header for token extraction in image service
-- Multiple API key headers for various AI providers
-
-### 8.3 CORS Implementation
-
-Both services implement CORS headers:
-- `Access-Control-Allow-Origin: *`
-- `Access-Control-Allow-Headers: Content-Type`
-- No authentication headers in CORS configuration
-
-### 8.4 External API Key Management
-
-Extensive use of environment variables for API keys:
-- Azure OpenAI (multiple endpoints)
-- Scaleway (Pixtral, Mistral)
-- OpenRouter
-- Cloudflare
-- Bing Search API
-- Google Analytics
-
-### 8.5 Security Considerations Not Previously Mentioned
-
-1. **No Session Management**: Neither service implements session cookies or session storage
-2. **Token Extraction Fallback**: image.pollinations.ai falls back to referrer headers if no token found
-3. **Public CORS**: Both services allow all origins, potentially enabling CSRF attacks
-4. **IP Spoofing Risk**: Relying on headers for IP detection can be spoofed
-5. **No Rate Limit Headers**: Services don't return rate limit information to clients
-
-### 8.6 Model Context Protocol (MCP) Integration
-
-A new MCP service exists that:
-- Implements OAuth flow for Pollinations
-- Uses PKCE for enhanced security
-- Provides structured access to Pollinations resources
-- Could serve as a template for API authentication
+4. **Implementation Details:**
+   - Keep referrer checking for frontend apps (browser-based usage)
+   - Bypass IP queue for valid token requests
+   - Track usage by token instead of IP for backend apps
+   - Maintain whitelist for trusted domains (queue bypass)
 
 ## 9. Final Recommendations
 
-Based on all findings, the priority should be:
+Based on all findings and the simplified authentication strategy:
 
-1. **Immediate**: Remove referrer-based authentication entirely
-2. **High Priority**: Implement auth.pollinations.ai integration
-3. **Medium Priority**: Standardize token formats and validation
-4. **Low Priority**: Clean up legacy code and consolidate utilities
+1. **Immediate**: Standardize token/referrer extraction utilities
+2. **High Priority**: 
+   - Implement token-based queue bypass in both services
+   - Remove referrer fallback from token extraction
+   - Consolidate domain whitelists to environment variables
+3. **Medium Priority**: 
+   - Create shared authentication utilities
+   - Implement token-based usage tracking
+   - Standardize error responses
+4. **Low Priority**: Clean up legacy code and improve documentation
 
-The auth.pollinations.ai service provides a clean, secure foundation that both text and image services should adopt to eliminate current security vulnerabilities and inconsistencies.
+The simplified approach maintains security while being practical:
+- Frontend apps use referrer + IP queuing (current behavior)
+- Backend apps use tokens for authentication and bypass queuing
+- No complex JWT infrastructure needed for the APIs
+- auth.pollinations.ai remains separate for user management

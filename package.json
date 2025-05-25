@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "chartjs-node-canvas": "^5.0.0",
+    "csv-parser": "^3.2.0"
+  }
+}

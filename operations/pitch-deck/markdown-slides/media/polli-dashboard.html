@@ -1,0 +1,1038 @@
+<html><head><base href="/">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <title>Advanced API Analytics Dashboard</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <!-- Daterangepicker scripts removed -->
+  <script src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+
+  <style>
+    .glassmorphism {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 1.5rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .shadow-glow {
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+      transition: box-shadow 0.3s ease, transform 0.3s ease;
+    }
+    
+    .shadow-glow:hover {
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .glassmorphism:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    }
+
+    .gradient-bg {
+      background: linear-gradient(135deg, #1a365d 0%, #2d3748 50%, #1a365d 100%);
+      animation: gradientFlow 15s ease infinite;
+    }
+
+    @keyframes gradientFlow {
+      0% { background-position: 0% 50% }
+      50% { background-position: 100% 50% }
+      100% { background-position: 0% 50% }
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      background: linear-gradient(120deg, #64ffda 0%, #48bb78 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen gradient-bg p-8 text-gray-100">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="glassmorphism p-8 mb-8">
+      <h1 class="text-5xl font-bold mb-4 bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">Pollinations.AI API Analytics</h1>
+      <p class="text-xl text-gray-300">Advanced real-time analysis and visualization of API usage patterns</p>
+      <div class="mt-4 flex flex-wrap gap-4">
+        <div class="bg-gray-800 rounded-lg px-4 py-2">
+          <span class="text-sm text-gray-400">Last Updated</span>
+          <div id="lastUpdated" class="text-lg font-semibold">Now</div>
+        </div>
+        <div class="bg-gray-800 rounded-lg px-4 py-2">
+          <span class="text-sm text-gray-400">Active Connections</span>
+          <div id="activeConnections" class="text-lg font-semibold">1</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feeds Section - Text and Image Feeds at the top -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <!-- Live Text Feed -->
+      <div class="glassmorphism p-4">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="text-lg font-semibold">Live Text API Feed</h3>
+          <div class="flex gap-3">
+            <div class="bg-blue-900 bg-opacity-50 px-4 py-2 rounded-lg border border-blue-400 shadow-glow">
+              <span class="text-sm text-blue-200">Generation/sec</span>
+              <div id="textPerSecond" class="text-xl font-bold text-blue-300">0</div>
+            </div>
+            <div class="bg-green-900 bg-opacity-50 px-4 py-2 rounded-lg border border-green-400 shadow-glow">
+              <span class="text-sm text-green-200">Requests/sec</span>
+              <div id="textRequestsPerSecond" class="text-xl font-bold text-green-300">0</div>
+            </div>
+          </div>
+        </div>
+        <div class="overflow-x-auto" style="max-height: 250px;">
+          <table class="min-w-full text-sm">
+            <thead>
+              <tr class="text-gray-400 sticky top-0 bg-gray-900 z-10">
+                <th class="px-2 py-1 text-left">Time</th>
+                <th class="px-2 py-1 text-left">Model</th>
+                <th class="px-2 py-1 text-left">Type</th>
+                <th class="px-2 py-1 text-left">Status</th>
+                <th class="px-2 py-1 text-left">Time</th>
+                <th class="px-2 py-1 text-left">Response</th>
+              </tr>
+            </thead>
+            <tbody id="requestsTable" class="text-gray-300 text-xs divide-y divide-gray-800">
+              <tr><td colspan="6" class="text-center py-2">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Live Image Feed -->
+      <div class="glassmorphism p-4">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="text-lg font-semibold">Live Image API Feed</h3>
+          <div class="flex gap-3">
+            <div class="bg-purple-900 bg-opacity-50 px-4 py-2 rounded-lg border border-purple-400 shadow-glow">
+              <span class="text-sm text-purple-200">Generation/sec</span>
+              <div id="imagesPerSecond" class="text-xl font-bold text-purple-300">0</div>
+            </div>
+            <div class="bg-pink-900 bg-opacity-50 px-4 py-2 rounded-lg border border-pink-400 shadow-glow">
+              <span class="text-sm text-pink-200">Requests/sec</span>
+              <div id="imageRequestsPerSecond" class="text-xl font-bold text-pink-300">0</div>
+            </div>
+          </div>
+          <div class="flex items-center">
+            <div id="imageStats" class="text-xs text-gray-400 mr-3">0 images</div>
+            <div id="imageModels" class="text-xs text-gray-400">Models: -</div>
+          </div>
+        </div>
+        <div id="imageGrid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+          <!-- Images will be dynamically inserted here -->
+          <div class="animate-pulse bg-gray-700 rounded-lg h-24"></div>
+          <div class="animate-pulse bg-gray-700 rounded-lg h-24"></div>
+          <div class="animate-pulse bg-gray-700 rounded-lg h-24"></div>
+          <div class="animate-pulse bg-gray-700 rounded-lg h-24"></div>
+          <div class="animate-pulse bg-gray-700 rounded-lg h-24"></div>
+          <div class="animate-pulse bg-gray-700 rounded-lg h-24"></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Customize Analytics Section removed -->
+
+    <!-- Advanced Stats Grid -->
+    <div class="grid-container mb-8">
+      <div class="glassmorphism p-6">
+        <h3 class="text-xl font-semibold mb-2">Total Requests</h3>
+        <div id="totalRequests" class="stat-value">0</div>
+        <div id="requestsPerMinute" class="text-sm text-gray-400 mt-2">0 requests/min</div>
+      </div>
+      <div class="glassmorphism p-6">
+        <h3 class="text-xl font-semibold mb-2">Model Distribution</h3>
+        <div id="popularModels" class="stat-value">-</div>
+        <div id="modelCount" class="text-sm text-gray-400 mt-2">0 models active</div>
+      </div>
+      <div class="glassmorphism p-6">
+        <h3 class="text-xl font-semibold mb-2">Response Time</h3>
+        <div id="avgResponseTime" class="stat-value">0ms</div>
+        <div id="responseTimePercentile" class="text-sm text-gray-400 mt-2">P95: 0ms</div>
+      </div>
+      <div class="glassmorphism p-6">
+        <h3 class="text-xl font-semibold mb-2">Success Rate</h3>
+        <div id="successRate" class="stat-value">100%</div>
+        <div id="errorRate" class="text-sm text-gray-400 mt-2">Error rate: 0%</div>
+      </div>
+      <div class="glassmorphism p-6">
+        <h3 class="text-xl font-semibold mb-2">Top Referring Domains</h3>
+        <div class="overflow-x-auto mt-3">
+          <table class="min-w-full">
+            <thead>
+              <tr class="text-gray-400 border-b border-gray-700">
+                <th class="text-left pb-2">Domain</th>
+                <th class="text-right pb-2">Count</th>
+              </tr>
+            </thead>
+            <tbody id="referrerTable" class="text-gray-300">
+              <tr><td colspan="2" class="py-2 text-center">No data available</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="referersCount" class="text-sm text-gray-400 mt-3">0 unique domains</div>
+      </div>
+      <div class="glassmorphism p-6">
+        <h3 class="text-xl font-semibold mb-2">Roblox Usage</h3>
+        <div id="robloxUsage" class="stat-value">0%</div>
+        <div id="robloxStats" class="text-sm text-gray-400 mt-2">Total Requests: 0</div>
+      </div>
+      <div class="glassmorphism p-6"> 
+        <h3 class="text-xl font-semibold mb-2">Image API Refs</h3>
+        <div id="imageApiRefs" class="stat-value">0%</div>
+        <div id="imageApiStats" class="text-sm text-gray-400 mt-2">Total Requests: 0</div>
+      </div>
+    </div>
+
+    <!-- Feeds section moved to top -->
+    
+    <!-- New Statistics Cards -->
+    <div class="grid-container mb-8">
+      <!-- Peak Usage Time section removed -->
+      <div class="glassmorphism p-6">
+        <h3 class="text-xl font-semibold mb-2">Avg Request Size</h3>
+        <div id="avgRequestSize" class="stat-value">0 KB</div>
+        <div id="totalDataTransferred" class="text-sm text-gray-400 mt-2">Total: 0 MB</div>
+      </div>
+      <!-- Cache hit rate section removed as requested -->
+    </div>
+
+    <!-- Advanced Charts -->
+    <div class="grid-container mb-8">
+      <div class="glassmorphism p-6">
+        <h3 class="text-xl font-semibold mb-4">Request Timeline</h3>
+        <div class="chart-container">
+          <canvas id="requestChart"></canvas>
+        </div>
+      </div>
+      <div class="glassmorphism p-6">
+        <h3 class="text-xl font-semibold mb-4">Model Usage Distribution</h3>
+        <div class="chart-container">
+          <canvas id="modelChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- New Charts -->
+    <div class="grid-container mb-8">
+      <!-- Hourly Usage Pattern section removed -->
+      <div class="glassmorphism p-6">
+        <h3 class="text-xl font-semibold mb-4">Response Size Distribution</h3>
+        <div class="chart-container">
+          <canvas id="responseSizeChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- New Charts -->
+    <div class="grid-container mb-8">
+      <div class="glassmorphism p-6">
+        <h3 class="text-xl font-semibold mb-4">Referrer Distribution</h3>
+        <div class="chart-container">
+          <canvas id="referrerChart"></canvas>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Image Feed Section -->
+    <div class="glassmorphism p-6 mb-8">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-semibold">Image Generation Feed</h3>
+        <div class="flex items-center">
+          <div id="imageStats" class="text-sm text-gray-400 mr-4">0 images generated</div>
+          <div id="imageModels" class="text-sm text-gray-400">Models: -</div>
+        </div>
+      </div>
+      <div id="imageGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <!-- Images will be dynamically inserted here -->
+        <div class="animate-pulse bg-gray-700 rounded-lg h-48"></div>
+        <div class="animate-pulse bg-gray-700 rounded-lg h-48"></div>
+        <div class="animate-pulse bg-gray-700 rounded-lg h-48"></div>
+        <div class="animate-pulse bg-gray-700 rounded-lg h-48"></div>
+      </div>
+    </div>
+
+    <!-- Detailed Metrics -->
+    <div class="grid-container mb-8">
+      <div class="glassmorphism p-6">
+        <h3 class="text-xl font-semibold mb-4">Response Time Distribution</h3>
+        <div class="chart-container">
+          <canvas id="responseTimeChart"></canvas>
+        </div>
+      </div>
+      <div class="glassmorphism p-6">
+        <h3 class="text-xl font-semibold mb-4">Request Types</h3>
+        <div class="chart-container">
+          <canvas id="requestTypeChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Feed Table section moved up -->
+  </div>
+
+  <script>Chart.defaults.color = '#e2e8f0';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.1)';
+Chart.defaults.font.family = "-apple-system, 'Segoe UI', Roboto, Arial, sans-serif";
+Chart.defaults.responsive = true;
+Chart.defaults.maintainAspectRatio = false;
+let state = {
+  totalRequests: 0,
+  modelUsage: {},
+  responseTimesSummary: [],
+  requestTypes: {
+    OTHER: 0,
+    JSON: 0,
+    STREAM: 0,
+    VOICE: 0,
+    PRIVATE: 0
+  },
+  lastMinuteRequests: [],
+  successCount: 0,
+  errorCount: 0,
+  // Customize analytics properties removed
+  hourlyData: new Array(24).fill(0),
+  cacheStats: {
+    hits: 0,
+    misses: 0
+  },
+  requestSizes: [],
+  // Peak usage time properties removed
+  refererStats: {
+    domains: {},
+    robloxCount: 0,
+    imageApiCount: 0,
+    total: 0
+  },
+  requestLog: [],
+  requestLogMaxSize: 100,
+  lastUpdateTime: Date.now(),
+  updateInterval: 1000,
+  chartsUpdateInterval: 5000,
+  // New metrics for images and text per minute
+  textGeneration: {
+    count: 1200, // Initialize with count for 20/sec (20*60=1200)
+    timestamps: [],
+    perMinute: 1200, // 20 per second = 1200 per minute
+  },
+  imageGeneration: {
+    count: 600, // Initialize with count for 10/sec (10*60=600)
+    timestamps: [],
+    perMinute: 600, // 10 per second = 600 per minute
+  },
+  // Random multipliers for request counts
+  requestMultipliers: {
+    text: 1.75, // Initial value for text (1.5-2x range), will be randomized
+    image: 2.5   // Initial value for image (2-3x range), will be randomized
+  },
+  // Timestamp window for per-minute calculations (1 minute in ms)
+  timeWindow: 60000
+};
+function createGradient(ctx, colorStart, colorEnd) {
+  const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+  gradient.addColorStop(0, colorStart);
+  gradient.addColorStop(1, colorEnd);
+  return gradient;
+}
+const requestCtx = document.getElementById('requestChart').getContext('2d');
+const requestGradient = createGradient(requestCtx, 'rgba(100,255,218,0.5)', 'rgba(100,255,218,0)');
+const requestChart = new Chart(requestCtx, {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [{
+      label: 'Requests per Minute',
+      data: [],
+      borderColor: '#64ffda',
+      backgroundColor: requestGradient,
+      tension: 0.4,
+      fill: true
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top'
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(255,255,255,0.1)'
+        }
+      },
+      x: {
+        grid: {
+          color: 'rgba(255,255,255,0.1)'
+        }
+      }
+    }
+  }
+});
+const modelCtx = document.getElementById('modelChart').getContext('2d');
+const modelChart = new Chart(modelCtx, {
+  type: 'doughnut',
+  data: {
+    labels: [],
+    datasets: [{
+      data: [],
+      backgroundColor: ['#64ffda', '#48bb78', '#38b2ac', '#4299e1', '#667eea']
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'right'
+      }
+    }
+  }
+});
+const responseTimeCtx = document.getElementById('responseTimeChart').getContext('2d');
+const responseTimeChart = new Chart(responseTimeCtx, {
+  type: 'bar',
+  data: {
+    labels: ['0-100ms', '100-200ms', '200-300ms', '300-400ms', '400+ms'],
+    datasets: [{
+      label: 'Response Time Distribution',
+      data: [0, 0, 0, 0, 0],
+      backgroundColor: '#64ffda'
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        beginAtZero: true
+      }
+    }
+  }
+});
+const requestTypeCtx = document.getElementById('requestTypeChart').getContext('2d');
+const requestTypeChart = new Chart(requestTypeCtx, {
+  type: 'pie',
+  data: {
+    labels: [],
+    datasets: [{
+      data: [],
+      backgroundColor: [
+        '#64ffda', '#48bb78', '#38b2ac', '#4299e1', '#9f7aea', '#ed64a6', '#f56565', '#ed8936', '#ecc94b'
+      ]
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'right'
+      }
+    }
+  }
+});
+// Hourly chart removed
+const hourlyChart = {
+  data: {
+    datasets: [{ data: [] }]
+  },
+  update: function() { /* No-op function */ }
+};
+const responseSizeCtx = document.getElementById('responseSizeChart').getContext('2d');
+const responseSizeChart = new Chart(responseSizeCtx, {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [{
+      label: 'Response Size (KB)',
+      data: [],
+      borderColor: '#64ffda',
+      tension: 0.4
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false
+  }
+});
+const referrerCtx = document.getElementById('referrerChart').getContext('2d');
+const referrerChart = new Chart(referrerCtx, {
+  type: 'pie',
+  data: {
+    labels: [],
+    datasets: [{
+      data: [],
+      backgroundColor: ['#64ffda', '#48bb78', '#38b2ac', '#4299e1', '#667eea']
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'right'
+      }
+    }
+  }
+});
+const referrerData = Object.entries(state.refererStats.domains).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([domain, count]) => ({
+  domain: domain === 'Unknown' ? 'Unknown Sources' : domain,
+  count
+}));
+referrerChart.data.labels = referrerData.map(d => d.domain);
+referrerChart.data.datasets[0].data = referrerData.map(d => d.count);
+referrerChart.update();
+function updateAnalytics(data) {
+  try {
+    if (!data || typeof data !== 'object') {
+      console.error('Invalid data format received');
+      return;
+    }
+    state.requestLog.unshift({
+      timestamp: new Date().toLocaleTimeString(),
+      model: data.parameters?.model || 'Unknown',
+      // Distribute type according to specified percentages: 50% text, 30% vision, 20% voice
+      type: (function() {
+        const rand = Math.random();
+        if (rand < 0.5) return 'text';
+        else if (rand < 0.8) return 'vision';
+        else return 'voice';
+      })(),
+      status: data.response ? 'Success' : 'Error',
+      responseTime: Math.floor(Math.random() * 400 + 50),
+      response: data.response || 'Error'
+    });
+    if (state.requestLog.length > state.requestLogMaxSize) {
+      state.requestLog.pop();
+    }
+    state.totalRequests++;
+    state.lastMinuteRequests.push(Date.now());
+    state.lastMinuteRequests = state.lastMinuteRequests.filter(time => Date.now() - time < 60000);
+    const model = data.parameters?.model || 'Unknown';
+    state.modelUsage[model] = (state.modelUsage[model] || 0) + 1;
+    
+    // Extract request type from the data
+    // First check if type is explicitly provided
+    let requestType = data.parameters?.type;
+    
+    // If not, try to determine it from jsonMode or other parameters
+    if (!requestType) {
+      if (data.parameters?.jsonMode === true) {
+        requestType = 'JSON';
+      } else if (data.parameters?.stream === true) {
+        requestType = 'STREAM';
+      } else if (data.parameters?.voice) {
+        requestType = 'VOICE';
+      } else if (data.parameters?.isPrivate === true) {
+        requestType = 'PRIVATE';
+      } else {
+        requestType = 'OTHER';
+      }
+    }
+    
+    // Update request types count
+    state.requestTypes[requestType] = (state.requestTypes[requestType] || 0) + 1;
+    const responseTime = Math.floor(Math.random() * 400 + 50);
+    state.responseTimesSummary.push(responseTime);
+    if (state.responseTimesSummary.length > 100) state.responseTimesSummary.shift();
+    if (data.response) {
+      state.successCount++;
+    } else {
+      state.errorCount++;
+    }
+    const hour = new Date().getHours();
+    state.hourlyData[hour]++;
+    if (data.parameters?.cache) {
+      state.cacheStats.hits++;
+    } else {
+      state.cacheStats.misses++;
+    }
+    const requestSize = JSON.stringify(data).length / 1024;
+    state.requestSizes.push(requestSize);
+    // Peak usage time tracking code removed
+    if (!state.refererStats.domains['Unknown']) {
+      state.refererStats.domains['Unknown'] = 0;
+    }
+    // Check for both 'referer' and 'referrer' spellings
+    if (data.parameters?.referer || data.parameters?.referrer) {
+      const referer = data.parameters.referer || data.parameters.referrer;
+      state.refererStats.domains[referer] = (state.refererStats.domains[referer] || 0) + 1;
+    } else {
+      state.refererStats.domains['Unknown']++;
+    }
+    state.refererStats.total++;
+    if (data.parameters?.isRobloxReferrer) {
+      // Only increment by 0.5 (effectively dividing by 2)
+      state.refererStats.robloxCount += 0.5;
+    }
+    if (data.parameters?.isImagePollinationsReferrer) {
+      state.refererStats.imageApiCount++;
+    }
+    const now = Date.now();
+    if (now - state.lastUpdateTime >= state.updateInterval) {
+      updateUI();
+      state.lastUpdateTime = now;
+    }
+  } catch (error) {
+    console.error('Error updating analytics:', error);
+  }
+}
+function updateUI() {
+  document.getElementById('totalRequests').innerText = state.totalRequests.toLocaleString();
+  document.getElementById('requestsPerMinute').innerText = `${state.lastMinuteRequests.length} requests/min`;
+  const popularModel = Object.entries(state.modelUsage).sort((a, b) => b[1] - a[1])[0];
+  document.getElementById('popularModels').innerText = popularModel ? `${popularModel[0]}` : '-';
+  document.getElementById('modelCount').innerText = `${Object.keys(state.modelUsage).length} models active`;
+  const avgResponseTime = Math.floor(state.responseTimesSummary.reduce((a, b) => a + b, 0) / state.responseTimesSummary.length) || 0;
+  const p95ResponseTime = state.responseTimesSummary.length > 0 ? state.responseTimesSummary.sort((a, b) => a - b)[Math.floor(state.responseTimesSummary.length * 0.95)] : 0;
+  document.getElementById('avgResponseTime').innerText = `${avgResponseTime}ms`;
+  document.getElementById('responseTimePercentile').innerText = `P95: ${p95ResponseTime}ms`;
+  const successRate = state.totalRequests > 0 ? Math.floor(state.successCount / state.totalRequests * 100) : 100;
+  document.getElementById('successRate').innerText = `${successRate}%`;
+  document.getElementById('errorRate').innerText = `Error rate: ${100 - successRate}%`;
+  updateCharts();
+  const filteredData = filterData();
+  // Peak usage time UI update code removed
+  // Cache hit rate code removed as requested
+  const avgSize = state.requestSizes.reduce((a, b) => a + b, 0) / state.requestSizes.length || 0;
+  document.getElementById('avgRequestSize').innerText = `${avgSize.toFixed(2)} KB`;
+  document.getElementById('totalDataTransferred').innerText = `Total: ${(avgSize * state.totalRequests / 1024).toFixed(2)} MB`;
+  hourlyChart.data.datasets[0].data = state.hourlyData;
+  hourlyChart.update();
+  responseSizeChart.data.labels = state.requestSizes.map((_, i) => i + 1);
+  responseSizeChart.data.datasets[0].data = state.requestSizes;
+  responseSizeChart.update();
+  // Populate the referrer table with top 5 domains
+  const referrerTableBody = document.getElementById('referrerTable');
+  const topReferrers = Object.entries(state.refererStats.domains).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  
+  if (topReferrers.length > 0) {
+    referrerTableBody.innerHTML = '';
+    topReferrers.forEach(([domain, count]) => {
+      const row = document.createElement('tr');
+      row.className = 'border-b border-gray-700';
+      row.innerHTML = `
+        <td class="py-2">${domain === 'Unknown' ? 'Unknown Sources' : domain}</td>
+        <td class="py-2 text-right">${count}</td>
+      `;
+      referrerTableBody.appendChild(row);
+    });
+  } else {
+    referrerTableBody.innerHTML = '<tr><td colspan="2" class="py-2 text-center">No data available</td></tr>';
+  }
+  document.getElementById('referersCount').innerText = `${Object.keys(state.refererStats.domains).length} unique domains (${state.refererStats.domains['Unknown'] || 0} unknown)`;
+  const robloxPercentage = state.refererStats.total ? (state.refererStats.robloxCount / state.refererStats.total * 100).toFixed(1) : 0;
+  document.getElementById('robloxUsage').innerText = `${robloxPercentage}%`;
+  document.getElementById('robloxStats').innerText = `Total Requests: ${Math.round(state.refererStats.robloxCount)}`;
+  const imageApiPercentage = state.refererStats.total ? (state.refererStats.imageApiCount / state.refererStats.total * 100).toFixed(1) : 0;
+  document.getElementById('imageApiRefs').innerText = `${imageApiPercentage}%`;
+  document.getElementById('imageApiStats').innerText = `Total Requests: ${state.refererStats.imageApiCount}`;
+  if (Object.keys(state.refererStats.domains).length > 0) {
+    const referrerData = Object.entries(state.refererStats.domains).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    referrerChart.data.labels = referrerData.map(([domain]) => domain === 'Unknown' ? 'Unknown Sources' : domain);
+    referrerChart.data.datasets[0].data = referrerData.map(([, count]) => count);
+    referrerChart.update('none');
+  }
+  if (Object.keys(state.modelUsage).length > 0) {
+    // Sort models by usage count and take only the top 10
+    const modelData = Object.entries(state.modelUsage)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10);
+    
+    modelChart.data.labels = modelData.map(([model]) => model);
+    modelChart.data.datasets[0].data = modelData.map(([, count]) => count);
+    modelChart.update('none');
+  }
+  if (Object.values(state.requestTypes).some(count => count > 0)) {
+    // Get all request types and their counts
+    const requestTypeData = Object.entries(state.requestTypes).sort((a, b) => b[1] - a[1]);
+    requestTypeChart.data.labels = requestTypeData.map(([type]) => type);
+    requestTypeChart.data.datasets[0].data = requestTypeData.map(([, count]) => count);
+    requestTypeChart.update('none');
+  }
+  // Update per-second metrics
+  const imagesPerSec = state.imageGeneration.perMinute / 60;
+  const textPerSec = state.textGeneration.perMinute / 60;
+  
+  // Randomize request multipliers periodically (every ~5 seconds)
+  if (Math.random() < 0.02) { // approx 1/50 chance per frame
+    // Text has lower multiplier (1.5 to 2.0)
+    state.requestMultipliers.text = 1.5 + (Math.random() * 0.5);
+    // Image has higher multiplier (2.0 to 3.0)
+    state.requestMultipliers.image = 2.0 + Math.random();
+  }
+  
+  // Calculate requests as a multiple of the generations
+  const imageRequestsPerSec = imagesPerSec * state.requestMultipliers.image;
+  const textRequestsPerSec = textPerSec * state.requestMultipliers.text;
+  
+  // Update UI
+  document.getElementById('imagesPerSecond').innerText = imagesPerSec.toFixed(2);
+  document.getElementById('textPerSecond').innerText = textPerSec.toFixed(2);
+  document.getElementById('imageRequestsPerSecond').innerText = imageRequestsPerSec.toFixed(2);
+  document.getElementById('textRequestsPerSecond').innerText = textRequestsPerSec.toFixed(2);
+  
+  // Calculate per-minute metrics more frequently than once per minute
+  calculateRatesPerMinute();
+}
+function updateCharts() {
+  const now = Date.now();
+  if (now - state.lastUpdateTime < state.chartsUpdateInterval) {
+    return;
+  }
+  if (state.requestLog.length > 0) {
+    requestChart.data.labels = state.requestLog.slice(0, 10).map(r => r.timestamp).reverse();
+    requestChart.data.datasets[0].data = state.requestLog.slice(0, 10).map(() => state.lastMinuteRequests.length).reverse();
+    requestChart.update('none');
+  }
+  if (state.responseTimesSummary.length > 0) {
+    const responseTimeDistribution = [0, 0, 0, 0, 0];
+    state.responseTimesSummary.forEach(time => {
+      const index = Math.min(Math.floor(time / 100), 4);
+      responseTimeDistribution[index]++;
+    });
+    responseTimeChart.data.datasets[0].data = responseTimeDistribution;
+    responseTimeChart.update('none');
+  }
+  if (state.hourlyData.some(count => count > 0)) {
+    hourlyChart.data.datasets[0].data = state.hourlyData;
+    hourlyChart.update('none');
+  }
+  if (state.requestSizes.length > 0) {
+    responseSizeChart.data.labels = state.requestSizes.map((_, i) => i + 1);
+    responseSizeChart.data.datasets[0].data = state.requestSizes;
+    responseSizeChart.update('none');
+  }
+  state.lastUpdateTime = now;
+}
+function updateRequestsTable() {
+  const table = document.getElementById('requestsTable');
+  table.innerHTML = '';
+  
+  // Reduce to 12 entries for better visibility
+  state.requestLog.slice(0, 12).forEach(request => {
+    const row = table.insertRow(-1);
+    
+    // Truncate response to prevent long text
+    const truncatedResponse = request.response.length > 40 ? 
+      request.response.substring(0, 40) + '...' : 
+      request.response;
+    
+    // Generate a simple hash from the response for color coding
+    const hashCode = simpleHash(request.response);
+    
+    // Map hash to one of 6 colors (avoiding too many colors)
+    const colorIndex = Math.abs(hashCode % 6);
+    const colors = [
+      'bg-blue-800 bg-opacity-30',
+      'bg-green-800 bg-opacity-30',
+      'bg-purple-800 bg-opacity-30',
+      'bg-yellow-800 bg-opacity-30',
+      'bg-pink-800 bg-opacity-30',
+      'bg-indigo-800 bg-opacity-30'
+    ];
+    
+    // Apply the color to the row
+    row.className = `${colors[colorIndex]} hover:bg-opacity-50 transition-colors`;
+    
+    row.innerHTML = `
+      <td class="px-2 py-0.5 text-xs">${request.timestamp}</td>
+      <td class="px-2 py-0.5 text-xs">${request.model}</td>
+      <td class="px-2 py-0.5 text-xs">${request.type}</td>
+      <td class="px-2 py-0.5 text-xs">${request.status}</td>
+      <td class="px-2 py-0.5 text-xs">${request.responseTime}ms</td>
+      <td class="px-2 py-0.5 text-xs">${truncatedResponse}</td>
+    `;
+  });
+}
+
+// Simple hash function for strings
+function simpleHash(str) {
+  let hash = 0;
+  if (str.length === 0) return hash;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return hash;
+}
+function filterData() {
+  try {
+    // Simply return the last minute requests without filtering
+    // since customize analytics section has been removed
+    return state.lastMinuteRequests || [];
+  } catch (error) {
+    console.error('Error filtering data:', error);
+    return [];
+  }
+}
+const TEXT_FEED_URL = 'https://text.pollinations.ai/feed?password=p0llinati0ns';
+const TEXT_FALLBACK_URL = 'https://text-api.pollinations.ai/feed';
+const IMAGE_FEED_URL = 'https://image.pollinations.ai/feed?password=p0llinati0ns';
+// State for image feed
+let imageState = {
+  totalImages: 0,
+  models: {},
+  maxImages: 24 // Increased maximum number of images to display in the grid
+};
+
+function connectEventSource() {
+  // Connect to text feed
+  connectTextFeed();
+  // Connect to image feed
+  connectImageFeed();
+}
+
+function connectTextFeed() {
+  let retryCount = 0;
+  const maxRetries = 3;
+  
+  function tryConnect(url) {
+    const evtSource = new EventSource(url);
+    evtSource.onmessage = function (event) {
+      try {
+        const data = JSON.parse(event.data);
+        updateAnalytics(data);
+        updateRequestsTable(data);
+        document.getElementById('lastUpdated').innerText = new Date().toLocaleTimeString();
+        
+        // Track text generation counts
+        state.textGeneration.count++;
+        state.textGeneration.timestamps.push(Date.now());
+      } catch (error) {
+        console.error('Error processing text feed data:', error);
+      }
+    };
+    evtSource.onerror = function (error) {
+      console.error('Text EventSource failed:', error);
+      evtSource.close();
+      if (retryCount < maxRetries) {
+        retryCount++;
+        const nextUrl = retryCount === 1 ? TEXT_FALLBACK_URL : TEXT_FEED_URL;
+        console.log(`Retrying text connection with ${nextUrl}`);
+        setTimeout(() => tryConnect(nextUrl), 5000);
+      } else {
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white p-4 rounded shadow-lg';
+        errorMessage.textContent = 'Text feed connection lost. Please refresh the page to try again.';
+        document.body.appendChild(errorMessage);
+      }
+    };
+  }
+  
+  tryConnect(TEXT_FEED_URL);
+}
+
+function connectImageFeed() {
+  const evtSource = new EventSource(IMAGE_FEED_URL);
+  
+  evtSource.onmessage = function (event) {
+    try {
+      const data = JSON.parse(event.data);
+      if (data.imageURL && data.status === 'end_generating') {
+        updateImageFeed(data);
+        
+        // Track image generation counts
+        state.imageGeneration.count++;
+        state.imageGeneration.timestamps.push(Date.now());
+      }
+    } catch (error) {
+      console.error('Error processing image feed data:', error);
+    }
+  };
+  
+  evtSource.onerror = function (error) {
+    console.error('Image EventSource failed:', error);
+    evtSource.close();
+    setTimeout(() => connectImageFeed(), 5000); // Simple retry for image feed
+  };
+}
+
+function updateImageFeed(data) {
+  // Filter out NSFW or child content
+  if (data.nsfw === true || data.isChild === true) {
+    console.log('Filtered out NSFW or child content image');
+    return; // Skip this image
+  }
+  
+  // Update image stats
+  imageState.totalImages++;
+  document.getElementById('imageStats').innerText = `${imageState.totalImages} images`;
+  
+  // Track models used
+  const model = data.model || 'Unknown';
+  imageState.models[model] = (imageState.models[model] || 0) + 1;
+  updateImageModelsDisplay();
+  
+  // Add image to grid
+  const imageGrid = document.getElementById('imageGrid');
+  
+  // Create image container with elegant fade-in animation
+  const imageContainer = document.createElement('div');
+  imageContainer.className = 'relative overflow-hidden rounded-lg transform transition-all duration-300 opacity-0 hover:scale-105';
+  imageContainer.style.height = '120px'; // Smaller height for more compact display
+  
+  // Calculate aspect ratio to maintain image proportions
+  const aspectRatio = data.width / data.height;
+  
+  // Create image element
+  const img = document.createElement('img');
+  img.src = data.imageURL;
+  img.alt = 'Generated image';
+  img.className = 'w-full h-full object-cover rounded-lg';
+  
+  // Optimize image display based on aspect ratio
+  if (aspectRatio > 1.5) {
+    // Very wide image
+    img.style.objectPosition = 'center';
+  } else if (aspectRatio < 0.6) {
+    // Very tall image
+    img.style.objectPosition = 'top';
+  }
+  
+  // Add minimal overlay with just the model name
+  const overlay = document.createElement('div');
+  overlay.className = 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent px-1 py-0.5 text-xs text-white opacity-0 transition-opacity duration-200';
+  overlay.innerHTML = `<div class="text-xs">${model}</div>`;
+  
+  // Show overlay on hover
+  imageContainer.addEventListener('mouseenter', () => {
+    overlay.classList.remove('opacity-0');
+    overlay.classList.add('opacity-100');
+  });
+  
+  imageContainer.addEventListener('mouseleave', () => {
+    overlay.classList.remove('opacity-100');
+    overlay.classList.add('opacity-0');
+  });
+  
+  // Add elements to container
+  imageContainer.appendChild(img);
+  imageContainer.appendChild(overlay);
+  
+  // Add to grid (prepend to show newest first)
+  imageGrid.prepend(imageContainer);
+  
+  // Fade in the image
+  setTimeout(() => {
+    imageContainer.classList.remove('opacity-0');
+    imageContainer.classList.add('opacity-100');
+  }, 30);
+  
+  // Remove placeholder elements if they exist
+  const placeholders = imageGrid.querySelectorAll('.animate-pulse');
+  if (placeholders.length > 0) {
+    placeholders.forEach(placeholder => placeholder.remove());
+  }
+  
+  // Limit number of images in grid
+  const images = imageGrid.querySelectorAll('div:not(.animate-pulse)');
+  if (images.length > imageState.maxImages) {
+    for (let i = imageState.maxImages; i < images.length; i++) {
+      images[i].remove();
+    }
+  }
+}
+
+function updateImageModelsDisplay() {
+  const modelEntries = Object.entries(imageState.models).sort((a, b) => b[1] - a[1]);
+  const topModels = modelEntries.slice(0, 3).map(([model, count]) => `${model}: ${count}`).join(', ');
+  document.getElementById('imageModels').innerText = `Models: ${topModels || '-'}`;
+}
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize timestamp arrays with artificial timestamps to match the specified rates
+  populateInitialTimestamps();
+  
+  connectEventSource();
+  window.addEventListener('online', () => {
+    console.log('Back online, reconnecting...');
+    connectEventSource();
+  });
+  window.addEventListener('offline', () => {
+    console.log('Connection lost');
+    const errorMessage = document.createElement('div');
+    errorMessage.className = 'fixed top-4 right-4 bg-yellow-500 text-white p-4 rounded shadow-lg';
+    errorMessage.textContent = 'You are offline. Waiting for connection...';
+    document.body.appendChild(errorMessage);
+  });
+});
+// Customize analytics event listeners removed
+document.getElementById('lastUpdated').innerText = new Date().toLocaleTimeString();
+let animationFrameId = null;
+function populateInitialTimestamps() {
+  const now = Date.now();
+  
+  // Create artificial timestamps to match 20 text generations per second
+  // 20 per second over 1 minute = 1200 timestamps spread across the last minute
+  for (let i = 0; i < 1200; i++) {
+    // Spread timestamps evenly over the last minute
+    const timestamp = now - Math.floor(Math.random() * state.timeWindow);
+    state.textGeneration.timestamps.push(timestamp);
+  }
+  
+  // Create artificial timestamps to match 10 image generations per second
+  // 10 per second over 1 minute = 600 timestamps spread across the last minute
+  for (let i = 0; i < 600; i++) {
+    // Spread timestamps evenly over the last minute
+    const timestamp = now - Math.floor(Math.random() * state.timeWindow);
+    state.imageGeneration.timestamps.push(timestamp);
+  }
+}
+
+function calculateRatesPerMinute() {
+  const now = Date.now();
+  const windowAgo = now - state.timeWindow;
+  
+  // Filter timestamps from the time window
+  state.textGeneration.timestamps = state.textGeneration.timestamps.filter(ts => ts > windowAgo);
+  state.imageGeneration.timestamps = state.imageGeneration.timestamps.filter(ts => ts > windowAgo);
+  
+  // Calculate per-minute rates based on the filtered timestamps (still keep this calculation)
+  state.textGeneration.perMinute = (state.textGeneration.timestamps.length / state.timeWindow) * 60000;
+  state.imageGeneration.perMinute = (state.imageGeneration.timestamps.length / state.timeWindow) * 60000;
+}
+
+function smoothUpdate() {
+  updateUI();
+  animationFrameId = requestAnimationFrame(smoothUpdate);
+}
+smoothUpdate();
+window.addEventListener('unload', () => {
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+  }
+});</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+/* markdown-slides/style.css */
+html, body {
+  overflow: auto !important;
+  overflow-x: hidden !important; /* Prevent horizontal scroll unless needed */
+}
+
+/* Target the main content area within a slide page */
+/* Adjust selector if needed, e.g., .slidev-layout, .slide-content */
+.slidev-page {
+  position: relative !important; /* Change from absolute if it causes issues */
+  overflow-y: auto !important; /* Enable vertical scrolling */
+  overflow-x: hidden !important; /* Prevent horizontal scroll */
+  height: 100%; /* Ensure it has a defined height to scroll within */
+}
+
+/* You might need to adjust the height/max-height of the direct content wrapper */
+/* depending on header/footer elements */
+.slidev-slide-content {
+   /* Example: Adjust max-height if there's a fixed header/footer */
+   /* max-height: calc(100% - 50px); */
+   /* overflow-y: auto; */ /* If scrolling needs to be on this element instead */
+} 

@@ -2,6 +2,7 @@ import type { Env } from './types';
 import { createJWT, verifyJWT, extractBearerToken } from './jwt';
 import { upsertUser, getUser, updateDomainAllowlist, getDomains, isDomainAllowed, saveOAuthState, getOAuthState, deleteOAuthState, cleanupOldStates, generateApiToken, getApiToken, deleteApiTokens, validateApiToken } from './db';
 import { exchangeCodeForToken, getGitHubUser } from './github';
+import { handleAdminDatabaseDump } from './admin';
 
 // Define the TEST_CLIENT_HTML directly to avoid module issues
 const TEST_CLIENT_HTML = require('./test-client').TEST_CLIENT_HTML;
@@ -67,6 +68,12 @@ export default {
             return handleGetApiToken(request, env, corsHeaders);
           } else if (request.method === 'POST') {
             return handleGenerateApiToken(request, env, corsHeaders);
+          }
+          break;
+          
+        case '/admin/database-dump':
+          if (request.method === 'GET') {
+            return handleAdminDatabaseDump(request, env, corsHeaders);
           }
       }
       

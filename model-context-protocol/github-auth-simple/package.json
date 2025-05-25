@@ -5,9 +5,9 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "bash deploy.sh production",
-    "deploy:prod": "ENV_FILE=.dev.vars.prod bash deploy.sh production",
-    "deploy:local": "ENV_FILE=.dev.vars.local bash deploy.sh local",
+    "deploy": "node deploy.js",
+    "deploy:prod": "ENV_FILE=.dev.vars.prod node deploy.js",
+    "deploy:local": "ENV_FILE=.dev.vars node deploy.js",
     "test": "node test.js"
   },
   "dependencies": {

@@ -4,12 +4,13 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-// Path to .dev.vars file
-const devVarsPath = path.join(__dirname, '.dev.vars.prod');
+// Get environment file path from ENV_FILE environment variable or use default
+const envFile = process.env.ENV_FILE || '.dev.vars.prod';
+const devVarsPath = path.join(__dirname, envFile);
 
-// Check if .dev.vars exists
+// Check if environment file exists
 if (!fs.existsSync(devVarsPath)) {
-  console.error('Error: .dev.vars file not found!');
+  console.error(`Error: ${envFile} file not found!`);
   process.exit(1);
 }
 
@@ -31,7 +32,7 @@ devVarsContent.split('\n').forEach(line => {
 });
 
 // Check required environment variables
-const requiredVars = ['GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET', 'JWT_SECRET'];
+const requiredVars = ['GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET', 'JWT_SECRET', 'ADMIN_API_KEY'];
 const missingVars = requiredVars.filter(varName => !envVars[varName]);
 
 if (missingVars.length > 0) {
@@ -53,7 +54,7 @@ Object.entries(envVars).forEach(([key, value]) => {
   }
 });
 
-console.log('Deploying with environment variables from .dev.vars...');
+console.log(`Deploying with environment variables from ${envFile}...`);
 
 try {
   // Execute the deploy command

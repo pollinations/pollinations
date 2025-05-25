@@ -95,3 +95,8 @@ export function getRequestData(req) {
         response_format
     };
 }
+// Function to check if delay should be bypassed
+export function shouldBypassDelay(req) {
+    const referrer = getReferrer(req, req.body || {});
+    return WHITELISTED_DOMAINS.some(domain => referrer.toLowerCase().includes(domain));
+}

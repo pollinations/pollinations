@@ -528,6 +528,14 @@ const allProjects = {
   ],
   llmIntegrations: [
     {
+      name: "AI Code Generator",
+      url: "https://codegen.on.websim.com/",
+      description: "A websim project that generates code from description, selected programming language and other options. Integrates Pollinations because it allows for more models to choose from for potentially better results. It has modes like: Code Generator, Code Explainer, Reviewer, etc.",
+      author: "@Miencraft2",
+      submissionDate: "2025-05-25",
+      order: 1,
+    },
+    {
       name: "🖥️ Windows Walker",
       url: "https://github.com/SuperShivam5000/windows-walker",
       description: "Windows Walker – What Copilot for Windows should have been. AI-powered Windows assistant that translates voice/text commands into real system actions using PowerShell. Powered by ChatGPT + PowerShell in an Electron UI.",

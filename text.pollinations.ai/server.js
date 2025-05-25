@@ -339,7 +339,7 @@ export async function sendErrorResponse(res, req, error, requestData, statusCode
         messageCount: requestData.messages ? requestData.messages.length : 0,
         totalMessageLength: requestData.messages ? 
             requestData.messages.reduce((total, msg) => 
-                total + (typeof msg.content === 'string' ? msg.content.length : 0), 0) : 0
+                total + (typeof msg?.content === 'string' ? msg.content.length : 0), 0) : 0
     } : 'no request data';
 
     // Log comprehensive error information (for internal use only)

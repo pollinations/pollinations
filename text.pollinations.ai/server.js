@@ -13,7 +13,7 @@ import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { processRequestForAds } from './ads/initRequestFilter.js';
 import { createStreamingAdWrapper } from './ads/streamingAdWrapper.js';
-import { getRequestData, getReferrer, WHITELISTED_DOMAINS } from './requestUtils.js';
+import { getRequestData, shouldBypassDelay } from './requestUtils.js';
 
 // Load environment variables
 dotenv.config();
@@ -294,12 +294,6 @@ async function handleRequest(req, res, requestData) {
     // if (!shouldBypassDelay(req)) {
     //     await sleep(3000);
     // }
-}
-
-// Function to check if delay should be bypassed
-function shouldBypassDelay(req) {
-    const referrer = getReferrer(req, req.body || {});
-    return WHITELISTED_DOMAINS.some(domain => referrer.toLowerCase().includes(domain));
 }
 
 // Helper function for consistent error responses

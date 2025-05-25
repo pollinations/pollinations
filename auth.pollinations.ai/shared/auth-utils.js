@@ -13,7 +13,7 @@
  * @param {Request|Object} req - The request object (can be Cloudflare Request or Express req)
  * @returns {string|null} The referrer URL or null
  */
-function extractReferrer(req) {
+export function extractReferrer(req) {
   // Handle Cloudflare Workers Request
   if (req.headers && typeof req.headers.get === 'function') {
     return req.headers.get('referer') || 
@@ -39,7 +39,7 @@ function extractReferrer(req) {
  * @param {Request|Object} req - The request object
  * @returns {string|null} The token or null
  */
-function extractToken(req) {
+export function extractToken(req) {
   // Handle Cloudflare Workers Request
   if (req.headers && typeof req.headers.get === 'function') {
     // Check Authorization header
@@ -93,7 +93,7 @@ function extractToken(req) {
  * @param {string[]|string} validTokens - Array of valid tokens or comma-separated string
  * @returns {boolean} Whether the token is valid
  */
-function isValidToken(token, validTokens) {
+export function isValidToken(token, validTokens) {
   if (!token) return false;
   
   // Handle comma-separated string (from env vars)
@@ -111,7 +111,7 @@ function isValidToken(token, validTokens) {
  * @param {string[]|string} whitelist - Array of whitelisted domains or comma-separated string
  * @returns {boolean} Whether the domain is whitelisted
  */
-function isDomainWhitelisted(referrer, whitelist) {
+export function isDomainWhitelisted(referrer, whitelist) {
   if (!referrer) return false;
   
   // Handle comma-separated string (from env vars)
@@ -140,7 +140,7 @@ function isDomainWhitelisted(referrer, whitelist) {
  * @param {Request|Object} req - The request object
  * @returns {string} The client IP or 'unknown'
  */
-function getClientIp(req) {
+export function getClientIp(req) {
   // Handle Cloudflare Workers Request
   if (req.headers && typeof req.headers.get === 'function') {
     return req.headers.get('cf-connecting-ip') ||
@@ -169,7 +169,7 @@ function getClientIp(req) {
  * @param {string[]|string} config.whitelistedDomains - Whitelisted domains
  * @returns {{shouldBypass: boolean, reason: string}} Bypass decision and reason
  */
-function shouldBypassQueue(req, config) {
+export function shouldBypassQueue(req, config) {
   // Check for valid token first (backend apps)
   const token = extractToken(req);
   if (token && isValidToken(token, config.validTokens)) {
@@ -183,26 +183,4 @@ function shouldBypassQueue(req, config) {
   }
   
   return { shouldBypass: false, reason: 'no_bypass' };
-}
-
-// Export for both CommonJS and ES modules
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    extractReferrer,
-    extractToken,
-    isValidToken,
-    isDomainWhitelisted,
-    getClientIp,
-    shouldBypassQueue
-  };
-} else {
-  // ES modules export (handled by bundlers)
-  export {
-    extractReferrer,
-    extractToken,
-    isValidToken,
-    isDomainWhitelisted,
-    getClientIp,
-    shouldBypassQueue
-  };
 }

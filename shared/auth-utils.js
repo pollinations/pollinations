@@ -5,6 +5,7 @@
  * Strategy:
  * - Frontend apps (no backend): Use referrer + IP-based queuing
  * - Backend apps: Use token authentication with no queuing
+ * - Referrers grant extended access but fewer rights than tokens
  * 
  * Usage:
  * Services should load their own .env file with dotenv, then import these utilities:
@@ -12,8 +13,8 @@
  */
 
 /**
- * Extract referrer from request headers
- * Used for frontend app identification and analytics
+ * Extract referrer from request headers and body
+ * Used for frontend app identification, extended access, and analytics
  * @param {Request|Object} req - The request object (can be Cloudflare Request or Express req)
  * @returns {string|null} The referrer URL or null
  */
@@ -21,6 +22,7 @@ export function extractReferrer(req) {
   // Handle Cloudflare Workers Request
   if (req.headers && typeof req.headers.get === 'function') {
     return req.headers.get('referer') || 
+           req.headers.get('referrer') || // Support both spellings
            req.headers.get('origin') || 
            req.headers.get('x-forwarded-host') || 
            null;
@@ -28,10 +30,18 @@ export function extractReferrer(req) {
   
   // Handle Express/Node.js request
   if (req.headers && typeof req.headers === 'object') {
-    return req.headers.referer || 
-           req.headers.origin || 
-           req.headers['x-forwarded-host'] || 
-           null;
+    const headerReferrer = req.headers.referer || 
+                          req.headers.referrer || // Support both spellings
+                          req.headers.origin || 
+                          req.headers['x-forwarded-host'];
+    
+    if (headerReferrer) return headerReferrer;
+    
+    // Check body for referrer field in POST requests (both spellings)
+    if (req.method === 'POST' && req.body) {
+      if (req.body.referrer) return req.body.referrer;
+      if (req.body.referer) return req.body.referer;
+    }
   }
   
   return null;
@@ -40,14 +50,56 @@ export function extractReferrer(req) {
 /**
  * Extract authentication token from request
  * Supports multiple token sources (NO referrer fallback)
+ * Compatible with OpenAI and other LLM API authentication patterns
  * @param {Request|Object} req - The request object
  * @returns {string|null} The token or null
  */
 export function extractToken(req) {
-  const q = new URL(req.url, 'http://x').searchParams.get('token');
-  const hdr = req.headers.get?.('authorization')?.replace(/^Bearer\s+/i,'') ||
-              req.headers.get?.('x-pollinations-token');
-  return q || hdr || null;            // header/query only – no referrer here!
+  // Check URL query parameters
+  const q = new URL(req.url, 'http://x').searchParams.get('token') || 
+           new URL(req.url, 'http://x').searchParams.get('api_key') || // Support api_key query param
+           new URL(req.url, 'http://x').searchParams.get('apikey'); // Support alternate spelling
+  
+  // Check headers for Bearer token, API key, and custom headers
+  // We're extra permissive with 'authorization' header format to support various clients
+  let authHeader = null;
+  if (req.headers.get) { // Cloudflare-style headers
+    const auth = req.headers.get('authorization');
+    if (auth) {
+      // Support both "Bearer token" and plain "token" formats
+      authHeader = auth.replace(/^Bearer\s+/i,'');
+    }
+    // Check various API key header patterns
+    authHeader = authHeader || 
+                req.headers.get('x-pollinations-token') ||
+                req.headers.get('x-api-key') ||
+                req.headers.get('api-key') ||
+                req.headers.get('apikey');
+  } else if (req.headers) { // Express-style headers
+    const auth = req.headers.authorization;
+    if (auth) {
+      // Support both "Bearer token" and plain "token" formats
+      authHeader = auth.replace(/^Bearer\s+/i,'');
+    }
+    // Check various API key header patterns
+    authHeader = authHeader || 
+                req.headers['x-pollinations-token'] ||
+                req.headers['x-api-key'] ||
+                req.headers['api-key'] ||
+                req.headers.apikey;
+  }
+  
+  // Check body for token field in POST requests (multiple field names)
+  let bodyToken = null;
+  if (req.method === 'POST' && req.body) {
+    bodyToken = req.body.token ||
+               req.body.api_key ||
+               req.body.apikey ||
+               req.body.auth_token ||
+               req.body.authorization;
+  }
+  
+  return q || authHeader || bodyToken || null;  // header/query/body only – no referrer here!
 }
 
 /**

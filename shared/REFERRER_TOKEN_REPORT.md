@@ -241,12 +241,14 @@ The simplified approach maintains security while being practical:
      - `extractReferrer(req)` - Standardized referrer extraction
      - `shouldBypassQueue(req, ctx)` - Unified queue bypass logic
      - `getIp(req)` - Consistent IP address extraction
+     - `validateApiTokenDb(token)` - Prepared for future auth API integration
 
 2. **Shared Queue Management**:
    - Created `shared/ipQueue.js` to standardize IP-based queue handling
    - Implemented `enqueue(req, fn, opts)` function that respects authentication context
    - Proper handling of legacy tokens and allowlisted domains
    - Self-contained configuration loading
+   - Successfully managing 68 legacy tokens and 20 allowlisted domains
 
 3. **Environment Configuration**:
    - Consolidated all token lists and domain allowlists in shared/.env
@@ -258,26 +260,39 @@ The simplified approach maintains security while being practical:
    - ✅ Updated text.pollinations.ai to use shared utilities
      - Removed legacy token handling and referrer checks
      - Simplified server.js implementation
+     - Fixed duplicate request handling bug that caused "Cannot set headers after they are sent to the client" error
+     - Removed redundant queue implementation that was causing issues
    - ✅ Updated image.pollinations.ai to use shared utilities
      - Removed VALID_TOKENS from .env (now in shared/.env as LEGACY_TOKENS)
      - Integrated with createAndReturnImages.js
+
+5. **Security Improvements**:
+   - Removed referrer fallback in token extraction
+   - Clear separation of concerns: referrers for analytics, tokens for authentication
+   - Consistent token validation across services
+   - Improved error handling and logging
 
 ### 🔄 IN PROGRESS
 
 1. **Documentation**:
    - Updated SIMPLE-plan.md with implementation status
    - Updated this REFERRER_TOKEN_REPORT.md with current state
+   - Adding detailed comments to code for better maintainability
 
 ### 📋 PLANNED
 
 1. **Testing**:
    - Add unit tests for the shared utilities
    - Test edge cases for token validation and queue bypass
+   - Create integration tests for both services
+   - Implement automated testing in CI pipeline
 
 2. **Future Enhancements**:
+   - Activate auth.pollinations.ai API integration for token validation
    - Consider moving token handling to cloudflare-cache services (see GitHub issue #2095)
    - Extract shared functionality from cloudflare-cache implementations
    - Implement edge authentication for improved security and performance
+   - Add monitoring and analytics for authentication and queue performance
 
 ## 11. Key Benefits of Implementation
 

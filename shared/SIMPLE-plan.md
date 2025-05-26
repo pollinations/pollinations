@@ -159,13 +159,14 @@ Ships in ~2 days, no new infra, and leaves clean seams for future upgrades.
 1. **Shared Authentication Utilities**:
    - Created `auth-utils.js` with standardized token and referrer extraction
    - Implemented `shouldBypassQueue()` for consistent queue bypass logic
-   - Added `validateApiTokenDb()` for API-based token validation
+   - Added `validateApiTokenDb()` for API-based token validation (prepared for future use)
    - Added `getIp()` for consistent IP address handling
 
 2. **Shared Queue Management**:
    - Implemented `ipQueue.js` with self-contained queue management
    - Created `enqueue()` function that handles IP-based rate limiting
    - Utilities automatically load their own configuration
+   - Successfully handling 68 legacy tokens and 20 allowlisted domains
 
 3. **Environment Configuration**:
    - Created centralized `.env` file in the shared folder
@@ -175,23 +176,32 @@ Ships in ~2 days, no new infra, and leaves clean seams for future upgrades.
 
 4. **Service Integration**:
    - ✅ Integrated with text.pollinations.ai service
+   - ✅ Fixed duplicate request handling bug in text.pollinations.ai
    - ✅ Integrated with image.pollinations.ai service
    - Simplified service code by removing duplicate logic
    - Services now just import and use the shared utilities
+
+5. **Bug Fixes**:
+   - Fixed "Cannot set headers after they are sent to the client" error in text.pollinations.ai
+   - Removed duplicate handleRequest calls in processRequest function
+   - Ensured proper queue bypass logic for all authentication methods
 
 ### 🔄 IN PROGRESS
 
 1. **Documentation**:
    - Updated SIMPLE-plan.md with implementation status
    - Updated REFERRER_TOKEN_REPORT.md with current state
+   - Added detailed comments to code for better maintainability
 
 ### 📋 PLANNED
 
 1. **Testing**:
    - Add unit tests for the shared utilities
    - Test edge cases for token validation and queue bypass
+   - Create integration tests for both services
 
 2. **Future Enhancements**:
+   - Activate auth.pollinations.ai API integration for token validation
    - Consider moving token handling to cloudflare-cache services (see GitHub issue #2095)
    - Extract shared functionality from cloudflare-cache implementations
    - Implement edge authentication for improved security and performance

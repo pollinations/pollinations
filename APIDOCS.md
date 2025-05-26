@@ -42,7 +42,81 @@ Click the links below to see examples in your browser:
   - [Referrer 🔗](#referrer-)
     - [API Update (starting **2025.03.31**) 📅](#api-update-starting-20250331-)
     - [Special Bee ✅🐝🍯](#special-bee-)
+  - [Authentication 🔑](#authentication-)
+    - [API Keys and Tokens](#api-keys-and-tokens)
+    - [Bearer Authentication](#bearer-authentication)
+    - [Authentication Methods](#authentication-methods)
   - [License 📜](#license-)
+
+---
+
+## Authentication 🔑
+
+Pollinations.AI provides flexible authentication options designed for different types of applications.
+
+### Who Needs What Authentication?
+
+- **Frontend Web Apps**: Only need a valid referrer - **no token required!**
+- **Backend Services & Scripts**: Should use API tokens for reliable access and higher rate limits
+- **Testing & Development**: Can use anonymous access for quick experimentation
+
+### Getting Started with Authentication
+
+**Visit [auth.pollinations.ai](https://auth.pollinations.ai) to:**
+- Set up and register your application's referrer
+- Create API tokens for backend applications
+- Manage your authentication settings
+
+### Referrer-Based Authentication
+
+For **frontend web applications** that call our APIs directly from the browser, a valid referrer is sufficient:
+
+- Browsers automatically send the `Referer` header
+- Alternatively, add `?referrer=your-app-identifier` to API requests
+- Registered referrers get higher rate limits and priority access
+- **No token needed** - keeping your frontend secure
+
+### API Keys and Tokens (For Backend Apps)
+
+For **backend services, scripts, and server applications**, tokens provide the highest priority access. Tokens can be provided using any of these methods:
+
+| Method | Description | Example |
+| :--- | :--- | :--- |
+| Authorization Header | Standard HTTP header with or without `Bearer` prefix | `Authorization: Bearer YOUR_TOKEN` or `Authorization: YOUR_TOKEN` |
+| Custom Headers | Alternative header options | `X-API-Key: YOUR_TOKEN` or `apikey: YOUR_TOKEN` |
+| Query Parameter | Token as URL parameter | `?token=YOUR_TOKEN` or `?api_key=YOUR_TOKEN` |
+| Request Body | Token in POST request body | `{ "token": "YOUR_TOKEN" }` or `{ "api_key": "YOUR_TOKEN" }` |
+
+### Bearer Authentication
+
+The Bearer authentication scheme is the recommended approach for backend applications, especially when integrating with our OpenAI-compatible endpoints:
+
+```http
+GET /your-endpoint HTTP/1.1
+Host: api.pollinations.ai
+Authorization: Bearer YOUR_TOKEN
+```
+
+### Authentication Tiers
+
+Pollinations.AI supports multiple authentication tiers:
+
+1. **API Token Authentication**: Highest priority (for backend applications)
+   - Highest rate limits and priority queue access
+   - Full access to all API features and endpoints
+   - **Create tokens at [auth.pollinations.ai](https://auth.pollinations.ai)**
+
+2. **Referrer-based Authentication**: Standard access (for frontend web apps)
+   - Increased rate limits compared to anonymous access
+   - Automatic handling through browser's `Referer` header
+   - **Register your domain at [auth.pollinations.ai](https://auth.pollinations.ai)**
+
+3. **Anonymous Access**: Basic access (for testing/development)
+   - Limited rate limits with standard queue waiting times
+   - No setup required - just call the API
+
+> **Security Best Practice**: Never expose API tokens in frontend code! 
+> Frontend web applications should rely on referrer-based authentication.
 
 ---
 
@@ -1928,19 +2002,40 @@ def connect_text_feed():
 
 ## Referrer 🔗
 
+**Referrers are the recommended authentication method for frontend web applications** that call our APIs directly from the browser. 
+
+Why use referrers?
+- **Security**: No tokens to manage or accidentally expose
+- **Simplicity**: Works automatically in browsers via the `Referer` header
+- **Priority**: Registered referrers get higher rate limits and priority queue access
+
+### How to Use Referrers
+
+1. **Automatic (Browser)**: When your web app makes API calls, browsers automatically send the `Referer` header
+2. **Manual (Optional)**: Add `?referrer=your-app-identifier` to API requests for more specific identification
+3. **Register**: Visit [auth.pollinations.ai](https://auth.pollinations.ai) to register your domain for increased rate limits
+
+**Example API call with explicit referrer:**
+```
+https://image.pollinations.ai/prompt/a%20beautiful%20landscape?referrer=mywebapp.com
+```
+
 ### API Update (starting **2025.03.31**) 📅
 
 - **Text-To-Image** responses may show the Pollinations.AI logo 🖼️ (can be disabled with `nologo=true`).
 - **Text-To-Text** responses may include a link to pollinations.ai 🔗.
 
-**To potentially influence future default behavior or qualify for different rate limits:** Add a `referrer` parameter to your API requests.
-
-- **Web Apps:** Browsers typically send this via the `Referer` HTTP header automatically. Explicitly setting the `referrer` parameter can provide more specific context (e.g., `?referrer=MyWebAppSection`).
-- **Bots & Backend Apps:** Add the `referrer` parameter (e.g., `?referrer=MyCoolBot` or in POST body) to identify your application.
+**For the best experience:**
+- **Web Applications**: Register your referrer at [auth.pollinations.ai](https://auth.pollinations.ai)
+- **Backend Services**: Use API tokens instead of referrers (see [Authentication section](#authentication-))
 
 ### Special Bee ✅🐝🍯
 
-Projects can **request to have their referrer verified** for potentially enhanced API access (e.g., priority queue, modified rate limits). This is evaluated on a case-by-case basis. [Submit a Special Bee Request](https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml)
+Web applications can qualify for enhanced API access (priority queue, modified rate limits) by registering as a Special Bee. 
+
+**Two ways to become a Special Bee:**
+1. **Self-serve**: Visit [auth.pollinations.ai](https://auth.pollinations.ai) to register your domain
+2. **Request review**: For special cases, [submit a Special Bee Request](https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml)
 
 ---
 

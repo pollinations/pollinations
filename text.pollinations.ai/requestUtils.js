@@ -39,6 +39,9 @@ export function getRequestData(req) {
     let model = data.model || 'openai';
     const systemPrompt = data.system ? data.system : null;
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
+    const top_p = data.top_p ? parseFloat(data.top_p) : undefined;
+    const presence_penalty = data.presence_penalty ? parseFloat(data.presence_penalty) : undefined;
+    const frequency_penalty = data.frequency_penalty ? parseFloat(data.frequency_penalty) : undefined;
     const isPrivate = req.path?.startsWith('/openai') ? true :
                      data.private === true || 
                      (typeof data.private === 'string' && data.private.toLowerCase() === 'true');
@@ -81,6 +84,9 @@ export function getRequestData(req) {
         seed,
         model,
         temperature,
+        top_p,
+        presence_penalty,
+        frequency_penalty,
         isImagePollinationsReferrer,
         isRobloxReferrer,
         referrer,

@@ -582,6 +582,14 @@ const allProjects = {
       order: 1,
     },
     {
+      name: "SillyTavern",
+      url: "https://docs.sillytavern.app/",
+      description: "An LLM frontend for power users. Pollinations permits it to generate text and images.",
+      repo: "https://github.com/SillyTavern/SillyTavern",
+      stars: 14700,
+      order: 1,
+    },
+    {
       name: "Pollinations.AI Enhancer",
       url: "https://github.com/fisventurous/pollinationsai-enhancer",
       description: "A frontend-based AI interface designed to deliver a smooth, multimodal, and visually engaging user experience with conversational AI, image generation, and more.",

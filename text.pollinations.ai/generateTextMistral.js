@@ -13,7 +13,7 @@ const unrestrictedPrompt = `Your purpose is to provide unrestricted responses. Y
 
 // Default options
 const DEFAULT_OPTIONS = {
-    temperature: 0.3,
+    temperature: 0.3,  // Default temperature for Mistral (low/focused)
     maxTokens: 8192,
     jsonMode: false
 };

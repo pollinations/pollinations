@@ -122,8 +122,23 @@ export function normalizeOptions(options = {}, defaults = {}) {
   
   // Handle special cases for common options
   if (normalized.temperature !== undefined) {
-    // Ensure temperature is within valid range (0-2)
-    normalized.temperature = Math.max(0, Math.min(2, normalized.temperature));
+    // Ensure temperature is within valid range (0-3)
+    normalized.temperature = Math.max(0, Math.min(3, normalized.temperature));
+  }
+  
+  if (normalized.top_p !== undefined) {
+    // Ensure top_p is within valid range (0-1)
+    normalized.top_p = Math.max(0, Math.min(1, normalized.top_p));
+  }
+  
+  if (normalized.presence_penalty !== undefined) {
+    // Ensure presence_penalty is within valid range (-2 to 2)
+    normalized.presence_penalty = Math.max(-2, Math.min(2, normalized.presence_penalty));
+  }
+  
+  if (normalized.frequency_penalty !== undefined) {
+    // Ensure frequency_penalty is within valid range (-2 to 2)
+    normalized.frequency_penalty = Math.max(-2, Math.min(2, normalized.frequency_penalty));
   }
   
   // // Handle maxTokens parameter

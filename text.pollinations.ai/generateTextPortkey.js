@@ -145,7 +145,6 @@ const baseCloudflareConfig = {
     authKey: process.env.CLOUDFLARE_AUTH_TOKEN,
     // Set default max_tokens to 8192 (increased from 256)
     'max-tokens': 8192,
-    'temperature': 0.1,
 };
 
 // Base configuration for Scaleway models
@@ -165,8 +164,9 @@ const baseMistralConfig = {
     'custom-host': process.env.SCALEWAY_MISTRAL_BASE_URL,
     authKey: process.env.SCALEWAY_MISTRAL_API_KEY,
     // Set default max_tokens to 8192
-    temperature: 0.3,
     'max-tokens': 8192,
+    // Default temperature for Mistral models (low/focused)
+    temperature: 0.3,
 };
 
 // Base configuration for Modal models
@@ -364,8 +364,7 @@ export const portkeyConfig = {
         authKey: process.env.AZURE_COMMAND_R_API_KEY,
         'auth-header-name': 'Authorization',
         'auth-header-value-prefix': '',
-        'max-tokens': 800,
-        temperature: 0.3
+        'max-tokens': 800
     }),
     // Cloudflare model configurations
     '@cf/meta/llama-3.3-70b-instruct-fp8-fast': () => createCloudflareModelConfig(),
@@ -399,7 +398,6 @@ export const portkeyConfig = {
     // Mistral model configuration
     'mistral-small-3.1-24b-instruct-2503': () => createMistralModelConfig({
         'max-tokens': 8192,
-        temperature: 0.3,
         'model': "mistral-small-3.1-24b-instruct-2503"
     }),
     // Modal model configurations
@@ -517,6 +515,15 @@ export const generateTextPortkey = createOpenAICompatibleClient({
                 }
             }
 
+            // Apply model-specific sampling parameter defaults if not provided by user
+            // Only set defaults if user hasn't provided values (they take precedence)
+            const samplingParams = ['temperature', 'top_p', 'presence_penalty', 'frequency_penalty'];
+            samplingParams.forEach(param => {
+                if (requestBody[param] === undefined && config[param] !== undefined) {
+                    log(`Setting ${param} to model default value: ${config[param]}`);
+                    requestBody[param] = config[param];
+                }
+            });
 
             return requestBody;
         } catch (error) {

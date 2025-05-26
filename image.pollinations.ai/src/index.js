@@ -13,10 +13,14 @@ import { countFluxJobs } from './availableServers.js';
 import { handleRegisterEndpoint } from './availableServers.js';
 import debug from 'debug';
 import { createProgressTracker } from './progressBar.js';
+import fs from 'fs';
+import path from 'path';
 
 // Import shared utilities
 import { enqueue } from '../../shared/ipQueue.js';
-import { extractToken, shouldBypassQueue, getIp } from '../../shared/auth-utils.js';
+import { extractToken, shouldBypassQueue, getIp, isValidToken, handleAuthentication, addAuthDebugHeaders, createAuthDebugResponse } from '../../shared/auth-utils.js';
+
+// Using DEBUG environment variable for debugging instead of file logging
 
 const logError = debug('pollinations:error');
 const logApi = debug('pollinations:api');
@@ -48,6 +52,7 @@ const setCORSHeaders = (res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Expose-Headers', 'X-Auth-Status, X-Auth-Reason, X-Debug-Token, X-Debug-Token-Source, X-Debug-Referrer, X-Debug-Legacy-Token-Match, X-Debug-Allowlist-Match, X-Debug-User-Id');
 }
 
 /** 
@@ -116,11 +121,10 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     progress.updateBar(requestId, 40, 'Server', 'Selecting optimal server...');
     progress.updateBar(requestId, 50, 'Generation', 'Preparing...');
     
-    // Check if request should bypass queue using shared utility
-    const { bypass: hasValidToken, userId } = await shouldBypassQueue(req);
+    const { bypass, reason, userId, debugInfo } = await handleAuthentication(req, requestId, logAuth);
     
     // Pass the authentication result directly instead of token and referrer
-    const { buffer, ...maturity } = await createAndReturnImageCached(generationPrompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId, wasTransformedForBadDomain, hasValidToken);
+    const { buffer, ...maturity } = await createAndReturnImageCached(generationPrompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId, wasTransformedForBadDomain, bypass);
 
     progress.updateBar(requestId, 50, 'Generation', 'Starting generation');
 
@@ -269,7 +273,10 @@ const checkCacheAndGenerate = async (req, res) => {
 
       // Check for valid token to bypass queue
       const token = extractToken(req);
-      const hasValidToken = isValidToken(token);
+      // Use the imported isValidToken function from auth-utils.js
+      // Pass the LEGACY_TOKENS from environment as the validTokens parameter
+      const legacyTokens = process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [];
+      const hasValidToken = isValidToken(token, legacyTokens);
       if (hasValidToken && safeParams.model !== "gptimage") {
         logAuth('Queue bypass granted for token:', token);
         progress.updateBar(requestId, 20, 'Priority', 'Token authenticated');
@@ -304,10 +311,25 @@ const checkCacheAndGenerate = async (req, res) => {
     });
 
 
-    res.writeHead(200, {
+    // Get authentication info from the token
+    const token = extractToken(req);
+    const legacyTokens = process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [];
+    const isAuthenticated = isValidToken(token, legacyTokens);
+    
+    // Add debug headers for authentication information
+    const headers = {
       'Content-Type': 'image/jpeg',
       'Cache-Control': 'public, max-age=31536000, immutable',
-    });
+      'X-Auth-Status': isAuthenticated ? 'authenticated' : 'unauthenticated'
+    };
+    
+    // Add token information if present
+    if (token) {
+      headers['X-Debug-Token-Present'] = 'true';
+      headers['X-Debug-Token-Source'] = 'header';
+    }
+    
+    res.writeHead(200, headers);
     res.write(bufferAndMaturity.buffer);
     res.end();
 
@@ -318,19 +340,48 @@ const checkCacheAndGenerate = async (req, res) => {
     progress.errorBar(requestId, error.message || 'Internal Server Error');
     progress.stop();
     
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      error: 'Internal Server Error',
-      message: error.message || 'An error occurred while processing your request',
-      details: error.details || {},
-      timingInfo,
+    // Determine the appropriate status code (default to 500 if not specified)
+    const statusCode = error.status || 500;
+    const errorType = statusCode === 401 ? 'Unauthorized' : 
+                     statusCode === 403 ? 'Forbidden' : 
+                     statusCode === 429 ? 'Too Many Requests' : 'Internal Server Error';
+    
+    // Extract debug info from error if available
+    const errorDebugInfo = error.details?.debugInfo;
+    
+    // Add debug headers for authentication information even in error responses
+    const errorHeaders = {
+      'Content-Type': 'application/json',
+      'X-Error-Type': errorType
+    };
+    
+    addAuthDebugHeaders(errorHeaders, errorDebugInfo);
+    
+    // Log the error response using debug
+    logError('Error response:', {
+      requestId,
+      statusCode,
+      errorType,
+      message: error.message
+    });
+    
+    res.writeHead(statusCode, errorHeaders);
+    // Create a response object with error information
+    const responseObj = {
+      error: errorType,
+      message: error.message,
+      details: error.details,
+      debug: createAuthDebugResponse(errorDebugInfo),
+      timingInfo: relativeTiming(timingInfo),
       requestId,
       requestParameters: {
         prompt: originalPrompt,
-        ...safeParams,
-        referrer
+        params: safeParams,
+        referrer: referrer
       }
-    }));
+    };
+    
+    res.end(JSON.stringify(responseObj));
   }
 };
 

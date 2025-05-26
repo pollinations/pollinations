@@ -8,9 +8,102 @@
  * - Referrers grant extended access but fewer rights than tokens
  * 
  * Usage:
- * Services should load their own .env file with dotenv, then import these utilities:
- * import { extractToken, extractReferrer, shouldBypassQueue } from '../shared/auth-utils.js';
+ * Services can import these utilities directly, as environment variables are loaded automatically:
+ * import { extractToken, extractReferrer, shouldBypassQueue, handleAuthentication, addAuthDebugHeaders, createAuthDebugResponse } from '../shared/auth-utils.js';
  */
+
+// Auto-load environment variables from shared and local .env files
+import './env-loader.js';
+
+// Token field configuration for DRY principle
+const TOKEN_FIELDS = {
+  query: ['token', 'api_key', 'apikey'],
+  header: ['authorization', 'x-pollinations-token', 'x-api-key', 'api-key', 'apikey'],
+  body: ['token', 'api_key', 'apikey', 'auth_token', 'authorization']
+};
+
+/**
+ * Helper function to extract value from query parameters
+ * @param {string} url - Request URL
+ * @param {string[]} fields - Array of field names to check
+ * @returns {Object} { value, source } or { value: null, source: null }
+ */
+function extractFromQuery(url, fields) {
+  const urlObj = new URL(url, 'http://x');
+  for (const field of fields) {
+    const value = urlObj.searchParams.get(field);
+    if (value) return { value, source: `query:${field}` };
+  }
+  return { value: null, source: null };
+}
+
+/**
+ * Helper function to extract value from headers (supports both Cloudflare and Express styles)
+ * @param {Object} headers - Request headers
+ * @param {string[]} fields - Array of field names to check
+ * @returns {Object} { value, source } or { value: null, source: null }
+ */
+function extractFromHeaders(headers, fields) {
+  for (const field of fields) {
+    let value = null;
+    
+    if (headers.get) { // Cloudflare-style headers
+      value = headers.get(field);
+    } else if (headers) { // Express-style headers
+      value = headers[field] || headers[field.toLowerCase()];
+    }
+    
+    if (value) {
+      // Special handling for authorization header
+      if (field === 'authorization') {
+        value = value.replace(/^Bearer\s+/i, '');
+      }
+      return { value, source: `header:${field}` };
+    }
+  }
+  return { value: null, source: null };
+}
+
+/**
+ * Helper function to extract value from request body
+ * @param {Object} body - Request body
+ * @param {string[]} fields - Array of field names to check
+ * @returns {Object} { value, source } or { value: null, source: null }
+ */
+function extractFromBody(body, fields) {
+  if (!body) return { value: null, source: null };
+  
+  for (const field of fields) {
+    const value = body[field];
+    if (value) return { value, source: `body:${field}` };
+  }
+  return { value: null, source: null };
+}
+
+/**
+ * Extract authentication token from request
+ * Supports multiple token sources (NO referrer fallback)
+ * Compatible with OpenAI and other LLM API authentication patterns
+ * @param {Request|Object} req - The request object
+ * @returns {string|null} The token or null
+ */
+export function extractToken(req) {
+  // Check URL query parameters
+  const queryResult = extractFromQuery(req.url, TOKEN_FIELDS.query);
+  if (queryResult.value) return queryResult.value;
+  
+  // Check headers for Bearer token, API key, and custom headers
+  const headerResult = extractFromHeaders(req.headers, TOKEN_FIELDS.header);
+  if (headerResult.value) return headerResult.value;
+  
+  // Check body for token field in POST requests (multiple field names)
+  if (req.method === 'POST' && req.body) {
+    const bodyResult = extractFromBody(req.body, TOKEN_FIELDS.body);
+    if (bodyResult.value) return bodyResult.value;
+  }
+  
+  return null;  // header/query/body only – no referrer here!
+}
 
 /**
  * Extract referrer from request headers and body
@@ -48,61 +141,6 @@ export function extractReferrer(req) {
 }
 
 /**
- * Extract authentication token from request
- * Supports multiple token sources (NO referrer fallback)
- * Compatible with OpenAI and other LLM API authentication patterns
- * @param {Request|Object} req - The request object
- * @returns {string|null} The token or null
- */
-export function extractToken(req) {
-  // Check URL query parameters
-  const q = new URL(req.url, 'http://x').searchParams.get('token') || 
-           new URL(req.url, 'http://x').searchParams.get('api_key') || // Support api_key query param
-           new URL(req.url, 'http://x').searchParams.get('apikey'); // Support alternate spelling
-  
-  // Check headers for Bearer token, API key, and custom headers
-  // We're extra permissive with 'authorization' header format to support various clients
-  let authHeader = null;
-  if (req.headers.get) { // Cloudflare-style headers
-    const auth = req.headers.get('authorization');
-    if (auth) {
-      // Support both "Bearer token" and plain "token" formats
-      authHeader = auth.replace(/^Bearer\s+/i,'');
-    }
-    // Check various API key header patterns
-    authHeader = authHeader || 
-                req.headers.get('x-pollinations-token') ||
-                req.headers.get('x-api-key') ||
-                req.headers.get('api-key') ||
-                req.headers.get('apikey');
-  } else if (req.headers) { // Express-style headers
-    const auth = req.headers.authorization;
-    if (auth) {
-      // Support both "Bearer token" and plain "token" formats
-      authHeader = auth.replace(/^Bearer\s+/i,'');
-    }
-    // Check various API key header patterns
-    authHeader = authHeader || 
-                req.headers['x-pollinations-token'] ||
-                req.headers['x-api-key'] ||
-                req.headers['api-key'] ||
-                req.headers.apikey;
-  }
-  
-  // Check body for token field in POST requests (multiple field names)
-  let bodyToken = null;
-  if (req.method === 'POST' && req.body) {
-    bodyToken = req.body.token ||
-               req.body.api_key ||
-               req.body.apikey ||
-               req.body.auth_token ||
-               req.body.authorization;
-  }
-  
-  return q || authHeader || bodyToken || null;  // header/query/body only – no referrer here!
-}
-
-/**
  * Validate token against allowed tokens
  * Simple string comparison for now
  * @param {string} token - The token to validate
@@ -112,58 +150,34 @@ export function extractToken(req) {
 export function isValidToken(token, validTokens) {
   if (!token) return false;
   
-  // Handle comma-separated string (from env vars)
-  if (typeof validTokens === 'string') {
-    validTokens = validTokens.split(',').map(t => t.trim()).filter(Boolean);
-  }
+  // Convert validTokens to array if it's a string
+  const tokensArray = Array.isArray(validTokens) 
+    ? validTokens 
+    : (validTokens || '').split(',');
   
-  // Simple string comparison
-  return validTokens.includes(token);
+  // Check if token is in the array
+  return tokensArray.includes(token);
 }
 
 /**
- * Check if domain is whitelisted
- * @param {string} referrer - The referrer URL to check
- * @param {string[]|string} whitelist - Array of whitelisted domains or comma-separated string
- * @returns {boolean} Whether the domain is whitelisted
+ * Determine the source of the token (header, query param, body)
+ * @param {Request|Object} req - The request object
+ * @returns {string} The source of the token
  */
-export function isDomainWhitelisted(referrer, whitelist) {
-  if (!referrer) return false;
-  
-  // Handle comma-separated string (from env vars)
-  if (typeof whitelist === 'string') {
-    whitelist = whitelist.split(',').map(d => d.trim()).filter(Boolean);
-  }
-  
-  try {
-    const url = new URL(referrer);
-    return whitelist.some(domain => url.hostname.includes(domain));
-  } catch (e) {
-    // If referrer is not a valid URL, check if it includes any whitelisted domain
-    return whitelist.some(domain => referrer.includes(domain));
-    return false;
-  }
-}
+export function getTokenSource(req) {
+  const token = extractToken(req);
+  if (!token) return 'unknown';
 
-/**
- * Check if a domain is allowed for a specific user in the auth database.
- * @param {string} userId - The user ID.
- * @param {string} referrer - The referrer URL to check.
- * @param {D1Database} db - The D1 Database instance.
- * @param {function} isDomainAllowedDb - The function to check domain against DB (e.g., from auth.pollinations.ai/src/db.ts).
- * @returns {Promise<boolean>} Whether the domain is allowed for the user.
- */
-export async function isUserDomainAllowedFromDb(userId, referrer, db, isDomainAllowedDb) {
-  if (!userId || !referrer || !db || !isDomainAllowedDb) return false;
+  const queryResult = extractFromQuery(req.url, TOKEN_FIELDS.query);
+  if (queryResult.value === token) return queryResult.source;
 
-  try {
-    const url = new URL(referrer);
-    const hostname = url.hostname.toLowerCase();
-    return await isDomainAllowedDb(db, userId, hostname);
-  } catch (e) {
-    // Invalid URL
-    return false;
-  }
+  const headerResult = extractFromHeaders(req.headers, TOKEN_FIELDS.header);
+  if (headerResult.value === token) return headerResult.source;
+
+  const bodyResult = extractFromBody(req.body, TOKEN_FIELDS.body);
+  if (bodyResult.value === token) return bodyResult.source;
+
+  return 'unknown';
 }
 
 /**
@@ -273,28 +287,257 @@ export async function validateApiTokenDb(token) {
 }
 
 /**
+ * Check if domain is whitelisted
+ * @param {string} referrer - The referrer URL to check
+ * @param {string[]|string} whitelist - Array of whitelisted domains or comma-separated string
+ * @returns {boolean} Whether the domain is whitelisted
+ */
+export function isDomainWhitelisted(referrer, whitelist) {
+  if (!referrer) return false;
+  
+  // Handle comma-separated string (from env vars)
+  if (typeof whitelist === 'string') {
+    whitelist = whitelist.split(',').map(d => d.trim()).filter(Boolean);
+  }
+  
+  try {
+    const url = new URL(referrer);
+    return whitelist.some(domain => url.hostname.includes(domain));
+  } catch (e) {
+    // If referrer is not a valid URL, check if it includes any whitelisted domain
+    return whitelist.some(domain => referrer.includes(domain));
+    return false;
+  }
+}
+
+/**
+ * Check if a domain is allowed for a specific user in the auth database.
+ * @param {string} userId - The user ID.
+ * @param {string} referrer - The referrer URL to check.
+ * @param {D1Database} db - The D1 Database instance.
+ * @param {function} isDomainAllowedDb - The function to check domain against DB (e.g., from auth.pollinations.ai/src/db.ts).
+ * @returns {Promise<boolean>} Whether the domain is allowed for the user.
+ */
+export async function isUserDomainAllowedFromDb(userId, referrer, db, isDomainAllowedDb) {
+  if (!userId || !referrer || !db || !isDomainAllowedDb) return false;
+
+  try {
+    const url = new URL(referrer);
+    const hostname = url.hostname.toLowerCase();
+    return await isDomainAllowedDb(db, userId, hostname);
+  } catch (e) {
+    // Invalid URL
+    return false;
+  }
+}
+
+/**
  * Determine if request should bypass queue
  * @param {Request|Object} req - The request object
  * @param {Object} ctx - Context object
  * @param {string[]|string} [ctx.legacyTokens] - Legacy tokens to check
  * @param {string[]|string} [ctx.allowlist] - Allowlisted domains
- * @returns {{bypass: boolean, reason: string, userId: string|null}} Bypass decision, reason, and userId if authenticated
+ * @returns {{bypass: boolean, reason: string, userId: string|null, debugInfo: Object}} Bypass decision, reason, userId if authenticated, and debug info
+ * @throws {Error} If an invalid token is provided
  */
 export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
   const token = extractToken(req);
   const ref   = extractReferrer(req);
-  // 1️⃣ DB token
+  
+  // Create debug info object for headers
+  const debugInfo = {
+    token: token ? (token.length > 8 ? token.substring(0, 4) + '...' + token.substring(token.length - 4) : token) : null,
+    referrer: ref,
+    tokenSource: token ? getTokenSource(req) : null,
+    legacyTokensCount: Array.isArray(legacyTokens) ? legacyTokens.length : (legacyTokens?.split(',').length || 0),
+    allowlistCount: Array.isArray(allowlist) ? allowlist.length : (allowlist?.split(',').length || 0)
+  };
+  
+  // If a token is provided, validate it
   if (token) {
+    // 1️⃣ Check DB token
     const userId = await validateApiTokenDb(token);   // Uses auth.pollinations.ai API
-    if (userId) return { bypass:true, reason:'DB_TOKEN', userId };
+    if (userId) {
+      debugInfo.authResult = 'DB_TOKEN';
+      debugInfo.userId = userId;
+      return { bypass:true, reason:'DB_TOKEN', userId, debugInfo };
+    }
+    
+    // 2️⃣ Check legacy token
+    const legacyTokenMatch = legacyTokens.includes(token);
+    if (legacyTokenMatch) {
+      debugInfo.authResult = 'LEGACY_TOKEN';
+      debugInfo.legacyTokenMatch = true;
+      return { bypass:true, reason:'LEGACY_TOKEN', userId:null, debugInfo };
+    }
+    
+    // If token is provided but not valid, throw an error
+    debugInfo.authResult = 'INVALID_TOKEN';
+    const error = new Error('Invalid token provided');
+    error.status = 401;
+    error.details = { debugInfo };
+    throw error;
   }
-  // 2️⃣ legacy token (header/query **or** inside referrer)
-  const legacyHit = legacyTokens.includes(token) ||
-                   (ref && legacyTokens.some(t => ref.includes(t)));
-  if (legacyHit)  return { bypass:true, reason:'LEGACY_TOKEN', userId:null };
-  // 3️⃣ allow-listed domain
-  if (allowlist.some(d => ref?.includes(d)))
-       return { bypass:true, reason:'ALLOWLIST', userId:null };
-  // 4️⃣ default → go through queue
-  return { bypass:false, reason:'NONE', userId:null };
+  
+  // 3️⃣ Check for legacy token in referrer (no error thrown for invalid referrers)
+  const legacyReferrerMatch = ref && legacyTokens.some(t => ref.includes(t));
+  if (legacyReferrerMatch) {
+    debugInfo.authResult = 'LEGACY_REFERRER';
+    debugInfo.legacyReferrerMatch = true;
+    return { bypass:true, reason:'LEGACY_REFERRER', userId:null, debugInfo };
+  }
+  
+  // 4️⃣ Check allow-listed domain
+  const allowlistMatch = ref && allowlist.some(d => ref.includes(d));
+  if (allowlistMatch) {
+    debugInfo.authResult = 'ALLOWLIST';
+    debugInfo.allowlistMatch = true;
+    return { bypass:true, reason:'ALLOWLIST', userId:null, debugInfo };
+  }
+  
+  // 5️⃣ default → go through queue
+  debugInfo.authResult = 'NONE';
+  return { bypass:false, reason:'NONE', userId:null, debugInfo };
+}
+
+/**
+ * Handle authentication with standardized error handling
+ * This function encapsulates the common pattern of:
+ * 1. Loading auth context from environment
+ * 2. Calling shouldBypassQueue with error handling
+ * 3. Returning structured auth result or throwing appropriate errors
+ * 
+ * @param {Object} req - Request object
+ * @param {string} requestId - Request ID for logging
+ * @param {Function} logAuth - Debug logger function
+ * @returns {Promise<Object>} Authentication result with bypass, reason, userId, and debugInfo
+ * @throws {Error} 401 error for invalid tokens, re-throws other errors
+ */
+export async function handleAuthentication(req, requestId = null, logAuth = null) {
+  let hasValidToken, reason, userId, debugInfo;
+  
+  try {
+    // Load auth context from environment
+    const legacyTokens = process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [];
+    const allowlist = process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : [];
+    
+    // Check if request should bypass queue using shared utility
+    // This may throw an error if an invalid token is provided
+    const authResult = await shouldBypassQueue(req, { legacyTokens, allowlist });
+    hasValidToken = authResult.bypass;
+    reason = authResult.reason;
+    userId = authResult.userId;
+    debugInfo = authResult.debugInfo;
+    
+    // Log authentication information if logger provided
+    if (logAuth && requestId) {
+      logAuth('Authentication result:', {
+        requestId,
+        hasValidToken,
+        reason,
+        userId,
+        debugInfo
+      });
+    }
+    
+    return {
+      bypass: hasValidToken,
+      reason,
+      userId,
+      debugInfo
+    };
+    
+  } catch (authError) {
+    // Handle invalid token error
+    if (authError.details?.debugInfo?.authResult === 'INVALID_TOKEN') {
+      if (logAuth) {
+        logAuth('Invalid token error:', authError.message);
+        // Log the authentication error using debug
+        if (requestId) {
+          logAuth('Authentication error:', {
+            requestId,
+            error: 'INVALID_TOKEN',
+            message: authError.message
+          });
+        }
+      }
+      
+      // Return a 401 Unauthorized response
+      const error = new Error('Invalid authentication token');
+      error.status = 401;
+      error.details = { authError: 'The provided token is not valid' };
+      throw error;
+    }
+    // Re-throw other errors
+    throw authError;
+  }
+}
+
+/**
+ * Add debug headers to response from authentication debug info
+ * This centralizes the common pattern of adding X-Debug-* headers for authentication debugging
+ * 
+ * @param {Object} headers - Headers object to modify
+ * @param {Object} debugInfo - Debug info from authentication result
+ */
+export function addAuthDebugHeaders(headers, debugInfo) {
+  if (!debugInfo) return;
+  
+  if (debugInfo.authResult) {
+    headers['X-Auth-Result'] = debugInfo.authResult;
+  }
+  
+  if (debugInfo.token) {
+    headers['X-Debug-Token'] = debugInfo.token;
+  }
+  
+  if (debugInfo.tokenSource) {
+    headers['X-Debug-Token-Source'] = debugInfo.tokenSource;
+  }
+  
+  if (debugInfo.referrer) {
+    headers['X-Debug-Referrer'] = 'present';
+  }
+  
+  if (debugInfo.legacyTokenMatch) {
+    headers['X-Debug-Legacy-Token-Match'] = 'true';
+  }
+  
+  if (debugInfo.allowlistMatch) {
+    headers['X-Debug-Allowlist-Match'] = 'true';
+  }
+}
+
+/**
+ * Create a structured debug response object from authentication debug info
+ * This centralizes the common pattern of constructing debug info for error responses
+ * 
+ * @param {Object} debugInfo - Debug info from authentication result
+ * @returns {Object|null} Structured debug object or null if no debug info
+ */
+export function createAuthDebugResponse(debugInfo) {
+  if (!debugInfo) return null;
+  
+  const debug = {
+    authResult: debugInfo.authResult || 'NONE'
+  };
+  
+  // Add token info if available
+  if (debugInfo.token || debugInfo.tokenSource || debugInfo.legacyTokenMatch) {
+    debug.tokenInfo = {
+      present: !!debugInfo.token,
+      source: debugInfo.tokenSource || 'none',
+      legacyMatch: !!debugInfo.legacyTokenMatch
+    };
+  }
+  
+  // Add referrer info if available
+  if (debugInfo.referrer || debugInfo.allowlistMatch) {
+    debug.referrerInfo = {
+      present: !!debugInfo.referrer,
+      allowlistMatch: !!debugInfo.allowlistMatch
+    };
+  }
+  
+  return debug;
 }

@@ -15,7 +15,6 @@ import sharp from 'sharp';
 import sleep from 'await-sleep';
 import dotenv from 'dotenv';
 
-// Load environment variables
 dotenv.config();
 
 // Loggers

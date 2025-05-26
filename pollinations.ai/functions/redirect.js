@@ -1,8 +1,8 @@
 // Netlify function to handle redirects with analytics
 import fetch from 'node-fetch';
-// dotenv
-import dotenv from 'dotenv';
-dotenv.config();
+
+// Auto-load environment variables from shared and local .env files
+import '../../shared/env-loader.js';
 
 // Import redirect mapping and affiliate data from the consolidated affiliates.js file
 import { redirectMapping, affiliatesData } from '../../affiliate/affiliates.js';

@@ -1,5 +1,7 @@
 // Simple test script for the redirect function
-require('dotenv').config({ path: './.env.production' });
+// Auto-load environment variables from shared and local .env files
+import './shared/env-loader.js';
+
 const redirectFunction = require('./functions/redirect');
 
 // Mock event objects for testing

@@ -5,7 +5,6 @@ import crypto from 'crypto';
 import debug from 'debug';
 import { promises as fs } from 'fs';
 import path from 'path';
-import PQueue from 'p-queue';
 import dotenv from 'dotenv';
 import { availableModels } from './availableModels.js';
 import { getHandler } from './availableModels.js';
@@ -13,10 +12,15 @@ import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { processRequestForAds } from './ads/initRequestFilter.js';
 import { createStreamingAdWrapper } from './ads/streamingAdWrapper.js';
-import { getRequestData, shouldBypassDelay } from './requestUtils.js';
+import { getRequestData } from './requestUtils.js';
+
+// Import shared utilities
+import { enqueue } from '../shared/ipQueue.js';
 
 // Load environment variables
 dotenv.config();
+
+// Shared authentication and queue is initialized automatically in ipQueue.js
 
 const BANNED_PHRASES = [
 ];
@@ -109,15 +113,11 @@ app.get('/crossdomain.xml', (req, res) => {
 
 app.set('trust proxy', true);
 
-// Queue setup per IP address
-const queues = new Map();
-
-export function getQueue(ip) {
-    if (!queues.has(ip)) {
-        queues.set(ip, new PQueue({ concurrency: 1, interval: 6000, intervalCap: 1 }));
-    }
-    return queues.get(ip);
-}
+// Queue configuration for text service
+const QUEUE_CONFIG = {
+  interval: 6000,  // 6 seconds between requests per IP
+  cap: 1          // Max 1 concurrent request per IP
+};
 
 // Function to get IP address
 export function getIp(req) {
@@ -448,28 +448,10 @@ export function sendContentResponse(res, completion) {
 }
 
 // Helper function to process requests with queueing and caching logic
-export async function processRequest(req, res, requestData) {
+async function processRequest(req, res, requestData) {
     const ip = getIp(req);
-
-    // // Check for banned phrases first
-    // try {
-    //     await checkBannedPhrases(requestData.messages, ip);
-    // } catch (error) {
-    //     // Only block for actual banned phrases, not API errors
-    //     if (error.message && error.message.includes("banned phrase")) {
-    //         return sendErrorResponse(res, req, error, requestData, 403);
-    //     }
-        
-    //     // For API errors in streaming mode, pass them through
-    //     if (requestData.stream) {
-    //         log('API error in streaming mode:', error);
-    //         return sendErrorResponse(res, req, error, requestData, error.status || error.code || 500);
-    //     } else {
-    //         return sendErrorResponse(res, req, error, requestData, error.status || error.code || 500);
-    //     }
-    // }
-
     
+    // Check for blocked IPs first
     if (isIPBlocked(ip)) {
         errorLog('Blocked IP:', ip);
         const errorResponse = {
@@ -489,30 +471,19 @@ export async function processRequest(req, res, requestData) {
             return res.status(403).json(errorResponse);
         }
     }
-
-    const queue = getQueue(ip);
-
-    // if (queue.size >= 60) {
-    //     errorLog('Queue size limit exceeded for IP: %s', ip);
-    //     const errorResponse = {
-    //         error: 'Too Many Requests',
-    //         status: 429,
-    //         details: {
-    //             queueSize: queue.size,
-    //             maxQueueSize: 60,
-    //             timestamp: new Date().toISOString()
-    //         }
-    //     };
-    //     return res.status(429).json(errorResponse);
-    // }
     
-    const bypassQueue = requestData.isImagePollinationsReferrer || requestData.isRobloxReferrer || shouldBypassDelay(req);
-
-    if (bypassQueue) {
-        await handleRequest(req, res, requestData);
-    } else {
-        await getQueue(ip).add(() => handleRequest(req, res, requestData));
+    // Use shared queue for rate limiting
+    try {
+        await enqueue(req, async () => {
+            await handleRequest(req, res, requestData);
+        }, QUEUE_CONFIG);
+    } catch (error) {
+        errorLog('Error in queue processing: %s', error.message);
+        throw error;
     }
+
+    // Note: We've removed the duplicate handleRequest calls that were causing the headers error
+    // The shared enqueue function above now handles all queue logic, including bypass logic
 }
 
 // Helper function to check if a model is an audio model and add necessary parameters

@@ -1,29 +1,36 @@
 import urldecode from 'urldecode';
 import http from 'http';
 import { parse } from 'url';
-import PQueue from 'p-queue';
 import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
 import { createAndReturnImageCached } from './createAndReturnImages.js';
 import { makeParamsSafe } from './makeParamsSafe.js';
 import { cacheImage } from './cacheGeneratedImages.js';
 import { normalizeAndTranslatePrompt } from './normalizeAndTranslatePrompt.js';
 import { countJobs } from './generalImageQueue.js';
-import { getIp } from './getIp.js';
 import sleep from 'await-sleep';
 import { MODELS } from './models.js';
 import { countFluxJobs } from './availableServers.js';
 import { handleRegisterEndpoint } from './availableServers.js';
 import debug from 'debug';
 import { createProgressTracker } from './progressBar.js';
-import { extractToken, isValidToken } from './config/tokens.js';
+import fs from 'fs';
+import path from 'path';
+
+// Import shared utilities
+import { enqueue } from '../../shared/ipQueue.js';
+import { extractToken, getIp, isValidToken, handleAuthentication, addAuthDebugHeaders, createAuthDebugResponse } from '../../shared/auth-utils.js';
+
+// Queue configuration for image service
+const QUEUE_CONFIG = {
+  interval: 10000, // 10 seconds between requests per IP
+  cap: 1          // Max 1 concurrent request per IP
+};
 
 const logError = debug('pollinations:error');
 const logApi = debug('pollinations:api');
 const logAuth = debug('pollinations:auth');
 
 export let currentJobs = [];
-
-const ipQueue = {};
 
 // In-memory store for tracking IP violations
 const ipViolations = new Map();
@@ -49,6 +56,7 @@ const setCORSHeaders = (res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Expose-Headers', 'X-Auth-Status, X-Auth-Reason, X-Debug-Token, X-Debug-Token-Source, X-Debug-Referrer, X-Debug-Legacy-Token-Match, X-Debug-Allowlist-Match, X-Debug-User-Id');
 }
 
 /** 
@@ -117,10 +125,10 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     progress.updateBar(requestId, 40, 'Server', 'Selecting optimal server...');
     progress.updateBar(requestId, 50, 'Generation', 'Preparing...');
     
-    // Extract token from request for authorization
-    const token = extractToken(req);
+    const { bypass, reason, userId, debugInfo } = await handleAuthentication(req, requestId, logAuth);
     
-    const { buffer, ...maturity } = await createAndReturnImageCached(generationPrompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId, wasTransformedForBadDomain, token, referrer);
+    // Pass the authentication result directly instead of token and referrer
+    const { buffer, ...maturity } = await createAndReturnImageCached(generationPrompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId, wasTransformedForBadDomain, bypass);
 
     progress.updateBar(requestId, 50, 'Generation', 'Starting generation');
 
@@ -267,11 +275,11 @@ const checkCacheAndGenerate = async (req, res) => {
         return result;
       };
 
-      // Check for valid token to bypass queue
-      const token = extractToken(req);
-      const hasValidToken = isValidToken(token);
+      // Check for valid token to bypass queue using shared authentication
+      const authResult = await handleAuthentication(req, requestId, logAuth);
+      const hasValidToken = authResult.bypass;
       if (hasValidToken && safeParams.model !== "gptimage") {
-        logAuth('Queue bypass granted for token:', token);
+        logAuth('Queue bypass granted for token');
         progress.updateBar(requestId, 20, 'Priority', 'Token authenticated');
         
         // Skip queue for valid tokens
@@ -279,51 +287,43 @@ const checkCacheAndGenerate = async (req, res) => {
         return generateImage();
       }
 
-      let queueExisted = false;
-      if (!ipQueue[ip]) {
-        ipQueue[ip] = new PQueue({ concurrency: 1, interval: 10000, intervalCap:1 });
-      } else {
-        queueExisted = true;
-      }
-
-      progress.updateBar(requestId, 20, 'Queueing', 'Checking cache');
-
-      const result = await ipQueue[ip].add(async () => {
-        if (queueExisted && countJobs() > 2) {
-          const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
-          const queuePosition = Math.min(40, queueSize);
-          const progressPercent = 30 + Math.floor((40 - queuePosition) / 40 * 20); // Maps position 40->30%, 0->50%
-
-          progress.updateBar(requestId, progressPercent, 'Queueing', `Queue position: ${queuePosition}`);
-          logApi("queueExisted", queueExisted, "for ip", ip, " sleeping a little", queueSize);
-          
-          if (queueSize >= 8) {
-            progress.errorBar(requestId, 'Queue full');
-            progress.stop();
-            throw new Error("queue full");
-          }
-
-          progress.setQueued(queueSize);
-          await sleep(100);
+      // Use the shared queue utility
+      const result = await enqueue(req, async () => {
+        // Check queue size and handle accordingly
+        const queueSize = countJobs();
+        const fluxJobs = countFluxJobs();
+        
+        // If queue is too large, reject the request
+        if (queueSize >= 8) {
+          progress.errorBar(requestId, 'Queue full');
+          progress.stop();
+          throw new Error("queue full");
         }
         
+        // Update progress and process the image
         progress.setProcessing();
         return generateImage();
-      });
-
-      // if the queue is empty and none pending or processing we can delete the queue
-      if (ipQueue[ip].size === 0 && ipQueue[ip].pending === 0) {
-        delete ipQueue[ip];
-      }
+      }, QUEUE_CONFIG);
 
       return result;
     });
 
 
-    res.writeHead(200, {
+    // Get authentication info using shared authentication utility
+    const authResult = await handleAuthentication(req);
+    const isAuthenticated = authResult.bypass;
+    
+    // Add debug headers for authentication information
+    const headers = {
       'Content-Type': 'image/jpeg',
       'Cache-Control': 'public, max-age=31536000, immutable',
-    });
+      'X-Auth-Status': isAuthenticated ? 'authenticated' : 'unauthenticated'
+    };
+    
+    // Add authentication debug headers using shared utility
+    addAuthDebugHeaders(headers, authResult.debugInfo);
+    
+    res.writeHead(200, headers);
     res.write(bufferAndMaturity.buffer);
     res.end();
 
@@ -334,19 +334,48 @@ const checkCacheAndGenerate = async (req, res) => {
     progress.errorBar(requestId, error.message || 'Internal Server Error');
     progress.stop();
     
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      error: 'Internal Server Error',
-      message: error.message || 'An error occurred while processing your request',
-      details: error.details || {},
-      timingInfo,
+    // Determine the appropriate status code (default to 500 if not specified)
+    const statusCode = error.status || 500;
+    const errorType = statusCode === 401 ? 'Unauthorized' : 
+                     statusCode === 403 ? 'Forbidden' : 
+                     statusCode === 429 ? 'Too Many Requests' : 'Internal Server Error';
+    
+    // Extract debug info from error if available
+    const errorDebugInfo = error.details?.debugInfo;
+    
+    // Add debug headers for authentication information even in error responses
+    const errorHeaders = {
+      'Content-Type': 'application/json',
+      'X-Error-Type': errorType
+    };
+    
+    addAuthDebugHeaders(errorHeaders, errorDebugInfo);
+    
+    // Log the error response using debug
+    logError('Error response:', {
+      requestId,
+      statusCode,
+      errorType,
+      message: error.message
+    });
+    
+    res.writeHead(statusCode, errorHeaders);
+    // Create a response object with error information
+    const responseObj = {
+      error: errorType,
+      message: error.message,
+      details: error.details,
+      debug: createAuthDebugResponse(errorDebugInfo),
+      timingInfo: relativeTiming(timingInfo),
       requestId,
       requestParameters: {
         prompt: originalPrompt,
         ...safeParams,
         referrer
       }
-    }));
+    };
+    
+    res.end(JSON.stringify(responseObj));
   }
 };
 

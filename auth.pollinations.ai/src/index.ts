@@ -75,6 +75,16 @@ export default {
           if (request.method === 'GET') {
             return handleAdminDatabaseDump(request, env, corsHeaders);
           }
+          break;
+      }
+      
+      // Check if the path matches the pattern /api/validate-token/:token
+      if (url.pathname.startsWith('/api/validate-token/')) {
+        if (request.method === 'GET') {
+          // Extract token from the URL path
+          const token = url.pathname.replace('/api/validate-token/', '');
+          return handleValidateToken(token, env, corsHeaders);
+        }
       }
       
       return createErrorResponse(404, 'Resource not found', corsHeaders);
@@ -135,9 +145,6 @@ async function handleCallback(request: Request, env: Env, corsHeaders: Record<st
   }
   
   try {
-    // Hardcode client ID and secret since env vars might be causing issues
-    const clientId = 'Ov23li0fJetQ56U2JKsF';
-    const clientSecret = env.GITHUB_CLIENT_SECRET;
     
     // Exchange code for token
     const accessToken = await exchangeCodeForToken(code, new URL('/callback', url.origin).toString(), env);
@@ -335,4 +342,34 @@ async function handleGenerateApiToken(request: Request, env: Env, corsHeaders: R
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
+}
+
+/**
+ * Validates an API token and returns the associated user ID if valid.
+ * This endpoint is used by other Pollinations services to verify tokens.
+ * @param token The API token to validate
+ * @param env Environment variables
+ * @param corsHeaders CORS headers to include in the response
+ * @returns Response with validation result
+ */
+async function handleValidateToken(token: string, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  try {
+    if (!token) {
+      return createErrorResponse(400, 'Missing required parameter: token', corsHeaders);
+    }
+    
+    // Validate the token against the database
+    const userId = await validateApiToken(env.DB, token);
+    
+    // Return validation result
+    return new Response(JSON.stringify({
+      valid: userId !== null,
+      userId: userId,
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('Error validating token:', error);
+    return createErrorResponse(400, 'Invalid request format', corsHeaders);
+  }
 }

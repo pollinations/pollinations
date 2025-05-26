@@ -274,14 +274,8 @@ export async function validateApiTokenDb(token) {
   if (!token) return null;
   
   try {
-    // Call the auth.pollinations.ai API to validate the token
-    const response = await fetch('https://auth.pollinations.ai/api/validate-token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ token })
-    });
+    // Call the auth.pollinations.ai API to validate the token using a simple GET request
+    const response = await fetch(`https://auth.pollinations.ai/api/validate-token/${token}`);
     
     if (!response.ok) return null;
     
@@ -408,21 +402,21 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
     
     // If token is provided but not valid, return error info instead of throwing
     // This prevents the server from crashing while maintaining proper error handling
-    tokenLog('❌ Invalid token provided: %s', debugInfo.token);
-    errorLog('Invalid token provided (source: %s)', debugInfo.tokenSource || 'unknown');
-    debugInfo.authResult = 'INVALID_TOKEN';
-    log('Authentication failed: INVALID_TOKEN');
-    return { 
-      bypass: false, 
-      reason: 'INVALID_TOKEN', 
-      userId: null, 
-      debugInfo,
-      error: {
-        message: 'Invalid token provided',
-        status: 401,
-        details: { debugInfo }
-      }
-    };
+    // tokenLog('❌ Invalid token provided: %s', debugInfo.token);
+    // errorLog('Invalid token provided (source: %s)', debugInfo.tokenSource || 'unknown');
+    // debugInfo.authResult = 'INVALID_TOKEN';
+    // log('Authentication failed: INVALID_TOKEN');
+    // return { 
+    //   bypass: false, 
+    //   reason: 'INVALID_TOKEN', 
+    //   userId: null, 
+    //   debugInfo,
+    //   error: {
+    //     message: 'Invalid token provided',
+    //     status: 401,
+    //     details: { debugInfo }
+    //   }
+    // };
   }
   
   // 3️⃣ Check for legacy token in referrer (no error thrown for invalid referrers)

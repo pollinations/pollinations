@@ -1,20 +1,15 @@
 import fetch from 'node-fetch';
 import { fileTypeFromBuffer } from 'file-type';
 import { addPollinationsLogoWithImagemagick, getLogoPath } from './imageOperations.js';
-import { MODELS } from './models.js';
 import FormData from 'form-data';
-import fs from 'fs';
 import { fetchFromLeastBusyFluxServer, getNextTurboServerUrl } from './availableServers.js';
 import debug from 'debug';
-import { checkContent } from './llamaguard.js';
 import { writeExifMetadata } from './writeExifMetadata.js';
 import { sanitizeString } from './translateIfNecessary.js';
-import { extractToken, isValidToken } from './config/tokens.js';
+// Import shared authentication utilities
 import sharp from 'sharp';
-import sleep from 'await-sleep';
 import dotenv from 'dotenv';
 
-// Load environment variables
 dotenv.config();
 
 // Loggers
@@ -591,18 +586,17 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
  * @param {number} concurrentRequests - Number of concurrent requests
  * @param {Object} progress - Progress tracking object
  * @param {string} requestId - Request ID for progress tracking
- * @param {boolean} hasValidToken - Whether the request has a valid token
- * @param {string} referrer - The request referrer
+ * @param {boolean} hasValidToken - Whether the request has valid authentication
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean, [key: string]: any}>}
  */
-const generateImage = async (prompt, safeParams, concurrentRequests, progress, requestId, hasValidToken, referrer) => {
+const generateImage = async (prompt, safeParams, concurrentRequests, progress, requestId, hasValidToken) => {
   // Model selection strategy using a more functional approach
   if (safeParams.model === 'gptimage') {
-    // Restrict GPT Image model to users with valid tokens or approved referrers
-    if (!hasValidToken && !isApprovedReferrer(referrer)) {
-      logError('Access to GPT Image model requires token or approved referrer. Please request a token at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml');
+    // Restrict GPT Image model to users with valid authentication
+    if (!hasValidToken) {
+      logError('Access to GPT Image model requires authentication. Please request a token at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml');
       progress.updateBar(requestId, 35, 'Auth', 'GPT Image requires authorization');
-      throw new Error('Access to GPT Image model requires token or approved referrer. Please request a token at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml');      
+      throw new Error('Access to GPT Image model requires authentication. Please request a token at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml');      
     } else {
       // For gptimage model, always throw errors instead of falling back
       updateProgress(progress, requestId, 30, 'Processing', 'Trying Azure GPT Image...');
@@ -705,20 +699,16 @@ const processImageBuffer = async (buffer, maturityFlags, safeParams, metadataObj
  * @param {Object} progress - Progress tracking object.
  * @param {string} requestId - Request ID for progress tracking.
  * @param {boolean} wasTransformedForBadDomain - Flag indicating if the prompt was transformed due to bad domain.
- * @param {string} token - The authentication token (optional).
- * @param {string} referrer - The request referrer (optional).
+ * @param {boolean} hasValidToken - Whether the request has valid authentication (optional).
  * @returns {Promise<{buffer: Buffer, isChild: boolean, isMature: boolean}>}
  */
-export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests, originalPrompt, progress, requestId, wasTransformedForBadDomain = false, token = null, referrer = null) {
+export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests, originalPrompt, progress, requestId, wasTransformedForBadDomain = false, hasValidToken = false) {
   try {
     // Update generation progress
     updateProgress(progress, requestId, 60, 'Generation', 'Calling API...');
     
-    // Check if token is valid
-    const hasValidToken = token ? isValidToken(token) : false;
-    
     // Generate the image using the appropriate model
-    const result = await generateImage(prompt, safeParams, concurrentRequests, progress, requestId, hasValidToken, referrer);
+    const result = await generateImage(prompt, safeParams, concurrentRequests, progress, requestId, hasValidToken);
     updateProgress(progress, requestId, 70, 'Generation', 'API call complete');
     updateProgress(progress, requestId, 75, 'Processing', 'Checking safety...');
     

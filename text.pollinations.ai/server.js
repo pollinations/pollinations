@@ -480,27 +480,8 @@ async function processRequest(req, res, requestData) {
         throw error;
     }
 
-    // if (queue.size >= 60) {
-    //     errorLog('Queue size limit exceeded for IP: %s', ip);
-    //     const errorResponse = {
-    //         error: 'Too Many Requests',
-    //         status: 429,
-    //         details: {
-    //             queueSize: queue.size,
-    //             maxQueueSize: 60,
-    //             timestamp: new Date().toISOString()
-    //         }
-    //     };
-    //     return res.status(429).json(errorResponse);
-    // }
-    
-    const bypassQueue = requestData.isImagePollinationsReferrer || requestData.isRobloxReferrer || shouldBypassDelay(req);
-
-    if (bypassQueue) {
-        await handleRequest(req, res, requestData);
-    } else {
-        await getQueue(ip).add(() => handleRequest(req, res, requestData));
-    }
+    // Note: We've removed the duplicate handleRequest calls that were causing the headers error
+    // The shared enqueue function above now handles all queue logic, including bypass logic
 }
 
 // Helper function to check if a model is an audio model and add necessary parameters

@@ -1,29 +1,29 @@
 import urldecode from 'urldecode';
 import http from 'http';
 import { parse } from 'url';
-import PQueue from 'p-queue';
 import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
 import { createAndReturnImageCached } from './createAndReturnImages.js';
 import { makeParamsSafe } from './makeParamsSafe.js';
 import { cacheImage } from './cacheGeneratedImages.js';
 import { normalizeAndTranslatePrompt } from './normalizeAndTranslatePrompt.js';
 import { countJobs } from './generalImageQueue.js';
-import { getIp } from './getIp.js';
 import sleep from 'await-sleep';
 import { MODELS } from './models.js';
 import { countFluxJobs } from './availableServers.js';
 import { handleRegisterEndpoint } from './availableServers.js';
 import debug from 'debug';
 import { createProgressTracker } from './progressBar.js';
-import { extractToken, isValidToken } from './config/tokens.js';
+
+// Import shared utilities
+import { enqueue } from '../../shared/ipQueue.js';
+import { extractToken, shouldBypassQueue } from '../../shared/auth-utils.js';
+import { getIp } from '../../shared/auth-utils.js';
 
 const logError = debug('pollinations:error');
 const logApi = debug('pollinations:api');
 const logAuth = debug('pollinations:auth');
 
 export let currentJobs = [];
-
-const ipQueue = {};
 
 // In-memory store for tracking IP violations
 const ipViolations = new Map();
@@ -117,8 +117,11 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     progress.updateBar(requestId, 40, 'Server', 'Selecting optimal server...');
     progress.updateBar(requestId, 50, 'Generation', 'Preparing...');
     
-    // Extract token from request for authorization
+    // Extract token from request for authorization using shared utility
     const token = extractToken(req);
+    
+    // Check if request should bypass queue using shared utility
+    const { bypass, userId } = await shouldBypassQueue(req);
     
     const { buffer, ...maturity } = await createAndReturnImageCached(generationPrompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId, wasTransformedForBadDomain, token, referrer);
 
@@ -279,42 +282,26 @@ const checkCacheAndGenerate = async (req, res) => {
         return generateImage();
       }
 
-      let queueExisted = false;
-      if (!ipQueue[ip]) {
-        ipQueue[ip] = new PQueue({ concurrency: 1, interval: 10000, intervalCap:1 });
-      } else {
-        queueExisted = true;
-      }
-
-      progress.updateBar(requestId, 20, 'Queueing', 'Checking cache');
-
-      const result = await ipQueue[ip].add(async () => {
-        if (queueExisted && countJobs() > 2) {
-          const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
-          const queuePosition = Math.min(40, queueSize);
-          const progressPercent = 30 + Math.floor((40 - queuePosition) / 40 * 20); // Maps position 40->30%, 0->50%
-
-          progress.updateBar(requestId, progressPercent, 'Queueing', `Queue position: ${queuePosition}`);
-          logApi("queueExisted", queueExisted, "for ip", ip, " sleeping a little", queueSize);
-          
-          if (queueSize >= 8) {
-            progress.errorBar(requestId, 'Queue full');
-            progress.stop();
-            throw new Error("queue full");
-          }
-
-          progress.setQueued(queueSize);
-          await sleep(100);
+      // Use the shared queue utility
+      const result = await enqueue(req, async () => {
+        // Check queue size and handle accordingly
+        const queueSize = countJobs();
+        const fluxJobs = countFluxJobs();
+        
+        // If queue is too large, reject the request
+        if (queueSize >= 8) {
+          progress.errorBar(requestId, 'Queue full');
+          progress.stop();
+          throw new Error("queue full");
         }
         
+        // Update progress and process the image
         progress.setProcessing();
         return generateImage();
+      }, {
+        interval: Number(process.env.QUEUE_INTERVAL_MS_IMAGE || 10000),
+        cap: 1
       });
-
-      // if the queue is empty and none pending or processing we can delete the queue
-      if (ipQueue[ip].size === 0 && ipQueue[ip].pending === 0) {
-        delete ipQueue[ip];
-      }
 
       return result;
     });

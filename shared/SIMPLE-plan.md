@@ -173,5 +173,6 @@ Ships in ~2 days, no new infra, and leaves clean seams for future upgrades.
    - Using node-fetch for API calls to auth service
 
 4. **Next Steps**:
-   - Complete integration with image.pollinations.ai service ✅ text.pollinations.ai integration complete
+   - ✅ Complete integration with text.pollinations.ai service
+   - ✅ Complete integration with image.pollinations.ai service
    - Add unit tests for the shared utilities

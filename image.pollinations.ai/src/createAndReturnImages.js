@@ -9,7 +9,8 @@ import debug from 'debug';
 import { checkContent } from './llamaguard.js';
 import { writeExifMetadata } from './writeExifMetadata.js';
 import { sanitizeString } from './translateIfNecessary.js';
-import { extractToken, isValidToken } from './config/tokens.js';
+// Import shared authentication utilities
+import { extractToken, shouldBypassQueue } from '../../shared/auth-utils.js';
 import sharp from 'sharp';
 import sleep from 'await-sleep';
 import dotenv from 'dotenv';
@@ -714,8 +715,15 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
     // Update generation progress
     updateProgress(progress, requestId, 60, 'Generation', 'Calling API...');
     
-    // Check if token is valid
-    const hasValidToken = token ? isValidToken(token) : false;
+    // Check if request should bypass queue using shared utility
+    // We'll create a mock request object since we only have the token and referrer
+    const mockReq = {
+      headers: {
+        'authorization': token ? `Bearer ${token}` : undefined,
+        'referer': referrer
+      }
+    };
+    const { bypass: hasValidToken } = await shouldBypassQueue(mockReq);
     
     // Generate the image using the appropriate model
     const result = await generateImage(prompt, safeParams, concurrentRequests, progress, requestId, hasValidToken, referrer);

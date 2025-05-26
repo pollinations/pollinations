@@ -231,30 +231,75 @@ The simplified approach maintains security while being practical:
 - No complex JWT infrastructure needed for the APIs
 - auth.pollinations.ai remains separate for user management
 
-## 10. Implementation Progress: SIMPLE Plan
+## 10. Implementation Status
 
-A phased implementation plan called SIMPLE (Standardized Implementation for Minimal-Prep Legacy Enhancement) has been created to address the issues identified in this report. The plan focuses on:
+### ✅ COMPLETED
 
 1. **Shared Authentication Utilities**:
    - Created `shared/auth-utils.js` with standardized functions:
      - `extractToken(req)` - Consistent token extraction from headers and query params
      - `extractReferrer(req)` - Standardized referrer extraction
      - `shouldBypassQueue(req, ctx)` - Unified queue bypass logic
+     - `getIp(req)` - Consistent IP address extraction
 
 2. **Shared Queue Management**:
    - Created `shared/ipQueue.js` to standardize IP-based queue handling
    - Implemented `enqueue(req, fn, opts)` function that respects authentication context
    - Proper handling of legacy tokens and allowlisted domains
+   - Self-contained configuration loading
 
 3. **Environment Configuration**:
-   - Moved all hardcoded values to environment variables
-   - Created `.env.example` template with documentation
-   - Added feature flag for easy rollback (`USE_SHARED_AUTH_AND_QUEUE`)
+   - Consolidated all token lists and domain allowlists in shared/.env
+   - Created comprehensive `.env.example` template with documentation
+   - Organized environment variables with clear sections and comments
+   - Standardized implementation across all services (no feature flag needed)
 
 4. **Service Integration**:
-   - Updated both text.pollinations.ai and image.pollinations.ai to use shared utilities
-   - Removed duplicated code and inconsistent implementations
-   - Maintained backward compatibility
+   - ✅ Updated text.pollinations.ai to use shared utilities
+     - Removed legacy token handling and referrer checks
+     - Simplified server.js implementation
+   - ✅ Updated image.pollinations.ai to use shared utilities
+     - Removed VALID_TOKENS from .env (now in shared/.env as LEGACY_TOKENS)
+     - Integrated with createAndReturnImages.js
+
+### 🔄 IN PROGRESS
+
+1. **Documentation**:
+   - Updated SIMPLE-plan.md with implementation status
+   - Updated this REFERRER_TOKEN_REPORT.md with current state
+
+### 📋 PLANNED
+
+1. **Testing**:
+   - Add unit tests for the shared utilities
+   - Test edge cases for token validation and queue bypass
+
+2. **Future Enhancements**:
+   - Consider moving token handling to cloudflare-cache services (see GitHub issue #2095)
+   - Extract shared functionality from cloudflare-cache implementations
+   - Implement edge authentication for improved security and performance
+
+## 11. Key Benefits of Implementation
+
+1. **Improved Security**:
+   - Removed referrer-based authentication
+   - Consistent token validation
+   - No referrer fallback in token extraction
+
+2. **Better Maintainability**:
+   - Centralized authentication and queue management
+   - Shared utilities reduce code duplication
+   - Clear documentation of environment variables
+
+3. **Simplified Integration**:
+   - Services only need to import and use the shared utilities
+   - No need for manual context setup
+   - Automatic configuration loading
+
+4. **Consistent Behavior**:
+   - Same authentication and queue behavior across services
+   - Clear separation of concerns
+   - Referrers for analytics only, tokens for authentication
 
 This implementation follows the recommendations in this report while ensuring minimal disruption to existing services.
 

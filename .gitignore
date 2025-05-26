@@ -104,7 +104,6 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
 .venv
 env/
 venv/
@@ -226,7 +225,7 @@ web_modules/
 
 # dotenv environment variable files
 # Temporarily commented out to allow editing and consolidation
-#.env
+.env
 .env.development.local
 .env.test.local
 .env.production.local

@@ -108,15 +108,15 @@ ALLOWLISTED_DOMAINS=pollinations.ai,roblox.com
 QUEUE_INTERVAL_MS_TEXT=6000
 QUEUE_INTERVAL_MS_IMAGE=10000
 
-# feature flag – use shared helpers (set false to roll back instantly)
-USE_SHARED_AUTH_AND_QUEUE=true
+# Note: Shared authentication and queue utilities are now the standard implementation
+# and are always used across all services.
 4 · Phased schedule (2½ engineering days)
 Day	Tasks	Output
 0 AM	create /shared; stub helpers; copy env template	repo ready ✅
 0 PM	implement auth-utils, ipQueue; add Jest unit tests covering: DB token ok / legacy header / legacy referrer / deny	CI green ✅
 1 AM	patch text service; remove old queue code; local smoke test	text passes 🔄
 1 PM	patch image service; prune ipQueue object; local smoke test	image passes 🔄
-1 EOD	deploy to staging with USE_SHARED_AUTH_AND_QUEUE=true; tail logs to compare authReason, latency	validation
+1 EOD	deploy to staging with shared utilities; tail logs to compare authReason, latency	validation
 2 AM	prod flip of flag; set alert (5xx > baseline+1 %)	live
 2 PM	cleanup: delete old queue helpers; document new flow	done
 
@@ -135,13 +135,9 @@ no token, bad referrer → queued → either success after delay or 429 if queue
 
 ✅ Compare P99 latency before/after (expect same or lower – less duplicated code).
 
-6 · Rollback (instant)
-bash
-Copy
-Edit
-export USE_SHARED_AUTH_AND_QUEUE=false   # back to legacy per-service paths
-pm2 restart all   # or redeploy worker
-No code revert required.
+6 · Maintenance
+
+The shared authentication and queue utilities are now the standard implementation across all services. Any changes to authentication or queue behavior should be made in the shared utilities.
 
 7 · Next ready steps (later, not blocking)
 Queue scaling – optional KV adapter can slot into ipQueue.js.
@@ -155,6 +151,50 @@ Critical referrer-auth bug closed.
 One authoritative auth + queue layer across both back-ends.
 
 Ships in ~2 days, no new infra, and leaves clean seams for future upgrades.
+
+## Implementation Status
+
+### ✅ COMPLETED
+
+1. **Shared Authentication Utilities**:
+   - Created `auth-utils.js` with standardized token and referrer extraction
+   - Implemented `shouldBypassQueue()` for consistent queue bypass logic
+   - Added `validateApiTokenDb()` for API-based token validation
+   - Added `getIp()` for consistent IP address handling
+
+2. **Shared Queue Management**:
+   - Implemented `ipQueue.js` with self-contained queue management
+   - Created `enqueue()` function that handles IP-based rate limiting
+   - Utilities automatically load their own configuration
+
+3. **Environment Configuration**:
+   - Created centralized `.env` file in the shared folder
+   - Consolidated token lists and domain allowlists from both services
+   - Organized environment variables with clear documentation
+   - Removed redundant configuration from individual services
+
+4. **Service Integration**:
+   - ✅ Integrated with text.pollinations.ai service
+   - ✅ Integrated with image.pollinations.ai service
+   - Simplified service code by removing duplicate logic
+   - Services now just import and use the shared utilities
+
+### 🔄 IN PROGRESS
+
+1. **Documentation**:
+   - Updated SIMPLE-plan.md with implementation status
+   - Updated REFERRER_TOKEN_REPORT.md with current state
+
+### 📋 PLANNED
+
+1. **Testing**:
+   - Add unit tests for the shared utilities
+   - Test edge cases for token validation and queue bypass
+
+2. **Future Enhancements**:
+   - Consider moving token handling to cloudflare-cache services (see GitHub issue #2095)
+   - Extract shared functionality from cloudflare-cache implementations
+   - Implement edge authentication for improved security and performance
 
 ## Implementation Notes
 
@@ -172,7 +212,9 @@ Ships in ~2 days, no new infra, and leaves clean seams for future upgrades.
    - Added package.json to shared folder with required dependencies
    - Using node-fetch for API calls to auth service
 
-4. **Next Steps**:
-   - ✅ Complete integration with text.pollinations.ai service
-   - ✅ Complete integration with image.pollinations.ai service
-   - Add unit tests for the shared utilities
+4. **Key Design Decisions**:
+   - Referrers are for frontend app identification and analytics only
+   - Tokens are for backend authentication and queue bypass
+   - No referrer fallback in token extraction (security improvement)
+   - Simple string comparison for token validation (no JWT complexity)
+   - Track usage by token for backend apps, by IP for frontend apps

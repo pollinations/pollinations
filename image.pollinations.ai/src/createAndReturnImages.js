@@ -1,18 +1,13 @@
 import fetch from 'node-fetch';
 import { fileTypeFromBuffer } from 'file-type';
 import { addPollinationsLogoWithImagemagick, getLogoPath } from './imageOperations.js';
-import { MODELS } from './models.js';
 import FormData from 'form-data';
-import fs from 'fs';
 import { fetchFromLeastBusyFluxServer, getNextTurboServerUrl } from './availableServers.js';
 import debug from 'debug';
-import { checkContent } from './llamaguard.js';
 import { writeExifMetadata } from './writeExifMetadata.js';
 import { sanitizeString } from './translateIfNecessary.js';
 // Import shared authentication utilities
-import { extractToken, shouldBypassQueue, isValidToken } from '../../shared/auth-utils.js';
 import sharp from 'sharp';
-import sleep from 'await-sleep';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -711,9 +706,6 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
   try {
     // Update generation progress
     updateProgress(progress, requestId, 60, 'Generation', 'Calling API...');
-    
-    // Authentication check is now passed directly from the calling function
-    // No need to create a mock request or call shouldBypassQueue again
     
     // Generate the image using the appropriate model
     const result = await generateImage(prompt, safeParams, concurrentRequests, progress, requestId, hasValidToken);

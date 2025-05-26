@@ -371,12 +371,20 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
       return { bypass:true, reason:'LEGACY_TOKEN', userId:null, debugInfo };
     }
     
-    // If token is provided but not valid, throw an error
+    // If token is provided but not valid, return error info instead of throwing
+    // This prevents the server from crashing while maintaining proper error handling
     debugInfo.authResult = 'INVALID_TOKEN';
-    const error = new Error('Invalid token provided');
-    error.status = 401;
-    error.details = { debugInfo };
-    throw error;
+    return { 
+      bypass: false, 
+      reason: 'INVALID_TOKEN', 
+      userId: null, 
+      debugInfo,
+      error: {
+        message: 'Invalid token provided',
+        status: 401,
+        details: { debugInfo }
+      }
+    };
   }
   
   // 3️⃣ Check for legacy token in referrer (no error thrown for invalid referrers)

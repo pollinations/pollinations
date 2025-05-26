@@ -31,9 +31,28 @@ export async function enqueue(req, fn, { interval=6000, cap=1 }={}) {
     allowlist: process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : []
   };
   
-  const { bypass } = await shouldBypassQueue(req, authContext);
-  if (bypass) return fn();
+  // Get queue bypass decision with auth context
+  const authResult = await shouldBypassQueue(req, authContext);
   
+  // Check if there's an error in the auth result (invalid token)
+  if (authResult.error) {
+    console.error('Authentication error:', authResult.error.message);
+    // Create a proper error object to throw
+    const error = new Error(authResult.error.message);
+    error.status = authResult.error.status;
+    error.details = authResult.error.details;
+    // Add extra context for debugging
+    error.queueContext = {
+      authContextLength: JSON.stringify(authContext).length,
+      issuedAt: new Date().toISOString()
+    };
+    throw error;
+  }
+  
+  // If bypass is true, execute the function immediately
+  if (authResult.bypass) return fn();
+  
+  // Otherwise, queue the function based on IP
   const ip = req.headers.get?.('cf-connecting-ip') || 
              req.headers['cf-connecting-ip'] || 
              req.ip || 

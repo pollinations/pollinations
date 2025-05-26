@@ -104,7 +104,6 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
 .venv
 env/
 venv/
@@ -225,6 +224,7 @@ web_modules/
 .yarn-integrity
 
 # dotenv environment variable files
+# Temporarily commented out to allow editing and consolidation
 .env
 .env.development.local
 .env.test.local

@@ -9,22 +9,27 @@
 
 import PQueue from 'p-queue';
 import { shouldBypassQueue } from './auth-utils.js';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Load environment variables from shared .env file
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 // In-memory queue storage
 const queues = new Map();
 
-// Global auth context - should be set at service startup
-let globalAuthCtx = { legacyTokens: [], allowlist: [] };
+// Global auth context - automatically loaded from .env
+const legacyTokens = process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [];
+const allowlist = process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : [];
 
-/**
- * Set the global authentication context
- * @param {Object} ctx - Authentication context
- * @param {string[]|string} [ctx.legacyTokens] - Legacy tokens to check
- * @param {string[]|string} [ctx.allowlist] - Allowlisted domains
- */
-export function setAuthContext(ctx) {
-  globalAuthCtx = ctx;
-}
+// Global auth context
+const globalAuthCtx = { legacyTokens, allowlist };
+
+// Log initialization
+console.log(`Shared queue initialized with ${legacyTokens.length} legacy tokens and ${allowlist.length} allowlisted domains`);
+
 
 /**
  * Enqueue a function to be executed based on IP address

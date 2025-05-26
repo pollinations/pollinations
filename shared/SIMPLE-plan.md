@@ -4,7 +4,7 @@ Everything below can be completed without adding any new storage layer or auth p
 1 · New shared helpers (±200 LOC total)
 File	Key exports	Notes
 shared/auth-utils.js	extractToken(req) • extractReferrer(req) • shouldBypassQueue(req, ctx) • validateApiTokenDb(token)	ctx = { legacyTokens, allowlist } ✅
-shared/ipQueue.js	enqueue(req, fn, opts)	wraps in-memory p-queue; one queue per IP
+shared/ipQueue.js	enqueue(req, fn, opts)	loads config from shared/.env; wraps p-queue ✅
 
 1.1 extractToken(req)
 js
@@ -44,11 +44,26 @@ Copy
 Edit
 import PQueue from 'p-queue';
 import { shouldBypassQueue } from './auth-utils.js';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Load environment variables from shared .env file
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, '.env') });
+
+// Load auth context from environment
+const legacyTokens = process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [];
+const allowlist = process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : [];
+const globalAuthCtx = { legacyTokens, allowlist };
+
+// Queue storage
 const queues = new Map();
+
 export async function enqueue(req, fn, { interval=6000, cap=1 }={}) {
   const { bypass } = await shouldBypassQueue(req, globalAuthCtx);
   if (bypass) return fn();
-  const ip = req.headers['cf-connecting-ip'] || req.ip || 'unknown';
+  const ip = req.headers.get?.('cf-connecting-ip') || req.headers['cf-connecting-ip'] || req.ip || 'unknown';
   if (!queues.has(ip))
        queues.set(ip, new PQueue({ concurrency:1, interval, intervalCap:cap }));
   return queues.get(ip).add(fn);
@@ -58,7 +73,10 @@ export async function enqueue(req, fn, { interval=6000, cap=1 }={}) {
 diff
 Copy
 Edit
-- const queue = getQueue(ip);             // delete bespoke map + func above
+- import PQueue from 'p-queue';           // remove PQueue import
+- const queues = new Map();               // remove queue map
+- function getQueue(ip) { ... }           // remove queue function
+- const queue = getQueue(ip);             // remove queue lookup
 - await queue.add(() => processRequest());
 + import { enqueue } from '../shared/ipQueue.js';
 + await enqueue(req, () => processRequest(), {
@@ -145,11 +163,15 @@ Ships in ~2 days, no new infra, and leaves clean seams for future upgrades.
    - Created validateApiTokenDb function that calls the auth service endpoint
    - Removed DB dependency from the context object
 
-2. **Package Management**:
+2. **Environment Management**:
+   - Shared utilities now load environment variables directly from shared/.env file
+   - No need for services to pass auth context - it's handled automatically
+   - Simplified integration with services - just import and use
+
+3. **Package Management**:
    - Added package.json to shared folder with required dependencies
    - Using node-fetch for API calls to auth service
 
-3. **Next Steps**:
-   - Complete integration with text.pollinations.ai service
-   - Complete integration with image.pollinations.ai service
+4. **Next Steps**:
+   - Complete integration with image.pollinations.ai service ✅ text.pollinations.ai integration complete
    - Add unit tests for the shared utilities

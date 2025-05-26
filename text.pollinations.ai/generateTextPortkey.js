@@ -116,8 +116,6 @@ const DEFAULT_OPTIONS = {
 const baseAzureConfig = {
     provider: 'azure-openai',
     retry: '3',
-    // Default temperature for Azure OpenAI models (balanced)
-    temperature: 0.7,
 };
 
 /**
@@ -147,8 +145,6 @@ const baseCloudflareConfig = {
     authKey: process.env.CLOUDFLARE_AUTH_TOKEN,
     // Set default max_tokens to 8192 (increased from 256)
     'max-tokens': 8192,
-    // Default temperature for Cloudflare models (balanced)
-    temperature: 0.5,
 };
 
 // Base configuration for Scaleway models
@@ -158,8 +154,6 @@ const baseScalewayConfig = {
     authKey: process.env.SCALEWAY_API_KEY,
     // Set default max_tokens to 8192 (increased from default)
     'max-tokens': 8192,
-    // Default temperature for Scaleway models (balanced)
-    temperature: 0.6,
 };
 
 // Base configuration for Mistral Scaleway model
@@ -171,8 +165,8 @@ const baseMistralConfig = {
     authKey: process.env.SCALEWAY_MISTRAL_API_KEY,
     // Set default max_tokens to 8192
     'max-tokens': 8192,
-    // Default temperature for Mistral models (creative)
-    temperature: 0.7,
+    // Default temperature for Mistral models (low/focused)
+    temperature: 0.3,
 };
 
 // Base configuration for Modal models
@@ -182,8 +176,6 @@ const baseModalConfig = {
     authKey: process.env.HORMOZ_MODAL_KEY,
     // Set default max_tokens to 4096
     'max-tokens': 4096,
-    // Default temperature for Modal models (balanced)
-    temperature: 0.6,
 };
 
 // Base configuration for OpenRouter models
@@ -372,9 +364,7 @@ export const portkeyConfig = {
         authKey: process.env.AZURE_COMMAND_R_API_KEY,
         'auth-header-name': 'Authorization',
         'auth-header-value-prefix': '',
-        'max-tokens': 800,
-        // Default temperature for Cohere models (focused)
-        temperature: 0.3
+        'max-tokens': 800
     }),
     // Cloudflare model configurations
     '@cf/meta/llama-3.3-70b-instruct-fp8-fast': () => createCloudflareModelConfig(),

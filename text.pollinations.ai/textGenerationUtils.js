@@ -122,8 +122,8 @@ export function normalizeOptions(options = {}, defaults = {}) {
   
   // Handle special cases for common options
   if (normalized.temperature !== undefined) {
-    // Ensure temperature is within valid range (0-2)
-    normalized.temperature = Math.max(0, Math.min(2, normalized.temperature));
+    // Ensure temperature is within valid range (0-3)
+    normalized.temperature = Math.max(0, Math.min(3, normalized.temperature));
   }
   
   if (normalized.top_p !== undefined) {

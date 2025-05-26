@@ -116,13 +116,11 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     progress.updateBar(requestId, 40, 'Server', 'Selecting optimal server...');
     progress.updateBar(requestId, 50, 'Generation', 'Preparing...');
     
-    // Extract token from request for authorization using shared utility
-    const token = extractToken(req);
-    
     // Check if request should bypass queue using shared utility
-    const { bypass, userId } = await shouldBypassQueue(req);
+    const { bypass: hasValidToken, userId } = await shouldBypassQueue(req);
     
-    const { buffer, ...maturity } = await createAndReturnImageCached(generationPrompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId, wasTransformedForBadDomain, token, referrer);
+    // Pass the authentication result directly instead of token and referrer
+    const { buffer, ...maturity } = await createAndReturnImageCached(generationPrompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId, wasTransformedForBadDomain, hasValidToken);
 
     progress.updateBar(requestId, 50, 'Generation', 'Starting generation');
 

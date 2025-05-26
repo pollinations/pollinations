@@ -1,24 +1,8 @@
 import debug from 'debug';
+// Import shared utilities for authentication and environment handling
+import { extractReferrer, shouldBypassQueue } from '../shared/auth-utils.js';
 
 const log = debug('pollinations:requestUtils');
-
-
-// Read whitelisted domains from environment variable
-export const WHITELISTED_DOMAINS = process.env.WHITELISTED_DOMAINS 
-    ? process.env.WHITELISTED_DOMAINS.split(',').map(domain => domain.trim())
-    : [];
-
-
-/**
- * Helper function to get referrer from request
- * @param {object} req - Express request object
- * @param {object} data - Request data
- * @returns {string} - Referrer string
- */
-export function getReferrer(req, data) {
-    const referer = req.headers.referer || req.headers.referrer || req.headers.origin || data.referrer || data.origin || req.headers['http-referer'] || 'unknown';
-    return referer;
-}
 
 /**
  * Common function to handle request data
@@ -43,9 +27,16 @@ export function getRequestData(req) {
                      data.private === true || 
                      (typeof data.private === 'string' && data.private.toLowerCase() === 'true');
 
-    const referrer = getReferrer(req, data);
-    const isImagePollinationsReferrer = WHITELISTED_DOMAINS.some(domain => referrer.toLowerCase().includes(domain));
-    const isRobloxReferrer = referrer.toLowerCase().includes('roblox') || referrer.toLowerCase().includes('gacha11211');
+    // Use shared referrer extraction utility
+    const referrer = extractReferrer(req);
+    
+    // Use shared authentication function to check if referrer should bypass queue
+    const authResult = shouldBypassQueue(req, {
+        legacyTokens: process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [],
+        allowlist: process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : []
+    });
+    const isImagePollinationsReferrer = authResult.bypass;
+    const isRobloxReferrer = referrer && (referrer.toLowerCase().includes('roblox') || referrer.toLowerCase().includes('gacha11211'));
     const stream = data.stream || false; 
     
     // Extract voice parameter for audio models
@@ -95,8 +86,28 @@ export function getRequestData(req) {
         response_format
     };
 }
-// Function to check if delay should be bypassed
+
+/**
+ * Function to check if delay should be bypassed based on referrer
+ * @param {object} req - Express request object
+ * @returns {boolean} - Whether delay should be bypassed
+ */
 export function shouldBypassDelay(req) {
-    const referrer = getReferrer(req, req.body || {});
-    return WHITELISTED_DOMAINS.some(domain => referrer.toLowerCase().includes(domain));
+    try {
+        // Use shared shouldBypassQueue function to determine bypass
+        const authResult = shouldBypassQueue(req, {
+            legacyTokens: process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [],
+            allowlist: process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : []
+        });
+        
+        // Also check for Roblox referrer as a special case
+        const referrer = extractReferrer(req);
+        const isRobloxReferrer = referrer && (referrer.toLowerCase().includes('roblox') || referrer.toLowerCase().includes('gacha11211'));
+        
+        return authResult.bypass || isRobloxReferrer;
+    } catch (error) {
+        // If authentication check fails, don't bypass delay
+        log('Authentication check failed for delay bypass:', error.message);
+        return false;
+    }
 }

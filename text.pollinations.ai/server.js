@@ -113,7 +113,11 @@ app.get('/crossdomain.xml', (req, res) => {
 
 app.set('trust proxy', true);
 
-// Queue configuration is now handled by the shared ipQueue.js module
+// Queue configuration for text service
+const QUEUE_CONFIG = {
+  interval: 6000,  // 6 seconds between requests per IP
+  cap: 1          // Max 1 concurrent request per IP
+};
 
 // Function to get IP address
 export function getIp(req) {
@@ -472,9 +476,7 @@ async function processRequest(req, res, requestData) {
     try {
         await enqueue(req, async () => {
             await handleRequest(req, res, requestData);
-        }, {
-            interval: Number(process.env.QUEUE_INTERVAL_MS_TEXT || 6000)
-        });
+        }, QUEUE_CONFIG);
     } catch (error) {
         errorLog('Error in queue processing: %s', error.message);
         throw error;

@@ -9,27 +9,9 @@
 
 import PQueue from 'p-queue';
 import { shouldBypassQueue } from './auth-utils.js';
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-// Load environment variables from shared .env file
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.join(__dirname, '.env') });
 
 // In-memory queue storage
 const queues = new Map();
-
-// Global auth context - automatically loaded from .env
-const legacyTokens = process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [];
-const allowlist = process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : [];
-
-// Global auth context
-const globalAuthCtx = { legacyTokens, allowlist };
-
-// Log initialization
-console.log(`Shared queue initialized with ${legacyTokens.length} legacy tokens and ${allowlist.length} allowlisted domains`);
-
 
 /**
  * Enqueue a function to be executed based on IP address
@@ -43,7 +25,13 @@ console.log(`Shared queue initialized with ${legacyTokens.length} legacy tokens 
  * @returns {Promise<any>} Result of the function execution
  */
 export async function enqueue(req, fn, { interval=6000, cap=1 }={}) {
-  const { bypass } = await shouldBypassQueue(req, globalAuthCtx);
+  // Create auth context from environment variables (loaded by env-loader.js via auth-utils.js import)
+  const authContext = {
+    legacyTokens: process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [],
+    allowlist: process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : []
+  };
+  
+  const { bypass } = await shouldBypassQueue(req, authContext);
   if (bypass) return fn();
   
   const ip = req.headers.get?.('cf-connecting-ip') || 

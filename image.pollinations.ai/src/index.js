@@ -18,9 +18,13 @@ import path from 'path';
 
 // Import shared utilities
 import { enqueue } from '../../shared/ipQueue.js';
-import { extractToken, shouldBypassQueue, getIp, isValidToken, handleAuthentication, addAuthDebugHeaders, createAuthDebugResponse } from '../../shared/auth-utils.js';
+import { extractToken, getIp, isValidToken, handleAuthentication, addAuthDebugHeaders, createAuthDebugResponse } from '../../shared/auth-utils.js';
 
-// Using DEBUG environment variable for debugging instead of file logging
+// Queue configuration for image service
+const QUEUE_CONFIG = {
+  interval: 10000, // 10 seconds between requests per IP
+  cap: 1          // Max 1 concurrent request per IP
+};
 
 const logError = debug('pollinations:error');
 const logApi = debug('pollinations:api');
@@ -271,14 +275,11 @@ const checkCacheAndGenerate = async (req, res) => {
         return result;
       };
 
-      // Check for valid token to bypass queue
-      const token = extractToken(req);
-      // Use the imported isValidToken function from auth-utils.js
-      // Pass the LEGACY_TOKENS from environment as the validTokens parameter
-      const legacyTokens = process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [];
-      const hasValidToken = isValidToken(token, legacyTokens);
+      // Check for valid token to bypass queue using shared authentication
+      const authResult = await handleAuthentication(req, requestId, logAuth);
+      const hasValidToken = authResult.bypass;
       if (hasValidToken && safeParams.model !== "gptimage") {
-        logAuth('Queue bypass granted for token:', token);
+        logAuth('Queue bypass granted for token');
         progress.updateBar(requestId, 20, 'Priority', 'Token authenticated');
         
         // Skip queue for valid tokens
@@ -302,19 +303,15 @@ const checkCacheAndGenerate = async (req, res) => {
         // Update progress and process the image
         progress.setProcessing();
         return generateImage();
-      }, {
-        interval: Number(process.env.QUEUE_INTERVAL_MS_IMAGE || 10000),
-        cap: 1
-      });
+      }, QUEUE_CONFIG);
 
       return result;
     });
 
 
-    // Get authentication info from the token
-    const token = extractToken(req);
-    const legacyTokens = process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [];
-    const isAuthenticated = isValidToken(token, legacyTokens);
+    // Get authentication info using shared authentication utility
+    const authResult = await handleAuthentication(req);
+    const isAuthenticated = authResult.bypass;
     
     // Add debug headers for authentication information
     const headers = {
@@ -323,11 +320,8 @@ const checkCacheAndGenerate = async (req, res) => {
       'X-Auth-Status': isAuthenticated ? 'authenticated' : 'unauthenticated'
     };
     
-    // Add token information if present
-    if (token) {
-      headers['X-Debug-Token-Present'] = 'true';
-      headers['X-Debug-Token-Source'] = 'header';
-    }
+    // Add authentication debug headers using shared utility
+    addAuthDebugHeaders(headers, authResult.debugInfo);
     
     res.writeHead(200, headers);
     res.write(bufferAndMaturity.buffer);
@@ -376,8 +370,8 @@ const checkCacheAndGenerate = async (req, res) => {
       requestId,
       requestParameters: {
         prompt: originalPrompt,
-        params: safeParams,
-        referrer: referrer
+        ...safeParams,
+        referrer
       }
     };
     

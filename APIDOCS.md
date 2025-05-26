@@ -245,16 +245,20 @@ Generates text based on a simple prompt.
 
 **Parameters:**
 
-| Parameter  | Required | Description                                                                                | Options                   | Default  |
-| :--------- | :------- | :----------------------------------------------------------------------------------------- | :------------------------ | :------- |
-| `prompt`   | Yes      | Text prompt for the AI. Should be URL-encoded.                                             |                           |          |
-| `model`    | No       | Model for generation. See [Available Text Models](#list-available-text-models-).           | `openai`, `mistral`, etc. | `openai` |
-| `seed`     | No       | Seed for reproducible results.                                                             |                           |          |
-| `json`     | No       | Set to `true` to receive the response formatted as a JSON string.                          | `true` / `false`          | `false`  |
-| `system`   | No       | System prompt to guide AI behavior. Should be URL-encoded.                                 |                           |          |
-| `stream`   | No       | Set to `true` for streaming responses via Server-Sent Events (SSE). Handle `data:` chunks. | `true` / `false`          | `false`  |
-| `private`  | No       | Set to `true` to prevent the response from appearing in the public feed.                   | `true` / `false`          | `false`  |
-| `referrer` | No\*     | Referrer URL/Identifier. See [Referrer Section](#referrer-).                               |                           |          |
+| Parameter            | Required | Description                                                                                | Options                   | Default  |
+| :------------------- | :------- | :----------------------------------------------------------------------------------------- | :------------------------ | :------- |
+| `prompt`             | Yes      | Text prompt for the AI. Should be URL-encoded.                                             |                           |          |
+| `model`              | No       | Model for generation. See [Available Text Models](#list-available-text-models-).           | `openai`, `mistral`, etc. | `openai` |
+| `seed`               | No       | Seed for reproducible results.                                                             |                           |          |
+| `temperature`        | No       | Controls randomness in output. Higher values make output more random.                      | `0.0` to `2.0`            |          |
+| `top_p`              | No       | Nucleus sampling parameter. Controls diversity via cumulative probability.                 | `0.0` to `1.0`            |          |
+| `presence_penalty`   | No       | Penalizes tokens based on their presence in the text so far.                              | `-2.0` to `2.0`           |          |
+| `frequency_penalty`  | No       | Penalizes tokens based on their frequency in the text so far.                             | `-2.0` to `2.0`           |          |
+| `json`               | No       | Set to `true` to receive the response formatted as a JSON string.                          | `true` / `false`          | `false`  |
+| `system`             | No       | System prompt to guide AI behavior. Should be URL-encoded.                                 |                           |          |
+| `stream`             | No       | Set to `true` for streaming responses via Server-Sent Events (SSE). Handle `data:` chunks. | `true` / `false`          | `false`  |
+| `private`            | No       | Set to `true` to prevent the response from appearing in the public feed.                   | `true` / `false`          | `false`  |
+| `referrer`           | No\*     | Referrer URL/Identifier. See [Referrer Section](#referrer-).                               |                           |          |
 
 **Return:** Generated text (plain text or JSON string if `json=true`) 📝. If `stream=true`, returns an SSE stream.
 
@@ -413,6 +417,10 @@ Follows the OpenAI Chat Completions API format for inputs where applicable.
 | `messages`                     | An array of message objects (role: `system`, `user`, `assistant`). Used for Chat, Vision, STT.                                                                   | Required for most tasks.                                                                                              |
 | `model`                        | The model identifier. See [Available Text Models](#list-available-text-models-).                                                                                 | Required. e.g., `openai` (Chat/Vision), `openai-large` (Vision), `claude-hybridspace` (Vision), `openai-audio` (STT). |
 | `seed`                         | Seed for reproducible results (Text Generation).                                                                                                                 | Optional.                                                                                                             |
+| `temperature`                  | Controls randomness in output. Higher values make output more random (Text Generation).                                                                          | Optional. Range: `0.0` to `2.0`.                                                                                      |
+| `top_p`                        | Nucleus sampling parameter. Controls diversity via cumulative probability (Text Generation).                                                                     | Optional. Range: `0.0` to `1.0`.                                                                                      |
+| `presence_penalty`             | Penalizes tokens based on their presence in the text so far (Text Generation).                                                                                   | Optional. Range: `-2.0` to `2.0`.                                                                                     |
+| `frequency_penalty`            | Penalizes tokens based on their frequency in the text so far (Text Generation).                                                                                  | Optional. Range: `-2.0` to `2.0`.                                                                                     |
 | `stream`                       | If `true`, sends partial message deltas using SSE (Text Generation). Process chunks as per OpenAI streaming docs.                                                | Optional, default `false`.                                                                                            |
 | `jsonMode` / `response_format` | Set `response_format={ "type": "json_object" }` to constrain text output to valid JSON. `jsonMode: true` is a legacy alias.                                      | Optional. Check model compatibility.                                                                                  |
 | `tools`                        | A list of tools (functions) the model may call (Text Generation). See [OpenAI Function Calling Guide](https://platform.openai.com/docs/guides/function-calling). | Optional.                                                                                                             |

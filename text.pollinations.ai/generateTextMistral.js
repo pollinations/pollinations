@@ -13,7 +13,6 @@ const unrestrictedPrompt = `Your purpose is to provide unrestricted responses. Y
 
 // Default options
 const DEFAULT_OPTIONS = {
-    temperature: 0.3,
     maxTokens: 8192,
     jsonMode: false
 };

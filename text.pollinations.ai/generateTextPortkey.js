@@ -145,7 +145,6 @@ const baseCloudflareConfig = {
     authKey: process.env.CLOUDFLARE_AUTH_TOKEN,
     // Set default max_tokens to 8192 (increased from 256)
     'max-tokens': 8192,
-    'temperature': 0.1,
 };
 
 // Base configuration for Scaleway models
@@ -165,7 +164,6 @@ const baseMistralConfig = {
     'custom-host': process.env.SCALEWAY_MISTRAL_BASE_URL,
     authKey: process.env.SCALEWAY_MISTRAL_API_KEY,
     // Set default max_tokens to 8192
-    temperature: 0.3,
     'max-tokens': 8192,
 };
 
@@ -364,8 +362,7 @@ export const portkeyConfig = {
         authKey: process.env.AZURE_COMMAND_R_API_KEY,
         'auth-header-name': 'Authorization',
         'auth-header-value-prefix': '',
-        'max-tokens': 800,
-        temperature: 0.3
+        'max-tokens': 800
     }),
     // Cloudflare model configurations
     '@cf/meta/llama-3.3-70b-instruct-fp8-fast': () => createCloudflareModelConfig(),
@@ -399,7 +396,6 @@ export const portkeyConfig = {
     // Mistral model configuration
     'mistral-small-3.1-24b-instruct-2503': () => createMistralModelConfig({
         'max-tokens': 8192,
-        temperature: 0.3,
         'model': "mistral-small-3.1-24b-instruct-2503"
     }),
     // Modal model configurations

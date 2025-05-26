@@ -24,6 +24,7 @@
     "axios": "^1.7.7",
     "commander": "^13.1.0",
     "cors": "^2.8.5",
+    "debug": "^4.4.1",
     "dotenv": "^16.0.3",
     "eventsource": "^3.0.2",
     "eventsource-parser": "^3.0.2",

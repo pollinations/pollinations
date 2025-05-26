@@ -1,13 +1,24 @@
-# Environment Variable Centralization - Project Complete ✅
+# Environment Variable Centralization & Queue Configuration - Project Complete ✅
 
 **Date Completed:** May 26, 2025  
-**Objective:** Ensure all accesses to environment variables related to authentication and analytics utilize shared utility functions
+**Objectives:** 
+1. Ensure all accesses to environment variables related to authentication and analytics utilize shared utility functions
+2. Move queue configuration from shared environment variables to individual services
 
 ## 🎯 Mission Accomplished
 
 **100% of environment variable access now uses shared utilities with zero code duplication!**
 
+**Queue configuration successfully moved to individual services for better encapsulation!**
+
 ## 📊 Summary of Changes
+
+### Related Documentation
+
+- [SIMPLE-plan.md](./SIMPLE-plan.md) - Original implementation plan with final status
+- [REFERRER_TOKEN_REPORT.md](./REFERRER_TOKEN_REPORT.md) - Comprehensive report on referrer and token handling
+
+Both documents have been updated to reflect the completed status of all tasks.
 
 ### Files Updated
 
@@ -22,11 +33,14 @@
 ### Total Impact
 
 - **Authentication logic**: 150+ lines → ~20 lines (**87% reduction**)
-- **Environment loading**: Multiple configs → Single env-loader.js (**90% reduction**)
-- **Debug headers**: 25+ lines boilerplate → Single function call (**95% reduction**)
+- **Environment loading**: Multiple configurations → single env-loader.js (**90% reduction**)
+- **Debug headers**: 25+ lines boilerplate → single function call (**95% reduction**)
 - **Token extraction**: 80+ lines → ~10 lines (**88% reduction**)
+- **Queue configuration**: Shared file → Service-owned constants
+  - Text Service: 6 second interval, 1 concurrent request cap
+  - Image Service: 10 second interval, 1 concurrent request cap
 
-## 🏗️ Architecture Achieved
+##  Architecture Achieved
 
 ### Environment Variable Flow
 ```
@@ -39,7 +53,7 @@ auth-utils.js (imports env-loader)
 All services (import auth-utils)
 ```
 
-### Files with Centralized Access ✅
+### Files with Centralized Access 
 
 1. **shared/auth-utils.js** - Core utility with env-loader.js
 2. **text.pollinations.ai/requestUtils.js** - Uses shared shouldBypassQueue
@@ -49,16 +63,16 @@ All services (import auth-utils)
 6. **pollinations.ai/functions/redirect.js** - Imports env-loader.js
 7. **pollinations.ai/test-redirect.js** - Imports env-loader.js
 
-## 🛡️ Security & Maintainability Benefits
+##  Security & Maintainability Benefits
 
-✅ **No hardcoded secrets** in any codebase files  
-✅ **Single point of configuration** management  
-✅ **Consistent error handling** across all services  
-✅ **Standardized debug headers** for troubleshooting  
-✅ **Easy to add new services** with minimal boilerplate  
-✅ **Environment variables automatically available** when importing shared utilities  
+**No hardcoded secrets** in any codebase files  
+**Single point of configuration** management  
+**Consistent error handling** across all services  
+**Standardized debug headers** for troubleshooting  
+**Easy to add new services** with minimal boilerplate  
+**Environment variables automatically available** when importing shared utilities  
 
-## 🔄 Environment Variable Types Centralized
+##  Environment Variable Types Centralized
 
 ### Authentication Variables
 - `LEGACY_TOKENS` - Comma-separated legacy authentication tokens
@@ -70,18 +84,20 @@ All services (import auth-utils)
 - `GA_API_SECRET` - Google Analytics API secret
 
 ### Queue Configuration
-- `QUEUE_INTERVAL_MS_TEXT` - Text service queue interval
-- `QUEUE_INTERVAL_MS_IMAGE` - Image service queue interval
+- **Text Service**: 6 second interval, 1 concurrent request cap
+- **Image Service**: 10 second interval, 1 concurrent request cap
 
-## 📋 Key Design Principles Implemented
+##  Key Design Principles Implemented
 
 1. **DRY (Don't Repeat Yourself)** - Single source of truth for all environment access
 2. **Automatic Loading** - No manual dotenv configuration needed
 3. **Proper Precedence** - Local .env overrides shared .env for development
 4. **Security First** - No secrets in codebase, centralized configuration
 5. **Minimal Boilerplate** - Services just import and use shared utilities
+6. **Service ownership** - Each service owns its queue configuration
+7. **Separation of concerns** - Environment variables for secrets, constants for application configuration
 
-## 🚀 Usage Pattern Established
+##  Usage Pattern Established
 
 ```javascript
 // Environment variables are loaded automatically - no setup needed!

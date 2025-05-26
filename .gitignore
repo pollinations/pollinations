@@ -225,7 +225,8 @@ web_modules/
 .yarn-integrity
 
 # dotenv environment variable files
-.env
+# Temporarily commented out to allow editing and consolidation
+#.env
 .env.development.local
 .env.test.local
 .env.production.local

@@ -5,6 +5,10 @@
  * Strategy:
  * - Frontend apps (no backend): Use referrer + IP-based queuing
  * - Backend apps: Use token authentication with no queuing
+ * 
+ * Usage:
+ * Services should load their own .env file with dotenv, then import these utilities:
+ * import { extractToken, shouldBypassQueue } from '../auth.pollinations.ai/shared/auth-utils.js';
  */
 
 /**

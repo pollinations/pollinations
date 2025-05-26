@@ -2,6 +2,10 @@
  * Shared configuration loader for Pollinations services
  * Loads configuration from environment variables only
  * No hardcoded values are stored in this file
+ * 
+ * Usage:
+ * Services should load their own .env file with dotenv, then import these utilities:
+ * import { isApprovedClient, getValidTokens } from '../auth.pollinations.ai/shared/config.js';
  */
 
 // Get whitelisted domains from environment

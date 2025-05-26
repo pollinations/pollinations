@@ -12,7 +12,7 @@ import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { processRequestForAds } from './ads/initRequestFilter.js';
 import { createStreamingAdWrapper } from './ads/streamingAdWrapper.js';
-import { getRequestData, shouldBypassDelay } from './requestUtils.js';
+import { getRequestData } from './requestUtils.js';
 
 // Import shared utilities
 import { enqueue } from '../shared/ipQueue.js';

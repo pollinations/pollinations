@@ -473,14 +473,7 @@ async function processRequest(req, res, requestData) {
     }
     
     // Use shared queue for rate limiting
-    try {
-        await enqueue(req, async () => {
-            await handleRequest(req, res, requestData);
-        }, QUEUE_CONFIG);
-    } catch (error) {
-        errorLog('Error in queue processing: %s', error.message);
-        throw error;
-    }
+    await enqueue(req, () => handleRequest(req, res, requestData), QUEUE_CONFIG);
 
     // Note: We've removed the duplicate handleRequest calls that were causing the headers error
     // The shared enqueue function above now handles all queue logic, including bypass logic

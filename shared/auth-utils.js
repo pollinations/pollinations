@@ -14,6 +14,13 @@
 
 // Auto-load environment variables from shared and local .env files
 import './env-loader.js';
+import debug from 'debug';
+
+// Set up debug loggers with namespaces
+const log = debug('pollinations:auth');
+const errorLog = debug('pollinations:error');
+const tokenLog = debug('pollinations:auth:token');
+const referrerLog = debug('pollinations:auth:referrer');
 
 // Token field configuration for DRY principle
 const TOKEN_FIELDS = {
@@ -341,8 +348,26 @@ export async function isUserDomainAllowedFromDb(userId, referrer, db, isDomainAl
  * @throws {Error} If an invalid token is provided
  */
 export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
+  log('shouldBypassQueue called for request: %s %s', req.method, req.url);
+  
   const token = extractToken(req);
   const ref   = extractReferrer(req);
+  
+  // Log token and referrer extraction results
+  if (token) {
+    tokenLog('Token extracted: %s (length: %d, source: %s)', 
+             token.length > 8 ? token.substring(0, 4) + '...' + token.substring(token.length - 4) : token,
+             token.length,
+             getTokenSource(req));
+  } else {
+    tokenLog('No token provided in request');
+  }
+  
+  if (ref) {
+    referrerLog('Referrer extracted: %s', ref);
+  } else {
+    referrerLog('No referrer found in request');
+  }
   
   // Create debug info object for headers
   const debugInfo = {
@@ -353,27 +378,40 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
     allowlistCount: Array.isArray(allowlist) ? allowlist.length : (allowlist?.split(',').length || 0)
   };
   
+  log('Auth context: legacyTokens=%d, allowlist=%d', debugInfo.legacyTokensCount, debugInfo.allowlistCount);
+  
   // If a token is provided, validate it
   if (token) {
+    tokenLog('Validating token: %s', debugInfo.token);
+    
     // 1️⃣ Check DB token
+    tokenLog('Checking token against auth.pollinations.ai API');
     const userId = await validateApiTokenDb(token);   // Uses auth.pollinations.ai API
     if (userId) {
+      tokenLog('✅ Valid DB token found for user: %s', userId);
       debugInfo.authResult = 'DB_TOKEN';
       debugInfo.userId = userId;
+      log('Queue bypass granted: DB_TOKEN for user %s', userId);
       return { bypass:true, reason:'DB_TOKEN', userId, debugInfo };
     }
     
     // 2️⃣ Check legacy token
+    tokenLog('Checking against %d legacy tokens', debugInfo.legacyTokensCount);
     const legacyTokenMatch = legacyTokens.includes(token);
     if (legacyTokenMatch) {
+      tokenLog('✅ Valid legacy token match found');
       debugInfo.authResult = 'LEGACY_TOKEN';
       debugInfo.legacyTokenMatch = true;
+      log('Queue bypass granted: LEGACY_TOKEN');
       return { bypass:true, reason:'LEGACY_TOKEN', userId:null, debugInfo };
     }
     
     // If token is provided but not valid, return error info instead of throwing
     // This prevents the server from crashing while maintaining proper error handling
+    tokenLog('❌ Invalid token provided: %s', debugInfo.token);
+    errorLog('Invalid token provided (source: %s)', debugInfo.tokenSource || 'unknown');
     debugInfo.authResult = 'INVALID_TOKEN';
+    log('Authentication failed: INVALID_TOKEN');
     return { 
       bypass: false, 
       reason: 'INVALID_TOKEN', 
@@ -388,22 +426,35 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
   }
   
   // 3️⃣ Check for legacy token in referrer (no error thrown for invalid referrers)
-  const legacyReferrerMatch = ref && legacyTokens.some(t => ref.includes(t));
-  if (legacyReferrerMatch) {
-    debugInfo.authResult = 'LEGACY_REFERRER';
-    debugInfo.legacyReferrerMatch = true;
-    return { bypass:true, reason:'LEGACY_REFERRER', userId:null, debugInfo };
-  }
+  if (ref) {
+    referrerLog('Checking referrer for legacy token: %s', ref);
+    const legacyReferrerMatch = legacyTokens.some(t => ref.includes(t));
+    if (legacyReferrerMatch) {
+      referrerLog('✅ Legacy token found in referrer: %s', ref);
+      debugInfo.authResult = 'LEGACY_REFERRER';
+      debugInfo.legacyReferrerMatch = true;
+      log('Queue bypass granted: LEGACY_REFERRER');
+      return { bypass:true, reason:'LEGACY_REFERRER', userId:null, debugInfo };
+    } else {
+      referrerLog('No legacy token found in referrer');
+    }
   
-  // 4️⃣ Check allow-listed domain
-  const allowlistMatch = ref && allowlist.some(d => ref.includes(d));
-  if (allowlistMatch) {
-    debugInfo.authResult = 'ALLOWLIST';
-    debugInfo.allowlistMatch = true;
-    return { bypass:true, reason:'ALLOWLIST', userId:null, debugInfo };
+    // 4️⃣ Check allow-listed domain
+    referrerLog('Checking referrer against %d allowlisted domains', debugInfo.allowlistCount);
+    const allowlistMatch = allowlist.some(d => ref.includes(d));
+    if (allowlistMatch) {
+      referrerLog('✅ Referrer matches allowlisted domain: %s', ref);
+      debugInfo.authResult = 'ALLOWLIST';
+      debugInfo.allowlistMatch = true;
+      log('Queue bypass granted: ALLOWLIST');
+      return { bypass:true, reason:'ALLOWLIST', userId:null, debugInfo };
+    } else {
+      referrerLog('Referrer does not match any allowlisted domain');
+    }
   }
   
   // 5️⃣ default → go through queue
+  log('No bypass criteria met, request will be queued');
   debugInfo.authResult = 'NONE';
   return { bypass:false, reason:'NONE', userId:null, debugInfo };
 }

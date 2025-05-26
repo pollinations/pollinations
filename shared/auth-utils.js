@@ -85,16 +85,10 @@ export function isDomainWhitelisted(referrer, whitelist) {
   
   try {
     const url = new URL(referrer);
-    const hostname = url.hostname.toLowerCase();
-    
-    return whitelist.some(domain => {
-      domain = domain.toLowerCase();
-      // Exact match or subdomain match
-      return hostname === domain || 
-             hostname.endsWith('.' + domain);
-    });
+    return whitelist.some(domain => url.hostname.includes(domain));
   } catch (e) {
-    // Invalid URL
+    // If referrer is not a valid URL, check if it includes any whitelisted domain
+    return whitelist.some(domain => referrer.includes(domain));
     return false;
   }
 }
@@ -144,6 +138,58 @@ export function getClientIp(req) {
   }
   
   return 'unknown';
+}
+
+/**
+ * Get IP address from request (with privacy masking)
+ * @param {Object} req - The request object
+ * @returns {string} The IP address (truncated for privacy)
+ */
+export function getIp(req) {
+  // Prioritize standard proxy headers and add cloudflare-specific headers
+  const ip = req.headers["x-bb-ip"] || 
+             req.headers["x-nf-client-connection-ip"] || 
+             req.headers["x-real-ip"] || 
+             req.headers['x-forwarded-for'] || 
+             req.headers['cf-connecting-ip'] ||
+             (req.socket ? req.socket.remoteAddress : null);
+  
+  if (!ip) return null;
+  
+  // Handle x-forwarded-for which can contain multiple IPs (client, proxy1, proxy2, ...)
+  // The client IP is typically the first one in the list
+  const cleanIp = ip.split(',')[0].trim();
+  
+  // Check if IPv4 or IPv6
+  if (cleanIp.includes(':')) {
+      // IPv6 address - take first 4 segments (64 bits) which typically represent the network prefix
+      // Handle special IPv6 formats like ::1 or 2001::
+      const segments = cleanIp.split(':');
+      let normalizedSegments = [];
+      
+      // Handle :: notation (compressed zeros)
+      if (cleanIp.includes('::')) {
+          const parts = cleanIp.split('::');
+          const leftPart = parts[0] ? parts[0].split(':') : [];
+          const rightPart = parts[1] ? parts[1].split(':') : [];
+          
+          // Calculate how many zero segments are represented by ::
+          const missingSegments = 8 - leftPart.length - rightPart.length;
+          
+          normalizedSegments = [
+              ...leftPart,
+              ...Array(missingSegments).fill('0'),
+              ...rightPart
+          ];
+      } else {
+          normalizedSegments = segments;
+      }
+      
+      return normalizedSegments.slice(0, 4).join(':');
+  } else {
+      // IPv4 address - take first 3 segments
+      return cleanIp.split('.').slice(0, 3).join('.');
+  }
 }
 
 /**

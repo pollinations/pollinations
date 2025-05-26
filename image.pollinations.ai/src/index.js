@@ -16,8 +16,7 @@ import { createProgressTracker } from './progressBar.js';
 
 // Import shared utilities
 import { enqueue } from '../../shared/ipQueue.js';
-import { extractToken, shouldBypassQueue } from '../../shared/auth-utils.js';
-import { getIp } from '../../shared/auth-utils.js';
+import { extractToken, shouldBypassQueue, getIp } from '../../shared/auth-utils.js';
 
 const logError = debug('pollinations:error');
 const logApi = debug('pollinations:api');

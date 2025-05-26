@@ -10,7 +10,7 @@ import { checkContent } from './llamaguard.js';
 import { writeExifMetadata } from './writeExifMetadata.js';
 import { sanitizeString } from './translateIfNecessary.js';
 // Import shared authentication utilities
-import { extractToken, shouldBypassQueue } from '../../shared/auth-utils.js';
+import { extractToken, shouldBypassQueue, isValidToken } from '../../shared/auth-utils.js';
 import sharp from 'sharp';
 import sleep from 'await-sleep';
 import dotenv from 'dotenv';

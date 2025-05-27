@@ -260,6 +260,11 @@ const checkCacheAndGenerate = async (req, res) => {
       //   prompt: originalPrompt, 
       //   ip: getIp(req), status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer, token: extractToken(req) && extractToken(req).slice(0, 2) + "..." });
 
+      // Check for valid token to determine queue interval
+      const authResult = await handleAuthentication(req, requestId, logAuth);
+      const hasValidToken = authResult.bypass;
+      
+      // Pass authentication status to generateImage (hasReferrer will be checked there for gptimage)
       const generateImage = async () => {
         timingInfo.push({ step: 'Start generating job', timestamp: Date.now() });
         const result = await imageGen({ 
@@ -275,19 +280,20 @@ const checkCacheAndGenerate = async (req, res) => {
         return result;
       };
 
-      // Check for valid token to bypass queue using shared authentication
-      const authResult = await handleAuthentication(req, requestId, logAuth);
-      const hasValidToken = authResult.bypass;
-      if (hasValidToken && safeParams.model !== "gptimage") {
-        logAuth('Queue bypass granted for token');
-        progress.updateBar(requestId, 20, 'Priority', 'Token authenticated');
-        
-        // Skip queue for valid tokens
-        timingInfo.push({ step: 'Token authenticated - bypassing queue', timestamp: Date.now() });
-        return generateImage();
+      // Determine queue configuration based on token
+      let queueConfig;
+      if (hasValidToken) {
+        // Token removes delay between requests (no interval)
+        queueConfig = { interval: 0, cap: 1 };
+        logAuth('Token authenticated - queue with no delay');
+        progress.updateBar(requestId, 20, 'Authenticated', 'Token verified');
+      } else {
+        // Use default queue config with interval
+        queueConfig = QUEUE_CONFIG;
+        logAuth('Standard queue with delay (no token)');
       }
 
-      // Use the shared queue utility
+      // Use the shared queue utility - everyone goes through queue
       const result = await enqueue(req, async () => {
         // Check queue size and handle accordingly
         const queueSize = countJobs();
@@ -303,7 +309,7 @@ const checkCacheAndGenerate = async (req, res) => {
         // Update progress and process the image
         progress.setProcessing();
         return generateImage();
-      }, QUEUE_CONFIG);
+      }, queueConfig);
 
       return result;
     });

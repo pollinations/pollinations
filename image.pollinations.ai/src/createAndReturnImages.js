@@ -485,23 +485,31 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
       // Add the prompt
       formData.append('prompt', sanitizeString(prompt));
       
-      // Handle the image based on its type
+      // Handle images based on their type
       try {
-        // Use the first image URL from the array (backward compatible with string type)
-        const imageUrl = Array.isArray(safeParams.image) ? safeParams.image[0] : safeParams.image;
+        // Convert to array if it's a string (backward compatible)
+        const imageUrls = Array.isArray(safeParams.image) ? safeParams.image : [safeParams.image];
         
-        if (imageUrl) {
-            // Fetch image from URL
-            logCloudflare(`Fetching image from URL: ${imageUrl}`);
+        if (imageUrls.length === 0) {
+            // Handle errors for missing image
+            throw new Error('Image URL is required for GPT Image edit mode but was not provided');
+        }
+        
+        // Process each image in the array
+        for (let i = 0; i < imageUrls.length; i++) {
+            const imageUrl = imageUrls[i];
+            logCloudflare(`Fetching image ${i+1}/${imageUrls.length} from URL: ${imageUrl}`);
+            
             const imageResponse = await fetch(imageUrl);
             if (!imageResponse.ok) {
                 throw new Error(`Failed to fetch image from URL: ${imageUrl}`);
             }
+            
             const buffer = await imageResponse.buffer();
-            formData.append('image', buffer, { filename: 'image.png' });
-        } else {
-            // Handle errors for missing image
-            throw new Error('Image URL is required for GPT Image edit mode but was not provided');
+            // Use a unique field name for each image (image, image1, image2, etc.)
+            // First image has no suffix to maintain backward compatibility
+            const fieldName = i === 0 ? 'image' : `image${i}`;
+            formData.append(fieldName, buffer, { filename: `image${i}.png` });
         }
       } catch (error) {
         logError('Error processing image for editing:', error);

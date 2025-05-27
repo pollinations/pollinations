@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pollinations.AI Auth - Preview</title>
+    <style>
+        /* Psychedelic Gen-Z style with minimal code */
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap');
+
+        :root {
+            --color-primary: #ff61d8;
+            --color-secondary: #05ffa1;
+            --color-accent: #ffcc00;
+            --color-text: #000000;
+            --color-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+
+        body { 
+            font-family: 'Space Grotesk', sans-serif;
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+        }
+
+        .container { 
+            background: white;
+            padding: 30px; 
+            border-radius: 16px;
+            border: 3px solid var(--color-primary);
+        }
+
+        h1 { 
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-top: 2rem;
+            color: var(--color-primary);
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            color: var(--color-primary);
+        }
+
+        .emoji-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .emoji-title span {
+            font-size: 36px;
+        }
+
+        /* Help Section Styles */
+        .help-section {
+            background: linear-gradient(135deg, rgba(255, 97, 216, 0.1), rgba(5, 255, 161, 0.1));
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 2px dashed var(--color-primary);
+        }
+
+        .help-content {
+            display: grid;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .help-item {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .help-item h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .help-item p {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .help-details {
+            margin-top: 15px;
+            padding-left: 10px;
+        }
+
+        .help-details ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .help-details li {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .help-details li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--color-secondary);
+            font-weight: bold;
+        }
+
+        .pro-tips {
+            list-style: none;
+            padding: 0;
+        }
+
+        .pro-tips li {
+            margin: 12px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .tip-emoji {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        code { 
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            display: inline-block;
+            border: 1px solid #eee;
+            color: var(--color-primary);
+            margin: 5px 0;
+        }
+
+        .section-info {
+            color: #666;
+            font-size: 0.95rem;
+            margin: 10px 0;
+            font-style: italic;
+        }
+
+        button { 
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .status { 
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 12px;
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="emoji-title"><span>🐝</span> Pollinations.AI Auth <span>🌸</span></h1>
+        
+        <div class="help-section">
+            <h2>💡 Quick Guide</h2>
+            <div class="help-content">
+                <div class="help-item">
+                    <h3>🔑 What's a Token?</h3>
+                    <p>Think of it like your VIP pass! 🎫 It lets you skip the queue and get instant access to our AI models. No more waiting!</p>
+                    <div class="help-details">
+                        <p><strong>How to use:</strong></p>
+                        <ul>
+                            <li>In URL: <code>?token=your-token-here</code></li>
+                            <li>In headers: <code>Authorization: Bearer your-token-here</code></li>
+                            <li>Also works with: <code>api_key</code> or <code>apikey</code></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="help-item">
+                    <h3>🌐 What's a Referrer?</h3>
+                    <p>It's basically where you're coming from! 📍 If your website is on our VIP list, you get priority access automatically. No token needed!</p>
+                    <div class="help-details">
+                        <p><strong>How it works:</strong></p>
+                        <ul>
+                            <li>We check your site's domain automatically</li>
+                            <li>If you're on the allowlist = instant access ✨</li>
+                            <li>Perfect for frontend apps (no backend needed!)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="help-item">
+                    <h3>🚀 Pro Tips</h3>
+                    <ul class="pro-tips">
+                        <li><span class="tip-emoji">💻</span> <strong>Frontend apps:</strong> Just add your domain to the allowlist!</li>
+                        <li><span class="tip-emoji">⚡</span> <strong>Backend apps:</strong> Use tokens for instant access</li>
+                        <li><span class="tip-emoji">🔒</span> <strong>Keep it secret:</strong> Never share your token publicly!</li>
+                        <li><span class="tip-emoji">📊</span> <strong>No limits:</strong> Both methods give you unlimited access</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div id="auth-section">
+            <h2>✨ 1. Authentication</h2>
+            <button>Login with GitHub</button>
+            <div class="status">Login to manage your domains and tokens</div>
+        </div>
+        
+        <div id="domain-section">
+            <h2>🌐 3. Referrer/Domain Management</h2>
+            <p class="section-info">Add your website domains here for automatic priority access! No tokens needed for these sites.</p>
+            <div class="status">Your allowlisted domains will appear here</div>
+            
+            <h3>🔑 4. API Token Management</h3>
+            <p class="section-info">Generate tokens for backend apps or when you need guaranteed access. Keep these secret! 🤫</p>
+            <div class="status">Your API tokens will appear here</div>
+        </div>
+    </div>
+</body>
+</html>

@@ -16,6 +16,7 @@ import { getRequestData } from './requestUtils.js';
 
 // Import shared utilities
 import { enqueue } from '../shared/ipQueue.js';
+import { handleAuthentication } from '../shared/auth-utils.js';
 
 // Load environment variables
 dotenv.config();
@@ -61,6 +62,7 @@ const app = express();
 
 const log = debug('pollinations:server');
 const errorLog = debug('pollinations:error');
+const authLog = debug('pollinations:auth');
 const BLOCKED_IPS_LOG = path.join(process.cwd(), 'blocked_ips.txt');
 
 // Load blocked IPs from file on startup
@@ -472,8 +474,29 @@ async function processRequest(req, res, requestData) {
         }
     }
     
+    // Check authentication status
+    const authResult = await handleAuthentication(req, null, authLog);
+    const hasValidToken = authResult.bypass;
+    const hasReferrer = authResult.debugInfo?.referrer || authResult.debugInfo?.allowlistMatch;
+    
+    // Determine queue configuration based on authentication
+    let queueConfig;
+    if (hasValidToken) {
+        // Token skips queue entirely - execute immediately
+        authLog('Token authenticated - bypassing queue');
+        return handleRequest(req, res, requestData);
+    } else if (hasReferrer) {
+        // Referrer skips delays between requests (no interval)
+        queueConfig = { interval: 0, cap: 1 };
+        authLog('Referrer authenticated - queue with no delay');
+    } else {
+        // Use default queue config with interval
+        queueConfig = QUEUE_CONFIG;
+        authLog('No authentication - standard queue with delay');
+    }
+    
     // Use shared queue for rate limiting
-    await enqueue(req, () => handleRequest(req, res, requestData), QUEUE_CONFIG);
+    await enqueue(req, () => handleRequest(req, res, requestData), queueConfig);
 
     // Note: We've removed the duplicate handleRequest calls that were causing the headers error
     // The shared enqueue function above now handles all queue logic, including bypass logic
@@ -605,61 +628,56 @@ function sendAsOpenAIStream(res, completion, req = null) {
     if (responseStream) {
         log('Attempting to proxy stream to client');
         
-        // For Node.js Readable streams
-        if (responseStream.pipe) {
-            log('Using pipe for Node.js Readable stream');
+        // Get messages from the request data
+        // For GET requests, messages will be in the request path
+        // For POST requests, messages will be in the request body
+        const messages = req ? (
+            // Try to get messages from different sources
+            (req.body && req.body.messages) || 
+            (req.requestData && req.requestData.messages) || 
+            (completion.requestData && completion.requestData.messages) ||
+            []
+        ) : [];
+        
+        // Check if we have messages and should process the stream for ads
+        if (req && messages.length > 0) {
+            log('Processing stream for ads with', messages.length, 'messages');
             
-            // Get messages from the request data
-            // For GET requests, messages will be in the request path
-            // For POST requests, messages will be in the request body
-            const messages = req ? (
-                // Try to get messages from different sources
-                (req.body && req.body.messages) || 
-                (req.requestData && req.requestData.messages) || 
-                (completion.requestData && completion.requestData.messages) ||
-                []
-            ) : [];
+            // Create a wrapped stream that will add ads at the end
+            const wrappedStream = createStreamingAdWrapper(
+                responseStream, 
+                req, 
+                messages
+            );
             
-            // Check if we have messages and should process the stream for ads
-            if (req && messages.length > 0) {
-                log('Processing stream for ads with', messages.length, 'messages');
-                
-                // Create a wrapped stream that will add ads at the end
-                const wrappedStream = createStreamingAdWrapper(
-                    responseStream, 
-                    req, 
-                    messages
-                );
-                
-                // Pipe the wrapped stream to the response
-                wrappedStream.pipe(res);
-                
-                // Handle client disconnect
-                if (req) req.on('close', () => {
-                    log('Client disconnected');
-                    if (wrappedStream.destroy) {
-                        wrappedStream.destroy();
-                    }
-                    if (responseStream.destroy) {
-                        responseStream.destroy();
-                    }
-                });
-            } else {
-                // Directly pipe the stream to the client - true thin proxy approach
-                log('Directly piping SSE stream to client (no ad processing)');
-                responseStream.pipe(res);
-                
-                // Handle client disconnect
-                if (req) req.on('close', () => {
-                    log('Client disconnected');
-                    if (responseStream.destroy) {
-                        responseStream.destroy();
-                    }
-                });
-            }
+            // Pipe the wrapped stream to the response
+            wrappedStream.pipe(res);
             
-            return;
+            // Handle client disconnect
+            if (req) req.on('close', () => {
+                log('Client disconnected');
+                if (wrappedStream.destroy) {
+                    wrappedStream.destroy();
+                }
+                if (responseStream.destroy) {
+                    responseStream.destroy();
+                }
+            });
+        } else {
+            // Directly pipe the stream to the client - true thin proxy approach
+            log('Directly piping SSE stream to client (no ad processing)');
+            responseStream.pipe(res);
+            
+            // Handle client disconnect
+            if (req) req.on('close', () => {
+                log('Client disconnected');
+                if (responseStream.destroy) {
+                    responseStream.destroy();
+                }
+            });
         }
+        
+        return;
     }
     
     // If we get here, we couldn't handle the stream properly

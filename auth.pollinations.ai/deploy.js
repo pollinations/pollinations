@@ -41,7 +41,7 @@ if (missingVars.length > 0) {
 }
 
 // Build the deploy command with full path to npx
-const npxPath = '/Users/thomash/.nvm/versions/node/v20.19.0/bin/npx';
+const npxPath = 'npx';
 let deployCommand = `${npxPath} wrangler deploy --env production`;
 
 // Add environment variables to the command

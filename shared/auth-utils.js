@@ -24,9 +24,9 @@ const referrerLog = debug('pollinations:auth:referrer');
 
 // Token field configuration for DRY principle
 const TOKEN_FIELDS = {
-  query: ['token', 'api_key', 'apikey'],
-  header: ['authorization', 'x-pollinations-token', 'x-api-key', 'api-key', 'apikey'],
-  body: ['token', 'api_key', 'apikey', 'auth_token', 'authorization']
+  query: ['token'],
+  header: ['authorization', 'x-pollinations-token'],
+  body: ['token', 'auth_token', 'authorization']
 };
 
 /**

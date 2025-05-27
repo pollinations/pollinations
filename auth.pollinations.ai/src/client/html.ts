@@ -16,6 +16,45 @@ export const generateHTML = () => `<!DOCTYPE html>
     <div class="container">
         <h1 class="emoji-title"><span>🐝</span> Pollinations.AI Auth <span>🌸</span></h1>
         
+        <details class="help-section" open>
+            <summary><h2 style="display: inline;">💡 Quick Guide</h2></summary>
+            <div class="help-content">
+                <div class="help-item">
+                    <h3>🔑 What's a Token?</h3>
+                    <p>Think of it like your access key! 🎫 It lets you skip the queue and get instant access to our AI models. No more waiting!</p>
+                    <div class="help-details">
+                        <p><strong>How to use:</strong></p>
+                        <ul>
+                            <li>URL: <code>https://text.pollinations.ai/openai?token=YOUR_TOKEN</code></li>
+                            <li>Header: <code>Authorization: Bearer YOUR_TOKEN</code></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="help-item">
+                    <h3>🌐 What's a Referrer?</h3>
+                    <p>It's basically where you're coming from! 📍 If your website is on our trusted list, you get priority access automatically. No token needed!</p>
+                    <div class="help-details">
+                        <p><strong>How it works:</strong></p>
+                        <ul>
+                            <li>We check your site's domain automatically</li>
+                            <li>If you're on the allowlist = instant access ✨</li>
+                            <li>Perfect for frontend apps (no backend needed!)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="help-item">
+                    <h3>🚀 Pro Tips</h3>
+                    <ul class="pro-tips">
+                        <li><span class="tip-emoji">💻</span> <strong>Web apps:</strong> Just add your domain to the allowlist!</li>
+                        <li><span class="tip-emoji">⚡</span> <strong>Backend apps:</strong> Use tokens for Discord bots, AI chatbots, etc.</li>
+                        <li><span class="tip-emoji">🔒</span> <strong>Keep it secret:</strong> Never share your token publicly!</li>
+                    </ul>
+                </div>
+            </div>
+        </details>
+        
         <div id="auth-section">
             <h2>✨ 1. Authentication</h2>
             <button id="auth-button" onclick="startAuth()">Login with GitHub</button>
@@ -30,6 +69,7 @@ export const generateHTML = () => `<!DOCTYPE html>
         
         <div id="domain-section" class="hidden">
             <h2>🌐 3. Referrer/Domain Management</h2>
+            <p class="section-info">Add your website domains here for automatic priority access! No tokens needed for these sites.</p>
             <div class="input-group">
                 <input type="text" id="new-domain" placeholder="example.com">
                 <button onclick="addDomain()">Add Domain</button>
@@ -37,10 +77,15 @@ export const generateHTML = () => `<!DOCTYPE html>
             <div id="domain-info" class="status"></div>
             
             <h3>🔑 4. API Token Management</h3>
+            <p class="section-info">Generate tokens for backend apps or when you need guaranteed access. Keep these secret! 🤫</p>
             <div id="token-info" class="status"><em>Loading token information...</em></div>
             <button onclick="generateApiToken()">Generate New Token</button>
         </div>
     </div>
+
+    <footer style="text-align: center; padding: 20px; margin-top: 40px; font-size: 14px; opacity: 0.8;">
+        <p>Need help? Check out our <a href="https://github.com/pollinations/pollinations/blob/master/APIDOCS.md" target="_blank" style="color: var(--color-primary);">API Documentation</a> 📚</p>
+    </footer>
 
     ${JS}
 </body>

@@ -271,4 +271,115 @@ code::after {
     0% { transform: translateY(0); }
     100% { transform: translateY(-5px); }
 }
+
+/* Help Section Styles */
+.help-section {
+    background: linear-gradient(135deg, rgba(255, 97, 216, 0.1), rgba(5, 255, 161, 0.1));
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 30px;
+    border: 2px dashed var(--color-primary);
+}
+
+.help-section summary {
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+}
+
+.help-section summary::-webkit-details-marker {
+    display: none;
+}
+
+.help-section summary h2 {
+    margin: 0;
+}
+
+.help-section[open] summary {
+    margin-bottom: 15px;
+}
+
+.help-section .help-content {
+    display: grid;
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.help-item {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.help-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(255, 97, 216, 0.2);
+}
+
+.help-item h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: var(--color-primary);
+}
+
+.help-item p {
+    margin: 10px 0;
+    line-height: 1.6;
+}
+
+.help-details {
+    margin-top: 15px;
+    padding-left: 10px;
+}
+
+.help-details ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.help-details li {
+    margin: 8px 0;
+    padding-left: 20px;
+    position: relative;
+}
+
+.help-details li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: var(--color-secondary);
+    font-weight: bold;
+}
+
+.pro-tips {
+    list-style: none;
+    padding: 0;
+}
+
+.pro-tips li {
+    margin: 12px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.tip-emoji {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.section-info {
+    color: #666;
+    font-size: 0.95rem;
+    margin: 10px 0;
+    font-style: italic;
+}
+
+/* Enhanced code blocks for help section */
+.help-item code {
+    background: linear-gradient(90deg, #f8f9fa, #fff);
+    font-size: 0.9rem;
+}
 `;

@@ -3,6 +3,7 @@ import { createJWT, verifyJWT, extractBearerToken } from './jwt';
 import { upsertUser, getUser, updateDomainAllowlist, getDomains, isDomainAllowed, saveOAuthState, getOAuthState, deleteOAuthState, cleanupOldStates, generateApiToken, getApiToken, deleteApiTokens, validateApiToken } from './db';
 import { exchangeCodeForToken, getGitHubUser } from './github';
 import { handleAdminDatabaseDump } from './admin';
+import { authRateLimiter, tokenRateLimiter, validateRateLimiter, getClientIP } from './rate-limiter';
 
 // Define the TEST_CLIENT_HTML directly to avoid module issues
 const TEST_CLIENT_HTML = require('./test-client').TEST_CLIENT_HTML;
@@ -83,7 +84,7 @@ export default {
         if (request.method === 'GET') {
           // Extract token from the URL path
           const token = url.pathname.replace('/api/validate-token/', '');
-          return handleValidateToken(token, env, corsHeaders);
+          return handleValidateToken(token, env, corsHeaders, request);
         }
       }
       
@@ -101,6 +102,14 @@ export default {
 };
 
 async function handleAuthorize(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  // Apply rate limiting
+  const clientIP = getClientIP(request);
+  const rateLimitResult = await authRateLimiter.checkLimit(clientIP);
+  
+  if (!rateLimitResult.allowed) {
+    return authRateLimiter.createRateLimitResponse(rateLimitResult, corsHeaders);
+  }
+  
   const url = new URL(request.url);
   const redirectUri = url.searchParams.get('redirect_uri');
   
@@ -129,6 +138,14 @@ async function handleAuthorize(request: Request, env: Env, corsHeaders: Record<s
 }
 
 async function handleCallback(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  // Apply rate limiting
+  const clientIP = getClientIP(request);
+  const rateLimitResult = await authRateLimiter.checkLimit(clientIP);
+  
+  if (!rateLimitResult.allowed) {
+    return authRateLimiter.createRateLimitResponse(rateLimitResult, corsHeaders);
+  }
+  
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
@@ -315,6 +332,14 @@ async function handleGetApiToken(request: Request, env: Env, corsHeaders: Record
 }
 
 async function handleGenerateApiToken(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  // Apply rate limiting for token generation
+  const clientIP = getClientIP(request);
+  const rateLimitResult = await tokenRateLimiter.checkLimit(clientIP);
+  
+  if (!rateLimitResult.allowed) {
+    return tokenRateLimiter.createRateLimitResponse(rateLimitResult, corsHeaders);
+  }
+  
   const url = new URL(request.url);
   const userId = url.searchParams.get('user_id');
   
@@ -352,8 +377,18 @@ async function handleGenerateApiToken(request: Request, env: Env, corsHeaders: R
  * @param corsHeaders CORS headers to include in the response
  * @returns Response with validation result
  */
-async function handleValidateToken(token: string, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+async function handleValidateToken(token: string, env: Env, corsHeaders: Record<string, string>, request?: Request): Promise<Response> {
   try {
+    // Apply rate limiting for token validation
+    if (request) {
+      const clientIP = getClientIP(request);
+      const rateLimitResult = await validateRateLimiter.checkLimit(clientIP);
+      
+      if (!rateLimitResult.allowed) {
+        return validateRateLimiter.createRateLimitResponse(rateLimitResult, corsHeaders);
+      }
+    }
+    
     if (!token) {
       return createErrorResponse(400, 'Missing required parameter: token', corsHeaders);
     }

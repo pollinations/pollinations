@@ -54,6 +54,10 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
     if (!validQualities.includes(quality)) {
         quality = 'medium';
     }
+    
+    // Process image parameter - support for multiple comma-separated image URLs
+    // Always convert to array for consistency (empty array if null/undefined)
+    const imageArray = image ? image.split(',') : [];
 
-    return { width, height, seed, model, enhance, nologo, negative_prompt, nofeed, safe, quality, image };
+    return { width, height, seed, model, enhance, nologo, negative_prompt, nofeed, safe, quality, image: imageArray };
 };

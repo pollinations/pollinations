@@ -166,6 +166,14 @@ We offer React hooks for easy integration. Example usage:
 
 Check out our [Pollinations React Hooks](./pollinations-react/README.md) for more details.
 
+## 🌟 Projects Using Pollinations.AI
+
+### Creative & Interactive Applications
+
+| Project | Description | Creator | Links |
+|---------|-------------|---------|-------|
+| 🎨 DreamHer | Interactive web app that transforms your imagination of a "dream girl" into a visual representation through just 10 simple questions using Pollinations AI | @_Creation22 | [Website](https://dreamher.vercel.app/), [GitHub](https://github.com/creation22/DreamGirl) - ⭐ 2 |
+
 ## Architecture
 ```mermaid
 graph LR

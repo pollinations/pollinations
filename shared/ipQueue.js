@@ -29,9 +29,10 @@ const queues = new Map();
  * @param {number} [options.interval=6000] - Time between requests in ms
  * @param {number} [options.cap=1] - Number of requests allowed per interval
  * @param {boolean} [options.forceQueue=false] - Force queuing even for authenticated requests
+ * @param {number} [options.maxQueueSize] - Maximum queue size per IP (throws error if exceeded)
  * @returns {Promise<any>} Result of the function execution
  */
-export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false }={}) {
+export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false, maxQueueSize }={}) {
   // Create auth context from environment variables (loaded by env-loader.js via auth-utils.js import)
   const authContext = {
     legacyTokens: process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [],
@@ -102,8 +103,29 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false 
     return fn();
   }
   
+  // Check if queue exists for this IP and get its current size
+  const currentQueueSize = queues.get(ip)?.size || 0;
+  const currentPending = queues.get(ip)?.pending || 0;
+  const totalInQueue = currentQueueSize + currentPending;
+  
+  // Check if adding to queue would exceed maxQueueSize
+  if (maxQueueSize && totalInQueue >= maxQueueSize) {
+    const error = new Error(`Queue full for IP ${ip}: ${totalInQueue} requests already queued (max: ${maxQueueSize})`);
+    error.status = 429; // Too Many Requests
+    error.queueInfo = {
+      ip,
+      currentSize: currentQueueSize,
+      pending: currentPending,
+      total: totalInQueue,
+      maxAllowed: maxQueueSize
+    };
+    log('Queue full for IP %s: size=%d, pending=%d, max=%d', ip, currentQueueSize, currentPending, maxQueueSize);
+    throw error;
+  }
+  
   // Otherwise, queue the function based on IP
-  log('Request queued for IP: %s (queue size: %d, forceQueue: %s)', ip, queues.get(ip)?.size || 0, forceQueue);
+  log('Request queued for IP: %s (queue size: %d, pending: %d, forceQueue: %s)', 
+      ip, currentQueueSize, currentPending, forceQueue);
   
   // Create queue for this IP if it doesn't exist
   if (!queues.has(ip)) {
@@ -112,7 +134,7 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false 
   }
   
   // Add to queue and return
-  log('Adding request to queue for IP: %s', ip);
+  log('Adding request to queue for IP: %s (will be #%d in queue)', ip, totalInQueue + 1);
   return queues.get(ip).add(() => {
     log('Executing queued request for IP: %s', ip);
     return fn();

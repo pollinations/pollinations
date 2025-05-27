@@ -295,21 +295,10 @@ const checkCacheAndGenerate = async (req, res) => {
 
       // Use the shared queue utility - everyone goes through queue
       const result = await enqueue(req, async () => {
-        // Check queue size and handle accordingly
-        const queueSize = countJobs();
-        const fluxJobs = countFluxJobs();
-        
-        // If queue is too large, reject the request
-        if (queueSize >= 8) {
-          progress.errorBar(requestId, 'Queue full');
-          progress.stop();
-          throw new Error("queue full");
-        }
-        
         // Update progress and process the image
         progress.setProcessing();
         return generateImage();
-      }, { ...queueConfig, forceQueue: true });
+      }, { ...queueConfig, forceQueue: true, maxQueueSize: 5 });
 
       return result;
     });
@@ -380,6 +369,11 @@ const checkCacheAndGenerate = async (req, res) => {
         referrer
       }
     };
+    
+    // Add queue info for 429 errors
+    if (statusCode === 429 && error.queueInfo) {
+      responseObj.queueInfo = error.queueInfo;
+    }
     
     res.end(JSON.stringify(responseObj));
   }

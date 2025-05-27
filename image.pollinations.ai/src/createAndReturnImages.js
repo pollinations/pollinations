@@ -432,7 +432,8 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
     }
     
     // Check if we need to use the edits endpoint instead of generations
-    const isEditMode = safeParams.image !== null;
+    // Check if we have any image URLs to work with
+    const isEditMode = safeParams.image && safeParams.image.length > 0;
     if (isEditMode) {
       // Replace 'generations' with 'edits' in the endpoint URL
       endpoint = endpoint.replace('/images/generations', '/images/edits');
@@ -486,17 +487,21 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
       
       // Handle the image based on its type
       try {
-        if (typeof safeParams.image === 'string') {
-            // Handle image URL - fetch it first
-            logCloudflare(`Fetching image from URL: ${safeParams.image}`);
-            const imageResponse = await fetch(safeParams.image);
+        // Use the first image URL from the array (backward compatible with string type)
+        const imageUrl = Array.isArray(safeParams.image) ? safeParams.image[0] : safeParams.image;
+        
+        if (imageUrl) {
+            // Fetch image from URL
+            logCloudflare(`Fetching image from URL: ${imageUrl}`);
+            const imageResponse = await fetch(imageUrl);
             if (!imageResponse.ok) {
-              throw new Error(`Failed to fetch image from URL: ${imageResponse.status} ${imageResponse.statusText}`);
+                throw new Error(`Failed to fetch image from URL: ${imageUrl}`);
             }
             const buffer = await imageResponse.buffer();
             formData.append('image', buffer, { filename: 'image.png' });
         } else {
-          throw new Error('Unsupported image format for editing');
+            // Handle errors for missing image
+            throw new Error('Image URL is required for GPT Image edit mode but was not provided');
         }
       } catch (error) {
         logError('Error processing image for editing:', error);

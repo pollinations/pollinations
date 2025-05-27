@@ -129,10 +129,8 @@ export function extractReferrer(req) {
   }
   
   // Then check body for referrer field (second priority) - not just for POST
-  if (req.body) {
-    if (req.body.referrer) return req.body.referrer;
-    if (req.body.referer) return req.body.referer;
-  }
+  if (req.body?.referrer) return String(req.body.referrer);
+  if (req.body?.referer) return String(req.body.referer);
   
   // Finally check headers (lowest priority)
   // Handle Cloudflare Workers Request
@@ -452,10 +450,12 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
   
   // 3️⃣ Check for legacy token in referrer (no error thrown for invalid referrers)
   if (ref) {
-    referrerLog('Checking referrer for legacy token: %s', ref);
-    const legacyReferrerMatch = legacyTokens.some(t => ref.includes(t));
+    // Convert to string to handle any type safely
+    const refStr = String(ref);
+    referrerLog('Checking referrer for legacy token: %s', refStr);
+    const legacyReferrerMatch = legacyTokens.some(t => refStr.includes(t));
     if (legacyReferrerMatch) {
-      referrerLog('✅ Legacy token found in referrer: %s', ref);
+      referrerLog('✅ Legacy token found in referrer: %s', refStr);
       debugInfo.authResult = 'LEGACY_REFERRER';
       debugInfo.legacyReferrerMatch = true;
       log('Queue bypass granted: LEGACY_REFERRER');
@@ -465,8 +465,8 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
     }
   
     // 3.5️⃣ Special check for catgpt referrer
-    if (ref.toLowerCase().includes('catgpt')) {
-      referrerLog('✅ CatGPT referrer detected: %s', ref);
+    if (refStr.toLowerCase().includes('catgpt')) {
+      referrerLog('✅ CatGPT referrer detected: %s', refStr);
       debugInfo.authResult = 'CATGPT_REFERRER';
       debugInfo.catgptMatch = true;
       log('Queue bypass granted: CATGPT_REFERRER');
@@ -475,9 +475,9 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
   
     // 4️⃣ Check allow-listed domain
     referrerLog('Checking referrer against %d allowlisted domains', debugInfo.allowlistCount);
-    const allowlistMatch = allowlist.some(d => ref.includes(d));
+    const allowlistMatch = allowlist.some(d => refStr.includes(d));
     if (allowlistMatch) {
-      referrerLog('✅ Referrer matches allowlisted domain: %s', ref);
+      referrerLog('✅ Referrer matches allowlisted domain: %s', refStr);
       debugInfo.authResult = 'ALLOWLIST';
       debugInfo.allowlistMatch = true;
       log('Queue bypass granted: ALLOWLIST');

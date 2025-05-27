@@ -476,17 +476,17 @@ async function processRequest(req, res, requestData) {
     
     // Check authentication status
     const authResult = await handleAuthentication(req, null, authLog);
-    const hasValidToken = authResult.bypass;
+    const hasValidToken = authResult.bypass && authResult.reason === 'TOKEN';
     const hasReferrer = authResult.debugInfo?.referrer || authResult.debugInfo?.allowlistMatch;
     
     // Determine queue configuration based on authentication
     let queueConfig;
     if (hasValidToken) {
-        // Token skips queue entirely - execute immediately
-        authLog('Token authenticated - bypassing queue');
-        return handleRequest(req, res, requestData);
+        // Token reduces delay between requests (no interval) but doesn't bypass queue
+        queueConfig = { interval: 0, cap: 1 };
+        authLog('Token authenticated - queue with no delay');
     } else if (hasReferrer) {
-        // Referrer skips delays between requests (no interval)
+        // Referrer also skips delays between requests (no interval)
         queueConfig = { interval: 0, cap: 1 };
         authLog('Referrer authenticated - queue with no delay');
     } else {
@@ -495,8 +495,40 @@ async function processRequest(req, res, requestData) {
         authLog('No authentication - standard queue with delay');
     }
     
-    // Use shared queue for rate limiting
-    await enqueue(req, () => handleRequest(req, res, requestData), queueConfig);
+    // Use shared queue for rate limiting with max queue size
+    try {
+        await enqueue(req, () => handleRequest(req, res, requestData), { 
+            ...queueConfig, 
+            maxQueueSize: 30 
+        });
+    } catch (error) {
+        // Handle queue full error
+        if (error.status === 429) {
+            errorLog('Queue full for IP %s: %s', ip, error.message);
+            const errorResponse = {
+                error: 'Too Many Requests',
+                status: 429,
+                details: {
+                    message: 'Request queue is full. Please try again later.',
+                    queueInfo: error.queueInfo,
+                    timestamp: new Date().toISOString()
+                }
+            };
+            
+            if (requestData.stream) {
+                // For streaming requests, send error as a stream
+                sendAsOpenAIStream(res, { 
+                    error: errorResponse.error, 
+                    choices: [{ message: { content: errorResponse.details.message } }] 
+                }, req);
+                return;
+            } else {
+                return res.status(429).json(errorResponse);
+            }
+        }
+        // Re-throw other errors
+        throw error;
+    }
 
     // Note: We've removed the duplicate handleRequest calls that were causing the headers error
     // The shared enqueue function above now handles all queue logic, including bypass logic

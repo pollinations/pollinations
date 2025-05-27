@@ -295,21 +295,10 @@ const checkCacheAndGenerate = async (req, res) => {
 
       // Use the shared queue utility - everyone goes through queue
       const result = await enqueue(req, async () => {
-        // Check queue size and handle accordingly
-        const queueSize = countJobs();
-        const fluxJobs = countFluxJobs();
-        
-        // If queue is too large, reject the request
-        if (queueSize >= 8) {
-          progress.errorBar(requestId, 'Queue full');
-          progress.stop();
-          throw new Error("queue full");
-        }
-        
         // Update progress and process the image
         progress.setProcessing();
         return generateImage();
-      }, { ...queueConfig, forceQueue: true });
+      }, { ...queueConfig, forceQueue: true, maxQueueSize: 5 });
 
       return result;
     });
@@ -325,6 +314,21 @@ const checkCacheAndGenerate = async (req, res) => {
       'Cache-Control': 'public, max-age=31536000, immutable',
       'X-Auth-Status': isAuthenticated ? 'authenticated' : 'unauthenticated'
     };
+    
+    // Add Content-Disposition header with sanitized filename
+    if (originalPrompt) {
+      // Create a filename from the prompt, limiting length and sanitizing
+      const baseFilename = originalPrompt
+        .slice(0, 100) // Limit to 100 characters
+        .replace(/[^a-z0-9\s-]/gi, '') // Remove special characters except spaces and hyphens
+        .replace(/\s+/g, '-') // Replace spaces with hyphens
+        .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+        .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
+        .toLowerCase();
+      
+      const filename = (baseFilename || 'generated-image') + '.jpg';
+      headers['Content-Disposition'] = `inline; filename="${filename}"`;
+    }
     
     // Add authentication debug headers using shared utility
     addAuthDebugHeaders(headers, authResult.debugInfo);
@@ -380,6 +384,11 @@ const checkCacheAndGenerate = async (req, res) => {
         referrer
       }
     };
+    
+    // Add queue info for 429 errors
+    if (statusCode === 429 && error.queueInfo) {
+      responseObj.queueInfo = error.queueInfo;
+    }
     
     res.end(JSON.stringify(responseObj));
   }

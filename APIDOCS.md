@@ -26,7 +26,7 @@ Click the links below to see examples in your browser:
     - [List Available Image Models 📜](#list-available-image-models-)
   - [Generate Text API 📝](#generate-text-api-)
     - [Text-To-Text (GET) 🗣️](#text-to-text-get-️)
-    - [Text \& Multimodal (OpenAI Compatible POST) 🧠💬🖼️🎤⚙️](#text--multimodal-openai-compatible-post-️️)
+    - [Text & Multimodal (OpenAI Compatible POST) 🧠💬🖼️🎤⚙️](#text--multimodal-openai-compatible-post-️️)
       - [Vision Capabilities (Image Input) 🖼️➡️📝](#vision-capabilities-image-input-️️)
       - [Speech-to-Text Capabilities (Audio Input) 🎤➡️📝](#speech-to-text-capabilities-audio-input-️)
       - [Function Calling ⚙️](#function-calling-️)
@@ -82,10 +82,10 @@ For **backend services, scripts, and server applications**, tokens provide the h
 
 | Method | Description | Example |
 | :--- | :--- | :--- |
-| Authorization Header | Standard HTTP header with or without `Bearer` prefix | `Authorization: Bearer YOUR_TOKEN` or `Authorization: YOUR_TOKEN` |
-| Custom Headers | Alternative header options | `X-API-Key: YOUR_TOKEN` or `apikey: YOUR_TOKEN` |
-| Query Parameter | Token as URL parameter | `?token=YOUR_TOKEN` or `?api_key=YOUR_TOKEN` |
-| Request Body | Token in POST request body | `{ "token": "YOUR_TOKEN" }` or `{ "api_key": "YOUR_TOKEN" }` |
+| Authorization Header | Standard Bearer token approach (recommended) | `Authorization: Bearer YOUR_TOKEN` |
+| Custom Headers | Alternative header options | `X-Pollinations-Token: YOUR_TOKEN` |
+| Query Parameter | Token as URL parameter | `?token=YOUR_TOKEN` |
+| Request Body | Token in POST request body | `{ "token": "YOUR_TOKEN" }` or `{ "auth_token": "YOUR_TOKEN" }` or `{ "authorization": "YOUR_TOKEN" }` |
 
 ### Bearer Authentication
 
@@ -201,7 +201,7 @@ async function fetchImage(prompt, params = {}) {
   };
   const queryParams = new URLSearchParams({ ...defaultParams, ...params });
   const encodedPrompt = encodeURIComponent(prompt);
-  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?${queryParams.toString()}`;
+  const url = `https://image.pollinations.ai/prompt/${encoded_prompt}?${queryParams.toString()}`;
 
   console.log("Fetching image from:", url);
 
@@ -500,7 +500,7 @@ Follows the OpenAI Chat Completions API format for inputs where applicable.
 | `tools`                        | A list of tools (functions) the model may call (Text Generation). See [OpenAI Function Calling Guide](https://platform.openai.com/docs/guides/function-calling). | Optional.                                                                                                             |
 | `tool_choice`                  | Controls how the model uses tools.                                                                                                                               | Optional.                                                                                                             |
 | `private`                      | Set to `true` to prevent the response from appearing in the public feed.                                                                                         | Optional, default `false`.                                                                                            |
-| `reasoning_effort`             | Sets reasoning effort for `o3-mini` model (Text Generation).                                                                                                     | Optional. Options: `low`, `medium`, `high`.                                                                           |
+| `referrer`                     | Referrer URL/Identifier. See [Referrer Section](#referrer-).                                                                                                     | Optional.                                                                                                             |
 
 <details>
 <summary><strong>Code Examples:</strong> Basic Chat Completion (POST)</summary>
@@ -1256,15 +1256,14 @@ try:
     print("--- First API Call (User Request) ---")
     response = requests.post(url, headers=headers, json=payload)
     response.raise_for_status()
+    
+    # Parse the JSON response
     response_data = response.json()
-    print(json.dumps(response_data, indent=2))
-
-    response_message = response_data['choices'][0]['message']
-
+    
     # Check if the model wants to call a tool
-    if response_message.get("tool_calls"):
+    if response_data.get("choices", [{}])[0].get("message", {}).get("tool_calls"):
         print("\n--- Model requested tool call ---")
-        tool_call = response_message["tool_calls"][0] # Assuming one call for simplicity
+        tool_call = response_data["choices"][0]["message"]["tool_calls"][0] # Assuming one call for simplicity
         function_name = tool_call["function"]["name"]
         function_args = json.loads(tool_call["function"]["arguments"])
 
@@ -1276,7 +1275,7 @@ try:
             )
 
             # Append the assistant's request and your function's response to messages
-            messages.append(response_message) # Add assistant's msg with tool_calls
+            messages.append(response_data["choices"][0]["message"]) # Add assistant's msg with tool_calls
             messages.append(
                 {
                     "tool_call_id": tool_call["id"],
@@ -1304,7 +1303,7 @@ try:
 
     else:
         print("\n--- Model responded directly ---")
-        print("Assistant:", response_message['content'])
+        print("Assistant:", response_data['choices'][0]['message']['content'])
 
 
 except requests.exceptions.RequestException as e:
@@ -1672,37 +1671,37 @@ async function generateAudioPost(text, voice = "alloy") {
     const responseData = await response.json();
     
     try {
-      // Extract the base64-encoded audio data
-      const audioBase64 = responseData.choices[0].message.audio.data;
-      
-      // Convert base64 to binary data
-      // First, create a binary string from the base64 data
-      const binaryString = atob(audioBase64);
-      
-      // Convert the binary string to a Uint8Array
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      
-      // Create a blob from the bytes
-      const audioBlob = new Blob([bytes], { type: "audio/mpeg" });
-      const audioUrl = URL.createObjectURL(audioBlob);
-      
-      // Play the audio
-      const audio = new Audio(audioUrl);
-      audio.play();
-      console.log("Audio generated and playing.");
-      
-      // Optional: Download the audio file
-      // const downloadLink = document.createElement('a');
-      // downloadLink.href = audioUrl;
-      // downloadLink.download = 'generated_audio.mp3';
-      // downloadLink.click();
-      
+        // Extract the base64-encoded audio data
+        const audioBase64 = responseData.choices[0].message.audio.data;
+        
+        // Convert base64 to binary data
+        // First, create a binary string from the base64 data
+        const binaryString = atob(audioBase64);
+        
+        // Convert the binary string to a Uint8Array
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        // Create a blob from the bytes
+        const audioBlob = new Blob([bytes], { type: "audio/mpeg" });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        // Play the audio
+        const audio = new Audio(audioUrl);
+        audio.play();
+        console.log("Audio generated and playing.");
+        
+        // Optional: Download the audio file
+        // const downloadLink = document.createElement('a');
+        // downloadLink.href = audioUrl;
+        // downloadLink.download = 'generated_audio.mp3';
+        // downloadLink.click();
+        
     } catch (error) {
-      console.error("Error processing audio data:", error);
-      console.error("Response structure:", responseData);
+        console.error("Error processing audio data:", error);
+        console.error("Response structure:", responseData);
     }
   } catch (error) {
     console.error("Error generating audio via POST:", error);
@@ -1882,7 +1881,7 @@ def connect_image_feed():
              time.sleep(10)
 
 # --- Usage ---
-# connect_image_feed()
+// connect_image_feed()
 ```
 
 </details>
@@ -2001,7 +2000,7 @@ def connect_text_feed():
              time.sleep(10)
 
 # --- Usage ---
-# connect_text_feed()
+// connect_text_feed()
 ```
 
 </details>

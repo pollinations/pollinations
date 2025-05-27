@@ -59,17 +59,11 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
     let processedImage = null;
     if (image) {
         if (typeof image === 'string') {
-            // Check if it contains comma-separated URLs
-            if (image.includes(',')) {
-                // Split and clean up URLs
-                processedImage = image.split(',')
-                    .map(url => url.trim())
-                    .filter(url => url.length > 0)
-                    .slice(0, 5); // Limit to 5 images max
-            } else {
-                // Single image URL
-                processedImage = [image.trim()];
-            }
+            // Split by comma and clean up URLs
+            processedImage = image.split(',')
+                .map(url => url.trim())
+                .filter(url => url.length > 0)
+                .slice(0, 5); // Limit to 5 images max
         } else if (Array.isArray(image)) {
             // Already an array, limit to 5 images
             processedImage = image.slice(0, 5);

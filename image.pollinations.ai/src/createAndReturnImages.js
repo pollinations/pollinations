@@ -506,10 +506,8 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
             }
             
             const buffer = await imageResponse.buffer();
-            // Use a unique field name for each image (image, image1, image2, etc.)
-            // First image has no suffix to maintain backward compatibility
-            const fieldName = i === 0 ? 'image' : `image${i}`;
-            formData.append(fieldName, buffer, { filename: `image${i}.png` });
+            // Use the image[] array notation as required by Azure OpenAI API
+            formData.append('image[]', buffer, { filename: `image${i}.png` });
         }
       } catch (error) {
         logError('Error processing image for editing:', error);

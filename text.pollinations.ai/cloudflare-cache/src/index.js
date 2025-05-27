@@ -14,7 +14,7 @@ const NON_CACHE_PATHS = ['/models', '/feed', '/openai/models'];
 /**
  * Prepare metadata for caching
  */
-function prepareMetadata(request, url, response, contentSize, isStreaming) {
+function prepareMetadata(request, url, response, contentSize, isStreaming, hasRequestBody = false) {
   // Create metadata object with core response properties
   const metadata = {
     // Original URL information
@@ -29,6 +29,9 @@ function prepareMetadata(request, url, response, contentSize, isStreaming) {
     method: request.method,
     status: response.status.toString(),
     statusText: response.statusText,
+    
+    // Request body reference
+    hasRequestBody: hasRequestBody.toString(),
     
     // Original headers as JSON for future reconstruction
     headers: JSON.stringify(Object.fromEntries(response.headers))
@@ -116,6 +119,9 @@ export default {
       
       log('cache', 'Cache miss, proxying to origin...');
       
+      // Store the request body if present (for POST/PUT requests)
+      const hasRequestBody = await storeRequestBody(env, request, key);
+      
       // Forward the request to the origin server
       const originResp = await proxyRequest(request, env);
       
@@ -125,125 +131,108 @@ export default {
         return originResp;
       }
       
-      // Process headers for the response
-      const responseHeaders = prepareResponseHeaders(originResp.headers, {
-        cacheStatus: 'MISS',
-        cacheKey: key
-      });
+      // Determine if this is a streaming response
+      const contentLength = originResp.headers.get('content-length');
+      const isStreaming = !contentLength || parseInt(contentLength) > 10 * 1024 * 1024; // 10MB threshold
       
-      // Check if the response is streaming (for events and chunked responses)
-      const contentType = originResp.headers.get('content-type') || '';
-      const isStreaming = contentType.includes('text/event-stream') || 
-                          originResp.headers.get('transfer-encoding') === 'chunked';
+      log('cache', `Response type: ${isStreaming ? 'streaming' : 'regular'} (content-length: ${contentLength || 'not set'})`);
       
-      if (isStreaming) {
-        log('stream', 'Streaming response detected');
-        
-        // Only proceed if body is available
-        if (!originResp.body) {
-          log('stream', '❌ No response body available');
+      // Handle regular (non-streaming) responses
+      if (!isStreaming) {
+        try {
+          const responseClone = originResp.clone();
+          const content = await responseClone.arrayBuffer();
+          
+          // Prepare metadata with request body reference
+          const metadata = prepareMetadata(request, url, originResp, content.byteLength, false, hasRequestBody);
+          
+          // Store the response in R2 with metadata
+          await env.TEXT_BUCKET.put(key, content, {
+            customMetadata: metadata
+          });
+          
+          log('cache', `✅ Cached response: ${key} (${content.byteLength} bytes)`);
+          
+          // Return the original response
+          return originResp;
+        } catch (err) {
+          log('error', `Error caching regular response: ${err.message}`);
+          if (err.stack) log('error', `Stack: ${err.stack}`);
+          // Return origin response even if caching fails
           return originResp;
         }
-        
-        // This approach follows the "thin proxy" design principle:
-        // 1. Send response directly to the client while collecting data for caching
-        // 2. Cache the data after the stream is completely processed
-        
-        // Collect chunks as they pass through to the client
-        let chunks = [];
-        let totalSize = 0;
-        
-        // Create a transform stream that captures chunks as they flow through
-        const captureStream = new TransformStream({
-          transform(chunk, controller) {
-            // Save a copy of the chunk for caching later
-            chunks.push(chunk.slice());
-            totalSize += chunk.byteLength;
-            
-            // Pass the chunk through unchanged to the client
-            controller.enqueue(chunk);
-          },
-          flush(controller) {
-            // This runs when the stream is complete
-            log('stream', `🏁 Response streaming complete (${chunks.length} chunks, ${totalSize} bytes)`);
-            
-            // Cache the response in the background once streaming is done
-            ctx.waitUntil((async () => {
-              try {
-                // Combine all chunks into a single buffer
-                const completeResponse = new Uint8Array(totalSize);
-                let offset = 0;
-                
-                for (const chunk of chunks) {
-                  completeResponse.set(chunk, offset);
-                  offset += chunk.byteLength;
-                }
-                
-                log('cache', `📦 Caching complete response (${totalSize} bytes)`);
-                
-                // Use the helper function to prepare metadata
-                const metadata = prepareMetadata(request, url, originResp, totalSize, isStreaming);
-                
-                log('cache', 'Saving metadata with keys:', Object.keys(metadata).join(', '));
-                
-                // Store in R2 with comprehensive metadata
-                await env.TEXT_BUCKET.put(key, completeResponse, {
-                  customMetadata: metadata
-                });
-                
-                log('cache', `✅ Response cached successfully (${totalSize} bytes)`);
-                
-                // Free memory
-                chunks = null;
-              } catch (err) {
-                log('error', `❌ Caching failed: ${err.message}`);
-                if (err.stack) log('error', `Stack: ${err.stack}`);
-              }
-            })());
-          }
-        });
-        
-        // Pipe the response through our capture stream
-        const transformedStream = originResp.body.pipeThrough(captureStream);
-        
-        // Return the stream to the client immediately
-        return new Response(transformedStream, {
-          status: originResp.status,
-          statusText: originResp.statusText,
-          headers: responseHeaders
-        });
-      } else {
-        // For non-streaming responses, clone and cache in the background
-        const clonedResp = originResp.clone();
-        
-        ctx.waitUntil(
-          (async () => {
+      }
+      
+      // This approach follows the "thin proxy" design principle:
+      // 1. Send response directly to the client while collecting data for caching
+      // 2. Cache the data after the stream is completely processed
+      
+      // Collect chunks as they pass through to the client
+      let chunks = [];
+      let totalSize = 0;
+      
+      // Create a transform stream that captures chunks as they flow through
+      const captureStream = new TransformStream({
+        transform(chunk, controller) {
+          // Save a copy of the chunk for caching later
+          chunks.push(chunk.slice());
+          totalSize += chunk.byteLength;
+          
+          // Pass the chunk through unchanged to the client
+          controller.enqueue(chunk);
+        },
+        flush(controller) {
+          // This runs when the stream is complete
+          log('stream', `🏁 Response streaming complete (${chunks.length} chunks, ${totalSize} bytes)`);
+          
+          // Cache the response in the background once streaming is done
+          ctx.waitUntil((async () => {
             try {
-              const responseData = await clonedResp.arrayBuffer();
+              // Combine all chunks into a single buffer
+              const completeResponse = new Uint8Array(totalSize);
+              let offset = 0;
               
-              // Use the helper function to prepare metadata for non-streaming responses
-              const metadata = prepareMetadata(request, url, originResp, responseData.byteLength, false);
+              for (const chunk of chunks) {
+                completeResponse.set(chunk, offset);
+                offset += chunk.byteLength;
+              }
+              
+              log('cache', `📦 Caching complete response (${totalSize} bytes)`);
+              
+              // Prepare metadata with request body reference
+              const metadata = prepareMetadata(request, url, originResp, totalSize, true, hasRequestBody);
               
               log('cache', 'Saving metadata with keys:', Object.keys(metadata).join(', '));
               
-              await env.TEXT_BUCKET.put(key, responseData, {
+              // Store in R2 with comprehensive metadata
+              await env.TEXT_BUCKET.put(key, completeResponse, {
                 customMetadata: metadata
               });
               
-              log('cache', `✅ Response cached successfully (${responseData.byteLength} bytes)`);
+              log('cache', `✅ Response cached successfully (${totalSize} bytes)`);
+              
+              // Free memory
+              chunks = null;
             } catch (err) {
-              log('error', `❌ Cache failed: ${err.message}`);
+              log('error', `❌ Caching failed: ${err.message}`);
               if (err.stack) log('error', `Stack: ${err.stack}`);
             }
-          })()
-        );
-        
-        return new Response(originResp.body, {
-          status: originResp.status,
-          statusText: originResp.statusText,
-          headers: responseHeaders
-        });
-      }
+          })());
+        }
+      });
+      
+      // Pipe the response through our capture stream
+      const transformedStream = originResp.body.pipeThrough(captureStream);
+      
+      // Return the stream to the client immediately
+      return new Response(transformedStream, {
+        status: originResp.status,
+        statusText: originResp.statusText,
+        headers: prepareResponseHeaders(originResp.headers, {
+          cacheStatus: 'MISS',
+          cacheKey: key
+        })
+      });
     } catch (err) {
       log('error', `❌ Worker error: ${err.message}`);
       if (err.stack) log('error', `Stack: ${err.stack}`);
@@ -401,10 +390,16 @@ async function getCachedResponse(env, key) {
       key,
       size: cachedObject.size,
       uploaded: cachedObject.uploaded,
-      metadata: cachedObject.customMetadata
+      metadata: cachedObject.customMetadata,
+      hasRequestBody: cachedObject.customMetadata?.hasRequestBody === 'true'
     });
     
     const metadata = cachedObject.customMetadata || {};
+    
+    // Optionally log if there's an associated request body
+    if (metadata.hasRequestBody === 'true') {
+      log('cache', `Associated request body available at: ${key}-request`);
+    }
     
     // Prepare headers based on metadata
     const cacheHeaders = {
@@ -441,5 +436,99 @@ async function getCachedResponse(env, key) {
     log('error', `Error getting cached response: ${err.message}`);
     if (err.stack) log('error', `Stack: ${err.stack}`);
     return null;
+  }
+}
+
+/**
+ * Get a cached request body from R2
+ */
+async function getCachedRequest(env, key) {
+  try {
+    const requestKey = `${key}-request`;
+    const cachedRequest = await env.TEXT_BUCKET.get(requestKey);
+    
+    if (!cachedRequest) {
+      log('cache', `No cached request found for key: ${requestKey}`);
+      return null;
+    }
+    
+    const requestBody = await cachedRequest.text();
+    log('cache', `Retrieved cached request body: ${requestKey} (${requestBody.length} bytes)`);
+    
+    return {
+      body: requestBody,
+      uploaded: cachedRequest.uploaded,
+      size: cachedRequest.size
+    };
+  } catch (err) {
+    log('error', `Error getting cached request: ${err.message}`);
+    return null;
+  }
+}
+
+/**
+ * Get both cached request and response as a pair
+ */
+async function getCachedRequestResponsePair(env, key) {
+  try {
+    // Get both in parallel for efficiency
+    const [response, request] = await Promise.all([
+      getCachedResponse(env, key),
+      getCachedRequest(env, key)
+    ]);
+    
+    return {
+      request,
+      response,
+      key
+    };
+  } catch (err) {
+    log('error', `Error getting cached pair: ${err.message}`);
+    return null;
+  }
+}
+
+/**
+ * List all cached request-response pairs (for debugging/analytics)
+ * Note: This is a simple implementation - for production, consider pagination
+ */
+async function listCachedPairs(env, limit = 100) {
+  try {
+    const list = await env.TEXT_BUCKET.list({ limit });
+    
+    // Group by base key (without -request suffix)
+    const pairs = new Map();
+    
+    for (const object of list.objects) {
+      const key = object.key;
+      const baseKey = key.endsWith('-request') ? key.slice(0, -8) : key;
+      
+      if (!pairs.has(baseKey)) {
+        pairs.set(baseKey, { response: null, request: null });
+      }
+      
+      if (key.endsWith('-request')) {
+        pairs.get(baseKey).request = {
+          key,
+          size: object.size,
+          uploaded: object.uploaded
+        };
+      } else {
+        pairs.get(baseKey).response = {
+          key,
+          size: object.size,
+          uploaded: object.uploaded,
+          metadata: object.customMetadata
+        };
+      }
+    }
+    
+    return Array.from(pairs.entries()).map(([baseKey, pair]) => ({
+      key: baseKey,
+      ...pair
+    }));
+  } catch (err) {
+    log('error', `Error listing cached pairs: ${err.message}`);
+    return [];
   }
 }

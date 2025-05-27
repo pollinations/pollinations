@@ -1,59 +1,90 @@
 # Comprehensive Report: Referrer and Token Handling in Pollinations.AI Services
 
+## 🚨 CRITICAL SECURITY UPDATE (May 27, 2025)
+
+**FIXED**: Authentication bypass vulnerability in Cloudflare cache that was causing all cached requests to bypass authentication.
+
+### Issue Summary
+- **Problem**: Cache was setting `X-Forwarded-Host: text.pollinations.ai` which was being treated as a referrer
+- **Impact**: All requests through cache got automatic allowlist authentication bypass
+- **Fix**: Removed `x-forwarded-host` from referrer extraction and cache headers
+- **Status**: ✅ RESOLVED - Authentication now works correctly for all requests
+
+**References**: [Issue #2125](https://github.com/pollinations/pollinations/issues/2125) | [PR #2126](https://github.com/pollinations/pollinations/pull/2126)
+
+---
+
 ## Executive Summary
 
-The handling of referrers and tokens across text.pollinations.ai and image.pollinations.ai is indeed messy and inconsistent. Both services implement different approaches to authentication, rate limiting, and access control, with overlapping but distinct purposes for referrers and tokens.
+The handling of referrers and tokens across text.pollinations.ai and image.pollinations.ai has been **significantly improved and standardized** through the shared auth-utils.js implementation. The previous inconsistencies have been resolved with a unified approach.
 
 ## 1. text.pollinations.ai
 
-### 1.1 Referrer Handling
+### 1.1 Referrer Handling - **UPDATED & SECURED**
 
 **Purpose:** Referrers are used for multiple purposes:
-- **Queue bypass/priority access** for whitelisted domains
+- **Queue bypass/priority access** for allowlisted domains
 - **Analytics tracking** 
 - **Ad system targeting**
 - **Special model routing** (e.g., Roblox users)
 
 **Implementation Details:**
 
-1. **Extraction Logic** (`requestUtils.js`):
+1. **Extraction Logic** (`shared/auth-utils.js`) - **SECURITY FIX APPLIED**:
    ```javascript
-   const referer = req.headers.referer || req.headers.referrer || 
-                   req.headers.origin || data.referrer || data.origin || 
-                   req.headers['http-referer'] || 'unknown';
+   export function extractReferrer(req) {
+     // ⚠️ SECURITY: x-forwarded-host removed to prevent cache bypass
+     return req.headers.get('referer') || 
+            req.headers.get('referrer') || 
+            req.headers.get('origin') || 
+            null;
+   }
    ```
-   - Multiple fallback sources for referrer extraction
-   - Inconsistent header naming (referer vs referrer)
+   - **REMOVED**: `x-forwarded-host` (security vulnerability)
+   - **STANDARDIZED**: Consistent extraction across services
+   - **SECURED**: Prevents cache domain from triggering authentication bypass
 
-2. **Whitelisted Domains** (`requestUtils.js`):
-   - Environment variable: `WHITELISTED_DOMAINS`
+2. **Allowlisted Domains** (`shared/.env`):
+   - Environment variable: `ALLOWLISTED_DOMAINS`
    - Domains that bypass queue delays
-   - Used for `isImagePollinationsReferrer` flag
+   - Used for legitimate referrer-based authentication
 
 3. **Special Handling**:
    - **Roblox Detection**: Automatically routes to "llamascout" model
-   - **Bad Domains**: Forces 100% ad probability in ad system
    - **Analytics**: All referrers sent to Google Analytics
+   - **Enhanced Logging**: Better debugging capabilities added
 
-4. **Ad System Integration** (`shouldShowAds.js`):
-   - Skips ads for `roblox` and `image.pollinations.ai` referrers
-   - Bad domains trigger forced ad display
+### 1.2 Token Handling - **ENHANCED & STANDARDIZED**
 
-### 1.2 Token Handling
+**Purpose:** Multi-source authentication with comprehensive token support
 
-**Purpose:** Primarily for external API authentication
+**Implementation Details** (`shared/auth-utils.js`):
 
-**Types of Tokens:**
+1. **Token Sources** (Priority Order):
+   ```javascript
+   // Query parameters
+   ['token', 'api_key', 'apikey']
+   
+   // Headers  
+   ['authorization', 'x-pollinations-token', 'x-api-key', 'api-key', 'apikey']
+   
+   // Request body (POST requests)
+   ['token', 'api_key', 'apikey', 'auth_token', 'authorization']
+   ```
 
-1. **API Tokens** (referenced in code but not deeply implemented):
-   - Bearer tokens in Authorization headers
-   - Used by Portkey integration for various AI providers
+2. **Token Validation**:
+   - **Legacy tokens**: Fast local check (performance optimized)
+   - **API tokens**: Database validation via auth.pollinations.ai
+   - **Enhanced logging**: Detailed validation tracking
 
-2. **Service-Specific Tokens**:
-   - Used for accessing external AI model providers
-   - Managed through environment variables
-
-**No User Authentication Tokens**: Unlike image.pollinations.ai, there's no user-level token system for access control.
+3. **Authentication Flow** (`shouldBypassQueue`):
+   ```javascript
+   // 1️⃣ Legacy token check (performance optimization)
+   // 2️⃣ DB token validation  
+   // 3️⃣ Legacy token in referrer
+   // 4️⃣ Allowlisted domain
+   // 5️⃣ Default → go through queue
+   ```
 
 ## 2. image.pollinations.ai
 
@@ -63,13 +94,19 @@ The handling of referrers and tokens across text.pollinations.ai and image.polli
 
 **Implementation Details:**
 
-1. **Extraction Logic** (`utils/BadDomainHandler.js`):
+1. **Extraction Logic** (`shared/auth-utils.js`):
    ```javascript
-   const referrer = headers?.referer || headers?.referrer || 
-                    headers?.['referer'] || headers?.['referrer'] || 
-                    headers?.origin;
+   export function extractReferrer(req) {
+     // ⚠️ SECURITY: x-forwarded-host removed to prevent cache bypass
+     return req.headers.get('referer') || 
+            req.headers.get('referrer') || 
+            req.headers.get('origin') || 
+            null;
+   }
    ```
-   - Similar inconsistent extraction pattern
+   - **REMOVED**: `x-forwarded-host` (security vulnerability)
+   - **STANDARDIZED**: Consistent extraction across services
+   - **SECURED**: Prevents cache domain from triggering authentication bypass
 
 2. **Bad Domain Detection**:
    - Environment variable: `BAD_DOMAINS`
@@ -145,11 +182,10 @@ The handling of referrers and tokens across text.pollinations.ai and image.polli
    ```javascript
    // Create shared utility
    export function extractReferrer(req) {
-     return req.headers.referer || 
-            req.headers.referrer || 
-            req.headers.origin || 
-            req.body?.referrer || 
-            'unknown';
+     return req.headers.get('referer') || 
+            req.headers.get('referrer') || 
+            req.headers.get('origin') || 
+            null;
    }
    ```
 

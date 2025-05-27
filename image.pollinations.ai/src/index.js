@@ -315,6 +315,21 @@ const checkCacheAndGenerate = async (req, res) => {
       'X-Auth-Status': isAuthenticated ? 'authenticated' : 'unauthenticated'
     };
     
+    // Add Content-Disposition header with sanitized filename
+    if (originalPrompt) {
+      // Create a filename from the prompt, limiting length and sanitizing
+      const baseFilename = originalPrompt
+        .slice(0, 100) // Limit to 100 characters
+        .replace(/[^a-z0-9\s-]/gi, '') // Remove special characters except spaces and hyphens
+        .replace(/\s+/g, '-') // Replace spaces with hyphens
+        .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+        .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
+        .toLowerCase();
+      
+      const filename = (baseFilename || 'generated-image') + '.jpg';
+      headers['Content-Disposition'] = `inline; filename="${filename}"`;
+    }
+    
     // Add authentication debug headers using shared utility
     addAuthDebugHeaders(headers, authResult.debugInfo);
     

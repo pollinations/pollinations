@@ -2,7 +2,7 @@ import { MODELS } from './models.js';
 
 /**
  * Sanitizes and adjusts parameters for image generation.
- * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string, safe: boolean|string, quality: string, image: string|null }} params
+ * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string, safe: boolean|string, quality: string, image: string|string[]|null }} params
  * @returns {Object} - The sanitized parameters.
  */
 export const makeParamsSafe = ({ width = null, height = null, seed, model = "flux", enhance, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false, safe = false, private:isPrivate = false, quality = 'medium', image = null }) => {
@@ -55,5 +55,31 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
         quality = 'medium';
     }
 
-    return { width, height, seed, model, enhance, nologo, negative_prompt, nofeed, safe, quality, image };
+    // Process image parameter to handle comma-separated URLs
+    let processedImage = null;
+    if (image) {
+        if (typeof image === 'string') {
+            // Check if it contains comma-separated URLs
+            if (image.includes(',')) {
+                // Split and clean up URLs
+                processedImage = image.split(',')
+                    .map(url => url.trim())
+                    .filter(url => url.length > 0)
+                    .slice(0, 5); // Limit to 5 images max
+            } else {
+                // Single image URL
+                processedImage = [image.trim()];
+            }
+        } else if (Array.isArray(image)) {
+            // Already an array, limit to 5 images
+            processedImage = image.slice(0, 5);
+        }
+        
+        // If no valid images found, set to null
+        if (processedImage && processedImage.length === 0) {
+            processedImage = null;
+        }
+    }
+
+    return { width, height, seed, model, enhance, nologo, negative_prompt, nofeed, safe, quality, image: processedImage };
 };

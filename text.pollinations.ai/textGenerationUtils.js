@@ -1,4 +1,5 @@
 import debug from 'debug';
+import { limitImageContent } from './textImageUtils.js';
 
 const log = debug('pollinations:utils');
 const errorLog = debug('pollinations:utils:error');
@@ -13,7 +14,10 @@ export function validateAndNormalizeMessages(messages) {
     throw new Error('Messages must be a non-empty array');
   }
   
-  return messages.map(msg => {
+  // First limit image content to maximum 5 images
+  const limitedMessages = limitImageContent(messages);
+  
+  return limitedMessages.map(msg => {
     // Create a base message with required properties
     const normalizedMsg = {
       role: msg.role || 'user',

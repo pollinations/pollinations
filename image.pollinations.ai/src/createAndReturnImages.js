@@ -432,7 +432,7 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
     }
     
     // Check if we need to use the edits endpoint instead of generations
-    const isEditMode = safeParams.image !== null;
+    const isEditMode = safeParams.image !== null && safeParams.image.length > 0;
     if (isEditMode) {
       // Replace 'generations' with 'edits' in the endpoint URL
       endpoint = endpoint.replace('/images/generations', '/images/edits');
@@ -484,12 +484,16 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
       // Add the prompt
       formData.append('prompt', sanitizeString(prompt));
       
-      // Handle the image based on its type
+      // Handle the image(s) - for edit mode, use the first image
       try {
-        if (typeof safeParams.image === 'string') {
+        const imageUrl = Array.isArray(safeParams.image) ? safeParams.image[0] : safeParams.image;
+        if (typeof imageUrl === 'string') {
             // Handle image URL - fetch it first
-            logCloudflare(`Fetching image from URL: ${safeParams.image}`);
-            const imageResponse = await fetch(safeParams.image);
+            logCloudflare(`Fetching image from URL: ${imageUrl}`);
+            if (Array.isArray(safeParams.image) && safeParams.image.length > 1) {
+              logCloudflare(`Note: Edit mode only supports one image, using first of ${safeParams.image.length} provided images`);
+            }
+            const imageResponse = await fetch(imageUrl);
             if (!imageResponse.ok) {
               throw new Error(`Failed to fetch image from URL: ${imageResponse.status} ${imageResponse.statusText}`);
             }

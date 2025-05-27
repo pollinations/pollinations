@@ -119,27 +119,32 @@ export function extractToken(req) {
  * @returns {string|null} The referrer URL or null
  */
 export function extractReferrer(req) {
-  // Handle Cloudflare Workers Request
-  if (req.headers && typeof req.headers.get === 'function') {
-    return req.headers.get('referer') || 
-           req.headers.get('referrer') || // Support both spellings
-           req.headers.get('origin') || 
-           null;
+  // First check URL query parameters (highest priority)
+  const url = req.url;
+  if (url) {
+    const urlObj = new URL(url, 'http://x'); // Use dummy base for relative URLs
+    const queryReferrer = urlObj.searchParams.get('referrer') || 
+                         urlObj.searchParams.get('referer'); // Support both spellings
+    if (queryReferrer) return queryReferrer;
   }
   
-  // Handle Express/Node.js request
-  if (req.headers && typeof req.headers === 'object') {
+  // Then check body for referrer field (second priority) - not just for POST
+  if (req.body?.referrer) return String(req.body.referrer);
+  if (req.body?.referer) return String(req.body.referer);
+  
+  // Finally check headers (lowest priority)
+  // Handle Cloudflare Workers Request
+  if (req.headers && typeof req.headers.get === 'function') {
+    const headerReferrer = req.headers.get('referer') || 
+                          req.headers.get('referrer') || // Support both spellings
+                          req.headers.get('origin');
+    if (headerReferrer) return headerReferrer;
+  } else if (req.headers && typeof req.headers === 'object') {
+    // Handle Express/Node.js request
     const headerReferrer = req.headers.referer || 
                           req.headers.referrer || // Support both spellings
                           req.headers.origin;
-    
     if (headerReferrer) return headerReferrer;
-    
-    // Check body for referrer field in POST requests (both spellings)
-    if (req.method === 'POST' && req.body) {
-      if (req.body.referrer) return req.body.referrer;
-      if (req.body.referer) return req.body.referer;
-    }
   }
   
   return null;
@@ -445,10 +450,12 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
   
   // 3️⃣ Check for legacy token in referrer (no error thrown for invalid referrers)
   if (ref) {
-    referrerLog('Checking referrer for legacy token: %s', ref);
-    const legacyReferrerMatch = legacyTokens.some(t => ref.includes(t));
+    // Convert to string to handle any type safely
+    const refStr = String(ref);
+    referrerLog('Checking referrer for legacy token: %s', refStr);
+    const legacyReferrerMatch = legacyTokens.some(t => refStr.includes(t));
     if (legacyReferrerMatch) {
-      referrerLog('✅ Legacy token found in referrer: %s', ref);
+      referrerLog('✅ Legacy token found in referrer: %s', refStr);
       debugInfo.authResult = 'LEGACY_REFERRER';
       debugInfo.legacyReferrerMatch = true;
       log('Queue bypass granted: LEGACY_REFERRER');
@@ -457,11 +464,20 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
       referrerLog('No legacy token found in referrer');
     }
   
+    // 3.5️⃣ Special check for catgpt referrer
+    if (refStr.toLowerCase().includes('catgpt')) {
+      referrerLog('✅ CatGPT referrer detected: %s', refStr);
+      debugInfo.authResult = 'CATGPT_REFERRER';
+      debugInfo.catgptMatch = true;
+      log('Queue bypass granted: CATGPT_REFERRER');
+      return { bypass:true, reason:'CATGPT_REFERRER', userId:null, debugInfo };
+    }
+  
     // 4️⃣ Check allow-listed domain
     referrerLog('Checking referrer against %d allowlisted domains', debugInfo.allowlistCount);
-    const allowlistMatch = allowlist.some(d => ref.includes(d));
+    const allowlistMatch = allowlist.some(d => refStr.includes(d));
     if (allowlistMatch) {
-      referrerLog('✅ Referrer matches allowlisted domain: %s', ref);
+      referrerLog('✅ Referrer matches allowlisted domain: %s', refStr);
       debugInfo.authResult = 'ALLOWLIST';
       debugInfo.allowlistMatch = true;
       log('Queue bypass granted: ALLOWLIST');

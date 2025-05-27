@@ -119,27 +119,34 @@ export function extractToken(req) {
  * @returns {string|null} The referrer URL or null
  */
 export function extractReferrer(req) {
-  // Handle Cloudflare Workers Request
-  if (req.headers && typeof req.headers.get === 'function') {
-    return req.headers.get('referer') || 
-           req.headers.get('referrer') || // Support both spellings
-           req.headers.get('origin') || 
-           null;
+  // First check URL query parameters (highest priority)
+  const url = req.url;
+  if (url) {
+    const urlObj = new URL(url, 'http://x'); // Use dummy base for relative URLs
+    const queryReferrer = urlObj.searchParams.get('referrer') || 
+                         urlObj.searchParams.get('referer'); // Support both spellings
+    if (queryReferrer) return queryReferrer;
   }
   
-  // Handle Express/Node.js request
-  if (req.headers && typeof req.headers === 'object') {
+  // Then check body for referrer field (second priority) - not just for POST
+  if (req.body) {
+    if (req.body.referrer) return req.body.referrer;
+    if (req.body.referer) return req.body.referer;
+  }
+  
+  // Finally check headers (lowest priority)
+  // Handle Cloudflare Workers Request
+  if (req.headers && typeof req.headers.get === 'function') {
+    const headerReferrer = req.headers.get('referer') || 
+                          req.headers.get('referrer') || // Support both spellings
+                          req.headers.get('origin');
+    if (headerReferrer) return headerReferrer;
+  } else if (req.headers && typeof req.headers === 'object') {
+    // Handle Express/Node.js request
     const headerReferrer = req.headers.referer || 
                           req.headers.referrer || // Support both spellings
                           req.headers.origin;
-    
     if (headerReferrer) return headerReferrer;
-    
-    // Check body for referrer field in POST requests (both spellings)
-    if (req.method === 'POST' && req.body) {
-      if (req.body.referrer) return req.body.referrer;
-      if (req.body.referer) return req.body.referer;
-    }
   }
   
   return null;
@@ -455,6 +462,15 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
       return { bypass:true, reason:'LEGACY_REFERRER', userId:null, debugInfo };
     } else {
       referrerLog('No legacy token found in referrer');
+    }
+  
+    // 3.5️⃣ Special check for catgpt referrer
+    if (ref.toLowerCase().includes('catgpt')) {
+      referrerLog('✅ CatGPT referrer detected: %s', ref);
+      debugInfo.authResult = 'CATGPT_REFERRER';
+      debugInfo.catgptMatch = true;
+      log('Queue bypass granted: CATGPT_REFERRER');
+      return { bypass:true, reason:'CATGPT_REFERRER', userId:null, debugInfo };
     }
   
     // 4️⃣ Check allow-listed domain

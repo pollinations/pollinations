@@ -229,3 +229,123 @@ Result:
    - Updated SIMPLE-plan.md with final implementation status
    - Updated REFERRER_TOKEN_REPORT.md with current state
    - Added detailed comments to code for better maintainability
+
+# "Fast First" Roll-out – day-zero cleanup (no KV, no OAuth yet)
+
+**CRITICAL UPDATE (2025-05-27)**: Fixed authentication bypass vulnerability in Cloudflare cache. See [Security Fix](#security-fix-may-2025) below.
+
+Everything below can be completed without adding any new storage layer or auth provider.
+
+## 1 · New shared helpers (±200 LOC total)
+
+| File | Key exports | Notes |
+|------|-------------|-------|
+| shared/auth-utils.js | extractToken(req) • extractReferrer(req) • shouldBypassQueue(req, ctx) • validateApiTokenDb(token) | ctx = { legacyTokens, allowlist } |
+| shared/ipQueue.js | enqueue(req, fn, opts) | loads config from shared/.env; wraps p-queue |
+
+### 1.1 extractToken(req)
+```javascript
+export function extractToken(req) {
+  // Check query parameters
+  for (const field of ['token', 'api_key', 'apikey']) {
+    const value = new URL(req.url).searchParams.get(field);
+    if (value) return value;
+  }
+  
+  // Check headers
+  const authHeader = req.headers.get('authorization');
+  if (authHeader) {
+    return authHeader.replace(/^Bearer\s+/i, '');
+  }
+  
+  const tokenHeaders = ['x-pollinations-token', 'x-api-key', 'api-key', 'apikey'];
+  for (const header of tokenHeaders) {
+    const value = req.headers.get(header);
+    if (value) return value;
+  }
+  
+  // Check body for POST requests
+  if (req.method === 'POST' && req.body) {
+    for (const field of ['token', 'api_key', 'apikey', 'auth_token', 'authorization']) {
+      if (req.body[field]) return req.body[field];
+    }
+  }
+  
+  return null;
+}
+```
+
+### 1.2 extractReferrer(req) - **SECURITY FIX APPLIED**
+```javascript
+export function extractReferrer(req) {
+  // SECURITY: x-forwarded-host removed to prevent cache bypass
+  return req.headers.get('referer') || 
+         req.headers.get('referrer') || 
+         req.headers.get('origin') || 
+         null;
+}
+```
+
+### 1.3 shouldBypassQueue
+```javascript
+export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
+  const token = extractToken(req);
+  const ref = extractReferrer(req);
+  
+  // 1️⃣ Legacy token check (performance optimization)
+  if (token && legacyTokens.includes(token)) {
+    return { bypass: true, reason: 'LEGACY_TOKEN', userId: null };
+  }
+  
+  // 2️⃣ DB token validation
+  if (token) {
+    const result = await validateApiTokenDb(token);
+    if (result.valid) {
+      return { bypass: true, reason: 'DB_TOKEN', userId: result.userId };
+    }
+  }
+  
+  // 3️⃣ Legacy token in referrer
+  if (ref && legacyTokens.some(t => ref.includes(t))) {
+    return { bypass: true, reason: 'LEGACY_REFERRER', userId: null };
+  }
+  
+  // 4️⃣ Allowlisted domain
+  if (ref && allowlist.some(d => ref.includes(d))) {
+    return { bypass: true, reason: 'ALLOWLIST', userId: null };
+  }
+  
+  // 5️⃣ Default → go through queue
+  return { bypass: false, reason: 'NONE', userId: null };
+}
+```
+
+## Security Fix (May 2025)
+
+### CRITICAL UPDATE (2025-05-27): Fixed authentication bypass vulnerability in Cloudflare cache.
+
+**Issue**: Cloudflare cache was causing all requests to bypass authentication due to `X-Forwarded-Host` header being treated as referrer.
+
+**Root Cause**:
+1. Cache set `X-Forwarded-Host: text.pollinations.ai`
+2. Auth system used `x-forwarded-host` as referrer source
+3. `text.pollinations.ai` was allowlisted
+4. Result: All cached requests got automatic authentication bypass
+
+**Fix Applied**:
+- Removed `X-Forwarded-Host` from cache headers
+- Removed `x-forwarded-host` from referrer extraction
+- Enhanced logging for better debugging
+- Maintained all cache functionality
+
+**Security Impact**:
+- **Before**: All cached requests bypassed authentication 
+- **After**: Authentication works correctly for all requests 
+
+**Files Changed**:
+- `shared/auth-utils.js` - Enhanced logging + fixed referrer extraction
+- `text.pollinations.ai/cloudflare-cache/src/index.js` - Removed problematic header
+
+**References**: 
+- Issue: [#2125](https://github.com/pollinations/pollinations/issues/2125)
+- PR: [#2126](https://github.com/pollinations/pollinations/pull/2126)

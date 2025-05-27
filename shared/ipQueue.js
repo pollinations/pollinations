@@ -28,9 +28,10 @@ const queues = new Map();
  * @param {Object} options - Queue options
  * @param {number} [options.interval=6000] - Time between requests in ms
  * @param {number} [options.cap=1] - Number of requests allowed per interval
+ * @param {boolean} [options.forceQueue=false] - Force queuing even for authenticated requests
  * @returns {Promise<any>} Result of the function execution
  */
-export async function enqueue(req, fn, { interval=6000, cap=1 }={}) {
+export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false }={}) {
   // Create auth context from environment variables (loaded by env-loader.js via auth-utils.js import)
   const authContext = {
     legacyTokens: process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [],
@@ -95,14 +96,14 @@ export async function enqueue(req, fn, { interval=6000, cap=1 }={}) {
     throw error;
   }
   
-  // If bypass is true, execute the function immediately
-  if (authResult.bypass) {
+  // If bypass is true and forceQueue is false, execute the function immediately
+  if (authResult.bypass && !forceQueue) {
     log('Queue bypass granted for reason: %s, executing immediately', authResult.reason);
     return fn();
   }
   
   // Otherwise, queue the function based on IP
-  log('Request queued for IP: %s (queue size: %d)', ip, queues.get(ip)?.size || 0);
+  log('Request queued for IP: %s (queue size: %d, forceQueue: %s)', ip, queues.get(ip)?.size || 0, forceQueue);
   
   // Create queue for this IP if it doesn't exist
   if (!queues.has(ip)) {

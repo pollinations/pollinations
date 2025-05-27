@@ -311,7 +311,7 @@ async function generateCacheKey(request) {
         parts.push(bodyText);
       }
     } catch (err) {
-      logMain(`Error including body in cache key: ${err.message}`);
+      log('error', `Error including body in cache key: ${err.message}`);
     }
   }
   
@@ -371,8 +371,7 @@ function prepareResponseHeaders(originalHeaders, cacheInfo = {}) {
 function prepareForwardedHeaders(requestHeaders, url) {
   const headers = new Headers(requestHeaders);
   
-  // Add standard forwarded headers
-  headers.set('X-Forwarded-Host', url.host);
+  // Add standard forwarded headers (but NOT X-Forwarded-Host to avoid referrer confusion)
   headers.set('X-Forwarded-Proto', url.protocol.replace(':', ''));
   
   // Forward client IP address

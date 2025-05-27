@@ -124,7 +124,6 @@ export function extractReferrer(req) {
     return req.headers.get('referer') || 
            req.headers.get('referrer') || // Support both spellings
            req.headers.get('origin') || 
-           req.headers.get('x-forwarded-host') || 
            null;
   }
   
@@ -132,8 +131,7 @@ export function extractReferrer(req) {
   if (req.headers && typeof req.headers === 'object') {
     const headerReferrer = req.headers.referer || 
                           req.headers.referrer || // Support both spellings
-                          req.headers.origin || 
-                          req.headers['x-forwarded-host'];
+                          req.headers.origin;
     
     if (headerReferrer) return headerReferrer;
     
@@ -271,17 +269,43 @@ export function getIp(req) {
  * @returns {Promise<string|null>} UserId if valid, null otherwise.
  */
 export async function validateApiTokenDb(token) {
-  if (!token) return null;
+  const maskedToken = token && token.length > 8 ? 
+    token.substring(0, 4) + '...' + token.substring(token.length - 4) : 
+    token;
+  
+  if (!token) {
+    tokenLog('validateApiTokenDb: No token provided');
+    return null;
+  }
+  
+  tokenLog('validateApiTokenDb: Starting validation for token: %s', maskedToken);
   
   try {
-    // Call the auth.pollinations.ai API to validate the token using a simple GET request
-    const response = await fetch(`https://auth.pollinations.ai/api/validate-token/${token}`);
+    const apiUrl = `https://auth.pollinations.ai/api/validate-token/${token}`;
+    tokenLog('validateApiTokenDb: Making API call to auth.pollinations.ai');
     
-    if (!response.ok) return null;
+    // Call the auth.pollinations.ai API to validate the token using a simple GET request
+    const response = await fetch(apiUrl);
+    
+    tokenLog('validateApiTokenDb: API response status: %d %s', response.status, response.statusText);
+    
+    if (!response.ok) {
+      tokenLog('validateApiTokenDb: API returned non-OK status: %d', response.status);
+      return null;
+    }
     
     const data = await response.json();
-    return data.valid ? data.userId : null;
+    tokenLog('validateApiTokenDb: API response data: %o', data);
+    
+    if (data.valid && data.userId) {
+      tokenLog('validateApiTokenDb: Token validation successful for user: %s', data.userId);
+      return data.userId;
+    } else {
+      tokenLog('validateApiTokenDb: Token validation failed - invalid token or missing userId');
+      return null;
+    }
   } catch (error) {
+    tokenLog('validateApiTokenDb: Error during API call: %s', error.message);
     console.error('Error validating token with auth API:', error);
     return null;
   }
@@ -378,18 +402,7 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
   if (token) {
     tokenLog('Validating token: %s', debugInfo.token);
     
-    // 1️⃣ Check DB token
-    tokenLog('Checking token against auth.pollinations.ai API');
-    const userId = await validateApiTokenDb(token);   // Uses auth.pollinations.ai API
-    if (userId) {
-      tokenLog('✅ Valid DB token found for user: %s', userId);
-      debugInfo.authResult = 'DB_TOKEN';
-      debugInfo.userId = userId;
-      log('Queue bypass granted: DB_TOKEN for user %s', userId);
-      return { bypass:true, reason:'DB_TOKEN', userId, debugInfo };
-    }
-    
-    // 2️⃣ Check legacy token
+    // 1️⃣ Check legacy token first (fast local check)
     tokenLog('Checking against %d legacy tokens', debugInfo.legacyTokensCount);
     const legacyTokenMatch = legacyTokens.includes(token);
     if (legacyTokenMatch) {
@@ -398,6 +411,17 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
       debugInfo.legacyTokenMatch = true;
       log('Queue bypass granted: LEGACY_TOKEN');
       return { bypass:true, reason:'LEGACY_TOKEN', userId:null, debugInfo };
+    }
+    
+    // 2️⃣ Check DB token (slower API call)
+    tokenLog('Checking token against auth.pollinations.ai API');
+    const userId = await validateApiTokenDb(token);   // Uses auth.pollinations.ai API
+    if (userId) {
+      tokenLog('✅ Valid DB token found for user: %s', userId);
+      debugInfo.authResult = 'DB_TOKEN';
+      debugInfo.userId = userId;
+      log('Queue bypass granted: DB_TOKEN for user %s', userId);
+      return { bypass:true, reason:'DB_TOKEN', userId, debugInfo };
     }
     
     // If token is provided but not valid, return error info instead of throwing

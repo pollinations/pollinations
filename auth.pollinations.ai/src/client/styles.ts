@@ -393,28 +393,7 @@ code::after {
     position: relative;
 }
 
-.tier-container::before {
-    content: "";
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: conic-gradient(
-        transparent, 
-        rgba(255, 97, 216, 0.1), 
-        rgba(5, 255, 161, 0.1), 
-        rgba(255, 204, 0, 0.1), 
-        transparent
-    );
-    animation: rotate 10s linear infinite;
-    z-index: -1;
-}
-
-@keyframes rotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
+/* Removed rotating box background */
 
 .tier-badge {
     display: inline-block;

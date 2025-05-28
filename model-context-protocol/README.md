@@ -9,6 +9,7 @@ A Model Context Protocol (MCP) server for the Pollinations APIs that enables AI 
 - Generate text responses from text prompts
 - Generate audio (text-to-speech) from text prompts
 - List available image and text generation models
+- Support for multiple reference images in image generation
 - STDIO transport for easy integration with MCP clients
 - Simple and lightweight
 - Compatible with the Model Context Protocol (MCP)
@@ -129,6 +130,12 @@ The MCP server provides the following tools:
 6. `listModels` - Lists available models for image or text generation
 
 ## Changelog
+
+### Version 1.0.11
+- Fixed McpServer constructor to correctly pass instructions parameter
+- Added support for multiple reference images in image generation
+- Improved error handling and parameter validation
+- Updated documentation to reflect latest features
 
 ### Version 1.0.7
 - Simplified architecture by removing HTTP server components

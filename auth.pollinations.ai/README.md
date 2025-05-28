@@ -1,13 +1,27 @@
 # GitHub Auth Simple 🔐
 
-A minimal GitHub OAuth proxy for Pollinations. Clean, simple, and JWT-based.
+A minimal GitHub OAuth proxy for Pollinations. Clean, simple, and JWT-based. This represents the ideal authentication pattern that text.pollinations.ai and image.pollinations.ai should adopt.
 
 ## Features ✨
 
 - GitHub OAuth flow
-- JWT token generation
+- JWT token generation (24-hour expiration)
 - Domain allowlist management
+- API tokens (16-character, URL-safe) for service access
+- Database-backed with Cloudflare D1
 - Zero complexity, pure simplicity
+
+## Architecture Benefits 🏆
+
+This authentication service implements the recommended approach for all Pollinations services:
+- **NO referrer usage for authentication** (correct approach)
+- Domain allowlists stored in database per user
+- Clean REST API endpoints for auth operations
+- Proper separation of concerns
+- Eliminates referrer-based security issues
+- Centralizes user management
+- Removes hardcoded domain lists
+- Provides consistent authentication across services
 
 ## Setup 🚀
 

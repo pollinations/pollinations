@@ -7,6 +7,7 @@ const CODE_EXAMPLES = {
 
 ### Image Generation
 Generate Image: \`GET https://image.pollinations.ai/prompt/{prompt}\`
+Generate with Multiple Reference Images: \`GET https://image.pollinations.ai/prompt/{prompt}?image={url1},{url2},{url3}\`
 
 ### Image Models
 List Models: \`GET https://image.pollinations.ai/models\`
@@ -58,6 +59,7 @@ Make sure the prompts in the URL are encoded. Don't quote the generated markdown
   - **Width:** [width]
   - **Height:** [height]
   - **Model:** [model]
+  - **Reference Images:** [comma-separated URLs for multiple reference images]
 
   ## Key points:
   - If the user's prompt is short, add creative details to make it about 50 words suitable for an image generator AI.
@@ -68,6 +70,7 @@ Make sure the prompts in the URL are encoded. Don't quote the generated markdown
     - Modify the prompt and keep the seed unchanged.
   - Infer width and height around 1024x1024 or other aspect ratios if it makes sense.
   - Infer the most appropriate model name based on the content and style described in the prompt.
+  - Multiple reference images can be provided as comma-separated URLs in the image parameter.
 
   ## Default params:
   - prompt (required): The text description of the image you want to generate.
@@ -76,6 +79,7 @@ Make sure the prompts in the URL are encoded. Don't quote the generated markdown
   - seed (optional): Seed for reproducible results (default: random).
   - width/height (optional): Default 1024x1024.
   - nologo (optional): Set to true to disable the logo rendering.
+  - image (optional): Comma-separated URLs for reference images (supports multiple images).
 
   ## Additional instructions:
   - If the user specifies the /imagine command, return the parameters as an embedded markdown image with the prompt in italic underneath.
@@ -83,6 +87,10 @@ Make sure the prompts in the URL are encoded. Don't quote the generated markdown
   ## Example:
   ![{description}](https://image.pollinations.ai/prompt/{description}?width={width}&height={height})
   *{description}*
+
+  ## Example with multiple reference images:
+  ![{description}](https://image.pollinations.ai/prompt/{description}?image={url1},{url2},{url3})
+  *{description} with reference images*
   `,
     language: "markdown"
   },

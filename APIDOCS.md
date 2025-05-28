@@ -85,7 +85,7 @@ For **backend services, scripts, and server applications**, tokens provide the h
 | Authorization Header | Standard Bearer token approach (recommended) | `Authorization: Bearer YOUR_TOKEN` |
 | Custom Headers | Alternative header options | `X-Pollinations-Token: YOUR_TOKEN` |
 | Query Parameter | Token as URL parameter | `?token=YOUR_TOKEN` |
-| Request Body | Token in POST request body | `{ "token": "YOUR_TOKEN" }` or `{ "auth_token": "YOUR_TOKEN" }` or `{ "authorization": "YOUR_TOKEN" }` |
+| Request Body | Token in POST request body | `{ "token": "YOUR_TOKEN" }` |
 
 ### Bearer Authentication
 

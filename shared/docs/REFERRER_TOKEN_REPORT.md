@@ -69,7 +69,7 @@ The handling of referrers and tokens across text.pollinations.ai and image.polli
    ['authorization', 'x-pollinations-token', 'x-api-key', 'api-key', 'apikey']
    
    // Request body (POST requests)
-   ['token', 'api_key', 'apikey', 'auth_token', 'authorization']
+   ['token']
    ```
 
 2. **Token Validation**:

@@ -1,12 +1,14 @@
 # GitHub Auth Simple 🔐
 
-A minimal GitHub OAuth proxy for Pollinations. Clean, simple, and JWT-based.
+A minimal GitHub OAuth proxy for Pollinations. Clean, simple, and session-based.
 
 ## Features ✨
 
 - GitHub OAuth flow
-- JWT token generation
+- Session-based authentication
 - Domain allowlist management
+- User tier system (Seed, Flower, Nectar)
+- Automatic token expiration handling
 - Zero complexity, pure simplicity
 
 ## Setup 🚀
@@ -26,11 +28,16 @@ npm run dev
 - `GET /authorize?redirect_uri=...` - Start OAuth flow
 - `GET /callback` - GitHub OAuth callback
 
-### Protected (JWT required)
+### Protected (Auth required)
 - `GET /api/user` - Get current user
 - `GET /api/domains?user_id=...` - Get domain allowlist
 - `POST /api/domains?user_id=...` - Update domain allowlist
 - `GET /api/check-domain?user_id=...&domain=...` - Check if domain is allowed
+
+### User Tier Endpoints
+- `GET /api/user-tier?user_id=...` - Get a user's tier
+- `POST /api/user-tier` - Set a user's tier (admin only)
+- `GET /api/user-tiers` - Get all users with their tiers (admin only)
 
 ## Testing 🧪
 
@@ -44,12 +51,17 @@ node test.js
 npm run deploy
 ```
 
-## Architecture 🏗️
+## Architecture 🖥️
 
+### Server Components
 - **index.ts** - Simple route handlers
-- **jwt.ts** - JWT creation/verification
 - **db.ts** - Database operations
 - **github.ts** - GitHub OAuth helpers
 - **types.ts** - TypeScript interfaces
+
+### Client UI
+- **client/html.ts** - HTML templates
+- **client/styles.ts** - CSS styling
+- **client/scripts.ts** - Client-side JavaScript
 
 That's it! No bloat, no complexity. Just auth. 🎯

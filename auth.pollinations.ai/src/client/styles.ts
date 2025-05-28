@@ -382,4 +382,156 @@ code::after {
     background: linear-gradient(90deg, #f8f9fa, #fff);
     font-size: 0.9rem;
 }
+
+/* Tier display styling */
+.tier-container {
+    margin-top: 15px;
+    background: #f9f9f9;
+    border-radius: 12px;
+    padding: 10px 15px;
+    border: 1px solid #eee;
+    position: relative;
+}
+
+.tier-container::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(
+        transparent, 
+        rgba(255, 97, 216, 0.1), 
+        rgba(5, 255, 161, 0.1), 
+        rgba(255, 204, 0, 0.1), 
+        transparent
+    );
+    animation: rotate 10s linear infinite;
+    z-index: -1;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.tier-badge {
+    display: inline-block;
+    padding: 8px 20px;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 10px 0 20px 0;
+    position: relative;
+    overflow: hidden;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.tier-badge::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: skewX(-25deg);
+    animation: tier-shine 3s infinite;
+}
+
+@keyframes tier-shine {
+    0% { left: -100%; }
+    20% { left: 200%; }
+    100% { left: 200%; }
+}
+
+.tier-badge.seed {
+    background: linear-gradient(135deg, #7ed56f, #28b485);
+}
+
+.tier-badge.flower {
+    background: linear-gradient(135deg, #ff61d8, #ff3b5c);
+}
+
+.tier-badge.nectar {
+    background: linear-gradient(135deg, #ffcc00, #ff9500);
+}
+
+.tier-description {
+    margin-top: 15px;
+    line-height: 1.6;
+}
+
+.tier-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.tier-header h3 {
+    margin: 0;
+}
+
+.tier-pills {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.tier-pill {
+    padding: 6px 15px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+    background-color: #f0f0f0;
+    color: #888;
+    cursor: default;
+}
+
+.tier-pill.active {
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.tier-pill.seed.active {
+    background: linear-gradient(135deg, #7ed56f, #28b485);
+}
+
+.tier-pill.flower.active {
+    background: linear-gradient(135deg, #ff61d8, #ff3b5c);
+}
+
+.tier-pill.nectar.active {
+    background: linear-gradient(135deg, #ffcc00, #ff9500);
+}
+
+.tier-benefit-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.tier-benefit-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.tier-emoji {
+    font-size: 20px;
+    flex-shrink: 0;
+}
 `;

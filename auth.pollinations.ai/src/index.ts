@@ -1,6 +1,6 @@
-import type { Env } from './types';
+import type { Env, UserTier } from './types';
 import { createJWT, verifyJWT, extractBearerToken } from './jwt';
-import { upsertUser, getUser, updateDomainAllowlist, getDomains, isDomainAllowed, saveOAuthState, getOAuthState, deleteOAuthState, cleanupOldStates, generateApiToken, getApiToken, deleteApiTokens, validateApiToken } from './db';
+import { upsertUser, getUser, updateDomainAllowlist, getDomains, isDomainAllowed, saveOAuthState, getOAuthState, deleteOAuthState, cleanupOldStates, generateApiToken, getApiToken, deleteApiTokens, validateApiToken, getUserTier, setUserTier, getAllUserTiers } from './db';
 import { exchangeCodeForToken, getGitHubUser } from './github';
 import { handleAdminDatabaseDump } from './admin';
 
@@ -68,6 +68,20 @@ export default {
             return handleGetApiToken(request, env, corsHeaders);
           } else if (request.method === 'POST') {
             return handleGenerateApiToken(request, env, corsHeaders);
+          }
+          break;
+          
+        case '/api/user-tier':
+          if (request.method === 'GET') {
+            return handleGetUserTier(request, env, corsHeaders);
+          } else if (request.method === 'POST') {
+            return handleSetUserTier(request, env, corsHeaders);
+          }
+          break;
+          
+        case '/api/user-tiers':
+          if (request.method === 'GET') {
+            return handleGetAllUserTiers(request, env, corsHeaders);
           }
           break;
           
@@ -361,10 +375,20 @@ async function handleValidateToken(token: string, env: Env, corsHeaders: Record<
     // Validate the token against the database
     const userId = await validateApiToken(env.DB, token);
     
-    // Return validation result
+    // Get user tier if token is valid
+    let tier: UserTier = 'seed';
+    if (userId) {
+      tier = await getUserTier(env.DB, userId);
+    }
+    
+    // Return validation result with tier information
     return new Response(JSON.stringify({
       valid: userId !== null,
       userId: userId,
+      tier: userId ? tier : null,
+      isNectar: userId ? (tier === 'nectar') : false,
+      isFlower: userId ? (tier === 'flower') : false,
+      isSeed: userId ? (tier === 'seed') : false
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -372,4 +396,115 @@ async function handleValidateToken(token: string, env: Env, corsHeaders: Record<
     console.error('Error validating token:', error);
     return createErrorResponse(400, 'Invalid request format', corsHeaders);
   }
+}
+
+/**
+ * Get a user's tier
+ * @param request Request object
+ * @param env Environment variables
+ * @param corsHeaders CORS headers
+ * @returns Response with the user's tier
+ */
+async function handleGetUserTier(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  const url = new URL(request.url);
+  const userId = url.searchParams.get('user_id');
+  
+  if (!userId) {
+    return createErrorResponse(400, 'Missing required parameter: user_id', corsHeaders);
+  }
+  
+  // Verify auth
+  const token = extractBearerToken(request);
+  if (!token) {
+    return createErrorResponse(401, 'Unauthorized', corsHeaders);
+  }
+  
+  const payload = await verifyJWT(token, env);
+  if (!payload || payload.sub !== userId) {
+    return createErrorResponse(403, 'Forbidden', corsHeaders);
+  }
+  
+  // Get the user's tier
+  const tier = await getUserTier(env.DB, userId);
+  
+  return new Response(JSON.stringify({ 
+    tier,
+    isNectar: tier === 'nectar',
+    isFlower: tier === 'flower',
+    isSeed: tier === 'seed'
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+/**
+ * Set a user's tier (admin only)
+ * @param request Request object
+ * @param env Environment variables
+ * @param corsHeaders CORS headers
+ * @returns Response indicating success
+ */
+async function handleSetUserTier(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  const url = new URL(request.url);
+  const userId = url.searchParams.get('user_id');
+  
+  if (!userId) {
+    return createErrorResponse(400, 'Missing required parameter: user_id', corsHeaders);
+  }
+  
+  // Verify admin auth
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ') || authHeader.replace('Bearer ', '') !== env.ADMIN_API_KEY) {
+    return createErrorResponse(403, 'Forbidden - Admin access required', corsHeaders);
+  }
+  
+  // Parse request body
+  let tier: UserTier;
+  try {
+    const body = await request.json() as { tier: string };
+    
+    if (!body.tier || !['seed', 'flower', 'nectar'].includes(body.tier)) {
+      return createErrorResponse(400, 'Invalid tier value. Must be one of: seed, flower, nectar', corsHeaders);
+    }
+    
+    tier = body.tier as UserTier;
+  } catch (error) {
+    return createErrorResponse(400, 'Invalid request body', corsHeaders);
+  }
+  
+  // Set the user's tier
+  await setUserTier(env.DB, userId, tier);
+  
+  return new Response(JSON.stringify({ 
+    success: true, 
+    userId, 
+    tier 
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+/**
+ * Get all users with their tiers (admin only)
+ * @param request Request object
+ * @param env Environment variables
+ * @param corsHeaders CORS headers
+ * @returns Response with all users and their tiers
+ */
+async function handleGetAllUserTiers(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  // Verify admin auth
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ') || authHeader.replace('Bearer ', '') !== env.ADMIN_API_KEY) {
+    return createErrorResponse(403, 'Forbidden - Admin access required', corsHeaders);
+  }
+  
+  // Get all users with their tiers
+  const userTiers = await getAllUserTiers(env.DB);
+  
+  return new Response(JSON.stringify({ 
+    users: userTiers,
+    count: userTiers.length
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
 }

@@ -174,6 +174,12 @@ Check out our [Pollinations React Hooks](./pollinations-react/README.md) for mor
 |---------|-------------|---------|-------|
 | 🎨 DreamHer | Interactive web app that transforms your imagination of a "dream girl" into a visual representation through just 10 simple questions using Pollinations AI | @_Creation22 | [Website](https://dreamher.vercel.app/), [GitHub](https://github.com/creation22/DreamGirl) - ⭐ 2 |
 
+### Tools & Interfaces
+
+| Project | Description | Creator | Links |
+|---------|-------------|---------|-------|
+| 🛠️ AI Content Describer | An extension for NVDA, the free and open-source screen reader for Microsoft Windows. Uses multimodal generative AI to help those with blindness and visual impairments understand pictures, UI controls, complex diagrams/graphics, and more through intelligent descriptions that go far beyond simple alt-text. | @cartertemm | [GitHub](https://github.com/cartertemm/AI-content-describer/) - ⭐ 54 |
+
 ## Architecture
 ```mermaid
 graph LR

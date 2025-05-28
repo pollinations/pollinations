@@ -305,6 +305,16 @@ const allProjects = {
   ],
   toolsInterfaces: [
     {
+      name: "🛠️ AI Content Describer",
+      url: "https://github.com/cartertemm/AI-content-describer/",
+      description: "An extension for NVDA, the free and open-source screen reader for Microsoft Windows. Uses multimodal generative AI to help those with blindness and visual impairments understand pictures, UI controls, complex diagrams/graphics, and more through intelligent descriptions that go far beyond simple alt-text.",
+      author: "@cartertemm",
+      repo: "https://github.com/cartertemm/AI-content-describer/",
+      stars: 54,
+      submissionDate: "2025-05-28",
+      order: 1,
+    },
+    {
       name: "Pollin-Coder",
       url: "https://pollin-coder.megavault.in",
       description: "A free AI-powered website builder that lets anyone create a clean site just by describing it. It uses Pollinations AI to generate the content and layout instantly.",

@@ -266,7 +266,7 @@ export function extractToken(req) {
   
   // Check body for POST requests
   if (req.method === 'POST' && req.body) {
-    for (const field of ['token', 'api_key', 'apikey', 'auth_token', 'authorization']) {
+    for (const field of ['token', 'api_key', 'apikey']) {
       if (req.body[field]) return req.body[field];
     }
   }

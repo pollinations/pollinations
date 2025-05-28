@@ -29,6 +29,7 @@ export async function handleAdminDatabaseDump(request: Request, env: Env, corsHe
     const domains = await env.DB.prepare('SELECT * FROM domains').all();
     const apiTokens = await env.DB.prepare('SELECT * FROM api_tokens').all();
     const oauthStates = await env.DB.prepare('SELECT * FROM oauth_state').all();
+    const userTiers = await env.DB.prepare('SELECT * FROM user_tiers').all();
     
     // Return all data as JSON
     return new Response(JSON.stringify({
@@ -36,6 +37,7 @@ export async function handleAdminDatabaseDump(request: Request, env: Env, corsHe
       domains: domains.results,
       apiTokens: apiTokens.results,
       oauthStates: oauthStates.results,
+      userTiers: userTiers.results,
       timestamp: new Date().toISOString()
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

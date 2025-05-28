@@ -10,6 +10,7 @@ let authToken = null;
 let userId = null;
 let currentDomains = [];
 let apiToken = null;
+let userTier = 'seed';
 
 // Initialize on page load
 window.addEventListener('load', function() {
@@ -110,6 +111,32 @@ function logout() {
     showStatus('auth-status', '👋 Logged out successfully', 'info');
 }
 
+// Handle token errors (expired or invalid tokens)
+function handleTokenError() {
+    // Clear stored data
+    localStorage.removeItem('github_auth_token');
+    localStorage.removeItem('github_username');
+    localStorage.removeItem('github_user_id');
+    
+    // Reset UI
+    authToken = null;
+    userId = null;
+    currentDomains = [];
+    apiToken = null;
+    userTier = 'seed';
+    
+    // Toggle auth/logout buttons
+    document.getElementById('auth-button').classList.remove('hidden');
+    document.getElementById('logout-button').classList.add('hidden');
+    
+    // Hide sections
+    document.getElementById('user-section').classList.add('hidden');
+    document.getElementById('domain-section').classList.add('hidden');
+    
+    // Show logout message
+    showStatus('auth-status', '⏰ Your session has expired. Please log in again.', 'info');
+}
+
 // Get user info
 async function getUserInfo() {
     if (!authToken) {
@@ -128,19 +155,22 @@ async function getUserInfo() {
             const data = await response.json();
             userId = data.github_user_id;
             
-            let userHtml = '<strong>User Info:</strong><br>' +
-                '🆔 ID: ' + data.github_user_id + '<br>' +
-                '👤 Username: ' + data.username;
+            // Store user ID for persistence
+            localStorage.setItem('github_user_id', userId);
             
-            showStatus('user-info', userHtml, 'info');
+            showStatus('user-info', '<strong>GitHub User ID:</strong> ' + userId + '<br><strong>Username:</strong> ' + data.username, 'info');
             
-            // Show domain section
-            document.getElementById('domain-section').classList.remove('hidden');
-            
-            // Automatically fetch domains
+            // Now that we have the user ID, get domains and token
             getDomains();
+            getApiToken();
+            getUserTier();
         } else {
-            showStatus('user-info', '❌ Error: ' + response.statusText, 'error');
+            // Check if unauthorized (token expired or invalid)
+            if (response.status === 401) {
+                handleTokenError();
+            } else {
+                showStatus('user-info', '❌ Error: ' + response.statusText, 'error');
+            }
         }
     } catch (error) {
         showStatus('user-info', '❌ Error: ' + error.message, 'error');
@@ -166,7 +196,12 @@ async function getDomains() {
             currentDomains = data.domains || [];
             displayDomains();
         } else {
-            showStatus('domain-info', '❌ Error: ' + response.statusText, 'error');
+            // Check if unauthorized (token expired or invalid)
+            if (response.status === 401) {
+                handleTokenError();
+            } else {
+                showStatus('domain-info', '❌ Error: ' + response.statusText, 'error');
+            }
         }
     } catch (error) {
         showStatus('domain-info', '❌ Error: ' + error.message, 'error');
@@ -259,6 +294,60 @@ async function removeDomain(domainToRemove) {
     }
 }
 
+// Get user tier
+async function getUserTier() {
+    if (!authToken || !userId) {
+        // Hide tier section if not authenticated
+        document.getElementById('tier-section').classList.add('hidden');
+        return;
+    }
+    // Show tier section when authenticated
+    document.getElementById('tier-section').classList.remove('hidden');
+    
+    try {
+        const response = await fetch(API_BASE + '/api/user-tier?user_id=' + userId, {
+            headers: {
+                'Authorization': 'Bearer ' + authToken
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            userTier = data.tier || 'seed';
+            updateTierDisplay();
+        } else {
+            // Check if unauthorized (token expired or invalid)
+            if (response.status === 401) {
+                handleTokenError();
+            } else {
+                // If there's another error, default to seed tier
+                userTier = 'seed';
+                updateTierDisplay();
+                console.error('Error fetching user tier:', response.statusText);
+            }
+        }
+    } catch (error) {
+        // If there's an error, default to seed tier
+        userTier = 'seed';
+        updateTierDisplay();
+        console.error('Error fetching user tier:', error);
+    }
+}
+
+// Update the tier display in the UI
+function updateTierDisplay() {
+    // Reset all pills
+    document.querySelectorAll('.tier-pill').forEach(pill => {
+        pill.classList.remove('active');
+    });
+    
+    // Activate the current tier pill
+    const activePill = document.getElementById(userTier + '-pill');
+    if (activePill) {
+        activePill.classList.add('active');
+    }
+}
+
 // Get API token
 async function getApiToken() {
     if (!authToken || !userId) {
@@ -283,7 +372,12 @@ async function getApiToken() {
                 showStatus('token-info', '⚠️ No API token found. Generate one first! 🔄', 'info');
             }
         } else {
-            showStatus('token-info', '❌ Error: ' + response.statusText, 'error');
+            // Check if unauthorized (token expired or invalid)
+            if (response.status === 401) {
+                handleTokenError();
+            } else {
+                showStatus('token-info', '❌ Error: ' + response.statusText, 'error');
+            }
         }
     } catch (error) {
         showStatus('token-info', '❌ Error: ' + error.message, 'error');

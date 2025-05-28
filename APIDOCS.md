@@ -118,6 +118,17 @@ Pollinations.AI supports multiple authentication tiers:
 > **Security Best Practice**: Never expose API tokens in frontend code! 
 > Frontend web applications should rely on referrer-based authentication.
 
+### User Tier System
+
+Pollinations.AI uses a tiered system where apps automatically upgrade based on usage and ad integration:
+
+| Stage | Rate Limits | Models |
+|------|-------------|--------|
+| **seed** | Limited | Standard |
+| **flower** | Less limited | Advanced |
+| **nectar** | Unlimited | Advanced |
+
+Please create a **special bee** issue on GitHub to request tier upgrade. 
 ---
 
 ## Generate Image API 🖼️
@@ -201,7 +212,7 @@ async function fetchImage(prompt, params = {}) {
   };
   const queryParams = new URLSearchParams({ ...defaultParams, ...params });
   const encodedPrompt = encodeURIComponent(prompt);
-  const url = `https://image.pollinations.ai/prompt/${encoded_prompt}?${queryParams.toString()}`;
+  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?${queryParams.toString()}`;
 
   console.log("Fetching image from:", url);
 
@@ -400,6 +411,7 @@ try:
 
 except requests.exceptions.RequestException as e:
     print(f"Error fetching text: {e}")
+    # if response is not None: print(response.text)
 ```
 
 **JavaScript (Browser `fetch`):**
@@ -810,6 +822,8 @@ curl https://text.pollinations.ai/openai \
     ],
     "max_tokens": 300
   }'
+# Expected Response might include:
+# ... "choices": [ { "message": { "role": "assistant", "tool_calls": [ { ... "function": { "name": "get_current_weather", "arguments": "{\"location\": \"Boston, MA\"}" ... } ] } } ] ...
 ```
 
 **Python (`requests`, using URL and local file/base64):**
@@ -889,6 +903,7 @@ def analyze_local_image(image_path, question="What's in this image?"):
         return response.json()
     except requests.exceptions.RequestException as e:
         print(f"Error analyzing local image: {e}")
+        # if response is not None: print(response.text) # Show error from API
         return None
 
 # --- Usage Examples ---
@@ -1456,6 +1471,7 @@ try:
         with open(output_filename, 'wb') as f:
             f.write(response.content)
         print(f"Audio saved successfully as {output_filename}")
+        
     else:
         print("Error: Expected audio response, but received:")
         print(f"Content-Type: {response.headers.get('Content-Type')}")
@@ -1849,7 +1865,7 @@ import time
 feed_url = "https://image.pollinations.ai/feed"
 
 def connect_image_feed():
-    while True: # Loop to reconnect on error
+     while True: # Loop to reconnect on error
         try:
             print(f"Connecting to image feed: {feed_url}")
             # Need stream=True for SSE
@@ -2038,11 +2054,16 @@ https://image.pollinations.ai/prompt/a%20beautiful%20landscape?referrer=mywebapp
 
 ### Special Bee ✅🐝🍯
 
-Web applications can qualify for enhanced API access (priority queue, modified rate limits) by registering as a Special Bee. 
+**Special Bee requests are for upgrading to flower tier** - unlocking unlimited usage and SOTA models for your application.
 
-**Two ways to become a Special Bee:**
-1. **Self-serve**: Visit [auth.pollinations.ai](https://auth.pollinations.ai) to register your domain
-2. **Request review**: For special cases, [submit a Special Bee Request](https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml)
+**Two ways to request flower tier upgrade:**
+1. **Self-serve**: Visit [auth.pollinations.ai](https://auth.pollinations.ai) to register your domain and request tier upgrade
+2. **GitHub request**: For special cases, [submit a Special Bee Request](https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml)
+
+**Flower tier benefits:**
+- Less limited rate limits → **Unlimited usage**
+- Standard models → **SOTA models**
+- Priority queue access
 
 ---
 

@@ -1,5 +1,5 @@
 name: Special Bee Request
-description: Request to have your domain/referrer approved for enhanced API access
+description: Request flower tier upgrade for unlimited usage and SOTA models
 title: "[Special Bee Request]: "
 labels: ["special-bee-request"]
 body:
@@ -10,9 +10,9 @@ body:
           <img src="https://raw.githubusercontent.com/pollinations/pollinations/master/assets/pollinations_ai_logo_image_white_transparent.png" alt="Pollinations Logo" width="48" height="48" style="display: inline-block;">
           <h1 style="margin: 0; font-size: 24px; display: inline-block;">Special Bee Request</h1>
         </div>
-        Thanks for your interest in Pollinations API! This form is for requesting domain/referrer approval 
-        that may provide enhanced API access (e.g., priority queue, modified rate limits).
-        
+        Thanks for your interest in Pollinations API! This form is for requesting **flower tier upgrade** 
+        which provides unlimited usage, SOTA models, and priority queue access.
+
   - type: input
     id: project-name
     attributes:
@@ -57,8 +57,8 @@ body:
   - type: input
     id: domain-to-approve
     attributes:
-      label: Domain/Referrer to Approve
-      description: The domain or referrer string you want approved
+      label: Domain/Referrer for Flower Tier
+      description: The domain or referrer string you want upgraded to flower tier
       placeholder: "e.g., example.com or MyBotName"
     validations:
       required: true

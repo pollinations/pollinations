@@ -1,4 +1,4 @@
-import type { User } from './types';
+import type { User, UserTier } from './types';
 import type { D1Database } from '@cloudflare/workers-types';
 
 // Ultra-simplified user management - only store github_user_id and username
@@ -153,4 +153,52 @@ export async function validateApiToken(db: D1Database, token: string): Promise<s
   `).bind(token).first();
   
   return result ? (result.user_id as string) : null;
+}
+
+// User tier management functions
+
+/**
+ * Get a user's tier
+ * @param db D1 Database instance
+ * @param userId User ID
+ * @returns The user's tier (defaults to 'seed' if not set)
+ */
+export async function getUserTier(db: D1Database, userId: string): Promise<UserTier> {
+  const result = await db.prepare(`
+    SELECT tier FROM user_tiers WHERE user_id = ?
+  `).bind(userId).first();
+  
+  return result ? (result.tier as UserTier) : 'seed';
+}
+
+/**
+ * Set a user's tier
+ * @param db D1 Database instance
+ * @param userId User ID
+ * @param tier The tier to set
+ */
+export async function setUserTier(db: D1Database, userId: string, tier: UserTier): Promise<void> {
+  await db.prepare(`
+    INSERT INTO user_tiers (user_id, tier, updated_at)
+    VALUES (?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT(user_id) DO UPDATE SET
+      tier = excluded.tier,
+      updated_at = CURRENT_TIMESTAMP
+  `).bind(userId, tier).run();
+}
+
+/**
+ * Get all users with their tiers
+ * @param db D1 Database instance
+ * @returns Array of users with their tiers
+ */
+export async function getAllUserTiers(db: D1Database): Promise<Array<{user_id: string, username: string, tier: UserTier}>> {
+  const results = await db.prepare(`
+    SELECT u.github_user_id as user_id, u.username, COALESCE(t.tier, 'seed') as tier
+    FROM users u
+    LEFT JOIN user_tiers t ON u.github_user_id = t.user_id
+    ORDER BY u.username
+  `).all();
+  
+  return results.results as Array<{user_id: string, username: string, tier: UserTier}>;
 }

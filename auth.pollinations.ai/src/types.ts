@@ -20,3 +20,12 @@ export interface GitHubUser {
   avatar_url: string;
   email: string | null;
 }
+
+// User tier types
+export type UserTier = 'seed' | 'flower' | 'nectar';
+
+export interface UserTierInfo {
+  user_id: string;
+  username: string;
+  tier: UserTier;
+}

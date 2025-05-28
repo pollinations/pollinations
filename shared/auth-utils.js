@@ -271,7 +271,7 @@ export function getIp(req) {
 /**
  * Validate token against the auth.pollinations.ai API.
  * @param {string} token - The token to validate.
- * @returns {Promise<string|null>} UserId if valid, null otherwise.
+ * @returns {Promise<{userId: string, tier: string}|null>} User info if valid, null otherwise.
  */
 export async function validateApiTokenDb(token) {
   const maskedToken = token && token.length > 8 ? 
@@ -286,7 +286,7 @@ export async function validateApiTokenDb(token) {
   tokenLog('validateApiTokenDb: Starting validation for token: %s', maskedToken);
   
   try {
-    const apiUrl = `https://auth.pollinations.ai/api/validate-token/${token}`;
+    const apiUrl = `https://auth.pollinations.ai/api/validate-token/${encodeURIComponent(token)}`;
     tokenLog('validateApiTokenDb: Making API call to auth.pollinations.ai');
     
     // Call the auth.pollinations.ai API to validate the token using a simple GET request
@@ -302,9 +302,12 @@ export async function validateApiTokenDb(token) {
     const data = await response.json();
     tokenLog('validateApiTokenDb: API response data: %o', data);
     
-    if (data.valid && data.userId) {
-      tokenLog('validateApiTokenDb: Token validation successful for user: %s', data.userId);
-      return data.userId;
+    if (data && data.valid && data.userId) {
+      tokenLog('validateApiTokenDb: Valid token for user: %s, tier: %s', data.userId, data.tier || 'seed');
+      return {
+        userId: data.userId,
+        tier: data.tier || 'seed'
+      };
     } else {
       tokenLog('validateApiTokenDb: Token validation failed - invalid token or missing userId');
       return null;
@@ -420,13 +423,20 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
     
     // 2️⃣ Check DB token (slower API call)
     tokenLog('Checking token against auth.pollinations.ai API');
-    const userId = await validateApiTokenDb(token);   // Uses auth.pollinations.ai API
-    if (userId) {
-      tokenLog('✅ Valid DB token found for user: %s', userId);
+    const tokenResult = await validateApiTokenDb(token);   // Uses auth.pollinations.ai API
+    if (tokenResult && tokenResult.userId) {
+      tokenLog('✅ Valid DB token found for user: %s (tier: %s)', tokenResult.userId, tokenResult.tier);
       debugInfo.authResult = 'DB_TOKEN';
-      debugInfo.userId = userId;
-      log('Queue bypass granted: DB_TOKEN for user %s', userId);
-      return { bypass:true, reason:'DB_TOKEN', userId, debugInfo };
+      debugInfo.userId = tokenResult.userId;
+      debugInfo.tier = tokenResult.tier;
+      log('Queue bypass granted: DB_TOKEN for user %s (tier: %s)', tokenResult.userId, tokenResult.tier);
+      return { 
+        bypass: true, 
+        reason: 'DB_TOKEN', 
+        userId: tokenResult.userId, 
+        tier: tokenResult.tier,
+        debugInfo 
+      };
     }
     
     // If token is provided but not valid, return error info instead of throwing
@@ -537,6 +547,7 @@ export async function handleAuthentication(req, requestId = null, logAuth = null
       bypass: hasValidToken,
       reason,
       userId,
+      tier: debugInfo.tier || 'seed',
       debugInfo
     };
     

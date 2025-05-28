@@ -48,7 +48,7 @@ export const generateHTML = () => `<!DOCTYPE html>
                     <h3>🚀 Pro Tips</h3>
                     <ul class="pro-tips">
                         <li><span class="tip-emoji">💻</span> <strong>Web apps:</strong> Just add your domain to the allowlist!</li>
-                        <li><span class="tip-emoji">⚡</span> <strong>Backend apps:</strong> Use tokens for Discord bots, AI chatbots, etc.</li>
+                        <li><span class="tip-emoji">⚡</span> <strong>Backend apps:</strong> Use tokens for Discord bots, larger apps, etc.</li>
                         <li><span class="tip-emoji">🔒</span> <strong>Keep it secret:</strong> Never share your token publicly!</li>
                     </ul>
                 </div>

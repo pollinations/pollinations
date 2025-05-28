@@ -67,6 +67,9 @@ flowchart TD
    - Implements safety checks and content moderation
    - Processes and transforms images
    - Enforces rate limiting (1 request per 10 seconds per IP)
+   - **NEW**: Supports multiple reference images in Azure GPT Image edit mode
+     - Processes all images in comma-separated URL parameters
+     - Uses unique field names for each image (image, image1, image2, etc.)
 
 3. **Cloudflare R2 Storage**
    - Stores cached images
@@ -143,9 +146,31 @@ The system follows a "thin proxy" design principle:
 - Direct forwarding of requests
 - No transformation of responses
 - Simple and efficient caching logic
+- Support for multiple reference images with minimal code changes
+
+## Multiple Reference Images
+
+The Azure GPT Image API now supports multiple reference images in edit mode:
+
+### Usage
+```
+/prompt/[your-prompt]?image=https://example.com/image1.png,https://example.com/image2.png,https://example.com/image3.png
+```
+
+### Implementation Details
+- The first image is sent with field name `image` (backward compatibility)
+- Additional images use field names `image1`, `image2`, etc.
+- All images are fetched in parallel with progress logging
+- The system maintains the "thin proxy" principle with minimal processing
+
+### Example Request
+```bash
+curl "https://image.pollinations.ai/prompt/edit-this-image?image=https://raw.githubusercontent.com/pollinations/catgpt/main/images/original-catgpt.png,https://example.com/reference-image.png"
+```
 
 ## Troubleshooting
 
 - If the worker returns 404 errors, ensure that the origin service is accessible
 - If you encounter rate limiting issues, verify that IP forwarding is working correctly
 - For caching issues, check the R2 bucket configuration and permissions
+- For multiple reference images: ensure URLs are properly comma-separated and accessible

@@ -26,7 +26,7 @@ const referrerLog = debug('pollinations:auth:referrer');
 const TOKEN_FIELDS = {
   query: ['token'],
   header: ['authorization', 'x-pollinations-token'],
-  body: ['token', 'auth_token', 'authorization']
+  body: ['token' ]
 };
 
 /**

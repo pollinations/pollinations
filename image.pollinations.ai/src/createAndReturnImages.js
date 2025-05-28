@@ -417,12 +417,20 @@ const updateProgress = (progress, requestId, percentage, stage, message) => {
  * Calls the Azure GPT Image API to generate or edit images
  * @param {string} prompt - The prompt for image generation or editing
  * @param {Object} safeParams - The parameters for image generation or editing
+ * @param {Object} userInfo - Complete user authentication info object with bypass, userId, tier, etc.
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
  */
-export const callAzureGPTImage = async (prompt, safeParams) => {
+export const callAzureGPTImage = async (prompt, safeParams, userInfo = {}) => {
   try {
-    // Randomly select between the two available endpoints
-    const endpointIndex = Math.floor(Math.random() * 2) + 1; // Generates either 1 or 2
+    // Extract user tier with fallback to 'seed'
+    const userTier = userInfo.tier || 'seed';
+    
+    // Stage-based endpoint selection instead of random
+    // seed stage → GPT_IMAGE_1_ENDPOINT (standard endpoint)
+    // flower/nectar stage → GPT_IMAGE_2_ENDPOINT (advanced endpoint)
+    const endpointIndex = (userTier === 'seed') ? 1 : 2;
+    
+    logCloudflare(`Using Azure GPT Image endpoint ${endpointIndex} for user tier: ${userTier}`, userInfo.userId ? `(userId: ${userInfo.userId})` : '(anonymous)');
     
     const apiKey = process.env[`GPT_IMAGE_${endpointIndex}_AZURE_API_KEY`];
     let endpoint = process.env[`GPT_IMAGE_${endpointIndex}_ENDPOINT`];
@@ -597,14 +605,14 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
  * @param {number} concurrentRequests - Number of concurrent requests
  * @param {Object} progress - Progress tracking object
  * @param {string} requestId - Request ID for progress tracking
- * @param {boolean} hasValidToken - Whether the request has valid authentication
+ * @param {Object} userInfo - Complete user authentication info object with bypass, userId, tier, etc.
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean, [key: string]: any}>}
  */
-const generateImage = async (prompt, safeParams, concurrentRequests, progress, requestId, hasValidToken) => {
+const generateImage = async (prompt, safeParams, concurrentRequests, progress, requestId, userInfo) => {
   // Model selection strategy using a more functional approach
   if (safeParams.model === 'gptimage') {
     // Restrict GPT Image model to users with valid authentication
-    if (!hasValidToken) {
+    if (!userInfo || !userInfo.bypass) {
       logError('Access to GPT Image model requires authentication. Please request a token at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml');
       progress.updateBar(requestId, 35, 'Auth', 'GPT Image requires authorization');
       throw new Error('Access to GPT Image model requires authentication. Please request a token at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml');      
@@ -612,7 +620,7 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
       // For gptimage model, always throw errors instead of falling back
       updateProgress(progress, requestId, 30, 'Processing', 'Trying Azure GPT Image...');
       try {
-        return await callAzureGPTImage(prompt, safeParams);
+        return await callAzureGPTImage(prompt, safeParams, userInfo);
       } catch (error) {
         // Log the error but don't fall back - propagate it to the caller
         logError('Azure GPT Image failed:', error.message);
@@ -710,16 +718,16 @@ const processImageBuffer = async (buffer, maturityFlags, safeParams, metadataObj
  * @param {Object} progress - Progress tracking object.
  * @param {string} requestId - Request ID for progress tracking.
  * @param {boolean} wasTransformedForBadDomain - Flag indicating if the prompt was transformed due to bad domain.
- * @param {boolean} hasValidToken - Whether the request has valid authentication (optional).
+ * @param {Object} userInfo - Complete user authentication info object with bypass, userId, tier, etc.
  * @returns {Promise<{buffer: Buffer, isChild: boolean, isMature: boolean}>}
  */
-export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests, originalPrompt, progress, requestId, wasTransformedForBadDomain = false, hasValidToken = false) {
+export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests, originalPrompt, progress, requestId, wasTransformedForBadDomain = false, userInfo = {}) {
   try {
     // Update generation progress
     updateProgress(progress, requestId, 60, 'Generation', 'Calling API...');
     
     // Generate the image using the appropriate model
-    const result = await generateImage(prompt, safeParams, concurrentRequests, progress, requestId, hasValidToken);
+    const result = await generateImage(prompt, safeParams, concurrentRequests, progress, requestId, userInfo);
     updateProgress(progress, requestId, 70, 'Generation', 'API call complete');
     updateProgress(progress, requestId, 75, 'Processing', 'Checking safety...');
     

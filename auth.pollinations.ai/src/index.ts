@@ -385,10 +385,7 @@ async function handleValidateToken(token: string, env: Env, corsHeaders: Record<
     return new Response(JSON.stringify({
       valid: userId !== null,
       userId: userId,
-      tier: userId ? tier : null,
-      isNectar: userId ? (tier === 'nectar') : false,
-      isFlower: userId ? (tier === 'flower') : false,
-      isSeed: userId ? (tier === 'seed') : false
+      tier: userId ? tier : null
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -428,10 +425,7 @@ async function handleGetUserTier(request: Request, env: Env, corsHeaders: Record
   const tier = await getUserTier(env.DB, userId);
   
   return new Response(JSON.stringify({ 
-    tier,
-    isNectar: tier === 'nectar',
-    isFlower: tier === 'flower',
-    isSeed: tier === 'seed'
+    tier
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
@@ -445,13 +439,6 @@ async function handleGetUserTier(request: Request, env: Env, corsHeaders: Record
  * @returns Response indicating success
  */
 async function handleSetUserTier(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
-  const url = new URL(request.url);
-  const userId = url.searchParams.get('user_id');
-  
-  if (!userId) {
-    return createErrorResponse(400, 'Missing required parameter: user_id', corsHeaders);
-  }
-  
   // Verify admin auth
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ') || authHeader.replace('Bearer ', '') !== env.ADMIN_API_KEY) {
@@ -459,9 +446,18 @@ async function handleSetUserTier(request: Request, env: Env, corsHeaders: Record
   }
   
   // Parse request body
+  let userId: string;
   let tier: UserTier;
+  
   try {
-    const body = await request.json() as { tier: string };
+    const body = await request.json() as { tier: string, user_id: string };
+    
+    // Check for user_id in body
+    if (!body.user_id) {
+      return createErrorResponse(400, 'Missing required parameter: user_id in request body', corsHeaders);
+    }
+    
+    userId = body.user_id;
     
     if (!body.tier || !['seed', 'flower', 'nectar'].includes(body.tier)) {
       return createErrorResponse(400, 'Invalid tier value. Must be one of: seed, flower, nectar', corsHeaders);

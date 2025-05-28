@@ -47,8 +47,16 @@ node test.js
 
 ## Deployment 🌍
 
+### Standard Deployment
 ```bash
 npm run deploy
+```
+
+### Deployment with Migrations (Recommended)
+This ensures database migrations are applied before deployment, which is essential for the tier system to work properly.
+
+```bash
+npm run deploy:with-migrations
 ```
 
 ## Architecture 🖥️

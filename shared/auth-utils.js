@@ -271,7 +271,7 @@ export function getIp(req) {
 /**
  * Validate token against the auth.pollinations.ai API.
  * @param {string} token - The token to validate.
- * @returns {Promise<{userId: string, tier: string, isNectar: boolean, isFlower: boolean, isSeed: boolean}|null>} User info if valid, null otherwise.
+ * @returns {Promise<{userId: string, tier: string}|null>} User info if valid, null otherwise.
  */
 export async function validateApiTokenDb(token) {
   const maskedToken = token && token.length > 8 ? 
@@ -306,10 +306,7 @@ export async function validateApiTokenDb(token) {
       tokenLog('validateApiTokenDb: Valid token for user: %s, tier: %s', data.userId, data.tier || 'seed');
       return {
         userId: data.userId,
-        tier: data.tier || 'seed',
-        isNectar: data.tier === 'nectar',
-        isFlower: data.tier === 'flower',
-        isSeed: data.tier === 'seed' || !data.tier
+        tier: data.tier || 'seed'
       };
     } else {
       tokenLog('validateApiTokenDb: Token validation failed - invalid token or missing userId');
@@ -432,18 +429,12 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
       debugInfo.authResult = 'DB_TOKEN';
       debugInfo.userId = tokenResult.userId;
       debugInfo.tier = tokenResult.tier;
-      debugInfo.isNectar = tokenResult.isNectar;
-      debugInfo.isFlower = tokenResult.isFlower;
-      debugInfo.isSeed = tokenResult.isSeed;
       log('Queue bypass granted: DB_TOKEN for user %s (tier: %s)', tokenResult.userId, tokenResult.tier);
       return { 
         bypass: true, 
         reason: 'DB_TOKEN', 
         userId: tokenResult.userId, 
         tier: tokenResult.tier,
-        isNectar: tokenResult.isNectar,
-        isFlower: tokenResult.isFlower,
-        isSeed: tokenResult.isSeed,
         debugInfo 
       };
     }
@@ -557,9 +548,6 @@ export async function handleAuthentication(req, requestId = null, logAuth = null
       reason,
       userId,
       tier: debugInfo.tier || 'seed',
-      isNectar: debugInfo.isNectar || false,
-      isFlower: debugInfo.isFlower || false,
-      isSeed: debugInfo.isSeed || (!debugInfo.tier || debugInfo.tier === 'seed'),
       debugInfo
     };
     

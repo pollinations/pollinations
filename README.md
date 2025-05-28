@@ -8,7 +8,8 @@
 ## 🆕 Latest News
 
 - **🔐 Auth Dashboard** - New authentication dashboard is now live! Visit [auth.pollinations.ai](https://auth.pollinations.ai) to manage your API tokens and referrer domains for priority access. [Learn more](APIDOCS.md#authentication-).
-- **🔍 Special Bee** - New "Special Bee" issue template! Projects can now request referrer verification by submitting a [Domain Verification Request](https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml)[More info](https://github.com/pollinations/pollinations/blob/master/APIDOCS.md#special-bee-)
+- **🏆 User Tier System** - Apps automatically upgrade through seed/flower/nectar tiers based on usage and ad integration. Higher tiers unlock unlimited usage, SOTA models, and revenue sharing. [Learn more](APIDOCS.md#user-tier-system).
+- **🔍 Special Bee** - Request flower tier upgrade for unlimited usage and SOTA models! Submit a [Special Bee Request](https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml) or use [auth.pollinations.ai](https://auth.pollinations.ai). [More info](https://github.com/pollinations/pollinations/blob/master/APIDOCS.md#special-bee-)
 - **📚 API Documentation** - Major API documentation improvements! We've completely revamped our API docs with better examples, clearer explanations, and interactive code snippets. [Check it out](https://github.com/pollinations/pollinations/blob/master/APIDOCS.md).
 - **🤖 MCP Server** - New Model Context Protocol (MCP) server for AI assistants like Claude to generate images directly! [Learn more](./model-context-protocol/README.md).  
   [![MCP Server Interface](https://github.com/user-attachments/assets/7311a7df-6b6a-4da5-94f8-7d57baca0ba3)](./model-context-protocol/README.md)

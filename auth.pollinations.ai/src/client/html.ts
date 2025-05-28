@@ -65,6 +65,22 @@ export const generateHTML = () => `<!DOCTYPE html>
         <div id="user-section" class="hidden">
             <h2>👤 2. User Info</h2>
             <div id="user-info" class="status"></div>
+            <div id="tier-section" class="tier-container hidden">
+                <div class="tier-header">
+                    <h3>✨ Your Tier:</h3>
+                </div>
+                <div class="tier-pills">
+                    <div id="seed-pill" class="tier-pill seed">
+                        <span class="tier-emoji">🌱</span> Seed
+                    </div>
+                    <div id="flower-pill" class="tier-pill flower">
+                        <span class="tier-emoji">🌸</span> Flower
+                    </div>
+                    <div id="nectar-pill" class="tier-pill nectar">
+                        <span class="tier-emoji">🍯</span> Nectar
+                    </div>
+                </div>
+            </div>
         </div>
         
         <div id="domain-section" class="hidden">

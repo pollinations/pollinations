@@ -59,11 +59,12 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
   authLog('Calling shouldBypassQueue for request: %s', path);
   const authResult = await shouldBypassQueue(req, authContext);
   
-  // Log the authentication result
-  authLog('Authentication result: reason=%s, bypass=%s, userId=%s', 
+  // Log the authentication result with tier information
+  authLog('Authentication result: reason=%s, bypass=%s, userId=%s, tier=%s', 
           authResult.reason, 
           authResult.bypass, 
-          authResult.userId || 'none');
+          authResult.userId || 'none',
+          authResult.tier || 'none');
   
   // Check if there's an error in the auth result (invalid token)
   if (authResult.error) {
@@ -97,7 +98,13 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
     throw error;
   }
   
-  // Always use the queue but adjust the interval based on authentication type
+  // Check if this is a nectar tier user - they bypass the queue entirely
+  if (authResult.tokenAuth && authResult.tier === 'nectar') {
+    log('Nectar tier user detected - bypassing queue entirely');
+    return fn(); // Execute immediately, bypassing the queue
+  }
+  
+  // For all other users, always use the queue but adjust the interval based on authentication type
   // This ensures all requests are subject to rate limiting and queue size constraints
   
   // Check the new, clearer authentication result fields

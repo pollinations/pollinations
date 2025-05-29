@@ -333,6 +333,11 @@ const startFeedListener = async (options = {}) => {
         try {
             const data = JSON.parse(event.data);
             
+            // Special logging for v1_rblx_access referrer requests, regardless of other filters
+            if (options.logRblxAccess && data.parameters?.referrer === 'v1_rblx_access') {
+                logRblxAccessRequest(data, options.logRblxAccess);
+            }
+            
             // Check filters FIRST
             if (matchesFilters(data, options)) {
                 
@@ -515,6 +520,40 @@ const writeDataToJson = (filePath) => {
     }
 };
 
+// Function to log v1_rblx_access requests to a specific file
+const logRblxAccessRequest = (data, logFile) => {
+    try {
+        if (!logFile) return;
+        
+        // Format the log entry as JSON
+        const logEntry = {
+            timestamp: new Date().toISOString(),
+            ip: data.ip || 'unknown',
+            referrer: data.parameters?.referrer || 'unknown',
+            model: data.parameters?.model || 'unknown',
+            isPrivate: data.isPrivate || false,
+            totalTokens: data.parameters?.total_tokens || 0,
+            systemPrompt: data.parameters?.messages?.find(msg => msg.role === 'system')?.content || null,
+            userPrompt: data.parameters?.messages?.find(msg => msg.role === 'user')?.content || null,
+            response: data.response || '',
+        };
+        
+        // Append to file (create if it doesn't exist)
+        const logString = JSON.stringify(logEntry) + '\n';
+        
+        // Create directory if it doesn't exist
+        const dir = path.dirname(logFile);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        
+        fs.appendFileSync(logFile, logString);
+        log(`Logged v1_rblx_access request to ${logFile}`);
+    } catch (error) {
+        log(`Error logging to v1_rblx_access file: ${error.message}`);
+    }
+};
+
 // Parse command line arguments
 const parseArgs = () => {
     const program = new Command();
@@ -532,6 +571,7 @@ const parseArgs = () => {
         .option('--base-url <url>', 'Base URL for API (default: https://text.pollinations.ai)')
         .option('--count-only', 'Only display statistics, not individual messages')
         .option('--json-output <file>', 'Save raw data to JSON file for later analysis')
+        .option('--log-rblx-access <file>', 'Log all v1_rblx_access requests to specified file')
  
      program.parse(process.argv);
 

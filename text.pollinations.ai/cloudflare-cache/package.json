@@ -19,7 +19,7 @@
   "author": "Pollinations",
   "license": "MIT",
   "devDependencies": {
-    "wrangler": "^4.15.0"
+    "wrangler": "^4.17.0"
   },
   "dependencies": {
     "fast-json-stable-stringify": "^2.1.0",

@@ -417,7 +417,7 @@ const updateProgress = (progress, requestId, percentage, stage, message) => {
  * Calls the Azure GPT Image API to generate or edit images
  * @param {string} prompt - The prompt for image generation or editing
  * @param {Object} safeParams - The parameters for image generation or editing
- * @param {Object} userInfo - Complete user authentication info object with bypass, userId, tier, etc.
+ * @param {Object} userInfo - Complete user authentication info object with authenticated, userId, tier, etc.
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
  */
 export const callAzureGPTImage = async (prompt, safeParams, userInfo = {}) => {
@@ -605,14 +605,20 @@ export const callAzureGPTImage = async (prompt, safeParams, userInfo = {}) => {
  * @param {number} concurrentRequests - Number of concurrent requests
  * @param {Object} progress - Progress tracking object
  * @param {string} requestId - Request ID for progress tracking
- * @param {Object} userInfo - Complete user authentication info object with bypass, userId, tier, etc.
+ * @param {Object} userInfo - Complete user authentication info object with authenticated, userId, tier, etc.
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean, [key: string]: any}>}
  */
 const generateImage = async (prompt, safeParams, concurrentRequests, progress, requestId, userInfo) => {
   // Model selection strategy using a more functional approach
   if (safeParams.model === 'gptimage') {
+    // Detailed logging of authentication info for GPT image access
+    logError('GPT Image authentication check:', 
+      userInfo ? 
+        `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || 'none'}, tier=${userInfo.tier || 'none'}` 
+        : 'No userInfo provided');
+    
     // Restrict GPT Image model to users with valid authentication
-    if (!userInfo || !userInfo.bypass) {
+    if (!userInfo || !userInfo.authenticated) {
       logError('Access to GPT Image model requires authentication. Please request a token at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml');
       progress.updateBar(requestId, 35, 'Auth', 'GPT Image requires authorization');
       throw new Error('Access to GPT Image model requires authentication. Please request a token at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml');      
@@ -718,7 +724,7 @@ const processImageBuffer = async (buffer, maturityFlags, safeParams, metadataObj
  * @param {Object} progress - Progress tracking object.
  * @param {string} requestId - Request ID for progress tracking.
  * @param {boolean} wasTransformedForBadDomain - Flag indicating if the prompt was transformed due to bad domain.
- * @param {Object} userInfo - Complete user authentication info object with bypass, userId, tier, etc.
+ * @param {Object} userInfo - Complete user authentication info object with authenticated, userId, tier, etc.
  * @returns {Promise<{buffer: Buffer, isChild: boolean, isMature: boolean}>}
  */
 export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests, originalPrompt, progress, requestId, wasTransformedForBadDomain = false, userInfo = {}) {

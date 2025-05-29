@@ -55,15 +55,16 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
   
   authLog('Processing request: %s %s from IP: %s', method, path, ip);
   
-  // Get queue bypass decision with auth context
-  authLog('Calling shouldBypassQueue for request: %s', path);
+  // Get authentication status with auth context
+  authLog('Checking authentication for request: %s', path);
   const authResult = await shouldBypassQueue(req, authContext);
   
-  // Log the authentication result
-  authLog('Authentication result: reason=%s, bypass=%s, userId=%s', 
+  // Log the authentication result with tier information
+  authLog('Authentication result: reason=%s, authenticated=%s, userId=%s, tier=%s', 
           authResult.reason, 
-          authResult.bypass, 
-          authResult.userId || 'none');
+          authResult.authenticated, 
+          authResult.userId || 'none',
+          authResult.tier || 'none');
   
   // Check if there's an error in the auth result (invalid token)
   if (authResult.error) {
@@ -97,10 +98,26 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
     throw error;
   }
   
-  // If bypass is true and forceQueue is false, execute the function immediately
-  if (authResult.bypass && !forceQueue) {
-    log('Queue bypass granted for reason: %s, executing immediately', authResult.reason);
-    return fn();
+  // Check if this is a nectar tier user - they skip the queue entirely
+  if (authResult.tokenAuth && authResult.tier === 'nectar') {
+    log('Nectar tier user detected - skipping queue entirely');
+    return fn(); // Execute immediately, skipping the queue
+  }
+  
+  // For all other users, always use the queue but adjust the interval based on authentication type
+  // This ensures all requests are subject to rate limiting and queue size constraints
+  
+  // Check the new, clearer authentication result fields
+  if (authResult.tokenAuth && interval > 0) {
+    // Only token authentication gets zero interval
+    log('Token authenticated request - using zero interval in queue');
+    interval = 0; // Token authentication means no delay between requests
+  } else if (authResult.referrerAuth) {
+    // Referrer-based authentication still uses standard interval
+    log('Referrer authenticated request - using standard interval in queue');
+  } else {
+    // Non-authenticated requests use standard interval
+    log('Non-authenticated request - using standard interval in queue');
   }
   
   // Check if queue exists for this IP and get its current size

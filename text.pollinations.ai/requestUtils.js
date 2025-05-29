@@ -1,6 +1,7 @@
 import debug from 'debug';
 // Import shared utilities for authentication and environment handling
-import { extractReferrer, shouldBypassQueue } from '../shared/auth-utils.js';
+import { shouldBypassQueue } from '../shared/auth-utils.js';
+import { extractReferrer } from '../shared/extractFromRequest.js';
 
 const log = debug('pollinations:requestUtils');
 
@@ -33,12 +34,13 @@ export function getRequestData(req) {
     // Use shared referrer extraction utility
     const referrer = extractReferrer(req);
     
-    // Use shared authentication function to check if referrer should bypass queue
+    // Use shared authentication function to check if referrer is authenticated
     const authResult = shouldBypassQueue(req, {
         legacyTokens: process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [],
         allowlist: process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : []
     });
-    const isImagePollinationsReferrer = authResult.bypass;
+    // Use the new explicit authentication field instead of bypass
+    const isImagePollinationsReferrer = authResult.authenticated;
     const isRobloxReferrer = referrer && (referrer.toLowerCase().includes('roblox') || referrer.toLowerCase().includes('gacha11211'));
     const stream = data.stream || false; 
     
@@ -94,13 +96,13 @@ export function getRequestData(req) {
 }
 
 /**
- * Function to check if delay should be bypassed based on referrer
+ * Function to check if request should skip delay based on authentication
  * @param {object} req - Express request object
- * @returns {boolean} - Whether delay should be bypassed
+ * @returns {boolean} - Whether delay should be skipped based on authentication
  */
 export function shouldBypassDelay(req) {
     try {
-        // Use shared shouldBypassQueue function to determine bypass
+        // Use shared shouldBypassQueue function to determine authentication status
         const authResult = shouldBypassQueue(req, {
             legacyTokens: process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [],
             allowlist: process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : []
@@ -110,10 +112,11 @@ export function shouldBypassDelay(req) {
         const referrer = extractReferrer(req);
         const isRobloxReferrer = referrer && (referrer.toLowerCase().includes('roblox') || referrer.toLowerCase().includes('gacha11211'));
         
-        return authResult.bypass || isRobloxReferrer;
+        // Use the new explicit authentication fields instead of bypass
+        return authResult.authenticated || isRobloxReferrer;
     } catch (error) {
-        // If authentication check fails, don't bypass delay
-        log('Authentication check failed for delay bypass:', error.message);
+        // If authentication check fails, apply standard delay
+        log('Authentication check failed for delay decision:', error.message);
         return false;
     }
 }

@@ -285,7 +285,7 @@ async function proxyRequest(request, env) {
  */
 async function generateCacheKey(request) {
   // Authentication parameters to exclude from cache key
-  const AUTH_PARAMS = ['token', 'referrer', 'referer', 'nofeed', 'no-cache', 'auth_token', 'authorization', 'api_key', 'apikey'];
+  const AUTH_PARAMS = ['token', 'referrer', 'referer', 'nofeed', 'no-cache'];
 
   const url = new URL(request.url);
   

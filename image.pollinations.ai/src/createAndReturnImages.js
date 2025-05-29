@@ -611,6 +611,12 @@ export const callAzureGPTImage = async (prompt, safeParams, userInfo = {}) => {
 const generateImage = async (prompt, safeParams, concurrentRequests, progress, requestId, userInfo) => {
   // Model selection strategy using a more functional approach
   if (safeParams.model === 'gptimage') {
+    // Detailed logging of authentication info for GPT image access
+    logError('GPT Image authentication check:', 
+      userInfo ? 
+        `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || 'none'}, tier=${userInfo.tier || 'none'}` 
+        : 'No userInfo provided');
+    
     // Restrict GPT Image model to users with valid authentication
     if (!userInfo || !userInfo.authenticated) {
       logError('Access to GPT Image model requires authentication. Please request a token at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml');

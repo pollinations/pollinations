@@ -16,7 +16,8 @@ import { getRequestData } from './requestUtils.js';
 
 // Import shared utilities
 import { enqueue } from '../shared/ipQueue.js';
-import { handleAuthentication, getIp } from '../shared/auth-utils.js';
+import { handleAuthentication } from '../shared/auth-utils.js';
+import { getIp } from '../shared/extractFromRequest.js';
 
 // Load environment variables
 dotenv.config();

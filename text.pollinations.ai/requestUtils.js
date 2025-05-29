@@ -1,6 +1,7 @@
 import debug from 'debug';
 // Import shared utilities for authentication and environment handling
-import { extractReferrer, shouldBypassQueue } from '../shared/auth-utils.js';
+import { shouldBypassQueue } from '../shared/auth-utils.js';
+import { extractReferrer } from '../shared/extractFromRequest.js';
 
 const log = debug('pollinations:requestUtils');
 

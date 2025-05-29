@@ -18,7 +18,8 @@ import path from 'path';
 
 // Import shared utilities
 import { enqueue } from '../../shared/ipQueue.js';
-import { extractToken, getIp, isValidToken, handleAuthentication, addAuthDebugHeaders, createAuthDebugResponse } from '../../shared/auth-utils.js';
+import { isValidToken, handleAuthentication, addAuthDebugHeaders, createAuthDebugResponse } from '../../shared/auth-utils.js';
+import { extractToken, getIp } from '../../shared/extractFromRequest.js';
 
 // Queue configuration for image service
 const QUEUE_CONFIG = {

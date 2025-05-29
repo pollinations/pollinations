@@ -38,7 +38,8 @@ export function getRequestData(req) {
         legacyTokens: process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [],
         allowlist: process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : []
     });
-    const isImagePollinationsReferrer = authResult.bypass;
+    // Use the new explicit authentication field instead of bypass
+    const isImagePollinationsReferrer = authResult.authenticated;
     const isRobloxReferrer = referrer && (referrer.toLowerCase().includes('roblox') || referrer.toLowerCase().includes('gacha11211'));
     const stream = data.stream || false; 
     
@@ -110,7 +111,8 @@ export function shouldBypassDelay(req) {
         const referrer = extractReferrer(req);
         const isRobloxReferrer = referrer && (referrer.toLowerCase().includes('roblox') || referrer.toLowerCase().includes('gacha11211'));
         
-        return authResult.bypass || isRobloxReferrer;
+        // Use the new explicit authentication fields instead of bypass
+        return authResult.authenticated || isRobloxReferrer;
     } catch (error) {
         // If authentication check fails, don't bypass delay
         log('Authentication check failed for delay bypass:', error.message);

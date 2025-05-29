@@ -202,3 +202,40 @@ export async function getAllUserTiers(db: D1Database): Promise<Array<{user_id: s
   
   return results.results as Array<{user_id: string, username: string, tier: UserTier}>;
 }
+
+/**
+ * Find user by domain
+ * @param db D1 Database instance
+ * @param domain Domain to check
+ * @returns User ID, username and tier if the domain is registered by any user, null otherwise
+ */
+export async function findUserByDomain(db: D1Database, domain: string): Promise<{user_id: string, username: string, tier: UserTier} | null> {
+  console.log(`Checking if domain ${domain} is registered by any user`);
+  
+  try {
+    // Find any user that has registered this domain
+    const result = await db.prepare(`
+      SELECT u.github_user_id as user_id, u.username, COALESCE(t.tier, 'seed') as tier
+      FROM domains d
+      JOIN users u ON d.user_id = u.github_user_id
+      LEFT JOIN user_tiers t ON u.github_user_id = t.user_id
+      WHERE d.domain = ?
+      LIMIT 1
+    `).bind(domain).first();
+    
+    if (!result) {
+      console.log(`No user found for domain: ${domain}`);
+      return null;
+    }
+    
+    console.log(`Found user ${result.user_id} (${result.username}) with tier ${result.tier} for domain: ${domain}`);
+    return {
+      user_id: result.user_id as string,
+      username: result.username as string,
+      tier: result.tier as UserTier
+    };
+  } catch (error) {
+    console.error('Error finding user by domain:', error);
+    return null;
+  }
+}

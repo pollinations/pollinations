@@ -284,23 +284,47 @@ async function proxyRequest(request, env) {
  * Generate a cache key for the request
  */
 async function generateCacheKey(request) {
+  // Authentication parameters to exclude from cache key
+  const AUTH_PARAMS = ['token', 'referrer', 'referer', 'nofeed', 'no-cache', 'auth_token', 'authorization', 'api_key', 'apikey'];
+
   const url = new URL(request.url);
+  
+  // Filter query parameters, excluding auth params
+  const filteredParams = new URLSearchParams();
+  for (const [key, value] of url.searchParams) {
+    if (!AUTH_PARAMS.includes(key.toLowerCase())) {
+      filteredParams.append(key, value);
+    }
+  }
+  
   const parts = [
     request.method,
     url.pathname,
-    url.search
+    filteredParams.toString() // Only include non-auth query params
   ];
   
-  // Add body for POST/PUT requests if present
+  // Add filtered body for POST/PUT requests
   if ((request.method === 'POST' || request.method === 'PUT') && request.body) {
     try {
       const clonedRequest = request.clone();
       const bodyText = await clonedRequest.text();
+      
       if (bodyText) {
-        parts.push(bodyText);
+        try {
+          // Try to parse as JSON and filter auth fields
+          const bodyObj = JSON.parse(bodyText);
+          const filteredBody = Object.entries(bodyObj)
+            .filter(([key]) => !AUTH_PARAMS.includes(key.toLowerCase()))
+            .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
+            
+          parts.push(JSON.stringify(filteredBody));
+        } catch {
+          // If not JSON, use body as-is (but this shouldn't happen for our API)
+          parts.push(bodyText);
+        }
       }
     } catch (err) {
-      log('error', `Error including body in cache key: ${err.message}`);
+      log('error', `Error processing body for cache key: ${err.message}`);
     }
   }
   

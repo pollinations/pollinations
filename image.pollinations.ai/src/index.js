@@ -263,9 +263,10 @@ const checkCacheAndGenerate = async (req, res) => {
       //   prompt: originalPrompt, 
       //   ip: getIp(req), status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer, token: extractToken(req) && extractToken(req).slice(0, 2) + "..." });
 
-      // Check for valid token to determine queue interval
+      // Check for authentication status to determine queue interval
       const authResult = await handleAuthentication(req, requestId, logAuth);
-      const hasValidToken = authResult.bypass;
+      // Use the new explicit authentication fields
+      const hasValidToken = authResult.tokenAuth;
       
       // Pass authentication status to generateImage (hasReferrer will be checked there for gptimage)
       const generateImage = async () => {

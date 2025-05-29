@@ -417,8 +417,16 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
       tokenLog('✅ Valid legacy token match found');
       debugInfo.authResult = 'LEGACY_TOKEN';
       debugInfo.legacyTokenMatch = true;
-      log('Queue bypass granted: LEGACY_TOKEN');
-      return { bypass:true, reason:'LEGACY_TOKEN', userId:null, debugInfo };
+      log('Authentication succeeded: LEGACY_TOKEN');
+      return { 
+        bypass: true, // Kept for backward compatibility
+        authenticated: true, 
+        tokenAuth: true, 
+        referrerAuth: false,
+        reason: 'LEGACY_TOKEN', 
+        userId: null, 
+        debugInfo 
+      };
     }
     
     // 2️⃣ Check DB token (slower API call)
@@ -429,9 +437,12 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
       debugInfo.authResult = 'DB_TOKEN';
       debugInfo.userId = tokenResult.userId;
       debugInfo.tier = tokenResult.tier;
-      log('Queue bypass granted: DB_TOKEN for user %s (tier: %s)', tokenResult.userId, tokenResult.tier);
+      log('Authentication succeeded: DB_TOKEN for user %s (tier: %s)', tokenResult.userId, tokenResult.tier);
       return { 
-        bypass: true, 
+        bypass: true, // Kept for backward compatibility
+        authenticated: true, 
+        tokenAuth: true, 
+        referrerAuth: false,
         reason: 'DB_TOKEN', 
         userId: tokenResult.userId, 
         tier: tokenResult.tier,
@@ -468,8 +479,16 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
       referrerLog('✅ Legacy token found in referrer: %s', refStr);
       debugInfo.authResult = 'LEGACY_REFERRER';
       debugInfo.legacyReferrerMatch = true;
-      log('Queue bypass granted: LEGACY_REFERRER');
-      return { bypass:true, reason:'LEGACY_REFERRER', userId:null, debugInfo };
+      log('Authentication succeeded: LEGACY_REFERRER');
+      return { 
+        bypass: true, // Kept for backward compatibility
+        authenticated: true, 
+        tokenAuth: false, 
+        referrerAuth: true,
+        reason: 'LEGACY_REFERRER', 
+        userId: null, 
+        debugInfo 
+      };
     } else {
       referrerLog('No legacy token found in referrer');
     }
@@ -479,19 +498,35 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
       referrerLog('✅ CatGPT referrer detected: %s', refStr);
       debugInfo.authResult = 'CATGPT_REFERRER';
       debugInfo.catgptMatch = true;
-      log('Queue bypass granted: CATGPT_REFERRER');
-      return { bypass:true, reason:'CATGPT_REFERRER', userId:null, debugInfo };
+      log('Authentication succeeded: CATGPT_REFERRER');
+      return { 
+        bypass: true, // Kept for backward compatibility
+        authenticated: true, 
+        tokenAuth: false, 
+        referrerAuth: true,
+        reason: 'CATGPT_REFERRER', 
+        userId: null, 
+        debugInfo 
+      };
     }
   
     // 4️⃣ Check allow-listed domain
     referrerLog('Checking referrer against %d allowlisted domains', debugInfo.allowlistCount);
     const allowlistMatch = allowlist.some(d => refStr.includes(d));
     if (allowlistMatch) {
-      referrerLog('✅ Referrer matches allowlisted domain: %s', refStr);
+      referrerLog('✅ Allowlisted domain: %s', refStr);
       debugInfo.authResult = 'ALLOWLIST';
       debugInfo.allowlistMatch = true;
-      log('Queue bypass granted: ALLOWLIST');
-      return { bypass:true, reason:'ALLOWLIST', userId:null, debugInfo };
+      log('Authentication succeeded: ALLOWLIST');
+      return { 
+        bypass: true, // Kept for backward compatibility
+        authenticated: true, 
+        tokenAuth: false, 
+        referrerAuth: true,
+        reason: 'ALLOWLIST', 
+        userId: null, 
+        debugInfo 
+      };
     } else {
       referrerLog('Referrer does not match any allowlisted domain');
     }
@@ -499,8 +534,18 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
   
   // 5️⃣ default → go through queue
   log('No bypass criteria met, request will be queued');
+  // Default: not authenticated
   debugInfo.authResult = 'NONE';
-  return { bypass:false, reason:'NONE', userId:null, debugInfo };
+  log('Authentication failed: Not authenticated');
+  return { 
+    bypass: false, // Kept for backward compatibility
+    authenticated: false, 
+    tokenAuth: false, 
+    referrerAuth: false,
+    reason: 'NOT_AUTHENTICATED', 
+    userId: null, 
+    debugInfo 
+  };
 }
 
 /**
@@ -544,7 +589,10 @@ export async function handleAuthentication(req, requestId = null, logAuth = null
     }
     
     return {
-      bypass: hasValidToken,
+      bypass: hasValidToken, // Kept for backward compatibility
+      authenticated: authResult.authenticated,
+      tokenAuth: authResult.tokenAuth,
+      referrerAuth: authResult.referrerAuth,
       reason,
       userId,
       tier: debugInfo.tier || 'seed',

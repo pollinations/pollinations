@@ -420,8 +420,9 @@ async function processRequest(req, res, requestData) {
     
     // Check authentication status
     const authResult = await handleAuthentication(req, null, authLog);
-    const hasValidToken = authResult.bypass && authResult.reason === 'TOKEN';
-    const hasReferrer = authResult.debugInfo?.referrer || authResult.debugInfo?.allowlistMatch;
+    // Use the new explicit authentication fields
+    const hasValidToken = authResult.tokenAuth;
+    const hasReferrer = authResult.referrerAuth;
     
     // Determine queue configuration based on authentication
     let queueConfig;

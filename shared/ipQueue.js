@@ -99,7 +99,8 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
   }
   
   // Check if this is a nectar tier user - they skip the queue entirely
-  if (authResult.tokenAuth && authResult.tier === 'nectar') {
+  // Allow all nectar tier users to bypass the queue regardless of authentication method
+  if (authResult.tier === 'nectar') {
     log('Nectar tier user detected - skipping queue entirely');
     return fn(); // Execute immediately, skipping the queue
   }

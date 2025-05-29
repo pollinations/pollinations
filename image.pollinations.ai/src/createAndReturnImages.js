@@ -15,26 +15,6 @@ dotenv.config();
 // Loggers
 const logError = debug('pollinations:error');
 const logPerf = debug('pollinations:perf');
-
-/**
- * Checks if a referrer is from an approved domain
- * @param {string} referrer - The referrer URL
- * @returns {boolean} - Whether the referrer is approved
- */
-const isApprovedReferrer = (referrer) => {
-  if (!referrer) return false;
-  
-  // List of approved domains that can use the GPT Image model
-  const approvedDomains = [
-    'pollinations.ai',
-    'image.pollinations.ai',
-    'flow.pollinations.ai',
-    'localhost',
-  ];
-  
-  return approvedDomains.some(approvedDomain => referrer.includes(approvedDomain));
-};
-
 const logOps = debug('pollinations:ops');
 const logCloudflare = debug('pollinations:cloudflare');
 
@@ -112,26 +92,24 @@ export const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
     // Start timing for fetch
     const fetch_start_time = Date.now();
 
-    // Retry logic for fetch
+    // Single attempt - no retry logic
     let response;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        const fetchFunction = safeParams.model === "turbo" ? fetchFromTurboServer : fetchFromLeastBusyFluxServer;
-        response = await fetchFunction({
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(body),
-        });
-        if (response.ok) break; // If response is ok, break out of the loop
+    try {
+      const fetchFunction = safeParams.model === "turbo" ? fetchFromTurboServer : fetchFromLeastBusyFluxServer;
+      response = await fetchFunction({
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) {
         logError("Error from server. input was", body);
         throw new Error(`Server responded with ${response.status}`);
-      } catch (error) {
-        logError(`Fetch attempt ${attempt} failed: ${error.message}`);
-        if (attempt === 3) throw error;
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
       }
+    } catch (error) {
+      logError(`Fetch failed: ${error.message}`);
+      throw error;
     }
 
     const fetch_end_time = Date.now();
@@ -353,35 +331,6 @@ function getCloudflareCredentials() {
 }
 
 /**
- * Calculates the closest aspect ratio from a list of predefined aspect ratios.
- * @param {number} width - The width of the image.
- * @param {number} height - The height of the image.
- * @returns {string} - The closest aspect ratio as a string.
- */
-export function calculateClosestAspectRatio(width, height) {
-  const aspectRatio = width / height
-  const ratios = {
-    '1:1': 1,
-    '4:3': 4/3,
-    '16:9': 16/9,
-    '3:2': 3/2
-  }
-
-  let closestRatio = '1:1'
-  let minDiff = Math.abs(aspectRatio - 1)
-
-  for (const [ratio, value] of Object.entries(ratios)) {
-    const diff = Math.abs(aspectRatio - value)
-    if (diff < minDiff) {
-      minDiff = diff
-      closestRatio = ratio
-    }
-  }
-
-  return closestRatio
-}
-
-/**
  * Converts an image buffer to JPEG format if it's not already a JPEG.
  * @param {Buffer} buffer - The image buffer to convert.
  * @returns {Promise<Buffer>} - The converted image buffer.
@@ -414,6 +363,173 @@ const updateProgress = (progress, requestId, percentage, stage, message) => {
 };
 
 /**
+ * Helper function to call Azure GPT Image with specific endpoint
+ * @param {string} prompt - The prompt for image generation or editing
+ * @param {Object} safeParams - The parameters for image generation or editing
+ * @param {Object} userInfo - User authentication info object
+ * @param {number} endpointIndex - The endpoint index to use (1 or 2)
+ * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
+ */
+const callAzureGPTImageWithEndpoint = async (prompt, safeParams, userInfo, endpointIndex) => {
+  const apiKey = process.env[`GPT_IMAGE_${endpointIndex}_AZURE_API_KEY`];
+  let endpoint = process.env[`GPT_IMAGE_${endpointIndex}_ENDPOINT`];
+  
+  if (!apiKey || !endpoint) {
+    throw new Error(`Azure API key or endpoint ${endpointIndex} not found in environment variables`);
+  }
+  
+  // Check if we need to use the edits endpoint instead of generations
+  const isEditMode = safeParams.image && safeParams.image.length > 0;
+  if (isEditMode) {
+    // Replace 'generations' with 'edits' in the endpoint URL
+    endpoint = endpoint.replace('/images/generations', '/images/edits');
+    logCloudflare(`Using Azure endpoint ${endpointIndex} in edit mode`);
+  } else {
+    logCloudflare(`Using Azure endpoint ${endpointIndex} in generation mode`);
+  }
+
+  // Map safeParams to Azure API parameters
+  const size = `${safeParams.width}x${safeParams.height}`;
+  
+  // Determine quality based on safeParams or use medium as default
+  const quality = safeParams.quality || 'medium';
+  
+  // Set output format to png for best quality
+  const outputFormat = 'jpeg';
+  
+  // Default compression to 100 (best quality)
+  const outputCompression = 70;
+  
+  // Build request body
+  const requestBody = {
+    prompt: sanitizeString(prompt),
+    size:"auto",
+    quality,
+    output_format: outputFormat,
+    output_compression: outputCompression,
+    moderation: "low",
+    n: 1
+  };
+  
+  // We'll only use the requestBody for generation mode
+  // For edit mode, we'll use FormData instead
+  
+  // Note: Azure GPT Image API doesn't support the 'seed' parameter
+  // We'll log the seed for reference but not include it in the request
+  if (safeParams.seed) {
+    logCloudflare(`Seed value ${safeParams.seed} not supported by Azure GPT Image API, ignoring`);
+  }
+  
+  logCloudflare('Calling Azure GPT Image API with params:', requestBody);
+  
+  let response;
+  
+  if (isEditMode) {
+    // For edit mode, always use FormData (multipart/form-data)
+    const formData = new FormData();
+    
+    // Add the prompt
+    formData.append('prompt', sanitizeString(prompt));
+    
+    // Handle images based on their type
+    try {
+      // Convert to array if it's a string (backward compatible)
+      const imageUrls = Array.isArray(safeParams.image) ? safeParams.image : [safeParams.image];
+      
+      if (imageUrls.length === 0) {
+          // Handle errors for missing image
+          throw new Error('Image URL is required for GPT Image edit mode but was not provided');
+      }
+      
+      // Process each image in the array
+      for (let i = 0; i < imageUrls.length; i++) {
+          const imageUrl = imageUrls[i];
+          logCloudflare(`Fetching image ${i+1}/${imageUrls.length} from URL: ${imageUrl}`);
+          
+          const imageResponse = await fetch(imageUrl);
+          if (!imageResponse.ok) {
+              throw new Error(`Failed to fetch image from URL: ${imageUrl}`);
+          }
+          
+          const buffer = await imageResponse.buffer();
+          // Use the image[] array notation as required by Azure OpenAI API
+          formData.append('image[]', buffer, { filename: `image${i}.png` });
+      }
+    } catch (error) {
+      logError('Error processing image for editing:', error);
+      throw new Error(`Failed to process image: ${error.message}`);
+    }
+    
+    // Add other parameters
+    formData.append('quality', quality);
+    formData.append('n', '1');
+    
+    // Log the endpoint and headers for debugging
+    logCloudflare(`Sending edit request to endpoint: ${endpoint}`);
+    
+    // Get the headers from formData
+    const formHeaders = formData.getHeaders();
+    
+    // Single attempt - no retry logic
+    response = await fetch(
+      endpoint,
+      {
+        method: 'POST',
+        headers: {
+          ...formHeaders,
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: formData
+      }
+    );
+    
+    logCloudflare(`Edit request response status: ${response.status}`);
+  } else {
+    // Standard JSON request for generation - single attempt, no retry logic
+    response = await fetch(
+      endpoint,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify(requestBody)
+      }
+    );
+  }
+  
+  if (!response.ok) {
+    // Clone the response before consuming its body
+    const errorResponse = response.clone();
+    try {
+      const errorText = await errorResponse.text();
+      throw new Error(`Azure GPT Image API error: ${response.status} - error ${errorText}`);
+    } catch (textError) {
+      // If we can't read the response as text, just throw with the status
+      throw textError;
+    }
+  }
+  
+  const data = await response.json();
+  
+  if (!data.data || !data.data[0] || !data.data[0].b64_json) {
+    throw new Error('Invalid response from Azure GPT Image API');
+  }
+  
+  // Convert base64 to buffer
+  const imageBuffer = Buffer.from(data.data[0].b64_json, 'base64');
+  
+  // Azure doesn't provide content safety information directly, so we'll set defaults
+  // In a production environment, you might want to use a separate content moderation service
+  return {
+    buffer: imageBuffer,
+    isMature: false,  // Default assumption
+    isChild: false,   // Default assumption
+  };
+};
+
+/**
  * Calls the Azure GPT Image API to generate or edit images
  * @param {string} prompt - The prompt for image generation or editing
  * @param {Object} safeParams - The parameters for image generation or editing
@@ -432,166 +548,18 @@ export const callAzureGPTImage = async (prompt, safeParams, userInfo = {}) => {
     
     logCloudflare(`Using Azure GPT Image endpoint ${endpointIndex} for user tier: ${userTier}`, userInfo.userId ? `(userId: ${userInfo.userId})` : '(anonymous)');
     
-    const apiKey = process.env[`GPT_IMAGE_${endpointIndex}_AZURE_API_KEY`];
-    let endpoint = process.env[`GPT_IMAGE_${endpointIndex}_ENDPOINT`];
-    
-    if (!apiKey || !endpoint) {
-      throw new Error(`Azure API key or endpoint ${endpointIndex} not found in environment variables`);
-    }
-    
-    // Check if we need to use the edits endpoint instead of generations
-    // Check if we have any image URLs to work with
-    const isEditMode = safeParams.image && safeParams.image.length > 0;
-    if (isEditMode) {
-      // Replace 'generations' with 'edits' in the endpoint URL
-      endpoint = endpoint.replace('/images/generations', '/images/edits');
-      logCloudflare(`Using Azure endpoint ${endpointIndex} in edit mode`);
-    } else {
-      logCloudflare(`Using Azure endpoint ${endpointIndex} in generation mode`);
-    }
-
-    // Map safeParams to Azure API parameters
-    const size = `${safeParams.width}x${safeParams.height}`;
-    
-    // Determine quality based on safeParams or use medium as default
-    const quality = safeParams.quality || 'medium';
-    
-    // Set output format to png for best quality
-    const outputFormat = 'jpeg';
-    
-    // Default compression to 100 (best quality)
-    const outputCompression = 70;
-    
-    // Build request body
-    const requestBody = {
-      prompt: sanitizeString(prompt),
-      size:"auto",
-      quality,
-      output_format: outputFormat,
-      output_compression: outputCompression,
-      moderation: "low",
-      n: 1
-    };
-    
-    // We'll only use the requestBody for generation mode
-    // For edit mode, we'll use FormData instead
-    
-    // Note: Azure GPT Image API doesn't support the 'seed' parameter
-    // We'll log the seed for reference but not include it in the request
-    if (safeParams.seed) {
-      logCloudflare(`Seed value ${safeParams.seed} not supported by Azure GPT Image API, ignoring`);
-    }
-    
-    logCloudflare('Calling Azure GPT Image API with params:', requestBody);
-    
-    let response;
-    
-    if (isEditMode) {
-      // For edit mode, always use FormData (multipart/form-data)
-      const formData = new FormData();
-      
-      // Add the prompt
-      formData.append('prompt', sanitizeString(prompt));
-      
-      // Handle images based on their type
-      try {
-        // Convert to array if it's a string (backward compatible)
-        const imageUrls = Array.isArray(safeParams.image) ? safeParams.image : [safeParams.image];
-        
-        if (imageUrls.length === 0) {
-            // Handle errors for missing image
-            throw new Error('Image URL is required for GPT Image edit mode but was not provided');
-        }
-        
-        // Process each image in the array
-        for (let i = 0; i < imageUrls.length; i++) {
-            const imageUrl = imageUrls[i];
-            logCloudflare(`Fetching image ${i+1}/${imageUrls.length} from URL: ${imageUrl}`);
-            
-            const imageResponse = await fetch(imageUrl);
-            if (!imageResponse.ok) {
-                throw new Error(`Failed to fetch image from URL: ${imageUrl}`);
-            }
-            
-            const buffer = await imageResponse.buffer();
-            // Use the image[] array notation as required by Azure OpenAI API
-            formData.append('image[]', buffer, { filename: `image${i}.png` });
-        }
-      } catch (error) {
-        logError('Error processing image for editing:', error);
-        throw new Error(`Failed to process image: ${error.message}`);
+    try {
+      // Try with the tier-appropriate endpoint first
+      return await callAzureGPTImageWithEndpoint(prompt, safeParams, userInfo, endpointIndex);
+    } catch (error) {
+      // Only try fallback for higher tier users when endpoint 2 fails
+      if (endpointIndex === 2) {
+        logCloudflare(`Endpoint 2 failed, falling back to endpoint 1 for user: ${userInfo.userId || 'anonymous'}`);
+        return await callAzureGPTImageWithEndpoint(prompt, safeParams, userInfo, 1);
       }
-      
-      // Add other parameters
-      formData.append('quality', quality);
-      formData.append('n', '1');
-      
-      // Log the endpoint and headers for debugging
-      logCloudflare(`Sending edit request to endpoint: ${endpoint}`);
-      
-      // Get the headers from formData
-      const formHeaders = formData.getHeaders();
-      
-      // Create a clone of the formData for potential retries or debugging
-      // This is important because FormData can only be consumed once
-      
-      // Add the authorization header
-      response = await fetch(
-        endpoint,
-        {
-          method: 'POST',
-          headers: {
-            ...formHeaders,
-            'Authorization': `Bearer ${apiKey}`
-          },
-          body: formData
-        }
-      );
-      
-      logCloudflare(`Edit request response status: ${response.status}`);
-    } else {
-      // Standard JSON request for generation
-      response = await fetch(
-        endpoint,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-          },
-          body: JSON.stringify(requestBody)
-        }
-      );
+      // For seed tier users, just propagate the error
+      throw error;
     }
-    
-    if (!response.ok) {
-      // Clone the response before consuming its body
-      const errorResponse = response.clone();
-      try {
-        const errorText = await errorResponse.text();
-        throw new Error(`Azure GPT Image API error: ${response.status} - error ${errorText}`);
-      } catch (textError) {
-        // If we can't read the response as text, just throw with the status
-        throw textError;
-      }
-    }
-    
-    const data = await response.json();
-    
-    if (!data.data || !data.data[0] || !data.data[0].b64_json) {
-      throw new Error('Invalid response from Azure GPT Image API');
-    }
-    
-    // Convert base64 to buffer
-    const imageBuffer = Buffer.from(data.data[0].b64_json, 'base64');
-    
-    // Azure doesn't provide content safety information directly, so we'll set defaults
-    // In a production environment, you might want to use a separate content moderation service
-    return {
-      buffer: imageBuffer,
-      isMature: false,  // Default assumption
-      isChild: false,   // Default assumption
-    };
   } catch (error) {
     logError('Error calling Azure GPT Image API:', error);
     throw error;
@@ -642,18 +610,14 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
       return await callCloudflareFlux(prompt, safeParams);
     } catch (error) {
       logError('Cloudflare Flux failed, trying Dreamshaper:', error.message);
-      try {
-        updateProgress(progress, requestId, 35, 'Processing', 'Trying Cloudflare Dreamshaper...');
-        return await callCloudflareDreamshaper(prompt, safeParams);
-      } catch (dreamshaperError) {
-        logError('Cloudflare Dreamshaper failed:', dreamshaperError.message);
-        // Fall through to ComfyUI
-      }
     }
   }
-  
-  // Default fallback to ComfyUI
-  return await callComfyUI(prompt, safeParams, concurrentRequests);
+  try {
+    return await callComfyUI(prompt, safeParams, concurrentRequests);
+  } catch (error) {
+    updateProgress(progress, requestId, 35, 'Processing', 'Trying Cloudflare Dreamshaper...');
+    return await callCloudflareDreamshaper(prompt, safeParams);
+  }
 };
 
 /**

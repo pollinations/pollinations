@@ -55,14 +55,14 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
   
   authLog('Processing request: %s %s from IP: %s', method, path, ip);
   
-  // Get queue bypass decision with auth context
-  authLog('Calling shouldBypassQueue for request: %s', path);
+  // Get authentication status with auth context
+  authLog('Checking authentication for request: %s', path);
   const authResult = await shouldBypassQueue(req, authContext);
   
   // Log the authentication result with tier information
-  authLog('Authentication result: reason=%s, bypass=%s, userId=%s, tier=%s', 
+  authLog('Authentication result: reason=%s, authenticated=%s, userId=%s, tier=%s', 
           authResult.reason, 
-          authResult.bypass, 
+          authResult.authenticated, 
           authResult.userId || 'none',
           authResult.tier || 'none');
   
@@ -98,10 +98,10 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
     throw error;
   }
   
-  // Check if this is a nectar tier user - they bypass the queue entirely
+  // Check if this is a nectar tier user - they skip the queue entirely
   if (authResult.tokenAuth && authResult.tier === 'nectar') {
-    log('Nectar tier user detected - bypassing queue entirely');
-    return fn(); // Execute immediately, bypassing the queue
+    log('Nectar tier user detected - skipping queue entirely');
+    return fn(); // Execute immediately, skipping the queue
   }
   
   // For all other users, always use the queue but adjust the interval based on authentication type

@@ -310,7 +310,7 @@ const checkCacheAndGenerate = async (req, res) => {
 
     // Get authentication info using shared authentication utility
     const authResult = await handleAuthentication(req);
-    const isAuthenticated = authResult.bypass;
+    const isAuthenticated = authResult.authenticated;
     
     // Add debug headers for authentication information
     const headers = {

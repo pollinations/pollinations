@@ -421,13 +421,13 @@ async function processRequest(req, res, requestData) {
     // Check authentication status
     const authResult = await handleAuthentication(req, null, authLog);
     // Use the new explicit authentication fields
-    const hasValidToken = authResult.tokenAuth;
+    const isTokenAuthenticated = authResult.tokenAuth;
     const hasReferrer = authResult.referrerAuth;
     
     // Determine queue configuration based on authentication
     let queueConfig;
-    if (hasValidToken) {
-        // Token reduces delay between requests (no interval) but doesn't bypass queue
+    if (isTokenAuthenticated) {
+        // Token reduces delay between requests (no interval) but still goes through queue
         queueConfig = { interval: 0, cap: 1 };
         authLog('Token authenticated - queue with no delay');
     } else if (hasReferrer) {
@@ -476,7 +476,7 @@ async function processRequest(req, res, requestData) {
     }
 
     // Note: We've removed the duplicate handleRequest calls that were causing the headers error
-    // The shared enqueue function above now handles all queue logic, including bypass logic
+    // The shared enqueue function above now handles all queue logic, including authentication status
 }
 
 // Helper function to check if a model is an audio model and add necessary parameters

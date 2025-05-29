@@ -365,12 +365,12 @@ export async function isUserDomainAllowedFromDb(userId, referrer, db, isDomainAl
 }
 
 /**
- * Determine if request should bypass queue
+ * Determine if request is authenticated
  * @param {Request|Object} req - The request object
  * @param {Object} ctx - Context object
  * @param {string[]|string} [ctx.legacyTokens] - Legacy tokens to check
  * @param {string[]|string} [ctx.allowlist] - Allowlisted domains
- * @returns {{bypass: boolean, reason: string, userId: string|null, debugInfo: Object}} Bypass decision, reason, userId if authenticated, and debug info
+ * @returns {{authenticated: boolean, tokenAuth: boolean, referrerAuth: boolean, bypass: boolean, reason: string, userId: string|null, debugInfo: Object}} Authentication status, auth type, reason, userId if authenticated, and debug info
  * @throws {Error} If an invalid token is provided
  */
 export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
@@ -494,7 +494,7 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
     }
   
     // 3.5️⃣ Special check for catgpt referrer
-    if (refStr.toLowerCase().includes('catgpt')) {
+    if (refStr.toLowerCase().includes('pollinations.github.io')) {
       referrerLog('✅ CatGPT referrer detected: %s', refStr);
       debugInfo.authResult = 'CATGPT_REFERRER';
       debugInfo.catgptMatch = true;
@@ -533,7 +533,7 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
   }
   
   // 5️⃣ default → go through queue
-  log('No bypass criteria met, request will be queued');
+  log('Not authenticated, request will be queued');
   // Default: not authenticated
   debugInfo.authResult = 'NONE';
   log('Authentication failed: Not authenticated');
@@ -558,21 +558,21 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
  * @param {Object} req - Request object
  * @param {string} requestId - Request ID for logging
  * @param {Function} logAuth - Debug logger function
- * @returns {Promise<Object>} Authentication result with bypass, reason, userId, and debugInfo
+ * @returns {Promise<Object>} Authentication result with authenticated status, reason, userId, and debugInfo
  * @throws {Error} 401 error for invalid tokens, re-throws other errors
  */
 export async function handleAuthentication(req, requestId = null, logAuth = null) {
-  let hasValidToken, reason, userId, debugInfo;
+  let isAuthenticated, reason, userId, debugInfo;
   
   try {
     // Load auth context from environment
     const legacyTokens = process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [];
     const allowlist = process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : [];
     
-    // Check if request should bypass queue using shared utility
+    // Check if request is authenticated using shared utility
     // This may throw an error if an invalid token is provided
     const authResult = await shouldBypassQueue(req, { legacyTokens, allowlist });
-    hasValidToken = authResult.bypass;
+    isAuthenticated = authResult.authenticated;
     reason = authResult.reason;
     userId = authResult.userId;
     debugInfo = authResult.debugInfo;
@@ -581,7 +581,7 @@ export async function handleAuthentication(req, requestId = null, logAuth = null
     if (logAuth && requestId) {
       logAuth('Authentication result:', {
         requestId,
-        hasValidToken,
+        isAuthenticated,
         reason,
         userId,
         debugInfo
@@ -589,7 +589,7 @@ export async function handleAuthentication(req, requestId = null, logAuth = null
     }
     
     return {
-      bypass: hasValidToken, // Kept for backward compatibility
+      bypass: isAuthenticated, // Kept for backward compatibility
       authenticated: authResult.authenticated,
       tokenAuth: authResult.tokenAuth,
       referrerAuth: authResult.referrerAuth,

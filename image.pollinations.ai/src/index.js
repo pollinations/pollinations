@@ -19,6 +19,7 @@ import path from 'path';
 // Import shared utilities
 import { enqueue } from '../../shared/ipQueue.js';
 import { extractToken, getIp, isValidToken, handleAuthentication, addAuthDebugHeaders, createAuthDebugResponse } from '../../shared/auth-utils.js';
+import { createFriendlyErrorResponse } from './errorHandlers.js';
 
 // Queue configuration for image service
 const QUEUE_CONFIG = {
@@ -346,9 +347,16 @@ const checkCacheAndGenerate = async (req, res) => {
     
     // Determine the appropriate status code (default to 500 if not specified)
     const statusCode = error.status || 500;
-    const errorType = statusCode === 401 ? 'Unauthorized' : 
-                     statusCode === 403 ? 'Forbidden' : 
-                     statusCode === 429 ? 'Too Many Requests' : 'Internal Server Error';
+    
+    // Check if we already have a friendly error response from our error handler
+    let errorResponse;
+    if (error.friendlyResponse) {
+      // Use the friendly error response that was already created
+      errorResponse = error.friendlyResponse;
+    } else {
+      // Create a new friendly error response based on status code
+      errorResponse = createFriendlyErrorResponse(statusCode, error.message);
+    }
     
     // Extract debug info from error if available
     const errorDebugInfo = error.details?.debugInfo;
@@ -356,8 +364,13 @@ const checkCacheAndGenerate = async (req, res) => {
     // Add debug headers for authentication information even in error responses
     const errorHeaders = {
       'Content-Type': 'application/json',
-      'X-Error-Type': errorType
+      'X-Error-Type': errorResponse.errorType || 'unknown'
     };
+    
+    // Add retry-after header for rate limits if available
+    if (errorResponse.retryAfter) {
+      errorHeaders['Retry-After'] = errorResponse.retryAfter;
+    }
     
     addAuthDebugHeaders(errorHeaders, errorDebugInfo);
     
@@ -365,16 +378,15 @@ const checkCacheAndGenerate = async (req, res) => {
     logError('Error response:', {
       requestId,
       statusCode,
-      errorType,
-      message: error.message
+      errorType: errorResponse.errorType,
+      message: errorResponse.message
     });
     
     res.writeHead(statusCode, errorHeaders);
+    
     // Create a response object with error information
     const responseObj = {
-      error: errorType,
-      message: error.message,
-      details: error.details,
+      ...errorResponse,
       debug: createAuthDebugResponse(errorDebugInfo),
       timingInfo: relativeTiming(timingInfo),
       requestId,
@@ -388,6 +400,11 @@ const checkCacheAndGenerate = async (req, res) => {
     // Add queue info for 429 errors
     if (statusCode === 429 && error.queueInfo) {
       responseObj.queueInfo = error.queueInfo;
+    }
+    
+    // Always include original error details (thin proxy principle)
+    if (error.originalError) {
+      responseObj.originalError = error.originalError;
     }
     
     res.end(JSON.stringify(responseObj));

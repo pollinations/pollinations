@@ -6,6 +6,7 @@ import { fetchFromLeastBusyFluxServer, getNextTurboServerUrl } from './available
 import debug from 'debug';
 import { writeExifMetadata } from './writeExifMetadata.js';
 import { sanitizeString } from './translateIfNecessary.js';
+import { createFriendlyErrorResponse } from './errorHandlers.js';
 // Import shared authentication utilities
 import sharp from 'sharp';
 import dotenv from 'dotenv';
@@ -561,9 +562,18 @@ export const callAzureGPTImage = async (prompt, safeParams) => {
       const errorResponse = response.clone();
       try {
         const errorText = await errorResponse.text();
-        throw new Error(`Azure GPT Image API error: ${response.status} - error ${errorText}`);
+        
+        // Create a friendly error response for common status codes
+        const friendlyError = createFriendlyErrorResponse(response.status, errorText, 'Azure');
+        
+        // Throw a custom error with both the friendly message and original error details
+        const error = new Error(friendlyError.message);
+        error.status = response.status;
+        error.friendlyResponse = friendlyError;
+        error.originalError = errorText;
+        throw error;
       } catch (textError) {
-        // If we can't read the response as text, just throw with the status
+        // If we can't read the response as text, use what we have
         throw textError;
       }
     }

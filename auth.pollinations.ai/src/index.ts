@@ -1,11 +1,13 @@
 import type { Env, UserTier } from './types';
 import { createJWT, verifyJWT, extractBearerToken } from './jwt';
-import { upsertUser, getUser, updateDomainAllowlist, getDomains, isDomainAllowed, saveOAuthState, getOAuthState, deleteOAuthState, cleanupOldStates, generateApiToken, getApiToken, deleteApiTokens, validateApiToken, getUserTier, setUserTier, getAllUserTiers } from './db';
+import { upsertUser, getUser, updateDomainAllowlist, getDomains, isDomainAllowed, saveOAuthState, getOAuthState, deleteOAuthState, cleanupOldStates, generateApiToken, getApiToken, deleteApiTokens, validateApiToken, getUserTier, setUserTier, getAllUserTiers, findUserByDomain } from './db';
+import { extractReferrer } from '../../shared/extractFromRequest.js';
 import { exchangeCodeForToken, getGitHubUser } from './github';
 import { handleAdminDatabaseDump } from './admin';
+import { generateHTML } from './client/html';
 
 // Define the TEST_CLIENT_HTML directly to avoid module issues
-const TEST_CLIENT_HTML = require('./test-client').TEST_CLIENT_HTML;
+const TEST_CLIENT_HTML = generateHTML();
 
 // Define the ScheduledEvent type for the scheduled function
 interface ScheduledEvent {
@@ -88,6 +90,12 @@ export default {
         case '/admin/database-dump':
           if (request.method === 'GET') {
             return handleAdminDatabaseDump(request, env, corsHeaders);
+          }
+          break;
+          
+        case '/api/validate-referrer':
+          if (request.method === 'GET') {
+            return handleValidateReferrer(request, env, corsHeaders);
           }
           break;
       }
@@ -503,4 +511,66 @@ async function handleGetAllUserTiers(request: Request, env: Env, corsHeaders: Re
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
+}
+
+/**
+ * Validate if a referrer domain is registered by any user
+ * @param request Request object
+ * @param env Environment variables
+ * @param corsHeaders CORS headers
+ * @returns Response with validation result
+ */
+export async function handleValidateReferrer(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+
+  // Fall back to standard referrer extraction if no domain parameter
+  const referrerInput = extractReferrer(request);
+  
+ 
+  if (!referrerInput) {
+    return createErrorResponse(400, 'Missing referrer information', corsHeaders);
+  }
+  
+  try {
+    // Extract domain from the referrer (in case it's a URL)
+    let domain = referrerInput;
+    
+    // If referrer is a URL, extract just the domain part
+    if (referrerInput.startsWith('http://') || referrerInput.startsWith('https://')) {
+      try {
+        const urlObj = new URL(referrerInput);
+        domain = urlObj.hostname;
+      } catch (error) {
+        // If parsing fails, use the raw value
+        console.log('Failed to parse referrer as URL, using raw value:', error);
+      }
+    }
+    
+    console.log(`Validating domain: ${domain} (from referrer: ${referrerInput})`);
+    
+    // Check if the domain is registered by any user
+    const userInfo = await findUserByDomain(env.DB, domain);
+    
+    if (userInfo) {
+      // Domain is registered - return success with user info
+      return new Response(JSON.stringify({
+        valid: true,
+        user_id: userInfo.user_id,
+        username: userInfo.username,
+        tier: userInfo.tier
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } else {
+      // Domain not registered by any user
+      return new Response(JSON.stringify({
+        valid: false,
+        message: 'Domain not registered by any user'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+  } catch (error) {
+    console.error('Error validating referrer:', error);
+    return createErrorResponse(500, 'Failed to validate referrer', corsHeaders);
+  }
 }

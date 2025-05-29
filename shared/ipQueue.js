@@ -97,10 +97,20 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
     throw error;
   }
   
-  // If bypass is true and forceQueue is false, execute the function immediately
-  if (authResult.bypass && !forceQueue) {
-    log('Queue bypass granted for reason: %s, executing immediately', authResult.reason);
-    return fn();
+  // Previously, we would bypass the queue entirely for authenticated requests
+  // Now we always use the queue but adjust the interval based on authentication type
+  // This ensures all requests are subject to rate limiting and queue size constraints
+  
+  // Use token authentication to determine queue settings - only token auth gets interval=0
+  // We check the reason to see if it's a token (DB_TOKEN or LEGACY_TOKEN) vs referrer
+  const isTokenAuth = authResult.bypass && (authResult.reason === 'DB_TOKEN' || authResult.reason === 'LEGACY_TOKEN');
+  
+  if (isTokenAuth && interval > 0) {
+    log('Token authenticated request - using zero interval in queue');
+    interval = 0; // Token authentication means no delay between requests
+  } else if (authResult.bypass) {
+    // Other authenticated requests (referrer-based) still get standard interval
+    log('Referrer authenticated request - using standard interval in queue');
   }
   
   // Check if queue exists for this IP and get its current size

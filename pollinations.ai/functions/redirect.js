@@ -11,6 +11,33 @@ import { redirectMapping, affiliatesData } from '../../affiliate/affiliates.js';
 const REFERRAL_LINKS = redirectMapping;
 
 /**
+ * Sanitize target ID to handle common formatting issues
+ * @param {string} targetId - The raw target ID from the URL
+ * @returns {string} - Sanitized target ID
+ */
+function sanitizeTargetId(targetId) {
+  if (!targetId) return '';
+  
+  // Remove any trailing slashes
+  let sanitized = targetId.replace(/\/+$/, '');
+  
+  // Remove any query parameters
+  sanitized = sanitized.split('?')[0];
+  
+  // Remove any spaces
+  sanitized = sanitized.trim();
+  
+  // Handle double slashes that might appear in malformed URLs
+  // e.g., if the URL was /redirect//kofi instead of /redirect/kofi
+  if (sanitized.startsWith('/')) {
+    sanitized = sanitized.substring(1);
+  }
+  
+  console.log(`Sanitized target ID: '${targetId}' -> '${sanitized}'`);
+  return sanitized;
+}
+
+/**
  * Send analytics event to Google Analytics
  * @param {string} eventName - Name of the event
  * @param {object} metadata - Event metadata
@@ -109,7 +136,10 @@ export const handler = async function(event, context) {
   // Get the target ID from the path
   const path = event.path || '';
   const pathSegments = path.split('/');
-  const targetId = pathSegments[pathSegments.length - 1];
+  const rawTargetId = pathSegments[pathSegments.length - 1];
+  
+  // Sanitize the target ID to handle common formatting issues
+  const targetId = sanitizeTargetId(rawTargetId);
   
   // Get URL from query parameters or use the mapped URL
   const params = event.queryStringParameters || {};

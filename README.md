@@ -182,6 +182,14 @@ Check out our [Pollinations React Hooks](./pollinations-react/README.md) for mor
 |---------|-------------|---------|-------|
 | 🛠️ AI Content Describer | An extension for NVDA, the free and open-source screen reader for Microsoft Windows. Uses multimodal generative AI to help those with blindness and visual impairments understand pictures, UI controls, complex diagrams/graphics, and more through intelligent descriptions that go far beyond simple alt-text. | @cartertemm | [GitHub](https://github.com/cartertemm/AI-content-describer/) - ⭐ 54 |
 
+### LLM Integrations
+
+| Project | Description | Creator | Links |
+|---------|-------------|---------|-------|
+| 🤖 MoneyPrinterTurbo | Simply provide a topic or keyword for a video, and it will automatically generate the video copy, video materials, video subtitles, and video background music before synthesizing a high-definition short video. Integrates Pollinations' text generation service to create engaging and relevant video scripts. | @harry0703 | [GitHub](https://github.com/harry0703/MoneyPrinterTurbo) - ⭐ 32186 |
+| 🤖 SillyTavern | An LLM frontend for power users. Pollinations permits it to generate text and images. | | [Website](https://docs.sillytavern.app/), [GitHub](https://github.com/SillyTavern/SillyTavern) - ⭐ 14700 |
+| 🤖 LLM7.io | A free and open AI platform providing advanced multimodal capabilities, including large language model access and experimental search tools. Integrates Pollinations text generation as a backend service with transparent credit on the website and repository. | @chigwell | [Website](https://llm7.io), [GitHub](https://github.com/chigwell/llm7.io) - ⭐ 7 |
+
 ## Architecture
 ```mermaid
 graph LR

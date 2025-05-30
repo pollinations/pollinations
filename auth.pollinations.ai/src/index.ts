@@ -1,6 +1,6 @@
 import type { Env, UserTier } from './types';
 import { createJWT, verifyJWT, extractBearerToken } from './jwt';
-import { upsertUser, getUser, updateDomainAllowlist, getDomains, isDomainAllowed, saveOAuthState, getOAuthState, deleteOAuthState, cleanupOldStates, generateApiToken, getApiToken, deleteApiTokens, validateApiToken, getUserTier, setUserTier, getAllUserTiers, findUserByDomain } from './db';
+import { upsertUser, getUser, updateDomainAllowlist, getDomains, isDomainAllowed, saveOAuthState, getOAuthState, deleteOAuthState, cleanupOldStates, generateApiToken, getApiToken, deleteApiTokens, validateApiToken, getUserTier, setUserTier, getAllUserTiers, findUserByDomain, getUserPreferences, setUserPreference, updateUserPreferences, deleteUserPreference } from './db';
 import { extractReferrer } from '../../shared/extractFromRequest.js';
 import { exchangeCodeForToken, getGitHubUser } from './github';
 import { handleAdminDatabaseDump } from './admin';
@@ -96,6 +96,14 @@ export default {
         case '/api/validate-referrer':
           if (request.method === 'GET') {
             return handleValidateReferrer(request, env, corsHeaders);
+          }
+          break;
+          
+        case '/preferences':
+          if (request.method === 'GET') {
+            return handleGetPreferences(request, env, corsHeaders);
+          } else if (request.method === 'POST') {
+            return handleUpdatePreferences(request, env, corsHeaders);
           }
           break;
       }
@@ -572,5 +580,150 @@ export async function handleValidateReferrer(request: Request, env: Env, corsHea
   } catch (error) {
     console.error('Error validating referrer:', error);
     return createErrorResponse(500, 'Failed to validate referrer', corsHeaders);
+  }
+}
+
+// Get user preferences
+// @param request Request object
+// @param env Environment variables
+// @param corsHeaders CORS headers
+// @returns Response with user preferences
+async function handleGetPreferences(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  try {
+    // Try to get userId from various sources
+    let userId: string | null = null;
+    let requestingUserId: string | null = null;
+    
+    // 1. Check for API token authentication
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
+    
+    if (token) {
+      requestingUserId = await validateApiToken(env.DB, token);
+    }
+    
+    // 2. Check for JWT authentication
+    if (!requestingUserId) {
+      const bearerToken = extractBearerToken(request);
+      if (bearerToken) {
+        try {
+          const payload = await verifyJWT(bearerToken, env.JWT_SECRET);
+          requestingUserId = payload.user_id;
+        } catch (error) {
+          // Invalid JWT
+        }
+      }
+    }
+    
+    // 3. Check query parameter for specific user
+    const url = new URL(request.url);
+    const queryUserId = url.searchParams.get('user_id');
+    
+    if (queryUserId) {
+      // If querying a specific user, ensure requester is authenticated
+      if (!requestingUserId) {
+        return new Response(JSON.stringify({ error: 'Authentication required to query other users' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      userId = queryUserId;
+    } else {
+      // If no specific user requested, use the authenticated user
+      userId = requestingUserId;
+    }
+    
+    if (!userId) {
+      return new Response(JSON.stringify({ error: 'User ID not found' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Fetch preferences
+    const preferences = await getUserPreferences(env.DB, userId);
+    
+    return new Response(JSON.stringify({
+      user_id: userId,
+      preferences: preferences
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+    
+  } catch (error) {
+    console.error('Error fetching preferences:', error);
+    return createErrorResponse(500, 'Internal server error', corsHeaders);
+  }
+}
+
+// Update user preferences
+// @param request Request object
+// @param env Environment variables
+// @param corsHeaders CORS headers
+// @returns Response with updated preferences
+async function handleUpdatePreferences(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  try {
+    // Authentication check - must be either API token or JWT
+    let userId: string | null = null;
+    
+    // Check API token
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
+    
+    if (token) {
+      userId = await validateApiToken(env.DB, token);
+    }
+    
+    // Check JWT if no API token
+    if (!userId) {
+      const bearerToken = extractBearerToken(request);
+      if (bearerToken) {
+        try {
+          const payload = await verifyJWT(bearerToken, env.JWT_SECRET);
+          userId = payload.user_id;
+        } catch (error) {
+          // Invalid JWT
+        }
+      }
+    }
+    
+    if (!userId) {
+      return new Response(JSON.stringify({ error: 'Authentication required' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Parse request body
+    const body = await request.json() as { preferences?: Record<string, any>, key?: string, value?: any };
+    
+    if (body.preferences) {
+      // Update multiple preferences at once
+      await updateUserPreferences(env.DB, userId, body.preferences);
+    } else if (body.key !== undefined && body.value !== undefined) {
+      // Update a single preference
+      await setUserPreference(env.DB, userId, body.key, body.value);
+    } else {
+      return new Response(JSON.stringify({ error: 'Invalid request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Return updated preferences
+    const updatedPreferences = await getUserPreferences(env.DB, userId);
+    
+    return new Response(JSON.stringify({
+      user_id: userId,
+      preferences: updatedPreferences
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+    
+  } catch (error) {
+    console.error('Error updating preferences:', error);
+    return createErrorResponse(500, 'Internal server error', corsHeaders);
   }
 }

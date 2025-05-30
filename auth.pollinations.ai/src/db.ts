@@ -239,3 +239,92 @@ export async function findUserByDomain(db: D1Database, domain: string): Promise<
     return null;
   }
 }
+
+// User preferences management functions
+
+/**
+ * Get user preferences
+ * @param db D1 Database instance
+ * @param userId User ID
+ * @returns User preferences object (defaults to empty object if not set)
+ */
+export async function getUserPreferences(db: D1Database, userId: string): Promise<Record<string, any>> {
+  const result = await db.prepare(`
+    SELECT preferences FROM users WHERE github_user_id = ?
+  `).bind(userId).first();
+  
+  if (!result || !result.preferences) {
+    return {};
+  }
+  
+  try {
+    return JSON.parse(result.preferences as string);
+  } catch (error) {
+    console.error('Error parsing user preferences:', error);
+    return {};
+  }
+}
+
+/**
+ * Set a specific user preference
+ * @param db D1 Database instance
+ * @param userId User ID
+ * @param key Preference key
+ * @param value Preference value
+ */
+export async function setUserPreference(db: D1Database, userId: string, key: string, value: any): Promise<void> {
+  // Get current preferences
+  const currentPrefs = await getUserPreferences(db, userId);
+  
+  // Update the specific preference
+  currentPrefs[key] = value;
+  
+  // Save back to database
+  await db.prepare(`
+    UPDATE users 
+    SET preferences = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE github_user_id = ?
+  `).bind(JSON.stringify(currentPrefs), userId).run();
+}
+
+/**
+ * Update multiple user preferences at once
+ * @param db D1 Database instance
+ * @param userId User ID
+ * @param preferences Object with preference key-value pairs to update
+ */
+export async function updateUserPreferences(db: D1Database, userId: string, preferences: Record<string, any>): Promise<void> {
+  // Get current preferences
+  const currentPrefs = await getUserPreferences(db, userId);
+  
+  // Merge with new preferences
+  const updatedPrefs = { ...currentPrefs, ...preferences };
+  
+  // Save back to database
+  await db.prepare(`
+    UPDATE users 
+    SET preferences = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE github_user_id = ?
+  `).bind(JSON.stringify(updatedPrefs), userId).run();
+}
+
+/**
+ * Delete a user preference
+ * @param db D1 Database instance
+ * @param userId User ID
+ * @param key Preference key to delete
+ */
+export async function deleteUserPreference(db: D1Database, userId: string, key: string): Promise<void> {
+  // Get current preferences
+  const currentPrefs = await getUserPreferences(db, userId);
+  
+  // Delete the key
+  delete currentPrefs[key];
+  
+  // Save back to database
+  await db.prepare(`
+    UPDATE users 
+    SET preferences = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE github_user_id = ?
+  `).bind(JSON.stringify(currentPrefs), userId).run();
+}

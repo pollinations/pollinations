@@ -1,8 +1,8 @@
 import { generateCacheKey, cacheResponse } from './cache-utils.js';
 import { proxyToOrigin } from './image-proxy.js';
 import { sendToAnalytics } from './analytics.js';
-import { getClientIp } from './ip-utils.js';
 
+import { getClientIp } from './ip-utils.js';
 // Cache status constants for better readability
 const CACHE_STATUS = {
   PENDING: 'pending',

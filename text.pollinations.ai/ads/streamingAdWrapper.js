@@ -94,7 +94,7 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
                         } else if (shouldForceAd) {
                             // If we're forcing an ad but none was generated, create a generic Ko-fi ad
                             log('No ad generated but p-ads marker is present. Creating generic Ko-fi ad for streaming.');
-                            const genericKofiAd = "\n\n---\nPowered by Pollinations.AI free text APIs. [Support our mission](https://pollinations.ai/redirect/kofi) to keep AI accessible for everyone.";
+                            const genericKofiAd = "\n\n---\n🌸 **Ad** 🌸\nPowered by Pollinations.AI free text APIs. [Support our mission](https://pollinations.ai/redirect/kofi) to keep AI accessible for everyone.";
                             const adChunk = formatAdAsSSE(genericKofiAd);
 
                             // Push the ad chunk before the [DONE] message
@@ -137,7 +137,7 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
                         if (shouldForceAd) {
                             // If error occurs but we should force an ad, create a generic Ko-fi ad
                             log('Error occurred, but p-ads marker is present. Creating generic Ko-fi ad for streaming.');
-                            const genericKofiAd = "\n\n---\nPowered by Pollinations.AI free text APIs. [Support our mission](https://pollinations.ai/redirect/kofi) to keep AI accessible for everyone.";
+                            const genericKofiAd = "\n\n---\n🌸 **Ad** 🌸\nPowered by Pollinations.AI free text APIs. [Support our mission](https://pollinations.ai/redirect/kofi) to keep AI accessible for everyone.";
                             const adChunk = formatAdAsSSE(genericKofiAd);
 
                             // Push the ad chunk before the [DONE] message

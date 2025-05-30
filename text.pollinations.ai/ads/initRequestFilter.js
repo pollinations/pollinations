@@ -240,7 +240,7 @@ export async function generateAdForContent(content, req, messages, markerFound =
         // If we get here and should force an ad, create a generic Ko-fi ad as last resort
         if (shouldForceAd) {
             log('All ad generation attempts failed, but p-ads marker is present. Creating generic Ko-fi ad.');
-            const genericKofiAd = "\n\n---\nPowered by Pollinations.AI free text APIs. [Support our mission](https://pollinations.ai/redirect/kofi) to keep AI accessible for everyone.";
+            const genericKofiAd = "\n\n---\n🌸 **Ad** 🌸\nPowered by Pollinations.AI free text APIs. [Support our mission](https://pollinations.ai/redirect/kofi) to keep AI accessible for everyone.";
 
             if (req) {
                 // Log the ad interaction with metadata
@@ -275,7 +275,7 @@ export async function generateAdForContent(content, req, messages, markerFound =
         // If error occurs but we should force an ad, return a generic Ko-fi ad
         if (shouldForceAd) {
             log('Error occurred, but p-ads marker is present. Creating generic Ko-fi ad as fallback.');
-            const genericKofiAd = "\n\n---\nPowered by Pollinations.AI free text APIs. [Support our mission](https://pollinations.ai/redirect/kofi) to keep AI accessible for everyone.";
+            const genericKofiAd = "\n\n---\n🌸 **Ad** 🌸\nPowered by Pollinations.AI free text APIs. [Support our mission](https://pollinations.ai/redirect/kofi) to keep AI accessible for everyone.";
 
             if (req) {
                 // Log the ad interaction with metadata
@@ -341,7 +341,7 @@ export async function processRequestForAds(content, req, messages = []) {
     // If we should force an ad but none was generated, create a generic Ko-fi ad
     if (shouldForceAd) {
         log('No ad generated but p-ads marker is present. Creating generic Ko-fi ad for non-streaming response.');
-        const genericKofiAd = "\n\n---\nPowered by Pollinations.AI free text APIs. [Support our mission](https://pollinations.ai/redirect/kofi) to keep AI accessible for everyone.";
+        const genericKofiAd = "\n\n---\n🌸 **Ad** 🌸\nPowered by Pollinations.AI free text APIs. [Support our mission](https://pollinations.ai/redirect/kofi) to keep AI accessible for everyone.";
 
         if (req) {
             // Log the ad interaction with metadata

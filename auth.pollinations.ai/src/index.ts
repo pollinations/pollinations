@@ -6,6 +6,21 @@ import { exchangeCodeForToken, getGitHubUser } from './github';
 import { handleAdminDatabaseDump } from './admin';
 import { generateHTML } from './client/html';
 
+// Add proper type declarations for DOM types
+declare global {
+  interface Window {}
+}
+
+// Make sure TypeScript knows about these DOM types
+declare var Response: any;
+declare var Request: any;
+declare var URL: any;
+declare var console: any;
+
+// Define type aliases for better type checking
+type ResponseType = any;
+type RequestType = any;
+
 // Define the TEST_CLIENT_HTML directly to avoid module issues
 const TEST_CLIENT_HTML = generateHTML();
 
@@ -104,6 +119,14 @@ export default {
             return handleGetPreferences(request, env, corsHeaders);
           } else if (request.method === 'POST') {
             return handleUpdatePreferences(request, env, corsHeaders);
+          }
+          break;
+          
+        case '/admin/preferences':
+          if (request.method === 'GET') {
+            return handleAdminGetPreferences(request, env, corsHeaders);
+          } else if (request.method === 'POST') {
+            return handleAdminUpdatePreferences(request, env, corsHeaders);
           }
           break;
       }
@@ -583,7 +606,7 @@ export async function handleValidateReferrer(request: Request, env: Env, corsHea
   }
 }
 
-// Get user preferences
+// Get user preferences - regular user endpoint (only their own preferences)
 // @param request Request object
 // @param env Environment variables
 // @param corsHeaders CORS headers
@@ -592,50 +615,31 @@ async function handleGetPreferences(request: Request, env: Env, corsHeaders: Rec
   try {
     // Try to get userId from various sources
     let userId: string | null = null;
-    let requestingUserId: string | null = null;
     
     // 1. Check for API token authentication
     const authHeader = request.headers.get('authorization');
     const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
     
     if (token) {
-      requestingUserId = await validateApiToken(env.DB, token);
+      userId = await validateApiToken(env.DB, token);
     }
     
-    // 2. Check for JWT authentication
-    if (!requestingUserId) {
+    // 2. Check for JWT authentication (if not already authenticated)
+    if (!userId) {
       const bearerToken = extractBearerToken(request);
       if (bearerToken) {
         try {
           const payload = await verifyJWT(bearerToken, env.JWT_SECRET);
-          requestingUserId = payload.user_id;
+          userId = payload.user_id;
         } catch (error) {
           // Invalid JWT
         }
       }
     }
     
-    // 3. Check query parameter for specific user
-    const url = new URL(request.url);
-    const queryUserId = url.searchParams.get('user_id');
-    
-    if (queryUserId) {
-      // If querying a specific user, ensure requester is authenticated
-      if (!requestingUserId) {
-        return new Response(JSON.stringify({ error: 'Authentication required to query other users' }), {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-      userId = queryUserId;
-    } else {
-      // If no specific user requested, use the authenticated user
-      userId = requestingUserId;
-    }
-    
     if (!userId) {
-      return new Response(JSON.stringify({ error: 'User ID not found' }), {
-        status: 400,
+      return new Response(JSON.stringify({ error: 'Authentication required' }), {
+        status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
@@ -657,7 +661,7 @@ async function handleGetPreferences(request: Request, env: Env, corsHeaders: Rec
   }
 }
 
-// Update user preferences
+// Update user preferences - regular user endpoint (only their own preferences)
 // @param request Request object
 // @param env Environment variables
 // @param corsHeaders CORS headers
@@ -697,6 +701,208 @@ async function handleUpdatePreferences(request: Request, env: Env, corsHeaders: 
     
     // Parse request body
     const body = await request.json() as { preferences?: Record<string, any>, key?: string, value?: any };
+    
+    // Input validation for key length and value size
+    const MAX_KEY_LENGTH = 100;
+    const MAX_VALUE_SIZE_BYTES = 10000; // 10KB for any single value
+    const MAX_TOTAL_SIZE_BYTES = 100000; // 100KB total preferences size
+    
+    if (body.key !== undefined) {
+      // Validate key length
+      if (body.key.length > MAX_KEY_LENGTH) {
+        return new Response(JSON.stringify({ error: `Preference key exceeds maximum length of ${MAX_KEY_LENGTH} characters` }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
+      // Validate value size
+      const valueSize = JSON.stringify(body.value).length;
+      if (valueSize > MAX_VALUE_SIZE_BYTES) {
+        return new Response(JSON.stringify({ error: `Preference value exceeds maximum size of ${MAX_VALUE_SIZE_BYTES} bytes` }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    } else if (body.preferences) {
+      // Validate total preferences size
+      const totalSize = JSON.stringify(body.preferences).length;
+      if (totalSize > MAX_TOTAL_SIZE_BYTES) {
+        return new Response(JSON.stringify({ error: `Total preferences exceed maximum size of ${MAX_TOTAL_SIZE_BYTES} bytes` }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
+      // Validate individual keys and values
+      for (const key in body.preferences) {
+        if (key.length > MAX_KEY_LENGTH) {
+          return new Response(JSON.stringify({ error: `Preference key '${key}' exceeds maximum length of ${MAX_KEY_LENGTH} characters` }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        
+        const valueSize = JSON.stringify(body.preferences[key]).length;
+        if (valueSize > MAX_VALUE_SIZE_BYTES) {
+          return new Response(JSON.stringify({ error: `Value for key '${key}' exceeds maximum size of ${MAX_VALUE_SIZE_BYTES} bytes` }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+      }
+    }
+    
+    if (body.preferences) {
+      // Update multiple preferences at once
+      await updateUserPreferences(env.DB, userId, body.preferences);
+    } else if (body.key !== undefined && body.value !== undefined) {
+      // Update a single preference
+      await setUserPreference(env.DB, userId, body.key, body.value);
+    } else {
+      return new Response(JSON.stringify({ error: 'Invalid request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Return updated preferences
+    const updatedPreferences = await getUserPreferences(env.DB, userId);
+    
+    return new Response(JSON.stringify({
+      user_id: userId,
+      preferences: updatedPreferences
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+    
+  } catch (error) {
+    console.error('Error updating preferences:', error);
+    return createErrorResponse(500, 'Internal server error', corsHeaders);
+  }
+}
+
+// Admin endpoint to get any user's preferences
+// @param request Request object
+// @param env Environment variables
+// @param corsHeaders CORS headers
+// @returns Response with user preferences
+async function handleAdminGetPreferences(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  try {
+    // Verify admin auth
+    const authHeader = request.headers.get('authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ') || authHeader.replace('Bearer ', '') !== env.ADMIN_API_KEY) {
+      return createErrorResponse(403, 'Forbidden - Admin access required', corsHeaders);
+    }
+    
+    // Get user ID from query parameter
+    const url = new URL(request.url);
+    const userId = url.searchParams.get('user_id');
+    
+    if (!userId) {
+      return new Response(JSON.stringify({ error: 'User ID is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Fetch preferences
+    const preferences = await getUserPreferences(env.DB, userId);
+    
+    return new Response(JSON.stringify({
+      user_id: userId,
+      preferences: preferences
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+    
+  } catch (error) {
+    console.error('Error fetching preferences:', error);
+    return createErrorResponse(500, 'Internal server error', corsHeaders);
+  }
+}
+
+// Admin endpoint to update any user's preferences
+// @param request Request object
+// @param env Environment variables
+// @param corsHeaders CORS headers
+// @returns Response with updated preferences
+async function handleAdminUpdatePreferences(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  try {
+    // Verify admin auth
+    const authHeader = request.headers.get('authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ') || authHeader.replace('Bearer ', '') !== env.ADMIN_API_KEY) {
+      return createErrorResponse(403, 'Forbidden - Admin access required', corsHeaders);
+    }
+    
+    // Get user ID from query parameter
+    const url = new URL(request.url);
+    const userId = url.searchParams.get('user_id');
+    
+    if (!userId) {
+      return new Response(JSON.stringify({ error: 'User ID is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Parse request body
+    const body = await request.json() as { preferences?: Record<string, any>, key?: string, value?: any };
+    
+    // Input validation for key length and value size
+    const MAX_KEY_LENGTH = 100;
+    const MAX_VALUE_SIZE_BYTES = 10000; // 10KB for any single value
+    const MAX_TOTAL_SIZE_BYTES = 100000; // 100KB total preferences size
+    
+    if (body.key !== undefined) {
+      // Validate key length
+      if (body.key.length > MAX_KEY_LENGTH) {
+        return new Response(JSON.stringify({ error: `Preference key exceeds maximum length of ${MAX_KEY_LENGTH} characters` }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
+      // Validate value size
+      const valueSize = JSON.stringify(body.value).length;
+      if (valueSize > MAX_VALUE_SIZE_BYTES) {
+        return new Response(JSON.stringify({ error: `Preference value exceeds maximum size of ${MAX_VALUE_SIZE_BYTES} bytes` }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    } else if (body.preferences) {
+      // Validate total preferences size
+      const totalSize = JSON.stringify(body.preferences).length;
+      if (totalSize > MAX_TOTAL_SIZE_BYTES) {
+        return new Response(JSON.stringify({ error: `Total preferences exceed maximum size of ${MAX_TOTAL_SIZE_BYTES} bytes` }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
+      // Validate individual keys and values
+      for (const key in body.preferences) {
+        if (key.length > MAX_KEY_LENGTH) {
+          return new Response(JSON.stringify({ error: `Preference key '${key}' exceeds maximum length of ${MAX_KEY_LENGTH} characters` }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        
+        const valueSize = JSON.stringify(body.preferences[key]).length;
+        if (valueSize > MAX_VALUE_SIZE_BYTES) {
+          return new Response(JSON.stringify({ error: `Value for key '${key}' exceeds maximum size of ${MAX_VALUE_SIZE_BYTES} bytes` }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+      }
+    }
     
     if (body.preferences) {
       // Update multiple preferences at once

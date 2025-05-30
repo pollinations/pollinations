@@ -10,7 +10,7 @@ const memoizedResults = new Map();
  * @param {string|null} explicitReferrer - Optional explicitly provided referrer
  * @returns {string|null} - Extracted referrer
  */
-function extractReferrer(headers, explicitReferrer) {
+function getRefererFromHeaders(headers, explicitReferrer) {
   if (explicitReferrer) {
     logger(`Using explicitly provided referrer: ${explicitReferrer}`);
     return explicitReferrer;
@@ -118,7 +118,7 @@ export function extractDomain(url) {
  */
 export async function processPrompt(prompt, headers = {}, explicitReferrer = null, transformProbability = 0.6) {
   // Extract referrer
-  const referrer = extractReferrer(headers, explicitReferrer);
+  const referrer = getRefererFromHeaders(headers, explicitReferrer);
   
   // Generate a memoization key
   const memoKey = `${prompt}_referrer_${referrer || 'none'}`;

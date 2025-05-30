@@ -220,19 +220,19 @@ export async function generateAffiliateAd(affiliateId, content = '', messages = 
 
         // Use the ad_text field if available
         if (affiliate.ad_text) {
-            adTextSource = affiliate.ad_text.replace('{url}', referralLink);
+            adTextSource = `🌸 **Ad** 🌸\n${affiliate.ad_text.replace('{url}', referralLink)}`;
         }
         // Use description if available
         else if (affiliate.description) {
-            adTextSource = `${affiliate.description} [Learn more](${referralLink})`;
+            adTextSource = `🌸 **Ad** 🌸\n${affiliate.description} [Learn more](${referralLink})`;
         }
         // Use product name if available
         else if (affiliate.product) {
-            adTextSource = `Learn more about ${affiliate.product} [Learn more](${referralLink})`;
+            adTextSource = `🌸 **Ad** 🌸\nLearn more about ${affiliate.product} [Learn more](${referralLink})`;
         }
         // Fallback to generic text
         else {
-            adTextSource = `Learn more about ${affiliate.name} [Learn more](${referralLink})`;
+            adTextSource = `🌸 **Ad** 🌸\nLearn more about ${affiliate.name} [Learn more](${referralLink})`;
             log(`No specific text for ${affiliateId}, using generic ad text.`);
         }
 
@@ -253,11 +253,13 @@ IMPORTANT INSTRUCTIONS:
 3. Maximum length should be 1 sentence - brevity is essential
 4. Make the ad feel targeted and personalized to the conversation topic
 5. Preserve the existing markdown links in the format [text](url) - these MUST remain intact
-6. Match the language of the conversation (translate if needed)
+6. Match the language of the conversation (translate if needed) - INCLUDING the "Ad" label
 7. Use a direct, engaging tone with specific references to the conversation topic
 8. Return your response in this exact format: "LANGUAGE_NAME: your_contextualized_ad_text"
 9. Remember. The shorter and more personal, the sweeter.
-10. Do not change the link format. Use simple markdown links.
+10. Do not change the link format. Use simple markdown links ONLY - no HTML tags.
+11. The "🌸 **Ad** 🌸" label MUST be translated to match the conversation language
+12. NEVER use HTML formatting (no <div>, <span>, <img> etc.) - use ONLY markdown syntax
 
 CONVERSATION CONTEXT:
 ${conversationContext}
@@ -268,7 +270,8 @@ ${adTextSource}
 RESPONSE:`;
 
             try {
-                const completion = await generateTextPortkey([{role:"system", content: "You are an expert advertising copywriter who creates short, concise, and highly personalized ads based on conversation context."}, { role: "user", content: contextualPrompt }]);
+                // Use openai-large model for better link preservation
+                const completion = await generateTextPortkey([{role:"system", content: "You are an expert advertising copywriter who creates short, concise, and highly personalized ads based on conversation context."}, { role: "user", content: contextualPrompt }], { model: 'openai-large' });
                 const response = completion.choices[0]?.message?.content?.trim();
 
                 if (response && response.length > 0) {
@@ -297,37 +300,12 @@ RESPONSE:`;
             }
         }
         
-        // Now generate image with the final ad text if markerFound is true
-        let imageUrl = '';
-        if (markerFound) {
-            // Generate image prompt based on affiliate data and final ad text
-            // Extract meaningful text from ad text (remove markdown and links)
-            const cleanAdText = adTextSource.replace(/\[(.*?)\]\(.*?\)/g, '$1').substring(0, 120).trim();
-            
-            // Generate a simple prompt based on the actual ad content with ad text at the end
-            const imagePrompt = `${affiliate.name} ${affiliate.product || ''}, professional advertisement design, high quality, ${cleanAdText}`;
-            
-            // Encode the image prompt for URL
-            const encodedImagePrompt = encodeURIComponent(imagePrompt);
-            
-            // Create image URL with appropriate dimensions - square and smaller as requested
-            const imageSize = 120; // Square size
-            imageUrl = `https://image.pollinations.ai/prompt/${encodedImagePrompt}?width=${imageSize}&height=${imageSize}&nologo=true`;
-            
-            log(`Generated thumbnail image for ${affiliate.name} (${affiliateId}) with ad text context`);
-        }
-
+        // Image ads temporarily disabled
         // Format the final ad - with or without image based on markerFound
         let adText;
-        if (markerFound && imageUrl) {
-            // Format with image for p-ads marker
-            adText = `\n\n---\n<div style="display: flex; align-items: center; margin-top: 10px; margin-bottom: 10px;">\n<img src="${imageUrl}" alt="${affiliate.name}" style="margin-right: 15px; border-radius: 5px; width: 120px; height: 120px; object-fit: cover;"/>\n<div>${adTextSource}</div>\n</div>`;
-            log(`Generated ad with thumbnail for ${affiliate.name} (${affiliateId})`);
-        } else {
-            // Standard format without image
-            adText = `\n\n---\n${adTextSource}`;
-            log(`Generated standard ad for ${affiliate.name} (${affiliateId})`);
-        }
+        // Always use standard format without image
+        adText = `\n\n---\n${adTextSource}`;
+        log(`Generated standard ad for ${affiliate.name} (${affiliateId})`);
         
         return adText;
     } catch (error) {

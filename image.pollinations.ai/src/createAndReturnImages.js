@@ -544,8 +544,9 @@ export const callAzureGPTImage = async (prompt, safeParams, userInfo = {}) => {
     // Stage-based endpoint selection instead of random
     // seed stage → GPT_IMAGE_1_ENDPOINT (standard endpoint)
     // flower/nectar stage → GPT_IMAGE_2_ENDPOINT (advanced endpoint)
-    const endpointIndex = (userTier === 'seed') ? 1 : 2;
+    // const endpointIndex = (userTier === 'seed') ? 1 : 2;
     
+    const endpointIndex = userTier === 'seed' ? 2 : 1;
     logCloudflare(`Using Azure GPT Image endpoint ${endpointIndex} for user tier: ${userTier}`, userInfo.userId ? `(userId: ${userInfo.userId})` : '(anonymous)');
     
     try {

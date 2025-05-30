@@ -453,6 +453,14 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🎨 PixPal",
+      url: "https://pixpal.chat",
+      description: "PixPal is a free AI assistant that can analyze, edit, and generate images, build websites from screenshots, create 3D games, and write full blog posts—all in one chat. Upload a photo, describe an idea, or request a UI clone and PixPal instantly delivers creative results.",
+      author: "@andreas_11",
+      submissionDate: "2025-05-30",
+      order: 1,
+    },
+    {
       name: "DreamHer",
       url: "https://dreamher.vercel.app/",
       description: "Interactive web app that transforms your imagination of a 'dream girl' into a visual representation through just 10 simple questions using Pollinations AI. Features AI-powered visualization, dynamic processing, and an engaging, magical user experience.",

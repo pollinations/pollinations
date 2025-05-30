@@ -587,7 +587,7 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
         : 'No userInfo provided');
     
     // Restrict GPT Image model to users with valid authentication
-    if (!userInfo || !userInfo.authenticated) {
+    if (!userInfo || !userInfo.authenticated || userInfo.tier === 'seed') {
       logError('Access to GPT Image model requires authentication. Please request a token at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml');
       progress.updateBar(requestId, 35, 'Auth', 'GPT Image requires authorization');
       throw new Error('Access to GPT Image model requires authentication. Please request a token at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml');      

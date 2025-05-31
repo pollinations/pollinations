@@ -84,28 +84,19 @@ export const generateHTML = () => `<!DOCTYPE html>
             
             <div id="preferences-section" class="preferences-container hidden">
                 <div class="preferences-header">
-                    <h3>⚡ Vibe Check:</h3>
+                    <h3>✨ Vibe Check Your Settings ✨</h3>
                 </div>
-                <div class="ads-preference-card">
-                    <div class="preference-item">
-                        <div class="ads-info">
-                            <label for="ads-toggle" class="toggle-label">
-                                <span class="toggle-title">Show Ads</span>
-                                <span class="toggle-subtitle">support the project & unlock higher tiers 🚀</span>
-                            </label>
-                        </div>
-                        <div class="toggle-switch">
-                            <input type="checkbox" id="ads-toggle" onchange="toggleAdsPreference()">
-                            <span class="toggle-slider"></span>
-                        </div>
+                <div class="preference-item">
+                    <label for="ads-toggle" class="toggle-label">Show Ads</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="ads-toggle" onchange="toggleAdsPreference()">
+                        <span class="toggle-slider"></span>
                     </div>
-                    <div class="ads-status-row">
-                        <span id="ads-status" class="preference-status">Loading...</span>
-                    </div>
-                    <div class="ads-explanation">
-                        <p class="tier-unlock-info">💡 <em>Enabling ads helps upgrade your tier from seed → flower → nectar!</em></p>
-                        <p class="payment-alternative">prefer no ads? <a href="https://github.com/pollinations/pollinations/issues/2202" target="_blank" class="vote-link">vote for credit card payments here</a> 💳</p>
-                    </div>
+                    <span id="ads-status" class="preference-status">Loading...</span>
+                </div>
+                <div class="preference-info">
+                    <p>💯 Enabling ads helps you level up to higher tiers - no cap!</p>
+                    <p>👀 Want credit card payments instead? <a href="https://github.com/pollinations/pollinations/issues/2202" target="_blank">Drop a 👍 on this issue</a> to vote!</p>
                 </div>
             </div>
         </div>

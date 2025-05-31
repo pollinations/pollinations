@@ -629,7 +629,7 @@ async function handleGetPreferences(request: Request, env: Env, corsHeaders: Rec
       const bearerToken = extractBearerToken(request);
       if (bearerToken) {
         try {
-          const payload = await verifyJWT(bearerToken, env.JWT_SECRET);
+          const payload = await verifyJWT(bearerToken, env);
           userId = payload.user_id;
         } catch (error) {
           // Invalid JWT
@@ -684,7 +684,7 @@ async function handleUpdatePreferences(request: Request, env: Env, corsHeaders: 
       const bearerToken = extractBearerToken(request);
       if (bearerToken) {
         try {
-          const payload = await verifyJWT(bearerToken, env.JWT_SECRET);
+          const payload = await verifyJWT(bearerToken, env);
           userId = payload.user_id;
         } catch (error) {
           // Invalid JWT

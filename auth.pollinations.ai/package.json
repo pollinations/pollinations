@@ -4,7 +4,7 @@
   "description": "Simple GitHub OAuth proxy for Pollinations",
   "main": "src/index.ts",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev --port 3333",
     "deploy": "node deploy.js",
     "deploy:prod": "ENV_FILE=.dev.vars.prod node deploy.js",
     "deploy:local": "ENV_FILE=.dev.vars node deploy.js",

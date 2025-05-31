@@ -1,9 +1,69 @@
-# Processing Special Bee Requests: Standard Operating Procedure
+# Special Bee Request Process (Tier System)
 
 ## Overview
-This document outlines the process for handling special bee requests in the Pollinations repository. Special bee requests allow external projects to use Pollinations' image and text generation APIs by whitelisting their domains/tokens.
+Special Bee requests are now processed through the new tier-based authentication system. **Most requests should receive standard responses** directing users to register at auth.pollinations.ai for seed tier access. Only exceptional projects should be flagged for flower tier review.
 
-## Step 1: Identify Valid Requests
+## New Tier-Based Process
+
+### Step 1: Evaluate Request Quality
+**DEFAULT: Give standard response unless project is truly exceptional**
+
+- Check for live website with real users
+- Verify professional team or established organization  
+- Look for clear business model or educational value
+- Assess potential for meaningful partnership
+
+### Step 2: Choose Response Type
+
+#### Standard Response (95% of requests):
+```markdown
+Hi @username! 👋
+
+## 🌱 Get Immediate Access
+
+1. **Register**: https://auth.pollinations.ai
+2. **Sign in** with GitHub (@username)
+3. **Get seed tier** with better rate limits
+4. **Start creating** your AI content
+
+## Next Steps
+- Register for immediate access
+- Close this issue once set up
+- Request flower tier later if needed
+
+Happy coding! 🐝
+```
+
+#### Exceptional Projects Only (5% of requests):
+```markdown
+Hi @username! 👋
+
+## 🌱 Get Immediate Access
+
+1. **Register**: https://auth.pollinations.ai
+2. **Sign in** with GitHub (@username)
+3. **Get seed tier** with better rate limits
+
+## 🌸 Flower Tier Review
+Your [project type] looks very promising! I'm flagging this for **flower tier** review which includes:
+- Unlimited usage ⚡
+- SOTA models 🤖
+- Priority queue access 🚀
+
+Please register first, then we'll follow up on the upgrade.
+
+@thomash - Flagged for flower tier review - [brief reason]
+
+Happy coding! 🐝
+```
+
+### Step 3: Close Issue
+After posting response, close the issue to keep the queue clean.
+
+---
+
+## Legacy Process (Pre-Tier System)
+### Step 1: Identify Valid Requests
 - Search GitHub issues with `label:special-bee-request state:open`
 - Verify each issue uses the proper template with required fields:
   - Project Name
@@ -12,13 +72,13 @@ This document outlines the process for handling special bee requests in the Poll
   - Contact Information
   - Domain/Referrer to Approve
 
-## Step 2: Evaluate Request Validity
+### Step 2: Evaluate Request Validity
 - Check that the domain/token is appropriate (lowercase, simple)
 - Ensure project appears legitimate
 - If insufficient information, comment requesting details and keep open
 - If clearly spam/inappropriate, close with explanation
 
-## Step 3: Process Valid Requests
+### Step 3: Process Valid Requests
 1. **Document the token in tokens_to_add.txt**:
    ```
    ## [Project Name] (Issue #XXXX)
@@ -46,7 +106,7 @@ This document outlines the process for handling special bee requests in the Poll
 
 3. **Close the issue**
 
-## Step 4: Update Environment Files
+### Step 4: Update Environment Files
 Add the approved tokens to:
 
 1. **text.pollinations.ai/.env**:
@@ -57,7 +117,7 @@ Add the approved tokens to:
    - Locate `VALID_TOKENS=` line
    - Add the new token to the comma-separated list
 
-## Step 5: Maintain Token Documentation
+### Step 5: Maintain Token Documentation
 - Keep tokens_to_add.txt updated with all processed requests
 - Maintain summary sections at the top:
   ```
@@ -68,7 +128,7 @@ Add the approved tokens to:
   - [list of all tokens]
   ```
 
-## Recent Processing Progress
+### Recent Processing Progress
 
 **LATEST PROCESSED (May 31, 2025):**
 15. **#2080 (GPT-API)** - STANDARD RESPONSE: Minimal description, personal use
@@ -91,11 +151,24 @@ Add the approved tokens to:
 - **@thomash flagging** for promising projects
 
 ### Flagging Criteria for Flower Tier:
-- **High usage potential**: Projects likely to generate significant API usage
-- **Revenue opportunity**: Commercial applications or business tools
-- **Ecosystem value**: Projects that showcase Pollinations capabilities
-- **Innovation factor**: Unique or creative use cases
-- **Partnership potential**: Professional teams or established companies
+**⚠️ BE VERY SELECTIVE - Most requests should get standard responses**
+
+Only flag for flower tier if the project meets **MULTIPLE** of these strict criteria:
+- **Proven traction**: Live website with existing users/traffic
+- **Business model**: Clear revenue potential or commercial application
+- **Professional team**: Company/organization with established presence
+- **High-value use case**: Educational institutions, enterprise tools, or significant innovation
+- **Partnership potential**: Could lead to meaningful collaboration or showcase value
+
+**RED FLAGS - Do NOT flag:**
+- Personal projects or hobby apps
+- Discord bots without clear business model
+- Minimal descriptions or "testing" purposes
+- No live website or GitHub repository
+- Individual developers without proven track record
+- Generic AI assistants without unique value proposition
+
+**DEFAULT APPROACH**: When in doubt, give standard response directing to auth.pollinations.ai
 
 ## Token Guidelines
 - Use lowercase for new tokens

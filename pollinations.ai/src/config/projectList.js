@@ -619,6 +619,16 @@ const allProjects = {
       order: 1,
     },
     {
+      name: "LLM7.io",
+      url: "https://llm7.io",
+      description: "A free and open AI platform providing advanced multimodal capabilities, including large language model access and experimental search tools. Integrates Pollinations text generation as a backend service with transparent credit on the website and repository.",
+      author: "@chigwell",
+      repo: "https://github.com/chigwell/llm7.io",
+      stars: 7,
+      submissionDate: "2025-05-30",
+      order: 1,
+    },
+    {
       name: "Pollinations.AI Enhancer",
       url: "https://github.com/fisventurous/pollinationsai-enhancer",
       description: "A frontend-based AI interface designed to deliver a smooth, multimodal, and visually engaging user experience with conversational AI, image generation, and more.",

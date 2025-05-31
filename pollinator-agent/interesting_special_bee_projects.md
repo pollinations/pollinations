@@ -55,6 +55,7 @@ The Special Bee request process has been successfully migrated to the new tier-b
 ### Recent Processing Results (May 31, 2025)
 
 **FLAGGED FOR FLOWER TIER (Exceptional cases):**
+- **#2186 (IntraMind)** - Professional company with multiple AI services, live website, and business model
 - **#2147 (udeki.com)** - Educational platform with CEO request and live website 
 - **#2091 (School District Query)** - Educational platform with existing user base 
 - **#2062 (pinblogai)** - Content creation tool with live website and business model 
@@ -62,6 +63,9 @@ The Special Bee request process has been successfully migrated to the new tier-b
 - **#1957 (A4F)** - Detailed project with clear use case
 
 **STANDARD RESPONSES (Majority):**
+- **#2191 (bullnium)** - Personal education project, lacks business model
+- **#2189 (Pollinations Discord Bot)** - Discord bot without clear business model
+- **#2182 (Testing project)** - Explicitly for testing purposes only
 - **#2137 (ABU AI)** - Cross-platform AI assistant (revised to standard)
 - **#2190 (UnrestrictedGPT)** - Discord bot, minimal description
 - **#2080 (GPT-API)** - Minimal description, personal use
@@ -70,9 +74,9 @@ The Special Bee request process has been successfully migrated to the new tier-b
 - **#2168 (MODA)** - Minimal description, no GitHub repo
 
 ### Revised Success Metrics:
-- **25 requests processed** since tier system launch
-- **6 flagged for flower tier** (24% - more selective approach)
-- **19 standard responses** (76% redirect to auth.pollinations.ai)
+- **29 requests processed** since tier system launch
+- **7 flagged for flower tier** (24% - more selective approach)
+- **22 standard responses** (76% redirect to auth.pollinations.ai)
 - **Quality over quantity** - focusing on truly exceptional projects
 - **Educational platforms and established businesses** prioritized
 

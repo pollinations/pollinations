@@ -142,6 +142,10 @@ Add the approved tokens to:
 23. **#2137 (ABU AI)** - FLAGGED for flower tier: Cross-platform AI assistant with live website
 24. **#2091 (School District Query)** - FLAGGED for flower tier: Educational platform with existing website
 25. **#2062 (pinblogai)** - FLAGGED for flower tier: Content creation tool with live website
+26. **#2191 (bullnium)** - STANDARD RESPONSE: Personal education project, lacks business model
+27. **#2189 (Pollinations Discord Bot)** - STANDARD RESPONSE: Discord bot without clear business model
+28. **#2186 (IntraMind)** - FLAGGED for flower tier: Professional company with multiple AI services
+29. **#2182 (Testing project)** - STANDARD RESPONSE: Explicitly for testing purposes only
 
 ### Response Style Improvements:
 - **Concise format** based on user feedback

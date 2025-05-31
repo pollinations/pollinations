@@ -548,17 +548,6 @@ input:checked + .toggle-slider:before {
     50% { box-shadow: 0 0 10px 3px rgba(153, 102, 204, 0.5); }
     100% { box-shadow: 0 0 0px 0px rgba(153, 102, 204, 0); }
 }
-    font-weight: 700;
-    font-size: 1.2rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin: 10px 0 20px 0;
-    position: relative;
-    overflow: hidden;
-    color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
 
 .tier-badge::after {
     content: "";

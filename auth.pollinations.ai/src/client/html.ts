@@ -84,10 +84,10 @@ export const generateHTML = () => `<!DOCTYPE html>
             
             <div id="preferences-section" class="preferences-container hidden">
                 <div class="preferences-header">
-                    <h3>✨ Your Preferences ✨</h3>
+                    <h3>✨ Your Settings ✨</h3>
                 </div>
                 <div class="preference-item">
-                    <label for="ads-toggle" class="toggle-label">Vibe with Ads ✨</label>
+                    <label for="ads-toggle" class="toggle-label">Show Ads</label>
                     <div class="toggle-switch">
                         <input type="checkbox" id="ads-toggle" onchange="toggleAdsPreference()">
                         <span class="toggle-slider"></span>

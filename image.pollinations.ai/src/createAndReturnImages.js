@@ -557,21 +557,10 @@ export const callAzureGPTImage = async (prompt, safeParams, userInfo = {}) => {
     // flower/nectar stage → GPT_IMAGE_2_ENDPOINT (advanced endpoint)
     // const endpointIndex = (userTier === 'seed') ? 1 : 2;
     
-    const endpointIndex = userTier === 'seed' ? 2 : 1;
+    const endpointIndex = 2; //Math.random() < 0.5 ? 1 : 2 ;
     logCloudflare(`Using Azure GPT Image endpoint ${endpointIndex} for user tier: ${userTier}`, userInfo.userId ? `(userId: ${userInfo.userId})` : '(anonymous)');
-    
-    try {
-      // Try with the tier-appropriate endpoint first
-      return await callAzureGPTImageWithEndpoint(prompt, safeParams, userInfo, endpointIndex);
-    } catch (error) {
-      // Only try fallback for higher tier users when endpoint 2 fails
-      if (endpointIndex === 2) {
-        logCloudflare(`Endpoint 2 failed, falling back to endpoint 1 for user: ${userInfo.userId || 'anonymous'}`);
-        return await callAzureGPTImageWithEndpoint(prompt, safeParams, userInfo, 1);
-      }
-      // For seed tier users, just propagate the error
-      throw error;
-    }
+
+    return await callAzureGPTImageWithEndpoint(prompt, safeParams, userInfo, endpointIndex);
   } catch (error) {
     logError('Error calling Azure GPT Image API:', error);
     throw error;

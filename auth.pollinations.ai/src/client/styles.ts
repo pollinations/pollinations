@@ -476,12 +476,13 @@ code::after {
     border-bottom: 1px solid;
 }
 
-/* Toggle Switch */
+/* Toggle Switch - Gen-Z style */
 .toggle-switch {
     position: relative;
     display: inline-block;
-    width: 50px;
-    height: 26px;
+    width: 56px;
+    height: 28px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
 }
 
 .toggle-switch input {
@@ -497,36 +498,55 @@ code::after {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #ccc;
+    background: linear-gradient(145deg, #e6e6e6, #f0f0f0);
     transition: .4s;
     border-radius: 34px;
+    border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: inset 0 -2px 5px rgba(0,0,0,0.05), 0 2px 0 rgba(255,255,255,0.7);
 }
 
 .toggle-slider:before {
     position: absolute;
-    content: "";
-    height: 18px;
-    width: 18px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    transition: .4s;
+    content: "😶";
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    height: 22px;
+    width: 22px;
+    left: 3px;
+    bottom: 2px;
+    background: linear-gradient(145deg, #ffffff, #f0f0f0);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    transition: all 0.4s cubic-bezier(0.18, 0.89, 0.35, 1.15);
     border-radius: 50%;
 }
 
+.toggle-slider:hover:before {
+    transform: scale(1.1);
+}
+
 input:checked + .toggle-slider {
-    background-color: var(--color-secondary);
-    animation: toggle-on 0.5s forwards;
+    background: linear-gradient(145deg, #7649ba, #9966cc);
+    animation: shimmer 3s infinite linear;
+    background-size: 200% 200%;
 }
 
 input:checked + .toggle-slider:before {
-    transform: translateX(24px);
+    content: "🤑";
+    transform: translateX(28px);
+}
+
+@keyframes shimmer {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 @keyframes toggle-on {
-    0% { background-color: var(--color-secondary); }
-    50% { background-color: var(--color-primary); }
-    100% { background-color: var(--color-secondary); }
+    0% { box-shadow: 0 0 0px 0px rgba(153, 102, 204, 0); }
+    50% { box-shadow: 0 0 10px 3px rgba(153, 102, 204, 0.5); }
+    100% { box-shadow: 0 0 0px 0px rgba(153, 102, 204, 0); }
 }
     font-weight: 700;
     font-size: 1.2rem;

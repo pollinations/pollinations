@@ -87,7 +87,7 @@ export const generateHTML = () => `<!DOCTYPE html>
                     <h3>✨ Vibe Check Your Settings ✨</h3>
                 </div>
                 <div class="preference-item">
-                    <label for="ads-toggle" class="toggle-label">Show Ads</label>
+                    <label for="ads-toggle" class="toggle-label">Vibe with Ads ✨</label>
                     <div class="toggle-switch">
                         <input type="checkbox" id="ads-toggle" onchange="toggleAdsPreference()">
                         <span class="toggle-slider"></span>

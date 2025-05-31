@@ -68,6 +68,35 @@ Add the approved tokens to:
   - [list of all tokens]
   ```
 
+## Recent Processing Progress
+
+**LATEST PROCESSED (May 31, 2025):**
+15. **#2080 (GPT-API)** - STANDARD RESPONSE: Minimal description, personal use
+16. **#2075 (AI brainrot image)** - STANDARD RESPONSE: Personal use, no GitHub repo
+17. **#2084 (Wisdom-Core)** - FLAGGED for flower tier: Educational AI tutor with live website
+18. **#2031 (ahmadi)** - STANDARD RESPONSE: Minimal "dev bot" description
+19. **#2168 (MODA)** - STANDARD RESPONSE: Minimal description, no GitHub repo
+20. **#1957 (A4F)** - FLAGGED for flower tier: Detailed project with clear use case
+21. **#2190 (UnrestrictedGPT)** - STANDARD RESPONSE: Discord bot, no URL/GitHub repo
+22. **#2147 (udeki.com)** - FLAGGED for flower tier: Educational platform with CEO request
+23. **#2137 (ABU AI)** - FLAGGED for flower tier: Cross-platform AI assistant with live website
+24. **#2091 (School District Query)** - FLAGGED for flower tier: Educational platform with existing website
+25. **#2062 (pinblogai)** - FLAGGED for flower tier: Content creation tool with live website
+
+### Response Style Improvements:
+- **Concise format** based on user feedback
+- **Direct @username mentions** for personalization
+- **Numbered steps** for clarity
+- **Emoji usage** (🌱🌸🐝⚡🤖🚀) for visual appeal
+- **@thomash flagging** for promising projects
+
+### Flagging Criteria for Flower Tier:
+- **High usage potential**: Projects likely to generate significant API usage
+- **Revenue opportunity**: Commercial applications or business tools
+- **Ecosystem value**: Projects that showcase Pollinations capabilities
+- **Innovation factor**: Unique or creative use cases
+- **Partnership potential**: Professional teams or established companies
+
 ## Token Guidelines
 - Use lowercase for new tokens
 - Keep tokens simple, preferably matching the domain

@@ -35,6 +35,34 @@ This document highlights notable projects from special bee requests and tracks w
 4. CoNavic
 5. Mr. Kaks Discord Bot
 
+## Recent Tier System Migration (May 31, 2025)
+
+The Special Bee request process has been successfully migrated to the new tier-based authentication system. Users now register at `auth.pollinations.ai` for seed tier access, with promising projects flagged for flower tier upgrades.
+
+### Notable Projects (May 31, 2025 Update)
+
+**RECENTLY FLAGGED FOR FLOWER TIER:**
+- **#2147 (udeki.com)** - Educational platform with CEO request and live website
+- **#2137 (ABU AI)** - Cross-platform AI assistant with live website  
+- **#2091 (School District Query)** - Educational platform with existing user base
+- **#2062 (pinblogai)** - Content creation tool with live website and business model
+- **#2084 (Wisdom-Core)** - Educational AI tutor with live website
+- **#1957 (A4F)** - Detailed project with clear use case
+
+**STANDARD RESPONSES:**
+- **#2190 (UnrestrictedGPT)** - Discord bot, minimal description
+- **#2080 (GPT-API)** - Minimal description, personal use
+- **#2075 (AI brainrot image)** - Personal use, no GitHub repo
+- **#2031 (ahmadi)** - Minimal "dev bot" description
+- **#2168 (MODA)** - Minimal description, no GitHub repo
+
+### Migration Success Metrics:
+- **25 requests processed** since tier system launch
+- **11 flagged for flower tier** (44% success rate)
+- **14 standard responses** (56% redirect to auth.pollinations.ai)
+- **Educational platforms** showing highest flagging success rate
+- **Live websites + business models** = strong flower tier indicators
+
 ## Notable Projects
 
 ### 1. Snapgen.io ✅ (Added to projectList.js)

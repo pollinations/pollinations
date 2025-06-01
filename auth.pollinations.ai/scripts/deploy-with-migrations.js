@@ -6,7 +6,7 @@ const path = require('path');
 
 // Get environment file path from ENV_FILE environment variable or use default
 const envFile = process.env.ENV_FILE || '.dev.vars.prod';
-const devVarsPath = path.join(__dirname, envFile);
+const devVarsPath = path.join(__dirname, '..', envFile);
 
 // Check if environment file exists
 if (!fs.existsSync(devVarsPath)) {
@@ -66,12 +66,12 @@ try {
   
   console.log('\n⚠️ If the user_tiers table does not exist, we need to apply the migration.');
   console.log('\n⚠️ To manually apply just the user_tiers migration, run:');
-  console.log(`npx wrangler d1 execute ${databaseName} --env production --file ./migrations/user_tiers.sql`);
+  console.log(`npx wrangler d1 execute ${databaseName} --env production --file ../migrations/user_tiers.sql`);
   
   const userInput = process.argv[2];
   if (userInput === '--apply-user-tiers') {
     console.log('\n🔄 Applying user_tiers migration...');
-    execSync(`npx wrangler d1 execute ${databaseName} --env production --file ./migrations/user_tiers.sql`, {
+    execSync(`npx wrangler d1 execute ${databaseName} --env production --file ../migrations/user_tiers.sql`, {
       stdio: 'inherit',
       shell: true
     });

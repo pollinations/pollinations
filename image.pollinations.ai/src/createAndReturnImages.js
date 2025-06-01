@@ -662,7 +662,6 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
         if (!isContentSafetyError) {
           await logGptImageError(prompt, safeParams, userInfo, error);
         }
-        
         progress.updateBar(requestId, 100, 'Error', error.message);
         throw error;
       }

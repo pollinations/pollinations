@@ -671,9 +671,13 @@ const processImageBuffer = async (buffer, maturityFlags, safeParams, metadataObj
   let processedBuffer = !logoPath ? buffer : 
     await addPollinationsLogoWithImagemagick(buffer, logoPath, safeParams);
   
-  // Convert format
-  updateProgress(progress, requestId, 85, 'Processing', 'Converting format...');
-  processedBuffer = await convertToJpeg(processedBuffer);
+  // Convert format if not transparent
+  if (!safeParams.transparent) {
+    updateProgress(progress, requestId, 85, 'Processing', 'Converting to JPEG...');
+    processedBuffer = await convertToJpeg(processedBuffer);
+  } else {
+    updateProgress(progress, requestId, 85, 'Processing', 'Keeping PNG format for transparency...');
+  }
   
   // Add metadata
   updateProgress(progress, requestId, 90, 'Processing', 'Writing metadata...');

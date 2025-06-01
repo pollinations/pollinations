@@ -127,7 +127,10 @@ export function getLogoPath(safeParams, isChild, isMature) {
 export async function addPollinationsLogoWithImagemagick(buffer, logoPath, safeParams) {
     const { ext } = await fileTypeFromBuffer(buffer);
     const tempImageFile = tempfile({ extension: ext });
-    const tempOutputFile = tempfile({ extension: "jpg" });
+    
+    // Use PNG for transparent images, JPG otherwise
+    const outputExt = safeParams.transparent ? "png" : "jpg";
+    const tempOutputFile = tempfile({ extension: outputExt });
 
     await fs.writeFile(tempImageFile, buffer);
 
@@ -136,6 +139,7 @@ export async function addPollinationsLogoWithImagemagick(buffer, logoPath, safeP
     const targetHeight = scaleFactor * 31;
 
     return new Promise((resolve, reject) => {
+        // Note: -background none is crucial for preserving transparency
         const command = `convert -background none -gravity southeast -geometry ${targetWidth}x${targetHeight}+10+10 ${tempImageFile} ${logoPath} -composite ${tempOutputFile}`;
         try {
             exec(command, async (error, stdout, stderr) => {

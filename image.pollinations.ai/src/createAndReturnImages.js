@@ -9,9 +9,8 @@ import { sanitizeString } from './translateIfNecessary.js';
 // Import shared authentication utilities
 import sharp from 'sharp';
 import dotenv from 'dotenv';
-import fs from 'fs';
-import path from 'path';
-import { promises as fsPromises } from 'fs';
+// Import GPT Image logging utilities
+import { logGptImagePrompt, logGptImageError } from './utils/gptImageLogger.js';
 
 dotenv.config();
 
@@ -629,123 +628,7 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
   }
 };
 
-/**
- * Logs prompts made to the gptimage model to a temporary file
- * @param {string} prompt - The prompt for image generation
- * @param {Object} safeParams - Parameters for image generation
- * @param {Object} userInfo - User authentication information
- */
-async function logGptImagePrompt(prompt, safeParams, userInfo = {}) {
-  try {
-    // Create temp directory if it doesn't exist
-    const tempDir = path.join(process.cwd(), 'temp');
-    const logDir = path.join(tempDir, 'logs');
-    
-    await fsPromises.mkdir(tempDir, { recursive: true });
-    await fsPromises.mkdir(logDir, { recursive: true });
-    
-    const timestamp = new Date().toISOString();
-    const logFile = path.join(logDir, 'gptimage_prompts.log');
-    
-    // Format the log entry with timestamp, prompt, and relevant parameters
-    // Check for image parameters to log
-    const hasImageUrls = safeParams.imageUrls && safeParams.imageUrls.length > 0;
-    const hasImageData = safeParams.imageData || safeParams.image || safeParams.images;
-    
-    const logEntry = JSON.stringify({
-      timestamp,
-      prompt,
-      model: safeParams.model,
-      size: `${safeParams.width}x${safeParams.height}`,
-      // Log if this is an image editing request
-      hasImageInput: hasImageUrls || hasImageData,
-      imageUrls: hasImageUrls ? safeParams.imageUrls : [],
-      // Include complete user info for better diagnostics
-      userInfo: {
-        userId: userInfo.userId || 'anonymous',
-        authenticated: userInfo.authenticated || false,
-        tokenAuth: userInfo.tokenAuth || false,
-        referrerAuth: userInfo.referrerAuth || false,
-        reason: userInfo.reason || 'none',
-        tier: userInfo.tier || 'none',
-        bypass: userInfo.bypass || false,
-        // Include complete debugInfo if available
-        debugInfo: userInfo.debugInfo || {}
-      }
-    }, null, 2);
-    
-    // Append to log file
-    await fsPromises.appendFile(logFile, logEntry + ',\n');
-    
-    logOps('Logged gptimage prompt to', logFile);
-  } catch (error) {
-    // Non-blocking error handling for logging
-    logError('Error logging gptimage prompt:', error.message);
-  }
-}
-
-/**
- * Logs errors that occur during gptimage model generation
- * @param {string} prompt - The prompt for image generation
- * @param {Object} safeParams - Parameters for image generation
- * @param {Object} userInfo - User authentication information
- * @param {Error} error - The error that occurred
- */
-async function logGptImageError(prompt, safeParams, userInfo = {}, error) {
-  try {
-    // Create temp directory if it doesn't exist
-    const tempDir = path.join(process.cwd(), 'temp');
-    const logDir = path.join(tempDir, 'logs');
-    
-    await fsPromises.mkdir(tempDir, { recursive: true });
-    await fsPromises.mkdir(logDir, { recursive: true });
-    
-    const timestamp = new Date().toISOString();
-    const logFile = path.join(logDir, 'gptimage_errors.log');
-    
-    // Format the log entry with timestamp, prompt, error details and relevant parameters
-    // Check for image parameters to log
-    const hasImageUrls = safeParams.imageUrls && safeParams.imageUrls.length > 0;
-    const hasImageData = safeParams.imageData || safeParams.image || safeParams.images;
-    
-    const logEntry = JSON.stringify({
-      timestamp,
-      prompt,
-      model: safeParams.model,
-      size: `${safeParams.width}x${safeParams.height}`,
-      // Log if this is an image editing request
-      hasImageInput: hasImageUrls || hasImageData,
-      imageUrls: hasImageUrls ? safeParams.imageUrls : [],
-      // Include complete user info for better diagnostics
-      userInfo: {
-        userId: userInfo.userId || 'anonymous',
-        authenticated: userInfo.authenticated || false,
-        tokenAuth: userInfo.tokenAuth || false,
-        referrerAuth: userInfo.referrerAuth || false,
-        reason: userInfo.reason || 'none',
-        tier: userInfo.tier || 'none',
-        bypass: userInfo.bypass || false,
-        // Include complete debugInfo if available
-        debugInfo: userInfo.debugInfo || {}
-      },
-      error: {
-        message: error.message,
-        name: error.name,
-        stack: error.stack,
-        code: error.code,
-        status: error.status || error.statusCode
-      }
-    }, null, 2);
-    
-    // Append to log file
-    await fsPromises.appendFile(logFile, logEntry + ',\n');
-    
-    logOps('Logged gptimage error to', logFile);
-  } catch (logError) {
-    // Non-blocking error handling for logging
-    logError('Error logging gptimage error:', logError.message);
-  }
-}
+// GPT Image logging functions have been moved to utils/gptImageLogger.js
 
 /**
  * Extracts and normalizes maturity flags from image generation result

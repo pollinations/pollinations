@@ -5,7 +5,7 @@ import { MODELS } from './models.js';
  * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string, safe: boolean|string, quality: string, image: string|null }} params
  * @returns {Object} - The sanitized parameters.
  */
-export const makeParamsSafe = ({ width = null, height = null, seed, model = "flux", enhance, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false, safe = false, private:isPrivate = false, quality = 'medium', image = null }) => {
+export const makeParamsSafe = ({ width = null, height = null, seed, model = "flux", enhance, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false, safe = false, private:isPrivate = false, quality = 'medium', image = null, transparent = false }) => {
     // Sanitize boolean parameters - always return a boolean value
     const sanitizeBoolean = (value) => {
         // If it's already a boolean, return it directly
@@ -20,6 +20,7 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
     nologo = sanitizeBoolean(nologo);
     nofeed = sanitizeBoolean(nofeed) || sanitizeBoolean(isPrivate);
     safe = sanitizeBoolean(safe);
+    transparent = sanitizeBoolean(transparent);
 
     // Ensure model is one of the allowed models or default to "flux"
     const allowedModels = Object.keys(MODELS);
@@ -59,5 +60,5 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
     // Always convert to array for consistency (empty array if null/undefined)
     const imageArray = image ? image.split(',') : [];
 
-    return { width, height, seed, model, enhance, nologo, negative_prompt, nofeed, safe, quality, image: imageArray };
+    return { width, height, seed, model, enhance, nologo, negative_prompt, nofeed, safe, quality, image: imageArray, transparent };
 };

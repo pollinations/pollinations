@@ -21,12 +21,21 @@ Click the links below to see examples in your browser:
 - [Pollinations.AI API Documentation](#pollinationsai-api-documentation)
   - [Quickstart](#quickstart)
   - [Summary / Navigation](#summary--navigation)
+  - [Authentication 🔑](#authentication-)
+    - [Who Needs What Authentication?](#who-needs-what-authentication)
+    - [Getting Started with Authentication](#getting-started-with-authentication)
+    - [Referrer-Based Authentication](#referrer-based-authentication)
+    - [API Keys and Tokens (For Backend Apps)](#api-keys-and-tokens-for-backend-apps)
+    - [Bearer Authentication](#bearer-authentication)
+    - [Authentication Tiers](#authentication-tiers)
+    - [User Tier System](#user-tier-system)
+  - [Please create a **special bee** issue on GitHub to request tier upgrade.](#please-create-a-special-bee-issue-on-github-to-request-tier-upgrade)
   - [Generate Image API 🖼️](#generate-image-api-️)
     - [Text-To-Image (GET) 🖌️](#text-to-image-get-️)
     - [List Available Image Models 📜](#list-available-image-models-)
   - [Generate Text API 📝](#generate-text-api-)
     - [Text-To-Text (GET) 🗣️](#text-to-text-get-️)
-    - [Text & Multimodal (OpenAI Compatible POST) 🧠💬🖼️🎤⚙️](#text--multimodal-openai-compatible-post-️️)
+    - [Text \& Multimodal (OpenAI Compatible POST) 🧠💬🖼️🎤⚙️](#text--multimodal-openai-compatible-post-️️)
       - [Vision Capabilities (Image Input) 🖼️➡️📝](#vision-capabilities-image-input-️️)
       - [Speech-to-Text Capabilities (Audio Input) 🎤➡️📝](#speech-to-text-capabilities-audio-input-️)
       - [Function Calling ⚙️](#function-calling-️)
@@ -40,12 +49,9 @@ Click the links below to see examples in your browser:
     - [Image Feed 🖼️📈](#image-feed-️)
     - [Text Feed 📝📈](#text-feed-)
   - [Referrer 🔗](#referrer-)
+    - [How to Use Referrers](#how-to-use-referrers)
     - [API Update (starting **2025.03.31**) 📅](#api-update-starting-20250331-)
     - [Special Bee ✅🐝🍯](#special-bee-)
-  - [Authentication 🔑](#authentication-)
-    - [API Keys and Tokens](#api-keys-and-tokens)
-    - [Bearer Authentication](#bearer-authentication)
-    - [Authentication Methods](#authentication-methods)
   - [License 📜](#license-)
 
 ---
@@ -153,6 +159,7 @@ Generates an image based on a text description.
 | `enhance`  | No       | Set to `true` to enhance the prompt using an LLM for more detail.                  | `false` |
 | `safe`     | No       | Set to `true` for strict NSFW filtering (throws error if detected).                | `false` |
 | `referrer` | No\*     | Referrer URL/Identifier. See [Referrer Section](#referrer-).                       |         |
+| `transparent` | No | Set to `true` to request a transparent background (PNG output, if supported by the model). Otherwise, output is JPEG. | `false` |
 
 **Return:** Image file (typically JPEG) 🖼️
 

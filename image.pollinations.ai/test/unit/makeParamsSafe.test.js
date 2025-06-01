@@ -84,4 +84,20 @@ describe('makeParamsSafe', () => {
     expect(result.enhance).toBe(true)
     expect(result.nologo).toBe(false)
   })
+
+  it('should handle the transparent parameter correctly', () => {
+    const input = {
+      transparent: 'true',
+      enhance: false
+    };
+    const result = makeParamsSafe(input);
+    expect(result.transparent).toBe(true);
+    
+    const inputFalse = {
+      transparent: 'false',
+      enhance: false
+    };
+    const resultFalse = makeParamsSafe(inputFalse);
+    expect(resultFalse.transparent).toBe(false);
+  });
 })

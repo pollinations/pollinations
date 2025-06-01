@@ -394,16 +394,15 @@ const callAzureGPTImageWithEndpoint = async (prompt, safeParams, userInfo, endpo
   // Determine quality based on safeParams or use medium as default
   const quality = safeParams.quality || 'medium';
   
-  // Set output format to png for best quality
-  const outputFormat = 'jpeg';
-  
+  // Set output format to png for best quality if transparent, otherwise jpeg
+  const outputFormat = safeParams.transparent ? 'png' : 'jpeg';
   // Default compression to 100 (best quality)
   const outputCompression = 70;
   
   // Build request body
   const requestBody = {
     prompt: sanitizeString(prompt),
-    size:"auto",
+    size: "auto",
     quality,
     output_format: outputFormat,
     output_compression: outputCompression,

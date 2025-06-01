@@ -5,3 +5,4 @@ dist/
 .dev.vars.prod
 .env
 *.log
+backups/

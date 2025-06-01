@@ -399,6 +399,135 @@ code::after {
     display: inline-block;
     padding: 8px 20px;
     border-radius: 30px;
+
+/* Preferences styling */
+.preferences-container {
+    margin-top: 15px;
+    background: linear-gradient(135deg, #fdf0ff 0%, #f0f7ff 100%);
+    border-radius: 18px;
+    padding: 15px 20px;
+    border: 2px solid #e9c6ff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.preferences-container:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.preferences-header h3 {
+    margin: 5px 0 15px 0;
+    color: #7e57c2;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-align: center;
+    font-size: 1.3rem;
+}
+
+.preference-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
+    margin-bottom: 8px;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.toggle-label {
+    flex: 1;
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: #444;
+}
+
+.preference-status {
+    margin-left: 10px;
+    font-size: 0.9rem;
+    color: #7e57c2;
+    font-weight: 600;
+}
+
+.preference-info {
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 12px;
+    border-left: 4px solid #7e57c2;
+}
+
+.preference-info p {
+    margin: 6px 0;
+    font-size: 0.95rem;
+    color: #555;
+}
+
+.preference-info a {
+    color: #7e57c2;
+    font-weight: bold;
+    text-decoration: none;
+    transition: all 0.2s;
+    border-bottom: 1px dotted;
+    padding-bottom: 1px;
+}
+
+.preference-info a:hover {
+    color: #5e35b1;
+    border-bottom: 1px solid;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: var(--color-secondary);
+    animation: toggle-on 0.5s forwards;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(24px);
+}
+
+@keyframes toggle-on {
+    0% { background-color: var(--color-secondary); }
+    50% { background-color: var(--color-primary); }
+    100% { background-color: var(--color-secondary); }
+}
     font-weight: 700;
     font-size: 1.2rem;
     text-transform: uppercase;

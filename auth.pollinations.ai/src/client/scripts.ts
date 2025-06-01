@@ -11,6 +11,9 @@ let userId = null;
 let currentDomains = [];
 let apiToken = null;
 let userTier = 'seed';
+let userPreferences = {};
+
+// Define all functions in global scope so they can be accessed by inline event handlers
 
 // Initialize on page load
 window.addEventListener('load', function() {
@@ -49,11 +52,12 @@ window.addEventListener('load', function() {
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
         
-        // Automatically load user info, domains and token
+        // Automatically load user info, domains, token and preferences
         userId = params.get('user_id');
         getUserInfo();
         getDomains();
         getApiToken();
+        getUserPreferences();
     } else {
         // Check for stored token
         const storedToken = localStorage.getItem('github_auth_token');
@@ -71,23 +75,24 @@ window.addEventListener('load', function() {
             document.getElementById('user-section').classList.remove('hidden');
             document.getElementById('domain-section').classList.remove('hidden');
             
-            // Automatically load user info, domains and token
+            // Automatically load user info, domains, token and preferences
             getUserInfo();
             getDomains();
             getApiToken();
+            getUserPreferences();
         }
     }
 });
 
 // Start authentication
-function startAuth() {
+window.startAuth = function() {
     // Use the current path as the redirect URI (works for both / and /test-client)
     const redirectUri = encodeURIComponent(window.location.href);
     window.location.href = API_BASE + '/authorize?redirect_uri=' + redirectUri;
 }
 
 // Logout function
-function logout() {
+window.logout = function() {
     // Clear stored data
     localStorage.removeItem('github_auth_token');
     localStorage.removeItem('github_username');
@@ -228,7 +233,7 @@ function displayDomains() {
 }
 
 // Add domain
-async function addDomain() {
+window.addDomain = async function() {
     const domain = document.getElementById('new-domain').value.trim();
     if (!domain) {
         showStatus('domain-info', '❌ Please enter a domain', 'error');
@@ -265,7 +270,7 @@ async function addDomain() {
 }
 
 // Remove domain
-async function removeDomain(domainToRemove) {
+window.removeDomain = async function(domainToRemove) {
     if (!authToken || !userId) {
         showStatus('domain-info', '❌ Get user info first', 'error');
         return;
@@ -348,6 +353,130 @@ function updateTierDisplay() {
     }
 }
 
+// Get user preferences
+async function getUserPreferences() {
+    if (!authToken || !userId) {
+        // Hide preferences section if not authenticated
+        if (document.getElementById('preferences-section')) {
+            document.getElementById('preferences-section').classList.add('hidden');
+        }
+        return;
+    }
+    
+    // Show preferences section when authenticated
+    if (document.getElementById('preferences-section')) {
+        document.getElementById('preferences-section').classList.remove('hidden');
+    
+        try {
+            const response = await fetch(API_BASE + '/preferences', {
+                headers: {
+                    'Authorization': 'Bearer ' + authToken
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                userPreferences = data.preferences || {};
+                
+                // Update toggle state
+                updateAdsToggleUI();
+            } else {
+                // Check if unauthorized (token expired or invalid)
+                if (response.status === 401) {
+                    // Don't call handleTokenError() directly to avoid disrupting flow
+                    console.error('Unauthorized when getting preferences');
+                    document.getElementById('ads-status').textContent = 'Auth error';
+                } else {
+                    console.error('Error fetching preferences:', response.statusText);
+                    document.getElementById('ads-status').textContent = 'Error loading preferences';
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching preferences:', error);
+            document.getElementById('ads-status').textContent = 'Error loading preferences';
+        }
+    }
+}
+
+// Update the ads toggle UI based on current preferences
+function updateAdsToggleUI() {
+    const adsToggle = document.getElementById('ads-toggle');
+    const adsStatus = document.getElementById('ads-status');
+    
+    // Only update if elements exist
+    if (adsToggle && adsStatus) {
+        // Set toggle state based on preferences
+        const showAds = userPreferences.show_ads !== false; // Default to true if not set
+        adsToggle.checked = showAds;
+        
+        // Update status text
+        adsStatus.textContent = showAds ? 'Enabled' : 'Disabled';
+    }
+}
+
+// Toggle ads preference
+window.toggleAdsPreference = async function() {
+    if (!authToken || !userId) {
+        return;
+    }
+    
+    const adsToggle = document.getElementById('ads-toggle');
+    const adsStatus = document.getElementById('ads-status');
+    
+    // Check if elements exist
+    if (!adsToggle || !adsStatus) {
+        console.error('Toggle elements not found');
+        return;
+    }
+    
+    // Get new state from toggle
+    const showAds = adsToggle.checked;
+    
+    // Update status to loading
+    adsStatus.textContent = 'Saving...';
+    
+    try {
+        const response = await fetch(API_BASE + '/preferences', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + authToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                key: 'show_ads',
+                value: showAds
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            userPreferences = data.preferences || {};
+            
+            // Update UI
+            updateAdsToggleUI();
+        } else {
+            // Error handling
+            if (response.status === 401) {
+                console.error('Unauthorized when updating preferences');
+                adsStatus.textContent = 'Auth error';
+                // Don't call handleTokenError directly to avoid disrupting flow
+            } else {
+                console.error('Error updating preferences:', response.statusText);
+                adsStatus.textContent = 'Error saving preference';
+                
+                // Revert toggle to previous state
+                adsToggle.checked = userPreferences.show_ads !== false;
+            }
+        }
+    } catch (error) {
+        console.error('Error updating preferences:', error);
+        adsStatus.textContent = 'Error saving preference';
+        
+        // Revert toggle to previous state
+        adsToggle.checked = userPreferences.show_ads !== false;
+    }
+}
+
 // Get API token
 async function getApiToken() {
     if (!authToken || !userId) {
@@ -385,7 +514,7 @@ async function getApiToken() {
 }
 
 // Generate API token
-async function generateApiToken() {
+window.generateApiToken = async function() {
     if (!authToken || !userId) {
         showStatus('token-info', '❌ Get user info first', 'error');
         return;

@@ -653,10 +653,18 @@ async function logGptImagePrompt(prompt, safeParams, userInfo = {}) {
       prompt,
       model: safeParams.model,
       size: `${safeParams.width}x${safeParams.height}`,
-      userId: userInfo.userId || 'anonymous',
-      authType: userInfo.tokenAuth ? 'token' : (userInfo.referrerAuth ? 'referrer' : 'unknown'),
-      authReason: userInfo.reason || 'none',
-      tier: userInfo.tier || 'none'
+      // Include complete user info for better diagnostics
+      userInfo: {
+        userId: userInfo.userId || 'anonymous',
+        authenticated: userInfo.authenticated || false,
+        tokenAuth: userInfo.tokenAuth || false,
+        referrerAuth: userInfo.referrerAuth || false,
+        reason: userInfo.reason || 'none',
+        tier: userInfo.tier || 'none',
+        bypass: userInfo.bypass || false,
+        // Include complete debugInfo if available
+        debugInfo: userInfo.debugInfo || {}
+      }
     }, null, 2);
     
     // Append to log file
@@ -694,10 +702,18 @@ async function logGptImageError(prompt, safeParams, userInfo = {}, error) {
       prompt,
       model: safeParams.model,
       size: `${safeParams.width}x${safeParams.height}`,
-      userId: userInfo.userId || 'anonymous',
-      authType: userInfo.tokenAuth ? 'token' : (userInfo.referrerAuth ? 'referrer' : 'unknown'),
-      authReason: userInfo.reason || 'none',
-      tier: userInfo.tier || 'none',
+      // Include complete user info for better diagnostics
+      userInfo: {
+        userId: userInfo.userId || 'anonymous',
+        authenticated: userInfo.authenticated || false,
+        tokenAuth: userInfo.tokenAuth || false,
+        referrerAuth: userInfo.referrerAuth || false,
+        reason: userInfo.reason || 'none',
+        tier: userInfo.tier || 'none',
+        bypass: userInfo.bypass || false,
+        // Include complete debugInfo if available
+        debugInfo: userInfo.debugInfo || {}
+      },
       error: {
         message: error.message,
         name: error.name,

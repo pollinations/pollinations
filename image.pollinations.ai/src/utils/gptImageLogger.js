@@ -16,8 +16,9 @@ const logError = debug('pollinations:error');
  * @param {string} prompt - The prompt for image generation
  * @param {Object} safeParams - Parameters for image generation
  * @param {Object} userInfo - User authentication information
+ * @param {Object} contentSafetyResults - Results from Azure Content Safety analysis (optional)
  */
-export async function logGptImagePrompt(prompt, safeParams, userInfo = {}) {
+export async function logGptImagePrompt(prompt, safeParams, userInfo = {}, contentSafetyResults = null) {
   try {
     // Create temp directory if it doesn't exist
     const tempDir = path.join(process.cwd(), 'temp');
@@ -42,6 +43,12 @@ export async function logGptImagePrompt(prompt, safeParams, userInfo = {}) {
       // Log if this is an image editing request
       hasImageInput: hasImageUrls || hasImageData,
       imageUrls: hasImageUrls ? safeParams.imageUrls : [],
+      // Include content safety analysis results if available
+      contentSafety: contentSafetyResults ? {
+        safe: contentSafetyResults.safe,
+        formattedViolations: contentSafetyResults.formattedViolations,
+        violations: contentSafetyResults.violations
+      } : null,
       // Include complete user info for better diagnostics
       userInfo: {
         userId: userInfo.userId || 'anonymous',
@@ -72,8 +79,9 @@ export async function logGptImagePrompt(prompt, safeParams, userInfo = {}) {
  * @param {Object} safeParams - Parameters for image generation
  * @param {Object} userInfo - User authentication information
  * @param {Error} error - The error that occurred
+ * @param {Object} contentSafetyResults - Results from Azure Content Safety analysis (optional)
  */
-export async function logGptImageError(prompt, safeParams, userInfo = {}, error) {
+export async function logGptImageError(prompt, safeParams, userInfo = {}, error, contentSafetyResults = null) {
   try {
     // Create temp directory if it doesn't exist
     const tempDir = path.join(process.cwd(), 'temp');
@@ -98,6 +106,12 @@ export async function logGptImageError(prompt, safeParams, userInfo = {}, error)
       // Log if this is an image editing request
       hasImageInput: hasImageUrls || hasImageData,
       imageUrls: hasImageUrls ? safeParams.imageUrls : [],
+      // Include content safety analysis results if available
+      contentSafety: contentSafetyResults ? {
+        safe: contentSafetyResults.safe,
+        formattedViolations: contentSafetyResults.formattedViolations,
+        violations: contentSafetyResults.violations
+      } : null,
       // Include complete user info for better diagnostics
       userInfo: {
         userId: userInfo.userId || 'anonymous',
@@ -115,7 +129,13 @@ export async function logGptImageError(prompt, safeParams, userInfo = {}, error)
         name: error.name,
         stack: error.stack,
         code: error.code,
-        status: error.status || error.statusCode
+        status: error.status || error.statusCode,
+        // Flag if error is related to content safety
+        isContentSafetyError: error.message && (
+          error.message.includes('unsafe content') || 
+          error.message.includes('rejected prompt') ||
+          error.message.includes('rejected image')
+        )
       }
     }, null, 2);
     

@@ -15,13 +15,7 @@ export const SOCIAL_LINKS = {
     width: "25px",
     height: "25px",
   },
-  youtube: {
-    label: 'YouTube',
-    icon: ICONS.youtube,
-    url: 'https://www.youtube.com/channel/UCk4yKnLnYfyUmCCbDzOZOug',
-    width: "25px",
-    height: "25px",
-  },
+
   instagram: {
     label: 'Instagram',
     icon: ICONS.instagram,

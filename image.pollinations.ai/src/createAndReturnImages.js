@@ -397,7 +397,7 @@ const callAzureGPTImageWithEndpoint = async (prompt, safeParams, userInfo, endpo
   // Set output format to png if model is gptimage, otherwise jpeg
   const outputFormat = 'png';
   // Default compression to 100 (best quality)
-  const outputCompression = 70;
+  // const outputCompression = 70;
   
   // Build request body
   const requestBody = {
@@ -405,7 +405,7 @@ const callAzureGPTImageWithEndpoint = async (prompt, safeParams, userInfo, endpo
     size: "auto",
     quality,
     output_format: outputFormat,
-    output_compression: outputCompression,
+    // output_compression: outputCompression,
     // moderation: "low",
     n: 1
   };

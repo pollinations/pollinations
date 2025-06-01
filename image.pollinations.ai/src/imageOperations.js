@@ -128,7 +128,7 @@ export async function addPollinationsLogoWithImagemagick(buffer, logoPath, safeP
     const { ext } = await fileTypeFromBuffer(buffer);
     const tempImageFile = tempfile({ extension: ext });
     // Use PNG for gptimage model, JPG otherwise
-    const outputExt = safeParams.model === 'gptimage' ? "png" : "jpg";
+    const outputExt = "png";
     const tempOutputFile = tempfile({ extension: outputExt });
 
     await fs.writeFile(tempImageFile, buffer);

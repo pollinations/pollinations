@@ -89,7 +89,6 @@ For **backend services, scripts, and server applications**, tokens provide the h
 | Method | Description | Example |
 | :--- | :--- | :--- |
 | Authorization Header | Standard Bearer token approach (recommended) | `Authorization: Bearer YOUR_TOKEN` |
-| Custom Headers | Alternative header options | `X-Pollinations-Token: YOUR_TOKEN` |
 | Query Parameter | Token as URL parameter | `?token=YOUR_TOKEN` |
 | Request Body | Token in POST request body | `{ "token": "YOUR_TOKEN" }` |
 
@@ -117,7 +116,7 @@ Pollinations.AI supports multiple authentication tiers:
    - Automatic handling through browser's `Referer` header
    - **Register your domain at [auth.pollinations.ai](https://auth.pollinations.ai)**
 
-3. **Anonymous Access**: Basic access (for testing/development)
+3. **Anonymous Access**: Basic access
    - Limited rate limits with standard queue waiting times
    - No setup required - just call the API
 

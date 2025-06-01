@@ -159,7 +159,6 @@ Generates an image based on a text description.
 | `enhance`  | No       | Set to `true` to enhance the prompt using an LLM for more detail.                  | `false` |
 | `safe`     | No       | Set to `true` for strict NSFW filtering (throws error if detected).                | `false` |
 | `referrer` | No\*     | Referrer URL/Identifier. See [Referrer Section](#referrer-).                       |         |
-| `transparent` | No | Set to `true` to request a transparent background (PNG output, if supported by the model). Otherwise, output is JPEG. | `false` |
 
 **Return:** Image file (typically JPEG) 🖼️
 

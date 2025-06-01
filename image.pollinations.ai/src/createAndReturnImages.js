@@ -394,8 +394,8 @@ const callAzureGPTImageWithEndpoint = async (prompt, safeParams, userInfo, endpo
   // Determine quality based on safeParams or use medium as default
   const quality = safeParams.quality || 'medium';
   
-  // Set output format to png for best quality if transparent, otherwise jpeg
-  const outputFormat = safeParams.transparent ? 'png' : 'jpeg';
+  // Set output format to png if model is gptimage, otherwise jpeg
+  const outputFormat = safeParams.model === 'gptimage' ? 'png' : 'jpeg';
   // Default compression to 100 (best quality)
   const outputCompression = 70;
   
@@ -671,12 +671,12 @@ const processImageBuffer = async (buffer, maturityFlags, safeParams, metadataObj
   let processedBuffer = !logoPath ? buffer : 
     await addPollinationsLogoWithImagemagick(buffer, logoPath, safeParams);
   
-  // Convert format if not transparent
-  if (!safeParams.transparent) {
+  // Convert format if not gptimage
+  if (safeParams.model !== 'gptimage') {
     updateProgress(progress, requestId, 85, 'Processing', 'Converting to JPEG...');
     processedBuffer = await convertToJpeg(processedBuffer);
   } else {
-    updateProgress(progress, requestId, 85, 'Processing', 'Keeping PNG format for transparency...');
+    updateProgress(progress, requestId, 85, 'Processing', 'Keeping PNG format for gptimage...');
   }
   
   // Add metadata

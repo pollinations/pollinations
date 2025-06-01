@@ -127,9 +127,8 @@ export function getLogoPath(safeParams, isChild, isMature) {
 export async function addPollinationsLogoWithImagemagick(buffer, logoPath, safeParams) {
     const { ext } = await fileTypeFromBuffer(buffer);
     const tempImageFile = tempfile({ extension: ext });
-    
-    // Use PNG for transparent images, JPG otherwise
-    const outputExt = safeParams.transparent ? "png" : "jpg";
+    // Use PNG for gptimage model, JPG otherwise
+    const outputExt = safeParams.model === 'gptimage' ? "png" : "jpg";
     const tempOutputFile = tempfile({ extension: outputExt });
 
     await fs.writeFile(tempImageFile, buffer);

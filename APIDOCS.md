@@ -1046,7 +1046,7 @@ def transcribe_audio(audio_path, question="Transcribe this audio"):
 
     # Determine audio format (simple check by extension)
     audio_format = audio_path.split('.')[-1].lower()
-    supported_formats = ['mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm'] # Check API/OpenAI docs for current list
+    supported_formats = ['mp3', 'wav'] # Only WAV and MP3 formats are currently supported
     if audio_format not in supported_formats:
          print(f"Warning: Potentially unsupported audio format '{audio_format}'. Check API documentation.")
          # Consider trying a default like 'mp3' or returning error
@@ -1113,7 +1113,7 @@ async function transcribeAudio(audioFile, question = "Transcribe this audio") {
   try {
     const base64AudioData = await fileToBase64Data(audioFile);
     const audioFormat = audioFile.name.split(".").pop().toLowerCase();
-    // Add validation for supported formats if needed
+    // Note: Only WAV and MP3 formats are currently supported
 
     const payload = {
       model: "openai-audio",

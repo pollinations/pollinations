@@ -452,8 +452,19 @@ const callAzureGPTImageWithEndpoint = async (prompt, safeParams, userInfo, endpo
           }
           
           const buffer = await imageResponse.buffer();
+          
+          // Determine file extension from Content-Type header
+          const contentType = imageResponse.headers.get('content-type') || '';
+          let extension = '.png'; // Default extension
+          
+          // Extract extension from content type (e.g., "image/jpeg" -> "jpeg")
+          if (contentType.startsWith('image/')) {
+              const mimeExtension = contentType.split('/')[1].split(';')[0]; // Handle cases like "image/jpeg; charset=utf-8"
+              extension = `.${mimeExtension}`;
+          }
+          
           // Use the image[] array notation as required by Azure OpenAI API
-          formData.append('image[]', buffer, { filename: `image${i}.png` });
+          formData.append('image[]', buffer, { filename: `image${i}${extension}` });
       }
     } catch (error) {
       logError('Error processing image for editing:', error);
@@ -544,22 +555,12 @@ export const callAzureGPTImage = async (prompt, safeParams, userInfo = {}) => {
     // Stage-based endpoint selection instead of random
     // seed stage → GPT_IMAGE_1_ENDPOINT (standard endpoint)
     // flower/nectar stage → GPT_IMAGE_2_ENDPOINT (advanced endpoint)
-    const endpointIndex = (userTier === 'seed') ? 1 : 2;
+    // const endpointIndex = (userTier === 'seed') ? 1 : 2;
     
+    const endpointIndex = 1; //Math.random() < 0.5 ? 1 : 2 ;
     logCloudflare(`Using Azure GPT Image endpoint ${endpointIndex} for user tier: ${userTier}`, userInfo.userId ? `(userId: ${userInfo.userId})` : '(anonymous)');
-    
-    try {
-      // Try with the tier-appropriate endpoint first
-      return await callAzureGPTImageWithEndpoint(prompt, safeParams, userInfo, endpointIndex);
-    } catch (error) {
-      // Only try fallback for higher tier users when endpoint 2 fails
-      if (endpointIndex === 2) {
-        logCloudflare(`Endpoint 2 failed, falling back to endpoint 1 for user: ${userInfo.userId || 'anonymous'}`);
-        return await callAzureGPTImageWithEndpoint(prompt, safeParams, userInfo, 1);
-      }
-      // For seed tier users, just propagate the error
-      throw error;
-    }
+
+    return await callAzureGPTImageWithEndpoint(prompt, safeParams, userInfo, endpointIndex);
   } catch (error) {
     logError('Error calling Azure GPT Image API:', error);
     throw error;
@@ -586,10 +587,11 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
         : 'No userInfo provided');
     
     // Restrict GPT Image model to users with valid authentication
-    if (!userInfo || !userInfo.authenticated) {
-      logError('Access to GPT Image model requires authentication. Please request a token at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml');
+    if (!userInfo || !userInfo.authenticated || userInfo.tier === 'seed') {
+      const errorText = "We temporarily limited access to gpt-image-1 until Azure approves increased quota. Access to GPT Image model requires authentication. Please authenticate at https://auth.pollinations.ai and request a tier upgrade at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml";
+      logError(errorText);
       progress.updateBar(requestId, 35, 'Auth', 'GPT Image requires authorization');
-      throw new Error('Access to GPT Image model requires authentication. Please request a token at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml');      
+      throw new Error(errorText);      
     } else {
       // For gptimage model, always throw errors instead of falling back
       updateProgress(progress, requestId, 30, 'Processing', 'Trying Azure GPT Image...');

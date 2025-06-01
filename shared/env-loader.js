@@ -7,8 +7,9 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Use different variable names to avoid conflicts with global __filename/__dirname
+const currentFilePath = fileURLToPath(import.meta.url);
+const currentDirPath = path.dirname(currentFilePath);
 
 /**
  * Load environment variables from both shared and local .env files
@@ -17,7 +18,7 @@ const __dirname = path.dirname(__filename);
  */
 export function loadEnvironments(localEnvPath = null) {
   // Load shared .env file first
-  const sharedEnvPath = path.resolve(__dirname, '.env');
+  const sharedEnvPath = path.resolve(currentDirPath, '.env');
   dotenv.config({ path: sharedEnvPath });
   
   // Load local .env file (takes precedence over shared)

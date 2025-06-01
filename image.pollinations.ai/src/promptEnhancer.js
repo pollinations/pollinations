@@ -2,6 +2,10 @@
 import fetch from 'node-fetch';
 import urldecode from 'urldecode';
 import debug from 'debug';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 const logError = debug('pollinations:error');
 const logPimp = debug('pollinations:pimp');
@@ -66,13 +70,22 @@ Respond only with the new prompt. Nothing Else.`
             referrer: 'https://image.pollinations.ai'
         });
 
+        // Add authentication token if available
+        const headers = {
+            'Content-Type': 'application/json',
+            'referer': 'https://image.pollinations.ai'
+        };
+        
+        // Use POLLINATIONS_KEY from environment if available
+        if (process.env.POLLINATIONS_KEY) {
+            headers['Authorization'] = `Bearer ${process.env.POLLINATIONS_KEY}`;
+            logPimp("Using POLLINATIONS_KEY for authentication");
+        }
+
         response = await Promise.race([
             fetch(apiUrl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'referer': 'https://image.pollinations.ai'
-                },
+                headers: headers,
                 body: body
             }).then(res => {
                 if (res.status !== 200) {

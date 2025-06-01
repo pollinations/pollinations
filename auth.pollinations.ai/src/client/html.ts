@@ -81,6 +81,24 @@ export const generateHTML = () => `<!DOCTYPE html>
                     </div>
                 </div>
             </div>
+            
+            <div id="preferences-section" class="preferences-container hidden">
+                <div class="preferences-header">
+                    <h3>✨ Your Settings ✨</h3>
+                </div>
+                <div class="preference-item">
+                    <label for="ads-toggle" class="toggle-label">Show Ads</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="ads-toggle" onchange="toggleAdsPreference()">
+                        <span class="toggle-slider"></span>
+                    </div>
+                    <span id="ads-status" class="preference-status">Loading...</span>
+                </div>
+                <div class="preference-info">
+                    <p>💯 Enabling ads helps you level up to higher tiers - no cap!</p>
+                    <p>👀 Want credit card payments instead? <a href="https://github.com/pollinations/pollinations/issues/2202" target="_blank">Drop a 👍 on this issue</a> to vote!</p>
+                </div>
+            </div>
         </div>
         
         <div id="domain-section" class="hidden">

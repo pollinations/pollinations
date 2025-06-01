@@ -684,13 +684,8 @@ async function handleUpdatePreferences(request: Request, env: Env, corsHeaders: 
       const bearerToken = extractBearerToken(request);
       if (bearerToken) {
         try {
-<<<<<<< HEAD
           const payload = await verifyJWT(bearerToken, env);
           userId = payload.sub;
-=======
-          const payload = await verifyJWT(bearerToken, env.JWT_SECRET);
-          userId = payload.user_id;
->>>>>>> master
         } catch (error) {
           // Invalid JWT
         }

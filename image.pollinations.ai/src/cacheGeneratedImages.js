@@ -3,11 +3,9 @@ import fs from 'fs/promises';
 import { existsSync, mkdirSync } from 'fs';
 import path from 'path';
 import debug from 'debug';
-import { PromiseCache } from './utils/promiseCache.js';
 
 const MAX_CACHE_SIZE = process.env.NODE_ENV === 'test' ? 2 : 500000;
 const memCache = new Map(); // Using Map to maintain insertion order for LRU
-const promiseCache = new PromiseCache(MAX_CACHE_SIZE); // For caching in-flight promises
 
 const logError = debug('pollinations:error');
 const logCache = debug('pollinations:cache');
@@ -58,50 +56,23 @@ export const getCachedImage = (prompt = "", extraParams) => {
 };
 
 export const cacheImage = async (prompt, extraParams, bufferPromiseCreator) => {
-  const cachePath = generateCachePath(prompt, extraParams);
-  
-  // First check if we have a completed result in cache
   if (isImageCached(prompt, extraParams)) {
-    logCache(`Found cached result for: ${cachePath}`);
     return getCachedImage(prompt, extraParams);
   }
 
-  // Check if there's an in-flight promise for this request
-  // This prevents duplicate concurrent executions
-  const promiseKey = `promise_${cachePath}`;
-  
-  try {
-    const buffer = await promiseCache.getOrCreate(promiseKey, async () => {
-      logCache(`Executing image generation for: ${cachePath}`);
-      const result = await bufferPromiseCreator();
-      
-      // Cache the completed result
-      // If cache is at max size, remove oldest entry (first item in Map)
-      if (memCache.size >= MAX_CACHE_SIZE) {
-        const firstKey = memCache.keys().next().value;
-        memCache.delete(firstKey);
-        logCache(`Removed oldest cache entry: ${firstKey}`);
-      }
+  const cachePath = generateCachePath(prompt, extraParams);
+  const buffer = await bufferPromiseCreator();
 
-      memCache.set(cachePath, result);
-      logCache(`Cached completed image: ${cachePath}`);
-      
-      // Clean up the promise from the promise cache after a delay
-      // This allows the result to be served from memCache for subsequent requests
-      setTimeout(() => {
-        promiseCache.delete(promiseKey);
-        logCache(`Cleaned up promise cache for: ${promiseKey}`);
-      }, 1000);
-      
-      return result;
-    });
-    
-    return buffer;
-  } catch (error) {
-    // Promise was already removed from cache on error
-    logError(`Error in cacheImage for ${cachePath}:`, error);
-    throw error;
+  // If cache is at max size, remove oldest entry (first item in Map)
+  if (memCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = memCache.keys().next().value;
+    memCache.delete(firstKey);
+    logCache(`Removed oldest cache entry: ${firstKey}`);
   }
+
+  memCache.set(cachePath, buffer);
+  logCache(`Cached image: ${cachePath}`);
+  return buffer;
 };
 
 export const memoize = (fn, getKey) => {

@@ -575,6 +575,16 @@ const allProjects = {
       order: 1,
     },
     {
+      name: "🎤 Comeback AI",
+      url: "https://comeback-ai.pinkpixel.dev",
+      description: "AI-powered clapback machine that transforms mean comments into witty comebacks with 10 unique personas, uses Pollinations openai-audio for voice synthesis, and Whisper for speech-to-text transcription. Turn trolls into comedy gold!",
+      author: "@sizzlebop",
+      repo: "https://github.com/pinkpixel-dev/comeback-ai",
+      stars: 1,
+      submissionDate: "2025-05-31",
+      order: 1,
+    },
+    {
       name: "The Promised Pen",
       url: "https://promisedpen.app",
       description: "A free, feature-rich novel writing application that helps writers organize stories, characters, and worlds. Uses Pollinations AI for generating chapter summaries, rewriting text based on context, and generating new content based on previous chapters and character information.",
@@ -616,6 +626,16 @@ const allProjects = {
       description: "An LLM frontend for power users. Pollinations permits it to generate text and images.",
       repo: "https://github.com/SillyTavern/SillyTavern",
       stars: 14700,
+      order: 1,
+    },
+    {
+      name: "LLM7.io",
+      url: "https://llm7.io",
+      description: "A free and open AI platform providing advanced multimodal capabilities, including large language model access and experimental search tools. Integrates Pollinations text generation as a backend service with transparent credit on the website and repository.",
+      author: "@chigwell",
+      repo: "https://github.com/chigwell/llm7.io",
+      stars: 7,
+      submissionDate: "2025-05-30",
       order: 1,
     },
     {

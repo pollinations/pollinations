@@ -9,6 +9,8 @@ import { sanitizeString } from './translateIfNecessary.js';
 // Import shared authentication utilities
 import sharp from 'sharp';
 import dotenv from 'dotenv';
+// Import GPT Image logging utilities
+import { logGptImagePrompt, logGptImageError } from './utils/gptImageLogger.js';
 
 dotenv.config();
 
@@ -557,7 +559,7 @@ export const callAzureGPTImage = async (prompt, safeParams, userInfo = {}) => {
     // flower/nectar stage → GPT_IMAGE_2_ENDPOINT (advanced endpoint)
     // const endpointIndex = (userTier === 'seed') ? 1 : 2;
     
-    const endpointIndex = userTier === 'seed' ? 2 : 1;
+    const endpointIndex = 1; //Math.random() < 0.5 ? 1 : 2 ;
     logCloudflare(`Using Azure GPT Image endpoint ${endpointIndex} for user tier: ${userTier}`, userInfo.userId ? `(userId: ${userInfo.userId})` : '(anonymous)');
 
     return await callAzureGPTImageWithEndpoint(prompt, safeParams, userInfo, endpointIndex);
@@ -593,6 +595,9 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
       progress.updateBar(requestId, 35, 'Auth', 'GPT Image requires authorization');
       throw new Error(errorText);      
     } else {
+      // Only log authenticated requests that will actually use gptimage
+      await logGptImagePrompt(prompt, safeParams, userInfo);
+      
       // For gptimage model, always throw errors instead of falling back
       updateProgress(progress, requestId, 30, 'Processing', 'Trying Azure GPT Image...');
       try {
@@ -600,7 +605,8 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
       } catch (error) {
         // Log the error but don't fall back - propagate it to the caller
         logError('Azure GPT Image failed:', error.message);
-        progress.updateBar(requestId, 35, 'Error', 'GPT Image API error');
+        await logGptImageError(prompt, safeParams, userInfo, error);
+        progress.updateBar(requestId, 100, 'Error', error.message);
         throw error;
       }
     }
@@ -621,6 +627,8 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
     return await callCloudflareDreamshaper(prompt, safeParams);
   }
 };
+
+// GPT Image logging functions have been moved to utils/gptImageLogger.js
 
 /**
  * Extracts and normalizes maturity flags from image generation result

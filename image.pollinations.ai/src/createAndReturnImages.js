@@ -11,6 +11,7 @@ import sharp from 'sharp';
 import dotenv from 'dotenv';
 // Import GPT Image logging utilities
 import { logGptImagePrompt, logGptImageError } from './utils/gptImageLogger.js';
+import { analyzeTextSafety, analyzeImageSafety, formatViolations } from './utils/azureContentSafety.js';
 
 dotenv.config();
 
@@ -446,27 +447,52 @@ const callAzureGPTImageWithEndpoint = async (prompt, safeParams, userInfo, endpo
       // Process each image in the array
       for (let i = 0; i < imageUrls.length; i++) {
           const imageUrl = imageUrls[i];
-          logCloudflare(`Fetching image ${i+1}/${imageUrls.length} from URL: ${imageUrl}`);
-          
-          const imageResponse = await fetch(imageUrl);
-          if (!imageResponse.ok) {
-              throw new Error(`Failed to fetch image from URL: ${imageUrl}`);
+          try {
+              logCloudflare(`Fetching image ${i+1}/${imageUrls.length} from URL: ${imageUrl}`);
+              
+              const imageResponse = await fetch(imageUrl);
+              if (!imageResponse.ok) {
+                  throw new Error(`Failed to fetch image from URL: ${imageUrl}`);
+              }
+              
+              const buffer = await imageResponse.buffer();
+              
+              // Only check safety after we've successfully fetched the image
+              logCloudflare(`Checking safety of input image ${i+1}/${imageUrls.length}`);
+              const imageSafetyResult = await analyzeImageSafety(buffer);
+              
+              // Log image safety check results
+              await logGptImagePrompt(
+                prompt, 
+                safeParams, 
+                userInfo, 
+                { ...imageSafetyResult, source: `Input image ${i+1}` }
+              );
+              
+              if (!imageSafetyResult.safe) {
+                  const errorMessage = `Input image ${i+1} contains unsafe content: ${imageSafetyResult.formattedViolations}`;
+                  const error = new Error(errorMessage);
+                  await logGptImageError(prompt, safeParams, userInfo, error, imageSafetyResult);
+                  throw error;
+              }
+              
+              // Determine file extension from Content-Type header
+              const contentType = imageResponse.headers.get('content-type') || '';
+              let extension = '.png'; // Default extension
+              
+              // Extract extension from content type (e.g., "image/jpeg" -> "jpeg")
+              if (contentType.startsWith('image/')) {
+                  const mimeExtension = contentType.split('/')[1].split(';')[0]; // Handle cases like "image/jpeg; charset=utf-8"
+                  extension = `.${mimeExtension}`;
+              }
+              
+              // Use the image[] array notation as required by Azure OpenAI API
+              formData.append('image[]', buffer, { filename: `image${i}${extension}` });
+          } catch (error) {
+              // More specific error handling for image processing
+              logError(`Error processing image ${i+1}:`, error.message);
+              throw new Error(`Failed to process image: ${error.message}`);
           }
-          
-          const buffer = await imageResponse.buffer();
-          
-          // Determine file extension from Content-Type header
-          const contentType = imageResponse.headers.get('content-type') || '';
-          let extension = '.png'; // Default extension
-          
-          // Extract extension from content type (e.g., "image/jpeg" -> "jpeg")
-          if (contentType.startsWith('image/')) {
-              const mimeExtension = contentType.split('/')[1].split(';')[0]; // Handle cases like "image/jpeg; charset=utf-8"
-              extension = `.${mimeExtension}`;
-          }
-          
-          // Use the image[] array notation as required by Azure OpenAI API
-          formData.append('image[]', buffer, { filename: `image${i}${extension}` });
       }
     } catch (error) {
       logError('Error processing image for editing:', error);
@@ -599,13 +625,43 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
       await logGptImagePrompt(prompt, safeParams, userInfo);
       
       // For gptimage model, always throw errors instead of falling back
-      updateProgress(progress, requestId, 30, 'Processing', 'Trying Azure GPT Image...');
+      updateProgress(progress, requestId, 30, 'Processing', 'Checking prompt safety...');
+      
       try {
+        // Check prompt safety with Azure Content Safety
+        const promptSafetyResult = await analyzeTextSafety(prompt);
+        
+        // Log the prompt with safety analysis results
+        await logGptImagePrompt(prompt, safeParams, userInfo, promptSafetyResult);
+        
+        if (!promptSafetyResult.safe) {
+          const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
+          logError('Azure Content Safety rejected prompt:', errorMessage);
+          progress.updateBar(requestId, 100, 'Error', 'Prompt contains unsafe content');
+          
+          // Log the error with safety analysis results
+          const error = new Error(errorMessage);
+          await logGptImageError(prompt, safeParams, userInfo, error, promptSafetyResult);
+          throw error;
+        }
+        
+        updateProgress(progress, requestId, 35, 'Processing', 'Trying Azure GPT Image...');
         return await callAzureGPTImage(prompt, safeParams, userInfo);
       } catch (error) {
         // Log the error but don't fall back - propagate it to the caller
-        logError('Azure GPT Image failed:', error.message);
-        await logGptImageError(prompt, safeParams, userInfo, error);
+        logError('Azure GPT Image generation or safety check failed:', error.message);
+        
+        // Check if this is a content safety error that already has analysis results attached
+        const isContentSafetyError = error.message && (
+          error.message.includes('unsafe content') || 
+          error.message.includes('rejected prompt') ||
+          error.message.includes('rejected image')
+        );
+        
+        // If it's not already logged with safety results from earlier checks
+        if (!isContentSafetyError) {
+          await logGptImageError(prompt, safeParams, userInfo, error);
+        }
         progress.updateBar(requestId, 100, 'Error', error.message);
         throw error;
       }

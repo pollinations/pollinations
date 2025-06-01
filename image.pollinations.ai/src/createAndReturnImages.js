@@ -648,11 +648,18 @@ async function logGptImagePrompt(prompt, safeParams, userInfo = {}) {
     const logFile = path.join(logDir, 'gptimage_prompts.log');
     
     // Format the log entry with timestamp, prompt, and relevant parameters
+    // Check for image parameters to log
+    const hasImageUrls = safeParams.imageUrls && safeParams.imageUrls.length > 0;
+    const hasImageData = safeParams.imageData || safeParams.image || safeParams.images;
+    
     const logEntry = JSON.stringify({
       timestamp,
       prompt,
       model: safeParams.model,
       size: `${safeParams.width}x${safeParams.height}`,
+      // Log if this is an image editing request
+      hasImageInput: hasImageUrls || hasImageData,
+      imageUrls: hasImageUrls ? safeParams.imageUrls : [],
       // Include complete user info for better diagnostics
       userInfo: {
         userId: userInfo.userId || 'anonymous',
@@ -697,11 +704,18 @@ async function logGptImageError(prompt, safeParams, userInfo = {}, error) {
     const logFile = path.join(logDir, 'gptimage_errors.log');
     
     // Format the log entry with timestamp, prompt, error details and relevant parameters
+    // Check for image parameters to log
+    const hasImageUrls = safeParams.imageUrls && safeParams.imageUrls.length > 0;
+    const hasImageData = safeParams.imageData || safeParams.image || safeParams.images;
+    
     const logEntry = JSON.stringify({
       timestamp,
       prompt,
       model: safeParams.model,
       size: `${safeParams.width}x${safeParams.height}`,
+      // Log if this is an image editing request
+      hasImageInput: hasImageUrls || hasImageData,
+      imageUrls: hasImageUrls ? safeParams.imageUrls : [],
       // Include complete user info for better diagnostics
       userInfo: {
         userId: userInfo.userId || 'anonymous',

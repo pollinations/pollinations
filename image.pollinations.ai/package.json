@@ -14,6 +14,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@azure-rest/ai-content-safety": "^1.0.1",
+    "@azure/core-auth": "^1.9.0",
+    "@azure/identity": "^4.10.0",
     "@google-cloud/translate": "^7.2.1",
     "@gradio/client": "^0.19.4",
     "@vitalets/google-translate-api": "^9.2.0",

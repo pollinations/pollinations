@@ -4,7 +4,7 @@ import { parse } from 'url';
 import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
 import { createAndReturnImageCached } from './createAndReturnImages.js';
 import { makeParamsSafe } from './makeParamsSafe.js';
-import { cacheImage } from './cacheGeneratedImages.js';
+import { cacheImagePromise } from './cacheGeneratedImages.js';
 import { normalizeAndTranslatePrompt } from './normalizeAndTranslatePrompt.js';
 import { countJobs } from './generalImageQueue.js';
 import sleep from 'await-sleep';
@@ -254,7 +254,7 @@ const checkCacheAndGenerate = async (req, res) => {
   
   try {
     // Cache the generated image
-    const bufferAndMaturity = await cacheImage(originalPrompt, safeParams, async () => {
+    const bufferAndMaturity = await cacheImagePromise(originalPrompt, safeParams, async () => {
       const ip = getIp(req);
 
       progress.updateBar(requestId, 10, 'Queueing', 'Request queued');

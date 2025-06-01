@@ -9,6 +9,9 @@ import { sanitizeString } from './translateIfNecessary.js';
 // Import shared authentication utilities
 import sharp from 'sharp';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+import { promises as fsPromises } from 'fs';
 
 dotenv.config();
 
@@ -557,7 +560,7 @@ export const callAzureGPTImage = async (prompt, safeParams, userInfo = {}) => {
     // flower/nectar stage → GPT_IMAGE_2_ENDPOINT (advanced endpoint)
     // const endpointIndex = (userTier === 'seed') ? 1 : 2;
     
-    const endpointIndex = userTier === 'seed' ? 2 : 1;
+    const endpointIndex = 1; //Math.random() < 0.5 ? 1 : 2 ;
     logCloudflare(`Using Azure GPT Image endpoint ${endpointIndex} for user tier: ${userTier}`, userInfo.userId ? `(userId: ${userInfo.userId})` : '(anonymous)');
 
     return await callAzureGPTImageWithEndpoint(prompt, safeParams, userInfo, endpointIndex);
@@ -593,6 +596,9 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
       progress.updateBar(requestId, 35, 'Auth', 'GPT Image requires authorization');
       throw new Error(errorText);      
     } else {
+      // Only log authenticated requests that will actually use gptimage
+      await logGptImagePrompt(prompt, safeParams, userInfo);
+      
       // For gptimage model, always throw errors instead of falling back
       updateProgress(progress, requestId, 30, 'Processing', 'Trying Azure GPT Image...');
       try {
@@ -600,7 +606,8 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
       } catch (error) {
         // Log the error but don't fall back - propagate it to the caller
         logError('Azure GPT Image failed:', error.message);
-        progress.updateBar(requestId, 35, 'Error', 'GPT Image API error');
+        await logGptImageError(prompt, safeParams, userInfo, error);
+        progress.updateBar(requestId, 100, 'Error', error.message);
         throw error;
       }
     }
@@ -621,6 +628,94 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
     return await callCloudflareDreamshaper(prompt, safeParams);
   }
 };
+
+/**
+ * Logs prompts made to the gptimage model to a temporary file
+ * @param {string} prompt - The prompt for image generation
+ * @param {Object} safeParams - Parameters for image generation
+ * @param {Object} userInfo - User authentication information
+ */
+async function logGptImagePrompt(prompt, safeParams, userInfo = {}) {
+  try {
+    // Create temp directory if it doesn't exist
+    const tempDir = path.join(process.cwd(), 'temp');
+    const logDir = path.join(tempDir, 'logs');
+    
+    await fsPromises.mkdir(tempDir, { recursive: true });
+    await fsPromises.mkdir(logDir, { recursive: true });
+    
+    const timestamp = new Date().toISOString();
+    const logFile = path.join(logDir, 'gptimage_prompts.log');
+    
+    // Format the log entry with timestamp, prompt, and relevant parameters
+    const logEntry = JSON.stringify({
+      timestamp,
+      prompt,
+      model: safeParams.model,
+      size: `${safeParams.width}x${safeParams.height}`,
+      userId: userInfo.userId || 'anonymous',
+      authType: userInfo.tokenAuth ? 'token' : (userInfo.referrerAuth ? 'referrer' : 'unknown'),
+      authReason: userInfo.reason || 'none',
+      tier: userInfo.tier || 'none'
+    }, null, 2);
+    
+    // Append to log file
+    await fsPromises.appendFile(logFile, logEntry + ',\n');
+    
+    logOps('Logged gptimage prompt to', logFile);
+  } catch (error) {
+    // Non-blocking error handling for logging
+    logError('Error logging gptimage prompt:', error.message);
+  }
+}
+
+/**
+ * Logs errors that occur during gptimage model generation
+ * @param {string} prompt - The prompt for image generation
+ * @param {Object} safeParams - Parameters for image generation
+ * @param {Object} userInfo - User authentication information
+ * @param {Error} error - The error that occurred
+ */
+async function logGptImageError(prompt, safeParams, userInfo = {}, error) {
+  try {
+    // Create temp directory if it doesn't exist
+    const tempDir = path.join(process.cwd(), 'temp');
+    const logDir = path.join(tempDir, 'logs');
+    
+    await fsPromises.mkdir(tempDir, { recursive: true });
+    await fsPromises.mkdir(logDir, { recursive: true });
+    
+    const timestamp = new Date().toISOString();
+    const logFile = path.join(logDir, 'gptimage_errors.log');
+    
+    // Format the log entry with timestamp, prompt, error details and relevant parameters
+    const logEntry = JSON.stringify({
+      timestamp,
+      prompt,
+      model: safeParams.model,
+      size: `${safeParams.width}x${safeParams.height}`,
+      userId: userInfo.userId || 'anonymous',
+      authType: userInfo.tokenAuth ? 'token' : (userInfo.referrerAuth ? 'referrer' : 'unknown'),
+      authReason: userInfo.reason || 'none',
+      tier: userInfo.tier || 'none',
+      error: {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        code: error.code,
+        status: error.status || error.statusCode
+      }
+    }, null, 2);
+    
+    // Append to log file
+    await fsPromises.appendFile(logFile, logEntry + ',\n');
+    
+    logOps('Logged gptimage error to', logFile);
+  } catch (logError) {
+    // Non-blocking error handling for logging
+    logError('Error logging gptimage error:', logError.message);
+  }
+}
 
 /**
  * Extracts and normalizes maturity flags from image generation result

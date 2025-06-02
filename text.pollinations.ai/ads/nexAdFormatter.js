@@ -1,7 +1,7 @@
-import { debug } from '../utils/debug.js';
+import debug from 'debug';
 
-const log = debug('ads:nexAdFormatter');
-const errorLog = debug('ads:nexAdFormatter:error');
+const log = debug('pollinations:nexad:formatter');
+const errorLog = debug('pollinations:nexad:formatter:error');
 
 /**
  * Convert HTML to Markdown

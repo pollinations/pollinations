@@ -175,9 +175,12 @@ async function handleRequest(req, res, requestData) {
                     const content = completion.choices[0].message.content;
                     
                     // Then process regular referral links
-                    const processedContent = await processRequestForAds(content, req, requestData.messages);
+                    const adString = await processRequestForAds(req, content, requestData.messages);
                     
-                    completion.choices[0].message.content = processedContent;
+                    // If an ad was generated, append it to the content
+                    if (adString) {
+                        completion.choices[0].message.content = content + '\n\n' + adString;
+                    }
                 } catch (error) {
                     errorLog('Error processing content:', error);
                 }

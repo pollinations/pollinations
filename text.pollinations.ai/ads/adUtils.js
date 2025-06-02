@@ -30,17 +30,6 @@ export function sendAdSkippedAnalytics(req, reason, isStreaming = false, additio
 }
 
 export function shouldProceedWithAd(show, req, content, messages, isStreaming) {
-    // Skip if we've already processed this request
-    if (req && req._adProcessed) {
-        log('Request already processed for ads, skipping duplicate processing');
-        return false;
-    }
-
-    // Mark request as processed
-    if (req) {
-        req._adProcessed = true;
-    }
-
     // If not showing ads based on probability/markers
     if (!show) {
         const reason = !content ? 'empty_content' :

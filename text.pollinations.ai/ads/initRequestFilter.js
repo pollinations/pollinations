@@ -1,9 +1,9 @@
 import { sendToAnalytics } from '../sendToAnalytics.js';
-import { debug } from '../utils/debug.js';
+import debug from 'debug';
 import { generateAffiliateAd } from './adLlmMapper.js';
 import { logAdInteraction } from './adLogger.js';
 import { affiliatesData } from '../../affiliate/affiliates.js';
-import { shouldShowAds, extractAdMarker } from './shouldShowAds.js';
+import { shouldShowAds } from './shouldShowAds.js';
 import { shouldProceedWithAd, sendAdSkippedAnalytics } from './adUtils.js';
 import { fetchNexAd, createNexAdRequest } from './nexAdClient.js';
 import { formatNexAd, extractTrackingData, trackImpression } from './nexAdFormatter.js';
@@ -30,12 +30,11 @@ export async function generateAdForContent(req, content, messages = [], isStream
         log(`User country detected: ${userCountry || 'unknown'}`);
 
         // Check if we should show ads
-        const { show, detectedMarker } = shouldShowAds(content, messages);
-        const markerFound = extractAdMarker(content) || extractAdMarker(messages);
-        const shouldForceAd = markerFound || detectedMarker;
+        const { shouldShowAd, markerFound, forceAd } = shouldShowAds(content, messages, req);
+        const shouldForceAd = markerFound || forceAd;
 
         // Determine if we should proceed with ad generation
-        if (!shouldProceedWithAd(show, req, content, messages, isStreaming)) {
+        if (!shouldProceedWithAd(shouldShowAd, req, content, messages, isStreaming)) {
             return null;
         }
 
@@ -107,7 +106,7 @@ export async function generateAdForContent(req, content, messages = [], isStream
             }
 
             // Generate the ad string for Ko-fi
-            const adString = await generateAffiliateAd("kofi", content, messages, markerFound || detectedMarker);
+            const adString = await generateAffiliateAd("kofi", content, messages, markerFound || forceAd);
 
             if (adString) {
                 // Log the ad interaction
@@ -156,10 +155,5 @@ export async function generateAdForContent(req, content, messages = [], isStream
  * This is used for non-streaming responses
  */
 export async function processRequestForAds(req, content, messages) {
-    // Mark that we've processed this request to avoid duplicate ads
-    if (req) {
-        req._adProcessed = true;
-    }
-    
     return generateAdForContent(req, content, messages, false);
 }

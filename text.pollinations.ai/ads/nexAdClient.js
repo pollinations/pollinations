@@ -1,7 +1,7 @@
-import { debug } from '../utils/debug.js';
+import debug from 'debug';
 
-const log = debug('ads:nexAdClient');
-const errorLog = debug('ads:nexAdClient:error');
+const log = debug('pollinations:nexad:client');
+const errorLog = debug('pollinations:nexad:client:error');
 
 // nex.ad API configuration
 const NEX_AD_CONFIG = {
@@ -54,9 +54,9 @@ function formatConversations(messages, currentContent) {
       if (msg.role && msg.content) {
         conversations.push({
           id: index + 1,
-          text: msg.content.substring(0, 500), // Limit length
-          timestamp: new Date().toISOString(),
-          sender: msg.role === 'user' ? 'user' : 'bot'
+          content: msg.content.substring(0, 500), // Limit length
+          timestamp: Math.floor(Date.now() / 1000), // Unix timestamp in seconds
+          role: msg.role === 'user' ? 'user' : 'assistant'
         });
       }
     });
@@ -65,9 +65,9 @@ function formatConversations(messages, currentContent) {
     if (currentContent) {
       conversations.push({
         id: conversations.length + 1,
-        text: currentContent.substring(0, 500),
-        timestamp: new Date().toISOString(),
-        sender: 'bot'
+        content: currentContent.substring(0, 500),
+        timestamp: Math.floor(Date.now() / 1000), // Unix timestamp in seconds
+        role: 'assistant'
       });
     }
     

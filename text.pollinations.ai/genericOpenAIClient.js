@@ -37,7 +37,7 @@ export function createOpenAICompatibleClient(config) {
         systemPrompts = {},
         defaultOptions = {},
         providerName = 'unknown',
-        formatResponse = (x) => x,
+        formatResponse = null,
         additionalHeaders = {},
         transformRequest = null,
         supportsSystemMessages = true
@@ -199,7 +199,7 @@ export function createOpenAICompatibleClient(config) {
                 log(`[${requestId}] Streaming response headers:`, responseHeaders);
                 
                 let streamToReturn = response.body;
-                if (response.body) {
+                if (response.body  && formatResponse) {
                     // Map each SSE event chunk's delta through formatResponse
                     streamToReturn = response.body.pipe(
                         createSseStreamConverter((json) => {

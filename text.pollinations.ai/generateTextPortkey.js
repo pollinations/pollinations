@@ -531,18 +531,18 @@ export const generateTextPortkey = createOpenAICompatibleClient({
             throw error;
         }
     },
-    formatResponse: (message) => {
-        // fix deepseek-v3 response
-        if (!message.content && message.reasoning_content) {
-            message.content = message.reasoning_content;
-            message.reasoning_content = null;
-        }
-        if (message.content && message.reasoning_content) {
-            message.content = `<think>${message.reasoning_content}</think>${message.content}`;
-            message.reasoning_content = null;
-        }
-        return message;
-    },
+    // formatResponse: (message) => {
+    //     // fix deepseek-v3 response
+    //     if (!message.content && message.reasoning_content) {
+    //         message.content = message.reasoning_content;
+    //         message.reasoning_content = null;
+    //     }
+    //     if (message.content && message.reasoning_content) {
+    //         message.content = `<think>${message.reasoning_content}</think>${message.content}`;
+    //         message.reasoning_content = null;
+    //     }
+    //     return message;
+    // },
 
     // Model mapping, system prompts, and default options
     modelMapping: MODEL_MAPPING,

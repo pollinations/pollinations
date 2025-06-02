@@ -83,7 +83,7 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
                 isDone = true;
 
                 // Process the collected content and add an ad
-                generateAdForContent(collectedContent, req, messages, markerFound, true)
+                generateAdForContent(req, collectedContent, messages, true)
                     .then(adString => {
                         if (adString) {
                             // Format the ad as a proper SSE message

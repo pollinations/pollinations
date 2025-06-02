@@ -1,6 +1,6 @@
-import debug from 'debug';
 import { affiliatesData } from "./affiliate_prompt.js";
 import { generateTextPortkey } from '../generateTextPortkey.js';
+import debug from 'debug';
 
 // Base URL for affiliate redirects
 export const REDIRECT_BASE_URL = 'https://pollinations.ai/redirect/';

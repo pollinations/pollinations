@@ -1,67 +1,75 @@
-# nex.ad Migration Guide
+# Nex.Ad Migration Guide
 
 ## Overview
-This branch implements nex.ad integration for the text.pollinations.ai ad system with a feature flag for gradual rollout.
-
-## Environment Variables
-
-### Required for nex.ad
-- `NEX_AD_ENDPOINT` - nex.ad API endpoint (default: https://api-prod.nex-ad.com/ad/request/v2)
-
-### Feature Flags
-- `USE_NEX_AD` - Enable nex.ad integration (true/false, default: false)
-- `NEX_AD_ROLLOUT_PERCENTAGE` - Percentage of requests to use nex.ad (0-100, default: 0)
-- `FALLBACK_TO_AFFILIATES` - Fallback to affiliate system if nex.ad fails (true/false, default: true)
-
-## Testing
-
-### Test with nex.ad only (no fallback)
-```bash
-USE_NEX_AD=true NEX_AD_ROLLOUT_PERCENTAGE=100 FALLBACK_TO_AFFILIATES=false npm start
-```
-
-### Test with 50% rollout
-```bash
-USE_NEX_AD=true NEX_AD_ROLLOUT_PERCENTAGE=50 npm start
-```
-
-### Test with affiliate system only (current behavior)
-```bash
-USE_NEX_AD=false npm start
-```
+The text.pollinations.ai ad system has been migrated from the LLM-based affiliate system to use the Nex.Ad API. This provides:
+- Dynamic ad selection based on conversation context
+- Real-time ad relevance without requiring local LLM processing
+- Simplified architecture with Ko-fi as a fallback
 
 ## Key Changes
 
-1. **New Modules**:
-   - `nexAdClient.js` - Handles nex.ad API requests
-   - `nexAdFormatter.js` - Formats nex.ad responses to markdown
-   - `adConfig.js` - Feature flag configuration
+### 1. Ad Selection Flow
+**Before**: 
+- Use LLM to match conversation content with affiliate programs
+- Generate contextual ad text using LLM
+- Redirect clicks through pollinations.ai/redirect
 
-2. **Modified Files**:
-   - `initRequestFilter.js` - Added nex.ad integration with feature flag
+**After**:
+- Send conversation context to Nex.Ad API
+- Receive pre-formatted ads with click tracking
+- Clicks go directly to Nex.Ad tracking URLs
+- Ko-fi donation link as fallback when no ads available
 
-3. **Click Tracking**:
-   - With nex.ad: Uses nex.ad's click_through URLs directly
-   - With affiliates: Still uses pollinations.ai/redirect/
+### 2. Click Tracking
+- **Nex.Ad ads**: Direct to Nex.Ad click_through URLs (no local redirect)
+- **Ko-fi fallback**: Still uses pollinations.ai/redirect/kofi
 
-## Analytics
+### 3. Analytics
+Enhanced tracking with:
+- `ad_source`: 'nexad' or 'kofi_fallback'
+- Nex.Ad specific fields: tid, campaign_id, ad_id
+- Maintained existing Google Analytics integration
 
-Both systems track the same metrics with an additional `ad_source` field:
-- `ad_source: 'nexad'` - Ad served by nex.ad
-- `ad_source: 'affiliate'` - Ad served by affiliate system
+## Implementation Details
 
-## Rollback
+### New Modules
+1. **nexAdClient.js**: Handles Nex.Ad API requests
+   - Extracts visitor data from request headers
+   - Formats conversation context
+   - Manages API timeouts and error handling
 
-To instantly rollback to affiliate system:
-1. Set `USE_NEX_AD=false`
-2. Or set `NEX_AD_ROLLOUT_PERCENTAGE=0`
+2. **nexAdFormatter.js**: Processes Nex.Ad responses
+   - Converts HTML ads to markdown format
+   - Extracts tracking data
+   - Sends impression tracking requests
+
+### Modified Modules
+- **initRequestFilter.js**: Simplified to use Nex.Ad with Ko-fi fallback
+- **adUtils.js**: Updated helper functions for the new flow
+
+## Testing
+```bash
+# Run the service locally
+npm start
+
+# Test with curl
+curl -X POST http://localhost:3000/openai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [{"role": "user", "content": "Tell me about AI p-ads"}],
+    "stream": false
+  }'
+```
+
+## Analytics Events
+- **ad_impression**: When an ad is shown
+  - Includes: ad_source, campaign_id (nexad), affiliate_id (kofi)
+- **ad_clicked**: When a user clicks an ad
+  - Tracked by Nex.Ad for their ads
+  - Tracked by redirect function for Ko-fi
 
 ## Next Steps
-
-1. Get nex.ad API credentials
-2. Test in development
-3. Gradual rollout:
-   - Start with 5% (NEX_AD_ROLLOUT_PERCENTAGE=5)
-   - Monitor metrics
-   - Increase gradually to 100%
-4. Remove affiliate system code once stable
+1. Configure Nex.Ad API credentials
+2. Monitor ad performance metrics
+3. Eventually remove unused affiliate matching code
+4. Update redirect function to only handle Ko-fi

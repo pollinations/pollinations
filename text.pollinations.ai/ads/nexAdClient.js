@@ -139,8 +139,8 @@ export function createNexAdRequest(req, messages, content) {
     user_agent: req.headers['user-agent'] || 'unknown',
     // Include full IP for geo-targeting/fraud detection as requested by NEX ad
     ip: fullIp,
-    // Use full accept-language header value as ISO language tag
-    language: req.headers['accept-language'] || 'en',
+    // Extract only the first language code from accept-language header
+    language: extractFirstLanguage(req.headers['accept-language']) || 'en',
   };
   
   // Create chatbot context
@@ -151,6 +151,21 @@ export function createNexAdRequest(req, messages, content) {
   };
   
   return { visitorData, conversationContext };
+}
+
+/**
+ * Extract the first language code from Accept-Language header
+ * @param {string} acceptLanguage - Accept-Language header value
+ * @returns {string} - First language code (e.g., 'en-GB' or 'en')
+ */
+function extractFirstLanguage(acceptLanguage) {
+  if (!acceptLanguage) return null;
+  
+  // Split by comma and take the first language
+  const firstLang = acceptLanguage.split(',')[0];
+  
+  // Remove any quality values (q=0.9) if present
+  return firstLang.split(';')[0].trim();
 }
 
 /**

@@ -306,7 +306,11 @@ RESPONSE:`;
         // Format the final ad - with or without image based on markerFound
         let adText;
         // Always use standard format without image
-        adText = `\n\n---\n${adTextSource}`;
+        // Use different prefix for Ko-fi (direct support) vs sponsors
+        const prefix = affiliateId === 'kofi' 
+            ? '**Support Pollinations.AI directly:**' 
+            : '**Support Pollinations.AI by visiting our sponsor:**';
+        adText = `\n\n---\n\n${prefix}\n${adTextSource}`;
         log(`Generated standard ad for ${affiliate.name} (${affiliateId})`);
         
         return adText;

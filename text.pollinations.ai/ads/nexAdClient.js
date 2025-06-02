@@ -160,9 +160,9 @@ export function createNexAdRequest(req, messages, content) {
     user_agent: req.headers['user-agent'] || 'unknown',
     // Include full IP for geo-targeting/fraud detection as requested by NEX ad
     ip: fullIp,
-    language: req.headers['accept-language']?.split(',')[0] || 'en',
-    referrer: req.headers.referer || req.headers.referrer || '',
-    email: req.user?.email || undefined // If authenticated
+    // Use full accept-language header value as ISO language tag
+    language: req.headers['accept-language'] || 'en',
+    referrer: req.headers.referer || req.headers.referrer || ''
   };
   
   // Create chatbot context

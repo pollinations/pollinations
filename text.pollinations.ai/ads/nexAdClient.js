@@ -1,4 +1,6 @@
 import debug from 'debug';
+import crypto from 'crypto';
+import { getIp } from '../../shared/extractFromRequest.js';
 
 const log = debug('pollinations:nexad:client');
 const errorLog = debug('pollinations:nexad:client:error');
@@ -140,12 +142,24 @@ export async function fetchNexAd(visitorData, conversationContext) {
  */
 export function createNexAdRequest(req, messages, content) {
   // Extract visitor data from request
+  // Get IP both as full version for geo-targeting and hashed for user ID
+  const fullIp = getIp(req, true) || 'unknown';
+  const hashedIp = hashIPAddress(fullIp);
+  
+  // Create hash of IP + current date (without time) for daily session ID
+  const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+  const sessionId = hashIPAddress(`${fullIp}_${currentDate}`, 'session-salt');
+  
   const visitorData = {
-    pub_user_id: req.sessionID || req.headers['x-session-id'] || generateUserId(),
-    session_id: req.sessionID || generateSessionId(),
-    browser_id: req.cookies?.browser_id || generateBrowserId(),
+    // Use hashed IP as the primary user identifier
+    pub_user_id: hashedIp,
+    // Use IP + current date as session ID (changes daily for same user)
+    session_id: req.sessionID || sessionId,
+    // Only include browser_id if it actually exists
+    ...(req.cookies?.browser_id && { browser_id: req.cookies.browser_id }),
     user_agent: req.headers['user-agent'] || 'unknown',
-    ip: req.ip || req.headers['x-forwarded-for']?.split(',')[0] || req.headers['x-real-ip'] || 'unknown',
+    // Include full IP for geo-targeting/fraud detection as requested by NEX ad
+    ip: fullIp,
     language: req.headers['accept-language']?.split(',')[0] || 'en',
     referrer: req.headers.referer || req.headers.referrer || '',
     email: req.user?.email || undefined // If authenticated
@@ -162,15 +176,33 @@ export function createNexAdRequest(req, messages, content) {
   return { visitorData, conversationContext };
 }
 
-// Helper functions for ID generation
+/**
+ * Hash an IP address for privacy
+ * @param {string} ip - IP address to hash
+ * @param {string} [salt] - Optional salt to add to the hash
+ * @returns {string} - Hashed IP address
+ */
+function hashIPAddress(ip, salt = process.env.IP_HASH_SALT || 'pollinations-salt') {
+  // Return placeholder for unknown IPs
+  if (!ip || ip === 'unknown') {
+    return 'unknown';
+  }
+  
+  try {
+    // Create a SHA-256 hash of the IP with salt
+    return crypto
+      .createHash('sha256')
+      .update(`${ip}${salt}`)
+      .digest('hex')
+      // Truncate to first 16 characters for reasonable length while maintaining uniqueness
+      .substring(0, 16);
+  } catch (error) {
+    errorLog('Error hashing IP address:', error);
+    return 'hash_error';
+  }
+}
+
+// Helper function for user ID generation (rarely used now with IP hashing)
 function generateUserId() {
   return `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
-
-function generateSessionId() {
-  return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
-
-function generateBrowserId() {
-  return `browser_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }

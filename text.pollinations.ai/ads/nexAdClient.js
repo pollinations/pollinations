@@ -16,30 +16,6 @@ const NEX_AD_CONFIG = {
 };
 
 /**
- * Extract topic from conversation
- * @param {Array} messages - Conversation messages
- * @param {string} currentContent - Current content being generated
- * @returns {string} - Extracted topic
- */
-function extractTopic(messages, currentContent) {
-  try {
-    // Combine all messages to understand context
-    const allMessages = messages.map(m => m.content || '').filter(Boolean);
-    const fullContext = [...allMessages, currentContent].join(' ');
-    
-    // Simple topic extraction - could be enhanced
-    const words = fullContext.split(/\s+/).filter(word => word.length > 4);
-    const uniqueWords = [...new Set(words)];
-    
-    // Return first few meaningful words as topic
-    return uniqueWords.slice(0, 5).join(' ').substring(0, 50);
-  } catch (error) {
-    errorLog('Error extracting topic:', error);
-    return 'general conversation';
-  }
-}
-
-/**
  * Format conversation history for nex.ad
  * @param {Array} messages - Conversation messages
  * @param {string} currentContent - Current content being generated
@@ -52,6 +28,9 @@ function formatConversations(messages, currentContent) {
     
     // Add all messages
     messages.forEach((msg, index) => {
+      if (msg.role === 'system') {
+        return;
+      }
       if (msg.role && msg.content) {
         conversations.push({
           id: index + 1,
@@ -168,7 +147,6 @@ export function createNexAdRequest(req, messages, content) {
   const conversationContext = {
     bot_name: "Pollinations AI",
     bot_description: "AI-powered text generation and creative assistance",
-    topic: extractTopic(messages, content),
     conversations: formatConversations(messages, content)
   };
   

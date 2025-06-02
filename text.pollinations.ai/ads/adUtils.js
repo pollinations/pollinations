@@ -6,7 +6,6 @@ const log = debug('pollinations:adfilter');
 // Regular expression to detect markdown formatting in content
 export const markdownRegex = /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`.*\`)|(?:\>.*)|(?:\-\s.*)|(?:\d\.\s.*)/;
 
-
 // Whether to require markdown for ad processing
 export const REQUIRE_MARKDOWN = true;
 
@@ -29,19 +28,27 @@ export function sendAdSkippedAnalytics(req, reason, isStreaming = false, additio
         ...additionalData
     });
 }
-export function shouldProceedWithAd(content, markerFound) {
-    // If no content, skip ad processing
-    if (!content) {
+
+export function shouldProceedWithAd(show, req, content, messages, isStreaming) {
+    // If not showing ads based on probability/markers
+    if (!show) {
+        const reason = !content ? 'empty_content' :
+                      content.length < 100 ? 'content_too_short' :
+                      'probability_check_failed';
+        
+        sendAdSkippedAnalytics(req, reason, isStreaming);
         return false;
     }
 
-    // Skip if content is too short (less than 50 characters)
-    if (content.length < 50) {
+    // Check content validity
+    if (!content || content.length < 50) {
+        sendAdSkippedAnalytics(req, 'content_too_short', isStreaming);
         return false;
     }
 
-    // If markdown is required and not found, skip (unless marker is present)
-    if (REQUIRE_MARKDOWN && !markerFound && !markdownRegex.test(content)) {
+    // Check if ad already exists
+    if (content.includes('🌸 **Ad** 🌸')) {
+        sendAdSkippedAnalytics(req, 'ad_already_exists', isStreaming);
         return false;
     }
 

@@ -30,37 +30,17 @@ export async function logGptImagePrompt(prompt, safeParams, userInfo = {}, conte
     const timestamp = new Date().toISOString();
     const logFile = path.join(logDir, 'gptimage_prompts.log');
     
-    // Format the log entry with timestamp, prompt, and relevant parameters
-    // Check for image parameters to log
-    const hasImageUrls = safeParams.imageUrls && safeParams.imageUrls.length > 0;
-    const hasImageData = safeParams.imageData || safeParams.image || safeParams.images;
     
     const logEntry = JSON.stringify({
       timestamp,
       prompt,
       model: safeParams.model,
       size: `${safeParams.width}x${safeParams.height}`,
-      // Log if this is an image editing request
-      hasImageInput: hasImageUrls || hasImageData,
-      imageUrls: hasImageUrls ? safeParams.imageUrls : [],
+      image: safeParams.image,
       // Include content safety analysis results if available
-      contentSafety: contentSafetyResults ? {
-        safe: contentSafetyResults.safe,
-        formattedViolations: contentSafetyResults.formattedViolations,
-        violations: contentSafetyResults.violations
-      } : null,
+      contentSafety: contentSafetyResults,
       // Include complete user info for better diagnostics
-      userInfo: {
-        userId: userInfo.userId || 'anonymous',
-        authenticated: userInfo.authenticated || false,
-        tokenAuth: userInfo.tokenAuth || false,
-        referrerAuth: userInfo.referrerAuth || false,
-        reason: userInfo.reason || 'none',
-        tier: userInfo.tier || 'none',
-        bypass: userInfo.bypass || false,
-        // Include complete debugInfo if available
-        debugInfo: userInfo.debugInfo || {}
-      }
+      userInfo
     }, null, 2);
     
     // Append to log file
@@ -113,17 +93,7 @@ export async function logGptImageError(prompt, safeParams, userInfo = {}, error,
         violations: contentSafetyResults.violations
       } : null,
       // Include complete user info for better diagnostics
-      userInfo: {
-        userId: userInfo.userId || 'anonymous',
-        authenticated: userInfo.authenticated || false,
-        tokenAuth: userInfo.tokenAuth || false,
-        referrerAuth: userInfo.referrerAuth || false,
-        reason: userInfo.reason || 'none',
-        tier: userInfo.tier || 'none',
-        bypass: userInfo.bypass || false,
-        // Include complete debugInfo if available
-        debugInfo: userInfo.debugInfo || {}
-      },
+      userInfo,
       error: {
         message: error.message,
         name: error.name,

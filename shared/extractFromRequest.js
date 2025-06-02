@@ -48,7 +48,13 @@ export function extractReferrer(req) {
  * @returns {string} The IP address (truncated for privacy)
  */
 
-export function getIp(req) {
+/**
+ * Extract IP address from request
+ * @param {Request|Object} req - The request object
+ * @param {boolean} [fullIp=false] - If true, returns the complete IP without trimming
+ * @returns {string|null} The IP address or null
+ */
+export function getIp(req, fullIp = false) {
   // Prioritize standard proxy headers and add cloudflare-specific headers
   const ip = req.headers["x-bb-ip"] ||
     req.headers["x-nf-client-connection-ip"] ||
@@ -64,6 +70,11 @@ export function getIp(req) {
   const cleanIp = ip.split(',')[0].trim();
 
   // Check if IPv4 or IPv6
+  // If fullIp is true, return the complete IP address without trimming
+  if (fullIp) {
+    return cleanIp;
+  }
+  
   if (cleanIp.includes(':')) {
     // IPv6 address - take first 4 segments (64 bits) which typically represent the network prefix
     // Handle special IPv6 formats like ::1 or 2001::

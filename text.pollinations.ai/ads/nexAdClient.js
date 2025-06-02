@@ -162,7 +162,6 @@ export function createNexAdRequest(req, messages, content) {
     ip: fullIp,
     // Use full accept-language header value as ISO language tag
     language: req.headers['accept-language'] || 'en',
-    referrer: req.headers.referer || req.headers.referrer || ''
   };
   
   // Create chatbot context

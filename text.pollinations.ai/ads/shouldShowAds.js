@@ -28,7 +28,7 @@ function contentContainsTriggerWords(content) {
 
 
 // Probability of adding referral links (10%)
-const REFERRAL_LINK_PROBABILITY = 0.05;
+const REFERRAL_LINK_PROBABILITY = 0.10;
 
 const TEST_ADS_MARKER = "p-ads";
 

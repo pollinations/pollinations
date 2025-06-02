@@ -10,21 +10,20 @@ const NEX_AD_CONFIG = {
     publisher_id: 9,
     publisher_name: "Pollinations",
     publisher_type: "chatbot"
-  },
-  timeout: 2000 // 2 second timeout to not slow down responses
+  }
 };
 
 /**
- * Extract relevant topic from conversation messages
+ * Extract topic from conversation
  * @param {Array} messages - Conversation messages
  * @param {string} currentContent - Current content being generated
  * @returns {string} - Extracted topic
  */
 function extractTopic(messages, currentContent) {
   try {
-    // Combine recent messages to understand context
-    const recentMessages = messages.slice(-3).map(m => m.content || '').filter(Boolean);
-    const fullContext = [...recentMessages, currentContent].join(' ');
+    // Combine all messages to understand context
+    const allMessages = messages.map(m => m.content || '').filter(Boolean);
+    const fullContext = [...allMessages, currentContent].join(' ');
     
     // Simple topic extraction - could be enhanced
     const words = fullContext.split(/\s+/).filter(word => word.length > 4);
@@ -46,15 +45,15 @@ function extractTopic(messages, currentContent) {
  */
 function formatConversations(messages, currentContent) {
   try {
-    // Include last few messages plus current response
+    // Include all messages plus current response
     const conversations = [];
     
-    // Add recent messages
-    messages.slice(-2).forEach((msg, index) => {
+    // Add all messages
+    messages.forEach((msg, index) => {
       if (msg.role && msg.content) {
         conversations.push({
           id: index + 1,
-          content: msg.content.substring(0, 500), // Limit length
+          content: msg.content, // Full content, no truncation
           timestamp: Math.floor(Date.now() / 1000), // Unix timestamp in seconds
           role: msg.role === 'user' ? 'user' : 'assistant'
         });
@@ -65,7 +64,7 @@ function formatConversations(messages, currentContent) {
     if (currentContent) {
       conversations.push({
         id: conversations.length + 1,
-        content: currentContent.substring(0, 500),
+        content: currentContent, // Full content, no truncation
         timestamp: Math.floor(Date.now() / 1000), // Unix timestamp in seconds
         role: 'assistant'
       });
@@ -94,8 +93,8 @@ export async function fetchNexAd(visitorData, conversationContext) {
     
     log('Requesting ad from nex.ad:', JSON.stringify(requestBody, null, 2));
     
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), NEX_AD_CONFIG.timeout);
+    // Track request timing
+    const startTime = Date.now();
     
     const response = await fetch(NEX_AD_CONFIG.endpoint, {
       method: 'POST',
@@ -103,11 +102,11 @@ export async function fetchNexAd(visitorData, conversationContext) {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify(requestBody),
-      signal: controller.signal
+      body: JSON.stringify(requestBody)
     });
     
-    clearTimeout(timeoutId);
+    const requestDuration = Date.now() - startTime;
+    log(`nex.ad request completed in ${requestDuration}ms`);
     
     if (!response.ok) {
       errorLog(`nex.ad API error: ${response.status} ${response.statusText}`);
@@ -127,11 +126,7 @@ export async function fetchNexAd(visitorData, conversationContext) {
     
     return data;
   } catch (error) {
-    if (error.name === 'AbortError') {
-      errorLog('nex.ad request timed out');
-    } else {
-      errorLog('Error fetching nex.ad:', error);
-    }
+    errorLog('Error fetching nex.ad:', error);
     return null;
   }
 }

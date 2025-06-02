@@ -61,7 +61,7 @@ export function formatNexAd(nexAdData) {
     }
     
     // Format with our standard ad prefix
-    const formattedAd = `🌸 **Ad** 🌸\n${markdownContent}`;
+    const formattedAd = `\n---\n\n🌸 **Ad** 🌸\n${markdownContent}`;
     
     log('Formatted ad:', formattedAd);
     

@@ -192,6 +192,12 @@ Check out our [Pollinations React Hooks](./pollinations-react/README.md) for mor
 | 🤖 LLM7.io | A free and open AI platform providing advanced multimodal capabilities, including large language model access and experimental search tools. Integrates Pollinations text generation as a backend service with transparent credit on the website and repository. | @chigwell | [Website](https://llm7.io), [GitHub](https://github.com/chigwell/llm7.io) - ⭐ 7 |
 | 🎤 Comeback AI | AI-powered clapback machine that transforms mean comments into witty comebacks with 10 unique personas, uses Pollinations openai-audio for voice synthesis, and Whisper for speech-to-text transcription. Turn trolls into comedy gold! | @sizzlebop | [Website](https://comeback-ai.pinkpixel.dev), [GitHub](https://github.com/pinkpixel-dev/comeback-ai) - ⭐ 1 |
 
+### Social Bots
+
+| Project | Description | Creator | Links |
+|---------|-------------|---------|-------|
+| 🎮 Gacha | Your Sassy All-in-One AI Discord Bot. A powerful, sassy, and slightly mischievous AI bot designed to level up your Discord server with intelligent conversations, creative tools, and smart automation — all wrapped in a playful personality. Features AI-powered chat with STM and LTM, image generation & editing, image fusion & GIF handling, real-time web search, voice replies, media intelligence, slash commands, and dynamic intent detection. | `_dr_misterio_` | [Discord Bot](https://discord.com/oauth2/authorize?client_id=1377330983740903586) |
+
 ## Architecture
 ```mermaid
 graph LR

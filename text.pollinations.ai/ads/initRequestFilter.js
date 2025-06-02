@@ -1,10 +1,13 @@
-import debug from 'debug';
 import { sendToAnalytics } from '../sendToAnalytics.js';
+import { debug } from '../utils/debug.js';
 import { findRelevantAffiliate, generateAffiliateAd, extractReferralLinkInfo, REDIRECT_BASE_URL } from './adLlmMapper.js';
 import { logAdInteraction } from './adLogger.js';
 import { affiliatesData } from '../../affiliate/affiliates.js';
-import { shouldShowAds } from './shouldShowAds.js';
+import { shouldShowAds, extractAdMarker } from './shouldShowAds.js';
 import { shouldProceedWithAd , sendAdSkippedAnalytics} from './adUtils.js';
+import { fetchNexAd, createNexAdRequest } from './nexAdClient.js';
+import { formatNexAd, extractTrackingData, trackImpression } from './nexAdFormatter.js';
+import { shouldUseNexAd, AD_CONFIG } from './adConfig.js';
 const log = debug('pollinations:adfilter');
 const errorLog = debug('pollinations:adfilter:error');
 
@@ -92,12 +95,112 @@ export async function generateAdForContent(content, req, messages, markerFound =
     try {
         log('Generating ad for content...');
 
-        // Find the relevant affiliate, passing the user's country code
-        const affiliateData = await findRelevantAffiliate(content, messages, userCountry);
+        // Check if we should use nex.ad
+        let adString = null;
+        let isNexAd = false;
+        
+        if (shouldUseNexAd()) {
+            log('Using nex.ad system');
+            // Try nex.ad first
+            const { visitorData, conversationContext } = createNexAdRequest(req, messages, content);
+            const nexAdResponse = await fetchNexAd(visitorData, conversationContext);
+            
+            if (nexAdResponse) {
+                // Format nex.ad response
+                adString = formatNexAd(nexAdResponse);
+                
+                if (adString) {
+                    isNexAd = true;
+                    // Extract tracking data
+                    const trackingData = extractTrackingData(nexAdResponse);
+                    
+                    // Track impression
+                    await trackImpression(trackingData);
+                    
+                    // Log the ad interaction
+                    if (req) {
+                        logAdInteraction({
+                            timestamp: new Date().toISOString(),
+                            ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+                            campaign_id: trackingData.campaign_id,
+                            ad_id: trackingData.ad_id,
+                            tid: trackingData.tid,
+                            ad_source: 'nexad',
+                            streaming: isStreaming,
+                            referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
+                            user_agent: req.headers['user-agent'] || 'unknown',
+                            country: userCountry || 'unknown'
+                        });
 
-        // If no affiliate data is found but we should force an ad (p-ads marker present)
-        if (!affiliateData && shouldForceAd) {
-            log('No relevant affiliate found, but p-ads marker is present. Using Ko-fi as fallback.');
+                        // Send analytics for the ad impression
+                        sendToAnalytics(req, 'ad_impression', {
+                            campaign_id: trackingData.campaign_id,
+                            ad_id: trackingData.ad_id,
+                            tid: trackingData.tid,
+                            ad_type: trackingData.ad_type,
+                            ad_source: 'nexad',
+                            streaming: isStreaming,
+                            forced: shouldForceAd,
+                            country: userCountry || 'unknown'
+                        });
+                    }
+                }
+            }
+        }
+        
+        // If nex.ad didn't work and we should fallback to affiliates
+        if (!adString && (!shouldUseNexAd() || AD_CONFIG.FALLBACK_TO_AFFILIATES)) {
+            log('Using affiliate system');
+            
+            // Find the relevant affiliate, passing the user's country code
+            const affiliateData = await findRelevantAffiliate(content, messages, userCountry);
+            
+            if (affiliateData) {
+                // Generate affiliate ad
+                adString = await generateAffiliateAd(affiliateData.id, content, messages, markerFound || detectedMarker);
+                
+                if (adString) {
+                    // Extract info for analytics
+                    const linkInfo = extractReferralLinkInfo(adString);
+                    
+                    // Log the ad interaction with metadata
+                    if (req) {
+                        logAdInteraction({
+                            timestamp: new Date().toISOString(),
+                            ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+                            affiliate_id: affiliateData.id,
+                            affiliate_name: affiliateData.name,
+                            topic: linkInfo.topic || 'unknown',
+                            ad_source: 'affiliate',
+                            streaming: isStreaming,
+                            referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
+                            user_agent: req.headers['user-agent'] || 'unknown',
+                            country: userCountry || 'unknown'
+                        });
+
+                        // Send analytics for the ad impression
+                        sendToAnalytics(req, 'ad_impression', {
+                            affiliate_id: affiliateData.id,
+                            affiliate_name: affiliateData.name,
+                            topic: linkInfo.topic || 'unknown',
+                            ad_source: 'affiliate',
+                            streaming: isStreaming,
+                            forced: shouldForceAd,
+                            country: userCountry || 'unknown'
+                        });
+                    }
+                }
+            }
+        }
+        
+        // If we have an ad, return it
+        if (adString) {
+            return adString;
+        }
+        
+        // Fallback to Ko-fi if no ad was generated and we should force an ad
+        if (shouldForceAd) {
+            log('No ad generated but p-ads marker is present. Using Ko-fi as fallback.');
             // Find the Ko-fi affiliate in our data as a guaranteed fallback
             const kofiAffiliate = affiliatesData.find(a => a.id === "kofi");
 
@@ -150,93 +253,6 @@ export async function generateAdForContent(content, req, messages, markerFound =
             }
         }
 
-        // If no affiliate data is found and not forcing an ad, send analytics and return null
-        if (!affiliateData && req && !shouldForceAd) {
-            sendAdSkippedAnalytics(req, 'no_relevant_affiliate', isStreaming);
-            return null;
-        }
-
-        // If affiliate data is found, generate the ad string
-        if (affiliateData) {
-            // Pass content and messages to enable language matching
-            const adString = await generateAffiliateAd(affiliateData.id, content, messages, markerFound || detectedMarker);
-
-            // If ad generation failed but we should force an ad (p-ads marker present)
-            if (!adString && shouldForceAd) {
-                log('Ad generation failed, but p-ads marker is present. Using Ko-fi as fallback.');
-                // Try with Ko-fi as a fallback
-                const kofiAdString = await generateAffiliateAd("kofi", content, messages, markerFound || detectedMarker);
-
-                if (kofiAdString && req) {
-                    // Extract info for analytics
-                    const linkInfo = extractReferralLinkInfo(kofiAdString);
-
-                    // Log the ad interaction with metadata
-                    logAdInteraction({
-                        timestamp: new Date().toISOString(),
-                        ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
-                        affiliate_id: "kofi",
-                        affiliate_name: "Support Pollinations on Ko-fi",
-                        topic: linkInfo.topic || 'unknown',
-                        streaming: isStreaming,
-                        referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
-                        user_agent: req.headers['user-agent'] || 'unknown'
-                    });
-
-                    // Send analytics for the ad impression
-                    sendToAnalytics(req, 'ad_impression', {
-                        affiliate_id: "kofi",
-                        affiliate_name: "Support Pollinations on Ko-fi",
-                        topic: linkInfo.topic || 'unknown',
-                        streaming: isStreaming,
-                        forced: true
-                    });
-
-                    return kofiAdString;
-                }
-            }
-
-            // If ad generation failed and not forcing an ad, send analytics
-            if (!adString && req && !shouldForceAd) {
-                sendAdSkippedAnalytics(req, 'ad_generation_failed', isStreaming, {
-                    affiliate_id: affiliateData.id,
-                    affiliate_name: affiliateData.name
-                });
-                return null;
-            }
-
-            // If an ad string was successfully generated
-            if (adString) {
-                // Extract info for analytics
-                const linkInfo = extractReferralLinkInfo(adString);
-
-                // Log the ad interaction with metadata
-                if (req) {
-                    logAdInteraction({
-                        timestamp: new Date().toISOString(),
-                        ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
-                        affiliate_id: affiliateData.id,
-                        affiliate_name: affiliateData.name,
-                        topic: linkInfo.topic || 'unknown',
-                        streaming: isStreaming,
-                        referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
-                        user_agent: req.headers['user-agent'] || 'unknown'
-                    });
-
-                    // Send analytics for the ad impression
-                    sendToAnalytics(req, 'ad_impression', {
-                        affiliate_id: affiliateData.id,
-                        affiliate_name: affiliateData.name,
-                        topic: linkInfo.topic || 'unknown',
-                        streaming: isStreaming,
-                        forced: shouldForceAd
-                    });
-                }
-
-                return adString;
-            }
-        }
-
         // If we get here and should force an ad, create a generic Ko-fi ad as last resort
         if (shouldForceAd) {
             log('All ad generation attempts failed, but p-ads marker is present. Creating generic Ko-fi ad.');
@@ -252,7 +268,8 @@ export async function generateAdForContent(content, req, messages, markerFound =
                     topic: "generic",
                     streaming: isStreaming,
                     referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
-                    user_agent: req.headers['user-agent'] || 'unknown'
+                    user_agent: req.headers['user-agent'] || 'unknown',
+                    country: userCountry || 'unknown'
                 });
 
                 // Send analytics for the ad impression

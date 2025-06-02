@@ -1,30 +1,6 @@
 import { getRequestData } from '../requestUtils.js';
 import { REDIRECT_BASE_URL } from './adLlmMapper.js';
 import { REQUIRE_MARKDOWN, markdownRegex } from './adUtils.js';
-import { affiliatesData } from '../../affiliate/affiliates.js';
-
-// Create a flattened list of all trigger words from all affiliates
-const ALL_TRIGGER_WORDS = affiliatesData.reduce((words, affiliate) => {
-    if (affiliate.triggerWords && Array.isArray(affiliate.triggerWords)) {
-        return [...words, ...affiliate.triggerWords];
-    }
-    return words;
-}, []);
-
-// Function to check if content contains any trigger words
-function contentContainsTriggerWords(content) {
-    if (!content || typeof content !== 'string') {
-        return false;
-    }
-
-    // Convert content to lowercase for case-insensitive matching
-    const lowercaseContent = content.toLowerCase();
-
-    // Check if content contains any trigger word (case insensitive)
-    return ALL_TRIGGER_WORDS.some(word =>
-        lowercaseContent.includes(word.toLowerCase())
-    );
-}
 
 
 // Probability of adding referral links (10%)
@@ -32,6 +8,7 @@ const REFERRAL_LINK_PROBABILITY = 0.10;
 
 const TEST_ADS_MARKER = "p-ads";
 
+const SKIP_USER_AGENTS=["Roblox/Linux"];
 // Parse bad domains from environment variable (comma-separated list)
 const BAD_DOMAINS = process.env.BAD_DOMAINS ? process.env.BAD_DOMAINS.split(',').map(domain => domain.trim().toLowerCase()) : [];
 
@@ -41,6 +18,15 @@ const log = debug('pollinations:shouldShowAds');
 // Extracted utility functions
 
 export function shouldShowAds(content, messages = [], req = null) {
+    // Skip ads for specific user agents
+    if (req?.headers?.['user-agent']) {
+        const userAgent = req.headers['user-agent'];
+        if (SKIP_USER_AGENTS.some(skipAgent => userAgent.includes(skipAgent))) {
+            log(`Skipping ads for user agent: ${userAgent}`);
+            return { shouldShowAd: false, markerFound: false };
+        }
+    }
+    
     // Check for the test marker first - if found, immediately return true
     let markerFound = false;
 
@@ -126,27 +112,15 @@ export function shouldShowAds(content, messages = [], req = null) {
         return { shouldShowAd: false, markerFound: false };
     }
 
-    // Check for trigger words in content or messages
-    let triggerWordsFound = false;
-    if (content) {
-        triggerWordsFound = contentContainsTriggerWords(content);
-    }
-    if (!triggerWordsFound && messages && messages.length > 0) {
-        triggerWordsFound = messages.some(msg => msg.content && contentContainsTriggerWords(msg.content)
-        );
-    }
+
 
     // If marker is not found, use the default probability
     const effectiveProbability = markerFound
         ? 1.0 // 100% probability for marker found
-        : triggerWordsFound
-            ? REFERRAL_LINK_PROBABILITY * 2 // Triple probability for trigger words
-            : REFERRAL_LINK_PROBABILITY;
+        : REFERRAL_LINK_PROBABILITY;
 
     if (markerFound) {
         log('Test marker "p-ads" found, using 100% probability');
-    } else if (triggerWordsFound) {
-        log(`Trigger words found in content, using triple probability (${(REFERRAL_LINK_PROBABILITY * 3).toFixed(2)})`);
     }
 
     // Random check - only process based on the effective probability

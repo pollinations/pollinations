@@ -222,21 +222,7 @@ export async function generateAffiliateAd(affiliateId, content = '', messages = 
         if (affiliate.ad_text) {
             adTextSource = `\n---\n\n🌸 **Ad** 🌸\n${affiliate.ad_text.replace('{url}', referralLink)}`;
         }
-        // Use description if available
-        else if (affiliate.description) {
-            log(`Using description for ${affiliate.name} (${affiliateId})`);
-            adTextSource = `\n---\n\n🌸 **Ad** 🌸\n${affiliate.description} [Learn more](${referralLink})`;
-        }
-        // Use product name if available
-        else if (affiliate.product) {
-            log(`Using product name for ${affiliate.name} (${affiliateId})`);
-            adTextSource = `\n---\n\n🌸 **Ad** 🌸\nLearn more about ${affiliate.product} [Learn more](${referralLink})`;
-        }
-        // Fallback to generic text
-        else {
-            log(`Using name only for ${affiliate.name} (${affiliateId})`);
-            adTextSource = `\n---\n\n🌸 **Ad** 🌸\nLearn more about ${affiliate.name} [Learn more](${referralLink})`;
-        }
+    
 
         // First, contextualize and translate ad text if content is provided
         if (content && content.trim().length > 0) {
@@ -308,8 +294,8 @@ RESPONSE:`;
         // Always use standard format without image
         // Use different prefix for Ko-fi (direct support) vs sponsors
         const prefix = affiliateId === 'kofi' 
-            ? '**Support Pollinations.AI directly:**' 
-            : '**Support Pollinations.AI by visiting our sponsor:**';
+            ? '**Support Pollinations.AI:**' 
+            : '**Sponsor:**';
         adText = `\n\n---\n\n${prefix}\n${adTextSource}`;
         log(`Generated standard ad for ${affiliate.name} (${affiliateId})`);
         

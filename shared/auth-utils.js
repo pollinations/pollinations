@@ -532,3 +532,51 @@ export function createAuthDebugResponse(debugInfo) {
   
   return debug;
 }
+
+/**
+ * Fetch user preferences from auth.pollinations.ai
+ * @param {string} userId - The user ID to fetch preferences for
+ * @returns {Promise<Object|null>} User preferences object or null if not found/error
+ */
+export async function getUserPreferences(userId) {
+  if (!userId) return null;
+  
+  const preferenceLog = debug('pollinations:auth:preferences');
+  
+  try {
+    preferenceLog(`Fetching preferences for user ${userId}`);
+    
+    // Using admin endpoint to access preferences
+    const response = await fetch(
+      `https://auth.pollinations.ai/admin/preferences?user_id=${encodeURIComponent(userId)}`,
+      {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${process.env.ADMIN_API_KEY}`
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      preferenceLog(`Failed to fetch preferences: ${response.status} ${response.statusText}`);
+      // Log response body for debugging if status is not 404 (not found)
+      if (response.status !== 404) {
+        try {
+          const errorBody = await response.text();
+          preferenceLog('Error response body:', errorBody);
+        } catch (e) {
+          // Ignore error reading body
+        }
+      }
+      return null;
+    }
+    
+    const data = await response.json();
+    preferenceLog('Preferences fetched successfully:', data.preferences);
+    
+    return data.preferences || {};
+  } catch (error) {
+    preferenceLog('Error fetching preferences:', error);
+    return null;
+  }
+}

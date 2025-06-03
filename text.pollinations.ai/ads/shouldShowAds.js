@@ -1,10 +1,10 @@
 import { getRequestData } from '../requestUtils.js';
 import { REDIRECT_BASE_URL } from './adLlmMapper.js';
 import { REQUIRE_MARKDOWN, markdownRegex } from './adUtils.js';
+import { handleAuthentication, getUserPreferences } from '../../shared/auth-utils.js';
 
-
-// Probability of adding referral links (10%)
-const REFERRAL_LINK_PROBABILITY = 0.075;
+// Probability of adding referral links (4%)
+const REFERRAL_LINK_PROBABILITY = 0.04;
 
 const TEST_ADS_MARKER = "p-ads";
 
@@ -17,7 +17,9 @@ import debug from "debug";
 const log = debug('pollinations:shouldShowAds');
 // Extracted utility functions
 
-export function shouldShowAds(content, messages = [], req = null) {
+export async function shouldShowAds(content, messages = [], req = null) {
+    log('shouldShowAds called with content length:', content?.length, 'messages:', messages?.length, 'req:', !!req);
+
     // Skip ads for specific user agents
     if (req?.headers?.['user-agent']) {
         const userAgent = req.headers['user-agent'];
@@ -57,6 +59,29 @@ export function shouldShowAds(content, messages = [], req = null) {
         if (markerFound) {
             log('Test marker "p-ads" found in messages, forcing ad display regardless of other conditions');
             return { shouldShowAd: true, markerFound: true, forceAd: true };
+        }
+    }
+
+    // Check user preferences if request is provided
+    if (req) {
+        try {
+            const authResult = await handleAuthentication(req);
+            if (authResult.authenticated && authResult.userId) {
+                log('User authenticated, checking preferences for userId:', authResult.userId);
+                
+                const preferences = await getUserPreferences(authResult.userId);
+                if (preferences && preferences.show_ads === false) {
+                    log('User has opted out of ads via preferences');
+                    return { 
+                        shouldShowAd: false, 
+                        markerFound: false, 
+                        userPreference: false 
+                    };
+                }
+            }
+        } catch (error) {
+            log('Error checking user preferences:', error);
+            // Continue with normal flow if preference check fails
         }
     }
 
@@ -111,8 +136,6 @@ export function shouldShowAds(content, messages = [], req = null) {
         log('Skipping ad processing due to lack of markdown formatting');
         return { shouldShowAd: false, markerFound: false };
     }
-
-
 
     // If marker is not found, use the default probability
     const effectiveProbability = markerFound

@@ -221,6 +221,7 @@ Pollinations.AI is used in various projects, including:
 
 | Project | Description | Creator | Links |
 |---------|-------------|---------|-------|
+| 🆕 Whizzy AI | An educational AI platform for students featuring AI-powered study assistance, chat functionality, and image generation capabilities using Pollinations AI. Designed to help students with studies they find challenging. | @vaibhavcoding69 | [Website](https://whizzyai.vercel.app) |
 | 🆕 AI Code Generator | A websim project that generates code from description, selected programming language and other options. Integrates Pollinations because it allows for more models to choose from for potentially better results. It has modes like: Code Generator, Code Explainer, Reviewer, etc. | @Miencraft2 | [Website](https://codegen.on.websim.com/) |
 | 🆕 🖥️ Windows Walker | Windows Walker – What Copilot for Windows should have been. AI-powered Windows assistant that translates voice/text commands into real system actions using PowerShell. Powered by ChatGPT + PowerShell in an Electron UI. | @supershivam | [GitHub](https://github.com/SuperShivam5000/windows-walker) - ⭐ 3, [Demo Video](https://www.youtube.com/watch?v=mcH4TlnGenQ) |
 | 🆕 The Promised Pen | A free, feature-rich novel writing application that helps writers organize stories, characters, and worlds. Uses Pollinations AI for generating chapter summaries, rewriting text based on context, and generating new content based on previous chapters and character information. | @soryn.san | [Website](https://promisedpen.app) |

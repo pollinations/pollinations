@@ -603,6 +603,16 @@ const allProjects = {
   ],
   llmIntegrations: [
     {
+      name: "🆕 🤖 Mindcraft",
+      url: "https://github.com/kolbytn/mindcraft",
+      description: "Crafting minds for Minecraft with LLMs and Mineflayer! An AI agent framework for Minecraft using Large Language Models that creates intelligent bots capable of autonomous gameplay, building, and interaction.",
+      author: "@kolbytn",
+      repo: "https://github.com/kolbytn/mindcraft",
+      stars: 3500,
+      submissionDate: "2025-06-03",
+      order: 1,
+    },
+    {
       name: "🆕 Whizzy AI",
       url: "https://whizzyai.vercel.app",
       description: "An educational AI platform for students featuring AI-powered study assistance, chat functionality, and image generation capabilities using Pollinations AI. Designed to help students with studies they find challenging.",

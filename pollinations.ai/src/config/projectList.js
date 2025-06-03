@@ -453,6 +453,15 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🇪🇸 Juego de Memorizar con Pollinations",
+      url: "https://proyectodescartes.org/IATools/Parejas/",
+      description: "Un juego de memoria tipo 'encuentra las parejas' donde los usuarios pueden ingresar un tema, elegir un estilo artístico, generar imágenes con la API de Pollinations, editar y regenerar imágenes si es necesario, y descargar el juego completo. (A memory matching game like 'find the pairs' where users can enter a theme, choose an artistic style, generate images with the Pollinations API, edit and regenerate images if needed, and download the complete game.)",
+      author: "@juanrivera126",
+      submissionDate: "2025-06-03",
+      language: "es-ES",
+      order: 1,
+    },
+    {
       name: "🇪🇸 Generador de presentaciones con imágenes y texto V2",
       url: "https://proyectodescartes.org/IATools/Crea_presentaciones4/",
       description: "Una herramienta configurable que permite crear presentaciones con 3 a 20 diapositivas usando la API de Pollinations. Genera títulos, descripciones e imágenes para cada diapositiva, con posibilidad de regenerar imágenes y descargar en HTML. (A configurable tool that allows you to create presentations with 3 to 20 slides using the Pollinations API. Generates titles, descriptions and images for each slide, with the ability to regenerate images and download in HTML.)",

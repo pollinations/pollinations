@@ -173,6 +173,7 @@ Check out our [Pollinations React Hooks](./pollinations-react/README.md) for mor
 
 | Project | Description | Creator | Links |
 |---------|-------------|---------|-------|
+| 🤖 ImageEditer | AI Art Studio - A feature-rich Telegram bot that creates art from text prompts, remixes images, merges multiple artworks, and offers one-tap regeneration with real-time control. Supports multiple AI models (GPT Image, Flux, Turbo) with NSFW detection and smart layout features. | @_dr_misterio_ | [Telegram Bot](https://t.me/ImageEditer_bot) |
 | 🎨 DreamHer | Interactive web app that transforms your imagination of a "dream girl" into a visual representation through just 10 simple questions using Pollinations AI | @_Creation22 | [Website](https://dreamher.vercel.app/), [GitHub](https://github.com/creation22/DreamGirl) - ⭐ 2 |
 | 🎨 PixPal | PixPal is a free AI assistant that can analyze, edit, and generate images, build websites from screenshots, create 3D games, and write full blog posts—all in one chat | @andreas_11 | [Website](https://pixpal.chat) |
 
@@ -190,6 +191,12 @@ Check out our [Pollinations React Hooks](./pollinations-react/README.md) for mor
 | 🤖 SillyTavern | An LLM frontend for power users. Pollinations permits it to generate text and images. | | [Website](https://docs.sillytavern.app/), [GitHub](https://github.com/SillyTavern/SillyTavern) - ⭐ 14700 |
 | 🤖 LLM7.io | A free and open AI platform providing advanced multimodal capabilities, including large language model access and experimental search tools. Integrates Pollinations text generation as a backend service with transparent credit on the website and repository. | @chigwell | [Website](https://llm7.io), [GitHub](https://github.com/chigwell/llm7.io) - ⭐ 7 |
 | 🎤 Comeback AI | AI-powered clapback machine that transforms mean comments into witty comebacks with 10 unique personas, uses Pollinations openai-audio for voice synthesis, and Whisper for speech-to-text transcription. Turn trolls into comedy gold! | @sizzlebop | [Website](https://comeback-ai.pinkpixel.dev), [GitHub](https://github.com/pinkpixel-dev/comeback-ai) - ⭐ 1 |
+
+### Social Bots
+
+| Project | Description | Creator | Links |
+|---------|-------------|---------|-------|
+| 🎮 Gacha | Your Sassy All-in-One AI Discord Bot. A powerful, sassy, and slightly mischievous AI bot designed to level up your Discord server with intelligent conversations, creative tools, and smart automation — all wrapped in a playful personality. Features AI-powered chat with STM and LTM, image generation & editing, image fusion & GIF handling, real-time web search, voice replies, media intelligence, slash commands, and dynamic intent detection. | `_dr_misterio_` | [Discord Bot](https://discord.com/oauth2/authorize?client_id=1377330983740903586) |
 
 ## Architecture
 ```mermaid

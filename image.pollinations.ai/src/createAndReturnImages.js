@@ -466,14 +466,6 @@ const callAzureGPTImageWithEndpoint = async (prompt, safeParams, userInfo, endpo
               logCloudflare(`Checking safety of input image ${i+1}/${imageUrls.length}`);
               const imageSafetyResult = await analyzeImageSafety(buffer);
               
-              // Log image safety check results
-              await logGptImagePrompt(
-                prompt, 
-                safeParams, 
-                userInfo, 
-                { ...imageSafetyResult, source: `Input image ${i+1}` }
-              );
-              
               if (!imageSafetyResult.safe) {
                   const errorMessage = `Input image ${i+1} contains unsafe content: ${imageSafetyResult.formattedViolations}`;
                   const error = new Error(errorMessage);
@@ -632,9 +624,6 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
       progress.updateBar(requestId, 35, 'Auth', 'GPT Image requires authorization');
       throw new Error(errorText);      
     } else {
-      // Only log authenticated requests that will actually use gptimage
-      await logGptImagePrompt(prompt, safeParams, userInfo);
-      
       // For gptimage model, always throw errors instead of falling back
       updateProgress(progress, requestId, 30, 'Processing', 'Checking prompt safety...');
       
@@ -661,18 +650,9 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
       } catch (error) {
         // Log the error but don't fall back - propagate it to the caller
         logError('Azure GPT Image generation or safety check failed:', error.message);
-        
-        // Check if this is a content safety error that already has analysis results attached
-        const isContentSafetyError = error.message && (
-          error.message.includes('unsafe content') || 
-          error.message.includes('rejected prompt') ||
-          error.message.includes('rejected image')
-        );
-        
-        // If it's not already logged with safety results from earlier checks
-        if (!isContentSafetyError) {
-          await logGptImageError(prompt, safeParams, userInfo, error);
-        }
+
+        await logGptImageError(prompt, safeParams, userInfo, error);
+
         progress.updateBar(requestId, 100, 'Error', error.message);
         throw error;
       }

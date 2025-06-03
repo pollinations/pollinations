@@ -170,14 +170,18 @@ async function handleRequest(req, res, requestData) {
             // Check if this is an audio response - if so, skip content processing
             const isAudioResponse = completion.choices?.[0]?.message?.audio !== undefined;
             
-            if (!isAudioResponse) {
+            // Skip ad processing for JSON mode responses
+            if (!isAudioResponse && !requestData.jsonMode) {
                 try {
                     const content = completion.choices[0].message.content;
                     
                     // Then process regular referral links
-                    const processedContent = await processRequestForAds(content, req, requestData.messages);
+                    const adString = await processRequestForAds(req, content, requestData.messages);
                     
-                    completion.choices[0].message.content = processedContent;
+                    // If an ad was generated, append it to the content
+                    if (adString) {
+                        completion.choices[0].message.content = content + '\n\n' + adString;
+                    }
                 } catch (error) {
                     errorLog('Error processing content:', error);
                 }
@@ -617,8 +621,11 @@ function sendAsOpenAIStream(res, completion, req = null) {
             []
         ) : [];
         
+        // Get jsonMode from request data
+        const jsonMode = completion.requestData?.jsonMode || false;
+        
         // Check if we have messages and should process the stream for ads
-        if (req && messages.length > 0) {
+        if (req && messages.length > 0 && !jsonMode) {
             log('Processing stream for ads with', messages.length, 'messages');
             
             // Create a wrapped stream that will add ads at the end
@@ -642,8 +649,8 @@ function sendAsOpenAIStream(res, completion, req = null) {
                 }
             });
         } else {
-            // Directly pipe the stream to the client - true thin proxy approach
-            log('Directly piping SSE stream to client (no ad processing)');
+            // If no messages, no request object, or JSON mode, just pipe the stream directly
+            log('Skipping ad processing for stream' + (jsonMode ? ' (JSON mode)' : ''));
             responseStream.pipe(res);
             
             // Handle client disconnect

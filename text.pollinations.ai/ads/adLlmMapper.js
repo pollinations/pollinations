@@ -1,6 +1,6 @@
-import debug from 'debug';
 import { affiliatesData } from "./affiliate_prompt.js";
 import { generateTextPortkey } from '../generateTextPortkey.js';
+import debug from 'debug';
 
 // Base URL for affiliate redirects
 export const REDIRECT_BASE_URL = 'https://pollinations.ai/redirect/';
@@ -220,21 +220,9 @@ export async function generateAffiliateAd(affiliateId, content = '', messages = 
 
         // Use the ad_text field if available
         if (affiliate.ad_text) {
-            adTextSource = `🌸 **Ad** 🌸\n${affiliate.ad_text.replace('{url}', referralLink)}`;
+            adTextSource = `\n---\n\n🌸 **Ad** 🌸\n${affiliate.ad_text.replace('{url}', referralLink)}`;
         }
-        // Use description if available
-        else if (affiliate.description) {
-            adTextSource = `🌸 **Ad** 🌸\n${affiliate.description} [Learn more](${referralLink})`;
-        }
-        // Use product name if available
-        else if (affiliate.product) {
-            adTextSource = `🌸 **Ad** 🌸\nLearn more about ${affiliate.product} [Learn more](${referralLink})`;
-        }
-        // Fallback to generic text
-        else {
-            adTextSource = `🌸 **Ad** 🌸\nLearn more about ${affiliate.name} [Learn more](${referralLink})`;
-            log(`No specific text for ${affiliateId}, using generic ad text.`);
-        }
+    
 
         // First, contextualize and translate ad text if content is provided
         if (content && content.trim().length > 0) {
@@ -304,7 +292,11 @@ RESPONSE:`;
         // Format the final ad - with or without image based on markerFound
         let adText;
         // Always use standard format without image
-        adText = `\n\n---\n${adTextSource}`;
+        // Use different prefix for Ko-fi (direct support) vs sponsors
+        const prefix = affiliateId === 'kofi' 
+            ? '**Support Pollinations.AI:**' 
+            : '**Sponsor:**';
+        adText = `\n\n---\n\n${prefix}\n${adTextSource}`;
         log(`Generated standard ad for ${affiliate.name} (${affiliateId})`);
         
         return adText;

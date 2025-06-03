@@ -453,6 +453,14 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🤖 ImageEditer",
+      url: "https://t.me/ImageEditer_bot",
+      description: "AI Art Studio - A feature-rich Telegram bot that creates art from text prompts, remixes images, merges multiple artworks, and offers one-tap regeneration with real-time control. Supports multiple AI models (GPT Image, Flux, Turbo) with NSFW detection and smart layout features.",
+      author: "@_dr_misterio_",
+      submissionDate: "2025-06-02",
+      order: 1,
+    },
+    {
       name: "🎨 PixPal",
       url: "https://pixpal.chat",
       description: "PixPal is a free AI assistant that can analyze, edit, and generate images, build websites from screenshots, create 3D games, and write full blog posts—all in one chat. Upload a photo, describe an idea, or request a UI clone and PixPal instantly delivers creative results.",
@@ -939,10 +947,10 @@ const allProjects = {
       order: 1,
     },
     {
-      name: "Gacha",
-      url: "https://shapes.inc/gacha-gachu/public",
-      description: "A versatile AI chat-bot and image generator powered by Pollinations.AI, featuring web search, image generation with model selection, and character-aware image generation through !webgen command.",
-      author: "@_dr_misterio_",
+      name: "🎮 Gacha",
+      url: "https://discord.com/oauth2/authorize?client_id=1377330983740903586",
+      description: "Your Sassy All-in-One AI Discord Bot. A powerful, sassy, and slightly mischievous AI bot designed to level up your Discord server with intelligent conversations, creative tools, and smart automation — all wrapped in a playful personality. Features AI-powered chat with STM and LTM, image generation & editing, image fusion & GIF handling, real-time web search, voice replies, media intelligence, slash commands, and dynamic intent detection.",
+      author: "`_dr_misterio_`",
       submissionDate: "2025-02-24",
       order: 1,
     },

@@ -3,7 +3,7 @@ import { createJWT, verifyJWT, extractBearerToken } from './jwt';
 import { upsertUser, getUser, updateDomainAllowlist, getDomains, isDomainAllowed, saveOAuthState, getOAuthState, deleteOAuthState, cleanupOldStates, generateApiToken, getApiToken, deleteApiTokens, validateApiToken, getUserTier, setUserTier, getAllUserTiers, findUserByDomain, getUserPreferences, setUserPreference, updateUserPreferences, deleteUserPreference } from './db';
 import { extractReferrer } from '../../shared/extractFromRequest.js';
 import { exchangeCodeForToken, getGitHubUser } from './github';
-import { handleAdminDatabaseDump } from './admin';
+import { handleAdminDatabaseDump, handleAdminUserInfo } from './admin';
 import { generateHTML } from './client/html';
 
 // Add proper type declarations for DOM types
@@ -105,6 +105,12 @@ export default {
         case '/admin/database-dump':
           if (request.method === 'GET') {
             return handleAdminDatabaseDump(request, env, corsHeaders);
+          }
+          break;
+          
+        case '/admin/user-info':
+          if (request.method === 'GET') {
+            return handleAdminUserInfo(request, env, corsHeaders);
           }
           break;
           

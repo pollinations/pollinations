@@ -3,8 +3,8 @@ import { REDIRECT_BASE_URL } from './adLlmMapper.js';
 import { REQUIRE_MARKDOWN, markdownRegex } from './adUtils.js';
 import { handleAuthentication, getUserPreferences } from '../../shared/auth-utils.js';
 
-// Probability of adding referral links (10%)
-const REFERRAL_LINK_PROBABILITY = 1.0; // Temporarily set to 100% for testing
+// Probability of adding referral links (4%)
+const REFERRAL_LINK_PROBABILITY = 0.04;
 
 const TEST_ADS_MARKER = "p-ads";
 
@@ -70,7 +70,7 @@ export async function shouldShowAds(content, messages = [], req = null) {
                 log('User authenticated, checking preferences for userId:', authResult.userId);
                 
                 const preferences = await getUserPreferences(authResult.userId);
-                if (preferences && preferences.ads === false) {
+                if (preferences && preferences.show_ads === false) {
                     log('User has opted out of ads via preferences');
                     return { 
                         shouldShowAd: false, 
@@ -132,11 +132,10 @@ export async function shouldShowAds(content, messages = [], req = null) {
 
     // Skip if content does not have markdown-like formatting, unless we're testing
     // This helps distinguish actual text responses from other formats like code
-    // TEMPORARILY DISABLED FOR TESTING
-    // if (REQUIRE_MARKDOWN && !markdownRegex.test(content) && !content.includes(TEST_ADS_MARKER)) {
-    //     log('Skipping ad processing due to lack of markdown formatting');
-    //     return { shouldShowAd: false, markerFound: false };
-    // }
+    if (REQUIRE_MARKDOWN && !markdownRegex.test(content) && !content.includes(TEST_ADS_MARKER)) {
+        log('Skipping ad processing due to lack of markdown formatting');
+        return { shouldShowAd: false, markerFound: false };
+    }
 
     // If marker is not found, use the default probability
     const effectiveProbability = markerFound

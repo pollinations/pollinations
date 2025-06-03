@@ -61,7 +61,7 @@ export function formatNexAd(nexAdData) {
     }
     
     // Format with our standard ad prefix
-    const formattedAd = `\n---\n\n**Support Pollinations.AI by visiting our sponsor:**\n${markdownContent}`;
+    const formattedAd = `\n\n---\n\n**Sponsor**\n${markdownContent}`;
     
     log('Formatted ad:', formattedAd);
     

@@ -30,7 +30,7 @@ export async function generateAdForContent(req, content, messages = [], isStream
         log(`User country detected: ${userCountry || 'unknown'}`);
 
         // Check if we should show ads
-        const { shouldShowAd, markerFound, forceAd } = shouldShowAds(content, messages, req);
+        const { shouldShowAd, markerFound, forceAd } = await shouldShowAds(content, messages, req);
         const shouldForceAd = markerFound || forceAd;
 
         // Determine if we should proceed with ad generation

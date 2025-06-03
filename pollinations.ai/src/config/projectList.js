@@ -453,6 +453,15 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🇪🇸 Generador de presentaciones con imágenes y texto V2",
+      url: "https://proyectodescartes.org/IATools/Crea_presentaciones4/",
+      description: "Una herramienta configurable que permite crear presentaciones con 3 a 20 diapositivas usando la API de Pollinations. Genera títulos, descripciones e imágenes para cada diapositiva, con posibilidad de regenerar imágenes y descargar en HTML. (A configurable tool that allows you to create presentations with 3 to 20 slides using the Pollinations API. Generates titles, descriptions and images for each slide, with the ability to regenerate images and download in HTML.)",
+      author: "@juanrivera126",
+      submissionDate: "2025-06-03",
+      language: "es-ES",
+      order: 1,
+    },
+    {
       name: "🤖 ImageEditer",
       url: "https://t.me/ImageEditer_bot",
       description: "AI Art Studio - A feature-rich Telegram bot that creates art from text prompts, remixes images, merges multiple artworks, and offers one-tap regeneration with real-time control. Supports multiple AI models (GPT Image, Flux, Turbo) with NSFW detection and smart layout features.",

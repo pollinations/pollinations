@@ -157,6 +157,7 @@ Generates an image based on a text description.
 | `private`  | No       | Set to `true` to prevent the image from appearing in the public feed.              | `false` |
 | `enhance`  | No       | Set to `true` to enhance the prompt using an LLM for more detail.                  | `false` |
 | `safe`     | No       | Set to `true` for strict NSFW filtering (throws error if detected).                | `false` |
+| `transparent` | No    | Set to `true` to generate images with transparent backgrounds (gptimage model only). | `false` |
 | `referrer` | No\*     | Referrer URL/Identifier. See [Referrer Section](#referrer-).                       |         |
 
 **Return:** Image file (typically JPEG) 🖼️
@@ -174,6 +175,9 @@ curl -o sunset.jpg "https://image.pollinations.ai/prompt/A%20beautiful%20sunset%
 
 # With parameters
 curl -o sunset_large.jpg "https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?width=1280&height=720&seed=42&model=flux"
+
+# With transparent background (gptimage model only)
+curl -o logo_transparent.png "https://image.pollinations.ai/prompt/A%20company%20logo%20on%20transparent%20background?model=gptimage&transparent=true"
 ```
 
 **Python (`requests`):**
@@ -189,6 +193,7 @@ params = {
     "seed": 42,
     "model": "flux",
     # "nologo": "true", # Optional
+    # "transparent": "true", # Optional - generates transparent background (gptimage model only)
     # "referrer": "MyPythonApp" # Optional
 }
 encoded_prompt = urllib.parse.quote(prompt)

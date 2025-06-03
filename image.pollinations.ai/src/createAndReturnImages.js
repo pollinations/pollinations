@@ -413,6 +413,12 @@ const callAzureGPTImageWithEndpoint = async (prompt, safeParams, userInfo, endpo
     n: 1
   };
   
+  // Add background parameter for transparent images when using gptimage model
+  if (safeParams.transparent) {
+    requestBody.background = "transparent";
+    logCloudflare('Adding background=transparent parameter for gptimage model');
+  }
+  
   // We'll only use the requestBody for generation mode
   // For edit mode, we'll use FormData instead
   
@@ -493,6 +499,12 @@ const callAzureGPTImageWithEndpoint = async (prompt, safeParams, userInfo, endpo
     // Add other parameters
     formData.append('quality', quality);
     formData.append('n', '1');
+    
+    // Add background parameter for transparent images when using gptimage model
+    if (safeParams.transparent) {
+      formData.append('background', 'transparent');
+      logCloudflare('Adding background=transparent parameter for gptimage edit mode');
+    }
     
     // Log the endpoint and headers for debugging
     logCloudflare(`Sending edit request to endpoint: ${endpoint}`);

@@ -453,6 +453,26 @@ const allProjects = {
   ],
   creativeApps: [
     {
+      name: "🤖 Minecraft AI (Node.js)",
+      url: "https://github.com/aeromechanic000/minecraft-ai",
+      description: "A framework focusing on AI driven minecraft agents based on mindcraft framework. Features autonomous AI agents that can navigate, build, and interact in Minecraft worlds using natural language processing and computer vision.",
+      author: "@aeromechanic000",
+      repo: "https://github.com/aeromechanic000/minecraft-ai",
+      stars: 7,
+      submissionDate: "2025-06-03",
+      order: 1,
+    },
+    {
+      name: "🤖 Minecraft AI (Python)",
+      url: "https://github.com/aeromechanic000/minecraft-ai-python",
+      description: "An Open Framework for Building Embodied AI in Minecraft. Provides tools and APIs for creating intelligent agents that can understand and interact with the Minecraft environment using machine learning and AI techniques.",
+      author: "@aeromechanic000",
+      repo: "https://github.com/aeromechanic000/minecraft-ai-python",
+      stars: 6,
+      submissionDate: "2025-06-03",
+      order: 1,
+    },
+    {
       name: "🇪🇸 Juego de Memorizar con Pollinations",
       url: "https://proyectodescartes.org/IATools/Parejas/",
       description: "Un juego de memoria tipo 'encuentra las parejas' donde los usuarios pueden ingresar un tema, elegir un estilo artístico, generar imágenes con la API de Pollinations, editar y regenerar imágenes si es necesario, y descargar el juego completo. (A memory matching game like 'find the pairs' where users can enter a theme, choose an artistic style, generate images with the Pollinations API, edit and regenerate images if needed, and download the complete game.)",

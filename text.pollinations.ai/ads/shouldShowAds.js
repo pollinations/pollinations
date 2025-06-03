@@ -1,6 +1,7 @@
 import { getRequestData } from '../requestUtils.js';
 import { REDIRECT_BASE_URL } from './adLlmMapper.js';
 import { REQUIRE_MARKDOWN, markdownRegex } from './adUtils.js';
+import { handleAuthentication, getUserPreferences } from '../../shared/auth-utils.js';
 
 
 // Probability of adding referral links (10%)
@@ -17,7 +18,7 @@ import debug from "debug";
 const log = debug('pollinations:shouldShowAds');
 // Extracted utility functions
 
-export function shouldShowAds(content, messages = [], req = null) {
+export async function shouldShowAds(content, messages = [], req = null) {
     // Skip ads for specific user agents
     if (req?.headers?.['user-agent']) {
         const userAgent = req.headers['user-agent'];
@@ -58,6 +59,26 @@ export function shouldShowAds(content, messages = [], req = null) {
             log('Test marker "p-ads" found in messages, forcing ad display regardless of other conditions');
             return { shouldShowAd: true, markerFound: true, forceAd: true };
         }
+    }
+
+    // Check user preferences for authenticated users
+    try {
+        const authResult = await handleAuthentication(req);
+        if (authResult.authenticated && authResult.userId) {
+            const preferences = await getUserPreferences(authResult.userId);
+            
+            if (preferences && preferences.ads === false) {
+                log(`User ${authResult.userId} has ads disabled in preferences`);
+                return { 
+                    shouldShowAd: false, 
+                    markerFound: false, 
+                    userPreference: false 
+                };
+            }
+        }
+    } catch (error) {
+        log('Error checking user preferences:', error);
+        // Continue with normal flow if preference check fails
     }
 
     // Get request data for referrer check

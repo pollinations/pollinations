@@ -532,3 +532,40 @@ export function createAuthDebugResponse(debugInfo) {
   
   return debug;
 }
+
+/**
+ * Fetch user preferences from auth.pollinations.ai
+ * @param {string} userId - The user ID
+ * @returns {Promise<Object|null>} User preferences object or null
+ */
+export async function getUserPreferences(userId) {
+  if (!userId) return null;
+  
+  const preferenceLog = debug('pollinations:auth:preferences');
+  
+  try {
+    preferenceLog(`Fetching preferences for user ${userId}`);
+    
+    const response = await fetch(
+      `https://auth.pollinations.ai/preferences?user_id=${encodeURIComponent(userId)}`,
+      {
+        headers: {
+          'Accept': 'application/json'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      preferenceLog(`Failed to fetch preferences: ${response.status}`);
+      return null;
+    }
+    
+    const data = await response.json();
+    preferenceLog('Preferences fetched:', data.preferences);
+    
+    return data.preferences || {};
+  } catch (error) {
+    preferenceLog('Error fetching preferences:', error);
+    return null;
+  }
+}

@@ -16,7 +16,7 @@ import { shouldShowAds } from './shouldShowAds.js';
  * @param {Array} messages - The input messages
  * @returns {Stream} - A transformed stream that will add an ad at the end
  */
-export function createStreamingAdWrapper(responseStream, req, messages = []) {
+export async function createStreamingAdWrapper(responseStream, req, messages = []) {
     if (!responseStream || !responseStream.pipe) {
         log('Invalid stream provided to createStreamingAdWrapper');
         if (req) {
@@ -25,7 +25,7 @@ export function createStreamingAdWrapper(responseStream, req, messages = []) {
         return responseStream;
     }
 
-    const { shouldShowAd, markerFound, adAlreadyExists, forceAd } = shouldShowAds(null, messages, req);
+    const { shouldShowAd, markerFound, adAlreadyExists, forceAd } = await shouldShowAds(null, messages, req);
 
     // If p-ads marker was found, set forceAd flag
     const shouldForceAd = forceAd || false;

@@ -916,6 +916,14 @@ const allProjects = {
   ],
   socialBots: [
     {
+      name: "🤖 GPT_Project",
+      url: "https://t.me/gpt_project_official_bot",
+      description: "GPT_Project Telegram AI Chatbot was conceived as a professional productivity tool that's always in your pocket. Uses Pollinations API for image generation with models like Flux and language models such as GPT-4.1, GPT-4.1-nano, and SearchGPT. Features include advanced AI interaction, versatile image generation, AI-powered image analysis, voice message recognition, and text-to-speech.",
+      author: "@lordon4x",
+      submissionDate: "2025-06-03",
+      order: 1,
+    },
+    {
       name: "🤖 AdvanceChatGptBot",
       url: "https://t.me/AdvChatGptBot",
       description: "A powerful AI-driven Telegram bot that brings cutting-edge artificial intelligence features to your fingertips. Features GPT-4o and GPT-4o-mini, DALL-E Model, OCR and Google Voice2Text. Uses Pollinations through @gpt4free Python lib.",

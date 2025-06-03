@@ -588,7 +588,7 @@ export const callAzureGPTImage = async (prompt, safeParams, userInfo = {}) => {
     // flower/nectar stage → GPT_IMAGE_2_ENDPOINT (advanced endpoint)
     // const endpointIndex = (userTier === 'seed') ? 1 : 2;
     
-    const endpointIndex = 1; //Math.random() < 0.5 ? 1 : 2 ;
+    const endpointIndex = Math.random() < 0.5 ? 1 : 2 ;
     logCloudflare(`Using Azure GPT Image endpoint ${endpointIndex} for user tier: ${userTier}`, userInfo.userId ? `(userId: ${userInfo.userId})` : '(anonymous)');
 
     return await callAzureGPTImageWithEndpoint(prompt, safeParams, userInfo, endpointIndex);
@@ -619,7 +619,7 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
     
     // Restrict GPT Image model to users with valid authentication
     if (!userInfo || !userInfo.authenticated || userInfo.tier === 'seed') {
-      const errorText = "We temporarily limited access to gpt-image-1 until Azure approves increased quota. Access to GPT Image model requires authentication. Please authenticate at https://auth.pollinations.ai and request a tier upgrade at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml";
+      const errorText = "Access to gpt-image-1 is currently limited to users in the flower tier. We will be opening up access gradually. Please authenticate at https://auth.pollinations.ai and request a tier upgrade at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml";
       logError(errorText);
       progress.updateBar(requestId, 35, 'Auth', 'GPT Image requires authorization');
       throw new Error(errorText);      

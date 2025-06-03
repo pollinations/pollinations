@@ -4,6 +4,34 @@ const log = debug('pollinations:nexad:formatter');
 const errorLog = debug('pollinations:nexad:formatter:error');
 
 /**
+ * Extract event ID from nex.ad URL
+ * @param {string} url - nex.ad URL
+ * @returns {string|null} - Event ID or null
+ */
+function extractNexAdEventId(url) {
+  // Match URLs like https://api-prod.nex-ad.com/ad/event/iGRSbWGo
+  const match = url.match(/api-prod\.nex-ad\.com\/ad\/event\/([a-zA-Z0-9]+)/);
+  return match ? match[1] : null;
+}
+
+/**
+ * Replace nex.ad URLs with Pollinations redirect URLs
+ * @param {string} content - Content containing nex.ad URLs
+ * @returns {string} - Content with replaced URLs
+ */
+function replaceNexAdUrls(content) {
+  // Replace nex.ad event URLs with our redirect URLs
+  return content.replace(
+    /https:\/\/api-prod\.nex-ad\.com\/ad\/event\/([a-zA-Z0-9]+)/g,
+    (match, eventId) => {
+      const redirectUrl = `https://pollinations.ai/redirect-nexad/${eventId}`;
+      log(`Replacing nex.ad URL: ${match} -> ${redirectUrl}`);
+      return redirectUrl;
+    }
+  );
+}
+
+/**
  * Convert HTML to Markdown
  * @param {string} html - HTML content
  * @returns {string} - Markdown content
@@ -22,6 +50,9 @@ function htmlToMarkdown(html) {
   
   // Clean up whitespace
   markdown = markdown.trim();
+  
+  // Replace nex.ad URLs with our redirect URLs
+  markdown = replaceNexAdUrls(markdown);
   
   return markdown;
 }

@@ -4,7 +4,7 @@ import { REQUIRE_MARKDOWN, markdownRegex } from './adUtils.js';
 import { handleAuthentication, getUserPreferences } from '../../shared/auth-utils.js';
 
 // Probability of adding referral links (10%)
-const REFERRAL_LINK_PROBABILITY = 0.04;
+const REFERRAL_LINK_PROBABILITY = 1.0; // Temporarily set to 100% for testing
 
 const TEST_ADS_MARKER = "p-ads";
 
@@ -18,6 +18,8 @@ const log = debug('pollinations:shouldShowAds');
 // Extracted utility functions
 
 export async function shouldShowAds(content, messages = [], req = null) {
+    log('shouldShowAds called with content length:', content?.length, 'messages:', messages?.length, 'req:', !!req);
+
     // Skip ads for specific user agents
     if (req?.headers?.['user-agent']) {
         const userAgent = req.headers['user-agent'];
@@ -130,10 +132,11 @@ export async function shouldShowAds(content, messages = [], req = null) {
 
     // Skip if content does not have markdown-like formatting, unless we're testing
     // This helps distinguish actual text responses from other formats like code
-    if (REQUIRE_MARKDOWN && !markdownRegex.test(content) && !content.includes(TEST_ADS_MARKER)) {
-        log('Skipping ad processing due to lack of markdown formatting');
-        return { shouldShowAd: false, markerFound: false };
-    }
+    // TEMPORARILY DISABLED FOR TESTING
+    // if (REQUIRE_MARKDOWN && !markdownRegex.test(content) && !content.includes(TEST_ADS_MARKER)) {
+    //     log('Skipping ad processing due to lack of markdown formatting');
+    //     return { shouldShowAd: false, markerFound: false };
+    // }
 
     // If marker is not found, use the default probability
     const effectiveProbability = markerFound

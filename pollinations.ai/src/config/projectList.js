@@ -583,6 +583,14 @@ const allProjects = {
   ],
   llmIntegrations: [
     {
+      name: "🆕 Whizzy AI",
+      url: "https://whizzyai.vercel.app",
+      description: "An educational AI platform for students featuring AI-powered study assistance, chat functionality, and image generation capabilities using Pollinations AI. Designed to help students with studies they find challenging.",
+      author: "@vaibhavcoding69",
+      submissionDate: "2025-06-03",
+      order: 1,
+    },
+    {
       name: "AI Code Generator",
       url: "https://codegen.on.websim.com/",
       description: "A websim project that generates code from description, selected programming language and other options. Integrates Pollinations because it allows for more models to choose from for potentially better results. It has modes like: Code Generator, Code Explainer, Reviewer, etc.",

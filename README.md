@@ -325,6 +325,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 🇪🇸 Yo el director | Web para crear peliculas y contenido para youtube, usando Pollinations (Web platform for creating movies and YouTube content using Pollinations) | @henryecamposs | [Website](https://yoeldirector.dpana.com.ve) |
 | 🆕 Pollin-Coder | A free AI-powered website builder that lets anyone create a clean site just by describing it. It uses Pollinations AI to generate the content and layout instantly. | @r3ap3redit | [Website](https://pollin-coder.megavault.in) |
 | 🆕 Imagemate AI | A powerful image generation app designed to turn your imagination into stunning visuals with the help of advanced artificial intelligence. Built using the Pollinations AI API, Imagemate AI allows users to input a text prompt and instantly receive AI-generated images that match the description. | @Shanto-Islam | [Play Store](https://play.google.com/store/apps/details?id=com.madameweb.imgmate) |
 | 🆕 MVKProject Nexus API | An API platform specializing in artificial intelligence services: AI Chat Interaction with models like ChatGPT, Gemini, DeepSeek, and Meta AI, AI Image Generation powered by Pollinations, and AI Image Analysis for content description and insights. | @DarknessDEVV | [Website](https://nexus.adonis-except.xyz/), [GitHub](https://github.com/DarknessDEVV/-mvkproject-nexus) - ⭐ 1, [NPM](https://www.npmjs.com/package/@mvkproject/nexus) |

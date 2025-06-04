@@ -305,6 +305,15 @@ const allProjects = {
   ],
   toolsInterfaces: [
     {
+      name: "🇪🇸 Yo el director",
+      url: "https://yoeldirector.dpana.com.ve",
+      description: "Web para crear peliculas y contenido para youtube, usando Pollinations (Web platform for creating movies and YouTube content using Pollinations)",
+      author: "@henryecamposs",
+      submissionDate: "2025-06-04",
+      language: "es",
+      order: 1,
+    },
+    {
       name: "🛠️ AI Content Describer",
       url: "https://github.com/cartertemm/AI-content-describer/",
       description: "An extension for NVDA, the free and open-source screen reader for Microsoft Windows. Uses multimodal generative AI to help those with blindness and visual impairments understand pictures, UI controls, complex diagrams/graphics, and more through intelligent descriptions that go far beyond simple alt-text.",

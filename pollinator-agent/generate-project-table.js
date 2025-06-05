@@ -41,19 +41,15 @@ const isNewProject = (project) => {
 const formatProjectName = (project) => {
   let name = project.name;
   
-  // Make name clickable with website URL if available
-  if (project.url) {
+  // Only make name clickable if there's a URL that's different from the GitHub repo
+  if (project.url && project.url !== project.repo) {
     name = `[${name}](${project.url})`;
   }
   
-  // Add GitHub link as clickable stars if available and different from main URL
-  if (project.repo && project.repo !== project.url) {
+  // Always add GitHub link as clickable stars if repo exists
+  if (project.repo) {
     const starCount = project.stars >= 1000 ? `${(project.stars / 1000).toFixed(1)}k` : `${project.stars || 0}`;
     name += ` [⭐ ${starCount}](${project.repo})`;
-  } else if (project.repo && project.repo === project.url && project.stars !== undefined) {
-    // If the repo is the same as URL, just add star count (not clickable since it would be redundant)
-    const starCount = project.stars >= 1000 ? `${(project.stars / 1000).toFixed(1)}k` : `${project.stars || 0}`;
-    name += ` ⭐ ${starCount}`;
   }
   
   // Add demo link if available

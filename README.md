@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="operations/annoucement/pollinations-ai-logo.png" alt="Pollinations.AI Logo" width="100%"/>
+  <img src="operations/media/pollinations-ai-logo.png" alt="Pollinations.AI Logo" width="100%"/>
 </div>
 
 ## 🆕 Latest News

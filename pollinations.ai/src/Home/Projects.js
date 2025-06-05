@@ -3,7 +3,7 @@ import { makeStyles } from "@mui/styles"
 import { Box } from "@mui/material"
 
 import { Colors, Fonts, SectionBG } from "../config/global"
-import { projects, projectCategories } from "../config/projectList"
+import { projects, categories as projectCategories } from "../config/projectList"
 import {
   PROJECT_TITLE,
   PROJECT_SUBTITLE,
@@ -53,7 +53,7 @@ const handleSubmitButtonClick = (e) => {
 
 const Projects = () => {
   const classes = useStyles()
-  const [selectedCategory, setSelectedCategory] = useState("featured")
+  const [selectedCategory, setSelectedCategory] = useState("vibeCoding")
 
   useEffect(() => {
     // Trigger initial category selection on component mount
@@ -70,14 +70,14 @@ const Projects = () => {
     if (selectedCategory !== categoryKey) {
       return Colors.offblack
     }
-    return categoryKey === "featured" ? Colors.special : Colors.lime
+    return Colors.lime
   }
 
   const getButtonTextColor = (categoryKey) => {
     if (selectedCategory === categoryKey) {
-      return categoryKey === "featured" ? Colors.offwhite : Colors.offblack
+      return Colors.offblack
     }
-    return categoryKey === "featured" ? Colors.special : Colors.lime
+    return Colors.lime
   }
 
   return (

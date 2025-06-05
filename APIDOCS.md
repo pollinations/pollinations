@@ -213,54 +213,6 @@ except requests.exceptions.RequestException as e:
     # if response is not None: print(response.text)
 ```
 
-**JavaScript (Browser `fetch`):**
-
-```javascript
-async function fetchImage(prompt, params = {}) {
-  const defaultParams = {
-    // width: 1024, height: 1024 // Defaults are handled by API
-  };
-  const queryParams = new URLSearchParams({ ...defaultParams, ...params });
-  const encodedPrompt = encodeURIComponent(prompt);
-  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?${queryParams.toString()}`;
-
-  console.log("Fetching image from:", url);
-
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      const errorText = await response.text(); // Get error details if possible
-      throw new Error(
-        `HTTP error! status: ${response.status}, message: ${errorText}`
-      );
-    }
-    const imageBlob = await response.blob();
-    const imageUrl = URL.createObjectURL(imageBlob);
-
-    // Example: Display the image
-    const img = document.createElement("img");
-    img.src = imageUrl;
-    img.alt = prompt;
-    document.body.appendChild(img); // Append to your desired element
-    console.log("Image fetched and displayed.");
-  } catch (error) {
-    console.error("Error fetching image:", error);
-  }
-}
-
-// --- Usage ---
-fetchImage("A beautiful sunset over the ocean", {
-  width: 1280,
-  height: 720,
-  seed: 42,
-  model: "flux",
-  // nologo: true // Optional
-});
-
-// Just prompt
-// fetchImage("Cyberpunk city raining");
-```
-
 </details>
 
 ---
@@ -298,32 +250,6 @@ try:
         print(f"- {model}")
 except requests.exceptions.RequestException as e:
     print(f"Error fetching models: {e}")
-```
-
-**JavaScript (Browser `fetch`):**
-
-```javascript
-async function listImageModels() {
-  const url = "https://image.pollinations.ai/models";
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const models = await response.json();
-    console.log("Available Image Models:", models);
-    // Example: Populate a dropdown
-    // const selectElement = document.getElementById('model-select');
-    // models.forEach(model => {
-    //   const option = new Option(model, model);
-    //   selectElement.add(option);
-    // });
-  } catch (error) {
-    console.error("Error fetching image models:", error);
-  }
-}
-
-listImageModels();
 ```
 
 </details>
@@ -422,54 +348,6 @@ try:
 except requests.exceptions.RequestException as e:
     print(f"Error fetching text: {e}")
     # if response is not None: print(response.text)
-```
-
-**JavaScript (Browser `fetch`):**
-
-```javascript
-async function fetchText(prompt, params = {}) {
-  const queryParams = new URLSearchParams(params);
-  const encodedPrompt = encodeURIComponent(prompt);
-  const url = `https://text.pollinations.ai/${encodedPrompt}?${queryParams.toString()}`;
-
-  console.log("Fetching text from:", url);
-
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const responseText = await response.text();
-
-    if (params.json === "true" || params.json === true) {
-      try {
-        const data = JSON.parse(responseText);
-        console.log("Response (JSON parsed):", data);
-        // Process JSON data
-      } catch (e) {
-        console.error("Failed to parse JSON response:", e);
-        console.log("Raw response:", responseText);
-      }
-    } else {
-      console.log("Response (Plain Text):", responseText);
-      // Display plain text
-      // document.getElementById('output').textContent = responseText;
-    }
-  } catch (error) {
-    console.error("Error fetching text:", error);
-  }
-}
-
-// --- Usage ---
-fetchText("What are the main benefits of exercise?");
-
-fetchText("List 3 popular dog breeds", {
-  model: "mistral",
-  json: "true", // Get result as JSON string
-});
-
-// Note: For stream=true, see dedicated streaming example under POST section
 ```
 
 </details>
@@ -574,54 +452,6 @@ except requests.exceptions.RequestException as e:
     # if response is not None: print(response.text)
 ```
 
-**JavaScript (Browser `fetch`):**
-
-```javascript
-async function postChatCompletion(messages, options = {}) {
-  const url = "https://text.pollinations.ai/openai";
-  const payload = {
-    model: options.model || "openai",
-    messages: messages,
-    seed: options.seed,
-    private: options.private,
-    referrer: options.referrer || "WebApp", // Optional
-  };
-
-  console.log("Sending POST request to:", url, payload);
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `HTTP error! status: ${response.status}, message: ${errorText}`
-      );
-    }
-
-    const result = await response.json();
-    console.log("Assistant:", result.choices[0].message.content);
-    // console.log("Full response:", result);
-    return result; // Return the full response object
-  } catch (error) {
-    console.error("Error posting chat completion:", error);
-  }
-}
-
-// --- Usage ---
-const chatMessages = [
-  { role: "system", content: "You are a travel agent." },
-  { role: "user", content: "Suggest a 3-day itinerary for Rome." },
-];
-postChatCompletion(chatMessages, { model: "mistral", seed: 500 });
-```
-
 </details>
 
 <details>
@@ -692,94 +522,6 @@ except requests.exceptions.RequestException as e:
 except Exception as e:
     print(f"\nError processing stream: {e}")
 
-```
-
-**JavaScript (Browser `fetch` with `ReadableStream`):**
-
-```javascript
-async function streamChatCompletion(messages, options = {}, onChunkReceived) {
-  const url = "https://text.pollinations.ai/openai";
-  const payload = {
-    model: options.model || "openai",
-    messages: messages,
-    seed: options.seed,
-    stream: true, // Enable streaming
-  };
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "text/event-stream",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `HTTP error! status: ${response.status}, message: ${errorText}`
-      );
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    console.log("Starting stream...");
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        console.log("Stream finished.");
-        break;
-      }
-
-      buffer += decoder.decode(value, { stream: true });
-
-      // Process buffer line by line (SSE format: data: {...}\n\n)
-      const lines = buffer.split("\n\n");
-      buffer = lines.pop(); // Keep the potentially incomplete last line
-
-      for (const line of lines) {
-        if (line.startsWith("data: ")) {
-          const dataStr = line.substring(6).trim();
-          if (dataStr === "[DONE]") {
-            console.log("Received [DONE] marker.");
-            continue; // Or handle end of stream signal
-          }
-          try {
-            const chunk = JSON.parse(dataStr);
-            const content = chunk?.choices?.[0]?.delta?.content;
-            if (content && onChunkReceived) {
-              onChunkReceived(content); // Callback to handle the text chunk
-            }
-          } catch (e) {
-            console.error("Failed to parse stream chunk:", dataStr, e);
-          }
-        }
-      }
-    }
-  } catch (error) {
-    console.error("Error during streaming chat completion:", error);
-  }
-}
-
-// --- Usage ---
-const streamMessages = [
-  { role: "user", content: "Write a detailed explanation of photosynthesis." },
-];
-
-// Example callback to display chunks in a div
-const outputDiv = document.createElement("div");
-document.body.appendChild(outputDiv);
-function handleChunk(textChunk) {
-  console.log("Chunk:", textChunk);
-  outputDiv.textContent += textChunk;
-}
-
-streamChatCompletion(streamMessages, { model: "openai" }, handleChunk);
 ```
 
 </details>
@@ -926,78 +668,6 @@ def analyze_local_image(image_path, question="What's in this image?"):
 # if result_local:
 #     print("Local Image Analysis:", result_local['choices'][0]['message']['content'])
 
-```
-
-**JavaScript (Browser `fetch`, using local file/base64):**
-
-```javascript
-// Function to encode file to base64
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result); // result includes 'data:mime/type;base64,' prefix
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-async function analyzeImage(imageFile, question = "What's in this image?") {
-  const url = "https://text.pollinations.ai/openai";
-
-  try {
-    const base64ImageDataUrl = await fileToBase64(imageFile);
-
-    const payload = {
-      model: "openai", // Ensure vision support
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: question },
-            {
-              type: "image_url",
-              image_url: {
-                url: base64ImageDataUrl,
-              },
-            },
-          ],
-        },
-      ],
-      max_tokens: 500, // Optional
-    };
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `HTTP error! status: ${response.status}, message: ${errorText}`
-      );
-    }
-
-    const result = await response.json();
-    console.log("Vision Analysis:", result.choices[0].message.content);
-    // Display the result
-    // document.getElementById('vision-result').textContent = result.choices[0].message.content;
-  } catch (error) {
-    console.error("Error analyzing image:", error);
-  }
-}
-
-// --- Usage Example (Attach to a file input change event) ---
-// <input type="file" id="imageInput" accept="image/*">
-/*
-document.getElementById('imageInput').addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    if (file) {
-        analyzeImage(file, "Describe this picture in detail.");
-    }
-});
-*/
 ```
 
 </details>

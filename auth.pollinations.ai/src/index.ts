@@ -1,6 +1,31 @@
 import type { Env, UserTier } from './types';
 import { createJWT, verifyJWT, extractBearerToken } from './jwt';
-import { upsertUser, getUser, updateDomainAllowlist, getDomains, isDomainAllowed, saveOAuthState, getOAuthState, deleteOAuthState, cleanupOldStates, generateApiToken, getApiToken, deleteApiTokens, validateApiToken, getUserTier, setUserTier, getAllUserTiers, findUserByDomain, getUserPreferences, setUserPreference, updateUserPreferences, deleteUserPreference } from './db';
+import { 
+  upsertUser, 
+  getUser, 
+  saveOAuthState, 
+  getOAuthState, 
+  deleteOAuthState, 
+  cleanupOldStates, 
+  updateDomainAllowlist, 
+  getDomains, 
+  generateApiToken, 
+  getApiToken, 
+  deleteApiTokens, 
+  validateApiToken, 
+  getUserTier, 
+  setUserTier, 
+  getAllUserTiers, 
+  findUserByDomain, 
+  getUserPreferences, 
+  setUserPreference, 
+  updateUserPreferences, 
+  deleteUserPreference,
+  getUserMetrics,
+  setUserMetric,
+  updateUserMetrics,
+  incrementUserMetric
+} from './db';
 import { extractReferrer } from '../../shared/extractFromRequest.js';
 import { exchangeCodeForToken, getGitHubUser } from './github';
 import { handleAdminDatabaseDump, handleAdminUserInfo } from './admin';
@@ -135,15 +160,22 @@ export default {
             return handleAdminUpdatePreferences(request, env, corsHeaders);
           }
           break;
-      }
-      
-      // Check if the path matches the pattern /api/validate-token/:token
-      if (url.pathname.startsWith('/api/validate-token/')) {
-        if (request.method === 'GET') {
-          // Extract token from the URL path
-          const token = url.pathname.replace('/api/validate-token/', '');
-          return handleValidateToken(token, env, corsHeaders);
-        }
+          
+        case '/admin/metrics':
+          if (request.method === 'GET') {
+            return handleAdminGetMetrics(request, env, corsHeaders);
+          } else if (request.method === 'POST') {
+            return handleAdminUpdateMetrics(request, env, corsHeaders);
+          }
+          break;
+          
+        case '/api/validate-token/':
+          if (request.method === 'GET') {
+            // Extract token from the URL path
+            const token = url.pathname.replace('/api/validate-token/', '');
+            return handleValidateToken(token, env, corsHeaders);
+          }
+          break;
       }
       
       return createErrorResponse(404, 'Resource not found', corsHeaders);
@@ -319,7 +351,17 @@ async function handleCheckDomain(request: Request, env: Env, corsHeaders: Record
     return createErrorResponse(400, 'Missing required parameters', corsHeaders);
   }
   
-  const allowed = await isDomainAllowed(env.DB, userId, domain);
+  // Validate if the domain exists first
+  const url2 = new URL(request.url);
+  const domain2 = url2.searchParams.get('domain');
+
+  if (!domain2) {
+    return createErrorResponse(400, 'Domain parameter is required', corsHeaders);
+  }
+
+  // Check if domain is allowed for this user
+  const domains = await getDomains(env.DB, userId);
+  const allowed = domains.includes(domain2);
   
   return new Response(JSON.stringify({ allowed }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -939,3 +981,126 @@ async function handleAdminUpdatePreferences(request: Request, env: Env, corsHead
     return createErrorResponse(500, 'Internal server error', corsHeaders);
   }
 }
+
+// Admin endpoint to get any user's metrics
+// @param request Request object
+// @param env Environment variables
+// @param corsHeaders CORS headers
+// @returns Response with user metrics
+async function handleAdminGetMetrics(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  try {
+    // Get auth token from header or query
+    const authHeader = request.headers.get('authorization')
+    const authToken = authHeader?.replace('Bearer ', '') || 
+                     new URL(request.url).searchParams.get('api_key')
+    
+    if (!authToken || authToken !== env.ADMIN_API_KEY) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    
+    // Get user_id from query params
+    const url = new URL(request.url)
+    const userId = url.searchParams.get('user_id')
+    
+    if (!userId) {
+      return new Response(JSON.stringify({ error: 'user_id parameter is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    
+    // Fetch metrics
+    const metrics = await getUserMetrics(env.DB, userId)
+    
+    return new Response(JSON.stringify({
+      user_id: userId,
+      metrics: metrics
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  } catch (error) {
+    console.error('Error fetching metrics:', error)
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
+}
+
+// Admin endpoint to update any user's metrics
+// @param request Request object
+// @param env Environment variables
+// @param corsHeaders CORS headers
+// @returns Response with updated metrics
+async function handleAdminUpdateMetrics(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  try {
+    // Get auth token from header or query
+    const authHeader = request.headers.get('authorization')
+    const authToken = authHeader?.replace('Bearer ', '') || 
+                     new URL(request.url).searchParams.get('api_key')
+    
+    if (!authToken || authToken !== env.ADMIN_API_KEY) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    
+    // Get user_id from query params
+    const url = new URL(request.url)
+    const userId = url.searchParams.get('user_id')
+    
+    if (!userId) {
+      return new Response(JSON.stringify({ error: 'user_id parameter is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    
+    // Parse request body
+    const body = await request.json() as { metrics?: Record<string, any>, key?: string, value?: any, increment?: { key: string, by?: number } }
+    
+    // Validate request
+    if (!body.metrics && !body.key && !body.increment) {
+      return new Response(JSON.stringify({ error: 'Either metrics object, key/value pair, or increment must be provided' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    
+    // Apply updates
+    if (body.increment) {
+      // Increment a numeric metric
+      await incrementUserMetric(env.DB, userId, body.increment.key, body.increment.by || 1)
+    } else if (body.metrics) {
+      // Update multiple metrics at once
+      await updateUserMetrics(env.DB, userId, body.metrics)
+    } else if (body.key !== undefined) {
+      // Update single metric
+      await setUserMetric(env.DB, userId, body.key, body.value)
+    }
+    
+    // Return updated metrics
+    const updatedMetrics = await getUserMetrics(env.DB, userId)
+    
+    return new Response(JSON.stringify({
+      user_id: userId,
+      metrics: updatedMetrics
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  } catch (error) {
+    console.error('Error updating metrics:', error)
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
+}
+
+// End of file

@@ -47,6 +47,13 @@ npm run dev
   - Body: `{"key": "preference_name", "value": "preference_value"}` for single preference
   - Body: `{"preferences": {"key1": "value1", "key2": "value2"}}` for multiple preferences
 
+### User Metrics Endpoints (Admin Only - NEW)
+- `GET /admin/metrics?user_id=...` - Get user metrics/analytics
+- `POST /admin/metrics?user_id=...` - Update user metrics
+  - Body: `{"key": "metric_name", "value": metric_value}` for single metric
+  - Body: `{"metrics": {"key1": value1, "key2": value2}}` for multiple metrics
+  - Body: `{"increment": {"key": "metric_name", "by": 1}}` to increment a numeric metric
+
 ## User Preferences 🎨
 
 The system now supports storing arbitrary user preferences as JSON. This allows users to customize their experience, such as:
@@ -73,6 +80,45 @@ curl -X POST https://auth.pollinations.ai/preferences \
   -H "Authorization: Bearer YOUR_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"preferences": {"theme": "dark", "language": "en"}}'
+```
+
+## User Metrics 📊
+
+The system includes a separate `metrics` field for backend-only analytics that users cannot modify. This is used to track:
+- Ad clicks (total, by type, by date)
+- User engagement metrics
+- Any other analytics data
+
+### Example Usage
+
+```bash
+# Get user metrics (admin only)
+curl -H "Authorization: Bearer ADMIN_API_KEY" \
+  "https://auth.pollinations.ai/admin/metrics?user_id=USER_ID"
+
+# Update a single metric
+curl -X POST "https://auth.pollinations.ai/admin/metrics?user_id=USER_ID" \
+  -H "Authorization: Bearer ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"key": "total_requests", "value": 100}'
+
+# Increment a metric
+curl -X POST "https://auth.pollinations.ai/admin/metrics?user_id=USER_ID" \
+  -H "Authorization: Bearer ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"increment": {"key": "api_calls", "by": 1}}'
+
+# Track an ad click using the metrics endpoint
+curl -X POST "https://auth.pollinations.ai/admin/metrics?user_id=USER_ID" \
+  -H "Authorization: Bearer ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"increment": {"key": "ad_clicks.banner", "by": 1}}'
+
+# Or add more structured ad click data
+curl -X POST "https://auth.pollinations.ai/admin/metrics?user_id=USER_ID" \
+  -H "Authorization: Bearer ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"key": "ad_clicks", "value": {"total": 5, "banner": 3, "inline": 2, "last_click": "2025-06-05"}}'
 ```
 
 ## Testing 🧪
@@ -110,5 +156,6 @@ npm run deploy:with-migrations
 
 ### Database Schema
 The `users` table now includes a `preferences` column that stores user preferences as JSON text.
+The `users` table includes a `preferences` column for user preferences and a `metrics` column for backend analytics as JSON text.
 
 That's it! No bloat, no complexity. Just auth. 🎯

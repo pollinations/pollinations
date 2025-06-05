@@ -40,7 +40,17 @@
 - Added "Gacha" to `games.js`
 - Added "GPT_Project", "AdvanceChatGptBot", "PolliBot", and "Jackey" to their respective category files
 - Updated placeholder entries for "urSapere AI", "Raftar.xyz", and "Anime Character Generator"
-- Processing next batch of projects: "Aura Chat Bot", "Quick AI & Jolbak", "AI Image Generator [ROBLOX]", "SingodiyaTech bot", and "Raftar.xyz"
+- Processed "Aura Chat Bot", "Quick AI & Jolbak", "AI Image Generator [ROBLOX]", "SingodiyaTech bot", and "Raftar.xyz"
+- Added "ai/teens worldwide" to `learn.js`
+- Added "Echo AI" and "Neurix 🇷🇺" to `chat.js`
+- Added "Snapgen.io" to `creative.js`
+
+## Categorization Instructions
+
+When assigning projects to categories, always:
+- Use the most accurate fit based on project functionality and metadata.
+- If a project fits multiple categories, prefer assigning it to less-populated categories (games, hackAndBuild, learn, socialBots, vibeCoding) to maintain balance across categories.
+- Avoid duplicates and keep each project in only one category.
 
 ## Project List
 
@@ -174,42 +184,42 @@ Okay, here are all the unique project names from the provided JSON data:
 125. OkeyAI - added to learn.js (educational LLM with African cultural awareness)
 126. DesmondBot - added to chat.js (standalone chat UI)
 127. DreamBig - Generative AI Playground - added to chat.js (multi-model playground)
-128. Goalani
-129. IMyself AI 
-130. FreeAI 
-131. AI Unlimited Customizable Feature Module 
-132. PrivatePollenAI
-133. Zelos AI image generator
-134. MiReXa AI
-135. FlowGPT
-136. gpt4free
-137. Unity AI Lab
-138. DynaSpark AI
-139. Dreamscape AI
-140. PollinateAI
-141. WebGeniusAI
-142. NailsGen
-143. ImageGen AI Image
-144. RuangRiung AI Image 
-145. BlackWave
-146. Generator Text AI 
-147. Strain Navigator
-148. MalaysiaPrompt 
-149. Generator AI Image 
-150. Pollinations.ai Image Generation (for Frame)
+128. Goalani - added to chat.js
+129. IMyself AI - added to creative.js
+130. FreeAI - added to chat.js
+131. AI Unlimited Customizable Feature Module - added to hackAndBuild.js (as Quicker Pollinations AI)
+132. PrivatePollenAI - added to chat.js
+133. Zelos AI image generator - added to creative.js
+134. MiReXa AI - added to chat.js
+135. FlowGPT - added to creative.js
+136. gpt4free - added to chat.js
+137. Unity AI Lab - added to chat.js
+138. DynaSpark AI - added to chat.js
+139. Dreamscape AI - added to creative.js
+140. PollinateAI - added to creative.js
+141. WebGeniusAI - added to creative.js
+142. NailsGen - added to creative.js
+143. ImageGen AI Image - added to creative.js
+144. RuangRiung AI Image - added to creative.js 
+145. BlackWave - added to creative.js
+146. Generator Text AI - added to creative.js 
+147. Strain Navigator - added to hackAndBuild.js
+148. MalaysiaPrompt - added to learn.js
+149. Generator AI Image - added to creative.js
+150. Pollinations.ai Image Generation (for Frame) - added to creative.js
 151. Podcast #1500 - updated in learn.js with accurate metadata
-152. LAHGen
-153. Elixpo Art
-154. Riffle
-155. AI 文本转音频 
-156. Case Me 
-157. PixPax
-158. Watch TV with neko (Roblox)
-159. Jenny AI
-160. CalcuBite AI
-161. RoastMaster AI
-162. roastmyselfie.app
-163. StoryMagic: Interactive Kids Stories
+
+153. Elixpo Art - added to creative.js
+154. Riffle - added to learn.js
+155. AI 文本转音频 - added to creative.js
+156. Case Me - added to creative.js
+157. PixPax - added to chat.js
+158. Watch TV with neko (Roblox) - added to games.js
+159. Jenny AI - added to chat.js
+160. CalcuBite AI - added to creative.js
+161. RoastMaster AI - added to games.js
+162. roastmyselfie.app - added to games.js
+163. StoryMagic: Interactive Kids Stories - added to learn.js
 164. Open Prompt - added to vibeCoding.js
 165. AI儿童故事 
 166. Herramientas IA

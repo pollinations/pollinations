@@ -5,6 +5,28 @@
 
 export const gamesProjects = [
   {
+    name: "RoastMaster AI",
+    description: "No detailed description available, but likely a creative/entertainment tool (AI roast generator).",
+    submissionDate: "2025-03-14",
+    order: 1
+  },
+  {
+    name: "roastmyselfie.app",
+    url: "https://roastmyselfie.app",
+    description: "AI Personality Analyzer - Get roasted and psychoanalyzed.. just from one selfie! Dare to try?",
+    author: "@andres_11",
+    submissionDate: "2025-03-14",
+    order: 2
+  },
+  {
+    name: "Watch TV with neko (Roblox)",
+    url: "https://www.roblox.com/games/15087497266/UPD-Watch-TV-with-neko-AI",
+    description: "Roblox game where you can talk with AI catgirls 🐾 or just have fun, talking with other players in cozy rooms ⭐️",
+    author: "https://www.roblox.com/users/3857849039/profile/",
+    submissionDate: "2025-03-17",
+    order: 2
+  },
+  {
     name: "Pollinations AI Game",
     url: "https://pollinations-ai-game.vercel.app/",
     description: "A Hitchhiker's Guide to the Galaxy themed LLM-based elevator game.",

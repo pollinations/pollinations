@@ -5,6 +5,16 @@
 
 export const hackAndBuildProjects = [
   {
+    name: "🌱 Strain Navigator",
+    url: "https://www.strainnavigator.com/",
+    description: "A collection of tools to help Growers, Breeders & Seed Bankers. Free & Open Source powered by Pollinations.ai.",
+    author: "@Tolerable",
+    repo: "https://github.com/Tolerable/strainnavigator",
+    stars: 1,
+    submissionDate: "2025-04-15",
+    order: 1
+  },
+  {
     name: "FoodAnaly",
     url: "https://foodanaly.vercel.app/",
     description: "An AI application for food analysis that uses advanced artificial intelligence technology to help users understand food ingredients, nutritional value, and health impacts. Provides food safety analysis, nutritional health assessment, sports and fitness analysis, visual display, alternative recommendations, and practical insights for different dietary habits.",

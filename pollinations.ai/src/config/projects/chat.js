@@ -5,6 +5,74 @@
 
 export const chatProjects = [
   {
+    name: "PixPax",
+    url: "https://pixpal.chat",
+    description: "A user-friendly chatbot that lets you analyze images, remix existing images or create new images, all through simple chat.",
+    author: "@andreas_11",
+    submissionDate: "2025-03-17",
+    order: 2
+  },
+  {
+    name: "Jenny AI",
+    description: "AI chatbot and character creation platform with tts and sst it also has image generation and vision ability which are powered by pollinations.",
+    author: "https://www.linkedin.com/in/pritam-roy-95185328a",
+    submissionDate: "2025-03-16",
+    order: 3
+  },
+  {
+    name: "DynaSpark AI",
+    url: "https://dynaspark.onrender.com",
+    description: "A versatile AI assistant with advanced image and text generation capabilities.",
+    author: "Th3-C0der",
+    repo: "https://github.com/Th3-C0der",
+    stars: 20,
+    order: 1
+  },
+  {
+    name: "Unity AI Lab",
+    url: "https://blog.unityailab.com/unity.html",
+    description: "A specialized uncensored LLM model built on Mistral Large, focused on unrestricted conversations.",
+    order: 1
+  },
+  {
+    name: "gpt4free",
+    url: "https://github.com/xtekky/gpt4free",
+    description: "The official gpt4free repository - various collection of powerful language models.",
+    author: "xtekky",
+    repo: "https://github.com/xtekky/gpt4free",
+    stars: 64100,
+    order: 1
+  },
+
+  {
+    name: "PrivatePollenAI",
+    url: "https://mmojocoder.github.io/PrivatePollenAI/chat.html",
+    description: "A privacy-focused chat assistant app that securely stores data locally, integrates with PollinationAI for text and image generation, features a minimalistic UI, and allows users to choose models and write their own system instructions.",
+    author: "https://github.com/MMojoCoder",
+    repo: "https://github.com/MMojoCoder/PrivatePollenAI",
+    submissionDate: "2025-02-23",
+    order: 4
+  },
+  {
+    name: "FreeAI 🇨🇳",
+    url: "https://freeai.aihub.ren/",
+    description: "An AI application platform based on Pollinations.AI API, providing free and unlimited AI chat assistant, image generation, and voice synthesis services.",
+    author: "@Azad-sl",
+    repo: "https://github.com/Azad-sl/FreeAI",
+    submissionDate: "2025-03-24",
+    language: "zh-CN",
+    stars: 44,
+    order: 2
+  },
+  {
+    name: "Goalani",
+    url: "https://goalani.com",
+    description: "Voice-enabled AI fitness coach. Using only your voice, you can communicate with the agent to manage your fitness and nutrition. Features weight tracking, exercise logging, food tracking with AI-generated images, and agent customization.",
+    author: "goalani.app@gmail.com",
+    submissionDate: "2025-04-09",
+    order: 3
+  },
+  {
     name: "Neurix 🇷🇺",
     url: "https://neurix.ru",
     description: "A website offering easy and free access to various neural networks, with multi-language support planned. Provides a platform for accessing various AI models, including Pollinations.",

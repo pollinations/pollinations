@@ -5,6 +5,27 @@
 
 export const learnProjects = [
   {
+    name: "StoryMagic: Interactive Kids Stories",
+    description: "Interactive and educational tool for generating kids' stories.",
+    submissionDate: "2025-03-14",
+    order: 1
+  },
+  {
+    name: "Riffle",
+    url: "https://riffle.ink",
+    description: "A powerful tool designed to make reading English books more enjoyable and effective while helping you build your vocabulary naturally. Using Pollinations AI to create content that incorporates your own vocabulary words allows you to learn them in a vivid, engaging context.",
+    author: "gsx123@gmail.com",
+    submissionDate: "2025-03-28",
+    order: 1
+  },
+  {
+    name: "MalaysiaPrompt 🇲🇾",
+    url: "https://malaysiaprompt.rf.gd/",
+    description: "A resource for discovering and sharing creative prompts, supporting the Malaysian creative and educational AI community.",
+    language: "ms-MY",
+    order: 3
+  },
+  {
     name: "OkeyAI",
     url: "https://chat.okeymeta.com.ng",
     description: "An LLM created by Africans to understand and have cultural awareness of African contexts and languages, OkeyAI outperforms many LLM models based on size and intelligence, OkeyMeta uses pollination image generating API to train it's LLM (OkeyAI) on images in real time.",

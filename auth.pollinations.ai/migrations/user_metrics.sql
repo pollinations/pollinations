@@ -18,3 +18,6 @@ BEGIN
     SET metrics = '{}'
     WHERE github_user_id = NEW.github_user_id;
 END;
+
+-- Update any existing rows with NULL usernames to empty string to satisfy constraints
+UPDATE users SET username = '' WHERE username IS NULL;

@@ -15,7 +15,7 @@
 // Auto-load environment variables from shared and local .env files
 import './env-loader.js';
 import debug from 'debug';
-import { extractFromHeaders, extractReferrer, getTokenSource, extractFromQuery, extractFromBody, extractToken, TOKEN_FIELDS } from './extractFromRequest.js';
+import { extractReferrer, getTokenSource, extractToken } from './extractFromRequest.js';
 
 // Set up debug loggers with namespaces
 const log = debug('pollinations:auth');

@@ -35,7 +35,7 @@ Click the links below to see examples in your browser:
     - [List Available Image Models 📜](#list-available-image-models-)
   - [Generate Text API 📝](#generate-text-api-)
     - [Text-To-Text (GET) 🗣️](#text-to-text-get-️)
-    - [Text \& Multimodal (OpenAI Compatible POST) 🧠💬🖼️🎤⚙️](#text--multimodal-openai-compatible-post-️️)
+    - [Text & Multimodal (OpenAI Compatible POST) 🧠💬🖼️🎤⚙️](#text--multimodal-openai-compatible-post-️️)
       - [Vision Capabilities (Image Input) 🖼️➡️📝](#vision-capabilities-image-input-️️)
       - [Speech-to-Text Capabilities (Audio Input) 🎤➡️📝](#speech-to-text-capabilities-audio-input-️)
       - [Function Calling ⚙️](#function-calling-️)
@@ -412,10 +412,7 @@ curl https://text.pollinations.ai/openai \
   -H "Content-Type: application/json" \
   -d '{
     "model": "openai",
-    "messages": [
-      {"role": "system", "content": "You are a helpful assistant."},
-      {"role": "user", "content": "What is the weather like in Paris today?"}
-    ],
+    "messages": [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "What is the weather like in Paris today?"}],
     "seed": 42
   }'
 ```
@@ -559,6 +556,7 @@ except Exception as e:
 **cURL (using URL):**
 
 ```bash
+# Get JSON response with image analysis
 curl https://text.pollinations.ai/openai \
   -H "Content-Type: application/json" \
   -d '{
@@ -612,14 +610,6 @@ def analyze_image_url(image_url, question="What's in this image?"):
         return None
 
 # --- Option 2: Analyze Local Image File ---
-def encode_image_base64(image_path):
-    try:
-        with open(image_path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode('utf-8')
-    except FileNotFoundError:
-        print(f"Error: Image file not found at {image_path}")
-        return None
-
 def analyze_local_image(image_path, question="What's in this image?"):
     base64_image = encode_image_base64(image_path)
     if not base64_image:
@@ -770,87 +760,6 @@ def transcribe_audio(audio_path, question="Transcribe this audio"):
 #     print("Transcription failed.")
 ```
 
-**JavaScript (Browser `fetch`):**
-
-```javascript
-// Function to encode file to base64 (prefix removed for this API)
-function fileToBase64Data(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      // Result has 'data:audio/xxx;base64,' prefix, remove it
-      const base64String = reader.result.split(",")[1];
-      resolve(base64String);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-async function transcribeAudio(audioFile, question = "Transcribe this audio") {
-  const url = "https://text.pollinations.ai/openai";
-
-  try {
-    const base64AudioData = await fileToBase64Data(audioFile);
-    const audioFormat = audioFile.name.split(".").pop().toLowerCase();
-    // Note: Only WAV and MP3 formats are currently supported
-
-    const payload = {
-      model: "openai-audio",
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: question },
-            {
-              type: "input_audio",
-              input_audio: {
-                data: base64AudioData,
-                format: audioFormat,
-              },
-            },
-          ],
-        },
-      ],
-      // Optional: Add parameters like 'language'
-    };
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `HTTP error! status: ${response.status}, message: ${errorText}`
-      );
-    }
-
-    const result = await response.json();
-    const transcription = result?.choices?.[0]?.message?.content;
-    console.log("Transcription:", transcription);
-    // Display the result
-    // document.getElementById('transcript-result').textContent = transcription;
-    return transcription;
-  } catch (error) {
-    console.error("Error transcribing audio:", error);
-  }
-}
-
-// --- Usage Example (Attach to a file input change event) ---
-// <input type="file" id="audioInput" accept="audio/*">
-/*
-document.getElementById('audioInput').addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    if (file) {
-        transcribeAudio(file);
-    }
-});
-*/
-```
-
 </details>
 
 ---
@@ -951,10 +860,10 @@ try:
     print("--- First API Call (User Request) ---")
     response = requests.post(url, headers=headers, json=payload)
     response.raise_for_status()
-    
+
     # Parse the JSON response
     response_data = response.json()
-    
+
     # Check if the model wants to call a tool
     if response_data.get("choices", [{}])[0].get("message", {}).get("tool_calls"):
         print("\n--- Model requested tool call ---")
@@ -999,7 +908,6 @@ try:
     else:
         print("\n--- Model responded directly ---")
         print("Assistant:", response_data['choices'][0]['message']['content'])
-
 
 except requests.exceptions.RequestException as e:
     print(f"Error during function calling request: {e}")
@@ -1061,30 +969,6 @@ try:
 
 except requests.exceptions.RequestException as e:
     print(f"Error fetching text models: {e}")
-```
-
-**JavaScript (Browser `fetch`):**
-
-```javascript
-async function listTextModels() {
-  const url = "https://text.pollinations.ai/models";
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const modelsData = await response.json();
-    console.log("Available Text Models & Voices:", modelsData);
-    // You might want to parse modelsData further depending on its structure
-    // e.g., filter for models, extract voices, etc.
-    // const voices = modelsData?.['openai-audio']?.voices || [];
-    // console.log("Voices:", voices);
-  } catch (error) {
-    console.error("Error fetching text models:", error);
-  }
-}
-
-listTextModels();
 ```
 
 </details>
@@ -1159,55 +1043,6 @@ try:
 
 except requests.exceptions.RequestException as e:
     print(f"Error making TTS GET request: {e}")
-```
-
-**JavaScript (Browser `fetch`):**
-
-```javascript
-async function generateAudioGet(text, voice = "alloy") {
-  const encodedText = encodeURIComponent(text);
-  const params = new URLSearchParams({
-    model: "openai-audio",
-    voice: voice,
-  });
-  const url = `https://text.pollinations.ai/${encodedText}?${params.toString()}`;
-
-  console.log("Generating audio via GET:", url);
-
-  try {
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `HTTP error! status: ${response.status}, message: ${errorText}`
-      );
-    }
-
-    if (response.headers.get("Content-Type")?.includes("audio/mpeg")) {
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-
-      // Example: Play the audio
-      const audio = new Audio(audioUrl);
-      audio.play();
-      console.log("Audio generated and playing.");
-    } else {
-      const errorText = await response.text();
-      console.error(
-        "Expected audio, received:",
-        response.headers.get("Content-Type"),
-        errorText
-      );
-      throw new Error("API did not return audio content.");
-    }
-  } catch (error) {
-    console.error("Error generating audio via GET:", error);
-  }
-}
-
-// --- Usage ---
-// generateAudioGet("This audio comes from a GET request.", "shimmer");
 ```
 
 </details>
@@ -1338,74 +1173,6 @@ except requests.exceptions.RequestException as e:
     print(f"Error making TTS POST request: {e}")
 ```
 
-**JavaScript (Browser `fetch`):**
-
-```javascript
-async function generateAudioPost(text, voice = "alloy") {
-  const url = "https://text.pollinations.ai/openai";
-  const payload = {
-    model: "openai-audio",
-    messages: [{ role: "user", content: text }],
-    voice: voice,
-  };
-  console.log("Generating audio via POST:", payload);
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `HTTP error! status: ${response.status}, message: ${errorText}`
-      );
-    }
-    
-    // Parse the JSON response
-    const responseData = await response.json();
-    
-    try {
-        // Extract the base64-encoded audio data
-        const audioBase64 = responseData.choices[0].message.audio.data;
-        
-        // Convert base64 to binary data
-        // First, create a binary string from the base64 data
-        const binaryString = atob(audioBase64);
-        
-        // Convert the binary string to a Uint8Array
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        
-        // Create a blob from the bytes
-        const audioBlob = new Blob([bytes], { type: "audio/mpeg" });
-        const audioUrl = URL.createObjectURL(audioBlob);
-        
-        // Play the audio
-        const audio = new Audio(audioUrl);
-        audio.play();
-        console.log("Audio generated and playing.");
-        
-        // Optional: Download the audio file
-        // const downloadLink = document.createElement('a');
-        // downloadLink.href = audioUrl;
-        // downloadLink.download = 'generated_audio.mp3';
-        // downloadLink.click();
-        
-    } catch (error) {
-        console.error("Error processing audio data:", error);
-        console.error("Response structure:", responseData);
-    }
-  } catch (error) {
-    console.error("Error generating audio via POST:", error);
-  }
-}
-// generateAudioPost("Generate speech using the POST method.", "nova");
-```
-
 </details>
 
 ---
@@ -1487,53 +1254,6 @@ Integrate Pollinations directly into your React applications.
 curl -N https://image.pollinations.ai/feed
 ```
 
-**JavaScript (Browser `EventSource`):**
-
-```javascript
-function connectImageFeed() {
-  const feedUrl = "https://image.pollinations.ai/feed";
-  console.log("Connecting to Image Feed:", feedUrl);
-
-  const eventSource = new EventSource(feedUrl);
-
-  eventSource.onmessage = function (event) {
-    try {
-      const imageData = JSON.parse(event.data);
-      console.log("New Image:", imageData);
-      // Example: Display the image prompt and URL
-      const div = document.createElement("div");
-      div.innerHTML = `
-                <p><strong>Prompt:</strong> ${imageData.prompt || "N/A"}</p>
-                <img src="${imageData.imageURL}" alt="${
-        imageData.prompt || "Generated Image"
-      }" width="100">
-                <hr>
-            `;
-      // document.getElementById('image-feed-output').prepend(div); // Add to your display area
-    } catch (e) {
-      console.error("Failed to parse image feed data:", event.data, e);
-    }
-  };
-
-  eventSource.onerror = function (err) {
-    console.error("Image Feed Error:", err);
-    // Handle errors, e.g., try reconnecting after a delay
-    eventSource.close(); // Close current connection
-    // setTimeout(connectImageFeed, 5000); // Optional: Attempt reconnect
-  };
-
-  eventSource.onopen = function () {
-    console.log("Image Feed connection opened.");
-  };
-
-  // Optional: Add cleanup logic if needed when navigating away or closing the component
-  // window.addEventListener('beforeunload', () => eventSource.close());
-}
-
-// --- Usage ---
-// connectImageFeed();
-```
-
 **Python (`sseclient-py`):**
 
 ```python
@@ -1613,43 +1333,6 @@ def connect_image_feed():
 ```bash
 # Display raw SSE stream
 curl -N https://text.pollinations.ai/feed
-```
-
-**JavaScript (Browser `EventSource`):**
-
-```javascript
-function connectTextFeed() {
-  const feedUrl = "https://text.pollinations.ai/feed";
-  console.log("Connecting to Text Feed:", feedUrl);
-
-  const eventSource = new EventSource(feedUrl);
-
-  eventSource.onmessage = function (event) {
-    try {
-      const textData = JSON.parse(event.data);
-      console.log("New Text Response:", textData);
-      // Example: Display the response text
-      // const p = document.createElement('p');
-      // p.textContent = `[${textData.model || 'N/A'}] ${textData.response || 'N/A'}`;
-      // document.getElementById('text-feed-output').prepend(p); // Add to your display area
-    } catch (e) {
-      console.error("Failed to parse text feed data:", event.data, e);
-    }
-  };
-
-  eventSource.onerror = function (err) {
-    console.error("Text Feed Error:", err);
-    eventSource.close();
-    // setTimeout(connectTextFeed, 5000); // Optional: Attempt reconnect
-  };
-
-  eventSource.onopen = function () {
-    console.log("Text Feed connection opened.");
-  };
-}
-
-// --- Usage ---
-// connectTextFeed();
 ```
 
 **Python (`sseclient-py`):**

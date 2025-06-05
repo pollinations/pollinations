@@ -1,9 +1,6 @@
 <div align="center">
-  <img src="assets/pollinations_ai_logo_image_black.png" alt="Pollinations.AI Logo" width="320"/>
-  <h1><a href="https://pollinations.ai">Pollinations.AI</a></h1>
+  <img src="operations/media/pollinations-ai-logo.png" alt="Pollinations.AI Logo" width="100%"/>
 </div>
-
-
 
 ## 🆕 Latest News
 

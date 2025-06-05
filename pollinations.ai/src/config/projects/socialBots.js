@@ -5,6 +5,21 @@
 
 export const socialBotsProjects = [
   {
+    name: "Anyai",
+    url: "https://discord.gg/anyai",
+    description: "A Discord bot and community for AI-driven content.",
+    author: "@meow_18838",
+    submissionDate: "2025-05-05",
+    order: 5
+  },
+  {
+    name: "Aura Chat Bot",
+    description: "A chat bot integrating Pollinations API for text and image generation.",
+    author: "@Py-Phoenix-PJS",
+    submissionDate: "2025-05-12",
+    order: 1
+  },
+  {
     name: "🤖 ImageEditer",
     url: "https://t.me/ImageEditer_bot",
     description: "AI Art Studio - A feature-rich Telegram bot that creates art from text prompts, remixes images, merges multiple artworks, and offers one-tap regeneration with real-time control. Supports multiple AI models (GPT Image, Flux, Turbo) with NSFW detection and smart layout features.",

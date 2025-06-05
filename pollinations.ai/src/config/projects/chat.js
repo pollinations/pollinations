@@ -5,6 +5,46 @@
 
 export const chatProjects = [
   {
+    name: "Neurix 🇷🇺",
+    url: "https://neurix.ru",
+    description: "A website offering easy and free access to various neural networks, with multi-language support planned. Provides a platform for accessing various AI models, including Pollinations.",
+    author: "@Igroshka",
+    submissionDate: "2025-05-10",
+    language: "ru-RU",
+    order: 1
+  },
+  {
+    name: "Echo AI",
+    description: "A chat interface for AI interactions and conversations.",
+    author: "Unknown",
+    submissionDate: "2025-06-05",
+    order: 1
+  },
+  {
+    name: "DreamBig - Generative AI Playground",
+    url: "https://dreambiglabs.vercel.app/",
+    description: "Interactive AI playground with chat, image generation, and voice responses for creative exploration.",
+    author: "@opzzxsprinta._999",
+    submissionDate: "2025-04-15",
+    order: 1
+  },
+  {
+    name: "🤖 DesmondBot",
+    url: "https://swedish-innocent-teeth-majority.trycloudflare.com",
+    description: "A snarky bot based on Llama that is 100% free, powered by the Pollinations text API and OpenWebUI. Other models are available as well.",
+    author: "@mcgdj",
+    submissionDate: "2025-04-18",
+    order: 2
+  },
+  {
+    name: "Pal Chat",
+    url: "https://apps.apple.com/us/app/pal-chat-ai-chat-client/id6447545085?platform=iphone",
+    description: "An iOS app that integrates with all LLMs including Pollinations AI models in one unified simple interface.",
+    author: "https://x.com/pallavmac",
+    submissionDate: "2025-02-16",
+    order: 1
+  },
+  {
     name: "Pollinations AI Chatbot",
     url: "https://pollinations-ai-chatbot.vercel.app/",
     description: "A chat bot integrating Pollinations API for text and image generation.",
@@ -211,14 +251,6 @@ export const chatProjects = [
     description: "A lightweight version of KoboldAI that uses Pollinations for text generation, offering a streamlined experience for creative writing and storytelling.",
     author: "@kobold_dev",
     submissionDate: "2025-03-15",
-    order: 2
-  },
-  {
-    name: "Aura Chat Bot",
-    url: "https://aura-chat.vercel.app/",
-    description: "A conversational AI with a focus on emotional intelligence and empathetic responses, powered by Pollinations text generation models.",
-    author: "@aura_labs",
-    submissionDate: "2025-05-12",
     order: 2
   },
   {

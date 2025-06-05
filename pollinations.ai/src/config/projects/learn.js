@@ -5,6 +5,23 @@
 
 export const learnProjects = [
   {
+    name: "OkeyAI",
+    url: "https://chat.okeymeta.com.ng",
+    description: "An LLM created by Africans to understand and have cultural awareness of African contexts and languages, OkeyAI outperforms many LLM models based on size and intelligence, OkeyMeta uses pollination image generating API to train it's LLM (OkeyAI) on images in real time.",
+    author: "@okeymeta",
+    repo: "https://github.com/okeymeta",
+    submissionDate: "2025-04-19",
+    order: 1
+  },
+  {
+    name: "Apple Shortcuts Guide",
+    url: "https://www.youtube.com/watch?v=5NR5h7DTtEI",
+    description: "Video guide on creating AI images using Apple Shortcuts.",
+    author: "@tolerantone",
+    submissionDate: "2025-05-05",
+    order: 1
+  },
+  {
     name: "Connect Pollinations with Open Web UI tutorial",
     url: "https://github.com/pollinations/connect-with-open-webui",
     description: "Step-by-step guide on integrating Pollinations APIs with Open Web UI for enhanced image generation.",
@@ -39,28 +56,28 @@ export const learnProjects = [
   },
   {
     name: "Tutorial",
-    url: "#", // Placeholder URL
-    description: "A general tutorial related to Pollinations.AI.", // Placeholder description
-    author: "@pollinations", // Placeholder author
-    submissionDate: "2025-05-28", // Placeholder date
-    order: 5 // Placeholder order
+    url: "https://guiadehospedagem.com.br/pollinations-ai/",
+    description: "An in-depth Portuguese tutorial on using Pollinations AI.",
+    author: "Janderson de Sales",
+    submissionDate: "2025-04-15",
+    language: "pt-BR",
+    order: 5
   },
   {
     name: "Podcast #1500",
-    url: "#", // Placeholder URL
-    description: "Podcast episode #1500 featuring Pollinations.AI or related topics.", // Placeholder description
-    author: "@pollinations", // Placeholder author
-    submissionDate: "2025-05-28", // Placeholder date
-    order: 6 // Placeholder order
+    url: "https://open.spotify.com/show/1wu4ngb1dclyTwoNN4cZzK",
+    description: "Podcast project powered by pollinations, featuring dialogues among LLMs. First episode features 3o-mini and DeepSeek R1 70B talking about Vibe Coding.",
+    author: "@brain.diver",
+    submissionDate: "2025-03-31",
+    order: 6
   },
   {
     name: "Proyecto Descartes",
-    url: "https://github.com/IBM/AI-Descartes",
-    description: "An IBM project on combining data and theory for derivable scientific discovery with AI.", // Placeholder description, can be improved
-    author: "IBM", // From GitHub
-    repo: "https://github.com/IBM/AI-Descartes",
-    submissionDate: "2025-06-04", // Placeholder date
-    order: 7 // Next order
+    url: "https://proyectodescartes.org/revista/Numeros/Revista_8_2024/index.html",
+    description: "Educational initiative integrating Pollinations AI into STEM.",
+    author: "Juan Gmo. Rivera",
+    submissionDate: "2025-04-15",
+    order: 7
   },
   // Additional projects will be migrated from recovered data
   {

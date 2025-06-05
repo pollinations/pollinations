@@ -5,6 +5,67 @@
 
 export const creativeProjects = [
   {
+    name: "Snapgen.io",
+    url: "https://snapgen.io",
+    description: "A free AI image generation website with a clean and professional interface, offering high-quality image generation without requiring API keys.",
+    author: "tharindu@tsoft-llc.com",
+    submissionDate: "2025-05-10",
+    order: 1
+  },
+  {
+    name: "Image Gen - Uncensored Edition",
+    url: "https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2",
+    description: "A powerful image generation assistant on HuggingChat.",
+    author: "@DeFactOfficial",
+    submissionDate: "2025-02-16",
+    order: 1
+  },
+  {
+    name: "Own-AI",
+    url: "https://own-ai.pages.dev/",
+    description: "An AI text-to-image generator.",
+    author: "Sujal Goswami",
+    submissionDate: "2025-02-16",
+    order: 3
+  },
+  {
+    name: "Pollinator Android App",
+    url: "https://github.com/g-aggarwal/Pollinator",
+    description: "An open-source Android app for text-to-image generation.",
+    author: "@gaurav_87680",
+    submissionDate: "2025-02-16",
+    order: 2
+  },
+  {
+    name: "Pollinations.ai Model Comparison",
+    url: "https://endemicmedia.github.io/FLARE/llm-comparison-tool/",
+    description: "An interactive tool designed to compare outputs from various large language models with customizable timeout settings and real-time testing capabilities.",
+    author: "https://github.com/dseeker",
+    repo: "https://github.com/EndemicMedia",
+    submissionDate: "2025-02-16",
+    order: 4
+  },
+  {
+    name: "Elixpo Art Chrome Extension",
+    url: "https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh",
+    description: "It uses the pollinations image endpoint to generate an image with `boltning` as the model in 4 types of aspect ratios and themes with prompt engineering thus transforming selected texts into art smoothly with a disposable GUI in web.",
+    author: "Ayushman Bhatacharya",
+    repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter/tree/main/Elixpo%20Chrome%20%20Extension",
+    stars: 8,
+    submissionDate: "2025-03-14",
+    order: 4
+  },
+  {
+    name: "Imagen",
+    url: "https://altkriz.github.io/imagen/",
+    description: "A beautiful web interface for generating images using Pollinations.ai API with only the \"flux\" and \"turbo\" models.",
+    author: "@altkriz",
+    repo: "https://github.com/altkriz/imagen",
+    stars: 3,
+    submissionDate: "2025-04-13",
+    order: 2
+  },
+  {
     name: "Pollinations AI Video Generator",
     url: "https://pollinations-ai-video-generator.vercel.app/",
     description: "An open-source video generation system using AI.",

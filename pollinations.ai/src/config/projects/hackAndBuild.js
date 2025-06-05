@@ -5,6 +5,60 @@
 
 export const hackAndBuildProjects = [
   {
+    name: "FoodAnaly",
+    url: "https://foodanaly.vercel.app/",
+    description: "An AI application for food analysis that uses advanced artificial intelligence technology to help users understand food ingredients, nutritional value, and health impacts. Provides food safety analysis, nutritional health assessment, sports and fitness analysis, visual display, alternative recommendations, and practical insights for different dietary habits.",
+    author: "liukang0120@163.com",
+    submissionDate: "2025-04-23",
+    order: 1
+  },
+  {
+    name: "imggen.top 🇨🇳",
+    url: "https://www.imggen.top/",
+    description: "Create stunning AI-generated images in seconds with our free AI image generator. No login required, unlimited generations, powered by FLUX model.",
+    author: "lipengliang2012@163.com",
+    submissionDate: "2025-04-30",
+    language: "zh-CN",
+    order: 4
+  },
+  {
+    name: "CoNavic",
+    url: "https://github.com/mkantwala/CoNavic/",
+    description: "A free, open-source browser extension that brings the power of ChatGPT and browser automation directly to your fingertips. Instantly access AI assistance, manage tabs, and organize bookmarks using natural language all securely within your browser.",
+    author: "@mkantwala",
+    repo: "https://github.com/mkantwala/CoNavic/",
+    stars: 1,
+    submissionDate: "2025-05-01",
+    order: 1
+  },
+  {
+    name: "WordPress AI Vision Block",
+    url: "https://wordpress.org/plugins/ai-vision-block/",
+    description: "A custom WordPress Gutenberg block that allows you to generate images using the Pollinations API. Simply enter a prompt, and the AI will generate an image for you. Once the post is saved, the image is automatically stored in the WordPress Media Library.",
+    author: "mahmood-asadi",
+    repo: "https://github.com/mahmood-asadi/ai-vision-block",
+    stars: 5,
+    submissionDate: "2025-03-31",
+    order: 2
+  },
+  {
+    name: "DominiSigns",
+    description: "Avatar Translator for Dominican Sign Language that uses artificial intelligence to translate text and audio into Dominican sign language (LSRD), creating a communication bridge for approximately 100,000 deaf people in the Dominican Republic.",
+    author: "@cmunozdev",
+    repo: "https://github.com/cmunozdev/DominiSigns",
+    stars: 3,
+    submissionDate: "2025-04-06",
+    order: 2
+  },
+  {
+    name: "Mimir AIP",
+    url: "https://mimir-aip.github.io/",
+    description: "An AI integration platform for developers.",
+    author: "@pipeline",
+    submissionDate: "2025-05-05",
+    order: 1
+  },
+  {
     name: "Herramientas IA",
     url: "https://herramientas.ia",
     description: "Tools designed with Pollinations.AI and the DescartesJS editor, including tools from other Pollinations.AI community members.",

@@ -73,8 +73,8 @@ export const creativeProjects = [
     description: "A Flutter application that listens for image generation prompts, requests images from Pollinations.AI, and displays them on the Frame wearable device. Users can use voice commands to generate images and save/share them using the device's sharing mechanism.",
     author: "CitizenOneX",
     repo: "https://github.com/CitizenOneX/frame_pollinations",
-    submissionDate: "2025-04-13",
     stars: 3,
+    submissionDate: "2025-04-13",
     order: 1
   },
   {
@@ -100,7 +100,7 @@ export const creativeProjects = [
     description: "Text-to-image generator using Pollinations, supporting Indonesian and English prompts.",
     author: "@ayick13",
     repo: "https://github.com/ayick13/app",
-    stars: 0,
+    stars: 1,
     submissionDate: "2025-04-16",
     language: "id-ID",
     order: 2
@@ -300,7 +300,7 @@ export const creativeProjects = [
     description: "This AI generates video from text in match-cut text style, uses pollinations llm to generate nearby text, and supports API integration.",
     author: "@r3ap3redit",
     repo: "https://github.com/iotserver24/match-cut-ai",
-    stars: 0,
+    stars: 2,
     submissionDate: "2025-05-18",
     order: 1
   },
@@ -318,7 +318,7 @@ export const creativeProjects = [
     description: "AI-powered text and audio content generation platform providing a user-friendly interface for interacting with various AI generation services from Pollinations.ai.",
     author: "@fisven",
     repo: "https://github.com/fisventurous/pollinationsai-enhancer",
-    stars: 0,
+    stars: 2,
     submissionDate: "2025-04-27",
     order: 1
   },
@@ -345,6 +345,7 @@ export const creativeProjects = [
     description: "Use Natural Language to \"Converse\" with Your Codebase, Folda-Scan Smart Project Q&A, powered by advanced vectorization technology, allows you to easily understand complex code, pinpoint information, and offers unprecedented convenience for AI collaboration.",
     author: "@0010skn",
     repo: "https://github.com/0010skn/WebFS-Toolkit-Local-Folder-Scan-Monitor-Versioning-AI-Prep",
+    stars: 178,
     submissionDate: "2025-05-19",
     order: 1
   },

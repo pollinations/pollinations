@@ -46,11 +46,16 @@ const formatProjectName = (project) => {
     name = `[${name}](${project.url})`;
   }
   
-  // Add GitHub link if available
-  if (project.repo) {
+  // Add GitHub link if available and different from main URL
+  if (project.repo && project.repo !== project.url) {
     const starsText = project.stars ? ` ⭐ ${(project.stars / 1000).toFixed(1)}k` : 
                      (project.stars === 0 ? ` ⭐ 0` : '');
     name += ` ([GitHub](${project.repo})${starsText})`;
+  } else if (project.repo && project.repo === project.url && project.stars !== undefined) {
+    // If the repo is the same as URL, just add star count (if available)
+    const starsText = project.stars ? ` ⭐ ${(project.stars / 1000).toFixed(1)}k` : 
+                     (project.stars === 0 ? ` ⭐ 0` : '');
+    name += starsText;
   }
   
   // Add demo link if available

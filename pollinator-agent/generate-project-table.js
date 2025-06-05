@@ -49,7 +49,8 @@ const formatProjectName = (project) => {
   // Always add GitHub link as clickable stars if repo exists
   if (project.repo) {
     const starCount = project.stars >= 1000 ? `${(project.stars / 1000).toFixed(1)}k` : `${project.stars || 0}`;
-    name += ` [⭐ ${starCount}](${project.repo})`;
+    // Use non-breaking spaces to prevent line breaks within the stars section
+    name += ` ([⭐${'\u00A0'}${starCount}](${project.repo}))`;
   }
   
   // Add demo link if available

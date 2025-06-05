@@ -4,9 +4,13 @@
 
 When handling project submission issues:
 
-1. Add new projects to the appropriate section in:
-   - README.md under the "Projects Using Pollinations.AI" section
-   - pollinations.ai/src/config/projectList.js in the corresponding category array
+1. Add new projects to the appropriate category file in:
+   - pollinations.ai/src/config/projects/[category].js (e.g., creative.js, vibeCoding.js, etc.)
+   - DO NOT manually edit the README.md file directly
+   - After updating the project list files, run the script to update the README.md automatically:
+     ```bash
+     node pollinator-agent/generate-project-table.js --update-readme
+     ```
 
 2. Project Entry Format:
    ```javascript

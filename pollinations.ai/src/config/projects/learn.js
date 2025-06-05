@@ -109,14 +109,7 @@ export const learnProjects = [
     order: 7
   },
   // Additional projects will be migrated from recovered data
-  {
-    name: "POLLIPAPER",
-    url: "https://pollipaper.vercel.app",
-    description: "A research paper summarization and exploration tool that uses Pollinations AI to generate concise summaries and identify key concepts from academic papers. Helps researchers quickly grasp the essence of complex documents.",
-    author: "@paper_explorer",
-    submissionDate: "2025-04-18",
-    order: 2
-  },
+
   {
     name: "Whizzy AI",
     url: "https://whizzyai.vercel.app",
@@ -124,5 +117,14 @@ export const learnProjects = [
     author: "@vaibhavcoding69",
     submissionDate: "2025-06-03",
     order: 1
-  }
+  },
+  {
+    name: "TeekGenAI",
+    url: "https://www.youtube.com/@teekgenai",
+    description: "A platform providing free access to AI tools like image generation, text-to-speech, and chat, with tutorials. Content often available in Sinhala.",
+    author: "@teekgenai", // From TikTok/YouTube
+    submissionDate: "2025-06-04", // Placeholder date
+    language: "si", // Sinhala
+    order: 2
+  } ,
 ];

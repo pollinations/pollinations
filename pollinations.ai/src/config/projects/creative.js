@@ -37,7 +37,7 @@ export const creativeProjects = [
     repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter",
     stars: 8,
     submissionDate: "2025-03-31",
-    order: 3
+    order: 1
   },
   {
     name: "AI 文本转音频 🇨🇳",
@@ -48,7 +48,7 @@ export const creativeProjects = [
     stars: 2,
     submissionDate: "2025-03-24",
     language: "zh-CN",
-    order: 5
+    order: 1
   },
   {
     name: "Case Me 🇧🇷",
@@ -75,7 +75,7 @@ export const creativeProjects = [
     repo: "https://github.com/CitizenOneX/frame_pollinations",
     submissionDate: "2025-04-13",
     stars: 3,
-    order: 3
+    order: 1
   },
   {
     name: "BlackWave",
@@ -84,6 +84,15 @@ export const creativeProjects = [
     author: "@metimol",
     submissionDate: "2025-04-19",
     order: 1
+  },
+  {
+    name: "POLLIPAPER",
+    url: "https://github.com/Tolerable/POLLIPAPER",
+    description: "A dynamic wallpaper app that uses Pollinations AI.",
+    author: "@intolerant0ne",
+    order: 1,
+    category: "creativeApps",
+    stars: 8
   },
   {
     name: "Generator Text AI 🇮🇩",
@@ -223,7 +232,7 @@ export const creativeProjects = [
     repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter/tree/main/Elixpo%20Chrome%20%20Extension",
     stars: 8,
     submissionDate: "2025-03-14",
-    order: 4
+    order: 1
   },
   {
     name: "Imagen",
@@ -233,7 +242,7 @@ export const creativeProjects = [
     repo: "https://github.com/altkriz/imagen",
     stars: 3,
     submissionDate: "2025-04-13",
-    order: 2
+    order: 1
   },
   {
     name: "Pollinations AI Video Generator",
@@ -410,7 +419,7 @@ export const creativeProjects = [
     repo: "https://github.com/altkriz/imagen",
     stars: 3,
     submissionDate: "2025-04-13",
-    order: 2
+    order: 1
   },
   {
     name: "Pollinations Feed",
@@ -527,15 +536,6 @@ export const creativeProjects = [
     order: 2
   },
   {
-    name: "TeekGenAI",
-    url: "https://www.youtube.com/@teekgenai",
-    description: "A platform providing free access to AI tools like image generation, text-to-speech, and chat, with tutorials. Content often available in Sinhala.",
-    author: "@teekgenai", // From TikTok/YouTube
-    submissionDate: "2025-06-04", // Placeholder date
-    language: "si", // Sinhala
-    order: 2
-  },
-  {
     name: "Anime Character Generator",
     url: "https://animechar.gen.ai/create",
     description: "A dedicated AI tool for generating high-quality, unique anime-style characters. Offers detailed customization of art style, character traits, clothing, and accessories, all powered by Pollinations.",
@@ -543,7 +543,7 @@ export const creativeProjects = [
     repo: "https://github.com/animeartdevs/character-generator",
     stars: 250,
     submissionDate: "2025-03-01",
-    order: 2
+    order: 1
   },
   {
     name: "IRINA by visuallink",
@@ -586,6 +586,6 @@ export const creativeProjects = [
     repo: "https://github.com/creativesparks/jackey",
     stars: 120,
     submissionDate: "2025-01-15",
-    order: 4
+    order: 1
   }
 ];

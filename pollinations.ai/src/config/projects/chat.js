@@ -62,7 +62,7 @@ export const chatProjects = [
     submissionDate: "2025-03-24",
     language: "zh-CN",
     stars: 44,
-    order: 2
+    order: 1
   },
   {
     name: "Goalani",
@@ -195,7 +195,7 @@ export const chatProjects = [
     stars: 1,
     submissionDate: "2025-05-08",
     language: "id-ID",
-    order: 3
+    order: 1
   },
   {
     name: "LLM7.io",
@@ -267,7 +267,8 @@ export const chatProjects = [
     author: "@lobehub",
     repo: "https://github.com/lobehub/lobe-chat",
     stars: 21000,
-    submissionDate: "2025-03-01"
+    submissionDate: "2025-03-01",
+    order: 1
   },
   {
     name: "toai.chat",

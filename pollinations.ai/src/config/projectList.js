@@ -8,7 +8,7 @@ import { hackAndBuildProjects } from './projects/hackAndBuild.js';
 import { chatProjects } from './projects/chat.js';
 import { socialBotsProjects } from './projects/socialBots.js';
 import { learnProjects } from './projects/learn.js';
-import { featuredProjects } from './projects/featured.js';
+
 
 // New categories based on GitHub issue #2275
 export const categories = [
@@ -51,7 +51,7 @@ export const categories = [
 
 // Consolidated projects object with imported categories
 export const projects = {
-  featured: featuredProjects,
+
   vibeCoding: vibeCodingProjects,
   creative: creativeProjects,
   games: gamesProjects,
@@ -104,14 +104,14 @@ const sortProjectsByOrderAndStars = (projects) => {
 };
 
 /**
- * Organizes projects into categories and creates the featured section
+ * Organizes projects into categories
  *
  * @param {Object} sourceProjects - Object containing all projects by category
  * @returns {Object} - Organized projects object with populated categories
  */
-const organizeFeaturedProjects = (sourceProjects) => {
+const organizeProjects = (sourceProjects) => {
   const result = {
-    featured: [],
+
     vibeCoding: [],
     creative: [],
     games: [],
@@ -143,12 +143,7 @@ const organizeFeaturedProjects = (sourceProjects) => {
         const dateB = b.submissionDate ? new Date(b.submissionDate) : new Date(0);
         return dateB - dateA;
       })
-      .slice(0, 5); // Take top 3
-    
-    // Create a set of project names that should be featured
-    const featuredProjectNames = new Set(order1Projects.map(project => 
-      project.name.replace("🆕", "").trim()
-    ));
+      .slice(0, 5); // Take top 5
 
     sourceProjects[category].forEach(project => {
       // Skip hidden projects
@@ -165,21 +160,7 @@ const organizeFeaturedProjects = (sourceProjects) => {
       // Get name for checking
       const normalizedName = project.name;
 
-      // Update featured flag based only on being in the top 5 order=1 projects
-      if (featuredProjectNames.has(normalizedName)) {
-        // Add to featured section
-        result.featured.push({
-          ...processedProject,
-          originalCategory: category,
-          featured: true
-        });
-        
-        // Also mark as featured in the main category
-        processedProject.featured = true;
-      } else {
-        // Remove featured flag if it existed
-        delete processedProject.featured;
-      }
+      // Add any additional processing if needed
 
       // Add to category collection
       categoryProjects.push(processedProject);
@@ -192,8 +173,8 @@ const organizeFeaturedProjects = (sourceProjects) => {
     result[category] = sortedProjects;
   });
 
-  // Sort featured projects by order and stars
-  result.featured = sortProjectsByOrderAndStars(result.featured);
+  
+
   return result;
 };
 
@@ -209,7 +190,7 @@ const allProjects = {
 };
 
 // Generate the organized projects
-const organizedProjects = organizeFeaturedProjects(allProjects);
+const organizedProjects = organizeProjects(allProjects);
 // Export the final projects object
 Object.keys(projects).forEach(category => {
   projects[category] = organizedProjects[category];

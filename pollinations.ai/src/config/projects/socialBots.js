@@ -5,6 +5,18 @@
 
 export const socialBotsProjects = [
   {
+    name: "🎮 Gacha",
+    url: "https://discord.com/oauth2/authorize?client_id=1377330983740903586",
+    description: "Your Sassy All-in-One AI Discord Bot. A powerful, sassy, and slightly mischievous AI bot designed to level up your Discord server with intelligent conversations, creative tools, and smart automation — all wrapped in a playful personality. Features AI-powered chat with STM and LTM, image generation & editing, image fusion & GIF handling, real-time web search, voice replies, media intelligence, slash commands, and dynamic intent detection.",
+    author: "`_dr_misterio_`",
+    submissionDate: "2025-02-24",
+    order: 1,
+    category: "socialBots",
+    originalPath: "pollinations.ai/src/config/projectList.js",
+    discoveredCommit: "15ec92f2",
+    discoveredDate: "2025-06-04T09:29:31.740Z"
+  }, 
+  {
     name: "Anyai",
     url: "https://discord.gg/anyai",
     description: "A Discord bot and community for AI-driven content.",
@@ -139,7 +151,7 @@ export const socialBotsProjects = [
     repo: "https://github.com/raftarxyz/raftar-bot",
     stars: 42,
     submissionDate: "2025-05-20",
-    order: 3
+    order: 1
   },
   {
     name: "PolliBot",
@@ -149,6 +161,6 @@ export const socialBotsProjects = [
     repo: "https://github.com/botbuilders/pollibot-telegram",
     stars: 75,
     submissionDate: "2025-03-20",
-    order: 2
+    order: 1
   }
 ];

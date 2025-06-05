@@ -109,7 +109,7 @@ export const hackAndBuildProjects = [
     repo: "https://github.com/mahmood-asadi/ai-vision-block",
     stars: 5,
     submissionDate: "2025-03-31",
-    order: 2
+    order: 1
   },
   {
     name: "DominiSigns",
@@ -118,7 +118,7 @@ export const hackAndBuildProjects = [
     repo: "https://github.com/cmunozdev/DominiSigns",
     stars: 3,
     submissionDate: "2025-04-06",
-    order: 2
+    order: 1
   },
   {
     name: "Mimir AIP",
@@ -239,7 +239,7 @@ export const hackAndBuildProjects = [
     repo: "https://github.com/ursapere/ursapere-ai",
     stars: 25,
     submissionDate: "2025-05-15",
-    order: 2
+    order: 1
   },
   // Additional projects will be migrated from recovered data
   {
@@ -250,6 +250,6 @@ export const hackAndBuildProjects = [
     repo: "https://github.com/aifuturelabs/gpt-project",
     stars: 150,
     submissionDate: "2025-01-20",
-    order: 3
+    order: 1
   }
 ];

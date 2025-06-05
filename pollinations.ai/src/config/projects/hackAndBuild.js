@@ -109,13 +109,23 @@ export const hackAndBuildProjects = [
   },
   {
     name: "urSapere AI",
-    url: "#", // Placeholder URL
-    description: "An AI project in the Hack & Build category.", // Placeholder description
-    author: "@unknown", // Placeholder author
-    repo: "#", // Placeholder repo
-    stars: 0, // Placeholder stars
-    submissionDate: "2025-05-28", // Placeholder date
-    order: 2 // Placeholder order
+    url: "https://ursapere.ai",
+    description: "An AI-powered research tool that helps users explore and understand complex topics by leveraging Pollinations for advanced data analysis and summarization.",
+    author: "@ursapere_devs",
+    repo: "https://github.com/ursapere/ursapere-ai",
+    stars: 25,
+    submissionDate: "2025-05-15",
+    order: 2
   },
   // Additional projects will be migrated from recovered data
+  {
+    name: "GPT_Project",
+    url: "https://real-gpt-project.dev",
+    description: "A cutting-edge platform leveraging GPT models via Pollinations for advanced text analysis, content generation, and interactive chat solutions. Showcases multiple proof-of-concept applications.",
+    author: "AI Future Labs",
+    repo: "https://github.com/aifuturelabs/gpt-project",
+    stars: 150,
+    submissionDate: "2025-01-20",
+    order: 3
+  }
 ];

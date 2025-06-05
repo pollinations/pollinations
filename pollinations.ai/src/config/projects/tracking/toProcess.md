@@ -76,14 +76,14 @@ Okay, here are all the unique project names from the provided JSON data:
 73. Herramientas IA - added to hackAndBuild.js
 74. Pollinations AI Video Generator - added to creative.js
 75. Pollinations AI Game - added to games.js
-76. POLLIPAPER
-77. AI PPT Maker
-78. UR Imagine & Chat AI
-79. Pollinations Gallery
-80. AI-Bloom
-81. GPT_Project
-82. AdvanceChatGptBot
-83. PolliBot
+76. POLLIPAPER - added to learn.js
+77. AI PPT Maker - added to creative.js
+78. UR Imagine & Chat AI - added to chat.js
+79. Pollinations Gallery - added to creative.js
+80. AI-Bloom - added to creative.js
+81. GPT_Project - added to hackAndBuild.js
+82. AdvanceChatGptBot - added to chat.js
+83. PolliBot - added to chat.js
 84. Aura Chat Bot
 85. Quick AI & Jolbak
 86. AI Image Generator [ROBLOX]
@@ -91,8 +91,8 @@ Okay, here are all the unique project names from the provided JSON data:
 88. Raftar.xyz
 89. AlphaLLM - AI Discord Bot
 90. pollinations-tg-bot 
-91. Jackey
-92. Gacha
+91. Jackey - added to creative.js
+92. Gacha - added to games.js
 93. One Word - added to socialBots.js
 94. Titan-GPT - added to socialBots.js
 95. Discord Bot - added to socialBots.js as "Pollinations Discord Bot"
@@ -204,7 +204,7 @@ Okay, here are all the unique project names from the provided JSON data:
 201. Tutorial - added to learn.js
 202. TeekGenAI - added to creative.js
 203. Anime Character Generator - added to creative.js
-204. LiteAI - needs categorization
+204. LiteAI - added to chat.js
 205. ai/teens worldwide - needs categorization - learn?
 206. Echo AI - needs categorization - chat?
 207. urSapere AI - added to hackAndBuild.js
@@ -214,7 +214,7 @@ Okay, here are all the unique project names from the provided JSON data:
 211. Quick AI & Jolbak - added to socialBots.js
 212. AI Image Generator [ROBLOX] - added to socialBots.js
 213. SingodiyaTech bot - added to socialBots.js
-214. IRINA by visuallink - needs categorization - creative?
+214. IRINA by visuallink - added to creative.js
 283. 🆕 Children's Picture Books Plugin - duplicate, remove
 284. 🆕 Free AI Chatbot & Image Generator - duplicate, remove
 285. 🆕 Neurix 🇷🇺 

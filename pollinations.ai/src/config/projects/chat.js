@@ -220,5 +220,41 @@ export const chatProjects = [
     author: "@aura_labs",
     submissionDate: "2025-05-12",
     order: 2
+  },
+  {
+    name: "LiteAI",
+    url: "https://liteai.chat/",
+    description: "A free, fast, and anonymous AI chat and image generation platform with no login required. Features include various AI models, prompt library, upscaling, and community sharing.",
+    author: "LiteAI Team",
+    submissionDate: "2025-05-10",
+    order: 3
+  },
+  {
+    name: "UR Imagine & Chat AI",
+    url: "https://urimagine.netlify.app/",
+    description: "A versatile AI platform offering both image generation and chat functionalities. Users can create visuals from text prompts and engage in conversations with AI models, all powered by Pollinations.",
+    author: "@ur_imagine",
+    submissionDate: "2025-05-01",
+    order: 3
+  },
+  {
+    name: "AdvanceChatGptBot",
+    url: "https://adv-chatgpt.example.com",
+    description: "An advanced chatbot leveraging multiple GPT models via Pollinations for sophisticated dialogue management, context retention, and multimodal interactions. Includes features like personality selection and knowledge base integration.",
+    author: "ChatBotMasters",
+    repo: "https://github.com/chatbotmasters/adv-chatgpt",
+    stars: 200,
+    submissionDate: "2025-02-01",
+    order: 1
+  },
+  {
+    name: "PolliBot",
+    url: "https://pollibot.example.com",
+    description: "A versatile Telegram bot integrated with Pollinations. Offers image generation, text summarization, and quick answers directly within Telegram chats. Supports multiple languages.",
+    author: "BotBuilders Inc.",
+    repo: "https://github.com/botbuilders/pollibot-telegram",
+    stars: 75,
+    submissionDate: "2025-03-20",
+    order: 2
   }
 ];

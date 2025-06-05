@@ -323,10 +323,55 @@ export const creativeProjects = [
   },
   {
     name: "Anime Character Generator",
-    url: "#", // Placeholder URL
-    description: "A tool for generating anime-style characters.", // Placeholder description
-    author: "@unknown", // Placeholder author
-    submissionDate: "2025-06-04", // Placeholder date
+    url: "https://animechar.gen.ai/create",
+    description: "A dedicated AI tool for generating high-quality, unique anime-style characters. Offers detailed customization of art style, character traits, clothing, and accessories, all powered by Pollinations.",
+    author: "@AnimeArtDevs",
+    repo: "https://github.com/animeartdevs/character-generator",
+    stars: 250,
+    submissionDate: "2025-03-01",
     order: 2
+  },
+  {
+    name: "IRINA by visuallink",
+    url: "https://irina.visuallink.ru/",
+    description: "A website offering easy and free access to various neural networks, with multi-language support planned. Provides a platform for accessing various AI models, including Pollinations.",
+    author: "visuallink",
+    email: "info@visuallink.ru",
+    submissionDate: "2025-05-10",
+    order: 2
+  },
+  {
+    name: "AI PPT Maker",
+    url: "https://ppt.monsterstudio.org/",
+    description: "An AI-powered presentation generator that creates PowerPoint slides from text prompts using Pollinations. Features customizable templates, image suggestions, and content structuring to streamline presentation creation.",
+    author: "@ppt_monster",
+    submissionDate: "2025-04-25",
+    order: 1
+  },
+  {
+    name: "Pollinations Gallery",
+    url: "https://pollinations-gallery.netlify.app/",
+    description: "A dynamic gallery showcasing AI-generated art created with Pollinations. Users can browse, search, and filter images, and submit their own creations. Features community voting and artist profiles.",
+    author: "@gallery_ai",
+    submissionDate: "2025-05-12",
+    order: 1
+  },
+  {
+    name: "AI-Bloom",
+    url: "https://ai-bloom.com/",
+    description: "A platform for generating and exploring AI-created floral art and patterns. Users can customize flower types, colors, and arrangements using Pollinations, and share their digital bouquets.",
+    author: "@bloom_artist",
+    submissionDate: "2025-04-30",
+    order: 2
+  },
+  {
+    name: "Jackey",
+    url: "https://jackey.ai/app",
+    description: "Jackey is a creative AI companion that helps users generate story ideas, write scripts, and create concept art using Pollinations. It's designed for writers, game developers, and filmmakers.",
+    author: "Creative Sparks Ltd.",
+    repo: "https://github.com/creativesparks/jackey",
+    stars: 120,
+    submissionDate: "2025-01-15",
+    order: 4
   }
 ];

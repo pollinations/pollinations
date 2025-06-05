@@ -1,0 +1,11 @@
+{
+  "type": "module",
+  "name": "pollinator-agent",
+  "version": "1.0.0",
+  "description": "Project management tools for Pollinations",
+  "main": "generate-project-table.mjs",
+  "scripts": {
+    "generate": "node generate-project-table.mjs",
+    "update-readme": "node generate-project-table.mjs --update-readme"
+  }
+}

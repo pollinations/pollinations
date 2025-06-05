@@ -42,15 +42,16 @@ export async function generateAdForContent(req, content, messages = [], isStream
 
         // Try nex.ad first
         const { visitorData, conversationContext } = createNexAdRequest(req, messages, content);
-        const nexAdResponse = await fetchNexAd(visitorData, conversationContext);
+        const nexAdResult = await fetchNexAd(visitorData, conversationContext);
         
-        if (nexAdResponse) {
-            // Format nex.ad response
-            const adString = formatNexAd(nexAdResponse);
+        if (nexAdResult && nexAdResult.adData) {
+            const { adData, userIdForTracking } = nexAdResult;
+            // Format nex.ad response, passing the userIdForTracking
+            const adString = formatNexAd(adData, userIdForTracking);
             
             if (adString) {
-                // Extract tracking data
-                const trackingData = extractTrackingData(nexAdResponse);
+                // Extract tracking data from adData
+                const trackingData = extractTrackingData(adData);
                 
                 // Track impression
                 await trackImpression(trackingData);

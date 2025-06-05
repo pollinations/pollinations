@@ -105,7 +105,7 @@ export async function fetchNexAd(visitorData, conversationContext) {
       return null;
     }
     
-    return data;
+    return { adData: data, userIdForTracking: visitorData.pub_user_id };
   } catch (error) {
     errorLog('Error fetching nex.ad:', error);
     return null;

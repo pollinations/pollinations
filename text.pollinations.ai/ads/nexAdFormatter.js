@@ -19,12 +19,15 @@ function extractNexAdEventId(url) {
  * @param {string} content - Content containing nex.ad URLs
  * @returns {string} - Content with replaced URLs
  */
-function replaceNexAdUrls(content) {
+function replaceNexAdUrls(content, userId) {
   // Replace nex.ad event URLs with our redirect URLs
   return content.replace(
     /https:\/\/api-prod\.nex-ad\.com\/ad\/event\/([a-zA-Z0-9]+)/g,
     (match, eventId) => {
-      const redirectUrl = `https://pollinations.ai/redirect-nexad/${eventId}`;
+      let redirectUrl = `https://pollinations.ai/redirect-nexad/${eventId}`;
+      if (userId) {
+        redirectUrl += `?user_id=${encodeURIComponent(userId)}`;
+      }
       log(`Replacing nex.ad URL: ${match} -> ${redirectUrl}`);
       return redirectUrl;
     }
@@ -36,7 +39,7 @@ function replaceNexAdUrls(content) {
  * @param {string} html - HTML content
  * @returns {string} - Markdown content
  */
-function htmlToMarkdown(html) {
+function htmlToMarkdown(html, userId) {
   if (!html) return '';
   
   // Simple HTML to Markdown conversion
@@ -52,7 +55,7 @@ function htmlToMarkdown(html) {
   markdown = markdown.trim();
   
   // Replace nex.ad URLs with our redirect URLs
-  markdown = replaceNexAdUrls(markdown);
+  markdown = replaceNexAdUrls(markdown, userId);
   
   return markdown;
 }
@@ -62,7 +65,7 @@ function htmlToMarkdown(html) {
  * @param {Object} nexAdData - Response from nex.ad API
  * @returns {string|null} - Formatted ad text or null
  */
-export function formatNexAd(nexAdData) {
+export function formatNexAd(nexAdData, userId) {
   try {
     if (!nexAdData?.ads?.[0]) {
       log('No ads in nex.ad response');
@@ -84,7 +87,7 @@ export function formatNexAd(nexAdData) {
     }
     
     // Convert HTML to Markdown
-    const markdownContent = htmlToMarkdown(adContent);
+    const markdownContent = htmlToMarkdown(adContent, userId);
     
     if (!markdownContent) {
       errorLog('Empty ad content after conversion');

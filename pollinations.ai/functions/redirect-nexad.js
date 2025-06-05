@@ -125,6 +125,51 @@ export const handler = async function(event, context) {
   const targetUrl = `https://api-prod.nex-ad.com/ad/event/${eventId}`;
   
   console.log(`Redirecting to nex.ad: ${eventId} -> ${targetUrl}`);
+
+  // Check for user_id and increment ad_clicks if present
+  const userId = event.queryStringParameters && event.queryStringParameters.user_id;
+  if (userId) {
+    console.log(`User ID found: ${userId}. Attempting to increment ad_clicks.`);
+    const adminApiKey = process.env.POLLINATIONS_ADMIN_API_KEY;
+    if (adminApiKey) {
+      const metricsUrl = `https://auth.pollinations.ai/admin/metrics?user_id=${encodeURIComponent(userId)}`;
+      const metricsPayload = {
+        increment: {
+          key: "ad_clicks",
+          by: 1
+        }
+      };
+
+      // Fire and forget - do not await, so it doesn't block the redirect
+      fetch(metricsUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${adminApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(metricsPayload)
+      })
+      .then(async response => {
+        const responseBodyText = await response.text(); // Read as text to handle non-JSON or empty responses
+        try {
+          // Attempt to parse as JSON only if content-type suggests it, or log raw text
+          const responseBody = response.headers.get('content-type')?.includes('application/json') && responseBodyText ? JSON.parse(responseBodyText) : responseBodyText;
+          if (!response.ok) {
+            console.error(`Failed to increment ad_clicks for user ${userId}. Status: ${response.status}`, responseBody);
+          } else {
+            console.log(`Successfully triggered ad_clicks increment for user ${userId}. Response:`, responseBody);
+          }
+        } catch (e) {
+            console.error(`Error parsing metrics response for user ${userId} (Status: ${response.status}):`, e, `Raw Body: ${responseBodyText}`);
+        }
+      })
+      .catch(error => {
+        console.error(`Network error or other issue incrementing ad_clicks for user ${userId}:`, error);
+      });
+    } else {
+      console.warn('POLLINATIONS_ADMIN_API_KEY not found in environment. Cannot increment ad_clicks.');
+    }
+  }
   
   try {
     // Send analytics with metadata

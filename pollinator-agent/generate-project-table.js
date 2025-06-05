@@ -37,30 +37,43 @@ const isNewProject = (project) => {
   }
 };
 
-// Function to format links for the markdown table
-const formatLinks = (project) => {
-  const links = [];
+// Function to format project name with links
+const formatProjectName = (project) => {
+  let name = project.name;
   
-  if (project.url) {
-    links.push(`[Website](${project.url})`);
+  // Only make name clickable if there's a URL that's different from the GitHub repo
+  if (project.url && project.url !== project.repo) {
+    name = `[${name}](${project.url})`;
   }
   
+  // Always add GitHub link as clickable stars if repo exists
   if (project.repo) {
-    const starsText = project.stars ? ` - ⭐ ${(project.stars / 1000).toFixed(1)}k` : 
-                     (project.stars === 0 ? ` - ⭐ 0` : '');
-    links.push(`[GitHub](${project.repo})${starsText}`);
+    const starCount = project.stars >= 1000 ? `${(project.stars / 1000).toFixed(1)}k` : `${project.stars || 0}`;
+    // Use non-breaking spaces to prevent line breaks within the stars section
+    name += ` ([⭐${'\u00A0'}${starCount}](${project.repo}))`;
   }
   
+  // Add demo link if available
   if (project.demo) {
-    links.push(`[Demo](${project.demo})`);
+    name += ` ([Demo](${project.demo}))`;
   }
   
-  return links.join(', ');
+  return name;
 };
 
 // Function to format author information
 const formatAuthor = (project) => {
-  return project.author || '-';
+  if (!project.author) return '-';
+  
+  // Check if the author is a URL
+  const urlPattern = /^https?:\/\//i;
+  if (urlPattern.test(project.author)) {
+    // If it's a URL, return a simple link with text 'Link'
+    return `[Link](${project.author})`;
+  }
+  
+  // Otherwise return the author name as is
+  return project.author;
 };
 
 // Function to generate markdown table for a category
@@ -72,8 +85,8 @@ const generateCategoryTable = (categoryKey, categoryTitle) => {
   }
   
   let markdown = `### ${categoryTitle}\n\n`;
-  markdown += '| Project | Description | Creator | Links |\n';
-  markdown += '|---------|-------------|---------|-------|\n';
+  markdown += '| Project | Description | Creator |\n';
+  markdown += '|---------|-------------|--------|\n';
   
   // Sort projects by order and stars
   const sortedProjects = [...categoryProjects]
@@ -120,7 +133,7 @@ const generateCategoryTable = (categoryKey, categoryTitle) => {
       typeEmoji = '🖥️ ';
     }
     
-    markdown += `| ${newTag}${typeEmoji}${languageEmoji}${project.name} | ${project.description || '-'} | ${formatAuthor(project)} | ${formatLinks(project)} |\n`;
+    markdown += `| ${newTag}${typeEmoji}${languageEmoji}${formatProjectName(project)} | ${project.description || '-'} | ${formatAuthor(project)} |\n`;
   }
   
   return markdown + '\n';

@@ -159,7 +159,7 @@ export const hackAndBuildProjects = [
     description: "A frontend-based AI interface designed to deliver a smooth, multimodal, and visually engaging user experience with conversational AI, image generation, and more.",
     author: "@fisven",
     repo: "https://github.com/fisventurous/pollinationsai-enhancer",
-    stars: 0,
+    stars: 2,
     submissionDate: "2025-04-27",
     order: 1
   },

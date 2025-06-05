@@ -35,10 +35,7 @@ export function getRequestData(req) {
     const referrer = extractReferrer(req);
     
     // Use shared authentication function to check if referrer is authenticated
-    const authResult = shouldBypassQueue(req, {
-        legacyTokens: process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [],
-        allowlist: process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : []
-    });
+    const authResult = shouldBypassQueue(req);
     // Use the new explicit authentication field instead of bypass
     const isImagePollinationsReferrer = authResult.authenticated;
     const isRobloxReferrer = referrer && (referrer.toLowerCase().includes('roblox') || referrer.toLowerCase().includes('gacha11211'));
@@ -103,10 +100,7 @@ export function getRequestData(req) {
 export function shouldBypassDelay(req) {
     try {
         // Use shared shouldBypassQueue function to determine authentication status
-        const authResult = shouldBypassQueue(req, {
-            legacyTokens: process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [],
-            allowlist: process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : []
-        });
+        const authResult = shouldBypassQueue(req);
         
         // Also check for Roblox referrer as a special case
         const referrer = extractReferrer(req);

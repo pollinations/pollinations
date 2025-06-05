@@ -52,10 +52,7 @@ if (authResult.bypass) {
 }
 
 // Manual authentication (if you need fine control)
-const { bypass, reason, userId, debugInfo } = await shouldBypassQueue(req, { 
-  legacyTokens: process.env.LEGACY_TOKENS?.split(',') || [], 
-  allowlist: process.env.ALLOWLISTED_DOMAINS?.split(',') || []
-});
+const { bypass, reason, userId, debugInfo } = await shouldBypassQueue(req);
 
 // Add debug headers to response
 const headers = { 'Content-Type': 'application/json' };

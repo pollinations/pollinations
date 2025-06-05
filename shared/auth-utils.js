@@ -198,19 +198,16 @@ export async function isUserDomainAllowedFromDb(userId, referrer, db, isDomainAl
 /**
  * Determine if request is authenticated
  * @param {Request|Object} req - The request object
- * @param {Object} ctx - Context object
- * @param {string[]|string} [ctx.legacyTokens] - Legacy tokens to check
- * @param {string[]|string} [ctx.allowlist] - Allowlisted domains
+ * @param {Object} ctx - Context object (currently unused but kept for future extensibility)
  * @returns {{authenticated: boolean, tokenAuth: boolean, referrerAuth: boolean, bypass: boolean, reason: string, userId: string|null, debugInfo: Object}} Authentication status, auth type, reason, userId if authenticated, and debug info
  * @throws {Error} If an invalid token is provided
  */
-export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
+export async function shouldBypassQueue(req) {
   log('shouldBypassQueue called for request: %s %s', req.method, req.url);
   
   const token = extractToken(req);
   const ref   = extractReferrer(req);
   
-  // Log token and referrer extraction results
   if (token) {
     tokenLog('Token extracted: %s (length: %d, source: %s)', 
              token.length > 8 ? token.substring(0, 4) + '...' + token.substring(token.length - 4) : token,
@@ -226,43 +223,17 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
     referrerLog('No referrer found in request');
   }
   
-  // Create debug info object for headers
   const debugInfo = {
     token: token ? (token.length > 8 ? token.substring(0, 4) + '...' + token.substring(token.length - 4) : token) : null,
     referrer: ref,
-    tokenSource: token ? getTokenSource(req) : null,
-    legacyTokensCount: Array.isArray(legacyTokens) ? legacyTokens.length : (legacyTokens?.split(',').length || 0),
-    allowlistCount: Array.isArray(allowlist) ? allowlist.length : (allowlist?.split(',').length || 0)
+    tokenSource: token ? getTokenSource(req) : null
   };
-  
-  log('Auth context: legacyTokens=%d, allowlist=%d', debugInfo.legacyTokensCount, debugInfo.allowlistCount);
-  
-  // If a token is provided, validate it
+    
+  // 1️⃣ Token-based authentication
   if (token) {
     tokenLog('Validating token: %s', debugInfo.token);
-    
-    // 1️⃣ Check legacy token first (fast local check)
-    tokenLog('Checking against %d legacy tokens', debugInfo.legacyTokensCount);
-    const legacyTokenMatch = legacyTokens.includes(token);
-    if (legacyTokenMatch) {
-      tokenLog('✅ Valid legacy token match found');
-      debugInfo.authResult = 'LEGACY_TOKEN';
-      debugInfo.legacyTokenMatch = true;
-      log('Authentication succeeded: LEGACY_TOKEN');
-      return { 
-        bypass: true, // Kept for backward compatibility
-        authenticated: true, 
-        tokenAuth: true, 
-        referrerAuth: false,
-        reason: 'LEGACY_TOKEN', 
-        userId: null, 
-        debugInfo 
-      };
-    }
-    
-    // 2️⃣ Check DB token (slower API call)
     tokenLog('Checking token against auth.pollinations.ai API');
-    const tokenResult = await validateApiTokenDb(token);   // Uses auth.pollinations.ai API
+    const tokenResult = await validateApiTokenDb(token);
     if (tokenResult && tokenResult.userId) {
       tokenLog('✅ Valid DB token found for user: %s (tier: %s)', tokenResult.userId, tokenResult.tier);
       debugInfo.authResult = 'DB_TOKEN';
@@ -270,7 +241,7 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
       debugInfo.tier = tokenResult.tier;
       log('Authentication succeeded: DB_TOKEN for user %s (tier: %s)', tokenResult.userId, tokenResult.tier);
       return { 
-        bypass: true, // Kept for backward compatibility
+        bypass: true, 
         authenticated: true, 
         tokenAuth: true, 
         referrerAuth: false,
@@ -280,110 +251,51 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
         debugInfo 
       };
     }
-    
-    // If token is provided but not valid, return error info instead of throwing
-    // This prevents the server from crashing while maintaining proper error handling
-    // tokenLog('❌ Invalid token provided: %s', debugInfo.token);
-    // errorLog('Invalid token provided (source: %s)', debugInfo.tokenSource || 'unknown');
-    // debugInfo.authResult = 'INVALID_TOKEN';
-    // log('Authentication failed: INVALID_TOKEN');
-    // return { 
-    //   bypass: false, 
-    //   reason: 'INVALID_TOKEN', 
-    //   userId: null, 
-    //   debugInfo,
-    //   error: {
-    //     message: 'Invalid token provided',
-    //     status: 401,
-    //     details: { debugInfo }
-    //   }
-    // };
+    // If token is provided but it's not valid, we log it and continue.
+    tokenLog('❌ Invalid or unrecognized token provided: %s. Will try other auth methods.', debugInfo.token);
+    errorLog('Invalid or unrecognized token provided (source: %s)', debugInfo.tokenSource || 'unknown');
   }
   
-  // 3️⃣ Check for legacy token in referrer (no error thrown for invalid referrers)
+  // 2️⃣ Referrer-based authentication
   if (ref) {
-    // Convert to string to handle any type safely
-    const refStr = String(ref);
-    referrerLog('Checking referrer for legacy token: %s', refStr);
-    const legacyReferrerMatch = legacyTokens.some(t => refStr.includes(t));
-    if (legacyReferrerMatch) {
-      referrerLog('✅ Legacy token found in referrer: %s', refStr);
-      debugInfo.authResult = 'LEGACY_REFERRER';
-      debugInfo.legacyReferrerMatch = true;
-      log('Authentication succeeded: LEGACY_REFERRER');
-      return { 
-        bypass: true, // Kept for backward compatibility
-        authenticated: true, 
-        tokenAuth: false, 
-        referrerAuth: true,
-        reason: 'LEGACY_REFERRER', 
-        userId: null, 
-        debugInfo 
-      };
-    } else {
-      referrerLog('No legacy token found in referrer');
-    }
-  
-    // 4️⃣ Check allow-listed domain
-    referrerLog('Checking referrer against %d allowlisted domains', debugInfo.allowlistCount);
-    const allowlistMatch = allowlist.some(d => refStr.includes(d));
-    if (allowlistMatch) {
-      referrerLog('✅ Allowlisted domain: %s', refStr);
-      debugInfo.authResult = 'ALLOWLIST';
-      debugInfo.allowlistMatch = true;
-      log('Authentication succeeded: ALLOWLIST');
-      return { 
-        bypass: true, // Enabling bypass for allowlisted domains
-        authenticated: true, 
-        tokenAuth: false, 
-        referrerAuth: true,
-        reason: 'ALLOWLIST', 
-        userId: null, 
-        debugInfo 
-      };
-    } else {
-      referrerLog('Referrer does not match any allowlisted domain');
-    }
-    
-    // 5️⃣ Check for domain registered in auth database
-    referrerLog('Checking if referrer is registered in auth database');
-    const dbReferrerResult = await checkReferrerInDb(ref);
+    const refStr = String(ref); 
+
+    referrerLog('Checking if referrer is registered in auth database: %s', refStr);
+    const dbReferrerResult = await checkReferrerInDb(refStr);
     if (dbReferrerResult && dbReferrerResult.userId) {
-      referrerLog('✅ Registered domain: %s for user %s (tier: %s)', ref, dbReferrerResult.userId, dbReferrerResult.tier);
+      referrerLog('✅ Registered domain: %s for user %s (tier: %s)', refStr, dbReferrerResult.userId, dbReferrerResult.tier);
       debugInfo.authResult = 'DB_REFERRER';
-      debugInfo.dbReferrerMatch = true;
+      debugInfo.dbReferrerMatch = true; // Ensuring this is included
       debugInfo.userId = dbReferrerResult.userId;
-      debugInfo.username = dbReferrerResult.username;
+      debugInfo.username = dbReferrerResult.username; // Ensuring this is included
       debugInfo.tier = dbReferrerResult.tier;
       log('Authentication succeeded: DB_REFERRER for user %s (tier: %s)', dbReferrerResult.userId, dbReferrerResult.tier);
       return { 
-        bypass: true, // Enable bypass for DB-registered referrers
+        bypass: true, 
         authenticated: true, 
-        tokenAuth: false, 
+        tokenAuth: false,
         referrerAuth: true,
         reason: 'DB_REFERRER', 
-        userId: dbReferrerResult.userId,
-        tier: dbReferrerResult.tier, 
+        userId: dbReferrerResult.userId, 
+        tier: dbReferrerResult.tier,
         debugInfo 
       };
     } else {
-      referrerLog('Referrer is not registered in auth database');
+      referrerLog('Referrer is not a registered domain in auth database: %s', refStr);
     }
   }
-  
-  // 5️⃣ default → go through queue
-  log('Not authenticated, request will be queued');
-  // Default: not authenticated
+
+  // Default return if no authentication method succeeds
+  log('Authentication failed: NO_AUTH_METHOD_SUCCESS (No valid token or registered referrer found)');
   debugInfo.authResult = 'NONE';
-  log('Authentication failed: Not authenticated');
-  return { 
-    bypass: false, // Kept for backward compatibility
-    authenticated: false, 
-    tokenAuth: false, 
+  return {
+    bypass: false,
+    authenticated: false,
+    tokenAuth: false,
     referrerAuth: false,
-    reason: 'NOT_AUTHENTICATED', 
-    userId: null, 
-    debugInfo 
+    reason: 'NO_AUTH_METHOD_SUCCESS',
+    userId: null,
+    debugInfo
   };
 }
 
@@ -404,13 +316,10 @@ export async function handleAuthentication(req, requestId = null, logAuth = null
   let isAuthenticated, reason, userId, debugInfo;
   
   try {
-    // Load auth context from environment
-    const legacyTokens = process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [];
-    const allowlist = process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : [];
-    
     // Check if request is authenticated using shared utility
     // This may throw an error if an invalid token is provided
-    const authResult = await shouldBypassQueue(req, { legacyTokens, allowlist });
+    // const allowlist = process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : []; // Removed allowlist
+    const authResult = await shouldBypassQueue(req);
     isAuthenticated = authResult.authenticated;
     reason = authResult.reason;
     userId = authResult.userId;
@@ -489,14 +398,6 @@ export function addAuthDebugHeaders(headers, debugInfo) {
   if (debugInfo.referrer) {
     headers['X-Debug-Referrer'] = 'present';
   }
-  
-  if (debugInfo.legacyTokenMatch) {
-    headers['X-Debug-Legacy-Token-Match'] = 'true';
-  }
-  
-  if (debugInfo.allowlistMatch) {
-    headers['X-Debug-Allowlist-Match'] = 'true';
-  }
 }
 
 /**
@@ -514,11 +415,10 @@ export function createAuthDebugResponse(debugInfo) {
   };
   
   // Add token info if available
-  if (debugInfo.token || debugInfo.tokenSource || debugInfo.legacyTokenMatch) {
+  if (debugInfo.token || debugInfo.tokenSource) {
     debug.tokenInfo = {
       present: !!debugInfo.token,
-      source: debugInfo.tokenSource || 'none',
-      legacyMatch: !!debugInfo.legacyTokenMatch
+      source: debugInfo.tokenSource || 'none'
     };
   }
   

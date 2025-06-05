@@ -217,7 +217,7 @@ async function handleRequest(req, res, requestData) {
             log('Sending streaming response with sendAsOpenAIStream');
             // Add requestData to completion object for access in streaming ad wrapper
             completion.requestData = requestData;
-            sendAsOpenAIStream(res, completion, req);
+            await sendAsOpenAIStream(res, completion, req);
         } else {
             if (req.method === 'GET') {
                 sendContentResponse(res, completion);
@@ -416,7 +416,7 @@ async function processRequest(req, res, requestData) {
         
         if (requestData.stream) {
             // For streaming requests, send error as a stream
-            sendAsOpenAIStream(res, { error: 'Forbidden', choices: [{ message: { content: 'Forbidden' } }] }, req);
+            await sendAsOpenAIStream(res, { error: 'Forbidden', choices: [{ message: { content: 'Forbidden' } }] }, req);
             return;
         } else {
             return res.status(403).json(errorResponse);
@@ -467,7 +467,7 @@ async function processRequest(req, res, requestData) {
             
             if (requestData.stream) {
                 // For streaming requests, send error as a stream
-                sendAsOpenAIStream(res, { 
+                await sendAsOpenAIStream(res, { 
                     error: errorResponse.error, 
                     choices: [{ message: { content: errorResponse.details.message } }] 
                 }, req);
@@ -580,7 +580,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     }
 })
 
-function sendAsOpenAIStream(res, completion, req = null) {
+async function sendAsOpenAIStream(res, completion, req = null) {
     log('sendAsOpenAIStream called with completion type:', typeof completion);
     if (completion) {
         log('Completion properties:', {
@@ -629,7 +629,7 @@ function sendAsOpenAIStream(res, completion, req = null) {
             log('Processing stream for ads with', messages.length, 'messages');
             
             // Create a wrapped stream that will add ads at the end
-            const wrappedStream = createStreamingAdWrapper(
+            const wrappedStream = await createStreamingAdWrapper(
                 responseStream, 
                 req, 
                 messages

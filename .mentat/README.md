@@ -55,13 +55,39 @@ When handling project submission issues:
      ```
    - The star count will be displayed on the project page next to the GitHub link
 
-6. Categories:
-   - LLM Integrations
-   - Creative & Interactive Applications
-   - Tools & Interfaces
-   - Social Bots
-   - SDK & Libraries
-   - Tutorials
+6. Categories (as of June 2025):
+   - Vibe Coding ✨ (`vibeCoding.js`): No-code / describe-to-code playgrounds and builders
+   - Creative 🎨 (`creative.js`): Turn prompts into images, video, music, design, slides
+   - Games 🎲 (`games.js`): AI-powered play, interactive fiction, puzzle & agent worlds
+   - Hack-&-Build 🛠️ (`hackAndBuild.js`): SDKs, integration libs, extensions, dashboards, MCP servers
+   - Chat 💬 (`chat.js`): Standalone chat UIs / multi-model playgrounds
+   - Social Bots 🤖 (`socialBots.js`): Discord / Telegram / WhatsApp / Roblox bots & NPCs
+   - Learn 📚 (`learn.js`): Tutorials, guides, style books & educational demos
+   - (Tracking file: `tracking/toProcess.md` for workflow management)
+
+## Classification Guidelines (2025 Update)
+- Each project must be assigned to only **one** category file (no duplicates).
+- Category assignment is based on actual functionality and metadata, not just the source JSON category.
+- When a project fits multiple categories, prefer less-populated categories (games, hackAndBuild, learn, socialBots, vibeCoding) to maintain balance.
+- Educational/interactive learning tools go to `learn.js`.
+- SDKs, APIs, and toolkits go to `hackAndBuild.js`.
+- Creative tools (image, text, audio generation, etc.) go to `creative.js`.
+- Chatbots and conversational agents go to `chat.js`.
+- Games and interactive fiction go to `games.js`.
+- Social platform bots go to `socialBots.js`.
+- No placeholder entries remain in category files; all projects are tracked in `toProcess.md` until categorized.
+- After categorization, update `toProcess.md` to reflect the assignment (e.g., "added to creative.js").
+- Use project metadata from `accumulated-projects.json` as the source of truth.
+
+## Current Workflow Summary
+1. Review uncategorized projects listed in `tracking/toProcess.md`.
+2. For each, inspect metadata in `accumulated-projects.json`.
+3. Assign to the most appropriate category file, following the above rules.
+4. Update both the category file and `toProcess.md` incrementally.
+5. Avoid duplicates and maintain category balance.
+6. If a project lacks sufficient detail, remove or defer it from the tracking list.
+7. All decisions and reassignments should be consistent and documented.
+8. This workflow ensures a clean, organized, and up-to-date project classification for Pollinations.AI.
 
 7. Add appropriate UTF-8 icons to titles where relevant (🤖 for bots, 🎨 for creative apps, etc.)
 

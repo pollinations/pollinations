@@ -5,6 +5,14 @@
 
 export const learnProjects = [
   {
+    name: "AI儿童故事 🇨🇳",
+    url: "https://kidss.netlify.app/",
+    description: "基于此项目 构建有趣的孩子故事书应用演示 (Based on this project, build an interesting children's storybook application demo)",
+    author: "MZ",
+    submissionDate: "2025-03-10",
+    order: 2
+  },
+  {
     name: "StoryMagic: Interactive Kids Stories",
     description: "Interactive and educational tool for generating kids' stories.",
     submissionDate: "2025-03-14",
@@ -108,5 +116,13 @@ export const learnProjects = [
     author: "@paper_explorer",
     submissionDate: "2025-04-18",
     order: 2
+  },
+  {
+    name: "Whizzy AI",
+    url: "https://whizzyai.vercel.app",
+    description: "An educational AI platform for students featuring AI-powered study assistance, chat functionality, and image generation capabilities using Pollinations AI. Designed to help students with studies they find challenging.",
+    author: "@vaibhavcoding69",
+    submissionDate: "2025-06-03",
+    order: 1
   }
 ];

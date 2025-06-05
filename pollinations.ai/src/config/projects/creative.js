@@ -5,6 +5,22 @@
 
 export const creativeProjects = [
   {
+    name: "Avatar GenStudio",
+    url: "https://astudio-dcae4.web.app",
+    description: "A system for creating custom characters that uses the Pollinations API for totally free and unlimited image generation.",
+    author: "@nic-wq",
+    submissionDate: "2025-03-10",
+    order: 1
+  },
+  {
+    name: "Musify - AI Enhanced Music Streaming",
+    url: "https://musify-sd.vercel.app/",
+    description: "Musify is your AI-powered music buddy, making your jam sessions smarter and more fun. Powered by pollinations API, it offers AI Music Assistant, Voice Commands, AI Playlist Creator, and Responsive Design.",
+    author: "@Sugamdeol",
+    submissionDate: "2025-02-27",
+    order: 2
+  },
+  {
     name: "CalcuBite AI",
     url: "https://calcubite.vercel.app/",
     description: "CalcuBite AI is a smart tool that analyzes food from images to provide calorie and nutrient details. Just take a photo, and it quickly gives you an estimate of your meal's nutritional value. It uses AI for accurate analysis, and if you run out of free scans, you can watch an ad to get more!",
@@ -343,18 +359,7 @@ export const creativeProjects = [
     order: 1
   },
   {
-    name: "DreamHer",
-    url: "https://dreamher.vercel.app/",
-    description: "Interactive web app that transforms your imagination of a 'dream girl' into a visual representation through just 10 simple questions using Pollinations AI. Features AI-powered visualization, dynamic processing, and an engaging, magical user experience.",
-    author: "@_Creation22",
-    authorUrl: "https://x.com/_Creation22",
-    repo: "https://github.com/creation22/DreamGirl",
-    stars: 2,
-    submissionDate: "2025-05-27",
-    order: 1
-  },
-  {
-    name: "🎨 PixPal",
+    name: " PixPal",
     url: "https://pixpal.chat",
     description: "PixPal is a free AI assistant that can analyze, edit, and generate images, build websites from screenshots, create 3D games, and write full blog posts—all in one chat. Upload a photo, describe an idea, or request a UI clone and PixPal instantly delivers creative results.",
     author: "@andreas_11",

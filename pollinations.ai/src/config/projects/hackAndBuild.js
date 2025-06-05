@@ -5,6 +5,66 @@
 
 export const hackAndBuildProjects = [
   {
+    name: "MCPollinations",
+    url: "https://github.com/pinkpixel-dev/MCPollinations",
+    description: "A Model Context Protocol (MCP) server that enables AI assistants to generate images, text, and audio through the Pollinations APIs. Supports customizable parameters, image saving, and multiple model options.",
+    author: "Pink Pixel",
+    category: "sdkLibraries"
+  },
+  {
+    name: "pollinations_ai",
+    url: "https://pub.dev/packages/pollinations_ai",
+    description: "Dart/Flutter package for Pollinations API.",
+    author: "@Meenapintu",
+    category: "sdkLibraries"
+  },
+  {
+    name: "Smpldev",
+    url: "https://smpldev.ftp.sh/",
+    description: "Create, deploy, and scale full-stack web and mobile applications in minutes.",
+    author: "@kennet678",
+    category: "sdkLibraries"
+  },
+  {
+    name: "pollinations NPM Module",
+    description: "JavaScript/Node.js SDK for Pollinations API.",
+    category: "sdkLibraries"
+  },
+  {
+    name: "pypollinations",
+    url: "https://pypi.org/project/pypollinations/",
+    description: "Comprehensive Python wrapper for Pollinations AI API.",
+    author: "@KTS-o7",
+    category: "sdkLibraries"
+  },
+  {
+    name: "@pollinations/react",
+    url: "https://www.npmjs.com/package/@pollinations/react",
+    description: "React hooks for easy integration of Pollinations' features.",
+    author: "@pollinations",
+    category: "sdkLibraries"
+  },
+  {
+    name: "Polli API Dashboard",
+    description: "Dashboard for managing/interacting with Pollinations API.",
+    category: "sdkLibraries"
+  },
+  {
+    name: "pollinations.ai Python SDK",
+    url: "https://github.com/pollinations-ai/pollinations.ai",
+    description: "Official Python SDK for working with Pollinations' models.",
+    author: "@pollinations-ai",
+    category: "sdkLibraries"
+  },
+  {
+    name: "Herramientas IA",
+    url: "https://proyectodescartes.org/descartescms/herramientas-ia",
+    description: "Tools designed with Pollinations.AI and the DescartesJS editor, including tools from other Pollinations.AI community members.",
+    author: "@juanrivera126",
+    submissionDate: "2025-03-10",
+    order: 3
+  },
+  {
     name: "🌱 Strain Navigator",
     url: "https://www.strainnavigator.com/",
     description: "A collection of tools to help Growers, Breeders & Seed Bankers. Free & Open Source powered by Pollinations.ai.",

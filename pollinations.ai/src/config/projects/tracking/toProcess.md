@@ -84,7 +84,7 @@ Okay, here are all the unique project names from the provided JSON data:
 26. Free AI Chatbot & Image Generator - added to chat.js
 27. Server Status Dashboards - added to hackAndBuild.js
 28. MVKProject Nexus API - added to hackAndBuild.js
-29. Irina
+29. Irina - added to chat.js
 30. Minecraft AI (Node.js) - added to games.js
 31. Minecraft AI (Python) - added to games.js
 32. Juego de Memorizar con Pollinations - added to games.js
@@ -221,10 +221,10 @@ Okay, here are all the unique project names from the provided JSON data:
 162. roastmyselfie.app - added to games.js
 163. StoryMagic: Interactive Kids Stories - added to learn.js
 164. Open Prompt - added to vibeCoding.js
-165. AI儿童故事 
-166. Herramientas IA
-167. Avatar GenStudio
-168. Musify - AI Enhanced Music Streaming
+165. AI儿童故事 🇨🇳 - added to learn.js
+166. Herramientas IA - added to hackAndBuild.js
+167. Avatar GenStudio - added to creative.js
+168. Musify - AI Enhanced Music Streaming - added to creative.js
 169. image1gen
 170. AI Image Generator
 171. PolliSonic Generator
@@ -243,14 +243,14 @@ Okay, here are all the unique project names from the provided JSON data:
 185. pollinations-tg-bot - added to socialBots.js
 186. ComfyUI-Pollinations
 187. Node.js Client Library
-188. MCPollinations
-189. pollinations_ai
-190. Smpldev
-191. pollinations NPM Module
-192. pypollinations
-193. @pollinations/react
-194. Polli API Dashboard
-195. pollinations.ai Python SDK
+188. MCPollinations - added to hackAndBuild.js
+189. pollinations_ai - added to hackAndBuild.js
+190. Smpldev - added to hackAndBuild.js
+191. pollinations NPM Module - added to hackAndBuild.js
+192. pypollinations - added to hackAndBuild.js
+193. @pollinations/react - added to hackAndBuild.js
+194. Polli API Dashboard - added to hackAndBuild.js
+195. pollinations.ai Python SDK - added to hackAndBuild.js
 196. Pollinations.AI AI/Teens talk - updated in learn.js with accurate metadata
 197. Connect Pollinations with Open Web UI tutorial - already in learn.js
 198. Chinese DeepSeek Tutorial - updated in learn.js with accurate metadata

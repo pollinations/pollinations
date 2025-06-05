@@ -140,5 +140,15 @@ export const socialBotsProjects = [
     stars: 42,
     submissionDate: "2025-05-20",
     order: 3
+  },
+  {
+    name: "PolliBot",
+    url: "https://pollibot.example.com",
+    description: "A versatile Telegram bot integrated with Pollinations. Offers image generation, text summarization, and quick answers directly within Telegram chats. Supports multiple languages.",
+    author: "BotBuilders Inc.",
+    repo: "https://github.com/botbuilders/pollibot-telegram",
+    stars: 75,
+    submissionDate: "2025-03-20",
+    order: 2
   }
 ];

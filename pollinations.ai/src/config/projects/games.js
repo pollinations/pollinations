@@ -163,5 +163,16 @@ export const gamesProjects = [
     stars: 300,
     submissionDate: "2025-02-20",
     order: 1
+  },
+  {
+    name: "DreamHer",
+    url: "https://dreamher.vercel.app/",
+    description: "Interactive web app that transforms your imagination of a 'dream girl' into a visual representation through just 10 simple questions using Pollinations AI. Features AI-powered visualization, dynamic processing, and an engaging, magical user experience.",
+    author: "@_Creation22",
+    authorUrl: "https://x.com/_Creation22",
+    repo: "https://github.com/creation22/DreamGirl",
+    stars: 2,
+    submissionDate: "2025-05-27",
+    order: 1
   }
 ];

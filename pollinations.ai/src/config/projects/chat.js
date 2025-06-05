@@ -234,14 +234,6 @@ export const chatProjects = [
     order: 1
   },
   {
-    name: "🆕 Whizzy AI",
-    url: "https://whizzyai.vercel.app",
-    description: "An educational AI platform for students featuring AI-powered study assistance, chat functionality, and image generation capabilities using Pollinations AI. Designed to help students with studies they find challenging.",
-    author: "@vaibhavcoding69",
-    submissionDate: "2025-06-03",
-    order: 1
-  },
-  {
     name: "KoboldAI Lite",
     url: "https://koboldai.net",
     description: "A lightweight AI framework for text generation and chat.",
@@ -346,15 +338,5 @@ export const chatProjects = [
     stars: 200,
     submissionDate: "2025-02-01",
     order: 1
-  },
-  {
-    name: "PolliBot",
-    url: "https://pollibot.example.com",
-    description: "A versatile Telegram bot integrated with Pollinations. Offers image generation, text summarization, and quick answers directly within Telegram chats. Supports multiple languages.",
-    author: "BotBuilders Inc.",
-    repo: "https://github.com/botbuilders/pollibot-telegram",
-    stars: 75,
-    submissionDate: "2025-03-20",
-    order: 2
   }
 ];

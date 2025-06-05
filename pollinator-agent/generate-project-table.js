@@ -11,6 +11,7 @@
  * 2. Update the README.md file by replacing content between special markers
  */
 
+import { categories, projects } from '../pollinations.ai/src/config/projectList.js';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -63,7 +64,7 @@ const formatAuthor = (project) => {
 };
 
 // Function to generate markdown table for a category
-const generateCategoryTable = (categoryKey, categoryTitle, projects) => {
+const generateCategoryTable = (categoryKey, categoryTitle) => {
   const categoryProjects = projects[categoryKey];
   
   if (!categoryProjects || categoryProjects.length === 0) {
@@ -126,13 +127,13 @@ const generateCategoryTable = (categoryKey, categoryTitle, projects) => {
 };
 
 // Generate the markdown content for all project tables
-const generateProjectMarkdown = (categories, projects) => {
+const generateProjectMarkdown = () => {
   let markdown = '> **Note:** Some projects may be temporarily hidden from this list if they are currently broken or undergoing maintenance.\n\n';
   markdown += 'Pollinations.AI is used in various projects, including:\n\n';
   
   // Generate tables for each category
   for (const category of categories) {
-    markdown += generateCategoryTable(category.key, category.title, projects);
+    markdown += generateCategoryTable(category.key, category.title);
   }
   
   return markdown;
@@ -181,12 +182,8 @@ const updateReadme = async (markdownContent) => {
 // Main function to generate project tables and update files
 const main = async () => {
   try {
-    // Dynamically import the project data
-    const projectModule = await import('../pollinations.ai/src/config/projectList.js');
-    const { categories, projects } = projectModule;
-    
     // Generate the markdown content
-    const markdownContent = generateProjectMarkdown(categories, projects);
+    const markdownContent = generateProjectMarkdown();
     
     // Always write to PROJECTS.md as a standalone file
     const projectsPath = path.join(process.cwd(), 'PROJECTS.md');

@@ -37,25 +37,28 @@ const isNewProject = (project) => {
   }
 };
 
-// Function to format links for the markdown table
-const formatLinks = (project) => {
-  const links = [];
+// Function to format project name with links
+const formatProjectName = (project) => {
+  let name = project.name;
   
+  // Make name clickable with website URL if available
   if (project.url) {
-    links.push(`[Website](${project.url})`);
+    name = `[${name}](${project.url})`;
   }
   
+  // Add GitHub link if available
   if (project.repo) {
-    const starsText = project.stars ? ` - ⭐ ${(project.stars / 1000).toFixed(1)}k` : 
-                     (project.stars === 0 ? ` - ⭐ 0` : '');
-    links.push(`[GitHub](${project.repo})${starsText}`);
+    const starsText = project.stars ? ` ⭐ ${(project.stars / 1000).toFixed(1)}k` : 
+                     (project.stars === 0 ? ` ⭐ 0` : '');
+    name += ` ([GitHub](${project.repo})${starsText})`;
   }
   
+  // Add demo link if available
   if (project.demo) {
-    links.push(`[Demo](${project.demo})`);
+    name += ` ([Demo](${project.demo}))`;
   }
   
-  return links.join(', ');
+  return name;
 };
 
 // Function to format author information
@@ -82,8 +85,8 @@ const generateCategoryTable = (categoryKey, categoryTitle) => {
   }
   
   let markdown = `### ${categoryTitle}\n\n`;
-  markdown += '| Project | Description | Creator | Links |\n';
-  markdown += '|---------|-------------|---------|-------|\n';
+  markdown += '| Project | Description | Creator |\n';
+  markdown += '|---------|-------------|--------|\n';
   
   // Sort projects by order and stars
   const sortedProjects = [...categoryProjects]
@@ -130,7 +133,7 @@ const generateCategoryTable = (categoryKey, categoryTitle) => {
       typeEmoji = '🖥️ ';
     }
     
-    markdown += `| ${newTag}${typeEmoji}${languageEmoji}${project.name} | ${project.description || '-'} | ${formatAuthor(project)} | ${formatLinks(project)} |\n`;
+    markdown += `| ${newTag}${typeEmoji}${languageEmoji}${formatProjectName(project)} | ${project.description || '-'} | ${formatAuthor(project)} |\n`;
   }
   
   return markdown + '\n';

@@ -60,7 +60,17 @@ const formatLinks = (project) => {
 
 // Function to format author information
 const formatAuthor = (project) => {
-  return project.author || '-';
+  if (!project.author) return '-';
+  
+  // Check if the author is a URL
+  const urlPattern = /^https?:\/\//i;
+  if (urlPattern.test(project.author)) {
+    // If it's a URL, return a simple link with text 'Link'
+    return `[Link](${project.author})`;
+  }
+  
+  // Otherwise return the author name as is
+  return project.author;
 };
 
 // Function to generate markdown table for a category

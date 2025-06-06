@@ -119,6 +119,9 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
   if (maxQueueSize && totalInQueue >= maxQueueSize) {
     const error = new Error(`Queue full for IP ${ip}: ${totalInQueue} requests already queued (max: ${maxQueueSize})`);
     error.status = 429; // Too Many Requests
+    if (authResult.userId) {
+      error.userId = authResult.userId;
+    }
     error.queueInfo = {
       ip,
       currentSize: currentQueueSize,

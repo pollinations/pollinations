@@ -1,4 +1,5 @@
 import express from 'express';
+import axios from 'axios'; // For making HTTP requests to auth service
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import crypto from 'crypto';
@@ -76,6 +77,42 @@ async function loadBlockedIPs() {
 loadBlockedIPs().catch(error => {
     errorLog('Failed to load blocked IPs:', error);
 });
+
+// Environment variables for auth service (ensure these are set in your .env or environment)
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:8787'; // Default for local dev
+const AUTH_ADMIN_API_KEY = process.env.AUTH_ADMIN_API_KEY;
+
+// Function to track user queue full event
+async function trackUserQueueFullEvent(userId) {
+  if (!AUTH_ADMIN_API_KEY) {
+    errorLog('AUTH_ADMIN_API_KEY is not set. Cannot track queue full metric.');
+    return;
+  }
+  if (!userId) {
+    errorLog('No userId provided for queue full event. Cannot track.');
+    return;
+  }
+
+  const metricPayload = {
+    increment: { "text_service_queue_full_count": 1 }
+  };
+
+  try {
+    log(`Tracking queue full event for userId: ${userId}`);
+    await axios.post(`${AUTH_SERVICE_URL}/admin/metrics?user_id=${userId}`, metricPayload, {
+      headers: {
+        'Authorization': `Bearer ${AUTH_ADMIN_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    log(`Successfully tracked queue full event for userId: ${userId}`);
+  } catch (err) {
+    errorLog(`Error tracking queue full event for userId ${userId}: ${err.message}`);
+    if (err.response) {
+      errorLog(`Auth service response: ${err.response.status} - ${JSON.stringify(err.response.data)}`);
+    }
+  }
+}
 
 // Middleware to block IPs
 app.use((req, res, next) => {
@@ -442,6 +479,9 @@ async function processRequest(req, res, requestData) {
         // Handle queue full error
         if (error.status === 429) {
             errorLog('Queue full for IP %s: %s', ip, error.message);
+            if (error.userId) {
+              trackUserQueueFullEvent(error.userId); // Fire-and-forget
+            }
             const errorResponse = {
                 error: 'Too Many Requests',
                 status: 429,

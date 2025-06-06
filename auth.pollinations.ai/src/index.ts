@@ -1,9 +1,34 @@
 import type { Env, UserTier } from './types';
 import { createJWT, verifyJWT, extractBearerToken } from './jwt';
-import { upsertUser, getUser, updateDomainAllowlist, getDomains, isDomainAllowed, saveOAuthState, getOAuthState, deleteOAuthState, cleanupOldStates, generateApiToken, getApiToken, deleteApiTokens, validateApiToken, getUserTier, setUserTier, getAllUserTiers, findUserByDomain, getUserPreferences, setUserPreference, updateUserPreferences, deleteUserPreference } from './db';
+import { 
+  upsertUser, 
+  getUser, 
+  saveOAuthState, 
+  getOAuthState, 
+  deleteOAuthState, 
+  cleanupOldStates, 
+  updateDomainAllowlist, 
+  getDomains, 
+  generateApiToken, 
+  getApiToken, 
+  deleteApiTokens, 
+  validateApiToken, 
+  getUserTier, 
+  setUserTier, 
+  getAllUserTiers, 
+  findUserByDomain, 
+  getUserPreferences, 
+  setUserPreference, 
+  updateUserPreferences, 
+  deleteUserPreference,
+  getUserMetrics,
+  setUserMetric,
+  updateUserMetrics,
+  incrementUserMetric
+} from './db';
 import { extractReferrer } from '../../shared/extractFromRequest.js';
 import { exchangeCodeForToken, getGitHubUser } from './github';
-import { handleAdminDatabaseDump, handleAdminUserInfo } from './admin';
+import { handleAdminDatabaseDump, handleAdminUserInfo, handleAdminGetMetrics, handleAdminUpdateMetrics } from './admin';
 import { generateHTML } from './client/html';
 
 // Add proper type declarations for DOM types
@@ -133,6 +158,14 @@ export default {
             return handleAdminGetPreferences(request, env, corsHeaders);
           } else if (request.method === 'POST') {
             return handleAdminUpdatePreferences(request, env, corsHeaders);
+          }
+          break;
+          
+        case '/admin/metrics':
+          if (request.method === 'GET') {
+            return handleAdminGetMetrics(request, env, corsHeaders);
+          } else if (request.method === 'POST') {
+            return handleAdminUpdateMetrics(request, env, corsHeaders);
           }
           break;
       }
@@ -319,7 +352,17 @@ async function handleCheckDomain(request: Request, env: Env, corsHeaders: Record
     return createErrorResponse(400, 'Missing required parameters', corsHeaders);
   }
   
-  const allowed = await isDomainAllowed(env.DB, userId, domain);
+  // Validate if the domain exists first
+  const url2 = new URL(request.url);
+  const domain2 = url2.searchParams.get('domain');
+
+  if (!domain2) {
+    return createErrorResponse(400, 'Domain parameter is required', corsHeaders);
+  }
+
+  // Check if domain is allowed for this user
+  const domains = await getDomains(env.DB, userId);
+  const allowed = domains.includes(domain2);
   
   return new Response(JSON.stringify({ allowed }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -939,3 +982,5 @@ async function handleAdminUpdatePreferences(request: Request, env: Env, corsHead
     return createErrorResponse(500, 'Internal server error', corsHeaders);
   }
 }
+
+// End of file

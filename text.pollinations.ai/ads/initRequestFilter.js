@@ -7,6 +7,7 @@ import { shouldShowAds } from './shouldShowAds.js';
 import { shouldProceedWithAd, sendAdSkippedAnalytics } from './adUtils.js';
 import { fetchNexAd, createNexAdRequest } from './nexAdClient.js';
 import { formatNexAd, extractTrackingData, trackImpression } from './nexAdFormatter.js';
+import { handleAuthentication } from '../../shared/auth-utils.js';
 
 const log = debug('pollinations:adfilter');
 const errorLog = debug('pollinations:adfilter:error');
@@ -21,6 +22,21 @@ const errorLog = debug('pollinations:adfilter:error');
  */
 export async function generateAdForContent(req, content, messages = [], isStreaming = false) {
     try {
+        // Get authenticated user ID if available - do this once at the top
+        let authResult = null;
+        let authenticatedUserId = null;
+        
+        try {
+            authResult = await handleAuthentication(req);
+            if (authResult.authenticated && authResult.userId) {
+                authenticatedUserId = authResult.userId;
+                log(`Authenticated user ID: ${authenticatedUserId}`);
+            }
+        } catch (error) {
+            // Authentication failed, continue without user ID
+            log('Authentication failed or not provided, continuing without user ID');
+        }
+
         // Extract user country from request headers
         const userCountry = req?.headers?.['cf-ipcountry'] || 
                            req?.headers?.['x-geo-country'] || 
@@ -29,8 +45,8 @@ export async function generateAdForContent(req, content, messages = [], isStream
         
         log(`User country detected: ${userCountry || 'unknown'}`);
 
-        // Check if we should show ads
-        const { shouldShowAd, markerFound, forceAd } = await shouldShowAds(content, messages, req);
+        // Check if we should show ads - pass auth result to avoid duplicate authentication
+        const { shouldShowAd, markerFound, forceAd } = await shouldShowAds(content, messages, req, authResult);
         const shouldForceAd = markerFound || forceAd;
 
         // Determine if we should proceed with ad generation
@@ -40,17 +56,20 @@ export async function generateAdForContent(req, content, messages = [], isStream
 
         log('Generating ad for content...');
 
-        // Try nex.ad first
-        const { visitorData, conversationContext } = createNexAdRequest(req, messages, content);
-        const nexAdResponse = await fetchNexAd(visitorData, conversationContext);
+        // Try nex.ad first - pass authenticated user ID
+        const { visitorData, conversationContext } = createNexAdRequest(req, messages, content, authenticatedUserId);
+        const nexAdResult = await fetchNexAd(visitorData, conversationContext);
         
-        if (nexAdResponse) {
-            // Format nex.ad response
-            const adString = formatNexAd(nexAdResponse);
+        if (nexAdResult && nexAdResult.adData) {
+            const { adData, userIdForTracking } = nexAdResult;
+            // Only use authenticated user ID for tracking, not hashed IP fallback
+            const userIdForRedirect = authenticatedUserId; // null if not authenticated
+            // Format nex.ad response, only passing real user ID (not hashed IP)
+            const adString = formatNexAd(adData, userIdForRedirect);
             
             if (adString) {
-                // Extract tracking data
-                const trackingData = extractTrackingData(nexAdResponse);
+                // Extract tracking data from adData
+                const trackingData = extractTrackingData(adData);
                 
                 // Track impression
                 await trackImpression(trackingData);

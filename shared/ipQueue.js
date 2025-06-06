@@ -33,17 +33,6 @@ const queues = new Map();
  * @returns {Promise<any>} Result of the function execution
  */
 export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false, maxQueueSize }={}) {
-  // Create auth context from environment variables (loaded by env-loader.js via auth-utils.js import)
-  const authContext = {
-    legacyTokens: process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [],
-    allowlist: process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : []
-  };
-  
-  // Log authentication context
-  authLog('Authentication context created with %d legacy tokens and %d allowlisted domains', 
-          authContext.legacyTokens.length,
-          authContext.allowlist.length);
-  
   // Extract useful request info for logging
   const url = req.url || 'no-url';
   const method = req.method || 'no-method';
@@ -55,9 +44,9 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
   
   authLog('Processing request: %s %s from IP: %s', method, path, ip);
   
-  // Get authentication status with auth context
+  // Get authentication status
   authLog('Checking authentication for request: %s', path);
-  const authResult = await shouldBypassQueue(req, authContext);
+  const authResult = await shouldBypassQueue(req);
   
   // Log the authentication result with tier information
   authLog('Authentication result: reason=%s, authenticated=%s, userId=%s, tier=%s', 
@@ -88,7 +77,7 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
     
     // Add extra context for debugging
     error.queueContext = {
-      authContextLength: JSON.stringify(authContext).length,
+      // authContextLength removed as authContext is no longer used
       request: { method, path, ip },
       issuedAt: new Date().toISOString()
     };

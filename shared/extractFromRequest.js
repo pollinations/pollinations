@@ -6,7 +6,7 @@
  */
 
 // Token field configuration for DRY principle
-export const TOKEN_FIELDS = {
+const TOKEN_FIELDS = {
   query: ['token'],
   header: ['authorization', 'x-pollinations-token'],
   body: ['token' ]
@@ -183,7 +183,7 @@ export function getClientIp(req) {
  * @param {string[]} fields - Array of field names to check
  * @returns {Object} { value, source } or { value: null, source: null }
  */
-export function extractFromQuery(url, fields) {
+function extractFromQuery(url, fields) {
   const urlObj = new URL(url, 'http://x');
   for (const field of fields) {
     const value = urlObj.searchParams.get(field);
@@ -197,7 +197,7 @@ export function extractFromQuery(url, fields) {
  * @param {string[]} fields - Array of field names to check
  * @returns {Object} { value, source } or { value: null, source: null }
  */
-export function extractFromHeaders(headers, fields) {
+function extractFromHeaders(headers, fields) {
   for (const field of fields) {
     let value = null;
 
@@ -224,7 +224,7 @@ export function extractFromHeaders(headers, fields) {
  * @param {string[]} fields - Array of field names to check
  * @returns {Object} { value, source } or { value: null, source: null }
  */
-export function extractFromBody(body, fields) {
+function extractFromBody(body, fields) {
   if (!body) return { value: null, source: null };
   
   for (const field of fields) {

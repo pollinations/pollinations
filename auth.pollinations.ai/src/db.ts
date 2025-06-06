@@ -328,3 +328,96 @@ export async function deleteUserPreference(db: D1Database, userId: string, key: 
     WHERE github_user_id = ?
   `).bind(JSON.stringify(currentPrefs), userId).run();
 }
+
+// User metrics management functions (backend-only analytics)
+
+/**
+ * Get user metrics
+ * @param db D1 Database instance
+ * @param userId User ID
+ * @returns User metrics object (defaults to empty object if not set)
+ */
+export async function getUserMetrics(db: D1Database, userId: string): Promise<Record<string, any>> {
+  const result = await db.prepare(`
+    SELECT metrics FROM users WHERE github_user_id = ?
+  `).bind(userId).first();
+  
+  if (!result || !result.metrics) {
+    return {};
+  }
+  
+  try {
+    return JSON.parse(result.metrics as string);
+  } catch (error) {
+    console.error('Error parsing user metrics:', error);
+    return {};
+  }
+}
+
+/**
+ * Set a specific user metric
+ * @param db D1 Database instance
+ * @param userId User ID
+ * @param key Metric key
+ * @param value Metric value
+ */
+export async function setUserMetric(db: D1Database, userId: string, key: string, value: any): Promise<void> {
+  // Get current metrics
+  const currentMetrics = await getUserMetrics(db, userId);
+  
+  // Update the specific metric
+  currentMetrics[key] = value;
+  
+  // Save back to database
+  await db.prepare(`
+    UPDATE users 
+    SET metrics = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE github_user_id = ?
+  `).bind(JSON.stringify(currentMetrics), userId).run();
+}
+
+/**
+ * Update multiple user metrics at once
+ * @param db D1 Database instance
+ * @param userId User ID
+ * @param metrics Object with metric key-value pairs to update
+ */
+export async function updateUserMetrics(db: D1Database, userId: string, metrics: Record<string, any>): Promise<void> {
+  // Get current metrics
+  const currentMetrics = await getUserMetrics(db, userId);
+  
+  // Merge with new metrics
+  const updatedMetrics = { ...currentMetrics, ...metrics };
+  
+  // Save back to database
+  await db.prepare(`
+    UPDATE users 
+    SET metrics = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE github_user_id = ?
+  `).bind(JSON.stringify(updatedMetrics), userId).run();
+}
+
+/**
+ * Increment a numeric metric
+ * @param db D1 Database instance
+ * @param userId User ID
+ * @param key Metric key to increment
+ * @param incrementBy Amount to increment by (default: 1)
+ */
+export async function incrementUserMetric(db: D1Database, userId: string, key: string, incrementBy: number = 1): Promise<void> {
+  // Get current metrics
+  const currentMetrics = await getUserMetrics(db, userId);
+  
+  // Increment the metric (initialize to 0 if doesn't exist)
+  const currentValue = typeof currentMetrics[key] === 'number' ? currentMetrics[key] : 0;
+  currentMetrics[key] = currentValue + incrementBy;
+  
+  // Save back to database
+  await db.prepare(`
+    UPDATE users 
+    SET metrics = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE github_user_id = ?
+  `).bind(JSON.stringify(currentMetrics), userId).run();
+}
+
+// End of metrics functions

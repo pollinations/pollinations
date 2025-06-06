@@ -1,5 +1,5 @@
 name: Special Bee Request
-description: Request flower tier upgrade for unlimited usage and SOTA models
+description: Request tier upgrade.
 title: "[Special Bee Request]: "
 labels: ["special-bee-request"]
 body:
@@ -7,11 +7,11 @@ body:
     attributes:
       value: |
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="https://raw.githubusercontent.com/pollinations/pollinations/master/assets/pollinations_ai_logo_image_white_transparent.png" alt="Pollinations Logo" width="48" height="48" style="display: inline-block;">
+          <img src="https://raw.githubusercontent.com/pollinations/pollinations/master/operations/media/pollinations-ai-logo.png" alt="Pollinations Logo" width="48" height="48" style="display: inline-block;">
           <h1 style="margin: 0; font-size: 24px; display: inline-block;">Special Bee Request</h1>
         </div>
-        Thanks for your interest in Pollinations API! This form is for requesting **flower tier upgrade** 
-        which provides unlimited usage, SOTA models, and priority queue access.
+        Thanks for your interest in Pollinations API! This form is for requesting a **tier upgrade**.
+        For more information about tiers and upgrades, see the [API Docs Tier Section](../../APIDOCS.md#special-bee-).
 
   - type: input
     id: project-name
@@ -26,7 +26,7 @@ body:
     id: project-description
     attributes:
       label: Project Description
-      description: Please provide a brief description of your project and how it uses Pollinations API
+      description: Please provide a brief description of your project and how it uses Pollinations.AI API
       placeholder: "Describe what your project does and how it integrates with Pollinations..."
     validations:
       required: true

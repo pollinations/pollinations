@@ -22,20 +22,17 @@ Click the links below to see examples in your browser:
   - [Quickstart](#quickstart)
   - [Summary / Navigation](#summary--navigation)
   - [Authentication 🔑](#authentication-)
-    - [Who Needs What Authentication?](#who-needs-what-authentication)
-    - [Getting Started with Authentication](#getting-started-with-authentication)
-    - [Referrer-Based Authentication](#referrer-based-authentication)
-    - [API Keys and Tokens (For Backend Apps)](#api-keys-and-tokens-for-backend-apps)
-    - [Bearer Authentication](#bearer-authentication)
-    - [Authentication Tiers](#authentication-tiers)
-    - [User Tier System](#user-tier-system)
-  - [Please create a **special bee** issue on GitHub to request tier upgrade.](#please-create-a-special-bee-issue-on-github-to-request-tier-upgrade)
+    - [Getting Started](#getting-started)
+    - [Methods](#methods)
+      - [Referrer](#referrer)
+      - [Token](#token)
+    - [Tiers](#tiers)
   - [Generate Image API 🖼️](#generate-image-api-️)
     - [Text-To-Image (GET) 🖌️](#text-to-image-get-️)
     - [List Available Image Models 📜](#list-available-image-models-)
   - [Generate Text API 📝](#generate-text-api-)
     - [Text-To-Text (GET) 🗣️](#text-to-text-get-️)
-    - [Text & Multimodal (OpenAI Compatible POST) 🧠💬🖼️🎤⚙️](#text--multimodal-openai-compatible-post-️️)
+    - [Text \& Multimodal (OpenAI Compatible POST) 🧠💬🖼️🎤⚙️](#text--multimodal-openai-compatible-post-️️)
       - [Vision Capabilities (Image Input) 🖼️➡️📝](#vision-capabilities-image-input-️️)
       - [Speech-to-Text Capabilities (Audio Input) 🎤➡️📝](#speech-to-text-capabilities-audio-input-️)
       - [Function Calling ⚙️](#function-calling-️)
@@ -60,20 +57,20 @@ Click the links below to see examples in your browser:
 
 Pollinations.AI provides flexible authentication options designed for different types of applications.
 
-### Who Needs What Authentication?
-
-- **Frontend Web Apps**: Only need a valid referrer - **no token required!**
-- **Backend Services & Scripts**: Should use API tokens for reliable access and higher rate limits
-- **Testing & Development**: Can use anonymous access for quick experimentation
-
-### Getting Started with Authentication
+### Getting Started
 
 **Visit [auth.pollinations.ai](https://auth.pollinations.ai) to:**
 - Set up and register your application's referrer
 - Create API tokens for backend applications
 - Manage your authentication settings
 
-### Referrer-Based Authentication
+
+> **Security Best Practice**: Never expose API tokens in frontend code! 
+> Frontend web applications should rely on referrer-based authentication.
+
+###  Methods
+
+#### Referrer
 
 For **frontend web applications** that call our APIs directly from the browser, a valid referrer is sufficient:
 
@@ -82,7 +79,7 @@ For **frontend web applications** that call our APIs directly from the browser, 
 - Registered referrers get higher rate limits and priority access
 - **No token needed** - keeping your frontend secure
 
-### API Keys and Tokens (For Backend Apps)
+#### Token
 
 For **backend services, scripts, and server applications**, tokens provide the highest priority access. Tokens can be provided using any of these methods:
 
@@ -92,7 +89,7 @@ For **backend services, scripts, and server applications**, tokens provide the h
 | Query Parameter | Token as URL parameter | `?token=YOUR_TOKEN` |
 | Request Body | Token in POST request body | `{ "token": "YOUR_TOKEN" }` |
 
-### Bearer Authentication
+**Bearer Authentication**
 
 The Bearer authentication scheme is the recommended approach for backend applications, especially when integrating with our OpenAI-compatible endpoints:
 
@@ -102,38 +99,19 @@ Host: api.pollinations.ai
 Authorization: Bearer YOUR_TOKEN
 ```
 
-### Authentication Tiers
+### Tiers
 
-Pollinations.AI supports multiple authentication tiers:
-
-1. **API Token Authentication**: Highest priority (for backend applications)
-   - Highest rate limits and priority queue access
-   - Full access to all API features and endpoints
-   - **Create tokens at [auth.pollinations.ai](https://auth.pollinations.ai)**
-
-2. **Referrer-based Authentication**: Standard access (for frontend web apps)
-   - Increased rate limits compared to anonymous access
-   - Automatic handling through browser's `Referer` header
-   - **Register your domain at [auth.pollinations.ai](https://auth.pollinations.ai)**
-
-3. **Anonymous Access**: Basic access
-   - Limited rate limits with standard queue waiting times
-   - No setup required - just call the API
-
-> **Security Best Practice**: Never expose API tokens in frontend code! 
-> Frontend web applications should rely on referrer-based authentication.
-
-### User Tier System
-
-Pollinations.AI uses a tiered system where apps automatically upgrade based on usage and ad integration:
-
-| Stage | Rate Limits | Models |
+| Tier | Rate Limit | Model Pack |
 |------|-------------|--------|
-| **seed** | Limited | Standard |
-| **flower** | Less limited | Advanced |
-| **nectar** | Unlimited | Advanced |
+| anonymous | 15 seconds | Limited |
+| **Seed** | 5 seconds | Standard |
+| **Flower** | 3 seconds | Advanced |
+| **Nectar** | None | Advanced |
 
-Please create a **special bee** issue on GitHub to request tier upgrade. 
+**1.** Get access to **Seed** tier : ***[auth.pollinations.ai](https://auth.pollinations.ai)***
+
+**2.** Get tier **upgrade** : ***[Special Bee request](https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml)***
+
 ---
 
 ## Generate Image API 🖼️

@@ -7,7 +7,8 @@ import { shouldShowAds } from './shouldShowAds.js';
 import { shouldProceedWithAd, sendAdSkippedAnalytics } from './adUtils.js';
 import { fetchNexAd, createNexAdRequest } from './nexAdClient.js';
 import { formatNexAd, extractTrackingData, trackImpression } from './nexAdFormatter.js';
-import { handleAuthentication } from '../../shared/auth-utils.js';
+import { handleAuthentication } from '../../../shared/auth-utils.js';
+import { incrementUserMetric } from '../../../shared/userMetrics.js';
 
 const log = debug('pollinations:adfilter');
 const errorLog = debug('pollinations:adfilter:error');
@@ -100,6 +101,11 @@ export async function generateAdForContent(req, content, messages = [], isStream
                         forced: shouldForceAd,
                         country: userCountry || 'unknown'
                     });
+
+                    // Track per-user ad impression metrics if user is authenticated
+                    if (authenticatedUserId) {
+                        incrementUserMetric(authenticatedUserId, 'ad_impressions_nexad');
+                    }
                 }
 
                 return adString;
@@ -151,6 +157,11 @@ export async function generateAdForContent(req, content, messages = [], isStream
                         forced: shouldForceAd,
                         country: userCountry || 'unknown'
                     });
+
+                    // Track per-user ad impression metrics if user is authenticated
+                    if (authenticatedUserId) {
+                        incrementUserMetric(authenticatedUserId, 'ad_impressions_kofi');
+                    }
                 }
 
                 return adString;

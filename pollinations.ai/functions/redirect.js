@@ -1,5 +1,6 @@
 // Netlify function to handle redirects with analytics
 import fetch from 'node-fetch';
+import { incrementUserMetric } from '../../shared/userMetrics.js';
 
 // Import redirect mapping and affiliate data from the consolidated affiliates.js file
 import { redirectMapping, affiliatesData } from '../../affiliate/affiliates.js';
@@ -162,6 +163,15 @@ export const handler = async function(event, context) {
       targetUrl: url,
       source: 'referral'
     }, event);
+    
+    // Track per-user affiliate click metrics if user ID is provided
+    const userId = event.queryStringParameters && event.queryStringParameters.user_id;
+    if (userId) {
+      // Use shared utility to increment affiliate_clicks metric
+      incrementUserMetric(userId, 'affiliate_clicks');
+    } else {
+      console.log('No user_id found in query parameters. Skipping per-user affiliate_clicks increment.');
+    }
     
     // Return redirect response
     return {

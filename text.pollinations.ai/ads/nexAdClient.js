@@ -117,9 +117,10 @@ export async function fetchNexAd(visitorData, conversationContext) {
  * @param {Object} req - Express request object
  * @param {Array} messages - Conversation messages
  * @param {string} content - Current content
+ * @param {string|null} authenticatedUserId - Authenticated user ID if available
  * @returns {Object} - nex.ad request data
  */
-export function createNexAdRequest(req, messages, content) {
+export function createNexAdRequest(req, messages, content, authenticatedUserId = null) {
   // Extract visitor data from request
   // Get IP both as full version for geo-targeting and hashed for user ID
   const fullIp = getIp(req, true) || 'unknown';
@@ -130,8 +131,8 @@ export function createNexAdRequest(req, messages, content) {
   const sessionId = hashIPAddress(`${fullIp}_${currentDate}`, 'session-salt');
   
   const visitorData = {
-    // Use hashed IP as the primary user identifier
-    pub_user_id: hashedIp,
+    // Use authenticated user ID if available, otherwise fall back to hashed IP
+    pub_user_id: authenticatedUserId || hashedIp,
     // Use IP + current date as session ID (changes daily for same user)
     session_id: req.sessionID || sessionId,
     // Only include browser_id if it actually exists

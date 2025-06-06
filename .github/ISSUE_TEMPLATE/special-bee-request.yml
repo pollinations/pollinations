@@ -10,8 +10,11 @@ body:
           <img src="https://raw.githubusercontent.com/pollinations/pollinations/master/operations/media/pollinations-ai-logo.png" alt="Pollinations Logo" width="100%" style="display: inline-block;">
           <h1 style="margin: 0; font-size: 24px; display: inline-block;">Special Bee Request</h1>
         </div>
-        Thanks for your interest in Pollinations API! This form is for requesting a **tier upgrade**.
-        For more information about tiers and upgrades, see the [API Docs Tier Section](../../APIDOCS.md#special-bee-).
+        <div style="font-size: 1.25em; font-style: italic; margin-bottom: 12px;">
+          Thanks for your interest in Pollinations API! This form is for requesting a tier upgrade.<br>
+          For more information about tiers and upgrades, see the 
+          <a href="../../APIDOCS.md#special-bee-" style="font-style: italic;">API Docs Tier Section</a>.
+        </div>
 
   - type: input
     id: project-name

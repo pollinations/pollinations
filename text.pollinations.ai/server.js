@@ -49,16 +49,6 @@ function isIPBlocked(ip) {
     return blockedIPs.has(ip);
 }
 
-async function checkBannedPhrases(messages, ip) {
-    const messagesString = JSON.stringify(messages).toLowerCase();
-    for (const phrase of BANNED_PHRASES) {
-        if (messagesString.includes(phrase.toLowerCase())) {
-            await blockIP(ip);
-            throw new Error(`Message contains banned phrase. IP has been blocked.`);
-        }
-    }
-}
-
 const app = express();
 
 const log = debug('pollinations:server');
@@ -241,10 +231,7 @@ async function handleRequest(req, res, requestData) {
         
         sendErrorResponse(res, req, error, requestData);
     }
-    
-    // if (!shouldBypassDelay(req)) {
-    //     await sleep(3000);
-    // }
+
 }
 
 // Helper function for consistent error responses

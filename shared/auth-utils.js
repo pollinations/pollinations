@@ -253,7 +253,7 @@ export async function shouldBypassQueue(req) {
     }
     // If token is provided but it's not valid, we log it and continue.
     tokenLog('❌ Invalid or unrecognized token provided: %s. Will try other auth methods.', debugInfo.token);
-    errorLog('Invalid or unrecognized token provided (source: %s)', debugInfo.tokenSource || 'unknown');
+    errorLog('Invalid or unrecognized token provided (source: %s, token: %s)', debugInfo.tokenSource || 'unknown', debugInfo.token);
   }
   
   // 2️⃣ Referrer-based authentication

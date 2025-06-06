@@ -48,7 +48,7 @@ case "$1" in
         ;;
     
     "all-ad-clickers")
-        execute_query "SELECT github_user_id, username, json_extract(metrics, '$.ad_clicks') as ad_clicks FROM users WHERE json_extract(metrics, '$.ad_clicks') IS NOT NULL AND json_extract(metrics, '$.ad_clicks') > 0 ORDER BY json_extract(metrics, '$.ad_clicks') DESC"
+        execute_query "SELECT github_user_id, username, json_extract(metrics, '$.ad_clicks') as ad_clicks, json_extract(metrics, '$.ad_impressions') as ad_impressions FROM users WHERE (json_extract(metrics, '$.ad_clicks') IS NOT NULL AND json_extract(metrics, '$.ad_clicks') > 0) OR (json_extract(metrics, '$.ad_impressions') IS NOT NULL AND json_extract(metrics, '$.ad_impressions') > 0) ORDER BY ad_impressions DESC, ad_clicks DESC"
         ;;
     
     "user-metrics")

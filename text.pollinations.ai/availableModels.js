@@ -187,7 +187,7 @@ const models = [
     name: "elixposearch",
     description: "ElixpoSearch - Custom search-enhanced AI model",
     handler: generateTextPortkey,
-    provider: "Custom",
+    provider: "Elixpo/Pollinations",
     input_modalities: ["text"],
     output_modalities: ["text"],
     tools: false,

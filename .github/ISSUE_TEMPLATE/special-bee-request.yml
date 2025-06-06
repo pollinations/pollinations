@@ -35,18 +35,11 @@ body:
       required: true
 
   - type: input
-    id: project-url
+    id: github-username
     attributes:
-      label: Project URL
-      description: Link to your project (if public)
-      placeholder: "https://example.com"
-
-  - type: input
-    id: contact-info
-    attributes:
-      label: Contact Information
-      description: How can we reach you? (Discord username, GitHub username, email, or social profile link)
-      placeholder: "e.g., @username"
+      label: GitHub Username
+      description: Please enter your GitHub username (required for verification and contact)
+      placeholder: "e.g., octocat"
     validations:
       required: true
 
@@ -58,13 +51,11 @@ body:
       placeholder: "https://github.com/your-repo"
 
   - type: input
-    id: domain-to-approve
+    id: project-url
     attributes:
-      label: Domain/Referrer for Flower Tier
-      description: The domain or referrer string you want upgraded to flower tier
-      placeholder: "e.g., example.com or MyBotName"
-    validations:
-      required: true
+      label: Project URL
+      description: Link to your project (if public)
+      placeholder: "https://example.com"
 
   - type: markdown
     attributes:

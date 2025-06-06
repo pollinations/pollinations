@@ -40,6 +40,8 @@ GH_TOKEN="ghp_…"           # PAT with repo + project scopes
 PROJECT_NODE_ID="PVT_…"    # Node-ID of Project 20
 ```
 
+You can use touch, echo and cat command in the terminal for read .env
+
 | Name | Value | Purpose |
 | ----- | ----- | ----- |
 | REPO | pollinations/pollinations | Target repository |

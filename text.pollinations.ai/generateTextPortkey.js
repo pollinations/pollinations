@@ -30,7 +30,7 @@ const MODEL_MAPPING = {
     // Cloudflare models
     'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
     'llamascout': '@cf/meta/llama-4-scout-17b-16e-instruct',
-    'deepseek-reasoning': 'MAI-DS-R1',
+    'deepseek-reasoning': 'azure-deepseek-r1-0528',
     //'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
     'phi': 'phi-4-instruct',
     //'phi-mini': 'phi-4-mini-instruct',
@@ -44,7 +44,9 @@ const MODEL_MAPPING = {
     // Cloudflare models
     //'qwen-qwq': '@cf/qwen/qwq-32b',
     // DeepSeek models
-    'deepseek': 'DeepSeek-V3-0324'
+    'deepseek': 'DeepSeek-V3-0324',
+    // Custom endpoints
+    'elixposearch': 'elixposearch-endpoint'
 };
 
 // Base prompts that can be reused across different models
@@ -207,6 +209,14 @@ const baseDeepSeekReasoningConfig = {
     'max-tokens': 8192
 };
 
+// ElixpoSearch custom endpoint configuration
+const baseElixpoSearchConfig = {
+    provider: 'openai',
+    'custom-host': process.env.ELIXPOSEARCH_ENDPOINT,
+    authKey: process.env.ELIXPOSEARCH_API_KEY,
+    'max-tokens': 4096
+};
+
 /**
  * Creates a DeepSeek model configuration
  * @param {Object} additionalConfig - Additional configuration to merge with base config
@@ -291,16 +301,34 @@ function createOpenRouterModelConfig(additionalConfig = {}) {
     };
 }
 
+/**
+ * Creates an ElixpoSearch model configuration
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - ElixpoSearch model configuration
+ */
+function createElixpoSearchModelConfig(additionalConfig = {}) {
+    return {
+        ...baseElixpoSearchConfig,
+        ...additionalConfig
+    };
+}
+
 
 
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
     // Azure Grok model configuration
     'azure-grok': () =>  createAzureModelConfig(
-            process.env.AZURE_GROK_API_KEY,
-            process.env.AZURE_GROK_ENDPOINT,
+            process.env.AZURE_GENERAL_API_KEY,
+            process.env.AZURE_GENERAL_ENDPOINT,
             `grok-3-mini`,
             'pollinations-safety'
+    ),
+    'azure-deepseek-r1-0528': () => createAzureModelConfig(
+        process.env.AZURE_GENERAL_API_KEY,
+        process.env.AZURE_GENERAL_ENDPOINT,
+        `DeepSeek-R1-0528`,
+        'pollinations-safety'
     ),
     // Azure OpenAI model configurations
     'gpt-4.1-nano': () => createAzureModelConfig(
@@ -439,6 +467,8 @@ export const portkeyConfig = {
     }),
     'DeepSeek-V3-0324': () => createDeepSeekModelConfig(),
     'MAI-DS-R1': () => createDeepSeekReasoningConfig(),
+    // Custom endpoints
+    'elixposearch-endpoint': () => createElixpoSearchModelConfig(),
 };
 
 /**

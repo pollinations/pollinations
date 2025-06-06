@@ -38,14 +38,6 @@ export async function generateAdForContent(req, content, messages = [], isStream
             log('Authentication failed or not provided, continuing without user ID');
         }
 
-        // Extract user country from request headers
-        const userCountry = req?.headers?.['cf-ipcountry'] || 
-                           req?.headers?.['x-geo-country'] || 
-                           req?.headers?.['x-vercel-ip-country'] ||
-                           null;
-        
-        log(`User country detected: ${userCountry || 'unknown'}`);
-
         // Check if we should show ads - pass auth result to avoid duplicate authentication
         const { shouldShowAd, markerFound, forceAd } = await shouldShowAds(content, messages, req, authResult);
         const shouldForceAd = markerFound || forceAd;
@@ -87,7 +79,6 @@ export async function generateAdForContent(req, content, messages = [], isStream
                         streaming: isStreaming,
                         referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
                         user_agent: req.headers['user-agent'] || 'unknown',
-                        country: userCountry || 'unknown'
                     });
 
                     // Send analytics for the ad impression
@@ -99,7 +90,6 @@ export async function generateAdForContent(req, content, messages = [], isStream
                         ad_source: 'nexad',
                         streaming: isStreaming,
                         forced: shouldForceAd,
-                        country: userCountry || 'unknown'
                     });
 
                     // Track per-user ad impression metrics
@@ -119,16 +109,6 @@ export async function generateAdForContent(req, content, messages = [], isStream
         const kofiAffiliate = affiliatesData.find(a => a.id === "kofi");
         
         if (kofiAffiliate) {
-            // Check if Ko-fi is blocked in user's country
-            if (userCountry && kofiAffiliate.blockedCountries && kofiAffiliate.blockedCountries.includes(userCountry)) {
-                log(`Ko-fi is blocked in user's country (${userCountry}), skipping ad`);
-                sendAdSkippedAnalytics(req, 'country_blocked', isStreaming, {
-                    affiliate_id: "kofi",
-                    affiliate_name: kofiAffiliate.name,
-                    country: userCountry
-                });
-                return null;
-            }
 
             // Generate the ad string for Ko-fi
             const adString = await generateAffiliateAd("kofi", content, messages, markerFound || forceAd);
@@ -145,7 +125,6 @@ export async function generateAdForContent(req, content, messages = [], isStream
                         streaming: isStreaming,
                         referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
                         user_agent: req.headers['user-agent'] || 'unknown',
-                        country: userCountry || 'unknown'
                     });
 
                     // Send analytics for the ad impression
@@ -155,7 +134,6 @@ export async function generateAdForContent(req, content, messages = [], isStream
                         ad_source: 'kofi_fallback',
                         streaming: isStreaming,
                         forced: shouldForceAd,
-                        country: userCountry || 'unknown'
                     });
 
                     // Track per-user ad impression metrics for Ko-fi fallback

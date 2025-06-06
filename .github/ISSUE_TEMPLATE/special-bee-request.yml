@@ -35,15 +35,6 @@ body:
       required: true
 
   - type: input
-    id: github-username
-    attributes:
-      label: GitHub Username
-      description: Please enter your GitHub username (required for verification and contact)
-      placeholder: "e.g., octocat"
-    validations:
-      required: true
-
-  - type: input
     id: github-repo
     attributes:
       label: GitHub Repository URL

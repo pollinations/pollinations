@@ -30,7 +30,7 @@ const MODEL_MAPPING = {
     // Cloudflare models
     'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
     'llamascout': '@cf/meta/llama-4-scout-17b-16e-instruct',
-    'deepseek-reasoning': 'MAI-DS-R1',
+    'deepseek-reasoning': 'azure-deepseek-r1-0528',
     //'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
     'phi': 'phi-4-instruct',
     //'phi-mini': 'phi-4-mini-instruct',
@@ -297,10 +297,16 @@ function createOpenRouterModelConfig(additionalConfig = {}) {
 export const portkeyConfig = {
     // Azure Grok model configuration
     'azure-grok': () =>  createAzureModelConfig(
-            process.env.AZURE_GROK_API_KEY,
-            process.env.AZURE_GROK_ENDPOINT,
+            process.env.AZURE_GENERAL_API_KEY,
+            process.env.AZURE_GENERAL_ENDPOINT,
             `grok-3-mini`,
             'pollinations-safety'
+    ),
+    'azure-deepseek-r1-0528': () => createAzureModelConfig(
+        process.env.AZURE_GENERAL_API_KEY,
+        process.env.AZURE_GENERAL_ENDPOINT,
+        `DeepSeek-R1-0528`,
+        'pollinations-safety'
     ),
     // Azure OpenAI model configurations
     'gpt-4.1-nano': () => createAzureModelConfig(

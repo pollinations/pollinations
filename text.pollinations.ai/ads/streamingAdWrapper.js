@@ -7,7 +7,6 @@ const log = debug('pollinations:adfilter');
 const errorLog = debug('pollinations:adfilter:error');
 import { generateAdForContent } from './initRequestFilter.js';
 import { sendAdSkippedAnalytics } from './adUtils.js';
-import { shouldShowAds } from './shouldShowAds.js';
 /**
  * Creates a streaming wrapper that adds an ad at the end of the stream
  * This maintains the thin proxy approach for most of the stream
@@ -25,42 +24,7 @@ export async function createStreamingAdWrapper(responseStream, req, messages = [
         return responseStream;
     }
 
-    const adCheckResult = await shouldShowAds(null, messages, req);
-    const { shouldShowAd, markerFound, adAlreadyExists, forceAd } = adCheckResult;
-
-    // If p-ads marker was found, set forceAd flag
-    const shouldForceAd = forceAd || false;
-
-    // Only check for existing ads if we're not forcing an ad
-    if (adAlreadyExists && !shouldForceAd) {
-        log('Ad already exists in conversation history, skipping streaming ad');
-        if (req) {
-            sendAdSkippedAnalytics(req, 'ad_already_exists', true);
-        }
-        return responseStream;
-    }
-
-    // Only skip if we're not forcing an ad
-    if (!shouldShowAd && !shouldForceAd) {
-        // We've already sent the ad_skipped analytics in shouldShowAds
-        return responseStream;
-    }
-
-    log('Creating streaming ad wrapper' + (shouldForceAd ? ' (forced by p-ads)' : ''));
-
-    // Log the messages for debugging
-    if (messages && messages.length > 0) {
-        log(`Processing streaming with ${messages.length} messages`);
-        // Log the first message content (truncated for brevity)
-        const firstMessageContent = messages[0].content;
-        if (typeof firstMessageContent === 'string') {
-            log(`First message content (truncated): ${firstMessageContent.substring(0, 100)}${firstMessageContent.length > 100 ? '...' : ''}`);
-        } else if (firstMessageContent) {
-            log(`First message content is not a string: ${typeof firstMessageContent}`);
-        }
-    } else {
-        log('No messages provided to streaming ad wrapper');
-    }
+    log('Creating streaming ad wrapper');
 
     // Collect the content to analyze for affiliate matching
     let collectedContent = '';
@@ -92,40 +56,6 @@ export async function createStreamingAdWrapper(responseStream, req, messages = [
 
                             // Push the ad chunk before the [DONE] message
                             this.push(adChunk);
-                        } else if (shouldForceAd) {
-                            // If we're forcing an ad but none was generated, create a generic Ko-fi ad
-                            log('No ad generated but p-ads marker is present. Creating generic Ko-fi ad for streaming.');
-                            const genericKofiAd = "\n\n---\n🌸 **Ad** 🌸\nPowered by Pollinations.AI free text APIs. [Support our mission](https://pollinations.ai/redirect/kofi) to keep AI accessible for everyone.";
-                            const adChunk = formatAdAsSSE(genericKofiAd);
-
-                            // Push the ad chunk before the [DONE] message
-                            this.push(adChunk);
-
-                            if (req) {
-                                // Log the ad interaction with metadata
-                                logAdInteraction({
-                                    timestamp: new Date().toISOString(),
-                                    ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
-                                    affiliate_id: "kofi",
-                                    affiliate_name: "Support Pollinations on Ko-fi",
-                                    topic: "streaming_fallback",
-                                    streaming: true,
-                                    referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
-                                    user_agent: req.headers['user-agent'] || 'unknown'
-                                });
-
-                                // Send analytics for the ad impression
-                                sendToAnalytics(req, 'ad_impression', {
-                                    affiliate_id: "kofi",
-                                    affiliate_name: "Support Pollinations on Ko-fi",
-                                    topic: "streaming_fallback",
-                                    streaming: true,
-                                    forced: true,
-                                    fallback: true
-                                });
-                            }
-                        } else {
-                            // We've already sent the ad_skipped analytics in generateAdForContent
                         }
 
                         // Push the [DONE] message
@@ -134,45 +64,6 @@ export async function createStreamingAdWrapper(responseStream, req, messages = [
                     })
                     .catch(error => {
                         errorLog('Error processing streaming ad:', error);
-
-                        if (shouldForceAd) {
-                            // If error occurs but we should force an ad, create a generic Ko-fi ad
-                            log('Error occurred, but p-ads marker is present. Creating generic Ko-fi ad for streaming.');
-                            const genericKofiAd = "\n\n---\n🌸 **Ad** 🌸\nPowered by Pollinations.AI free text APIs. [Support our mission](https://pollinations.ai/redirect/kofi) to keep AI accessible for everyone.";
-                            const adChunk = formatAdAsSSE(genericKofiAd);
-
-                            // Push the ad chunk before the [DONE] message
-                            this.push(adChunk);
-
-                            if (req) {
-                                // Log the ad interaction with metadata
-                                logAdInteraction({
-                                    timestamp: new Date().toISOString(),
-                                    ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
-                                    affiliate_id: "kofi",
-                                    affiliate_name: "Support Pollinations on Ko-fi",
-                                    topic: "error_streaming_fallback",
-                                    streaming: true,
-                                    referrer: req.headers.referer || req.headers.referrer || req.headers.origin || 'unknown',
-                                    user_agent: req.headers['user-agent'] || 'unknown'
-                                });
-
-                                // Send analytics for the ad impression
-                                sendToAnalytics(req, 'ad_impression', {
-                                    affiliate_id: "kofi",
-                                    affiliate_name: "Support Pollinations on Ko-fi",
-                                    topic: "error_streaming_fallback",
-                                    streaming: true,
-                                    forced: true,
-                                    error: error.message
-                                });
-                            }
-                        } else if (req) {
-                            sendAdSkippedAnalytics(req, 'error', true, {
-                                error_message: error.message
-                            });
-                        }
-
                         // Push the [DONE] message
                         this.push(chunk);
                         callback();

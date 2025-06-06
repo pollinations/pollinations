@@ -102,9 +102,9 @@ export async function generateAdForContent(req, content, messages = [], isStream
                         country: userCountry || 'unknown'
                     });
 
-                    // Track per-user ad impression metrics if user is authenticated
+                    // Track per-user ad impression metrics
                     if (authenticatedUserId) {
-                        incrementUserMetric(authenticatedUserId, 'ad_impressions_nexad');
+                        incrementUserMetric(authenticatedUserId, 'ad_impressions');
                     }
                 }
 
@@ -158,9 +158,9 @@ export async function generateAdForContent(req, content, messages = [], isStream
                         country: userCountry || 'unknown'
                     });
 
-                    // Track per-user ad impression metrics if user is authenticated
+                    // Track per-user ad impression metrics for Ko-fi fallback
                     if (authenticatedUserId) {
-                        incrementUserMetric(authenticatedUserId, 'ad_impressions_kofi');
+                        incrementUserMetric(authenticatedUserId, 'ad_impressions');
                     }
                 }
 

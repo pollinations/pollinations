@@ -168,14 +168,15 @@ export default {
             return handleAdminUpdateMetrics(request, env, corsHeaders);
           }
           break;
-          
-        case '/api/validate-token/':
-          if (request.method === 'GET') {
-            // Extract token from the URL path
-            const token = url.pathname.replace('/api/validate-token/', '');
-            return handleValidateToken(token, env, corsHeaders);
-          }
-          break;
+      }
+      
+      // Check if the path matches the pattern /api/validate-token/:token
+      if (url.pathname.startsWith('/api/validate-token/')) {
+        if (request.method === 'GET') {
+          // Extract token from the URL path
+          const token = url.pathname.replace('/api/validate-token/', '');
+          return handleValidateToken(token, env, corsHeaders);
+        }
       }
       
       return createErrorResponse(404, 'Resource not found', corsHeaders);

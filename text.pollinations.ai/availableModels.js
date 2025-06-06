@@ -183,6 +183,15 @@ const models = [
     output_modalities: ["text"],
     tools: false,
   },
+  {
+    name: "elixposearch",
+    description: "ElixpoSearch - Custom search-enhanced AI model",
+    handler: generateTextPortkey,
+    provider: "Custom",
+    input_modalities: ["text"],
+    output_modalities: ["text"],
+    tools: false,
+  },
   // {
   //   name: "deepseek-reasoning-large",
   //   description: "DeepSeek R1 - Llama 70B",

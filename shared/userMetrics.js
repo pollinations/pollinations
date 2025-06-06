@@ -1,5 +1,3 @@
-import fetch from 'node-fetch';
-
 /**
  * Increment a user metric using the Pollinations admin API
  * @param {string} userId - The user ID to increment metrics for

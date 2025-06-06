@@ -1,5 +1,4 @@
 // Netlify function to handle nex.ad redirects with analytics
-import fetch from 'node-fetch';
 import { incrementUserMetric } from '../../shared/userMetrics.js';
 
 /**

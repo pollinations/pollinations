@@ -5,6 +5,16 @@
 
 export const creativeProjects = [
   {
+    name: "x-files image generator 🇮🇩",
+    url: "https://x-files.rizqioliveira.my.id",
+    description: "X-files adalah image generator canggih yang didukung model turbo dan premium (X-files is an advanced image generator supported by turbo and premium models)",
+    author: "@ray23-bit",
+    repo: "https://ray23-bit.github.io/project7",
+    submissionDate: "2025-06-07",
+    language: "id-ID",
+    order: 1
+  },
+  {
     name: "Avatar GenStudio",
     url: "https://astudio-dcae4.web.app",
     description: "A system for creating custom characters that uses the Pollinations API for totally free and unlimited image generation.",

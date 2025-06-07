@@ -5,6 +5,14 @@
 
 export const chatProjects = [
   {
+    name: "Ai drafterplus",
+    url: "https://ai.drafterplus.nl/",
+    description: "A ChatGPT-like interface with multiple AI models. Completely free and saves conversations in the browser using localStorage.",
+    author: "@dexvisser_",
+    submissionDate: "2025-06-07",
+    order: 1
+  },
+  {
     name: "PixPax",
     url: "https://pixpal.chat",
     description: "A user-friendly chatbot that lets you analyze images, remix existing images or create new images, all through simple chat.",

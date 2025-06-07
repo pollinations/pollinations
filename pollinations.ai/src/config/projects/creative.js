@@ -5,30 +5,12 @@
 
 export const creativeProjects = [
   {
-    name: "x-files image generator 🇮🇩",
-    url: "https://x-files.rizqioliveira.my.id",
-    description: "X-files adalah image generator canggih yang didukung model turbo dan premium (X-files is an advanced image generator supported by turbo and premium models)",
-    author: "@ray23-bit",
-    repo: "https://ray23-bit.github.io/project7",
-    submissionDate: "2025-06-07",
-    language: "id-ID",
-    order: 1
-  },
-  {
-    name: "GeoNameBase.com",
-    url: "https://www.geonamebase.com/",
-    description: "GeoNameBase is a platform that integrates geographical information with AI-powered artistic creation, aiming to transform locations around the world into unique pieces of art through artificial intelligence. Users can select any place and, by combining it with diverse artistic styles—such as watercolor, gothic, cyberpunk, Van Gogh, Monet, and more—generate art images that capture the essence of each locale.",
-    author: "webmaster199856@gmail.com",
-    submissionDate: "2025-06-07",
-    order: 1
-  },
-  {
     name: "Image Creator",
     url: "https://saepulwap.blogspot.com/p/flux-image-creator.html",
     description: "Create images with multi-language prompts, the language will be automatically translated by AI into English.",
     author: "https://facebook.com/403.frobidden",
     submissionDate: "2025-06-07",
-    order: 2
+    order: 1
   },
   {
     name: "CatGPT Meme Generator 🐱",
@@ -38,7 +20,7 @@ export const creativeProjects = [
     repo: "https://github.com/pollinations/catgpt",
     stars: 2,
     submissionDate: "2025-06-05",
-    order: 2
+    order: 1
   },
   {
     name: "Avatar GenStudio",

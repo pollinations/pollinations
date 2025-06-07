@@ -5,6 +5,14 @@
 
 export const creativeProjects = [
   {
+    name: "GeoNameBase.com",
+    url: "https://www.geonamebase.com/",
+    description: "GeoNameBase is a platform that integrates geographical information with AI-powered artistic creation, aiming to transform locations around the world into unique pieces of art through artificial intelligence. Users can select any place and, by combining it with diverse artistic styles—such as watercolor, gothic, cyberpunk, Van Gogh, Monet, and more—generate art images that capture the essence of each locale.",
+    author: "webmaster199856@gmail.com",
+    submissionDate: "2025-06-07",
+    order: 1
+  },
+  {
     name: "Avatar GenStudio",
     url: "https://astudio-dcae4.web.app",
     description: "A system for creating custom characters that uses the Pollinations API for totally free and unlimited image generation.",

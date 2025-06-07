@@ -1,0 +1,7 @@
+torch
+transformers
+modal
+fastapi
+uvicorn
+pillow
+httpx

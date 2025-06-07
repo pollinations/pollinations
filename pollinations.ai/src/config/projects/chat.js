@@ -347,5 +347,13 @@ export const chatProjects = [
     stars: 200,
     submissionDate: "2025-02-01",
     order: 1
+  },
+  {
+    name: "AI drafterplus",
+    url: "https://ai.drafterplus.nl/",
+    description: "ChatGPT-like interface with a lot of AI models. Completely free. Saves inside the browser using localstorage.",
+    author: "@dexvisser_",
+    submissionDate: "2025-06-07",
+    order: 3
   }
 ];

@@ -15,6 +15,32 @@ export const creativeProjects = [
     order: 1
   },
   {
+    name: "GeoNameBase.com",
+    url: "https://www.geonamebase.com/",
+    description: "GeoNameBase is a platform that integrates geographical information with AI-powered artistic creation, aiming to transform locations around the world into unique pieces of art through artificial intelligence. Users can select any place and, by combining it with diverse artistic styles—such as watercolor, gothic, cyberpunk, Van Gogh, Monet, and more—generate art images that capture the essence of each locale.",
+    author: "webmaster199856@gmail.com",
+    submissionDate: "2025-06-07",
+    order: 1
+  },
+  {
+    name: "Image Creator",
+    url: "https://saepulwap.blogspot.com/p/flux-image-creator.html",
+    description: "Create images with multi-language prompts, the language will be automatically translated by AI into English.",
+    author: "https://facebook.com/403.frobidden",
+    submissionDate: "2025-06-07",
+    order: 2
+  },
+  {
+    name: "CatGPT Meme Generator 🐱",
+    url: "https://pollinations.github.io/catgpt/",
+    description: "Transform your questions into sassy cat wisdom! An AI-powered meme generator that creates personalized cat comics in response to your questions. A collaboration between Pollinations.AI and Tanika Godbole, the original creator of the CatGPT comic.",
+    author: "@voodoohop",
+    repo: "https://github.com/pollinations/catgpt",
+    stars: 2,
+    submissionDate: "2025-06-05",
+    order: 2
+  },
+  {
     name: "Avatar GenStudio",
     url: "https://astudio-dcae4.web.app",
     description: "A system for creating custom characters that uses the Pollinations API for totally free and unlimited image generation.",
@@ -330,6 +356,17 @@ export const creativeProjects = [
     repo: "https://github.com/fisventurous/pollinationsai-enhancer",
     stars: 2,
     submissionDate: "2025-04-27",
+    order: 1
+  },
+  {
+    name: "Text2Image_audio 🇨🇳",
+    url: "nihilistic.dpdns.org",
+    description: "文生图与文生语音网站 - 一个初学者的AI编程项目，支持文本转图像和音频生成功能。(Text to Image and Text to Audio website - A beginner's AI programming project supporting text-to-image and audio generation features.)",
+    author: "@peyoba",
+    repo: "https://github.com/peyoba/Text2Image_audio",
+    stars: 0,
+    submissionDate: "2025-06-05",
+    language: "zh-CN",
     order: 1
   },
   {

@@ -5,11 +5,21 @@
 
 export const creativeProjects = [
   {
-    name: "DeepEx",
-    url: "https://www.mediafire.com/file/7zk1f0tio6kieaz/DeepEx+DS-T3.apk/file",
-    description: "An Android AI app featuring unlimited AI chat with the DS-T3 model and image generation using Pollinations API. Free performance AI app with no paid features.",
-    author: "@ELLIOTpxp",
+    name: "Image Creator",
+    url: "https://saepulwap.blogspot.com/p/flux-image-creator.html",
+    description: "Create images with multi-language prompts, the language will be automatically translated by AI into English.",
+    author: "https://facebook.com/403.frobidden",
     submissionDate: "2025-06-07",
+    order: 1
+  },
+  {
+    name: "CatGPT Meme Generator 🐱",
+    url: "https://pollinations.github.io/catgpt/",
+    description: "Transform your questions into sassy cat wisdom! An AI-powered meme generator that creates personalized cat comics in response to your questions. A collaboration between Pollinations.AI and Tanika Godbole, the original creator of the CatGPT comic.",
+    author: "@voodoohop",
+    repo: "https://github.com/pollinations/catgpt",
+    stars: 2,
+    submissionDate: "2025-06-05",
     order: 1
   },
   {
@@ -328,6 +338,17 @@ export const creativeProjects = [
     repo: "https://github.com/fisventurous/pollinationsai-enhancer",
     stars: 2,
     submissionDate: "2025-04-27",
+    order: 1
+  },
+  {
+    name: "Text2Image_audio 🇨🇳",
+    url: "nihilistic.dpdns.org",
+    description: "文生图与文生语音网站 - 一个初学者的AI编程项目，支持文本转图像和音频生成功能。(Text to Image and Text to Audio website - A beginner's AI programming project supporting text-to-image and audio generation features.)",
+    author: "@peyoba",
+    repo: "https://github.com/peyoba/Text2Image_audio",
+    stars: 0,
+    submissionDate: "2025-06-05",
+    language: "zh-CN",
     order: 1
   },
   {

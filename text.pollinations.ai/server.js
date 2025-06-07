@@ -49,16 +49,6 @@ function isIPBlocked(ip) {
     return blockedIPs.has(ip);
 }
 
-async function checkBannedPhrases(messages, ip) {
-    const messagesString = JSON.stringify(messages).toLowerCase();
-    for (const phrase of BANNED_PHRASES) {
-        if (messagesString.includes(phrase.toLowerCase())) {
-            await blockIP(ip);
-            throw new Error(`Message contains banned phrase. IP has been blocked.`);
-        }
-    }
-}
-
 const app = express();
 
 const log = debug('pollinations:server');
@@ -241,10 +231,7 @@ async function handleRequest(req, res, requestData) {
         
         sendErrorResponse(res, req, error, requestData);
     }
-    
-    // if (!shouldBypassDelay(req)) {
-    //     await sleep(3000);
-    // }
+
 }
 
 // Helper function for consistent error responses
@@ -433,11 +420,11 @@ async function processRequest(req, res, requestData) {
     let queueConfig;
     if (isTokenAuthenticated) {
         // Token reduces delay between requests (no interval) but still goes through queue
-        queueConfig = { interval: 0, cap: 1 };
+        queueConfig = { interval: 1000, cap: 3 };
         authLog('Token authenticated - queue with no delay');
     } else if (hasReferrer) {
         // Referrer also skips delays between requests (no interval)
-        queueConfig = { interval: 0, cap: 1 };
+        queueConfig = { interval: 3000, cap: 1 };
         authLog('Referrer authenticated - queue with no delay');
     } else {
         // Use default queue config with interval

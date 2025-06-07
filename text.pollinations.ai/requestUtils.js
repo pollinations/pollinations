@@ -1,6 +1,5 @@
 import debug from 'debug';
 // Import shared utilities for authentication and environment handling
-import { shouldBypassQueue } from '../shared/auth-utils.js';
 import { extractReferrer } from '../shared/extractFromRequest.js';
 
 const log = debug('pollinations:requestUtils');
@@ -33,12 +32,7 @@ export function getRequestData(req) {
 
     // Use shared referrer extraction utility
     const referrer = extractReferrer(req);
-    
-    // Use shared authentication function to check if referrer is authenticated
-    const authResult = shouldBypassQueue(req);
-    // Use the new explicit authentication field instead of bypass
-    const isImagePollinationsReferrer = authResult.authenticated;
-    const isRobloxReferrer = referrer && (referrer.toLowerCase().includes('roblox') || referrer.toLowerCase().includes('gacha11211'));
+
     const stream = data.stream || false; 
     
     // Extract voice parameter for audio models
@@ -63,11 +57,6 @@ export function getRequestData(req) {
         messages.unshift({ role: 'system', content: systemPrompt });
     }
 
-    if (isRobloxReferrer) {
-        log('Roblox referrer detected:', referrer);
-        model="llamascout"
-    }
-
     return {
         messages,
         jsonMode,
@@ -77,8 +66,6 @@ export function getRequestData(req) {
         top_p,
         presence_penalty,
         frequency_penalty,
-        isImagePollinationsReferrer,
-        isRobloxReferrer,
         referrer,
         stream,
         isPrivate,
@@ -90,27 +77,4 @@ export function getRequestData(req) {
         reasoning_effort,
         response_format
     };
-}
-
-/**
- * Function to check if request should skip delay based on authentication
- * @param {object} req - Express request object
- * @returns {boolean} - Whether delay should be skipped based on authentication
- */
-export function shouldBypassDelay(req) {
-    try {
-        // Use shared shouldBypassQueue function to determine authentication status
-        const authResult = shouldBypassQueue(req);
-        
-        // Also check for Roblox referrer as a special case
-        const referrer = extractReferrer(req);
-        const isRobloxReferrer = referrer && (referrer.toLowerCase().includes('roblox') || referrer.toLowerCase().includes('gacha11211'));
-        
-        // Use the new explicit authentication fields instead of bypass
-        return authResult.authenticated || isRobloxReferrer;
-    } catch (error) {
-        // If authentication check fails, apply standard delay
-        log('Authentication check failed for delay decision:', error.message);
-        return false;
-    }
 }

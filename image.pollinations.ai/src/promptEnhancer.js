@@ -67,13 +67,13 @@ Respond only with the new prompt. Nothing Else.`
             ],
             seed: seed,
             model: "openai",
-            referrer: 'https://image.pollinations.ai'
+            referrer: 'image.pollinations.ai'
         });
 
         // Add authentication token if available
         const headers = {
             'Content-Type': 'application/json',
-            'referer': 'https://image.pollinations.ai'
+            'Referer': 'image.pollinations.ai'
         };
         
         // Use POLLINATIONS_KEY from environment if available

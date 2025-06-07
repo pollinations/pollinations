@@ -162,5 +162,13 @@ export const socialBotsProjects = [
     stars: 75,
     submissionDate: "2025-03-20",
     order: 1
+  },
+  {
+    name: "GPT_Project",
+    url: "https://t.me/gpt_project_official_bot",
+    description: "GPT_Project Telegram AI Chatbot - A professional productivity tool that's always in your pocket. Utilizes Pollinations API for image generation (including Flux model) and text models (GPT-4.1, GPT-4.1-nano, SearchGPT). Features advanced language model interaction, versatile image generation, AI-powered image analysis, voice message recognition, text-to-speech, and a referral system. Designed for studying, work, and everyday AI assistance.",
+    author: "@lordon4x",
+    submissionDate: "2024-12-18",
+    order: 1
   }
 ];

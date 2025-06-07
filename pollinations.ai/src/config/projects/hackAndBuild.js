@@ -241,15 +241,4 @@ export const hackAndBuildProjects = [
     submissionDate: "2025-05-15",
     order: 1
   },
-  // Additional projects will be migrated from recovered data
-  {
-    name: "GPT_Project",
-    url: "https://real-gpt-project.dev",
-    description: "A cutting-edge platform leveraging GPT models via Pollinations for advanced text analysis, content generation, and interactive chat solutions. Showcases multiple proof-of-concept applications.",
-    author: "AI Future Labs",
-    repo: "https://github.com/aifuturelabs/gpt-project",
-    stars: 150,
-    submissionDate: "2025-01-20",
-    order: 1
-  }
 ];

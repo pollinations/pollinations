@@ -5,12 +5,20 @@
 
 export const creativeProjects = [
   {
+    name: "GeoNameBase.com",
+    url: "https://www.geonamebase.com/",
+    description: "GeoNameBase is a platform that integrates geographical information with AI-powered artistic creation, aiming to transform locations around the world into unique pieces of art through artificial intelligence. Users can select any place and, by combining it with diverse artistic styles—such as watercolor, gothic, cyberpunk, Van Gogh, Monet, and more—generate art images that capture the essence of each locale.",
+    author: "webmaster199856@gmail.com",
+    submissionDate: "2025-06-07",
+    order: 1
+  },
+  {
     name: "Image Creator",
     url: "https://saepulwap.blogspot.com/p/flux-image-creator.html",
     description: "Create images with multi-language prompts, the language will be automatically translated by AI into English.",
     author: "https://facebook.com/403.frobidden",
     submissionDate: "2025-06-07",
-    order: 1
+    order: 2
   },
   {
     name: "CatGPT Meme Generator 🐱",
@@ -20,7 +28,7 @@ export const creativeProjects = [
     repo: "https://github.com/pollinations/catgpt",
     stars: 2,
     submissionDate: "2025-06-05",
-    order: 1
+    order: 2
   },
   {
     name: "Avatar GenStudio",

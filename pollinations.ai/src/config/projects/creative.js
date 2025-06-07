@@ -5,6 +5,14 @@
 
 export const creativeProjects = [
   {
+    name: "DeepEx",
+    url: "https://www.mediafire.com/file/7zk1f0tio6kieaz/DeepEx+DS-T3.apk/file",
+    description: "An Android AI app featuring unlimited AI chat with the DS-T3 model and image generation using Pollinations API. Free performance AI app with no paid features.",
+    author: "@ELLIOTpxp",
+    submissionDate: "2025-06-07",
+    order: 1
+  },
+  {
     name: "Avatar GenStudio",
     url: "https://astudio-dcae4.web.app",
     description: "A system for creating custom characters that uses the Pollinations API for totally free and unlimited image generation.",

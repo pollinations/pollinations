@@ -323,6 +323,17 @@ export const creativeProjects = [
     order: 1
   },
   {
+    name: "Text2Image_audio 🇨🇳",
+    url: "nihilistic.dpdns.org",
+    description: "文生图与文生语音网站 - 一个初学者的AI编程项目，支持文本转图像和音频生成功能。(Text to Image and Text to Audio website - A beginner's AI programming project supporting text-to-image and audio generation features.)",
+    author: "@peyoba",
+    repo: "https://github.com/peyoba/Text2Image_audio",
+    stars: 0,
+    submissionDate: "2025-06-05",
+    language: "zh-CN",
+    order: 1
+  },
+  {
     name: "Aiphoto智能绘画 🇨🇳",
     url: "https://qiyimg.3d.tc/Aiphoto",
     description: "AI艺术工坊 - 智能绘画生成器。这是一个基于AI的绘画生成工具，可以根据用户输入的中文描述自动生成相应的图片。(An AI art workshop - intelligent painting generator. This is an AI-based painting generation tool that can automatically generate images based on Chinese descriptions input by users.)",

@@ -5,6 +5,14 @@
 
 export const creativeProjects = [
   {
+    name: "MrEgonAI",
+    url: "https://mr-egon-ai.vercel.app/",
+    description: "An image generator powered by pollinations.ai and its image generation models. Features text-to-image generation with various AI models.",
+    author: "@mregon",
+    submissionDate: "2025-06-07",
+    order: 1
+  },
+  {
     name: "Image Creator",
     url: "https://saepulwap.blogspot.com/p/flux-image-creator.html",
     description: "Create images with multi-language prompts, the language will be automatically translated by AI into English.",

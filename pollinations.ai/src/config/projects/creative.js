@@ -5,6 +5,14 @@
 
 export const creativeProjects = [
   {
+    name: "Image Creator",
+    url: "https://saepulwap.blogspot.com/p/flux-image-creator.html",
+    description: "Create images with multi-language prompts, the language will be automatically translated by AI into English.",
+    author: "https://facebook.com/403.frobidden",
+    submissionDate: "2025-06-07",
+    order: 1
+  },
+  {
     name: "Avatar GenStudio",
     url: "https://astudio-dcae4.web.app",
     description: "A system for creating custom characters that uses the Pollinations API for totally free and unlimited image generation.",

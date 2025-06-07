@@ -165,5 +165,13 @@ export const gamesProjects = [
     stars: 2,
     submissionDate: "2025-05-27",
     order: 1
+  },
+  {
+    name: "A Mita (Roblox)",
+    url: "https://www.roblox.com/games/118762581800441/A-Mita",
+    description: "A Roblox game about interacting with AI with different personalities. Features dynamic AI conversations and reached up to 1k active players at its peak.",
+    author: "@thespecificdev",
+    submissionDate: "2025-06-07",
+    order: 1
   }
 ];

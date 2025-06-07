@@ -5,6 +5,14 @@
 
 export const creativeProjects = [
   {
+    name: "MrEgonAI",
+    url: "https://mr-egon-ai.vercel.app/",
+    description: "An image generator powered by pollinations.ai and its image generation models. Features text-to-image generation with various AI models.",
+    author: "@mregon",
+    submissionDate: "2025-06-07",
+    order: 1
+  },
+  {
     name: "Avatar GenStudio",
     url: "https://astudio-dcae4.web.app",
     description: "A system for creating custom characters that uses the Pollinations API for totally free and unlimited image generation.",

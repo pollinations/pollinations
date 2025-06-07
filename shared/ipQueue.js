@@ -8,6 +8,7 @@
  */
 
 import PQueue from 'p-queue';
+import { incrementUserMetric } from './userMetrics.js';
 import debug from 'debug';
 import { shouldBypassQueue } from './auth-utils.js';
 
@@ -127,6 +128,9 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
       maxAllowed: maxQueueSize
     };
     log('Queue full for IP %s: size=%d, pending=%d, max=%d', ip, currentQueueSize, currentPending, maxQueueSize);
+    if (authResult.userId) {
+      incrementUserMetric(authResult.userId, 'ip_queue_full_count');
+    }
     throw error;
   }
   

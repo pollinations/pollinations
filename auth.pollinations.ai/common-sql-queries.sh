@@ -31,7 +31,8 @@ show_usage() {
     echo "  recent-users         - Users created in last 7 days"
     echo "  table-info           - Show all tables"
     echo "  users-schema         - Show users table schema"
-    echo "  top-metrics          - Top users by various metrics"
+    echo "  top-metrics          - Top users by various metrics
+  top-ip-queue-full   - Top 10 users by IP queue full events"
     echo ""
     echo "Examples:"
     echo "  $0 top-ad-clickers"
@@ -39,7 +40,8 @@ show_usage() {
     echo "  $0 user-domains 5099901"
     echo "  $0 user-profile 5099901"
     echo "  $0 add-domain 5099901 example.com"
-    echo "  $0 remove-domain 123"
+    echo "  $0 remove-domain 123
+  $0 top-ip-queue-full"
 }
 
 case "$1" in
@@ -48,7 +50,7 @@ case "$1" in
         ;;
     
     "all-ad-clickers")
-        execute_query "SELECT github_user_id, username, json_extract(metrics, '$.ad_clicks') as ad_clicks FROM users WHERE json_extract(metrics, '$.ad_clicks') IS NOT NULL AND json_extract(metrics, '$.ad_clicks') > 0 ORDER BY json_extract(metrics, '$.ad_clicks') DESC"
+        execute_query "SELECT github_user_id, username, json_extract(metrics, '$.ad_clicks') as ad_clicks, json_extract(metrics, '$.ad_impressions') as ad_impressions FROM users WHERE (json_extract(metrics, '$.ad_clicks') IS NOT NULL AND json_extract(metrics, '$.ad_clicks') > 0) OR (json_extract(metrics, '$.ad_impressions') IS NOT NULL AND json_extract(metrics, '$.ad_impressions') > 0) ORDER BY ad_impressions DESC, ad_clicks DESC"
         ;;
     
     "user-metrics")
@@ -151,6 +153,10 @@ case "$1" in
             COALESCE(json_extract(metrics, '$.api_calls'), 0) + 
             COALESCE(json_extract(metrics, '$.generations'), 0) 
         DESC LIMIT 10"
+        ;;
+
+    "top-ip-queue-full")
+        execute_query "SELECT github_user_id, username, json_extract(metrics, '$.ip_queue_full_count') as ip_queue_full_events FROM users WHERE json_extract(metrics, '$.ip_queue_full_count') IS NOT NULL AND json_extract(metrics, '$.ip_queue_full_count') > 0 ORDER BY ip_queue_full_events DESC LIMIT 10"
         ;;
     
     *)

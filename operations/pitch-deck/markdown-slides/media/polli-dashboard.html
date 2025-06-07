@@ -592,13 +592,6 @@ function updateAnalytics(data) {
       state.refererStats.domains['Unknown']++;
     }
     state.refererStats.total++;
-    if (data.parameters?.isRobloxReferrer) {
-      // Only increment by 0.5 (effectively dividing by 2)
-      state.refererStats.robloxCount += 0.5;
-    }
-    if (data.parameters?.isImagePollinationsReferrer) {
-      state.refererStats.imageApiCount++;
-    }
     const now = Date.now();
     if (now - state.lastUpdateTime >= state.updateInterval) {
       updateUI();

@@ -5,23 +5,22 @@
 
 export const creativeProjects = [
   {
-<<<<<<< HEAD
     name: "MrEgonAI",
     url: "https://mr-egon-ai.vercel.app/",
     description: "An image generator powered by pollinations.ai and its image generation models. Features text-to-image generation with various AI models.",
     author: "@mregon",
-=======
-    name: "Image Creator",
-    url: "https://saepulwap.blogspot.com/p/flux-image-creator.html",
-    description: "Create images with multi-language prompts, the language will be automatically translated by AI into English.",
-    author: "https://facebook.com/403.frobidden",
->>>>>>> master
     submissionDate: "2025-06-07",
     order: 1
   },
   {
-<<<<<<< HEAD
-=======
+    name: "Image Creator",
+    url: "https://saepulwap.blogspot.com/p/flux-image-creator.html",
+    description: "Create images with multi-language prompts, the language will be automatically translated by AI into English.",
+    author: "https://facebook.com/403.frobidden",
+    submissionDate: "2025-06-07",
+    order: 1
+  },
+  {
     name: "CatGPT Meme Generator 🐱",
     url: "https://pollinations.github.io/catgpt/",
     description: "Transform your questions into sassy cat wisdom! An AI-powered meme generator that creates personalized cat comics in response to your questions. A collaboration between Pollinations.AI and Tanika Godbole, the original creator of the CatGPT comic.",
@@ -32,7 +31,6 @@ export const creativeProjects = [
     order: 1
   },
   {
->>>>>>> master
     name: "Avatar GenStudio",
     url: "https://astudio-dcae4.web.app",
     description: "A system for creating custom characters that uses the Pollinations API for totally free and unlimited image generation.",

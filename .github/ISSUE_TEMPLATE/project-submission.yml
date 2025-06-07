@@ -57,12 +57,13 @@ body:
       label: Project Category
       description: Select the category under which your project should be posted
       options:
-        - LLM Integrations
-        - Creative & Interactive Applications
-        - Tools & Interfaces
-        - Social Bots
-        - SDK & Libraries
-        - Tutorials
+        - Chat Projects 💬
+        - Creative Projects 🎨
+        - Games 🎮
+        - Hack & Build 🛠️
+        - Learn 📚
+        - Social Bots 🤖
+        - Vibe Coding 🌈
     validations:
       required: true
 
@@ -78,6 +79,7 @@ body:
       value: |
         ### Implementation Instructions
 
-        For the being implementing this issue:
-        - Add the new project to the top of the appropriate section in README.md and pollinations.ai/src/config/projectList.js
-        - Add a new UTF-8 icon to the title or where appropriate
+        For the person implementing this issue:
+        - Add the new project to the top of the appropriate file in pollinations.ai/src/config/projects/ based on the selected category
+        - Ensure the project entry includes all necessary fields (name, url, description, author, submissionDate, etc.)
+        - Make sure to maintain proper JSON formatting with commas between entries

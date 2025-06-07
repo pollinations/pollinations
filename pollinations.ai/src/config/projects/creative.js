@@ -13,6 +13,14 @@ export const creativeProjects = [
     order: 1
   },
   {
+    name: "Image Creator",
+    url: "https://saepulwap.blogspot.com/p/flux-image-creator.html",
+    description: "Create images with multi-language prompts, the language will be automatically translated by AI into English.",
+    author: "https://facebook.com/403.frobidden",
+    submissionDate: "2025-06-07",
+    order: 2
+  },
+  {
     name: "CatGPT Meme Generator 🐱",
     url: "https://pollinations.github.io/catgpt/",
     description: "Transform your questions into sassy cat wisdom! An AI-powered meme generator that creates personalized cat comics in response to your questions. A collaboration between Pollinations.AI and Tanika Godbole, the original creator of the CatGPT comic.",

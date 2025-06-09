@@ -23,23 +23,16 @@ const errorLog = debug('pollinations:adfilter:error');
  */
 export async function generateAdForContent(req, content, messages = [], isStreaming = false) {
     try {
-        // Get authenticated user ID if available - do this once at the top
-        let authResult = null;
-        let authenticatedUserId = null;
-        
-        try {
-            authResult = await handleAuthentication(req);
-            if (authResult.authenticated && authResult.userId) {
-                authenticatedUserId = authResult.userId;
-                log(`Authenticated user ID: ${authenticatedUserId}`);
-            }
-        } catch (error) {
-            // Authentication failed, continue without user ID
-            log('Authentication failed or not provided, continuing without user ID');
+        // Simply use the auth info from req
+        const userId = req?.authResult?.userId;
+        if (userId) {
+            log(`Authenticated user ID: ${userId}`);
+        } else {
+            log('No authenticated user ID found in req.authResult, or req.authResult is undefined.');
         }
 
-        // Check if we should show ads - pass auth result to avoid duplicate authentication
-        const { shouldShowAd, markerFound, forceAd } = await shouldShowAds(content, messages, req, authResult);
+        // Pass req to shouldShowAds, it will use req.authResult
+        const { shouldShowAd, markerFound, forceAd } = await shouldShowAds(content, messages, req);
         const shouldForceAd = markerFound || forceAd;
 
         // Determine if we should proceed with ad generation
@@ -50,13 +43,13 @@ export async function generateAdForContent(req, content, messages = [], isStream
         log('Generating ad for content...');
 
         // Try nex.ad first - pass authenticated user ID
-        const { visitorData, conversationContext } = createNexAdRequest(req, messages, content, authenticatedUserId);
+        const { visitorData, conversationContext } = createNexAdRequest(req, messages, content, userId);
         const nexAdResult = await fetchNexAd(visitorData, conversationContext);
         
         if (nexAdResult && nexAdResult.adData) {
             const { adData, userIdForTracking } = nexAdResult;
             // Only use authenticated user ID for tracking, not hashed IP fallback
-            const userIdForRedirect = authenticatedUserId; // null if not authenticated
+            const userIdForRedirect = userId; // null if not authenticated
             // Format nex.ad response, only passing real user ID (not hashed IP)
             const adString = formatNexAd(adData, userIdForRedirect);
             
@@ -93,8 +86,8 @@ export async function generateAdForContent(req, content, messages = [], isStream
                     });
 
                     // Track per-user ad impression metrics
-                    if (authenticatedUserId) {
-                        incrementUserMetric(authenticatedUserId, 'ad_impressions');
+                    if (userId) {
+                        incrementUserMetric(userId, 'ad_impressions');
                     }
                 }
 
@@ -137,8 +130,8 @@ export async function generateAdForContent(req, content, messages = [], isStream
                     });
 
                     // Track per-user ad impression metrics for Ko-fi fallback
-                    if (authenticatedUserId) {
-                        incrementUserMetric(authenticatedUserId, 'ad_impressions');
+                    if (userId) {
+                        incrementUserMetric(userId, 'ad_impressions');
                     }
                 }
 

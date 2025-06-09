@@ -420,7 +420,7 @@ async function processRequest(req, res, requestData) {
     let queueConfig;
     if (isTokenAuthenticated) {
         // Token reduces delay between requests (no interval) but still goes through queue
-        queueConfig = { interval: 1000, cap: 3 };
+        queueConfig = { interval: 1000, cap: authResult.tier === 'seed' ? 3 : 20 };
         authLog('Token authenticated - queue with no delay');
     } else if (hasReferrer) {
         // Referrer also skips delays between requests (no interval)

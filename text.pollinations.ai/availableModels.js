@@ -359,7 +359,7 @@ const models = [
     handler: generateTextPortkey,
     //    details:  "Audio-focused variant delivering rich auditory and textual content.",
     provider: "Azure",
-    input_modalities: ["text", "image", "audio"],
+    input_modalities: ["text", "audio"],
     output_modalities: ["audio", "text"],
     tools: true,
   },

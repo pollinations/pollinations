@@ -298,8 +298,11 @@ const models = [
   },
 ];
 
+// Sort models alphabetically by name at module level for consistency
+const sortedModels = models.sort((a, b) => a.name.localeCompare(b.name));
+
 // Now export the processed models with proper functional approach
-export const availableModels = models.map((model) => {
+export const availableModels = sortedModels.map((model) => {
   const inputs = model.input_modalities || [];
   const outputs = model.output_modalities || [];
 

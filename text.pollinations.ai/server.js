@@ -116,22 +116,7 @@ const QUEUE_CONFIG = {
 
 // GET /models request handler
 app.get('/models', (req, res) => {
-    // Always sort models alphabetically by name
-    const modelsList = [...availableModels].sort((a, b) => a.name.localeCompare(b.name));
-
-    // Helper to create a new object with its keys in alphabetical order
-    const sortObjectKeys = (obj) =>
-        Object.keys(obj)
-            .sort((a, b) => a.localeCompare(b))
-            .reduce((acc, key) => {
-                acc[key] = obj[key];
-                return acc;
-            }, {});
-
-    // Return models with alphabetically ordered keys for deterministic output
-    const models = modelsList.map(sortObjectKeys);
-
-    res.json(models);
+    res.json(availableModels);
 });
 
 setupFeedEndpoint(app);

@@ -74,7 +74,7 @@ const models = [
     provider: "chatwithmono.xyz",
     aliases: "o3,o3-mini",
     community: false,
-    input_modalities: ["text"],
+    input_modalities: ["text", "image"],
     output_modalities: ["text"],
   },
   {

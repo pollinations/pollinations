@@ -300,8 +300,9 @@ export function createOpenAICompatibleClient(config) {
                 completionTokens: data.usage?.completion_tokens,
                 project: 'text.pollinations.ai',
                 environment: process.env.NODE_ENV || 'production',
-                // Include user information if available
-                user: normalizedOptions.userInfo?.userId || 'anonymous',
+                // Include user information if available - prioritize username for better identification
+                user: normalizedOptions.userInfo?.username || normalizedOptions.userInfo?.userId || 'anonymous',
+                username: normalizedOptions.userInfo?.username, // Explicitly include username field
                 organization: normalizedOptions.userInfo?.userId ? 'pollinations' : undefined,
                 tier: normalizedOptions.userInfo?.tier || 'seed'
             }).catch(err => {
@@ -359,8 +360,9 @@ export function createOpenAICompatibleClient(config) {
                 error,
                 project: 'text.pollinations.ai',
                 environment: process.env.NODE_ENV || 'production',
-                // Include user information if available
-                user: normalizedOptions.userInfo?.userId || 'anonymous',
+                // Include user information if available - prioritize username for better identification
+                user: normalizedOptions.userInfo?.username || normalizedOptions.userInfo?.userId || 'anonymous',
+                username: normalizedOptions.userInfo?.username, // Explicitly include username field
                 organization: normalizedOptions.userInfo?.userId ? 'pollinations' : undefined,
                 tier: normalizedOptions.userInfo?.tier || 'seed'
             }).catch(err => {

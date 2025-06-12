@@ -58,7 +58,12 @@ export async function sendTinybirdEvent(eventData) {
             // Model and provider info
             model: eventData.model || 'unknown',
             // Use model's provider from availableModels if provider wasn't explicitly set
-            provider: eventData.provider || getProviderNameFromModel(eventData.model),
+            provider: (() => {
+                const providedProvider = eventData.provider;
+                const lookupProvider = providedProvider || getProviderNameFromModel(eventData.model);
+                log(`Provider for model ${eventData.model || 'unknown'}: ${lookupProvider} ${providedProvider ? '(explicit)' : '(from model lookup)'}`);
+                return lookupProvider;
+            })(),
             
             // Performance metrics
             duration: eventData.duration,

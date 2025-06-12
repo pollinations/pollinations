@@ -9,11 +9,12 @@ This directory contains the tooling for monitoring and analyzing LLM API calls m
 
 ## Configuration
 
-All required environment variables are stored in the main `.env` file in the project root:
+The Tinybird telemetry is optional and will not affect the core functionality if not configured. Environment variables can be stored in the main `.env` file in the project root:
 
 ```
-TINYBIRD_API_URL=https://api.europe-west2.gcp.tinybird.co
-TINYBIRD_API_KEY=p.your-tinybird-api-key
+# Optional: Tinybird telemetry configuration
+TINYBIRD_API_URL=https://api.europe-west2.gcp.tinybird.co  # Optional, defaults to EU endpoint
+TINYBIRD_API_KEY=p.your-tinybird-api-key                  # Optional, telemetry will be skipped if not set
 ```
 
 ## Usage
@@ -25,7 +26,7 @@ The telemetry tracking is automatically integrated into `genericOpenAIClient.js`
 - Token usage (prompt, completion, total)
 - Success/error status
 - Duration metrics
-- Message content (truncated)
+- No message content (excluded for privacy)
 
 ## Dashboard
 

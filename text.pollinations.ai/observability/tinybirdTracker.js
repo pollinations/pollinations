@@ -1,6 +1,11 @@
 import dotenv from 'dotenv';
+import debug from 'debug';
+
 // Load environment variables
 dotenv.config();
+
+const log = debug('pollinations:tinybird');
+const errorLog = debug('pollinations:tinybird:error');
 
 const TINYBIRD_API_URL = process.env.TINYBIRD_API_URL || 'https://api.europe-west2.gcp.tinybird.co';
 const TINYBIRD_API_KEY = process.env.TINYBIRD_API_KEY;
@@ -11,9 +16,9 @@ const TINYBIRD_API_KEY = process.env.TINYBIRD_API_KEY;
  * @returns {Promise} - Promise that resolves when the event is sent
  */
 export async function sendTinybirdEvent(eventData) {
-    // Skip if Tinybird API key is not set
+    // Skip if Tinybird API key is not set - this is optional functionality
     if (!TINYBIRD_API_KEY) {
-        console.log('TINYBIRD_API_KEY not set, skipping telemetry');
+        log('TINYBIRD_API_KEY not set, skipping telemetry');
         return;
     }
 
@@ -73,7 +78,7 @@ export async function sendTinybirdEvent(eventData) {
             }),
         };
 
-        console.log(`Sending telemetry to Tinybird for ${eventData.provider} ${eventData.model} call`);
+        log(`Sending telemetry to Tinybird for ${eventData.provider} ${eventData.model} call`);
         
         // Create an abort controller for timeout
         const controller = new AbortController();
@@ -91,18 +96,18 @@ export async function sendTinybirdEvent(eventData) {
             });
 
             if (!response.ok) {
-                console.error('Failed to send telemetry to Tinybird', response.status, await response.text().catch(() => 'Could not read response text'));
+                errorLog('Failed to send telemetry to Tinybird: %s %s', response.status, await response.text().catch(() => 'Could not read response text'));
             }
         } catch (fetchError) {
             if (fetchError.name === 'AbortError') {
-                console.error('Tinybird telemetry request timed out after 5 seconds');
+                errorLog('Tinybird telemetry request timed out after 5 seconds');
             } else {
-                console.error('Fetch error when sending telemetry to Tinybird:', fetchError);
+                errorLog('Fetch error when sending telemetry to Tinybird: %O', fetchError);
             }
         } finally {
             clearTimeout(timeoutId);
         }
     } catch (error) {
-        console.error('Error sending telemetry to Tinybird', error);
+        errorLog('Error sending telemetry to Tinybird: %O', error);
     }
 }

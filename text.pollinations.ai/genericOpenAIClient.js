@@ -56,6 +56,9 @@ export function createOpenAICompatibleClient(config) {
             options
         });
 
+        // Declare normalizedOptions in outer scope so it's available in catch block
+        let normalizedOptions;
+        
         try {
             // Check if API key is available
             if (!authHeaderValue()) {
@@ -63,7 +66,7 @@ export function createOpenAICompatibleClient(config) {
             }
 
             // Normalize options with defaults
-            const normalizedOptions = normalizeOptions(options, defaultOptions);
+            normalizedOptions = normalizeOptions(options, defaultOptions);
             
             // Determine which model to use
             const modelKey = normalizedOptions.model;
@@ -339,7 +342,7 @@ export function createOpenAICompatibleClient(config) {
                 startTime: new Date(startTime),
                 endTime,
                 requestId,
-                model: normalizedOptions.model, // Use friendly model name from request options
+                model: normalizedOptions?.model || options?.model || 'unknown', // Safely access model name
                 duration: completionTime,
                 status: 'error',
                 error,

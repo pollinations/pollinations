@@ -577,6 +577,36 @@ export const generateTextPortkey = createOpenAICompatibleClient({
                 }
             });
 
+            // Apply model-specific parameter filtering
+            // Some models like searchgpt only accept specific parameters
+            const modelParameterAllowList = {
+                'gpt-4o-mini-search-preview': ['messages', 'stream', 'model'] // Only these parameters are allowed for searchgpt
+                // Add more models as needed
+            };
+
+            // Check if the current model has parameter restrictions
+            const allowedParams = modelParameterAllowList[requestBody.model];
+            if (allowedParams) {
+                log(`Applying parameter filter for model ${requestBody.model}, allowing only: ${allowedParams.join(', ')}`);
+                
+                // Create a new request body with only allowed parameters
+                const filteredBody = {};
+                
+                // Only include parameters that are in the allow list
+                for (const param of allowedParams) {
+                    if (requestBody[param] !== undefined) {
+                        filteredBody[param] = requestBody[param];
+                    }
+                }
+                
+                // Preserve the additional headers
+                if (requestBody._additionalHeaders) {
+                    filteredBody._additionalHeaders = requestBody._additionalHeaders;
+                }
+                
+                return filteredBody;
+            }
+
             return requestBody;
         } catch (error) {
             errorLog('Error in request transformation:', error);

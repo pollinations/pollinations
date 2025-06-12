@@ -130,9 +130,13 @@ export async function sendTinybirdEvent(eventData) {
                 signal: controller.signal
             });
 
+            const responseText = await response.text().catch(() => 'Could not read response text');
+            
             if (!response.ok) {
-                const errorText = await response.text().catch(() => 'Could not read response text');
-                errorLog(`Failed to send telemetry to Tinybird: ${response.status} ${errorText}`);
+                errorLog(`Failed to send telemetry to Tinybird: ${response.status} ${responseText}`);
+            } else {
+                log(`Tinybird response: ${response.status} ${responseText}`);
+                log(`Successfully sent telemetry event for model: ${modelName}, provider: ${provider}`);
             }
         } catch (fetchError) {
             const errorMessage = fetchError.name === 'AbortError' ? 

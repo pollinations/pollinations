@@ -11,6 +11,7 @@ import {
 } from './textGenerationUtils.js';
 
 import { createSseStreamConverter } from './sseStreamConverter.js';
+import { sendTinybirdEvent } from './observability/tinybirdTracker.js';
 
 /**
  * Creates a client function for OpenAI-compatible APIs
@@ -284,6 +285,24 @@ export function createOpenAICompatibleClient(config) {
                 completionTokens: data.usage?.completion_tokens,
                 totalTokens: data.usage?.total_tokens
             });
+            
+            // Send telemetry to Tinybird
+            const endTime = new Date();
+            sendTinybirdEvent({
+                startTime: new Date(startTime),
+                endTime,
+                requestId,
+                model: data.model || modelName,
+                provider: providerName,
+                duration: completionTime,
+                status: 'success',
+                promptTokens: data.usage?.prompt_tokens,
+                completionTokens: data.usage?.completion_tokens,
+                project: 'text.pollinations.ai',
+                environment: process.env.NODE_ENV || 'production'
+            }).catch(err => {
+                errorLog(`[${requestId}] Failed to send telemetry to Tinybird`, err);
+            });
 
             // Use custom response formatter if provided
             // Pass only choices[0] to formatResponse, reconstruct after
@@ -320,6 +339,24 @@ export function createOpenAICompatibleClient(config) {
                 name: error.name,
                 stack: error.stack,
                 completionTimeMs: Date.now() - startTime
+            });
+            
+            // Send error telemetry to Tinybird
+            const endTime = new Date();
+            const completionTime = endTime.getTime() - startTime;
+            sendTinybirdEvent({
+                startTime: new Date(startTime),
+                endTime,
+                requestId,
+                model: modelName,
+                provider: providerName,
+                duration: completionTime,
+                status: 'error',
+                error,
+                project: 'text.pollinations.ai',
+                environment: process.env.NODE_ENV || 'production'
+            }).catch(err => {
+                errorLog(`[${requestId}] Failed to send error telemetry to Tinybird`, err);
             });
             
             // Simply throw the error

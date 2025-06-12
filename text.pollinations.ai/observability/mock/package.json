@@ -1,0 +1,19 @@
+{
+  "name": "llm-events-generator",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Generate mock LLM events data for Tinybird",
+  "main": "generate-llm-events.js",
+  "scripts": {
+    "generate": "node generate-llm-events.js"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^9.5.1",
+    "@xenova/transformers": "^2.17.2",
+    "commander": "^11.0.0",
+    "uuid": "^11.1.0"
+  },
+  "bin": {
+    "generate-llm-events": "./generate-llm-events.js"
+  }
+}

@@ -600,7 +600,11 @@ export const generateTextPortkey = createOpenAICompatibleClient({
     modelMapping: MODEL_MAPPING,
     systemPrompts: SYSTEM_PROMPTS,
     defaultOptions: DEFAULT_OPTIONS,
-    providerName: 'Portkey Gateway'
+    // Get provider name dynamically from the selected model
+    providerName: (modelName) => {
+        const model = findModelByName(modelName);
+        return model?.provider || 'Unknown';
+    }
 });
 
 function countMessageCharacters(messages) {

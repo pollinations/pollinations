@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import debug from 'debug';
+import { getModelPricing } from '../availableModels.js';
 
 // Load environment variables
 dotenv.config();
@@ -23,32 +24,41 @@ export async function sendTinybirdEvent(eventData) {
     }
 
     try {
+        // Calculate cost based on token usage and model pricing
+        const pricing = getModelPricing(eventData.model);
+        const promptCost = ((eventData.promptTokens || 0) * pricing.prompt_tokens) / 1000;  // Cost per 1K tokens
+        const completionCost = ((eventData.completionTokens || 0) * pricing.completion_tokens) / 1000;
+        const totalCost = promptCost + completionCost;
+
+        // Construct the event object with defaults and conditionals using spread operator
         const event = {
-            // Standard timestamps
+            // Standard timestamps and identifiers
             start_time: eventData.startTime?.toISOString(),
             end_time: eventData.endTime?.toISOString(),
-            
-            // Message and model info
             message_id: eventData.requestId,
+            id: eventData.requestId,
+            
+            // Model and provider info
             model: eventData.model || 'unknown',
             provider: eventData.provider || 'unknown',
             
             // Performance metrics
             duration: eventData.duration,
             llm_api_duration_ms: eventData.duration,
+            standard_logging_object_response_time: eventData.duration,
             
-            // Response data (if success)
-            response: eventData.status === 'success' ? {
-                id: eventData.requestId,
-                object: 'chat.completion',
-                usage: {
-                    prompt_tokens: eventData.promptTokens || 0,
-                    completion_tokens: eventData.completionTokens || 0,
-                    total_tokens: (eventData.promptTokens || 0) + (eventData.completionTokens || 0),
-                }
-            } : undefined,
+            // Cost information
+            cost: totalCost,
             
-            // No message content is stored for privacy reasons
+            // User info
+            user: eventData.username || eventData.user || 'anonymous',
+            username: eventData.username,
+            
+            // Status and event type constants
+            standard_logging_object_status: eventData.status,
+            log_event_type: 'chat_completion',
+            call_type: 'completion',
+            cache_hit: false,
             
             // Metadata
             proxy_metadata: {
@@ -58,32 +68,34 @@ export async function sendTinybirdEvent(eventData) {
                 chat_id: eventData.chatId || '',
             },
             
-            // User info
-            user: eventData.user || 'anonymous',
+            // Conditionally add response data for successful requests
+            ...(eventData.status === 'success' && {
+                response: {
+                    id: eventData.requestId,
+                    object: 'chat.completion',
+                    usage: {
+                        prompt_tokens: eventData.promptTokens || 0,
+                        completion_tokens: eventData.completionTokens || 0,
+                        total_tokens: (eventData.promptTokens || 0) + (eventData.completionTokens || 0),
+                    }
+                }
+            }),
             
-            // Status and performance 
-            standard_logging_object_status: eventData.status,
-            standard_logging_object_response_time: eventData.duration,
-            
-            // Event type and ID
-            log_event_type: 'chat_completion',
-            id: eventData.requestId,
-            call_type: 'completion',
-            cache_hit: false,
-            
-            // Error info (if error)
+            // Conditionally add error info
             ...(eventData.status === 'error' && {
                 exception: eventData.error?.message || 'Unknown error',
                 traceback: eventData.error?.stack || '',
             }),
         };
 
-        // Log user information when it's available
-        if (eventData.user && eventData.user !== 'anonymous') {
-            log(`Sending telemetry to Tinybird for ${eventData.provider} ${eventData.model} call - User: ${eventData.user}, Tier: ${eventData.tier || 'seed'}`);
-        } else {
-            log(`Sending telemetry to Tinybird for ${eventData.provider} ${eventData.model} call - Anonymous user`);
-        }
+        // Simplified user logging with a consistent format
+        const userIdentifier = eventData.username ? 
+            `Username: ${eventData.username}` : 
+            eventData.user && eventData.user !== 'anonymous' ? 
+                `UserID: ${eventData.user}` : 
+                'Anonymous user';
+            
+        log(`Sending telemetry to Tinybird for ${eventData.provider} ${eventData.model} call - ${userIdentifier}${eventData.tier ? `, Tier: ${eventData.tier}` : ''}`);
         
         // Create an abort controller for timeout
         const controller = new AbortController();
@@ -101,14 +113,14 @@ export async function sendTinybirdEvent(eventData) {
             });
 
             if (!response.ok) {
-                errorLog('Failed to send telemetry to Tinybird: %s %s', response.status, await response.text().catch(() => 'Could not read response text'));
+                const errorText = await response.text().catch(() => 'Could not read response text');
+                errorLog(`Failed to send telemetry to Tinybird: ${response.status} ${errorText}`);
             }
         } catch (fetchError) {
-            if (fetchError.name === 'AbortError') {
-                errorLog('Tinybird telemetry request timed out after 5 seconds');
-            } else {
-                errorLog('Fetch error when sending telemetry to Tinybird: %O', fetchError);
-            }
+            const errorMessage = fetchError.name === 'AbortError' ? 
+                'Tinybird telemetry request timed out after 5 seconds' : 
+                `Fetch error when sending telemetry to Tinybird: ${fetchError.message}`;
+            errorLog(errorMessage);
         } finally {
             clearTimeout(timeoutId);
         }

@@ -133,15 +133,11 @@ async function handleRequest(req, res, requestData) {
         
         // Get user info from authentication if available
         const authResult = req.authResult || {};
-        const userInfo = {
-            userId: authResult.userId || null,
-            tier: authResult.tier || 'seed'
-        };
         
-        // Add user info to request data
+        // Add user info to request data - using authResult directly as a thin proxy
         const requestWithUserInfo = {
             ...requestData,
-            userInfo
+            userInfo: authResult
         };
         
         const completion = await generateTextBasedOnModel(requestData.messages, requestWithUserInfo);
@@ -415,13 +411,7 @@ async function processRequest(req, res, requestData) {
             }
         };
         
-        if (requestData.stream) {
-            // For streaming requests, send error as a stream
-            await sendAsOpenAIStream(res, { error: 'Forbidden', choices: [{ message: { content: 'Forbidden' } }] }, req);
-            return;
-        } else {
-            return res.status(403).json(errorResponse);
-        }
+        return res.status(403).json(errorResponse);
     }
     
     // Check authentication status
@@ -708,20 +698,7 @@ async function generateTextBasedOnModel(messages, options) {
             log('Streaming mode enabled for model:', model, 'stream value:', options.stream);
         }
         
-        // Apply Roblox-specific fix if needed
-        const robloxFixedMessages = handleRobloxSpecificFix(messages, model);
-        
-        // Remove p-ads marker from messages to prevent it from affecting the LLM context
-        const processedMessages = robloxFixedMessages.map(msg => {
-            if (msg.content && typeof msg.content === 'string') {
-                // Remove the p-ads marker from the message content
-                return {
-                    ...msg,
-                    content: msg.content.replace(/p-ads/g, '')
-                };
-            }
-            return msg;
-        });
+        const processedMessages = messages;
         
         // Log the messages being sent
         log('Sending messages to model handler:', JSON.stringify(processedMessages.map(m => ({ role: m.role, content: typeof m.content === 'string' ? m.content.substring(0, 50) + '...' : '[non-string content]' }))));

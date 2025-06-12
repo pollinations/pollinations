@@ -78,7 +78,12 @@ export async function sendTinybirdEvent(eventData) {
             }),
         };
 
-        log(`Sending telemetry to Tinybird for ${eventData.provider} ${eventData.model} call`);
+        // Log user information when it's available
+        if (eventData.user && eventData.user !== 'anonymous') {
+            log(`Sending telemetry to Tinybird for ${eventData.provider} ${eventData.model} call - User: ${eventData.user}, Tier: ${eventData.tier || 'seed'}`);
+        } else {
+            log(`Sending telemetry to Tinybird for ${eventData.provider} ${eventData.model} call - Anonymous user`);
+        }
         
         // Create an abort controller for timeout
         const controller = new AbortController();

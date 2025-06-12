@@ -299,7 +299,11 @@ export function createOpenAICompatibleClient(config) {
                 promptTokens: data.usage?.prompt_tokens,
                 completionTokens: data.usage?.completion_tokens,
                 project: 'text.pollinations.ai',
-                environment: process.env.NODE_ENV || 'production'
+                environment: process.env.NODE_ENV || 'production',
+                // Include user information if available
+                user: normalizedOptions.userInfo?.userId || 'anonymous',
+                organization: normalizedOptions.userInfo?.userId ? 'pollinations' : undefined,
+                tier: normalizedOptions.userInfo?.tier || 'seed'
             }).catch(err => {
                 errorLog(`[${requestId}] Failed to send telemetry to Tinybird`, err);
             });
@@ -354,7 +358,11 @@ export function createOpenAICompatibleClient(config) {
                 status: 'error',
                 error,
                 project: 'text.pollinations.ai',
-                environment: process.env.NODE_ENV || 'production'
+                environment: process.env.NODE_ENV || 'production',
+                // Include user information if available
+                user: normalizedOptions.userInfo?.userId || 'anonymous',
+                organization: normalizedOptions.userInfo?.userId ? 'pollinations' : undefined,
+                tier: normalizedOptions.userInfo?.tier || 'seed'
             }).catch(err => {
                 errorLog(`[${requestId}] Failed to send error telemetry to Tinybird`, err);
             });

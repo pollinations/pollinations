@@ -130,7 +130,21 @@ async function handleRequest(req, res, requestData) {
     try {
         // Generate a unique ID for this request
         const requestId = generatePollinationsId();
-        const completion = await generateTextBasedOnModel(requestData.messages, requestData);
+        
+        // Get user info from authentication if available
+        const authResult = req.authResult || {};
+        const userInfo = {
+            userId: authResult.userId || null,
+            tier: authResult.tier || 'seed'
+        };
+        
+        // Add user info to request data
+        const requestWithUserInfo = {
+            ...requestData,
+            userInfo
+        };
+        
+        const completion = await generateTextBasedOnModel(requestData.messages, requestWithUserInfo);
         
         // Ensure completion has the request ID
         completion.id = requestId;
@@ -412,6 +426,8 @@ async function processRequest(req, res, requestData) {
     
     // Check authentication status
     const authResult = await handleAuthentication(req, null, authLog);
+    // Store authentication result in request for later use
+    req.authResult = authResult;
     // Use the new explicit authentication fields
     const isTokenAuthenticated = authResult.tokenAuth;
     const hasReferrer = authResult.referrerAuth;

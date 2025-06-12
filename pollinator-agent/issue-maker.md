@@ -62,33 +62,27 @@ The script relies on:
 
 ## **🔄 2 · End-to-End Flow**
 
-### **🧠 Step 1 | Parse Input**
+### **📝 Step 1 | Define Issue Title and Description**
 
 * Extract the issue {title} and {description} from the context of the chat
 * 👉 **The {description} MUST include at least one emoji!!! (e.g., 🚀, ✅, ⚠️)**
+* Present the title and description clearly to the user
 
-### **🧩 Step 2 | Choose the Parent CATEGORY**
+### **📊 Step 2 | Get All Available Categories**
 
-**DO NOT IMPLEMENT THIS MANUALLY.** The script automatically:
-1. Fetches issues with label CATEGORY  
-2. Computes cosine similarity  
-3. Selects the highest-scoring parent
+Run this command to fetch all CATEGORY issues:
+```bash
+curl -s -H "Authorization: Bearer $(jq -r '.mcpServers.github.env.GITHUB_PAT' ~/.cursor/mcp.json)" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/pollinations/pollinations/issues?labels=CATEGORY&state=open&per_page=50" | jq -r '.[] | "\(.number) \(.title)"'
+```
 
-You only need to let the script handle this.
+### **🎯 Step 3 | Define Best Matching Category**
 
-### **🪄 Step 3 | Gather Variables for the Script**
+Based on the issue title/description and available categories:
+- Identify which CATEGORY has the most topical/semantic relevance
+- Note the issue number of the best matching parent
+- If no clear match, use the first CATEGORY as fallback
 
-**SIMPLE REPLACEMENT ONLY:**
-
-| Placeholder | Replace With | Example |
-| ----- | ----- | ----- |
-| `<title>` | User's issue title | `"The Color of the Moon"` |
-| `<body>` | User's issue description | `"Discuss the various colors..."` |
-| `<parent_number>` | Remove entirely (script auto-finds) | Delete this part |
-
-**IMPORTANT:** The `<parent_number>` should be REMOVED from the one-liner since the script automatically finds the best parent.
-
-### **🧾 Step 4 | One-Shot Bash Automation**
+### **🚀 Step 4 | One-Shot Bash Automation**
 
 **AUTONOMOUS EXECUTION REQUIREMENTS:**
 - **You MUST execute the command yourself** using the terminal tool
@@ -101,36 +95,37 @@ You only need to let the script handle this.
 - If you see ANY ⚠️ warning, the operation failed - do NOT claim success
 - If you see ✅ for all steps, only then report the final success URL
 - Use the one-liner EXACTLY as provided - do NOT modify any part of it
-- **ONLY** replace `<title>` and `<body>` with actual values
-- **REMOVE** the `<parent_number>` part entirely (script finds parent automatically)
+- **ONLY** replace `<title>`, `<body>`, and `<parent_number>` with actual values
 
 **WRONG APPROACH:** ❌ Trying to manually implement API calls, compute similarity, or modify the script logic. Asking user to copy-paste and run commands.
 
-**CORRECT APPROACH:** ✅ Execute the one-liner, replacing only `<title>` and `<body>`, remove `<parent_number>`, run it, validate output, report results
+**CORRECT APPROACH:** ✅ Execute the one-liner, replacing only `<title>`, `<body>`, and `<parent_number>`, run it, validate output, report results
 
 ```bash
-TITLE="<title>"; BODY="<body>"; set -euo pipefail; REPO_VAR="pollinations/pollinations"; PROJECT_NODE_ID="PVT_kwDOBS76fs4AwCAM"; TOKEN=$(jq -r '.mcpServers.github.env.GITHUB_PAT' ~/.cursor/mcp.json); PARENT_NUM=$(curl -s -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO_VAR/issues?labels=CATEGORY&state=open&per_page=50" | jq -r '.[0].number'); [[ -z "$TOKEN" || "$TOKEN" == "null" ]] && { echo "❌  GITHUB_PAT not found"; exit 1; }; ISSUE_JSON=$(jq -n --arg t "$TITLE" --arg b "$BODY" '{title:$t,body:$b}'); CREATE=$(curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO_VAR/issues" -d "$ISSUE_JSON"); CHILD_ID=$(jq -r .id <<< "$CREATE"); CHILD_NODE=$(jq -r .node_id <<< "$CREATE"); CHILD_NUM=$(jq -r .number <<< "$CREATE"); echo "Linking to parent #$PARENT_NUM..."; LINK_RESPONSE=$(curl -s -w "%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO_VAR/issues/$PARENT_NUM/sub_issues" -d "{\"sub_issue_id\":$CHILD_ID}"); LINK_CODE="${LINK_RESPONSE: -3}"; [[ "$LINK_CODE" != "201" ]] && echo "⚠️  Link failed: $LINK_CODE" || echo "✅ Linked successfully"; echo "Adding to Project 20..."; PAYLOAD=$(jq -n --arg p "$PROJECT_NODE_ID" --arg c "$CHILD_NODE" '{query:"mutation($p:ID!,$c:ID!){addProjectV2ItemById(input:{projectId:$p,contentId:$c}){item{id}}}",variables:{p:$p,c:$c}}'); PROJECT_RESPONSE=$(curl -s -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" https://api.github.com/graphql -d "$PAYLOAD"); if echo "$PROJECT_RESPONSE" | jq -e '.errors' > /dev/null; then echo "⚠️  Project add failed:" && echo "$PROJECT_RESPONSE" | jq '.errors'; else echo "✅ Added to project successfully"; fi; echo "Assigning issue..."; VIEWER=$(curl -s -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" https://api.github.com/graphql -d '{"query":"{ viewer { login } }"}' | jq -r .data.viewer.login); ASSIGN_RESPONSE=$(curl -s -w "%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO_VAR/issues/$CHILD_NUM/assignees" -d "{\"assignees\":[\"$VIEWER\"]}"); ASSIGN_CODE="${ASSIGN_RESPONSE: -3}"; [[ "$ASSIGN_CODE" != "201" ]] && echo "⚠️  Assignment failed: $ASSIGN_CODE" || echo "✅ Assigned to $VIEWER"; echo -e "\n🎉  Success → https://github.com/$REPO_VAR/issues/$CHILD_NUM"
+TITLE="<title>"; BODY="<body>"; PARENT_NUM="<parent_number>"; set -euo pipefail; REPO_VAR="pollinations/pollinations"; PROJECT_NODE_ID="PVT_kwDOBS76fs4AwCAM"; TOKEN=$(jq -r '.mcpServers.github.env.GITHUB_PAT' ~/.cursor/mcp.json); [[ -z "$TOKEN" || "$TOKEN" == "null" ]] && { echo "❌  GITHUB_PAT not found"; exit 1; }; echo "📌 Creating issue with parent #$PARENT_NUM..."; ISSUE_JSON=$(jq -n --arg t "$TITLE" --arg b "$BODY" '{title:$t,body:$b}'); CREATE=$(curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO_VAR/issues" -d "$ISSUE_JSON"); CHILD_ID=$(jq -r .id <<< "$CREATE"); CHILD_NODE=$(jq -r .node_id <<< "$CREATE"); CHILD_NUM=$(jq -r .number <<< "$CREATE"); echo "✅ Created issue #$CHILD_NUM"; echo "Linking to parent #$PARENT_NUM..."; LINK_RESPONSE=$(curl -s -w "%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO_VAR/issues/$PARENT_NUM/sub_issues" -d "{\"sub_issue_id\":$CHILD_ID}"); LINK_CODE="${LINK_RESPONSE: -3}"; [[ "$LINK_CODE" != "201" ]] && echo "⚠️  Link failed: $LINK_CODE" || echo "✅ Linked successfully"; echo "Adding to Project 20..."; PAYLOAD=$(jq -n --arg p "$PROJECT_NODE_ID" --arg c "$CHILD_NODE" '{query:"mutation($p:ID!,$c:ID!){addProjectV2ItemById(input:{projectId:$p,contentId:$c}){item{id}}}",variables:{p:$p,c:$c}}'); PROJECT_RESPONSE=$(curl -s -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" https://api.github.com/graphql -d "$PAYLOAD"); if echo "$PROJECT_RESPONSE" | jq -e '.errors' > /dev/null; then echo "⚠️  Project add failed:" && echo "$PROJECT_RESPONSE" | jq '.errors'; else echo "✅ Added to project successfully"; fi; echo "Assigning issue..."; VIEWER=$(curl -s -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" https://api.github.com/graphql -d '{"query":"{ viewer { login } }"}' | jq -r .data.viewer.login); ASSIGN_RESPONSE=$(curl -s -w "%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO_VAR/issues/$CHILD_NUM/assignees" -d "{\"assignees\":[\"$VIEWER\"]}"); ASSIGN_CODE="${ASSIGN_RESPONSE: -3}"; [[ "$ASSIGN_CODE" != "201" ]] && echo "⚠️  Assignment failed: $ASSIGN_CODE" || echo "✅ Assigned to $VIEWER"; echo -e "\n🎉  Success → https://github.com/$REPO_VAR/issues/$CHILD_NUM"
 ```
 
 **EXAMPLE USAGE:**
 ```bash
-TITLE="The Color of the Moon"; BODY="Discuss the various colors the moon can appear due to atmospheric conditions and other factors."; set -euo pipefail; REPO_VAR="pollinations/pollinations"; PROJECT_NODE_ID="PVT_kwDOBS76fs4AwCAM"; TOKEN=$(jq -r '.mcpServers.github.env.GITHUB_PAT' ~/.cursor/mcp.json); PARENT_NUM=$(curl -s -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO_VAR/issues?labels=CATEGORY&state=open&per_page=50" | jq -r '.[0].number'); [[ -z "$TOKEN" || "$TOKEN" == "null" ]] && { echo "❌  GITHUB_PAT not found"; exit 1; }; ISSUE_JSON=$(jq -n --arg t "$TITLE" --arg b "$BODY" '{title:$t,body:$b}'); CREATE=$(curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO_VAR/issues" -d "$ISSUE_JSON"); CHILD_ID=$(jq -r .id <<< "$CREATE"); CHILD_NODE=$(jq -r .node_id <<< "$CREATE"); CHILD_NUM=$(jq -r .number <<< "$CREATE"); echo "Linking to parent #$PARENT_NUM..."; LINK_RESPONSE=$(curl -s -w "%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO_VAR/issues/$PARENT_NUM/sub_issues" -d "{\"sub_issue_id\":$CHILD_ID}"); LINK_CODE="${LINK_RESPONSE: -3}"; [[ "$LINK_CODE" != "201" ]] && echo "⚠️  Link failed: $LINK_CODE" || echo "✅ Linked successfully"; echo "Adding to Project 20..."; PAYLOAD=$(jq -n --arg p "$PROJECT_NODE_ID" --arg c "$CHILD_NODE" '{query:"mutation($p:ID!,$c:ID!){addProjectV2ItemById(input:{projectId:$p,contentId:$c}){item{id}}}",variables:{p:$p,c:$c}}'); PROJECT_RESPONSE=$(curl -s -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" https://api.github.com/graphql -d "$PAYLOAD"); if echo "$PROJECT_RESPONSE" | jq -e '.errors' > /dev/null; then echo "⚠️  Project add failed:" && echo "$PROJECT_RESPONSE" | jq '.errors'; else echo "✅ Added to project successfully"; fi; echo "Assigning issue..."; VIEWER=$(curl -s -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" https://api.github.com/graphql -d '{"query":"{ viewer { login } }"}' | jq -r .data.viewer.login); ASSIGN_RESPONSE=$(curl -s -w "%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO_VAR/issues/$CHILD_NUM/assignees" -d "{\"assignees\":[\"$VIEWER\"]}"); ASSIGN_CODE="${ASSIGN_RESPONSE: -3}"; [[ "$ASSIGN_CODE" != "201" ]] && echo "⚠️  Assignment failed: $ASSIGN_CODE" || echo "✅ Assigned to $VIEWER"; echo -e "\n🎉  Success → https://github.com/$REPO_VAR/issues/$CHILD_NUM"
+TITLE="The Color of the Moon"; BODY="Discuss the various colors the moon can appear due to atmospheric conditions and other factors."; PARENT_NUM="1595"; set -euo pipefail; REPO_VAR="pollinations/pollinations"; PROJECT_NODE_ID="PVT_kwDOBS76fs4AwCAM"; TOKEN=$(jq -r '.mcpServers.github.env.GITHUB_PAT' ~/.cursor/mcp.json); [[ -z "$TOKEN" || "$TOKEN" == "null" ]] && { echo "❌  GITHUB_PAT not found"; exit 1; }; echo "📌 Creating issue with parent #$PARENT_NUM..."; ISSUE_JSON=$(jq -n --arg t "$TITLE" --arg b "$BODY" '{title:$t,body:$b}'); CREATE=$(curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO_VAR/issues" -d "$ISSUE_JSON"); CHILD_ID=$(jq -r .id <<< "$CREATE"); CHILD_NODE=$(jq -r .node_id <<< "$CREATE"); CHILD_NUM=$(jq -r .number <<< "$CREATE"); echo "✅ Created issue #$CHILD_NUM"; echo "Linking to parent #$PARENT_NUM..."; LINK_RESPONSE=$(curl -s -w "%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO_VAR/issues/$PARENT_NUM/sub_issues" -d "{\"sub_issue_id\":$CHILD_ID}"); LINK_CODE="${LINK_RESPONSE: -3}"; [[ "$LINK_CODE" != "201" ]] && echo "⚠️  Link failed: $LINK_CODE" || echo "✅ Linked successfully"; echo "Adding to Project 20..."; PAYLOAD=$(jq -n --arg p "$PROJECT_NODE_ID" --arg c "$CHILD_NODE" '{query:"mutation($p:ID!,$c:ID!){addProjectV2ItemById(input:{projectId:$p,contentId:$c}){item{id}}}",variables:{p:$p,c:$c}}'); PROJECT_RESPONSE=$(curl -s -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" https://api.github.com/graphql -d "$PAYLOAD"); if echo "$PROJECT_RESPONSE" | jq -e '.errors' > /dev/null; then echo "⚠️  Project add failed:" && echo "$PROJECT_RESPONSE" | jq '.errors'; else echo "✅ Added to project successfully"; fi; echo "Assigning issue..."; VIEWER=$(curl -s -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" https://api.github.com/graphql -d '{"query":"{ viewer { login } }"}' | jq -r .data.viewer.login); ASSIGN_RESPONSE=$(curl -s -w "%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO_VAR/issues/$CHILD_NUM/assignees" -d "{\"assignees\":[\"$VIEWER\"]}"); ASSIGN_CODE="${ASSIGN_RESPONSE: -3}"; [[ "$ASSIGN_CODE" != "201" ]] && echo "⚠️  Assignment failed: $ASSIGN_CODE" || echo "✅ Assigned to $VIEWER"; echo -e "\n🎉  Success → https://github.com/$REPO_VAR/issues/$CHILD_NUM"
 ```
 
-### **📣 Step 5 | Confirm to the User**
+### **📣 Step 5 | Result**
 
 **AUTONOMOUS VALIDATION & REPORTING:**
 After executing the command yourself, validate the results and report to the user:
 
 **VALIDATION CHECKLIST** - Only report success if ALL of these appeared in YOUR execution output:
-1. ✅ "Linked successfully" appeared in output
-2. ✅ "Added to project successfully" appeared in output  
-3. ✅ "Assigned to [username]" appeared in output
-4. 🎉 Final success URL was printed
+1. ✅ "Created issue #[number]" appeared in output
+2. ✅ "Linked successfully" appeared in output
+3. ✅ "Added to project successfully" appeared in output  
+4. ✅ "Assigned to [username]" appeared in output
+5. 🎉 Final success URL was printed
 
 **SUCCESS REPORTING:**
 - Extract and provide the final GitHub issue URL from the command output
 - Confirm that all steps completed successfully
+- Show which parent category was selected
 
 **FAILURE REPORTING:**
 - Look for ⚠️ symbols in YOUR command output

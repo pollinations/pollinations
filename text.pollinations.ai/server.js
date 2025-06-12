@@ -596,9 +596,7 @@ async function sendAsOpenAIStream(res, completion, req = null) {
     }
     
     // Handle streaming response from the API
-    const responseStream = completion.responseStream;
-    log('Got streaming response from API, provider:', completion.providerName);
-    
+    const responseStream = completion.responseStream;    
     // If we have a responseStream, try to proxy it
     if (responseStream) {
         log('Attempting to proxy stream to client');

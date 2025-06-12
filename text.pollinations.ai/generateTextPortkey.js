@@ -600,7 +600,6 @@ export const generateTextPortkey = createOpenAICompatibleClient({
     modelMapping: MODEL_MAPPING,
     systemPrompts: SYSTEM_PROMPTS,
     defaultOptions: DEFAULT_OPTIONS,
-    providerName: 'Portkey'
 });
 
 function countMessageCharacters(messages) {

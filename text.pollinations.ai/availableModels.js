@@ -1,7 +1,6 @@
 // Import all handler functions
 import { generateTextSearch } from "./generateTextSearch.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
-import { generateTextMistral } from "./generateTextMistral.js";
 
 // Import wrapped models from the new file
 import {

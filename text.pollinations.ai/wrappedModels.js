@@ -1,7 +1,6 @@
 // Import wrapper functions
 import wrapModelWithContext from "./wrapModelWithContext.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
-import generateTextMistral from "./generateTextMistral.js";
 
 // Import persona prompts
 import surSystemPrompt from "./personas/sur.js";

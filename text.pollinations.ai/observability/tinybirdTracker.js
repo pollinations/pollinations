@@ -8,15 +8,8 @@ import { getModelPricing, findModelByName } from '../availableModels.js';
  * @returns {string} - The provider name or 'Unknown' if not found
  */
 function getProviderNameFromModel(modelName) {
-  if (!modelName) return 'Unknown';
-  
-  try {
     const model = findModelByName(modelName);
     return model?.provider || 'Unknown';
-  } catch (err) {
-    log('Error getting provider name:', err);
-    return 'Unknown';
-  }
 }
 
 // Load environment variables
@@ -39,6 +32,9 @@ export async function sendTinybirdEvent(eventData) {
         log('TINYBIRD_API_KEY not set, skipping telemetry');
         return;
     }
+    
+    // Log the friendly model name we received
+    log(`Sending telemetry to Tinybird for model: ${eventData.model || 'unknown'}`);
 
     try {
         // Calculate cost based on token usage and model pricing
@@ -47,6 +43,11 @@ export async function sendTinybirdEvent(eventData) {
         const completionCost = ((eventData.completionTokens || 0) * pricing.completion_tokens) / 1000;
         const totalCost = promptCost + completionCost;
 
+        // Get the provider for the model
+        const modelName = eventData.model || 'unknown';
+        const provider = getProviderNameFromModel(modelName);
+        log(`Provider for model ${modelName}: ${provider}`);
+        
         // Construct the event object with defaults and conditionals using spread operator
         const event = {
             // Standard timestamps and identifiers
@@ -56,14 +57,8 @@ export async function sendTinybirdEvent(eventData) {
             id: eventData.requestId,
             
             // Model and provider info
-            model: eventData.model || 'unknown',
-            // Use model's provider from availableModels if provider wasn't explicitly set
-            provider: (() => {
-                const providedProvider = eventData.provider;
-                const lookupProvider = providedProvider || getProviderNameFromModel(eventData.model);
-                log(`Provider for model ${eventData.model || 'unknown'}: ${lookupProvider} ${providedProvider ? '(explicit)' : '(from model lookup)'}`);
-                return lookupProvider;
-            })(),
+            model: modelName,
+            provider,
             
             // Performance metrics
             duration: eventData.duration,
@@ -118,7 +113,7 @@ export async function sendTinybirdEvent(eventData) {
                 `UserID: ${eventData.user}` : 
                 'Anonymous user';
             
-        log(`Sending telemetry to Tinybird for ${eventData.provider} ${eventData.model} call - ${userIdentifier}${eventData.tier ? `, Tier: ${eventData.tier}` : ''}`);
+        log(`Sending telemetry to Tinybird for ${eventData.model} call - ${userIdentifier}${eventData.tier ? `, Tier: ${eventData.tier}` : ''}`);
         
         // Create an abort controller for timeout
         const controller = new AbortController();

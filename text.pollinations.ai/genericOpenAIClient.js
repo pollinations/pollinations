@@ -22,7 +22,6 @@ import { sendTinybirdEvent } from './observability/tinybirdTracker.js';
  * @param {Object} config.modelMapping - Mapping of internal model names to API model names
  * @param {Object} config.systemPrompts - Default system prompts for different models
  * @param {Object} config.defaultOptions - Default options for the client
- * @param {string} config.providerName - Name of the provider (for logging and errors)
  * @param {Function} config.formatResponse - Optional function to format the response
  * @param {Object} config.additionalHeaders - Optional additional headers to include in requests
  * @param {boolean|Function} config.supportsSystemMessages - Whether the API supports system messages (default: true)
@@ -37,22 +36,21 @@ export function createOpenAICompatibleClient(config) {
         modelMapping = {},
         systemPrompts = {},
         defaultOptions = {},
-        providerName = 'unknown',
         formatResponse = null,
         additionalHeaders = {},
         transformRequest = null,
         supportsSystemMessages = true
     } = config;
 
-    const log = debug(`pollinations:${providerName.toLowerCase()}`);
-    const errorLog = debug(`pollinations:${providerName.toLowerCase()}:error`);
+    const log = debug(`pollinations:genericopenai`);
+    const errorLog = debug(`pollinations:genericopenai:error`);
 
     // Return the client function
     return async function(messages, options = {}) {
         const startTime = Date.now();
         const requestId = generateRequestId();
         
-        log(`[${requestId}] Starting ${providerName} generation request`, {
+        log(`[${requestId}] Starting generic openai generation request`, {
             timestamp: new Date().toISOString(),
             messageCount: messages?.length || 0,
             options
@@ -61,7 +59,7 @@ export function createOpenAICompatibleClient(config) {
         try {
             // Check if API key is available
             if (!authHeaderValue()) {
-                throw new Error(`${providerName} API key is not set`);
+                throw new Error(`Generic OpenAI API key is not set`);
             }
 
             // Normalize options with defaults
@@ -124,7 +122,7 @@ export function createOpenAICompatibleClient(config) {
                 : cleanedRequestBody;
     
 
-            log(`[${requestId}] Sending request to ${providerName} API`, {
+            log(`[${requestId}] Sending request to Generic OpenAI API`, {
                 timestamp: new Date().toISOString(),
                 model: cleanedRequestBody.model,
                 maxTokens: cleanedRequestBody.max_tokens,
@@ -153,8 +151,6 @@ export function createOpenAICompatibleClient(config) {
 
             log(`[${requestId}] Request headers:`, headers);
 
-            log(`[${requestId}] Sending request to ${providerName} API at ${endpointUrl}`);
-
             log(`[${requestId}] Request body:`, JSON.stringify(finalRequestBody, null, 2));
             // Make API request
             const response = await fetch(endpointUrl, {
@@ -165,7 +161,7 @@ export function createOpenAICompatibleClient(config) {
 
             // Handle streaming response
             if (normalizedOptions.stream) {
-                log(`[${requestId}] Streaming response from ${providerName} API, status: ${response.status}, statusText: ${response.statusText}`);
+                log(`[${requestId}] Streaming response from Generic OpenAI API, status: ${response.status}, statusText: ${response.statusText}`);
                 const responseHeaders = Object.fromEntries([...response.headers.entries()]);
                 
                 // Check if the response is successful for streaming
@@ -186,16 +182,11 @@ export function createOpenAICompatibleClient(config) {
                     error.status = response.status;
                     error.details = errorDetails;
                     
-                    // For tracking, still keep provider info internally
-                    error.originalProvider = providerName;
-                    error.provider = "Pollinations";
                     error.model = modelName;
                     
                     throw error;
                 }
-                
-                log(`[${requestId}] Creating streaming response object for ${providerName}`);
-                
+            
                 // Check if the response is SSE (text/event-stream)
                 log(`[${requestId}] Streaming response headers:`, responseHeaders);
                 
@@ -226,20 +217,19 @@ export function createOpenAICompatibleClient(config) {
                     );
                 }
                 return {
-                    id: `${providerName.toLowerCase()}-${requestId}`,
+                    id: `${'genericopenai'.toLowerCase()}-${requestId}`,
                     object: 'chat.completion.chunk',
                     created: Math.floor(startTime / 1000),
                     model: modelName,
                     stream: true,
-                    responseStream: streamToReturn, // This is the (possibly transformed) stream
-                    providerName,
+                    responseStream: streamToReturn, // This is the (possibly transformed) stream,
                     choices: [{ delta: { content: '' }, finish_reason: null, index: 0 }],
-                    error: !response.ok ? { message: `${providerName} API error: ${response.status} ${response.statusText}` } : undefined
+                    error: !response.ok ? { message: `Generic OpenAI API error: ${response.status} ${response.statusText}` } : undefined
                 };
 
             }
 
-            log(`[${requestId}] Received response from ${providerName} API`, {
+            log(`[${requestId}] Received response from Generic OpenAI API`, {
                 timestamp: new Date().toISOString(),
                 status: response.status,
                 statusText: response.statusText,
@@ -264,9 +254,6 @@ export function createOpenAICompatibleClient(config) {
                 error.status = response.status;
                 error.details = errorDetails;
                 
-                // For tracking, still keep provider info internally
-                error.originalProvider = providerName;
-                error.provider = "Pollinations";
                 error.model = modelName;
                 
                 throw error;
@@ -292,8 +279,7 @@ export function createOpenAICompatibleClient(config) {
                 startTime: new Date(startTime),
                 endTime,
                 requestId,
-                model: data.model || modelName,
-                provider: providerName,
+                model: normalizedOptions.model, // Use friendly model name from request options
                 duration: completionTime,
                 status: 'success',
                 promptTokens: data.usage?.prompt_tokens,
@@ -320,7 +306,7 @@ export function createOpenAICompatibleClient(config) {
             if (!data.id) {
                 log(`[${requestId}] Adding missing id field to response`);
                 
-                data.id = `${providerName.toLowerCase()}-${requestId}`;
+                data.id =  `genericopenai-${requestId}`;
             }
             
             if (!data.object) {
@@ -353,8 +339,7 @@ export function createOpenAICompatibleClient(config) {
                 startTime: new Date(startTime),
                 endTime,
                 requestId,
-                model: modelName,
-                provider: providerName,
+                model: normalizedOptions.model, // Use friendly model name from request options
                 duration: completionTime,
                 status: 'error',
                 error,

@@ -1,6 +1,23 @@
 import dotenv from 'dotenv';
 import debug from 'debug';
-import { getModelPricing } from '../availableModels.js';
+import { getModelPricing, findModelByName } from '../availableModels.js';
+
+/**
+ * Get the provider name for a model by looking it up in availableModels
+ * @param {string} modelName - The name of the model
+ * @returns {string} - The provider name or 'Unknown' if not found
+ */
+function getProviderNameFromModel(modelName) {
+  if (!modelName) return 'Unknown';
+  
+  try {
+    const model = findModelByName(modelName);
+    return model?.provider || 'Unknown';
+  } catch (err) {
+    log('Error getting provider name:', err);
+    return 'Unknown';
+  }
+}
 
 // Load environment variables
 dotenv.config();
@@ -40,7 +57,8 @@ export async function sendTinybirdEvent(eventData) {
             
             // Model and provider info
             model: eventData.model || 'unknown',
-            provider: eventData.provider || 'unknown',
+            // Use model's provider from availableModels if provider wasn't explicitly set
+            provider: eventData.provider || getProviderNameFromModel(eventData.model),
             
             // Performance metrics
             duration: eventData.duration,

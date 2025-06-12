@@ -18,7 +18,7 @@ const MODEL_MAPPING = {
     'openai-large': 'azure-gpt-4.1',
     //'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
     'openai-reasoning': 'o3', // Maps to custom MonoAI endpoint
-    'searchgpt2': 'gpt-4o-mini-search-preview', // Maps to custom MonoAI endpoint
+    'searchgpt': 'gpt-4o-mini-search-preview', // Maps to custom MonoAI endpoint
     // 'openai-audio': 'gpt-4o-mini-audio-preview',
     'openai-audio': 'gpt-4o-audio-preview',
     //'openai-roblox': 'gpt-4.1-mini-roblox', // Roblox model
@@ -76,7 +76,7 @@ const SYSTEM_PROMPTS = {
     'openai': BASE_PROMPTS.conversational,
     'openai-large': BASE_PROMPTS.conversational,
     'openai-reasoning': BASE_PROMPTS.conversational,
-    'searchgpt2': BASE_PROMPTS.conversational,
+    'searchgpt': BASE_PROMPTS.conversational,
     // Grok model
     'grok': BASE_PROMPTS.conversational,
     //'openai-xlarge': BASE_PROMPTS.conversational,
@@ -439,7 +439,7 @@ export const portkeyConfig = {
     'qwen-reasoning': () => createScalewayModelConfig(),
     'openai-reasoning': () => ({ ...baseMonoAIConfig }), 
     'o3': () => ({ ...baseMonoAIConfig }), 
-    'searchgpt2': () => ({ ...baseMonoAIConfig }),
+    'searchgpt': () => ({ ...baseMonoAIConfig }),
     'gpt-4o-mini-search-preview': () => ({ ...baseMonoAIConfig }), 
     'unity': () => createScalewayModelConfig(),
     'mis-unity': () => createScalewayModelConfig({

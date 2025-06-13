@@ -173,5 +173,13 @@ export const gamesProjects = [
     author: "@thespecificdev",
     submissionDate: "2025-06-07",
     order: 1
+  },
+  {
+    name: "Convince the Weird Maid to Let You Leave the House (Roblox)",
+    url: "https://www.roblox.com/games/120881450499910/Convince-the-Weird-Maid-to-Let-You-Leave-the-House",
+    description: "A Roblox game where a weird maid traps you inside her house. Your goal is to convince her to let you leave before her 'freakiness' meter hits 100%. Powered by GPT-4o-mini for dynamic AI conversations.",
+    author: "@wBrowsqq",
+    submissionDate: "2025-06-13",
+    order: 1
   }
 ];

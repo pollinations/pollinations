@@ -130,7 +130,17 @@ async function handleRequest(req, res, requestData) {
     try {
         // Generate a unique ID for this request
         const requestId = generatePollinationsId();
-        const completion = await generateTextBasedOnModel(requestData.messages, requestData);
+        
+        // Get user info from authentication if available
+        const authResult = req.authResult || {};
+        
+        // Add user info to request data - using authResult directly as a thin proxy
+        const requestWithUserInfo = {
+            ...requestData,
+            userInfo: authResult
+        };
+        
+        const completion = await generateTextBasedOnModel(requestData.messages, requestWithUserInfo);
         
         // Ensure completion has the request ID
         completion.id = requestId;
@@ -401,17 +411,13 @@ async function processRequest(req, res, requestData) {
             }
         };
         
-        if (requestData.stream) {
-            // For streaming requests, send error as a stream
-            await sendAsOpenAIStream(res, { error: 'Forbidden', choices: [{ message: { content: 'Forbidden' } }] }, req);
-            return;
-        } else {
-            return res.status(403).json(errorResponse);
-        }
+        return res.status(403).json(errorResponse);
     }
     
     // Check authentication status
     const authResult = await handleAuthentication(req, null, authLog);
+    // Store authentication result in request for later use
+    req.authResult = authResult;
     // Use the new explicit authentication fields
     const isTokenAuthenticated = authResult.tokenAuth;
     const hasReferrer = authResult.referrerAuth;
@@ -590,9 +596,7 @@ async function sendAsOpenAIStream(res, completion, req = null) {
     }
     
     // Handle streaming response from the API
-    const responseStream = completion.responseStream;
-    log('Got streaming response from API, provider:', completion.providerName);
-    
+    const responseStream = completion.responseStream;    
     // If we have a responseStream, try to proxy it
     if (responseStream) {
         log('Attempting to proxy stream to client');
@@ -692,20 +696,7 @@ async function generateTextBasedOnModel(messages, options) {
             log('Streaming mode enabled for model:', model, 'stream value:', options.stream);
         }
         
-        // Apply Roblox-specific fix if needed
-        const robloxFixedMessages = handleRobloxSpecificFix(messages, model);
-        
-        // Remove p-ads marker from messages to prevent it from affecting the LLM context
-        const processedMessages = robloxFixedMessages.map(msg => {
-            if (msg.content && typeof msg.content === 'string') {
-                // Remove the p-ads marker from the message content
-                return {
-                    ...msg,
-                    content: msg.content.replace(/p-ads/g, '')
-                };
-            }
-            return msg;
-        });
+        const processedMessages = messages;
         
         // Log the messages being sent
         log('Sending messages to model handler:', JSON.stringify(processedMessages.map(m => ({ role: m.role, content: typeof m.content === 'string' ? m.content.substring(0, 50) + '...' : '[non-string content]' }))));

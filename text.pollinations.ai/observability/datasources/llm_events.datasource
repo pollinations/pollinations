@@ -1,0 +1,49 @@
+
+DESCRIPTION >
+    Store LLM events with usage metrics, costs, and metadata
+
+SCHEMA >
+    `timestamp` DateTime `json:$.start_time`,
+    `organization` String `json:$.proxy_metadata.organization` DEFAULT '',
+    `project` String `json:$.proxy_metadata.project` DEFAULT '',
+    `environment` String `json:$.proxy_metadata.environment` DEFAULT '',
+    `user` String `json:$.user` DEFAULT 'unknown',
+    `chat_id` String `json:$.proxy_metadata.chat_id` DEFAULT '',
+    `message_id` String `json:$.message_id`,
+    `model` LowCardinality(String) `json:$.model` DEFAULT 'unknown',
+    `prompt_tokens` UInt16 `json:$.response.usage.prompt_tokens` DEFAULT 0,
+    `completion_tokens` UInt16 `json:$.response.usage.completion_tokens` DEFAULT 0,
+    `total_tokens` UInt16 `json:$.response.usage.total_tokens` DEFAULT 0,
+    `response_time` Float32 `json:$.standard_logging_object_response_time` DEFAULT 0,
+    `duration` Float32 `json:$.duration` DEFAULT 0,
+    `cost` Float32 `json:$.cost` DEFAULT 0,
+    `exception` String `json:$.exception` DEFAULT '',
+    `traceback` String `json:$.traceback` DEFAULT '',
+    `response_status` LowCardinality(String) `json:$.standard_logging_object_status` DEFAULT 'unknown',
+
+    `messages` Array(Map(String, String)) `json:$.messages[:]` DEFAULT [],
+    `response_choices` Array(String) `json:$.response.choices[:]` DEFAULT [],
+    `proxy_metadata` String `json:$.proxy_metadata` DEFAULT '',
+    `provider` LowCardinality(String) `json:$.provider` DEFAULT 'unknown',
+
+    `llm_api_duration_ms` Float32 `json:$.llm_api_duration_ms` DEFAULT 0,
+    `end_time` DateTime `json:$.end_time`,
+    `id` String `json:$.id` DEFAULT '',
+    `stream` Bool `json:$.stream` DEFAULT false,
+    `call_type` LowCardinality(String) `json:$.call_type` DEFAULT 'unknown',
+    `api_key` String `json:$.api_key` DEFAULT '',
+    `log_event_type` LowCardinality(String) `json:$.log_event_type` DEFAULT 'unknown',
+    `cache_hit` Bool `json:$.cache_hit` DEFAULT false,
+    `response` String `json:$.response` DEFAULT '',
+    `response_id` String `json:$.response.id`,
+    `response_object` String `json:$.response.object` DEFAULT 'unknown',
+
+    `embedding` Array(Float32) `json:$.embedding[:]` DEFAULT []
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
+ENGINE_SORTING_KEY "timestamp, organization, project, environment, user, chat_id"
+ENGINE_PRIMARY_KEY "timestamp, organization, project"
+
+FORWARD_QUERY >
+    SELECT timestamp, organization, project, environment, user, chat_id, message_id, model, prompt_tokens, completion_tokens, total_tokens, response_time, duration, cost, exception, traceback, response_status, messages, response_choices, proxy_metadata, provider, llm_api_duration_ms, end_time, id, CAST(stream, 'Bool') AS stream, call_type, api_key, log_event_type, CAST(cache_hit, 'Bool') AS cache_hit, response, response_id, response_object, defaultValueOfTypeName('Array(Float32)') AS embedding

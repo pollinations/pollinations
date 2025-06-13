@@ -173,5 +173,13 @@ export const gamesProjects = [
     author: "@thespecificdev",
     submissionDate: "2025-06-07",
     order: 1
+  },
+  {
+    name: "🕰️ Time Travel Selfie Portal",
+    url: "https://selfie-time-traveler-portal.vercel.app",
+    description: "Upload your selfie, background is automatically removed. Choose a historical era and view your viral time-travel portrait, move your image for the best fit, and get your unique humorous biography. Uses text.pollinations.ai for image analysis and biography creation, and image.pollinations.ai for background generation.",
+    author: "@Argyrisk21",
+    submissionDate: "2025-06-13",
+    order: 1
   }
 ];

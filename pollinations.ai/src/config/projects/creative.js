@@ -47,6 +47,16 @@ export const creativeProjects = [
     order: 1
   },
   {
+    name: "StoryBolt",
+    url: "https://storybolt.vercel.app/",
+    description: "Generate stories with enticing narratives and beautiful illustrations. Users can enter a prompt, customize the genre and art style, and publish their stories! Users can favorite, download, and listen to their stories, and read other books created by the community.",
+    author: "@gumbasil",
+    repo: "https://github.com/sahilalamgir/StoryBolt",
+    stars: 0,
+    submissionDate: "2025-06-13",
+    order: 1
+  },
+  {
     name: "Musify - AI Enhanced Music Streaming",
     url: "https://musify-sd.vercel.app/",
     description: "Musify is your AI-powered music buddy, making your jam sessions smarter and more fun. Powered by pollinations API, it offers AI Music Assistant, Voice Commands, AI Playlist Creator, and Responsive Design.",

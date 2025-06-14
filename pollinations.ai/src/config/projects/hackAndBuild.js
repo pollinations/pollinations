@@ -241,4 +241,13 @@ export const hackAndBuildProjects = [
     submissionDate: "2025-05-15",
     order: 1
   },
+  {
+    name: "DynaSpark API",
+    url: "https://th3-ai.github.io/DynaSpark",
+    description: "The DynaSpark API provides simple yet powerful AI capabilities for text generation, image creation, and audio synthesis. Built on the Pollinations AI API, it includes its own Python package and detailed documentation. Lightweight, developer-friendly, and easy to integrate with fast API calls and seamless operation in both web and desktop environments.",
+    author: "@Th3-C0der",
+    repo: "https://github.com/Th3-AI/DynaSpark",
+    submissionDate: "2025-06-12",
+    order: 1
+  },
 ];

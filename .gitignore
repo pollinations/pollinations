@@ -290,3 +290,4 @@ text.pollinations.ai/v2/
 model-context-protocol/mcp-server-sqlite-npx/
 model-context-protocol/github-app-auth/.dev.vars
 image.pollinations.ai/temp_logs/gptimage_requests.jsonl
+/text.pollinations.ai

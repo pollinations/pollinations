@@ -17,7 +17,8 @@ const MODEL_MAPPING = {
     'openai': 'gpt-4.1-mini',       // Maps to portkeyConfig['gpt-4o-mini']
     'openai-large': 'azure-gpt-4.1',
     //'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
-    //'openai-reasoning': 'o4-mini', // Maps to portkeyConfig['o1-mini'],
+    'openai-reasoning': 'o3', // Maps to custom MonoAI endpoint
+    'searchgpt': 'gpt-4o-mini-search-preview', // Maps to custom MonoAI endpoint
     // 'openai-audio': 'gpt-4o-mini-audio-preview',
     'openai-audio': 'gpt-4o-audio-preview',
     //'openai-roblox': 'gpt-4.1-mini-roblox', // Roblox model
@@ -74,6 +75,8 @@ const SYSTEM_PROMPTS = {
     'openai-fast': BASE_PROMPTS.conversational,
     'openai': BASE_PROMPTS.conversational,
     'openai-large': BASE_PROMPTS.conversational,
+    'openai-reasoning': BASE_PROMPTS.conversational,
+    'searchgpt': BASE_PROMPTS.conversational,
     // Grok model
     'grok': BASE_PROMPTS.conversational,
     //'openai-xlarge': BASE_PROMPTS.conversational,
@@ -187,6 +190,13 @@ const baseOpenRouterConfig = {
     authKey: process.env.OPENROUTER_API_KEY,
     // Set default max_tokens to 4096
     'max-tokens': 4096,
+};
+
+// MonoAI configuration for o3 model
+const baseMonoAIConfig = {
+    provider: 'openai',
+    'custom-host': 'https://www.chatwithmono.xyz/api/pollinations',
+    // No auth key required as this is a free endpoint
 };
 
 // DeepSeek model configuration
@@ -423,6 +433,18 @@ export const portkeyConfig = {
     }),
     'llama-3.3-70b-instruct': () => createScalewayModelConfig(),
     'deepseek-r1-distill-llama-70b': () => createScalewayModelConfig(),
+    'qwen-coder': () => createScalewayModelConfig(),
+    'evil-mistral': () => createScalewayModelConfig(),
+    'surscaleway': () => createScalewayModelConfig(),
+    'qwen-reasoning': () => createScalewayModelConfig(),
+    'openai-reasoning': () => ({ ...baseMonoAIConfig }), 
+    'o3': () => ({ ...baseMonoAIConfig }), 
+    'searchgpt': () => ({ ...baseMonoAIConfig }),
+    'gpt-4o-mini-search-preview': () => ({ ...baseMonoAIConfig }), 
+    'unity': () => createScalewayModelConfig(),
+    'mis-unity': () => createScalewayModelConfig({
+        'retry': '0',
+    }),
     // Mistral model configuration
     'mistral-small-3.1-24b-instruct-2503': () => createMistralModelConfig({
         'max-tokens': 8192,

@@ -5,6 +5,15 @@
 
 export const hackAndBuildProjects = [
   {
+    name: "JSON Pollinations API",
+    url: "https://pollinations-json.deno.dev/openai",
+    description: "Deno Deploy API wrapper for Pollinations that provides JSON-formatted responses. Designed for applications that require JSON API integration with Pollinations services.",
+    author: "@1robots123",
+    authorUrl: "https://websim.com/@1robots123",
+    submissionDate: "2025-06-13",
+    order: 1
+  },
+  {
     name: "MCPollinations",
     url: "https://github.com/pinkpixel-dev/MCPollinations",
     description: "A Model Context Protocol (MCP) server that enables AI assistants to generate images, text, and audio through the Pollinations APIs. Supports customizable parameters, image saving, and multiple model options.",

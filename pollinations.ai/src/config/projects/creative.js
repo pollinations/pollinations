@@ -13,14 +13,6 @@ export const creativeProjects = [
     order: 1
   },
   {
-    name: "JSON Pollinations API",
-    url: "https://pollinations-json.deno.dev/openai",
-    description: "A Deno Deploy API wrapper for Pollinations that provides JSON-formatted responses. Designed for applications that require JSON API integration with Pollinations services.",
-    author: "@apersonwhomakesstuff",
-    submissionDate: "2025-06-13",
-    order: 1
-  },
-  {
     name: "MrEgonAI",
     url: "https://mr-egon-ai.vercel.app/",
     description: "An image generator powered by pollinations.ai and its image generation models. Features text-to-image generation with various AI models.",

@@ -296,19 +296,15 @@ export function cleanNullAndUndefined(obj) {
 /**
  * Creates a standardized error response
  * @param {Error} error - Error object
- * @param {string} providerName - Provider name
  * @returns {Object} - Standardized error response
  */
-export function createErrorResponse(error, providerName = 'unknown') {
-  errorLog(`Error in ${providerName} provider:`, error);
+export function createErrorResponse(error) {
+  errorLog(`Error:`, error);
   
   return {
     error: {
       message: error.message || 'An unexpected error occurred',
       code: error.code || 500,
-      metadata: {
-        provider_name: providerName
-      }
     }
   };
 }

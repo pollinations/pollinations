@@ -392,14 +392,14 @@ export const portkeyConfig = {
         process.env.AZURE_OPENAI_41_ENDPOINT,
         'gpt-4.1'
     ),
-    'optillm-p1': () => ({
-        provider: 'openai',
-        'custom-host': 'http://localhost:8100/v1/chat/completions',
-        authKey: 'sk-placeholder-key',
-        'auth-header-name': 'Authorization',
-        'auth-header-value-prefix': 'Bearer ',
-        'max-tokens': 4096
-    }),
+    // 'optillm-p1': () => ({
+    //     provider: 'openai',
+    //     'custom-host': 'http://localhost:8100/v1',
+    //     authKey: 'sk-placeholder-key',
+    //     'auth-header-name': 'Authorization',
+    //     'auth-header-value-prefix': 'Bearer ',
+    //     'max-tokens': 4096
+    // }),
     'azure-gpt-4.1-xlarge': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_XLARGE_API_KEY,
         process.env.AZURE_OPENAI_XLARGE_ENDPOINT,
@@ -620,11 +620,6 @@ export const generateTextPortkey = createOpenAICompatibleClient({
                 }
                 
                 return filteredBody;
-            }
-
-            // Transform model name for optillm-p1 requests to use Chain of Code approach
-            if (modelName === 'optillm-p1') {
-                requestBody.model = 'coc-openai-large';
             }
 
             return requestBody;

@@ -577,6 +577,12 @@ export const generateTextPortkey = createOpenAICompatibleClient({
                 }
             });
 
+            // Fix for grok model: always set seed to null
+            if (modelName === 'azure-grok' && requestBody.seed !== undefined) {
+                log(`Setting seed to null for grok model (was: ${requestBody.seed})`);
+                requestBody.seed = null;
+            }
+
             // Apply model-specific parameter filtering
             // Some models like searchgpt only accept specific parameters
             const modelParameterAllowList = {

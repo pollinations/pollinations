@@ -1,92 +1,148 @@
 #!/bin/bash
 
 # OptiLLM Setup Script for Pollinations
-# This script sets up OptiLLM as a proxy for enhanced LLM inference
+# This script manages OptiLLM installation and configuration
 
-set -e
-
-OPTILLM_VENV_PATH="/home/ubuntu/optillm-venv"
+VENV_PATH="/home/ubuntu/optillm-venv"
 OPTILLM_PORT=8100
-POLLINATIONS_OPENAI_ENDPOINT="https://text.pollinations.ai/openai"
+DEFAULT_BACKEND="https://text.pollinations.ai/openai"
 
-echo "🚀 Setting up OptiLLM for Pollinations..."
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-# Function to check if virtual environment exists
-check_venv() {
-    if [ -d "$OPTILLM_VENV_PATH" ]; then
-        echo "✅ OptiLLM virtual environment found at $OPTILLM_VENV_PATH"
-        return 0
+# Emojis for visual feedback
+ROCKET="🚀"
+CHECK="✅"
+WARNING="⚠️"
+LIGHTBULB="💡"
+SATELLITE="📡"
+GEAR="⚙️"
+TEST="🧪"
+FIRE="🔥"
+
+print_status() {
+    echo -e "${BLUE}${ROCKET} Setting up OptiLLM for Pollinations...${NC}"
+}
+
+# Function to detect Azure OpenAI configuration
+detect_azure_config() {
+    if [ -f "../.env" ]; then
+        AZURE_ENDPOINT=$(grep "^AZURE_OPENAI_41_ENDPOINT=" ../.env | cut -d'=' -f2- | tr -d '"')
+        AZURE_API_KEY=$(grep "^AZURE_OPENAI_41_API_KEY=" ../.env | cut -d'=' -f2- | tr -d '"')
+        
+        if [ ! -z "$AZURE_ENDPOINT" ] && [ ! -z "$AZURE_API_KEY" ]; then
+            # Extract base URL for Azure OpenAI (remove deployment-specific parts)
+            # From: https://thot--m9jzyn1x-swedencentral.openai.azure.com/openai/deployments/gpt-4.1/chat/completions?api-version=2025-01-01-preview
+            # To: https://thot--m9jzyn1x-swedencentral.openai.azure.com/
+            AZURE_BASE_URL=$(echo "$AZURE_ENDPOINT" | sed -E 's|(/openai/deployments/.*)$||')
+            # For OptiLLM with Azure, we need to set the model name to match the deployment
+            AZURE_MODEL_NAME="gpt-4.1"
+            echo -e "${CHECK} Found Azure OpenAI configuration in .env"
+            echo -e "  ${GEAR} Base URL: $AZURE_BASE_URL"
+            echo -e "  ${GEAR} Model: $AZURE_MODEL_NAME"
+            echo -e "  ${GEAR} API Key: ${AZURE_API_KEY:0:12}..."
+            return 0
+        fi
+    fi
+    return 1
+}
+
+setup_optillm() {
+    print_status
+    
+    # Check if virtual environment exists
+    if [ ! -d "$VENV_PATH" ]; then
+        echo -e "${YELLOW}${WARNING} Creating OptiLLM virtual environment...${NC}"
+        python3 -m venv "$VENV_PATH"
+        source "$VENV_PATH/bin/activate"
+        pip install --upgrade pip
+        pip install optillm
+        echo -e "${GREEN}${CHECK} OptiLLM installed in virtual environment${NC}"
     else
-        echo "❌ OptiLLM virtual environment not found"
-        return 1
+        echo -e "${GREEN}${CHECK} OptiLLM virtual environment found at $VENV_PATH${NC}"
+    fi
+    
+    # Test installation
+    echo -e "${TEST} Testing OptiLLM installation..."
+    source "$VENV_PATH/bin/activate"
+    if optillm --version > /dev/null 2>&1; then
+        echo -e "${GREEN}${CHECK} OptiLLM installation verified${NC}"
+        echo -e "${GREEN}${FIRE} OptiLLM setup complete!${NC}"
+        echo -e "${LIGHTBULB} Use './setup.sh start' to start the proxy${NC}"
+    else
+        echo -e "${RED}❌ OptiLLM installation failed${NC}"
+        exit 1
     fi
 }
 
-# Function to create and setup virtual environment
-setup_venv() {
-    echo "📦 Creating OptiLLM virtual environment..."
-    python3 -m venv "$OPTILLM_VENV_PATH"
-    
-    echo "📥 Installing OptiLLM..."
-    "$OPTILLM_VENV_PATH/bin/pip" install --upgrade pip
-    "$OPTILLM_VENV_PATH/bin/pip" install optillm
-    
-    echo "✅ OptiLLM installed successfully"
-}
-
-# Function to test OptiLLM installation
-test_installation() {
-    echo "🧪 Testing OptiLLM installation..."
-    "$OPTILLM_VENV_PATH/bin/optillm" --help > /dev/null
-    echo "✅ OptiLLM installation verified"
-}
-
-# Function to start OptiLLM proxy
 start_optillm() {
-    echo "🌐 Starting OptiLLM proxy on port $OPTILLM_PORT..."
-    echo "📡 Proxying to: $POLLINATIONS_OPENAI_ENDPOINT"
-    
-    export OPENAI_API_KEY="sk-placeholder-key"
+    print_status
     
     # Check if already running
-    if lsof -Pi :$OPTILLM_PORT -sTCP:LISTEN -t >/dev/null; then
-        echo "⚠️  OptiLLM is already running on port $OPTILLM_PORT"
-        echo "💡 Use 'pkill -f optillm' to stop it first"
+    if pgrep -f "optillm.*$OPTILLM_PORT" > /dev/null; then
+        echo -e "${WARNING} OptiLLM is already running on port $OPTILLM_PORT${NC}"
+        echo -e "${LIGHTBULB} Use 'pkill -f optillm' to stop it first${NC}"
         return 1
     fi
     
-    echo "▶️  Starting OptiLLM..."
-    "$OPTILLM_VENV_PATH/bin/optillm" \
-        --port $OPTILLM_PORT \
-        --base_url "$POLLINATIONS_OPENAI_ENDPOINT" \
-        --log info &
+    # Detect backend configuration
+    BACKEND_URL="$DEFAULT_BACKEND"
+    EXTRA_ARGS=""
     
-    OPTILLM_PID=$!
-    echo "🆔 OptiLLM started with PID: $OPTILLM_PID"
-    
-    # Wait a moment for startup
-    sleep 3
-    
-    # Test if it's responding
-    if curl -s "http://localhost:$OPTILLM_PORT/v1/models" > /dev/null; then
-        echo "✅ OptiLLM proxy is responding on http://localhost:$OPTILLM_PORT"
-        echo "🎯 Ready to handle requests!"
+    if detect_azure_config; then
+        echo -e "${LIGHTBULB} Choose backend configuration:"
+        echo -e "  1) Direct Azure OpenAI (recommended for optimization)"
+        echo -e "  2) Pollinations proxy (default)"
+        read -p "Enter choice (1 or 2): " choice
+        
+        if [ "$choice" = "1" ]; then
+            BACKEND_URL="$AZURE_BASE_URL"
+            export OPENAI_API_KEY="$AZURE_API_KEY"
+            echo -e "${SATELLITE} Using direct Azure OpenAI backend"
+            echo -e "${SATELLITE} Backend: $BACKEND_URL"
+            echo -e "${SATELLITE} Model: $AZURE_MODEL_NAME"
+        else
+            export OPENAI_API_KEY="sk-placeholder-key"
+            echo -e "${SATELLITE} Using Pollinations proxy backend"
+        fi
     else
-        echo "❌ OptiLLM proxy is not responding"
-        return 1
+        export OPENAI_API_KEY="sk-placeholder-key"
+        echo -e "${SATELLITE} Using Pollinations proxy backend (no Azure config found)"
+    fi
+    
+    echo -e "${SATELLITE} Starting OptiLLM proxy on port $OPTILLM_PORT..."
+    echo -e "${SATELLITE} Proxying to: $BACKEND_URL"
+    
+    # Start OptiLLM in background
+    source "$VENV_PATH/bin/activate"
+    nohup optillm --port $OPTILLM_PORT --base-url "$BACKEND_URL" --approach none --log info > optillm.log 2>&1 &
+    
+    # Wait a moment and check if it started
+    sleep 3
+    if pgrep -f "optillm.*$OPTILLM_PORT" > /dev/null; then
+        PID=$(pgrep -f "optillm.*$OPTILLM_PORT")
+        echo -e "${GREEN}${CHECK} OptiLLM started successfully${NC}"
+        echo -e "${GREEN}${CHECK} PID: $PID${NC}"
+        echo -e "${LIGHTBULB} Check logs: tail -f optillm.log${NC}"
+    else
+        echo -e "${RED}❌ Failed to start OptiLLM${NC}"
+        echo -e "${LIGHTBULB} Check optillm.log for errors${NC}"
+        exit 1
     fi
 }
 
-# Function to stop OptiLLM
 stop_optillm() {
-    echo "🛑 Stopping OptiLLM..."
+    echo -e "${WARNING} Stopping OptiLLM..."
     pkill -f optillm || echo "No OptiLLM process found"
-    echo "✅ OptiLLM stopped"
+    echo -e "${GREEN}${CHECK} OptiLLM stopped${NC}"
 }
 
-# Function to test OptiLLM with a sample request
 test_request() {
-    echo "🧪 Testing OptiLLM with sample request..."
+    echo -e "${TEST} Testing OptiLLM with sample request..."
     
     curl -s -X POST "http://localhost:$OPTILLM_PORT/v1/chat/completions" \
         -H "Content-Type: application/json" \
@@ -100,19 +156,10 @@ test_request() {
 # Main execution based on arguments
 case "${1:-setup}" in
     "setup")
-        if ! check_venv; then
-            setup_venv
-        fi
-        test_installation
-        echo "🎉 OptiLLM setup complete!"
-        echo "💡 Use './setup.sh start' to start the proxy"
+        setup_optillm
         ;;
     
     "start")
-        if ! check_venv; then
-            echo "❌ OptiLLM not installed. Run './setup.sh setup' first"
-            exit 1
-        fi
         start_optillm
         ;;
     
@@ -123,9 +170,7 @@ case "${1:-setup}" in
     "restart")
         stop_optillm
         sleep 2
-        if check_venv; then
-            start_optillm
-        fi
+        start_optillm
         ;;
     
     "test")
@@ -133,12 +178,12 @@ case "${1:-setup}" in
         ;;
     
     "status")
-        if lsof -Pi :$OPTILLM_PORT -sTCP:LISTEN -t >/dev/null; then
-            echo "✅ OptiLLM is running on port $OPTILLM_PORT"
-            PID=$(lsof -Pi :$OPTILLM_PORT -sTCP:LISTEN -t)
-            echo "🆔 PID: $PID"
+        if pgrep -f "optillm.*$OPTILLM_PORT" > /dev/null; then
+            echo -e "${GREEN}${CHECK} OptiLLM is running on port $OPTILLM_PORT${NC}"
+            PID=$(pgrep -f "optillm.*$OPTILLM_PORT")
+            echo -e "${GREEN}${CHECK} PID: $PID${NC}"
         else
-            echo "❌ OptiLLM is not running"
+            echo -e "${RED}❌ OptiLLM is not running${NC}"
         fi
         ;;
     

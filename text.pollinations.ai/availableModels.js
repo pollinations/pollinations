@@ -67,20 +67,20 @@ const models = [
       completion_tokens: 0.008    // $0.008 per 1K output tokens (GPT-4.1)
     },
   },
-  {
-    name: "p1",
-    description: "GPT-4.1 with OptiLLM optimization proxy for enhanced reasoning and performance",
-    handler: generateTextPortkey,
-    provider: "azure",
-    aliases: [],
-    input_modalities: ["text"],
-    output_modalities: ["text"], 
-    tools: true,
-    pricing: {
-      prompt_tokens: 0.000005,
-      completion_tokens: 0.00002
-    }
-  },
+  // {
+  //   name: "p1",
+  //   description: "GPT-4.1 with OptiLLM optimization proxy for enhanced reasoning and performance",
+  //   handler: generateTextPortkey,
+  //   provider: "azure",
+  //   aliases: [],
+  //   input_modalities: ["text"],
+  //   output_modalities: ["text"], 
+  //   tools: true,
+  //   pricing: {
+  //     prompt_tokens: 0.000005,
+  //     completion_tokens: 0.00002
+  //   }
+  // },
   // {
   //   name: "openai-roblox",
   //   description: "OpenAI GPT-4.1-mini for Roblox",

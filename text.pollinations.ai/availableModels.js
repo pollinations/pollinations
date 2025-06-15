@@ -372,11 +372,14 @@ const sortedModels = models.sort((a, b) => a.name.localeCompare(b.name));
 
 // Now export the processed models with proper functional approach
 export const availableModels = sortedModels.map((model) => {
-  const inputs = model.input_modalities || [];
-  const outputs = model.output_modalities || [];
+  // Omit internal pricing metadata from the publicly exposed object
+  const { token_input, token_cache, token_output, ...publicModel } = model;
+
+  const inputs = publicModel.input_modalities || [];
+  const outputs = publicModel.output_modalities || [];
 
   return {
-    ...model,
+    ...publicModel,
     vision: inputs.includes("image"),
     audio: inputs.includes("audio") || outputs.includes("audio"),
   };

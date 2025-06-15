@@ -1,7 +1,6 @@
 // Import all handler functions
 import { generateTextSearch } from "./generateTextSearch.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
-import { generateTextMistral } from "./generateTextMistral.js";
 
 // Import wrapped models from the new file
 import {
@@ -30,6 +29,10 @@ const models = [
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
     tools: true,
+    pricing: {
+      prompt_tokens: 0.0004,    // $0.0004 per 1K input tokens (GPT-4.1-mini)
+      completion_tokens: 0.0016  // $0.0016 per 1K output tokens (GPT-4.1-mini)
+    },
   },
   {
     name: "openai-fast",
@@ -42,6 +45,10 @@ const models = [
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
     tools: true,
+    pricing: {
+      prompt_tokens: 0.0001,    // $0.0001 per 1K input tokens (GPT-4.1-nano)
+      completion_tokens: 0.0004    // $0.0004 per 1K output tokens (GPT-4.1-nano)
+    },
   },
   {
     name: "openai-large",
@@ -55,6 +62,10 @@ const models = [
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
     tools: true,
+    pricing: {
+      prompt_tokens: 0.002,    // $0.002 per 1K input tokens (GPT-4.1)
+      completion_tokens: 0.008    // $0.008 per 1K output tokens (GPT-4.1)
+    },
   },
   // {
   //   name: "openai-roblox",
@@ -99,6 +110,10 @@ const models = [
     input_modalities: ["text"],
     output_modalities: ["text"],
     tools: true,
+    pricing: {
+      prompt_tokens: 0.0004,    // $0.0004 per 1K input tokens (Qwen models)
+      completion_tokens: 0.0012    // $0.0012 per 1K output tokens (Qwen models)
+    },
   },
   {
     name: "llamascout",
@@ -111,6 +126,10 @@ const models = [
     input_modalities: ["text"],
     output_modalities: ["text"],
     tools: false,
+    pricing: {
+      prompt_tokens: 0.00027,    // $0.00027 per 1K input tokens (Llama 4 Scout)
+      completion_tokens: 0.00085    // $0.00085 per 1K output tokens (Llama 4 Scout)
+    },
   },
   {
     name: "mistral",
@@ -123,6 +142,10 @@ const models = [
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
     tools: true,
+    pricing: {
+      prompt_tokens: 0.002,
+      completion_tokens: 0.006
+    },
   },
   {
     name: "unity",
@@ -320,14 +343,37 @@ const models = [
     input_modalities: ["text", "image", "audio"],
     output_modalities: ["audio", "text"],
     tools: true,
+    pricing: {
+      prompt_tokens: 0.015,    // $0.015 per 1K input tokens (GPT-4o audio)
+      completion_tokens: 0.06    // $0.06 per 1K output tokens (GPT-4o audio)
+    },
   },
 ];
 
 // Sort models alphabetically by name at module level for consistency
 const sortedModels = models.sort((a, b) => a.name.localeCompare(b.name));
 
+// Set default pricing for models without explicit pricing
+const modelsWithPricing = sortedModels.map((model) => {
+  if (!model.pricing) {
+    // Add pricing based on provider
+    if (model.provider === "Cloudflare" && model.name.toLowerCase().includes("mistral")) {
+      model.pricing = {
+        prompt_tokens: 0.0001,    // $0.0001 per 1K input tokens (Mistral Small models)
+        completion_tokens: 0.0003  // $0.0003 per 1K output tokens (Mistral Small models)
+      };
+    } else {
+      model.pricing = {
+        prompt_tokens: 0.001,    // Default $0.001 per 1K input tokens
+        completion_tokens: 0.003  // Default $0.003 per 1K output tokens
+      };
+    }
+  }
+  return model;
+});
+
 // Now export the processed models with proper functional approach
-export const availableModels = sortedModels.map((model) => {
+export const availableModels = modelsWithPricing.map((model) => {
   const inputs = model.input_modalities || [];
   const outputs = model.output_modalities || [];
 
@@ -337,6 +383,24 @@ export const availableModels = sortedModels.map((model) => {
     audio: inputs.includes("audio") || outputs.includes("audio"),
   };
 });
+
+// Export model pricing for use in Tinybird tracker
+export function getModelPricing(modelName) {
+  // Find by exact name only
+  const model = availableModels.find(
+    (model) => model.name === modelName || model.aliases === modelName
+  );
+  
+  if (model && model.pricing) {
+    return model.pricing;
+  }
+  
+  // Return default pricing if no match found
+  return {
+    prompt_tokens: 0.001,    // Default $0.001 per 1K input tokens
+    completion_tokens: 0.003    // Default $0.003 per 1K output tokens
+  };
+}
 
 /**
  * Find a model by name

@@ -1,7 +1,7 @@
 // Import all handler functions
-import { generateTextSearch } from "./generateTextSearch.js";
+// import { generateTextSearch } from "./generateTextSearch.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
-import { generateTextMistral } from "./generateTextMistral.js";
+// import { generateTextMistral } from "./generateTextMistral.js";
 
 // Import wrapped models from the new file
 import {
@@ -40,6 +40,7 @@ const models = [
     handler: generateTextPortkey,
     //    details: "Blink-fast micro GPT—quick replies, ultra-cheap.",
     provider: "Azure",
+    tier: "anonymous",
     community: false,
     aliases: "gpt-4.1-nano",
     input_modalities: ["text", "image"],
@@ -69,11 +70,12 @@ const models = [
     name: "openai-reasoning",
     description: "OpenAI O3 (provided by chatwithmono.xyz)",
     handler: generateTextPortkey,
-    //    details: "Mini GPT-4 + built-in web search—facts at warp speed.",
+    //    details: "Reasoning model + built-in web search—facts at warp speed.",
     reasoning: true,
     provider: "chatwithmono.xyz",
-    aliases: "o3,o3-mini",
+    tier: "seed",
     community: false,
+    aliases: "o3",
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
     token_input: 2.0,
@@ -87,6 +89,7 @@ const models = [
     //    details: "DeepSeek's math nerd—aces chain-of-thought on the cheap.",
     search: true,
     provider: "chatwithmono.xyz",
+    tier: "seed",
     community: false,
     aliases: "gpt-4o-mini-search",
     input_modalities: ["text"],
@@ -102,6 +105,7 @@ const models = [
     handler: generateTextPortkey,
     //    details: "Tiny Phi—multilingual answers for pocket change.",
     provider: "Scaleway",
+    tier: "anonymous",
     community: false,
     aliases: "qwen2.5-coder-32b-instruct",
     input_modalities: ["text"],
@@ -117,6 +121,7 @@ const models = [
     handler: generateTextPortkey,
     //    details: "Grok lite—cheeky vibes, solid number-crunching.",
     provider: "Cloudflare",
+    tier: "anonymous",
     community: false,
     aliases: "llama-4-scout-17b-16e-instruct",
     input_modalities: ["text"],
@@ -132,6 +137,7 @@ const models = [
     handler: generateTextPortkey,
     //    details: "Mega MoE monster—huge context, still budget-friendly.",
     provider: "Cloudflare",
+    tier: "anonymous",
     community: false,
     aliases: "mistral-small-3.1-24b-instruct",
     input_modalities: ["text", "image"],
@@ -149,7 +155,7 @@ const models = [
     //    details: "Mega MoE monster—huge context, still budget-friendly.",
     provider: "Cloudflare",
     uncensored: true,
-    tier: "seed",
+    tier: "flower",
     community: true,
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
@@ -172,6 +178,7 @@ const models = [
     handler: midijourney,
     //    details: "Generates creative musical compositions from text prompts in ABC notation.",
     provider: "Azure",
+    tier: "anonymous",
     community: true,
     input_modalities: ["text"],
     output_modalities: ["text"],
@@ -183,6 +190,7 @@ const models = [
     handler: rtist,
     //    details: "Alibaba's code buddy—spits clean functions & fixes bugs.",
     provider: "Azure",
+    tier: "anonymous",
     community: true,
     input_modalities: ["text"],
     output_modalities: ["text"],
@@ -235,6 +243,7 @@ const models = [
     handler: generateTextPortkey,
     //    details: "Reliable model for precise instruction following and robust responses.",
     provider: "Azure",
+    tier: "anonymous",
     community: false,
     aliases: "phi-4-mini-instruct",
     input_modalities: ["text", "image", "audio"],
@@ -306,9 +315,11 @@ const models = [
     handler: bidara,
     //    details: "Expert in biomimicry, biology, engineering, and design for sustainable solutions.",
     provider: "Azure",
+    tier: "seed",
     community: true,
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
+    tools: false,
   },
   {
     name: "openai-audio",

@@ -16,7 +16,6 @@ const MODEL_MAPPING = {
     'openai-fast': 'gpt-4.1-nano',
     'openai': 'gpt-4.1-mini',       // Maps to portkeyConfig['gpt-4o-mini']
     'openai-large': 'azure-gpt-4.1',
-    'p1': 'optillm-p1',
     //'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
     'openai-reasoning': 'o3', // Maps to custom MonoAI endpoint
     'searchgpt': 'gpt-4o-mini-search-preview', // Maps to custom MonoAI endpoint
@@ -392,14 +391,6 @@ export const portkeyConfig = {
         process.env.AZURE_OPENAI_41_ENDPOINT,
         'gpt-4.1'
     ),
-    // 'optillm-p1': () => ({
-    //     provider: 'openai',
-    //     'custom-host': 'http://localhost:8100/v1',
-    //     authKey: 'sk-placeholder-key',
-    //     'auth-header-name': 'Authorization',
-    //     'auth-header-value-prefix': 'Bearer ',
-    //     'max-tokens': 4096
-    // }),
     'azure-gpt-4.1-xlarge': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_XLARGE_API_KEY,
         process.env.AZURE_OPENAI_XLARGE_ENDPOINT,
@@ -585,12 +576,6 @@ export const generateTextPortkey = createOpenAICompatibleClient({
                     requestBody[param] = config[param];
                 }
             });
-
-            // Fix for grok model: always set seed to null
-            if (modelName === 'azure-grok' && requestBody.seed !== undefined) {
-                log(`Setting seed to null for grok model (was: ${requestBody.seed})`);
-                requestBody.seed = null;
-            }
 
             // Apply model-specific parameter filtering
             // Some models like searchgpt only accept specific parameters

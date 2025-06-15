@@ -319,7 +319,7 @@ const models = [
     community: true,
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
-    tools: false,
+    tools: true,
   },
   {
     name: "openai-audio",

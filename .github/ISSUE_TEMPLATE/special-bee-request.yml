@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-          <img src="https://raw.githubusercontent.com/pollinations/pollinations/master/assets/pollinations_ai_logo_text_light.png" alt="Pollinations Logo" width="100%" style="display: inline-block;">
+          <img src="https://raw.githubusercontent.com/pollinations/pollinations/master/operations/assets/pollinations_ai_logo_text_white.png" alt="Pollinations Logo" width="100%" style="display: inline-block;">
           <h1 style="margin: 0; font-size: 24px; display: inline-block;">Special Bee Request</h1>
         </div>
         <div style="font-size: 1.25em; font-style: italic; margin-bottom: 12px;">

@@ -17,7 +17,7 @@ const models = [
   // All Pollinations.AI models
   {
     name: "openai",
-    description: "GPT-4.1-mini",
+    description: "OpenAI GPT-4.1 Mini",
     handler: generateTextPortkey,
     provider: "Azure",
     tier: "seed",
@@ -34,7 +34,7 @@ const models = [
   },
   {
     name: "openai-fast",
-    description: "GPT-4.1-nano",
+    description: "OpenAI GPT-4.1 Nano",
     handler: generateTextPortkey,
     provider: "Azure",
     tier: "anonymous",
@@ -51,7 +51,7 @@ const models = [
   },
   {
     name: "openai-large",
-    description: "GPT-4.1",
+    description: "OpenAI GPT-4.1",
     handler: generateTextPortkey,
     provider: "Azure",
     tier: "seed",
@@ -85,7 +85,7 @@ const models = [
   },
   {
     name: "searchgpt",
-    description: "OpenAI GPT-4o mini search preview (provided by chatwithmono.xyz)",
+    description: "OpenAI GPT-4o Mini Search Preview (provided by chatwithmono.xyz)",
     handler: generateTextPortkey,
     search: true,
     provider: "chatwithmono.xyz",
@@ -154,7 +154,7 @@ const models = [
   },
   {
     name: "deepseek-reasoning",
-    description: "DeepSeek R1-0528",
+    description: "DeepSeek R1 0528",
     handler: generateTextPortkey,
     reasoning: true,
     provider: "Azure",
@@ -172,7 +172,7 @@ const models = [
   },
   {
     name: "phi",
-    description: "Phi-4 Instruct",
+    description: "Phi-4 Mini Instruct",
     handler: generateTextPortkey,
     provider: "Azure",
     tier: "anonymous",
@@ -189,7 +189,7 @@ const models = [
   },
   {
     name: "deepseek",
-    description: "DeepSeek-V3",
+    description: "DeepSeek V3",
     handler: generateTextPortkey,
     provider: "Azure",
     tier: "seed",
@@ -206,7 +206,7 @@ const models = [
   },
   {
     name: "grok",
-    description: "xAi Grok-3 Mini",
+    description: "xAI Grok-3 Mini",
     handler: generateTextPortkey,
     provider: "Azure",
     tier: "seed",
@@ -223,7 +223,7 @@ const models = [
   },
   {
     name: "openai-audio",
-    description: "GPT-4o-audio-preview",
+    description: "OpenAI GPT-4o Audio Preview",
     voices: [
       "alloy",
       "echo",
@@ -254,11 +254,10 @@ const models = [
     },
   },
 
-  // All community models
-  // Community models below reuse upstream endpoints – pricing handled upstream, so no pricing metadata added.
+  // All community models - Reuse upstream endpoints
   {
     name: "unity",
-    description: "Unity Unrestricted Agent (Mistral Small 3.1)",
+    description: "Unity Unrestricted Agent",
     handler: unityMistralLarge,
     provider: "Cloudflare",
     uncensored: true,
@@ -275,7 +274,7 @@ const models = [
   },
   {
     name: "mirexa",
-    description: "Mirexa AI Companion (GPT-4.1)",
+    description: "Mirexa AI Companion",
     handler: generateTextMirexa,
     provider: "Azure",
     tier: "seed",
@@ -291,7 +290,7 @@ const models = [
   },
   {
     name: "midijourney",
-    description: "Midijourney",
+    description: "MIDIjourney",
     handler: midijourney,
     provider: "Azure",
     tier: "anonymous",
@@ -340,7 +339,7 @@ const models = [
   },
   {
     name: "elixposearch",
-    description: "ElixpoSearch - Custom search-enhanced AI model",
+    description: "Elixpo Search",
     handler: generateTextPortkey,
     provider: "Scaleway",
     tier: "seed",
@@ -356,7 +355,7 @@ const models = [
   },
   {
     name: "hypnosis-tracy",
-    description: "Hypnosis Tracy 7B",
+    description: "Hypnosis Tracy",
     handler: hypnosisTracy,
     provider: "Azure",
     tier: "seed",
@@ -372,7 +371,7 @@ const models = [
   },
   {
     name: "sur",
-    description: "Sur AI Assistant (Mistral)",
+    description: "Sur AI Assistant",
     handler: surMistral,
     provider: "Cloudflare",
     tier: "seed",
@@ -388,7 +387,7 @@ const models = [
   },
   {
     name: "bidara",
-    description: "BIDARA - Biomimetic Designer and Research Assistant by NASA",
+    description: "BIDARA (Biomimetic Designer and Research Assistant by NASA)",
     handler: bidara,
     provider: "Azure",
     tier: "seed",

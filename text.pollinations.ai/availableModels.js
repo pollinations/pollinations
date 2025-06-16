@@ -409,17 +409,15 @@ const sortedModels = [
   ...models.filter((m) => m.community === true).sort((a, b) => a.name.localeCompare(b.name)),
 ];
 
-// Set default pricing for models without explicit pricing
-const modelsWithPricing = sortedModels.map((model) => {
-  if (!model.pricing) {
-    model.pricing = {
-      prompt: 1,
-      completion: 4,
-      cache: 0.25,
-    };
-  }
-  return model;
-});
+const DEFAULT_PRICING = { prompt: 1, completion: 4, cache: 0.25 };
+
+const modelsWithPricing = sortedModels.map(model => ({
+  ...model,
+  pricing: {
+    ...DEFAULT_PRICING,
+    ...model.pricing,
+  },
+}));
 
 // Now export the processed models with proper functional approach
 export const availableModels = modelsWithPricing.map((model) => {

@@ -32,6 +32,10 @@ const models = [
     token_input: 0.4,
     token_cache: 0.1,
     token_output: 1.6,
+    pricing: {
+      prompt_tokens: 0.0004,    // $0.0004 per 1K input tokens (GPT-4.1-mini)
+      completion_tokens: 0.0016  // $0.0016 per 1K output tokens (GPT-4.1-mini)
+    },
   },
   {
     name: "openai-fast",
@@ -47,6 +51,10 @@ const models = [
     token_input: 0.1,
     token_cache: 0.025,
     token_output: 0.4,
+    pricing: {
+      prompt_tokens: 0.0001,    // $0.0001 per 1K input tokens (GPT-4.1-nano)
+      completion_tokens: 0.0004    // $0.0004 per 1K output tokens (GPT-4.1-nano)
+    },
   },
   {
     name: "openai-large",
@@ -62,6 +70,10 @@ const models = [
     token_input: 2.0,
     token_cache: 0.5,
     token_output: 8.0,
+    pricing: {
+      prompt_tokens: 0.002,    // $0.002 per 1K input tokens (GPT-4.1)
+      completion_tokens: 0.008    // $0.008 per 1K output tokens (GPT-4.1)
+    },
   },
   {
     name: "openai-reasoning",
@@ -108,6 +120,10 @@ const models = [
     token_input: 0.06,
     token_cache: 0.015,
     token_output: 0.15,
+    pricing: {
+      prompt_tokens: 0.0004,    // $0.0004 per 1K input tokens (Qwen models)
+      completion_tokens: 0.0012    // $0.0012 per 1K output tokens (Qwen models)
+    },
   },
   {
     name: "llamascout",
@@ -123,6 +139,10 @@ const models = [
     token_input: 0.18,
     token_cache: 0.045,
     token_output: 0.59,
+    pricing: {
+      prompt_tokens: 0.00027,    // $0.00027 per 1K input tokens (Llama 4 Scout)
+      completion_tokens: 0.00085    // $0.00085 per 1K output tokens (Llama 4 Scout)
+    },
   },
   {
     name: "mistral",
@@ -138,6 +158,10 @@ const models = [
     token_input: 0.1,
     token_cache: 0.025,
     token_output: 0.3,
+    pricing: {
+      prompt_tokens: 0.002,
+      completion_tokens: 0.006
+    },
   },
   // Community models below reuse upstream endpoints – pricing handled upstream, so no token_* metadata added.
   {
@@ -331,6 +355,10 @@ const models = [
     token_input: 2.5,
     token_cache: 1.25,
     token_output: 10.0,
+    pricing: {
+      prompt_tokens: 0.015,    // $0.015 per 1K input tokens (GPT-4o audio)
+      completion_tokens: 0.06    // $0.06 per 1K output tokens (GPT-4o audio)
+    },
   },
 // Original searchgpt model replaced by the new chatwithmono.xyz version above
 // {
@@ -349,13 +377,55 @@ const models = [
 // Sort models alphabetically by name at module level for consistency
 const sortedModels = models.sort((a, b) => a.name.localeCompare(b.name));
 
-// Now export the processed models with proper functional approach
-export const availableModels = sortedModels.map((model) => {
-  // Omit internal pricing metadata from the publicly exposed object
-  const { token_input, token_cache, token_output, ...publicModel } = model;
+// Consolidate legacy token_* fields into the pricing object and set sane defaults
+const modelsWithPricing = sortedModels.map((model) => {
+  const { token_input, token_cache, token_output } = model;
 
-  const inputs = publicModel.input_modalities || [];
-  const outputs = publicModel.output_modalities || [];
+  // Ensure that a pricing object exists so we can safely mutate it
+  model.pricing = model.pricing || {};
+
+  // Migrate the more accurate legacy pricing values (if present)
+  if (token_input !== undefined) {
+    model.pricing.prompt_tokens = token_input;
+  }
+
+  if (token_output !== undefined) {
+    model.pricing.completion_tokens = token_output;
+  }
+
+  if (token_cache !== undefined) {
+    model.pricing.cached_tokens = token_cache;
+  }
+
+  // Remove the deprecated top-level keys
+  delete model.token_input;
+  delete model.token_cache;
+  delete model.token_output;
+
+  // If after migration there is still no pricing data, fall back to sensible defaults
+  if (Object.keys(model.pricing).length === 0) {
+    if (model.provider === "Cloudflare" && model.name.toLowerCase().includes("mistral")) {
+      model.pricing = {
+        prompt_tokens: 0.0001,    // $0.0001 per 1K input tokens (Mistral Small models)
+        completion_tokens: 0.0003, // $0.0003 per 1K output tokens (Mistral Small models)
+        cached_tokens: 0.0001,    // Assume same as prompt by default
+      };
+    } else {
+      model.pricing = {
+        prompt_tokens: 0.001,    // Default $0.001 per 1K input tokens
+        completion_tokens: 0.003, // Default $0.003 per 1K output tokens
+        cached_tokens: 0.001,    // Assume same as prompt by default
+      };
+    }
+  }
+
+  return model;
+});
+
+// Now export the processed models with proper functional approach
+export const availableModels = modelsWithPricing.map((model) => {
+  const inputs = model.input_modalities || [];
+  const outputs = model.output_modalities || [];
 
   return {
     ...publicModel,
@@ -363,6 +433,24 @@ export const availableModels = sortedModels.map((model) => {
     audio: inputs.includes("audio") || outputs.includes("audio"),
   };
 });
+
+// Export model pricing for use in Tinybird tracker
+export function getModelPricing(modelName) {
+  // Find by exact name only
+  const model = availableModels.find(
+    (model) => model.name === modelName || model.aliases === modelName
+  );
+  
+  if (model && model.pricing) {
+    return model.pricing;
+  }
+  
+  // Return default pricing if no match found
+  return {
+    prompt_tokens: 0.001,    // Default $0.001 per 1K input tokens
+    completion_tokens: 0.003    // Default $0.003 per 1K output tokens
+  };
+}
 
 /**
  * Find a model by name

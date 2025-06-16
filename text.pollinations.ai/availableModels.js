@@ -27,9 +27,9 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt_tokens: 0.4,
-      completion_tokens: 1.6,
-      cached_tokens: 0.1,
+      prompt: 0.4,
+      completion: 1.6,
+      cache: 0.1,
     },
   },
   {
@@ -44,9 +44,9 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt_tokens: 0.1,
-      completion_tokens: 0.4,
-      cached_tokens: 0.025,
+      prompt: 0.1,
+      completion: 0.4,
+      cache: 0.025,
     },
   },
   {
@@ -61,9 +61,9 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt_tokens: 2.0,
-      completion_tokens: 8.0,
-      cached_tokens: 0.5,
+      prompt: 2.0,
+      completion: 8.0,
+      cache: 0.5,
     },
   },
   {
@@ -78,9 +78,9 @@ const models = [
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
     pricing: {
-      prompt_tokens: 2.0,
-      completion_tokens: 8.0,
-      cached_tokens: 0.5,
+      prompt: 2.0,
+      completion: 8.0,
+      cache: 0.5,
     },
   },
   {
@@ -96,9 +96,9 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt_tokens: 0.15,
-      completion_tokens: 0.6,
-      cached_tokens: 0.0375,
+      prompt: 0.15,
+      completion: 0.6,
+      cache: 0.0375,
     },
   },
   {
@@ -113,9 +113,9 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt_tokens: 0.07,
-      completion_tokens: 0.18,
-      cached_tokens: 0.018,
+      prompt: 0.07,
+      completion: 0.18,
+      cache: 0.018,
     },
   },
   {
@@ -130,9 +130,9 @@ const models = [
     output_modalities: ["text"],
     tools: false,
     pricing: {
-      prompt_tokens: 0.27,
-      completion_tokens: 0.85,
-      cached_tokens: 0.06,
+      prompt: 0.27,
+      completion: 0.85,
+      cache: 0.06,
     },
   },
   {
@@ -147,9 +147,9 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt_tokens: 0.1,
-      completion_tokens: 0.3,
-      cached_tokens: 0.025,
+      prompt: 0.1,
+      completion: 0.3,
+      cache: 0.025,
     },
   },
   {
@@ -165,9 +165,9 @@ const models = [
     output_modalities: ["text"],
     tools: false,
     pricing: {
-      prompt_tokens: 0.55,
-      completion_tokens: 2.19,
-      cached_tokens: 0.14,
+      prompt: 0.55,
+      completion: 2.19,
+      cache: 0.14,
     },
   },
   {
@@ -182,9 +182,9 @@ const models = [
     output_modalities: ["text"],
     tools: false,
     pricing: {
-      prompt_tokens: 0.065,
-      completion_tokens: 0.25,
-      cached_tokens: 0.01625,
+      prompt: 0.065,
+      completion: 0.25,
+      cache: 0.01625,
     },
   },
   {
@@ -199,9 +199,9 @@ const models = [
     output_modalities: ["text"],
     tools: false,
     pricing: {
-      prompt_tokens: 0.27,
-      completion_tokens: 1.1,
-      cached_tokens: 0.07,
+      prompt: 0.27,
+      completion: 1.1,
+      cache: 0.07,
     },
   },
   {
@@ -216,9 +216,9 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt_tokens: 0.3,
-      completion_tokens: 0.5,
-      cached_tokens: 0.075,
+      prompt: 0.3,
+      completion: 0.5,
+      cache: 0.075,
     },
   },
   {
@@ -248,9 +248,9 @@ const models = [
     output_modalities: ["audio", "text"],
     tools: true,
     pricing: {
-      prompt_tokens: 10.0,
-      completion_tokens: 40.0,
-      cached_tokens: 5.0,
+      prompt: 10.0,
+      completion: 40.0,
+      cache: 5.0,
     },
   },
 
@@ -267,9 +267,9 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt_tokens: 0.1,
-      completion_tokens: 0.3,
-      cached_tokens: 0.025,
+      prompt: 0.1,
+      completion: 0.3,
+      cache: 0.025,
     },
   },
   {
@@ -283,9 +283,9 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt_tokens: 2.0,
-      completion_tokens: 8.0,
-      cached_tokens: 0.5,
+      prompt: 2.0,
+      completion: 8.0,
+      cache: 0.5,
     },
   },
   {
@@ -299,9 +299,9 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt_tokens: 2.0,
-      completion_tokens: 8.0,
-      cached_tokens: 0.5,
+      prompt: 2.0,
+      completion: 8.0,
+      cache: 0.5,
     },
   },
   {
@@ -315,9 +315,9 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt_tokens: 2.0,
-      completion_tokens: 8.0,
-      cached_tokens: 0.5,
+      prompt: 2.0,
+      completion: 8.0,
+      cache: 0.5,
     },
   },
   {
@@ -332,9 +332,9 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt_tokens: 0.1,
-      completion_tokens: 0.3,
-      cached_tokens: 0.025,
+      prompt: 0.1,
+      completion: 0.3,
+      cache: 0.025,
     },
   },
   {
@@ -348,9 +348,9 @@ const models = [
     output_modalities: ["text"],
     tools: false,
     pricing: {
-      prompt_tokens: 0.15,
-      completion_tokens: 0.6,
-      cached_tokens: 0.0375,
+      prompt: 0.15,
+      completion: 0.6,
+      cache: 0.0375,
     },
   },
   {
@@ -364,9 +364,9 @@ const models = [
     output_modalities: ["audio", "text"],
     tools: true,
     pricing: {
-      prompt_tokens: 2.5,
-      completion_tokens: 10.0,
-      cached_tokens: 1.25,
+      prompt: 2.5,
+      completion: 10.0,
+      cache: 1.25,
     },
   },
   {
@@ -380,9 +380,9 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt_tokens: 0.1,
-      completion_tokens: 0.3,
-      cached_tokens: 0.025,
+      prompt: 0.1,
+      completion: 0.3,
+      cache: 0.025,
     },
   },
   {
@@ -396,9 +396,9 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt_tokens: 2.0,
-      completion_tokens: 8.0,
-      cached_tokens: 0.5,
+      prompt: 2.0,
+      completion: 8.0,
+      cache: 0.5,
     },
   },
 ];
@@ -413,9 +413,9 @@ const sortedModels = [
 const modelsWithPricing = sortedModels.map((model) => {
   if (!model.pricing) {
     model.pricing = {
-      prompt_tokens: 1,
-      completion_tokens: 4,
-      cached_tokens: 0.25,
+      prompt: 1,
+      completion: 4,
+      cache: 0.25,
     };
   }
   return model;
@@ -446,9 +446,9 @@ export function getModelPricing(modelName) {
   
   // Return default pricing if no match found
   return {
-    prompt_tokens: 1,
-    completion_tokens: 4,
-    cached_tokens: 0.25,
+    prompt: 1,
+    completion: 4,
+    cache: 0.25,
   };
 }
 

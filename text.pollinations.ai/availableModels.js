@@ -1,5 +1,4 @@
 // Import all handler functions
-import { generateTextSearch } from "./generateTextSearch.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 
 // Import wrapped models from the new file
@@ -14,15 +13,13 @@ import {
   bidara,
 } from "./wrappedModels.js";
 
-// Removed handlers object – call handler functions directly in model definitions
-
 const models = [
+  // All Pollinations.AI models
   {
     name: "openai",
-    description: "GPT-4.1-mini",
+    description: "OpenAI GPT-4.1 Mini",
     handler: generateTextPortkey,
-    //    details:  "Optimized for fast and cost-effective text and image processing.",
-    provider: "Azure",
+    provider: "azure",
     tier: "seed",
     community: false,
     aliases: "gpt-4.1-mini",
@@ -30,32 +27,33 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt_tokens: 0.0004,    // $0.0004 per 1K input tokens (GPT-4.1-mini)
-      completion_tokens: 0.0016  // $0.0016 per 1K output tokens (GPT-4.1-mini)
+      prompt: 0.4,
+      completion: 1.6,
+      cache: 0.1,
     },
   },
   {
     name: "openai-fast",
-    description: "GPT-4.1-nano",
+    description: "OpenAI GPT-4.1 Nano",
     handler: generateTextPortkey,
-    //    details:  "Optimized for fast and cost-effective text and image processing.",
-    provider: "Azure",
+    provider: "azure",
+    tier: "anonymous",
     community: false,
     aliases: "gpt-4.1-nano",
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt_tokens: 0.0001,    // $0.0001 per 1K input tokens (GPT-4.1-nano)
-      completion_tokens: 0.0004    // $0.0004 per 1K output tokens (GPT-4.1-nano)
+      prompt: 0.1,
+      completion: 0.4,
+      cache: 0.025,
     },
   },
   {
     name: "openai-large",
-    description: "GPT-4.1",
+    description: "OpenAI GPT-4.1",
     handler: generateTextPortkey,
-    //    details: "Delivers enhanced performance for high-quality text and image analysis.",
-    provider: "Azure",
+    provider: "azure",
     tier: "seed",
     community: false,
     aliases: "gpt-4.1",
@@ -63,262 +61,169 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt_tokens: 0.002,    // $0.002 per 1K input tokens (GPT-4.1)
-      completion_tokens: 0.008    // $0.008 per 1K output tokens (GPT-4.1)
+      prompt: 2.0,
+      completion: 8.0,
+      cache: 0.5,
     },
   },
-  // {
-  //   name: "openai-roblox",
-  //   description: "OpenAI GPT-4.1-mini for Roblox",
-  //   handler: generateTextPortkey,
-  //   provider: "Azure",
-  //   input_modalities: ["text", "image"],
-  //   output_modalities: ["text"],
-  //   tools: true,
-  // },
   {
     name: "openai-reasoning",
     description: "OpenAI O3 (provided by chatwithmono.xyz)",
     handler: generateTextPortkey,
-    //    details: "Specialized for advanced reasoning and complex problem solving using the o3 model.",
     reasoning: true,
     provider: "chatwithmono.xyz",
-    aliases: "o3,o3-mini",
+    tier: "seed",
     community: false,
+    aliases: "o3",
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
+    pricing: {
+      prompt: 2.0,
+      completion: 8.0,
+      cache: 0.5,
+    },
   },
   {
     name: "searchgpt",
-    description: "OpenAI GPT-4o mini search preview (provided by chatwithmono.xyz)",
+    description: "OpenAI GPT-4o Mini Search Preview (provided by chatwithmono.xyz)",
     handler: generateTextPortkey,
     search: true,
     provider: "chatwithmono.xyz",
+    tier: "seed",
     community: false,
     aliases: "gpt-4o-mini-search",
     input_modalities: ["text"],
     output_modalities: ["text"],
+    tools: true,
+    pricing: {
+      prompt: 0.15,
+      completion: 0.6,
+      cache: 0.0375,
+    },
   },
   {
     name: "qwen-coder",
     description: "Qwen 2.5 Coder 32B",
     handler: generateTextPortkey,
-    //    details: "Tailored for coding tasks with efficient code generation and debugging support.",
-    provider: "Scaleway",
+    provider: "scaleway",
+    tier: "anonymous",
     community: false,
     aliases: "qwen2.5-coder-32b-instruct",
     input_modalities: ["text"],
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt_tokens: 0.0004,    // $0.0004 per 1K input tokens (Qwen models)
-      completion_tokens: 0.0012    // $0.0012 per 1K output tokens (Qwen models)
+      prompt: 0.07,
+      completion: 0.18,
+      cache: 0.018,
     },
   },
   {
     name: "llamascout",
     description: "Llama 4 Scout 17B",
     handler: generateTextPortkey,
-    //    details: "Llama 4 Scout model optimized for efficient text generation.",
-    provider: "Cloudflare",
+    provider: "cloudflare",
+    tier: "anonymous",
     community: false,
     aliases: "llama-4-scout-17b-16e-instruct",
     input_modalities: ["text"],
     output_modalities: ["text"],
     tools: false,
     pricing: {
-      prompt_tokens: 0.00027,    // $0.00027 per 1K input tokens (Llama 4 Scout)
-      completion_tokens: 0.00085    // $0.00085 per 1K output tokens (Llama 4 Scout)
+      prompt: 0.27,
+      completion: 0.85,
+      cache: 0.06,
     },
   },
   {
     name: "mistral",
     description: "Mistral Small 3.1 24B",
     handler: generateTextPortkey,
-    //    details:  "Efficient language generation focused on speed and clarity.",
-    provider: "Cloudflare",
+    provider: "cloudflare",
+    tier: "anonymous",
     community: false,
     aliases: "mistral-small-3.1-24b-instruct",
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt_tokens: 0.002,
-      completion_tokens: 0.006
+      prompt: 0.1,
+      completion: 0.3,
+      cache: 0.025,
     },
   },
   {
-    name: "unity",
-    description: "Unity Unrestricted Agent (Mistral Small 3.1)",
-    handler: unityMistralLarge,
-    //    details:  "Uncensored.",
-    provider: "Cloudflare",
-    uncensored: true,
-    tier: "seed",
-    community: true,
-    input_modalities: ["text", "image"],
-    output_modalities: ["text"],
-    tools: true,
-  },
-  {
-    name: "mirexa",
-    description: "Mirexa AI Companion (GPT-4.1)",
-    handler: generateTextMirexa,
-    provider: "Azure",
-    tier: "seed",
-    community: true,
-    input_modalities: ["text", "image"],
-    output_modalities: ["text"],
-    tools: true,
-  },
-  {
-    name: "midijourney",
-    description: "Midijourney",
-    handler: midijourney,
-    //    details:  "Generates creative musical compositions from text prompts in ABC notation.",
-    provider: "Azure",
-    community: true,
-    input_modalities: ["text"],
-    output_modalities: ["text"],
-    tools: true,
-  },
-  {
-    name: "rtist",
-    description: "Rtist",
-    handler: rtist,
-    //    details:  "Image generation assistant by @Bqrio.",
-    provider: "Azure",
-    community: true,
-    input_modalities: ["text"],
-    output_modalities: ["text"],
-    tools: true,
-  },
-  // Original searchgpt model replaced by the new chatwithmono.xyz version above
-  // {
-  //   name: "searchgpt",
-  //   description: "SearchGPT",
-  //   handler: generateTextSearch,
-  //   //    details:  "Integrates real-time search results for responses.",
-  //   provider: "Azure",
-  //   tier: "seed",
-  //   community: false,
-  //   input_modalities: ["text", "image"],
-  //   output_modalities: ["text"],
-  //   tools: true,
-  // },
-  {
-    name: "evil",
-    description: "Evil",
-    handler: evilMistral,
-    //    details:  "Experimental mode for unfiltered and creatively diverse outputs.",
-    provider: "Cloudflare",
-    uncensored: true,
-    tier: "flower",
-    community: true,
-    input_modalities: ["text", "image"],
-    output_modalities: ["text"],
-    tools: true,
-  },
-  {
     name: "deepseek-reasoning",
-    description: "DeepSeek R1-0528",
+    description: "DeepSeek R1 0528",
     handler: generateTextPortkey,
-    //    details:  "Combines distilled reasoning with advanced contextual understanding.",
     reasoning: true,
-    provider: "Azure",
+    provider: "azure",
     tier: "seed",
     community: false,
     aliases: "deepseek-r1-0528",
     input_modalities: ["text"],
     output_modalities: ["text"],
     tools: false,
-  },
-  {
-    name: "elixposearch",
-    description: "ElixpoSearch - Custom search-enhanced AI model",
-    handler: generateTextPortkey,
-    provider: "Scaleway",
-    tier: "seed",
-    community: true,
-    input_modalities: ["text"],
-    output_modalities: ["text"],
-    tools: false,
+    pricing: {
+      prompt: 0.55,
+      completion: 2.19,
+      cache: 0.14,
+    },
   },
   {
     name: "phi",
-    description: "Phi-4 Instruct",
+    description: "Phi-4 Mini Instruct",
     handler: generateTextPortkey,
-    //    details:  "Reliable model for precise instruction following and robust responses.",
-    provider: "Azure",
+    provider: "azure",
+    tier: "anonymous",
     community: false,
     aliases: "phi-4-mini-instruct",
     input_modalities: ["text", "image", "audio"],
     output_modalities: ["text"],
     tools: false,
-  },
-  {
-    name: "hypnosis-tracy",
-    description: "Hypnosis Tracy 7B",
-    handler: hypnosisTracy,
-    //    details:  "Self-help assistant offering therapeutic guidance and advice.",
-    provider: "Azure",
-    tier: "seed",
-    community: true,
-    input_modalities: ["text", "audio"],
-    output_modalities: ["audio", "text"],
-    tools: true,
+    pricing: {
+      prompt: 0.065,
+      completion: 0.25,
+      cache: 0.01625,
+    },
   },
   {
     name: "deepseek",
-    description: "DeepSeek-V3",
+    description: "DeepSeek V3",
     handler: generateTextPortkey,
-    //    details:  "Advanced language model with comprehensive understanding capabilities.",
-    provider: "Azure",
+    provider: "azure",
     tier: "seed",
     community: false,
     aliases: "deepseek-v3",
     input_modalities: ["text"],
     output_modalities: ["text"],
     tools: false,
+    pricing: {
+      prompt: 0.27,
+      completion: 1.1,
+      cache: 0.07,
+    },
   },
   {
     name: "grok",
-    description: "xAi Grok-3 Mini",
+    description: "xAI Grok-3 Mini",
     handler: generateTextPortkey,
-    //    details:  "Grok model from xAI hosted on Azure, known for its conversational abilities and reasoning.",
-    provider: "Azure",
+    provider: "azure",
     tier: "seed",
     community: false,
     aliases: "grok-3-mini",
     input_modalities: ["text"],
     output_modalities: ["text"],
     tools: true,
-  },
-  {
-    name: "sur",
-    description: "Sur AI Assistant (Mistral)",
-    handler: surMistral,
-    //    details:  "Sur assistant powered by Mistral architecture for enhanced capabilities.",
-    provider: "Cloudflare",
-    tier: "seed",
-    community: true,
-    input_modalities: ["text", "image"],
-    output_modalities: ["text"],
-    tools: true,
-  },
-  {
-    name: "bidara",
-    description: "BIDARA - Biomimetic Designer and Research Assistant by NASA",
-    handler: bidara,
-    //    details:  "Expert in biomimicry, biology, engineering, and design for sustainable solutions.",
-    provider: "Azure",
-    community: true,
-    input_modalities: ["text", "image"],
-    output_modalities: ["text"],
+    pricing: {
+      prompt: 0.3,
+      completion: 0.5,
+      cache: 0.075,
+    },
   },
   {
     name: "openai-audio",
-    description: "GPT-4o-audio-preview",
+    description: "OpenAI GPT-4o Audio Preview",
     voices: [
       "alloy",
       "echo",
@@ -335,8 +240,7 @@ const models = [
       "dan",
     ],
     handler: generateTextPortkey,
-    //    details:  "Audio-focused variant delivering rich auditory and textual content.",
-    provider: "Azure",
+    provider: "azure",
     tier: "seed",
     community: false,
     aliases: "gpt-4o-audio-preview",
@@ -344,33 +248,175 @@ const models = [
     output_modalities: ["audio", "text"],
     tools: true,
     pricing: {
-      prompt_tokens: 0.015,    // $0.015 per 1K input tokens (GPT-4o audio)
-      completion_tokens: 0.06    // $0.06 per 1K output tokens (GPT-4o audio)
+      prompt: 10.0,
+      completion: 40.0,
+      cache: 5.0,
+    },
+  },
+
+  // All community models - Reuse upstream endpoints
+  {
+    name: "unity",
+    description: "Unity Unrestricted Agent",
+    handler: unityMistralLarge,
+    provider: "cloudflare",
+    uncensored: true,
+    tier: "flower",
+    community: true,
+    input_modalities: ["text", "image"],
+    output_modalities: ["text"],
+    tools: true,
+    pricing: {
+      prompt: 0.1,
+      completion: 0.3,
+      cache: 0.025,
+    },
+  },
+  {
+    name: "mirexa",
+    description: "Mirexa AI Companion",
+    handler: generateTextMirexa,
+    provider: "azure",
+    tier: "seed",
+    community: true,
+    input_modalities: ["text", "image"],
+    output_modalities: ["text"],
+    tools: true,
+    pricing: {
+      prompt: 2.0,
+      completion: 8.0,
+      cache: 0.5,
+    },
+  },
+  {
+    name: "midijourney",
+    description: "MIDIjourney",
+    handler: midijourney,
+    provider: "azure",
+    tier: "anonymous",
+    community: true,
+    input_modalities: ["text"],
+    output_modalities: ["text"],
+    tools: true,
+    pricing: {
+      prompt: 2.0,
+      completion: 8.0,
+      cache: 0.5,
+    },
+  },
+  {
+    name: "rtist",
+    description: "Rtist",
+    handler: rtist,
+    provider: "azure",
+    tier: "anonymous",
+    community: true,
+    input_modalities: ["text"],
+    output_modalities: ["text"],
+    tools: true,
+    pricing: {
+      prompt: 2.0,
+      completion: 8.0,
+      cache: 0.5,
+    },
+  },
+  {
+    name: "evil",
+    description: "Evil",
+    handler: evilMistral,
+    provider: "cloudflare",
+    uncensored: true,
+    tier: "flower",
+    community: true,
+    input_modalities: ["text", "image"],
+    output_modalities: ["text"],
+    tools: true,
+    pricing: {
+      prompt: 0.1,
+      completion: 0.3,
+      cache: 0.025,
+    },
+  },
+  {
+    name: "elixposearch",
+    description: "Elixpo Search",
+    handler: generateTextPortkey,
+    provider: "scaleway",
+    tier: "seed",
+    community: true,
+    input_modalities: ["text"],
+    output_modalities: ["text"],
+    tools: false,
+    pricing: {
+      prompt: 0.15,
+      completion: 0.6,
+      cache: 0.0375,
+    },
+  },
+  {
+    name: "hypnosis-tracy",
+    description: "Hypnosis Tracy",
+    handler: hypnosisTracy,
+    provider: "azure",
+    tier: "seed",
+    community: true,
+    input_modalities: ["text", "audio"],
+    output_modalities: ["audio", "text"],
+    tools: true,
+    pricing: {
+      prompt: 2.5,
+      completion: 10.0,
+      cache: 1.25,
+    },
+  },
+  {
+    name: "sur",
+    description: "Sur AI Assistant",
+    handler: surMistral,
+    provider: "cloudflare",
+    tier: "seed",
+    community: true,
+    input_modalities: ["text", "image"],
+    output_modalities: ["text"],
+    tools: true,
+    pricing: {
+      prompt: 0.1,
+      completion: 0.3,
+      cache: 0.025,
+    },
+  },
+  {
+    name: "bidara",
+    description: "BIDARA (Biomimetic Designer and Research Assistant by NASA)",
+    handler: bidara,
+    provider: "azure",
+    tier: "anonymous",
+    community: true,
+    input_modalities: ["text", "image"],
+    output_modalities: ["text"],
+    tools: true,
+    pricing: {
+      prompt: 2.0,
+      completion: 8.0,
+      cache: 0.5,
     },
   },
 ];
 
-// Sort models alphabetically by name at module level for consistency
-const sortedModels = models.sort((a, b) => a.name.localeCompare(b.name));
+// Use the models array directly without sorting
+const unsortedModels = models;
 
-// Set default pricing for models without explicit pricing
-const modelsWithPricing = sortedModels.map((model) => {
-  if (!model.pricing) {
-    // Add pricing based on provider
-    if (model.provider === "Cloudflare" && model.name.toLowerCase().includes("mistral")) {
-      model.pricing = {
-        prompt_tokens: 0.0001,    // $0.0001 per 1K input tokens (Mistral Small models)
-        completion_tokens: 0.0003  // $0.0003 per 1K output tokens (Mistral Small models)
-      };
-    } else {
-      model.pricing = {
-        prompt_tokens: 0.001,    // Default $0.001 per 1K input tokens
-        completion_tokens: 0.003  // Default $0.003 per 1K output tokens
-      };
-    }
-  }
-  return model;
-});
+// Define default pricing values
+const DEFAULT_PRICING = { prompt: 1, completion: 4, cache: 0.25 };
+
+// Set default pricing using functional approach
+const modelsWithPricing = unsortedModels.map(model => ({
+  ...model,
+  pricing: {
+    ...DEFAULT_PRICING,
+    ...model.pricing,
+  },
+}));
 
 // Now export the processed models with proper functional approach
 export const availableModels = modelsWithPricing.map((model) => {
@@ -384,23 +430,7 @@ export const availableModels = modelsWithPricing.map((model) => {
   };
 });
 
-// Export model pricing for use in Tinybird tracker
-export function getModelPricing(modelName) {
-  // Find by exact name only
-  const model = availableModels.find(
-    (model) => model.name === modelName || model.aliases === modelName
-  );
-  
-  if (model && model.pricing) {
-    return model.pricing;
-  }
-  
-  // Return default pricing if no match found
-  return {
-    prompt_tokens: 0.001,    // Default $0.001 per 1K input tokens
-    completion_tokens: 0.003    // Default $0.003 per 1K output tokens
-  };
-}
+// Default pricing is now automatically applied to all models in the modelsWithPricing array
 
 /**
  * Find a model by name

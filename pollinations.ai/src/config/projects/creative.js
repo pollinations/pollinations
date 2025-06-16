@@ -5,6 +5,15 @@
 
 export const creativeProjects = [
   {
+    name: "Celebrity AI Image Generator",
+    url: "https://www.aicelebrity.design/",
+    description: "An AI-powered celebrity image generator that uses Pollinations.ai and a1.art APIs. Users can directly input celebrity text to generate celebrities doing anything. Features celebrity photo shooting capabilities where users can upload their pictures and take selfies with celebrities like Labubu, Taylor Swift, and more.",
+    author: "@Colin-Zero",
+    repo: "https://github.com/Colin-Zero",
+    submissionDate: "2025-06-16",
+    order: 1
+  },
+  {
     name: "Coloring AI 🎨",
     url: "https://coloring-ai.com/",
     description: "An intelligent web-based coloring assistant that turns black-and-white sketches into fully colored artworks using AI. Features multiple artistic styles, AI coloring generator, sketch-to-image conversion, and image-to-coloring page tools.",

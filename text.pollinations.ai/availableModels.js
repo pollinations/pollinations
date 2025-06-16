@@ -390,7 +390,7 @@ const models = [
     description: "BIDARA (Biomimetic Designer and Research Assistant by NASA)",
     handler: bidara,
     provider: "Azure",
-    tier: "seed",
+    tier: "anonymous",
     community: true,
     input_modalities: ["text", "image"],
     output_modalities: ["text"],

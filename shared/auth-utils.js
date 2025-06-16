@@ -296,7 +296,7 @@ export async function shouldBypassQueue(req) {
     reason: 'NO_AUTH_METHOD_SUCCESS',
     userId: null,
     username: null,
-    tier: 'seed',
+    tier: 'anonymous',  // Default to anonymous tier for unauthenticated users
     debugInfo
   };
 }

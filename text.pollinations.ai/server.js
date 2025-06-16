@@ -6,7 +6,7 @@ import debug from 'debug';
 import { promises as fs } from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
-import { availableModels } from './availableModels.js';
+import { availableModels, findModelByName } from './availableModels.js';
 import { getHandler } from './availableModels.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
@@ -16,7 +16,7 @@ import { getRequestData, prepareModelsForOutput } from './requestUtils.js';
 
 // Import shared utilities
 import { enqueue } from '../shared/ipQueue.js';
-import { handleAuthentication } from '../shared/auth-utils.js';
+import { handleAuthentication, hasModelTierAccess, validateModelAccess } from '../shared/auth-utils.js';
 import { getIp } from '../shared/extractFromRequest.js';
 
 // Load environment variables
@@ -115,9 +115,27 @@ const QUEUE_CONFIG = {
 // Using getIp from shared auth-utils.js
 
 // GET /models request handler
-app.get('/models', (req, res) => {
-    // Use prepareModelsForOutput to remove pricing information and apply sorting
-    res.json(prepareModelsForOutput(availableModels));
+app.get('/models', async (req, res) => {
+    try {
+        // Get user authentication info to filter models by tier
+        const authResult = await handleAuthentication(req, null, authLog);
+        const userTier = authResult.tier || 'anonymous';
+        
+        // Filter models based on tier access
+        const accessibleModels = availableModels.filter(model => 
+            hasModelTierAccess(userTier, model.tier || 'anonymous')
+        );
+        
+        // Use prepareModelsForOutput to remove pricing information and apply sorting
+        res.json(prepareModelsForOutput(accessibleModels));
+    } catch (error) {
+        // If authentication fails, default to anonymous tier
+        errorLog('Error in /models endpoint authentication:', error.message);
+        const accessibleModels = availableModels.filter(model => 
+            hasModelTierAccess('anonymous', model.tier || 'anonymous')
+        );
+        res.json(prepareModelsForOutput(accessibleModels));
+    }
 });
 
 setupFeedEndpoint(app);
@@ -695,6 +713,30 @@ async function generateTextBasedOnModel(messages, options) {
         // Log if streaming is enabled
         if (options.stream) {
             log('Streaming mode enabled for model:', model, 'stream value:', options.stream);
+        }
+        
+        // Get model configuration and check tier access
+        const modelConfig = findModelByName(model);
+        if (!modelConfig) {
+            throw new Error(`Model ${model} not found`);
+        }
+        
+        // Check tier access
+        const userTier = options.userInfo?.tier || 'anonymous';
+        const requiredTier = modelConfig.tier || 'anonymous';
+        
+        if (!hasModelTierAccess(userTier, requiredTier)) {
+            const error = new Error(
+                `Access to ${model} model requires ${requiredTier} tier or higher. ` +
+                `Your current tier is ${userTier}. Please authenticate at https://auth.pollinations.ai ` +
+                `and request a tier upgrade at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml`
+            );
+            error.status = 403;
+            error.code = 'INSUFFICIENT_TIER';
+            error.model = model;
+            error.requiredTier = requiredTier;
+            error.userTier = userTier;
+            throw error;
         }
         
         const processedMessages = messages;

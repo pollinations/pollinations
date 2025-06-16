@@ -478,3 +478,170 @@ export async function getUserPreferences(userId) {
     return null;
   }
 }
+
+// Set up debug logger for tier access
+const tierLog = debug('pollinations:auth:tier');
+
+/**
+ * Tier hierarchy definition - higher numbers have access to lower tier models
+ * anonymous: 1 - Basic tier, can access anonymous models
+ * seed: 2 - Mid tier, can access anonymous and seed models  
+ * flower: 3 - Premium tier, can access all models including uncensored
+ */
+const TIER_HIERARCHY = {
+  'anonymous': 1,
+  'seed': 2, 
+  'flower': 3
+};
+
+/**
+ * Check if a user's tier allows access to a model's required tier
+ * @param {string} userTier - The user's tier ('anonymous', 'seed', 'flower')
+ * @param {string} modelTier - The model's required tier ('anonymous', 'seed', 'flower')
+ * @returns {boolean} Whether the user has sufficient tier access
+ */
+export function hasModelTierAccess(userTier, modelTier) {
+  if (!userTier) userTier = 'anonymous'; // Default to anonymous for unauthenticated users
+  if (!modelTier) modelTier = 'anonymous'; // Default to anonymous for models without tier
+  
+  const userTierLevel = TIER_HIERARCHY[userTier] || TIER_HIERARCHY['anonymous'];
+  const modelTierLevel = TIER_HIERARCHY[modelTier] || TIER_HIERARCHY['anonymous'];
+  
+  const hasAccess = userTierLevel >= modelTierLevel;
+  
+  tierLog(`Tier access check: user=${userTier}(${userTierLevel}) model=${modelTier}(${modelTierLevel}) access=${hasAccess}`);
+  
+  return hasAccess;
+}
+
+/**
+ * Check if a user can access a specific model based on tier requirements
+ * @param {Object} model - The model object from availableModels
+ * @param {string} userTier - The user's tier
+ * @returns {boolean} Whether the user can access this model
+ */
+export function canAccessModel(model, userTier) {
+  if (!model) return false;
+  
+  return hasModelTierAccess(userTier, model.tier);
+}
+
+/**
+ * Find the best available fallback model for a user's tier when they can't access the requested model
+ * @param {Array} availableModels - Array of all available models
+ * @param {string} userTier - The user's current tier
+ * @param {string} preferredProvider - Optional preferred provider for fallback
+ * @returns {Object|null} The fallback model object or null if none available
+ */
+export function findFallbackModel(availableModels, userTier, preferredProvider = null) {
+  if (!availableModels || !Array.isArray(availableModels)) return null;
+  
+  // Filter models the user can access
+  const accessibleModels = availableModels.filter(model => canAccessModel(model, userTier));
+  
+  if (accessibleModels.length === 0) return null;
+  
+  // If a preferred provider is specified, try to find a model from that provider first
+  if (preferredProvider) {
+    const preferredProviderModel = accessibleModels.find(model => model.provider === preferredProvider);
+    if (preferredProviderModel) {
+      tierLog(`Found fallback model from preferred provider ${preferredProvider}: ${preferredProviderModel.name}`);
+      return preferredProviderModel;
+    }
+  }
+  
+  // Default fallback priority: openai > openai-fast > others
+  const fallbackPriority = ['openai', 'openai-fast'];
+  
+  for (const modelName of fallbackPriority) {
+    const fallbackModel = accessibleModels.find(model => model.name === modelName);
+    if (fallbackModel) {
+      tierLog(`Found priority fallback model: ${fallbackModel.name}`);
+      return fallbackModel;
+    }
+  }
+  
+  // If no priority models available, return the first accessible model
+  const fallbackModel = accessibleModels[0];
+  tierLog(`Using first available fallback model: ${fallbackModel.name}`);
+  return fallbackModel;
+}
+
+/**
+ * Validate model access for a user and return the appropriate model or fallback
+ * @param {string} requestedModelName - The name of the requested model
+ * @param {Array} availableModels - Array of all available models  
+ * @param {string} userTier - The user's tier
+ * @param {boolean} allowFallback - Whether to return a fallback model if access is denied
+ * @returns {Object} Result object with { allowed: boolean, model: Object|null, reason: string, fallback: boolean }
+ */
+export function validateModelAccess(requestedModelName, availableModels, userTier, allowFallback = true) {
+  if (!requestedModelName || !availableModels) {
+    return {
+      allowed: false,
+      model: null,
+      reason: 'Invalid parameters',
+      fallback: false
+    };
+  }
+  
+  // Find the requested model
+  const requestedModel = availableModels.find(model => 
+    model.name === requestedModelName || model.aliases === requestedModelName
+  );
+  
+  if (!requestedModel) {
+    // If model doesn't exist, try to find a fallback
+    if (allowFallback) {
+      const fallbackModel = findFallbackModel(availableModels, userTier);
+      if (fallbackModel) {
+        tierLog(`Model '${requestedModelName}' not found, using fallback: ${fallbackModel.name}`);
+        return {
+          allowed: true,
+          model: fallbackModel,
+          reason: `Model '${requestedModelName}' not found, using fallback`,
+          fallback: true
+        };
+      }
+    }
+    
+    return {
+      allowed: false,
+      model: null,
+      reason: `Model '${requestedModelName}' not found`,
+      fallback: false
+    };
+  }
+  
+  // Check if user has access to the requested model
+  if (canAccessModel(requestedModel, userTier)) {
+    return {
+      allowed: true,
+      model: requestedModel,
+      reason: 'Access granted',
+      fallback: false
+    };
+  }
+  
+  // Access denied - try to find a fallback if allowed
+  if (allowFallback) {
+    const fallbackModel = findFallbackModel(availableModels, userTier, requestedModel.provider);
+    if (fallbackModel) {
+      tierLog(`User tier '${userTier}' insufficient for model '${requestedModelName}' (requires '${requestedModel.tier}'), using fallback: ${fallbackModel.name}`);
+      return {
+        allowed: true,
+        model: fallbackModel,
+        reason: `Insufficient tier for '${requestedModelName}' (requires '${requestedModel.tier}'), using fallback`,
+        fallback: true
+      };
+    }
+  }
+  
+  // No fallback available or fallback not allowed
+  return {
+    allowed: false,
+    model: null,
+    reason: `Insufficient tier: '${requestedModelName}' requires '${requestedModel.tier}' tier, you have '${userTier}' tier`,
+    fallback: false
+  };
+}

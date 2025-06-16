@@ -13,10 +13,10 @@ const testCases = [
     expectedStatus: 200
   },
   {
-    name: "Anonymous user accessing seed tier model (openai)",
+    name: "Anonymous user accessing anonymous tier model (openai)",
     model: "openai",
     headers: {},
-    expectedStatus: 403
+    expectedStatus: 200
   },
   {
     name: "Anonymous user accessing flower tier model (deepseek)",
@@ -33,12 +33,20 @@ const testCases = [
     expectedStatus: 200
   },
   {
-    name: "Seed tier user accessing flower tier model (deepseek)",
+    name: "Seed tier user accessing seed tier model (deepseek)",
     model: "deepseek",
     headers: {
       'Authorization': `Bearer ${process.env.SEED_API_TOKEN || 'test-seed-token'}`
     },
-    expectedStatus: 403
+    expectedStatus: 200
+  },
+  {
+    name: "Seed tier user accessing seed tier model (evil)",
+    model: "evil",
+    headers: {
+      'Authorization': `Bearer ${process.env.SEED_API_TOKEN || 'test-seed-token'}`
+    },
+    expectedStatus: 200
   }
 ];
 

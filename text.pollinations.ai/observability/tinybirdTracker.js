@@ -53,9 +53,9 @@ export async function sendTinybirdEvent(eventData) {
             // Calculate cost using direct references
             // Pricing in availableModels.js is per million tokens, so we need to divide token counts by 1,000,000
             totalCost = (
-                (prompt_tokens / 1000000) * pricing.prompt_tokens + 
-                (completion_tokens / 1000000) * pricing.completion_tokens + 
-                (cached_tokens / 1000000) * (pricing.cached_tokens || 0)
+                (prompt_tokens / 1000000) * pricing.prompt + 
+                (completion_tokens / 1000000) * pricing.completion + 
+                (cached_tokens / 1000000) * (pricing.cache || 0)
             );
         }
 

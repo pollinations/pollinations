@@ -113,9 +113,9 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt_tokens: 0.06,
-      completion_tokens: 0.15,
-      cached_tokens: 0.015,
+      prompt_tokens: 0.07,
+      completion_tokens: 0.18,
+      cached_tokens: 0.018,
     },
   },
   {
@@ -130,9 +130,9 @@ const models = [
     output_modalities: ["text"],
     tools: false,
     pricing: {
-      prompt_tokens: 0.18,
-      completion_tokens: 0.59,
-      cached_tokens: 0.045,
+      prompt_tokens: 0.27,
+      completion_tokens: 0.85,
+      cached_tokens: 0.06,
     },
   },
   {
@@ -182,9 +182,9 @@ const models = [
     output_modalities: ["text"],
     tools: false,
     pricing: {
-      prompt_tokens: 0.13,
-      completion_tokens: 0.5,
-      cached_tokens: 0.0325,
+      prompt_tokens: 0.065,
+      completion_tokens: 0.25,
+      cached_tokens: 0.01625,
     },
   },
   {
@@ -248,9 +248,9 @@ const models = [
     output_modalities: ["audio", "text"],
     tools: true,
     pricing: {
-      prompt_tokens: 2.5,
-      completion_tokens: 10.0,
-      cached_tokens: 1.25,
+      prompt_tokens: 10.0,
+      completion_tokens: 40.0,
+      cached_tokens: 5.0,
     },
   },
 

@@ -80,9 +80,11 @@ const models = [
     aliases: "o3",
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
-    token_input: 2.0,
-    token_cache: 0.5,
-    token_output: 8.0,
+    pricing: {
+      prompt_tokens: 2.0,
+      completion_tokens: 8.0,
+      cached_tokens: 0.5,
+    },
   },
   {
     name: "searchgpt",
@@ -96,9 +98,11 @@ const models = [
     input_modalities: ["text"],
     output_modalities: ["text"],
     tools: true,
-    token_input: 0.15,
-    token_cache: 0.0375,
-    token_output: 0.6,
+    pricing: {
+      prompt_tokens: 0.15,
+      completion_tokens: 0.6,
+      cached_tokens: 0.0375,
+    },
   },
   {
     name: "qwen-coder",
@@ -221,9 +225,11 @@ const models = [
     input_modalities: ["text"],
     output_modalities: ["text"],
     tools: false,
-    token_input: 0.55,
-    token_cache: 0.14,
-    token_output: 2.19,
+    pricing: {
+      prompt_tokens: 0.55,
+      completion_tokens: 2.19,
+      cached_tokens: 0.14,
+    },
   },
   {
     name: "elixposearch",
@@ -247,9 +253,11 @@ const models = [
     input_modalities: ["text", "image", "audio"],
     output_modalities: ["text"],
     tools: false,
-    token_input: 0.13,
-    token_cache: 0.0325,
-    token_output: 0.5,
+    pricing: {
+      prompt_tokens: 0.13,
+      completion_tokens: 0.5,
+      cached_tokens: 0.0325,
+    },
   },
   {
     name: "hypnosis-tracy",
@@ -273,9 +281,11 @@ const models = [
     input_modalities: ["text"],
     output_modalities: ["text"],
     tools: false,
-    token_input: 0.27,
-    token_cache: 0.07,
-    token_output: 1.1,
+    pricing: {
+      prompt_tokens: 0.27,
+      completion_tokens: 1.1,
+      cached_tokens: 0.07,
+    },
   },
   {
     name: "grok",
@@ -288,9 +298,11 @@ const models = [
     input_modalities: ["text"],
     output_modalities: ["text"],
     tools: true,
-    token_input: 0.3,
-    token_cache: 0.075,
-    token_output: 0.5,
+    pricing: {
+      prompt_tokens: 0.3,
+      completion_tokens: 0.5,
+      cached_tokens: 0.075,
+    },
   },
   {
     name: "sur",
@@ -369,13 +381,15 @@ const modelsWithPricing = sortedModels.map((model) => {
     // Add pricing based on provider
     if (model.provider === "Cloudflare" && model.name.toLowerCase().includes("mistral")) {
       model.pricing = {
-        prompt_tokens: 0.0001,    // $0.0001 per 1K input tokens (Mistral Small models)
-        completion_tokens: 0.0003,  // $0.0003 per 1K output tokens (Mistral Small models)
+        prompt_tokens: 0.1,    // $0.1 per 1M input tokens (Mistral Small models)
+        completion_tokens: 0.3,  // $0.3 per 1M output tokens (Mistral Small models)
+        cached_tokens: 0.025,
       };
     } else {
       model.pricing = {
-        prompt_tokens: 0.001,    // Default $0.001 per 1K input tokens
-        completion_tokens: 0.003,  // Default $0.003 per 1K output tokens
+        prompt_tokens: 1.0,    // Default $1 per 1M input tokens
+        completion_tokens: 3.0,  // Default $3 per 1M output tokens
+        cached_tokens: 0.25,
       };
     }
   }
@@ -388,7 +402,7 @@ export const availableModels = modelsWithPricing.map((model) => {
   const outputs = model.output_modalities || [];
 
   return {
-    ...publicModel,
+    ...model,
     vision: inputs.includes("image"),
     audio: inputs.includes("audio") || outputs.includes("audio"),
   };
@@ -407,10 +421,12 @@ export function getModelPricing(modelName) {
   
   // Return default pricing if no match found
   return {
-    prompt_tokens: 0.001,    // Default $0.001 per 1K input tokens
-    completion_tokens: 0.003,  // Default $0.003 per 1K output tokens
+    prompt_tokens: 1.0,    // Default $1 per 1M input tokens
+    completion_tokens: 3.0,    // Default $3 per 1M output tokens
+    cached_tokens: 0.25,
   };
 }
+
 
 /**
  * Find a model by name

@@ -403,15 +403,14 @@ const models = [
   },
 ];
 
-// Sort models alphabetically by name at module level for consistency, but keep community: false first, then community: true
-const sortedModels = [
-  ...models.filter((m) => m.community === false).sort((a, b) => a.name.localeCompare(b.name)),
-  ...models.filter((m) => m.community === true).sort((a, b) => a.name.localeCompare(b.name)),
-];
+// Use the models array directly without sorting
+const unsortedModels = models;
 
+// Define default pricing values
 const DEFAULT_PRICING = { prompt: 1, completion: 4, cache: 0.25 };
 
-const modelsWithPricing = sortedModels.map(model => ({
+// Set default pricing using functional approach
+const modelsWithPricing = unsortedModels.map(model => ({
   ...model,
   pricing: {
     ...DEFAULT_PRICING,

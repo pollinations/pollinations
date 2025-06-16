@@ -16,7 +16,7 @@ import { getRequestData, prepareModelsForOutput } from './requestUtils.js';
 
 // Import shared utilities
 import { enqueue } from '../shared/ipQueue.js';
-import { handleAuthentication, hasModelTierAccess, validateModelAccess } from '../shared/auth-utils.js';
+import { handleAuthentication, hasModelTierAccess, validateModelAccess, checkModelTierAccess } from '../shared/auth-utils.js';
 import { getIp } from '../shared/extractFromRequest.js';
 
 // Load environment variables
@@ -738,30 +738,14 @@ async function generateTextBasedOnModel(messages, options) {
             throw new Error(`Model ${model} not found`);
         }
         
-        // Check tier access with detailed logging
+        // Check tier access using the shared utility function
         const userTier = options.userInfo?.tier || 'anonymous';
         const requiredTier = modelConfig.tier || 'anonymous';
         
-        tierLog(`Checking tier access for model ${model}: user tier=${userTier}, required tier=${requiredTier}`);
         tierLog(`User info from request: ${JSON.stringify(options.userInfo || {})}`);
         
-        if (!hasModelTierAccess(userTier, requiredTier)) {
-            tierLog(`TIER ACCESS DENIED: ${userTier} cannot access ${requiredTier} model ${model}`);
-            
-            const error = new Error(
-                `Access to ${model} model requires ${requiredTier} tier or higher. ` +
-                `Your current tier is ${userTier}. Please authenticate at https://auth.pollinations.ai ` +
-                `and request a tier upgrade at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml`
-            );
-            error.status = 403;
-            error.code = 'INSUFFICIENT_TIER';
-            error.model = model;
-            error.requiredTier = requiredTier;
-            error.userTier = userTier;
-            throw error;
-        }
-        
-        tierLog(`TIER ACCESS GRANTED: ${userTier} can access ${requiredTier} model ${model}`);
+        // This will throw a properly formatted error if access is denied
+        checkModelTierAccess(model, requiredTier, userTier);
         
         const processedMessages = messages;
         

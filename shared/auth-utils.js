@@ -515,6 +515,38 @@ export function hasModelTierAccess(userTier, modelTier) {
 }
 
 /**
+ * Check if a user has access to a model based on tier requirements
+ * This function checks tier access and throws a properly formatted error if access is denied
+ * 
+ * @param {string} modelName - The name of the model being accessed
+ * @param {string} modelTier - The tier required for the model ('anonymous', 'seed', 'flower')
+ * @param {string} userTier - The user's current tier ('anonymous', 'seed', 'flower')
+ * @throws {Error} Throws a 403 error with INSUFFICIENT_TIER code if access is denied
+ */
+export function checkModelTierAccess(modelName, modelTier, userTier) {
+  tierLog(`Checking tier access for model ${modelName}: user tier=${userTier}, required tier=${modelTier}`);
+  
+  if (!hasModelTierAccess(userTier, modelTier)) {
+    tierLog(`TIER ACCESS DENIED: ${userTier} cannot access ${modelTier} model ${modelName}`);
+    
+    const error = new Error(
+      `Access to ${modelName} model requires ${modelTier} tier or higher. ` +
+      `Your current tier is ${userTier}. Please authenticate at https://auth.pollinations.ai ` +
+      `and request a tier upgrade at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml`
+    );
+    error.status = 403;
+    error.code = 'INSUFFICIENT_TIER';
+    error.model = modelName;
+    error.requiredTier = modelTier;
+    error.userTier = userTier;
+    throw error;
+  }
+  
+  tierLog(`TIER ACCESS GRANTED: ${userTier} can access ${modelTier} model ${modelName}`);
+  return true;
+}
+
+/**
  * Check if a user can access a specific model based on tier requirements
  * @param {Object} model - The model object from availableModels
  * @param {string} userTier - The user's tier

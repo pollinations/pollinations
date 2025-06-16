@@ -267,6 +267,11 @@ const models = [
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
     tools: true,
+    pricing: {
+      prompt_tokens: 0.1,
+      completion_tokens: 0.3,
+      cached_tokens: 0.025,
+    },
   },
   {
     name: "mirexa",
@@ -278,6 +283,11 @@ const models = [
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
     tools: true,
+    pricing: {
+      prompt_tokens: 2.0,
+      completion_tokens: 8.0,
+      cached_tokens: 0.5,
+    },
   },
   {
     name: "midijourney",
@@ -289,6 +299,11 @@ const models = [
     input_modalities: ["text"],
     output_modalities: ["text"],
     tools: true,
+    pricing: {
+      prompt_tokens: 2.0,
+      completion_tokens: 8.0,
+      cached_tokens: 0.5,
+    },
   },
   {
     name: "rtist",
@@ -300,6 +315,11 @@ const models = [
     input_modalities: ["text"],
     output_modalities: ["text"],
     tools: true,
+    pricing: {
+      prompt_tokens: 2.0,
+      completion_tokens: 8.0,
+      cached_tokens: 0.5,
+    },
   },
   {
     name: "evil",
@@ -312,6 +332,11 @@ const models = [
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
     tools: true,
+    pricing: {
+      prompt_tokens: 0.1,
+      completion_tokens: 0.3,
+      cached_tokens: 0.025,
+    },
   },
   {
     name: "elixposearch",
@@ -323,6 +348,11 @@ const models = [
     input_modalities: ["text"],
     output_modalities: ["text"],
     tools: false,
+    pricing: {
+      prompt_tokens: 0.15,
+      completion_tokens: 0.6,
+      cached_tokens: 0.0375,
+    },
   },
   {
     name: "hypnosis-tracy",
@@ -334,6 +364,11 @@ const models = [
     input_modalities: ["text", "audio"],
     output_modalities: ["audio", "text"],
     tools: true,
+    pricing: {
+      prompt_tokens: 2.5,
+      completion_tokens: 10.0,
+      cached_tokens: 1.25,
+    },
   },
   {
     name: "sur",
@@ -345,6 +380,11 @@ const models = [
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
     tools: true,
+    pricing: {
+      prompt_tokens: 0.1,
+      completion_tokens: 0.3,
+      cached_tokens: 0.025,
+    },
   },
   {
     name: "bidara",
@@ -356,6 +396,11 @@ const models = [
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
     tools: true,
+    pricing: {
+      prompt_tokens: 2.0,
+      completion_tokens: 8.0,
+      cached_tokens: 0.5,
+    },
   },
 ];
 

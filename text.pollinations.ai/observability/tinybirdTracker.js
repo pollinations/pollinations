@@ -72,6 +72,8 @@ export async function sendTinybirdEvent(eventData) {
             message_id: eventData.requestId,
             id: eventData.requestId,
             
+            // Ensure response_id field is always present without intrusive data transformations
+            
             // Model and provider info
             model: modelName,
             provider,
@@ -102,15 +104,17 @@ export async function sendTinybirdEvent(eventData) {
                 chat_id: eventData.chatId || '',
             },
             
-            // Conditionally add response data for successful requests
-            ...(eventData.status === 'success' && {
-                response: {
-                    id: eventData.requestId,
-                    object: 'chat.completion',
-                    // Pass the usage object directly without transformation
-                    usage: eventData.usage
-                }
-            }),
+            // Always include basic response object to prevent null response_id
+            // For success cases, include full response data; for error cases, include minimal id
+            response: eventData.status === 'success' ? {
+                id: eventData.requestId,
+                object: 'chat.completion',
+                // Pass the usage object directly without transformation
+                usage: eventData.usage
+            } : {
+                // Minimal response object for failed requests to satisfy schema
+                id: eventData.requestId || `req_${Date.now()}`
+            },
             
             // Conditionally add error info
             ...(eventData.status === 'error' && {

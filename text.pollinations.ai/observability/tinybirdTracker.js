@@ -50,18 +50,13 @@ export async function sendTinybirdEvent(eventData) {
             // Access usage data directly following the thin proxy principle
             const { prompt_tokens = 0, completion_tokens = 0, cached_tokens = 0 } = eventData.usage;
             
-            // Calculate cost using direct references with safety checks
+            // Calculate cost using direct references
             // Pricing in availableModels.js is per million tokens, so we need to divide token counts by 1,000,000
-            if (pricing) {
-                totalCost = (
-                    (prompt_tokens / 1000000) * (pricing.prompt || 0) + 
-                    (completion_tokens / 1000000) * (pricing.completion || 0) + 
-                    (cached_tokens / 1000000) * (pricing.cache || 0)
-                );
-            } else {
-                totalCost = 0;
-                log(`No pricing information found for model: ${eventData.model}`);
-            }
+            totalCost = (
+                (prompt_tokens / 1000000) * pricing.prompt + 
+                (completion_tokens / 1000000) * pricing.completion + 
+                (cached_tokens / 1000000) * (pricing.cache || 0)
+            );
         }
 
         // Get the provider for the model
@@ -107,25 +102,15 @@ export async function sendTinybirdEvent(eventData) {
                 chat_id: eventData.chatId || '',
             },
             
-            // Always include response object with an ID to prevent schema issues
-            // This ensures response_id is never null in the Tinybird schema
-            response: {
-                id: eventData.requestId || `error-${Date.now()}`,
-                object: 'chat.completion',
-                // Pass the usage object with token count safeguards
-                usage: eventData.usage ? {
-                    // Ensure token counts stay within UInt16 limits (max 65535)
-                    prompt_tokens: Math.min(eventData.usage.prompt_tokens || 0, 65000),
-                    completion_tokens: Math.min(eventData.usage.completion_tokens || 0, 65000),
-                    total_tokens: Math.min(eventData.usage.total_tokens || 0, 65000),
-                    // Add a flag if we had to truncate values
-                    truncated: (
-                        (eventData.usage.prompt_tokens > 65000) ||
-                        (eventData.usage.completion_tokens > 65000) ||
-                        (eventData.usage.total_tokens > 65000)
-                    )
-                } : { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
-            },
+            // Conditionally add response data for successful requests
+            ...(eventData.status === 'success' && {
+                response: {
+                    id: eventData.requestId,
+                    object: 'chat.completion',
+                    // Pass the usage object directly without transformation
+                    usage: eventData.usage
+                }
+            }),
             
             // Conditionally add error info
             ...(eventData.status === 'error' && {

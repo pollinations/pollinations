@@ -37,11 +37,27 @@ export async function sendTinybirdEvent(eventData) {
     log(`Sending telemetry to Tinybird for model: ${eventData.model || 'unknown'}`);
 
     try {
-        // Calculate cost based on token usage and model pricing
+        // If we need to calculate cost, we'll use the pricing model
+        // But we'll avoid transforming data as much as possible (thin proxy principle)
         const pricing = getModelPricing(eventData.model);
-        const promptCost = ((eventData.promptTokens || 0) * pricing.prompt_tokens) / 1000;  // Cost per 1K tokens
-        const completionCost = ((eventData.completionTokens || 0) * pricing.completion_tokens) / 1000;
-        const totalCost = promptCost + completionCost;
+        
+        // Simply reference cost components from the usage object directly
+        // without transformations or data manipulation
+        let totalCost = 0;
+        
+        // Only calculate cost if we absolutely need to for downstream services
+        if (eventData.usage) {
+            // Access usage data directly following the thin proxy principle
+            const { prompt_tokens = 0, completion_tokens = 0, cached_tokens = 0 } = eventData.usage;
+            
+            // Calculate cost using direct references
+            // Pricing in availableModels.js is per million tokens, so we need to divide token counts by 1,000,000
+            totalCost = (
+                (prompt_tokens / 1000000) * pricing.prompt_tokens + 
+                (completion_tokens / 1000000) * pricing.completion_tokens + 
+                (cached_tokens / 1000000) * (pricing.cached_tokens || 0)
+            );
+        }
 
         // Get the provider for the model
         const modelName = eventData.model || 'unknown';
@@ -91,11 +107,8 @@ export async function sendTinybirdEvent(eventData) {
                 response: {
                     id: eventData.requestId,
                     object: 'chat.completion',
-                    usage: {
-                        prompt_tokens: eventData.promptTokens || 0,
-                        completion_tokens: eventData.completionTokens || 0,
-                        total_tokens: (eventData.promptTokens || 0) + (eventData.completionTokens || 0),
-                    }
+                    // Pass the usage object directly without transformation
+                    usage: eventData.usage
                 }
             }),
             

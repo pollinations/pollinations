@@ -368,20 +368,11 @@ const sortedModels = [
 // Set default pricing for models without explicit pricing
 const modelsWithPricing = sortedModels.map((model) => {
   if (!model.pricing) {
-    // Add pricing based on provider
-    if (model.provider === "Cloudflare" && model.name.toLowerCase().includes("mistral")) {
-      model.pricing = {
-        prompt_tokens: 0.1,    // $0.1 per 1M input tokens (Mistral Small models)
-        completion_tokens: 0.3,  // $0.3 per 1M output tokens (Mistral Small models)
-        cached_tokens: 0.025,
-      };
-    } else {
-      model.pricing = {
-        prompt_tokens: 1.0,    // Default $1 per 1M input tokens
-        completion_tokens: 3.0,  // Default $3 per 1M output tokens
-        cached_tokens: 0.25,
-      };
-    }
+    model.pricing = {
+      prompt_tokens: 1,
+      completion_tokens: 4,
+      cached_tokens: 0.25,
+    };
   }
   return model;
 });
@@ -411,12 +402,11 @@ export function getModelPricing(modelName) {
   
   // Return default pricing if no match found
   return {
-    prompt_tokens: 1.0,    // Default $1 per 1M input tokens
-    completion_tokens: 3.0,    // Default $3 per 1M output tokens
+    prompt_tokens: 1,
+    completion_tokens: 4,
     cached_tokens: 0.25,
   };
 }
-
 
 /**
  * Find a model by name

@@ -1,7 +1,5 @@
 // Import all handler functions
-// import { generateTextSearch } from "./generateTextSearch.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
-// import { generateTextMistral } from "./generateTextMistral.js";
 
 // Import wrapped models from the new file
 import {
@@ -15,10 +13,8 @@ import {
   bidara,
 } from "./wrappedModels.js";
 
-// Removed handlers object – call handler functions directly in model definitions
-
 const models = [
-  // All community: false models first
+  // All Pollinations.AI models
   {
     name: "openai",
     description: "GPT-4.1-mini",
@@ -258,8 +254,8 @@ const models = [
     },
   },
 
-  // All community: true models after
-  // Community models below reuse upstream endpoints – pricing handled upstream, so no token_* metadata added.
+  // All community models
+  // Community models below reuse upstream endpoints – pricing handled upstream, so no pricing metadata added.
   {
     name: "unity",
     description: "Unity Unrestricted Agent (Mistral Small 3.1)",

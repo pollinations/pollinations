@@ -13,6 +13,7 @@ SCHEMA >
     `model` LowCardinality(String) `json:$.model` DEFAULT 'unknown',
     `prompt_tokens` UInt16 `json:$.response.usage.prompt_tokens` DEFAULT 0,
     `completion_tokens` UInt16 `json:$.response.usage.completion_tokens` DEFAULT 0,
+    `cached_tokens` UInt16 `json:$.response.usage.cached_tokens` DEFAULT 0,
     `total_tokens` UInt16 `json:$.response.usage.total_tokens` DEFAULT 0,
     `response_time` Float32 `json:$.standard_logging_object_response_time` DEFAULT 0,
     `duration` Float32 `json:$.duration` DEFAULT 0,
@@ -45,5 +46,5 @@ ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
 ENGINE_SORTING_KEY "timestamp, organization, project, environment, user, chat_id"
 ENGINE_PRIMARY_KEY "timestamp, organization, project"
 
-FORWARD_QUERY >
-    SELECT timestamp, organization, project, environment, user, chat_id, message_id, model, prompt_tokens, completion_tokens, total_tokens, response_time, duration, cost, exception, traceback, response_status, messages, response_choices, proxy_metadata, provider, llm_api_duration_ms, end_time, id, CAST(stream, 'Bool') AS stream, call_type, api_key, log_event_type, CAST(cache_hit, 'Bool') AS cache_hit, response, response_id, response_object, defaultValueOfTypeName('Array(Float32)') AS embedding
+FORWARD_QUERY > 
+  SELECT timestamp, organization, project, environment, user, chat_id, message_id, model, prompt_tokens, completion_tokens, defaultValueOfTypeName('UInt16') AS cached_tokens, total_tokens, response_time, duration, cost, exception, traceback, response_status, messages, response_choices, proxy_metadata, provider, llm_api_duration_ms, end_time, id, stream, call_type, api_key, log_event_type, cache_hit, response, response_id, response_object, embedding

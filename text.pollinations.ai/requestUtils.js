@@ -78,3 +78,21 @@ export function getRequestData(req) {
         response_format
     };
 }
+
+/**
+ * Prepares model data for output by removing pricing information and applying sorting.
+ * Always sorts with community models (community: false first, then community: true).
+ * @param {Array} models - Array of model objects
+ * @returns {Array} - Sanitized model array without pricing, properly sorted
+ */
+export function prepareModelsForOutput(models) {
+  // Remove pricing information from all models
+  const prepared = models.map(({ pricing, ...rest }) => rest);
+  
+  // Sort models with non-community first, then community models
+  return [
+    ...prepared.filter((m) => m.community === false).sort((a, b) => a.name.localeCompare(b.name)),
+    ...prepared.filter((m) => m.community === true).sort((a, b) => a.name.localeCompare(b.name))
+  ];
+}
+

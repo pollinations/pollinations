@@ -271,9 +271,8 @@ export function createOpenAICompatibleClient(config) {
                 timestamp: new Date().toISOString(),
                 completionTimeMs: completionTime,
                 modelUsed: data.model || modelName,
-                promptTokens: data.usage?.prompt_tokens,
-                completionTokens: data.usage?.completion_tokens,
-                totalTokens: data.usage?.total_tokens
+                // Pass the complete usage object instead of extracting fields
+                usage: data.usage
             });
             
             // Send telemetry to Tinybird
@@ -285,13 +284,14 @@ export function createOpenAICompatibleClient(config) {
                 model: normalizedOptions.model, // Use friendly model name from request options
                 duration: completionTime,
                 status: 'success',
-                promptTokens: data.usage?.prompt_tokens,
-                completionTokens: data.usage?.completion_tokens,
+                // Pass the entire usage object rather than individual fields
+                usage: data.usage,
                 project: 'text.pollinations.ai',
                 environment: process.env.NODE_ENV || 'production',
-                // Include user information if available - prioritize username for better identification
+                // Spread all user information for better data retention
+                ...normalizedOptions.userInfo,
+                // Include these key fields explicitly for backwards compatibility
                 user: normalizedOptions.userInfo?.username || normalizedOptions.userInfo?.userId || 'anonymous',
-                username: normalizedOptions.userInfo?.username, // Explicitly include username field
                 organization: normalizedOptions.userInfo?.userId ? 'pollinations' : undefined,
                 tier: normalizedOptions.userInfo?.tier || 'seed'
             }).catch(err => {

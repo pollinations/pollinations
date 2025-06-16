@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import debug from 'debug';
-import { getModelPricing, findModelByName } from '../availableModels.js';
+import { findModelByName } from '../availableModels.js';
 
 /**
  * Get the provider name for a model by looking it up in availableModels
@@ -37,11 +37,27 @@ export async function sendTinybirdEvent(eventData) {
     log(`Sending telemetry to Tinybird for model: ${eventData.model || 'unknown'}`);
 
     try {
-        // Calculate cost based on token usage and model pricing
-        const pricing = getModelPricing(eventData.model);
-        const promptCost = ((eventData.promptTokens || 0) * pricing.prompt_tokens) / 1000;  // Cost per 1K tokens
-        const completionCost = ((eventData.completionTokens || 0) * pricing.completion_tokens) / 1000;
-        const totalCost = promptCost + completionCost;
+        // Get the model and its pricing directly
+        const model = findModelByName(eventData.model);
+        const pricing = model?.pricing;
+        
+        // Simply reference cost components from the usage object directly
+        // without transformations or data manipulation
+        let totalCost = 0;
+        
+        // Only calculate cost if we absolutely need to for downstream services
+        if (eventData.usage) {
+            // Access usage data directly following the thin proxy principle
+            const { prompt_tokens = 0, completion_tokens = 0, cached_tokens = 0 } = eventData.usage;
+            
+            // Calculate cost using direct references
+            // Pricing in availableModels.js is per million tokens, so we need to divide token counts by 1,000,000
+            totalCost = (
+                (prompt_tokens / 1000000) * pricing.prompt + 
+                (completion_tokens / 1000000) * pricing.completion + 
+                (cached_tokens / 1000000) * (pricing.cache || 0)
+            );
+        }
 
         // Get the provider for the model
         const modelName = eventData.model || 'unknown';
@@ -55,6 +71,8 @@ export async function sendTinybirdEvent(eventData) {
             end_time: eventData.endTime?.toISOString(),
             message_id: eventData.requestId,
             id: eventData.requestId,
+            
+            // Ensure response_id field is always present without intrusive data transformations
             
             // Model and provider info
             model: modelName,
@@ -86,18 +104,17 @@ export async function sendTinybirdEvent(eventData) {
                 chat_id: eventData.chatId || '',
             },
             
-            // Conditionally add response data for successful requests
-            ...(eventData.status === 'success' && {
-                response: {
-                    id: eventData.requestId,
-                    object: 'chat.completion',
-                    usage: {
-                        prompt_tokens: eventData.promptTokens || 0,
-                        completion_tokens: eventData.completionTokens || 0,
-                        total_tokens: (eventData.promptTokens || 0) + (eventData.completionTokens || 0),
-                    }
-                }
-            }),
+            // Always include basic response object to prevent null response_id
+            // For success cases, include full response data; for error cases, include minimal id
+            response: eventData.status === 'success' ? {
+                id: eventData.requestId,
+                object: 'chat.completion',
+                // Pass the usage object directly without transformation
+                usage: eventData.usage
+            } : {
+                // Minimal response object for failed requests to satisfy schema
+                id: eventData.requestId || `req_${Date.now()}`
+            },
             
             // Conditionally add error info
             ...(eventData.status === 'error' && {

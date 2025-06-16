@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import debug from 'debug';
-import { getModelPricing, findModelByName } from '../availableModels.js';
+import { findModelByName } from '../availableModels.js';
 
 /**
  * Get the provider name for a model by looking it up in availableModels
@@ -37,9 +37,9 @@ export async function sendTinybirdEvent(eventData) {
     log(`Sending telemetry to Tinybird for model: ${eventData.model || 'unknown'}`);
 
     try {
-        // If we need to calculate cost, we'll use the pricing model
-        // But we'll avoid transforming data as much as possible (thin proxy principle)
-        const pricing = getModelPricing(eventData.model);
+        // Get the model and its pricing directly
+        const model = findModelByName(eventData.model);
+        const pricing = model?.pricing;
         
         // Simply reference cost components from the usage object directly
         // without transformations or data manipulation

@@ -430,24 +430,7 @@ export const availableModels = modelsWithPricing.map((model) => {
   };
 });
 
-// Export model pricing for use in Tinybird tracker
-export function getModelPricing(modelName) {
-  // Find by exact name only
-  const model = availableModels.find(
-    (model) => model.name === modelName || model.aliases === modelName
-  );
-  
-  if (model && model.pricing) {
-    return model.pricing;
-  }
-  
-  // Return default pricing if no match found
-  return {
-    prompt: 1,
-    completion: 4,
-    cache: 0.25,
-  };
-}
+// Default pricing is now automatically applied to all models in the modelsWithPricing array
 
 /**
  * Find a model by name

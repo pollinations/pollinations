@@ -54,6 +54,7 @@ const app = express();
 const log = debug('pollinations:server');
 const errorLog = debug('pollinations:error');
 const authLog = debug('pollinations:auth');
+const tierLog = debug('pollinations:auth:tier');
 const BLOCKED_IPS_LOG = path.join(process.cwd(), 'blocked_ips.txt');
 
 // Load blocked IPs from file on startup
@@ -117,24 +118,40 @@ const QUEUE_CONFIG = {
 // GET /models request handler
 app.get('/models', async (req, res) => {
     try {
-        // Get user authentication info to filter models by tier
+        // Get user authentication info to include in model metadata
         const authResult = await handleAuthentication(req, null, authLog);
         const userTier = authResult.tier || 'anonymous';
         
-        // Filter models based on tier access
-        const accessibleModels = availableModels.filter(model => 
-            hasModelTierAccess(userTier, model.tier || 'anonymous')
-        );
+        // Return all models but include tier information and access status
+        const modelsWithAccessInfo = availableModels.map(model => {
+            const modelTier = model.tier || 'anonymous';
+            const hasAccess = hasModelTierAccess(userTier, modelTier);
+            
+            return {
+                ...model,
+                tier: modelTier,
+                accessible: hasAccess,
+                userTier: userTier
+            };
+        });
         
-        // Use prepareModelsForOutput to remove pricing information and apply sorting
-        res.json(prepareModelsForOutput(accessibleModels));
+        // Return models in OpenAI-compatible format
+        res.json(prepareModelsForOutput(modelsWithAccessInfo));
     } catch (error) {
         // If authentication fails, default to anonymous tier
         errorLog('Error in /models endpoint authentication:', error.message);
-        const accessibleModels = availableModels.filter(model => 
-            hasModelTierAccess('anonymous', model.tier || 'anonymous')
-        );
-        res.json(prepareModelsForOutput(accessibleModels));
+        const modelsWithAccessInfo = availableModels.map(model => {
+            const modelTier = model.tier || 'anonymous';
+            const hasAccess = hasModelTierAccess('anonymous', modelTier);
+            
+            return {
+                ...model,
+                tier: modelTier,
+                accessible: hasAccess,
+                userTier: 'anonymous'
+            };
+        });
+        res.json(prepareModelsForOutput(modelsWithAccessInfo));
     }
 });
 
@@ -721,11 +738,16 @@ async function generateTextBasedOnModel(messages, options) {
             throw new Error(`Model ${model} not found`);
         }
         
-        // Check tier access
+        // Check tier access with detailed logging
         const userTier = options.userInfo?.tier || 'anonymous';
         const requiredTier = modelConfig.tier || 'anonymous';
         
+        tierLog(`Checking tier access for model ${model}: user tier=${userTier}, required tier=${requiredTier}`);
+        tierLog(`User info from request: ${JSON.stringify(options.userInfo || {})}`);
+        
         if (!hasModelTierAccess(userTier, requiredTier)) {
+            tierLog(`TIER ACCESS DENIED: ${userTier} cannot access ${requiredTier} model ${model}`);
+            
             const error = new Error(
                 `Access to ${model} model requires ${requiredTier} tier or higher. ` +
                 `Your current tier is ${userTier}. Please authenticate at https://auth.pollinations.ai ` +
@@ -738,6 +760,8 @@ async function generateTextBasedOnModel(messages, options) {
             error.userTier = userTier;
             throw error;
         }
+        
+        tierLog(`TIER ACCESS GRANTED: ${userTier} can access ${requiredTier} model ${model}`);
         
         const processedMessages = messages;
         
@@ -761,24 +785,37 @@ async function generateTextBasedOnModel(messages, options) {
         
         return response;
     } catch (error) {
-        errorLog('Error in generateTextBasedOnModel:', JSON.stringify({
-            error: error.message,
-            model: model,
-            provider: error.provider || 'unknown',
-            requestParams: {
-                ...options,
-                messages: options.messages ? 
-                    options.messages.map(m => ({ 
-                        role: m.role, 
-                        content: typeof m.content === 'string' ? 
-                            m.content.substring(0, 100) + (m.content.length > 100 ? '...' : '') : 
-                            '[non-string content]' 
-                    })) : 
-                    'none'
-            },
-            errorDetails: error.response?.data || null,
-            stack: error.stack
-        }));
+        // Check if this is a tier access error and ensure it's properly formatted
+        if (error.code === 'INSUFFICIENT_TIER') {
+            errorLog('Tier access error:', JSON.stringify({
+                model: model,
+                userTier: error.userTier || 'unknown',
+                requiredTier: error.requiredTier || 'unknown',
+                message: error.message
+            }));
+            
+            // Make sure the error has the correct status code
+            error.status = 403;
+        } else {
+            errorLog('Error in generateTextBasedOnModel:', JSON.stringify({
+                error: error.message,
+                model: model,
+                provider: error.provider || 'unknown',
+                requestParams: {
+                    ...options,
+                    messages: options.messages ? 
+                        options.messages.map(m => ({ 
+                            role: m.role, 
+                            content: typeof m.content === 'string' ? 
+                                m.content.substring(0, 100) + (m.content.length > 100 ? '...' : '') : 
+                                '[non-string content]' 
+                        })) : 
+                        'none'
+                },
+                errorDetails: error.response?.data || null,
+                stack: error.stack
+            }));
+        }
         
         // For streaming errors, return a special error response that can be streamed
         if (options.stream) {
@@ -801,7 +838,8 @@ async function generateTextBasedOnModel(messages, options) {
             return {
                 error: {
                     message: error.message || 'An error occurred during text generation',
-                    status: error.code || 500,
+                    status: error.status || error.code || 500,
+                    code: error.code || 'UNKNOWN_ERROR',
                     details: errorDetails
                 },
             };

@@ -670,7 +670,6 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
       throw error;
     }
   }
-  }
   
   if (safeParams.model === 'flux') {
     try {

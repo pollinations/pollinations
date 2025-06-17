@@ -642,4 +642,38 @@ input:checked + .toggle-slider:before {
     font-size: 20px;
     flex-shrink: 0;
 }
+
+.tier-upgrade-message {
+    margin-top: 15px;
+    padding: 12px 15px;
+    background: linear-gradient(135deg, #fff0f9 0%, #f0f7ff 100%);
+    border-radius: 12px;
+    border-left: 4px solid var(--color-primary);
+    font-size: 0.95rem;
+    animation: pulse-border 2s infinite alternate;
+}
+
+@keyframes pulse-border {
+    0% { border-left-color: var(--color-primary); }
+    50% { border-left-color: var(--color-secondary); }
+    100% { border-left-color: var(--color-accent); }
+}
+
+.tier-upgrade-message p {
+    margin: 0;
+    line-height: 1.4;
+}
+
+.tier-upgrade-message a {
+    color: var(--color-primary);
+    font-weight: bold;
+    text-decoration: none;
+    border-bottom: 1px dotted;
+    transition: all 0.2s;
+}
+
+.tier-upgrade-message a:hover {
+    color: #ff3b5c;
+    border-bottom: 1px solid;
+}
 `;

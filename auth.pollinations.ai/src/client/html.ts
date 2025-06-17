@@ -80,6 +80,9 @@ export const generateHTML = () => `<!DOCTYPE html>
                         <span class="tier-emoji">🍯</span> Nectar
                     </div>
                 </div>
+                <div class="tier-upgrade-message">
+                    <p>Need access to more advanced models? <a href="https://github.com/pollinations/pollinations/issues/new?assignees=&labels=special+bee+request&template=special_bee_request.md&title=Special+Bee+Request" target="_blank">Request a tier upgrade</a> 🚀</p>
+                </div>
             </div>
             
             <div id="preferences-section" class="preferences-container hidden">

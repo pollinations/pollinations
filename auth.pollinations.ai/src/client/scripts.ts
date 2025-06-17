@@ -351,30 +351,6 @@ function updateTierDisplay() {
     if (activePill) {
         activePill.classList.add('active');
     }
-    
-    // Add or update the tier upgrade message
-    let tierMessageElement = document.getElementById('tier-upgrade-message');
-    
-    // Create the element if it doesn't exist
-    if (!tierMessageElement) {
-        tierMessageElement = document.createElement('div');
-        tierMessageElement.id = 'tier-upgrade-message';
-        tierMessageElement.className = 'tier-upgrade-message';
-        
-        // Insert after the tier pills
-        const tierPills = document.querySelector('.tier-pills');
-        if (tierPills && tierPills.parentNode) {
-            tierPills.parentNode.insertBefore(tierMessageElement, tierPills.nextSibling);
-        }
-    }
-    
-    // Set the message based on current tier
-    if (userTier !== 'nectar' && userTier !== 'flower') {
-        tierMessageElement.innerHTML = '<p>Need access to more advanced models? <a href="https://github.com/pollinations/pollinations/issues/new?assignees=&labels=special+bee+request&template=special_bee_request.md&title=Special+Bee+Request" target="_blank">Request a tier upgrade</a> 🚀</p>';
-        tierMessageElement.style.display = 'block';
-    } else {
-        tierMessageElement.style.display = 'none';
-    }
 }
 
 // Get user preferences

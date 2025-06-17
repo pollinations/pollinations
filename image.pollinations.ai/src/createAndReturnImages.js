@@ -7,6 +7,7 @@ import debug from 'debug';
 import { writeExifMetadata } from './writeExifMetadata.js';
 import { sanitizeString } from './translateIfNecessary.js';
 // Import shared authentication utilities
+import { checkModelTierAccess, hasModelTierAccess } from '../../shared/auth-utils.js';
 import sharp from 'sharp';
 import dotenv from 'dotenv';
 // Import GPT Image logging utilities
@@ -617,46 +618,58 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
         `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || 'none'}, tier=${userInfo.tier || 'none'}` 
         : 'No userInfo provided');
     
-    // Restrict GPT Image model to users with valid authentication
-    if (!userInfo || !userInfo.authenticated || userInfo.tier === 'seed') {
-      const errorText = "Access to gpt-image-1 is currently limited to users in the flower tier. We will be opening up access gradually. Please authenticate at https://auth.pollinations.ai and request a tier upgrade at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml";
-      logError(errorText);
-      progress.updateBar(requestId, 35, 'Auth', 'GPT Image requires authorization');
-      throw new Error(errorText);      
-    } else {
-      // For gptimage model, always throw errors instead of falling back
-      updateProgress(progress, requestId, 30, 'Processing', 'Checking prompt safety...');
+    // Use shared tier gating function to check access to gptimage model
+    try {
+      // The gptimage model requires 'flower' tier
+      const userTier = userInfo?.tier || 'anonymous';
+      const requiredTier = 'flower';
       
-      try {
-        // Check prompt safety with Azure Content Safety
-        const promptSafetyResult = await analyzeTextSafety(prompt);
+      // This will throw an error with proper formatting if access is denied
+      checkModelTierAccess('gptimage', requiredTier, userTier);
+      
+      // If we get here, the user has access
+      progress.updateBar(requestId, 35, 'Auth', 'GPT Image access granted');
+    } catch (error) {
+      // Log the error and update progress
+      logError(error.message);
+      progress.updateBar(requestId, 35, 'Auth', 'GPT Image requires authorization');
+      throw error;
+    }
+    
+    // User has access, proceed with generation
+    // For gptimage model, always throw errors instead of falling back
+    updateProgress(progress, requestId, 30, 'Processing', 'Checking prompt safety...');
+    
+    try {
+      // Check prompt safety with Azure Content Safety
+      const promptSafetyResult = await analyzeTextSafety(prompt);
+      
+      // Log the prompt with safety analysis results
+      await logGptImagePrompt(prompt, safeParams, userInfo, promptSafetyResult);
+      
+      if (!promptSafetyResult.safe) {
+        const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
+        logError('Azure Content Safety rejected prompt:', errorMessage);
+        progress.updateBar(requestId, 100, 'Error', 'Prompt contains unsafe content');
         
-        // Log the prompt with safety analysis results
-        await logGptImagePrompt(prompt, safeParams, userInfo, promptSafetyResult);
-        
-        if (!promptSafetyResult.safe) {
-          const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
-          logError('Azure Content Safety rejected prompt:', errorMessage);
-          progress.updateBar(requestId, 100, 'Error', 'Prompt contains unsafe content');
-          
-          // Log the error with safety analysis results
-          const error = new Error(errorMessage);
-          await logGptImageError(prompt, safeParams, userInfo, error, promptSafetyResult);
-          throw error;
-        }
-        
-        updateProgress(progress, requestId, 35, 'Processing', 'Trying Azure GPT Image...');
-        return await callAzureGPTImage(prompt, safeParams, userInfo);
-      } catch (error) {
-        // Log the error but don't fall back - propagate it to the caller
-        logError('Azure GPT Image generation or safety check failed:', error.message);
-
-        await logGptImageError(prompt, safeParams, userInfo, error);
-
-        progress.updateBar(requestId, 100, 'Error', error.message);
+        // Log the error with safety analysis results
+        const error = new Error(errorMessage);
+        await logGptImageError(prompt, safeParams, userInfo, error, promptSafetyResult);
         throw error;
       }
+      
+      updateProgress(progress, requestId, 35, 'Processing', 'Trying Azure GPT Image...');
+      return await callAzureGPTImage(prompt, safeParams, userInfo);
+    } catch (error) {
+      // Log the error but don't fall back - propagate it to the caller
+      logError('Azure GPT Image generation or safety check failed:', error.message);
+
+      await logGptImageError(prompt, safeParams, userInfo, error);
+
+      progress.updateBar(requestId, 100, 'Error', error.message);
+      throw error;
     }
+  }
   }
   
   if (safeParams.model === 'flux') {

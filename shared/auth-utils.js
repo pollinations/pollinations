@@ -341,7 +341,8 @@ export async function handleAuthentication(req, requestId = null, logAuth = null
     return {
       bypass: isAuthenticated, // Kept for backward compatibility
       ...authResult,
-      tier: debugInfo.tier || 'seed',
+      // Use the tier from authResult, which comes from shouldBypassQueue
+      // This preserves the 'anonymous' tier for unauthenticated users
       debugInfo
     };
     
@@ -531,8 +532,8 @@ export function checkModelTierAccess(modelName, modelTier, userTier) {
     
     const error = new Error(
       `Access to ${modelName} model requires ${modelTier} tier or higher. ` +
-      `Your current tier is ${userTier}. Please authenticate at https://auth.pollinations.ai ` +
-      `and request a tier upgrade at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml`
+      `Your current tier is ${userTier}. Please visit https://auth.pollinations.ai to authenticate ` +
+      `and upgrade your tier.`
     );
     error.status = 403;
     error.code = 'INSUFFICIENT_TIER';

@@ -81,7 +81,7 @@ export const generateHTML = () => `<!DOCTYPE html>
                     </div>
                 </div>
                 <div class="tier-upgrade-message">
-                    <p>Need access to more advanced models? <a href="https://github.com/pollinations/pollinations/issues/new?assignees=&labels=special+bee+request&template=special_bee_request.md&title=Special+Bee+Request" target="_blank">Request a tier upgrade</a> 🚀</p>
+                    <p>Need access to more advanced models? <a href="https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml" target="_blank">Request a tier upgrade</a> 🚀</p>
                 </div>
             </div>
             

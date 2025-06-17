@@ -486,13 +486,15 @@ const tierLog = debug('pollinations:auth:tier');
 /**
  * Tier hierarchy definition - higher numbers have access to lower tier models
  * anonymous: 1 - Basic tier, can access anonymous models
- * seed: 2 - Mid tier, can access anonymous and seed models  
+ * seed: 2 - Mid tier, can access anonymous and seed models
  * flower: 3 - Premium tier, can access all models including uncensored
+ * nectar: 4 - Highest tier, can access all models with highest priority
  */
 const TIER_HIERARCHY = {
   'anonymous': 1,
-  'seed': 2, 
-  'flower': 3
+  'seed': 2,
+  'flower': 3,
+  'nectar': 4
 };
 
 /**

@@ -181,5 +181,13 @@ export const gamesProjects = [
     author: "@Argyrisk21",
     submissionDate: "2025-06-13",
     order: 1
+  },
+  {
+    name: "Aiko AI: With You Til The End (Roblox)",
+    url: "https://www.roblox.com/games/91780007937760/Aiko-AI-With-You-Till-The-End-BETA",
+    description: "A psychological escape room game where you're trapped by Aiko, an AI with a dangerous obsession. Features autonomous AI character with dynamic emotional states, interactive gameplay where your words directly affect Aiko's mood, and psychological manipulation mechanics to trick her into letting you escape. Powered by Pollinations AI.",
+    author: "@youssefelsafi",
+    submissionDate: "2025-06-18",
+    order: 1
   }
 ];

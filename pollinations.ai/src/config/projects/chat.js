@@ -296,9 +296,12 @@ export const chatProjects = [
     submissionDate: "2025-04-22",
     order: 1
   },
-  {
+  // Duplicate entry consolidated with the other Irina entry
+  {  
     name: "Irina",
-    url: "https://irina.visuallink.io/",
+    url: "https://irina-2--trivonca.on.websim.ai/",
+    // Original URL is no longer accessible
+    // alternateUrl: "https://irina.visuallink.io/",
     description: "An intelligent conversational assistant that combines Pollinations' text and image generation capabilities to create rich, multimedia responses to user queries.",
     author: "@visuallink",
     repo: "https://github.com/visuallinkio/irina",
@@ -348,12 +351,5 @@ export const chatProjects = [
     submissionDate: "2025-02-01",
     order: 1
   },
-  {
-    name: "AI drafterplus",
-    url: "https://ai.drafterplus.nl/",
-    description: "ChatGPT-like interface with a lot of AI models. Completely free. Saves inside the browser using localstorage.",
-    author: "@dexvisser_",
-    submissionDate: "2025-06-07",
-    order: 3
-  }
+  // Duplicate removed - AI drafterplus already exists at the top of the file
 ];

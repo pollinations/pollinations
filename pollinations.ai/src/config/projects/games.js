@@ -35,10 +35,10 @@ export const gamesProjects = [
     order: 1
   },
   {
-    name: "🆕 🤖 Mindcraft",
-    url: "https://github.com/kolbytn/mindcraft",
-    description: "Crafting minds for Minecraft with LLMs and Mineflayer! An AI agent framework for Minecraft using Large Language Models that creates intelligent bots capable of autonomous gameplay, building, and interaction.",
-    author: "@kolbytn",
+    name: "Mindcraft",
+    url: "https://mindcraft-ai.vercel.app/",
+    description: "A web-based Minecraft-inspired game where players can use natural language to build and interact with a voxel world using Pollinations AI.",
+    author: "@mindcraft_team",
     repo: "https://github.com/kolbytn/mindcraft",
     stars: 3500,
     submissionDate: "2025-06-03",
@@ -80,28 +80,12 @@ export const gamesProjects = [
     order: 1
   },
   {
-    name: "Mindcraft",
-    url: "https://mindcraft-ai.vercel.app/",
-    description: "A web-based Minecraft-inspired game where players can use natural language to build and interact with a voxel world using Pollinations AI.",
-    author: "@mindcraft_team",
-    submissionDate: "2025-05-10",
-    order: 1
-  },
-  {
     name: "Juego de Memorizar con Pollinations",
     url: "https://memorizar-pollinations.vercel.app/",
     description: "A memory game that uses Pollinations AI to generate unique image pairs for matching, with difficulty levels and educational themes.",
     author: "@edudev_es",
     language: "es",
     submissionDate: "2025-04-18",
-    order: 1
-  },
-  {
-    name: "Favorite Puzzles",
-    url: "https://favorite-puzzles.netlify.app/",
-    description: "A collection of AI-generated puzzles including jigsaws, crosswords, and logic games, all created using Pollinations APIs.",
-    author: "@puzzle_master",
-    submissionDate: "2025-03-30",
     order: 1
   },
   {
@@ -128,14 +112,6 @@ export const gamesProjects = [
     description: "A Roblox game that lets players interact with AI characters powered by Pollinations, featuring dynamic conversations and quests.",
     author: "@roblox_ai_dev",
     submissionDate: "2025-04-25",
-    order: 1
-  },
-  {
-    name: "Watch TV with Neko (Roblox)",
-    url: "https://www.roblox.com/games/watch-tv-with-neko",
-    description: "A Roblox experience where players can watch AI-generated TV shows with a virtual cat companion, using Pollinations for content generation.",
-    author: "@neko_tv_dev",
-    submissionDate: "2025-05-15",
     order: 1
   },
   {

@@ -20,16 +20,8 @@ export const vibeCodingProjects = [
     submissionDate: "2025-03-25",
     order: 1
   },
-  {
-    name: "Pollinations MCP Server",
-    url: "https://github.com/pollinations/model-context-protocol",
-    description: "A Model Context Protocol server that enables AI-assisted development through natural language interaction with Pollinations' multimodal services.",
-    author: "@thomash",
-    repo: "https://github.com/pollinations/model-context-protocol",
-    stars: 42,
-    submissionDate: "2025-05-01",
-    order: 1
-  },
+  // Duplicate removed - Pollinations MCP Server already exists in hackAndBuild.js
+
   {
     name: "Pollinations Task Master",
     url: "https://github.com/LousyBook94/pollinations-task-master",

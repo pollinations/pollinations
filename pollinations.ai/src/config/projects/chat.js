@@ -5,6 +5,14 @@
 
 export const chatProjects = [
   {
+    name: "J.A.R.V.I.S.",
+    url: "https://huggingface.co/spaces/hadadrjt/ai",
+    description: "Just a Rather Very Intelligent System - an advanced AI language model inspired by Iron Man's iconic assistant. Features an interactive interface for real-time engagement with context-aware, high-fidelity natural language processing, integrated with Pollinations AI for image and audio generation.",
+    author: "@hadadarjt",
+    submissionDate: "2025-06-22",
+    order: 1
+  },
+  {
     name: "Ai drafterplus",
     url: "https://ai.drafterplus.nl/",
     description: "A ChatGPT-like interface with multiple AI models. Completely free and saves conversations in the browser using localStorage.",

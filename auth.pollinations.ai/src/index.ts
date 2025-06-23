@@ -675,7 +675,7 @@ async function handleGetPreferences(request: Request, env: Env, corsHeaders: Rec
       if (bearerToken) {
         try {
           const payload = await verifyJWT(bearerToken, env);
-          userId = payload.sub;
+          userId = payload?.sub || null;
         } catch (error) {
           // Invalid JWT
         }
@@ -730,7 +730,7 @@ async function handleUpdatePreferences(request: Request, env: Env, corsHeaders: 
       if (bearerToken) {
         try {
           const payload = await verifyJWT(bearerToken, env);
-          userId = payload.sub;
+          userId = payload?.sub || null;
         } catch (error) {
           // Invalid JWT
         }

@@ -34,25 +34,31 @@ export async function getUser(db: D1Database, userId: string): Promise<User | nu
 
 // Domain management functions
 export async function updateDomainAllowlist(db: D1Database, userId: string, domains: string[]): Promise<void> {
-  // First delete existing domains for this user
-  await db.prepare(`
-    DELETE FROM domains WHERE user_id = ?
-  `).bind(userId).run();
+  // Use a transaction for atomic operation and better performance
+  const statements = [
+    // First delete existing domains for this user
+    db.prepare(`DELETE FROM domains WHERE user_id = ?`).bind(userId)
+  ];
   
-  // Then insert new domains
+  // Add batch INSERT using VALUES clause for all domains at once
   if (domains.length > 0) {
-    // Create a prepared statement for domain insertion
-    const stmt = db.prepare(`
-      INSERT INTO domains (user_id, domain) VALUES (?, ?)
-    `);
+    // Create VALUES clause for batch insert: (?, ?), (?, ?), ...
+    const valuesClauses = domains.map(() => '(?, ?)').join(', ');
+    const batchInsertSQL = `INSERT INTO domains (user_id, domain) VALUES ${valuesClauses}`;
     
-    // Insert each domain
+    // Bind all parameters: userId, domain1, userId, domain2, ...
+    const bindParams: string[] = [];
     for (const domain of domains) {
-      await stmt.bind(userId, domain).run();
+      bindParams.push(userId, domain);
     }
+    
+    statements.push(db.prepare(batchInsertSQL).bind(...bindParams));
   }
   
-  console.log(`Updated domains for user ${userId}: ${domains.join(', ')}`);
+  // Execute all statements in a batch for better performance
+  await db.batch(statements);
+  
+  console.log(`Updated domains for user ${userId}: ${domains.join(', ')} (batch operation)`);
 }
 
 export async function getDomains(db: D1Database, userId: string): Promise<string[]> {

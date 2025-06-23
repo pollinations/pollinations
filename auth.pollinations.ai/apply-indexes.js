@@ -22,10 +22,10 @@ try {
 
   for (const statement of statements) {
     if (statement.trim()) {
-      console.log(`Executing: ${statement.substring(0, 50)}...`);
+      console.log(`Executing: ${statement.substring(0, 50)}...`); // Added backtick at the end of the template literal
       
       try {
-        execSync(`wrangler d1 execute github_auth --command="${statement};"`, {
+        execSync(`wrangler d1 execute github_auth --remote --command="${statement};"`, {
           stdio: 'inherit'
         });
       } catch (e) {

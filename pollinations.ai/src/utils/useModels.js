@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
  * Hook to fetch available models from the Pollinations API
  * Supports both text and image model types
  * @param {string} modelType - 'text' or 'image'
- * @returns {Object} - loading, error, and models data
+ * @returns {Object} - loading, error, models data, and utility functions
  */
 export const useModels = (modelType = 'text') => {
   const [models, setModels] = useState([]);
@@ -28,12 +28,13 @@ export const useModels = (modelType = 'text') => {
         const data = await response.json();
         
         if (modelType === 'text') {
-          // Process text models
+          // Process text models with validation
           let processedModels = [];
           
           if (Array.isArray(data)) {
-            // Process all models
+            // Filter out any invalid models and process valid ones
             processedModels = data
+              .filter(model => model && model.name && typeof model.name === 'string')
               .map(model => ({
                 id: model.name,
                 name: model.description ? `${model.name} - ${model.description}` : model.name,
@@ -46,12 +47,14 @@ export const useModels = (modelType = 'text') => {
           
           setModels(processedModels);
         } else {
-          // Process image models
+          // Process image models with validation
           if (Array.isArray(data)) {
-            const imageModels = data.map(modelId => ({
-              id: modelId,
-              name: modelId
-            }));
+            const imageModels = data
+              .filter(modelId => modelId && typeof modelId === 'string')
+              .map(modelId => ({
+                id: modelId,
+                name: modelId
+              }));
             setModels(imageModels);
           } else {
             console.warn("Unexpected image model data format:", data);
@@ -72,5 +75,25 @@ export const useModels = (modelType = 'text') => {
     fetchModels();
   }, [modelType]);
 
-  return { models, loading, error };
-}; 
+  // Utility function to check if a model exists
+  const isValidModel = (modelId) => {
+    return models.some(model => model.id === modelId);
+  };
+
+  // Utility function to get a fallback model if current selection is invalid
+  const getFallbackModel = (currentModel) => {
+    if (isValidModel(currentModel)) {
+      return currentModel;
+    }
+    // Return the first available model as fallback, defaulting to 'openai' for text
+    return models.length > 0 ? models[0].id : (modelType === 'text' ? 'openai' : 'flux');
+  };
+
+  return { 
+    models, 
+    loading, 
+    error, 
+    isValidModel, 
+    getFallbackModel 
+  };
+};

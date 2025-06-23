@@ -59,7 +59,7 @@ export const TextEditor = ({
   setSharedModel
 }) => {
   // Use the new hook with 'text' explicitly passed
-  const { models, loading: modelsLoading, error: modelsError } = useModels('text');
+  const { models, loading: modelsLoading, error: modelsError, isValidModel, getFallbackModel } = useModels('text');
   
   // Add theme and media query for responsive design
   const theme = useTheme();
@@ -74,6 +74,15 @@ export const TextEditor = ({
   if (promptOnly) {
     return null;
   }
+  
+  // Validate and fix invalid model selections
+  useEffect(() => {
+    if (!modelsLoading && models.length > 0 && sharedModel && !isValidModel(sharedModel)) {
+      console.warn(`Invalid model "${sharedModel}" detected, switching to fallback model`);
+      const fallbackModel = getFallbackModel(sharedModel);
+      setSharedModel(fallbackModel);
+    }
+  }, [sharedModel, models, modelsLoading, isValidModel, getFallbackModel, setSharedModel]);
   
   // Log the current sharedPrompt and sharedModel for debugging
   useEffect(() => {

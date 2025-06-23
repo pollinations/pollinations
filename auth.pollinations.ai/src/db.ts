@@ -57,23 +57,16 @@ export async function updateDomainAllowlist(db: D1Database, userId: string, doma
   
   // Execute all statements in a batch for better performance
   await db.batch(statements);
-  
-  console.log(`Updated domains for user ${userId}: ${domains.join(', ')} (batch operation)`);
 }
 
 export async function getDomains(db: D1Database, userId: string): Promise<string[]> {
-  console.log(`Getting domains for user ${userId}`);
-  
   try {
     const results = await db.prepare(`
       SELECT domain FROM domains WHERE user_id = ?
     `).bind(userId).all();
     
-    console.log('Domain query results:', JSON.stringify(results));
-    
     return (results.results || []).map(row => row.domain as string);
   } catch (error) {
-    console.error('Error getting domains:', error);
     return [];
   }
 }
@@ -247,8 +240,6 @@ export async function getAllUserTiers(db: D1Database): Promise<Array<{user_id: s
  * @returns User ID, username and tier if the domain is registered by any user, null otherwise
  */
 export async function findUserByDomain(db: D1Database, domain: string): Promise<{user_id: string, username: string, tier: UserTier} | null> {
-  console.log(`Checking if domain ${domain} is registered by any user`);
-  
   try {
     // Find any user that has registered this domain
     const result = await db.prepare(`
@@ -261,18 +252,15 @@ export async function findUserByDomain(db: D1Database, domain: string): Promise<
     `).bind(domain).first();
     
     if (!result) {
-      console.log(`No user found for domain: ${domain}`);
       return null;
     }
     
-    console.log(`Found user ${result.user_id} (${result.username}) with tier ${result.tier} for domain: ${domain}`);
     return {
       user_id: result.user_id as string,
       username: result.username as string,
       tier: result.tier as UserTier
     };
   } catch (error) {
-    console.error('Error finding user by domain:', error);
     return null;
   }
 }
@@ -297,7 +285,6 @@ export async function getUserPreferences(db: D1Database, userId: string): Promis
   try {
     return JSON.parse(result.preferences as string);
   } catch (error) {
-    console.error('Error parsing user preferences:', error);
     return {};
   }
 }
@@ -331,18 +318,30 @@ export async function setUserPreference(db: D1Database, userId: string, key: str
  * @param preferences Object with preference key-value pairs to update
  */
 export async function updateUserPreferences(db: D1Database, userId: string, preferences: Record<string, any>): Promise<void> {
-  // Get current preferences
-  const currentPrefs = await getUserPreferences(db, userId);
+  // For multiple preference updates, we need to build multiple JSON_SET operations
+  // Since SQLite doesn't support nested JSON_SET in a clean way, we'll use a different approach
   
-  // Merge with new preferences
-  const updatedPrefs = { ...currentPrefs, ...preferences };
+  if (Object.keys(preferences).length === 0) {
+    return; // Nothing to update
+  }
   
-  // Save back to database
+  // Build multiple JSON_SET operations by chaining them
+  let jsonSetClause = 'COALESCE(preferences, \'{}\')'
+  const bindParams: any[] = [];
+  
+  for (const [key, value] of Object.entries(preferences)) {
+    jsonSetClause = `JSON_SET(${jsonSetClause}, ?, ?)`;
+    bindParams.push(`$.${key}`, JSON.stringify(value));
+  }
+  
+  bindParams.push(userId); // Add userId at the end for WHERE clause
+  
   await db.prepare(`
     UPDATE users 
-    SET preferences = ?, updated_at = CURRENT_TIMESTAMP
+    SET preferences = ${jsonSetClause},
+        updated_at = CURRENT_TIMESTAMP
     WHERE github_user_id = ?
-  `).bind(JSON.stringify(updatedPrefs), userId).run();
+  `).bind(...bindParams).run();
 }
 
 /**
@@ -352,18 +351,13 @@ export async function updateUserPreferences(db: D1Database, userId: string, pref
  * @param key Preference key to delete
  */
 export async function deleteUserPreference(db: D1Database, userId: string, key: string): Promise<void> {
-  // Get current preferences
-  const currentPrefs = await getUserPreferences(db, userId);
-  
-  // Delete the key
-  delete currentPrefs[key];
-  
-  // Save back to database
+  // Use atomic JSON_REMOVE operation instead of GET-then-UPDATE
   await db.prepare(`
     UPDATE users 
-    SET preferences = ?, updated_at = CURRENT_TIMESTAMP
+    SET preferences = JSON_REMOVE(COALESCE(preferences, '{}'), ?),
+        updated_at = CURRENT_TIMESTAMP
     WHERE github_user_id = ?
-  `).bind(JSON.stringify(currentPrefs), userId).run();
+  `).bind(`$.${key}`, userId).run();
 }
 
 // User metrics management functions (backend-only analytics)
@@ -386,31 +380,25 @@ export async function getUserMetrics(db: D1Database, userId: string): Promise<Re
   try {
     return JSON.parse(result.metrics as string);
   } catch (error) {
-    console.error('Error parsing user metrics:', error);
     return {};
   }
 }
 
 /**
- * Set a specific user metric
+ * Set a specific metric value
  * @param db D1 Database instance
  * @param userId User ID
- * @param key Metric key
- * @param value Metric value
+ * @param key Metric key to set
+ * @param value Value to set
  */
 export async function setUserMetric(db: D1Database, userId: string, key: string, value: any): Promise<void> {
-  // Get current metrics
-  const currentMetrics = await getUserMetrics(db, userId);
-  
-  // Update the specific metric
-  currentMetrics[key] = value;
-  
-  // Save back to database
+  // Use atomic JSON_SET operation instead of GET-then-UPDATE
   await db.prepare(`
     UPDATE users 
-    SET metrics = ?, updated_at = CURRENT_TIMESTAMP
+    SET metrics = JSON_SET(COALESCE(metrics, '{}'), ?, ?),
+        updated_at = CURRENT_TIMESTAMP
     WHERE github_user_id = ?
-  `).bind(JSON.stringify(currentMetrics), userId).run();
+  `).bind(`$.${key}`, JSON.stringify(value), userId).run();
 }
 
 /**
@@ -420,18 +408,29 @@ export async function setUserMetric(db: D1Database, userId: string, key: string,
  * @param metrics Object with metric key-value pairs to update
  */
 export async function updateUserMetrics(db: D1Database, userId: string, metrics: Record<string, any>): Promise<void> {
-  // Get current metrics
-  const currentMetrics = await getUserMetrics(db, userId);
+  // For multiple metric updates, build chained JSON_SET operations
   
-  // Merge with new metrics
-  const updatedMetrics = { ...currentMetrics, ...metrics };
+  if (Object.keys(metrics).length === 0) {
+    return; // Nothing to update
+  }
   
-  // Save back to database
+  // Build multiple JSON_SET operations by chaining them
+  let jsonSetClause = 'COALESCE(metrics, \'{}\')'
+  const bindParams: any[] = [];
+  
+  for (const [key, value] of Object.entries(metrics)) {
+    jsonSetClause = `JSON_SET(${jsonSetClause}, ?, ?)`;
+    bindParams.push(`$.${key}`, JSON.stringify(value));
+  }
+  
+  bindParams.push(userId); // Add userId at the end for WHERE clause
+  
   await db.prepare(`
     UPDATE users 
-    SET metrics = ?, updated_at = CURRENT_TIMESTAMP
+    SET metrics = ${jsonSetClause},
+        updated_at = CURRENT_TIMESTAMP
     WHERE github_user_id = ?
-  `).bind(JSON.stringify(updatedMetrics), userId).run();
+  `).bind(...bindParams).run();
 }
 
 /**
@@ -442,19 +441,18 @@ export async function updateUserMetrics(db: D1Database, userId: string, metrics:
  * @param incrementBy Amount to increment by (default: 1)
  */
 export async function incrementUserMetric(db: D1Database, userId: string, key: string, incrementBy: number = 1): Promise<void> {
-  // Get current metrics
-  const currentMetrics = await getUserMetrics(db, userId);
-  
-  // Increment the metric (initialize to 0 if doesn't exist)
-  const currentValue = typeof currentMetrics[key] === 'number' ? currentMetrics[key] : 0;
-  currentMetrics[key] = currentValue + incrementBy;
-  
-  // Save back to database
+  // Use atomic JSON operations for increment
+  // First, ensure the metrics field exists and the key is initialized to 0 if not present
   await db.prepare(`
     UPDATE users 
-    SET metrics = ?, updated_at = CURRENT_TIMESTAMP
+    SET metrics = JSON_SET(
+      COALESCE(metrics, '{}'), 
+      ?, 
+      COALESCE(JSON_EXTRACT(COALESCE(metrics, '{}'), ?), 0) + ?
+    ),
+    updated_at = CURRENT_TIMESTAMP
     WHERE github_user_id = ?
-  `).bind(JSON.stringify(currentMetrics), userId).run();
+  `).bind(`$.${key}`, `$.${key}`, incrementBy, userId).run();
 }
 
 // End of metrics functions

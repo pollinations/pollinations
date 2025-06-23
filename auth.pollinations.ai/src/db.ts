@@ -157,6 +157,8 @@ export async function validateApiToken(db: D1Database, token: string): Promise<s
 
 // New consolidated function for complete token validation in one query
 // Replaces 3 separate queries with 1 JOIN query for 60-80% performance improvement
+// Use validateApiToken() for endpoints that only need userId (more efficient)
+// Use validateApiTokenComplete() for endpoints that need userId + username + tier
 export async function validateApiTokenComplete(db: D1Database, token: string): Promise<{
   userId: string | null;
   username: string | null;

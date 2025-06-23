@@ -244,7 +244,7 @@ const models = [
     tier: "seed",
     community: false,
     aliases: "gpt-4o-audio-preview",
-    input_modalities: ["text", "image", "audio"],
+    input_modalities: ["text", "audio"],
     output_modalities: ["audio", "text"],
     tools: true,
     pricing: {

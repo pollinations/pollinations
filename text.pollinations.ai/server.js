@@ -688,7 +688,7 @@ function handleRobloxSpecificFix(messages, model) {
 }
 
 async function generateTextBasedOnModel(messages, options) {
-    const model = options.model || 'openai';
+    const model = options.model || 'openai-fast';
     log('Using model:', model, 'with options:', JSON.stringify(options));
 
     try {

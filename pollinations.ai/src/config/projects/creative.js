@@ -5,6 +5,14 @@
 
 export const creativeProjects = [
   {
+    name: "Unfoldtech",
+    url: "https://studio.unfoldtech.online/",
+    description: "Easily generate new images inspired by the Pexels website with embedded IPTC (title, description, keywords) on download. Find beautiful image inspiration from Pexels, create prompts from images, and generate new images with metadata embedded for immediate use in stock photography or upscaling.",
+    author: "kengkreingkrai@gmail.com",
+    submissionDate: "2025-06-23",
+    order: 1
+  },
+  {
     name: "Celebrity AI Image Generator",
     url: "https://www.aicelebrity.design/",
     description: "An AI-powered celebrity image generator that uses Pollinations.ai and a1.art APIs. Users can directly input celebrity text to generate celebrities doing anything. Features celebrity photo shooting capabilities where users can upload their pictures and take selfies with celebrities like Labubu, Taylor Swift, and more.",

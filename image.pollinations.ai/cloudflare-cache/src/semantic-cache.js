@@ -5,7 +5,7 @@
  */
 
 import { createEmbeddingService, generateEmbedding, getResolutionBucket } from './embedding-service.js';
-import { SEMANTIC_SIMILARITY_THRESHOLD } from './config.js';
+import { SEMANTIC_SIMILARITY_THRESHOLD, SEMANTIC_CACHE_ENABLED } from './config.js';
 
 /**
  * Create a simple hash for Vectorize ID (using Web Crypto API)

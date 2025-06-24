@@ -3,6 +3,7 @@ import { proxyToOrigin } from './image-proxy.js';
 import { sendToAnalytics } from './analytics.js';
 import { createSemanticCache, checkSemanticCacheAndRespond, cacheImageEmbedding, checkExactCacheAndRespond } from './semantic-cache.js';
 import { extractPromptFromUrl, extractImageParams } from './hybrid-cache.js';
+import { SEMANTIC_CACHE_ENABLED } from './config.js';
 
 import { getClientIp } from './ip-utils.js';
 
@@ -62,7 +63,10 @@ export default {
     console.log(`Request: ${request.method} ${url.pathname}`);
     
     // Create semantic cache instance
-    const semanticCache = createSemanticCache(env);
+    let semanticCache = null;
+    if (SEMANTIC_CACHE_ENABLED) {
+      semanticCache = createSemanticCache(env);
+    }
     
     // Extract the prompt for analytics and semantic caching using consistent decoding
     const semanticPrompt = extractPromptFromUrl(url);
@@ -117,31 +121,33 @@ export default {
     }
     
     // Check semantic cache for similar images (after exact cache miss)
-    console.log('[DEBUG] Starting semantic cache check...');
     let semanticDebugInfo = null;
-    try {
-      const semanticResult = await checkSemanticCacheAndRespond(semanticCache, semanticPrompt, imageParams);
-      semanticDebugInfo = semanticResult?.debugInfo;
-      
-      if (semanticResult?.response) {
-        console.log('Semantic cache hit - returning similar image');
+    if (SEMANTIC_CACHE_ENABLED) {
+      console.log('[DEBUG] Starting semantic cache check...');
+      try {
+        const semanticResult = await checkSemanticCacheAndRespond(semanticCache, semanticPrompt, imageParams);
+        semanticDebugInfo = semanticResult?.debugInfo;
         
-        // Send analytics for semantic cache hit
-        if (url.pathname.startsWith('/prompt/')) {
-          const similarity = semanticResult.response.headers.get('x-semantic-similarity');
-          sendImageAnalytics(request, EVENTS.SERVED_FROM_CACHE, CACHE_STATUS.HIT, {
-            ...analyticsParams,
-            cacheType: 'semantic',
-            similarity: similarity
-          }, env, ctx);
+        if (semanticResult?.response) {
+          console.log('Semantic cache hit - returning similar image');
+          
+          // Send analytics for semantic cache hit
+          if (url.pathname.startsWith('/prompt/')) {
+            const similarity = semanticResult.response.headers.get('x-semantic-similarity');
+            sendImageAnalytics(request, EVENTS.SERVED_FROM_CACHE, CACHE_STATUS.HIT, {
+              ...analyticsParams,
+              cacheType: 'semantic',
+              similarity: similarity
+            }, env, ctx);
+          }
+          
+          return semanticResult.response;
         }
-        
-        return semanticResult.response;
+        console.log('[DEBUG] No semantic cache hit, proceeding to origin');
+      } catch (error) {
+        console.error('Error checking semantic cache:', error);
+        // Continue to origin - semantic cache errors shouldn't break requests
       }
-      console.log('[DEBUG] No semantic cache hit, proceeding to origin');
-    } catch (error) {
-      console.error('Error checking semantic cache:', error);
-      // Continue to origin - semantic cache errors shouldn't break requests
     }
 
     // Cache miss - proxy to origin
@@ -155,7 +161,9 @@ export default {
       ctx.waitUntil(cacheResponse(cacheKey, response.clone(), env, url.toString(), request));
       
       // Store embedding asynchronously for semantic caching
-      ctx.waitUntil(cacheImageEmbedding(semanticCache, cacheKey, semanticPrompt, imageParams));
+      if (SEMANTIC_CACHE_ENABLED) {
+        ctx.waitUntil(cacheImageEmbedding(semanticCache, cacheKey, semanticPrompt, imageParams));
+      }
       
       // Send analytics for cache miss but successful generation
       if (url.pathname.startsWith('/prompt/')) {
@@ -181,7 +189,7 @@ export default {
     newHeaders.set('x-cache', 'MISS');
     
     // Add semantic debug headers if we performed a semantic search
-    if (semanticDebugInfo?.searchPerformed) {
+    if (SEMANTIC_CACHE_ENABLED && semanticDebugInfo?.searchPerformed) {
       if (semanticDebugInfo.bestSimilarity !== null) {
         newHeaders.set('x-semantic-best-similarity', semanticDebugInfo.bestSimilarity.toFixed(3));
         newHeaders.set('x-semantic-threshold', semanticCache.similarityThreshold.toString()); // Show current threshold

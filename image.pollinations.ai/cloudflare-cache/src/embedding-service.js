@@ -69,21 +69,32 @@ export function normalizePromptForEmbedding(prompt, params = {}) {
 }
 
 /**
- * Create resolution bucket key with seed isolation
+ * Create resolution bucket key with seed and nologo isolation
  * Different seeds should NOT match semantically as they produce different images
+ * Images with/without logos are also visually different and shouldn't match
  * @param {number} width - Image width
  * @param {number} height - Image height
  * @param {string|number} seed - Image generation seed
- * @returns {string} - Resolution bucket key with seed isolation
+ * @param {boolean|string} nologo - Whether logo should be excluded
+ * @returns {string} - Resolution bucket key with seed and nologo isolation
  */
-export function getResolutionBucket(width = 1024, height = 1024, seed = null) {
+export function getResolutionBucket(width = 1024, height = 1024, seed = null, nologo = null) {
   const resolution = `${width}x${height}`;
+  
+  // Build bucket key with relevant visual parameters
+  let bucket = resolution;
   
   // Include seed in bucket for proper isolation
   // Different seeds can produce significantly different images even with same prompt
   if (seed !== null && seed !== undefined) {
-    return `${resolution}_seed${seed}`;
+    bucket += `_seed${seed}`;
   }
   
-  return resolution;
+  // Include nologo status since images with/without logos are visually different
+  if (nologo !== null && nologo !== undefined) {
+    const nologoValue = nologo === true || nologo === 'true' ? 'true' : 'false';
+    bucket += `_nologo${nologoValue}`;
+  }
+  
+  return bucket;
 }

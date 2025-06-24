@@ -75,7 +75,8 @@ export async function findSimilarImage(cache, prompt, params = {}) {
     const width = parseInt(params.width) || 1024;
     const height = parseInt(params.height) || 1024;
     const seed = params.seed; // Extract seed parameter
-    const bucket = getResolutionBucket(width, height, seed);
+    const nologo = params.nologo; // Extract nologo parameter
+    const bucket = getResolutionBucket(width, height, seed, nologo);
     
     console.log(`[SEMANTIC] Searching in resolution bucket: ${bucket}`);
     
@@ -143,24 +144,24 @@ export async function cacheImageEmbedding(cache, cacheKey, prompt, params = {}) 
     // Generate embedding for the prompt
     const embedding = await generateEmbedding(cache.embeddingService, prompt, params);
     
-    // Get resolution bucket
+    // Get resolution bucket for storage  
     const width = parseInt(params.width) || 1024;
     const height = parseInt(params.height) || 1024;
     const seed = params.seed; // Extract seed parameter
-    const bucket = getResolutionBucket(width, height, seed);
+    const nologo = params.nologo; // Extract nologo parameter
+    const bucket = getResolutionBucket(width, height, seed, nologo);
     
-    // Store in Vectorize with indexed metadata for fast filtering
-    // Use a hash of the cache key as ID since Vectorize has 64-byte limit
-    const vectorizeId = await createSimpleHash(cacheKey);
-    
+    // Store in Vectorize with rich metadata for filtering
     await cache.vectorize.upsert([{
-      id: vectorizeId,
+      id: await createSimpleHash(cacheKey),
       values: embedding,
       metadata: {
+        prompt: prompt,
         cacheKey: cacheKey,
         bucket: bucket,
         model: params.model || 'flux',
         seed: seed, // Store seed as separate indexed field
+        nologo: nologo, // Store nologo as separate indexed field
         width: width,
         height: height,
         cachedAt: Date.now()

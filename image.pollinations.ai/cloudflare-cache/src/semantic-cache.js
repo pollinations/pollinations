@@ -7,6 +7,41 @@
 import { createEmbeddingService, generateEmbedding, getResolutionBucket } from './embedding-service.js';
 
 /**
+ * Create a simple hash for Vectorize ID (using Web Crypto API)
+ * @param {string} input - Input string to hash
+ * @returns {Promise<string>} - Hash string
+ */
+async function createSimpleHash(input) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(input);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex.substring(0, 32); // Return first 32 chars
+}
+
+/**
+ * Helper function to set HTTP metadata headers from R2 object
+ * @param {Headers} headers - Headers object to populate
+ * @param {Object} httpMetadata - R2 object httpMetadata
+ */
+function setHttpMetadataHeaders(headers, httpMetadata) {
+  if (httpMetadata) {
+    // Iterate over all httpMetadata and set headers
+    for (const [key, value] of Object.entries(httpMetadata)) {
+      if (value) {
+        // Convert camelCase to kebab-case for HTTP headers
+        const headerName = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+        headers.set(headerName, value);
+      }
+    }
+  } else {
+    // Fallback to default content type
+    headers.set('content-type', 'image/jpeg');
+  }
+}
+
+/**
  * Create a semantic cache instance
  * @param {Object} env - Environment bindings
  * @returns {Object} - Semantic cache instance
@@ -16,7 +51,7 @@ export function createSemanticCache(env) {
     r2: env.IMAGE_BUCKET,
     vectorize: env.VECTORIZE_INDEX,
     ai: env.AI,
-    similarityThreshold: 0.85, // Conservative threshold for production
+    similarityThreshold: 0.7, // Temporarily lowered for testing
     embeddingService: createEmbeddingService(env.AI)
   };
 }
@@ -46,7 +81,7 @@ export async function findSimilarImage(cache, prompt, params = {}) {
     const searchResults = await cache.vectorize.query(embedding, {
       topK: 5,
       returnValues: false,
-      returnMetadata: 'indexed', // Fast queries using indexed metadata
+      returnMetadata: 'all', // Changed from 'indexed' to get all metadata including cacheKey
       filter: {
         bucket: { $eq: bucket },
         model: { $eq: params.model || 'flux' }
@@ -55,22 +90,30 @@ export async function findSimilarImage(cache, prompt, params = {}) {
     
     if (!searchResults.matches || searchResults.matches.length === 0) {
       console.log('[SEMANTIC] No similar images found in cache');
-      return null;
+      return { bestSimilarity: null };
     }
+    
+    // Log all matches for debugging
+    console.log('[SEMANTIC] Found matches:');
+    searchResults.matches.forEach((match, index) => {
+      const cacheKey = match.metadata?.cacheKey || match.id || 'unknown';
+      console.log(`  ${index + 1}. ${cacheKey} - similarity: ${match.score.toFixed(3)}`);
+    });
     
     // Return best match above similarity threshold
     const bestMatch = searchResults.matches[0];
     if (bestMatch.score >= cache.similarityThreshold) {
-      console.log(`[SEMANTIC] Found similar image with score: ${bestMatch.score.toFixed(3)}`);
+      console.log(`[SEMANTIC] Using match above threshold (${cache.similarityThreshold}): ${bestMatch.score.toFixed(3)}`);
       return {
         cacheKey: bestMatch.metadata.cacheKey,
         similarity: bestMatch.score,
-        bucket: bucket
+        bucket: bucket,
+        bestSimilarity: bestMatch.score
       };
     }
     
-    console.log(`[SEMANTIC] Best similarity ${bestMatch.score.toFixed(3)} below threshold ${cache.similarityThreshold}`);
-    return null;
+    console.log(`[SEMANTIC] Best similarity ${bestMatch.score.toFixed(3)} below threshold ${cache.similarityThreshold} - no match used`);
+    return { bestSimilarity: bestMatch.score };
     
   } catch (error) {
     console.error('[SEMANTIC] Error finding similar image:', error);
@@ -80,7 +123,7 @@ export async function findSimilarImage(cache, prompt, params = {}) {
 
 /**
  * Cache image embedding in Vectorize asynchronously
- * @param {Object} cache - Semantic cache instance  
+ * @param {Object} cache - Semantic cache instance
  * @param {string} cacheKey - R2 cache key
  * @param {string} prompt - Image prompt
  * @param {Object} params - Request parameters
@@ -98,8 +141,11 @@ export async function cacheImageEmbedding(cache, cacheKey, prompt, params = {}) 
     const bucket = getResolutionBucket(width, height);
     
     // Store in Vectorize with indexed metadata for fast filtering
+    // Use a hash of the cache key as ID since Vectorize has 64-byte limit
+    const vectorizeId = await createSimpleHash(cacheKey);
+    
     await cache.vectorize.upsert([{
-      id: cacheKey,
+      id: vectorizeId,
       values: embedding,
       metadata: {
         cacheKey: cacheKey,
@@ -116,5 +162,108 @@ export async function cacheImageEmbedding(cache, cacheKey, prompt, params = {}) 
   } catch (error) {
     console.error('[SEMANTIC] Error caching embedding:', error);
     // Don't throw - this is asynchronous and shouldn't break the request
+  }
+}
+
+/**
+ * Check semantic cache and return response if found
+ * High-level function that handles the complete semantic cache workflow
+ * @param {Object} cache - Semantic cache instance
+ * @param {string} prompt - Image prompt
+ * @param {Object} params - Request parameters
+ * @returns {Promise<Object|null>} - Object with response and debug info, or null if miss
+ */
+export async function checkSemanticCacheAndRespond(cache, prompt, params = {}) {
+  // Skip if no prompt provided
+  if (!prompt || typeof prompt !== 'string') {
+    console.log('[SEMANTIC] No valid prompt for semantic search');
+    return null;
+  }
+
+  try {
+    console.log('[SEMANTIC] Checking semantic cache for similar images...');
+    const result = await findSimilarImage(cache, prompt, params);
+    
+    if (!result.cacheKey) {
+      console.log('[SEMANTIC] No semantic matches found');
+      return { response: null, debugInfo: { searchPerformed: true, bestSimilarity: result.bestSimilarity } };
+    }
+
+    console.log(`[SEMANTIC] Found semantic match: ${result.cacheKey} (similarity: ${result.similarity.toFixed(3)})`);
+    
+    // Try to get the semantically similar image from R2
+    const similarCachedImage = await cache.r2.get(result.cacheKey);
+    
+    if (!similarCachedImage) {
+      console.log(`[SEMANTIC] Semantic match found but R2 object ${result.cacheKey} no longer exists`);
+      return { response: null, debugInfo: { searchPerformed: true, bestSimilarity: result.similarity } };
+    }
+
+    // Create response with semantic cache headers
+    const semanticHeaders = new Headers();
+    setHttpMetadataHeaders(semanticHeaders, similarCachedImage.httpMetadata);
+    
+    // Set semantic cache headers
+    semanticHeaders.set('cache-control', 'public, max-age=31536000, immutable');
+    semanticHeaders.set('x-cache', 'HIT');
+    semanticHeaders.set('x-cache-type', 'semantic');
+    semanticHeaders.set('x-semantic-similarity', result.similarity.toFixed(3));
+    semanticHeaders.set('x-semantic-bucket', result.bucket);
+    semanticHeaders.set('access-control-allow-origin', '*');
+    semanticHeaders.set('access-control-allow-methods', 'GET, POST, OPTIONS');
+    semanticHeaders.set('access-control-allow-headers', 'Content-Type');
+    
+    const response = new Response(similarCachedImage.body, {
+      headers: semanticHeaders
+    });
+    
+    return { 
+      response, 
+      debugInfo: { 
+        searchPerformed: true, 
+        bestSimilarity: result.similarity, 
+        cacheHit: true 
+      } 
+    };
+    
+  } catch (error) {
+    console.error('[SEMANTIC] Error checking semantic cache:', error);
+    return { response: null, debugInfo: { searchPerformed: false, error: error.message } };
+  }
+}
+
+/**
+ * Check exact cache and return response if found
+ * @param {Object} r2Bucket - R2 bucket instance
+ * @param {string} cacheKey - Cache key
+ * @returns {Promise<Response|null>} - Exact cache response or null if miss
+ */
+export async function checkExactCacheAndRespond(r2Bucket, cacheKey) {
+  try {
+    const cachedImage = await r2Bucket.get(cacheKey);
+    
+    if (!cachedImage) {
+      return null;
+    }
+
+    // Create response with exact cache headers
+    const cachedHeaders = new Headers();
+    setHttpMetadataHeaders(cachedHeaders, cachedImage.httpMetadata);
+    
+    // Set exact cache headers
+    cachedHeaders.set('cache-control', 'public, max-age=31536000, immutable');
+    cachedHeaders.set('x-cache', 'HIT');
+    cachedHeaders.set('x-cache-type', 'exact');
+    cachedHeaders.set('access-control-allow-origin', '*');
+    cachedHeaders.set('access-control-allow-methods', 'GET, POST, OPTIONS');
+    cachedHeaders.set('access-control-allow-headers', 'Content-Type');
+    
+    return new Response(cachedImage.body, {
+      headers: cachedHeaders
+    });
+    
+  } catch (error) {
+    console.error('Error retrieving cached image:', error);
+    return null;
   }
 }

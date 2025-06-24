@@ -8,9 +8,18 @@ compatibility_date = "2023-05-18"
 binding = "IMAGE_BUCKET"
 bucket_name = "pollinations-images"
 
+# Vectorize index for semantic caching
+[[vectorize]]
+binding = "VECTORIZE_INDEX"
+index_name = "pollinations-image-cache"
+
+# Workers AI for embeddings
+[ai]
+binding = "AI"
+
 # Environment variables
 [vars]
-ORIGIN_HOST = "image-origin.pollinations.ai"
+ORIGIN_HOST = "image.pollinations.ai"
 DEBUG_ANALYTICS = "false"  # Set to "true" to enable detailed analytics debugging
 
 # Increase limits for long-running operations
@@ -24,6 +33,19 @@ enabled = false      # turns Workers Logs off completely
 
 [observability.logs]
 invocation_logs = false
+
+# Test environment configuration
+[env.test]
+[[env.test.r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "pollinations-images"
+
+[[env.test.vectorize]]
+binding = "VECTORIZE_INDEX"
+index_name = "pollinations-image-cache-test"
+
+[env.test.ai]
+binding = "AI"
 
 # Note: The usage_model setting is deprecated and has been removed
 # Workers Unbound is now configured via account settings in the Cloudflare dashboard
@@ -41,5 +63,3 @@ invocation_logs = false
 # The deploy.sh script will automatically create a .dev.vars file
 # for local development using these values.
 # ===========================================
-
-

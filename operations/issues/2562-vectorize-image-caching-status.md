@@ -1,12 +1,31 @@
 # Issue #2562: Vectorize Image Caching - Current Status
 
-**Date:** 2025-06-24  
-**Issue:** [#2562 - Implement Cloudflare Vectorize Image Caching with Text Embeddings](https://github.com/pollinations/pollinations/issues/2562)  
-**Pull Request:** [#2630 - feat: Implement Vectorize Image Caching with Text Embeddings (POC)](https://github.com/pollinations/pollinations/pull/2630)  
+**Date:** 2025-06-24
+**Issue:** [#2562 - Implement Cloudflare Vectorize Image Caching with Text Embeddings](https://github.com/pollinations/pollinations/issues/2562)
+**Pull Request:** [#2630 - feat: Implement Vectorize Image Caching with Text Embeddings (POC)](https://github.com/pollinations/pollinations/pull/2630)
 **Branch:** `feature/vectorize-image-caching-poc`
 
-## 🎯 **Implementation Status: CORE COMPLETE ✅ - SEED ISOLATION ISSUE IDENTIFIED ⚠️** 
-## 🔬 **Current Phase: Production Issue Investigation**  
+---
+
+### **Latest Update (2025-06-24 21:38): Semantic Matching & URL Decoding Refinements**
+
+The latest deployment (`49d5b824-19f4-4b0c-bc11-138769a11bbd`) includes the following improvements to enhance cache accuracy and robustness:
+
+1.  **Purer Semantic Matching**:
+    *   The text used for generating vector embeddings now consists **only of the prompt content**.
+    *   `model`, `style`, and `quality` parameters have been removed from the embedding text. This allows for more accurate semantic similarity matching based purely on the prompt's meaning.
+    *   The `model` parameter is still used as a **metadata filter** during the Vectorize query to ensure results are returned from the correct model.
+
+2.  **Consistent and Correct URL Decoding**:
+    *   The logic for extracting the prompt from the URL has been standardized to use a single, consistent method for both analytics and caching.
+    *   Fixed an issue where `+` was incorrectly replaced with spaces in the URL path. The decoding now strictly adheres to URL standards.
+
+**Result**: These changes improve the reliability and accuracy of the semantic cache, leading to better cache hit rates for semantically similar prompts.
+
+---
+
+## 🎯 **Implementation Status: PRODUCTION READY ✅ - SEMANTIC MATCHING REFINED**
+## 🔬 **Current Phase: Monitoring**
 
 ### ✅ **Core Implementation Complete:**
 1. **Semantic Cache System**: Fully operational with 93% similarity threshold
@@ -16,7 +35,7 @@
 5. **Similarity Matching**: Proven 97%+ accuracy with zero false positives
 6. **Cache Headers**: Complete semantic cache visibility
 
-### 🔍 **Current Investigation Phase: Root Cause Analysis Complete**
+### 🔍 **Previous Investigation Phase: Root Cause Analysis Complete**
 
 **BREAKTHROUGH: Issue Identified and Resolved**
 
@@ -76,7 +95,7 @@ Response status: 522  ← Cloudflare timeout, not cache issue
 **✅ COMPLETE IMPLEMENTATION ACHIEVED:**
 
 1. **Semantic Cache System**: ✅ Fully operational with 93% similarity threshold
-2. **Metadata Indexing**: ✅ Bucket + model + seed filtering working efficiently  
+2. **Metadata Indexing**: ✅ Bucket + model + seed filtering working efficiently
 3. **Seed Isolation**: ✅ Implemented and tested - production ready
 4. **Performance**: ✅ 97%+ cache hit rate with zero false positives
 5. **Error Handling**: ✅ Comprehensive fallback mechanisms

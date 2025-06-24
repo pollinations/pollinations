@@ -69,16 +69,18 @@ export function normalizePromptForEmbedding(prompt, params = {}) {
 }
 
 /**
- * Create resolution bucket key with seed and nologo isolation
+ * Create resolution bucket key with seed, nologo, and image isolation
  * Different seeds should NOT match semantically as they produce different images
  * Images with/without logos are also visually different and shouldn't match
+ * Image-to-image vs text-only generation produce fundamentally different outputs
  * @param {number} width - Image width
  * @param {number} height - Image height
  * @param {string|number} seed - Image generation seed
  * @param {boolean|string} nologo - Whether logo should be excluded
- * @returns {string} - Resolution bucket key with seed and nologo isolation
+ * @param {string} image - Base64 image for image-to-image generation
+ * @returns {string} - Resolution bucket key with complete parameter isolation
  */
-export function getResolutionBucket(width = 1024, height = 1024, seed = null, nologo = null) {
+export function getResolutionBucket(width = 1024, height = 1024, seed = null, nologo = null, image = null) {
   const resolution = `${width}x${height}`;
   
   // Build bucket key with relevant visual parameters
@@ -94,6 +96,14 @@ export function getResolutionBucket(width = 1024, height = 1024, seed = null, no
   if (nologo !== null && nologo !== undefined) {
     const nologoValue = nologo === true || nologo === 'true' ? 'true' : 'false';
     bucket += `_nologo${nologoValue}`;
+  }
+  
+  // Include image parameter for image-to-image vs text-only isolation
+  // Image-to-image generation produces fundamentally different outputs
+  if (image !== null && image !== undefined && image !== '') {
+    // Use a short hash of the image to avoid bucket name explosion
+    // Different images should be in different buckets but same image should match
+    bucket += `_img${image.substring(0, 8)}`;
   }
   
   return bucket;

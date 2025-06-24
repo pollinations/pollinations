@@ -76,7 +76,8 @@ export async function findSimilarImage(cache, prompt, params = {}) {
     const height = parseInt(params.height) || 1024;
     const seed = params.seed; // Extract seed parameter
     const nologo = params.nologo; // Extract nologo parameter
-    const bucket = getResolutionBucket(width, height, seed, nologo);
+    const image = params.image; // Extract image parameter for image-to-image
+    const bucket = getResolutionBucket(width, height, seed, nologo, image);
     
     console.log(`[SEMANTIC] Searching in resolution bucket: ${bucket}`);
     
@@ -149,7 +150,8 @@ export async function cacheImageEmbedding(cache, cacheKey, prompt, params = {}) 
     const height = parseInt(params.height) || 1024;
     const seed = params.seed; // Extract seed parameter
     const nologo = params.nologo; // Extract nologo parameter
-    const bucket = getResolutionBucket(width, height, seed, nologo);
+    const image = params.image; // Extract image parameter for image-to-image
+    const bucket = getResolutionBucket(width, height, seed, nologo, image);
     
     // Store in Vectorize with rich metadata for filtering
     await cache.vectorize.upsert([{
@@ -162,6 +164,7 @@ export async function cacheImageEmbedding(cache, cacheKey, prompt, params = {}) 
         model: params.model || 'flux',
         seed: seed, // Store seed as separate indexed field
         nologo: nologo, // Store nologo as separate indexed field
+        image: image ? image.substring(0, 8) : null, // Store image hash for filtering
         width: width,
         height: height,
         cachedAt: Date.now()

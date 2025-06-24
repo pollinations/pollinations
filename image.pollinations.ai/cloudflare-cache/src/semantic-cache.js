@@ -5,6 +5,7 @@
  */
 
 import { createEmbeddingService, generateEmbedding, getResolutionBucket } from './embedding-service.js';
+import { SEMANTIC_SIMILARITY_THRESHOLD } from './config.js';
 
 /**
  * Create a simple hash for Vectorize ID (using Web Crypto API)
@@ -51,7 +52,7 @@ export function createSemanticCache(env) {
     r2: env.IMAGE_BUCKET,
     vectorize: env.VECTORIZE_INDEX,
     ai: env.AI,
-    similarityThreshold: 0.93, // 93% threshold - more conservative
+    similarityThreshold: SEMANTIC_SIMILARITY_THRESHOLD, // Centralized threshold configuration
     embeddingService: createEmbeddingService(env.AI)
   };
 }

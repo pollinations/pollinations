@@ -188,7 +188,7 @@ export default {
     if (semanticDebugInfo?.searchPerformed) {
       if (semanticDebugInfo.bestSimilarity !== null) {
         newHeaders.set('x-semantic-best-similarity', semanticDebugInfo.bestSimilarity.toFixed(3));
-        newHeaders.set('x-semantic-threshold', '0.7'); // Show current threshold
+        newHeaders.set('x-semantic-threshold', semanticCache.similarityThreshold.toString()); // Show current threshold
       }
       newHeaders.set('x-semantic-search', 'performed');
     } else {

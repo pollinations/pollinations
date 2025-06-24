@@ -12,7 +12,7 @@ import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { processRequestForAds } from './ads/initRequestFilter.js';
 import { createStreamingAdWrapper } from './ads/streamingAdWrapper.js';
-import { getRequestData, prepareModelsForOutput } from './requestUtils.js';
+import { getRequestData, prepareModelsForOutput, getUserMappedModel } from './requestUtils.js';
 
 // Import shared utilities
 import { enqueue } from '../shared/ipQueue.js';
@@ -135,13 +135,26 @@ async function handleRequest(req, res, requestData) {
         // Get user info from authentication if available
         const authResult = req.authResult || {};
         
+        // Apply user-specific model mapping if user is authenticated
+        let finalRequestData = requestData;
+        if (authResult.username) {
+            const mappedModel = getUserMappedModel(authResult.username);
+            if (mappedModel) {
+                log(`🔄 Model override: ${requestData.model} → ${mappedModel} for user ${authResult.username}`);
+                finalRequestData = {
+                    ...requestData,
+                    model: mappedModel
+                };
+            }
+        }
+        
         // Add user info to request data - using authResult directly as a thin proxy
         const requestWithUserInfo = {
-            ...requestData,
+            ...finalRequestData,
             userInfo: authResult
         };
         
-        const completion = await generateTextBasedOnModel(requestData.messages, requestWithUserInfo);
+        const completion = await generateTextBasedOnModel(finalRequestData.messages, requestWithUserInfo);
         
         // Ensure completion has the request ID
         completion.id = requestId;

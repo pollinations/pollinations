@@ -19,5 +19,12 @@ CREATE INDEX IF NOT EXISTS idx_domains_user_id ON domains(user_id);
 -- Add index on oauth_state.state for faster OAuth flow performance
 CREATE INDEX IF NOT EXISTS idx_oauth_state_state ON oauth_state(state);
 
+-- Additional performance indexes for OAuth cleanup and user lookups
+-- Add index on oauth_state.created_at for efficient cleanup of expired states
+CREATE INDEX IF NOT EXISTS idx_oauth_state_created_at ON oauth_state(created_at);
+
+-- Add index on users.username for faster username-based lookups (if used)
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+
 -- Optimize query planner with latest statistics
 PRAGMA optimize;

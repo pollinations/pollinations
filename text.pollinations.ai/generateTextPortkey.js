@@ -16,7 +16,7 @@ const MODEL_MAPPING = {
     'openai-fast': 'gpt-4.1-nano',
     'openai': 'gpt-4.1-mini',       // Maps to portkeyConfig['gpt-4o-mini']
     'openai-large': 'azure-gpt-4.1',
-    'openai-roblox': 'gpt-4.1-mini-roblox',
+    'openai-roblox': 'gpt-4o-mini-roblox',
     //'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
     'openai-reasoning': 'o3', // Maps to custom MonoAI endpoint
     'searchgpt': 'gpt-4o-mini-search-preview', // Maps to custom MonoAI endpoint
@@ -351,10 +351,10 @@ export const portkeyConfig = {
         process.env.AZURE_OPENAI_ENDPOINT,
         'gpt-4.1-mini'
     ),
-    'gpt-4.1-mini-roblox': () => createAzureModelConfig(
+    'gpt-4o-mini-roblox': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_ROBLOX_API_KEY,
         process.env.AZURE_OPENAI_ROBLOX_ENDPOINT,
-        'gpt-4.1-mini'
+        'gpt-4o-mini'
     ),
     'gpt-4o': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_LARGE_API_KEY,
@@ -380,16 +380,6 @@ export const portkeyConfig = {
         process.env.AZURE_OPENAI_AUDIO_LARGE_API_KEY,
         process.env.AZURE_OPENAI_AUDIO_LARGE_ENDPOINT,
         'gpt-4o-audio-preview'
-    ),
-    'gpt-4o-mini-roblox-rp': () => createAzureModelConfig(
-        process.env.AZURE_OPENAI_ROBLOX_API_KEY,
-        process.env.AZURE_OPENAI_ROBLOX_ENDPOINT,
-        'gpt-4o-mini'
-    ),
-    'gpt-4.1-mini-roblox': () => createAzureModelConfig(
-        process.env.AZURE_OPENAI_ROBLOX_KEY,
-        process.env.AZURE_OPENAI_ROBLOX_ENDPOINT,
-        'gpt-4.1-mini'
     ),
     'azure-gpt-4.1': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_41_API_KEY,

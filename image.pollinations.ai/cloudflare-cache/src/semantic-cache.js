@@ -83,7 +83,7 @@ export async function findSimilarImage(cache, prompt, params = {}) {
     
     // Search Vectorize with metadata filtering for efficiency
     const searchResults = await cache.vectorize.query(embedding, {
-      topK: 5,
+      topK: 1,
       returnValues: false,
       returnMetadata: 'all', // Changed from 'indexed' to get all metadata including cacheKey
       filter: {

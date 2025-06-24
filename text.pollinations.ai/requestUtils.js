@@ -20,7 +20,7 @@ export function getRequestData(req) {
                     data.response_format?.type === 'json_object';
                     
     const seed = data.seed ? parseInt(data.seed, 10) : null;
-    let model = data.model || 'openai';
+    let model = data.model || 'openai-fast';
     const systemPrompt = data.system ? data.system : null;
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
     const top_p = data.top_p ? parseFloat(data.top_p) : undefined;

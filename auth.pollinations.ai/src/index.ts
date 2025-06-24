@@ -13,6 +13,7 @@ import {
   getApiToken, 
   deleteApiTokens, 
   validateApiToken, 
+  validateApiTokenComplete,
   getUserTier, 
   setUserTier, 
   getAllUserTiers, 
@@ -461,26 +462,14 @@ async function handleValidateToken(token: string, env: Env, corsHeaders: Record<
     }
     
     // Validate the token against the database
-    const userId = await validateApiToken(env.DB, token);
-    
-    // Get user tier and username if token is valid
-    let tier: UserTier = 'seed';
-    let username = null;
-    if (userId) {
-      tier = await getUserTier(env.DB, userId);
-      // Get the user information to include username
-      const user = await getUser(env.DB, userId);
-      if (user) {
-        username = user.username;
-      }
-    }
+    const { userId, tier, username } = await validateApiTokenComplete(env.DB, token);
     
     // Return validation result with tier and username information
     return new Response(JSON.stringify({
       valid: userId !== null,
       userId: userId,
       username: username,
-      tier: userId ? tier : null
+      tier: tier
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -686,7 +675,7 @@ async function handleGetPreferences(request: Request, env: Env, corsHeaders: Rec
       if (bearerToken) {
         try {
           const payload = await verifyJWT(bearerToken, env);
-          userId = payload.sub;
+          userId = payload?.sub || null;
         } catch (error) {
           // Invalid JWT
         }
@@ -741,7 +730,7 @@ async function handleUpdatePreferences(request: Request, env: Env, corsHeaders: 
       if (bearerToken) {
         try {
           const payload = await verifyJWT(bearerToken, env);
-          userId = payload.sub;
+          userId = payload?.sub || null;
         } catch (error) {
           // Invalid JWT
         }

@@ -289,3 +289,4 @@ text.pollinations.ai/v2/
 .netlify
 .dev.vars
 image.pollinations.ai/temp_logs/
+.wrangler/

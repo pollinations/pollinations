@@ -51,7 +51,7 @@ export function createSemanticCache(env) {
     r2: env.IMAGE_BUCKET,
     vectorize: env.VECTORIZE_INDEX,
     ai: env.AI,
-    similarityThreshold: 0.7, // Temporarily lowered for testing
+    similarityThreshold: 0.93, // 93% threshold - more conservative
     embeddingService: createEmbeddingService(env.AI)
   };
 }
@@ -88,6 +88,11 @@ export async function findSimilarImage(cache, prompt, params = {}) {
       }
     });
     
+    console.log(`[SEMANTIC] Search results:`, {
+      matchCount: searchResults.matches?.length || 0,
+      searchQuery: { bucket, model: params.model || 'flux' }
+    });
+    
     if (!searchResults.matches || searchResults.matches.length === 0) {
       console.log('[SEMANTIC] No similar images found in cache');
       return { bestSimilarity: null };
@@ -117,7 +122,7 @@ export async function findSimilarImage(cache, prompt, params = {}) {
     
   } catch (error) {
     console.error('[SEMANTIC] Error finding similar image:', error);
-    return null; // Graceful fallback to exact cache
+    return { bestSimilarity: null, error: error.message }; // Graceful fallback to exact cache
   }
 }
 
@@ -184,9 +189,9 @@ export async function checkSemanticCacheAndRespond(cache, prompt, params = {}) {
     console.log('[SEMANTIC] Checking semantic cache for similar images...');
     const result = await findSimilarImage(cache, prompt, params);
     
-    if (!result.cacheKey) {
+    if (!result || !result.cacheKey) {
       console.log('[SEMANTIC] No semantic matches found');
-      return { response: null, debugInfo: { searchPerformed: true, bestSimilarity: result.bestSimilarity } };
+      return { response: null, debugInfo: { searchPerformed: true, bestSimilarity: result?.bestSimilarity, error: result?.error } };
     }
 
     console.log(`[SEMANTIC] Found semantic match: ${result.cacheKey} (similarity: ${result.similarity.toFixed(3)})`);
@@ -196,7 +201,7 @@ export async function checkSemanticCacheAndRespond(cache, prompt, params = {}) {
     
     if (!similarCachedImage) {
       console.log(`[SEMANTIC] Semantic match found but R2 object ${result.cacheKey} no longer exists`);
-      return { response: null, debugInfo: { searchPerformed: true, bestSimilarity: result.similarity } };
+      return { response: null, debugInfo: { searchPerformed: true, bestSimilarity: result.similarity, error: 'R2 object not found' } };
     }
 
     // Create response with semantic cache headers

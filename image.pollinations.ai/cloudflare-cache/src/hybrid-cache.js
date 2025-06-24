@@ -152,12 +152,14 @@ export function extractImageParams(url) {
   const model = url.searchParams.get('model');
   const style = url.searchParams.get('style');
   const quality = url.searchParams.get('quality');
+  const seed = url.searchParams.get('seed'); // Extract seed parameter for proper isolation
   
   if (width) params.width = width;
   if (height) params.height = height;
   if (model) params.model = model;
   if (style) params.style = style;
   if (quality) params.quality = quality;
+  if (seed) params.seed = seed; // Include seed in parameters
   
   return params;
 }

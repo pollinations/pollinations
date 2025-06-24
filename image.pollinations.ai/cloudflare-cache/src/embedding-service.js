@@ -69,11 +69,21 @@ export function normalizePromptForEmbedding(prompt, params = {}) {
 }
 
 /**
- * Create resolution bucket key - each exact resolution is its own bucket
+ * Create resolution bucket key with seed isolation
+ * Different seeds should NOT match semantically as they produce different images
  * @param {number} width - Image width
  * @param {number} height - Image height
- * @returns {string} - Resolution bucket key
+ * @param {string|number} seed - Image generation seed
+ * @returns {string} - Resolution bucket key with seed isolation
  */
-export function getResolutionBucket(width = 1024, height = 1024) {
-  return `${width}x${height}`;
+export function getResolutionBucket(width = 1024, height = 1024, seed = null) {
+  const resolution = `${width}x${height}`;
+  
+  // Include seed in bucket for proper isolation
+  // Different seeds can produce significantly different images even with same prompt
+  if (seed !== null && seed !== undefined) {
+    return `${resolution}_seed${seed}`;
+  }
+  
+  return resolution;
 }

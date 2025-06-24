@@ -73,7 +73,8 @@ export async function findSimilarImage(cache, prompt, params = {}) {
     // Get resolution bucket for filtering
     const width = parseInt(params.width) || 1024;
     const height = parseInt(params.height) || 1024;
-    const bucket = getResolutionBucket(width, height);
+    const seed = params.seed; // Extract seed parameter
+    const bucket = getResolutionBucket(width, height, seed);
     
     console.log(`[SEMANTIC] Searching in resolution bucket: ${bucket}`);
     
@@ -84,13 +85,14 @@ export async function findSimilarImage(cache, prompt, params = {}) {
       returnMetadata: 'all', // Changed from 'indexed' to get all metadata including cacheKey
       filter: {
         bucket: { $eq: bucket },
-        model: { $eq: params.model || 'flux' }
+        model: { $eq: params.model || 'flux' },
+        ...(seed !== undefined && seed !== null && { seed: { $eq: seed } }) // Add seed filter when available
       }
     });
     
     console.log(`[SEMANTIC] Search results:`, {
       matchCount: searchResults.matches?.length || 0,
-      searchQuery: { bucket, model: params.model || 'flux' }
+      searchQuery: { bucket, model: params.model || 'flux', seed: seed }
     });
     
     if (!searchResults.matches || searchResults.matches.length === 0) {
@@ -143,7 +145,8 @@ export async function cacheImageEmbedding(cache, cacheKey, prompt, params = {}) 
     // Get resolution bucket
     const width = parseInt(params.width) || 1024;
     const height = parseInt(params.height) || 1024;
-    const bucket = getResolutionBucket(width, height);
+    const seed = params.seed; // Extract seed parameter
+    const bucket = getResolutionBucket(width, height, seed);
     
     // Store in Vectorize with indexed metadata for fast filtering
     // Use a hash of the cache key as ID since Vectorize has 64-byte limit
@@ -156,6 +159,7 @@ export async function cacheImageEmbedding(cache, cacheKey, prompt, params = {}) 
         cacheKey: cacheKey,
         bucket: bucket,
         model: params.model || 'flux',
+        seed: seed, // Store seed as separate indexed field
         width: width,
         height: height,
         cachedAt: Date.now()

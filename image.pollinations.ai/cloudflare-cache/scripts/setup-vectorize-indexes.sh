@@ -41,6 +41,9 @@ create_index_if_missing "model" "string"
 # seed: Used for seed isolation filtering (e.g., "42", "999")
 create_index_if_missing "seed" "string"
 
+# cacheKey: Used to retrieve the R2 cache key for semantic matches (performance optimization)
+create_index_if_missing "cacheKey" "string"
+
 echo ""
 echo "🎉 All metadata indexes are ready!"
 echo ""

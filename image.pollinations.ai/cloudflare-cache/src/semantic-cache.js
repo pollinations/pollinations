@@ -69,7 +69,11 @@ export async function findSimilarImage(cache, prompt, params = {}) {
     console.log(`[SEMANTIC] Searching for similar image: "${prompt.substring(0, 50)}..."`);
     
     // Generate embedding for the prompt
+    const embeddingStart = Date.now();
     const embedding = await generateEmbedding(cache.embeddingService, prompt, params);
+    const embeddingDuration = Date.now() - embeddingStart;
+    
+    console.log(`[SEMANTIC] Embedding generation completed in ${embeddingDuration}ms`);
     
     // Get resolution bucket for filtering
     const width = parseInt(params.width) || 1024;
@@ -82,20 +86,23 @@ export async function findSimilarImage(cache, prompt, params = {}) {
     console.log(`[SEMANTIC] Searching in resolution bucket: ${bucket}`);
     
     // Search Vectorize with metadata filtering for efficiency
+    const queryStart = Date.now();
     const searchResults = await cache.vectorize.query(embedding, {
       topK: 1,
       returnValues: false,
-      returnMetadata: 'all', // Changed from 'indexed' to get all metadata including cacheKey
+      returnMetadata: 'indexed', // Use indexed metadata for better performance (requires cacheKey index)
       filter: {
-        bucket: { $eq: bucket },
-        model: { $eq: params.model || 'flux' },
-        ...(seed !== undefined && seed !== null && { seed: { $eq: seed } }) // Add seed filter when available
+        bucket: { $eq: bucket }
+        // Only filter by bucket - it already includes all necessary isolation (width, height, seed, nologo, image)
       }
     });
+    const queryDuration = Date.now() - queryStart;
     
+    console.log(`[SEMANTIC] Vectorize query completed in ${queryDuration}ms`);
     console.log(`[SEMANTIC] Search results:`, {
       matchCount: searchResults.matches?.length || 0,
-      searchQuery: { bucket, model: params.model || 'flux', seed: seed }
+      queryDurationMs: queryDuration,
+      searchQuery: { bucket }
     });
     
     if (!searchResults.matches || searchResults.matches.length === 0) {
@@ -143,7 +150,11 @@ export async function cacheImageEmbedding(cache, cacheKey, prompt, params = {}) 
     console.log(`[SEMANTIC] Caching embedding for: ${cacheKey}`);
     
     // Generate embedding for the prompt
+    const embeddingStart = Date.now();
     const embedding = await generateEmbedding(cache.embeddingService, prompt, params);
+    const embeddingDuration = Date.now() - embeddingStart;
+    
+    console.log(`[SEMANTIC] Embedding generation completed in ${embeddingDuration}ms`);
     
     // Get bucket and vectorize ID
     const width = parseInt(params.width) || 1024;
@@ -157,6 +168,7 @@ export async function cacheImageEmbedding(cache, cacheKey, prompt, params = {}) 
     console.log(`[SEMANTIC] Upserting to Vectorize - ID: ${vectorId}, Bucket: ${bucket}`);
     
     // Upsert to Vectorize with metadata
+    const upsertStart = Date.now();
     const upsertResult = await cache.vectorize.upsert([{
       id: vectorId,
       values: embedding,
@@ -172,7 +184,9 @@ export async function cacheImageEmbedding(cache, cacheKey, prompt, params = {}) 
         cachedAt: Date.now()
       }
     }]);
+    const upsertDuration = Date.now() - upsertStart;
     
+    console.log(`[SEMANTIC] Vectorize upsert completed in ${upsertDuration}ms`);
     console.log(`[SEMANTIC] Vectorize upsert result:`, JSON.stringify(upsertResult, null, 2));
     console.log(`[SEMANTIC] Successfully cached embedding in bucket: ${bucket}, mutation ID: ${upsertResult?.mutationId || 'unknown'}`);
     

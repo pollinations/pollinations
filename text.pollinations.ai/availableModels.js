@@ -67,6 +67,23 @@ const models = [
     },
   },
   {
+    name: "openai-roblox",
+    description: "OpenAI GPT-4.1 Mini (Roblox)",
+    handler: generateTextPortkey,
+    provider: "azure",
+    tier: "seed",
+    community: false,
+    aliases: "gpt-4.1-mini-roblox",
+    input_modalities: ["text", "image"],
+    output_modalities: ["text"],
+    tools: true,
+    pricing: {
+      prompt: 0.4,
+      completion: 1.6,
+      cache: 0.1,
+    },
+  },
+  {
     name: "openai-reasoning",
     description: "OpenAI O3 (provided by chatwithmono.xyz)",
     handler: generateTextPortkey,

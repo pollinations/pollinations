@@ -16,12 +16,12 @@ const MODEL_MAPPING = {
     'openai-fast': 'gpt-4.1-nano',
     'openai': 'gpt-4.1-mini',       // Maps to portkeyConfig['gpt-4o-mini']
     'openai-large': 'azure-gpt-4.1',
+    'openai-roblox': 'gpt-4.1-mini-roblox',
     //'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
     'openai-reasoning': 'o3', // Maps to custom MonoAI endpoint
     'searchgpt': 'gpt-4o-mini-search-preview', // Maps to custom MonoAI endpoint
     // 'openai-audio': 'gpt-4o-mini-audio-preview',
     'openai-audio': 'gpt-4o-audio-preview',
-    //'openai-roblox': 'gpt-4.1-mini-roblox', // Roblox model
     //'roblox-rp': 'gpt-4o-mini-roblox-rp', // Roblox roleplay model
     //'command-r': 'Cohere-command-r-plus-08-2024-jt', // Cohere Command R Plus model
     //'gemini': 'gemini-2.5-flash-preview-04-17',
@@ -75,12 +75,12 @@ const SYSTEM_PROMPTS = {
     'openai-fast': BASE_PROMPTS.conversational,
     'openai': BASE_PROMPTS.conversational,
     'openai-large': BASE_PROMPTS.conversational,
+    'openai-roblox': BASE_PROMPTS.conversational,
     'openai-reasoning': BASE_PROMPTS.conversational,
     'searchgpt': BASE_PROMPTS.conversational,
     // Grok model
     'grok': BASE_PROMPTS.conversational,
     //'openai-xlarge': BASE_PROMPTS.conversational,
-    'openai-roblox': BASE_PROMPTS.conversational,
     //'gemini': BASE_PROMPTS.conversational,
     // Cloudflare models
     'llama': BASE_PROMPTS.conversational,
@@ -349,6 +349,11 @@ export const portkeyConfig = {
     'gpt-4.1-mini': () => createAzureModelConfig(
         process.env.AZURE_OPENAI_API_KEY,
         process.env.AZURE_OPENAI_ENDPOINT,
+        'gpt-4.1-mini'
+    ),
+    'gpt-4.1-mini-roblox': () => createAzureModelConfig(
+        process.env.AZURE_OPENAI_ROBLOX_API_KEY,
+        process.env.AZURE_OPENAI_ROBLOX_ENDPOINT,
         'gpt-4.1-mini'
     ),
     'gpt-4o': () => createAzureModelConfig(

@@ -106,7 +106,7 @@ const SYSTEM_PROMPTS = {
 
 // Default options
 const DEFAULT_OPTIONS = {
-    model: 'openai',
+    model: 'openai-fast',
     jsonMode: false
 };
 

@@ -6,8 +6,10 @@
   "scripts": {
     "deploy": "wrangler deploy",
     "deploy:env": "bash ./deploy.sh",
-    "dev": "wrangler dev",
-    "logs": "wrangler tail"
+    "dev": "wrangler dev --port 8787 --experimental-vectorize-bind-to-prod",
+    "dev:simple": "wrangler dev",
+    "logs": "wrangler tail",
+    "test:semantic": "bash ../../test-semantic-cache-isolation.sh"
   },
   "keywords": [
     "cloudflare",

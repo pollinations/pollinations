@@ -200,7 +200,7 @@ export async function cacheResponse(cacheKey, response, env, originalUrl, reques
       },
       customMetadata: {
         // Essential metadata
-        originalUrl: originalUrl || '',
+        originalUrl: (originalUrl || '').substring(0, 2048),
         cachedAt: new Date().toISOString(),
         clientIp: clientIp,
         

@@ -64,13 +64,9 @@ export default {
     // Create semantic cache instance
     const semanticCache = createSemanticCache(env);
     
-    // Extract the prompt for analytics and semantic caching
-    const originalPrompt = url.pathname.startsWith('/prompt/')
-      ? decodeURIComponent(url.pathname.split('/prompt/')[1])
-      : '';
-    
-    // Extract prompt and parameters for semantic caching
+    // Extract the prompt for analytics and semantic caching using consistent decoding
     const semanticPrompt = extractPromptFromUrl(url);
+    const originalPrompt = semanticPrompt || ''; // Use same prompt for analytics consistency
     const imageParams = extractImageParams(url);
 
     // Process query parameters for analytics

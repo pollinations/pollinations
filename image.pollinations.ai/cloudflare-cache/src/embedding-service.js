@@ -54,16 +54,9 @@ export async function generateEmbedding(service, prompt, params = {}) {
  * @returns {string} - Normalized text for embedding
  */
 export function normalizePromptForEmbedding(prompt, params = {}) {
-  // Clean and normalize the prompt
+  // Clean and normalize the prompt - only use the pure prompt text
+  // Model, style, and quality are handled through metadata filtering and bucketing
   let normalized = prompt.toLowerCase().trim();
-  
-  // Add semantic parameters that affect image appearance
-  const semanticParams = ['style', 'model', 'quality'];
-  for (const key of semanticParams) {
-    if (params[key]) {
-      normalized += ` ${key}:${params[key]}`;
-    }
-  }
   
   return normalized;
 }

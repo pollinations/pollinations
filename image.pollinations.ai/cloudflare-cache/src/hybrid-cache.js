@@ -117,9 +117,8 @@ export function extractPromptFromUrl(url) {
     // Extract prompt from path like /prompt/sunset+over+ocean
     const pathMatch = url.pathname.match(/^\/prompt\/(.+)$/);
     if (pathMatch) {
-      // Decode and clean the prompt
+      // Decode the prompt, but do not replace '+' with spaces in the path
       const prompt = decodeURIComponent(pathMatch[1])
-        .replace(/\+/g, ' ')
         .trim();
       return prompt || null;
     }

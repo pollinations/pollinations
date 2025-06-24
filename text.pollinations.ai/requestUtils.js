@@ -20,7 +20,7 @@ export function getRequestData(req) {
                     data.response_format?.type === 'json_object';
                     
     const seed = data.seed ? parseInt(data.seed, 10) : null;
-    let model = data.model || 'openai';
+    let model = data.model || 'openai-fast';
     const systemPrompt = data.system ? data.system : null;
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
     const top_p = data.top_p ? parseFloat(data.top_p) : undefined;
@@ -96,3 +96,37 @@ export function prepareModelsForOutput(models) {
   ];
 }
 
+/**
+ * Get mapped model for a specific user
+ * Uses environment variable USER_MODEL_MAPPING for configuration
+ * Format: "username1:model1,username2:model2"
+ * @param {string} username - The username to check for mapping
+ * @returns {string|null} The mapped model name or null if no mapping exists
+ */
+export function getUserMappedModel(username) {
+  if (!username) return null;
+  
+  const mappingStr = process.env.USER_MODEL_MAPPING;
+  if (!mappingStr) return null;
+  
+  try {
+    // Parse mapping string: "thespecificdev:openai-large,testuser:grok"
+    const mappings = mappingStr.split(',')
+      .map(pair => pair.split(':'))
+      .filter(([user, model]) => user && model)
+      .reduce((acc, [user, model]) => {
+        acc[user.trim()] = model.trim();
+        return acc;
+      }, {});
+    
+    const mappedModel = mappings[username];
+    if (mappedModel) {
+      log(`🎯 User ${username} mapped to model: ${mappedModel}`);
+    }
+    
+    return mappedModel || null;
+  } catch (error) {
+    log('Error parsing USER_MODEL_MAPPING:', error);
+    return null;
+  }
+}

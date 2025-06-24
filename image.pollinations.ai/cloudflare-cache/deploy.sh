@@ -41,6 +41,35 @@ BUCKET_NAME="pollinations-images"
 echo -e "${GREEN}Ensuring R2 bucket exists: ${BUCKET_NAME}...${NC}"
 wrangler r2 bucket create $BUCKET_NAME 2>/dev/null || true
 
+# Setup Vectorize metadata indexes (required for semantic caching)
+echo -e "${GREEN}Setting up Vectorize metadata indexes...${NC}"
+if [ -f "scripts/setup-vectorize-indexes.sh" ]; then
+  ./scripts/setup-vectorize-indexes.sh
+else
+  echo -e "${YELLOW}Warning: setup-vectorize-indexes.sh script not found. Setting up indexes manually...${NC}"
+  
+  INDEX_NAME="pollinations-image-cache"
+  
+  # Function to create index if it doesn't exist
+  create_index_if_missing() {
+    local property_name=$1
+    local property_type=$2
+    
+    echo "📋 Checking metadata index '$property_name'..."
+    if wrangler vectorize list-metadata-index $INDEX_NAME | grep -q "$property_name"; then
+      echo "✅ Metadata index '$property_name' already exists"
+    else
+      echo "🔧 Creating metadata index '$property_name'..."
+      wrangler vectorize create-metadata-index $INDEX_NAME --property-name $property_name --type $property_type
+    fi
+  }
+  
+  # Required metadata indexes for semantic caching
+  create_index_if_missing "bucket" "string"
+  create_index_if_missing "model" "string"
+  create_index_if_missing "seed" "string"
+fi
+
 # Create .dev.vars file for local development if it doesn't exist
 if [ ! -f ".dev.vars" ]; then
   echo -e "${BLUE}Creating .dev.vars file for local development...${NC}"

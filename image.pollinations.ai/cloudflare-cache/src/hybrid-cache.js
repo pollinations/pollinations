@@ -152,6 +152,7 @@ export function extractImageParams(url) {
   const style = url.searchParams.get('style');
   const quality = url.searchParams.get('quality');
   const seed = url.searchParams.get('seed'); // Extract seed parameter for proper isolation
+  const nologo = url.searchParams.get('nologo'); // Extract nologo parameter for proper isolation
   
   if (width) params.width = width;
   if (height) params.height = height;
@@ -159,6 +160,7 @@ export function extractImageParams(url) {
   if (style) params.style = style;
   if (quality) params.quality = quality;
   if (seed) params.seed = seed; // Include seed in parameters
+  if (nologo) params.nologo = nologo; // Include nologo in parameters
   
   return params;
 }

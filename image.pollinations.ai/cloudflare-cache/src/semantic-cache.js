@@ -145,24 +145,26 @@ export async function cacheImageEmbedding(cache, cacheKey, prompt, params = {}) 
     // Generate embedding for the prompt
     const embedding = await generateEmbedding(cache.embeddingService, prompt, params);
     
-    // Get resolution bucket for storage  
+    // Get bucket and vectorize ID
     const width = parseInt(params.width) || 1024;
     const height = parseInt(params.height) || 1024;
     const seed = params.seed; // Extract seed parameter
-    const nologo = params.nologo; // Extract nologo parameter
+    const nologo = params.nologo; // Extract nologo parameter  
     const image = params.image; // Extract image parameter for image-to-image
     const bucket = getResolutionBucket(width, height, seed, nologo, image);
+    const vectorId = await createSimpleHash(cacheKey);
     
-    // Store in Vectorize with rich metadata for filtering
-    await cache.vectorize.upsert([{
-      id: await createSimpleHash(cacheKey),
+    console.log(`[SEMANTIC] Upserting to Vectorize - ID: ${vectorId}, Bucket: ${bucket}`);
+    
+    // Upsert to Vectorize with metadata
+    const upsertResult = await cache.vectorize.upsert([{
+      id: vectorId,
       values: embedding,
       metadata: {
-        prompt: prompt,
         cacheKey: cacheKey,
         bucket: bucket,
         model: params.model || 'flux',
-        seed: seed, // Store seed as separate indexed field
+        seed: seed ? seed.toString() : null, // Store seed as string for filtering
         nologo: nologo, // Store nologo as separate indexed field
         image: image ? image.substring(0, 8) : null, // Store image hash for filtering
         width: width,
@@ -171,10 +173,16 @@ export async function cacheImageEmbedding(cache, cacheKey, prompt, params = {}) 
       }
     }]);
     
-    console.log(`[SEMANTIC] Cached embedding in bucket: ${bucket}`);
+    console.log(`[SEMANTIC] Vectorize upsert result:`, JSON.stringify(upsertResult, null, 2));
+    console.log(`[SEMANTIC] Successfully cached embedding in bucket: ${bucket}, mutation ID: ${upsertResult?.mutationId || 'unknown'}`);
     
   } catch (error) {
     console.error('[SEMANTIC] Error caching embedding:', error);
+    console.error('[SEMANTIC] Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     // Don't throw - this is asynchronous and shouldn't break the request
   }
 }

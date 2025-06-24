@@ -11,7 +11,7 @@ bucket_name = "pollinations-images"
 # Vectorize index for semantic caching
 [[vectorize]]
 binding = "VECTORIZE_INDEX"
-index_name = "pollinations-image-cache"
+index_name = "pollinations-image-cache-v2"
 
 # Workers AI for embeddings
 [ai]

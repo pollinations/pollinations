@@ -35,37 +35,16 @@ function updateProgress(progress, requestId, percentage, stage, message) {
 }
 
 /**
- * Validates and adjusts resolution to nearest supported size
- * @param {number} width - Requested width
- * @param {number} height - Requested height
- * @returns {{width: number, height: number}} - Valid resolution
- */
-function validateResolution(width, height) {
-  // Find the closest supported resolution
-  let closestResolution = SUPPORTED_RESOLUTIONS[0];
-  let minDistance = Infinity;
-  
-  for (const [supportedWidth, supportedHeight] of SUPPORTED_RESOLUTIONS) {
-    const distance = Math.abs(width - supportedWidth) + Math.abs(height - supportedHeight);
-    if (distance < minDistance) {
-      minDistance = distance;
-      closestResolution = [supportedWidth, supportedHeight];
-    }
-  }
-  
-  logSora(`Resolution adjusted from ${width}x${height} to ${closestResolution[0]}x${closestResolution[1]}`);
-  return { width: closestResolution[0], height: closestResolution[1] };
-}
-
-/**
  * Creates a video generation job on Azure Sora API
  * @param {string} prompt - Video generation prompt
- * @param {Object} params - Generation parameters
+ * @param {Object} params - Generation parameters (currently ignored, uses fixed values)
  * @returns {Promise<string>} - Job ID
  */
 async function createVideoJob(prompt, params) {
-  const { width, height } = validateResolution(params.width || 480, params.height || 480);
-  const duration = Math.min(Math.max(params.n_seconds || 5, 1), 10); // Clamp between 1-10 seconds
+  // Hard-coded values for controlled rollout
+  const width = 480;
+  const height = 480;
+  const duration = 5; // 5 seconds fixed duration
   
   const requestBody = {
     model: "sora",
@@ -76,7 +55,7 @@ async function createVideoJob(prompt, params) {
     n_variants: 1
   };
   
-  logSora('Creating video job with params:', requestBody);
+  logSora('Creating video job with fixed params:', requestBody);
   
   const response = await fetch(`${AZURE_SORA_ENDPOINT}/openai/v1/video/generations/jobs?api-version=${API_VERSION}`, {
     method: 'POST',
@@ -175,8 +154,9 @@ async function downloadVideo(generationId) {
 
 /**
  * Generates a video using Azure Sora API with polling until completion
+ * Fixed parameters: 480x480 resolution, 5 seconds duration
  * @param {string} prompt - Video generation prompt
- * @param {Object} safeParams - Parameters for video generation
+ * @param {Object} safeParams - Parameters (resolution and duration ignored, uses fixed values)
  * @param {Object} progress - Progress tracking object
  * @param {string} requestId - Request ID for progress tracking
  * @returns {Promise<{buffer: Buffer, contentType: string, metadata: Object}>}
@@ -187,7 +167,7 @@ export async function generateSoraVideo(prompt, safeParams, progress, requestId)
       throw new Error('AZURE_SORA_API_KEY environment variable is required for Sora video generation');
     }
     
-    logSora('Starting Sora video generation:', { prompt, params: safeParams });
+    logSora('Starting Sora video generation with fixed 480x480 resolution and 5s duration:', { prompt });
     updateProgress(progress, requestId, 10, 'Initialize', 'Starting video generation...');
     
     // Create video generation job

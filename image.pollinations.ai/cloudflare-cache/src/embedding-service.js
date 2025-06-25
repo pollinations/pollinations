@@ -58,6 +58,13 @@ export function normalizePromptForEmbedding(prompt, params = {}) {
   // Model, style, and quality are handled through metadata filtering and bucketing
   let normalized = prompt.toLowerCase().trim();
   
+  // Remove all punctuation for consistent embeddings
+  // This ensures "test." and "test..." and "test" all produce the same embedding
+  normalized = normalized.replace(/[^\w\s]/g, ' ');
+  
+  // Normalize whitespace (replace multiple spaces with single space)
+  normalized = normalized.replace(/\s+/g, ' ').trim();
+  
   return normalized;
 }
 

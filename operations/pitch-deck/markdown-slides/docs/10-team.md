@@ -6,28 +6,42 @@ class: scroll
 <a href="/1">⬅️ Back to Index</a>
 </div>
 
-# 👥 **Team**
+## 🧑‍🤝‍🧑 TEAM
 
-<div class="bg-pink-100 p-1 pl-6 pr-6 rounded-lg border-l-4 border-pink-500 mb-6">
-  <p class="text-pink-800"><strong>Execution‑proven founders with complementary expertise</strong> — one commercial growth leader, one deep‑tech builder — backed by a lean hiring plan that fills the few gaps we still have.</p>
-</div>
+### Thomas Haferlach - CEO
 
-|                             | **Thomas Haferlach**                                                                                                                                                              | **Elliot Fouchy**                                                                                                                                                                                               |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Role**                    | Chief Executive Officer (CEO)                                                                                                                                                     | Chief Operating Officer (COO)                                                                                                                                                                                   |
-| **Core Focus**              | Vision, product‑market fit, fundraising, strategic partnerships                                                                                                                   | Day‑to‑day execution, platform engineering, creator operations                                                                                                                                                  |
+* **Owns the long-range vision and technical roadmap,** steering Pollinations toward the next major inflection in generative-AI infrastructure.
+* **Leads internal model research and rapid SOTA experiments,** keeping the stack ahead of the market.
+* **Designs and codes the end-to-end architecture**—from edge inference services to SDK tooling—behind our "zero-ops" promise.
 
-## **Current Gaps & Hiring Roadmap**
+---
 
-| Role                                                       | Why we need it                                                                                              | Timing      |
-| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------- |
-| **Lead MLOps / Infra Engineer**                            | Harden model‑serving pipeline as we scale to 10× traffic and add video                                      | **H2 2025** |
-| **Community & Creator Success – Kalam (incoming)** | Champion creator onboarding & engagement; drive feedback loop; lead teen‑facing XR/UGC initiatives          | **H2 2025** |
+### Elliot Fouchy - COO
 
-<br>
+* **Runs day-to-day engineering and ops**—sprints, deployments, incident response—while continually refining processes, dashboards and OKRs to keep 100 M+ renders / month reliable and cost-efficient.
+* **Manages resources, vendor contracts, cost levers and strategic partnerships**—GPU / cloud capacity, ad-tech integrations and research collaborations—so spend and alliances stay tightly aligned with roadmap priorities.
+* **Jumps into code as needed**—automation scripts, IaC, growth experiments—to unblock teams and accelerate delivery.
 
-### 🌟 **Kalam** (Head of Community & Creator Success)
-#
-* **Startup Acceleration & Investment:** Led programs at **Startupbootcamp Israel**, **Marathon Artists Lab**, and **European Pioneers** for games, music & media startups.
-* **Corporate Innovation:** Directed venture & AI‑driven hackdays at **Native Instruments**.
-* **XR / UGC Entrepreneurship:** Founded **Sound Obsessed** & **INXSPACE**, pioneering music‑AI experiences in Roblox, Fortnite & Minecraft.
+---
+
+### Third Co-Founder - CBO
+
+*Business architect who turns Pollinations.ai's fly-wheel traction into a resilient, investor-ready company.*
+
+* **Chart and execute the fundraising roadmap,** owning the story and closing the next Seed round and beyond.
+* **Build rigorous financial discipline**—budgets, KPI dashboards and unit-economics models that safeguard net margins as usage scales.
+* **Establish legal & governance foundations**—entity structure, IP strategy, data-privacy / ad-tech compliance, and the contracts powering rev-share and subscription plans.
+* **Design hiring plans, equity frameworks and culture rituals** that attract and retain top talent through rapid growth.
+* **Own risk management and operational scalability,** embedding processes and tooling that de-risk market, technical and regulatory exposure across all roadmap phases.
+
+---
+
+### Developer Team *(growing)*
+
+We are actively recruiting engineers from our open-source community, assigning scoped projects and bounties that let contributors grow into formal roles and organically expand the core dev squad.
+
+### Community Management Team *(forming)*
+
+Community stewards coordinate contributor onboarding, project matchmaking and knowledge-sharing events—helping new volunteers land meaningful tasks and ensuring our ecosystem scales with creativity and care.
+
+*Interested in joining either group? 🚀👾✨ [Jump into our Discord and say hello! 💬🤝](https://discord.gg/N7zpSWgP)*

@@ -6,7 +6,7 @@ class: scroll
 <a href="/1">⬅️ Back to Index</a>
 </div>
 
-# 🧑‍🤝‍🧑 **TEAM**
+# 👥 **TEAM**
 
 <br>
 

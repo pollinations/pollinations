@@ -12,6 +12,8 @@ import dotenv from 'dotenv';
 // Import GPT Image logging utilities
 import { logGptImagePrompt, logGptImageError } from './utils/gptImageLogger.js';
 import { analyzeTextSafety, analyzeImageSafety, formatViolations } from './utils/azureContentSafety.js';
+// Import Sora video generation
+import { generateSoraVideo, shouldUseSora } from './soraVideoGenerator.js';
 
 dotenv.config();
 
@@ -659,6 +661,31 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
     }
   }
   
+  if (safeParams.model === 'sora') {
+    // Detailed logging of authentication info for Sora video access
+    logError('Sora Video authentication check:', 
+      userInfo ? 
+        `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || 'none'}, tier=${userInfo.tier || 'none'}` 
+        : 'No userInfo provided');
+    
+    // Restrict Sora Video model to users with valid authentication
+    if (!userInfo || !userInfo.authenticated || userInfo.tier === 'seed') {
+      const errorText = "Access to Sora video generation is currently limited to users in the flower tier. We will be opening up access gradually. Please authenticate at https://auth.pollinations.ai and request a tier upgrade at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml";
+      logError(errorText);
+      progress.updateBar(requestId, 35, 'Auth', 'Sora Video requires authorization');
+      throw new Error(errorText);      
+    } else {
+      // For sora model, always throw errors instead of falling back
+      try {
+        updateProgress(progress, requestId, 30, 'Processing', 'Trying Sora Video...');
+        return await generateSoraVideo(prompt, safeParams, progress, requestId);
+      } catch (error) {
+        logError('Sora Video failed:', error.message);
+        throw error; // Don't fall back for video generation
+      }
+    }
+  }
+  
   if (safeParams.model === 'flux') {
     try {
       updateProgress(progress, requestId, 30, 'Processing', 'Trying Cloudflare Flux...');
@@ -674,8 +701,6 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
     return await callCloudflareDreamshaper(prompt, safeParams);
   }
 };
-
-// GPT Image logging functions have been moved to utils/gptImageLogger.js
 
 /**
  * Extracts and normalizes maturity flags from image generation result
@@ -750,16 +775,29 @@ const processImageBuffer = async (buffer, maturityFlags, safeParams, metadataObj
  * @param {string} requestId - Request ID for progress tracking.
  * @param {boolean} wasTransformedForBadDomain - Flag indicating if the prompt was transformed due to bad domain.
  * @param {Object} userInfo - Complete user authentication info object with authenticated, userId, tier, etc.
- * @returns {Promise<{buffer: Buffer, isChild: boolean, isMature: boolean}>}
+ * @returns {Promise<{buffer: Buffer, isChild: boolean, isMature: boolean, contentType?: string, metadata?: Object}>}
  */
 export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests, originalPrompt, progress, requestId, wasTransformedForBadDomain = false, userInfo = {}) {
   try {
     // Update generation progress
     updateProgress(progress, requestId, 60, 'Generation', 'Calling API...');
     
-    // Generate the image using the appropriate model
+    // Generate the image/video using the appropriate model
     const result = await generateImage(prompt, safeParams, concurrentRequests, progress, requestId, userInfo);
     updateProgress(progress, requestId, 70, 'Generation', 'API call complete');
+    
+    // Handle video content from Sora differently
+    if (safeParams.model === 'sora' && result.contentType === 'video/mp4') {
+      updateProgress(progress, requestId, 100, 'Complete', 'Video generation complete');
+      return {
+        buffer: result.buffer,
+        isChild: result.isChild || false,
+        isMature: result.isMature || false,
+        contentType: result.contentType,
+        metadata: result.metadata
+      };
+    }
+    
     updateProgress(progress, requestId, 75, 'Processing', 'Checking safety...');
     
     // Extract maturity flags

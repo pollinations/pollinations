@@ -8,19 +8,19 @@ class: scroll
 
 ## 🧑‍🤝‍🧑 **TEAM**
 
-### Thomas Haferlach - CEO
+### CEO | Thomas Haferlach
 
 * **Owns the long-range vision and technical roadmap,** steering Pollinations toward the next major inflection in generative-AI infrastructure.
 * **Leads internal model research and rapid SOTA experiments,** keeping the stack ahead of the market.
 * **Designs and codes the end-to-end architecture**—from edge inference services to SDK tooling—behind our "zero-ops" promise.
 
-### Elliot Fouchy - COO
+### COO | Elliot Fouchy
 
 * **Runs day-to-day engineering and ops**—sprints, deployments, incident response—while continually refining processes, dashboards and OKRs to keep 100 M+ renders / month reliable and cost-efficient.
 * **Manages resources, vendor contracts, cost levers and strategic partnerships**—GPU / cloud capacity, ad-tech integrations and research collaborations—so spend and alliances stay tightly aligned with roadmap priorities.
 * **Jumps into code as needed**—automation scripts, IaC, growth experiments—to unblock teams and accelerate delivery.
 
-### *Hiring* - CBO
+### CBO | *Hiring*
 
 *Business architect who turns Pollinations.ai's fly-wheel traction into a resilient, investor-ready company.*
 

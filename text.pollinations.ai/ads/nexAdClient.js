@@ -138,11 +138,19 @@ export function createNexAdRequest(req, messages, content, authenticatedUserId =
     // Only include browser_id if it actually exists
     ...(req.cookies?.browser_id && { browser_id: req.cookies.browser_id }),
     user_agent: req.headers['user-agent'] || 'unknown',
-    // Include full IP for geo-targeting/fraud detection as requested by NEX ad
-    ip: fullIp,
+    // Conditional IP sending: only for unauthenticated users for geo-targeting
+    // Authenticated users get privacy protection by not sending IP to nex.ad
+    ...(authenticatedUserId ? {} : { ip: fullIp }),
     // Extract only the first language code from accept-language header
     language: extractFirstLanguage(req.headers['accept-language']) || 'en',
   };
+  
+  // Log privacy decision for transparency
+  if (authenticatedUserId) {
+    log(`Privacy: Authenticated user ${authenticatedUserId} - IP NOT sent to nex.ad for privacy protection`);
+  } else {
+    log(`Privacy: Unauthenticated user - IP ${fullIp} sent to nex.ad for geo-targeting`);
+  }
   
   // Create chatbot context
   const conversationContext = {

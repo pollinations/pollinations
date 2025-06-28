@@ -64,8 +64,15 @@ export async function generateAdForContent(req, content, messages = [], isStream
                 // Extract tracking data from adData
                 const trackingData = extractTrackingData(adData);
                 
-                // Track impression
-                await trackImpression(trackingData);
+                // Conditional impression tracking based on authentication for privacy
+                if (authenticatedUserId) {
+                    // For authenticated users: Don't fire nex.ad impression URLs for privacy protection
+                    log(`Privacy: Authenticated user ${authenticatedUserId} - Skipping nex.ad impression tracking for privacy`);
+                } else {
+                    // For unauthenticated users: Fire nex.ad impression URLs as normal
+                    await trackImpression(trackingData);
+                    log(`Privacy: Unauthenticated user - Fired nex.ad impression tracking`);
+                }
                 
                 // Log the ad interaction
                 if (req) {
@@ -90,11 +97,26 @@ export async function generateAdForContent(req, content, messages = [], isStream
                         ad_source: 'nexad',
                         streaming: isStreaming,
                         forced: shouldForceAd,
+                        user_id: authenticatedUserId || null,
+                        username: authResult?.username || null,
+                        authenticated: !!authenticatedUserId,
+                        ip_sent_to_nexad: !authenticatedUserId,
+                        impression_sent_to_nexad: !authenticatedUserId,
+                        privacy_protected: !!authenticatedUserId,
+                        session_id: req.sessionID || null,
                     });
 
                     // Track per-user ad impression metrics
                     if (authenticatedUserId) {
+                        // Existing general metric
                         incrementUserMetric(authenticatedUserId, 'ad_impressions');
+                        
+                        // NEW: Privacy-specific metrics
+                        incrementUserMetric(authenticatedUserId, 'privacy_protected_impressions');
+                        incrementUserMetric(authenticatedUserId, 'nexad_impressions_without_ip');
+                        
+                        // NEW: Ad source specific metrics
+                        incrementUserMetric(authenticatedUserId, 'nexad_impressions');
                     }
                 }
 
@@ -134,11 +156,19 @@ export async function generateAdForContent(req, content, messages = [], isStream
                         ad_source: 'kofi_fallback',
                         streaming: isStreaming,
                         forced: shouldForceAd,
+                        user_id: authenticatedUserId || null,
+                        username: authResult?.username || null,
+                        authenticated: !!authenticatedUserId,
+                        session_id: req.sessionID || null,
                     });
 
                     // Track per-user ad impression metrics for Ko-fi fallback
                     if (authenticatedUserId) {
+                        // Existing general metric
                         incrementUserMetric(authenticatedUserId, 'ad_impressions');
+                        
+                        // NEW: Ad source specific metric
+                        incrementUserMetric(authenticatedUserId, 'kofi_fallback_impressions');
                     }
                 }
 

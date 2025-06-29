@@ -250,4 +250,14 @@ export const hackAndBuildProjects = [
     submissionDate: "2025-06-12",
     order: 1
   },
+  {
+    name: "YankoviC",
+    url: "https://github.com/Sweaterdog/YankoviC",
+    description: "A programming language interpreter written in JavaScript that emulates C/C++ writing style with Weird Al themed elements. Comes with 'The Accordion' IDE that uses Pollinations for tab autocomplete and chat assistant to help people learn YankoviC.",
+    author: "@Sweaterdog",
+    repo: "https://github.com/Sweaterdog/YankoviC",
+    stars: 0,
+    submissionDate: "2025-06-27",
+    order: 1
+  },
 ];

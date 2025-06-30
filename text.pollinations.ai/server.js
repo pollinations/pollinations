@@ -176,7 +176,40 @@ async function handleRequest(req, res, requestData) {
             userInfo: authResult
         };
         
-        const completion = await generateTextBasedOnModel(requestData.messages, requestWithUserInfo);
+        // Get user tier from authentication result
+const userTier = authResult.tier || 'anonymous';
+
+// Validate model access and get effective model (could be a fallback)
+const { allowed, model: effectiveModel, reason, fallback } = validateModelAccess(
+    requestData.model,
+    availableModels,
+    userTier,
+    true // Allow fallback
+);
+
+if (!allowed) {
+    const error = new Error(reason);
+    error.status = 403;
+    error.code = 'INSUFFICIENT_TIER';
+    error.details = {
+        debugInfo: authResult.debugInfo,
+        model: requestData.model,
+        userTier: userTier,
+        requiredTier: findModelByName(requestData.model)?.tier || 'unknown'
+    };
+    throw error;
+}
+
+// Use the effective model for the rest of the request
+requestData.model = effectiveModel.name;
+requestData.fallback = fallback;
+requestData.reason = reason;
+
+if (fallback) {
+    tierLog(`Using fallback model for tier '${userTier}': ${effectiveModel.name} (reason: ${reason})`);
+}
+
+const completion = await generateTextBasedOnModel(requestData.messages, requestWithUserInfo);
         
         // Ensure completion has the request ID
         completion.id = requestId;

@@ -48,9 +48,10 @@ h1, h2, h3 {
 }
 
 h1 { 
-    font-size: 2.5rem;
+    font-size: clamp(1.8rem, 6vw, 2.5rem);
     margin-bottom: 1.5rem;
     font-weight: 700;
+    word-break: break-word;
 }
 
 h1::after {
@@ -186,10 +187,17 @@ input:focus {
 
 .hidden { display: none; }
 
-.input-group { 
+/* Updated layout: stack input above button */
+.input-group {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
     margin-top: 10px;
+}
+
+.input-group button {
+    margin-right: 0; /* remove inline gap now that layout is vertical */
 }
 
 .domain-item { 
@@ -259,6 +267,7 @@ code::after {
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-wrap: wrap;
 }
 
 .emoji-title span {
@@ -270,6 +279,13 @@ code::after {
 @keyframes emoji-bounce {
     0% { transform: translateY(0); }
     100% { transform: translateY(-5px); }
+}
+
+/* Title logo styling */
+.title-logo {
+    height: 1.4em; /* scale with font size */
+    width: auto;
+    margin-right: 6px;
 }
 
 /* Help Section Styles */
@@ -370,13 +386,6 @@ code::after {
     flex-shrink: 0;
 }
 
-.section-info {
-    color: #666;
-    font-size: 0.95rem;
-    margin: 10px 0;
-    font-style: italic;
-}
-
 /* Enhanced code blocks for help section */
 .help-item code {
     background: linear-gradient(90deg, #f8f9fa, #fff);
@@ -399,6 +408,7 @@ code::after {
     display: inline-block;
     padding: 8px 20px;
     border-radius: 30px;
+}
 
 /* Preferences styling */
 .preferences-container {
@@ -480,14 +490,21 @@ code::after {
 .toggle-switch {
     position: relative;
     display: inline-block;
-    width: 50px;
-    height: 26px;
+    width: 64px;
+    height: 34px; /* Bigger pill for better tap targets */
 }
 
 .toggle-switch input {
+    /* Visually hidden but still clickable over the switch area */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    cursor: pointer;
     opacity: 0;
-    width: 0;
-    height: 0;
+    z-index: 2; /* place above slider so clicks reach the checkbox */
 }
 
 .toggle-slider {
@@ -497,47 +514,31 @@ code::after {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #ccc;
-    transition: .4s;
+    background: linear-gradient(135deg, #f3f3f3 0%, #eaeaea 100%);
+    border: 2px solid var(--color-primary);
+    transition: all .4s ease;
     border-radius: 34px;
 }
 
 .toggle-slider:before {
     position: absolute;
     content: "";
-    height: 18px;
-    width: 18px;
+    height: 24px;
+    width: 24px;
     left: 4px;
-    bottom: 4px;
-    background-color: white;
-    transition: .4s;
+    bottom: 3px;
+    background: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    transition: all .4s ease;
     border-radius: 50%;
 }
 
 input:checked + .toggle-slider {
-    background-color: var(--color-secondary);
-    animation: toggle-on 0.5s forwards;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
 }
 
 input:checked + .toggle-slider:before {
-    transform: translateX(24px);
-}
-
-@keyframes toggle-on {
-    0% { background-color: var(--color-secondary); }
-    50% { background-color: var(--color-primary); }
-    100% { background-color: var(--color-secondary); }
-}
-    font-weight: 700;
-    font-size: 1.2rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin: 10px 0 20px 0;
-    position: relative;
-    overflow: hidden;
-    color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transform: translateX(32px);
 }
 
 .tier-badge::after {
@@ -641,5 +642,114 @@ input:checked + .toggle-slider:before {
 .tier-emoji {
     font-size: 20px;
     flex-shrink: 0;
+}
+
+/* 💬 Inline Help Blocks */
+.help-block {
+    background: linear-gradient(135deg, rgba(255, 97, 216, 0.05), rgba(5, 255, 161, 0.05));
+    border: 2px dashed var(--color-primary);
+    border-radius: 14px;
+    margin: 15px 0;
+    transition: all 0.3s ease;
+}
+
+.help-block[open] {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
+}
+
+.help-block summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    color: #fff;
+    border-radius: 12px;
+    position: relative;
+}
+
+/* Hide default disclosure arrow */
+.help-block summary::-webkit-details-marker { display: none; }
+.help-block summary::marker { content: ""; }
+
+/* Custom + / - icon */
+.help-block summary::after {
+    content: '＋';
+    font-size: 20px;
+    margin-left: auto;
+    transition: transform 0.25s ease, content 0.25s ease;
+}
+.help-block[open] summary::after {
+    content: '−';
+}
+
+.help-block p,
+.help-block ul,
+.help-block code {
+    margin-left: 20px;
+}
+
+.help-block ul {
+    padding-left: 0;
+    list-style: none;
+}
+
+.help-block li {
+    position: relative;
+    padding-left: 20px;
+    margin: 6px 0;
+}
+
+.help-block li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--color-secondary);
+    font-weight: bold;
+}
+
+/* 🆕 Profile Card styling */
+.profile-card {
+    margin-top: 15px;
+    background: linear-gradient(135deg, rgba(5, 255, 161, 0.1) 0%, rgba(255, 97, 216, 0.1) 100%);
+    border-radius: 18px;
+    padding: 20px 24px;
+    border: 2px solid var(--color-secondary);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.profile-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* 💼 Access Card styling */
+.access-card {
+    margin-top: 15px;
+    background: linear-gradient(135deg, rgba(5, 255, 161, 0.08) 0%, rgba(255, 97, 216, 0.08) 100%);
+    border-radius: 18px;
+    padding: 20px 24px;
+    border: 2px solid var(--color-accent);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.access-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.access-card .section-info {
+    margin-top: 0;
+}
+
+.access-card button {
+    margin-top: 10px;
 }
 `;

@@ -10,6 +10,11 @@ binding = "DB"
 database_name = "github_auth"
 database_id = "4145d600-1df6-44a2-9769-5d5f731deb77"
 
+[[d1_databases]]
+binding = "DB_LOCAL"
+database_name = "github_auth_local"
+database_id = "d16418cf-14eb-40f5-a22c-a51e3d54ab70"
+
 # Environment variables declaration with placeholders
 # These will be overridden by secrets in the Cloudflare dashboard
 [vars]

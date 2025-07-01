@@ -39,6 +39,10 @@ window.addEventListener('load', function() {
         // Show user section and domain section
         document.getElementById('user-section').classList.remove('hidden');
         document.getElementById('domain-section').classList.remove('hidden');
+        // Show unified profile card
+        if (document.getElementById('profile-card')) {
+            document.getElementById('profile-card').classList.remove('hidden');
+        }
         
         // Toggle auth/logout buttons
         document.getElementById('auth-button').classList.add('hidden');
@@ -74,6 +78,10 @@ window.addEventListener('load', function() {
             
             document.getElementById('user-section').classList.remove('hidden');
             document.getElementById('domain-section').classList.remove('hidden');
+            // Show unified profile card
+            if (document.getElementById('profile-card')) {
+                document.getElementById('profile-card').classList.remove('hidden');
+            }
             
             // Automatically load user info, domains, token and preferences
             getUserInfo();
@@ -111,6 +119,9 @@ window.logout = function() {
     // Hide sections
     document.getElementById('user-section').classList.add('hidden');
     document.getElementById('domain-section').classList.add('hidden');
+    if (document.getElementById('profile-card')) {
+        document.getElementById('profile-card').classList.add('hidden');
+    }
     
     // Show logout message
     showStatus('auth-status', '👋 Logged out successfully', 'info');
@@ -137,6 +148,9 @@ function handleTokenError() {
     // Hide sections
     document.getElementById('user-section').classList.add('hidden');
     document.getElementById('domain-section').classList.add('hidden');
+    if (document.getElementById('profile-card')) {
+        document.getElementById('profile-card').classList.add('hidden');
+    }
     
     // Show logout message
     showStatus('auth-status', '⏰ Your session has expired. Please log in again.', 'info');

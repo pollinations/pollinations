@@ -15,23 +15,23 @@ import {
 
 const models = [
   // All Pollinations.AI models
-  {
-    name: "openai",
-    description: "OpenAI GPT-4.1 Mini",
-    handler: generateTextPortkey,
-    provider: "azure",
-    tier: "anonymous",
-    community: false,
-    aliases: "gpt-4.1-mini",
-    input_modalities: ["text", "image"],
-    output_modalities: ["text"],
-    tools: true,
-    pricing: {
-      prompt: 0.4,
-      completion: 1.6,
-      cache: 0.1,
-    },
-  },
+  // {
+  //   name: "openai",
+  //   description: "OpenAI GPT-4.1 Mini",
+  //   handler: generateTextPortkey,
+  //   provider: "azure",
+  //   tier: "anonymous",
+  //   community: false,
+  //   aliases: "gpt-4.1-mini",
+  //   input_modalities: ["text", "image"],
+  //   output_modalities: ["text"],
+  //   tools: true,
+  //   pricing: {
+  //     prompt: 0.4,
+  //     completion: 1.6,
+  //     cache: 0.1,
+  //   },
+  // },
   {
     name: "openai-fast",
     description: "OpenAI GPT-4.1 Nano",
@@ -54,7 +54,7 @@ const models = [
     description: "OpenAI GPT-4.1",
     handler: generateTextPortkey,
     provider: "azure",
-    tier: "anonymous",
+    tier: "seed",
     community: false,
     aliases: "gpt-4.1",
     input_modalities: ["text", "image"],
@@ -258,7 +258,7 @@ const models = [
     ],
     handler: generateTextPortkey,
     provider: "azure",
-    tier: "anonymous",
+    tier: "seed",
     community: false,
     aliases: "gpt-4o-audio-preview",
     input_modalities: ["text", "image", "audio"],
@@ -458,7 +458,7 @@ export function findModelByName(modelName) {
   return (
     availableModels.find(
       (model) => model.name === modelName || model.aliases === modelName
-    ) || availableModels.find((model) => model.name === "openai")
+    ) || availableModels.find((model) => model.name === "openai-fast")
   ); // Default to openai
 }
 

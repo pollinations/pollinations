@@ -37,7 +37,7 @@ export function ModelSelector({
   const anchorRef = React.useRef(null);
   
   // For models, load from API based on itemType
-  const { models, loading: modelsLoading, error: modelsError } = useModels(itemType);
+  const { models, loading: modelsLoading, error: modelsError, isValidModel, getFallbackModel } = useModels(itemType);
   
   // Handle toggle
   const handleToggle = () => {
@@ -70,6 +70,15 @@ export function ModelSelector({
       setOpen(false);
     }
   };
+
+  // Validate and fix invalid model selections
+  React.useEffect(() => {
+    if (!modelsLoading && models.length > 0 && currentModel && !isValidModel(currentModel)) {
+      console.warn(`Invalid model "${currentModel}" detected in ${itemType} selector, switching to fallback model`);
+      const fallbackModel = getFallbackModel(currentModel);
+      onModelChange(fallbackModel);
+    }
+  }, [currentModel, models, modelsLoading, isValidModel, getFallbackModel, onModelChange, itemType]);
 
   // Return focus to the button when the menu closes
   const prevOpen = React.useRef(open);

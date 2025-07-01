@@ -15,4 +15,4 @@ export const SEMANTIC_CACHE_ENABLED = true;
  * Lower values = more aggressive caching but potentially less relevant matches
  * Higher values = more conservative caching but higher quality matches
  */
-export const SEMANTIC_SIMILARITY_THRESHOLD = 0.8;
+export const SEMANTIC_SIMILARITY_THRESHOLD = 0.92;

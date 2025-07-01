@@ -139,11 +139,24 @@ async function handleRequest(req, res, requestData) {
         // Tier gating
         const model = availableModels.find(m => m.name === requestData.model || m.aliases?.includes(requestData.model));
         const userTier = authResult.tier || 'anonymous';
-
-        if (!model || !hasSufficientTier(userTier, model.tier)) {
-            const error = new Error(`Model not found or tier not high enough. Your tier: ${userTier}, required tier: ${model?.tier || 'unknown'}`)
-            error.status = 402;
-            await sendErrorResponse(res, req, error, requestData, 402);
+        
+        log(`Tier gating check: model=${requestData.model}, found=${!!model}, modelTier=${model?.tier}, userTier=${userTier}`);
+        
+        if (model) {
+            const hasAccess = hasSufficientTier(userTier, model.tier);
+            log(`Access check: hasSufficientTier(${userTier}, ${model.tier}) = ${hasAccess}`);
+            
+            if (!hasAccess) {
+                const error = new Error(`Model not found or tier not high enough. Your tier: ${userTier}, required tier: ${model.tier}`)
+                error.status = 402;
+                await sendErrorResponse(res, req, error, requestData, 402);
+                return;
+            }
+        } else {
+            log(`Model not found: ${requestData.model}`);
+            const error = new Error(`Model not found: ${requestData.model}`)
+            error.status = 404;
+            await sendErrorResponse(res, req, error, requestData, 404);
             return;
         }
 

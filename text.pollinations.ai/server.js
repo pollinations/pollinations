@@ -18,6 +18,7 @@ import { getRequestData, prepareModelsForOutput, getUserMappedModel } from './re
 import { enqueue } from '../shared/ipQueue.js';
 import { handleAuthentication } from '../shared/auth-utils.js';
 import { getIp } from '../shared/extractFromRequest.js';
+import { hasSufficientTier } from '../shared/tier-gating.js';
 
 // Load environment variables
 dotenv.config();
@@ -134,7 +135,18 @@ async function handleRequest(req, res, requestData) {
         
         // Get user info from authentication if available
         const authResult = req.authResult || {};
-        
+
+        // Tier gating
+        const model = availableModels.find(m => m.name === requestData.model || m.aliases?.includes(requestData.model));
+        const userTier = authResult.tier || 'anonymous';
+
+        if (!model || !hasSufficientTier(userTier, model.tier)) {
+            const error = new Error(`Model not found or tier not high enough. Your tier: ${userTier}, required tier: ${model?.tier || 'unknown'}`)
+            error.status = 402;
+            await sendErrorResponse(res, req, error, requestData, 402);
+            return;
+        }
+
         // Apply user-specific model mapping if user is authenticated
         let finalRequestData = requestData;
         if (authResult.username) {

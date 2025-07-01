@@ -614,9 +614,25 @@ const callKontextAPI = async (prompt, safeParams) => {
     formData.append('guidance_scale', safeParams.guidance_scale || 2.5);
     formData.append('num_inference_steps', safeParams.steps || 10);
     
-    // If there's an image in safeParams, add it to the form data
-    if (safeParams.image) {
-      formData.append('image', safeParams.image);
+    // If there's an image in safeParams (array format), download and add it to the form data
+    if (safeParams.image && safeParams.image.length > 0) {
+      try {
+        const imageUrl = safeParams.image[0]; // Use first image from array
+        const imageResponse = await fetch(imageUrl);
+        if (imageResponse.ok) {
+          const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+          formData.append('image', imageBuffer, {
+            filename: 'input.jpg',
+            contentType: 'image/jpeg'
+          });
+          logOps('Added input image to Kontext API request:', imageUrl);
+        } else {
+          logError('Failed to fetch input image:', imageUrl, imageResponse.status);
+        }
+      } catch (error) {
+        logError('Error processing input image:', error.message);
+        // Continue without image if there's an error
+      }
     }
     
     const response = await fetch('http://51.159.184.240:8000/generate', {

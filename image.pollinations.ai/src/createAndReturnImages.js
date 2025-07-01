@@ -600,6 +600,52 @@ export const callAzureGPTImage = async (prompt, safeParams, userInfo = {}) => {
 };
 
 /**
+ * Calls the external Flux Kontext API to generate voxel art images
+ * @param {string} prompt - The prompt for image generation
+ * @param {Object} safeParams - The parameters for image generation
+ * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
+ */
+const callKontextAPI = async (prompt, safeParams) => {
+  try {
+    logOps('Calling Kontext API with prompt:', prompt);
+    
+    const formData = new FormData();
+    formData.append('prompt', prompt);
+    formData.append('guidance_scale', safeParams.guidance_scale || 2.5);
+    formData.append('num_inference_steps', safeParams.steps || 10);
+    
+    // If there's an image in safeParams, add it to the form data
+    if (safeParams.image) {
+      formData.append('image', safeParams.image);
+    }
+    
+    const response = await fetch('http://51.159.184.240:8000/generate', {
+      method: 'POST',
+      body: formData,
+      timeout: 120000 // 2 minute timeout
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Kontext API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const buffer = Buffer.from(await response.arrayBuffer());
+    
+    logOps('Kontext API response received, buffer size:', buffer.length);
+    
+    // Return with default maturity flags (assuming generated art is safe)
+    return {
+      buffer,
+      isMature: false,
+      isChild: false
+    };
+  } catch (error) {
+    logError('Error calling Kontext API:', error);
+    throw new Error(`Kontext API generation failed: ${error.message}`);
+  }
+};
+
+/**
  * Generates an image using the appropriate model based on safeParams
  * @param {string} prompt - The prompt for image generation
  * @param {Object} safeParams - Parameters for image generation
@@ -657,6 +703,25 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
         progress.updateBar(requestId, 100, 'Error', error.message);
         throw error;
       }
+    }
+  }
+  
+  if (safeParams.model === 'kontext') {
+    // Kontext model requires seed tier or higher
+    if (!hasSufficientTier(userInfo.tier, 'seed')) {
+      const errorText = "Access to kontext model is limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.";
+      logError(errorText);
+      progress.updateBar(requestId, 35, 'Auth', 'Kontext model requires seed tier');
+      throw new Error(errorText);
+    }
+    
+    try {
+      updateProgress(progress, requestId, 30, 'Processing', 'Generating voxel art with Kontext...');
+      return await callKontextAPI(prompt, safeParams);
+    } catch (error) {
+      logError('Kontext API failed:', error.message);
+      progress.updateBar(requestId, 100, 'Error', error.message);
+      throw error;
     }
   }
   

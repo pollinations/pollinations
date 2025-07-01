@@ -104,6 +104,32 @@ h3 {
     100% { background-color: var(--color-accent); }
 }
 
+/* Funky login button */
+#auth-button {
+    font-size: 1.1rem;
+    padding: 14px 32px;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary), var(--color-accent));
+    background-size: 300% 300%;
+    animation: login-gradient 6s ease infinite;
+    border-radius: 40px;
+}
+
+@keyframes login-gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Ensure logout button height aligns with badge */
+#logout-button {
+    padding: 12px 24px; /* keep consistent */
+}
+
+/* Adjust badge padding to match button height */
+.profile-badge {
+    padding: 12px 24px;
+}
+
 button { 
     background: var(--color-primary);
     color: white;
@@ -395,14 +421,19 @@ code::after {
 /* Tier display styling */
 .tier-container {
     margin-top: 15px;
-    background: #f9f9f9;
-    border-radius: 12px;
-    padding: 10px 15px;
-    border: 1px solid #eee;
+    background: linear-gradient(135deg, #e8fff6 0%, #f0fff4 100%);
+    border-radius: 18px;
+    padding: 15px 20px;
+    border: 2px solid var(--color-secondary);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
     position: relative;
 }
 
-/* Removed rotating box background */
+.tier-container:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
 
 .tier-badge {
     display: inline-block;
@@ -431,7 +462,7 @@ code::after {
     color: #7e57c2;
     font-weight: 800;
     letter-spacing: 0.5px;
-    text-align: center;
+    text-align: left;
     font-size: 1.3rem;
 }
 
@@ -445,7 +476,9 @@ code::after {
 }
 
 .toggle-label {
-    flex: 1;
+    /* Allow the label to take only the width it needs so the switch appears right next to it */
+    flex: 0 0 auto;
+    margin-right: 10px;
     font-weight: 600;
     font-size: 1.05rem;
     color: #444;
@@ -751,5 +784,35 @@ input:checked + .toggle-slider:before {
 
 .access-card button {
     margin-top: 10px;
+}
+
+/* Profile badge styling */
+.profile-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    border: 2px solid var(--color-secondary);
+    border-radius: 40px;
+    background: white;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.profile-badge .gh-icon {
+    font-size: 1.2rem;
+}
+
+.profile-badge .username {
+    color: var(--color-primary);
+}
+
+.profile-badge .user-id {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.auth-section button + #badge-container {
+    margin-left: auto;
 }
 `;

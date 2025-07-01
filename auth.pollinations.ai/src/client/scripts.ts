@@ -39,11 +39,6 @@ window.addEventListener('load', function() {
         // Show user section and domain section
         document.getElementById('user-section').classList.remove('hidden');
         document.getElementById('domain-section').classList.remove('hidden');
-        // Show unified profile card
-        if (document.getElementById('profile-card')) {
-            document.getElementById('profile-card').classList.remove('hidden');
-        }
-        
         // Toggle auth/logout buttons
         document.getElementById('auth-button').classList.add('hidden');
         document.getElementById('logout-button').classList.remove('hidden');
@@ -78,10 +73,6 @@ window.addEventListener('load', function() {
             
             document.getElementById('user-section').classList.remove('hidden');
             document.getElementById('domain-section').classList.remove('hidden');
-            // Show unified profile card
-            if (document.getElementById('profile-card')) {
-                document.getElementById('profile-card').classList.remove('hidden');
-            }
             
             // Automatically load user info, domains, token and preferences
             getUserInfo();
@@ -119,12 +110,16 @@ window.logout = function() {
     // Hide sections
     document.getElementById('user-section').classList.add('hidden');
     document.getElementById('domain-section').classList.add('hidden');
-    if (document.getElementById('profile-card')) {
-        document.getElementById('profile-card').classList.add('hidden');
-    }
     
     // Show logout message
     showStatus('auth-status', '👋 Logged out successfully', 'info');
+    
+    // Clear badge
+    const badgeEl = document.getElementById('badge-container');
+    if (badgeEl) {
+        badgeEl.innerHTML = '';
+        badgeEl.classList.add('hidden');
+    }
 }
 
 // Handle token errors (expired or invalid tokens)
@@ -148,12 +143,16 @@ function handleTokenError() {
     // Hide sections
     document.getElementById('user-section').classList.add('hidden');
     document.getElementById('domain-section').classList.add('hidden');
-    if (document.getElementById('profile-card')) {
-        document.getElementById('profile-card').classList.add('hidden');
-    }
     
     // Show logout message
     showStatus('auth-status', '⏰ Your session has expired. Please log in again.', 'info');
+    
+    // Clear badge
+    const badgeEl2 = document.getElementById('badge-container');
+    if (badgeEl2) {
+        badgeEl2.innerHTML = '';
+        badgeEl2.classList.add('hidden');
+    }
 }
 
 // Get user info
@@ -177,7 +176,20 @@ async function getUserInfo() {
             // Store user ID for persistence
             localStorage.setItem('github_user_id', userId);
             
-            showStatus('user-info', '<strong>GitHub User ID:</strong> ' + userId + '<br><strong>Username:</strong> ' + data.username, 'info');
+            const userHtml = '<div class="profile-badge">' +
+              '<span class="gh-icon">🐙</span>' +
+              '<span class="username">@' + data.username + '</span>' +
+              '<span class="user-id">#' + userId + '</span>' +
+            '</div>';
+            // Inject into badge container next to logout button
+            const badgeEl = document.getElementById('badge-container');
+            if (badgeEl) {
+              badgeEl.innerHTML = userHtml;
+              badgeEl.classList.remove('hidden');
+            }
+
+            // Optionally clear the old user-info badge
+            showStatus('user-info', '', 'info');
             
             // Now that we have the user ID, get domains and token
             getDomains();
@@ -558,6 +570,7 @@ window.generateApiToken = async function() {
 // Show status
 function showStatus(elementId, message, type) {
     const element = document.getElementById(elementId);
+    if (!element) return;
     element.className = 'status ' + (type || 'info');
     element.innerHTML = message;
 }

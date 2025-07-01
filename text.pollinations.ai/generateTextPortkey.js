@@ -20,8 +20,8 @@ const MODEL_MAPPING = {
     //'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
     'openai-reasoning': 'o3', // Maps to custom MonoAI endpoint
     'searchgpt': 'gpt-4o-mini-search-preview', // Maps to custom MonoAI endpoint
-    // 'openai-audio': 'gpt-4o-mini-audio-preview',
-    'openai-audio': 'gpt-4o-audio-preview',
+    'openai-audio': 'gpt-4o-mini-audio-preview',
+    // 'openai-audio': 'gpt-4o-audio-preview',
     //'roblox-rp': 'gpt-4o-mini-roblox-rp', // Roblox roleplay model
     //'command-r': 'Cohere-command-r-plus-08-2024-jt', // Cohere Command R Plus model
     //'gemini': 'gemini-2.5-flash-preview-04-17',

@@ -12,8 +12,14 @@ export function extractResourceName(endpoint) {
     if (endpoint === undefined || endpoint === null) return null;
     log('Extracting resource name from endpoint:', endpoint);
 
-    // Extract resource name (e.g., pollinations4490940554 from https://pollinations4490940554.openai.azure.com)
-    const match = endpoint.match(/https:\/\/([^\.]+)\.openai\.azure\.com/);
+    // Extract resource name from both Azure OpenAI patterns:
+    // 1. https://pollinations4490940554.openai.azure.com
+    // 2. https://gpt-image-jp.cognitiveservices.azure.com
+    let match = endpoint.match(/https:\/\/([^\.]+)\.openai\.azure\.com/);
+    if (!match) {
+        match = endpoint.match(/https:\/\/([^\.]+)\.cognitiveservices\.azure\.com/);
+    }
+    
     const result = match ? match[1] : null;
     log('Extracted resource name:', result);
 

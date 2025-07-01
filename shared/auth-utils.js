@@ -296,7 +296,7 @@ export async function shouldBypassQueue(req) {
     reason: 'NO_AUTH_METHOD_SUCCESS',
     userId: null,
     username: null,
-    tier: 'seed',
+    tier: 'anonymous',
     debugInfo
   };
 }
@@ -341,7 +341,7 @@ export async function handleAuthentication(req, requestId = null, logAuth = null
     return {
       bypass: isAuthenticated, // Kept for backward compatibility
       ...authResult,
-      tier: debugInfo.tier || 'seed',
+      tier: debugInfo.tier || 'anonymous',
       debugInfo
     };
     

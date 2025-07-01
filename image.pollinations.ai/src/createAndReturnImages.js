@@ -12,6 +12,7 @@ import dotenv from 'dotenv';
 // Import GPT Image logging utilities
 import { logGptImagePrompt, logGptImageError } from './utils/gptImageLogger.js';
 import { analyzeTextSafety, analyzeImageSafety, formatViolations } from './utils/azureContentSafety.js';
+import { hasSufficientTier } from '../../shared/tier-gating.js';
 
 dotenv.config();
 
@@ -618,7 +619,7 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
         : 'No userInfo provided');
     
     // Restrict GPT Image model to users with valid authentication
-    if (!userInfo || !userInfo.authenticated || userInfo.tier === 'seed') {
+    if (!hasSufficientTier(userInfo.tier, 'flower')) {
       const errorText = "Access to gpt-image-1 is currently limited to users in the flower tier. We will be opening up access gradually. Please authenticate at https://auth.pollinations.ai and request a tier upgrade at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml";
       logError(errorText);
       progress.updateBar(requestId, 35, 'Auth', 'GPT Image requires authorization');

@@ -147,7 +147,7 @@ async function handleRequest(req, res, requestData) {
             log(`Access check: hasSufficientTier(${userTier}, ${model.tier}) = ${hasAccess}`);
             
             if (!hasAccess) {
-                const error = new Error(`Model not found or tier not high enough. Your tier: ${userTier}, required tier: ${model.tier}`)
+                const error = new Error(`Model not found or tier not high enough. Your tier: ${userTier}, required tier: ${model.tier}. To get a token or add a referrer, visit https://auth.pollinations.ai`)
                 error.status = 402;
                 await sendErrorResponse(res, req, error, requestData, 402);
                 return;

@@ -19,10 +19,11 @@ export const generateHTML = () => `<!DOCTYPE html>
 <body>
     <div class="container">
         <h1 class="emoji-title">
-            <img src="https://raw.githubusercontent.com/pollinations/pollinations/master/operations/assets/pollinations_ai_logo_black.svg" alt="Pollinations Logo" class="title-logo">
-            <span></span>
-            Pollinations.AI <br> 🐝 Auth 🌸
-            <span></span>
+            <span class="brand">
+                <img src="https://raw.githubusercontent.com/pollinations/pollinations/master/operations/assets/pollinations_ai_logo_black.svg" alt="Pollinations Logo" class="title-logo" />
+                Pollinations.AI
+            </span>
+            <span class="auth-title">🐝 Auth 🌸</span>
         </h1>
         
         <!-- Intro section reserved for future announcements -->
@@ -37,13 +38,11 @@ export const generateHTML = () => `<!DOCTYPE html>
 
         <!-- 👤 Account Section -->
         <div id="account-section">
-            <h2>👤 Creator Account</h2>
-
             <div id="user-section" class="hidden">
                 <!-- 🌟 Tier Section -->
                 <div id="tier-section" class="tier-container hidden">
                     <div class="tier-header">
-                        <h3>✨ Tier</h3>
+                        <h2>✨ Tier</h2>
                     </div>
                     <div class="tier-description">
                         <p>Seed tier is automatic on first login. Flower and Nectar are assigned in limited pilots while we're in beta. Higher tiers give you more Gen‑AI usage.</p>
@@ -59,14 +58,26 @@ export const generateHTML = () => `<!DOCTYPE html>
                         <div id="nectar-pill" class="tier-pill nectar">
                             <span class="tier-emoji">🍯</span> Nectar
                         </div>
-                        <p>Want to upgrade to Flower or Nectar tier? <a href="https://github.com/pollinations/pollinations/blob/master/.github/ISSUE_TEMPLATE/special-bee-request.yml" target="_blank">Apply here</a> to request access!</p>
+                        <p>
+                            <span style="font-size:1.2em;"></span>
+                            <b><i>Want to <span style="color:black;">upgrade</span> to <span style="color:#ff61d8;">Flower</span> or <span style="color:#ffb300;">Nectar</span> tier?</i></b>
+                            <br>
+                            <span style="font-size:1.1em;">🐝</span>
+                            <b>
+                                <a href="https://github.com/pollinations/pollinations/blob/master/.github/ISSUE_TEMPLATE/special-bee-request.yml" target="_blank" style="color:#00c896;">
+                                    <i>Request access! 🚀</i>
+                                </a>
+                            </b>
+                            <span style="font-size:1.1em;"></span>
+                        </p>
                     </div>
                 </div>
 
                 <div id="preferences-section" class="preferences-container hidden">
                     <div class="preferences-header">
-                        <h3>✨ Ads Settings ✨</h3>
+                        <h2>🪧 Ads</h2>
                     </div>
+                    <p>Enabling ads will help you level up to higher tiers (beta). When activated, contextual ads are added to a percentage of your GenAI API responses.</p>
                     <div class="preference-item">
                         <label for="ads-toggle" class="toggle-label">Show Ads</label>
                         <div class="toggle-switch">
@@ -75,17 +86,17 @@ export const generateHTML = () => `<!DOCTYPE html>
                         </div>
                         <span id="ads-status" class="preference-status">Loading...</span>
                     </div>
-                        <p>💯 <b><i>Enabling ads</i></b> will help you <b><i>level up</i></b> to higher tiers <b>– <span style="color:#ff61d8;">no cap</span>!</b> 🚀🌟</p>
+
                         <p>👀 <b><i>Want credit card payments instead?</i></b> 💳 <a href="https://github.com/pollinations/pollinations/issues/2202" target="_blank"><b>Drop a 👍 on this issue</b></a> to vote! 🗳️</p>
                 </div>
             </div>
         </div>
 
-        <!-- 🔑 Whitelist Section -->
+        <!-- 🔑 Allowed Section -->
         <div id="whitelist-section">
             <div id="domain-section" class="hidden">
                 <div class="access-card">
-                    <h3>🔑 Referrer / Domain</h3>
+                    <h2>🔑 Referrer / Domain</h2>
                     <p class="section-info">Enter the primary domain or referrer your app calls from. Your tier activates immediately for traffic from that domain. Ideal for front-end web apps.</p>
                     <div class="input-group">
                         <input type="text" id="new-domain" placeholder="example.com">
@@ -94,19 +105,22 @@ export const generateHTML = () => `<!DOCTYPE html>
                     <div id="domain-info" class="status"></div>
                 </div>
                 <details class="help-block" open>
-                    <summary>🌐 What's a Referrer?</summary>
-                    <p>It's basically where you're coming from! 📍 If your website is on our trusted list, you get priority access automatically. No token needed!</p>
+                    <summary>🌐 <b>What's a <i>Referrer</i>?</b> 🤔</summary>
+                    <p>
+                        <span style="font-size:1.2em;">🚀</span> <b><i>Requests from a higher-tier site?</i></b> <br>
+                        <span style="color:#ff61d8;"><b>We spot it instantly</b></span> and <b>give you <i>priority</i>—no token needed!</b> 🥇
+                    </p>
                     <ul>
-                        <li>We verify your site's domain automatically</li>
-                        <li>If you have its referrer or domain registered = instant access ✨</li>
-                        <li>Perfect for <strong>💻 Web apps</strong> (no backend needed!)</li>
+                        <li>🕵️‍♂️ <b>Your site is <i>auto-detected</i></b> and placed in the right tier.</li>
+                        <li>⚡ <b>Qualify for a higher tier?</b> <i>Enjoy <b>faster responses</b> right away!</i></li>
+                        <li>💡 <b>Perfect for <i>front-end</i> or <i>serverless</i> apps:</b> just call the endpoint—<b>no secrets to store</b>! 🔐</li>
                     </ul>
                 </details>
 
                 <div class="access-card">
-                                <h3>🔑 API Token</h3>
+                    <h2>🔑 API Token</h2>
 
-                    <p class="section-info">Generate a secret token for backend or server‑side integrations.</p>
+                    <p class="section-info">Generate a secure, private token for your backend or server-side integrations.</p>
                     <p><strong>🔒 Keep it secret:</strong> Never share your token publicly!</p>
 
                     <div id="token-info" class="status"><em>Loading token information...</em></div>
@@ -114,12 +128,24 @@ export const generateHTML = () => `<!DOCTYPE html>
                                     
                 </div>
                 <details class="help-block" open>
-                    <summary>🔑 What's a Token?</summary>
-                    <p>Think of it like your access key! 🎫 It lets you skip the queue and get instant access to our AI models. No more waiting!</p>
-                    <p><strong>How to use:</strong></p>
-                    <code>URL: https://text.pollinations.ai/openai?token=YOUR_TOKEN</code><br>
-                    <code>Header: Authorization: Bearer YOUR_TOKEN</code>
-                    <p><strong>⚡ Backend apps:</strong> Use tokens for Discord bots, AI chatbots, etc.</p>
+                    <summary>🔑 What's a Token? 🤔</summary>
+                    <p>
+                        <span style="font-size:1.2em;">🎫</span>
+                        <b><i>Your API token is your VIP access key!</i></b>
+                        <br>
+                        <span style="font-size:1.1em;">🚀</span>
+                        <b><i>Skip the line</i></b> and get <b><i>instant access</i></b> to our AI models.<br>
+                        <span style="color:#ff61d8;"><b><i>No more waiting!</i></b> ⏩</span>
+                    </p>
+                    <p>
+                        <b><i>🔧 How to use:</i></b>
+                    </p>
+                    <code>🌐 URL: <b>https://text.pollinations.ai/openai?token=YOUR_TOKEN</b></code><br>
+                    <code>🛡️ Header: <b>Authorization: Bearer YOUR_TOKEN</b></code>
+                    <p>
+                        <span style="font-size:1.1em;">🤖</span>
+                        <b><i>Perfect for backend apps:</i></b> Use tokens for <b>Discord bots</b>, <b>AI chatbots</b>, and more!
+                    </p>
                 </details>
             </div>
         </div>

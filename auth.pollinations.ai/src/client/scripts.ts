@@ -244,7 +244,7 @@ function displayDomains() {
     let domainHtml = '';
     
     if (currentDomains.length > 0) {
-        domainHtml = '<strong>🌐 Allowed Domains:</strong><div style="margin-top:10px">';
+        domainHtml = '<strong>🌐 Regirstered:</strong><div style="margin-top:10px">';
         for (const domain of currentDomains) {
             // Use data attributes instead of inline onclick handlers
             domainHtml += '<span class="domain-item">' + domain + 
@@ -522,7 +522,7 @@ async function getApiToken() {
             apiToken = data.token;
             
             if (apiToken) {
-                showStatus('token-info', '<strong>🔑 Your API Token:</strong><br><code>' + apiToken + '</code>', 'info');
+                showStatus('token-info', '<code class="token-value copyable" id="api-token-value" onclick="copyApiToken()" title="Click to copy">' + apiToken + '</code>', 'info');
             } else {
                 showStatus('token-info', '⚠️ No API token found. Generate one first! 🔄', 'info');
             }
@@ -558,12 +558,31 @@ window.generateApiToken = async function() {
             const data = await response.json();
             apiToken = data.token;
             
-            showStatus('token-info', '<strong>✅ New API Token Generated:</strong><br><code>' + apiToken + '</code><br><em>Save this token!</em> 🔐', 'success');
+            showStatus('token-info', '<code class="token-value copyable" id="api-token-value" onclick="copyApiToken()" title="Click to copy">' + apiToken + '</code>', 'success');
         } else {
             showStatus('token-info', '❌ Error: ' + response.statusText, 'error');
         }
     } catch (error) {
         showStatus('token-info', '❌ Error: ' + error.message, 'error');
+    }
+}
+
+// Copy API token to clipboard
+window.copyApiToken = async function() {
+    if (!apiToken) {
+        return;
+    }
+    try {
+        await navigator.clipboard.writeText(apiToken);
+        const codeEl = document.getElementById('api-token-value');
+        if (codeEl) {
+            codeEl.classList.add('copied');
+            setTimeout(() => {
+                codeEl.classList.remove('copied');
+            }, 2000);
+        }
+    } catch (err) {
+        console.error('Failed to copy token:', err);
     }
 }
 

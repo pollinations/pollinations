@@ -2,6 +2,8 @@
 export const CSS = `
 /* Psychedelic Gen-Z style with minimal code */
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap');
+/* Display font for the secondary line (Auth) */
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
 
 :root {
     --color-primary: #ff61d8;
@@ -307,9 +309,28 @@ code::after {
     100% { transform: translateY(-5px); }
 }
 
+/* Brand (logo + text) styling with subtle animated gradient */
+.emoji-title .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    font-size: clamp(1.4rem, 5vw, 2.2rem); /* smaller than before */
+    color: var(--color-text); /* solid black */
+}
+
+/* Secondary line (Auth) uses playful font */
+.emoji-title .auth-title {
+    width: 100%; /* force it on new line */
+    font-family: 'Pacifico', cursive;
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
+    display: inline-block;
+    margin-top: 4px;
+}
+
 /* Title logo styling */
 .title-logo {
-    height: 1.4em; /* scale with font size */
+    height: 1.4em; /* revert to smaller size */
     width: auto;
     margin-right: 6px;
 }
@@ -814,5 +835,59 @@ input:checked + .toggle-slider:before {
 
 .auth-section button + #badge-container {
     margin-left: auto;
+}
+
+.token-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.token-wrapper .token-value {
+    flex: 1 1 auto;
+}
+
+.token-value.copyable {
+    cursor: pointer;
+    position: relative;
+}
+
+.token-value.copyable:hover {
+    box-shadow: 0 0 6px var(--color-accent);
+}
+
+/* Show a checkmark icon when copied */
+.token-value.copied::after {
+    content: '✅';
+    position: absolute;
+    right: -1.6em;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.copy-token-btn {
+    padding: 8px 14px;
+    font-size: 1.2rem;
+    background: var(--color-secondary);
+    color: #000;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 6px var(--color-secondary);
+}
+
+.copy-token-btn:hover {
+    background: var(--color-accent);
+    box-shadow: 0 0 8px var(--color-accent);
+}
+
+.copy-icon {
+    pointer-events: none;
 }
 `;

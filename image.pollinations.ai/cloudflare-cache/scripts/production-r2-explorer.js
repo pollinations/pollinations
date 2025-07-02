@@ -25,9 +25,12 @@ export default {
         
         console.log(`Listing R2 objects... limit: ${limit}, prefix: "${prefix}", cursor: ${cursor ? 'YES' : 'NO'}, reverse: ${reverse}`);
         
+        const includeCustomMetadata = url.searchParams.get('include') === 'customMetadata';
+        
         const listOptions = { limit };
         if (prefix) listOptions.prefix = prefix;
         if (cursor) listOptions.cursor = cursor;
+        if (includeCustomMetadata) listOptions.include = ['customMetadata'];
         
         const objects = await env.IMAGE_BUCKET.list(listOptions);
         
@@ -48,6 +51,7 @@ export default {
         
       } else if (action === 'skip') {
         const skipCount = parseInt(url.searchParams.get('skipCount') || '1000');
+        const includeCustomMetadata = url.searchParams.get('include') === 'customMetadata';
         console.log(`Skipping ${skipCount} objects to find newer ones...`);
         
         let cursor = undefined;
@@ -56,10 +60,10 @@ export default {
         // Skip ahead by fetching and discarding objects
         while (skipped < skipCount) {
           const batchSize = Math.min(1000, skipCount - skipped);
-          const objects = await env.IMAGE_BUCKET.list({ 
-            limit: batchSize, 
-            cursor 
-          });
+          const listOptions = { limit: batchSize, cursor };
+          if (includeCustomMetadata) listOptions.include = ['customMetadata'];
+          
+          const objects = await env.IMAGE_BUCKET.list(listOptions);
           
           if (objects.objects.length === 0 || !objects.truncated) {
             break; // Reached end of bucket
@@ -70,16 +74,64 @@ export default {
         }
         
         // Now get the actual objects we want to see
-        const finalObjects = await env.IMAGE_BUCKET.list({ 
-          limit, 
-          cursor 
-        });
+        const finalListOptions = { limit, cursor };
+        if (includeCustomMetadata) finalListOptions.include = ['customMetadata'];
+        
+        const finalObjects = await env.IMAGE_BUCKET.list(finalListOptions);
         
         const result = {
           action: 'skip',
           skipped: skipped,
           cursor: cursor,
           objects: finalObjects.objects
+        };
+        
+        return new Response(JSON.stringify(result, null, 2), {
+          headers: { 
+            'content-type': 'application/json',
+            ...corsHeaders
+          }
+        });
+        
+      } else if (action === 'batch') {
+        // Fetch large amounts of data by automatically handling pagination
+        const targetCount = parseInt(url.searchParams.get('count') || '10000');
+        const maxCount = Math.min(targetCount, 100000); // Cap at 100k for safety
+        
+        console.log(`Batch fetching ${maxCount} objects...`);
+        
+        let allObjects = [];
+        let cursor = undefined;
+        let totalFetched = 0;
+        
+        // Fetch in batches of 1000 (R2's max limit)
+        while (totalFetched < maxCount) {
+          const batchSize = Math.min(1000, maxCount - totalFetched);
+          
+          const listOptions = { limit: batchSize };
+          if (prefix) listOptions.prefix = prefix;
+          if (cursor) listOptions.cursor = cursor;
+          
+          const objects = await env.IMAGE_BUCKET.list(listOptions);
+          
+          allObjects = allObjects.concat(objects.objects);
+          totalFetched += objects.objects.length;
+          
+          console.log(`Fetched batch: ${objects.objects.length}, Total: ${totalFetched}`);
+          
+          // If no more objects or not truncated, break
+          if (!objects.truncated || objects.objects.length === 0) {
+            break;
+          }
+          
+          cursor = objects.cursor;
+        }
+        
+        const result = {
+          action: 'batch',
+          requested: maxCount,
+          fetched: totalFetched,
+          objects: allObjects
         };
         
         return new Response(JSON.stringify(result, null, 2), {
@@ -162,29 +214,20 @@ export default {
         });
         
       } else if (action === 'download' && key) {
-        console.log(`Downloading object: ${key}`);
+        console.log(`Getting object: ${key}`);
         const object = await env.IMAGE_BUCKET.get(key);
         
         if (!object) {
-          return new Response('Object not found', { 
+          return new Response('Object not found', {
             status: 404,
             headers: corsHeaders
           });
         }
         
-        // Get file extension from content type or key
-        const contentType = object.httpMetadata?.contentType || 'application/octet-stream';
-        const extension = getFileExtension(contentType);
-        const filename = key.includes('.') ? key : `${key}${extension}`;
-        
-        return new Response(object.body, {
+        // Return the whole object as JSON (thin proxy principle)
+        return new Response(JSON.stringify(object, null, 2), {
           headers: {
-            'content-type': contentType,
-            'content-disposition': `attachment; filename="${filename}"`,
-            'x-r2-etag': object.etag,
-            'x-r2-uploaded': object.uploaded.toISOString(),
-            'x-r2-size': object.size.toString(),
-            'x-r2-key': key,
+            'content-type': 'application/json',
             ...corsHeaders
           }
         });
@@ -245,9 +288,11 @@ export default {
       
       // Default help response
       const help = {
-        endpoints: {
-          'list': '?action=list&limit=10&prefix=some_prefix&cursor=CURSOR',
-          'skip': '?action=skip&skipCount=5000&limit=10',
+        actions: {
+          'list': '?action=list&limit=10&prefix=_prompt_&cursor=CURSOR&include=customMetadata',
+          'batch': '?action=batch&count=50000&prefix=_prompt_',
+          'skip': '?action=skip&skipCount=1000&include=customMetadata',
+          'jump': '?action=jump',
           'recent': '?action=recent&limit=10&maxScan=10000',
           'metadata': '?action=metadata&key=OBJECT_KEY',
           'download': '?action=download&key=OBJECT_KEY',
@@ -283,17 +328,4 @@ export default {
   }
 };
 
-function getFileExtension(contentType) {
-  const typeMap = {
-    'image/jpeg': '.jpg',
-    'image/jpg': '.jpg', 
-    'image/png': '.png',
-    'image/gif': '.gif',
-    'image/webp': '.webp',
-    'image/svg+xml': '.svg',
-    'image/bmp': '.bmp',
-    'image/tiff': '.tiff'
-  };
-  
-  return typeMap[contentType?.toLowerCase()] || '.bin';
-}
+

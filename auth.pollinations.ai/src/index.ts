@@ -472,31 +472,69 @@ async function handleGenerateApiToken(request: Request, env: Env, corsHeaders: R
 /**
  * Validates an API token and returns the associated user ID if valid.
  * This endpoint is used by other Pollinations services to verify tokens.
+ * Uses Cloudflare Workers Cache API for performance optimization.
  * @param token The API token to validate
  * @param env Environment variables
  * @param corsHeaders CORS headers to include in the response
+ * @param ctx Execution context for async operations
  * @returns Response with validation result
  */
-async function handleValidateToken(token: string, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+async function handleValidateToken(token: string, env: Env, corsHeaders: Record<string, string>, ctx?: ExecutionContext): Promise<Response> {
+  const startTime = Date.now();
+  
   try {
     if (!token) {
       return createErrorResponse(400, 'Missing required parameter: token', corsHeaders);
     }
     
-    // Validate the token against the database
+    // Try cache first
+    const cache = await caches.open('token-validation');
+    const cacheKey = `https://auth.pollinations.ai/api/validate-token/${token}`;
+    
+    const cachedResponse = await cache.match(cacheKey);
+    if (cachedResponse) {
+      const cacheTime = Date.now() - startTime;
+      console.log(`🎯 Cache HIT: ${token.substring(0,8)}... in ${cacheTime}ms`);
+      return cachedResponse;
+    }
+    
+    // Cache miss - query database
+    const dbStartTime = Date.now();
+    console.log(`❌ Cache MISS: ${token.substring(0,8)}... querying DB`);
+    
     const { userId, tier, username } = await validateApiTokenComplete(env.DB, token);
     
-    // Return validation result with tier and username information
-    return new Response(JSON.stringify({
+    const dbTime = Date.now() - dbStartTime;
+    console.log(`💾 DB query completed in: ${dbTime}ms`);
+    
+    // Create response
+    const responseData = {
       valid: userId !== null,
       userId: userId,
       username: username,
       tier: tier
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    };
+    
+    const response = new Response(JSON.stringify(responseData), {
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=60' // 60 second TTL
+      },
     });
+    
+    // Cache the response asynchronously (don't wait for it)
+    if (ctx) {
+      ctx.waitUntil(cache.put(cacheKey, response.clone()));
+    }
+    
+    const totalTime = Date.now() - startTime;
+    console.log(`✅ Total handleValidateToken time: ${totalTime}ms (DB: ${dbTime}ms)`);
+    
+    return response;
   } catch (error) {
-    console.error('Error validating token:', error);
+    const errorTime = Date.now() - startTime;
+    console.error(`❌ Error validating token after ${errorTime}ms:`, error);
     return createErrorResponse(400, 'Invalid request format', corsHeaders);
   }
 }

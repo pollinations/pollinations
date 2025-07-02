@@ -62,13 +62,8 @@ export const generateHTML = () => `<!DOCTYPE html>
                             <span style="font-size:1.2em;"></span>
                             <b><i>Want to <span style="color:black;">upgrade</span> to <span style="color:#ff61d8;">Flower</span> or <span style="color:#ffb300;">Nectar</span> tier?</i></b>
                             <br>
-                            <span style="font-size:1.1em;">🐝</span>
-                            <b>
-                                <a href="https://github.com/pollinations/pollinations/blob/master/.github/ISSUE_TEMPLATE/special-bee-request.yml" target="_blank" style="color:#00c896;">
-                                    <i>Request access! 🚀</i>
-                                </a>
-                            </b>
-                            <span style="font-size:1.1em;"></span>
+                            <br>
+                            <a href="https://github.com/pollinations/pollinations/blob/master/.github/ISSUE_TEMPLATE/special-bee-request.yml" target="_blank" class="cta-hole">Request access!</a>
                         </p>
                     </div>
                 </div>
@@ -77,7 +72,7 @@ export const generateHTML = () => `<!DOCTYPE html>
                     <div class="preferences-header">
                         <h2>🪧 Ads</h2>
                     </div>
-                    <p>Enabling ads will help you level up to higher tiers (beta). When activated, contextual ads are added to a percentage of your GenAI API responses.</p>
+                    <p>Enabling ads will help you level up to higher tiers (beta). When activated, contextual ads are added to a percentage of Pollinations.AI's GenAI API responses.</p>
                     <div class="preference-item">
                         <label for="ads-toggle" class="toggle-label">Show Ads</label>
                         <div class="toggle-switch">
@@ -87,7 +82,10 @@ export const generateHTML = () => `<!DOCTYPE html>
                         <span id="ads-status" class="preference-status">Loading...</span>
                     </div>
 
-                        <p>👀 <b><i>Want credit card payments instead?</i></b> 💳 <a href="https://github.com/pollinations/pollinations/issues/2202" target="_blank"><b>Drop a 👍 on this issue</b></a> to vote! 🗳️</p>
+                    <p><b><i>Want credit card payments instead?</i></b> 💳 
+                    <br>
+                    <br>
+                    <a href="https://github.com/pollinations/pollinations/issues/2202" target="_blank" class="cta-hole">Drop a vote!</a></p>
                 </div>
             </div>
         </div>
@@ -97,7 +95,7 @@ export const generateHTML = () => `<!DOCTYPE html>
             <div id="domain-section" class="hidden">
                 <div class="access-card">
                     <h2>🔑 Referrer / Domain</h2>
-                    <p class="section-info">Enter the primary domain or referrer your app calls from. Your tier activates immediately for traffic from that domain. Ideal for front-end web apps.</p>
+                    <p class="section-info">Enter the primary domain or referrer your app calls from. Your tier activates immediately for the traffic from that domain.</p>
                     <div class="input-group">
                         <input type="text" id="new-domain" placeholder="example.com">
                         <button onclick="addDomain()">Add</button>
@@ -105,16 +103,41 @@ export const generateHTML = () => `<!DOCTYPE html>
                     <div id="domain-info" class="status"></div>
                 </div>
                 <details class="help-block" open>
-                    <summary>🌐 <b>What's a <i>Referrer</i>?</b> 🤔</summary>
-                    <p>
-                        <span style="font-size:1.2em;">🚀</span> <b><i>Requests from a higher-tier site?</i></b> <br>
-                        <span style="color:#ff61d8;"><b>We spot it instantly</b></span> and <b>give you <i>priority</i>—no token needed!</b> 🥇
-                    </p>
-                    <ul>
-                        <li>🕵️‍♂️ <b>Your site is <i>auto-detected</i></b> and placed in the right tier.</li>
-                        <li>⚡ <b>Qualify for a higher tier?</b> <i>Enjoy <b>faster responses</b> right away!</i></li>
-                        <li>💡 <b>Perfect for <i>front-end</i> or <i>serverless</i> apps:</b> just call the endpoint—<b>no secrets to store</b>! 🔐</li>
-                    </ul>
+                    <summary>
+                        <span style="font-size:1.1em;">🤔</span>
+                        <b>Referrer <span style="color:#888;">vs</span> Domain</b>
+                        <span style="font-size:1.1em;"></span>
+                    </summary>
+                    <div style="margin: 18px 0 10px 0;">
+                        <ul style="margin-bottom: 16px; line-height: 1.7;">
+                            <li>
+                                <b style="color:#3a3a3a;">Referrer</b>
+                                <span style="color:#888;">(for browser apps):</span>
+                                <br>
+                                <span style="margin-left:1.2em; display:inline-block;">
+                                    When your <b>front-end</b> (browser) calls the API directly.<br>
+                                    <span style="color:#666;">
+                                        <i>
+                                            To find your referrer: <br>
+                                            1. Open your browser's developer tools (usually F12 or right-click → Inspect).<br>
+                                            2. Go to the <b>Network</b> tab.<br>
+                                            3. Make an API request from your app.<br>
+                                            4. Click the request and look for the <b>Referer</b> header—this is your referrer URL.
+                                        </i>
+                                    </span>
+                                </span>
+                            </li>
+                            <li style="margin-top:12px;">
+                                <b style="color:#3a3a3a;">Domain</b>
+                                <span style="color:#888;">(for backend/server):</span>
+                                <br>
+                                <span style="margin-left:1.2em; display:inline-block;">
+                                    When your <b>server</b> or <b>edge function</b> makes the call.<br>
+                                    <span style="color:#666;">We match the main site address to your tier.</span>
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
                 </details>
 
                 <div class="access-card">
@@ -128,10 +151,10 @@ export const generateHTML = () => `<!DOCTYPE html>
                                     
                 </div>
                 <details class="help-block" open>
-                    <summary>🔑 What's a Token? 🤔</summary>
+                    <summary>🤔 What's a Token? </summary>
                     <p>
                         <span style="font-size:1.2em;">🎫</span>
-                        <i>Your personal access key </i>for  <i>instant access</i> to our Gen AI models.<br>
+                        <i>Your personal key </i>for  <i>access</i> to our Gen AI models.<br>
                     </p>
                     <p>
                         <b><i>🔧 How to use:</i></b>

@@ -898,4 +898,29 @@ input:checked + .toggle-slider:before {
     flex: 0 0 100%;  /* Force full-width row inside flex container */
     margin-top: 8px; /* Small spacing from buttons */
 }
+
+/* CTA Hole Style – looks like a cut-out label inside cards */
+a.cta-hole {
+    display: inline-block;
+    background: var(--color-bg);
+    color: var(--color-primary);
+    padding: 8px 22px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    border-radius: 999px;
+    border: 2px dashed var(--color-primary);
+    text-decoration: none;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+a.cta-hole:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+a.cta-hole:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--color-secondary);
+}
 `;

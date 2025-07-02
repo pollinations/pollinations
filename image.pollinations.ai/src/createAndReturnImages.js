@@ -612,9 +612,9 @@ const callKontextAPI = async (prompt, safeParams) => {
     const formData = new FormData();
     formData.append('prompt', prompt);
     formData.append('guidance_scale', safeParams.guidance_scale || 2.5);
-    formData.append('num_inference_steps', safeParams.steps || 10);
-    formData.append('width', safeParams.width || 768);
-    formData.append('height', safeParams.height || 768);
+    formData.append('num_inference_steps', 17); // Hard-coded for consistent performance
+    formData.append('width', safeParams.width);
+    formData.append('height', safeParams.height);
     
     // If there's an image in safeParams (array format), download and add it to the form data
     if (safeParams.image && safeParams.image.length > 0) {

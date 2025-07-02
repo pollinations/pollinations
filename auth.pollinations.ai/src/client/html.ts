@@ -130,9 +130,7 @@ export const generateHTML = () => `<!DOCTYPE html>
                         <span style="font-weight:700; color:#ff61d8; font-style:italic;">domain</span>
                         <span style="color:#444;"> or </span>
                         <span style="font-weight:700; color:#ffb300;">referrer</span>
-                        <span style="color:#444;"> your app calls from.<br>
-                        <span style="font-weight:600; color:#3a3a3a;">Your tier activates immediately</span>
-                        <span style="color:#888;"> for the traffic from that domain.</span>
+                        <span style="color:#444;"> your app calls from.</span>
                     </p>
                     <div class="input-group">
                         <input type="text" id="new-domain" placeholder="example.com">

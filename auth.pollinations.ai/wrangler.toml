@@ -21,6 +21,9 @@ JWT_SECRET = "placeholder"
 name = "github-auth-simple"
 route = { pattern = "auth.pollinations.ai/*", zone_name = "pollinations.ai" }
 
+# Smart Placement disabled - it actually made performance 33% worse
+# Better to rely on default Cloudflare edge routing
+
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "github_auth"

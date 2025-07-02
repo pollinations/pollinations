@@ -131,11 +131,7 @@ export const generateHTML = () => `<!DOCTYPE html>
                     <summary>🔑 What's a Token? 🤔</summary>
                     <p>
                         <span style="font-size:1.2em;">🎫</span>
-                        <b><i>Your API token is your VIP access key!</i></b>
-                        <br>
-                        <span style="font-size:1.1em;">🚀</span>
-                        <b><i>Skip the line</i></b> and get <b><i>instant access</i></b> to our AI models.<br>
-                        <span style="color:#ff61d8;"><b><i>No more waiting!</i></b> ⏩</span>
+                        <i>Your personal access key </i>for  <i>instant access</i> to our Gen AI models.<br>
                     </p>
                     <p>
                         <b><i>🔧 How to use:</i></b>

@@ -271,6 +271,8 @@ code {
     margin: 5px 0;
     position: relative;
     overflow: hidden;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 code::after {
@@ -889,5 +891,11 @@ input:checked + .toggle-slider:before {
 
 .copy-icon {
     pointer-events: none;
+}
+
+/* Ensure user info appears on its own line below the logout button */
+#auth-section #badge-container {
+    flex: 0 0 100%;  /* Force full-width row inside flex container */
+    margin-top: 8px; /* Small spacing from buttons */
 }
 `;

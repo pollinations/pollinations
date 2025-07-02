@@ -163,13 +163,20 @@ async function handleRequest(req, res, requestData) {
         // Apply user-specific model mapping if user is authenticated
         let finalRequestData = requestData;
         if (authResult.username) {
-            const mappedModel = getUserMappedModel(authResult.username);
-            if (mappedModel) {
-                log(`🔄 Model override: ${requestData.model} → ${mappedModel} for user ${authResult.username}`);
-                finalRequestData = {
-                    ...requestData,
-                    model: mappedModel
-                };
+            try {
+                const mappedModel = getUserMappedModel(authResult.username);
+                if (mappedModel) {
+                    log(`🔄 Model override: ${requestData.model} → ${mappedModel} for user ${authResult.username}`);
+                    finalRequestData = {
+                        ...requestData,
+                        model: mappedModel
+                    };
+                }
+            } catch (error) {
+                if (error.status === 403) {
+                    await sendErrorResponse(res, req, error, requestData, error.status);
+                    return;
+                }
             }
         }
         

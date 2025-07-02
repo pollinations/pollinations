@@ -57,6 +57,9 @@ window.addEventListener('load', function() {
         getDomains();
         getApiToken();
         getUserPreferences();
+        // Hide intro text when user is logged in
+        const introEl = document.getElementById('intro-text');
+        if (introEl) introEl.classList.add('hidden');
     } else {
         // Check for stored token
         const storedToken = localStorage.getItem('github_auth_token');
@@ -79,6 +82,9 @@ window.addEventListener('load', function() {
             getDomains();
             getApiToken();
             getUserPreferences();
+            // Hide intro text when user is logged in (stored session)
+            const introEl = document.getElementById('intro-text');
+            if (introEl) introEl.classList.add('hidden');
         }
     }
 });
@@ -120,6 +126,9 @@ window.logout = function() {
         badgeEl.innerHTML = '';
         badgeEl.classList.add('hidden');
     }
+    // Show intro text when user logs out
+    const introEl = document.getElementById('intro-text');
+    if (introEl) introEl.classList.remove('hidden');
 }
 
 // Handle token errors (expired or invalid tokens)
@@ -153,6 +162,9 @@ function handleTokenError() {
         badgeEl2.innerHTML = '';
         badgeEl2.classList.add('hidden');
     }
+    // Show intro text when session expires or token invalid
+    const introEl = document.getElementById('intro-text');
+    if (introEl) introEl.classList.remove('hidden');
 }
 
 // Get user info

@@ -923,4 +923,13 @@ a.cta-hole:focus {
     outline: none;
     box-shadow: 0 0 0 3px var(--color-secondary);
 }
+
+/* Tagline under Auth heading */
+.intro-tagline {
+    font-size: 1.15rem;
+    margin: -10px 0 24px 0;
+    text-align: left;
+    color: #3a3a3a;
+    line-height: 1.5;
+}
 `;

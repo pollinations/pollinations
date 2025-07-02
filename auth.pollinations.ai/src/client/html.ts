@@ -81,7 +81,7 @@ export const generateHTML = () => `<!DOCTYPE html>
                             <b><i>Want to <span style="color:black;">upgrade</span> to <span style="color:#ff61d8;">Flower</span> or <span style="color:#ffb300;">Nectar</span> tier?</i></b>
                             <br>
                             <br>
-                            <a href="https://github.com/pollinations/pollinations/blob/master/.github/ISSUE_TEMPLATE/special-bee-request.yml" target="_blank" class="cta-hole">Request access!</a>
+                            <a href="https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml" target="_blank" class="cta-hole">Request access!</a>
                         </p>
                     </div>
                 </div>
@@ -110,7 +110,7 @@ export const generateHTML = () => `<!DOCTYPE html>
                         <span id="ads-status" class="preference-status">Loading...</span>
                     </div><br>
                             <span style="color:#7a3cff; font-weight:bold; font-style:italic;">
-                                🚀 Beta Perk: <span style="color:#ff61d8;">Level up faster</span> — <span style="color:#444;">More Ads</span> <span style="color:#ffb300;">= Higher Tier</span>
+                                🚀 Beta (soon!): <span style="color:#ff61d8;">Level up faster</span> — <span style="color:#444;">More Ads</span> <span style="color:#ffb300;">= Higher Tier</span>
                             </span>
                     <p><b><i>Want credit card payments instead?</i></b> 💳 
                     <br>

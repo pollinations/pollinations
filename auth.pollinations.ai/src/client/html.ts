@@ -115,7 +115,7 @@ export const generateHTML = () => `<!DOCTYPE html>
                     <p><b><i>Want credit card payments instead?</i></b> 💳 
                     <br>
                     <br>
-                    <a href="https://github.com/pollinations/pollinations/issues/2202" target="_blank" class="cta-hole">Drop a vote!</a></p>
+                    <a href="https://github.com/pollinations/pollinations/issues/2202" target="_blank" class="cta-hole">Vote/discuss</a></p>
                 </div>
             </div>
         </div>
@@ -178,24 +178,24 @@ export const generateHTML = () => `<!DOCTYPE html>
                     </p>
 
                     <span style="display:inline-block; font-weight:900; color:#d7263d; font-style:italic; font-size:1.18em; letter-spacing:0.7px; text-shadow:0 2px 10px #d7263d22; margin-bottom:0.3em; border-bottom:2px solid #d7263d; padding-bottom:2px;">
-                        🔒💯 Keep it lowkey fr!
+                        🔒 Keep your token secure!
                     </span>
                     <ul style="margin: 14px 0 12px 0; padding-left: 1.4em; font-size:1.09em; list-style:none;">
                         <li style="margin-bottom:10px; display:flex; align-items:center;">
                             <span style="font-size:1.1em; margin-right:0.6em; color:#f9ca24;">⚠️</span>
                             <span style="font-style:italic; font-weight:bold; color:#f9ca24; background:black; padding:2px 6px; border-radius:4px;">
-                                Never share your token publicly anywhere ✋
+                                Never share your token publicly anywhere
                             </span>
                         </li>
                         <li style="display:flex; align-items:center; margin-bottom:0;">
                             <span style="font-size:1.1em; margin-right:0.6em; color:#f9ca24;">🚧</span>
                             <span style="color:#f9ca24; font-weight:bold; background:black; padding:2px 6px; border-radius:4px;">
-                                Don't commit to Git/GitHub - that's a major L 📉
+                                Don't commit tokens to Git/GitHub repositories
                             </span>
                         </li>
                     </ul>
                     <div style="color:red; font-size:0.98em; font-style:italic; margin-left:2.2em; margin-top:-4px;">
-                        <span style="font-size:1.1em; margin-right:0.4em">✨</span> Pro tip: Use <b>.env</b> files to store tokens safely
+                        <span style="font-size:1.1em; margin-right:0.4em">✨</span> Use <b>.env</b> files to store tokens safely
                     </div>
 
                     <div id="token-info" class="status"><em>Loading token information...</em></div>

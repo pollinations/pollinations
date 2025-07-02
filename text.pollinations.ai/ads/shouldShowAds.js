@@ -3,8 +3,8 @@ import { REDIRECT_BASE_URL } from './adLlmMapper.js';
 import { REQUIRE_MARKDOWN, markdownRegex } from './adUtils.js';
 import { handleAuthentication, getUserPreferences } from '../../shared/auth-utils.js';
 
-// Probability of adding referral links (4%)
-const REFERRAL_LINK_PROBABILITY = 0.04;
+// Probability of adding referral links (8%)
+const REFERRAL_LINK_PROBABILITY = 0.08;
 
 const TEST_ADS_MARKER = "p-ads";
 

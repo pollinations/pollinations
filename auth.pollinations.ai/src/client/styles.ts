@@ -81,6 +81,38 @@ h2 {
     display: inline-block;
 }
 
+/* Section headers with consistent styling */
+.section-header {
+    font-size: 1.8rem;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    display: inline-block;
+    position: relative;
+    z-index: 1;
+    font-weight: 700;
+}
+
+.section-header::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 0.4em;
+    bottom: 0.1em;
+    left: 0;
+    z-index: -1;
+    background-color: var(--color-secondary);
+    transform: skew(-12deg);
+    animation: section-highlight-shift 8s infinite linear;
+    opacity: 0.7;
+}
+
+@keyframes section-highlight-shift {
+    0% { background-color: var(--color-secondary); }
+    33% { background-color: var(--color-accent); }
+    66% { background-color: var(--color-primary); }
+    100% { background-color: var(--color-secondary); }
+}
+
 h3 {
     font-size: 1.4rem;
 }

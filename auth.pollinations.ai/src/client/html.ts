@@ -157,8 +157,8 @@ export const generateHTML = () => `<!DOCTYPE html>
                                 <code style="background:#f0f0f0; padding:2px 4px; border-radius:3px;">myapp.vercel.app</code>
                             </p>
                             
-                            <div style="margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #ffb300;">
-                                <span style="font-variant:small-caps; font-weight:bold; color:rgb(255,179,0)">🕵️‍♂️ To check your referrer:</span>
+                            <div style="margin-top: 16px; padding: 12px; font-size:1.2em;">
+                                <span style="font-variant:small-caps; font-weight:bold; color:rgb(255,179,0)">🕵️‍♂️ Find your referrer:</span>
                                 <ol style="margin: 8px 0 0 16px; color:#666;">
                                     <li>Open browser developer tools (F12 or right-click → Inspect)</li>
                                     <li>Go to the <b style="text-decoration:underline dashed #ffb300;">Network</b> tab</li>

@@ -1,4 +1,12 @@
 import type { Env, UserTier } from './types';
+
+// Add ExecutionContext type declaration
+declare global {
+  interface ExecutionContext {
+    waitUntil(promise: Promise<any>): void;
+    cf?: any;
+  }
+}
 import { createJWT, verifyJWT, extractBearerToken } from './jwt';
 import { 
   upsertUser, 
@@ -57,7 +65,7 @@ interface ScheduledEvent {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     
     // Add CORS headers
@@ -198,7 +206,7 @@ export default {
         if (request.method === 'GET') {
           // Extract token from the URL path
           const token = url.pathname.replace('/api/validate-token/', '');
-          return handleValidateToken(token, env, corsHeaders);
+          return handleValidateToken(token, env, corsHeaders, ctx);
         }
       }
       
@@ -486,6 +494,8 @@ async function handleValidateToken(token: string, env: Env, corsHeaders: Record<
     if (!token) {
       return createErrorResponse(400, 'Missing required parameter: token', corsHeaders);
     }
+    
+
     
     // Try cache first
     const cache = await caches.open('token-validation');

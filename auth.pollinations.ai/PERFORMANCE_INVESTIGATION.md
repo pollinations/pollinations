@@ -229,6 +229,59 @@ Request 5: 0.476s (Cache Hit)
 
 ---
 
-## 📈 **CONCLUSION**
+## 🚨 **CRITICAL UPDATE - JULY 2, 2025 @ 19:00 UTC**
 
-**Mission Accomplished**: Token validation performance optimized with minimal, elegant caching solution following "thin proxy" principle. The implementation provides immediate relief while maintaining code simplicity and reliability.
+### **Performance Discrepancy Mystery**
+
+After caching deployment, we discovered a **major discrepancy**:
+
+- **✅ Cloudflare Metrics**: 2-6ms response times (excellent)
+- **❌ Manual Testing**: Still 2+ seconds via curl/browser
+- **🤔 Status**: **UNRESOLVED MYSTERY**
+
+### **Investigation Attempts**
+
+#### **1. Smart Placement Testing**
+- **Added**: `[placement] mode = "smart"` to wrangler.toml
+- **Result**: **33% WORSE performance** (3,626ms vs 2,729ms)
+- **Action**: **REMOVED** Smart Placement configuration
+- **Learning**: Default Cloudflare routing is better than Smart Placement
+
+#### **2. Debug Code Removal**
+- **Suspected**: Regional debugging console.log causing delays
+- **Removed**: All debugging output from handleValidateToken
+- **Result**: **No improvement** - still 2+ seconds
+- **Learning**: Console.log was not the root cause
+
+#### **3. Local Testing Setup**
+- **Exported**: Production D1 database to `local_db_dump.sql`
+- **Goal**: Test locally to isolate Worker vs D1 connection issues
+- **Status**: **IN PROGRESS**
+
+### **Current Hypothesis**
+
+The metrics vs reality mismatch suggests:
+1. **Metrics show cached responses** (fast)
+2. **Manual tests hit cache misses** (slow) 
+3. **D1 connection latency** remains the root cause
+4. **Regional factors** affecting specific test locations
+
+### **Test Token for Debugging**
+- **Token**: `XnTAXfKzz1rqlAT5`
+- **User**: grey021 (ID: 73441082)
+- **Tier**: seed
+- **Status**: Valid
+
+### **Next Steps**
+1. **🔄 Complete local testing** to isolate issue
+2. **🔍 Analyze cache behavior** - why aren't manual tests hitting cache?
+3. **📊 Monitor metrics vs reality** over time
+4. **🌍 Test from different regions** to verify geographical impact
+
+---
+
+## 📈 **CONCLUSION** 
+
+**Status**: **PARTIALLY RESOLVED**  
+**Performance**: Excellent in metrics (2-6ms) but poor in reality (2+ seconds)  
+**Priority**: **HIGH** - Need to resolve metrics vs reality discrepancy

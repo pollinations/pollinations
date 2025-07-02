@@ -143,38 +143,32 @@ export const generateHTML = () => `<!DOCTYPE html>
                 <details class="help-block">
                     <summary>
                         <span style="font-size:1.1em;">🤔</span>
-                        <b>Referrer <span style="color:#d7263d;">vs</span> Domain</b>
+                        <b>How to find your domain</b>
                         <span style="font-size:1.1em;"></span>
                     </summary>
                     <div style="margin: 18px 0 10px 0;">
-                        <ul style="margin-bottom: 16px; line-height: 1.7;">
-                            <li>
-                                <b style="color:#3a3a3a; font-style:italic; letter-spacing:0.5px; text-decoration:underline dotted #b39ddb;">Referrer</b>
-                                <span style="color:#888; font-variant:small-caps; font-style:oblique;">(for browser apps)</span>
-                                <br>
-                                <span style="margin-left:1.2em; display:inline-block; font-style:oblique;">
-                                    When your <b style="text-decoration:underline wavy #7a3cff;">front-end</b> (browser) calls the API directly.<br>
-                                    <span style="color:#666; font-style:italic;">
-                                        <i>
-                                            <span style="font-variant:small-caps; font-weight:bold; font-style:normal; color:rgb(255,179,0)">🕵️‍♂️ To find your referrer:</span> <span style="font-style:normal;"></span><br>
-                                            1. Open your browser's developer tools (usually F12 or right-click → Inspect).<br>
-                                            2. Go to the <b style="text-decoration:underline dashed #ffb300;">Network</b> tab.<br>
-                                            3. Make an API request from your app.<br>
-                                            4. Click the request and look for the <b style="font-style:italic; text-decoration:underline dotted #ff61d8;">Referrer</b> header—this is your referrer URL.
-                                        </i>
-                                    </span>
-                                </span>
-                            </li>
-                            <li style="margin-top:12px;">
-                                <b style="color:#3a3a3a; font-style:italic; letter-spacing:0.5px; text-decoration:underline dotted #b39ddb;">Domain</b>
-                                <span style="color:#888; font-variant:small-caps; font-style:oblique;">(for backend/server)</span>
-                                <br>
-                                <span style="margin-left:1.2em; display:inline-block; font-style:oblique;">
-                                    When your <b style="text-decoration:underline wavy #7a3cff;">server</b> or <b style="text-decoration:underline wavy #7a3cff;">edge function</b> makes the call.<br>
-                                    <span style="color:#666; font-style:italic;">We match the main site address to your tier. <span style="font-style:normal;">🔑</span></span>
-                                </span>
-                            </li>
-                        </ul>
+                        <div style="margin-bottom: 16px; line-height: 1.7;">
+                            <p style="margin-bottom: 12px;">
+                                <b style="color:#3a3a3a; font-style:italic; letter-spacing:0.5px;">Simple way:</b>
+                                <span style="color:#666; font-style:italic;">Just enter the domain (including subdomains) of your deployed site.</span>
+                            </p>
+                            
+                            <p style="margin-left:1.2em; font-style:oblique; color:#888;">
+                                Examples: <code style="background:#f0f0f0; padding:2px 4px; border-radius:3px;">myapp.com</code>, 
+                                <code style="background:#f0f0f0; padding:2px 4px; border-radius:3px;">username.github.io</code>, 
+                                <code style="background:#f0f0f0; padding:2px 4px; border-radius:3px;">myapp.vercel.app</code>
+                            </p>
+                            
+                            <div style="margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #ffb300;">
+                                <span style="font-variant:small-caps; font-weight:bold; color:rgb(255,179,0)">🕵️‍♂️ To check your referrer:</span>
+                                <ol style="margin: 8px 0 0 16px; color:#666;">
+                                    <li>Open browser developer tools (F12 or right-click → Inspect)</li>
+                                    <li>Go to the <b style="text-decoration:underline dashed #ffb300;">Network</b> tab</li>
+                                    <li>Make an API request from your app</li>
+                                    <li>Click the request and look for the <b style="font-style:italic; text-decoration:underline dotted #ff61d8;">Referrer</b> header</li>
+                                </ol>
+                            </div>
+                        </div>
                     </div>
                 </details>
 
@@ -188,9 +182,14 @@ export const generateHTML = () => `<!DOCTYPE html>
                         <span style="font-weight:700; color:#d7263d; font-style:italic;">🔒 <u>Keep it secret</u>:</span>
                         <span style="color:#444; font-style:italic;"><b>Never</b> share your token <span style="color:#d7263d;">publicly</span>!</span>
                     </p>
+                    <div style="margin: 12px 0; padding: 10px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; border-left: 4px solid #f39c12;">
+                        <span style="font-weight:bold; color:#d68910;">⚠️ Security Warning:</span>
+                        <span style="color:#6c5ce7; font-weight:bold;"> Never commit tokens to Git/GitHub!</span><br>
+                        <span style="color:#636e72; font-size:0.9em; font-style:italic;">Use environment variables (.env files) to store your tokens safely.</span>
+                    </div>
 
                     <div id="token-info" class="status"><em>Loading token information...</em></div>
-                    <button onclick="generateApiToken()">Generate New Token</button>
+                    <button onclick="generateApiToken()">(Re)generate Token</button>
                                     
                 </div>
                 <details class="help-block">

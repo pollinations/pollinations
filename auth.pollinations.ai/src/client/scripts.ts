@@ -39,9 +39,9 @@ window.addEventListener('load', function() {
         // Show user section and domain section
         document.getElementById('user-section').classList.remove('hidden');
         document.getElementById('domain-section').classList.remove('hidden');
-        // Toggle auth/logout buttons
+        // Toggle auth/logout buttons and show user badge section
         document.getElementById('auth-button').classList.add('hidden');
-        document.getElementById('logout-button').classList.remove('hidden');
+        document.getElementById('user-badge-section').classList.remove('hidden');
         
         // Store in localStorage for persistence
         localStorage.setItem('github_auth_token', token);
@@ -70,9 +70,9 @@ window.addEventListener('load', function() {
             userId = localStorage.getItem('github_user_id');
             showStatus('auth-status', '✅ Authenticated as ' + storedUsername + ' 🎉', 'success');
             
-            // Toggle auth/logout buttons
+            // Toggle auth/logout buttons and show user badge section
             document.getElementById('auth-button').classList.add('hidden');
-            document.getElementById('logout-button').classList.remove('hidden');
+            document.getElementById('user-badge-section').classList.remove('hidden');
             
             document.getElementById('user-section').classList.remove('hidden');
             document.getElementById('domain-section').classList.remove('hidden');
@@ -109,9 +109,9 @@ window.logout = function() {
     currentDomains = [];
     apiToken = null;
     
-    // Toggle auth/logout buttons
+    // Toggle auth/logout buttons and hide user badge section
     document.getElementById('auth-button').classList.remove('hidden');
-    document.getElementById('logout-button').classList.add('hidden');
+    document.getElementById('user-badge-section').classList.add('hidden');
     
     // Hide sections
     document.getElementById('user-section').classList.add('hidden');
@@ -145,9 +145,9 @@ function handleTokenError() {
     apiToken = null;
     userTier = 'seed';
     
-    // Toggle auth/logout buttons
+    // Toggle auth/logout buttons and hide user badge section
     document.getElementById('auth-button').classList.remove('hidden');
-    document.getElementById('logout-button').classList.add('hidden');
+    document.getElementById('user-badge-section').classList.add('hidden');
     
     // Hide sections
     document.getElementById('user-section').classList.add('hidden');
@@ -534,9 +534,9 @@ async function getApiToken() {
             apiToken = data.token;
             
             if (apiToken) {
-                showStatus('token-info', '<code class="token-value copyable" id="api-token-value" onclick="copyApiToken()" title="Click to copy">' + apiToken + '</code>', 'info');
+                document.getElementById('token-info').innerHTML = '<code class="token-value copyable" id="api-token-value" onclick="copyApiToken()" title="Click to copy">' + apiToken + '</code>';
             } else {
-                showStatus('token-info', '⚠️ No API token found. Generate one first! 🔄', 'info');
+                document.getElementById('token-info').innerHTML = '<em>⚠️ No API token found. Generate one first! 🔄</em>';
             }
         } else {
             // Check if unauthorized (token expired or invalid)
@@ -570,7 +570,7 @@ window.generateApiToken = async function() {
             const data = await response.json();
             apiToken = data.token;
             
-            showStatus('token-info', '<code class="token-value copyable" id="api-token-value" onclick="copyApiToken()" title="Click to copy">' + apiToken + '</code>', 'success');
+            document.getElementById('token-info').innerHTML = '<code class="token-value copyable" id="api-token-value" onclick="copyApiToken()" title="Click to copy">' + apiToken + '</code>';
         } else {
             showStatus('token-info', '❌ Error: ' + response.statusText, 'error');
         }

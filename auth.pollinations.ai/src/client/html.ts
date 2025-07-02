@@ -44,17 +44,19 @@ export const generateHTML = () => `<!DOCTYPE html>
         </div>
 
         <!-- 🔐 Authentication -->
-        <div id="auth-section" style="margin-top: 40px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div id="auth-section" style="margin-top: 40px;">
             <button id="auth-button" onclick="startAuth()">Login with GitHub</button>
-            <button id="logout-button" onclick="logout()" class="hidden">Logout</button>
-            <div id="badge-container" class="hidden"></div>
+            <div id="user-badge-section" class="hidden" style="display:flex; align-items:center; gap:12px; margin-top: 15px; width: fit-content;">
+                <div id="badge-container" style="flex-shrink: 0;"></div>
+                <button id="logout-button" onclick="logout()" class="action-button" style="flex-shrink: 0;">Logout</button>
+            </div>
         </div>
 
         <!-- 👤 Account Section -->
         <div id="account-section">
             <div id="user-section" class="hidden">
                 <!-- 🌟 Tier Section -->
-                <div id="tier-section" class="tier-container hidden">
+                <div id="tier-section" class="section-group hidden">
                     <div class="tier-header">
                         <h2>✨ Tier</h2>
                     </div>
@@ -86,7 +88,7 @@ export const generateHTML = () => `<!DOCTYPE html>
                     </div>
                 </div>
 
-                <div id="preferences-section" class="preferences-container hidden">
+                <div id="preferences-section" class="section-group hidden">
                     <div class="preferences-header">
                         <h2>🪧 Ads</h2>
                     </div>
@@ -123,7 +125,7 @@ export const generateHTML = () => `<!DOCTYPE html>
         <!-- 🔑 Allowed Section -->
         <div id="whitelist-section">
             <div id="domain-section" class="hidden">
-                <div class="access-card">
+                <div class="section-content">
                     <h2>🔑 Referrer / Domain</h2>
                     <p class="section-info" style="font-style:italic; font-weight:500; color:#6c2cff;">
                         <span style="font-weight:700; color:black;">Enter the primary </span>
@@ -134,43 +136,43 @@ export const generateHTML = () => `<!DOCTYPE html>
                     </p>
                     <div class="input-group">
                         <input type="text" id="new-domain" placeholder="example.com">
-                        <button onclick="addDomain()">Add</button>
+                        <button onclick="addDomain()" class="action-button">Add</button>
                     </div>
                     <div id="domain-info" class="status"></div>
-                </div>
-                <details class="help-block">
-                    <summary>
-                        <span style="font-size:1.1em;">🤔</span>
-                        <b>How to find your domain</b>
-                        <span style="font-size:1.1em;"></span>
-                    </summary>
-                    <div style="margin: 18px 0 10px 0;">
-                        <div style="margin-bottom: 16px; line-height: 1.7;">
-                            <p style="margin-bottom: 12px;">
-                                <b style="color:#3a3a3a; font-style:italic; letter-spacing:0.5px;">Simple way:</b>
-                                <span style="color:#666; font-style:italic;">Just enter the domain (including subdomains) of your deployed site.</span>
-                            </p>
-                            
-                            <p style="margin-left:1.2em; font-style:oblique; color:#888;">
-                                Examples: <code style="background:#f0f0f0; padding:2px 4px; border-radius:3px;">myapp.com</code>, 
-                                <code style="background:#f0f0f0; padding:2px 4px; border-radius:3px;">username.github.io</code>, 
-                                <code style="background:#f0f0f0; padding:2px 4px; border-radius:3px;">myapp.vercel.app</code>
-                            </p>
-                            
-                            <div style="margin-top: 16px; padding: 12px; font-size:1.2em;">
-                                <span style="font-variant:small-caps; font-weight:bold; color:rgb(255,179,0)">🕵️‍♂️ Find your referrer:</span>
-                                <ol style="margin: 8px 0 0 16px; color:#666;">
-                                    <li>Open browser developer tools (F12 or right-click → Inspect)</li>
-                                    <li>Go to the <b style="text-decoration:underline dashed #ffb300;">Network</b> tab</li>
-                                    <li>Make an API request from your app</li>
-                                    <li>Click the request and look for the <b style="font-style:italic; text-decoration:underline dotted #ff61d8;">Referrer</b> header</li>
-                                </ol>
+                    
+                    <details class="help-block">
+                        <summary>
+                            <span style="font-size:1.1em;">🤔</span>
+                            <b>How to find your domain</b>
+                        </summary>
+                        <div style="margin: 18px 0 10px 0;">
+                            <div style="margin-bottom: 16px; line-height: 1.7;">
+                                <p style="margin-bottom: 12px;">
+                                    <b style="color:#3a3a3a; font-style:italic; letter-spacing:0.5px;">Simple way:</b>
+                                    <span style="color:#666; font-style:italic;">Just enter the domain (including subdomains) of your deployed site.</span>
+                                </p>
+                                
+                                <p style="margin-left:1.2em; font-style:oblique; color:#888;">
+                                    Examples: <code style="background:#f0f0f0; padding:2px 4px; border-radius:3px;">myapp.com</code>, 
+                                    <code style="background:#f0f0f0; padding:2px 4px; border-radius:3px;">username.github.io</code>, 
+                                    <code style="background:#f0f0f0; padding:2px 4px; border-radius:3px;">myapp.vercel.app</code>
+                                </p>
+                                
+                                <div style="margin-top: 16px; padding: 12px; font-size:1.2em;">
+                                    <span style="font-variant:small-caps; font-weight:bold; color:rgb(255,179,0)">🕵️‍♂️ Find your referrer:</span>
+                                    <ol style="margin: 8px 0 0 16px; color:#666;">
+                                        <li>Open browser developer tools (F12 or right-click → Inspect)</li>
+                                        <li>Go to the <b style="text-decoration:underline dashed #ffb300;">Network</b> tab</li>
+                                        <li>Make an API request from your app</li>
+                                        <li>Click the request and look for the <b style="font-style:italic; text-decoration:underline dotted #ff61d8;">Referrer</b> header</li>
+                                    </ol>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </details>
+                    </details>
+                </div>
 
-                <div class="access-card">
+                <div class="section-content">
                     <h2>🔑 API Token</h2>
 
                     <p class="section-info" style="font-style:italic; color:#2d3748;">
@@ -198,26 +200,28 @@ export const generateHTML = () => `<!DOCTYPE html>
                         <span style="font-size:1.1em; margin-right:0.4em">✨</span> Use <b>.env</b> files to store tokens safely
                     </div>
 
-                    <div id="token-info" class="status"><em>Loading token information...</em></div>
-                    <button onclick="generateApiToken()">(Re)generate Token</button>
+                    <div style="display: flex; align-items: center; gap: 12px; margin-top: 15px;">
+                        <div id="token-info" style="flex: 1; font-family: monospace; font-size: 1.1em; color: #333; font-weight: 600;"><em>Loading token information...</em></div>
+                        <button onclick="generateApiToken()" class="action-button">(Re)generate Token</button>
+                    </div>
+                    
+                    <details class="help-block">
+                        <summary>🤔 What's a Token?</summary>
+                        <p>
+                            <span style="font-size:1.2em;">🎟️</span>
+                            <i>Your personal key </i>for  <i>access</i> to our Gen AI models.<br>
+                        </p>
+                        <p>
+                            <b><i>🔧 How to use:</i></b>
+                        </p>
+                        <code>🌐 URL: <b>https://text.pollinations.ai/openai?token=YOUR_TOKEN</b></code><br>
+                        <code>🛡️ Header: <b>Authorization: Bearer YOUR_TOKEN</b></code>
+                        <p>
+                            <span style="font-size:1.1em;">🤖</span>
+                            <b><i>Perfect for backend apps:</i></b> Use tokens for <b>Discord bots</b>, <b>AI chatbots</b>, and more!
+                        </p>
+                    </details>
                 </div>
-
-                <details class="help-block">
-                    <summary>🤔 What's a Token? </summary>
-                    <p>
-                        <span style="font-size:1.2em;">🎫</span>
-                        <i>Your personal key </i>for  <i>access</i> to our Gen AI models.<br>
-                    </p>
-                    <p>
-                        <b><i>🔧 How to use:</i></b>
-                    </p>
-                    <code>🌐 URL: <b>https://text.pollinations.ai/openai?token=YOUR_TOKEN</b></code><br>
-                    <code>🛡️ Header: <b>Authorization: Bearer YOUR_TOKEN</b></code>
-                    <p>
-                        <span style="font-size:1.1em;">🤖</span>
-                        <b><i>Perfect for backend apps:</i></b> Use tokens for <b>Discord bots</b>, <b>AI chatbots</b>, and more!
-                    </p>
-                </details>
             </div>
         </div>
     </div>

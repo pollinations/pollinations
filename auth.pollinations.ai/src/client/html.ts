@@ -176,20 +176,32 @@ export const generateHTML = () => `<!DOCTYPE html>
                     <p class="section-info" style="font-style:italic; color:#2d3748;">
                         <b>Generate</b> a <span style="color:#00796b; font-style:italic;"><b>secure</b></span>, <span style="color:#6d28d9;"><b>private</b></span> token for your <span style="font-style:italic;">backend</span> or <span style="font-style:italic;">server-side</span> integrations.
                     </p>
-                    <p>
-                        <span style="font-weight:700; color:#d7263d; font-style:italic;">🔒 <u>Keep it secret</u>:</span>
-                        <span style="color:#444; font-style:italic;"><b>Never</b> share your token <span style="color:#d7263d;">publicly</span>!</span>
-                    </p>
-                    <div style="margin: 12px 0; padding: 10px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; border-left: 4px solid #f39c12;">
-                        <span style="font-weight:bold; color:#d68910;">⚠️ Security Warning:</span>
-                        <span style="color:#6c5ce7; font-weight:bold;"> Never commit tokens to Git/GitHub!</span><br>
-                        <span style="color:#636e72; font-size:0.9em; font-style:italic;">Use environment variables (.env files) to store your tokens safely.</span>
+
+                    <span style="display:inline-block; font-weight:900; color:#d7263d; font-style:italic; font-size:1.18em; letter-spacing:0.7px; text-shadow:0 2px 10px #d7263d22; margin-bottom:0.3em; border-bottom:2px solid #d7263d; padding-bottom:2px;">
+                        🔒💯 Keep it lowkey fr!
+                    </span>
+                    <ul style="margin: 14px 0 12px 0; padding-left: 1.4em; font-size:1.09em; list-style:none;">
+                        <li style="margin-bottom:10px; display:flex; align-items:center;">
+                            <span style="font-size:1.1em; margin-right:0.6em; color:#f9ca24;">⚠️</span>
+                            <span style="font-style:italic; font-weight:bold; color:#f9ca24; background:black; padding:2px 6px; border-radius:4px;">
+                                Never share your token publicly anywhere ✋
+                            </span>
+                        </li>
+                        <li style="display:flex; align-items:center; margin-bottom:0;">
+                            <span style="font-size:1.1em; margin-right:0.6em; color:#f9ca24;">🚧</span>
+                            <span style="color:#f9ca24; font-weight:bold; background:black; padding:2px 6px; border-radius:4px;">
+                                Don't commit to Git/GitHub - that's a major L 📉
+                            </span>
+                        </li>
+                    </ul>
+                    <div style="color:red; font-size:0.98em; font-style:italic; margin-left:2.2em; margin-top:-4px;">
+                        <span style="font-size:1.1em; margin-right:0.4em">✨</span> Pro tip: Use <b>.env</b> files to store tokens safely
                     </div>
 
                     <div id="token-info" class="status"><em>Loading token information...</em></div>
                     <button onclick="generateApiToken()">(Re)generate Token</button>
-                                    
                 </div>
+
                 <details class="help-block">
                     <summary>🤔 What's a Token? </summary>
                     <p>

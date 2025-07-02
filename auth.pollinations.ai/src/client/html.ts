@@ -115,7 +115,7 @@ export const generateHTML = () => `<!DOCTYPE html>
                     <p><b><i>Want credit card payments instead?</i></b> 💳 
                     <br>
                     <br>
-                    <a href="https://github.com/pollinations/pollinations/issues/2202" target="_blank" class="cta-hole">Drop a vote!</a></p>
+                    <a href="https://github.com/pollinations/pollinations/issues/2202" target="_blank" class="cta-hole">Vote/discuss</a></p>
                 </div>
             </div>
         </div>
@@ -176,14 +176,11 @@ export const generateHTML = () => `<!DOCTYPE html>
                     <p class="section-info" style="font-style:italic; color:#2d3748;">
                         <b>Generate</b> a <span style="color:#00796b; font-style:italic;"><b>secure</b></span>, <span style="color:#6d28d9;"><b>private</b></span> token for your <span style="font-style:italic;">backend</span> or <span style="font-style:italic;">server-side</span> integrations.
                     </p>
-                    <p>
-                        <span style="font-weight:700; color:#d7263d; font-style:italic;">🔒 <u>Keep it secret</u>:</span>
-                        <span style="color:#444; font-style:italic;"><b>Never</b> share your token <span style="color:#d7263d;">publicly</span>!</span>
-                    </p>
-                    <div style="margin: 12px 0; padding: 10px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; border-left: 4px solid #f39c12;">
-                        <span style="font-weight:bold; color:#d68910;">⚠️ Security Warning:</span>
-                        <span style="color:#6c5ce7; font-weight:bold;"> Never commit tokens to Git/GitHub!</span><br>
-                        <span style="color:#636e72; font-size:0.9em; font-style:italic;">Use environment variables (.env files) to store your tokens safely.</span>
+                    <div style="margin: 12px 0; padding: 12px; background: #fff5f5; border: 2px solid #ff6b6b; border-radius: 8px; border-left: 4px solid #d63031;">
+                        <span style="font-weight:bold; color:#d63031; font-size:1.05em;">🔒 Keep your token secure!</span><br>
+                        <span style="color:#444; margin-top: 6px; display: block;">• <b>Never</b> share your token publicly <span style="color:#d63031;">anywhere</span></span>
+                        <span style="color:#444;">• <b>Don't</b> commit tokens to Git/GitHub repositories</span><br>
+                        <span style="color:#6c5ce7; font-size:0.95em; font-style:italic; margin-top: 4px; display: block;">✨ Use .env files to store tokens safely</span>
                     </div>
 
                     <div id="token-info" class="status"><em>Loading token information...</em></div>

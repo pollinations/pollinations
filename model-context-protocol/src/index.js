@@ -113,7 +113,7 @@ These tools enable creative content generation with Pollinations APIs. The assis
   }
 }
 
-// If this file is run directly, start the server
-if (import.meta.url === `file://${process.argv[1]}`) {
-  startMcpServer();
-}
+// // If this file is run directly, start the server
+// if (import.meta.url === `file://${process.argv[1]}`) {
+//   startMcpServer();
+// }

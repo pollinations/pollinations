@@ -6,13 +6,45 @@
 import { getClientIp } from './ip-utils.js';
 
 /**
+ * Apply model-specific caching rules to the URL
+ * @param {URL} url - The URL object to transform
+ * @returns {URL} - The transformed URL object
+ */
+function applyModelSpecificRules(url) {
+  // Get the model parameter
+  const model = url.searchParams.get('model');
+  
+  // Define model-specific rules that return new URL parameters
+  const modelRules = {
+    'gptimage': (currentUrl) => {
+      // For gptimage, always use the same seed for consistent caching
+      const newUrl = new URL(currentUrl);
+      newUrl.searchParams.set('seed', '42');
+      return newUrl;
+    },
+    // Add more model rules here as needed
+    // 'somemodel': (currentUrl) => { 
+    //   const newUrl = new URL(currentUrl);
+    //   // transformation logic
+    //   return newUrl;
+    // }
+  };
+  
+  // Apply the rule if it exists for this model, otherwise return original
+  return (model && modelRules[model]) ? modelRules[model](url) : url;
+}
+
+/**
  * Generate a consistent cache key from URL
  * @param {URL} url - The URL object
  * @returns {string} - The cache key
  */
 export function generateCacheKey(url) {
+  // Apply model-specific rules first
+  const transformedUrl = applyModelSpecificRules(url);
+  
   // Normalize the URL by sorting query parameters
-  const normalizedUrl = new URL(url);
+  const normalizedUrl = new URL(transformedUrl);
   const params = Array.from(normalizedUrl.searchParams.entries())
     .sort(([keyA], [keyB]) => keyA.localeCompare(keyB));
   
@@ -20,7 +52,8 @@ export function generateCacheKey(url) {
   normalizedUrl.search = '';
   params.forEach(([key, value]) => {
     // Skip certain parameters that shouldn't affect caching
-    if (!['nofeed', 'no-cache'].includes(key)) {
+    // Authentication and referrer parameters should not be part of cache key
+    if (!['nofeed', 'no-cache', 'token', 'referrer', 'referer'].includes(key)) {
       normalizedUrl.searchParams.append(key, value);
     }
   });
@@ -167,7 +200,7 @@ export async function cacheResponse(cacheKey, response, env, originalUrl, reques
       },
       customMetadata: {
         // Essential metadata
-        originalUrl: originalUrl || '',
+        originalUrl: (originalUrl || '').substring(0, 2048),
         cachedAt: new Date().toISOString(),
         clientIp: clientIp,
         

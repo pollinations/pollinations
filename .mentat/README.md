@@ -4,17 +4,11 @@
 
 When handling project submission issues:
 
-1. Add new projects to the appropriate section in:
-   - README.md under the "Projects Using Pollinations.AI" section
-   - pollinations.ai/src/config/projectList.js in the corresponding category array
-   - add a UTF8 icon highlighting them as new additions
+1. Add new projects to the appropriate category file in:
+   - pollinations.ai/src/config/projects/[category].js (e.g., creative.js, vibeCoding.js, etc.)
+   - DO NOT manually edit the README.md file directly
 
-2. The "🆕" (NEW) emoji:
-   - Add this emoji to mark new project submissions
-   - The emoji will be automatically removed after 15 days from the submission date
-   - Projects without a submission date will not have the NEW emoji
-
-3. Project Entry Format:
+2. Project Entry Format:
    ```javascript
    {
      name: "Project Name",
@@ -29,19 +23,19 @@ When handling project submission issues:
    }
    ```
 
-4. Project Ordering Rules:
+3. Project Ordering Rules:
    - In the README.md file, projects should be ordered within their categories:
      - First by the `order` parameter (lower values first: 1, 2, 3, 4, 5)
      - Then by GitHub star count (higher star counts first)
      - For projects with the same order and no stars, use the submission date if there is one, if not keep the order as it is.
    - In the website rendering, the projectList.js order will be dynamically sorted using the same criteria so the actual order in the projectList.js file should not be changed
 
-5. Hiding Broken Projects:
+4. Hiding Broken Projects:
    - Use the `hidden: true` parameter to mark projects that are broken or no longer maintained
    - Projects with this flag will not be displayed in the README.md project listings
    - They will still remain in the projectList.js as the source of truth
 
-6. GitHub Star Counts:
+5. GitHub Star Counts:
    - For projects with GitHub repositories, add their star count as a `stars` property:
      ```javascript
      {
@@ -61,23 +55,49 @@ When handling project submission issues:
      ```
    - The star count will be displayed on the project page next to the GitHub link
 
-7. Categories:
-   - LLM Integrations
-   - Creative & Interactive Applications
-   - Tools & Interfaces
-   - Social Bots
-   - SDK & Libraries
-   - Tutorials
+6. Categories (as of June 2025):
+   - Vibe Coding ✨ (`vibeCoding.js`): No-code / describe-to-code playgrounds and builders
+   - Creative 🎨 (`creative.js`): Turn prompts into images, video, music, design, slides
+   - Games 🎲 (`games.js`): AI-powered play, interactive fiction, puzzle & agent worlds
+   - Hack-&-Build 🛠️ (`hackAndBuild.js`): SDKs, integration libs, extensions, dashboards, MCP servers
+   - Chat 💬 (`chat.js`): Standalone chat UIs / multi-model playgrounds
+   - Social Bots 🤖 (`socialBots.js`): Discord / Telegram / WhatsApp / Roblox bots & NPCs
+   - Learn 📚 (`learn.js`): Tutorials, guides, style books & educational demos
+   - (Tracking file: `tracking/toProcess.md` for workflow management)
 
-8. Add appropriate UTF-8 icons to titles where relevant (🤖 for bots, 🎨 for creative apps, etc.)
+## Classification Guidelines (2025 Update)
+- Each project must be assigned to only **one** category file (no duplicates).
+- Category assignment is based on actual functionality and metadata, not just the source JSON category.
+- When a project fits multiple categories, prefer less-populated categories (games, hackAndBuild, learn, socialBots, vibeCoding) to maintain balance.
+- Educational/interactive learning tools go to `learn.js`.
+- SDKs, APIs, and toolkits go to `hackAndBuild.js`.
+- Creative tools (image, text, audio generation, etc.) go to `creative.js`.
+- Chatbots and conversational agents go to `chat.js`.
+- Games and interactive fiction go to `games.js`.
+- Social platform bots go to `socialBots.js`.
+- No placeholder entries remain in category files; all projects are tracked in `toProcess.md` until categorized.
+- After categorization, update `toProcess.md` to reflect the assignment (e.g., "added to creative.js").
+- Use project metadata from `accumulated-projects.json` as the source of truth.
 
-9.  For projects in non-English languages:
+## Current Workflow Summary
+1. Review uncategorized projects listed in `tracking/toProcess.md`.
+2. For each, inspect metadata in `accumulated-projects.json`.
+3. Assign to the most appropriate category file, following the above rules.
+4. Update both the category file and `toProcess.md` incrementally.
+5. Avoid duplicates and maintain category balance.
+6. If a project lacks sufficient detail, remove or defer it from the tracking list.
+7. All decisions and reassignments should be consistent and documented.
+8. This workflow ensures a clean, organized, and up-to-date project classification for Pollinations.AI.
+
+7. Add appropriate UTF-8 icons to titles where relevant (🤖 for bots, 🎨 for creative apps, etc.)
+
+8. For projects in non-English languages:
    - Add a country flag emoji to the project name (e.g., 🇨🇳 for Chinese, 🇪🇸 for Spanish)
    - Include the "language" field in the project entry with the appropriate language code
    - Add an English translation of the description in parentheses when possible
    - This helps users easily identify and filter projects by language
 
-10. When creating a commit for project submissions, always add attribution to the issue creator using a Co-authored-by line in the commit message:
+9. When creating a commit for project submissions, always add attribution to the issue creator using a Co-authored-by line in the commit message:
     ```
     Add [Project Name] to project list
 

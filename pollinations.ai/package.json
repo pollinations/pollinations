@@ -2,6 +2,7 @@
   "name": "pollinations.ai",
   "homepage": "https://pollinations.ai",
   "version": "0.4.8",
+  "type": "module",
   "private": false,
   "dependencies": {
     "@babel/eslint-parser": "^7.26.5",
@@ -68,7 +69,8 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "netlify": "netlify dev",
-    "predeploy": "npm run build"
+    "predeploy": "npm run build",
+    "update-projects": "cd .. && node pollinator-agent/generate-project-table.js --update-readme"
   },
   "browserslist": {
     "production": [

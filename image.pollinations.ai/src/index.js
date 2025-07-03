@@ -1,29 +1,37 @@
 import urldecode from 'urldecode';
 import http from 'http';
 import { parse } from 'url';
-import PQueue from 'p-queue';
 import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
 import { createAndReturnImageCached } from './createAndReturnImages.js';
 import { makeParamsSafe } from './makeParamsSafe.js';
-import { cacheImage } from './cacheGeneratedImages.js';
+import { cacheImagePromise } from './cacheGeneratedImages.js';
 import { normalizeAndTranslatePrompt } from './normalizeAndTranslatePrompt.js';
 import { countJobs } from './generalImageQueue.js';
-import { getIp } from './getIp.js';
 import sleep from 'await-sleep';
 import { MODELS } from './models.js';
 import { countFluxJobs } from './availableServers.js';
 import { handleRegisterEndpoint } from './availableServers.js';
 import debug from 'debug';
 import { createProgressTracker } from './progressBar.js';
-import { extractToken, isValidToken } from './config/tokens.js';
+import fs from 'fs';
+import path from 'path';
+
+// Import shared utilities
+import { enqueue } from '../../shared/ipQueue.js';
+import { isValidToken, handleAuthentication, addAuthDebugHeaders, createAuthDebugResponse } from '../../shared/auth-utils.js';
+import { extractToken, getIp } from '../../shared/extractFromRequest.js';
+
+// Queue configuration for image service
+const QUEUE_CONFIG = {
+  interval: 10000, // 10 seconds between requests per IP
+  cap: 1          // Max 1 concurrent request per IP
+};
 
 const logError = debug('pollinations:error');
 const logApi = debug('pollinations:api');
 const logAuth = debug('pollinations:auth');
 
 export let currentJobs = [];
-
-const ipQueue = {};
 
 // In-memory store for tracking IP violations
 const ipViolations = new Map();
@@ -49,6 +57,7 @@ const setCORSHeaders = (res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Expose-Headers', 'X-Auth-Status, X-Auth-Reason, X-Debug-Token, X-Debug-Token-Source, X-Debug-Referrer, X-Debug-Legacy-Token-Match, X-Debug-Allowlist-Match, X-Debug-User-Id');
 }
 
 /** 
@@ -85,7 +94,7 @@ const preMiddleware = async function (pathname, req, res) {
  * @param {Object} params - The parameters object.
  * @returns {Promise<void>}
  */
-const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer, progress, requestId }) => {
+const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer, progress, requestId, authResult }) => {
   const ip = getIp(req);
   
   // Check if IP is blocked
@@ -117,7 +126,11 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     progress.updateBar(requestId, 40, 'Server', 'Selecting optimal server...');
     progress.updateBar(requestId, 50, 'Generation', 'Preparing...');
     
-    const { buffer, ...maturity } = await createAndReturnImageCached(generationPrompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId, wasTransformedForBadDomain);
+    // Create user info object for passing to generation functions
+    const userInfo = authResult;
+    
+    // Pass the complete user info object instead of individual properties
+    const { buffer, ...maturity } = await createAndReturnImageCached(generationPrompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId, wasTransformedForBadDomain, userInfo);
 
     progress.updateBar(requestId, 50, 'Generation', 'Starting generation');
 
@@ -238,8 +251,13 @@ const checkCacheAndGenerate = async (req, res) => {
   let timingInfo = [];  // Moved outside try block
   
   try {
+    // Call authentication ONCE and reuse the result
+    const authResult = await handleAuthentication(req, requestId, logAuth);
+    const isAuthenticated = authResult.authenticated;
+    const hasValidToken = authResult.tokenAuth;
+    
     // Cache the generated image
-    const bufferAndMaturity = await cacheImage(originalPrompt, safeParams, async () => {
+    const bufferAndMaturity = await cacheImagePromise(originalPrompt, safeParams, async () => {
       const ip = getIp(req);
 
       progress.updateBar(requestId, 10, 'Queueing', 'Request queued');
@@ -249,6 +267,7 @@ const checkCacheAndGenerate = async (req, res) => {
       //   prompt: originalPrompt, 
       //   ip: getIp(req), status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer, token: extractToken(req) && extractToken(req).slice(0, 2) + "..." });
 
+      // Pass authentication status to generateImage (hasReferrer will be checked there for gptimage)
       const generateImage = async () => {
         timingInfo.push({ step: 'Start generating job', timestamp: Date.now() });
         const result = await imageGen({ 
@@ -258,69 +277,64 @@ const checkCacheAndGenerate = async (req, res) => {
           safeParams, 
           referrer,
           progress,
-          requestId 
+          requestId,
+          authResult
         });
         timingInfo.push({ step: 'End generating job', timestamp: Date.now() });
         return result;
       };
 
-      // Check for valid token to bypass queue
-      const token = extractToken(req);
-      const hasValidToken = isValidToken(token);
+      // Determine queue configuration based on token
+      let queueConfig;
       if (hasValidToken) {
-        logAuth('Queue bypass granted for token:', token);
-        progress.updateBar(requestId, 20, 'Priority', 'Token authenticated');
-        
-        // Skip queue for valid tokens
-        timingInfo.push({ step: 'Token authenticated - bypassing queue', timestamp: Date.now() });
-        return generateImage();
-      }
-
-      let queueExisted = false;
-      if (!ipQueue[ip]) {
-        ipQueue[ip] = new PQueue({ concurrency: 1, interval: 10000, intervalCap:1 });
+        // Token removes delay between requests (no interval)
+        queueConfig = { interval: 0, cap: 1 };
+        logAuth('Token authenticated - queue with no delay');
+        progress.updateBar(requestId, 20, 'Authenticated', 'Token verified');
       } else {
-        queueExisted = true;
+        // Use default queue config with interval
+        queueConfig = QUEUE_CONFIG;
+        logAuth('Standard queue with delay (no token)');
       }
 
-      progress.updateBar(requestId, 20, 'Queueing', 'Checking cache');
-
-      const result = await ipQueue[ip].add(async () => {
-        if (queueExisted && countJobs() > 2) {
-          const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
-          const queuePosition = Math.min(40, queueSize);
-          const progressPercent = 30 + Math.floor((40 - queuePosition) / 40 * 20); // Maps position 40->30%, 0->50%
-
-          progress.updateBar(requestId, progressPercent, 'Queueing', `Queue position: ${queuePosition}`);
-          logApi("queueExisted", queueExisted, "for ip", ip, " sleeping a little", queueSize);
-          
-          if (queueSize >= 8) {
-            progress.errorBar(requestId, 'Queue full');
-            progress.stop();
-            throw new Error("queue full");
-          }
-
-          progress.setQueued(queueSize);
-          await sleep(100);
-        }
-        
+      // Use the shared queue utility - everyone goes through queue
+      const result = await enqueue(req, async () => {
+        // Update progress and process the image
         progress.setProcessing();
         return generateImage();
-      });
-
-      // if the queue is empty and none pending or processing we can delete the queue
-      if (ipQueue[ip].size === 0 && ipQueue[ip].pending === 0) {
-        delete ipQueue[ip];
-      }
+      }, { ...queueConfig, forceQueue: true, maxQueueSize: 5 });
 
       return result;
     });
 
-
-    res.writeHead(200, {
+    // Reuse the authentication result instead of calling again
+    
+    // Add debug headers for authentication information
+    const headers = {
       'Content-Type': 'image/jpeg',
       'Cache-Control': 'public, max-age=31536000, immutable',
-    });
+      'X-Auth-Status': isAuthenticated ? 'authenticated' : 'unauthenticated'
+    };
+    
+    // Add Content-Disposition header with sanitized filename
+    if (originalPrompt) {
+      // Create a filename from the prompt, limiting length and sanitizing
+      const baseFilename = originalPrompt
+        .slice(0, 100) // Limit to 100 characters
+        .replace(/[^a-z0-9\s-]/gi, '') // Remove special characters except spaces and hyphens
+        .replace(/\s+/g, '-') // Replace spaces with hyphens
+        .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+        .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
+        .toLowerCase();
+      
+      const filename = (baseFilename || 'generated-image') + '.jpg';
+      headers['Content-Disposition'] = `inline; filename="${filename}"`;
+    }
+    
+    // Add authentication debug headers using shared utility
+    addAuthDebugHeaders(headers, authResult.debugInfo);
+    
+    res.writeHead(200, headers);
     res.write(bufferAndMaturity.buffer);
     res.end();
 
@@ -331,19 +345,53 @@ const checkCacheAndGenerate = async (req, res) => {
     progress.errorBar(requestId, error.message || 'Internal Server Error');
     progress.stop();
     
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      error: 'Internal Server Error',
-      message: error.message || 'An error occurred while processing your request',
-      details: error.details || {},
-      timingInfo,
+    // Determine the appropriate status code (default to 500 if not specified)
+    const statusCode = error.status || 500;
+    const errorType = statusCode === 401 ? 'Unauthorized' : 
+                     statusCode === 403 ? 'Forbidden' : 
+                     statusCode === 429 ? 'Too Many Requests' : 'Internal Server Error';
+    
+    // Extract debug info from error if available
+    const errorDebugInfo = error.details?.debugInfo;
+    
+    // Add debug headers for authentication information even in error responses
+    const errorHeaders = {
+      'Content-Type': 'application/json',
+      'X-Error-Type': errorType
+    };
+    
+    addAuthDebugHeaders(errorHeaders, errorDebugInfo);
+    
+    // Log the error response using debug
+    logError('Error response:', {
+      requestId,
+      statusCode,
+      errorType,
+      message: error.message
+    });
+    
+    res.writeHead(statusCode, errorHeaders);
+    // Create a response object with error information
+    const responseObj = {
+      error: errorType,
+      message: error.message,
+      details: error.details,
+      debug: createAuthDebugResponse(errorDebugInfo),
+      timingInfo: relativeTiming(timingInfo),
       requestId,
       requestParameters: {
         prompt: originalPrompt,
         ...safeParams,
         referrer
       }
-    }));
+    };
+    
+    // Add queue info for 429 errors
+    if (statusCode === 429 && error.queueInfo) {
+      responseObj.queueInfo = error.queueInfo;
+    }
+    
+    res.end(JSON.stringify(responseObj));
   }
 };
 

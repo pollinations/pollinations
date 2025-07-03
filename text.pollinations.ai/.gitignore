@@ -1,3 +1,2 @@
-credentials/
-.env
-.wrangler/
+.tinyb
+observability/fixtures/*.ndjson

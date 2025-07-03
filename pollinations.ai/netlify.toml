@@ -13,6 +13,12 @@
   status = 200
   force = true
 
+[[redirects]]
+  from = "/redirect-nexad/*"
+  to = "/.netlify/functions/redirect-nexad/:splat"
+  status = 200
+  force = true
+
 # Ensure Netlify preserves the React router paths
 [[redirects]]
   from = "/*"

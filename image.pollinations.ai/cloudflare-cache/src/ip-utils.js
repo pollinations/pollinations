@@ -1,15 +1,29 @@
 /**
- * Utility function for getting client IP from request headers
- * Following the thin proxy design principle - keeping logic simple and minimal
+ * IP utility functions for Cloudflare Workers
  */
 
 /**
- * Get client IP address from request headers
- * @param {Request} request - The request object
- * @returns {string} - The client IP address or 'unknown'
+ * Get the client IP address from the request
+ * @param {Request} req - The request object
+ * @returns {string} The client IP address or 'unknown'
  */
-export function getClientIp(request) {
-  return request?.headers?.get('cf-connecting-ip') || 
-         request?.headers?.get('x-forwarded-for')?.split(',')[0] || 
-         'unknown';
+export function getClientIp(req) {
+  // Handle Cloudflare Workers Request
+  if (req.headers && typeof req.headers.get === 'function') {
+    return req.headers.get('cf-connecting-ip') ||
+      req.headers.get('x-real-ip') ||
+      req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+      'unknown';
+  }
+
+  // Handle Express/Node.js request
+  if (req.headers && typeof req.headers === 'object') {
+    return req.headers['cf-connecting-ip'] ||
+      req.headers['x-real-ip'] ||
+      (req.headers['x-forwarded-for'] || '').split(',')[0].trim() ||
+      req.connection?.remoteAddress ||
+      'unknown';
+  }
+
+  return 'unknown';
 }

@@ -187,11 +187,10 @@ const matchesFilters = (data, options = {}) => {
     // regardless of other filters
     if (!options.roblox) {
         // Check referrer, model name, and system prompt for Roblox
-        const isRobloxReferrer = referrer && referrer.toLowerCase().includes('roblox');
         const isRobloxModel = parameters?.model && 
             (parameters.model.toLowerCase().includes('roblox') || parameters.model === 'roblox-rp');
         
-        if (isRobloxReferrer || isRobloxModel) {
+        if (isRobloxModel) {
             return false;
         }
     }
@@ -348,7 +347,6 @@ const startFeedListener = async (options = {}) => {
                         metadata: {
                             referrer: parameters?.referrer || 'unknown',
                             model: parameters?.model || 'unknown',
-                            isRobloxReferrer: parameters?.referrer?.toLowerCase().includes('roblox') || false,
                             isImagePollinationsReferrer: parameters?.isImagePollinationsReferrer || false
                         },
                         stats: {

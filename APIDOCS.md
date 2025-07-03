@@ -21,6 +21,12 @@ Click the links below to see examples in your browser:
 - [Pollinations.AI API Documentation](#pollinationsai-api-documentation)
   - [Quickstart](#quickstart)
   - [Summary / Navigation](#summary--navigation)
+  - [Authentication 🔑](#authentication-)
+    - [Getting Started](#getting-started)
+    - [Methods](#methods)
+      - [Referrer](#referrer)
+      - [Token](#token)
+    - [Tiers](#tiers)
   - [Generate Image API 🖼️](#generate-image-api-️)
     - [Text-To-Image (GET) 🖌️](#text-to-image-get-️)
     - [List Available Image Models 📜](#list-available-image-models-)
@@ -40,9 +46,71 @@ Click the links below to see examples in your browser:
     - [Image Feed 🖼️📈](#image-feed-️)
     - [Text Feed 📝📈](#text-feed-)
   - [Referrer 🔗](#referrer-)
+    - [How to Use Referrers](#how-to-use-referrers)
     - [API Update (starting **2025.03.31**) 📅](#api-update-starting-20250331-)
     - [Special Bee ✅🐝🍯](#special-bee-)
   - [License 📜](#license-)
+
+---
+
+## Authentication 🔑
+
+Pollinations.AI provides flexible authentication options designed for different types of applications.
+
+### Getting Started
+
+**Visit [auth.pollinations.ai](https://auth.pollinations.ai) to:**
+- Set up and register your application's referrer
+- Create API tokens for backend applications
+- Manage your authentication settings
+
+
+> **Security Best Practice**: Never expose API tokens in frontend code! 
+> Frontend web applications should rely on referrer-based authentication.
+
+###  Methods
+
+#### Referrer
+
+For **frontend web applications** that call our APIs directly from the browser, a valid referrer is sufficient:
+
+- Browsers automatically send the `Referer` header
+- Alternatively, add `?referrer=your-app-identifier` to API requests
+- Registered referrers get higher rate limits and priority access
+- **No token needed** - keeping your frontend secure
+
+#### Token
+
+For **backend services, scripts, and server applications**, tokens provide the highest priority access. Tokens can be provided using any of these methods:
+
+| Method | Description | Example |
+| :--- | :--- | :--- |
+| Authorization Header | Standard Bearer token approach (recommended) | `Authorization: Bearer YOUR_TOKEN` |
+| Query Parameter | Token as URL parameter | `?token=YOUR_TOKEN` |
+| Request Body | Token in POST request body | `{ "token": "YOUR_TOKEN" }` |
+
+**Bearer Authentication**
+
+The Bearer authentication scheme is the recommended approach for backend applications, especially when integrating with our OpenAI-compatible endpoints:
+
+```http
+GET /your-endpoint HTTP/1.1
+Host: api.pollinations.ai
+Authorization: Bearer YOUR_TOKEN
+```
+
+### Tiers
+
+| Tier | Rate Limit | Model Pack |
+|------|-------------|--------|
+| anonymous | 15 seconds | Limited |
+| **Seed** | 5 seconds | Standard |
+| **Flower** | 3 seconds | Advanced |
+| **Nectar** | None | Advanced |
+
+**1.** Get access to **Seed** tier : ***[auth.pollinations.ai](https://auth.pollinations.ai)***
+
+**2.** Get tier **upgrade** : ***[Special Bee request](https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml)***
 
 ---
 
@@ -67,6 +135,7 @@ Generates an image based on a text description.
 | `private`  | No       | Set to `true` to prevent the image from appearing in the public feed.              | `false` |
 | `enhance`  | No       | Set to `true` to enhance the prompt using an LLM for more detail.                  | `false` |
 | `safe`     | No       | Set to `true` for strict NSFW filtering (throws error if detected).                | `false` |
+| `transparent` | No    | Set to `true` to generate images with transparent backgrounds (gptimage model only). | `false` |
 | `referrer` | No\*     | Referrer URL/Identifier. See [Referrer Section](#referrer-).                       |         |
 
 **Return:** Image file (typically JPEG) 🖼️
@@ -84,6 +153,9 @@ curl -o sunset.jpg "https://image.pollinations.ai/prompt/A%20beautiful%20sunset%
 
 # With parameters
 curl -o sunset_large.jpg "https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?width=1280&height=720&seed=42&model=flux"
+
+# With transparent background (gptimage model only)
+curl -o logo_transparent.png "https://image.pollinations.ai/prompt/A%20company%20logo%20on%20transparent%20background?model=gptimage&transparent=true"
 ```
 
 **Python (`requests`):**
@@ -99,6 +171,7 @@ params = {
     "seed": 42,
     "model": "flux",
     # "nologo": "true", # Optional
+    # "transparent": "true", # Optional - generates transparent background (gptimage model only)
     # "referrer": "MyPythonApp" # Optional
 }
 encoded_prompt = urllib.parse.quote(prompt)
@@ -116,54 +189,6 @@ except requests.exceptions.RequestException as e:
     print(f"Error fetching image: {e}")
     # Consider checking response.text for error messages from the API
     # if response is not None: print(response.text)
-```
-
-**JavaScript (Browser `fetch`):**
-
-```javascript
-async function fetchImage(prompt, params = {}) {
-  const defaultParams = {
-    // width: 1024, height: 1024 // Defaults are handled by API
-  };
-  const queryParams = new URLSearchParams({ ...defaultParams, ...params });
-  const encodedPrompt = encodeURIComponent(prompt);
-  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?${queryParams.toString()}`;
-
-  console.log("Fetching image from:", url);
-
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      const errorText = await response.text(); // Get error details if possible
-      throw new Error(
-        `HTTP error! status: ${response.status}, message: ${errorText}`
-      );
-    }
-    const imageBlob = await response.blob();
-    const imageUrl = URL.createObjectURL(imageBlob);
-
-    // Example: Display the image
-    const img = document.createElement("img");
-    img.src = imageUrl;
-    img.alt = prompt;
-    document.body.appendChild(img); // Append to your desired element
-    console.log("Image fetched and displayed.");
-  } catch (error) {
-    console.error("Error fetching image:", error);
-  }
-}
-
-// --- Usage ---
-fetchImage("A beautiful sunset over the ocean", {
-  width: 1280,
-  height: 720,
-  seed: 42,
-  model: "flux",
-  // nologo: true // Optional
-});
-
-// Just prompt
-// fetchImage("Cyberpunk city raining");
 ```
 
 </details>
@@ -205,32 +230,6 @@ except requests.exceptions.RequestException as e:
     print(f"Error fetching models: {e}")
 ```
 
-**JavaScript (Browser `fetch`):**
-
-```javascript
-async function listImageModels() {
-  const url = "https://image.pollinations.ai/models";
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const models = await response.json();
-    console.log("Available Image Models:", models);
-    // Example: Populate a dropdown
-    // const selectElement = document.getElementById('model-select');
-    // models.forEach(model => {
-    //   const option = new Option(model, model);
-    //   selectElement.add(option);
-    // });
-  } catch (error) {
-    console.error("Error fetching image models:", error);
-  }
-}
-
-listImageModels();
-```
-
 </details>
 
 ---
@@ -245,16 +244,20 @@ Generates text based on a simple prompt.
 
 **Parameters:**
 
-| Parameter  | Required | Description                                                                                | Options                   | Default  |
-| :--------- | :------- | :----------------------------------------------------------------------------------------- | :------------------------ | :------- |
-| `prompt`   | Yes      | Text prompt for the AI. Should be URL-encoded.                                             |                           |          |
-| `model`    | No       | Model for generation. See [Available Text Models](#list-available-text-models-).           | `openai`, `mistral`, etc. | `openai` |
-| `seed`     | No       | Seed for reproducible results.                                                             |                           |          |
-| `json`     | No       | Set to `true` to receive the response formatted as a JSON string.                          | `true` / `false`          | `false`  |
-| `system`   | No       | System prompt to guide AI behavior. Should be URL-encoded.                                 |                           |          |
-| `stream`   | No       | Set to `true` for streaming responses via Server-Sent Events (SSE). Handle `data:` chunks. | `true` / `false`          | `false`  |
-| `private`  | No       | Set to `true` to prevent the response from appearing in the public feed.                   | `true` / `false`          | `false`  |
-| `referrer` | No\*     | Referrer URL/Identifier. See [Referrer Section](#referrer-).                               |                           |          |
+| Parameter            | Required | Description                                                                                | Options                   | Default  |
+| :------------------- | :------- | :----------------------------------------------------------------------------------------- | :------------------------ | :------- |
+| `prompt`             | Yes      | Text prompt for the AI. Should be URL-encoded.                                             |                           |          |
+| `model`              | No       | Model for generation. See [Available Text Models](#list-available-text-models-).           | `openai`, `mistral`, etc. | `openai` |
+| `seed`               | No       | Seed for reproducible results.                                                             |                           |          |
+| `temperature`        | No       | Controls randomness in output. Higher values make output more random.                      | `0.0` to `3.0`            |          |
+| `top_p`              | No       | Nucleus sampling parameter. Controls diversity via cumulative probability.                 | `0.0` to `1.0`            |          |
+| `presence_penalty`   | No       | Penalizes tokens based on their presence in the text so far.                              | `-2.0` to `2.0`           |          |
+| `frequency_penalty`  | No       | Penalizes tokens based on their frequency in the text so far.                             | `-2.0` to `2.0`           |          |
+| `json`               | No       | Set to `true` to receive the response formatted as a JSON string.                          | `true` / `false`          | `false`  |
+| `system`             | No       | System prompt to guide AI behavior. Should be URL-encoded.                                 |                           |          |
+| `stream`             | No       | Set to `true` for streaming responses via Server-Sent Events (SSE). Handle `data:` chunks. | `true` / `false`          | `false`  |
+| `private`            | No       | Set to `true` to prevent the response from appearing in the public feed.                   | `true` / `false`          | `false`  |
+| `referrer`           | No\*     | Referrer URL/Identifier. See [Referrer Section](#referrer-).                               |                           |          |
 
 **Return:** Generated text (plain text or JSON string if `json=true`) 📝. If `stream=true`, returns an SSE stream.
 
@@ -322,54 +325,7 @@ try:
 
 except requests.exceptions.RequestException as e:
     print(f"Error fetching text: {e}")
-```
-
-**JavaScript (Browser `fetch`):**
-
-```javascript
-async function fetchText(prompt, params = {}) {
-  const queryParams = new URLSearchParams(params);
-  const encodedPrompt = encodeURIComponent(prompt);
-  const url = `https://text.pollinations.ai/${encodedPrompt}?${queryParams.toString()}`;
-
-  console.log("Fetching text from:", url);
-
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const responseText = await response.text();
-
-    if (params.json === "true" || params.json === true) {
-      try {
-        const data = JSON.parse(responseText);
-        console.log("Response (JSON parsed):", data);
-        // Process JSON data
-      } catch (e) {
-        console.error("Failed to parse JSON response:", e);
-        console.log("Raw response:", responseText);
-      }
-    } else {
-      console.log("Response (Plain Text):", responseText);
-      // Display plain text
-      // document.getElementById('output').textContent = responseText;
-    }
-  } catch (error) {
-    console.error("Error fetching text:", error);
-  }
-}
-
-// --- Usage ---
-fetchText("What are the main benefits of exercise?");
-
-fetchText("List 3 popular dog breeds", {
-  model: "mistral",
-  json: "true", // Get result as JSON string
-});
-
-// Note: For stream=true, see dedicated streaming example under POST section
+    # if response is not None: print(response.text)
 ```
 
 </details>
@@ -413,12 +369,16 @@ Follows the OpenAI Chat Completions API format for inputs where applicable.
 | `messages`                     | An array of message objects (role: `system`, `user`, `assistant`). Used for Chat, Vision, STT.                                                                   | Required for most tasks.                                                                                              |
 | `model`                        | The model identifier. See [Available Text Models](#list-available-text-models-).                                                                                 | Required. e.g., `openai` (Chat/Vision), `openai-large` (Vision), `claude-hybridspace` (Vision), `openai-audio` (STT). |
 | `seed`                         | Seed for reproducible results (Text Generation).                                                                                                                 | Optional.                                                                                                             |
+| `temperature`                  | Controls randomness in output. Higher values make output more random (Text Generation).                                                                          | Optional. Range: `0.0` to `3.0`.                                                                                      |
+| `top_p`                        | Nucleus sampling parameter. Controls diversity via cumulative probability (Text Generation).                                                                     | Optional. Range: `0.0` to `1.0`.                                                                                      |
+| `presence_penalty`             | Penalizes tokens based on their presence in the text so far (Text Generation).                                                                                   | Optional. Range: `-2.0` to `2.0`.                                                                                     |
+| `frequency_penalty`            | Penalizes tokens based on their frequency in the text so far (Text Generation).                                                                                  | Optional. Range: `-2.0` to `2.0`.                                                                                     |
 | `stream`                       | If `true`, sends partial message deltas using SSE (Text Generation). Process chunks as per OpenAI streaming docs.                                                | Optional, default `false`.                                                                                            |
 | `jsonMode` / `response_format` | Set `response_format={ "type": "json_object" }` to constrain text output to valid JSON. `jsonMode: true` is a legacy alias.                                      | Optional. Check model compatibility.                                                                                  |
 | `tools`                        | A list of tools (functions) the model may call (Text Generation). See [OpenAI Function Calling Guide](https://platform.openai.com/docs/guides/function-calling). | Optional.                                                                                                             |
 | `tool_choice`                  | Controls how the model uses tools.                                                                                                                               | Optional.                                                                                                             |
 | `private`                      | Set to `true` to prevent the response from appearing in the public feed.                                                                                         | Optional, default `false`.                                                                                            |
-| `reasoning_effort`             | Sets reasoning effort for `o3-mini` model (Text Generation).                                                                                                     | Optional. Options: `low`, `medium`, `high`.                                                                           |
+| `referrer`                     | Referrer URL/Identifier. See [Referrer Section](#referrer-).                                                                                                     | Optional.                                                                                                             |
 
 <details>
 <summary><strong>Code Examples:</strong> Basic Chat Completion (POST)</summary>
@@ -430,10 +390,7 @@ curl https://text.pollinations.ai/openai \
   -H "Content-Type: application/json" \
   -d '{
     "model": "openai",
-    "messages": [
-      {"role": "system", "content": "You are a helpful assistant."},
-      {"role": "user", "content": "What is the weather like in Paris today?"}
-    ],
+    "messages": [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "What is the weather like in Paris today?"}],
     "seed": 42
   }'
 ```
@@ -468,54 +425,6 @@ try:
 except requests.exceptions.RequestException as e:
     print(f"Error making POST request: {e}")
     # if response is not None: print(response.text)
-```
-
-**JavaScript (Browser `fetch`):**
-
-```javascript
-async function postChatCompletion(messages, options = {}) {
-  const url = "https://text.pollinations.ai/openai";
-  const payload = {
-    model: options.model || "openai",
-    messages: messages,
-    seed: options.seed,
-    private: options.private,
-    referrer: options.referrer || "WebApp", // Optional
-  };
-
-  console.log("Sending POST request to:", url, payload);
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `HTTP error! status: ${response.status}, message: ${errorText}`
-      );
-    }
-
-    const result = await response.json();
-    console.log("Assistant:", result.choices[0].message.content);
-    // console.log("Full response:", result);
-    return result; // Return the full response object
-  } catch (error) {
-    console.error("Error posting chat completion:", error);
-  }
-}
-
-// --- Usage ---
-const chatMessages = [
-  { role: "system", content: "You are a travel agent." },
-  { role: "user", content: "Suggest a 3-day itinerary for Rome." },
-];
-postChatCompletion(chatMessages, { model: "mistral", seed: 500 });
 ```
 
 </details>
@@ -590,94 +499,6 @@ except Exception as e:
 
 ```
 
-**JavaScript (Browser `fetch` with `ReadableStream`):**
-
-```javascript
-async function streamChatCompletion(messages, options = {}, onChunkReceived) {
-  const url = "https://text.pollinations.ai/openai";
-  const payload = {
-    model: options.model || "openai",
-    messages: messages,
-    seed: options.seed,
-    stream: true, // Enable streaming
-  };
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "text/event-stream",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `HTTP error! status: ${response.status}, message: ${errorText}`
-      );
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    console.log("Starting stream...");
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        console.log("Stream finished.");
-        break;
-      }
-
-      buffer += decoder.decode(value, { stream: true });
-
-      // Process buffer line by line (SSE format: data: {...}\n\n)
-      const lines = buffer.split("\n\n");
-      buffer = lines.pop(); // Keep the potentially incomplete last line
-
-      for (const line of lines) {
-        if (line.startsWith("data: ")) {
-          const dataStr = line.substring(6).trim();
-          if (dataStr === "[DONE]") {
-            console.log("Received [DONE] marker.");
-            continue; // Or handle end of stream signal
-          }
-          try {
-            const chunk = JSON.parse(dataStr);
-            const content = chunk?.choices?.[0]?.delta?.content;
-            if (content && onChunkReceived) {
-              onChunkReceived(content); // Callback to handle the text chunk
-            }
-          } catch (e) {
-            console.error("Failed to parse stream chunk:", dataStr, e);
-          }
-        }
-      }
-    }
-  } catch (error) {
-    console.error("Error during streaming chat completion:", error);
-  }
-}
-
-// --- Usage ---
-const streamMessages = [
-  { role: "user", content: "Write a detailed explanation of photosynthesis." },
-];
-
-// Example callback to display chunks in a div
-const outputDiv = document.createElement("div");
-document.body.appendChild(outputDiv);
-function handleChunk(textChunk) {
-  console.log("Chunk:", textChunk);
-  outputDiv.textContent += textChunk;
-}
-
-streamChatCompletion(streamMessages, { model: "openai" }, handleChunk);
-```
-
 </details>
 
 ---
@@ -713,6 +534,7 @@ streamChatCompletion(streamMessages, { model: "openai" }, handleChunk);
 **cURL (using URL):**
 
 ```bash
+# Get JSON response with image analysis
 curl https://text.pollinations.ai/openai \
   -H "Content-Type: application/json" \
   -d '{
@@ -728,6 +550,8 @@ curl https://text.pollinations.ai/openai \
     ],
     "max_tokens": 300
   }'
+# Expected Response might include:
+# ... "choices": [ { "message": { "role": "assistant", "tool_calls": [ { ... "function": { "name": "get_current_weather", "arguments": "{\"location\": \"Boston, MA\"}" ... } ] } } ] ...
 ```
 
 **Python (`requests`, using URL and local file/base64):**
@@ -764,14 +588,6 @@ def analyze_image_url(image_url, question="What's in this image?"):
         return None
 
 # --- Option 2: Analyze Local Image File ---
-def encode_image_base64(image_path):
-    try:
-        with open(image_path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode('utf-8')
-    except FileNotFoundError:
-        print(f"Error: Image file not found at {image_path}")
-        return None
-
 def analyze_local_image(image_path, question="What's in this image?"):
     base64_image = encode_image_base64(image_path)
     if not base64_image:
@@ -807,6 +623,7 @@ def analyze_local_image(image_path, question="What's in this image?"):
         return response.json()
     except requests.exceptions.RequestException as e:
         print(f"Error analyzing local image: {e}")
+        # if response is not None: print(response.text) # Show error from API
         return None
 
 # --- Usage Examples ---
@@ -819,78 +636,6 @@ def analyze_local_image(image_path, question="What's in this image?"):
 # if result_local:
 #     print("Local Image Analysis:", result_local['choices'][0]['message']['content'])
 
-```
-
-**JavaScript (Browser `fetch`, using local file/base64):**
-
-```javascript
-// Function to encode file to base64
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result); // result includes 'data:mime/type;base64,' prefix
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-async function analyzeImage(imageFile, question = "What's in this image?") {
-  const url = "https://text.pollinations.ai/openai";
-
-  try {
-    const base64ImageDataUrl = await fileToBase64(imageFile);
-
-    const payload = {
-      model: "openai", // Ensure vision support
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: question },
-            {
-              type: "image_url",
-              image_url: {
-                url: base64ImageDataUrl,
-              },
-            },
-          ],
-        },
-      ],
-      max_tokens: 500, // Optional
-    };
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `HTTP error! status: ${response.status}, message: ${errorText}`
-      );
-    }
-
-    const result = await response.json();
-    console.log("Vision Analysis:", result.choices[0].message.content);
-    // Display the result
-    // document.getElementById('vision-result').textContent = result.choices[0].message.content;
-  } catch (error) {
-    console.error("Error analyzing image:", error);
-  }
-}
-
-// --- Usage Example (Attach to a file input change event) ---
-// <input type="file" id="imageInput" accept="image/*">
-/*
-document.getElementById('imageInput').addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    if (file) {
-        analyzeImage(file, "Describe this picture in detail.");
-    }
-});
-*/
 ```
 
 </details>
@@ -949,7 +694,7 @@ def transcribe_audio(audio_path, question="Transcribe this audio"):
 
     # Determine audio format (simple check by extension)
     audio_format = audio_path.split('.')[-1].lower()
-    supported_formats = ['mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm'] # Check API/OpenAI docs for current list
+    supported_formats = ['mp3', 'wav'] # Only WAV and MP3 formats are currently supported
     if audio_format not in supported_formats:
          print(f"Warning: Potentially unsupported audio format '{audio_format}'. Check API documentation.")
          # Consider trying a default like 'mp3' or returning error
@@ -991,87 +736,6 @@ def transcribe_audio(audio_path, question="Transcribe this audio"):
 #     print("Transcription:", transcript)
 # else:
 #     print("Transcription failed.")
-```
-
-**JavaScript (Browser `fetch`):**
-
-```javascript
-// Function to encode file to base64 (prefix removed for this API)
-function fileToBase64Data(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      // Result has 'data:audio/xxx;base64,' prefix, remove it
-      const base64String = reader.result.split(",")[1];
-      resolve(base64String);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-async function transcribeAudio(audioFile, question = "Transcribe this audio") {
-  const url = "https://text.pollinations.ai/openai";
-
-  try {
-    const base64AudioData = await fileToBase64Data(audioFile);
-    const audioFormat = audioFile.name.split(".").pop().toLowerCase();
-    // Add validation for supported formats if needed
-
-    const payload = {
-      model: "openai-audio",
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: question },
-            {
-              type: "input_audio",
-              input_audio: {
-                data: base64AudioData,
-                format: audioFormat,
-              },
-            },
-          ],
-        },
-      ],
-      // Optional: Add parameters like 'language'
-    };
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `HTTP error! status: ${response.status}, message: ${errorText}`
-      );
-    }
-
-    const result = await response.json();
-    const transcription = result?.choices?.[0]?.message?.content;
-    console.log("Transcription:", transcription);
-    // Display the result
-    // document.getElementById('transcript-result').textContent = transcription;
-    return transcription;
-  } catch (error) {
-    console.error("Error transcribing audio:", error);
-  }
-}
-
-// --- Usage Example (Attach to a file input change event) ---
-// <input type="file" id="audioInput" accept="audio/*">
-/*
-document.getElementById('audioInput').addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    if (file) {
-        transcribeAudio(file);
-    }
-});
-*/
 ```
 
 </details>
@@ -1174,15 +838,14 @@ try:
     print("--- First API Call (User Request) ---")
     response = requests.post(url, headers=headers, json=payload)
     response.raise_for_status()
-    response_data = response.json()
-    print(json.dumps(response_data, indent=2))
 
-    response_message = response_data['choices'][0]['message']
+    # Parse the JSON response
+    response_data = response.json()
 
     # Check if the model wants to call a tool
-    if response_message.get("tool_calls"):
+    if response_data.get("choices", [{}])[0].get("message", {}).get("tool_calls"):
         print("\n--- Model requested tool call ---")
-        tool_call = response_message["tool_calls"][0] # Assuming one call for simplicity
+        tool_call = response_data["choices"][0]["message"]["tool_calls"][0] # Assuming one call for simplicity
         function_name = tool_call["function"]["name"]
         function_args = json.loads(tool_call["function"]["arguments"])
 
@@ -1194,7 +857,7 @@ try:
             )
 
             # Append the assistant's request and your function's response to messages
-            messages.append(response_message) # Add assistant's msg with tool_calls
+            messages.append(response_data["choices"][0]["message"]) # Add assistant's msg with tool_calls
             messages.append(
                 {
                     "tool_call_id": tool_call["id"],
@@ -1222,8 +885,7 @@ try:
 
     else:
         print("\n--- Model responded directly ---")
-        print("Assistant:", response_message['content'])
-
+        print("Assistant:", response_data['choices'][0]['message']['content'])
 
 except requests.exceptions.RequestException as e:
     print(f"Error during function calling request: {e}")
@@ -1285,30 +947,6 @@ try:
 
 except requests.exceptions.RequestException as e:
     print(f"Error fetching text models: {e}")
-```
-
-**JavaScript (Browser `fetch`):**
-
-```javascript
-async function listTextModels() {
-  const url = "https://text.pollinations.ai/models";
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const modelsData = await response.json();
-    console.log("Available Text Models & Voices:", modelsData);
-    // You might want to parse modelsData further depending on its structure
-    // e.g., filter for models, extract voices, etc.
-    // const voices = modelsData?.['openai-audio']?.voices || [];
-    // console.log("Voices:", voices);
-  } catch (error) {
-    console.error("Error fetching text models:", error);
-  }
-}
-
-listTextModels();
 ```
 
 </details>
@@ -1375,6 +1013,7 @@ try:
         with open(output_filename, 'wb') as f:
             f.write(response.content)
         print(f"Audio saved successfully as {output_filename}")
+        
     else:
         print("Error: Expected audio response, but received:")
         print(f"Content-Type: {response.headers.get('Content-Type')}")
@@ -1382,55 +1021,6 @@ try:
 
 except requests.exceptions.RequestException as e:
     print(f"Error making TTS GET request: {e}")
-```
-
-**JavaScript (Browser `fetch`):**
-
-```javascript
-async function generateAudioGet(text, voice = "alloy") {
-  const encodedText = encodeURIComponent(text);
-  const params = new URLSearchParams({
-    model: "openai-audio",
-    voice: voice,
-  });
-  const url = `https://text.pollinations.ai/${encodedText}?${params.toString()}`;
-
-  console.log("Generating audio via GET:", url);
-
-  try {
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `HTTP error! status: ${response.status}, message: ${errorText}`
-      );
-    }
-
-    if (response.headers.get("Content-Type")?.includes("audio/mpeg")) {
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-
-      // Example: Play the audio
-      const audio = new Audio(audioUrl);
-      audio.play();
-      console.log("Audio generated and playing.");
-    } else {
-      const errorText = await response.text();
-      console.error(
-        "Expected audio, received:",
-        response.headers.get("Content-Type"),
-        errorText
-      );
-      throw new Error("API did not return audio content.");
-    }
-  } catch (error) {
-    console.error("Error generating audio via GET:", error);
-  }
-}
-
-// --- Usage ---
-// generateAudioGet("This audio comes from a GET request.", "shimmer");
 ```
 
 </details>
@@ -1561,74 +1151,6 @@ except requests.exceptions.RequestException as e:
     print(f"Error making TTS POST request: {e}")
 ```
 
-**JavaScript (Browser `fetch`):**
-
-```javascript
-async function generateAudioPost(text, voice = "alloy") {
-  const url = "https://text.pollinations.ai/openai";
-  const payload = {
-    model: "openai-audio",
-    messages: [{ role: "user", content: text }],
-    voice: voice,
-  };
-  console.log("Generating audio via POST:", payload);
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `HTTP error! status: ${response.status}, message: ${errorText}`
-      );
-    }
-    
-    // Parse the JSON response
-    const responseData = await response.json();
-    
-    try {
-      // Extract the base64-encoded audio data
-      const audioBase64 = responseData.choices[0].message.audio.data;
-      
-      // Convert base64 to binary data
-      // First, create a binary string from the base64 data
-      const binaryString = atob(audioBase64);
-      
-      // Convert the binary string to a Uint8Array
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      
-      // Create a blob from the bytes
-      const audioBlob = new Blob([bytes], { type: "audio/mpeg" });
-      const audioUrl = URL.createObjectURL(audioBlob);
-      
-      // Play the audio
-      const audio = new Audio(audioUrl);
-      audio.play();
-      console.log("Audio generated and playing.");
-      
-      // Optional: Download the audio file
-      // const downloadLink = document.createElement('a');
-      // downloadLink.href = audioUrl;
-      // downloadLink.download = 'generated_audio.mp3';
-      // downloadLink.click();
-      
-    } catch (error) {
-      console.error("Error processing audio data:", error);
-      console.error("Response structure:", responseData);
-    }
-  } catch (error) {
-    console.error("Error generating audio via POST:", error);
-  }
-}
-// generateAudioPost("Generate speech using the POST method.", "nova");
-```
-
 </details>
 
 ---
@@ -1710,53 +1232,6 @@ Integrate Pollinations directly into your React applications.
 curl -N https://image.pollinations.ai/feed
 ```
 
-**JavaScript (Browser `EventSource`):**
-
-```javascript
-function connectImageFeed() {
-  const feedUrl = "https://image.pollinations.ai/feed";
-  console.log("Connecting to Image Feed:", feedUrl);
-
-  const eventSource = new EventSource(feedUrl);
-
-  eventSource.onmessage = function (event) {
-    try {
-      const imageData = JSON.parse(event.data);
-      console.log("New Image:", imageData);
-      // Example: Display the image prompt and URL
-      const div = document.createElement("div");
-      div.innerHTML = `
-                <p><strong>Prompt:</strong> ${imageData.prompt || "N/A"}</p>
-                <img src="${imageData.imageURL}" alt="${
-        imageData.prompt || "Generated Image"
-      }" width="100">
-                <hr>
-            `;
-      // document.getElementById('image-feed-output').prepend(div); // Add to your display area
-    } catch (e) {
-      console.error("Failed to parse image feed data:", event.data, e);
-    }
-  };
-
-  eventSource.onerror = function (err) {
-    console.error("Image Feed Error:", err);
-    // Handle errors, e.g., try reconnecting after a delay
-    eventSource.close(); // Close current connection
-    // setTimeout(connectImageFeed, 5000); // Optional: Attempt reconnect
-  };
-
-  eventSource.onopen = function () {
-    console.log("Image Feed connection opened.");
-  };
-
-  // Optional: Add cleanup logic if needed when navigating away or closing the component
-  // window.addEventListener('beforeunload', () => eventSource.close());
-}
-
-// --- Usage ---
-// connectImageFeed();
-```
-
 **Python (`sseclient-py`):**
 
 ```python
@@ -1768,7 +1243,7 @@ import time
 feed_url = "https://image.pollinations.ai/feed"
 
 def connect_image_feed():
-    while True: # Loop to reconnect on error
+     while True: # Loop to reconnect on error
         try:
             print(f"Connecting to image feed: {feed_url}")
             # Need stream=True for SSE
@@ -1800,7 +1275,7 @@ def connect_image_feed():
              time.sleep(10)
 
 # --- Usage ---
-# connect_image_feed()
+// connect_image_feed()
 ```
 
 </details>
@@ -1836,43 +1311,6 @@ def connect_image_feed():
 ```bash
 # Display raw SSE stream
 curl -N https://text.pollinations.ai/feed
-```
-
-**JavaScript (Browser `EventSource`):**
-
-```javascript
-function connectTextFeed() {
-  const feedUrl = "https://text.pollinations.ai/feed";
-  console.log("Connecting to Text Feed:", feedUrl);
-
-  const eventSource = new EventSource(feedUrl);
-
-  eventSource.onmessage = function (event) {
-    try {
-      const textData = JSON.parse(event.data);
-      console.log("New Text Response:", textData);
-      // Example: Display the response text
-      // const p = document.createElement('p');
-      // p.textContent = `[${textData.model || 'N/A'}] ${textData.response || 'N/A'}`;
-      // document.getElementById('text-feed-output').prepend(p); // Add to your display area
-    } catch (e) {
-      console.error("Failed to parse text feed data:", event.data, e);
-    }
-  };
-
-  eventSource.onerror = function (err) {
-    console.error("Text Feed Error:", err);
-    eventSource.close();
-    // setTimeout(connectTextFeed, 5000); // Optional: Attempt reconnect
-  };
-
-  eventSource.onopen = function () {
-    console.log("Text Feed connection opened.");
-  };
-}
-
-// --- Usage ---
-// connectTextFeed();
 ```
 
 **Python (`sseclient-py`):**
@@ -1919,7 +1357,7 @@ def connect_text_feed():
              time.sleep(10)
 
 # --- Usage ---
-# connect_text_feed()
+// connect_text_feed()
 ```
 
 </details>
@@ -1928,19 +1366,45 @@ def connect_text_feed():
 
 ## Referrer 🔗
 
+**Referrers are the recommended authentication method for frontend web applications** that call our APIs directly from the browser. 
+
+Why use referrers?
+- **Security**: No tokens to manage or accidentally expose
+- **Simplicity**: Works automatically in browsers via the `Referer` header
+- **Priority**: Registered referrers get higher rate limits and priority queue access
+
+### How to Use Referrers
+
+1. **Automatic (Browser)**: When your web app makes API calls, browsers automatically send the `Referer` header
+2. **Manual (Optional)**: Add `?referrer=your-app-identifier` to API requests for more specific identification
+3. **Register**: Visit [auth.pollinations.ai](https://auth.pollinations.ai) to register your domain for increased rate limits
+
+**Example API call with explicit referrer:**
+```
+https://image.pollinations.ai/prompt/a%20beautiful%20landscape?referrer=mywebapp.com
+```
+
 ### API Update (starting **2025.03.31**) 📅
 
 - **Text-To-Image** responses may show the Pollinations.AI logo 🖼️ (can be disabled with `nologo=true`).
 - **Text-To-Text** responses may include a link to pollinations.ai 🔗.
 
-**To potentially influence future default behavior or qualify for different rate limits:** Add a `referrer` parameter to your API requests.
-
-- **Web Apps:** Browsers typically send this via the `Referer` HTTP header automatically. Explicitly setting the `referrer` parameter can provide more specific context (e.g., `?referrer=MyWebAppSection`).
-- **Bots & Backend Apps:** Add the `referrer` parameter (e.g., `?referrer=MyCoolBot` or in POST body) to identify your application.
+**For the best experience:**
+- **Web Applications**: Register your referrer at [auth.pollinations.ai](https://auth.pollinations.ai)
+- **Backend Services**: Use API tokens instead of referrers (see [Authentication section](#authentication-))
 
 ### Special Bee ✅🐝🍯
 
-Projects can **request to have their referrer verified** for potentially enhanced API access (e.g., priority queue, modified rate limits). This is evaluated on a case-by-case basis. [Submit a Special Bee Request](https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml)
+**Special Bee requests are for upgrading to flower tier** - unlocking unlimited usage and SOTA models for your application.
+
+**Two ways to request flower tier upgrade:**
+1. **Self-serve**: Visit [auth.pollinations.ai](https://auth.pollinations.ai) to register your domain and request tier upgrade
+2. **GitHub request**: For special cases, [submit a Special Bee Request](https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml)
+
+**Flower tier benefits:**
+- Less limited rate limits → **Unlimited usage**
+- Standard models → **SOTA models**
+- Priority queue access
 
 ---
 

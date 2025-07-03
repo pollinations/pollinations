@@ -1,6 +1,8 @@
-import 'dotenv/config';
 import debug from 'debug';
 import fetch from 'node-fetch';
+
+// Auto-load environment variables from shared and local .env files
+import '../shared/env-loader.js';
 
 const measurementId = process.env.GA_MEASUREMENT_ID;
 const apiSecret = process.env.GA_API_SECRET;

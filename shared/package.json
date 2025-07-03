@@ -1,0 +1,13 @@
+{
+  "name": "pollinations-shared",
+  "version": "1.0.0",
+  "description": "Shared utilities for Pollinations services",
+  "type": "module",
+  "main": "index.js",
+  "dependencies": {
+    "debug": "^4.4.1",
+    "dotenv": "^16.5.0",
+    "node-fetch": "^3.3.2",
+    "p-queue": "^7.4.1"
+  }
+}

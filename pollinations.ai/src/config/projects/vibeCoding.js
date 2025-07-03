@@ -5,6 +5,16 @@
 
 export const vibeCodingProjects = [
   {
+    name: "PairFusion",
+    url: "https://pair-fusion.vercel.app/",
+    description: "A real-time AI powered, scalable and feature-rich collaborative IDE built for modern development teams. Experience seamless pair programming, instant feedback, and a professional-grade toolset designed for maximum productivity.",
+    author: "@auraticabhi",
+    repo: "https://github.com/auraticabhi/PairFusion",
+    stars: 0,
+    submissionDate: "2025-07-03",
+    order: 1
+  },
+  {
     name: "CraftUI",
     url: "https://craftui.studio/",
     description: "An AI-powered tool that simplifies UI design by turning text prompts or images into clean, production-ready components. It supports real-time customization with theme switching, framework selection (like Tailwind or Bootstrap), and intuitive editing. Whether you're a developer or designer, CraftUI helps you design faster, smarter, and with ease. Explore, remix, and share your creations in a growing creative community.",

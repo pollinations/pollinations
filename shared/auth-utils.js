@@ -102,7 +102,7 @@ export async function checkReferrerInDb(referrer) {
 /**
  * Validate token against the auth.pollinations.ai API.
  * @param {string} token - The token to validate.
- * @returns {Promise<{userId: string, tier: string}|null>} User info if valid, null otherwise.
+ * @returns {Promise<{userId: string, username: string, tier: string}|null>} User info if valid, null otherwise.
  */
 export async function validateApiTokenDb(token) {
   const maskedToken = token && token.length > 8 ? 
@@ -137,6 +137,7 @@ export async function validateApiTokenDb(token) {
       tokenLog('validateApiTokenDb: Valid token for user: %s, tier: %s', data.userId, data.tier || 'seed');
       return {
         userId: data.userId,
+        username: data.username || data.userId, // Use userId as fallback if username not provided
         tier: data.tier || 'seed'
       };
     } else {
@@ -199,7 +200,7 @@ export async function isUserDomainAllowedFromDb(userId, referrer, db, isDomainAl
  * Determine if request is authenticated
  * @param {Request|Object} req - The request object
  * @param {Object} ctx - Context object (currently unused but kept for future extensibility)
- * @returns {{authenticated: boolean, tokenAuth: boolean, referrerAuth: boolean, bypass: boolean, reason: string, userId: string|null, debugInfo: Object}} Authentication status, auth type, reason, userId if authenticated, and debug info
+ * @returns {{authenticated: boolean, tokenAuth: boolean, referrerAuth: boolean, bypass: boolean, reason: string, userId: string|null, username: string|null, tier: string, debugInfo: Object}} Authentication status, auth type, reason, userId, username if authenticated, and debug info
  * @throws {Error} If an invalid token is provided
  */
 export async function shouldBypassQueue(req) {
@@ -238,17 +239,17 @@ export async function shouldBypassQueue(req) {
       tokenLog('✅ Valid DB token found for user: %s (tier: %s)', tokenResult.userId, tokenResult.tier);
       debugInfo.authResult = 'DB_TOKEN';
       debugInfo.userId = tokenResult.userId;
+      debugInfo.username = tokenResult.username;
       debugInfo.tier = tokenResult.tier;
       log('Authentication succeeded: DB_TOKEN for user %s (tier: %s)', tokenResult.userId, tokenResult.tier);
-      return { 
-        bypass: true, 
-        authenticated: true, 
-        tokenAuth: true, 
+      return {
+        bypass: true,
+        authenticated: true,
+        tokenAuth: true,
         referrerAuth: false,
-        reason: 'DB_TOKEN', 
-        userId: tokenResult.userId, 
-        tier: tokenResult.tier,
-        debugInfo 
+        reason: 'DB_TOKEN',
+        ...tokenResult,
+        debugInfo
       };
     }
     // If token is provided but it's not valid, we log it and continue.
@@ -276,8 +277,7 @@ export async function shouldBypassQueue(req) {
         tokenAuth: false,
         referrerAuth: true,
         reason: 'DB_REFERRER', 
-        userId: dbReferrerResult.userId, 
-        tier: dbReferrerResult.tier,
+        ...dbReferrerResult,
         debugInfo 
       };
     } else {
@@ -295,6 +295,8 @@ export async function shouldBypassQueue(req) {
     referrerAuth: false,
     reason: 'NO_AUTH_METHOD_SUCCESS',
     userId: null,
+    username: null,
+    tier: 'anonymous',
     debugInfo
   };
 }
@@ -338,12 +340,8 @@ export async function handleAuthentication(req, requestId = null, logAuth = null
     
     return {
       bypass: isAuthenticated, // Kept for backward compatibility
-      authenticated: authResult.authenticated,
-      tokenAuth: authResult.tokenAuth,
-      referrerAuth: authResult.referrerAuth,
-      reason,
-      userId,
-      tier: debugInfo.tier || 'seed',
+      ...authResult,
+      tier: debugInfo.tier || 'anonymous',
       debugInfo
     };
     

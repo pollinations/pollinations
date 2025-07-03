@@ -5,6 +5,39 @@
 
 export const creativeProjects = [
   {
+    name: "Unfoldtech",
+    url: "https://studio.unfoldtech.online/",
+    description: "Easily generate new images inspired by the Pexels website with embedded IPTC (title, description, keywords) on download. Find beautiful image inspiration from Pexels, create prompts from images, and generate new images with metadata embedded for immediate use in stock photography or upscaling.",
+    author: "kengkreingkrai@gmail.com",
+    submissionDate: "2025-06-23",
+    order: 1
+  },
+  {
+    name: "Celebrity AI Image Generator",
+    url: "https://www.aicelebrity.design/",
+    description: "An AI-powered celebrity image generator that uses Pollinations.ai and a1.art APIs. Users can directly input celebrity text to generate celebrities doing anything. Features celebrity photo shooting capabilities where users can upload their pictures and take selfies with celebrities like Labubu, Taylor Swift, and more.",
+    author: "@Colin-Zero",
+    repo: "https://github.com/Colin-Zero",
+    submissionDate: "2025-06-16",
+    order: 1
+  },
+  {
+    name: "Coloring AI 🎨",
+    url: "https://coloring-ai.com/",
+    description: "An intelligent web-based coloring assistant that turns black-and-white sketches into fully colored artworks using AI. Features multiple artistic styles, AI coloring generator, sketch-to-image conversion, and image-to-coloring page tools.",
+    author: "962900862@qq.com",
+    submissionDate: "2025-06-13",
+    order: 1
+  },
+  {
+    name: "JSON Pollinations API",
+    url: "https://pollinations-json.deno.dev/openai",
+    description: "A Deno Deploy API wrapper for Pollinations that provides JSON-formatted responses. Designed for applications that require JSON API integration with Pollinations services.",
+    author: "@apersonwhomakesstuff",
+    submissionDate: "2025-06-13",
+    order: 1
+  },
+  {
     name: "MrEgonAI",
     url: "https://mr-egon-ai.vercel.app/",
     description: "An image generator powered by pollinations.ai and its image generation models. Features text-to-image generation with various AI models.",
@@ -36,6 +69,16 @@ export const creativeProjects = [
     description: "A system for creating custom characters that uses the Pollinations API for totally free and unlimited image generation.",
     author: "@nic-wq",
     submissionDate: "2025-03-10",
+    order: 1
+  },
+  {
+    name: "StoryBolt",
+    url: "https://storybolt.vercel.app/",
+    description: "Generate stories with enticing narratives and beautiful illustrations. Users can enter a prompt, customize the genre and art style, and publish their stories! Users can favorite, download, and listen to their stories, and read other books created by the community.",
+    author: "@gumbasil",
+    repo: "https://github.com/sahilalamgir/StoryBolt",
+    stars: 0,
+    submissionDate: "2025-06-13",
     order: 1
   },
   {

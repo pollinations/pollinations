@@ -1,4 +1,12 @@
 import type { Env, UserTier } from './types';
+
+// Add ExecutionContext type declaration
+declare global {
+  interface ExecutionContext {
+    waitUntil(promise: Promise<any>): void;
+    cf?: any;
+  }
+}
 import { createJWT, verifyJWT, extractBearerToken } from './jwt';
 import { 
   upsertUser, 
@@ -13,6 +21,7 @@ import {
   getApiToken, 
   deleteApiTokens, 
   validateApiToken, 
+  validateApiTokenComplete,
   getUserTier, 
   setUserTier, 
   getAllUserTiers, 
@@ -56,7 +65,7 @@ interface ScheduledEvent {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     
     // Add CORS headers
@@ -72,6 +81,28 @@ export default {
     }
     
     try {
+      // Serve favicon and media assets
+      if (url.pathname === '/favicon.ico') {
+        // Redirect to favicon within media directory for simplicity
+        return Response.redirect(`${url.origin}/media/favicon.ico`, 302);
+      }
+
+      if (url.pathname.startsWith('/media/')) {
+        // Attempt to fetch the requested media file from the repository's media directory
+        // In production these can be served by a proper asset pipeline / KV binding.
+        const assetUrl = `https://raw.githubusercontent.com/pollinations/auth.pollinations.ai/main${url.pathname}`;
+        const assetResponse = await fetch(assetUrl);
+        if (assetResponse.ok) {
+          // Clone headers to ensure proper CORS
+          const newHeaders = new Headers(assetResponse.headers);
+          corsHeaders && Object.entries(corsHeaders).forEach(([k, v]) => newHeaders.set(k, v));
+          return new Response(assetResponse.body, {
+            status: assetResponse.status,
+            headers: newHeaders
+          });
+        }
+      }
+      
       // Route handling
       switch (url.pathname) {
         case '/':
@@ -175,7 +206,7 @@ export default {
         if (request.method === 'GET') {
           // Extract token from the URL path
           const token = url.pathname.replace('/api/validate-token/', '');
-          return handleValidateToken(token, env, corsHeaders);
+          return handleValidateToken(token, env, corsHeaders, ctx);
         }
       }
       
@@ -449,36 +480,71 @@ async function handleGenerateApiToken(request: Request, env: Env, corsHeaders: R
 /**
  * Validates an API token and returns the associated user ID if valid.
  * This endpoint is used by other Pollinations services to verify tokens.
+ * Uses Cloudflare Workers Cache API for performance optimization.
  * @param token The API token to validate
  * @param env Environment variables
  * @param corsHeaders CORS headers to include in the response
+ * @param ctx Execution context for async operations
  * @returns Response with validation result
  */
-async function handleValidateToken(token: string, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+async function handleValidateToken(token: string, env: Env, corsHeaders: Record<string, string>, ctx?: ExecutionContext): Promise<Response> {
+  const startTime = Date.now();
+  
   try {
     if (!token) {
       return createErrorResponse(400, 'Missing required parameter: token', corsHeaders);
     }
     
-    // Validate the token against the database
-    const userId = await validateApiToken(env.DB, token);
+
     
-    // Get user tier if token is valid
-    let tier: UserTier = 'seed';
-    if (userId) {
-      tier = await getUserTier(env.DB, userId);
+    // Try cache first
+    const cache = await caches.open('token-validation');
+    const cacheKey = `https://auth.pollinations.ai/api/validate-token/${token}`;
+    
+    const cachedResponse = await cache.match(cacheKey);
+    if (cachedResponse) {
+      const cacheTime = Date.now() - startTime;
+      console.log(`🎯 Cache HIT: ${token.substring(0,8)}... in ${cacheTime}ms`);
+      return cachedResponse;
     }
     
-    // Return validation result with tier information
-    return new Response(JSON.stringify({
+    // Cache miss - query database
+    const dbStartTime = Date.now();
+    console.log(`❌ Cache MISS: ${token.substring(0,8)}... querying DB`);
+    
+    const { userId, tier, username } = await validateApiTokenComplete(env.DB, token);
+    
+    const dbTime = Date.now() - dbStartTime;
+    console.log(`💾 DB query completed in: ${dbTime}ms`);
+    
+    // Create response
+    const responseData = {
       valid: userId !== null,
       userId: userId,
-      tier: userId ? tier : null
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      username: username,
+      tier: tier
+    };
+    
+    const response = new Response(JSON.stringify(responseData), {
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=60' // 60 second TTL
+      },
     });
+    
+    // Cache the response asynchronously (don't wait for it)
+    if (ctx) {
+      ctx.waitUntil(cache.put(cacheKey, response.clone()));
+    }
+    
+    const totalTime = Date.now() - startTime;
+    console.log(`✅ Total handleValidateToken time: ${totalTime}ms (DB: ${dbTime}ms)`);
+    
+    return response;
   } catch (error) {
-    console.error('Error validating token:', error);
+    const errorTime = Date.now() - startTime;
+    console.error(`❌ Error validating token after ${errorTime}ms:`, error);
     return createErrorResponse(400, 'Invalid request format', corsHeaders);
   }
 }
@@ -679,7 +745,7 @@ async function handleGetPreferences(request: Request, env: Env, corsHeaders: Rec
       if (bearerToken) {
         try {
           const payload = await verifyJWT(bearerToken, env);
-          userId = payload.sub;
+          userId = payload?.sub || null;
         } catch (error) {
           // Invalid JWT
         }
@@ -734,7 +800,7 @@ async function handleUpdatePreferences(request: Request, env: Env, corsHeaders: 
       if (bearerToken) {
         try {
           const payload = await verifyJWT(bearerToken, env);
-          userId = payload.sub;
+          userId = payload?.sub || null;
         } catch (error) {
           // Invalid JWT
         }

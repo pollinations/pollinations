@@ -12,13 +12,14 @@ import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { processRequestForAds } from './ads/initRequestFilter.js';
 import { createStreamingAdWrapper } from './ads/streamingAdWrapper.js';
-import { getRequestData } from './requestUtils.js';
+import { getRequestData, prepareModelsForOutput, getUserMappedModel } from './requestUtils.js';
 
 // Import shared utilities
 import { enqueue } from '../shared/ipQueue.js';
 import { handleAuthentication } from '../shared/auth-utils.js';
 import { getIp } from '../shared/extractFromRequest.js';
 import { incrementUserMetric } from '../shared/userMetrics.js';
+import { hasSufficientTier } from '../shared/tier-gating.js';
 
 // Load environment variables
 dotenv.config();
@@ -117,7 +118,8 @@ const QUEUE_CONFIG = {
 
 // GET /models request handler
 app.get('/models', (req, res) => {
-    res.json(availableModels);
+    // Use prepareModelsForOutput to remove pricing information and apply sorting
+    res.json(prepareModelsForOutput(availableModels));
 });
 
 setupFeedEndpoint(app);
@@ -131,7 +133,61 @@ async function handleRequest(req, res, requestData) {
     try {
         // Generate a unique ID for this request
         const requestId = generatePollinationsId();
-        const completion = await generateTextBasedOnModel(requestData.messages, requestData);
+        
+        // Get user info from authentication if available
+        const authResult = req.authResult || {};
+
+        // Tier gating
+        const model = availableModels.find(m => m.name === requestData.model || m.aliases?.includes(requestData.model));
+        const userTier = authResult.tier || 'anonymous';
+        
+        log(`Tier gating check: model=${requestData.model}, found=${!!model}, modelTier=${model?.tier}, userTier=${userTier}`);
+        
+        if (model) {
+            const hasAccess = hasSufficientTier(userTier, model.tier);
+            log(`Access check: hasSufficientTier(${userTier}, ${model.tier}) = ${hasAccess}`);
+            
+            if (!hasAccess) {
+                const error = new Error(`Model not found or tier not high enough. Your tier: ${userTier}, required tier: ${model.tier}. To get a token or add a referrer, visit https://auth.pollinations.ai`)
+                error.status = 402;
+                await sendErrorResponse(res, req, error, requestData, 402);
+                return;
+            }
+        } else {
+            log(`Model not found: ${requestData.model}`);
+            const error = new Error(`Model not found: ${requestData.model}`)
+            error.status = 404;
+            await sendErrorResponse(res, req, error, requestData, 404);
+            return;
+        }
+
+        // Apply user-specific model mapping if user is authenticated
+        let finalRequestData = requestData;
+        if (authResult.username) {
+            try {
+                const mappedModel = getUserMappedModel(authResult.username);
+                if (mappedModel) {
+                    log(`🔄 Model override: ${requestData.model} → ${mappedModel} for user ${authResult.username}`);
+                    finalRequestData = {
+                        ...requestData,
+                        model: mappedModel
+                    };
+                }
+            } catch (error) {
+                if (error.status === 403) {
+                    await sendErrorResponse(res, req, error, requestData, error.status);
+                    return;
+                }
+            }
+        }
+        
+        // Add user info to request data - using authResult directly as a thin proxy
+        const requestWithUserInfo = {
+            ...finalRequestData,
+            userInfo: authResult
+        };
+        
+        const completion = await generateTextBasedOnModel(finalRequestData.messages, requestWithUserInfo);
         
         // Ensure completion has the request ID
         completion.id = requestId;
@@ -402,13 +458,7 @@ async function processRequest(req, res, requestData) {
             }
         };
         
-        if (requestData.stream) {
-            // For streaming requests, send error as a stream
-            await sendAsOpenAIStream(res, { error: 'Forbidden', choices: [{ message: { content: 'Forbidden' } }] }, req);
-            return;
-        } else {
-            return res.status(403).json(errorResponse);
-        }
+        return res.status(403).json(errorResponse);
     }
     
     // Check authentication status
@@ -416,7 +466,6 @@ async function processRequest(req, res, requestData) {
     // Store auth info for downstream functions
     requestData.userId = authResult.userId; // For backward compatibility
     req.authResult = authResult;           // Attach directly to req
-
     // Use the new explicit authentication fields
     const isTokenAuthenticated = authResult.tokenAuth;
     const hasReferrer = authResult.referrerAuth;
@@ -595,9 +644,7 @@ async function sendAsOpenAIStream(res, completion, req = null) {
     }
     
     // Handle streaming response from the API
-    const responseStream = completion.responseStream;
-    log('Got streaming response from API, provider:', completion.providerName);
-    
+    const responseStream = completion.responseStream;    
     // If we have a responseStream, try to proxy it
     if (responseStream) {
         log('Attempting to proxy stream to client');
@@ -688,7 +735,7 @@ function handleRobloxSpecificFix(messages, model) {
 }
 
 async function generateTextBasedOnModel(messages, options) {
-    const model = options.model || 'openai';
+    const model = options.model || 'openai-fast';
     log('Using model:', model, 'with options:', JSON.stringify(options));
 
     try {
@@ -697,20 +744,7 @@ async function generateTextBasedOnModel(messages, options) {
             log('Streaming mode enabled for model:', model, 'stream value:', options.stream);
         }
         
-        // Apply Roblox-specific fix if needed
-        const robloxFixedMessages = handleRobloxSpecificFix(messages, model);
-        
-        // Remove p-ads marker from messages to prevent it from affecting the LLM context
-        const processedMessages = robloxFixedMessages.map(msg => {
-            if (msg.content && typeof msg.content === 'string') {
-                // Remove the p-ads marker from the message content
-                return {
-                    ...msg,
-                    content: msg.content.replace(/p-ads/g, '')
-                };
-            }
-            return msg;
-        });
+        const processedMessages = messages;
         
         // Log the messages being sent
         log('Sending messages to model handler:', JSON.stringify(processedMessages.map(m => ({ role: m.role, content: typeof m.content === 'string' ? m.content.substring(0, 50) + '...' : '[non-string content]' }))));

@@ -20,7 +20,7 @@ export function getRequestData(req) {
                     data.response_format?.type === 'json_object';
                     
     const seed = data.seed ? parseInt(data.seed, 10) : null;
-    let model = data.model || 'openai';
+    let model = data.model || 'openai-fast';
     const systemPrompt = data.system ? data.system : null;
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
     const top_p = data.top_p ? parseFloat(data.top_p) : undefined;
@@ -77,4 +77,70 @@ export function getRequestData(req) {
         reasoning_effort,
         response_format
     };
+}
+
+/**
+ * Prepares model data for output by removing pricing information and applying sorting.
+ * Always sorts with community models (community: false first, then community: true).
+ * @param {Array} models - Array of model objects
+ * @returns {Array} - Sanitized model array without pricing, properly sorted
+ */
+export function prepareModelsForOutput(models) {
+  // Remove pricing information from all models
+  const prepared = models.map(({ pricing, ...rest }) => rest);
+  
+  // Sort models with non-community first, then community models
+  return [
+    ...prepared.filter((m) => m.community === false).sort((a, b) => a.name.localeCompare(b.name)),
+    ...prepared.filter((m) => m.community === true).sort((a, b) => a.name.localeCompare(b.name))
+  ];
+}
+
+/**
+ * Get mapped model for a specific user
+ * Uses environment variable USER_MODEL_MAPPING for configuration
+ * Format: "username1:model1,username2:model2,blockeduser:blocked"
+ * Special value "blocked" will throw Error with status 403
+ * @param {string} username - The username to check for mapping
+ * @returns {string|null} The mapped model name or null if no mapping exists
+ * @throws {Error} If user is mapped to "blocked"
+ */
+export function getUserMappedModel(username) {
+  if (!username) return null;
+  
+  const mappingStr = process.env.USER_MODEL_MAPPING;
+  if (!mappingStr) return null;
+  
+  try {
+    // Parse mapping string: "thespecificdev:openai-large,testuser:grok,spammer:blocked"
+    const mappings = mappingStr.split(',')
+      .map(pair => pair.split(':'))
+      .filter(([user, model]) => user && model)
+      .reduce((acc, [user, model]) => {
+        acc[user.trim()] = model.trim();
+        return acc;
+      }, {});
+    
+    const mappedModel = mappings[username];
+    if (mappedModel) {
+      // Check for blocked user
+      if (mappedModel.toLowerCase() === 'blocked') {
+        log(`🚫 User ${username} is blocked`);
+        const error = new Error(`User ${username} is currently blocked from using the text service`);
+        error.status = 403;
+        throw error;
+      }
+      
+      log(`🎯 User ${username} mapped to model: ${mappedModel}`);
+    }
+    
+    return mappedModel || null;
+  } catch (error) {
+    // Re-throw blocked user errors as-is
+    if (error.status === 403) {
+      throw error;
+    }
+    log('Error parsing USER_MODEL_MAPPING:', error);
+    return null;
+  }
 }

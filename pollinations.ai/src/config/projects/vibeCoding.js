@@ -5,6 +5,14 @@
 
 export const vibeCodingProjects = [
   {
+    name: "CraftUI",
+    url: "https://craftui.studio/",
+    description: "An AI-powered tool that simplifies UI design by turning text prompts or images into clean, production-ready components. It supports real-time customization with theme switching, framework selection (like Tailwind or Bootstrap), and intuitive editing. Whether you're a developer or designer, CraftUI helps you design faster, smarter, and with ease. Explore, remix, and share your creations in a growing creative community.",
+    author: "@imhardikdesai",
+    submissionDate: "2025-06-19",
+    order: 1
+  },
+  {
     name: "AI Code Generator",
     url: "https://codegen.on.websim.com/",
     description: "A websim project that generates code from description, selected programming language and other options. Integrates Pollinations because it allows for more models to choose from for potentially better results. It has modes like: Code Generator, Code Explainer, Reviewer, etc.",
@@ -20,16 +28,8 @@ export const vibeCodingProjects = [
     submissionDate: "2025-03-25",
     order: 1
   },
-  {
-    name: "Pollinations MCP Server",
-    url: "https://github.com/pollinations/model-context-protocol",
-    description: "A Model Context Protocol server that enables AI-assisted development through natural language interaction with Pollinations' multimodal services.",
-    author: "@thomash",
-    repo: "https://github.com/pollinations/model-context-protocol",
-    stars: 42,
-    submissionDate: "2025-05-01",
-    order: 1
-  },
+  // Duplicate removed - Pollinations MCP Server already exists in hackAndBuild.js
+
   {
     name: "Pollinations Task Master",
     url: "https://github.com/LousyBook94/pollinations-task-master",

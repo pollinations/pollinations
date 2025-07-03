@@ -14,6 +14,7 @@ import { logGptImagePrompt, logGptImageError } from './utils/gptImageLogger.js';
 import { analyzeTextSafety, analyzeImageSafety, formatViolations } from './utils/azureContentSafety.js';
 // Import Sora video generation
 import { generateSoraVideo, shouldUseSora } from './soraVideoGenerator.js';
+import { hasSufficientTier } from '../../shared/tier-gating.js';
 
 dotenv.config();
 
@@ -601,6 +602,70 @@ export const callAzureGPTImage = async (prompt, safeParams, userInfo = {}) => {
 };
 
 /**
+ * Calls the external Flux Kontext API to generate voxel art images
+ * @param {string} prompt - The prompt for image generation
+ * @param {Object} safeParams - The parameters for image generation
+ * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
+ */
+const callKontextAPI = async (prompt, safeParams) => {
+  try {
+    logOps('Calling Kontext API with prompt:', prompt);
+    
+    const formData = new FormData();
+    formData.append('prompt', prompt);
+    formData.append('guidance_scale', safeParams.guidance_scale || 2.5);
+    formData.append('num_inference_steps', 17); // Hard-coded for consistent performance
+    formData.append('width', safeParams.width);
+    formData.append('height', safeParams.height);
+    
+    // If there's an image in safeParams (array format), download and add it to the form data
+    if (safeParams.image && safeParams.image.length > 0) {
+      try {
+        const imageUrl = safeParams.image[0]; // Use first image from array
+        const imageResponse = await fetch(imageUrl);
+        if (imageResponse.ok) {
+          const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+          formData.append('image', imageBuffer, {
+            filename: 'input.jpg',
+            contentType: 'image/jpeg'
+          });
+          logOps('Added input image to Kontext API request:', imageUrl);
+        } else {
+          logError('Failed to fetch input image:', imageUrl, imageResponse.status);
+        }
+      } catch (error) {
+        logError('Error processing input image:', error.message);
+        // Continue without image if there's an error
+      }
+    }
+    
+    const response = await fetch('http://51.159.184.240:8000/generate', {
+      method: 'POST',
+      body: formData,
+      timeout: 120000 // 2 minute timeout
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Kontext API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const buffer = Buffer.from(await response.arrayBuffer());
+    
+    logOps('Kontext API response received, buffer size:', buffer.length);
+    
+    // Return with default maturity flags (assuming generated art is safe)
+    return {
+      buffer,
+      isMature: false,
+      isChild: false
+    };
+  } catch (error) {
+    logError('Error calling Kontext API:', error);
+    throw new Error(`Kontext API generation failed: ${error.message}`);
+  }
+};
+
+/**
  * Generates an image using the appropriate model based on safeParams
  * @param {string} prompt - The prompt for image generation
  * @param {Object} safeParams - Parameters for image generation
@@ -620,7 +685,7 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
         : 'No userInfo provided');
     
     // Restrict GPT Image model to users with valid authentication
-    if (!userInfo || !userInfo.authenticated || userInfo.tier === 'seed') {
+    if (!hasSufficientTier(userInfo.tier, 'flower')) {
       const errorText = "Access to gpt-image-1 is currently limited to users in the flower tier. We will be opening up access gradually. Please authenticate at https://auth.pollinations.ai and request a tier upgrade at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml";
       logError(errorText);
       progress.updateBar(requestId, 35, 'Auth', 'GPT Image requires authorization');
@@ -669,7 +734,7 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
         : 'No userInfo provided');
     
     // Restrict Sora Video model to users with valid authentication
-    if (!userInfo || !userInfo.authenticated || userInfo.tier === 'seed') {
+    if (!userInfo || !userInfo.authenticated || !hasSufficientTier(userInfo.tier, 'flower')) {
       const errorText = "Access to Sora video generation is currently limited to users in the flower tier. We will be opening up access gradually. Please authenticate at https://auth.pollinations.ai and request a tier upgrade at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml";
       logError(errorText);
       progress.updateBar(requestId, 35, 'Auth', 'Sora Video requires authorization');
@@ -683,6 +748,25 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
         logError('Sora Video failed:', error.message);
         throw error; // Don't fall back for video generation
       }
+    }
+  }
+  
+  if (safeParams.model === 'kontext') {
+    // Kontext model requires seed tier or higher
+    if (!hasSufficientTier(userInfo.tier, 'seed')) {
+      const errorText = "Access to kontext model is limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.";
+      logError(errorText);
+      progress.updateBar(requestId, 35, 'Auth', 'Kontext model requires seed tier');
+      throw new Error(errorText);
+    }
+    
+    try {
+      updateProgress(progress, requestId, 30, 'Processing', 'Generating voxel art with Kontext...');
+      return await callKontextAPI(prompt, safeParams);
+    } catch (error) {
+      logError('Kontext API failed:', error.message);
+      progress.updateBar(requestId, 100, 'Error', error.message);
+      throw error;
     }
   }
   

@@ -7,7 +7,7 @@
  * Set to false to disable semantic caching entirely (fallback to exact cache only)
  * Set to true to enable semantic caching with BGE embeddings
  */
-export const SEMANTIC_CACHE_ENABLED = false;
+export const SEMANTIC_CACHE_ENABLED = true;
 
 /**
  * Semantic cache similarity threshold
@@ -15,4 +15,4 @@ export const SEMANTIC_CACHE_ENABLED = false;
  * Lower values = more aggressive caching but potentially less relevant matches
  * Higher values = more conservative caching but higher quality matches
  */
-export const SEMANTIC_SIMILARITY_THRESHOLD = 0.8;
+export const SEMANTIC_SIMILARITY_THRESHOLD = 0.92;

@@ -54,7 +54,7 @@ const models = [
     description: "OpenAI GPT-4.1",
     handler: generateTextPortkey,
     provider: "azure",
-    tier: "anonymous",
+    tier: "seed",
     community: false,
     aliases: "gpt-4.1",
     input_modalities: ["text", "image"],
@@ -71,7 +71,7 @@ const models = [
     description: "OpenAI GPT-4.1 Mini (Roblox)",
     handler: generateTextPortkey,
     provider: "azure",
-    tier: "seed",
+    tier: "flower",
     community: false,
     aliases: "gpt-4.1-mini-roblox",
     input_modalities: ["text", "image"],
@@ -258,7 +258,7 @@ const models = [
     ],
     handler: generateTextPortkey,
     provider: "azure",
-    tier: "anonymous",
+    tier: "seed",
     community: false,
     aliases: "gpt-4o-audio-preview",
     input_modalities: ["text", "image", "audio"],
@@ -294,7 +294,7 @@ const models = [
     description: "Mirexa AI Companion",
     handler: generateTextMirexa,
     provider: "azure",
-    tier: "anonymous",
+    tier: "seed",
     community: true,
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
@@ -326,7 +326,7 @@ const models = [
     description: "Rtist",
     handler: rtist,
     provider: "azure",
-    tier: "anonymous",
+    tier: "seed",
     community: true,
     input_modalities: ["text"],
     output_modalities: ["text"],
@@ -359,7 +359,7 @@ const models = [
     description: "Elixpo Search",
     handler: generateTextPortkey,
     provider: "scaleway",
-    tier: "seed",
+    tier: "anonymous",
     community: true,
     input_modalities: ["text"],
     output_modalities: ["text"],
@@ -407,7 +407,7 @@ const models = [
     description: "BIDARA (Biomimetic Designer and Research Assistant by NASA)",
     handler: bidara,
     provider: "azure",
-    tier: "anonymous",
+    tier: "seed",
     community: true,
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
@@ -458,7 +458,7 @@ export function findModelByName(modelName) {
   return (
     availableModels.find(
       (model) => model.name === modelName || model.aliases === modelName
-    ) || availableModels.find((model) => model.name === "openai")
+    ) || availableModels.find((model) => model.name === "openai-fast")
   ); // Default to openai
 }
 

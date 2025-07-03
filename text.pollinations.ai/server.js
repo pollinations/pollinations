@@ -13,6 +13,7 @@ import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { processRequestForAds } from './ads/initRequestFilter.js';
 import { createStreamingAdWrapper } from './ads/streamingAdWrapper.js';
 import { getRequestData, prepareModelsForOutput, getUserMappedModel } from './requestUtils.js';
+import { logUserRequest } from './userLogger.js';
 
 // Import shared utilities
 import { enqueue } from '../shared/ipQueue.js';
@@ -191,6 +192,11 @@ async function handleRequest(req, res, requestData) {
         // Ensure completion has the request ID
         completion.id = requestId;
         
+        // Log user request/response if enabled
+        if (authResult.username) {
+            logUserRequest(authResult.username, finalRequestData, completion);
+        }
+        
         // Check if completion contains an error
         if (completion.error) {
             errorLog('Completion error details: %s', JSON.stringify(completion.error, null, 2));
@@ -205,6 +211,11 @@ async function handleRequest(req, res, requestData) {
             // Add the details if they exist
             if (errorObj.details) {
                 error.response = { data: errorObj.details };
+            }
+            
+            // Log error for debugging if user is being tracked
+            if (authResult.username) {
+                logUserRequest(authResult.username, finalRequestData, null, error);
             }
             
             await sendErrorResponse(res, req, error, requestData, errorObj.status || 500);
@@ -495,10 +506,10 @@ async function processRequest(req, res, requestData) {
         if (error.status === 429) {
             errorLog('Queue full for IP %s: %s', ip, error.message);
             const errorResponse = {
-                error: 'Too Many Requests',
+                error: 'Too Many Requests. Booo!',
                 status: 429,
                 details: {
-                    message: 'Request queue is full. Please try again later.',
+                    message: 'Request queue is full. Please try again later. Boo!',
                     queueInfo: error.queueInfo,
                     timestamp: new Date().toISOString()
                 }

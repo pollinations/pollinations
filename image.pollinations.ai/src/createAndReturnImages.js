@@ -637,8 +637,16 @@ const callKontextAPI = async (prompt, safeParams) => {
       }
     }
     
+    const headers = {};
+    
+    // Add Bearer token if FLUX_KONTEXT_KEY is available
+    if (process.env.FLUX_KONTEXT_KEY) {
+      headers['Authorization'] = `Bearer ${process.env.FLUX_KONTEXT_KEY}`;
+    }
+    
     const response = await fetch('http://51.159.184.240:8000/generate', {
       method: 'POST',
+      headers,
       body: formData,
       timeout: 120000 // 2 minute timeout
     });

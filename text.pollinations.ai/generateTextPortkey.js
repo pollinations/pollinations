@@ -13,10 +13,10 @@ const errorLog = debug('pollinations:portkey:error');
 // Model mapping for Portkey
 const MODEL_MAPPING = {
     // Azure OpenAI models
-    'openai-fast': 'gpt-4.1-mini-roblox',
-    'openai': 'gpt-4.1-mini-roblox',       // Maps to portkeyConfig['gpt-4o-mini']
-    'openai-large': 'gpt-4.1-mini-roblox',
-    'openai-roblox': 'gpt-4.1-mini-roblox',
+    'openai-fast': 'gpt-4.1-nano-roblox',
+    'openai': 'gpt-4o-mini',
+    'openai-large': 'azure-gpt-4.1',
+    'openai-roblox': 'gpt-4.1-nano-roblox',
     //'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
     'openai-reasoning': 'o3', // Maps to custom MonoAI endpoint
     'searchgpt': 'gpt-4o-mini-search-preview', // Maps to custom MonoAI endpoint
@@ -346,12 +346,7 @@ export const portkeyConfig = {
         process.env.AZURE_OPENAI_NANO_ENDPOINT,
         'gpt-4.1-nano'
     ),
-    'gpt-4.1-mini': () => createAzureModelConfig(
-        process.env.AZURE_OPENAI_API_KEY,
-        process.env.AZURE_OPENAI_ENDPOINT,
-        'gpt-4.1-mini'
-    ),
-    'gpt-4.1-mini-roblox': () => {
+    'gpt-4.1-nano-roblox': () => {
         // Randomly select one of the 3 roblox endpoints
         const endpoints = [
             {
@@ -370,13 +365,29 @@ export const portkeyConfig = {
                 apiKey: process.env.AZURE_OPENAI_ROBLOX_API_KEY_4,
                 endpoint: process.env.AZURE_OPENAI_ROBLOX_ENDPOINT_4
             },
+        ];
+        
+        const randomIndex = Math.floor(Math.random() * endpoints.length);
+        const selectedEndpoint = endpoints[randomIndex];
+        
+        log(`Selected random roblox endpoint ${randomIndex + 1}: ${selectedEndpoint.endpoint}`);
+        
+        return createAzureModelConfig(
+            selectedEndpoint.apiKey,
+            selectedEndpoint.endpoint,
+            'gpt-4.1-nano'
+        );
+    },
+    'gpt-4o-mini': () => {
+        // Randomly select one of the 3 roblox endpoints
+        const endpoints = [
             {
-                apiKey: process.env.AZURE_OPENAI_ROBLOX_API_KEY_5,
-                endpoint: process.env.AZURE_OPENAI_ROBLOX_ENDPOINT_5
+                apiKey: process.env.AZURE_OPENAI_MINI_API_KEY_1,
+                endpoint: process.env.AZURE_OPENAI_MINI_ENDPOINT_1
             },
             {
-                apiKey: process.env.AZURE_OPENAI_ROBLOX_API_KEY_6,
-                endpoint: process.env.AZURE_OPENAI_ROBLOX_ENDPOINT_6
+                apiKey: process.env.AZURE_OPENAI_MINI_API_KEY_2,
+                endpoint: process.env.AZURE_OPENAI_MINI_ENDPOINT_2
             },
         ];
         
@@ -388,7 +399,7 @@ export const portkeyConfig = {
         return createAzureModelConfig(
             selectedEndpoint.apiKey,
             selectedEndpoint.endpoint,
-            'gpt-4.1-mini'
+            'gpt-4o-mini'
         );
     },
     'gpt-4o': () => createAzureModelConfig(

@@ -29,3 +29,38 @@ export interface UserTierInfo {
   username: string;
   tier: UserTier;
 }
+
+// Subdomain types
+export type SubdomainSource = 'github_pages' | 'custom';
+
+export interface Subdomain {
+  id: number;
+  user_id: string;
+  subdomain: string;
+  source: SubdomainSource;
+  repo?: string;
+  custom_domain: boolean;
+  created_at: string;
+  last_published?: string;
+  updated_at: string;
+}
+
+export interface SubdomainRegistration {
+  subdomain: string;
+  source: SubdomainSource;
+  repo?: string;
+  custom_domain?: boolean;
+}
+
+export interface SubdomainUpdate {
+  source?: SubdomainSource;
+  repo?: string;
+  custom_domain?: boolean;
+}
+
+export interface SubdomainStatus {
+  subdomain: string;
+  status: 'active' | 'pending' | 'error';
+  last_published?: string;
+  error_message?: string;
+}

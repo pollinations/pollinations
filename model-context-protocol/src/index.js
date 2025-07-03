@@ -17,6 +17,7 @@ import { textTools } from './services/textService.js';
 import { audioTools } from './services/audioService.js';
 import { resourceTools } from './services/resourceService.js';
 import { authTools } from './services/authService.js';
+import { githubSubdomainTools } from './services/githubSubdomainService.js';
 
 // Export all tools as a flat array
 const toolDefinitions = [
@@ -28,7 +29,13 @@ const toolDefinitions = [
 
   // Audio tools
   ...audioTools,
+  
+  // Auth tools
   ...authTools,
+  
+  // GitHub subdomain tools
+  ...githubSubdomainTools,
+  
   // Resource tools
   // ...resourceTools
 ];
@@ -55,13 +62,14 @@ export async function startMcpServer() {
       instructions: `# 🚀 Pollinations MCP Server
 
 ## 💫 Available Capabilities
-This MCP server provides tools for **images**, **text**, **audio** and **Pollinations login** management through simple commands. ✨
+This MCP server provides tools for **images**, **text**, **audio**, **Pollinations login**, and **subdomain management** through simple commands. ✨
 
 ## 🎨 Creative Tools
 - Generate **stunning images** from text descriptions
 - Create **audio responses** and **text-to-speech** with various voices
 - Generate **text content** using powerful AI models
 - Manage **Pollinations login** and domain allowlists
+- Register and manage **custom subdomains** on pollinations.ai
 
 ## 💡 Pro Tips
 - Combine tools for amazing results! Generate an image → convert to speech about it

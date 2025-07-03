@@ -38,6 +38,14 @@ import {
 import { extractReferrer } from '../../shared/extractFromRequest.js';
 import { exchangeCodeForToken, getGitHubUser } from './github';
 import { handleAdminDatabaseDump, handleAdminUserInfo, handleAdminGetMetrics, handleAdminUpdateMetrics } from './admin';
+import { 
+  handleListSubdomains, 
+  handleRegisterSubdomain, 
+  handleUpdateSubdomain, 
+  handleDeleteSubdomain, 
+  handleGetSubdomainStatus,
+  handleResolveSubdomain
+} from './subdomain';
 import { generateHTML } from './client/html';
 
 // Add proper type declarations for DOM types
@@ -199,6 +207,25 @@ export default {
             return handleAdminUpdateMetrics(request, env, corsHeaders);
           }
           break;
+          
+        // Subdomain management routes
+        case '/github/subdomains/list':
+          if (request.method === 'GET') {
+            return handleListSubdomains(request, env, corsHeaders);
+          }
+          break;
+          
+        case '/github/subdomains/register':
+          if (request.method === 'POST') {
+            return handleRegisterSubdomain(request, env, corsHeaders);
+          }
+          break;
+          
+        case '/github/subdomains/resolve':
+          if (request.method === 'GET') {
+            return handleResolveSubdomain(request, env, corsHeaders);
+          }
+          break;
       }
       
       // Check if the path matches the pattern /api/validate-token/:token
@@ -207,6 +234,25 @@ export default {
           // Extract token from the URL path
           const token = url.pathname.replace('/api/validate-token/', '');
           return handleValidateToken(token, env, corsHeaders, ctx);
+        }
+      }
+      
+      // Handle subdomain dynamic routes
+      if (url.pathname.startsWith('/github/subdomains/update/')) {
+        if (request.method === 'POST') {
+          return handleUpdateSubdomain(request, env, corsHeaders);
+        }
+      }
+      
+      if (url.pathname.startsWith('/github/subdomains/delete/')) {
+        if (request.method === 'DELETE') {
+          return handleDeleteSubdomain(request, env, corsHeaders);
+        }
+      }
+      
+      if (url.pathname.startsWith('/github/subdomains/status/')) {
+        if (request.method === 'GET') {
+          return handleGetSubdomainStatus(request, env, corsHeaders);
         }
       }
       

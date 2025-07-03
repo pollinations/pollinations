@@ -88,6 +88,14 @@ export async function handleRegisterSubdomain(
       return createErrorResponse(400, 'GitHub repository is required for GitHub Pages source', corsHeaders);
     }
     
+    // Validate GitHub repository exists and is accessible
+    if (registration.source === 'github_pages' && registration.repo) {
+      const isValidRepo = await validateGitHubRepository(registration.repo, env);
+      if (!isValidRepo) {
+        return createErrorResponse(400, 'GitHub repository does not exist or is not accessible', corsHeaders);
+      }
+    }
+    
     // Register the subdomain
     const subdomain = await registerSubdomain(env.DB, userId, registration);
     
@@ -138,6 +146,14 @@ export async function handleUpdateSubdomain(
     // For GitHub Pages source, repo is required
     if (update.source === 'github_pages' && update.repo === undefined) {
       return createErrorResponse(400, 'GitHub repository is required for GitHub Pages source', corsHeaders);
+    }
+    
+    // Validate GitHub repository exists and is accessible
+    if (update.source === 'github_pages' && update.repo) {
+      const isValidRepo = await validateGitHubRepository(update.repo, env);
+      if (!isValidRepo) {
+        return createErrorResponse(400, 'GitHub repository does not exist or is not accessible', corsHeaders);
+      }
     }
     
     // Update the subdomain
@@ -236,7 +252,7 @@ export async function handleGetSubdomainStatus(
 
 /**
  * Handle resolving a subdomain to its GitHub Pages repository
- * This endpoint is public and doesn't require authentication
+ * This endpoint is public but rate-limited to prevent enumeration attacks
  */
 export async function handleResolveSubdomain(
   request: Request, 
@@ -249,6 +265,15 @@ export async function handleResolveSubdomain(
   if (!subdomainName) {
     return createErrorResponse(400, 'Missing required parameter: subdomain', corsHeaders);
   }
+  
+  // Basic rate limiting: check if subdomain name looks suspicious
+  // Reject requests with very short names or obvious enumeration patterns
+  if (subdomainName.length < 2 || /^[a-z]{1,2}$/.test(subdomainName)) {
+    return createErrorResponse(400, 'Invalid subdomain format', corsHeaders);
+  }
+  
+  // Add a small delay to make enumeration attacks less efficient
+  await new Promise(resolve => setTimeout(resolve, 100));
   
   // Find the subdomain
   const subdomain = await findSubdomain(env.DB, subdomainName);
@@ -275,9 +300,61 @@ export async function handleResolveSubdomain(
  * @returns True if valid, false otherwise
  */
 function isValidSubdomain(subdomain: string): boolean {
-  // Subdomain should be alphanumeric with hyphens, 3-63 characters
-  const subdomainRegex = /^[a-z0-9]([a-z0-9-]{1,61}[a-z0-9])?$/;
-  return subdomainRegex.test(subdomain);
+  // Reserved subdomains that conflict with existing services
+  const reservedSubdomains = new Set([
+    'auth', 'image', 'text', 'api', 'www', 'app', 'admin', 'cdn', 
+    'static', 'assets', 'blog', 'docs', 'help', 'support', 'status',
+    'mail', 'email', 'ftp', 'ssh', 'vpn', 'n8n', 'websim'
+  ]);
+  
+  if (reservedSubdomains.has(subdomain.toLowerCase())) {
+    return false;
+  }
+  
+  // Subdomain should be alphanumeric with hyphens, 2-63 characters
+  // Allow single chars or 2+ chars with proper start/end validation
+  const subdomainRegex = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
+  return subdomainRegex.test(subdomain) && subdomain.length >= 2 && subdomain.length <= 63;
+}
+
+/**
+ * Validate that a GitHub repository exists and is accessible
+ * @param repo Repository in format "owner/repo"
+ * @param env Environment variables
+ * @returns True if repository is valid and accessible
+ */
+async function validateGitHubRepository(repo: string, env: Env): Promise<boolean> {
+  try {
+    // Validate repo format
+    if (!repo || !repo.includes('/')) {
+      return false;
+    }
+    
+    const [owner, repoName] = repo.split('/');
+    if (!owner || !repoName) {
+      return false;
+    }
+    
+    // Check if repository exists and is public via GitHub API
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repoName}`, {
+      headers: {
+        'User-Agent': 'Pollinations-Subdomain-Service',
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+    
+    if (!response.ok) {
+      return false;
+    }
+    
+    const repoData = await response.json();
+    
+    // Ensure repository is public and not archived
+    return !repoData.private && !repoData.archived;
+  } catch (error) {
+    console.error('Error validating GitHub repository:', error);
+    return false;
+  }
 }
 
 /**

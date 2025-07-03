@@ -55,24 +55,48 @@ export const getCachedImage = (prompt = "", extraParams) => {
   return null;
 };
 
-export const cacheImage = async (prompt, extraParams, bufferPromiseCreator) => {
-  if (isImageCached(prompt, extraParams)) {
-    return getCachedImage(prompt, extraParams);
-  }
-
+// New function that caches promises immediately to prevent duplicate generation
+export const cacheImagePromise = async (prompt, extraParams, bufferPromiseCreator) => {
   const cachePath = generateCachePath(prompt, extraParams);
-  const buffer = await bufferPromiseCreator();
-
-  // If cache is at max size, remove oldest entry (first item in Map)
-  if (memCache.size >= MAX_CACHE_SIZE) {
-    const firstKey = memCache.keys().next().value;
-    memCache.delete(firstKey);
-    logCache(`Removed oldest cache entry: ${firstKey}`);
+  
+  // Check if we already have a cached result or promise
+  if (memCache.has(cachePath)) {
+    const cached = memCache.get(cachePath);
+    memCache.delete(cachePath);
+    memCache.set(cachePath, cached); // Move to end for LRU
+    
+    // If it's a promise, wait for it; otherwise return the buffer
+    if (cached instanceof Promise) {
+      logCache(`Found in-flight promise for: ${cachePath}`);
+      return await cached;
+    } else {
+      logCache(`Found cached result for: ${cachePath}`);
+      return cached;
+    }
   }
 
-  memCache.set(cachePath, buffer);
-  logCache(`Cached image: ${cachePath}`);
-  return buffer;
+  // Create the promise and cache it immediately
+  logCache(`Starting new generation for: ${cachePath}`);
+  const promise = bufferPromiseCreator();
+  
+  // Cache the promise immediately
+  memCache.set(cachePath, promise);
+  
+  try {
+    // Wait for the promise to resolve
+    const buffer = await promise;
+    
+    // Replace the promise with the actual result
+    memCache.set(cachePath, buffer);
+    logCache(`Completed generation and cached result for: ${cachePath}`);
+    
+    return buffer;
+  } catch (error) {
+    // Remove failed promise from cache
+    memCache.delete(cachePath);
+    logError(`Generation failed for ${cachePath}:`, error);
+    throw error;
+  }
 };
 
 export const memoize = (fn, getKey) => {

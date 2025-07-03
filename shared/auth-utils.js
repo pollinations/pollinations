@@ -15,6 +15,7 @@
 // Auto-load environment variables from shared and local .env files
 import './env-loader.js';
 import debug from 'debug';
+import { extractReferrer, getTokenSource, extractToken } from './extractFromRequest.js';
 
 // Set up debug loggers with namespaces
 const log = debug('pollinations:auth');
@@ -22,133 +23,9 @@ const errorLog = debug('pollinations:error');
 const tokenLog = debug('pollinations:auth:token');
 const referrerLog = debug('pollinations:auth:referrer');
 
-// Token field configuration for DRY principle
-const TOKEN_FIELDS = {
-  query: ['token'],
-  header: ['authorization', 'x-pollinations-token'],
-  body: ['token', 'auth_token', 'authorization']
-};
-
-/**
- * Helper function to extract value from query parameters
- * @param {string} url - Request URL
- * @param {string[]} fields - Array of field names to check
- * @returns {Object} { value, source } or { value: null, source: null }
- */
-function extractFromQuery(url, fields) {
-  const urlObj = new URL(url, 'http://x');
-  for (const field of fields) {
-    const value = urlObj.searchParams.get(field);
-    if (value) return { value, source: `query:${field}` };
-  }
-  return { value: null, source: null };
-}
-
-/**
- * Helper function to extract value from headers (supports both Cloudflare and Express styles)
- * @param {Object} headers - Request headers
- * @param {string[]} fields - Array of field names to check
- * @returns {Object} { value, source } or { value: null, source: null }
- */
-function extractFromHeaders(headers, fields) {
-  for (const field of fields) {
-    let value = null;
-    
-    if (headers.get) { // Cloudflare-style headers
-      value = headers.get(field);
-    } else if (headers) { // Express-style headers
-      value = headers[field] || headers[field.toLowerCase()];
-    }
-    
-    if (value) {
-      // Special handling for authorization header
-      if (field === 'authorization') {
-        value = value.replace(/^Bearer\s+/i, '');
-      }
-      return { value, source: `header:${field}` };
-    }
-  }
-  return { value: null, source: null };
-}
-
-/**
- * Helper function to extract value from request body
- * @param {Object} body - Request body
- * @param {string[]} fields - Array of field names to check
- * @returns {Object} { value, source } or { value: null, source: null }
- */
-function extractFromBody(body, fields) {
-  if (!body) return { value: null, source: null };
-  
-  for (const field of fields) {
-    const value = body[field];
-    if (value) return { value, source: `body:${field}` };
-  }
-  return { value: null, source: null };
-}
-
-/**
- * Extract authentication token from request
- * Supports multiple token sources (NO referrer fallback)
- * Compatible with OpenAI and other LLM API authentication patterns
- * @param {Request|Object} req - The request object
- * @returns {string|null} The token or null
- */
-export function extractToken(req) {
-  // Check URL query parameters
-  const queryResult = extractFromQuery(req.url, TOKEN_FIELDS.query);
-  if (queryResult.value) return queryResult.value;
-  
-  // Check headers for Bearer token, API key, and custom headers
-  const headerResult = extractFromHeaders(req.headers, TOKEN_FIELDS.header);
-  if (headerResult.value) return headerResult.value;
-  
-  // Check body for token field in POST requests (multiple field names)
-  if (req.method === 'POST' && req.body) {
-    const bodyResult = extractFromBody(req.body, TOKEN_FIELDS.body);
-    if (bodyResult.value) return bodyResult.value;
-  }
-  
-  return null;  // header/query/body only – no referrer here!
-}
-
-/**
- * Extract referrer from request headers and body
- * Used for frontend app identification, extended access, and analytics
- * @param {Request|Object} req - The request object (can be Cloudflare Request or Express req)
- * @returns {string|null} The referrer URL or null
- */
-export function extractReferrer(req) {
-  // First check URL query parameters (highest priority)
-  const url = req.url;
-  if (url) {
-    const urlObj = new URL(url, 'http://x'); // Use dummy base for relative URLs
-    const queryReferrer = urlObj.searchParams.get('referrer') || 
-                         urlObj.searchParams.get('referer'); // Support both spellings
-    if (queryReferrer) return queryReferrer;
-  }
-  
-  // Then check body for referrer field (second priority) - not just for POST
-  if (req.body?.referrer) return String(req.body.referrer);
-  if (req.body?.referer) return String(req.body.referer);
-  
-  // Finally check headers (lowest priority)
-  // Handle Cloudflare Workers Request
-  if (req.headers && typeof req.headers.get === 'function') {
-    const headerReferrer = req.headers.get('referer') || 
-                          req.headers.get('referrer') || // Support both spellings
-                          req.headers.get('origin');
-    if (headerReferrer) return headerReferrer;
-  } else if (req.headers && typeof req.headers === 'object') {
-    // Handle Express/Node.js request
-    const headerReferrer = req.headers.referer || 
-                          req.headers.referrer || // Support both spellings
-                          req.headers.origin;
-    if (headerReferrer) return headerReferrer;
-  }
-  
-  return null;
-}
+// Extract authentication token from request
+// This function has been moved to extractFromRequest.js
+// and is now imported at the top of this file
 
 /**
  * Validate token against allowed tokens
@@ -170,108 +47,62 @@ export function isValidToken(token, validTokens) {
 }
 
 /**
- * Determine the source of the token (header, query param, body)
- * @param {Request|Object} req - The request object
- * @returns {string} The source of the token
+ * Check if a referrer domain is registered by any user in the auth.pollinations.ai database
+ * @param {string} referrer - The referrer URL to check
+ * @returns {Promise<{userId: string, username: string, tier: string}|null>} User info if domain is registered, null otherwise
  */
-export function getTokenSource(req) {
-  const token = extractToken(req);
-  if (!token) return 'unknown';
-
-  const queryResult = extractFromQuery(req.url, TOKEN_FIELDS.query);
-  if (queryResult.value === token) return queryResult.source;
-
-  const headerResult = extractFromHeaders(req.headers, TOKEN_FIELDS.header);
-  if (headerResult.value === token) return headerResult.source;
-
-  const bodyResult = extractFromBody(req.body, TOKEN_FIELDS.body);
-  if (bodyResult.value === token) return bodyResult.source;
-
-  return 'unknown';
-}
-
-/**
- * Get client IP address from request
- * @param {Request|Object} req - The request object
- * @returns {string} The client IP or 'unknown'
- */
-export function getClientIp(req) {
-  // Handle Cloudflare Workers Request
-  if (req.headers && typeof req.headers.get === 'function') {
-    return req.headers.get('cf-connecting-ip') ||
-           req.headers.get('x-real-ip') ||
-           req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-           'unknown';
-  }
+export async function checkReferrerInDb(referrer) {
+  if (!referrer) return null;
   
-  // Handle Express/Node.js request
-  if (req.headers && typeof req.headers === 'object') {
-    return req.headers['cf-connecting-ip'] ||
-           req.headers['x-real-ip'] ||
-           (req.headers['x-forwarded-for'] || '').split(',')[0].trim() ||
-           req.connection?.remoteAddress ||
-           'unknown';
-  }
-  
-  return 'unknown';
-}
-
-/**
- * Get IP address from request (with privacy masking)
- * @param {Object} req - The request object
- * @returns {string} The IP address (truncated for privacy)
- */
-export function getIp(req) {
-  // Prioritize standard proxy headers and add cloudflare-specific headers
-  const ip = req.headers["x-bb-ip"] || 
-             req.headers["x-nf-client-connection-ip"] || 
-             req.headers["x-real-ip"] || 
-             req.headers['x-forwarded-for'] || 
-             req.headers['cf-connecting-ip'] ||
-             (req.socket ? req.socket.remoteAddress : null);
-  
-  if (!ip) return null;
-  
-  // Handle x-forwarded-for which can contain multiple IPs (client, proxy1, proxy2, ...)
-  // The client IP is typically the first one in the list
-  const cleanIp = ip.split(',')[0].trim();
-  
-  // Check if IPv4 or IPv6
-  if (cleanIp.includes(':')) {
-      // IPv6 address - take first 4 segments (64 bits) which typically represent the network prefix
-      // Handle special IPv6 formats like ::1 or 2001::
-      const segments = cleanIp.split(':');
-      let normalizedSegments = [];
-      
-      // Handle :: notation (compressed zeros)
-      if (cleanIp.includes('::')) {
-          const parts = cleanIp.split('::');
-          const leftPart = parts[0] ? parts[0].split(':') : [];
-          const rightPart = parts[1] ? parts[1].split(':') : [];
-          
-          // Calculate how many zero segments are represented by ::
-          const missingSegments = 8 - leftPart.length - rightPart.length;
-          
-          normalizedSegments = [
-              ...leftPart,
-              ...Array(missingSegments).fill('0'),
-              ...rightPart
-          ];
-      } else {
-          normalizedSegments = segments;
+  try {
+    // Extract domain from referrer URL if it's a full URL
+    let domain = referrer;
+    if (referrer.startsWith('http://') || referrer.startsWith('https://')) {
+      try {
+        const urlObj = new URL(referrer);
+        domain = urlObj.hostname;
+      } catch (error) {
+        // If parsing fails, use the raw referrer value
+        referrerLog('Failed to parse referrer as URL, using raw value:', error);
       }
-      
-      return normalizedSegments.slice(0, 4).join(':');
-  } else {
-      // IPv4 address - take first 3 segments
-      return cleanIp.split('.').slice(0, 3).join('.');
+    }
+    
+    referrerLog(`Checking if domain ${domain} is registered in auth.pollinations.ai database`);
+    
+    // Query the auth.pollinations.ai API to check if the domain is registered by any user
+    const apiUrl = `https://auth.pollinations.ai/api/validate-referrer?referrer=${encodeURIComponent(domain)}`;
+    referrerLog(`Calling API: ${apiUrl}`);
+    
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      referrerLog(`API returned error status: ${response.status}`);
+      return null;
+    }
+    
+    const data = await response.json();
+    referrerLog('API response:', data);
+    
+    if (data && data.valid && data.user_id) {
+      referrerLog(`✅ Domain ${domain} is registered by user ${data.user_id} (${data.username}) with tier ${data.tier}`);
+      return {
+        userId: data.user_id,
+        username: data.username,
+        tier: data.tier
+      };
+    } else {
+      referrerLog(`❌ Domain ${domain} is not registered in the database`);
+      return null;
+    }
+  } catch (error) {
+    referrerLog('Error checking referrer in database:', error);
+    return null;
   }
 }
 
 /**
  * Validate token against the auth.pollinations.ai API.
  * @param {string} token - The token to validate.
- * @returns {Promise<string|null>} UserId if valid, null otherwise.
+ * @returns {Promise<{userId: string, username: string, tier: string}|null>} User info if valid, null otherwise.
  */
 export async function validateApiTokenDb(token) {
   const maskedToken = token && token.length > 8 ? 
@@ -286,7 +117,7 @@ export async function validateApiTokenDb(token) {
   tokenLog('validateApiTokenDb: Starting validation for token: %s', maskedToken);
   
   try {
-    const apiUrl = `https://auth.pollinations.ai/api/validate-token/${token}`;
+    const apiUrl = `https://auth.pollinations.ai/api/validate-token/${encodeURIComponent(token)}`;
     tokenLog('validateApiTokenDb: Making API call to auth.pollinations.ai');
     
     // Call the auth.pollinations.ai API to validate the token using a simple GET request
@@ -302,9 +133,13 @@ export async function validateApiTokenDb(token) {
     const data = await response.json();
     tokenLog('validateApiTokenDb: API response data: %o', data);
     
-    if (data.valid && data.userId) {
-      tokenLog('validateApiTokenDb: Token validation successful for user: %s', data.userId);
-      return data.userId;
+    if (data && data.valid && data.userId) {
+      tokenLog('validateApiTokenDb: Valid token for user: %s, tier: %s', data.userId, data.tier || 'seed');
+      return {
+        userId: data.userId,
+        username: data.username || data.userId, // Use userId as fallback if username not provided
+        tier: data.tier || 'seed'
+      };
     } else {
       tokenLog('validateApiTokenDb: Token validation failed - invalid token or missing userId');
       return null;
@@ -362,21 +197,18 @@ export async function isUserDomainAllowedFromDb(userId, referrer, db, isDomainAl
 }
 
 /**
- * Determine if request should bypass queue
+ * Determine if request is authenticated
  * @param {Request|Object} req - The request object
- * @param {Object} ctx - Context object
- * @param {string[]|string} [ctx.legacyTokens] - Legacy tokens to check
- * @param {string[]|string} [ctx.allowlist] - Allowlisted domains
- * @returns {{bypass: boolean, reason: string, userId: string|null, debugInfo: Object}} Bypass decision, reason, userId if authenticated, and debug info
+ * @param {Object} ctx - Context object (currently unused but kept for future extensibility)
+ * @returns {{authenticated: boolean, tokenAuth: boolean, referrerAuth: boolean, bypass: boolean, reason: string, userId: string|null, username: string|null, tier: string, debugInfo: Object}} Authentication status, auth type, reason, userId, username if authenticated, and debug info
  * @throws {Error} If an invalid token is provided
  */
-export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
+export async function shouldBypassQueue(req) {
   log('shouldBypassQueue called for request: %s %s', req.method, req.url);
   
   const token = extractToken(req);
   const ref   = extractReferrer(req);
   
-  // Log token and referrer extraction results
   if (token) {
     tokenLog('Token extracted: %s (length: %d, source: %s)', 
              token.length > 8 ? token.substring(0, 4) + '...' + token.substring(token.length - 4) : token,
@@ -392,105 +224,81 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
     referrerLog('No referrer found in request');
   }
   
-  // Create debug info object for headers
   const debugInfo = {
     token: token ? (token.length > 8 ? token.substring(0, 4) + '...' + token.substring(token.length - 4) : token) : null,
     referrer: ref,
-    tokenSource: token ? getTokenSource(req) : null,
-    legacyTokensCount: Array.isArray(legacyTokens) ? legacyTokens.length : (legacyTokens?.split(',').length || 0),
-    allowlistCount: Array.isArray(allowlist) ? allowlist.length : (allowlist?.split(',').length || 0)
+    tokenSource: token ? getTokenSource(req) : null
   };
-  
-  log('Auth context: legacyTokens=%d, allowlist=%d', debugInfo.legacyTokensCount, debugInfo.allowlistCount);
-  
-  // If a token is provided, validate it
+    
+  // 1️⃣ Token-based authentication
   if (token) {
     tokenLog('Validating token: %s', debugInfo.token);
-    
-    // 1️⃣ Check legacy token first (fast local check)
-    tokenLog('Checking against %d legacy tokens', debugInfo.legacyTokensCount);
-    const legacyTokenMatch = legacyTokens.includes(token);
-    if (legacyTokenMatch) {
-      tokenLog('✅ Valid legacy token match found');
-      debugInfo.authResult = 'LEGACY_TOKEN';
-      debugInfo.legacyTokenMatch = true;
-      log('Queue bypass granted: LEGACY_TOKEN');
-      return { bypass:true, reason:'LEGACY_TOKEN', userId:null, debugInfo };
-    }
-    
-    // 2️⃣ Check DB token (slower API call)
     tokenLog('Checking token against auth.pollinations.ai API');
-    const userId = await validateApiTokenDb(token);   // Uses auth.pollinations.ai API
-    if (userId) {
-      tokenLog('✅ Valid DB token found for user: %s', userId);
+    const tokenResult = await validateApiTokenDb(token);
+    if (tokenResult && tokenResult.userId) {
+      tokenLog('✅ Valid DB token found for user: %s (tier: %s)', tokenResult.userId, tokenResult.tier);
       debugInfo.authResult = 'DB_TOKEN';
-      debugInfo.userId = userId;
-      log('Queue bypass granted: DB_TOKEN for user %s', userId);
-      return { bypass:true, reason:'DB_TOKEN', userId, debugInfo };
+      debugInfo.userId = tokenResult.userId;
+      debugInfo.username = tokenResult.username;
+      debugInfo.tier = tokenResult.tier;
+      log('Authentication succeeded: DB_TOKEN for user %s (tier: %s)', tokenResult.userId, tokenResult.tier);
+      return {
+        bypass: true,
+        authenticated: true,
+        tokenAuth: true,
+        referrerAuth: false,
+        reason: 'DB_TOKEN',
+        ...tokenResult,
+        debugInfo
+      };
     }
-    
-    // If token is provided but not valid, return error info instead of throwing
-    // This prevents the server from crashing while maintaining proper error handling
-    // tokenLog('❌ Invalid token provided: %s', debugInfo.token);
-    // errorLog('Invalid token provided (source: %s)', debugInfo.tokenSource || 'unknown');
-    // debugInfo.authResult = 'INVALID_TOKEN';
-    // log('Authentication failed: INVALID_TOKEN');
-    // return { 
-    //   bypass: false, 
-    //   reason: 'INVALID_TOKEN', 
-    //   userId: null, 
-    //   debugInfo,
-    //   error: {
-    //     message: 'Invalid token provided',
-    //     status: 401,
-    //     details: { debugInfo }
-    //   }
-    // };
+    // If token is provided but it's not valid, we log it and continue.
+    tokenLog('❌ Invalid or unrecognized token provided: %s. Will try other auth methods.', debugInfo.token);
+    errorLog('Invalid or unrecognized token provided (source: %s, token: %s)', debugInfo.tokenSource || 'unknown', debugInfo.token);
   }
   
-  // 3️⃣ Check for legacy token in referrer (no error thrown for invalid referrers)
+  // 2️⃣ Referrer-based authentication
   if (ref) {
-    // Convert to string to handle any type safely
-    const refStr = String(ref);
-    referrerLog('Checking referrer for legacy token: %s', refStr);
-    const legacyReferrerMatch = legacyTokens.some(t => refStr.includes(t));
-    if (legacyReferrerMatch) {
-      referrerLog('✅ Legacy token found in referrer: %s', refStr);
-      debugInfo.authResult = 'LEGACY_REFERRER';
-      debugInfo.legacyReferrerMatch = true;
-      log('Queue bypass granted: LEGACY_REFERRER');
-      return { bypass:true, reason:'LEGACY_REFERRER', userId:null, debugInfo };
+    const refStr = String(ref); 
+
+    referrerLog('Checking if referrer is registered in auth database: %s', refStr);
+    const dbReferrerResult = await checkReferrerInDb(refStr);
+    if (dbReferrerResult && dbReferrerResult.userId) {
+      referrerLog('✅ Registered domain: %s for user %s (tier: %s)', refStr, dbReferrerResult.userId, dbReferrerResult.tier);
+      debugInfo.authResult = 'DB_REFERRER';
+      debugInfo.dbReferrerMatch = true; // Ensuring this is included
+      debugInfo.userId = dbReferrerResult.userId;
+      debugInfo.username = dbReferrerResult.username; // Ensuring this is included
+      debugInfo.tier = dbReferrerResult.tier;
+      log('Authentication succeeded: DB_REFERRER for user %s (tier: %s)', dbReferrerResult.userId, dbReferrerResult.tier);
+      return { 
+        bypass: true, 
+        authenticated: true, 
+        tokenAuth: false,
+        referrerAuth: true,
+        reason: 'DB_REFERRER', 
+        ...dbReferrerResult,
+        debugInfo 
+      };
     } else {
-      referrerLog('No legacy token found in referrer');
-    }
-  
-    // 3.5️⃣ Special check for catgpt referrer
-    if (refStr.toLowerCase().includes('catgpt')) {
-      referrerLog('✅ CatGPT referrer detected: %s', refStr);
-      debugInfo.authResult = 'CATGPT_REFERRER';
-      debugInfo.catgptMatch = true;
-      log('Queue bypass granted: CATGPT_REFERRER');
-      return { bypass:true, reason:'CATGPT_REFERRER', userId:null, debugInfo };
-    }
-  
-    // 4️⃣ Check allow-listed domain
-    referrerLog('Checking referrer against %d allowlisted domains', debugInfo.allowlistCount);
-    const allowlistMatch = allowlist.some(d => refStr.includes(d));
-    if (allowlistMatch) {
-      referrerLog('✅ Referrer matches allowlisted domain: %s', refStr);
-      debugInfo.authResult = 'ALLOWLIST';
-      debugInfo.allowlistMatch = true;
-      log('Queue bypass granted: ALLOWLIST');
-      return { bypass:true, reason:'ALLOWLIST', userId:null, debugInfo };
-    } else {
-      referrerLog('Referrer does not match any allowlisted domain');
+      referrerLog('Referrer is not a registered domain in auth database: %s', refStr);
     }
   }
-  
-  // 5️⃣ default → go through queue
-  log('No bypass criteria met, request will be queued');
+
+  // Default return if no authentication method succeeds
+  log('Authentication failed: NO_AUTH_METHOD_SUCCESS (No valid token or registered referrer found)');
   debugInfo.authResult = 'NONE';
-  return { bypass:false, reason:'NONE', userId:null, debugInfo };
+  return {
+    bypass: false,
+    authenticated: false,
+    tokenAuth: false,
+    referrerAuth: false,
+    reason: 'NO_AUTH_METHOD_SUCCESS',
+    userId: null,
+    username: null,
+    tier: 'anonymous',
+    debugInfo
+  };
 }
 
 /**
@@ -503,21 +311,18 @@ export async function shouldBypassQueue(req, { legacyTokens, allowlist }) {
  * @param {Object} req - Request object
  * @param {string} requestId - Request ID for logging
  * @param {Function} logAuth - Debug logger function
- * @returns {Promise<Object>} Authentication result with bypass, reason, userId, and debugInfo
+ * @returns {Promise<Object>} Authentication result with authenticated status, reason, userId, and debugInfo
  * @throws {Error} 401 error for invalid tokens, re-throws other errors
  */
 export async function handleAuthentication(req, requestId = null, logAuth = null) {
-  let hasValidToken, reason, userId, debugInfo;
+  let isAuthenticated, reason, userId, debugInfo;
   
   try {
-    // Load auth context from environment
-    const legacyTokens = process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [];
-    const allowlist = process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : [];
-    
-    // Check if request should bypass queue using shared utility
+    // Check if request is authenticated using shared utility
     // This may throw an error if an invalid token is provided
-    const authResult = await shouldBypassQueue(req, { legacyTokens, allowlist });
-    hasValidToken = authResult.bypass;
+    // const allowlist = process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : []; // Removed allowlist
+    const authResult = await shouldBypassQueue(req);
+    isAuthenticated = authResult.authenticated;
     reason = authResult.reason;
     userId = authResult.userId;
     debugInfo = authResult.debugInfo;
@@ -526,7 +331,7 @@ export async function handleAuthentication(req, requestId = null, logAuth = null
     if (logAuth && requestId) {
       logAuth('Authentication result:', {
         requestId,
-        hasValidToken,
+        isAuthenticated,
         reason,
         userId,
         debugInfo
@@ -534,9 +339,9 @@ export async function handleAuthentication(req, requestId = null, logAuth = null
     }
     
     return {
-      bypass: hasValidToken,
-      reason,
-      userId,
+      bypass: isAuthenticated, // Kept for backward compatibility
+      ...authResult,
+      tier: debugInfo.tier || 'anonymous',
       debugInfo
     };
     
@@ -591,14 +396,6 @@ export function addAuthDebugHeaders(headers, debugInfo) {
   if (debugInfo.referrer) {
     headers['X-Debug-Referrer'] = 'present';
   }
-  
-  if (debugInfo.legacyTokenMatch) {
-    headers['X-Debug-Legacy-Token-Match'] = 'true';
-  }
-  
-  if (debugInfo.allowlistMatch) {
-    headers['X-Debug-Allowlist-Match'] = 'true';
-  }
 }
 
 /**
@@ -616,11 +413,10 @@ export function createAuthDebugResponse(debugInfo) {
   };
   
   // Add token info if available
-  if (debugInfo.token || debugInfo.tokenSource || debugInfo.legacyTokenMatch) {
+  if (debugInfo.token || debugInfo.tokenSource) {
     debug.tokenInfo = {
       present: !!debugInfo.token,
-      source: debugInfo.tokenSource || 'none',
-      legacyMatch: !!debugInfo.legacyTokenMatch
+      source: debugInfo.tokenSource || 'none'
     };
   }
   
@@ -633,4 +429,52 @@ export function createAuthDebugResponse(debugInfo) {
   }
   
   return debug;
+}
+
+/**
+ * Fetch user preferences from auth.pollinations.ai
+ * @param {string} userId - The user ID to fetch preferences for
+ * @returns {Promise<Object|null>} User preferences object or null if not found/error
+ */
+export async function getUserPreferences(userId) {
+  if (!userId) return null;
+  
+  const preferenceLog = debug('pollinations:auth:preferences');
+  
+  try {
+    preferenceLog(`Fetching preferences for user ${userId}`);
+    
+    // Using admin endpoint to access preferences
+    const response = await fetch(
+      `https://auth.pollinations.ai/admin/preferences?user_id=${encodeURIComponent(userId)}`,
+      {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${process.env.ADMIN_API_KEY}`
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      preferenceLog(`Failed to fetch preferences: ${response.status} ${response.statusText}`);
+      // Log response body for debugging if status is not 404 (not found)
+      if (response.status !== 404) {
+        try {
+          const errorBody = await response.text();
+          preferenceLog('Error response body:', errorBody);
+        } catch (e) {
+          // Ignore error reading body
+        }
+      }
+      return null;
+    }
+    
+    const data = await response.json();
+    preferenceLog('Preferences fetched successfully:', data.preferences);
+    
+    return data.preferences || {};
+  } catch (error) {
+    preferenceLog('Error fetching preferences:', error);
+    return null;
+  }
 }

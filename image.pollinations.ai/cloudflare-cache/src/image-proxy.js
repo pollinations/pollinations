@@ -21,6 +21,12 @@ export async function proxyToOrigin(request, env, originHost) {
   const url = new URL(request.url);
   const originalUrl = url.toString();
   url.hostname = originHost || env.ORIGIN_HOST || 'image.pollinations.ai';
+  
+  // Reset port to default (remove local dev port 8787)
+  if (url.port === '8787') {
+    url.port = ''; // This will use default port (80 for HTTP, 443 for HTTPS)
+  }
+  
   const targetUrl = url.toString();
   
   console.log(`Forwarding request from ${originalUrl} to ${targetUrl}`);

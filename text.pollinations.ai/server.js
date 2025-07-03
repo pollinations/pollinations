@@ -12,11 +12,13 @@ import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { processRequestForAds } from './ads/initRequestFilter.js';
 import { createStreamingAdWrapper } from './ads/streamingAdWrapper.js';
-import { getRequestData } from './requestUtils.js';
+import { getRequestData, prepareModelsForOutput, getUserMappedModel } from './requestUtils.js';
 
 // Import shared utilities
 import { enqueue } from '../shared/ipQueue.js';
-import { handleAuthentication, getIp } from '../shared/auth-utils.js';
+import { handleAuthentication } from '../shared/auth-utils.js';
+import { getIp } from '../shared/extractFromRequest.js';
+import { hasSufficientTier } from '../shared/tier-gating.js';
 
 // Load environment variables
 dotenv.config();
@@ -46,16 +48,6 @@ async function blockIP(ip) {
 
 function isIPBlocked(ip) {
     return blockedIPs.has(ip);
-}
-
-async function checkBannedPhrases(messages, ip) {
-    const messagesString = JSON.stringify(messages).toLowerCase();
-    for (const phrase of BANNED_PHRASES) {
-        if (messagesString.includes(phrase.toLowerCase())) {
-            await blockIP(ip);
-            throw new Error(`Message contains banned phrase. IP has been blocked.`);
-        }
-    }
 }
 
 const app = express();
@@ -125,7 +117,8 @@ const QUEUE_CONFIG = {
 
 // GET /models request handler
 app.get('/models', (req, res) => {
-    res.json(availableModels);
+    // Use prepareModelsForOutput to remove pricing information and apply sorting
+    res.json(prepareModelsForOutput(availableModels));
 });
 
 setupFeedEndpoint(app);
@@ -139,7 +132,61 @@ async function handleRequest(req, res, requestData) {
     try {
         // Generate a unique ID for this request
         const requestId = generatePollinationsId();
-        const completion = await generateTextBasedOnModel(requestData.messages, requestData);
+        
+        // Get user info from authentication if available
+        const authResult = req.authResult || {};
+
+        // Tier gating
+        const model = availableModels.find(m => m.name === requestData.model || m.aliases?.includes(requestData.model));
+        const userTier = authResult.tier || 'anonymous';
+        
+        log(`Tier gating check: model=${requestData.model}, found=${!!model}, modelTier=${model?.tier}, userTier=${userTier}`);
+        
+        if (model) {
+            const hasAccess = hasSufficientTier(userTier, model.tier);
+            log(`Access check: hasSufficientTier(${userTier}, ${model.tier}) = ${hasAccess}`);
+            
+            if (!hasAccess) {
+                const error = new Error(`Model not found or tier not high enough. Your tier: ${userTier}, required tier: ${model.tier}. To get a token or add a referrer, visit https://auth.pollinations.ai`)
+                error.status = 402;
+                await sendErrorResponse(res, req, error, requestData, 402);
+                return;
+            }
+        } else {
+            log(`Model not found: ${requestData.model}`);
+            const error = new Error(`Model not found: ${requestData.model}`)
+            error.status = 404;
+            await sendErrorResponse(res, req, error, requestData, 404);
+            return;
+        }
+
+        // Apply user-specific model mapping if user is authenticated
+        let finalRequestData = requestData;
+        if (authResult.username) {
+            try {
+                const mappedModel = getUserMappedModel(authResult.username);
+                if (mappedModel) {
+                    log(`🔄 Model override: ${requestData.model} → ${mappedModel} for user ${authResult.username}`);
+                    finalRequestData = {
+                        ...requestData,
+                        model: mappedModel
+                    };
+                }
+            } catch (error) {
+                if (error.status === 403) {
+                    await sendErrorResponse(res, req, error, requestData, error.status);
+                    return;
+                }
+            }
+        }
+        
+        // Add user info to request data - using authResult directly as a thin proxy
+        const requestWithUserInfo = {
+            ...finalRequestData,
+            userInfo: authResult
+        };
+        
+        const completion = await generateTextBasedOnModel(finalRequestData.messages, requestWithUserInfo);
         
         // Ensure completion has the request ID
         completion.id = requestId;
@@ -169,14 +216,18 @@ async function handleRequest(req, res, requestData) {
             // Check if this is an audio response - if so, skip content processing
             const isAudioResponse = completion.choices?.[0]?.message?.audio !== undefined;
             
-            if (!isAudioResponse) {
+            // Skip ad processing for JSON mode responses
+            if (!isAudioResponse && !requestData.jsonMode) {
                 try {
                     const content = completion.choices[0].message.content;
                     
                     // Then process regular referral links
-                    const processedContent = await processRequestForAds(content, req, requestData.messages);
+                    const adString = await processRequestForAds(req, content, requestData.messages);
                     
-                    completion.choices[0].message.content = processedContent;
+                    // If an ad was generated, append it to the content
+                    if (adString) {
+                        completion.choices[0].message.content = content + '\n\n' + adString;
+                    }
                 } catch (error) {
                     errorLog('Error processing content:', error);
                 }
@@ -212,7 +263,7 @@ async function handleRequest(req, res, requestData) {
             log('Sending streaming response with sendAsOpenAIStream');
             // Add requestData to completion object for access in streaming ad wrapper
             completion.requestData = requestData;
-            sendAsOpenAIStream(res, completion, req);
+            await sendAsOpenAIStream(res, completion, req);
         } else {
             if (req.method === 'GET') {
                 sendContentResponse(res, completion);
@@ -236,10 +287,7 @@ async function handleRequest(req, res, requestData) {
         
         sendErrorResponse(res, req, error, requestData);
     }
-    
-    // if (!shouldBypassDelay(req)) {
-    //     await sleep(3000);
-    // }
+
 }
 
 // Helper function for consistent error responses
@@ -409,29 +457,26 @@ async function processRequest(req, res, requestData) {
             }
         };
         
-        if (requestData.stream) {
-            // For streaming requests, send error as a stream
-            sendAsOpenAIStream(res, { error: 'Forbidden', choices: [{ message: { content: 'Forbidden' } }] }, req);
-            return;
-        } else {
-            return res.status(403).json(errorResponse);
-        }
+        return res.status(403).json(errorResponse);
     }
     
     // Check authentication status
     const authResult = await handleAuthentication(req, null, authLog);
-    const hasValidToken = authResult.bypass && authResult.reason === 'TOKEN';
-    const hasReferrer = authResult.debugInfo?.referrer || authResult.debugInfo?.allowlistMatch;
+    // Store authentication result in request for later use
+    req.authResult = authResult;
+    // Use the new explicit authentication fields
+    const isTokenAuthenticated = authResult.tokenAuth;
+    const hasReferrer = authResult.referrerAuth;
     
     // Determine queue configuration based on authentication
     let queueConfig;
-    if (hasValidToken) {
-        // Token reduces delay between requests (no interval) but doesn't bypass queue
-        queueConfig = { interval: 0, cap: 1 };
+    if (isTokenAuthenticated) {
+        // Token reduces delay between requests (no interval) but still goes through queue
+        queueConfig = { interval: 1000, cap: authResult.tier === 'seed' ? 3 : 20 };
         authLog('Token authenticated - queue with no delay');
     } else if (hasReferrer) {
         // Referrer also skips delays between requests (no interval)
-        queueConfig = { interval: 0, cap: 1 };
+        queueConfig = { interval: 3000, cap: 1 };
         authLog('Referrer authenticated - queue with no delay');
     } else {
         // Use default queue config with interval
@@ -461,7 +506,7 @@ async function processRequest(req, res, requestData) {
             
             if (requestData.stream) {
                 // For streaming requests, send error as a stream
-                sendAsOpenAIStream(res, { 
+                await sendAsOpenAIStream(res, { 
                     error: errorResponse.error, 
                     choices: [{ message: { content: errorResponse.details.message } }] 
                 }, req);
@@ -475,7 +520,7 @@ async function processRequest(req, res, requestData) {
     }
 
     // Note: We've removed the duplicate handleRequest calls that were causing the headers error
-    // The shared enqueue function above now handles all queue logic, including bypass logic
+    // The shared enqueue function above now handles all queue logic, including authentication status
 }
 
 // Helper function to check if a model is an audio model and add necessary parameters
@@ -574,7 +619,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     }
 })
 
-function sendAsOpenAIStream(res, completion, req = null) {
+async function sendAsOpenAIStream(res, completion, req = null) {
     log('sendAsOpenAIStream called with completion type:', typeof completion);
     if (completion) {
         log('Completion properties:', {
@@ -597,9 +642,7 @@ function sendAsOpenAIStream(res, completion, req = null) {
     }
     
     // Handle streaming response from the API
-    const responseStream = completion.responseStream;
-    log('Got streaming response from API, provider:', completion.providerName);
-    
+    const responseStream = completion.responseStream;    
     // If we have a responseStream, try to proxy it
     if (responseStream) {
         log('Attempting to proxy stream to client');
@@ -615,12 +658,15 @@ function sendAsOpenAIStream(res, completion, req = null) {
             []
         ) : [];
         
+        // Get jsonMode from request data
+        const jsonMode = completion.requestData?.jsonMode || false;
+        
         // Check if we have messages and should process the stream for ads
-        if (req && messages.length > 0) {
+        if (req && messages.length > 0 && !jsonMode) {
             log('Processing stream for ads with', messages.length, 'messages');
             
             // Create a wrapped stream that will add ads at the end
-            const wrappedStream = createStreamingAdWrapper(
+            const wrappedStream = await createStreamingAdWrapper(
                 responseStream, 
                 req, 
                 messages
@@ -640,8 +686,8 @@ function sendAsOpenAIStream(res, completion, req = null) {
                 }
             });
         } else {
-            // Directly pipe the stream to the client - true thin proxy approach
-            log('Directly piping SSE stream to client (no ad processing)');
+            // If no messages, no request object, or JSON mode, just pipe the stream directly
+            log('Skipping ad processing for stream' + (jsonMode ? ' (JSON mode)' : ''));
             responseStream.pipe(res);
             
             // Handle client disconnect
@@ -687,7 +733,7 @@ function handleRobloxSpecificFix(messages, model) {
 }
 
 async function generateTextBasedOnModel(messages, options) {
-    const model = options.model || 'openai';
+    const model = options.model || 'openai-fast';
     log('Using model:', model, 'with options:', JSON.stringify(options));
 
     try {
@@ -696,20 +742,7 @@ async function generateTextBasedOnModel(messages, options) {
             log('Streaming mode enabled for model:', model, 'stream value:', options.stream);
         }
         
-        // Apply Roblox-specific fix if needed
-        const robloxFixedMessages = handleRobloxSpecificFix(messages, model);
-        
-        // Remove p-ads marker from messages to prevent it from affecting the LLM context
-        const processedMessages = robloxFixedMessages.map(msg => {
-            if (msg.content && typeof msg.content === 'string') {
-                // Remove the p-ads marker from the message content
-                return {
-                    ...msg,
-                    content: msg.content.replace(/p-ads/g, '')
-                };
-            }
-            return msg;
-        });
+        const processedMessages = messages;
         
         // Log the messages being sent
         log('Sending messages to model handler:', JSON.stringify(processedMessages.map(m => ({ role: m.role, content: typeof m.content === 'string' ? m.content.substring(0, 50) + '...' : '[non-string content]' }))));

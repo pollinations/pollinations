@@ -3,7 +3,6 @@ import request from 'supertest';
 import app, {
     getIp,
     getRequestData,
-    shouldBypassDelay,
     sendErrorResponse,
     sendOpenAIResponse,
     sendContentResponse,
@@ -596,8 +595,6 @@ test('getRequestData should parse request data correctly', t => {
                 jsonMode: false,
                 seed: null,
                 temperature: undefined,
-                isImagePollinationsReferrer: false,
-                isRobloxReferrer: false,
                 referrer: 'unknown',
                 stream: false,
                 isPrivate: true
@@ -617,8 +614,6 @@ test('getRequestData should parse request data correctly', t => {
                 jsonMode: false,
                 seed: null,
                 temperature: undefined,
-                isImagePollinationsReferrer: false,
-                isRobloxReferrer: false,
                 referrer: 'unknown',
                 stream: false,
                 isPrivate: false
@@ -637,8 +632,6 @@ test('getRequestData should parse request data correctly', t => {
                 seed: null,
                 model: 'openai',
                 temperature: undefined,
-                isImagePollinationsReferrer: false,
-                isRobloxReferrer: false,
                 referrer: 'unknown',
                 stream: false,
                 isPrivate: false
@@ -649,43 +642,6 @@ test('getRequestData should parse request data correctly', t => {
     testCases.forEach(({ req, expected }) => {
         const result = getRequestData(req);
         t.deepEqual(result, expected);
-    });
-});
-
-test('shouldBypassDelay should handle Roblox referrer', t => {
-    const testCases = [
-        {
-            req: {
-                headers: { referer: 'https://www.roblox.com/games' },
-                query: {},
-                body: {},
-                params: {}
-            },
-            expected: true
-        },
-        {
-            req: {
-                headers: { referer: 'https://other-site.com' },
-                query: {},
-                body: {},
-                params: {}
-            },
-            expected: false
-        },
-        {
-            req: {
-                headers: {},
-                query: {},
-                body: {},
-                params: {}
-            },
-            expected: false
-        }
-    ];
-
-    testCases.forEach(({ req, expected }) => {
-        const result = shouldBypassDelay(req);
-        t.is(result, expected);
     });
 });
 

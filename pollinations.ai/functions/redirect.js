@@ -1,14 +1,38 @@
 // Netlify function to handle redirects with analytics
-import fetch from 'node-fetch';
-
-// Auto-load environment variables from shared and local .env files
-import '../../shared/env-loader.js';
+import { incrementUserMetric } from '../../shared/userMetrics.js';
 
 // Import redirect mapping and affiliate data from the consolidated affiliates.js file
 import { redirectMapping, affiliatesData } from '../../affiliate/affiliates.js';
 
 // Use the redirectMapping directly as it's already in the correct format
 const REFERRAL_LINKS = redirectMapping;
+
+/**
+ * Sanitize target ID to handle common formatting issues
+ * @param {string} targetId - The raw target ID from the URL
+ * @returns {string} - Sanitized target ID
+ */
+function sanitizeTargetId(targetId) {
+  if (!targetId) return '';
+  
+  // Remove any trailing slashes
+  let sanitized = targetId.replace(/\/+$/, '');
+  
+  // Remove any query parameters
+  sanitized = sanitized.split('?')[0];
+  
+  // Remove any spaces
+  sanitized = sanitized.trim();
+  
+  // Handle double slashes that might appear in malformed URLs
+  // e.g., if the URL was /redirect//kofi instead of /redirect/kofi
+  if (sanitized.startsWith('/')) {
+    sanitized = sanitized.substring(1);
+  }
+  
+  console.log(`Sanitized target ID: '${targetId}' -> '${sanitized}'`);
+  return sanitized;
+}
 
 /**
  * Send analytics event to Google Analytics
@@ -109,7 +133,10 @@ export const handler = async function(event, context) {
   // Get the target ID from the path
   const path = event.path || '';
   const pathSegments = path.split('/');
-  const targetId = pathSegments[pathSegments.length - 1];
+  const rawTargetId = pathSegments[pathSegments.length - 1];
+  
+  // Sanitize the target ID to handle common formatting issues
+  const targetId = sanitizeTargetId(rawTargetId);
   
   // Get URL from query parameters or use the mapped URL
   const params = event.queryStringParameters || {};
@@ -135,6 +162,15 @@ export const handler = async function(event, context) {
       targetUrl: url,
       source: 'referral'
     }, event);
+    
+    // Track per-user affiliate click metrics if user ID is provided
+    const userId = event.queryStringParameters && event.queryStringParameters.user_id;
+    if (userId) {
+      // Use shared utility to increment affiliate_clicks metric
+      incrementUserMetric(userId, 'affiliate_clicks');
+    } else {
+      console.log('No user_id found in query parameters. Skipping per-user affiliate_clicks increment.');
+    }
     
     // Return redirect response
     return {

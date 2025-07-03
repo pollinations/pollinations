@@ -1,6 +1,10 @@
 import { generateCacheKey, cacheResponse } from './cache-utils.js';
 import { proxyToOrigin } from './image-proxy.js';
 import { sendToAnalytics } from './analytics.js';
+import { createSemanticCache, checkSemanticCacheAndRespond, cacheImageEmbedding, checkExactCacheAndRespond } from './semantic-cache.js';
+import { extractPromptFromUrl, extractImageParams } from './hybrid-cache.js';
+import { SEMANTIC_CACHE_ENABLED } from './config.js';
+
 import { getClientIp } from './ip-utils.js';
 
 // Cache status constants for better readability
@@ -58,11 +62,17 @@ export default {
     
     console.log(`Request: ${request.method} ${url.pathname}`);
     
-    // Extract the prompt for analytics
-    const originalPrompt = url.pathname.startsWith('/prompt/')
-      ? decodeURIComponent(url.pathname.split('/prompt/')[1])
-      : '';
+    // Create semantic cache instance
+    let semanticCache = null;
+    if (SEMANTIC_CACHE_ENABLED) {
+      semanticCache = createSemanticCache(env);
+    }
     
+    // Extract the prompt for analytics and semantic caching using consistent decoding
+    const semanticPrompt = extractPromptFromUrl(url);
+    const originalPrompt = semanticPrompt || ''; // Use same prompt for analytics consistency
+    const imageParams = extractImageParams(url);
+
     // Process query parameters for analytics
     const safeParams = {};
     for (const [key, value] of url.searchParams.entries()) {
@@ -97,56 +107,49 @@ export default {
     console.log('Cache key:', cacheKey);
     
     // Check if we have this image cached in R2
-    try {
-      const cachedImage = await env.IMAGE_BUCKET.get(cacheKey);
+    const exactCacheResponse = await checkExactCacheAndRespond(env.IMAGE_BUCKET, cacheKey);
+    
+    if (exactCacheResponse) {
+      console.log(`Cache hit for: ${cacheKey}`);
       
-      if (cachedImage) {
-        console.log(`Cache hit for: ${cacheKey}`);
-        
-        // Send analytics for cache hit
-        if (url.pathname.startsWith('/prompt/')) {
-          sendImageAnalytics(request, EVENTS.SERVED_FROM_CACHE, CACHE_STATUS.HIT, analyticsParams, env, ctx);
-        }
-        
-        // Return the cached image with appropriate headers
-        const cachedHeaders = new Headers();
-        
-        // Use the stored HTTP metadata if available
-        if (cachedImage.httpMetadata) {
-          if (cachedImage.httpMetadata.contentType) {
-            cachedHeaders.set('content-type', cachedImage.httpMetadata.contentType);
-          }
-          if (cachedImage.httpMetadata.contentEncoding) {
-            cachedHeaders.set('content-encoding', cachedImage.httpMetadata.contentEncoding);
-          }
-          if (cachedImage.httpMetadata.contentDisposition) {
-            cachedHeaders.set('content-disposition', cachedImage.httpMetadata.contentDisposition);
-          }
-          if (cachedImage.httpMetadata.contentLanguage) {
-            cachedHeaders.set('content-language', cachedImage.httpMetadata.contentLanguage);
-          }
-        } else {
-          // Fallback to default content type
-          cachedHeaders.set('content-type', 'image/jpeg');
-        }
-        
-        // Always set these headers for cache control and CORS
-        cachedHeaders.set('cache-control', 'public, max-age=31536000, immutable');
-        cachedHeaders.set('x-cache', 'HIT');
-        cachedHeaders.set('access-control-allow-origin', '*');
-        cachedHeaders.set('access-control-allow-methods', 'GET, POST, OPTIONS');
-        cachedHeaders.set('access-control-allow-headers', 'Content-Type');
-        
-        return new Response(cachedImage.body, {
-          headers: cachedHeaders
-        });
+      // Send analytics for cache hit
+      if (url.pathname.startsWith('/prompt/')) {
+        sendImageAnalytics(request, EVENTS.SERVED_FROM_CACHE, CACHE_STATUS.HIT, analyticsParams, env, ctx);
       }
-    } catch (error) {
-      console.error('Error retrieving cached image:', error);
+      
+      return exactCacheResponse;
     }
     
-    console.log(`Cache miss for: ${cacheKey}`);
-    
+    // Check semantic cache for similar images (after exact cache miss)
+    let semanticDebugInfo = null;
+    if (SEMANTIC_CACHE_ENABLED) {
+      console.log('[DEBUG] Starting semantic cache check...');
+      try {
+        const semanticResult = await checkSemanticCacheAndRespond(semanticCache, semanticPrompt, imageParams);
+        semanticDebugInfo = semanticResult?.debugInfo;
+        
+        if (semanticResult?.response) {
+          console.log('Semantic cache hit - returning similar image');
+          
+          // Send analytics for semantic cache hit
+          if (url.pathname.startsWith('/prompt/')) {
+            const similarity = semanticResult.response.headers.get('x-semantic-similarity');
+            sendImageAnalytics(request, EVENTS.SERVED_FROM_CACHE, CACHE_STATUS.HIT, {
+              ...analyticsParams,
+              cacheType: 'semantic',
+              similarity: similarity
+            }, env, ctx);
+          }
+          
+          return semanticResult.response;
+        }
+        console.log('[DEBUG] No semantic cache hit, proceeding to origin');
+      } catch (error) {
+        console.error('Error checking semantic cache:', error);
+        // Continue to origin - semantic cache errors shouldn't break requests
+      }
+    }
+
     // Cache miss - proxy to origin
     console.log('Proxying request to origin service...');
     const response = await proxyToOrigin(request, env);
@@ -156,6 +159,11 @@ export default {
       console.log('Caching successful image response');
       // Pass the original URL and request to the cacheResponse function
       ctx.waitUntil(cacheResponse(cacheKey, response.clone(), env, url.toString(), request));
+      
+      // Store embedding asynchronously for semantic caching
+      if (SEMANTIC_CACHE_ENABLED) {
+        ctx.waitUntil(cacheImageEmbedding(semanticCache, cacheKey, semanticPrompt, imageParams));
+      }
       
       // Send analytics for cache miss but successful generation
       if (url.pathname.startsWith('/prompt/')) {
@@ -179,6 +187,17 @@ export default {
     // Add cache miss header to the response
     const newHeaders = new Headers(response.headers);
     newHeaders.set('x-cache', 'MISS');
+    
+    // Add semantic debug headers if we performed a semantic search
+    if (SEMANTIC_CACHE_ENABLED && semanticDebugInfo?.searchPerformed) {
+      if (semanticDebugInfo.bestSimilarity !== null) {
+        newHeaders.set('x-semantic-best-similarity', semanticDebugInfo.bestSimilarity.toFixed(3));
+        newHeaders.set('x-semantic-threshold', semanticCache.similarityThreshold.toString()); // Show current threshold
+      }
+      newHeaders.set('x-semantic-search', 'performed');
+    } else {
+      newHeaders.set('x-semantic-search', 'skipped');
+    }
     
     return new Response(response.body, {
       status: response.status,

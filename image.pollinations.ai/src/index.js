@@ -4,7 +4,7 @@ import { parse } from 'url';
 import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
 import { createAndReturnImageCached } from './createAndReturnImages.js';
 import { makeParamsSafe } from './makeParamsSafe.js';
-import { cacheImage } from './cacheGeneratedImages.js';
+import { cacheImagePromise } from './cacheGeneratedImages.js';
 import { normalizeAndTranslatePrompt } from './normalizeAndTranslatePrompt.js';
 import { countJobs } from './generalImageQueue.js';
 import sleep from 'await-sleep';
@@ -18,7 +18,8 @@ import path from 'path';
 
 // Import shared utilities
 import { enqueue } from '../../shared/ipQueue.js';
-import { extractToken, getIp, isValidToken, handleAuthentication, addAuthDebugHeaders, createAuthDebugResponse } from '../../shared/auth-utils.js';
+import { isValidToken, handleAuthentication, addAuthDebugHeaders, createAuthDebugResponse } from '../../shared/auth-utils.js';
+import { extractToken, getIp } from '../../shared/extractFromRequest.js';
 
 // Queue configuration for image service
 const QUEUE_CONFIG = {
@@ -93,7 +94,7 @@ const preMiddleware = async function (pathname, req, res) {
  * @param {Object} params - The parameters object.
  * @returns {Promise<void>}
  */
-const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer, progress, requestId }) => {
+const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer, progress, requestId, authResult }) => {
   const ip = getIp(req);
   
   // Check if IP is blocked
@@ -125,10 +126,11 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     progress.updateBar(requestId, 40, 'Server', 'Selecting optimal server...');
     progress.updateBar(requestId, 50, 'Generation', 'Preparing...');
     
-    const { bypass, reason, userId, debugInfo } = await handleAuthentication(req, requestId, logAuth);
+    // Create user info object for passing to generation functions
+    const userInfo = authResult;
     
-    // Pass the authentication result directly instead of token and referrer
-    const { buffer, ...maturity } = await createAndReturnImageCached(generationPrompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId, wasTransformedForBadDomain, bypass);
+    // Pass the complete user info object instead of individual properties
+    const { buffer, ...maturity } = await createAndReturnImageCached(generationPrompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId, wasTransformedForBadDomain, userInfo);
 
     progress.updateBar(requestId, 50, 'Generation', 'Starting generation');
 
@@ -249,8 +251,13 @@ const checkCacheAndGenerate = async (req, res) => {
   let timingInfo = [];  // Moved outside try block
   
   try {
+    // Call authentication ONCE and reuse the result
+    const authResult = await handleAuthentication(req, requestId, logAuth);
+    const isAuthenticated = authResult.authenticated;
+    const hasValidToken = authResult.tokenAuth;
+    
     // Cache the generated image
-    const bufferAndMaturity = await cacheImage(originalPrompt, safeParams, async () => {
+    const bufferAndMaturity = await cacheImagePromise(originalPrompt, safeParams, async () => {
       const ip = getIp(req);
 
       progress.updateBar(requestId, 10, 'Queueing', 'Request queued');
@@ -260,10 +267,6 @@ const checkCacheAndGenerate = async (req, res) => {
       //   prompt: originalPrompt, 
       //   ip: getIp(req), status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer, token: extractToken(req) && extractToken(req).slice(0, 2) + "..." });
 
-      // Check for valid token to determine queue interval
-      const authResult = await handleAuthentication(req, requestId, logAuth);
-      const hasValidToken = authResult.bypass;
-      
       // Pass authentication status to generateImage (hasReferrer will be checked there for gptimage)
       const generateImage = async () => {
         timingInfo.push({ step: 'Start generating job', timestamp: Date.now() });
@@ -274,7 +277,8 @@ const checkCacheAndGenerate = async (req, res) => {
           safeParams, 
           referrer,
           progress,
-          requestId 
+          requestId,
+          authResult
         });
         timingInfo.push({ step: 'End generating job', timestamp: Date.now() });
         return result;
@@ -303,10 +307,7 @@ const checkCacheAndGenerate = async (req, res) => {
       return result;
     });
 
-
-    // Get authentication info using shared authentication utility
-    const authResult = await handleAuthentication(req);
-    const isAuthenticated = authResult.bypass;
+    // Reuse the authentication result instead of calling again
     
     // Add debug headers for authentication information
     const headers = {

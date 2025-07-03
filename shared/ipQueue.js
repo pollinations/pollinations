@@ -8,6 +8,7 @@
  */
 
 import PQueue from 'p-queue';
+import { incrementUserMetric } from './userMetrics.js';
 import debug from 'debug';
 import { shouldBypassQueue } from './auth-utils.js';
 
@@ -33,17 +34,6 @@ const queues = new Map();
  * @returns {Promise<any>} Result of the function execution
  */
 export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false, maxQueueSize }={}) {
-  // Create auth context from environment variables (loaded by env-loader.js via auth-utils.js import)
-  const authContext = {
-    legacyTokens: process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [],
-    allowlist: process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : []
-  };
-  
-  // Log authentication context
-  authLog('Authentication context created with %d legacy tokens and %d allowlisted domains', 
-          authContext.legacyTokens.length,
-          authContext.allowlist.length);
-  
   // Extract useful request info for logging
   const url = req.url || 'no-url';
   const method = req.method || 'no-method';
@@ -55,15 +45,16 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
   
   authLog('Processing request: %s %s from IP: %s', method, path, ip);
   
-  // Get queue bypass decision with auth context
-  authLog('Calling shouldBypassQueue for request: %s', path);
-  const authResult = await shouldBypassQueue(req, authContext);
+  // Get authentication status
+  authLog('Checking authentication for request: %s', path);
+  const authResult = await shouldBypassQueue(req);
   
-  // Log the authentication result
-  authLog('Authentication result: reason=%s, bypass=%s, userId=%s', 
+  // Log the authentication result with tier information
+  authLog('Authentication result: reason=%s, authenticated=%s, userId=%s, tier=%s', 
           authResult.reason, 
-          authResult.bypass, 
-          authResult.userId || 'none');
+          authResult.authenticated, 
+          authResult.userId || 'none',
+          authResult.tier || 'none');
   
   // Check if there's an error in the auth result (invalid token)
   if (authResult.error) {
@@ -87,7 +78,7 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
     
     // Add extra context for debugging
     error.queueContext = {
-      authContextLength: JSON.stringify(authContext).length,
+      // authContextLength removed as authContext is no longer used
       request: { method, path, ip },
       issuedAt: new Date().toISOString()
     };
@@ -97,10 +88,27 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
     throw error;
   }
   
-  // If bypass is true and forceQueue is false, execute the function immediately
-  if (authResult.bypass && !forceQueue) {
-    log('Queue bypass granted for reason: %s, executing immediately', authResult.reason);
-    return fn();
+  // Check if this is a nectar tier user - they skip the queue entirely
+  // Allow all nectar tier users to bypass the queue regardless of authentication method
+  if (authResult.tier === 'nectar' && authResult.tokenAuth) {
+    log('Nectar tier user detected - skipping queue entirely');
+    return fn(); // Execute immediately, skipping the queue
+  }
+  
+  // For all other users, always use the queue but adjust the interval based on authentication type
+  // This ensures all requests are subject to rate limiting and queue size constraints
+  
+  // Check the new, clearer authentication result fields
+  if (authResult.tokenAuth && interval > 0) {
+    // Only token authentication gets zero interval
+    log('Token authenticated request - using zero interval in queue');
+    interval = 0; // Token authentication means no delay between requests
+  } else if (authResult.referrerAuth) {
+    // Referrer-based authentication still uses standard interval
+    log('Referrer authenticated request - using standard interval in queue');
+  } else {
+    // Non-authenticated requests use standard interval
+    log('Non-authenticated request - using standard interval in queue');
   }
   
   // Check if queue exists for this IP and get its current size
@@ -120,6 +128,9 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
       maxAllowed: maxQueueSize
     };
     log('Queue full for IP %s: size=%d, pending=%d, max=%d', ip, currentQueueSize, currentPending, maxQueueSize);
+    if (authResult.userId) {
+      incrementUserMetric(authResult.userId, 'ip_queue_full_count');
+    }
     throw error;
   }
   

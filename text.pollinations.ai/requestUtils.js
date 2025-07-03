@@ -1,6 +1,6 @@
 import debug from 'debug';
 // Import shared utilities for authentication and environment handling
-import { extractReferrer, shouldBypassQueue } from '../shared/auth-utils.js';
+import { extractReferrer } from '../shared/extractFromRequest.js';
 
 const log = debug('pollinations:requestUtils');
 
@@ -20,7 +20,7 @@ export function getRequestData(req) {
                     data.response_format?.type === 'json_object';
                     
     const seed = data.seed ? parseInt(data.seed, 10) : null;
-    let model = data.model || 'openai';
+    let model = data.model || 'openai-fast';
     const systemPrompt = data.system ? data.system : null;
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
     const top_p = data.top_p ? parseFloat(data.top_p) : undefined;
@@ -32,14 +32,7 @@ export function getRequestData(req) {
 
     // Use shared referrer extraction utility
     const referrer = extractReferrer(req);
-    
-    // Use shared authentication function to check if referrer should bypass queue
-    const authResult = shouldBypassQueue(req, {
-        legacyTokens: process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [],
-        allowlist: process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : []
-    });
-    const isImagePollinationsReferrer = authResult.bypass;
-    const isRobloxReferrer = referrer && (referrer.toLowerCase().includes('roblox') || referrer.toLowerCase().includes('gacha11211'));
+
     const stream = data.stream || false; 
     
     // Extract voice parameter for audio models
@@ -64,11 +57,6 @@ export function getRequestData(req) {
         messages.unshift({ role: 'system', content: systemPrompt });
     }
 
-    if (isRobloxReferrer) {
-        log('Roblox referrer detected:', referrer);
-        model="llamascout"
-    }
-
     return {
         messages,
         jsonMode,
@@ -78,8 +66,6 @@ export function getRequestData(req) {
         top_p,
         presence_penalty,
         frequency_penalty,
-        isImagePollinationsReferrer,
-        isRobloxReferrer,
         referrer,
         stream,
         isPrivate,
@@ -94,26 +80,67 @@ export function getRequestData(req) {
 }
 
 /**
- * Function to check if delay should be bypassed based on referrer
- * @param {object} req - Express request object
- * @returns {boolean} - Whether delay should be bypassed
+ * Prepares model data for output by removing pricing information and applying sorting.
+ * Always sorts with community models (community: false first, then community: true).
+ * @param {Array} models - Array of model objects
+ * @returns {Array} - Sanitized model array without pricing, properly sorted
  */
-export function shouldBypassDelay(req) {
-    try {
-        // Use shared shouldBypassQueue function to determine bypass
-        const authResult = shouldBypassQueue(req, {
-            legacyTokens: process.env.LEGACY_TOKENS ? process.env.LEGACY_TOKENS.split(',') : [],
-            allowlist: process.env.ALLOWLISTED_DOMAINS ? process.env.ALLOWLISTED_DOMAINS.split(',') : []
-        });
-        
-        // Also check for Roblox referrer as a special case
-        const referrer = extractReferrer(req);
-        const isRobloxReferrer = referrer && (referrer.toLowerCase().includes('roblox') || referrer.toLowerCase().includes('gacha11211'));
-        
-        return authResult.bypass || isRobloxReferrer;
-    } catch (error) {
-        // If authentication check fails, don't bypass delay
-        log('Authentication check failed for delay bypass:', error.message);
-        return false;
+export function prepareModelsForOutput(models) {
+  // Remove pricing information from all models
+  const prepared = models.map(({ pricing, ...rest }) => rest);
+  
+  // Sort models with non-community first, then community models
+  return [
+    ...prepared.filter((m) => m.community === false).sort((a, b) => a.name.localeCompare(b.name)),
+    ...prepared.filter((m) => m.community === true).sort((a, b) => a.name.localeCompare(b.name))
+  ];
+}
+
+/**
+ * Get mapped model for a specific user
+ * Uses environment variable USER_MODEL_MAPPING for configuration
+ * Format: "username1:model1,username2:model2,blockeduser:blocked"
+ * Special value "blocked" will throw Error with status 403
+ * @param {string} username - The username to check for mapping
+ * @returns {string|null} The mapped model name or null if no mapping exists
+ * @throws {Error} If user is mapped to "blocked"
+ */
+export function getUserMappedModel(username) {
+  if (!username) return null;
+  
+  const mappingStr = process.env.USER_MODEL_MAPPING;
+  if (!mappingStr) return null;
+  
+  try {
+    // Parse mapping string: "thespecificdev:openai-large,testuser:grok,spammer:blocked"
+    const mappings = mappingStr.split(',')
+      .map(pair => pair.split(':'))
+      .filter(([user, model]) => user && model)
+      .reduce((acc, [user, model]) => {
+        acc[user.trim()] = model.trim();
+        return acc;
+      }, {});
+    
+    const mappedModel = mappings[username];
+    if (mappedModel) {
+      // Check for blocked user
+      if (mappedModel.toLowerCase() === 'blocked') {
+        log(`🚫 User ${username} is blocked`);
+        const error = new Error(`User ${username} is currently blocked from using the text service`);
+        error.status = 403;
+        throw error;
+      }
+      
+      log(`🎯 User ${username} mapped to model: ${mappedModel}`);
     }
+    
+    return mappedModel || null;
+  } catch (error) {
+    // Re-throw blocked user errors as-is
+    if (error.status === 403) {
+      throw error;
+    }
+    log('Error parsing USER_MODEL_MAPPING:', error);
+    return null;
+  }
 }

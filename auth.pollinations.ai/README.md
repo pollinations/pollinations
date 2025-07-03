@@ -1,14 +1,17 @@
 # GitHub Auth Simple 🔐
 
-A minimal GitHub OAuth proxy for Pollinations. Clean, simple, and JWT-based. This represents the ideal authentication pattern that text.pollinations.ai and image.pollinations.ai should adopt.
+A minimal GitHub OAuth proxy for Pollinations. Clean, simple, and session-based. This represents the ideal authentication pattern that text.pollinations.ai and image.pollinations.ai should adopt.
 
 ## Features ✨
 
 - GitHub OAuth flow
-- JWT token generation (24-hour expiration)
+- Session-based authentication
 - Domain allowlist management
+- User tier system (Seed, Flower, Nectar)
+- User preferences management (NEW)
 - API tokens (16-character, URL-safe) for service access
 - Database-backed with Cloudflare D1
+- Automatic token expiration handling
 - Zero complexity, pure simplicity
 
 ## Architecture Benefits 🏆
@@ -40,11 +43,97 @@ npm run dev
 - `GET /authorize?redirect_uri=...` - Start OAuth flow
 - `GET /callback` - GitHub OAuth callback
 
-### Protected (JWT required)
+### Protected (Auth required)
 - `GET /api/user` - Get current user
 - `GET /api/domains?user_id=...` - Get domain allowlist
 - `POST /api/domains?user_id=...` - Update domain allowlist
 - `GET /api/check-domain?user_id=...&domain=...` - Check if domain is allowed
+
+### User Tier Endpoints
+- `GET /api/user-tier?user_id=...` - Get a user's tier
+- `POST /api/user-tier` - Set a user's tier (admin only)
+- `GET /api/user-tiers` - Get all users with their tiers (admin only)
+
+### User Preferences Endpoints (NEW)
+- `GET /preferences` - Get user preferences
+  - Optional: `?user_id=...` to get another user's preferences (requires auth)
+- `POST /preferences` - Update user preferences
+  - Body: `{"key": "preference_name", "value": "preference_value"}` for single preference
+  - Body: `{"preferences": {"key1": "value1", "key2": "value2"}}` for multiple preferences
+
+### User Metrics Endpoints (Admin Only - NEW)
+- `GET /admin/metrics?user_id=...` - Get user metrics/analytics
+- `POST /admin/metrics?user_id=...` - Update user metrics
+  - Body: `{"key": "metric_name", "value": metric_value}` for single metric
+  - Body: `{"metrics": {"key1": value1, "key2": value2}}` for multiple metrics
+  - Body: `{"increment": {"key": "metric_name", "by": 1}}` to increment a numeric metric
+
+## User Preferences 🎨
+
+The system now supports storing arbitrary user preferences as JSON. This allows users to customize their experience, such as:
+- Toggling ads on/off (`show_ads`)
+- Theme preferences (`theme`)
+- Language settings (`language`)
+- Notification preferences (`notifications`)
+- Any other custom preferences
+
+### Example Usage
+
+```bash
+# Get preferences (with API token)
+curl -H "Authorization: Bearer YOUR_API_TOKEN" https://auth.pollinations.ai/preferences
+
+# Update a single preference
+curl -X POST https://auth.pollinations.ai/preferences \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"key": "show_ads", "value": false}'
+
+# Update multiple preferences
+curl -X POST https://auth.pollinations.ai/preferences \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"preferences": {"theme": "dark", "language": "en"}}'
+```
+
+## User Metrics 📊
+
+The system includes a separate `metrics` field for backend-only analytics that users cannot modify. This is used to track:
+- Ad clicks (total, by type, by date)
+- User engagement metrics
+- Any other analytics data
+
+### Example Usage
+
+```bash
+# Get user metrics (admin only)
+curl -H "Authorization: Bearer ADMIN_API_KEY" \
+  "https://auth.pollinations.ai/admin/metrics?user_id=USER_ID"
+
+# Update a single metric
+curl -X POST "https://auth.pollinations.ai/admin/metrics?user_id=USER_ID" \
+  -H "Authorization: Bearer ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"key": "total_requests", "value": 100}'
+
+# Increment a metric
+curl -X POST "https://auth.pollinations.ai/admin/metrics?user_id=USER_ID" \
+  -H "Authorization: Bearer ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"increment": {"key": "api_calls", "by": 1}}'
+
+# Track an ad click using the metrics endpoint
+curl -X POST "https://auth.pollinations.ai/admin/metrics?user_id=USER_ID" \
+  -H "Authorization: Bearer ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"increment": {"key": "ad_clicks.banner", "by": 1}}'
+
+# Or add more structured ad click data
+curl -X POST "https://auth.pollinations.ai/admin/metrics?user_id=USER_ID" \
+  -H "Authorization: Bearer ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"key": "ad_clicks", "value": {"total": 5, "banner": 3, "inline": 2, "last_click": "2025-06-05"}}'
+```
 
 ## Testing 🧪
 
@@ -54,16 +143,33 @@ node test.js
 
 ## Deployment 🌍
 
+### Standard Deployment
 ```bash
 npm run deploy
 ```
 
-## Architecture 🏗️
+### Deployment with Migrations (Recommended)
+This ensures database migrations are applied before deployment, which is essential for the tier system and preferences to work properly.
 
+```bash
+npm run deploy:with-migrations
+```
+
+## Architecture 🖥️
+
+### Server Components
 - **index.ts** - Simple route handlers
-- **jwt.ts** - JWT creation/verification
-- **db.ts** - Database operations
+- **db.ts** - Database operations (including preferences management)
 - **github.ts** - GitHub OAuth helpers
 - **types.ts** - TypeScript interfaces
+
+### Client UI
+- **client/html.ts** - HTML templates
+- **client/styles.ts** - CSS styling
+- **client/scripts.ts** - Client-side JavaScript
+
+### Database Schema
+The `users` table now includes a `preferences` column that stores user preferences as JSON text.
+The `users` table includes a `preferences` column for user preferences and a `metrics` column for backend analytics as JSON text.
 
 That's it! No bloat, no complexity. Just auth. 🎯

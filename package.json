@@ -1,0 +1,16 @@
+{
+  "name": "pollinations",
+  "version": "1.0.0",
+  "description": "Pollinations.AI - World's Most Accessible Open GenAI Platform",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:text": "vitest run text.pollinations.ai/test/integration",
+    "test:image": "vitest run image.pollinations.ai/test/integration-framework"
+  },
+  "devDependencies": {
+    "supertest": "^7.0.0",
+    "vitest": "^1.6.0"
+  }
+}

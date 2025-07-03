@@ -1,3 +1,5 @@
+# Pollinations.AI
+
 <div align="center">
   <img src="operations/assets/pollinations_ai_logo_text_black.png" alt="Pollinations.AI Logo" width="100%"/>
 </div>
@@ -17,7 +19,7 @@
 
 ## 🌟 Introduction
 
-[Pollinations.AI](https://pollinations.ai) is an open-source gen AI startup based in Berlin, providing the most easy-to-use, free text and image generation API available. No signups or API keys required. We prioritize your privacy with zero data storage and completely anonymous usage.
+[Pollinations.AI](https://pollinations.ai) is an open-source generative AI startup based in Berlin, providing the most user-friendly, free text and image generation API available. No signups or API keys required—we prioritize your privacy with zero data storage and completely anonymous usage.
 
 ## 🚀 Key Features
 
@@ -81,13 +83,15 @@ For more advanced usage, check out our [API documentation](APIDOCS.md).
 
 ### Web Interface
 
-Our web interface is user-friendly and doesn't require any technical knowledge. Simply visit [https://pollinations.ai](https://pollinations.ai) and start creating!
+Our web interface is intuitive and doesn't require any technical knowledge. Simply visit [https://pollinations.ai](https://pollinations.ai) and start creating amazing content!
 
 ### API
 
 Use our API directly in your browser or applications:
 
-    https://pollinations.ai/p/conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden
+```url
+https://pollinations.ai/p/conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden
+```
 
 Replace the description with your own, and you'll get a unique image based on your words!
 
@@ -101,28 +105,34 @@ Here's an example of a generated image:
 
 Python code to download the generated image:
 
-    import requests
+```python
+import requests
 
-    def download_image(prompt):
-        url = f"https://pollinations.ai/p/{prompt}"
-        response = requests.get(url)
-        with open('generated_image.jpg', 'wb') as file:
-            file.write(response.content)
-        print('Image downloaded!')
+def download_image(prompt):
+    url = f"https://pollinations.ai/p/{prompt}"
+    response = requests.get(url)
+    with open('generated_image.jpg', 'wb') as file:
+        file.write(response.content)
+    print('Image downloaded!')
 
-    download_image("conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden")
+download_image("conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden")
+```
 
 ### Text Generation
 
 To generate text, use this URL:
 
-    https://text.pollinations.ai/What%20is%20artificial%20intelligence?
+```url
+https://text.pollinations.ai/What%20is%20artificial%20intelligence?
+```
 
 ### Audio Generation
 
 To generate audio from text, use this URL:
 
-    https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=nova
+```url
+https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=nova
+```
 
 ## 🛠️ Integration
 
@@ -130,32 +140,34 @@ To generate audio from text, use this URL:
 
 We offer React hooks for easy integration. Example usage:
 
-    import React from 'react';
-    import { usePollinationsImage, usePollinationsText } from '@pollinations/react';
-    import ReactMarkdown from 'react-markdown';
+```javascript
+import React from 'react';
+import { usePollinationsImage, usePollinationsText } from '@pollinations/react';
+import ReactMarkdown from 'react-markdown';
 
-    const AIGeneratedContent = () => {
-      const imageUrl = usePollinationsImage("Beautiful landscape of Paris with Eiffel Tower", { width: 800, height: 600, seed: 42 });
-      const markdown = usePollinationsText("Write a brief travel guide for Paris, including top attractions and local cuisine in markdown", { seed: 42 });
+const AIGeneratedContent = () => {
+  const imageUrl = usePollinationsImage("Beautiful landscape of Paris with Eiffel Tower", { width: 800, height: 600, seed: 42 });
+  const markdown = usePollinationsText("Write a brief travel guide for Paris, including top attractions and local cuisine in markdown", { seed: 42 });
 
-      return (
-        <div>
-          <h2>AI-Generated Travel Guide</h2>
-          <img src={imageUrl} alt="AI Generated" />
-          {markdown ? (
-            <ReactMarkdown>{markdown}</ReactMarkdown>
-          ) : (
-            <p>Loading markdown content...</p>
-          )}
-        </div>
-      );
-    };
+  return (
+    <div>
+      <h2>AI-Generated Travel Guide</h2>
+      <img src={imageUrl} alt="AI Generated" />
+      {markdown ? (
+        <ReactMarkdown>{markdown}</ReactMarkdown>
+      ) : (
+        <p>Loading markdown content...</p>
+      )}
+    </div>
+  );
+};
 
-    export default AIGeneratedContent;
+export default AIGeneratedContent;
+```
 
 Check out our [Pollinations React Hooks](./pollinations-react/README.md) for more details.
 
-## Architecture
+## 🏗️ Architecture
 ```mermaid
 graph LR
     Q[Bots - Discord, Telegram, WhatsApp] --> L1
@@ -464,9 +476,9 @@ We're committed to developing AI technology that serves humanity while respectin
 
 ## 🤝 Community and Development
 
-We believe in community-driven development. You can contribute to Pollinations.AI in several ways:
+We believe in community-driven development and welcome contributions from everyone! You can contribute to Pollinations.AI in several ways:
 
-1. **Coding Assistant**: The easiest way to contribute! Just [create a GitHub issue](https://github.com/pollinations/pollinations/issues/new) describing the feature you'd like to see implemented. The [MentatBot AI assistant](https://mentat.ai/) will analyze and implement it directly! No coding required - just describe what you want.
+1. **Coding Assistant**: The easiest way to contribute! Just [create a GitHub issue](https://github.com/pollinations/pollinations/issues/new) describing the feature you'd like to see implemented. The [MentatBot AI assistant](https://mentat.ai/) will analyze and implement it directly! No coding required—just describe what you want.
 
 2. **Project Submissions**: Have you built something with Pollinations.AI? [Use our project submission template](https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml) to share it with the community and get it featured in our README.
 
@@ -484,7 +496,7 @@ For any questions or support, please visit our [Discord channel](https://discord
 
 Our codebase is organized into several key folders, each serving a specific purpose in the Pollinations.AI ecosystem:
 
-- [`pollinations.ai/`](./app/): The main React application for the Pollinations.ai website.
+- [`pollinations.ai/`](./pollinations.ai/): The main React application for the Pollinations.ai website.
 
 - [`image.pollinations.ai/`](./image.pollinations.ai/): Backend service for image generation and caching with Cloudflare Workers and R2 storage.
 

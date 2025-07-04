@@ -33,16 +33,7 @@ Click the links below to see examples in your browser:
   - [MCP Server for AI Assistants 🤖🔧](#mcp-server-for-ai-assistants-)
   - [React Hooks ⚛️](#react-hooks-️)
   - [Real-time Feeds API 🔄](#real-time-feeds-api-)
-    - [1. Image Feed 🖼️📈](#1-image-feed-️)
-    - [2. Text Feed 📝📈](#2-text-feed-️)
   - [Authentication & Tiers 🔑](#authentication--tiers-)
-    - [Getting Started](#getting-started)
-    - [Authentication Methods](#authentication-methods)
-      - [Referrer](#referrer)
-      - [Token](#token)
-    - [Tiers & Rate Limits](#tiers--rate-limits)
-    - [Special Bee (Tier Upgrade)](#special-bee-tier-upgrade)
-    - [API Update (starting **2025.03.31**)](#api-update-starting-20250331-)
   - [License 📜](#license-)
 ---
 

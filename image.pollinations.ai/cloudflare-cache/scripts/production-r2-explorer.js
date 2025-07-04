@@ -232,6 +232,35 @@ export default {
           }
         });
         
+      } else if (action === 'keys-only') {
+        const cursor = url.searchParams.get('cursor');
+        
+        console.log(`Keys-only listing... limit: ${limit}, prefix: "${prefix}", cursor: ${cursor ? 'YES' : 'NO'}`);
+        
+        const listOptions = { limit };
+        if (prefix) listOptions.prefix = prefix;
+        if (cursor) listOptions.cursor = cursor;
+        
+        const objects = await env.IMAGE_BUCKET.list(listOptions);
+        
+        // Extract only the keys for maximum efficiency
+        const keys = objects.objects.map(obj => obj.key);
+        
+        const result = {
+          action: 'keys-only',
+          truncated: objects.truncated,
+          cursor: objects.cursor,
+          keys: keys,
+          count: keys.length
+        };
+        
+        return new Response(JSON.stringify(result, null, 2), {
+          headers: { 
+            'content-type': 'application/json',
+            ...corsHeaders
+          }
+        });
+        
       } else if (action === 'search') {
         const query = url.searchParams.get('query') || '';
         const maxResults = parseInt(url.searchParams.get('maxResults') || '50');
@@ -290,6 +319,7 @@ export default {
       const help = {
         actions: {
           'list': '?action=list&limit=10&prefix=_prompt_&cursor=CURSOR&include=customMetadata',
+          'keys-only': '?action=keys-only&limit=1000&prefix=_prompt_&cursor=CURSOR',
           'batch': '?action=batch&count=50000&prefix=_prompt_',
           'skip': '?action=skip&skipCount=1000&include=customMetadata',
           'jump': '?action=jump',

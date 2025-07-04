@@ -838,7 +838,9 @@ input:checked + .toggle-slider:before {
 .auth-section button + #badge-container {
     margin-left: auto;
 }
-
+.auth-section button + #usage-container
+{
+    margin-left: 20px;}
 .token-wrapper {
     display: flex;
     align-items: center;
@@ -894,8 +896,26 @@ input:checked + .toggle-slider:before {
 }
 
 /* Ensure user info appears on its own line below the logout button */
-#auth-section #badge-container {
-    flex: 0 0 100%;  /* Force full-width row inside flex container */
+#auth-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+    
+#auth-section > * {
+    margin-top: 0 !important; 
+}
+
+#badge-container,
+#usage-container {
+    flex: 0 0 auto;
+    margin-top: 0;
+}
+
+#auth-section #badge-container,
+#auth-section #usage-container {
+    flex: 0 0 auto;
     margin-top: 8px; /* Small spacing from buttons */
 }
 

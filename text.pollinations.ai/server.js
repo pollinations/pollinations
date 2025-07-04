@@ -480,15 +480,16 @@ async function processRequest(req, res, requestData) {
     const hasReferrer = authResult.referrerAuth;
     
     // Determine queue configuration based on authentication
+    // Note: ipQueue.js now handles tier-based cap logic automatically for token auth
     let queueConfig;
     if (isTokenAuthenticated) {
-        // Token reduces delay between requests (no interval) but still goes through queue
-        queueConfig = { interval: 1000, cap: authResult.tier === 'seed' ? 3 : 20 };
-        authLog('Token authenticated - queue with no delay');
+        // Token authentication - ipQueue will automatically apply tier-based caps
+        queueConfig = { interval: 1000, cap: 1 }; // cap will be overridden by ipQueue for token auth
+        authLog('Token authenticated - ipQueue will apply tier-based concurrency');
     } else if (hasReferrer) {
-        // Referrer also skips delays between requests (no interval)
+        // Referrer authentication uses base configuration
         queueConfig = { interval: 3000, cap: 1 };
-        authLog('Referrer authenticated - queue with no delay');
+        authLog('Referrer authenticated - using base configuration');
     } else {
         // Use default queue config with interval
         queueConfig = QUEUE_CONFIG;

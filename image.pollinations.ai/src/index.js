@@ -285,11 +285,12 @@ const checkCacheAndGenerate = async (req, res) => {
       };
 
       // Determine queue configuration based on token
+      // Note: ipQueue.js now handles tier-based cap logic automatically for token auth
       let queueConfig;
       if (hasValidToken) {
-        // Token removes delay between requests (no interval)
-        queueConfig = { interval: 0, cap: 1 };
-        logAuth('Token authenticated - queue with no delay');
+        // Token authentication - ipQueue will automatically apply tier-based caps
+        queueConfig = { interval: 0, cap: 1 }; // cap will be overridden by ipQueue for token auth
+        logAuth('Token authenticated - ipQueue will apply tier-based concurrency');
         progress.updateBar(requestId, 20, 'Authenticated', 'Token verified');
       } else {
         // Use default queue config with interval

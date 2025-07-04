@@ -95,20 +95,34 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
     return fn(); // Execute immediately, skipping the queue
   }
   
-  // For all other users, always use the queue but adjust the interval based on authentication type
+  // For all other users, always use the queue but adjust the interval and cap based on authentication type
   // This ensures all requests are subject to rate limiting and queue size constraints
   
-  // Check the new, clearer authentication result fields
-  if (authResult.tokenAuth && interval > 0) {
-    // Only token authentication gets zero interval
-    log('Token authenticated request - using zero interval in queue');
-    interval = 0; // Token authentication means no delay between requests
+  // Apply tier-based concurrency limits for token-authenticated requests
+  if (authResult.tokenAuth) {
+    // Set tier-based cap for token authentication
+    if (authResult.tier === 'seed') {
+      cap = 3; // Seed tier gets 3 simultaneous requests
+      log('Token authenticated (seed tier) - using cap: 3');
+    } else if (authResult.tier) {
+      cap = 20; // Higher tiers get 20 simultaneous requests
+      log('Token authenticated (%s tier) - using cap: 20', authResult.tier);
+    } else {
+      cap = 20; // Default to higher tier behavior for authenticated users
+      log('Token authenticated (no tier specified) - using cap: 20');
+    }
+    
+    // Token authentication gets zero interval (no delay between requests)
+    if (interval > 0) {
+      log('Token authenticated request - using zero interval in queue');
+      interval = 0;
+    }
   } else if (authResult.referrerAuth) {
-    // Referrer-based authentication still uses standard interval
-    log('Referrer authenticated request - using standard interval in queue');
+    // Referrer-based authentication still uses service-provided cap and standard interval
+    log('Referrer authenticated request - using service-provided cap: %d', cap);
   } else {
-    // Non-authenticated requests use standard interval
-    log('Non-authenticated request - using standard interval in queue');
+    // Non-authenticated requests use service-provided cap and interval
+    log('Non-authenticated request - using service-provided cap: %d', cap);
   }
   
   // Check if queue exists for this IP and get its current size

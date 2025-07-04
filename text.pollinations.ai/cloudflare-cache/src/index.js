@@ -1,7 +1,9 @@
-// No imports needed for Web Crypto API
+// Import semantic cache functionality
+import { createSemanticCache, checkSemanticCacheAndRespond, cacheTextEmbedding } from './semantic-cache.js';
+import { SEMANTIC_CACHE_ENABLED } from './config.js';
 
 // Worker version to track which deployment is running
-const WORKER_VERSION = "2.0.0-simplified";
+const WORKER_VERSION = "2.1.0-vectorize";
 
 // Unified logging function with category support
 function log(category, message, ...args) {
@@ -110,11 +112,43 @@ export default {
       const key = await generateCacheKey(request);
       log('cache', `Key: ${key}`);
       
-      // Try to get the cached response
+      // Try to get the cached response (exact match)
       const cachedResponse = await getCachedResponse(env, key);
       if (cachedResponse) {
-        log('cache', '✅ Cache hit!');
+        log('cache', '✅ Exact cache hit!');
         return cachedResponse;
+      }
+      
+      // Check for semantic cache match if enabled
+      if (SEMANTIC_CACHE_ENABLED && env.TEXT_VECTORIZE_INDEX && env.AI) {
+        log('cache', 'Checking semantic cache...');
+        
+        // Extract text content from request for semantic matching
+        const textContent = await extractTextContent(request);
+        
+        if (textContent) {
+          // Create semantic cache instance
+          const semanticCache = createSemanticCache(env);
+          
+          // Extract parameters from request
+          const params = await extractRequestParams(request);
+          
+          // Check semantic cache
+          const semanticResult = await checkSemanticCacheAndRespond(
+            semanticCache, 
+            textContent, 
+            params
+          );
+          
+          if (semanticResult && semanticResult.response) {
+            log('cache', '✅ Semantic cache hit!');
+            return semanticResult.response;
+          }
+          
+          log('cache', 'Semantic cache miss', semanticResult?.debugInfo);
+        } else {
+          log('cache', 'No text content extracted for semantic matching');
+        }
       }
       
       log('cache', 'Cache miss, proxying to origin...');
@@ -152,6 +186,32 @@ export default {
           });
           
           log('cache', `✅ Cached response: ${key} (${content.byteLength} bytes)`);
+          
+          // Cache embedding for semantic search if enabled
+          if (SEMANTIC_CACHE_ENABLED && env.TEXT_VECTORIZE_INDEX && env.AI) {
+            try {
+              // Extract text content for embedding
+              const textContent = await extractTextContent(request);
+              
+              if (textContent) {
+                // Create semantic cache instance
+                const semanticCache = createSemanticCache(env);
+                
+                // Extract parameters from request
+                const params = await extractRequestParams(request);
+                
+                // Cache embedding asynchronously
+                ctx.waitUntil(
+                  cacheTextEmbedding(semanticCache, key, textContent, params)
+                );
+                
+                log('cache', `Initiated async embedding caching for: ${key}`);
+              }
+            } catch (err) {
+              log('error', `Error caching embedding: ${err.message}`);
+              // Don't fail the request if embedding caching fails
+            }
+          }
           
           // Return the original response
           return originResp;
@@ -210,6 +270,30 @@ export default {
               });
               
               log('cache', `✅ Response cached successfully (${totalSize} bytes)`);
+              
+              // Cache embedding for semantic search if enabled
+              if (SEMANTIC_CACHE_ENABLED && env.TEXT_VECTORIZE_INDEX && env.AI) {
+                try {
+                  // Extract text content for embedding
+                  const textContent = await extractTextContent(request);
+                  
+                  if (textContent) {
+                    // Create semantic cache instance
+                    const semanticCache = createSemanticCache(env);
+                    
+                    // Extract parameters from request
+                    const params = await extractRequestParams(request);
+                    
+                    // Cache embedding
+                    await cacheTextEmbedding(semanticCache, key, textContent, params);
+                    
+                    log('cache', `Cached embedding for streaming response: ${key}`);
+                  }
+                } catch (err) {
+                  log('error', `Error caching embedding for streaming response: ${err.message}`);
+                  // Don't fail the request if embedding caching fails
+                }
+              }
               
               // Free memory
               chunks = null;
@@ -554,5 +638,90 @@ async function listCachedPairs(env, limit = 100) {
   } catch (err) {
     log('error', `Error listing cached pairs: ${err.message}`);
     return [];
+  }
+}
+
+/**
+ * Extract text content from request for semantic matching
+ */
+async function extractTextContent(request) {
+  if (request.method !== 'POST' && request.method !== 'PUT') {
+    return null;
+  }
+  
+  try {
+    const clonedRequest = request.clone();
+    const bodyText = await clonedRequest.text();
+    
+    if (!bodyText) {
+      return null;
+    }
+    
+    try {
+      // Try to parse as JSON
+      const bodyJson = JSON.parse(bodyText);
+      
+      // Extract text content from common LLM API request formats
+      if (bodyJson.prompt) {
+        return bodyJson.prompt;
+      } else if (bodyJson.messages && Array.isArray(bodyJson.messages)) {
+        // For chat completions, use the last user message
+        const userMessages = bodyJson.messages.filter(m => m.role === 'user');
+        if (userMessages.length > 0) {
+          return userMessages[userMessages.length - 1].content;
+        }
+      } else if (bodyJson.input) {
+        return bodyJson.input;
+      }
+    } catch (e) {
+      // If not JSON, return the raw text
+      return bodyText;
+    }
+    
+    return null;
+  } catch (err) {
+    log('error', `Error extracting text content: ${err.message}`);
+    return null;
+  }
+}
+
+/**
+ * Extract parameters from request for semantic matching
+ */
+async function extractRequestParams(request) {
+  const params = {};
+  
+  try {
+    const clonedRequest = request.clone();
+    const bodyText = await clonedRequest.text();
+    
+    if (bodyText) {
+      try {
+        // Try to parse as JSON
+        const bodyJson = JSON.parse(bodyText);
+        
+        // Extract common LLM parameters
+        if (bodyJson.model) params.model = bodyJson.model;
+        if (bodyJson.temperature !== undefined) params.temperature = bodyJson.temperature;
+        if (bodyJson.max_tokens !== undefined) params.max_tokens = bodyJson.max_tokens;
+        if (bodyJson.top_p !== undefined) params.top_p = bodyJson.top_p;
+        if (bodyJson.presence_penalty !== undefined) params.presence_penalty = bodyJson.presence_penalty;
+        if (bodyJson.frequency_penalty !== undefined) params.frequency_penalty = bodyJson.frequency_penalty;
+      } catch (e) {
+        // If not JSON, ignore
+      }
+    }
+    
+    // Also check URL parameters
+    const url = new URL(request.url);
+    if (url.searchParams.has('model')) params.model = url.searchParams.get('model');
+    if (url.searchParams.has('temperature')) params.temperature = url.searchParams.get('temperature');
+    if (url.searchParams.has('max_tokens')) params.max_tokens = url.searchParams.get('max_tokens');
+    if (url.searchParams.has('top_p')) params.top_p = url.searchParams.get('top_p');
+    
+    return params;
+  } catch (err) {
+    log('error', `Error extracting request params: ${err.message}`);
+    return params;
   }
 }

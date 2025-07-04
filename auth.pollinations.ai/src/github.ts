@@ -7,10 +7,10 @@ export async function exchangeCodeForToken(code: string, redirectUri: string, en
   
   console.log('GitHub OAuth exchange using environment variables');
   
-  // Log for debugging with more details
+  
   console.log('Using credentials:', {
-    clientId, // Temporarily log the full client ID for debugging
-    clientSecret, // Temporarily log the full client secret for debugging
+    clientId, 
+    clientSecret, 
     redirectUri,
     env_keys: Object.keys(env)
   });

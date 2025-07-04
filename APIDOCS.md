@@ -26,12 +26,10 @@ Click the links below to see examples in your browser:
     - [1. Text-To-Text (GET) 🗣️](#1-text-to-text-get-️)
     - [2. List Available Text Models 📜](#2-list-available-text-models-)
     - [3. Text & Multimodal (OpenAI Compatible POST) 🧠💬🖼️🎤⚙️](#3-text--multimodal-openai-compatible-post-️️)
-      - [Vision Capabilities (Image Input) 🖼️➡️📝](#vision-capabilities-image-input-️️)
-      - [Speech-to-Text Capabilities (Audio Input) 🎤➡️📝](#speech-to-text-capabilities-audio-input-️)
-      - [Function Calling ⚙️](#function-calling-️)
-  - [Audio API Functions 🎵](#audio-api-functions-)
-    - [1. Text-to-Speech (GET) 📝➡️🎙️](#1-text-to-speech-get-️️)
-    - [2. Speech-to-Text Capabilities (Audio Input) 🎤➡️📝](#2-speech-to-text-capabilities-audio-input-️)
+    - [4. Text-to-Speech (GET) 📝➡️🎙️](#1-text-to-speech-get-️️)
+    - [5. Speech-to-Text Capabilities (Audio Input) 🎤➡️📝](#5-speech-to-text-capabilities-audio-input-️)
+  - [Vision Capabilities (Image Input) 🖼️➡️📝](#vision-capabilities-image-input-️️)
+  - [Function Calling ⚙️](#function-calling-️)
   - [MCP Server for AI Assistants 🤖🔧](#mcp-server-for-ai-assistants-)
   - [React Hooks ⚛️](#react-hooks-️)
   - [Real-time Feeds API 🔄](#real-time-feeds-api-)
@@ -495,6 +493,177 @@ except Exception as e:
 
 </details>
 
+
+
+### 4. Text-to-Speech (GET) 📝➡️🎙️
+
+`GET https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}`
+
+Generates speech audio from text using a simple GET request. This method is best suited for **short text snippets** due to URL length limitations and direct audio file return.
+
+**Parameters:**
+
+| Parameter | Required | Description                                                                              | Options                                                   | Default        |
+| :-------- | :------- | :--------------------------------------------------------------------------------------- | :-------------------------------------------------------- | :------------- |
+| `prompt`  | Yes      | Text to synthesize. Must be URL-encoded.                                                 |                                                           |                |
+| `model`   | Yes      | Must be `openai-audio` for Text-to-Speech functionality.                                 | `openai-audio`                                            | `openai-audio` |
+| `voice`   | No       | The voice to use for synthesis. See available voices via [List Text Models](#list-available-text-models-). | e.g., `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer` | `alloy`        |
+
+**Return:** Audio file (MP3 format, `Content-Type: audio/mpeg`) 🎧 directly as the response body.
+
+**Rate Limits:** (Inherits base text API limits). See [Tiers](#tiers--rate-limits) for details.
+
+<details>
+<summary><strong>Code Examples:</strong> Text-to-Speech (GET)</summary>
+
+**cURL:**
+
+```bash
+# Basic TTS GET request, save to file
+curl -o hello_audio.mp3 "https://text.pollinations.ai/Hello%20world?model=openai-audio&voice=nova"
+
+# Different voice
+curl -o welcome_audio.mp3 "https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=fable"
+```
+
+**Python (`requests`):**
+
+```python
+import requests
+import urllib.parse
+
+text = "Generating audio using the GET method is simple for short texts."
+voice = "echo" # alloy, echo, fable, onyx, nova, shimmer
+output_filename = "generated_audio_get.mp3"
+
+encoded_text = urllib.parse.quote(text)
+url = f"https://text.pollinations.ai/{encoded_text}"
+params = {
+    "model": "openai-audio",
+    "voice": voice
+}
+
+try:
+    response = requests.get(url, params=params)
+    response.raise_for_status()
+
+    # Check if the response content type indicates an audio file
+    if 'audio/mpeg' in response.headers.get('Content-Type', ''):
+        with open(output_filename, 'wb') as f:
+            f.write(response.content)
+        print(f"Audio saved successfully as {output_filename}")
+        
+    else:
+        print("Error: Expected audio response, but received unexpected content type or data.")
+        print(f"Content-Type: {response.headers.get('Content-Type')}")
+        print("Response body preview (first 200 chars):", response.text[:200])
+
+except requests.exceptions.RequestException as e:
+    print(f"Error making TTS GET request: {e}")
+    # if response is not None: print(response.text) # Print API error for debugging
+```
+
+</details>
+
+---
+
+### 5. Speech-to-Text Capabilities (Audio Input) 🎤➡️📝
+
+- **Model:** `openai-audio`
+- **How:** Provide base64 audio data and its format within the `content` array of a `user` message.
+  ```json
+  {
+    "model": "openai-audio",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          { "type": "text", "text": "Transcribe this:" },
+          {
+            "type": "input_audio",
+            "input_audio": { "data": "{base64_audio_string}", "format": "wav" }
+          }
+        ]
+      }
+    ]
+  }
+  ```
+- **Details:** This functionality closely aligns with the OpenAI Audio API for transcriptions. See [OpenAI Audio Guide](https://platform.openai.com/docs/guides/audio).
+- **Return:** Standard OpenAI chat completion JSON response containing the transcription in the message content.
+
+<details>
+<summary><strong>Code Examples:</strong> Speech-to-Text (Audio Input)</summary>
+
+**Python (`requests`):**
+
+```python
+import requests
+import base64
+import json
+
+url = "https://text.pollinations.ai/openai"
+headers = {"Content-Type": "application/json"}
+
+def encode_audio_base64(audio_path):
+    try:
+        with open(audio_path, "rb") as audio_file:
+            return base64.b64encode(audio_file.read()).decode('utf-8')
+    except FileNotFoundError:
+        print(f"Error: Audio file not found at {audio_path}")
+        return None
+
+def transcribe_audio(audio_path, question="Transcribe this audio"):
+    base64_audio = encode_audio_base64(audio_path)
+    if not base64_audio:
+        return None
+
+    # Determine audio format (simple check by extension). Only WAV and MP3 are currently supported.
+    audio_format = audio_path.split('.')[-1].lower()
+    supported_formats = ['mp3', 'wav'] 
+    if audio_format not in supported_formats:
+         print(f"Warning: Potentially unsupported audio format '{audio_format}'. Only {', '.join(supported_formats)} are officially supported.")
+         return None # Or raise an error if strict
+
+    payload = {
+        "model": "openai-audio",
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": question},
+                    {
+                        "type": "input_audio",
+                        "input_audio": {
+                           "data": base64_audio,
+                           "format": audio_format
+                        }
+                    }
+                ]
+            }
+        ]
+        # Optional: Add parameters like 'language' (ISO-639-1) if supported by the model
+    }
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        result = response.json()
+        transcription = result.get('choices', [{}])[0].get('message', {}).get('content')
+        return transcription
+    except requests.exceptions.RequestException as e:
+        print(f"Error transcribing audio: {e}")
+        # if response is not None: print(response.text) # Show error from API for debugging
+        return None
+
+# --- Usage Example (Uncomment to run) ---
+# # Replace 'path/to/your/audio.wav' with an actual audio file path (e.g., 'sample.wav' or 'sample.mp3')
+# transcript = transcribe_audio('path/to/your/audio.wav') 
+# if transcript:
+#     print("Transcription:", transcript)
+# else:
+#     print("Transcription failed.")
+```
+
+</details>
 ---
 
 # Vision Capabilities (Image Input) 🖼️➡️📝
@@ -643,184 +812,6 @@ def analyze_local_image(image_path, question="What's in this image?"):
 
 ---
 
-
-
-
-# Audio API Functions 🎵
-
-Provides methods for generating audio via Text-to-Speech (TTS).
-
-### 1. Text-to-Speech (GET) 📝➡️🎙️
-
-`GET https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}`
-
-Generates speech audio from text using a simple GET request. This method is best suited for **short text snippets** due to URL length limitations and direct audio file return.
-
-**Parameters:**
-
-| Parameter | Required | Description                                                                              | Options                                                   | Default        |
-| :-------- | :------- | :--------------------------------------------------------------------------------------- | :-------------------------------------------------------- | :------------- |
-| `prompt`  | Yes      | Text to synthesize. Must be URL-encoded.                                                 |                                                           |                |
-| `model`   | Yes      | Must be `openai-audio` for Text-to-Speech functionality.                                 | `openai-audio`                                            | `openai-audio` |
-| `voice`   | No       | The voice to use for synthesis. See available voices via [List Text Models](#list-available-text-models-). | e.g., `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer` | `alloy`        |
-
-**Return:** Audio file (MP3 format, `Content-Type: audio/mpeg`) 🎧 directly as the response body.
-
-**Rate Limits:** (Inherits base text API limits). See [Tiers](#tiers--rate-limits) for details.
-
-<details>
-<summary><strong>Code Examples:</strong> Text-to-Speech (GET)</summary>
-
-**cURL:**
-
-```bash
-# Basic TTS GET request, save to file
-curl -o hello_audio.mp3 "https://text.pollinations.ai/Hello%20world?model=openai-audio&voice=nova"
-
-# Different voice
-curl -o welcome_audio.mp3 "https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=fable"
-```
-
-**Python (`requests`):**
-
-```python
-import requests
-import urllib.parse
-
-text = "Generating audio using the GET method is simple for short texts."
-voice = "echo" # alloy, echo, fable, onyx, nova, shimmer
-output_filename = "generated_audio_get.mp3"
-
-encoded_text = urllib.parse.quote(text)
-url = f"https://text.pollinations.ai/{encoded_text}"
-params = {
-    "model": "openai-audio",
-    "voice": voice
-}
-
-try:
-    response = requests.get(url, params=params)
-    response.raise_for_status()
-
-    # Check if the response content type indicates an audio file
-    if 'audio/mpeg' in response.headers.get('Content-Type', ''):
-        with open(output_filename, 'wb') as f:
-            f.write(response.content)
-        print(f"Audio saved successfully as {output_filename}")
-        
-    else:
-        print("Error: Expected audio response, but received unexpected content type or data.")
-        print(f"Content-Type: {response.headers.get('Content-Type')}")
-        print("Response body preview (first 200 chars):", response.text[:200])
-
-except requests.exceptions.RequestException as e:
-    print(f"Error making TTS GET request: {e}")
-    # if response is not None: print(response.text) # Print API error for debugging
-```
-
-</details>
-
----
-
-### 2. Speech-to-Text Capabilities (Audio Input) 🎤➡️📝
-
-- **Model:** `openai-audio`
-- **How:** Provide base64 audio data and its format within the `content` array of a `user` message.
-  ```json
-  {
-    "model": "openai-audio",
-    "messages": [
-      {
-        "role": "user",
-        "content": [
-          { "type": "text", "text": "Transcribe this:" },
-          {
-            "type": "input_audio",
-            "input_audio": { "data": "{base64_audio_string}", "format": "wav" }
-          }
-        ]
-      }
-    ]
-  }
-  ```
-- **Details:** This functionality closely aligns with the OpenAI Audio API for transcriptions. See [OpenAI Audio Guide](https://platform.openai.com/docs/guides/audio).
-- **Return:** Standard OpenAI chat completion JSON response containing the transcription in the message content.
-
-<details>
-<summary><strong>Code Examples:</strong> Speech-to-Text (Audio Input)</summary>
-
-**Python (`requests`):**
-
-```python
-import requests
-import base64
-import json
-
-url = "https://text.pollinations.ai/openai"
-headers = {"Content-Type": "application/json"}
-
-def encode_audio_base64(audio_path):
-    try:
-        with open(audio_path, "rb") as audio_file:
-            return base64.b64encode(audio_file.read()).decode('utf-8')
-    except FileNotFoundError:
-        print(f"Error: Audio file not found at {audio_path}")
-        return None
-
-def transcribe_audio(audio_path, question="Transcribe this audio"):
-    base64_audio = encode_audio_base64(audio_path)
-    if not base64_audio:
-        return None
-
-    # Determine audio format (simple check by extension). Only WAV and MP3 are currently supported.
-    audio_format = audio_path.split('.')[-1].lower()
-    supported_formats = ['mp3', 'wav'] 
-    if audio_format not in supported_formats:
-         print(f"Warning: Potentially unsupported audio format '{audio_format}'. Only {', '.join(supported_formats)} are officially supported.")
-         return None # Or raise an error if strict
-
-    payload = {
-        "model": "openai-audio",
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": question},
-                    {
-                        "type": "input_audio",
-                        "input_audio": {
-                           "data": base64_audio,
-                           "format": audio_format
-                        }
-                    }
-                ]
-            }
-        ]
-        # Optional: Add parameters like 'language' (ISO-639-1) if supported by the model
-    }
-    try:
-        response = requests.post(url, headers=headers, json=payload)
-        response.raise_for_status()
-        result = response.json()
-        transcription = result.get('choices', [{}])[0].get('message', {}).get('content')
-        return transcription
-    except requests.exceptions.RequestException as e:
-        print(f"Error transcribing audio: {e}")
-        # if response is not None: print(response.text) # Show error from API for debugging
-        return None
-
-# --- Usage Example (Uncomment to run) ---
-# # Replace 'path/to/your/audio.wav' with an actual audio file path (e.g., 'sample.wav' or 'sample.mp3')
-# transcript = transcribe_audio('path/to/your/audio.wav') 
-# if transcript:
-#     print("Transcription:", transcript)
-# else:
-#     print("Transcription failed.")
-```
-
-</details>
-
----
 
 # Function Calling ⚙️
 

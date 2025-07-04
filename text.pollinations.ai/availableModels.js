@@ -405,7 +405,7 @@ const models = [
     handler: bidara,
     // openai-large
     provider: "azure",
-    tier: "seed",
+    tier: "anonymous",
     community: true,
     input_modalities: ["text", "image"],
     output_modalities: ["text"],

@@ -12,10 +12,12 @@ let currentDomains = [];
 let apiToken = null;
 let userTier = 'seed';
 let userPreferences = {};
+let username = null; 
+const IS_DEV = false;
+let baseURL = "https://llm-tracker.tinybird.live/?token=p.eyJ1IjogIjY2ZTg5NDU1LTAzYTgtNGZkNS1iNjg3LWU5NDdhMzY5OThkMyIsICJpZCI6ICIwODdkZDljOC1lZmFmLTRkNjYtOWY2MS1hODEwNDc4ZWI5YjAiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.GvOkurXB57lHOfX9OWcS30PNnKJXpKn0_ecVGgEAe7k&start_date=2025-05-15+10%3A24%3A53&end_date=2025-06-14+10%3A24%3A53&dimension=user&user=";
+let usageBtn = document.getElementById('usage-container');
 
-// Define all functions in global scope so they can be accessed by inline event handlers
 
-// Initialize on page load
 window.addEventListener('load', function() {
     // Add event delegation for domain removal
     document.addEventListener('click', function(event) {
@@ -25,29 +27,85 @@ window.addEventListener('load', function() {
             if (domain) {
                 removeDomain(domain);
             }
-        }
+        } 
     });
+    
+
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
-    const username = params.get('username');
+    username = params.get('username'); 
     
+
+       // ...existing code...
+    if (IS_DEV) {
+        // Fake authentication for dev
+        authToken = "abcdef1234567890"; 
+        userId = "44115";
+        username = "dev-user"; 
+        showStatus('auth-status', '✅ Dev Authenticated as ' + username + ' 🎉', 'success');
+        document.getElementById('user-section').classList.remove('hidden');
+        document.getElementById('domain-section').classList.remove('hidden');
+        document.getElementById('auth-button').classList.add('hidden');
+        document.getElementById('logout-button').classList.remove('hidden');
+        const userHtml = '<div class="profile-badge">' +
+              '<span class="gh-icon">🐙</span>' +
+              '<span class="username">@dev-user</span>' +
+              '<span class="user-id">#44115</span>' +
+            '</div>';
+        const badgeEl = document.getElementById('badge-container');
+        if (badgeEl) {
+        badgeEl.innerHTML = userHtml;
+        badgeEl.classList.remove('hidden');
+        }
+        usageURL = baseURL + encodeURIComponent("Circuit-Overtime"); // i did it for testing purposes
+        usageBtn.setAttribute('data-id', usageURL);
+        if (usageBtn && usageBtn.dataset.id) {
+        usageBtn.addEventListener('click', function() {
+            window.location.href = usageBtn.dataset.id;
+        });
+        }  
+        else if (usageBtn && !usageBtn.dataset.id) {
+            alert("Client Token is not set.");
+        }
+        document.getElementById('usage-container').classList.remove('hidden');
+        currentDomains = ['localhost:3000', 'dev.example.com'];
+        displayDomains();
+        apiToken = 'dev-api-token-123';
+        showStatus('token-info', '<code class="token-value copyable" id="api-token-value" onclick="copyApiToken()" title="Click to copy">' + apiToken + '</code>', 'info');
+        userTier = 'seed';
+        updateTierDisplay();
+        userPreferences = { show_ads: true };
+        updateAdsToggleUI();
+        const introEl = document.getElementById('intro-text');
+        if (introEl) introEl.classList.add('hidden');
+       
+        return; // Skip real auth and API calls
+    }
+
+
     if (token && username) {
         // Store token and show success message
         authToken = token;
         showStatus('auth-status', '✅ Authenticated as ' + username + ' 🎉', 'success');
-        
-        // Show user section and domain section
         document.getElementById('user-section').classList.remove('hidden');
         document.getElementById('domain-section').classList.remove('hidden');
         // Toggle auth/logout buttons
         document.getElementById('auth-button').classList.add('hidden');
         document.getElementById('logout-button').classList.remove('hidden');
-        
-        // Store in localStorage for persistence
         localStorage.setItem('github_auth_token', token);
         localStorage.setItem('github_username', username);
         localStorage.setItem('github_user_id', params.get('user_id') || '');
-        
+        usageURL = baseURL + encodeURIComponent(username);
+        usageBtn.setAttribute('data-id', usageURL);
+        if (usageBtn && usageBtn.dataset.id) {
+        usageBtn.addEventListener('click', function() {
+            window.location.href = usageBtn.dataset.id;
+        });
+        }  
+        else if (usageBtn && !usageBtn.dataset.id) {
+            alert("Client Token is not set.");
+        }
+        document.getElementById('usage-container').classList.remove('hidden');
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
         
@@ -61,7 +119,7 @@ window.addEventListener('load', function() {
         const introEl = document.getElementById('intro-text');
         if (introEl) introEl.classList.add('hidden');
     } else {
-        // Check for stored token
+       
         const storedToken = localStorage.getItem('github_auth_token');
         const storedUsername = localStorage.getItem('github_username');
         
@@ -76,7 +134,17 @@ window.addEventListener('load', function() {
             
             document.getElementById('user-section').classList.remove('hidden');
             document.getElementById('domain-section').classList.remove('hidden');
-            
+            usageURL = baseURL + encodeURIComponent(storedUsername); 
+            usageBtn.setAttribute('data-id', usageURL);
+            if (usageBtn && usageBtn.dataset.id) {
+            usageBtn.addEventListener('click', function() {
+                window.location.href = usageBtn.dataset.id;
+            });
+            }  
+            else if (usageBtn && !usageBtn.dataset.id) {
+                alert("Client Token is not set.");
+            }
+            document.getElementById('usage-container').classList.remove('hidden');
             // Automatically load user info, domains, token and preferences
             getUserInfo();
             getDomains();
@@ -116,7 +184,7 @@ window.logout = function() {
     // Hide sections
     document.getElementById('user-section').classList.add('hidden');
     document.getElementById('domain-section').classList.add('hidden');
-    
+    document.getElementById('usage-container').classList.add('hidden');
     // Show logout message
     showStatus('auth-status', '👋 Logged out successfully', 'info');
     
@@ -129,6 +197,7 @@ window.logout = function() {
     // Show intro text when user logs out
     const introEl = document.getElementById('intro-text');
     if (introEl) introEl.classList.remove('hidden');
+    
 }
 
 // Handle token errors (expired or invalid tokens)
@@ -152,7 +221,7 @@ function handleTokenError() {
     // Hide sections
     document.getElementById('user-section').classList.add('hidden');
     document.getElementById('domain-section').classList.add('hidden');
-    
+    document.getElementById('usage-container').classList.add('hidden');
     // Show logout message
     showStatus('auth-status', '⏰ Your session has expired. Please log in again.', 'info');
     
@@ -199,7 +268,17 @@ async function getUserInfo() {
               badgeEl.innerHTML = userHtml;
               badgeEl.classList.remove('hidden');
             }
-
+            
+            usageURL = baseURL + encodeURIComponent(username);
+            usageBtn.setAttribute('data-id', usageURL);
+            if (usageBtn && usageBtn.dataset.id) {
+                usageBtn.addEventListener('click', function() {
+                    window.location.href = usageBtn.dataset.id;
+                });
+            }  
+            else if (usageBtn && !usageBtn.dataset.id) {
+                alert("Client Token is not set.");
+            }
             // Optionally clear the old user-info badge
             showStatus('user-info', '', 'info');
             
@@ -256,7 +335,7 @@ function displayDomains() {
     let domainHtml = '';
     
     if (currentDomains.length > 0) {
-        domainHtml = '<strong>🌐 Regirstered:</strong><div style="margin-top:10px">';
+        domainHtml = '<strong>🌐 Registered:</strong><div style="margin-top:10px">';
         for (const domain of currentDomains) {
             // Use data attributes instead of inline onclick handlers
             domainHtml += '<span class="domain-item">' + domain + 

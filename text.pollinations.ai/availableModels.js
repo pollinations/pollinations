@@ -17,19 +17,19 @@ const models = [
   // All Pollinations.AI models
   {
     name: "openai",
-    description: "OpenAI GPT-4.1 Mini",
+    description: "OpenAI GPT-4o Mini",
     handler: generateTextPortkey,
     provider: "azure",
     tier: "anonymous",
     community: false,
-    aliases: "gpt-4.1-mini",
+    aliases: "gpt-4o-mini",
     input_modalities: ["text", "image"],
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt: 0.4,
-      completion: 1.6,
-      cache: 0.1,
+      prompt: 0.165,
+      completion: 0.66,
+      cache: 0.083,
     },
   },
   {
@@ -46,7 +46,7 @@ const models = [
     pricing: {
       prompt: 0.1,
       completion: 0.4,
-      cache: 0.025,
+      cache: 0.03,
     },
   },
   {
@@ -149,7 +149,6 @@ const models = [
     pricing: {
       prompt: 0.27,
       completion: 0.85,
-      cache: 0.06,
     },
   },
   {
@@ -164,9 +163,8 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt: 0.1,
-      completion: 0.3,
-      cache: 0.025,
+      prompt: 0.35,
+      completion: 0.56,
     },
   },
   {
@@ -182,9 +180,8 @@ const models = [
     output_modalities: ["text"],
     tools: false,
     pricing: {
-      prompt: 0.55,
-      completion: 2.19,
-      cache: 0.14,
+      prompt: 1.49,
+      completion: 5.94,
     },
   },
   {
@@ -199,9 +196,8 @@ const models = [
     output_modalities: ["text"],
     tools: false,
     pricing: {
-      prompt: 0.065,
-      completion: 0.25,
-      cache: 0.01625,
+      prompt: 0.075,
+      completion: 0.3,
     },
   },
   {
@@ -216,9 +212,8 @@ const models = [
     output_modalities: ["text"],
     tools: false,
     pricing: {
-      prompt: 0.27,
-      completion: 1.1,
-      cache: 0.07,
+      prompt: 1.14,
+      completion: 4.56,
     },
   },
   {
@@ -233,14 +228,13 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt: 0.3,
-      completion: 0.5,
-      cache: 0.075,
+      prompt: 0.25,
+      completion: 1.27,
     },
   },
   {
     name: "openai-audio",
-    description: "OpenAI GPT-4o Audio Preview",
+    description: "OpenAI GPT-4o Mini Audio Preview",
     maxInputChars: 1000,
     voices: [
       "alloy",
@@ -261,14 +255,13 @@ const models = [
     provider: "azure",
     tier: "seed",
     community: false,
-    aliases: "gpt-4o-audio-preview",
+    aliases: "gpt-4o-mini-audio-preview",
     input_modalities: ["text", "image", "audio"],
     output_modalities: ["audio", "text"],
     tools: true,
     pricing: {
       prompt: 10.0,
-      completion: 40.0,
-      cache: 5.0,
+      completion: 20.0,
     },
   },
 
@@ -277,6 +270,7 @@ const models = [
     name: "unity",
     description: "Unity Unrestricted Agent",
     handler: unityMistralLarge,
+    // mistral
     provider: "cloudflare",
     uncensored: true,
     tier: "seed",
@@ -285,15 +279,15 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt: 0.1,
-      completion: 0.3,
-      cache: 0.025,
+      prompt: 0.35,
+      completion: 0.56,
     },
   },
   {
     name: "mirexa",
     description: "Mirexa AI Companion",
     handler: generateTextMirexa,
+    // openai-large
     provider: "azure",
     tier: "seed",
     community: true,
@@ -310,6 +304,7 @@ const models = [
     name: "midijourney",
     description: "MIDIjourney",
     handler: midijourney,
+    // openai-large
     provider: "azure",
     tier: "anonymous",
     community: true,
@@ -326,6 +321,7 @@ const models = [
     name: "rtist",
     description: "Rtist",
     handler: rtist,
+    // openai-large
     provider: "azure",
     tier: "seed",
     community: true,
@@ -342,6 +338,7 @@ const models = [
     name: "evil",
     description: "Evil",
     handler: evilMistral,
+    // mistral
     provider: "cloudflare",
     uncensored: true,
     tier: "seed",
@@ -350,9 +347,8 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt: 0.1,
-      completion: 0.3,
-      cache: 0.025,
+      prompt: 0.35,
+      completion: 0.56,
     },
   },
   {
@@ -375,6 +371,7 @@ const models = [
     name: "hypnosis-tracy",
     description: "Hypnosis Tracy",
     handler: hypnosisTracy,
+    // openai-audio
     provider: "azure",
     tier: "seed",
     community: true,
@@ -382,15 +379,15 @@ const models = [
     output_modalities: ["audio", "text"],
     tools: true,
     pricing: {
-      prompt: 2.5,
-      completion: 10.0,
-      cache: 1.25,
+      prompt: 10.0,
+      completion: 20.0,
     },
   },
   {
     name: "sur",
     description: "Sur AI Assistant",
     handler: surMistral,
+    // mistral
     provider: "cloudflare",
     tier: "seed",
     community: true,
@@ -398,15 +395,15 @@ const models = [
     output_modalities: ["text"],
     tools: true,
     pricing: {
-      prompt: 0.1,
-      completion: 0.3,
-      cache: 0.025,
+      prompt: 0.35,
+      completion: 0.56,
     },
   },
   {
     name: "bidara",
     description: "BIDARA (Biomimetic Designer and Research Assistant by NASA)",
     handler: bidara,
+    // openai-large
     provider: "azure",
     tier: "seed",
     community: true,

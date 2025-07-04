@@ -173,5 +173,13 @@ export const gamesProjects = [
     author: "@youssefelsafi",
     submissionDate: "2025-06-18",
     order: 1
+  },
+  {
+    name: "RETIME - FABRIC OF REALITY",
+    url: "https://rivatech-games.itch.io/retime",
+    description: "A text-based, blind friendly fantasy adventure game powered by Pollinations AI. Players navigate through broken pieces of reality and time, making choices that shape a unique story. Features screen-reader accessibility and temporal mechanics with 'Temporal Dinars' currency.",
+    author: "@TheSingleAlgerianPotato",
+    submissionDate: "2025-06-30",
+    order: 1
   }
 ];

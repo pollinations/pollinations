@@ -99,9 +99,11 @@ export function prepareModelsForOutput(models) {
 /**
  * Get mapped model for a specific user
  * Uses environment variable USER_MODEL_MAPPING for configuration
- * Format: "username1:model1,username2:model2"
+ * Format: "username1:model1,username2:model2,blockeduser:blocked"
+ * Special value "blocked" will throw Error with status 403
  * @param {string} username - The username to check for mapping
  * @returns {string|null} The mapped model name or null if no mapping exists
+ * @throws {Error} If user is mapped to "blocked"
  */
 export function getUserMappedModel(username) {
   if (!username) return null;
@@ -110,7 +112,7 @@ export function getUserMappedModel(username) {
   if (!mappingStr) return null;
   
   try {
-    // Parse mapping string: "thespecificdev:openai-large,testuser:grok"
+    // Parse mapping string: "thespecificdev:openai-large,testuser:grok,spammer:blocked"
     const mappings = mappingStr.split(',')
       .map(pair => pair.split(':'))
       .filter(([user, model]) => user && model)
@@ -121,11 +123,23 @@ export function getUserMappedModel(username) {
     
     const mappedModel = mappings[username];
     if (mappedModel) {
+      // Check for blocked user
+      if (mappedModel.toLowerCase() === 'blocked') {
+        log(`🚫 User ${username} is blocked`);
+        const error = new Error(`User ${username} is currently blocked from using the text service`);
+        error.status = 403;
+        throw error;
+      }
+      
       log(`🎯 User ${username} mapped to model: ${mappedModel}`);
     }
     
     return mappedModel || null;
   } catch (error) {
+    // Re-throw blocked user errors as-is
+    if (error.status === 403) {
+      throw error;
+    }
     log('Error parsing USER_MODEL_MAPPING:', error);
     return null;
   }

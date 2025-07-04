@@ -26,7 +26,7 @@ Click the links below to see examples in your browser:
     - [1. Text-To-Text (GET) 🗣️](#1-text-to-text-get-️)
     - [2. List Available Text Models 📜](#2-list-available-text-models-)
     - [3. Text & Multimodal (OpenAI Compatible POST) 🧠💬🖼️🎤⚙️](#3-text--multimodal-openai-compatible-post-️️)
-    - [4. Text-to-Speech (GET) 📝➡️🎙️](#1-text-to-speech-get-️️)
+    - [4. Text-to-Speech (GET) 📝➡️🎙️](#4-text-to-speech-get-️️)
     - [5. Speech-to-Text Capabilities (Audio Input) 🎤➡️📝](#5-speech-to-text-capabilities-audio-input-️)
   - [Vision Capabilities (Image Input) 🖼️➡️📝](#vision-capabilities-image-input-️️)
   - [Function Calling ⚙️](#function-calling-️)

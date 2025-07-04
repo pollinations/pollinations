@@ -310,8 +310,11 @@ const checkCacheAndGenerate = async (req, res) => {
     // Reuse the authentication result instead of calling again
     
     // Add debug headers for authentication information
+    const contentType = bufferAndMaturity.contentType || 'image/jpeg';
+    const isVideo = contentType.startsWith('video/');
+    
     const headers = {
-      'Content-Type': 'image/jpeg',
+      'Content-Type': contentType,
       'Cache-Control': 'public, max-age=31536000, immutable',
       'X-Auth-Status': isAuthenticated ? 'authenticated' : 'unauthenticated'
     };
@@ -327,7 +330,9 @@ const checkCacheAndGenerate = async (req, res) => {
         .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
         .toLowerCase();
       
-      const filename = (baseFilename || 'generated-image') + '.jpg';
+      // Set appropriate file extension based on content type
+      const extension = isVideo ? '.mp4' : '.jpg';
+      const filename = (baseFilename || (isVideo ? 'generated-video' : 'generated-image')) + extension;
       headers['Content-Disposition'] = `inline; filename="${filename}"`;
     }
     

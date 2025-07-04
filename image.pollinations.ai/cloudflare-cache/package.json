@@ -22,5 +22,8 @@
   "license": "MIT",
   "devDependencies": {
     "wrangler": "^4.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^17.0.1"
   }
 }

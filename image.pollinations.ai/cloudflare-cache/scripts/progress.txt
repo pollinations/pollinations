@@ -1,5 +1,0 @@
-Batch: 149900
-Total Keys: 20,070,221
-Rate: 2625.0 keys/second
-Elapsed: 7645.7s
-Last Updated: 2025-07-04T15:40:15.958Z

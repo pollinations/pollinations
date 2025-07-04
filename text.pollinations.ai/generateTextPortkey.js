@@ -13,10 +13,10 @@ const errorLog = debug('pollinations:portkey:error');
 // Model mapping for Portkey
 const MODEL_MAPPING = {
     // Azure OpenAI models
-    'openai-fast': 'gpt-4.1-mini-roblox',
-    'openai': 'gpt-4.1-mini-roblox',       // Maps to portkeyConfig['gpt-4o-mini']
-    'openai-large': 'gpt-4.1-mini-roblox',
-    'openai-roblox': 'gpt-4.1-mini-roblox',
+    'openai-fast': 'gpt-4.1-nano-roblox',
+    'openai': 'gpt-4o-mini',
+    'openai-large': 'azure-gpt-4.1',
+    'openai-roblox': 'gpt-4.1-nano-roblox',
     //'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
     'openai-reasoning': 'o3', // Maps to custom MonoAI endpoint
     'searchgpt': 'gpt-4o-mini-search-preview', // Maps to custom MonoAI endpoint
@@ -346,12 +346,7 @@ export const portkeyConfig = {
         process.env.AZURE_OPENAI_NANO_ENDPOINT,
         'gpt-4.1-nano'
     ),
-    'gpt-4.1-mini': () => createAzureModelConfig(
-        process.env.AZURE_OPENAI_API_KEY,
-        process.env.AZURE_OPENAI_ENDPOINT,
-        'gpt-4.1-mini'
-    ),
-    'gpt-4.1-mini-roblox': () => {
+    'gpt-4.1-nano-roblox': () => {
         // Randomly select one of the 3 roblox endpoints
         const endpoints = [
             {
@@ -370,13 +365,29 @@ export const portkeyConfig = {
                 apiKey: process.env.AZURE_OPENAI_ROBLOX_API_KEY_4,
                 endpoint: process.env.AZURE_OPENAI_ROBLOX_ENDPOINT_4
             },
+        ];
+        
+        const randomIndex = Math.floor(Math.random() * endpoints.length);
+        const selectedEndpoint = endpoints[randomIndex];
+        
+        log(`Selected random roblox endpoint ${randomIndex + 1}: ${selectedEndpoint.endpoint}`);
+        
+        return createAzureModelConfig(
+            selectedEndpoint.apiKey,
+            selectedEndpoint.endpoint,
+            'gpt-4.1-nano'
+        );
+    },
+    'gpt-4o-mini': () => {
+        // Randomly select one of the 3 roblox endpoints
+        const endpoints = [
             {
-                apiKey: process.env.AZURE_OPENAI_ROBLOX_API_KEY_5,
-                endpoint: process.env.AZURE_OPENAI_ROBLOX_ENDPOINT_5
+                apiKey: process.env.AZURE_OPENAI_MINI_API_KEY_1,
+                endpoint: process.env.AZURE_OPENAI_MINI_ENDPOINT_1
             },
             {
-                apiKey: process.env.AZURE_OPENAI_ROBLOX_API_KEY_6,
-                endpoint: process.env.AZURE_OPENAI_ROBLOX_ENDPOINT_6
+                apiKey: process.env.AZURE_OPENAI_MINI_API_KEY_2,
+                endpoint: process.env.AZURE_OPENAI_MINI_ENDPOINT_2
             },
         ];
         
@@ -388,7 +399,7 @@ export const portkeyConfig = {
         return createAzureModelConfig(
             selectedEndpoint.apiKey,
             selectedEndpoint.endpoint,
-            'gpt-4.1-mini'
+            'gpt-4o-mini'
         );
     },
     'gpt-4o': () => createAzureModelConfig(
@@ -553,15 +564,6 @@ export const generateTextPortkey = createOpenAICompatibleClient({
             // Get the model name from the request (already mapped by genericOpenAIClient)
             const modelName = requestBody.model; // This is already mapped by genericOpenAIClient
 
-            // Check character limit
-            const MAX_CHARS = 2048000;
-            const totalChars = countMessageCharacters(requestBody.messages);
-
-            if (totalChars > MAX_CHARS) {
-                errorLog('Input text exceeds maximum length of %d characters (current: %d)', MAX_CHARS, totalChars);
-                throw new Error(`Input text exceeds maximum length of ${MAX_CHARS} characters (current: ${totalChars})`);
-            }
-
             // Get the model configuration object
             const configFn = portkeyConfig[modelName];
 
@@ -580,9 +582,19 @@ export const generateTextPortkey = createOpenAICompatibleClient({
             // Set the headers as a property on the request object that will be used by genericOpenAIClient
             requestBody._additionalHeaders = additionalHeaders;
 
-            // Check if the model has a specific maxTokens limit in availableModels.js
+            // Check if the model has a specific maxInputChars limit in availableModels.js
             // Use the model name from requestBody instead of options which isn't available here
             const modelConfig = findModelByName(requestBody.model);
+            
+            // Check model-specific character limit (only if model defines maxInputChars)
+            if (modelConfig && modelConfig.maxInputChars) {
+                const totalChars = countMessageCharacters(requestBody.messages);
+                if (totalChars > modelConfig.maxInputChars) {
+                    errorLog('Input text exceeds model-specific limit of %d characters for model %s (current: %d)', 
+                        modelConfig.maxInputChars, requestBody.model, totalChars);
+                    throw new Error(`Input text exceeds maximum length of ${modelConfig.maxInputChars} characters for model ${requestBody.model} (current: ${totalChars})`);
+                }
+            }
 
             // For models with specific token limits or those using defaults
             if (!requestBody.max_tokens) {

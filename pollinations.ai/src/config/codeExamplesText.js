@@ -382,6 +382,27 @@ fetch('https://text.pollinations.ai/transcriptions', {
 \`\`\``,
     language: "markdown"
   },
+  kontext_image_to_image: {
+    category: "Kontext Image-to-Image",
+    code: ({ prompt, width, height, seed, model }) => `
+# Kontext Model - Image-to-Image Generation
+
+\`\`\`bash
+# Transform existing image with kontext model
+curl "https://image.pollinations.ai/prompt/transform%20this%20image?model=kontext&image=https://example.com/input-image.jpg"
+\`\`\`
+
+\`\`\`javascript
+// Simple fetch example
+fetch('https://image.pollinations.ai/prompt/transform%20this%20image?model=kontext&image=https://example.com/input.jpg')
+  .then(response => response.blob())
+  .then(blob => URL.createObjectURL(blob));
+\`\`\`
+
+**Requirements:** Seed tier or higher
+`,
+    language: "markdown"
+  },
   mcp_server: {
     category: "MCP Server",
     code: () => `# Model Context Protocol (MCP) Server for AI Assistants

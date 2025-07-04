@@ -54,6 +54,7 @@ Generates an image based on a text description.
 | `seed`     | No       | Seed for reproducible results.                                                     |         |
 | `width`    | No       | Width of the generated image in pixels.                                            | 1024    |
 | `height`   | No       | Height of the generated image in pixels.                                           | 1024    |
+| `image`    | No       | URL of input image for image-to-image generation/editing (kontext & gptimage).    |         |
 | `nologo`   | No       | Set to `true` to disable the Pollinations logo overlay (for registered users).     | `false` |
 | `private`  | No       | Set to `true` to prevent the image from appearing in the public feed.              | `false` |
 | `enhance`  | No       | Set to `true` to enhance the prompt using an LLM for more detail.                  | `false` |
@@ -79,11 +80,14 @@ curl -o sunset_large.jpg "https://image.pollinations.ai/prompt/A%20beautiful%20s
 
 # With transparent background (gptimage model only)
 curl -o logo_transparent.png "https://image.pollinations.ai/prompt/A%20company%20logo%20on%20transparent%20background?model=gptimage&transparent=true"
+
+# Image-to-image generation with kontext model
+curl -o logo_cake.png "https://image.pollinations.ai/prompt/bake_a_cake_from_this_logo?model=kontext&image=https://avatars.githubusercontent.com/u/86964862"
 ```
 
 **Python (`requests`):**
 
-```python
+```python^
 import requests
 import urllib.parse
 
@@ -95,6 +99,7 @@ params = {
     "model": "flux",
     # "nologo": "true", # Optional, set to "true" for registered referrers/tokens
     # "transparent": "true", # Optional - generates transparent background (gptimage model only)
+    # "image": "https://example.com/input-image.jpg", # Optional - for image-to-image generation (kontext & gptimage)
     # "referrer": "MyPythonApp" # Optional for referrer-based authentication
 }
 encoded_prompt = urllib.parse.quote(prompt)

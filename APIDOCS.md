@@ -41,6 +41,7 @@ Click the links below to see examples in your browser:
     - [Text-to-Speech (GET) 📝➡️🎙️](#text-to-speech-get-️️)
     - [Text-to-Speech (POST - OpenAI Compatible) 📝➡️🎙️](#text-to-speech-post---openai-compatible-️️)
   - [MCP Server for AI Assistants 🤖🔧](#mcp-server-for-ai-assistants-)
+  - [WebSim Service (`websim.pollinations.ai`) 🌐📄](#websim-service-websimpollinationsai-)
   - [React Hooks ⚛️](#react-hooks-️)
   - [Real-time Feeds API 🔄](#real-time-feeds-api-)
     - [Image Feed 🖼️📈](#image-feed-️)
@@ -57,18 +58,26 @@ Click the links below to see examples in your browser:
 
 Pollinations.AI provides flexible authentication options designed for different types of applications.
 
+### Who Needs What Authentication?
+
+- **Frontend Web Apps**: Typically only need a valid referrer (see [Referrer Section](#referrer-)). **No API token is usually required for client-side browser usage.**
+- **Backend Services & Scripts**: Should use API tokens for reliable access, higher rate limits, and to bypass IP-based queuing. API tokens are managed through [auth.pollinations.ai](https://github.com/pollinations/pollinations/blob/master/auth.pollinations.ai/README.md).
+- **Testing & Development**: Anonymous access is available for basic testing but is rate-limited and queued.
+
 ### Getting Started
 
-**Visit [auth.pollinations.ai](https://auth.pollinations.ai) to:**
-- Set up and register your application's referrer
-- Create API tokens for backend applications
-- Manage your authentication settings
+1.  **For Frontend Apps (Referrer-Based):**
+    *   Ensure your requests originate from a domain. For enhanced access (e.g., higher rate limits), register your domain via [auth.pollinations.ai](https://github.com/pollinations/pollinations/blob/master/auth.pollinations.ai/README.md). See the [Referrer Section](#referrer-) for more details.
 
+2.  **For Backend Services (Token-Based):**
+    *   Visit [auth.pollinations.ai](https://github.com/pollinations/pollinations/blob/master/auth.pollinations.ai/README.md) (you'll log in with GitHub).
+    *   Generate an API token. These are simple string tokens (e.g., 16-character URL-safe) designed for server-to-server communication.
+    *   Include this token in your API requests as described below.
 
 > **Security Best Practice**: Never expose API tokens in frontend code! 
 > Frontend web applications should rely on referrer-based authentication.
 
-###  Methods
+### Methods
 
 #### Referrer
 
@@ -81,13 +90,20 @@ For **frontend web applications** that call our APIs directly from the browser, 
 
 #### Token
 
-For **backend services, scripts, and server applications**, tokens provide the highest priority access. Tokens can be provided using any of these methods:
+For **backend services, scripts, and server applications**, API tokens provide authenticated, higher-priority access and bypass IP-based queuing. These tokens are generated and managed through [auth.pollinations.ai](https://github.com/pollinations/pollinations/blob/master/auth.pollinations.ai/README.md).
 
-| Method | Description | Example |
-| :--- | :--- | :--- |
-| Authorization Header | Standard Bearer token approach (recommended) | `Authorization: Bearer YOUR_TOKEN` |
-| Query Parameter | Token as URL parameter | `?token=YOUR_TOKEN` |
-| Request Body | Token in POST request body | `{ "token": "YOUR_TOKEN" }` |
+Tokens can be provided using any of these methods (listed in order of preference):
+
+| Method                 | Description                                                                                                | Example                                                                                                     |
+| :--------------------- | :--------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------- |
+| Authorization Header   | Standard Bearer token approach (recommended).                                                              | `Authorization: Bearer YOUR_API_TOKEN`                                                                      |
+| Custom Header          | Alternative header option.                                                                                 | `X-Pollinations-Token: YOUR_API_TOKEN`                                                                      |
+| Query Parameter        | Token as a URL parameter (use with caution, can be logged).                                                | `?token=YOUR_API_TOKEN`                                                                                     |
+| Request Body (POST)    | Token included in the JSON body of a POST request (less common for GET-style resource access).             | `{ "token": "YOUR_API_TOKEN" }` or `{ "auth_token": "YOUR_API_TOKEN" }` or `{ "authorization": "YOUR_API_TOKEN" }` |
+
+**Important:**
+- The tokens obtained from `auth.pollinations.ai` are the direct API tokens to be used with services like `image.pollinations.ai` and `text.pollinations.ai`. They are not JWTs that you need to decode or manage the expiry of on the client-side for these specific API calls.
+- Protect your API tokens like passwords.
 
 **Bearer Authentication**
 
@@ -135,6 +151,7 @@ Generates an image based on a text description.
 | `private`  | No       | Set to `true` to prevent the image from appearing in the public feed.              | `false` |
 | `enhance`  | No       | Set to `true` to enhance the prompt using an LLM for more detail.                  | `false` |
 | `safe`     | No       | Set to `true` for strict NSFW filtering (throws error if detected).                | `false` |
+| `image`    | No       | Reference image URL(s). Supports multiple images as comma-separated URLs.          |         |
 | `transparent` | No    | Set to `true` to generate images with transparent backgrounds (gptimage model only). | `false` |
 | `referrer` | No\*     | Referrer URL/Identifier. See [Referrer Section](#referrer-).                       |         |
 
@@ -153,6 +170,12 @@ curl -o sunset.jpg "https://image.pollinations.ai/prompt/A%20beautiful%20sunset%
 
 # With parameters
 curl -o sunset_large.jpg "https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?width=1280&height=720&seed=42&model=flux"
+
+# With reference image (edit mode)
+curl -o edited_image.jpg "https://image.pollinations.ai/prompt/Make%20it%20more%20colorful?image=https://example.com/original.jpg"
+
+# With multiple reference images
+curl -o combined_image.jpg "https://image.pollinations.ai/prompt/Combine%20these%20styles?image=https://example.com/style1.jpg,https://example.com/style2.jpg"
 
 # With transparent background (gptimage model only)
 curl -o logo_transparent.png "https://image.pollinations.ai/prompt/A%20company%20logo%20on%20transparent%20background?model=gptimage&transparent=true"
@@ -191,7 +214,75 @@ except requests.exceptions.RequestException as e:
     # if response is not None: print(response.text)
 ```
 
+**JavaScript (Browser `fetch`):**
+
+```javascript
+async function fetchImage(prompt, params = {}) {
+  const defaultParams = {
+    // width: 1024, height: 1024 // Defaults are handled by API
+  };
+  const queryParams = new URLSearchParams({ ...defaultParams, ...params });
+  const encodedPrompt = encodeURIComponent(prompt);
+  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?${queryParams.toString()}`;
+
+  console.log("Fetching image from:", url);
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      const errorText = await response.text(); // Get error details if possible
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${errorText}`
+      );
+    }
+    const imageBlob = await response.blob();
+    const imageUrl = URL.createObjectURL(imageBlob);
+
+    // Example: Display the image
+    const img = document.createElement("img");
+    img.src = imageUrl;
+    img.alt = prompt;
+    document.body.appendChild(img); // Append to your desired element
+    console.log("Image fetched and displayed.");
+  } catch (error) {
+    console.error("Error fetching image:", error);
+  }
+}
+
+// --- Usage ---
+fetchImage("A beautiful sunset over the ocean", {
+  width: 1280,
+  height: 720,
+  seed: 42,
+  model: "flux",
+  // nologo: true // Optional
+});
+
+// Just prompt
+// fetchImage("Cyberpunk city raining");
+```
 </details>
+
+---
+
+### Multiple Reference Images Support 🖼️+🖼️
+
+The Azure GPT Image API now supports multiple reference images in edit mode. You can provide multiple reference images by separating URLs with commas:
+
+```
+GET https://image.pollinations.ai/prompt/{prompt}?image={url1},{url2},{url3}
+```
+
+**Example with Multiple Reference Images:**
+```bash
+curl -o combined_image.jpg "https://image.pollinations.ai/prompt/Combine%20these%20images?image=https://example.com/image1.jpg,https://example.com/image2.jpg,https://example.com/image3.jpg"
+```
+
+**Implementation Details:**
+- The first image uses field name `image` (for backward compatibility)
+- Additional images use field names `image1`, `image2`, etc.
+- All images are fetched in parallel with progress logging
+- Follows the "thin proxy" design principle with minimal processing
 
 ---
 
@@ -263,7 +354,10 @@ Generates text based on a simple prompt.
 
 **Rate Limit (per IP):** 1 concurrent request / 3 sec interval.
 
-
+**Note on Ad System:**
+This endpoint incorporates an ad system with dual probability:
+- If the prompt or content includes the marker `p-ads`, there is a 100% probability of an ad being appended if relevant.
+- Otherwise, there is a 5% default probability of an ad being appended.
 
 <details>
 <summary><strong>Code Examples:</strong> Generate Text (GET)</summary>
@@ -328,6 +422,54 @@ except requests.exceptions.RequestException as e:
     # if response is not None: print(response.text)
 ```
 
+**JavaScript (Browser `fetch`):**
+
+```javascript
+async function fetchText(prompt, params = {}) {
+  const queryParams = new URLSearchParams(params);
+  const encodedPrompt = encodeURIComponent(prompt);
+  const url = `https://text.pollinations.ai/${encodedPrompt}?${queryParams.toString()}`;
+
+  console.log("Fetching text from:", url);
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const responseText = await response.text();
+
+    if (params.json === "true" || params.json === true) {
+      try {
+        const data = JSON.parse(responseText);
+        console.log("Response (JSON parsed):", data);
+        // Process JSON data
+      } catch (e) {
+        console.error("Failed to parse JSON response:", e);
+        console.log("Raw response:", responseText);
+      }
+    } else {
+      console.log("Response (Plain Text):", responseText);
+      // Display plain text
+      // document.getElementById('output').textContent = responseText;
+    }
+  } catch (error) {
+    console.error("Error fetching text:", error);
+  }
+}
+
+// --- Usage ---
+fetchText("What are the main benefits of exercise?");
+
+fetchText("List 3 popular dog breeds", {
+  model: "mistral",
+  json: "true", // Get result as JSON string
+});
+
+// Note: For stream=true, see dedicated streaming example under POST section
+```
+
 </details>
 
 ---
@@ -380,9 +522,11 @@ Follows the OpenAI Chat Completions API format for inputs where applicable.
 | `private`                      | Set to `true` to prevent the response from appearing in the public feed.                                                                                         | Optional, default `false`.                                                                                            |
 | `referrer`                     | Referrer URL/Identifier. See [Referrer Section](#referrer-).                                                                                                     | Optional.                                                                                                             |
 
+**Note on Ad System:**
+The ad system described above (for GET requests) also applies to POST requests. If the `p-ads` marker is found within the `messages` content, ad probability increases to 100%.
+
 <details>
 <summary><strong>Code Examples:</strong> Basic Chat Completion (POST)</summary>
-
 **cURL:**
 
 ```bash
@@ -898,9 +1042,7 @@ except Exception as e:
 
 ---
 
-**General Return Format (POST /openai for Text/Vision/STT/Functions):**
-
-- OpenAI-style chat completion response object (JSON). 🤖
+**Return:** OpenAI-style chat completion response object (JSON). 🤖
 
 **Rate Limits:** (Inherits base text API limits, potentially subject to specific model constraints)
 
@@ -1151,6 +1293,97 @@ except requests.exceptions.RequestException as e:
     print(f"Error making TTS POST request: {e}")
 ```
 
+**JavaScript (Browser `fetch`):**
+
+```javascript
+// Function to decode file to base64 (prefix removed for this API)
+function fileToBase64Data(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      // Result has 'data:audio/xxx;base64,' prefix, remove it
+      const base64String = reader.result.split(",")[1];
+      resolve(base64String);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function generateAudioPost(text, voice = "alloy") {
+  const url = "https://text.pollinations.ai/openai";
+  const payload = {
+    model: "openai-audio",
+    messages: [{ role: "user", content: text }],
+    voice: voice,
+  };
+  console.log("Generating audio via POST:", payload);
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${errorText}`
+      );
+    }
+    
+    // Parse the JSON response
+    const responseData = await response.json();
+    
+    try {
+        // Extract the base64-encoded audio data
+        const audioBase64 = responseData.choices[0].message.audio.data;
+        
+        // Convert base64 to binary data
+        // First, create a binary string from the base64 data
+        const binaryString = atob(audioBase64);
+        
+        // Convert the binary string to a Uint8Array
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        // Create a blob from the bytes
+        const audioBlob = new Blob([bytes], { type: "audio/mpeg" });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        // Play the audio
+        const audio = new Audio(audioUrl);
+        audio.play();
+        console.log("Audio generated and playing.");
+        
+        // Optional: Download the audio file
+        // const downloadLink = document.createElement('a');
+        // downloadLink.href = audioUrl;
+        // downloadLink.download = 'generated_audio.mp3';
+        // downloadLink.click();
+        
+    } catch (error) {
+        console.error("Error processing audio data:", error);
+        console.error("Response structure:", responseData);
+    }
+  } catch (error) {
+    console.error("Error generating audio via POST:", error);
+  }
+}
+
+// --- Usage Example (Attach to a file input change event) ---
+// <input type="file" id="imageInput" accept="image/*">
+/*
+document.getElementById('imageInput').addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        analyzeImage(file, "Describe this picture in detail.");
+    }
+});
+*/
+```
 </details>
 
 ---
@@ -1175,6 +1408,33 @@ Pollinations provides an MCP (Model Context Protocol) server that enables AI ass
 
 For installation and usage instructions, see the [MCP Server Documentation](./model-context-protocol/README.md) (Link placeholder - requires actual link).
 _(Code examples are specific to MCP client implementations and are best suited for the dedicated MCP documentation.)_
+
+---
+
+## WebSim Service (`websim.pollinations.ai`) 🌐📄
+
+`websim.pollinations.ai` acts as an HTML streaming wrapper around the `text.pollinations.ai` service. It's designed to take a prompt and stream back an HTML page that progressively renders the AI's response, potentially including interactive elements or specific formatting not available through the raw text API.
+
+**Endpoint:** `https://websim.pollinations.ai/{prompt}`
+
+**Functionality:**
+- Takes a prompt in the URL path, similar to the basic text generation GET endpoint.
+- Streams an HTML document as the response.
+- Useful for creating simple web-based demos or interfaces that display AI-generated text with custom styling or structure.
+
+**Parameters:**
+- It generally accepts the same query parameters as the `text.pollinations.ai` GET endpoint (e.g., `model`, `seed`, `template`, `system_prompt`) to control the underlying text generation.
+
+**Example Usage:**
+
+```html
+<!-- Simply navigate to this URL in a browser -->
+https://websim.pollinations.ai/Tell me a short story about a friendly robot
+```
+
+This service is particularly useful for quickly embedding AI-generated content into web pages or for applications that can render HTML directly.
+
+For more details on its implementation and advanced usage, refer to its dedicated README in the `text.pollinations.ai/websim.pollinations.ai/` directory within the repository.
 
 ---
 
@@ -1313,6 +1573,44 @@ def connect_image_feed():
 curl -N https://text.pollinations.ai/feed
 ```
 
+**JavaScript (Browser `EventSource`):**
+
+```javascript
+function connectTextFeed() {
+  const feedUrl = "https://text.pollinations.ai/feed";
+  try {
+    const eventSource = new EventSource(feedUrl);
+
+    eventSource.onmessage = function (event) {
+      try {
+        const textData = JSON.parse(event.data);
+        console.log("New Text Response:", textData);
+        // Example: Display the response text
+        // const p = document.createElement('p');
+        // p.textContent = `[${textData.model || 'N/A'}] ${textData.response || 'N/A'}`;
+        // document.getElementById('text-feed-output').prepend(p); // Add to your display area
+      } catch (e) {
+        console.error("Failed to parse text feed data:", event.data, e);
+      }
+    };
+
+    eventSource.onerror = function (err) {
+      console.error("Text Feed Error:", err);
+      eventSource.close();
+      // setTimeout(connectTextFeed, 5000); // Optional: Attempt reconnect
+    };
+
+    eventSource.onopen = function () {
+      console.log("Text Feed connection opened.");
+    };
+  } catch (error) {
+    console.error("Error connecting to text feed:", error);
+  }
+}
+
+// --- Usage ---
+// connectTextFeed();
+```
 **Python (`sseclient-py`):**
 
 ```python
@@ -1377,7 +1675,7 @@ Why use referrers?
 
 1. **Automatic (Browser)**: When your web app makes API calls, browsers automatically send the `Referer` header
 2. **Manual (Optional)**: Add `?referrer=your-app-identifier` to API requests for more specific identification
-3. **Register**: Visit [auth.pollinations.ai](https://auth.pollinations.ai) to register your domain for increased rate limits
+3. **Register**: Visit [auth.pollinations.ai](https://github.com/pollinations/pollinations/blob/master/auth.pollinations.ai/README.md) to register your domain for increased rate limits
 
 **Example API call with explicit referrer:**
 ```
@@ -1390,16 +1688,16 @@ https://image.pollinations.ai/prompt/a%20beautiful%20landscape?referrer=mywebapp
 - **Text-To-Text** responses may include a link to pollinations.ai 🔗.
 
 **For the best experience:**
-- **Web Applications**: Register your referrer at [auth.pollinations.ai](https://auth.pollinations.ai)
+- **Web Applications**: Register your referrer at [auth.pollinations.ai](https://github.com/pollinations/pollinations/blob/master/auth.pollinations.ai/README.md)
 - **Backend Services**: Use API tokens instead of referrers (see [Authentication section](#authentication-))
 
 ### Special Bee ✅🐝🍯
 
 **Special Bee requests are for upgrading to flower tier** - unlocking unlimited usage and SOTA models for your application.
 
-**Two ways to request flower tier upgrade:**
-1. **Self-serve**: Visit [auth.pollinations.ai](https://auth.pollinations.ai) to register your domain and request tier upgrade
-2. **GitHub request**: For special cases, [submit a Special Bee Request](https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml)
+**Two ways to become a Special Bee:**
+1. **Self-serve**: Visit [auth.pollinations.ai](https://github.com/pollinations/pollinations/blob/master/auth.pollinations.ai/README.md) to register your domain
+2. **Request review**: For special cases, [submit a Special Bee Request](https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml)
 
 **Flower tier benefits:**
 - Less limited rate limits → **Unlimited usage**

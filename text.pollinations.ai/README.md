@@ -11,6 +11,10 @@ This repository contains the source code for the Pollinations.ai Text Generation
 - Temperature control for output randomness
 - System prompt support
 - Request caching for improved performance
+- JWT-based authentication support for secure access
+- Dual probability ad system (100% when "p-ads" marker detected, 5% otherwise)
+- Referrer-based frontend app identification
+- Token-based backend authentication with queue bypass
 
 ## Installation
 

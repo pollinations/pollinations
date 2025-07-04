@@ -289,7 +289,7 @@ const checkCacheAndGenerate = async (req, res) => {
       let queueConfig;
       if (hasValidToken) {
         // Token authentication - ipQueue will automatically apply tier-based caps
-        queueConfig = { interval: 0, cap: 1 }; // cap will be overridden by ipQueue for token auth
+        queueConfig = { interval: 0 }; // cap will be set by ipQueue based on tier
         logAuth('Token authenticated - ipQueue will apply tier-based concurrency');
         progress.updateBar(requestId, 20, 'Authenticated', 'Token verified');
       } else {

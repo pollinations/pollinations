@@ -484,7 +484,7 @@ async function processRequest(req, res, requestData) {
     let queueConfig;
     if (isTokenAuthenticated) {
         // Token authentication - ipQueue will automatically apply tier-based caps
-        queueConfig = { interval: 1000, cap: 1 }; // cap will be overridden by ipQueue for token auth
+        queueConfig = { interval: 1000 }; // cap will be set by ipQueue based on tier
         authLog('Token authenticated - ipQueue will apply tier-based concurrency');
     } else if (hasReferrer) {
         // Referrer authentication uses base configuration

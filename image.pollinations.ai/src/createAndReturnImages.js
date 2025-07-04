@@ -600,7 +600,7 @@ export const callAzureGPTImage = async (prompt, safeParams, userInfo = {}) => {
 };
 
 /**
- * Calls the external Flux Kontext API to generate voxel art images
+ * Calls the external Flux Kontext API to generate images
  * @param {string} prompt - The prompt for image generation
  * @param {Object} safeParams - The parameters for image generation
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
@@ -742,7 +742,7 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
     }
     
     try {
-      updateProgress(progress, requestId, 30, 'Processing', 'Generating voxel art with Kontext...');
+      updateProgress(progress, requestId, 30, 'Processing', 'Generating image with Kontext...');
       return await callKontextAPI(prompt, safeParams);
     } catch (error) {
       logError('Kontext API failed:', error.message);

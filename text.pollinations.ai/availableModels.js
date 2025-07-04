@@ -241,6 +241,7 @@ const models = [
   {
     name: "openai-audio",
     description: "OpenAI GPT-4o Audio Preview",
+    maxInputChars: 1000,
     voices: [
       "alloy",
       "echo",

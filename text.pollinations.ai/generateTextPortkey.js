@@ -564,15 +564,6 @@ export const generateTextPortkey = createOpenAICompatibleClient({
             // Get the model name from the request (already mapped by genericOpenAIClient)
             const modelName = requestBody.model; // This is already mapped by genericOpenAIClient
 
-            // Check character limit
-            const MAX_CHARS = 2048000;
-            const totalChars = countMessageCharacters(requestBody.messages);
-
-            if (totalChars > MAX_CHARS) {
-                errorLog('Input text exceeds maximum length of %d characters (current: %d)', MAX_CHARS, totalChars);
-                throw new Error(`Input text exceeds maximum length of ${MAX_CHARS} characters (current: ${totalChars})`);
-            }
-
             // Get the model configuration object
             const configFn = portkeyConfig[modelName];
 
@@ -591,9 +582,19 @@ export const generateTextPortkey = createOpenAICompatibleClient({
             // Set the headers as a property on the request object that will be used by genericOpenAIClient
             requestBody._additionalHeaders = additionalHeaders;
 
-            // Check if the model has a specific maxTokens limit in availableModels.js
+            // Check if the model has a specific maxInputChars limit in availableModels.js
             // Use the model name from requestBody instead of options which isn't available here
             const modelConfig = findModelByName(requestBody.model);
+            
+            // Check model-specific character limit (only if model defines maxInputChars)
+            if (modelConfig && modelConfig.maxInputChars) {
+                const totalChars = countMessageCharacters(requestBody.messages);
+                if (totalChars > modelConfig.maxInputChars) {
+                    errorLog('Input text exceeds model-specific limit of %d characters for model %s (current: %d)', 
+                        modelConfig.maxInputChars, requestBody.model, totalChars);
+                    throw new Error(`Input text exceeds maximum length of ${modelConfig.maxInputChars} characters for model ${requestBody.model} (current: ${totalChars})`);
+                }
+            }
 
             // For models with specific token limits or those using defaults
             if (!requestBody.max_tokens) {

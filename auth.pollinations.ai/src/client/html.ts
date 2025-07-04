@@ -48,6 +48,7 @@ export const generateHTML = () => `<!DOCTYPE html>
             <button id="auth-button" onclick="startAuth()">Login with GitHub</button>
             <button id="logout-button" onclick="logout()" class="hidden">Logout</button>
             <div id="badge-container" class="hidden"></div>
+            <button id="usage-container" class="hidden">Check Usage</button>
         </div>
 
         <!-- 👤 Account Section -->

@@ -111,7 +111,6 @@ app.set('trust proxy', true);
 // Queue configuration for text service
 const QUEUE_CONFIG = {
   interval: 6000,  // 6 seconds between requests per IP
-  cap: 1          // Max 1 concurrent request per IP
 };
 
 // Using getIp from shared auth-utils.js
@@ -130,12 +129,16 @@ async function handleRequest(req, res, requestData) {
     log('Request: model=%s referrer=%s', requestData.model, requestData.referrer);
     log('Request data: %O', requestData);
 
+    // if (requestData.referrer === "Aiko_Roblox_Game")
+    //     throw new Error("blocked temporarily");
+
     try {
         // Generate a unique ID for this request
         const requestId = generatePollinationsId();
         
         // Get user info from authentication if available
         const authResult = req.authResult || {};
+
 
         // Tier gating
         const model = availableModels.find(m => m.name === requestData.model || m.aliases?.includes(requestData.model));
@@ -488,7 +491,7 @@ async function processRequest(req, res, requestData) {
         authLog('Token authenticated - ipQueue will apply tier-based concurrency');
     } else if (hasReferrer) {
         // Referrer authentication uses base configuration
-        queueConfig = { interval: 3000, cap: 1 };
+        queueConfig = { interval: 3000 };
         authLog('Referrer authenticated - using base configuration');
     } else {
         // Use default queue config with interval

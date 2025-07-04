@@ -106,6 +106,9 @@ export function prepareModelsForOutput(models) {
  * @throws {Error} If user is mapped to "blocked"
  */
 export function getUserMappedModel(username) {
+
+  log("checking model mapping for username", username);
+
   if (!username) return null;
   
   const mappingStr = process.env.USER_MODEL_MAPPING;
@@ -122,6 +125,7 @@ export function getUserMappedModel(username) {
       }, {});
     
     const mappedModel = mappings[username];
+    log("got mapped model", mappedModel,"for user", username)
     if (mappedModel) {
       // Check for blocked user
       if (mappedModel.toLowerCase() === 'blocked') {

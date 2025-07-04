@@ -20,6 +20,13 @@ const authLog = debug('pollinations:auth');
 // In-memory queue storage
 const queues = new Map();
 
+const tierCaps = {
+  "anonymous": 1,
+  "seed": 3,
+  "flower": 10,
+  "nectar": 30,
+}
+
 /**
  * Enqueue a function to be executed based on IP address
  * Requests with valid tokens or from allowlisted domains bypass the queue
@@ -38,7 +45,7 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
   const url = req.url || 'no-url';
   const method = req.method || 'no-method';
   const path = url.split('?')[0] || 'no-path';
-  const ip = req.headers?.get?.('cf-connecting-ip') || 
+  let ip = req.headers?.get?.('cf-connecting-ip') || 
             req.headers?.['cf-connecting-ip'] || 
             req.ip || 
             'unknown';
@@ -88,41 +95,28 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
     throw error;
   }
   
-  // Check if this is a nectar tier user - they skip the queue entirely
-  // Allow all nectar tier users to bypass the queue regardless of authentication method
-  if (authResult.tier === 'nectar' && authResult.tokenAuth) {
-    log('Nectar tier user detected - skipping queue entirely');
-    return fn(); // Execute immediately, skipping the queue
-  }
+  // // // Check if this is a nectar tier user - they skip the queue entirely
+  // // // Allow all nectar tier users to bypass the queue regardless of authentication method
+  // if (authResult.tier === 'nectar' && authResult.tokenAuth) {
+  //   log('Nectar tier user detected - skipping queue entirely');
+  //   return fn(); // Execute immediately, skipping the queue
+  // }
   
   // For all other users, always use the queue but adjust the interval and cap based on authentication type
   // This ensures all requests are subject to rate limiting and queue size constraints
-  
+
+  cap = tierCaps[authResult.tier] || 1;
+
   // Apply tier-based concurrency limits for token-authenticated requests
   if (authResult.tokenAuth) {
-    // Set tier-based cap for token authentication
-    if (authResult.tier === 'seed') {
-      cap = 3; // Seed tier gets 3 simultaneous requests
-      log('Token authenticated (seed tier) - using cap: 3');
-    } else if (authResult.tier) {
-      cap = 20; // Higher tiers get 20 simultaneous requests
-      log('Token authenticated (%s tier) - using cap: 20', authResult.tier);
-    } else {
-      cap = 20; // Default to higher tier behavior for authenticated users
-      log('Token authenticated (no tier specified) - using cap: 20');
-    }
     
-    // Token authentication gets zero interval (no delay between requests)
-    if (interval > 0) {
-      log('Token authenticated request - using zero interval in queue');
-      interval = 0;
-    }
-  } else if (authResult.referrerAuth) {
-    // Referrer-based authentication still uses service-provided cap and standard interval
-    log('Referrer authenticated request - using service-provided cap: %d', cap);
-  } else {
-    // Non-authenticated requests use service-provided cap and interval
-    log('Non-authenticated request - using service-provided cap: %d', cap);
+    // // // Token authentication gets zero interval (no delay between requests)
+    // if (interval > 0) {
+    //   log('Token authenticated request - using zero interval in queue');
+    //   interval = 0;
+    // }
+    authLog("Authenticated via token. using userId instead of ip address for queueing: "+ authResult.userId);
+    ip = authResult.userId;
   }
   
   // Check if queue exists for this IP and get its current size
@@ -142,9 +136,9 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
       maxAllowed: maxQueueSize
     };
     log('Queue full for IP %s: size=%d, pending=%d, max=%d', ip, currentQueueSize, currentPending, maxQueueSize);
-    if (authResult.userId) {
-      incrementUserMetric(authResult.userId, 'ip_queue_full_count');
-    }
+    // if (authResult.userId) {
+    //   incrementUserMetric(authResult.userId, 'ip_queue_full_count');
+    // }
     throw error;
   }
   
@@ -155,7 +149,7 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
   // Create queue for this IP if it doesn't exist
   if (!queues.has(ip)) {
     log('Creating new queue for IP: %s with interval: %dms, cap: %d', ip, interval, cap);
-    queues.set(ip, new PQueue({ concurrency: 1, interval, intervalCap: cap }));
+    queues.set(ip, new PQueue({ concurrency: cap, interval }));
   }
   
   // Add to queue and return

@@ -24,17 +24,18 @@ Please include open-graph metatags and use a Pollinations image for the thumbnai
 
 // Main handler function
 export default {
-  async fetch(request) {
-    return handleRequest(request);
+  async fetch(request, env) {
+    return handleRequest(request, env);
   }
 };
 
 /**
  * Main request handler
  * @param {Request} request - The incoming request
+ * @param {Object} env - The environment variables
  * @returns {Response} The response
  */
-async function handleRequest(request) {
+async function handleRequest(request, env) {
   // Handle CORS preflight requests
   if (request.method === 'OPTIONS') {
     return handleCorsPreflightRequest();
@@ -57,7 +58,7 @@ async function handleRequest(request) {
   }
 
   // Generate HTML from prompt
-  return generateHtml(prompt, request);
+  return generateHtml(prompt, request, env);
 }
 
 /**
@@ -151,14 +152,15 @@ function extractPromptFromPath(path) {
  * Generate HTML from a prompt by calling the text API
  * @param {string} prompt - The user prompt
  * @param {Request} request - The original request
+ * @param {Object} env - The environment variables
  * @returns {Response} The HTML response
  */
-async function generateHtml(prompt, request) {
+async function generateHtml(prompt, request, env) {
   // Get URL for query parameters
   const url = new URL(request.url);
   
   // Make upstream request to text API
-  const upstream = await fetchFromTextApi(prompt, url);
+  const upstream = await fetchFromTextApi(prompt, url, env);
 
   if (!upstream.ok || !upstream.body) {
     return new Response(`Upstream error ${upstream.status}`, {
@@ -189,15 +191,26 @@ async function generateHtml(prompt, request) {
  * Fetch HTML generation from the text API
  * @param {string} prompt - The user prompt
  * @param {URL} url - The URL object with query parameters
+ * @param {Object} env - The environment variables
  * @returns {Promise<Response>} The upstream response
  */
-function fetchFromTextApi(prompt, url) {
+function fetchFromTextApi(prompt, url, env) {
   // Get model from query parameter or use default
   const model = url.searchParams.get('model') || 'openai-large';
   
+  // Prepare headers with Bearer token
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+  
+  // Add Authorization header if TEXT_API_TOKEN is available
+  if (env.TEXT_API_TOKEN) {
+    headers['Authorization'] = `Bearer ${env.TEXT_API_TOKEN}`;
+  }
+  
   return fetch('https://text.pollinations.ai/v1/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({
       model,
       stream:  true,

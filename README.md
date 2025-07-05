@@ -41,6 +41,8 @@
 
 ## 🚀 Getting Started
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/pollinations/pollinations)
+
 ### Image Generation
 
 1. Visit [https://pollinations.ai](https://pollinations.ai)

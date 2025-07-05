@@ -15,6 +15,7 @@
 // Auto-load environment variables from shared and local .env files
 import './env-loader.js';
 import debug from 'debug';
+import memoizee from 'memoizee';
 import { extractReferrer, getTokenSource, extractToken } from './extractFromRequest.js';
 
 // Set up debug loggers with namespaces
@@ -51,7 +52,7 @@ export function isValidToken(token, validTokens) {
  * @param {string} referrer - The referrer URL to check
  * @returns {Promise<{userId: string, username: string, tier: string}|null>} User info if domain is registered, null otherwise
  */
-export async function checkReferrerInDb(referrer) {
+async function _checkReferrerInDb(referrer) {
   if (!referrer) return null;
   
   try {
@@ -99,12 +100,18 @@ export async function checkReferrerInDb(referrer) {
   }
 }
 
+// Memoized version with 30 second TTL
+export const checkReferrerInDb = memoizee(_checkReferrerInDb, { 
+  maxAge: 30000, // 30 seconds
+  promise: true  // Handle async functions properly
+});
+
 /**
  * Validate token against the auth.pollinations.ai API.
  * @param {string} token - The token to validate.
  * @returns {Promise<{userId: string, username: string, tier: string}|null>} User info if valid, null otherwise.
  */
-export async function validateApiTokenDb(token) {
+async function _validateApiTokenDb(token) {
   const maskedToken = token && token.length > 8 ? 
     token.substring(0, 4) + '...' + token.substring(token.length - 4) : 
     token;
@@ -150,6 +157,12 @@ export async function validateApiTokenDb(token) {
     return null;
   }
 }
+
+// Memoized version with 30 second TTL
+export const validateApiTokenDb = memoizee(_validateApiTokenDb, {
+  maxAge: 30000, // 30 seconds
+  promise: true  // Handle async functions properly
+});
 
 /**
  * Check if domain is whitelisted
@@ -243,7 +256,6 @@ export async function shouldBypassQueue(req) {
       debugInfo.tier = tokenResult.tier;
       log('Authentication succeeded: DB_TOKEN for user %s (tier: %s)', tokenResult.userId, tokenResult.tier);
       return {
-        bypass: true,
         authenticated: true,
         tokenAuth: true,
         referrerAuth: false,
@@ -273,7 +285,6 @@ export async function shouldBypassQueue(req) {
       debugInfo.tier = dbReferrerResult.tier;
       log('Authentication succeeded: DB_REFERRER for user %s (tier: %s)', dbReferrerResult.userId, dbReferrerResult.tier);
       return { 
-        bypass: true, 
         authenticated: true, 
         tokenAuth: false,
         referrerAuth: true,
@@ -290,7 +301,6 @@ export async function shouldBypassQueue(req) {
   log('Authentication failed: NO_AUTH_METHOD_SUCCESS (No valid token or registered referrer found)');
   debugInfo.authResult = 'NONE';
   return {
-    bypass: false,
     authenticated: false,
     tokenAuth: false,
     referrerAuth: false,
@@ -340,7 +350,6 @@ export async function handleAuthentication(req, requestId = null, logAuth = null
     }
     
     return {
-      bypass: isAuthenticated, // Kept for backward compatibility
       ...authResult,
       tier: debugInfo.tier || 'anonymous',
       debugInfo

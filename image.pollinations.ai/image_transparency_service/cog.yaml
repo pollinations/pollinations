@@ -1,0 +1,29 @@
+build:
+  gpu: true  # Enable GPU support
+  python_version: "3.12 
+  python_packages:
+    - torch
+    - torchvision
+    - transformers
+    - diffusers
+    - accelerate
+    - pillow
+    - fastapi
+    - uvicorn
+    - numpy
+    - httpx
+
+predict: 
+  - name: remove_background
+    description: "Remove the background from an image."
+    parameters:
+      - name: image
+        type: file
+        description: "Input image file (PNG or JPEG)."
+      - name: format
+        type: string
+        default: "png"
+        choices: ["png", "jpeg"]
+        description: "Output image format."
+    command: "python server.py"
+    timeout: 600  

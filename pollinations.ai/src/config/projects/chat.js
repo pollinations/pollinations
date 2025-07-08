@@ -5,6 +5,16 @@
 
 export const chatProjects = [
   {
+    name: "VOID.AI",
+    url: "https://thevoidai.vercel.app/",
+    description: "A humanlike AI mentor, productivity partner, and emotionally intelligent assistant that adapts its tone and energy based on user behavior. Features conversational AI that feels more like a charismatic friend than a chatbot, providing code walkthroughs, life advice, writing help, and motivation with realistic speech output and context memory.",
+    author: "@Ajay-Dhakad",
+    repo: "https://github.com/Ajay-Dhakad/VOID.AI",
+    stars: 0,
+    submissionDate: "2025-07-06",
+    order: 1
+  },
+  {
     name: "Ai drafterplus",
     url: "https://ai.drafterplus.nl/",
     description: "A ChatGPT-like interface with multiple AI models. Completely free and saves conversations in the browser using localStorage.",

@@ -290,3 +290,5 @@ text.pollinations.ai/v2/
 .dev.vars
 image.pollinations.ai/temp_logs/
 .wrangler/
+image.pollinations.ai/cloudflare-cache/all_keys.txt
+image.pollinations.ai/cloudflare-cache/scripts/catgpt_keys.txt

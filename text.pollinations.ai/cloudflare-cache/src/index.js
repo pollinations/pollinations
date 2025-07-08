@@ -1,6 +1,10 @@
 // No imports needed for Web Crypto API
 
 // Worker version to track which deployment is running
+import { createEmbeddingService, generateEmbedding } from './embedding-service.js';
+import { createSemanticCache, findSimilarText, cacheTextEmbedding } from './semantic-cache.js';
+import { extractAndNormalizeSemanticText, extractModelName } from './text-extractor.js';
+
 const WORKER_VERSION = "2.0.0-simplified";
 
 // Unified logging function with category support
@@ -83,8 +87,44 @@ async function storeRequestBody(env, request, key) {
     log('cache', `Stored request body separately (${bodyText.length} bytes) with key: ${requestKey}`);
     return true;
   } catch (err) {
-    log('error', `Failed to cache request body: ${err.message}`);
+    log("body is not a string. probably a binary file. won't save to cache.");
     return false;
+  }
+}
+
+/**
+ * Handles requests to the /embedding endpoint.
+ * @param {Request} request
+ * @param {object} env
+ * @returns {Promise<Response>}
+ */
+async function handleEmbeddingRequest(request, env) {
+  if (request.method !== 'POST') {
+    return new Response('Method Not Allowed', { status: 405 });
+  }
+
+  try {
+    const { text } = await request.json();
+
+    if (!text || typeof text !== 'string') {
+      return new Response('Invalid request body, "text" field is required.', { status: 400 });
+    }
+
+    log('Generating embedding for text:', text.slice(0, 50) + '...');
+
+    const embeddingService = createEmbeddingService(env.AI);
+    const embedding = await generateEmbedding(embeddingService, text);
+
+    log('Successfully generated embedding of size:', embedding.length);
+
+    return new Response(JSON.stringify(embedding), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+  } catch (error) {
+    console.error('Error in /embedding endpoint:', error);
+    log('Error in /embedding endpoint:', error.message);
+    return new Response('Internal Server Error', { status: 500 });
   }
 }
 
@@ -93,25 +133,66 @@ async function storeRequestBody(env, request, key) {
  */
 export default {
   async fetch(request, env, ctx) {
+    const semanticCache = createSemanticCache(env);
     try {
       // Parse request URL
       const url = new URL(request.url);
+      const pathname = url.pathname;
       
       // Log request information
-      log('request', `${request.method} ${url.pathname}`);
+      log('request', `${request.method} ${pathname}`);
       
       // Check if the path should be excluded from caching
-      if (NON_CACHE_PATHS.some(path => url.pathname.startsWith(path))) {
-        log('request', `Path ${url.pathname} excluded from caching, proxying directly`);
+      if (NON_CACHE_PATHS.some(path => pathname.startsWith(path))) {
+        log('request', `Path ${pathname} excluded from caching, proxying directly`);
         return await proxyRequest(request, env);
+      }
+      
+      // Handle the new /embedding endpoint
+      if (pathname === '/embedding') {
+        return handleEmbeddingRequest(request, env);
       }
       
       // Generate a cache key for the request
       const key = await generateCacheKey(request);
       log('cache', `Key: ${key}`);
       
+      // Capture request text and model name early for semantic caching (before consuming the stream)
+      let requestText = null;
+      let modelName = 'unknown';
+      if (request.method === 'POST' && request.body) {
+        try {
+          const rawBody = await request.clone().text();
+          requestText = extractAndNormalizeSemanticText(rawBody);
+          modelName = extractModelName(rawBody);
+          log('cache', `Extracted semantic text (${requestText.length} chars): ${requestText.substring(0, 100)}...`);
+          log('cache', `Extracted model name: ${modelName}`);
+        } catch (err) {
+          log('cache', 'Could not read request body for semantic caching');
+          requestText = url.toString(); // fallback to URL
+        }
+      } else {
+        requestText = url.toString();
+      }
+
       // Try to get the cached response
-      const cachedResponse = await getCachedResponse(env, key);
+      let cachedResponse = await getCachedResponse(env, key);
+
+      if (!cachedResponse) {
+        const similar = await findSimilarText(semanticCache, requestText, modelName);
+        if (similar && similar.cacheKey) {
+          cachedResponse = await getCachedResponse(env, similar.cacheKey);
+          if (cachedResponse) {
+            console.log(`[CACHE] Semantic HIT for model ${modelName}. Key: ${similar.cacheKey}, Similarity: ${similar.similarity}`);
+            cachedResponse.headers.set('x-cache-type', 'semantic');
+            cachedResponse.headers.set('x-semantic-similarity', similar.similarity.toString());
+            cachedResponse.headers.set('x-cache-model', similar.model || modelName);
+          } else {
+            console.log(`[CACHE] Semantic match found but R2 object ${similar.cacheKey} is missing.`);
+          }
+        }
+      }
+
       if (cachedResponse) {
         log('cache', '✅ Cache hit!');
         return cachedResponse;
@@ -150,8 +231,7 @@ export default {
           await env.TEXT_BUCKET.put(key, content, {
             customMetadata: metadata
           });
-          
-          log('cache', `✅ Cached response: ${key} (${content.byteLength} bytes)`);
+          await cacheTextEmbedding(semanticCache, key, requestText, modelName);
           
           // Return the original response
           return originResp;
@@ -210,6 +290,9 @@ export default {
               });
               
               log('cache', `✅ Response cached successfully (${totalSize} bytes)`);
+              
+              // Cache the text embedding asynchronously
+              ctx.waitUntil(cacheTextEmbedding(semanticCache, key, requestText, modelName));
               
               // Free memory
               chunks = null;
@@ -518,6 +601,7 @@ async function getCachedRequestResponsePair(env, key) {
  */
 async function listCachedPairs(env, limit = 100) {
   try {
+    const semanticCache = createSemanticCache(env);
     const list = await env.TEXT_BUCKET.list({ limit });
     
     // Group by base key (without -request suffix)

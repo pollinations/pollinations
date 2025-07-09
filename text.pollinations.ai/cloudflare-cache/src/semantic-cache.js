@@ -43,12 +43,18 @@ export async function findSimilarText(cache, text, modelName = 'unknown') {
       return {
         cacheKey: bestMatch.id,
         similarity: bestMatch.score,
-        model: bestMatch.metadata?.model || 'unknown'
+        model: bestMatch.metadata?.model || 'unknown',
+        aboveThreshold: true
       };
     }
 
     console.log(`[SEMANTIC_CACHE] Similar text found but below threshold: ${bestMatch.score} < ${cache.similarityThreshold}`);
-    return null;
+    return {
+      cacheKey: null,
+      similarity: bestMatch.score,
+      model: bestMatch.metadata?.model || 'unknown',
+      aboveThreshold: false
+    };
   } catch (error) {
     console.error('[SEMANTIC_CACHE] Error finding similar text:', error);
     return null;

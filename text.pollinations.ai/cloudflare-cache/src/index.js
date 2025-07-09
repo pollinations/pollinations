@@ -178,23 +178,34 @@ export default {
       // Try to get the cached response
       let cachedResponse = await getCachedResponse(env, key);
 
+      // Store similarity info for later use in headers
+      let semanticSimilarity = null;
+      
       if (!cachedResponse) {
         const similar = await findSimilarText(semanticCache, requestText, modelName);
-        if (similar && similar.cacheKey) {
-          cachedResponse = await getCachedResponse(env, similar.cacheKey);
-          if (cachedResponse) {
-            console.log(`[CACHE] Semantic HIT for model ${modelName}. Key: ${similar.cacheKey}, Similarity: ${similar.similarity}`);
-            cachedResponse.headers.set('x-cache-type', 'semantic');
-            cachedResponse.headers.set('x-semantic-similarity', similar.similarity.toString());
-            cachedResponse.headers.set('x-cache-model', similar.model || modelName);
-          } else {
-            console.log(`[CACHE] Semantic match found but R2 object ${similar.cacheKey} is missing.`);
+        if (similar) {
+          semanticSimilarity = similar.similarity;
+          if (similar.aboveThreshold && similar.cacheKey) {
+            cachedResponse = await getCachedResponse(env, similar.cacheKey);
+            if (cachedResponse) {
+              console.log(`[CACHE] Semantic HIT for model ${modelName}. Key: ${similar.cacheKey}, Similarity: ${similar.similarity}`);
+              cachedResponse.headers.set('x-cache-type', 'semantic');
+              cachedResponse.headers.set('x-semantic-similarity', similar.similarity.toString());
+              cachedResponse.headers.set('x-cache-model', similar.model || modelName);
+            } else {
+              console.log(`[CACHE] Semantic match found but R2 object ${similar.cacheKey} is missing.`);
+            }
           }
         }
       }
 
       if (cachedResponse) {
         log('cache', '✅ Cache hit!');
+        // Add cache debug headers for exact hit
+        cachedResponse.headers.set('x-cache-type', 'hit');
+        if (modelName) {
+          cachedResponse.headers.set('x-cache-model', modelName);
+        }
         return cachedResponse;
       }
       
@@ -209,7 +220,20 @@ export default {
       // Don't cache error responses
       if (originResp.status >= 401) {
         log('cache', `Not caching error response with status ${originResp.status}`);
-        return originResp;
+        
+        // Add cache debug headers even for error responses
+        const errorResponse = new Response(originResp.body, {
+          status: originResp.status,
+          statusText: originResp.statusText,
+          headers: originResp.headers
+        });
+        
+        errorResponse.headers.set('x-cache-type', 'miss');
+        if (modelName) {
+          errorResponse.headers.set('x-cache-model', modelName);
+        }
+        
+        return errorResponse;
       }
       
       // Determine if this is a streaming response
@@ -233,13 +257,41 @@ export default {
           });
           await cacheTextEmbedding(semanticCache, key, requestText, modelName);
           
-          // Return the original response
-          return originResp;
+          // Add cache debug headers for miss
+          const responseWithHeaders = new Response(originResp.body, {
+            status: originResp.status,
+            statusText: originResp.statusText,
+            headers: originResp.headers
+          });
+          responseWithHeaders.headers.set('x-cache-type', 'miss');
+          if (modelName) {
+            responseWithHeaders.headers.set('x-cache-model', modelName);
+          }
+          if (semanticSimilarity !== null && semanticSimilarity !== undefined) {
+            responseWithHeaders.headers.set('x-semantic-similarity', semanticSimilarity.toString());
+          }
+          
+          // Return the response with cache headers
+          return responseWithHeaders;
         } catch (err) {
           log('error', `Error caching regular response: ${err.message}`);
           if (err.stack) log('error', `Stack: ${err.stack}`);
+          // Add cache debug headers even if caching fails
+          const responseWithHeaders = new Response(originResp.body, {
+            status: originResp.status,
+            statusText: originResp.statusText,
+            headers: originResp.headers
+          });
+          responseWithHeaders.headers.set('x-cache-type', 'miss');
+          if (modelName) {
+            responseWithHeaders.headers.set('x-cache-model', modelName);
+          }
+          if (semanticSimilarity !== null && semanticSimilarity !== undefined) {
+            responseWithHeaders.headers.set('x-semantic-similarity', semanticSimilarity.toString());
+          }
+          
           // Return origin response even if caching fails
-          return originResp;
+          return responseWithHeaders;
         }
       }
       
@@ -313,7 +365,10 @@ export default {
         statusText: originResp.statusText,
         headers: prepareResponseHeaders(originResp.headers, {
           cacheStatus: 'MISS',
-          cacheKey: key
+          cacheKey: key,
+          cacheType: 'miss',
+          cacheModel: modelName,
+          semanticSimilarity: semanticSimilarity
         })
       });
     } catch (err) {
@@ -456,6 +511,19 @@ function prepareResponseHeaders(originalHeaders, cacheInfo = {}) {
   
   if (cacheInfo.cacheDate) {
     headers.set('X-Cache-Date', cacheInfo.cacheDate);
+  }
+  
+  // Add debug headers for cache type and model
+  if (cacheInfo.cacheType) {
+    headers.set('x-cache-type', cacheInfo.cacheType);
+  }
+  
+  if (cacheInfo.cacheModel) {
+    headers.set('x-cache-model', cacheInfo.cacheModel);
+  }
+  
+  if (cacheInfo.semanticSimilarity !== null && cacheInfo.semanticSimilarity !== undefined) {
+    headers.set('x-semantic-similarity', cacheInfo.semanticSimilarity.toString());
   }
   
   return headers;

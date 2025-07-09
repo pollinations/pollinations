@@ -291,11 +291,11 @@ export const chatProjects = [
   {
     name: "toai.chat",
     url: "https://toai.chat/",
-    description: "A personalized, multimodal AI chat assistant that leverages Pollinations APIs to converse with models like Claude, provide image generation, and answer questions about various topics.",
-    author: "@arjunbazinga",
-    repo: "https://github.com/arjunb023/chatbot",
-    stars: 11,
-    submissionDate: "2025-05-20",
+    description: "An AI-client-free project dedicated to enabling AI interaction using only curl, supporting multimodal and MCP capabilities, to provide users with the simplest way to use AI.",
+    author: "@Veallym0n",
+    repo: "https://github.com/Veallym0n/toai.chat",
+    stars: 2,
+    submissionDate: "2025-03-27",
     order: 1
   },
   {

@@ -1,0 +1,11 @@
+services:
+  text:
+    build:
+      context: .
+      dockerfile: dockerfile
+    container_name: pollinations-text
+    ports:
+      - "16385:16385"
+    env_file:
+      - .env
+    restart: unless-stopped

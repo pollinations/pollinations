@@ -59,11 +59,11 @@
 1. Use the `openai-audio` model with our API ([explore voices at OpenAI.fm](https://www.openai.fm/))
 2. Generate speech from text or transcribe audio to text
 
-### MCP Server for AI Assistants
+# MCP Server for AI Assistants
 
-Our MCP (Model Context Protocol) server enables AI assistants like Claude to generate images and audio directly. [Learn more](./model-context-protocol/README.md)
+Our MCP (Model Context Protocol) server enables AI assistants like Claude to generate images and audio directly. [Learn more](https://modelcontextprotocol.io/)
 
-#### Configuration
+## Configuration
 
 Add this to your MCP client configuration:
 
@@ -78,10 +78,11 @@ Add this to your MCP client configuration:
     }
   }
 }
-
-
 ```
-### Run with npx (no installation required)
+
+## Run with npx (no installation required)
+
+```bash
 npx @pollinations/model-context-protocol
 ```
 
@@ -106,7 +107,9 @@ Our web interface is user-friendly and doesn't require any technical knowledge. 
 
 Use our API directly in your browser or applications:
 
-    https://pollinations.ai/p/conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden
+```
+https://pollinations.ai/p/conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden
+```
 
 Replace the description with your own, and you'll get a unique image based on your words!
 
@@ -116,32 +119,38 @@ Replace the description with your own, and you'll get a unique image based on yo
 
 Here's an example of a generated image:
 
-[![Conceptual Isometric World](https://pollinations.ai/p/3d_wireframe_blueprint_for_the_prompt_conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=2000&height=500&nologo=true&seed=-1)](https://pollinations.ai/p/3d_wireframe_blueprint_for_the_prompt_conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=2000&height=500&nologo=true&seed=-1)
+[
 
 Python code to download the generated image:
 
-    import requests
+```python
+import requests
 
-    def download_image(prompt):
-        url = f"https://pollinations.ai/p/{prompt}"
-        response = requests.get(url)
-        with open('generated_image.jpg', 'wb') as file:
-            file.write(response.content)
-        print('Image downloaded!')
+def download_image(prompt):
+    url = f"https://pollinations.ai/p/{prompt}"
+    response = requests.get(url)
+    with open('generated_image.jpg', 'wb') as file:
+        file.write(response.content)
+    print('Image downloaded!')
 
-    download_image("conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden")
+download_image("conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden")
+```
 
 ### Text Generation
 
 To generate text, use this URL:
 
-    https://text.pollinations.ai/What%20is%20artificial%20intelligence?
+```
+https://text.pollinations.ai/What%20is%20artificial%20intelligence?
+```
 
 ### Audio Generation
 
 To generate audio from text, use this URL:
 
-    https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=nova
+```
+https://text.pollinations.ai/Welcome%20to%20Pollinations?model=openai-audio&voice=nova
+```
 
 ## 🛠️ Integration
 
@@ -149,32 +158,35 @@ To generate audio from text, use this URL:
 
 We offer React hooks for easy integration. Example usage:
 
-    import React from 'react';
-    import { usePollinationsImage, usePollinationsText } from '@pollinations/react';
-    import ReactMarkdown from 'react-markdown';
+```jsx
+import React from 'react';
+import { usePollinationsImage, usePollinationsText } from '@pollinations/react';
+import ReactMarkdown from 'react-markdown';
 
-    const AIGeneratedContent = () => {
-      const imageUrl = usePollinationsImage("Beautiful landscape of Paris with Eiffel Tower", { width: 800, height: 600, seed: 42 });
-      const markdown = usePollinationsText("Write a brief travel guide for Paris, including top attractions and local cuisine in markdown", { seed: 42 });
+const AIGeneratedContent = () => {
+  const imageUrl = usePollinationsImage("Beautiful landscape of Paris with Eiffel Tower", { width: 800, height: 600, seed: 42 });
+  const markdown = usePollinationsText("Write a brief travel guide for Paris, including top attractions and local cuisine in markdown", { seed: 42 });
 
-      return (
-        <div>
-          <h2>AI-Generated Travel Guide</h2>
-          <img src={imageUrl} alt="AI Generated" />
-          {markdown ? (
-            <ReactMarkdown>{markdown}</ReactMarkdown>
-          ) : (
-            <p>Loading markdown content...</p>
-          )}
-        </div>
-      );
-    };
+  return (
+    
+      AI-Generated Travel Guide
+      
+      {markdown ? (
+        {markdown}
+      ) : (
+        Loading markdown content...
+      )}
+    
+  );
+};
 
-    export default AIGeneratedContent;
+export default AIGeneratedContent;
+```
 
 Check out our [Pollinations React Hooks](./pollinations-react/README.md) for more details.
 
 ## Architecture
+
 ```mermaid
 graph LR
     Q[Bots - Discord, Telegram, WhatsApp] --> L1

@@ -235,6 +235,7 @@ const models = [
   {
     name: "openai-audio",
     description: "OpenAI GPT-4o Mini Audio Preview",
+    maxInputChars: 1000,
     voices: [
       "alloy",
       "echo",
@@ -404,7 +405,7 @@ const models = [
     handler: bidara,
     // openai-large
     provider: "azure",
-    tier: "seed",
+    tier: "anonymous",
     community: true,
     input_modalities: ["text", "image"],
     output_modalities: ["text"],

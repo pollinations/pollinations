@@ -5,6 +5,16 @@
 
 export const chatProjects = [
   {
+    name: "VOID.AI",
+    url: "https://thevoidai.vercel.app/",
+    description: "A humanlike AI mentor, productivity partner, and emotionally intelligent assistant that adapts its tone and energy based on user behavior. Features conversational AI that feels more like a charismatic friend than a chatbot, providing code walkthroughs, life advice, writing help, and motivation with realistic speech output and context memory.",
+    author: "@Ajay-Dhakad",
+    repo: "https://github.com/Ajay-Dhakad/VOID.AI",
+    stars: 0,
+    submissionDate: "2025-07-06",
+    order: 1
+  },
+  {
     name: "Ai drafterplus",
     url: "https://ai.drafterplus.nl/",
     description: "A ChatGPT-like interface with multiple AI models. Completely free and saves conversations in the browser using localStorage.",
@@ -280,12 +290,11 @@ export const chatProjects = [
   },
   {
     name: "toai.chat",
-    url: "https://toai.chat/",
-    description: "A personalized, multimodal AI chat assistant that leverages Pollinations APIs to converse with models like Claude, provide image generation, and answer questions about various topics.",
-    author: "@arjunbazinga",
-    repo: "https://github.com/arjunb023/chatbot",
-    stars: 11,
-    submissionDate: "2025-05-20",
+    description: "An AI-client-free project dedicated to enabling AI interaction using only curl, supporting multimodal and MCP capabilities, to provide users with the simplest way to use AI.",
+    author: "@Veallym0n",
+    repo: "https://github.com/Veallym0n/toai.chat",
+    stars: 2,
+    submissionDate: "2025-03-27",
     order: 1
   },
   {

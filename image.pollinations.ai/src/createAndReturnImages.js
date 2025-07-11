@@ -600,7 +600,7 @@ export const callAzureGPTImage = async (prompt, safeParams, userInfo = {}) => {
 };
 
 /**
- * Calls the external Flux Kontext API to generate voxel art images
+ * Calls the external Flux Kontext API to generate images
  * @param {string} prompt - The prompt for image generation
  * @param {Object} safeParams - The parameters for image generation
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
@@ -637,8 +637,16 @@ const callKontextAPI = async (prompt, safeParams) => {
       }
     }
     
+    const headers = {};
+    
+    // Add Bearer token if FLUX_KONTEXT_KEY is available
+    if (process.env.FLUX_KONTEXT_KEY) {
+      headers['Authorization'] = `Bearer ${process.env.FLUX_KONTEXT_KEY}`;
+    }
+    
     const response = await fetch('http://51.159.184.240:8000/generate', {
       method: 'POST',
+      headers,
       body: formData,
       timeout: 120000 // 2 minute timeout
     });
@@ -734,7 +742,7 @@ const generateImage = async (prompt, safeParams, concurrentRequests, progress, r
     }
     
     try {
-      updateProgress(progress, requestId, 30, 'Processing', 'Generating voxel art with Kontext...');
+      updateProgress(progress, requestId, 30, 'Processing', 'Generating image with Kontext...');
       return await callKontextAPI(prompt, safeParams);
     } catch (error) {
       logError('Kontext API failed:', error.message);

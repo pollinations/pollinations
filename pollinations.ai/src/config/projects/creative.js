@@ -5,6 +5,14 @@
 
 export const creativeProjects = [
   {
+    name: "Argent Script",
+    url: "https://perchance.org/ai-text-to-audio",
+    description: "AI Voice Generator - Generate text to audio for free and without limits, powered by GPT-4o Audio. Instantly convert your words into natural, lifelike speech.",
+    author: "https://github.com/withthatway",
+    submissionDate: "2025-07-04",
+    order: 1
+  },
+  {
     name: "Unfoldtech",
     url: "https://studio.unfoldtech.online/",
     description: "Easily generate new images inspired by the Pexels website with embedded IPTC (title, description, keywords) on download. Find beautiful image inspiration from Pexels, create prompts from images, and generate new images with metadata embedded for immediate use in stock photography or upscaling.",

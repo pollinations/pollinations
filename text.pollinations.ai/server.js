@@ -13,6 +13,7 @@ import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { processRequestForAds } from './ads/initRequestFilter.js';
 import { createStreamingAdWrapper } from './ads/streamingAdWrapper.js';
 import { getRequestData, prepareModelsForOutput, getUserMappedModel } from './requestUtils.js';
+import { logUserRequest } from './userLogger.js';
 
 // Import shared utilities
 import { enqueue } from '../shared/ipQueue.js';
@@ -110,7 +111,6 @@ app.set('trust proxy', true);
 // Queue configuration for text service
 const QUEUE_CONFIG = {
   interval: 6000,  // 6 seconds between requests per IP
-  cap: 1          // Max 1 concurrent request per IP
 };
 
 // Using getIp from shared auth-utils.js
@@ -129,12 +129,16 @@ async function handleRequest(req, res, requestData) {
     log('Request: model=%s referrer=%s', requestData.model, requestData.referrer);
     log('Request data: %O', requestData);
 
+    // if (requestData.referrer === "Aiko_Roblox_Game")
+    //     throw new Error("blocked temporarily");
+
     try {
         // Generate a unique ID for this request
         const requestId = generatePollinationsId();
         
         // Get user info from authentication if available
         const authResult = req.authResult || {};
+
 
         // Tier gating
         const model = availableModels.find(m => m.name === requestData.model || m.aliases?.includes(requestData.model));
@@ -191,6 +195,11 @@ async function handleRequest(req, res, requestData) {
         // Ensure completion has the request ID
         completion.id = requestId;
         
+        // Log user request/response if enabled
+        if (authResult.username) {
+            logUserRequest(authResult.username, finalRequestData, completion);
+        }
+        
         // Check if completion contains an error
         if (completion.error) {
             errorLog('Completion error details: %s', JSON.stringify(completion.error, null, 2));
@@ -205,6 +214,11 @@ async function handleRequest(req, res, requestData) {
             // Add the details if they exist
             if (errorObj.details) {
                 error.response = { data: errorObj.details };
+            }
+            
+            // Log error for debugging if user is being tracked
+            if (authResult.username) {
+                logUserRequest(authResult.username, finalRequestData, null, error);
             }
             
             await sendErrorResponse(res, req, error, requestData, errorObj.status || 500);
@@ -469,15 +483,16 @@ async function processRequest(req, res, requestData) {
     const hasReferrer = authResult.referrerAuth;
     
     // Determine queue configuration based on authentication
+    // Note: ipQueue.js now handles tier-based cap logic automatically for token auth
     let queueConfig;
     if (isTokenAuthenticated) {
-        // Token reduces delay between requests (no interval) but still goes through queue
-        queueConfig = { interval: 1000, cap: authResult.tier === 'seed' ? 3 : 20 };
-        authLog('Token authenticated - queue with no delay');
+        // Token authentication - ipQueue will automatically apply tier-based caps
+        queueConfig = { interval: 1000 }; // cap will be set by ipQueue based on tier
+        authLog('Token authenticated - ipQueue will apply tier-based concurrency');
     } else if (hasReferrer) {
-        // Referrer also skips delays between requests (no interval)
-        queueConfig = { interval: 3000, cap: 1 };
-        authLog('Referrer authenticated - queue with no delay');
+        // Referrer authentication uses base configuration
+        queueConfig = { interval: 3000 };
+        authLog('Referrer authenticated - using base configuration');
     } else {
         // Use default queue config with interval
         queueConfig = QUEUE_CONFIG;
@@ -495,10 +510,10 @@ async function processRequest(req, res, requestData) {
         if (error.status === 429) {
             errorLog('Queue full for IP %s: %s', ip, error.message);
             const errorResponse = {
-                error: 'Too Many Requests',
+                error: 'Too Many Requests. Booo!',
                 status: 429,
                 details: {
-                    message: 'Request queue is full. Please try again later.',
+                    message: 'Request queue is full. Please try again later. Boo!',
                     queueInfo: error.queueInfo,
                     timestamp: new Date().toISOString()
                 }

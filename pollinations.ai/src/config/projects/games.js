@@ -28,9 +28,10 @@ export const gamesProjects = [
   },
   {
     name: "Pollinations AI Game",
-    url: "https://pollinations-ai-game.vercel.app/",
+    url: "https://github.com/ednsinf/pollinations-ai",
     description: "A Hitchhiker's Guide to the Galaxy themed LLM-based elevator game.",
     author: "@game",
+    repo: "https://github.com/ednsinf/pollinations-ai",
     submissionDate: "2025-05-05",
     order: 1
   },
@@ -55,7 +56,8 @@ export const gamesProjects = [
   {
     name: "Infinite Tales",
     description: "Interactive storytelling platform powered by AI that creates endless narrative adventures.",
-    url: "https://infinitetales.ai",
+    url: "https://github.com/JayJayBinks/infinite-tales-rpg",
+    repo: "https://github.com/JayJayBinks/infinite-tales-rpg",
     author: "@infinite_tales",
     submissionDate: "2025-01-20"
   },
@@ -100,17 +102,18 @@ export const gamesProjects = [
   },
   {
     name: "Abyss Ascending",
-    url: "https://abyss-ascending.vercel.app/",
-    description: "A text-based adventure game with procedurally generated dungeons and storylines powered by Pollinations AI.",
-    author: "@abyss_game_studio",
+    url: "https://interzone.art.br/abyss_ascending/",
+    description: "A generative cosmic ocean adventure - text-based RPG with AI-driven storytelling, dynamic backgrounds, and procedural audio powered by Pollinations AI.",
+    author: "@interzone",
     submissionDate: "2025-05-05",
     order: 1
   },
   {
     name: "AI Character RP (Roblox)",
-    url: "https://www.roblox.com/games/ai-character-rp",
+    url: "https://github.com/snipcola/Roblox-AI",
     description: "A Roblox game that lets players interact with AI characters powered by Pollinations, featuring dynamic conversations and quests.",
     author: "@roblox_ai_dev",
+    repo: "https://github.com/snipcola/Roblox-AI",
     submissionDate: "2025-04-25",
     order: 1
   },

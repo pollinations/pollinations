@@ -18,13 +18,7 @@ export const hackAndBuildProjects = [
     author: "@Meenapintu",
     category: "sdkLibraries"
   },
-  {
-    name: "Smpldev",
-    url: "https://smpldev.ftp.sh/",
-    description: "Create, deploy, and scale full-stack web and mobile applications in minutes.",
-    author: "@kennet678",
-    category: "sdkLibraries"
-  },
+
   {
     name: "pollinations NPM Module",
     description: "JavaScript/Node.js SDK for Pollinations API.",
@@ -58,9 +52,10 @@ export const hackAndBuildProjects = [
   },
   {
     name: "Herramientas IA",
-    url: "https://proyectodescartes.org/descartescms/herramientas-ia",
+    url: "https://github.com/cusanotech/90-herramientas-de-inteligencia-artificial",
     description: "Tools designed with Pollinations.AI and the DescartesJS editor, including tools from other Pollinations.AI community members.",
     author: "@juanrivera126",
+    repo: "https://github.com/cusanotech/90-herramientas-de-inteligencia-artificial",
     submissionDate: "2025-03-10",
     order: 3
   },
@@ -175,10 +170,10 @@ export const hackAndBuildProjects = [
   },
   {
     name: "Pollinations MCP Server",
-    url: "https://github.com/pollinations/model-context-protocol",
+    url: "https://github.com/pollinations/model-context-protocol-server",
     description: "A Model Context Protocol server that enables AI-assisted development through natural language interaction with Pollinations' multimodal services.",
     author: "@thomash",
-    repo: "https://github.com/pollinations/model-context-protocol",
+    repo: "https://github.com/pollinations/model-context-protocol-server",
     stars: 42,
     submissionDate: "2025-04-10"
   },
@@ -204,7 +199,7 @@ export const hackAndBuildProjects = [
   },
   {
     name: "DominiSigns",
-    url: "https://github.com/dominicva/dominisigns",
+    url: "https://www.template.net/ai-sign-generator",
     description: "A WordPress block plugin that lets users create AI-generated images through the block editor. Integrates with Pollinations API to generate images from text prompts directly within WordPress.",
     author: "@dominicva",
     repo: "https://github.com/dominicva/dominisigns",
@@ -213,34 +208,16 @@ export const hackAndBuildProjects = [
   },
   {
     name: "Server Status Dashboards",
-    url: "https://server-status-dashboards.netlify.app/",
+    url: "https://github.com/hverr/status-dashboard",
     description: "A monitoring tool for tracking and visualizing server performance metrics, using Pollinations API for natural language interpretation of technical data.",
     author: "@devopper",
-    repo: "https://github.com/devopper/server-status-dashboards",
+    repo: "https://github.com/hverr/status-dashboard",
     stars: 31,
     submissionDate: "2025-05-01",
     order: 1
   },
-  {
-    name: "MVKProject Nexus API",
-    url: "https://nexus-api.mvkproject.dev/",
-    description: "An API gateway that provides simplified access to multiple AI services including Pollinations, offering standardized endpoints and request formats for developers.",
-    author: "@mvk",
-    repo: "https://github.com/mvkproject/nexus-api",
-    stars: 44,
-    submissionDate: "2025-04-18",
-    order: 1
-  },
-  {
-    name: "urSapere AI",
-    url: "https://ursapere.ai",
-    description: "An AI-powered research tool that helps users explore and understand complex topics by leveraging Pollinations for advanced data analysis and summarization.",
-    author: "@ursapere_devs",
-    repo: "https://github.com/ursapere/ursapere-ai",
-    stars: 25,
-    submissionDate: "2025-05-15",
-    order: 1
-  },
+
+
   {
     name: "DynaSpark API",
     url: "https://th3-ai.github.io/DynaSpark",

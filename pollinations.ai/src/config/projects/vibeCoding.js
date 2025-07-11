@@ -65,23 +65,8 @@ export const vibeCodingProjects = [
     author: "@rtxpower",
     order: 1
   },
-  {
-    name: "Define",
-    url: "https://define-i05a.onrender.com/api/docs/",
-    description: "An AI-powered REST API designed to generate definitions for words or phrases, constrained to a specified target word count. It allows customization of tone, context, and language, delivering precise, context-aware definitions programmatically—ideal for developers and content creators.",
-    author: "@hasanraiyan",
-    repo: "https://github.com/hasanraiyan",
-    submissionDate: "2025-05-06",
-    order: 1
-  },
-  {
-    name: "WebGeniusAI",
-    url: "https://webgeniusai.netlify.app/",
-    description: "AI tool that generates HTML websites with visuals from Pollinations.",
-    author: "@Aashir__Shaikh",
-    submissionDate: "2025-04-15",
-    order: 1
-  },
+
+
   {
     name: "Pollinations.DIY",
     url: "https://pollinations.diy",
@@ -113,16 +98,7 @@ export const vibeCodingProjects = [
     submissionDate: "2025-05-19",
     order: 1
   },
-  {
-    name: "Open Prompt",
-    url: "https://openprompt.co",
-    description: "A community-driven platform for creating, sharing, and discovering AI prompts for various applications. Integrated with Pollinations API for enhanced creative capabilities.",
-    author: "@markojohnas",
-    repo: "https://github.com/markojohnas/openprompt",
-    stars: 87,
-    submissionDate: "2025-05-11",
-    order: 1
-  },
+
   {
     name: "JustBuildThings",
     url: "https://justbuildthings.com",

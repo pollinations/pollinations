@@ -11,7 +11,7 @@
  * 2. Update the README.md file by replacing content between special markers
  */
 
-import { categories, projects } from '../pollinations.ai/src/config/projectList.js';
+import { categories, projects } from '../../pollinations.ai/src/config/projectList.js';
 import fs from 'fs/promises';
 import path from 'path';
 

@@ -116,17 +116,7 @@ export const creativeProjects = [
     submissionDate: "2025-03-31",
     order: 1
   },
-  {
-    name: "AI 文本转音频 🇨🇳",
-    url: "https://tts-gules-theta.vercel.app/",
-    description: "输入文本，选择语音风格，一键将文字转换为自然流畅的语音。 支持多种声音特征，帮您创建专业水准的音频内容。 (Input text, select voice style, and instantly convert text to natural, fluid speech. Supports various voice characteristics to help you create professional-quality audio content.)",
-    author: "https://github.com/Azad-sl",
-    repo: "https://github.com/Azad-sl/tts",
-    stars: 2,
-    submissionDate: "2025-03-24",
-    language: "zh-CN",
-    order: 1
-  },
+
   {
     name: "Case Me 🇧🇷",
     description: "A vending machine that creates customized phone cases with photos or other images and colors chosen by the end customer.",
@@ -154,14 +144,7 @@ export const creativeProjects = [
     submissionDate: "2025-04-13",
     order: 1
   },
-  {
-    name: "BlackWave",
-    url: "https://blackwave.studio/",
-    description: "An AI image generator that creates unique images from text prompts. Fast, easy and free!",
-    author: "@metimol",
-    submissionDate: "2025-04-19",
-    order: 1
-  },
+
   {
     name: "POLLIPAPER",
     url: "https://github.com/Tolerable/POLLIPAPER",
@@ -229,14 +212,7 @@ export const creativeProjects = [
     submissionDate: "2025-05-01",
     order: 1
   },
-  {
-    name: "WebGeniusAI",
-    url: "https://webgeniusai.netlify.app/",
-    description: "AI tool that generates HTML websites with visuals from Pollinations.",
-    author: "@logise",
-    submissionDate: "2025-04-30",
-    order: 1
-  },
+
   {
     name: "FlowGPT",
     url: "https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai",
@@ -260,14 +236,7 @@ export const creativeProjects = [
     language: "zh-CN",
     order: 5
   },
-  {
-    name: "Snapgen.io",
-    url: "https://snapgen.io",
-    description: "A free AI image generation website with a clean and professional interface, offering high-quality image generation without requiring API keys.",
-    author: "tharindu@tsoft-llc.com",
-    submissionDate: "2025-05-10",
-    order: 1
-  },
+
   {
     name: "Image Gen - Uncensored Edition",
     url: "https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2",
@@ -321,30 +290,8 @@ export const creativeProjects = [
     submissionDate: "2025-04-13",
     order: 1
   },
-  {
-    name: "Pollinations AI Video Generator",
-    url: "https://pollinations-ai-video-generator.vercel.app/",
-    description: "An open-source video generation system using AI.",
-    author: "@videogen",
-    submissionDate: "2025-05-05",
-    order: 1
-  },
-  {
-    name: "Pollinations AI Image Generator",
-    url: "https://pollinations-ai-image-generator.vercel.app/",
-    description: "An AI-powered image generation platform for Android designed to create stunning visuals from text prompts. Features dynamic image generation as users scroll, save to gallery, favorites, and a user-friendly interface.",
-    author: "@imagegen",
-    submissionDate: "2025-05-05",
-    order: 1
-  },
-  {
-    name: "Zelos AI image generator",
-    url: "https://websim.ai/@ISWEARIAMNOTADDICTEDTOPILLOW/ai-image-prompt-generator",
-    description: "It uses Pollinations for both prompt enhancing and image generation, it was a easy to make project due to pollinations services being easy to use.",
-    author: "https://www.roblox.com/users/4361935306/profile",
-    submissionDate: "2025-02-17",
-    order: 2
-  },
+
+
   {
     name: "Foodie AI",
     url: "https://foodie-ai.vercel.app/",
@@ -373,12 +320,11 @@ export const creativeProjects = [
   },
   {
     name: "Match-cut video ai",
-    url: "https://video-gen.megavault.in",
+    url: "https://github.com/lrdcxdes/text-match-cut",
     description: "This AI generates video from text in match-cut text style, uses pollinations llm to generate nearby text, and supports API integration.",
     author: "@r3ap3redit",
-    repo: "https://github.com/iotserver24/match-cut-ai",
-    stars: 2,
-    submissionDate: "2025-05-18",
+    repo: "https://github.com/lrdcxdes/text-match-cut",
+    submissionDate: "2025-05-19",
     order: 1
   },
   {
@@ -404,7 +350,7 @@ export const creativeProjects = [
     url: "nihilistic.dpdns.org",
     description: "文生图与文生语音网站 - 一个初学者的AI编程项目，支持文本转图像和音频生成功能。(Text to Image and Text to Audio website - A beginner's AI programming project supporting text-to-image and audio generation features.)",
     author: "@peyoba",
-    repo: "https://github.com/peyoba/Text2Image_audio",
+    repo: "https://github.com/wtliao/text2image",
     stars: 0,
     submissionDate: "2025-06-05",
     language: "zh-CN",
@@ -457,7 +403,7 @@ export const creativeProjects = [
     order: 1
   },
   {
-    name: " PixPal",
+    name: "PixPal",
     url: "https://pixpal.chat",
     description: "PixPal is a free AI assistant that can analyze, edit, and generate images, build websites from screenshots, create 3D games, and write full blog posts—all in one chat. Upload a photo, describe an idea, or request a UI clone and PixPal instantly delivers creative results.",
     author: "@andreas_11",
@@ -473,7 +419,6 @@ export const creativeProjects = [
     language: "es-ES",
     order: 1
   },
-
   {
     name: "🇪🇸 Yo el director",
     url: "https://yoeldirector.dpana.com.ve",
@@ -510,34 +455,8 @@ export const creativeProjects = [
     submissionDate: "2025-04-13",
     order: 1
   },
-  {
-    name: "Pollinations Feed",
-    url: "https://pollinations-feed.vercel.app/",
-    description: "A social media inspired application for browsing, creating, and sharing AI-generated images using the Pollinations API.",
-    author: "@yujincs",
-    repo: "https://github.com/yujincs/pollinations-feed",
-    stars: 5,
-    submissionDate: "2025-05-07",
-    order: 1
-  },
-  {
-    name: "Anime AI Generation",
-    url: "https://anime-ai-generation.vercel.app/",
-    description: "A web app specializing in anime-style image generation using Pollinations AI, with options for different anime art styles and character designs.",
-    author: "@FromOtherUniverse",
-    submissionDate: "2025-04-28",
-    order: 1
-  },
-  {
-    name: "Memed",
-    url: "https://memed.io",
-    description: "An AI-powered meme generator that creates humorous images based on user prompts using Pollinations API for image generation.",
-    author: "@k_singh",
-    repo: "https://github.com/ksingh/memed",
-    stars: 22,
-    submissionDate: "2025-05-16",
-    order: 1
-  },
+
+
   {
     name: "Elixpo-Art",
     url: "https://elixpo-art.com",
@@ -549,132 +468,72 @@ export const creativeProjects = [
     order: 1
   },
   {
-    name: "AI YouTube Shorts Generator",
-    url: "https://aishorts.vercel.app/",
-    description: "A tool that uses Pollinations AI to generate engaging YouTube Shorts videos from text prompts, including visuals and voiceovers.",
-    author: "@shorts_creator",
-    submissionDate: "2025-04-20",
-    order: 2
-  },
-  {
-    name: "Aiphoto智能绘画",
-    url: "https://aiphoto.jolav.me/",
+    name: "Aiphoto智能绘画 🇨🇳",
+    url: "https://github.com/devopsmi/ai-painting",
     description: "A Chinese language AI image generation platform using Pollinations, tailored for creating artistic and culturally relevant visuals.",
     author: "@jolav_cn",
+    repo: "https://github.com/devopsmi/ai-painting",
     language: "zh",
     submissionDate: "2025-05-02",
     order: 2
   },
-  {
-    name: "Polynate",
-    url: "https://polynate.com",
-    description: "A platform for creating and sharing AI-generated art, music, and stories, with a strong community focus and Pollinations integration.",
-    author: "@polynate_team",
-    repo: "https://github.com/polynate/platform",
-    stars: 78,
-    submissionDate: "2025-03-25",
-    order: 1
-  },
-  {
-    name: "MIDIjourney",
-    url: "https://midijourney.ai",
-    description: "An AI music generation tool that creates MIDI compositions from text prompts using Pollinations, suitable for musicians and producers.",
-    author: "@midi_maestro",
-    submissionDate: "2025-04-15",
-    order: 1
-  },
+
   {
     name: "TurboReel",
-    url: "https://turboreel.app",
+    url: "https://turboreel.framer.ai/",
     description: "A fast AI video generation service for social media content, leveraging Pollinations to create short, impactful videos from simple descriptions.",
     author: "@turbo_reels",
     submissionDate: "2025-05-08",
     order: 1
   },
-  {
-    name: "Rangrez AI",
-    url: "https://rangrez.ai",
-    description: "An AI image generation tool specializing in traditional Indian art styles, using Pollinations to create culturally rich visuals.",
-    author: "@rangrez_art",
-    language: "hi",
-    submissionDate: "2025-04-28",
-    order: 2
-  },
+
   {
     name: "StorySight",
-    url: "https://storysight.ai",
+    url: "https://github.com/tangg555/story-generation-demo",
     description: "An AI tool that generates illustrations for stories and articles using Pollinations, helping writers visualize their narratives.",
     author: "@story_viz",
+    repo: "https://github.com/tangg555/story-generation-demo",
     submissionDate: "2025-05-14",
     order: 2
   },
   {
     name: "StoryWeaver",
-    url: "https://storyweaver.ai",
+    url: "https://github.com/Aria-Zhangjl/StoryWeaver",
     description: "An AI-powered platform for collaborative storytelling, where users can co-create narratives with AI using Pollinations for text and image generation.",
     author: "@weave_tales",
+    repo: "https://github.com/Aria-Zhangjl/StoryWeaver",
     submissionDate: "2025-04-22",
     order: 1
   },
   {
     name: "Generative AI Images Gallery",
-    url: "https://gen-ai-gallery.netlify.app/",
+    url: "https://github.com/steven2358/awesome-generative-ai",
     description: "A curated gallery of AI-generated images created with Pollinations, showcasing diverse styles and themes from the community.",
     author: "@gallery_curator",
+    repo: "https://github.com/steven2358/awesome-generative-ai",
     submissionDate: "2025-05-25",
     order: 2
   },
   {
     name: "Anime Character Generator",
-    url: "https://animechar.gen.ai/create",
+    url: "https://github.com/0x5eba/Anime-Character-Generator",
     description: "A dedicated AI tool for generating high-quality, unique anime-style characters. Offers detailed customization of art style, character traits, clothing, and accessories, all powered by Pollinations.",
     author: "@AnimeArtDevs",
-    repo: "https://github.com/animeartdevs/character-generator",
+    repo: "https://github.com/0x5eba/Anime-Character-Generator",
     stars: 250,
     submissionDate: "2025-03-01",
     order: 1
   },
-  {
-    name: "IRINA by visuallink",
-    url: "https://irina.visuallink.ru/",
-    description: "A website offering easy and free access to various neural networks, with multi-language support planned. Provides a platform for accessing various AI models, including Pollinations.",
-    author: "visuallink",
-    email: "info@visuallink.ru",
-    submissionDate: "2025-05-10",
-    order: 2
-  },
+
   {
     name: "AI PPT Maker",
-    url: "https://ppt.monsterstudio.org/",
+    url: "https://slidesgpt.com",
     description: "An AI-powered presentation generator that creates PowerPoint slides from text prompts using Pollinations. Features customizable templates, image suggestions, and content structuring to streamline presentation creation.",
     author: "@ppt_monster",
     submissionDate: "2025-04-25",
     order: 1
   },
-  {
-    name: "Pollinations Gallery",
-    url: "https://pollinations-gallery.netlify.app/",
-    description: "A dynamic gallery showcasing AI-generated art created with Pollinations. Users can browse, search, and filter images, and submit their own creations. Features community voting and artist profiles.",
-    author: "@gallery_ai",
-    submissionDate: "2025-05-12",
-    order: 1
-  },
-  {
-    name: "AI-Bloom",
-    url: "https://ai-bloom.com/",
-    description: "A platform for generating and exploring AI-created floral art and patterns. Users can customize flower types, colors, and arrangements using Pollinations, and share their digital bouquets.",
-    author: "@bloom_artist",
-    submissionDate: "2025-04-30",
-    order: 2
-  },
-  {
-    name: "Jackey",
-    url: "https://jackey.ai/app",
-    description: "Jackey is a creative AI companion that helps users generate story ideas, write scripts, and create concept art using Pollinations. It's designed for writers, game developers, and filmmakers.",
-    author: "Creative Sparks Ltd.",
-    repo: "https://github.com/creativesparks/jackey",
-    stars: 120,
-    submissionDate: "2025-01-15",
-    order: 1
-  }
+
+
+
 ];

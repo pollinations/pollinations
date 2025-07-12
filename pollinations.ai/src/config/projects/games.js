@@ -184,5 +184,15 @@ export const gamesProjects = [
     author: "@TheSingleAlgerianPotato",
     submissionDate: "2025-06-30",
     order: 1
+  },
+  {
+    name: "AIStorium",
+    url: "https://aistorium.vercel.app/",
+    description: "Service for generating dynamic stories. Generates stories, images and audio by using pollinations api.",
+    author: "@artegoser",
+    repo: "https://github.com/artegoser/ai-storium",
+    stars: 1,
+    submissionDate: "2025-07-12",
+    order: 1
   }
 ];

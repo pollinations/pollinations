@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pollinations MCP Test Client</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f0f0f;
+            color: #fff;
+        }
+        .container {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #222;
+            border-radius: 8px;
+        }
+        button {
+            background: #ff006e;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #cc0058;
+        }
+        textarea, input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 5px;
+        }
+        .response {
+            background: #003300;
+            border: 1px solid #006600;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+        }
+        .error {
+            background: #330000;
+            border: 1px solid #660000;
+            color: #ff6666;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .status.connected {
+            background: #003300;
+            border: 1px solid #006600;
+            color: #66ff66;
+        }
+        .status.disconnected {
+            background: #330000;
+            border: 1px solid #660000;
+            color: #ff6666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌸 Pollinations MCP Test Client</h1>
+        <p>This page demonstrates how to connect to the Pollinations MCP server running on the main site.</p>
+        
+        <div id="status" class="status disconnected">
+            Status: Disconnected - Looking for MCP server...
+        </div>
+
+        <div class="section">
+            <h3>🎨 Image Generation</h3>
+            <input type="text" id="imagePrompt" placeholder="Enter image prompt (e.g., 'a cat in space')" value="a cat in space">
+            <input type="text" id="imageModel" placeholder="Model (optional, default: flux)" value="">
+            <input type="number" id="imageWidth" placeholder="Width" value="1024">
+            <input type="number" id="imageHeight" placeholder="Height" value="1024">
+            <button onclick="testImageGeneration()">Generate Image</button>
+            <div id="imageResponse"></div>
+        </div>
+
+        <div class="section">
+            <h3>📝 Text Generation</h3>
+            <textarea id="textPrompt" rows="4" placeholder="Enter your message...">Hello! Can you tell me about artificial intelligence?</textarea>
+            <input type="text" id="textModel" placeholder="Model (optional, default: openai)" value="">
+            <button onclick="testTextGeneration()">Generate Text</button>
+            <div id="textResponse"></div>
+        </div>
+
+        <div class="section">
+            <h3>🎵 Audio Generation</h3>
+            <input type="text" id="audioPrompt" placeholder="Enter audio description (e.g., 'upbeat electronic music')" value="upbeat electronic music">
+            <input type="number" id="audioDuration" placeholder="Duration in seconds" value="30">
+            <button onclick="testAudioGeneration()">Generate Audio</button>
+            <div id="audioResponse"></div>
+        </div>
+
+        <div class="section">
+            <h3>📋 Available Models</h3>
+            <button onclick="testGetModels()">Get Available Models</button>
+            <div id="modelsResponse"></div>
+        </div>
+
+        <div class="section">
+            <h3>Debug Info</h3>
+            <div id="debugInfo"></div>
+        </div>
+    </div>
+
+    <script>
+        let mcpReady = false;
+        
+        // Listen for MCP server ready message
+        window.addEventListener('message', (event) => {
+            if (event.origin !== window.location.origin) return;
+            
+            if (event.data.type === 'MCP_SERVER_READY') {
+                mcpReady = true;
+                updateStatus('Connected to Pollinations MCP Server', true);
+                document.getElementById('debugInfo').innerHTML = `
+                    <strong>MCP Server Details:</strong><br>
+                    Server: ${event.data.server}<br>
+                    Version: ${event.data.version}<br>
+                    Available Tools: ${event.data.tools.join(', ')}
+                `;
+            }
+        });
+
+        function updateStatus(message, connected) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = `Status: ${message}`;
+            statusEl.className = `status ${connected ? 'connected' : 'disconnected'}`;
+        }
+
+        function showResponse(elementId, response) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = `<div class="response">${JSON.stringify(response, null, 2)}</div>`;
+        }
+
+        function showError(elementId, error) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = `<div class="error">Error: ${error}</div>`;
+        }
+
+        // Simulate MCP tool calls (in a real implementation, this would use the MCP-B client transport)
+        async function callMcpTool(toolName, args) {
+            if (!mcpReady) {
+                throw new Error('MCP server not ready. Make sure you\'re on the main Pollinations site with MCP server running.');
+            }
+
+            // In a real MCP-B implementation, this would be handled by the transport layer
+            // For now, we'll simulate the calls directly to the Pollinations APIs
+            return await simulateToolCall(toolName, args);
+        }
+
+        async function simulateToolCall(toolName, args) {
+            switch (toolName) {
+                case 'generateImage':
+                    const params = new URLSearchParams();
+                    if (args.width) params.set('width', args.width.toString());
+                    if (args.height) params.set('height', args.height.toString());
+                    if (args.model && args.model !== 'flux') params.set('model', args.model);
+                    params.set('nologo', 'true');
+                    
+                    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(args.prompt)}?${params.toString()}`;
+                    return {
+                        content: [
+                            { type: 'text', text: `Image generated: ${imageUrl}` },
+                            { type: 'image', data: imageUrl, mimeType: 'image/jpeg' }
+                        ]
+                    };
+
+                case 'generateText':
+                    const response = await fetch('https://text.pollinations.ai/openai/v1/chat/completions', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            model: args.model || 'openai',
+                            messages: args.messages,
+                            temperature: 0.7
+                        })
+                    });
+                    const result = await response.json();
+                    return {
+                        content: [{ type: 'text', text: result.choices?.[0]?.message?.content || 'No response' }]
+                    };
+
+                case 'generateAudio':
+                    const audioParams = new URLSearchParams({
+                        duration: args.duration.toString(),
+                        model: args.model || 'music'
+                    });
+                    const audioUrl = `https://audio.pollinations.ai/prompt/${encodeURIComponent(args.prompt)}?${audioParams.toString()}`;
+                    return {
+                        content: [
+                            { type: 'text', text: `Audio generated: ${audioUrl}` },
+                            { type: 'resource', resource: { uri: audioUrl, mimeType: 'audio/mpeg' } }
+                        ]
+                    };
+
+                case 'getAvailableModels':
+                    return {
+                        content: [{
+                            type: 'text',
+                            text: 'Available models:\n\nImage: flux, midjourney, playground, dalle\nText: openai, mistral, claude, llama, gemini\nAudio: music, voice, effects'
+                        }]
+                    };
+
+                default:
+                    throw new Error(`Unknown tool: ${toolName}`);
+            }
+        }
+
+        async function testImageGeneration() {
+            try {
+                const prompt = document.getElementById('imagePrompt').value;
+                const model = document.getElementById('imageModel').value;
+                const width = parseInt(document.getElementById('imageWidth').value) || 1024;
+                const height = parseInt(document.getElementById('imageHeight').value) || 1024;
+
+                const result = await callMcpTool('generateImage', {
+                    prompt, model, width, height
+                });
+
+                showResponse('imageResponse', result);
+
+                // Show the generated image
+                const imageUrl = result.content.find(c => c.type === 'image')?.data;
+                if (imageUrl) {
+                    document.getElementById('imageResponse').innerHTML += 
+                        `<br><img src="${imageUrl}" style="max-width: 100%; border-radius: 5px; margin-top: 10px;" alt="Generated image">`;
+                }
+            } catch (error) {
+                showError('imageResponse', error.message);
+            }
+        }
+
+        async function testTextGeneration() {
+            try {
+                const prompt = document.getElementById('textPrompt').value;
+                const model = document.getElementById('textModel').value;
+
+                const result = await callMcpTool('generateText', {
+                    messages: [{ role: 'user', content: prompt }],
+                    model
+                });
+
+                showResponse('textResponse', result);
+            } catch (error) {
+                showError('textResponse', error.message);
+            }
+        }
+
+        async function testAudioGeneration() {
+            try {
+                const prompt = document.getElementById('audioPrompt').value;
+                const duration = parseInt(document.getElementById('audioDuration').value) || 30;
+
+                const result = await callMcpTool('generateAudio', {
+                    prompt, duration
+                });
+
+                showResponse('audioResponse', result);
+
+                // Show audio player
+                const audioUrl = result.content.find(c => c.type === 'resource')?.resource?.uri;
+                if (audioUrl) {
+                    document.getElementById('audioResponse').innerHTML += 
+                        `<br><audio controls style="width: 100%; margin-top: 10px;"><source src="${audioUrl}" type="audio/mpeg"></audio>`;
+                }
+            } catch (error) {
+                showError('audioResponse', error.message);
+            }
+        }
+
+        async function testGetModels() {
+            try {
+                const result = await callMcpTool('getAvailableModels', {});
+                showResponse('modelsResponse', result);
+            } catch (error) {
+                showError('modelsResponse', error.message);
+            }
+        }
+
+        // Check periodically if we're on the right page
+        setInterval(() => {
+            if (!mcpReady && window.location.hostname === 'pollinations.ai') {
+                updateStatus('Waiting for MCP server on main site...', false);
+            } else if (!mcpReady) {
+                updateStatus('Navigate to pollinations.ai to test MCP integration', false);
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

@@ -2,7 +2,7 @@
   "name": "pollinations.ai",
   "homepage": "https://pollinations.ai",
   "version": "0.4.8",
-  "type": "module",
+
   "private": false,
   "dependencies": {
     "@babel/eslint-parser": "^7.26.5",
@@ -55,7 +55,10 @@
     "slick-carousel": "^1.8.1",
     "throttle-debounce": "^3.0.1",
     "use-debounce": "^10.0.0",
-    "usehooks-ts": "^3.0.1"
+    "usehooks-ts": "^3.0.1",
+    "@mcp-b/transports": "latest",
+    "@modelcontextprotocol/sdk": "latest",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.0",

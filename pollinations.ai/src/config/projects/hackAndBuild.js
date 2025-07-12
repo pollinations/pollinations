@@ -171,7 +171,7 @@ export const hackAndBuildProjects = [
   {
     name: "Pollinations MCP Server",
     url: "https://github.com/pollinations/model-context-protocol-server",
-    description: "A Model Context Protocol server that enables AI-assisted development through natural language interaction with Pollinations' multimodal services.",
+    description: "A Model Context Protocol server that enables AI-assisted development through natural language interaction with Pollinations' multimodal services. Mult1m0dal",
     author: "@thomash",
     repo: "https://github.com/pollinations/model-context-protocol-server",
     stars: 42,

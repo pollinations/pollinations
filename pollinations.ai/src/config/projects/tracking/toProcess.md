@@ -158,7 +158,6 @@ Okay, here are all the unique project names from the provided JSON data:
 99. Anyai - added to socialBots.js
 100. Mimir AIP - added to hackAndBuild.js
 101. ai/teens worldwide - already in learn.js
-102. Apple Shortcuts Guide - already in learn.js
 103. Mirexa AI - already in creative.js
 104. MiReXa AI - already in creative.js
 105. Gacha - already in games.js

@@ -194,5 +194,13 @@ export const gamesProjects = [
     stars: 1,
     submissionDate: "2025-07-12",
     order: 1
+  },
+  {
+    name: "🧩 AI Word Search",
+    url: "https://play.google.com/store/apps/details?id=com.aiwords.app",
+    description: "AI-powered Android app that generates unlimited, personalized word search puzzles on any topic. Features custom AI-generated puzzles, print & share functionality, badges & achievements, clean interface, relaxing focus music, and upcoming multiplayer mode. Perfect for students, teachers, families, and puzzle enthusiasts.",
+    author: "hello@islandapps.dev",
+    submissionDate: "2025-07-12",
+    order: 1
   }
 ];

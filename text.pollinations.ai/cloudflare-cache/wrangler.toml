@@ -3,6 +3,16 @@ main = "src/index.js"
 compatibility_date = "2023-05-18"
 
 # R2 bucket for text storage
+# AI binding for embedding generation
+[ai]
+binding = "AI"
+
+# Vectorize index for semantic caching
+[[vectorize]]
+binding = "VECTORIZE_INDEX"
+index_name = "pollinations-text-cache-v1"
+
+# R2 bucket for text storage
 [[r2_buckets]]
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text"

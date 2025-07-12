@@ -106,6 +106,7 @@ export const chatProjects = [
     submissionDate: "2025-04-15",
     order: 1
   },
+
   {
     name: "Pal Chat",
     url: "https://apps.apple.com/us/app/pal-chat-ai-chat-client/id6447545085?platform=iphone",
@@ -122,6 +123,7 @@ export const chatProjects = [
     submissionDate: "2025-05-05",
     order: 1
   },
+
   {
     name: "OkeyMeta",
     url: "https://playground.okeymeta.com.ng/",
@@ -140,6 +142,7 @@ export const chatProjects = [
     submissionDate: "2025-04-25",
     order: 1
   },
+
   {
     name: "Pollinations Chat",
     url: "https://websim.ai/@AdrianoDev1/pollinations-ai-assistant/4",
@@ -203,7 +206,7 @@ export const chatProjects = [
     order: 1
   },
   {
-    name: "🎤 Comeback AI",
+    name: " Comeback AI",
     url: "https://comeback-ai.pinkpixel.dev",
     description: "AI-powered clapback machine that transforms mean comments into witty comebacks with 10 unique personas, uses Pollinations openai-audio for voice synthesis, and Whisper for speech-to-text transcription. Turn trolls into comedy gold!",
     author: "@sizzlebop",

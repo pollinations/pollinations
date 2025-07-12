@@ -336,16 +336,6 @@ export const creativeProjects = [
     order: 1
   },
   {
-    name: "Polynate",
-    url: "https://polynate.cloudwerx.dev/",
-    description: "AI-powered text and audio content generation platform providing a user-friendly interface for interacting with various AI generation services from Pollinations.ai.",
-    author: "@fisven",
-    repo: "https://github.com/fisventurous/pollinationsai-enhancer",
-    stars: 2,
-    submissionDate: "2025-04-27",
-    order: 1
-  },
-  {
     name: "Text2Image_audio 🇨🇳",
     url: "nihilistic.dpdns.org",
     description: "文生图与文生语音网站 - 一个初学者的AI编程项目，支持文本转图像和音频生成功能。(Text to Image and Text to Audio website - A beginner's AI programming project supporting text-to-image and audio generation features.)",
@@ -467,16 +457,7 @@ export const creativeProjects = [
     submissionDate: "2025-05-09",
     order: 1
   },
-  {
-    name: "Aiphoto智能绘画 🇨🇳",
-    url: "https://github.com/devopsmi/ai-painting",
-    description: "A Chinese language AI image generation platform using Pollinations, tailored for creating artistic and culturally relevant visuals.",
-    author: "@jolav_cn",
-    repo: "https://github.com/devopsmi/ai-painting",
-    language: "zh",
-    submissionDate: "2025-05-02",
-    order: 2
-  },
+
 
   {
     name: "TurboReel",
@@ -516,11 +497,9 @@ export const creativeProjects = [
   },
   {
     name: "Anime Character Generator",
-    url: "https://github.com/0x5eba/Anime-Character-Generator",
+    url: "https://perchance.org/ai-character-generator",
     description: "A dedicated AI tool for generating high-quality, unique anime-style characters. Offers detailed customization of art style, character traits, clothing, and accessories, all powered by Pollinations.",
     author: "@AnimeArtDevs",
-    repo: "https://github.com/0x5eba/Anime-Character-Generator",
-    stars: 250,
     submissionDate: "2025-03-01",
     order: 1
   },

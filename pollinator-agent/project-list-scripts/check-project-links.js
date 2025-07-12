@@ -14,7 +14,7 @@
  *   node check-project-links.js [--verbose] [--timeout=5000] [--category=chat]
  */
 
-import { projects } from '../pollinations.ai/src/config/projectList.js';
+import { projects } from '../../pollinations.ai/src/config/projectList.js';
 import fs from 'fs/promises';
 import path from 'path';
 

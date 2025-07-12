@@ -42,14 +42,7 @@ export const learnProjects = [
     submissionDate: "2025-04-19",
     order: 1
   },
-  {
-    name: "Apple Shortcuts Guide",
-    url: "https://www.youtube.com/watch?v=5NR5h7DTtEI",
-    description: "Video guide on creating AI images using Apple Shortcuts.",
-    author: "@tolerantone",
-    submissionDate: "2025-05-05",
-    order: 1
-  },
+
   {
     name: "Connect Pollinations with Open Web UI tutorial",
     url: "https://github.com/pollinations/connect-with-open-webui",

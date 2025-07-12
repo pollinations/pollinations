@@ -39,6 +39,7 @@ import { extractReferrer } from '../../shared/extractFromRequest.js';
 import { exchangeCodeForToken, getGitHubUser } from './github';
 import { handleAdminDatabaseDump, handleAdminUserInfo, handleAdminGetMetrics, handleAdminUpdateMetrics } from './admin';
 import { generateHTML } from './client/html';
+import { checkRateLimit } from './ratelimitter';
 
 // Add proper type declarations for DOM types
 declare global {
@@ -227,6 +228,15 @@ async function handleAuthorize(request: Request, env: Env, corsHeaders: Record<s
   const url = new URL(request.url);
   const redirectUri = url.searchParams.get('redirect_uri');
   
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const allowed = await checkRateLimit(env.DB, ip, 5, 10); // 5 reqs per 10 min
+  if (!allowed) {
+    return new Response(JSON.stringify({ error: 'Too Many Requests' }), {
+      status: 429,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
   if (!redirectUri) {
     return createErrorResponse(400, 'Missing required parameter: redirect_uri', corsHeaders);
   }

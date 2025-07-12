@@ -5,6 +5,14 @@
 
 export const learnProjects = [
   {
+    name: "Prompt Explorer",
+    url: "https://play.google.com/store/apps/details?id=com.ismafly.promptexploratorapp",
+    description: "A mobile app that combines AI prompt discovery with image generation using Pollinations API. Users can explore existing AI art from Lexica/Civitai, learn from prompts and metadata, then generate their own images directly in the app. Features include generation history, favorites, and a complete learning workflow from discovery to creation.",
+    author: "ismail.azdad@gmail.com",
+    submissionDate: "2025-07-12",
+    order: 1
+  },
+  {
     name: "AI儿童故事 🇨🇳",
     url: "https://kidss.netlify.app/",
     description: "基于此项目 构建有趣的孩子故事书应用演示 (Based on this project, build an interesting children's storybook application demo)",

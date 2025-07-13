@@ -107,5 +107,15 @@ export const vibeCodingProjects = [
     submissionDate: "2025-05-02",
     order: 1
   },
+  {
+    name: "SocialScribe",
+    url: "https://socialscribe.pages.dev/",
+    description: "An AI-powered Chrome extension that fixes grammar, rewrites text, and enhances your writing across websites like Twitter, LinkedIn, and Gmail, with customizable tone, length, and platform-specific formatting, plus support for emojis, hashtags, and keyword suggestions.",
+    author: "@sh20raj",
+    repo: "https://github.com/sh20raj/socialscribe",
+    stars: 1,
+    submissionDate: "2025-07-13",
+    order: 1
+  },
   // Additional projects will be migrated from recovered data
 ];

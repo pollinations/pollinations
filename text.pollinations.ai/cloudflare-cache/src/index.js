@@ -175,38 +175,42 @@ export default {
         requestText = url.toString();
       }
 
-      // Try to get the cached response
+      // Try direct cache first
       let cachedResponse = await getCachedResponse(env, key);
-
-      // Store similarity info for later use in headers
-      let semanticSimilarity = null;
       
-      if (!cachedResponse) {
-        const similar = await findSimilarText(semanticCache, requestText, modelName);
-        if (similar) {
-          semanticSimilarity = similar.similarity;
-          if (similar.aboveThreshold && similar.cacheKey) {
-            cachedResponse = await getCachedResponse(env, similar.cacheKey);
-            if (cachedResponse) {
-              console.log(`[CACHE] Semantic HIT for model ${modelName}. Key: ${similar.cacheKey}, Similarity: ${similar.similarity}`);
-              cachedResponse.headers.set('x-cache-type', 'semantic');
-              cachedResponse.headers.set('x-semantic-similarity', similar.similarity.toString());
-              cachedResponse.headers.set('x-cache-model', similar.model || modelName);
-            } else {
-              console.log(`[CACHE] Semantic match found but R2 object ${similar.cacheKey} is missing.`);
-            }
-          }
-        }
-      }
-
       if (cachedResponse) {
-        log('cache', '✅ Cache hit!');
-        // Add cache debug headers for exact hit
+        // Direct cache hit - no need for semantic search
+        log('cache', '✅ Direct cache hit!');
         cachedResponse.headers.set('x-cache-type', 'hit');
         if (modelName) {
           cachedResponse.headers.set('x-cache-model', modelName);
         }
         return cachedResponse;
+      }
+      
+      // No direct cache hit - try semantic cache
+      log('cache', 'Direct cache miss, trying semantic cache...');
+      const similar = await findSimilarText(semanticCache, requestText, modelName);
+      
+      // Store semantic similarity for response headers (even if below threshold)
+      let semanticSimilarity = null;
+      if (similar && similar.similarity !== null && similar.similarity !== undefined) {
+        semanticSimilarity = similar.similarity;
+      }
+      
+      if (similar && similar.aboveThreshold && similar.cacheKey) {
+        cachedResponse = await getCachedResponse(env, similar.cacheKey);
+        if (cachedResponse) {
+          console.log(`[CACHE] Semantic HIT for model ${modelName}. Key: ${similar.cacheKey}, Similarity: ${similar.similarity}`);
+          cachedResponse.headers.set('x-cache-type', 'semantic');
+          cachedResponse.headers.set('x-semantic-similarity', similar.similarity.toString());
+          cachedResponse.headers.set('x-cache-model', similar.model || modelName);
+          return cachedResponse;
+        } else {
+          console.log(`[CACHE] Semantic match found but R2 object ${similar.cacheKey} is missing.`);
+        }
+      } else if (similar) {
+        console.log(`[CACHE] Similar text found but below threshold: ${similar.similarity} < ${semanticCache.similarityThreshold}`);
       }
       
       log('cache', 'Cache miss, proxying to origin...');
@@ -231,6 +235,10 @@ export default {
         errorResponse.headers.set('x-cache-type', 'miss');
         if (modelName) {
           errorResponse.headers.set('x-cache-model', modelName);
+        }
+        // Include semantic similarity even for error responses
+        if (semanticSimilarity !== null && semanticSimilarity !== undefined) {
+          errorResponse.headers.set('x-semantic-similarity', semanticSimilarity.toString());
         }
         
         return errorResponse;
@@ -267,6 +275,7 @@ export default {
           if (modelName) {
             responseWithHeaders.headers.set('x-cache-model', modelName);
           }
+          // Always include semantic similarity if we found one (even below threshold)
           if (semanticSimilarity !== null && semanticSimilarity !== undefined) {
             responseWithHeaders.headers.set('x-semantic-similarity', semanticSimilarity.toString());
           }

@@ -38,8 +38,6 @@ export const vibeCodingProjects = [
     submissionDate: "2025-03-25",
     order: 1
   },
-  // Duplicate removed - Pollinations MCP Server already exists in hackAndBuild.js
-
   {
     name: "Pollinations Task Master",
     url: "https://github.com/LousyBook94/pollinations-task-master",
@@ -47,7 +45,7 @@ export const vibeCodingProjects = [
     author: "@LousyBook94",
     repo: "https://github.com/LousyBook94/pollinations-task-master",
     submissionDate: "2025-05-12",
-    stars: 3,
+    stars: 12,
     order: 1
   },
   {
@@ -55,7 +53,7 @@ export const vibeCodingProjects = [
     url: "https://github.com/QwenLM/Qwen-Agent",
     description: "A framework for developing agentic LLM applications.",
     repo: "https://github.com/QwenLM/Qwen-Agent",
-    stars: 6600,
+    stars: 9998,
     order: 1
   },
   {
@@ -65,8 +63,6 @@ export const vibeCodingProjects = [
     author: "@rtxpower",
     order: 1
   },
-
-
   {
     name: "Pollinations.DIY",
     url: "https://pollinations.diy",
@@ -98,7 +94,6 @@ export const vibeCodingProjects = [
     submissionDate: "2025-05-19",
     order: 1
   },
-
   {
     name: "JustBuildThings",
     url: "https://justbuildthings.com",
@@ -116,6 +111,5 @@ export const vibeCodingProjects = [
     stars: 1,
     submissionDate: "2025-07-13",
     order: 1
-  },
-  // Additional projects will be migrated from recovered data
+  }
 ];

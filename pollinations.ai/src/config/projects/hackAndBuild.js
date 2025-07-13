@@ -237,4 +237,14 @@ export const hackAndBuildProjects = [
     submissionDate: "2025-06-27",
     order: 1
   },
+
+  {
+    name: "Querynator5000",
+    url: "https://querynator5000.onrender.com/",
+    description: "Modern AI-first SQL interface for exploring and manipulating databases with natural language, running entirely in the browser with local persistence.",
+    author: "@SuperShivam5000",
+    repo: "https://github.com/SuperShivam5000/querynator5000",
+    submissionDate: "2025-07-13",
+    order: 1
+  },
 ];

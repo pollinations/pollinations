@@ -1,4 +1,4 @@
-import type { User, UserTier } from './types';
+import type { User, UserTier, Subdomain, SubdomainRegistration, SubdomainUpdate, SubdomainStatus, SubdomainSource } from './types';
 import type { D1Database } from '@cloudflare/workers-types';
 
 // Ultra-simplified user management - only store github_user_id and username
@@ -456,3 +456,293 @@ export async function incrementUserMetric(db: D1Database, userId: string, key: s
 }
 
 // End of metrics functions
+
+// Subdomain management functions
+
+/**
+ * List all subdomains for a user
+ * @param db D1 Database instance
+ * @param userId User ID
+ * @returns Array of user's subdomains
+ */
+export async function listSubdomains(db: D1Database, userId: string): Promise<Subdomain[]> {
+  try {
+    const results = await db.prepare(`
+      SELECT 
+        id, user_id, subdomain, source, repo, custom_domain, 
+        created_at, last_published, updated_at
+      FROM subdomains 
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+    `).bind(userId).all();
+    
+    return (results.results || []).map(row => ({
+      id: row.id as number,
+      user_id: row.user_id as string,
+      subdomain: row.subdomain as string,
+      source: row.source as SubdomainSource,
+      repo: row.repo as string | undefined,
+      custom_domain: Boolean(row.custom_domain),
+      created_at: row.created_at as string,
+      last_published: row.last_published as string | undefined,
+      updated_at: row.updated_at as string
+    }));
+  } catch (error) {
+    console.error('Error listing subdomains:', error);
+    return [];
+  }
+}
+
+/**
+ * Register a new subdomain for a user
+ * @param db D1 Database instance
+ * @param userId User ID
+ * @param registration Subdomain registration details
+ * @returns The newly created subdomain or null if registration failed
+ */
+export async function registerSubdomain(
+  db: D1Database, 
+  userId: string, 
+  registration: SubdomainRegistration
+): Promise<Subdomain | null> {
+  try {
+    // Check if subdomain already exists
+    const existing = await db.prepare(`
+      SELECT 1 FROM subdomains WHERE subdomain = ?
+    `).bind(registration.subdomain).first();
+    
+    if (existing) {
+      return null; // Subdomain already taken
+    }
+    
+    // Insert the new subdomain
+    const result = await db.prepare(`
+      INSERT INTO subdomains (
+        user_id, subdomain, source, repo, custom_domain
+      ) VALUES (?, ?, ?, ?, ?)
+      RETURNING 
+        id, user_id, subdomain, source, repo, custom_domain, 
+        created_at, last_published, updated_at
+    `).bind(
+      userId,
+      registration.subdomain,
+      registration.source,
+      registration.repo || null,
+      registration.custom_domain ? 1 : 0
+    ).first();
+    
+    if (!result) {
+      return null;
+    }
+    
+    return {
+      id: result.id as number,
+      user_id: result.user_id as string,
+      subdomain: result.subdomain as string,
+      source: result.source as SubdomainSource,
+      repo: result.repo as string | undefined,
+      custom_domain: Boolean(result.custom_domain),
+      created_at: result.created_at as string,
+      last_published: result.last_published as string | undefined,
+      updated_at: result.updated_at as string
+    };
+  } catch (error) {
+    console.error('Error registering subdomain:', error);
+    return null;
+  }
+}
+
+/**
+ * Update an existing subdomain
+ * @param db D1 Database instance
+ * @param userId User ID
+ * @param subdomain Subdomain name
+ * @param update Subdomain update details
+ * @returns The updated subdomain or null if update failed
+ */
+export async function updateSubdomain(
+  db: D1Database,
+  userId: string,
+  subdomain: string,
+  update: SubdomainUpdate
+): Promise<Subdomain | null> {
+  try {
+    // Check if subdomain exists and belongs to the user
+    const existing = await db.prepare(`
+      SELECT 1 FROM subdomains WHERE subdomain = ? AND user_id = ?
+    `).bind(subdomain, userId).first();
+    
+    if (!existing) {
+      return null; // Subdomain not found or doesn't belong to user
+    }
+    
+    // Build the update query dynamically based on provided fields
+    let updateQuery = 'UPDATE subdomains SET updated_at = CURRENT_TIMESTAMP';
+    const params: any[] = [];
+    
+    if (update.source !== undefined) {
+      updateQuery += ', source = ?';
+      params.push(update.source);
+    }
+    
+    if (update.repo !== undefined) {
+      updateQuery += ', repo = ?';
+      params.push(update.repo);
+    }
+    
+    if (update.custom_domain !== undefined) {
+      updateQuery += ', custom_domain = ?';
+      params.push(update.custom_domain ? 1 : 0);
+    }
+    
+    updateQuery += ' WHERE subdomain = ? AND user_id = ? RETURNING id, user_id, subdomain, source, repo, custom_domain, created_at, last_published, updated_at';
+    params.push(subdomain, userId);
+    
+    // Execute the update
+    const result = await db.prepare(updateQuery).bind(...params).first();
+    
+    if (!result) {
+      return null;
+    }
+    
+    return {
+      id: result.id as number,
+      user_id: result.user_id as string,
+      subdomain: result.subdomain as string,
+      source: result.source as SubdomainSource,
+      repo: result.repo as string | undefined,
+      custom_domain: Boolean(result.custom_domain),
+      created_at: result.created_at as string,
+      last_published: result.last_published as string | undefined,
+      updated_at: result.updated_at as string
+    };
+  } catch (error) {
+    console.error('Error updating subdomain:', error);
+    return null;
+  }
+}
+
+/**
+ * Delete a subdomain
+ * @param db D1 Database instance
+ * @param userId User ID
+ * @param subdomain Subdomain name
+ * @returns True if deletion was successful, false otherwise
+ */
+export async function deleteSubdomain(
+  db: D1Database,
+  userId: string,
+  subdomain: string
+): Promise<boolean> {
+  try {
+    // Delete the subdomain if it belongs to the user
+    const result = await db.prepare(`
+      DELETE FROM subdomains 
+      WHERE subdomain = ? AND user_id = ?
+    `).bind(subdomain, userId).run();
+    
+    return result.changes > 0;
+  } catch (error) {
+    console.error('Error deleting subdomain:', error);
+    return false;
+  }
+}
+
+/**
+ * Get subdomain status
+ * @param db D1 Database instance
+ * @param userId User ID
+ * @param subdomain Subdomain name
+ * @returns Subdomain status or null if not found
+ */
+export async function getSubdomainStatus(
+  db: D1Database,
+  userId: string,
+  subdomain: string
+): Promise<SubdomainStatus | null> {
+  try {
+    const result = await db.prepare(`
+      SELECT subdomain, last_published
+      FROM subdomains
+      WHERE subdomain = ? AND user_id = ?
+    `).bind(subdomain, userId).first();
+    
+    if (!result) {
+      return null;
+    }
+    
+    return {
+      subdomain: result.subdomain as string,
+      status: 'active', // Default status, can be enhanced with more logic
+      last_published: result.last_published as string | undefined
+    };
+  } catch (error) {
+    console.error('Error getting subdomain status:', error);
+    return null;
+  }
+}
+
+/**
+ * Update the last_published timestamp for a subdomain
+ * @param db D1 Database instance
+ * @param subdomain Subdomain name
+ * @returns True if update was successful, false otherwise
+ */
+export async function updateSubdomainPublished(
+  db: D1Database,
+  subdomain: string
+): Promise<boolean> {
+  try {
+    const result = await db.prepare(`
+      UPDATE subdomains
+      SET last_published = CURRENT_TIMESTAMP,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE subdomain = ?
+    `).bind(subdomain).run();
+    
+    return result.changes > 0;
+  } catch (error) {
+    console.error('Error updating subdomain published date:', error);
+    return false;
+  }
+}
+
+/**
+ * Find a subdomain by its name
+ * @param db D1 Database instance
+ * @param subdomain Subdomain name
+ * @returns The subdomain or null if not found
+ */
+export async function findSubdomain(
+  db: D1Database,
+  subdomain: string
+): Promise<Subdomain | null> {
+  try {
+    const result = await db.prepare(`
+      SELECT 
+        id, user_id, subdomain, source, repo, custom_domain, 
+        created_at, last_published, updated_at
+      FROM subdomains
+      WHERE subdomain = ?
+    `).bind(subdomain).first();
+    
+    if (!result) {
+      return null;
+    }
+    
+    return {
+      id: result.id as number,
+      user_id: result.user_id as string,
+      subdomain: result.subdomain as string,
+      source: result.source as SubdomainSource,
+      repo: result.repo as string | undefined,
+      custom_domain: Boolean(result.custom_domain),
+      created_at: result.created_at as string,
+      last_published: result.last_published as string | undefined,
+      updated_at: result.updated_at as string
+    };
+  } catch (error) {
+    console.error('Error finding subdomain:', error);
+    return null;
+  }
+}

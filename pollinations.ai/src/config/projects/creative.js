@@ -467,26 +467,7 @@ export const creativeProjects = [
     order: 2,
     stars: 14
   },
-  {
-    name: "StoryWeaver",
-    url: "https://github.com/Aria-Zhangjl/StoryWeaver",
-    description: "An AI-powered platform for collaborative storytelling, where users can co-create narratives with AI using Pollinations for text and image generation.",
-    author: "@weave_tales",
-    repo: "https://github.com/Aria-Zhangjl/StoryWeaver",
-    submissionDate: "2025-04-22",
-    order: 1,
-    stars: 215
-  },
-  {
-    name: "Generative AI Images Gallery",
-    url: "https://github.com/steven2358/awesome-generative-ai",
-    description: "A curated gallery of AI-generated images created with Pollinations, showcasing diverse styles and themes from the community.",
-    author: "@gallery_curator",
-    repo: "https://github.com/steven2358/awesome-generative-ai",
-    submissionDate: "2025-05-25",
-    order: 2,
-    stars: 8840
-  },
+
   {
     name: "Anime Character Generator",
     url: "https://perchance.org/ai-character-generator",

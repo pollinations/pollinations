@@ -5,6 +5,15 @@
 
 export const chatProjects = [
   {
+    name: "UltimaX Intelligence",
+    url: "https://umint-ai.hf.space",
+    description: "UltimaX Intelligence is a free AI platform that unifies multiple premium AI models into one seamless experience. Powered by the Pollinations open-source AI community and integrated with Open-WebUI, it provides an intuitive interface similar to ChatGPT but with more advanced features. Users can access a variety of powerful tools without any cost, registration, or login. All conversations are temporary and are not saved, ensuring privacy and simplicity.",
+    author: "@hadadarjt",
+    repo: "https://huggingface.co/spaces/umint/ai/tree/main",
+    submissionDate: "2025-07-13",
+    order: 1
+  },
+  {
     name: "VOID.AI",
     url: "https://thevoidai.vercel.app/",
     description: "A humanlike AI mentor, productivity partner, and emotionally intelligent assistant that adapts its tone and energy based on user behavior. Features conversational AI that feels more like a charismatic friend than a chatbot, providing code walkthroughs, life advice, writing help, and motivation with realistic speech output and context memory.",

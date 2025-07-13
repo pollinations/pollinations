@@ -9,7 +9,8 @@ export const hackAndBuildProjects = [
     url: "https://github.com/pinkpixel-dev/MCPollinations",
     description: "A Model Context Protocol (MCP) server that enables AI assistants to generate images, text, and audio through the Pollinations APIs. Supports customizable parameters, image saving, and multiple model options.",
     author: "Pink Pixel",
-    category: "sdkLibraries"
+    category: "sdkLibraries",
+    stars: 26
   },
   {
     name: "pollinations_ai",
@@ -18,7 +19,6 @@ export const hackAndBuildProjects = [
     author: "@Meenapintu",
     category: "sdkLibraries"
   },
-
   {
     name: "pollinations NPM Module",
     description: "JavaScript/Node.js SDK for Pollinations API.",
@@ -48,7 +48,8 @@ export const hackAndBuildProjects = [
     url: "https://github.com/pollinations-ai/pollinations.ai",
     description: "Official Python SDK for working with Pollinations' models.",
     author: "@pollinations-ai",
-    category: "sdkLibraries"
+    category: "sdkLibraries",
+    stars: 39
   },
   {
     name: "Herramientas IA",
@@ -57,7 +58,8 @@ export const hackAndBuildProjects = [
     author: "@juanrivera126",
     repo: "https://github.com/cusanotech/90-herramientas-de-inteligencia-artificial",
     submissionDate: "2025-03-10",
-    order: 3
+    order: 3,
+    stars: 24
   },
   {
     name: "🌱 Strain Navigator",
@@ -92,7 +94,7 @@ export const hackAndBuildProjects = [
     description: "A free, open-source browser extension that brings the power of ChatGPT and browser automation directly to your fingertips. Instantly access AI assistance, manage tabs, and organize bookmarks using natural language all securely within your browser.",
     author: "@mkantwala",
     repo: "https://github.com/mkantwala/CoNavic/",
-    stars: 1,
+    stars: 6,
     submissionDate: "2025-05-01",
     order: 1
   },
@@ -111,7 +113,7 @@ export const hackAndBuildProjects = [
     description: "Avatar Translator for Dominican Sign Language that uses artificial intelligence to translate text and audio into Dominican sign language (LSRD), creating a communication bridge for approximately 100,000 deaf people in the Dominican Republic.",
     author: "@cmunozdev",
     repo: "https://github.com/cmunozdev/DominiSigns",
-    stars: 3,
+    stars: 4,
     submissionDate: "2025-04-06",
     order: 1
   },
@@ -154,7 +156,7 @@ export const hackAndBuildProjects = [
     description: "A frontend-based AI interface designed to deliver a smooth, multimodal, and visually engaging user experience with conversational AI, image generation, and more.",
     author: "@fisven",
     repo: "https://github.com/fisventurous/pollinationsai-enhancer",
-    stars: 2,
+    stars: 3,
     submissionDate: "2025-04-27",
     order: 1
   },
@@ -164,16 +166,16 @@ export const hackAndBuildProjects = [
     description: "Windows Walker – What Copilot for Windows should have been. AI-powered Windows assistant that translates voice/text commands into real system actions using PowerShell. Powered by ChatGPT + PowerShell in an Electron UI.",
     author: "@supershivam",
     repo: "https://github.com/SuperShivam5000/windows-walker",
-    stars: 3,
+    stars: 9,
     submissionDate: "2025-05-22",
     order: 1
   },
   {
     name: "Pollinations MCP Server",
-    url: "https://github.com/pollinations/model-context-protocol-server",
+    url: "https://github.com/pinkpixel-dev/MCPollinations",
     description: "A Model Context Protocol server that enables AI-assisted development through natural language interaction with Pollinations' multimodal services. Mult1m0dal",
-    author: "@thomash",
-    repo: "https://github.com/pollinations/model-context-protocol-server",
+    author: "@pinkpixel-dev",
+    repo: "https://github.com/pinkpixel-dev/MCPollinations",
     stars: 42,
     submissionDate: "2025-04-10"
   },
@@ -183,7 +185,7 @@ export const hackAndBuildProjects = [
     description: "An extension for NVDA, the free and open-source screen reader for Microsoft Windows. Uses multimodal generative AI to help those with blindness and visual impairments understand pictures, UI controls, complex diagrams/graphics, and more through intelligent descriptions that go far beyond simple alt-text.",
     author: "@cartertemm",
     repo: "https://github.com/cartertemm/AI-content-describer/",
-    stars: 54,
+    stars: 60,
     submissionDate: "2025-05-28",
     order: 1
   },
@@ -193,7 +195,7 @@ export const hackAndBuildProjects = [
     description: "ChatGPT in terminal without requiring API keys. Uses Pollinations API endpoints to provide a free AI experience through the command line.",
     author: "@aandrew-me",
     repo: "https://github.com/aandrew-me/tgpt",
-    stars: 2500,
+    stars: 2698,
     submissionDate: "2025-05-15",
     order: 1
   },
@@ -216,8 +218,6 @@ export const hackAndBuildProjects = [
     submissionDate: "2025-05-01",
     order: 1
   },
-
-
   {
     name: "DynaSpark API",
     url: "https://th3-ai.github.io/DynaSpark",
@@ -233,8 +233,8 @@ export const hackAndBuildProjects = [
     description: "A programming language interpreter written in JavaScript that emulates C/C++ writing style with Weird Al themed elements. Comes with 'The Accordion' IDE that uses Pollinations for tab autocomplete and chat assistant to help people learn YankoviC.",
     author: "@Sweaterdog",
     repo: "https://github.com/Sweaterdog/YankoviC",
-    stars: 0,
+    stars: 1,
     submissionDate: "2025-06-27",
     order: 1
-  },
+  }
 ];

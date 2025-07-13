@@ -105,7 +105,6 @@ export const creativeProjects = [
     submissionDate: "2025-03-15",
     order: 1
   },
-
   {
     name: "Elixpo Art",
     url: "https://elixpoart.vercel.app",
@@ -116,7 +115,6 @@ export const creativeProjects = [
     submissionDate: "2025-03-31",
     order: 1
   },
-
   {
     name: "Case Me 🇧🇷",
     description: "A vending machine that creates customized phone cases with photos or other images and colors chosen by the end customer.",
@@ -140,11 +138,10 @@ export const creativeProjects = [
     description: "A Flutter application that listens for image generation prompts, requests images from Pollinations.AI, and displays them on the Frame wearable device. Users can use voice commands to generate images and save/share them using the device's sharing mechanism.",
     author: "CitizenOneX",
     repo: "https://github.com/CitizenOneX/frame_pollinations",
-    stars: 3,
+    stars: 6,
     submissionDate: "2025-04-13",
     order: 1
   },
-
   {
     name: "POLLIPAPER",
     url: "https://github.com/Tolerable/POLLIPAPER",
@@ -152,7 +149,7 @@ export const creativeProjects = [
     author: "@intolerant0ne",
     order: 1,
     category: "creativeApps",
-    stars: 8
+    stars: 9
   },
   {
     name: "Generator Text AI 🇮🇩",
@@ -165,7 +162,6 @@ export const creativeProjects = [
     language: "id-ID",
     order: 2
   },
-
   {
     name: "NailsGen",
     url: "https://www.nailsgen.com/",
@@ -212,7 +208,6 @@ export const creativeProjects = [
     submissionDate: "2025-05-01",
     order: 1
   },
-
   {
     name: "FlowGPT",
     url: "https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai",
@@ -236,7 +231,6 @@ export const creativeProjects = [
     language: "zh-CN",
     order: 5
   },
-
   {
     name: "Image Gen - Uncensored Edition",
     url: "https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2",
@@ -259,7 +253,8 @@ export const creativeProjects = [
     description: "An open-source Android app for text-to-image generation.",
     author: "@gaurav_87680",
     submissionDate: "2025-02-16",
-    order: 2
+    order: 2,
+    stars: 28
   },
   {
     name: "Pollinations.ai Model Comparison",
@@ -290,8 +285,6 @@ export const creativeProjects = [
     submissionDate: "2025-04-13",
     order: 1
   },
-
-
   {
     name: "Foodie AI",
     url: "https://foodie-ai.vercel.app/",
@@ -314,7 +307,7 @@ export const creativeProjects = [
     description: "Simply provide a topic or keyword for a video, and it will automatically generate the video copy, video materials, video subtitles, and video background music before synthesizing a high-definition short video. Integrates Pollinations' text generation service to create engaging and relevant video scripts.",
     author: "@harry0703",
     repo: "https://github.com/harry0703/MoneyPrinterTurbo",
-    stars: 32186,
+    stars: 37972,
     submissionDate: "2025-05-13",
     order: 1
   },
@@ -325,7 +318,8 @@ export const creativeProjects = [
     author: "@r3ap3redit",
     repo: "https://github.com/lrdcxdes/text-match-cut",
     submissionDate: "2025-05-19",
-    order: 1
+    order: 1,
+    stars: 12
   },
   {
     name: "The Promised Pen",
@@ -388,7 +382,7 @@ export const creativeProjects = [
     description: "Multi-Agent AI That Cooks Up Recipes Just for You ~ From fridge to feast, MASALA plans it all.",
     author: "@Naman009",
     repo: "https://github.com/Naman009/MASala",
-    stars: 1,
+    stars: 3,
     submissionDate: "2025-05-20",
     order: 1
   },
@@ -445,8 +439,6 @@ export const creativeProjects = [
     submissionDate: "2025-04-13",
     order: 1
   },
-
-
   {
     name: "Elixpo-Art",
     url: "https://elixpo-art.com",
@@ -457,8 +449,6 @@ export const creativeProjects = [
     submissionDate: "2025-05-09",
     order: 1
   },
-
-
   {
     name: "TurboReel",
     url: "https://turboreel.framer.ai/",
@@ -467,7 +457,6 @@ export const creativeProjects = [
     submissionDate: "2025-05-08",
     order: 1
   },
-
   {
     name: "StorySight",
     url: "https://github.com/tangg555/story-generation-demo",
@@ -475,26 +464,10 @@ export const creativeProjects = [
     author: "@story_viz",
     repo: "https://github.com/tangg555/story-generation-demo",
     submissionDate: "2025-05-14",
-    order: 2
+    order: 2,
+    stars: 14
   },
-  {
-    name: "StoryWeaver",
-    url: "https://github.com/Aria-Zhangjl/StoryWeaver",
-    description: "An AI-powered platform for collaborative storytelling, where users can co-create narratives with AI using Pollinations for text and image generation.",
-    author: "@weave_tales",
-    repo: "https://github.com/Aria-Zhangjl/StoryWeaver",
-    submissionDate: "2025-04-22",
-    order: 1
-  },
-  {
-    name: "Generative AI Images Gallery",
-    url: "https://github.com/steven2358/awesome-generative-ai",
-    description: "A curated gallery of AI-generated images created with Pollinations, showcasing diverse styles and themes from the community.",
-    author: "@gallery_curator",
-    repo: "https://github.com/steven2358/awesome-generative-ai",
-    submissionDate: "2025-05-25",
-    order: 2
-  },
+
   {
     name: "Anime Character Generator",
     url: "https://perchance.org/ai-character-generator",
@@ -503,7 +476,6 @@ export const creativeProjects = [
     submissionDate: "2025-03-01",
     order: 1
   },
-
   {
     name: "AI PPT Maker",
     url: "https://slidesgpt.com",
@@ -511,8 +483,5 @@ export const creativeProjects = [
     author: "@ppt_monster",
     submissionDate: "2025-04-25",
     order: 1
-  },
-
-
-
+  }
 ];

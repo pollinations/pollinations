@@ -44,10 +44,10 @@ export const socialBotsProjects = [
 
   {
     name: "Pollinations Discord Bot",
-    url: "https://github.com/pollinations/discord-bot",
-    description: "Official Discord bot for Pollinations.ai that allows server members to generate images, text, and audio directly within Discord channels.",
+    url: "https://github.com/pollinations/pollinations.ai-bot-old",
+    description: "Official Discord bot for Pollinations.ai that allows server members to generate images, text, and audio through simple commands and conversations.",
     author: "@pollinations",
-    repo: "https://github.com/pollinations/discord-bot",
+    repo: "https://github.com/pollinations/pollinations.ai-bot-old",
     stars: 156,
     submissionDate: "2025-03-20",
     order: 1

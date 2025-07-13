@@ -55,7 +55,9 @@ export const learnProjects = [
     name: "Connect Pollinations with Open Web UI tutorial",
     url: "https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI",
     description: "Step-by-step guide on integrating Pollinations APIs with Open Web UI for enhanced image generation.",
-    author: "@pollinations",
+    author: "@cloph-dsp",
+    repo: "https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI",
+    stars: 9,
     submissionDate: "2025-03-15",
     order: 1 // Existing project order
   },

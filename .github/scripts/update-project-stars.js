@@ -1,51 +1,66 @@
-#!/usr/bin/env node
+import fs from 'fs';
+import https from 'https';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-/**
- * Script to fetch GitHub star counts and update the project list file
- *
- * This script can be used in two ways:
- *
- * 1. Without arguments: Updates the project list file with star counts
- *    - Reads the project list file
- *    - Finds all GitHub repository URLs
- *    - Fetches star counts for repositories that don't already have them
- *    - Updates the file with the star counts
- *
- * 2. With owner/repo argument: Fetches and outputs star count for a specific repository
- *    - Fetches the star count for the specified repository
- *    - Outputs the star count in various formats (plain, formatted, markdown)
- *
- * Usage:
- *   - Update project list: node update-project-stars.js
- *   - Get stars for repo: node update-project-stars.js owner/repo
- *
- * Example: node update-project-stars.js pollinations/pollinations
- */
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const fs = require('fs');
-const path = require('path');
-const https = require('https');
+// Import project arrays from category files
+const vibeCoding = (await import('../../pollinations.ai/src/config/projects/vibeCoding.js')).default;
+const creative = (await import('../../pollinations.ai/src/config/projects/creative.js')).default;
+const games = (await import('../../pollinations.ai/src/config/projects/games.js')).default;
+const hackAndBuild = (await import('../../pollinations.ai/src/config/projects/hackAndBuild.js')).default;
+const chat = (await import('../../pollinations.ai/src/config/projects/chat.js')).default;
+const socialBots = (await import('../../pollinations.ai/src/config/projects/socialBots.js')).default;
+const learn = (await import('../../pollinations.ai/src/config/projects/learn.js')).default;
 
-// Path to the project list file (relative to the repository root)
-const PROJECT_LIST_PATH = path.join('pollinations.ai', 'src', 'config', 'projectList.js');
+// Category file mappings
+const categoryFiles = {
+  vibeCoding: {
+    array: vibeCoding,
+    path: path.join(__dirname, '../../pollinations.ai/src/config/projects/vibeCoding.js')
+  },
+  creative: {
+    array: creative,
+    path: path.join(__dirname, '../../pollinations.ai/src/config/projects/creative.js')
+  },
+  games: {
+    array: games,
+    path: path.join(__dirname, '../../pollinations.ai/src/config/projects/games.js')
+  },
+  hackAndBuild: {
+    array: hackAndBuild,
+    path: path.join(__dirname, '../../pollinations.ai/src/config/projects/hackAndBuild.js')
+  },
+  chat: {
+    array: chat,
+    path: path.join(__dirname, '../../pollinations.ai/src/config/projects/chat.js')
+  },
+  socialBots: {
+    array: socialBots,
+    path: path.join(__dirname, '../../pollinations.ai/src/config/projects/socialBots.js')
+  },
+  learn: {
+    array: learn,
+    path: path.join(__dirname, '../../pollinations.ai/src/config/projects/learn.js')
+  }
+};
 
-// Function to extract owner and repo from GitHub URL
 function extractOwnerAndRepo(url) {
-  // Handle different GitHub URL formats
   const githubRegex = /github\.com\/([^\/]+)\/([^\/\s]+)/;
   const match = url.match(githubRegex);
 
   if (match && match.length >= 3) {
     return {
       owner: match[1],
-      repo: match[2].replace(/\.git$/, '') // Remove .git if present
+      repo: match[2].replace(/\.git$/, '')
     };
   }
 
   return null;
 }
 
-// Function to fetch star count from GitHub API
 function fetchStarCount(owner, repo) {
   return new Promise((resolve, reject) => {
     const options = {
@@ -66,165 +81,165 @@ function fetchStarCount(owner, repo) {
 
       res.on('end', () => {
         try {
-          const response = JSON.parse(data);
-          if (response.stargazers_count !== undefined) {
-            resolve({
-              stars: response.stargazers_count,
-              fullResponse: response
-            });
-          } else if (response.message) {
-            reject(new Error(`GitHub API error: ${response.message}`));
+          const parsed = JSON.parse(data);
+          if (res.statusCode === 200) {
+            resolve(parsed.stargazers_count);
           } else {
-            reject(new Error('Failed to get star count'));
+            reject(new Error(`GitHub API error: ${res.statusCode} - ${parsed.message}`));
           }
         } catch (error) {
-          reject(error);
+          reject(new Error(`Failed to parse response: ${error.message}`));
         }
       });
     });
 
     req.on('error', (error) => {
-      reject(error);
+      reject(new Error(`Request failed: ${error.message}`));
     });
 
     req.end();
   });
 }
 
-// Format star count for display
-function formatStarCount(stars) {
-  if (stars < 1000) {
-    return stars.toString();
-  } else {
-    return (stars / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+function formatStarCount(count) {
+  if (count >= 1000) {
+    return `${(count / 1000).toFixed(1)}k`;
   }
+  return count.toString();
 }
 
-// Function to fetch and display stars for a specific repository
-async function fetchAndDisplayStars(ownerRepo) {
-  try {
-    const [owner, repo] = ownerRepo.split('/');
+// Custom formatter to output JavaScript objects without quoted keys
+function formatJavaScriptObject(obj, indent = 0) {
+  const spaces = '  '.repeat(indent);
+  const nextSpaces = '  '.repeat(indent + 1);
+  
+  if (Array.isArray(obj)) {
+    if (obj.length === 0) return '[]';
+    
+    let result = '[\n';
+    obj.forEach((item, index) => {
+      result += nextSpaces + formatJavaScriptObject(item, indent + 1);
+      if (index < obj.length - 1) result += ',';
+      result += '\n';
+    });
+    result += spaces + ']';
+    return result;
+  }
+  
+  if (obj && typeof obj === 'object') {
+    const entries = Object.entries(obj);
+    if (entries.length === 0) return '{}';
+    
+    let result = '{\n';
+    entries.forEach(([key, value], index) => {
+      // Don't quote keys unless they contain special characters
+      const needsQuotes = /[^a-zA-Z0-9_$]/.test(key) || /^[0-9]/.test(key);
+      const formattedKey = needsQuotes ? `"${key}"` : key;
+      
+      result += nextSpaces + formattedKey + ': ';
+      
+      if (typeof value === 'string') {
+        result += `"${value.replace(/"/g, '\\"')}"`;
+      } else {
+        result += formatJavaScriptObject(value, indent + 1);
+      }
+      
+      if (index < entries.length - 1) result += ',';
+      result += '\n';
+    });
+    result += spaces + '}';
+    return result;
+  }
+  
+  if (typeof obj === 'string') {
+    return `"${obj.replace(/"/g, '\\"')}"`;
+  }
+  
+  return String(obj);
+}
 
-    if (!owner || !repo) {
-      console.error('Invalid repository format. Please use "owner/repo"');
-      console.error('Example: node update-project-stars.js pollinations/pollinations');
+function writeProjectFile(filePath, projectArray) {
+  const formattedArray = formatJavaScriptObject(projectArray);
+  const content = `export default ${formattedArray};\n`;
+  
+  fs.writeFileSync(filePath, content, 'utf8');
+  console.log(`Updated ${filePath}`);
+}
+
+async function processProjectList() {
+  const args = process.argv.slice(2);
+  
+  // If a specific repo is provided, fetch and display its star count
+  if (args.length > 0) {
+    const repoUrl = args[0];
+    const repoInfo = extractOwnerAndRepo(repoUrl);
+    
+    if (!repoInfo) {
+      console.error('Invalid GitHub URL format');
       process.exit(1);
     }
-
-    console.log(`Fetching star count for ${owner}/${repo}...`);
-    const result = await fetchStarCount(owner, repo);
-    const stars = result.stars;
-
-    console.log('\nResults:');
-    console.log('-------------------------------------');
-    console.log(`Repository:    ${owner}/${repo}`);
-    console.log(`Stars:         ${stars}`);
-    console.log(`Formatted:     ⭐ ${formatStarCount(stars)}`);
-    console.log(`Markdown:      [${owner}/${repo}](https://github.com/${owner}/${repo}) - ⭐ ${formatStarCount(stars)}`);
-    console.log('-------------------------------------');
-
-    // Output just the number for easy parsing
-    console.log('\nStar count (raw number):');
-    console.log(stars);
-
-  } catch (error) {
-    console.error(`Error: ${error.message}`);
-    process.exit(1);
+    
+    try {
+      const stars = await fetchStarCount(repoInfo.owner, repoInfo.repo);
+      console.log(`${repoInfo.owner}/${repoInfo.repo}: ${formatStarCount(stars)} stars`);
+    } catch (error) {
+      console.error(`Error fetching stars for ${repoInfo.owner}/${repoInfo.repo}:`, error.message);
+    }
+    
+    return;
   }
-}
 
-// Function to process the project list file
-async function processProjectList() {
-  try {
-    // Read the file
-    const fileContent = fs.readFileSync(PROJECT_LIST_PATH, 'utf8');
+  // Process all project categories
+  for (const [categoryName, categoryData] of Object.entries(categoryFiles)) {
+    console.log(`\nProcessing ${categoryName}...`);
+    let updatedProjects = 0;
+    let addedStars = 0;
+    let unchangedProjects = 0;
 
-    // Find all repo URLs
-    const repoRegex = /repo:\s*"(https:\/\/github\.com\/[^"]+)"/g;
-    let match;
-    let updatedContent = fileContent;
-    let updates = 0;
-    let skipped = 0;
-
-    // Process each repo URL
-    const promises = [];
-    const repoMatches = [];
-
-    while ((match = repoRegex.exec(fileContent)) !== null) {
-      const repoUrl = match[1];
-
-      // Check if this project already has a stars field
-      const nextLines = fileContent.substring(match.index, match.index + 200);
-      if (nextLines.includes('stars:')) {
-        console.log(`Skipping ${repoUrl} - already has stars count`);
-        skipped++;
-        continue;
-      }
-
-      const ownerRepo = extractOwnerAndRepo(repoUrl);
-      if (ownerRepo) {
-        repoMatches.push({
-          url: repoUrl,
-          owner: ownerRepo.owner,
-          repo: ownerRepo.repo,
-          position: match.index + match[0].length
-        });
-
-        promises.push(fetchStarCount(ownerRepo.owner, ownerRepo.repo));
+    for (const project of categoryData.array) {
+      const githubUrl = project.url || project.repo;
+      
+      if (githubUrl && githubUrl.includes('github.com')) {
+        const repoInfo = extractOwnerAndRepo(githubUrl);
+        
+        if (repoInfo) {
+          try {
+            const stars = await fetchStarCount(repoInfo.owner, repoInfo.repo);
+            
+            if (project.stars !== undefined) {
+              if (project.stars !== stars) {
+                console.log(`  Updated ${project.name}: ${project.stars} → ${stars} stars`);
+                project.stars = stars;
+                updatedProjects++;
+              } else {
+                console.log(`  Unchanged ${project.name}: ${stars} stars`);
+                unchangedProjects++;
+              }
+            } else {
+              console.log(`  Added ${project.name}: ${stars} stars`);
+              project.stars = stars;
+              addedStars++;
+            }
+            
+            // Small delay to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+          } catch (error) {
+            console.error(`  Error fetching stars for ${project.name} (${repoInfo.owner}/${repoInfo.repo}):`, error.message);
+          }
+        }
       }
     }
 
-    // Wait for all API calls to complete
-    const results = await Promise.allSettled(promises);
-
-    // Apply updates in reverse order to maintain correct positions
-    for (let i = repoMatches.length - 1; i >= 0; i--) {
-      const result = results[i];
-      const repoMatch = repoMatches[i];
-
-      if (result.status === 'fulfilled') {
-        const starCount = result.value.stars;
-        console.log(`${repoMatch.owner}/${repoMatch.repo}: ${starCount} stars`);
-
-        // Insert the stars field after the repo field
-        const insertPosition = repoMatch.position;
-        const beforeInsert = updatedContent.substring(0, insertPosition);
-        const afterInsert = updatedContent.substring(insertPosition);
-
-        updatedContent = beforeInsert + `,\n      stars: ${starCount}` + afterInsert;
-        updates++;
-      } else {
-        console.error(`Failed to fetch stars for ${repoMatch.owner}/${repoMatch.repo}: ${result.reason}`);
-      }
+    // Write updated project data back to file
+    if (updatedProjects > 0 || addedStars > 0) {
+      writeProjectFile(categoryData.path, categoryData.array);
     }
 
-    // Write the updated content back to the file
-    if (updates > 0) {
-      fs.writeFileSync(PROJECT_LIST_PATH, updatedContent, 'utf8');
-      console.log(`Updated ${updates} repositories with star counts`);
-    } else {
-      console.log('No updates needed');
-    }
-
-    console.log(`Summary: ${updates} updated, ${skipped} skipped`);
-
-  } catch (error) {
-    console.error('Error processing file:', error);
-    process.exit(1);
+    console.log(`${categoryName} summary: ${addedStars} added, ${updatedProjects} updated, ${unchangedProjects} unchanged`);
   }
+
+  console.log('\nStar count update complete!');
 }
 
-// Main function
-async function main() {
-  // Check if a repository is provided as an argument
-  if (process.argv.length > 2) {
-    // If an argument is provided, fetch and display stars for that repository
-    await fetchAndDisplayStars(process.argv[2]);
-  } else {
-    // Otherwise, process the project list file
-    await processProjectList();
-  }
-}
-
-// Run the script
-main();
+processProjectList().catch(console.error);

@@ -33,7 +33,8 @@ export const gamesProjects = [
     author: "@game",
     repo: "https://github.com/ednsinf/pollinations-ai",
     submissionDate: "2025-05-05",
-    order: 1
+    order: 1,
+    stars: 0
   },
   {
     name: "Mindcraft",
@@ -59,7 +60,8 @@ export const gamesProjects = [
     url: "https://github.com/JayJayBinks/infinite-tales-rpg",
     repo: "https://github.com/JayJayBinks/infinite-tales-rpg",
     author: "@infinite_tales",
-    submissionDate: "2025-01-20"
+    submissionDate: "2025-01-20",
+    stars: 26
   },
   {
     name: "Minecraft AI (Node.js)",
@@ -73,11 +75,11 @@ export const gamesProjects = [
   },
   {
     name: "Minecraft AI (Python)",
-    url: "https://github.com/pollinations/minecraft-ai-python",
-    description: "A Python implementation for controlling Minecraft characters with Pollinations AI, featuring advanced pathfinding and building capabilities.",
-    author: "@py_minecraft_dev",
-    repo: "https://github.com/pollinations/minecraft-ai-python",
-    stars: 156,
+    url: "https://github.com/Amagash/minecraft-ai-python",
+    description: "A Python implementation that uses Pollinations AI to control a Minecraft character through natural language commands and automated gameplay.",
+    author: "@Amagash",
+    repo: "https://github.com/Amagash/minecraft-ai-python",
+    stars: 7,
     submissionDate: "2025-03-22",
     order: 1
   },
@@ -92,10 +94,10 @@ export const gamesProjects = [
   },
   {
     name: "Sirius Cybernetics Elevator Challenge",
-    url: "https://github.com/sirius-cybernetics/elevator-challenge",
+    url: "https://github.com/pollinations/sirius-cybernetics-elevator-challenge",
     description: "A programming challenge that uses Pollinations AI to simulate personality-driven elevator systems in a virtual building environment.",
     author: "@sirius_dev",
-    repo: "https://github.com/sirius-cybernetics/elevator-challenge",
+    repo: "https://github.com/pollinations/sirius-cybernetics-elevator-challenge",
     stars: 42,
     submissionDate: "2025-04-01",
     order: 1
@@ -115,7 +117,8 @@ export const gamesProjects = [
     author: "@roblox_ai_dev",
     repo: "https://github.com/snipcola/Roblox-AI",
     submissionDate: "2025-04-25",
-    order: 1
+    order: 1,
+    stars: 8
   },
   {
     name: "Deep Saga",
@@ -133,7 +136,6 @@ export const gamesProjects = [
     submissionDate: "2025-05-20",
     order: 1
   },
-
   {
     name: "DreamHer",
     url: "https://dreamher.vercel.app/",
@@ -200,6 +202,17 @@ export const gamesProjects = [
     url: "https://play.google.com/store/apps/details?id=com.aiwords.app",
     description: "AI-powered Android app that generates unlimited, personalized word search puzzles on any topic. Features custom AI-generated puzzles, print & share functionality, badges & achievements, clean interface, relaxing focus music, and upcoming multiplayer mode. Perfect for students, teachers, families, and puzzle enthusiasts.",
     author: "hello@islandapps.dev",
+    submissionDate: "2025-07-12",
+    order: 1
+  },
+  {
+    name: "🇨🇳 云渺仙途：凡尘篇",
+    url: "https://ai-game.jkai.de/",
+    description: "《云渺仙途：凡尘篇》是一个由AI驱动的文字修仙沙盒游戏 (An AI-driven text cultivation sandbox game featuring immortal cultivation adventures)",
+    author: "@ZhjGo",
+    repo: "https://github.com/ZhjGo/ai-game",
+    stars: 7,
+    language: "zh-CN",
     submissionDate: "2025-07-12",
     order: 1
   }

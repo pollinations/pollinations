@@ -6,10 +6,10 @@
  * This script can be used in two ways:
  *
  * 1. Without arguments: Updates the project list file with star counts
- *    - Reads the project list file
+ *    - Imports all project data from category files
  *    - Finds all GitHub repository URLs
  *    - Fetches star counts for repositories that don't already have them
- *    - Updates the file with the star counts
+ *    - Updates the files with the star counts
  *
  * 2. With owner/repo argument: Fetches and outputs star count for a specific repository
  *    - Fetches the star count for the specified repository
@@ -19,15 +19,32 @@
  *   - Update project list: node update-project-stars.js
  *   - Get stars for repo: node update-project-stars.js owner/repo
  *
- * Example: node update-project-stars.js pollinations/pollinations
  */
 
-const fs = require('fs');
-const path = require('path');
-const https = require('https');
+import fs from 'fs';
+import path from 'path';
+import https from 'https';
 
-// Path to the project list file (relative to the repository root)
+// Import all project data
+import { vibeCodingProjects } from '../../pollinations.ai/src/config/projects/vibeCoding.js';
+import { creativeProjects } from '../../pollinations.ai/src/config/projects/creative.js';
+import { gamesProjects } from '../../pollinations.ai/src/config/projects/games.js';
+import { hackAndBuildProjects } from '../../pollinations.ai/src/config/projects/hackAndBuild.js';
+import { chatProjects } from '../../pollinations.ai/src/config/projects/chat.js';
+import { socialBotsProjects } from '../../pollinations.ai/src/config/projects/socialBots.js';
+import { learnProjects } from '../../pollinations.ai/src/config/projects/learn.js';
+
+// Paths to project files (relative to the repository root)
 const PROJECT_LIST_PATH = path.join('pollinations.ai', 'src', 'config', 'projectList.js');
+const PROJECT_CATEGORY_PATHS = [
+  path.join('pollinations.ai', 'src', 'config', 'projects', 'vibeCoding.js'),
+  path.join('pollinations.ai', 'src', 'config', 'projects', 'creative.js'),
+  path.join('pollinations.ai', 'src', 'config', 'projects', 'games.js'),
+  path.join('pollinations.ai', 'src', 'config', 'projects', 'hackAndBuild.js'),
+  path.join('pollinations.ai', 'src', 'config', 'projects', 'chat.js'),
+  path.join('pollinations.ai', 'src', 'config', 'projects', 'socialBots.js'),
+  path.join('pollinations.ai', 'src', 'config', 'projects', 'learn.js')
+];
 
 // Function to extract owner and repo from GitHub URL
 function extractOwnerAndRepo(url) {
@@ -91,13 +108,57 @@ function fetchStarCount(owner, repo) {
   });
 }
 
-// Format star count for display
+// Function to format star count for display
 function formatStarCount(stars) {
-  if (stars < 1000) {
-    return stars.toString();
-  } else {
-    return (stars / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+  if (stars >= 1000) {
+    return (stars / 1000).toFixed(1) + 'k';
   }
+  return stars.toString();
+}
+
+// Function to format JavaScript object without quoted keys
+function formatJavaScriptObject(obj, indent = 0) {
+  const spaces = '  '.repeat(indent);
+  const innerSpaces = '  '.repeat(indent + 1);
+  
+  if (Array.isArray(obj)) {
+    if (obj.length === 0) return '[]';
+    
+    let result = '[\n';
+    obj.forEach((item, index) => {
+      result += innerSpaces + formatJavaScriptObject(item, indent + 1);
+      if (index < obj.length - 1) result += ',';
+      result += '\n';
+    });
+    result += spaces + ']';
+    return result;
+  }
+  
+  if (obj && typeof obj === 'object') {
+    const keys = Object.keys(obj);
+    if (keys.length === 0) return '{}';
+    
+    let result = '{\n';
+    keys.forEach((key, index) => {
+      const value = obj[key];
+      result += innerSpaces + key + ': ';
+      
+      if (typeof value === 'string') {
+        result += `"${value.replace(/"/g, '\\"')}"`;
+      } else if (typeof value === 'number' || typeof value === 'boolean') {
+        result += value;
+      } else {
+        result += formatJavaScriptObject(value, indent + 1);
+      }
+      
+      if (index < keys.length - 1) result += ',';
+      result += '\n';
+    });
+    result += spaces + '}';
+    return result;
+  }
+  
+  return JSON.stringify(obj);
 }
 
 // Function to fetch and display stars for a specific repository
@@ -133,80 +194,129 @@ async function fetchAndDisplayStars(ownerRepo) {
   }
 }
 
-// Function to process the project list file
+// All project categories with their file paths
+const projectCategories = {
+  vibeCoding: {
+    data: vibeCodingProjects,
+    filePath: path.join('pollinations.ai', 'src', 'config', 'projects', 'vibeCoding.js')
+  },
+  creative: {
+    data: creativeProjects,
+    filePath: path.join('pollinations.ai', 'src', 'config', 'projects', 'creative.js')
+  },
+  games: {
+    data: gamesProjects,
+    filePath: path.join('pollinations.ai', 'src', 'config', 'projects', 'games.js')
+  },
+  hackAndBuild: {
+    data: hackAndBuildProjects,
+    filePath: path.join('pollinations.ai', 'src', 'config', 'projects', 'hackAndBuild.js')
+  },
+  chat: {
+    data: chatProjects,
+    filePath: path.join('pollinations.ai', 'src', 'config', 'projects', 'chat.js')
+  },
+  socialBots: {
+    data: socialBotsProjects,
+    filePath: path.join('pollinations.ai', 'src', 'config', 'projects', 'socialBots.js')
+  },
+  learn: {
+    data: learnProjects,
+    filePath: path.join('pollinations.ai', 'src', 'config', 'projects', 'learn.js')
+  }
+};
+
+// Function to process all project files
 async function processProjectList() {
   try {
-    // Read the file
-    const fileContent = fs.readFileSync(PROJECT_LIST_PATH, 'utf8');
+    let totalUpdates = 0;
+    let totalSkipped = 0;
 
-    // Find all repo URLs
-    const repoRegex = /repo:\s*"(https:\/\/github\.com\/[^"]+)"/g;
-    let match;
-    let updatedContent = fileContent;
-    let updates = 0;
-    let skipped = 0;
+    // Process each category
+    for (const [categoryName, category] of Object.entries(projectCategories)) {
+      console.log(`\nProcessing ${categoryName} projects...`);
+      
+      const projectsToUpdate = [];
+      const promises = [];
 
-    // Process each repo URL
-    const promises = [];
-    const repoMatches = [];
+      // Find projects with GitHub URLs
+      category.data.forEach((project, index) => {
+        const githubUrl = project.url || project.repo;
+        if (githubUrl && githubUrl.includes('github.com')) {
+          const ownerRepo = extractOwnerAndRepo(githubUrl);
+          if (ownerRepo) {
+            projectsToUpdate.push({
+              project,
+              index,
+              url: githubUrl,
+              owner: ownerRepo.owner,
+              repo: ownerRepo.repo
+            });
+            promises.push(fetchStarCount(ownerRepo.owner, ownerRepo.repo));
+          }
+        }
+      });
 
-    while ((match = repoRegex.exec(fileContent)) !== null) {
-      const repoUrl = match[1];
-
-      // Check if this project already has a stars field
-      const nextLines = fileContent.substring(match.index, match.index + 200);
-      if (nextLines.includes('stars:')) {
-        console.log(`Skipping ${repoUrl} - already has stars count`);
-        skipped++;
+      if (projectsToUpdate.length === 0) {
+        console.log(`  No GitHub projects found in ${categoryName}`);
         continue;
       }
 
-      const ownerRepo = extractOwnerAndRepo(repoUrl);
-      if (ownerRepo) {
-        repoMatches.push({
-          url: repoUrl,
-          owner: ownerRepo.owner,
-          repo: ownerRepo.repo,
-          position: match.index + match[0].length
-        });
+      // Wait for all API calls to complete
+      const results = await Promise.allSettled(promises);
+      let categoryUpdates = 0;
 
-        promises.push(fetchStarCount(ownerRepo.owner, ownerRepo.repo));
+      // Process results and update project data
+      for (let i = 0; i < projectsToUpdate.length; i++) {
+        const result = results[i];
+        const projectInfo = projectsToUpdate[i];
+
+        if (result.status === 'fulfilled') {
+          const starCount = result.value.stars;
+          const currentStars = projectInfo.project.stars;
+          
+          console.log(`${projectInfo.owner}/${projectInfo.repo}: ${starCount} stars`);
+          
+          if (currentStars !== starCount) {
+            // Update the project data with new star count
+            category.data[projectInfo.index].stars = starCount;
+            categoryUpdates++;
+            
+            if (currentStars) {
+              console.log(`  Updated from ${currentStars} to ${starCount} stars`);
+            } else {
+              console.log(`  Added new stars field: ${starCount}`);
+            }
+          } else {
+            console.log(`  Stars unchanged: ${starCount}`);
+            totalSkipped++;
+          }
+        } else {
+          console.error(`Failed to fetch stars for ${projectInfo.owner}/${projectInfo.repo}: ${result.reason}`);
+        }
       }
-    }
 
-    // Wait for all API calls to complete
-    const results = await Promise.allSettled(promises);
-
-    // Apply updates in reverse order to maintain correct positions
-    for (let i = repoMatches.length - 1; i >= 0; i--) {
-      const result = results[i];
-      const repoMatch = repoMatches[i];
-
-      if (result.status === 'fulfilled') {
-        const starCount = result.value.stars;
-        console.log(`${repoMatch.owner}/${repoMatch.repo}: ${starCount} stars`);
-
-        // Insert the stars field after the repo field
-        const insertPosition = repoMatch.position;
-        const beforeInsert = updatedContent.substring(0, insertPosition);
-        const afterInsert = updatedContent.substring(insertPosition);
-
-        updatedContent = beforeInsert + `,\n      stars: ${starCount}` + afterInsert;
-        updates++;
+      // Write updated file if there were changes
+      if (categoryUpdates > 0) {
+        const fileContent = fs.readFileSync(category.filePath, 'utf8');
+        
+        // Create updated content by regenerating the export
+        const exportName = categoryName + 'Projects';
+        const formattedData = formatJavaScriptObject(category.data);
+        const updatedFileContent = fileContent.replace(
+          new RegExp(`export const ${exportName} = \\[[\\s\\S]*?\\];`, 'm'),
+          `export const ${exportName} = ${formattedData};`
+        );
+        
+        fs.writeFileSync(category.filePath, updatedFileContent, 'utf8');
+        console.log(`  Updated ${categoryUpdates} projects in ${categoryName}`);
+        totalUpdates += categoryUpdates;
       } else {
-        console.error(`Failed to fetch stars for ${repoMatch.owner}/${repoMatch.repo}: ${result.reason}`);
+        console.log(`  No updates needed for ${categoryName}`);
       }
     }
 
-    // Write the updated content back to the file
-    if (updates > 0) {
-      fs.writeFileSync(PROJECT_LIST_PATH, updatedContent, 'utf8');
-      console.log(`Updated ${updates} repositories with star counts`);
-    } else {
-      console.log('No updates needed');
-    }
-
-    console.log(`Summary: ${updates} updated, ${skipped} skipped`);
+    console.log(`\nSummary: ${totalUpdates} updated, ${totalSkipped} skipped`);
 
   } catch (error) {
     console.error('Error processing file:', error);

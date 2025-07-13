@@ -19,6 +19,7 @@ import { logUserRequest } from './userLogger.js';
 import { enqueue } from '../shared/ipQueue.js';
 import { handleAuthentication } from '../shared/auth-utils.js';
 import { getIp } from '../shared/extractFromRequest.js';
+import { incrementUserMetric } from '../shared/userMetrics.js';
 import { hasSufficientTier } from '../shared/tier-gating.js';
 
 // Load environment variables
@@ -476,8 +477,9 @@ async function processRequest(req, res, requestData) {
     
     // Check authentication status
     const authResult = await handleAuthentication(req, null, authLog);
-    // Store authentication result in request for later use
-    req.authResult = authResult;
+    // Store auth info for downstream functions
+    requestData.userId = authResult.userId; // For backward compatibility
+    req.authResult = authResult;           // Attach directly to req
     // Use the new explicit authentication fields
     const isTokenAuthenticated = authResult.tokenAuth;
     const hasReferrer = authResult.referrerAuth;
@@ -775,6 +777,20 @@ async function generateTextBasedOnModel(messages, options) {
         // Log streaming response details
         if (options.stream && response) {
             log('Received streaming response from handler:', response);
+        }
+
+        // Track metrics for authenticated users
+        if (options.userId) {
+            try {
+                // Track total model calls
+                incrementUserMetric(options.userId, 'model_calls');
+                
+                // Track specific model usage
+                incrementUserMetric(options.userId, `models.${model}`);
+            } catch (error) {
+                // Don't let metric errors affect main flow
+                errorLog('Failed to track model metrics:', error);
+            }
         }
         
         return response;

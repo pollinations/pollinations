@@ -23,23 +23,16 @@ const errorLog = debug('pollinations:adfilter:error');
  */
 export async function generateAdForContent(req, content, messages = [], isStreaming = false) {
     try {
-        // Get authenticated user ID if available - do this once at the top
-        let authResult = null;
-        let authenticatedUserId = null;
-        
-        try {
-            authResult = await handleAuthentication(req);
-            if (authResult.authenticated && authResult.userId) {
-                authenticatedUserId = authResult.userId;
-                log(`Authenticated user ID: ${authenticatedUserId}`);
-            }
-        } catch (error) {
-            // Authentication failed, continue without user ID
-            log('Authentication failed or not provided, continuing without user ID');
+        // Simply use the auth info from req
+        const userId = req?.authResult?.userId;
+        if (userId) {
+            log(`Authenticated user ID: ${userId}`);
+        } else {
+            log('No authenticated user ID found in req.authResult, or req.authResult is undefined.');
         }
 
-        // Check if we should show ads - pass auth result to avoid duplicate authentication
-        const { shouldShowAd, markerFound, forceAd } = await shouldShowAds(content, messages, req, authResult);
+        // Pass req to shouldShowAds, it will use req.authResult
+        const { shouldShowAd, markerFound, forceAd } = await shouldShowAds(content, messages, req);
         const shouldForceAd = markerFound || forceAd;
 
         // Determine if we should proceed with ad generation
@@ -50,13 +43,13 @@ export async function generateAdForContent(req, content, messages = [], isStream
         log('Generating ad for content...');
 
         // Try nex.ad first - pass authenticated user ID
-        const { visitorData, conversationContext } = createNexAdRequest(req, messages, content, authenticatedUserId);
+        const { visitorData, conversationContext } = createNexAdRequest(req, messages, content, userId);
         const nexAdResult = await fetchNexAd(visitorData, conversationContext);
         
         if (nexAdResult && nexAdResult.adData) {
             const { adData, userIdForTracking } = nexAdResult;
             // Only use authenticated user ID for tracking, not hashed IP fallback
-            const userIdForRedirect = authenticatedUserId; // null if not authenticated
+            const userIdForRedirect = userId; // null if not authenticated
             // Format nex.ad response, only passing real user ID (not hashed IP)
             const adString = formatNexAd(adData, userIdForRedirect);
             
@@ -65,9 +58,9 @@ export async function generateAdForContent(req, content, messages = [], isStream
                 const trackingData = extractTrackingData(adData);
                 
                 // Conditional impression tracking based on authentication for privacy
-                if (authenticatedUserId) {
+                if (userId) {
                     // For authenticated users: Don't fire nex.ad impression URLs for privacy protection
-                    log(`Privacy: Authenticated user ${authenticatedUserId} - Skipping nex.ad impression tracking for privacy`);
+                    log(`Privacy: Authenticated user ${userId} - Skipping nex.ad impression tracking for privacy`);
                 } else {
                     // For unauthenticated users: Fire nex.ad impression URLs as normal
                     await trackImpression(trackingData);
@@ -97,26 +90,26 @@ export async function generateAdForContent(req, content, messages = [], isStream
                         ad_source: 'nexad',
                         streaming: isStreaming,
                         forced: shouldForceAd,
-                        user_id: authenticatedUserId || null,
-                        username: authResult?.username || null,
-                        authenticated: !!authenticatedUserId,
-                        ip_sent_to_nexad: !authenticatedUserId,
-                        impression_sent_to_nexad: !authenticatedUserId,
-                        privacy_protected: !!authenticatedUserId,
+                        user_id: userId || null,
+                        username: req?.authResult?.username || null,
+                        authenticated: !!userId,
+                        ip_sent_to_nexad: !userId,
+                        impression_sent_to_nexad: !userId,
+                        privacy_protected: !!userId,
                         session_id: req.sessionID || null,
                     });
 
                     // Track per-user ad impression metrics
-                    if (authenticatedUserId) {
+                    if (userId) {
                         // Existing general metric
-                        incrementUserMetric(authenticatedUserId, 'ad_impressions');
+                        incrementUserMetric(userId, 'ad_impressions');
                         
                         // NEW: Privacy-specific metrics
-                        incrementUserMetric(authenticatedUserId, 'privacy_protected_impressions');
-                        incrementUserMetric(authenticatedUserId, 'nexad_impressions_without_ip');
+                        incrementUserMetric(userId, 'privacy_protected_impressions');
+                        incrementUserMetric(userId, 'nexad_impressions_without_ip');
                         
                         // NEW: Ad source specific metrics
-                        incrementUserMetric(authenticatedUserId, 'nexad_impressions');
+                        incrementUserMetric(userId, 'nexad_impressions');
                     }
                 }
 
@@ -156,19 +149,19 @@ export async function generateAdForContent(req, content, messages = [], isStream
                         ad_source: 'kofi_fallback',
                         streaming: isStreaming,
                         forced: shouldForceAd,
-                        user_id: authenticatedUserId || null,
-                        username: authResult?.username || null,
-                        authenticated: !!authenticatedUserId,
+                        user_id: userId || null,
+                        username: req?.authResult?.username || null,
+                        authenticated: !!userId,
                         session_id: req.sessionID || null,
                     });
 
                     // Track per-user ad impression metrics for Ko-fi fallback
-                    if (authenticatedUserId) {
+                    if (userId) {
                         // Existing general metric
-                        incrementUserMetric(authenticatedUserId, 'ad_impressions');
+                        incrementUserMetric(userId, 'ad_impressions');
                         
                         // NEW: Ad source specific metric
-                        incrementUserMetric(authenticatedUserId, 'kofi_fallback_impressions');
+                        incrementUserMetric(userId, 'kofi_fallback_impressions');
                     }
                 }
 

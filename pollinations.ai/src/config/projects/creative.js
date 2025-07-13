@@ -5,6 +5,14 @@
 
 export const creativeProjects = [
   {
+    name: "EzPromptla",
+    url: "https://ezpromptla.netlify.app",
+    description: "EzPromptla is an advanced visual prompt builder and creative partner designed to simplify high-quality AI image generation. It abstracts the complexity of prompt engineering by providing a category-driven interface (for automotive, portraits, products, etc.) and uses Google's Gemini model as a core reasoning engine to build, analyze, and refine user ideas into master-level prompts for Google Imagen.",
+    author: "mohamadizuanbakar@gmail.com",
+    submissionDate: "2025-07-13",
+    order: 1
+  },
+  {
     name: "Argent Script",
     url: "https://perchance.org/ai-text-to-audio",
     description: "AI Voice Generator - Generate text to audio for free and without limits, powered by GPT-4o Audio. Instantly convert your words into natural, lifelike speech.",

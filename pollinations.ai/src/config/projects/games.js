@@ -202,5 +202,16 @@ export const gamesProjects = [
     author: "hello@islandapps.dev",
     submissionDate: "2025-07-12",
     order: 1
+  },
+  {
+    name: "🇨🇳 云渺仙途：凡尘篇",
+    url: "https://ai-game.jkai.de/",
+    description: "《云渺仙途：凡尘篇》是一个由AI驱动的文字修仙沙盒游戏 (An AI-driven text cultivation sandbox game featuring immortal cultivation adventures)",
+    author: "@ZhjGo",
+    repo: "https://github.com/ZhjGo/ai-game",
+    stars: 7,
+    language: "zh-CN",
+    submissionDate: "2025-07-12",
+    order: 1
   }
 ];

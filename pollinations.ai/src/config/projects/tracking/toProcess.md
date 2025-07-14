@@ -44,6 +44,7 @@
 - Added "ai/teens worldwide" to `learn.js`
 - Added "Echo AI" and "Neurix 🇷🇺" to `chat.js`
 - Added "Snapgen.io" to `creative.js`
+- Added "Promptgenerator.art" to `creative.js`
 
 ## Categorization Instructions
 

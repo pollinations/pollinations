@@ -491,5 +491,13 @@ export const creativeProjects = [
     author: "@ppt_monster",
     submissionDate: "2025-04-25",
     order: 1
+  },
+  {
+    name: "Promptgenerator.art",
+    url: "https://promptgenerator.art",
+    description: "FREE Art Prompt Generator that helps you turn simple ideas into structured prompts for tools like Midjourney, DALL·E, and ChatGPT. One of its standout features is Test Visualization, which lets you instantly preview how your prompt might look — helping you fine-tune ideas before using any AI tool. This powerful visual preview is made possible through integration with Pollinations AI, enhancing your creative workflow like never before.",
+    author: "info@promptgenerator.art",
+    submissionDate: "2025-07-14",
+    order: 1
   }
 ];

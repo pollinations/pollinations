@@ -297,5 +297,16 @@ export const chatProjects = [
     order: 3
   },
 
+    {
+      name: "EvilChat 🔥🤖",
+      url: "https://altkriz.github.io/evilchat/",
+      description: "An uncensored AI chat interface with dark, sleek design, smooth animations, auto-scrolling chat window, fully responsive. Connects to the Pollinations.ai API to deliver unfiltered AI responses.",
+      author: "@altkriz",
+      repo: "https://github.com/altkriz/evilchat",
+      stars: 2,
+      submissionDate: "2025-07-14",
+      order: 1
+    },
+
   // Duplicate removed - AI drafterplus already exists at the top of the file
 ];

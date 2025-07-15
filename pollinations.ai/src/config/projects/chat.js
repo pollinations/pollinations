@@ -308,5 +308,14 @@ export const chatProjects = [
       order: 1
     },
 
+  {
+    name: "DeepSeek Prompt",
+    url: "https://www.deepseekprompt.top/",
+    description: "DeepSeek Prompt is a front-end application for managing and optimizing AI prompt assets with professional creation templates. Built with React and Vue, it offers prompt creation, editing, drag-and-drop sorting, template application, and data import/export. It integrates Pollinations APIs for intelligent prompt optimization via an 'AI Optimize' button that analyzes and enhances prompts.",
+    author: "lipengliang2012@163.com",
+    submissionDate: "2025-07-15",
+    order: 1
+  },
+
   // Duplicate removed - AI drafterplus already exists at the top of the file
 ];

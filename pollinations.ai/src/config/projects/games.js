@@ -38,10 +38,10 @@ export const gamesProjects = [
   },
   {
     name: "Mindcraft",
-    url: "https://mindcraft-ai.vercel.app/",
+    url: "https://mindcraft.riqvip.dev/",
     description: "A web-based Minecraft-inspired game where players can use natural language to build and interact with a voxel world using Pollinations AI.",
     author: "@mindcraft_team",
-    repo: "https://github.com/kolbytn/mindcraft",
+    repo: "https://github.com/mindcraft-ce/mindcraft-ce",
     stars: 3500,
     submissionDate: "2025-06-03",
     order: 1

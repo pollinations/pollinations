@@ -1,21 +1,24 @@
 "use strict";
-import fetch from 'node-fetch';
-import urldecode from 'urldecode';
-import debug from 'debug';
-import dotenv from 'dotenv';
+import fetch from "node-fetch";
+import urldecode from "urldecode";
+import debug from "debug";
+import dotenv from "dotenv";
 
 // Load environment variables
 dotenv.config();
 
-const logError = debug('pollinations:error');
-const logPimp = debug('pollinations:pimp');
-const logPerf = debug('pollinations:perf');
+const logError = debug("pollinations:error");
+const logPimp = debug("pollinations:pimp");
+const logPerf = debug("pollinations:perf");
 
 /**
  * Main function to get and print chat completion from Pollinations Text API.
  */
 async function main() {
-    const chatCompletion = await memoizedPimpPrompt("dolphin octopus retro telephone", 42);
+    const chatCompletion = await memoizedPimpPrompt(
+        "dolphin octopus retro telephone",
+        42,
+    );
     // Print the completion returned by the API.
     process.stdout.write(chatCompletion);
 }
@@ -58,42 +61,46 @@ async function pimpPromptRaw(prompt, seed) {
 - When asked for a random prompt, generate an evocative and surprising one that fits user constraints, and provide any unspecified details.
 - Dont omit any details from the originalprompt.
 
-Respond only with the new prompt. Nothing Else.`
+Respond only with the new prompt. Nothing Else.`,
                 },
                 {
                     role: "user",
-                    content: "Prompt: " + prompt
-                }
+                    content: "Prompt: " + prompt,
+                },
             ],
             seed: seed,
             model: "openai",
-            referrer: 'image.pollinations.ai'
+            referrer: "image.pollinations.ai",
         });
 
         // Add authentication token if available
         const headers = {
-            'Content-Type': 'application/json',
-            'Referer': 'image.pollinations.ai'
+            "Content-Type": "application/json",
+            Referer: "image.pollinations.ai",
         };
-        
+
         // Use POLLINATIONS_KEY from environment if available
         if (process.env.POLLINATIONS_KEY) {
-            headers['Authorization'] = `Bearer ${process.env.POLLINATIONS_KEY}`;
+            headers["Authorization"] = `Bearer ${process.env.POLLINATIONS_KEY}`;
             logPimp("Using POLLINATIONS_KEY for authentication");
         }
 
         response = await Promise.race([
             fetch(apiUrl, {
-                method: 'POST',
+                method: "POST",
                 headers: headers,
-                body: body
-            }).then(res => {
+                body: body,
+            }).then((res) => {
                 if (res.status !== 200) {
-                    throw new Error(`Error enhancing prompt: ${res.status} - ${res.statusText}`);
+                    throw new Error(
+                        `Error enhancing prompt: ${res.status} - ${res.statusText}`,
+                    );
                 }
                 return res.text();
             }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 5000))
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Timeout")), 5000),
+            ),
         ]);
     } catch (error) {
         logError("Error:", error.message);

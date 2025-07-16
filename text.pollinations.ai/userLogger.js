@@ -1,22 +1,22 @@
-import fs from 'fs';
-import path from 'path';
-import debug from 'debug';
+import fs from "fs";
+import path from "path";
+import debug from "debug";
 
-const log = debug('pollinations:userlogger');
+const log = debug("pollinations:userlogger");
 
 // Simple user logging - just specify usernames in environment variable
 // Read DEBUG_USERS dynamically each time
-const LOG_DIR = path.join(process.cwd(), 'user_logs');
+const LOG_DIR = path.join(process.cwd(), "user_logs");
 
 /**
  * Check if user should be logged
  */
 function shouldLogUser(username) {
-    const DEBUG_USERS = process.env.DEBUG_USERS || '';
+    const DEBUG_USERS = process.env.DEBUG_USERS || "";
     if (!DEBUG_USERS) return false;
-    if (DEBUG_USERS.toLowerCase() === 'all') return true;
-    
-    const users = DEBUG_USERS.split(',').map(u => u.trim().toLowerCase());
+    if (DEBUG_USERS.toLowerCase() === "all") return true;
+
+    const users = DEBUG_USERS.split(",").map((u) => u.trim().toLowerCase());
     return users.includes(username?.toLowerCase());
 }
 
@@ -24,7 +24,7 @@ function shouldLogUser(username) {
  * Sanitize username for filesystem safety
  */
 function sanitizeUsername(username) {
-    return username.replace(/[^a-zA-Z0-9_-]/g, '_');
+    return username.replace(/[^a-zA-Z0-9_-]/g, "_");
 }
 
 /**
@@ -41,9 +41,9 @@ function ensureLogDir() {
  */
 function logUserRequest(username, requestData, response = null, error = null) {
     if (!shouldLogUser(username)) return;
-    
+
     ensureLogDir();
-    
+
     const timestamp = new Date().toISOString();
     const logEntry = {
         timestamp,
@@ -52,27 +52,29 @@ function logUserRequest(username, requestData, response = null, error = null) {
             model: requestData.model,
             messages: requestData.messages || [],
             temperature: requestData.temperature,
-            stream: requestData.stream
+            stream: requestData.stream,
         },
-        response: response ? {
-            content: response.choices?.[0]?.message?.content,
-            usage: response.usage,
-            model: response.model
-        } : null,
-        error: error ? error.message : null
+        response: response
+            ? {
+                  content: response.choices?.[0]?.message?.content,
+                  usage: response.usage,
+                  model: response.model,
+              }
+            : null,
+        error: error ? error.message : null,
     };
-    
+
     const logLine = `${timestamp} | ${JSON.stringify(logEntry)}\n`;
-    
+
     // Create separate log file for each user
     const safeUsername = sanitizeUsername(username);
     const logFile = path.join(LOG_DIR, `${safeUsername}.log`);
-    
+
     try {
         fs.appendFileSync(logFile, logLine);
         log(`Logged request for user: ${username} to ${logFile}`);
     } catch (err) {
-        console.error('Failed to log user request:', err);
+        console.error("Failed to log user request:", err);
     }
 }
 

@@ -1,22 +1,22 @@
-import { exec } from 'child_process';
-import tempfile from 'tempfile';
-import fs from 'fs/promises';
-import { fileTypeFromBuffer } from 'file-type';
-import FormData from 'form-data';
-import fetch from 'node-fetch';
-import { MODELS } from './models.js';
-import debug from 'debug';
+import { exec } from "child_process";
+import tempfile from "tempfile";
+import fs from "fs/promises";
+import { fileTypeFromBuffer } from "file-type";
+import FormData from "form-data";
+import fetch from "node-fetch";
+import { MODELS } from "./models.js";
+import debug from "debug";
 
-const logError = debug('pollinations:error');
-const logPerf = debug('pollinations:perf');
-const logOps = debug('pollinations:ops');
+const logError = debug("pollinations:error");
+const logPerf = debug("pollinations:perf");
+const logOps = debug("pollinations:ops");
 
 /**
-* Applies a blur effect to the image using ImageMagick.
-* @param {Buffer} buffer - The image buffer.
-* @param {number} [size=8] - The size of the blur effect.
-* @returns {Promise<Buffer>} - The blurred image buffer.
-*/
+ * Applies a blur effect to the image using ImageMagick.
+ * @param {Buffer} buffer - The image buffer.
+ * @param {number} [size=8] - The size of the blur effect.
+ * @returns {Promise<Buffer>} - The blurred image buffer.
+ */
 export async function blurImage(buffer, size = 12) {
     const { ext } = await fileTypeFromBuffer(buffer);
     const tempImageFile = tempfile({ extension: ext });
@@ -37,7 +37,7 @@ export async function blurImage(buffer, size = 12) {
                     const bufferBlurred = await fs.readFile(tempOutputFile);
                     await Promise.all([
                         fs.unlink(tempImageFile),
-                        fs.unlink(tempOutputFile)
+                        fs.unlink(tempOutputFile),
                     ]);
                     resolve(bufferBlurred);
                 } catch (err) {
@@ -52,12 +52,12 @@ export async function blurImage(buffer, size = 12) {
 }
 
 /**
-* Resizes the image to the desired dimensions using ImageMagick.
-* @param {Buffer} buffer - The image buffer.
-* @param {number} width - The desired width.
-* @param {number} height - The desired height.
-* @returns {Promise<Buffer>} - The resized image buffer.
-*/
+ * Resizes the image to the desired dimensions using ImageMagick.
+ * @param {Buffer} buffer - The image buffer.
+ * @param {number} width - The desired width.
+ * @param {number} height - The desired height.
+ * @returns {Promise<Buffer>} - The resized image buffer.
+ */
 export async function resizeImage(buffer, width, height) {
     const { ext } = await fileTypeFromBuffer(buffer);
     const tempImageFile = tempfile({ extension: ext });
@@ -89,7 +89,7 @@ export async function resizeImage(buffer, width, height) {
                     const bufferResized = await fs.readFile(tempOutputFile);
                     await Promise.all([
                         fs.unlink(tempImageFile),
-                        fs.unlink(tempOutputFile)
+                        fs.unlink(tempOutputFile),
                     ]);
                     resolve(bufferResized);
                 } catch (err) {
@@ -104,27 +104,34 @@ export async function resizeImage(buffer, width, height) {
 }
 
 /**
-* Determines the appropriate logo path based on the parameters and maturity flags.
-* @param {Object} safeParams - The safe parameters for the image generation.
-* @param {boolean} isChild - Flag indicating if the image is considered child content.
-* @param {boolean} isMature - Flag indicating if the image is considered mature content.
-* @returns {string|null} - The path to the logo file or null if no logo should be added.
-*/
+ * Determines the appropriate logo path based on the parameters and maturity flags.
+ * @param {Object} safeParams - The safe parameters for the image generation.
+ * @param {boolean} isChild - Flag indicating if the image is considered child content.
+ * @param {boolean} isMature - Flag indicating if the image is considered mature content.
+ * @returns {string|null} - The path to the logo file or null if no logo should be added.
+ */
 export function getLogoPath(safeParams, isChild, isMature) {
-    if (!MODELS[safeParams.model].type.startsWith('meoow') && (safeParams["nologo"] || safeParams["nofeed"] || isChild || isMature)) {
+    if (
+        !MODELS[safeParams.model].type.startsWith("meoow") &&
+        (safeParams["nologo"] || safeParams["nofeed"] || isChild || isMature)
+    ) {
         return null;
     }
-    return 'logo.png';
+    return "logo.png";
 }
 
 /**
-* Adds a logo to the image using ImageMagick.
-* @param {Buffer} buffer - The image buffer.
-* @param {string} logoPath - The path to the logo file.
-* @param {Object} safeParams - Parameters for adjusting the logo size.
-* @returns {Promise<Buffer>} - The image buffer with the logo added.
-*/
-export async function addPollinationsLogoWithImagemagick(buffer, logoPath, safeParams) {
+ * Adds a logo to the image using ImageMagick.
+ * @param {Buffer} buffer - The image buffer.
+ * @param {string} logoPath - The path to the logo file.
+ * @param {Object} safeParams - Parameters for adjusting the logo size.
+ * @returns {Promise<Buffer>} - The image buffer with the logo added.
+ */
+export async function addPollinationsLogoWithImagemagick(
+    buffer,
+    logoPath,
+    safeParams,
+) {
     const { ext } = await fileTypeFromBuffer(buffer);
     const tempImageFile = tempfile({ extension: ext });
     // Use PNG for gptimage model, JPG otherwise
@@ -151,7 +158,7 @@ export async function addPollinationsLogoWithImagemagick(buffer, logoPath, safeP
                     const bufferWithLegend = await fs.readFile(tempOutputFile);
                     await Promise.all([
                         fs.unlink(tempImageFile),
-                        fs.unlink(tempOutputFile)
+                        fs.unlink(tempOutputFile),
                     ]);
                     resolve(bufferWithLegend);
                 } catch (err) {

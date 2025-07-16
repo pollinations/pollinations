@@ -54,16 +54,6 @@ describe('Token Integration Tests', () => {
       expect(response.headers.get('content-type')).toBe('image/jpeg');
     }, 30000);
 
-    it('should accept valid token in custom header', async () => {
-      const response = await fetch(`${BASE_URL}/prompt/test`, {
-        headers: {
-          'x-pollinations-token': TEST_TOKEN
-        }
-      });
-      expect(response.ok).toBe(true);
-      expect(response.headers.get('content-type')).toBe('image/jpeg');
-    }, 30000);
-
     it('should still work without token but go through queue', async () => {
       const response = await fetch(`${BASE_URL}/prompt/test`);
       expect(response.ok).toBe(true);

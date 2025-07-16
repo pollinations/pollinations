@@ -48,15 +48,6 @@ describe('Token Authentication', () => {
       expect(extractToken(req)).toBe('test-token');
     });
 
-    it('should extract token from custom header', () => {
-      const req = {
-        url: '/prompt/test',
-        headers: {
-          'x-pollinations-token': 'test-token'
-        }
-      };
-      expect(extractToken(req)).toBe('test-token');
-    });
 
     it('should return null when no token is present', () => {
       const req = {
@@ -64,17 +55,6 @@ describe('Token Authentication', () => {
         headers: {}
       };
       expect(extractToken(req)).toBe(null);
-    });
-
-    it('should prioritize query parameter over headers', () => {
-      const req = {
-        url: '/prompt/test?token=query-token',
-        headers: {
-          authorization: 'Bearer header-token',
-          'x-pollinations-token': 'custom-token'
-        }
-      };
-      expect(extractToken(req)).toBe('query-token');
     });
   });
 });

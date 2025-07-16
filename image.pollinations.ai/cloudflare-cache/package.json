@@ -1,29 +1,29 @@
 {
-  "name": "pollinations-cloudflare-cache",
-  "version": "1.0.0",
-  "description": "Cloudflare R2 caching solution for Pollinations image service",
-  "type": "module",
-  "scripts": {
-    "deploy": "wrangler deploy",
-    "deploy:env": "bash ./deploy.sh",
-    "dev": "wrangler dev --port 8787 --experimental-vectorize-bind-to-prod",
-    "dev:simple": "wrangler dev",
-    "logs": "wrangler tail",
-    "test:semantic": "bash ../../test-semantic-cache-isolation.sh"
-  },
-  "keywords": [
-    "cloudflare",
-    "r2",
-    "cdn",
-    "caching",
-    "pollinations"
-  ],
-  "author": "Pollinations",
-  "license": "MIT",
-  "devDependencies": {
-    "wrangler": "^4.0.0"
-  },
-  "dependencies": {
-    "dotenv": "^17.0.1"
-  }
+	"name": "pollinations-cloudflare-cache",
+	"version": "1.0.0",
+	"description": "Cloudflare R2 caching solution for Pollinations image service",
+	"type": "module",
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"deploy:env": "bash ./deploy.sh",
+		"dev": "wrangler dev --port 8787 --experimental-vectorize-bind-to-prod",
+		"dev:simple": "wrangler dev",
+		"logs": "wrangler tail",
+		"test:semantic": "bash ../../test-semantic-cache-isolation.sh"
+	},
+	"keywords": [
+		"cloudflare",
+		"r2",
+		"cdn",
+		"caching",
+		"pollinations"
+	],
+	"author": "Pollinations",
+	"license": "MIT",
+	"devDependencies": {
+		"wrangler": "^4.0.0"
+	},
+	"dependencies": {
+		"dotenv": "^17.0.1"
+	}
 }

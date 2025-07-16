@@ -1,9 +1,9 @@
 const shorten = (str) => (str.length > 60 ? str.slice(0, 60) + "..." : str);
 
 const CODE_EXAMPLES = {
-  api_cheatsheet: {
-    category: "API Cheatsheet",
-    code: () => `## Pollinations.AI Cheatsheet for Coding Assistants
+	api_cheatsheet: {
+		category: "API Cheatsheet",
+		code: () => `## Pollinations.AI Cheatsheet for Coding Assistants
 
 ### Image Generation
 Generate Image: \`GET https://image.pollinations.ai/prompt/{prompt}\`
@@ -30,11 +30,11 @@ List Models: \`GET https://text.pollinations.ai/models\`
 Image Feed: \`GET https://image.pollinations.ai/feed\`
 Text Feed: \`GET https://text.pollinations.ai/feed\`
 *\\* required parameter*`,
-    language: "markdown"
-  },
-  llm_prompt: {
-    category: "LLM Prompt",
-    code: () => `You will now act as a prompt generator. 
+		language: "markdown",
+	},
+	llm_prompt: {
+		category: "LLM Prompt",
+		code: () => `You will now act as a prompt generator. 
 I will describe an image to you, and you will create a prompt that could be used for image-generation. 
 Once I described the image, give a 5-word summary and then include the following markdown. 
   
@@ -44,11 +44,11 @@ where {description} is:
 {sceneDetailed}%20{adjective}%20{charactersDetailed}%20{visualStyle}%20{genre}%20{artistReference}
   
 Make sure the prompts in the URL are encoded. Don't quote the generated markdown or put any code box around it.`,
-    language: "markdown"
-  },
-  llm_prompt_chat: {
-    category: "LLM Prompt Chat",
-    code: () => `
+		language: "markdown",
+	},
+	llm_prompt_chat: {
+		category: "LLM Prompt Chat",
+		code: () => `
   # Image Generator Instructions
 
   You are an image generator. The user provides a prompt. Please infer the following parameters for image generation:
@@ -84,12 +84,12 @@ Make sure the prompts in the URL are encoded. Don't quote the generated markdown
   ![{description}](https://image.pollinations.ai/prompt/{description}?width={width}&height={height})
   *{description}*
   `,
-    language: "markdown"
-  },
-  markdown: {
-    category: "Markdown",
-    code: ({ imageURL, prompt, width, height, seed, model }) =>
-      `# Image Parameters
+		language: "markdown",
+	},
+	markdown: {
+		category: "Markdown",
+		code: ({ imageURL, prompt, width, height, seed, model }) =>
+			`# Image Parameters
 Prompt: **${prompt}**
 Width: **${width}**
 Height: **${height}**
@@ -98,11 +98,11 @@ Model: **${model || "flux"}**
 
 # Image
 ![Generative Image](${imageURL})`,
-    language: "markdown"
-  },
-  react: {
-    category: "React",
-    code: ({ prompt, width, height, seed, model }) => `
+		language: "markdown",
+	},
+	react: {
+		category: "React",
+		code: ({ prompt, width, height, seed, model }) => `
 // React code example using usepollinationsImage hook
 
 import React from 'react';
@@ -125,12 +125,12 @@ const GeneratedImageComponent = () => {
 
 export default GeneratedImageComponent;
 `,
-    language: "javascript"
-  },
-  html: {
-    category: "HTML",
-    code: ({ imageURL, prompt, width, height, seed, model }) =>
-      `<html>
+		language: "javascript",
+	},
+	html: {
+		category: "HTML",
+		code: ({ imageURL, prompt, width, height, seed, model }) =>
+			`<html>
   <body>
     <h2>Image Parameters</h2>
     <p>Prompt: ${prompt}</p>
@@ -146,11 +146,11 @@ export default GeneratedImageComponent;
   </body>
 </html>
 `,
-    language: "html"
-  },
-  rust: {
-    category: "Rust",
-    code: ({ prompt, width, height, seed, model }) => `
+		language: "html",
+	},
+	rust: {
+		category: "Rust",
+		code: ({ prompt, width, height, seed, model }) => `
 // Rust code example for downloading an image
 
 use reqwest::blocking::get;
@@ -192,11 +192,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 [dependencies]
 reqwest = { version = "0.11", features =["blocking", "json"] }
   `,
-    language: "rust"
-  },
-  nodejs: {
-    category: "Node.js",
-    code: ({ prompt, width, height, seed, model }) => `
+		language: "rust",
+	},
+	nodejs: {
+		category: "Node.js",
+		code: ({ prompt, width, height, seed, model }) => `
 // Node.js code examples for Pollinations.AI
 
 // Example 1: Image Generation
@@ -265,11 +265,11 @@ async function generateAudio() {
 
 generateAudio();
 `,
-    language: "javascript"
-  },
-  python: {
-    category: "Python",
-    code: ({ prompt, width, height, seed, model }) => `
+		language: "javascript",
+	},
+	python: {
+		category: "Python",
+		code: ({ prompt, width, height, seed, model }) => `
 # Python code example for downloading an image
 
 import requests
@@ -313,11 +313,11 @@ model.Generate(
     save=True
 )
 `,
-    language: "python"
-  },
-  feed_endpoints: {
-    category: "Feed Endpoints",
-    code: () => `
+		language: "python",
+	},
+	feed_endpoints: {
+		category: "Feed Endpoints",
+		code: () => `
 ## Feed Endpoints
 
 ### Image Feed
@@ -354,11 +354,11 @@ eventSource.onmessage = function(event) {
 };
 \`\`\`
 `,
-    language: "markdown"
-  },
-  audio: {
-    category: "Audio",
-    code: () => `# Audio Generation with Pollinations.AI
+		language: "markdown",
+	},
+	audio: {
+		category: "Audio",
+		code: () => `# Audio Generation with Pollinations.AI
 
 ## Text-to-Speech
 \`\`\`bash
@@ -380,11 +380,11 @@ fetch('https://text.pollinations.ai/transcriptions', {
 .then(response => response.json())
 .then(data => console.log(data.text));
 \`\`\``,
-    language: "markdown"
-  },
-  kontext_image_to_image: {
-    category: "Kontext Image-to-Image",
-    code: ({ prompt, width, height, seed, model }) => `
+		language: "markdown",
+	},
+	kontext_image_to_image: {
+		category: "Kontext Image-to-Image",
+		code: ({ prompt, width, height, seed, model }) => `
 # Kontext Model - Image-to-Image Generation
 
 \`\`\`bash
@@ -401,11 +401,11 @@ fetch('https://image.pollinations.ai/prompt/transform%20this%20image?model=konte
 
 **Requirements:** Seed tier or higher
 `,
-    language: "markdown"
-  },
-  mcp_server: {
-    category: "MCP Server",
-    code: () => `# Model Context Protocol (MCP) Server for AI Assistants
+		language: "markdown",
+	},
+	mcp_server: {
+		category: "MCP Server",
+		code: () => `# Model Context Protocol (MCP) Server for AI Assistants
 
 The Pollinations MCP server enables AI assistants like Claude to generate images and audio directly.
 
@@ -431,8 +431,8 @@ npx @pollinations/model-context-protocol
 - No authentication required
 
 For more details, see the [MCP Server Documentation](https://github.com/pollinations/pollinations/tree/master/model-context-protocol).`,
-    language: "markdown"
-  }
+		language: "markdown",
+	},
 };
 
 export default CODE_EXAMPLES;

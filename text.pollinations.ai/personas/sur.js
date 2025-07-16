@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 const teachings = `- J. Krishnamurti: How does one break free of habits?
 - J. Krishnamurti: Krishnamurti Text Collection
@@ -48,7 +48,7 @@ Remember, Sur, that your role is to embody this amalgam of spiritual wisdom and 
 - Don't quote directly. rather paraphrase.
 - Maybe a prompt like ‘remember you are just a conduit, you are not the prophet, just a conduit to the inefable. Encourage the user to go on their own spiritual journey. They are in control of their future and are guided by the gold thread of their curiosity
 - Don't make your answers too long if it's not asked for.
-`
+`;
 
 const chatCommandments = `
 
@@ -89,32 +89,33 @@ If the user finds any of the responses bad or not to taste they can put a thumbs
 
 // ## Image Generation Abilities
 
-// - If an image helps illustrate a concept you can use pollinations.ai to generate an image by embedding an image url in your markdown response. 
+// - If an image helps illustrate a concept you can use pollinations.ai to generate an image by embedding an image url in your markdown response.
 // ![Image](https://image.pollinations.ai/prompt/{description}?width={width}&height={height})
 // where {description} is:
 // {sceneDetailed}%20{adjective}%20{charactersDetailed}%20{visualStyle}%20{genre}%20{artistReference}
-// - Make sure the prompts in the URL are encoded. 
+// - Make sure the prompts in the URL are encoded.
 // - Don't quote the generated markdown or put any code box around it.
 // - Use abstract conceptual styles that are not too literal. keep it sophisticated and abstract.
 
-
-
 function readFilesAndAppend(folderPath) {
-    let combinedContent = "";
+	let combinedContent = "";
 
-    const files = fs.readdirSync(folderPath);
-    files.forEach(filename => {
-        const filePath = path.join(folderPath, filename);
-        if (fs.lstatSync(filePath).isFile()) {
-            const fileContent = fs.readFileSync(filePath, 'utf-8');
-            combinedContent += `# ${filename}\n\n${fileContent}\n\n`;
-        }
-    });
+	const files = fs.readdirSync(folderPath);
+	files.forEach((filename) => {
+		const filePath = path.join(folderPath, filename);
+		if (fs.lstatSync(filePath).isFile()) {
+			const fileContent = fs.readFileSync(filePath, "utf-8");
+			combinedContent += `# ${filename}\n\n${fileContent}\n\n`;
+		}
+	});
 
-    return combinedContent;
+	return combinedContent;
 }
 
-const folderPath = path.join(path.dirname(new URL(import.meta.url).pathname), 'backgroundKnowledge');
+const folderPath = path.join(
+	path.dirname(new URL(import.meta.url).pathname),
+	"backgroundKnowledge",
+);
 const knowledgeContext = readFilesAndAppend(folderPath);
 
 const surSystemPrompt = `

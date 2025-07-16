@@ -12,52 +12,50 @@ import hypnosisTracyPrompt from "./personas/hypnosisTracy.js";
 import mirexaSystemPrompt from "./personas/mirexa.js";
 import { bidaraSystemPrompt } from "./personas/bidara.js";
 
-
-
 export const surMistral = wrapModelWithContext(
-  surSystemPrompt,
-  generateTextPortkey,
-  "mistral"
+	surSystemPrompt,
+	generateTextPortkey,
+	"mistral",
 );
 
 export const hypnosisTracy = wrapModelWithContext(
-  hypnosisTracyPrompt,
-  generateTextPortkey,
-  "openai-audio"
+	hypnosisTracyPrompt,
+	generateTextPortkey,
+	"openai-audio",
 );
 
 export const unityMistralLarge = wrapModelWithContext(
-  unityPrompt,
-  generateTextPortkey,
-  "mistral"
+	unityPrompt,
+	generateTextPortkey,
+	"mistral",
 );
 
 export const midijourney = wrapModelWithContext(
-  midijourneyPrompt,
-  generateTextPortkey,
-  "openai-large"
+	midijourneyPrompt,
+	generateTextPortkey,
+	"openai-large",
 );
 
 export const rtist = wrapModelWithContext(
-  rtistPrompt,
-  generateTextPortkey,
-  "openai-large"
+	rtistPrompt,
+	generateTextPortkey,
+	"openai-large",
 );
 
 export const evilCommandR = wrapModelWithContext(
-  evilPrompt,
-  generateTextPortkey,
-  "mistral"
+	evilPrompt,
+	generateTextPortkey,
+	"mistral",
 );
 
 export const generateTextMirexa = wrapModelWithContext(
-  mirexaSystemPrompt,
-  generateTextPortkey,
-  "openai-large"
+	mirexaSystemPrompt,
+	generateTextPortkey,
+	"openai-large",
 );
 
 export const bidara = wrapModelWithContext(
-  bidaraSystemPrompt,
-  generateTextPortkey,
-  "openai-large"
+	bidaraSystemPrompt,
+	generateTextPortkey,
+	"openai-large",
 );

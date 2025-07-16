@@ -6,10 +6,10 @@
  * @returns {{ai: object, model: string}}
  */
 export function createEmbeddingService(ai) {
-  return {
-    ai,
-    model: "@cf/baai/bge-base-en-v1.5",
-  };
+	return {
+		ai,
+		model: "@cf/baai/bge-base-en-v1.5",
+	};
 }
 
 /**
@@ -19,14 +19,16 @@ export function createEmbeddingService(ai) {
  * @returns {Promise<number[]>}
  */
 export async function generateEmbedding(service, text) {
-  const response = await service.ai.run(service.model, {
-    text,
-    pooling: 'cls'
-  });
+	const response = await service.ai.run(service.model, {
+		text,
+		pooling: "cls",
+	});
 
-  if (!response.data || !response.data[0]) {
-    throw new Error('Failed to generate embedding: Invalid response from AI service');
-  }
+	if (!response.data || !response.data[0]) {
+		throw new Error(
+			"Failed to generate embedding: Invalid response from AI service",
+		);
+	}
 
-  return response.data[0];
+	return response.data[0];
 }

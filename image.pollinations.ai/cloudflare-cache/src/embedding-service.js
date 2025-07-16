@@ -10,10 +10,10 @@
  * @returns {Object} - Service instance
  */
 export function createEmbeddingService(ai) {
-  return {
-    ai,
-    model: "@cf/baai/bge-base-en-v1.5"
-  };
+	return {
+		ai,
+		model: "@cf/baai/bge-base-en-v1.5",
+	};
 }
 
 /**
@@ -24,27 +24,29 @@ export function createEmbeddingService(ai) {
  * @returns {Promise<Array>} - 768-dimensional embedding vector
  */
 export async function generateEmbedding(service, prompt, params = {}) {
-  try {
-    // Normalize the prompt for consistent embeddings
-    const normalizedText = normalizePromptForEmbedding(prompt, params);
-    
-    console.log(`[EMBEDDING] Generating embedding for: "${normalizedText.substring(0, 100)}..."`);
-    
-    // Generate embedding using Workers AI with CLS pooling for better accuracy
-    const response = await service.ai.run(service.model, {
-      text: normalizedText,
-      pooling: 'cls' // Use CLS pooling for better accuracy on longer inputs
-    });
-    
-    if (!response.data || !Array.isArray(response.data[0])) {
-      throw new Error('Invalid embedding response format');
-    }
-    
-    return response.data[0]; // 768-dimensional vector
-  } catch (error) {
-    console.error('[EMBEDDING] Error generating embedding:', error);
-    throw error;
-  }
+	try {
+		// Normalize the prompt for consistent embeddings
+		const normalizedText = normalizePromptForEmbedding(prompt, params);
+
+		console.log(
+			`[EMBEDDING] Generating embedding for: "${normalizedText.substring(0, 100)}..."`,
+		);
+
+		// Generate embedding using Workers AI with CLS pooling for better accuracy
+		const response = await service.ai.run(service.model, {
+			text: normalizedText,
+			pooling: "cls", // Use CLS pooling for better accuracy on longer inputs
+		});
+
+		if (!response.data || !Array.isArray(response.data[0])) {
+			throw new Error("Invalid embedding response format");
+		}
+
+		return response.data[0]; // 768-dimensional vector
+	} catch (error) {
+		console.error("[EMBEDDING] Error generating embedding:", error);
+		throw error;
+	}
 }
 
 /**
@@ -54,18 +56,18 @@ export async function generateEmbedding(service, prompt, params = {}) {
  * @returns {string} - Normalized text for embedding
  */
 export function normalizePromptForEmbedding(prompt, params = {}) {
-  // Clean and normalize the prompt - only use the pure prompt text
-  // Model, style, and quality are handled through metadata filtering and bucketing
-  let normalized = prompt.toLowerCase().trim();
-  
-  // Remove all punctuation for consistent embeddings
-  // This ensures "test." and "test..." and "test" all produce the same embedding
-  normalized = normalized.replace(/[^\w\s]/g, ' ');
-  
-  // Normalize whitespace (replace multiple spaces with single space)
-  normalized = normalized.replace(/\s+/g, ' ').trim();
-  
-  return normalized;
+	// Clean and normalize the prompt - only use the pure prompt text
+	// Model, style, and quality are handled through metadata filtering and bucketing
+	let normalized = prompt.toLowerCase().trim();
+
+	// Remove all punctuation for consistent embeddings
+	// This ensures "test." and "test..." and "test" all produce the same embedding
+	normalized = normalized.replace(/[^\w\s]/g, " ");
+
+	// Normalize whitespace (replace multiple spaces with single space)
+	normalized = normalized.replace(/\s+/g, " ").trim();
+
+	return normalized;
 }
 
 /**
@@ -80,31 +82,37 @@ export function normalizePromptForEmbedding(prompt, params = {}) {
  * @param {string} image - Base64 image for image-to-image generation
  * @returns {string} - Resolution bucket key with complete parameter isolation
  */
-export function getResolutionBucket(width = 1024, height = 1024, seed = null, nologo = null, image = null) {
-  const resolution = `${width}x${height}`;
-  
-  // Build bucket key with relevant visual parameters
-  let bucket = resolution;
-  
-  // Include seed in bucket for proper isolation
-  // Different seeds can produce significantly different images even with same prompt
-  if (seed !== null && seed !== undefined) {
-    bucket += `_seed${seed}`;
-  }
-  
-  // Include nologo status since images with/without logos are visually different
-  if (nologo !== null && nologo !== undefined) {
-    const nologoValue = nologo === true || nologo === 'true' ? 'true' : 'false';
-    bucket += `_nologo${nologoValue}`;
-  }
-  
-  // Include image parameter for image-to-image vs text-only isolation
-  // Image-to-image generation produces fundamentally different outputs
-  if (image !== null && image !== undefined && image !== '') {
-    // Use a short hash of the image to avoid bucket name explosion
-    // Different images should be in different buckets but same image should match
-    bucket += `_img${image.substring(0, 8)}`;
-  }
-  
-  return bucket;
+export function getResolutionBucket(
+	width = 1024,
+	height = 1024,
+	seed = null,
+	nologo = null,
+	image = null,
+) {
+	const resolution = `${width}x${height}`;
+
+	// Build bucket key with relevant visual parameters
+	let bucket = resolution;
+
+	// Include seed in bucket for proper isolation
+	// Different seeds can produce significantly different images even with same prompt
+	if (seed !== null && seed !== undefined) {
+		bucket += `_seed${seed}`;
+	}
+
+	// Include nologo status since images with/without logos are visually different
+	if (nologo !== null && nologo !== undefined) {
+		const nologoValue = nologo === true || nologo === "true" ? "true" : "false";
+		bucket += `_nologo${nologoValue}`;
+	}
+
+	// Include image parameter for image-to-image vs text-only isolation
+	// Image-to-image generation produces fundamentally different outputs
+	if (image !== null && image !== undefined && image !== "") {
+		// Use a short hash of the image to avoid bucket name explosion
+		// Different images should be in different buckets but same image should match
+		bucket += `_img${image.substring(0, 8)}`;
+	}
+
+	return bucket;
 }

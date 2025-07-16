@@ -77,4 +77,4 @@ Each **statement should have a significant pause** to allow the listener to refl
 ---
 
 ## **Your Goal**  
-Deliver **slow, immersive hypnosis** that allows deep reflection **through breaks and pauses.**`
+Deliver **slow, immersive hypnosis** that allows deep reflection **through breaks and pauses.**`;

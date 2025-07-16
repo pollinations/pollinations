@@ -3,41 +3,46 @@
 // Apply performance indexes to production database
 // GitHub Issue: #2604
 
-import { readFileSync } from 'fs';
-import { execSync } from 'child_process';
+import { readFileSync } from "fs";
+import { execSync } from "child_process";
 
-console.log('🚀 Applying performance optimization indexes...');
+console.log("🚀 Applying performance optimization indexes...");
 
-const sqlContent = readFileSync('./migrations/add_performance_indexes.sql', 'utf8');
+const sqlContent = readFileSync(
+	"./migrations/add_performance_indexes.sql",
+	"utf8",
+);
 
 try {
-  // Apply the SQL using wrangler d1 execute
-  console.log('📊 Creating indexes...');
-  
-  // Split SQL into individual statements and execute each
-  const statements = sqlContent
-    .split(';')
-    .map(stmt => stmt.trim())
-    .filter(stmt => stmt.length > 0 && !stmt.startsWith('--'));
+	// Apply the SQL using wrangler d1 execute
+	console.log("📊 Creating indexes...");
 
-  for (const statement of statements) {
-    if (statement.trim()) {
-      console.log(`Executing: ${statement.substring(0, 50)}...`); // Added backtick at the end of the template literal
-      
-      try {
-        execSync(`wrangler d1 execute github_auth --remote --command="${statement};"`, {
-          stdio: 'inherit'
-        });
-      } catch (e) {
-        console.log(`Note: ${statement} may already exist (this is OK)`);
-      }
-    }
-  }
-  
-  console.log('✅ Performance optimization indexes applied successfully!');
-  console.log('🔍 Test token validation performance now...');
-  
+	// Split SQL into individual statements and execute each
+	const statements = sqlContent
+		.split(";")
+		.map((stmt) => stmt.trim())
+		.filter((stmt) => stmt.length > 0 && !stmt.startsWith("--"));
+
+	for (const statement of statements) {
+		if (statement.trim()) {
+			console.log(`Executing: ${statement.substring(0, 50)}...`); // Added backtick at the end of the template literal
+
+			try {
+				execSync(
+					`wrangler d1 execute github_auth --remote --command="${statement};"`,
+					{
+						stdio: "inherit",
+					},
+				);
+			} catch (e) {
+				console.log(`Note: ${statement} may already exist (this is OK)`);
+			}
+		}
+	}
+
+	console.log("✅ Performance optimization indexes applied successfully!");
+	console.log("🔍 Test token validation performance now...");
 } catch (error) {
-  console.error('❌ Error applying indexes:', error.message);
-  process.exit(1);
+	console.error("❌ Error applying indexes:", error.message);
+	process.exit(1);
 }

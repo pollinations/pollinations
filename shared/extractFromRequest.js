@@ -8,7 +8,7 @@
 // Token field configuration for DRY principle
 const TOKEN_FIELDS = {
   query: ['token'],
-  header: ['authorization', 'x-pollinations-token'],
+  header: ['authorization'],
   body: ['token' ]
 };
 
@@ -233,4 +233,6 @@ function extractFromBody(body, fields) {
   }
   return { value: null, source: null };
 }
+
+
 

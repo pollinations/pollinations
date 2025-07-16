@@ -4,6 +4,8 @@
 import { createEmbeddingService, generateEmbedding } from './embedding-service.js';
 import { createSemanticCache, findSimilarText, cacheTextEmbedding } from './semantic-cache.js';
 import { extractAndNormalizeSemanticText, extractModelName } from './text-extractor.js';
+import { isSemanticCacheEligibleForToken } from './semantic-cache-eligibility.js';
+import { extractToken } from '../../../shared/extractFromRequest.js';
 
 const WORKER_VERSION = "2.0.0-simplified";
 
@@ -153,27 +155,70 @@ export default {
         return handleEmbeddingRequest(request, env);
       }
       
-      // Generate a cache key for the request
-      const key = await generateCacheKey(request);
-      log('cache', `Key: ${key}`);
-      
       // Capture request text and model name early for semantic caching (before consuming the stream)
       let requestText = null;
       let modelName = 'unknown';
-      if (request.method === 'POST' && request.body) {
+      let rawBody = null;
+      let parsedBody = null;
+      
+      if (request.method === 'POST') {
         try {
-          const rawBody = await request.clone().text();
+          rawBody = await request.clone().text();
+          log('cache', `Raw body length: ${rawBody.length}, preview: ${rawBody.substring(0, 200)}...`);
+          
           requestText = extractAndNormalizeSemanticText(rawBody);
           modelName = extractModelName(rawBody);
+          
           log('cache', `Extracted semantic text (${requestText.length} chars): ${requestText.substring(0, 100)}...`);
           log('cache', `Extracted model name: ${modelName}`);
+          
+          // Parse body for auth functions (don't modify request object)
+          try {
+            parsedBody = JSON.parse(rawBody);
+          } catch (e) {
+            log('cache', `Could not parse JSON body: ${e.message}`);
+            parsedBody = null;
+          }
+          
         } catch (err) {
-          log('cache', 'Could not read request body for semantic caching');
-          requestText = url.toString(); // fallback to URL
+          log('cache', `Could not read request body for semantic caching: ${err.message}`);
+          // Don't fallback to URL - use empty string or a meaningful default
+          requestText = '';
+          modelName = 'unknown';
         }
       } else {
-        requestText = url.toString();
+        // For GET requests, use decoded path for semantic matching
+        // Exclude specific endpoints that shouldn't use semantic caching
+        const excludedPaths = ['/models', '/feed'];
+        const shouldUseSemanticMatching = !excludedPaths.some(path => pathname.startsWith(path));
+        
+        if (shouldUseSemanticMatching) {
+          // Use decoded pathname for semantic matching
+          try {
+            requestText = decodeURIComponent(pathname);
+            log('cache', `GET request semantic text (decoded path): ${requestText}`);
+          } catch (err) {
+            // If decoding fails, use the original pathname
+            requestText = pathname;
+            log('cache', `Could not decode path, using original: ${requestText}`);
+          }
+        } else {
+          // For excluded paths, use full URL to ensure no semantic matches
+          requestText = url.toString();
+          log('cache', `GET request excluded from semantic matching: ${pathname}`);
+        }
       }
+      
+      // Extract user context for per-token caching
+      const userPrefix = extractToken(request) || 'anon';
+
+      // Generate cache key (remains user-agnostic for direct cache)
+      const key = await generateCacheKey(request);
+      log('cache', `Key: ${key}`);
+      
+      // Create user-specific cache key for semantic caching isolation
+      const userCacheKey = `${userPrefix}:${key}`;
+      log('cache', `User-specific cache key: ${userCacheKey}`);
 
       // Try direct cache first
       let cachedResponse = await getCachedResponse(env, key);
@@ -188,9 +233,54 @@ export default {
         return cachedResponse;
       }
       
-      // No direct cache hit - try semantic cache
-      log('cache', 'Direct cache miss, trying semantic cache...');
-      const similar = await findSimilarText(semanticCache, requestText, modelName);
+      // No direct cache hit - check if user is eligible for semantic cache
+      log('cache', 'Direct cache miss, checking semantic cache eligibility...');
+      
+      // Check if token is eligible for semantic cache
+      // Create a request-like object for token extraction with parsed body
+      const requestForTokenExtraction = {
+        method: request.method,
+        url: request.url,
+        headers: request.headers,
+        body: parsedBody
+      };
+      const token = extractToken(requestForTokenExtraction);
+      const isEligible = isSemanticCacheEligibleForToken(token);
+      
+      const eligibility = {
+        eligible: isEligible,
+        reason: isEligible ? 
+          'token is in semantic cache token list' : 
+          token ? 
+            'token not in semantic cache token list' :
+            'no authentication token for semantic cache',
+        token: token ? token.substring(0, 8) + '...' : null,
+        authType: token ? 'token' : 'anonymous'
+      };
+      
+      log('auth', `Token eligibility: ${eligibility.eligible} (${eligibility.reason})`);
+      
+      // Token eligibility check is synchronous, no try/catch needed
+      
+      let similar = null;
+      if (eligibility.eligible) {
+        log('cache', `✅ User eligible for semantic cache: ${eligibility.reason}`);
+        
+        // Only proceed with semantic search if we have meaningful text
+        if (requestText && requestText.trim().length > 0) {
+          log('cache', `Calling findSimilarText with: requestText=${requestText.substring(0, 50)}..., modelName=${modelName}, userPrefix=${userPrefix}`);
+          similar = await findSimilarText(semanticCache, requestText, modelName, userPrefix);
+          log('cache', `findSimilarText returned:`, similar);
+        } else {
+          log('cache', `⚠️ Skipping semantic search - empty or invalid request text`);
+        }
+      } else {
+        log('cache', `❌ User not eligible for semantic cache: ${eligibility.reason}`);
+        // Add eligibility info to response headers for debugging
+        ctx.waitUntil((async () => {
+          // Store eligibility context for headers later
+        })());
+      }
       
       // Store semantic similarity for response headers (even if below threshold)
       let semanticSimilarity = null;
@@ -240,6 +330,9 @@ export default {
         if (semanticSimilarity !== null && semanticSimilarity !== undefined) {
           errorResponse.headers.set('x-semantic-similarity', semanticSimilarity.toString());
         }
+        // Add semantic cache eligibility info to error responses
+        errorResponse.headers.set('x-semantic-eligible', eligibility.eligible.toString());
+        errorResponse.headers.set('x-semantic-reason', eligibility.reason);
         
         return errorResponse;
       }
@@ -263,7 +356,16 @@ export default {
           await env.TEXT_BUCKET.put(key, content, {
             customMetadata: metadata
           });
-          await cacheTextEmbedding(semanticCache, key, requestText, modelName);
+          
+          // Only store semantic cache if user is eligible and we have meaningful text
+          if (eligibility.eligible && requestText && requestText.trim().length > 0) {
+            await cacheTextEmbedding(semanticCache, key, requestText, modelName, userPrefix);
+            log('cache', `✅ Stored semantic cache embedding for eligible user`);
+          } else if (eligibility.eligible) {
+            log('cache', `⚠️ Skipped semantic cache embedding - empty or invalid request text`);
+          } else {
+            log('cache', `❌ Skipped semantic cache embedding - user not eligible: ${eligibility.reason}`);
+          }
           
           // Add cache debug headers for miss
           const responseWithHeaders = new Response(originResp.body, {
@@ -279,6 +381,9 @@ export default {
           if (semanticSimilarity !== null && semanticSimilarity !== undefined) {
             responseWithHeaders.headers.set('x-semantic-similarity', semanticSimilarity.toString());
           }
+          // Add semantic cache eligibility info
+          responseWithHeaders.headers.set('x-semantic-eligible', eligibility.eligible.toString());
+          responseWithHeaders.headers.set('x-semantic-reason', eligibility.reason);
           
           // Return the response with cache headers
           return responseWithHeaders;
@@ -298,6 +403,9 @@ export default {
           if (semanticSimilarity !== null && semanticSimilarity !== undefined) {
             responseWithHeaders.headers.set('x-semantic-similarity', semanticSimilarity.toString());
           }
+          // Add semantic cache eligibility info to error handling path
+          responseWithHeaders.headers.set('x-semantic-eligible', eligibility.eligible.toString());
+          responseWithHeaders.headers.set('x-semantic-reason', eligibility.reason);
           
           // Return origin response even if caching fails
           return responseWithHeaders;
@@ -352,8 +460,12 @@ export default {
               
               log('cache', `✅ Response cached successfully (${totalSize} bytes)`);
               
-              // Cache the text embedding asynchronously
-              ctx.waitUntil(cacheTextEmbedding(semanticCache, key, requestText, modelName));
+              // Cache the text embedding asynchronously (only if we have meaningful text)
+              if (requestText && requestText.trim().length > 0) {
+                ctx.waitUntil(cacheTextEmbedding(semanticCache, key, requestText, modelName, userPrefix));
+              } else {
+                log('cache', `⚠️ Skipping semantic cache storage - empty or invalid request text`);
+              }
               
               // Free memory
               chunks = null;
@@ -377,7 +489,9 @@ export default {
           cacheKey: key,
           cacheType: 'miss',
           cacheModel: modelName,
-          semanticSimilarity: semanticSimilarity
+          semanticSimilarity: semanticSimilarity,
+          semanticEligible: eligibility.eligible,
+          semanticReason: eligibility.reason
         })
       });
     } catch (err) {
@@ -533,6 +647,15 @@ function prepareResponseHeaders(originalHeaders, cacheInfo = {}) {
   
   if (cacheInfo.semanticSimilarity !== null && cacheInfo.semanticSimilarity !== undefined) {
     headers.set('x-semantic-similarity', cacheInfo.semanticSimilarity.toString());
+  }
+  
+  // Add semantic cache eligibility headers
+  if (cacheInfo.semanticEligible !== null && cacheInfo.semanticEligible !== undefined) {
+    headers.set('x-semantic-eligible', cacheInfo.semanticEligible.toString());
+  }
+  
+  if (cacheInfo.semanticReason) {
+    headers.set('x-semantic-reason', cacheInfo.semanticReason);
   }
   
   return headers;

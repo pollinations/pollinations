@@ -7,20 +7,20 @@ console.log('Testing 30 prompts with varying similarity to find the caching thre
 console.log('Current threshold: 0.92 (92%)\n');
 
 // Base prompt for comparison 
-const BASE_PROMPT = "What is artificial intelligence and how does it work?";
+const BASE_PROMPT = "What is artificial intelligence and how does it work in 2025?";
 
 // Test prompts with varying degrees of similarity
 const TEST_PROMPTS = [
   // IDENTICAL/NEAR-IDENTICAL (Expected: 95%+ similarity)
-  "What is artificial intelligence and how does it work?", // Exact match
-  "What is artificial intelligence and how does it work ?", // Extra space
-  "What is artificial intelligence and how does it work.", // Period instead of ?
+  "What is artificial intelligence and how does it work today?", // Very similar with slight variation
+  "What is artificial intelligence and how does it function?", // Function vs work
+  "What exactly is artificial intelligence and how does it work?", // Added "exactly"
   
   // VERY SIMILAR - Different phrasing (Expected: 90-95% similarity) 
-  "What is AI and how does it work?",
-  "Can you explain what artificial intelligence is and how it works?",
-  "How does artificial intelligence work and what is it?",
-  "What is artificial intelligence? How does it work?",
+  "What is AI and how does it work in practice?",
+  "Can you explain what artificial intelligence is and how it operates?",
+  "How does artificial intelligence function and what is it?",
+  "What is artificial intelligence? How does it operate?",
   
   // SIMILAR TOPIC - Different questions (Expected: 85-90% similarity)
   "What are the benefits of artificial intelligence?",
@@ -129,7 +129,7 @@ async function testSemanticBoundary() {
 
 async function makeRequest(content, testName) {
   const requestBody = {
-    model: 'gpt-4',
+    model: 'openai-fast',
     messages: [{"role": "user", "content": content}],
     temperature: 0.1,  
     stream: false
@@ -141,7 +141,8 @@ async function makeRequest(content, testName) {
     const response = await fetch(`${CACHE_URL}/openai/v1/chat/completions`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer test-token-123'  // Enable semantic caching with test token
       },
       body: JSON.stringify(requestBody)
     });

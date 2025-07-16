@@ -1,6 +1,7 @@
 name = "pollinations-text-cache"
 main = "src/index.js"
 compatibility_date = "2023-05-18"
+# compatibility_flags = ["nodejs_compat"]  # Removed - using Web Crypto API instead
 
 # R2 bucket for text storage
 # AI binding for embedding generation
@@ -11,6 +12,7 @@ binding = "AI"
 [[vectorize]]
 binding = "VECTORIZE_INDEX"
 index_name = "pollinations-text-cache-v1"
+experimental_remote = true
 
 # R2 bucket for text storage
 [[r2_buckets]]

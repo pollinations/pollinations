@@ -1,32 +1,32 @@
-import { useState } from "react"
-import styled from "@emotion/styled"
-import Hero from "./Hero"
+import { useState } from "react";
+import styled from "@emotion/styled";
+import Hero from "./Hero";
 // import { FeedImage } from "./FeedImage"
 // import { FeedText } from "./FeedText"
-import { Feeds } from "./Feeds.js"
-import Projects from "./Projects"
-import { Integration } from "./Integration"
-import { ImageContext } from "../utils/ImageContext"
-import Discord from "./Community"
-import Supporter from "./Supporter"
-import News from "./News"
+import { Feeds } from "./Feeds.js";
+import Projects from "./Projects";
+import { Integration } from "./Integration";
+import { ImageContext } from "../utils/ImageContext";
+import Discord from "./Community";
+import Supporter from "./Supporter";
+import News from "./News";
 
 export default function Home() {
-  const [image, setImage] = useState(null)
+    const [image, setImage] = useState(null);
 
-  return (
-    <ImageContext.Provider value={{ image, setImage }}>
-      <Style>
-        <Hero />
-        <News />
-        <Feeds />
-        <Projects />
-        <Integration />
-        <Discord />
-        <Supporter />
-      </Style>
-    </ImageContext.Provider>
-  )
+    return (
+        <ImageContext.Provider value={{ image, setImage }}>
+            <Style>
+                <Hero />
+                <News />
+                <Feeds />
+                <Projects />
+                <Integration />
+                <Discord />
+                <Supporter />
+            </Style>
+        </ImageContext.Provider>
+    );
 }
 
 const Style = styled.div`
@@ -39,4 +39,4 @@ const Style = styled.div`
   select:focus {
     outline: none;
   }
-`
+`;

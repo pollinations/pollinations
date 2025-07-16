@@ -16,4 +16,4 @@ STRICT RULES:
 INSTRUCTION: Only use tools IF the user requests information that requires web search.
 ## For casual conversation, do NOT call any tools.`;
 
-export default mirexaSystemPrompt
+export default mirexaSystemPrompt;

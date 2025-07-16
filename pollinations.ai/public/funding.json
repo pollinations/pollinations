@@ -1,76 +1,81 @@
 {
-  "version": "v1.0.0",
-  "entity": {
-    "type": "organisation",
-    "role": "maintainer",
-    "name": "Pollinations.AI",
-    "email": "hello@pollinations.ai",
-    "phone": "",
-    "description": "Pollinations.AI is the most easy-to-use, free text and image generation API available, serving over 50,000 active users and generating over 50 million images and 30 million text outputs monthly. Our platform integrates with 300+ projects globally.",
-    "webpageUrl": {
-      "url": "https://pollinations.ai",
-      "wellKnown": "https://pollinations.ai/.well-known/funding-manifest-urls"
-    }
-  },
-  "projects": [
-    {
-      "guid": "pollinations-ai",
-      "name": "Pollinations.AI",
-      "description": "A free and open-source API offering production-ready text and image generation, no sign-ups or API keys required and over 80 million pieces of media generated monthly.",
-      "webpageUrl": {
-        "url": "https://pollinations.ai",
-        "wellKnown": "https://pollinations.ai/.well-known/funding-manifest-urls"
-      },
-      "repositoryUrl": {
-        "url": "https://github.com/pollinations",
-        "wellKnown": "https://github.com/pollinations/.well-known/funding-manifest-urls"
-      },
-      "licenses": ["spdx:MIT"],
-      "tags": ["api", "open-source", "image-generation", "text-generation"]
-    }
-  ],
-  "funding": {
-    "channels": [
-      {
-        "guid": "github-sponsors",
-        "type": "payment-provider",
-        "address": "https://github.com/sponsors/pollinations",
-        "description": "Support via GitHub Sponsors."
-      },
-      {
-        "guid": "open-collective",
-        "type": "payment-provider",
-        "address": "https://opencollective.com/pollinationsai",
-        "description": "Support via Open Collective."
-      },
-      {
-        "guid": "ko-fi",
-        "type": "payment-provider",
-        "address": "https://ko-fi.com/pollinationsai",
-        "description": "Support via Ko-fi."
-      }
+    "version": "v1.0.0",
+    "entity": {
+        "type": "organisation",
+        "role": "maintainer",
+        "name": "Pollinations.AI",
+        "email": "hello@pollinations.ai",
+        "phone": "",
+        "description": "Pollinations.AI is the most easy-to-use, free text and image generation API available, serving over 50,000 active users and generating over 50 million images and 30 million text outputs monthly. Our platform integrates with 300+ projects globally.",
+        "webpageUrl": {
+            "url": "https://pollinations.ai",
+            "wellKnown": "https://pollinations.ai/.well-known/funding-manifest-urls"
+        }
+    },
+    "projects": [
+        {
+            "guid": "pollinations-ai",
+            "name": "Pollinations.AI",
+            "description": "A free and open-source API offering production-ready text and image generation, no sign-ups or API keys required and over 80 million pieces of media generated monthly.",
+            "webpageUrl": {
+                "url": "https://pollinations.ai",
+                "wellKnown": "https://pollinations.ai/.well-known/funding-manifest-urls"
+            },
+            "repositoryUrl": {
+                "url": "https://github.com/pollinations",
+                "wellKnown": "https://github.com/pollinations/.well-known/funding-manifest-urls"
+            },
+            "licenses": ["spdx:MIT"],
+            "tags": [
+                "api",
+                "open-source",
+                "image-generation",
+                "text-generation"
+            ]
+        }
     ],
-    "plans": [
-      {
-        "guid": "monthly-support",
-        "status": "active",
-        "name": "Monthly Support Plan",
-        "description": "Recurring monthly support to cover ongoing GPU, server, and development costs.",
-        "amount": 0,
-        "currency": "USD",
-        "frequency": "monthly",
-        "channels": ["github-sponsors", "open-collective", "ko-fi"]
-      },
-      {
-        "guid": "one-time-donation",
-        "status": "active",
-        "name": "One-time Donation",
-        "description": "One-time donations are welcome to support to cover ongoing GPU, server, and development costs.",
-        "amount": 0,
-        "currency": "USD",
-        "frequency": "one-time",
-        "channels": ["github-sponsors", "open-collective", "ko-fi"]
-      }
-    ]
-  }
+    "funding": {
+        "channels": [
+            {
+                "guid": "github-sponsors",
+                "type": "payment-provider",
+                "address": "https://github.com/sponsors/pollinations",
+                "description": "Support via GitHub Sponsors."
+            },
+            {
+                "guid": "open-collective",
+                "type": "payment-provider",
+                "address": "https://opencollective.com/pollinationsai",
+                "description": "Support via Open Collective."
+            },
+            {
+                "guid": "ko-fi",
+                "type": "payment-provider",
+                "address": "https://ko-fi.com/pollinationsai",
+                "description": "Support via Ko-fi."
+            }
+        ],
+        "plans": [
+            {
+                "guid": "monthly-support",
+                "status": "active",
+                "name": "Monthly Support Plan",
+                "description": "Recurring monthly support to cover ongoing GPU, server, and development costs.",
+                "amount": 0,
+                "currency": "USD",
+                "frequency": "monthly",
+                "channels": ["github-sponsors", "open-collective", "ko-fi"]
+            },
+            {
+                "guid": "one-time-donation",
+                "status": "active",
+                "name": "One-time Donation",
+                "description": "One-time donations are welcome to support to cover ongoing GPU, server, and development costs.",
+                "amount": 0,
+                "currency": "USD",
+                "frequency": "one-time",
+                "channels": ["github-sponsors", "open-collective", "ko-fi"]
+            }
+        ]
+    }
 }

@@ -1,12 +1,12 @@
 import { affiliatesData } from "./affiliate_prompt.js";
-import { generateTextPortkey } from '../generateTextPortkey.js';
-import debug from 'debug';
+import { generateTextPortkey } from "../generateTextPortkey.js";
+import debug from "debug";
 
 // Base URL for affiliate redirects
-export const REDIRECT_BASE_URL = 'https://pollinations.ai/redirect/';
+export const REDIRECT_BASE_URL = "https://pollinations.ai/redirect/";
 
-const log = debug('pollinations:adfilter');
-const errorLog = debug('pollinations:adfilter:error');
+const log = debug("pollinations:adfilter");
+const errorLog = debug("pollinations:adfilter:error");
 
 /**
  * Find the most relevant affiliate for the given content using an LLM.
@@ -16,9 +16,16 @@ const errorLog = debug('pollinations:adfilter:error');
  * @param {string} userCountry - The user's country code (optional).
  * @returns {Promise<object|null>} - The affiliate object, or null if none found/suitable.
  */
-export async function findRelevantAffiliate(content, messages = [], userCountry = null) {
+export async function findRelevantAffiliate(
+    content,
+    messages = [],
+    userCountry = null,
+) {
     // Combine the last 3 messages with the current content for context
-    const lastMessages = messages.slice(-3).map(m => m.content || "").filter(Boolean);
+    const lastMessages = messages
+        .slice(-3)
+        .map((m) => m.content || "")
+        .filter(Boolean);
     const combinedContent = [...lastMessages, content].join("\n");
 
     if (!combinedContent || combinedContent.trim() === "") {
@@ -27,33 +34,41 @@ export async function findRelevantAffiliate(content, messages = [], userCountry 
     }
 
     // Check if we should exclude NSFW content
-    const shouldExcludeNSFW = !combinedContent.toLowerCase().includes("nsfw") &&
-                              !combinedContent.toLowerCase().includes("adult") &&
-                              !combinedContent.toLowerCase().includes("sex");
+    const shouldExcludeNSFW =
+        !combinedContent.toLowerCase().includes("nsfw") &&
+        !combinedContent.toLowerCase().includes("adult") &&
+        !combinedContent.toLowerCase().includes("sex");
 
     // Filter out NSFW affiliates if needed
     let eligibleAffiliates = shouldExcludeNSFW
-        ? affiliatesData.filter(affiliate => !affiliate.nsfw)
+        ? affiliatesData.filter((affiliate) => !affiliate.nsfw)
         : affiliatesData;
 
     // Filter out affiliates that are blocked in the user's country
     if (userCountry) {
         log(`Filtering affiliates for user country: ${userCountry}`);
-        eligibleAffiliates = eligibleAffiliates.filter(affiliate => {
+        eligibleAffiliates = eligibleAffiliates.filter((affiliate) => {
             // Skip if affiliate doesn't have blockedCountries property
-            if (!affiliate.blockedCountries || !Array.isArray(affiliate.blockedCountries)) {
+            if (
+                !affiliate.blockedCountries ||
+                !Array.isArray(affiliate.blockedCountries)
+            ) {
                 return true;
             }
-            
+
             // Check if the user's country is in the blockedCountries list
             const isBlocked = affiliate.blockedCountries.includes(userCountry);
             if (isBlocked) {
-                log(`Affiliate ${affiliate.id} (${affiliate.name}) is blocked in ${userCountry}`);
+                log(
+                    `Affiliate ${affiliate.id} (${affiliate.name}) is blocked in ${userCountry}`,
+                );
             }
             return !isBlocked;
         });
-        
-        log(`${eligibleAffiliates.length} affiliates available after country filtering`);
+
+        log(
+            `${eligibleAffiliates.length} affiliates available after country filtering`,
+        );
     }
 
     // If no eligible affiliates, return null
@@ -64,10 +79,14 @@ export async function findRelevantAffiliate(content, messages = [], userCountry 
 
     try {
         // Generate affiliate markdown for the prompt, only including eligible affiliates
-        const eligibleAffiliateMarkdown = eligibleAffiliates.map(affiliate => {
-            const weight = affiliate.weight ? ` (Priority: ${affiliate.weight})` : '';
-            return `- ${affiliate.id}: ${affiliate.name} - ${affiliate.description}${weight}`;
-        }).join('\n');
+        const eligibleAffiliateMarkdown = eligibleAffiliates
+            .map((affiliate) => {
+                const weight = affiliate.weight
+                    ? ` (Priority: ${affiliate.weight})`
+                    : "";
+                return `- ${affiliate.id}: ${affiliate.name} - ${affiliate.description}${weight}`;
+            })
+            .join("\n");
 
         // Use the markdown format for the LLM prompt
         const promptForLLM = `
@@ -86,7 +105,10 @@ ${eligibleAffiliateMarkdown}
 AFFILIATE ID:`;
 
         // Use the openai-large model explicitly for better affiliate matching
-        const completion = await generateTextPortkey([{ role: "user", content: promptForLLM }], { model: 'openai-large' });
+        const completion = await generateTextPortkey(
+            [{ role: "user", content: promptForLLM }],
+            { model: "openai-large" },
+        );
 
         const response = completion.choices[0]?.message?.content?.trim();
 
@@ -99,21 +121,32 @@ AFFILIATE ID:`;
 
             // Only show Ko-fi ad if the random value is below our threshold
             if (randomValue < kofiShowPercentage) {
-                log(`No relevant affiliate found by LLM, showing Ko-fi donation (${randomValue} < ${kofiShowPercentage}%)`);
+                log(
+                    `No relevant affiliate found by LLM, showing Ko-fi donation (${randomValue} < ${kofiShowPercentage}%)`,
+                );
                 // Find the Ko-fi affiliate in our data
-                const kofiAffiliate = affiliatesData.find(a => a.id === "kofi");
-                
+                const kofiAffiliate = affiliatesData.find(
+                    (a) => a.id === "kofi",
+                );
+
                 // Check if Ko-fi is blocked in the user's country
-                if (kofiAffiliate && userCountry && 
-                    kofiAffiliate.blockedCountries && 
-                    kofiAffiliate.blockedCountries.includes(userCountry)) {
-                    log(`Ko-fi affiliate is blocked in user's country (${userCountry}), skipping ad`);
+                if (
+                    kofiAffiliate &&
+                    userCountry &&
+                    kofiAffiliate.blockedCountries &&
+                    kofiAffiliate.blockedCountries.includes(userCountry)
+                ) {
+                    log(
+                        `Ko-fi affiliate is blocked in user's country (${userCountry}), skipping ad`,
+                    );
                     return null;
                 }
-                
+
                 return kofiAffiliate || null;
             } else {
-                log(`No relevant affiliate found by LLM, skipping ad (${randomValue} >= ${kofiShowPercentage}%)`);
+                log(
+                    `No relevant affiliate found by LLM, skipping ad (${randomValue} >= ${kofiShowPercentage}%)`,
+                );
                 return null;
             }
         }
@@ -131,27 +164,40 @@ AFFILIATE ID:`;
 
             // Only show Ko-fi ad if the random value is below our threshold
             if (randomValue < kofiShowPercentage) {
-                log(`Could not extract affiliate ID from LLM response, showing Ko-fi (${randomValue} < ${kofiShowPercentage}%)`);
+                log(
+                    `Could not extract affiliate ID from LLM response, showing Ko-fi (${randomValue} < ${kofiShowPercentage}%)`,
+                );
                 // Find the Ko-fi affiliate in our data
-                const kofiAffiliate = affiliatesData.find(a => a.id === "kofi");
-                
+                const kofiAffiliate = affiliatesData.find(
+                    (a) => a.id === "kofi",
+                );
+
                 // Check if Ko-fi is blocked in the user's country
-                if (kofiAffiliate && userCountry && 
-                    kofiAffiliate.blockedCountries && 
-                    kofiAffiliate.blockedCountries.includes(userCountry)) {
-                    log(`Ko-fi affiliate is blocked in user's country (${userCountry}), skipping ad`);
+                if (
+                    kofiAffiliate &&
+                    userCountry &&
+                    kofiAffiliate.blockedCountries &&
+                    kofiAffiliate.blockedCountries.includes(userCountry)
+                ) {
+                    log(
+                        `Ko-fi affiliate is blocked in user's country (${userCountry}), skipping ad`,
+                    );
                     return null;
                 }
-                
+
                 return kofiAffiliate || null;
             } else {
-                log(`Could not extract affiliate ID from LLM response, skipping ad (${randomValue} >= ${kofiShowPercentage}%)`);
+                log(
+                    `Could not extract affiliate ID from LLM response, skipping ad (${randomValue} >= ${kofiShowPercentage}%)`,
+                );
                 return null;
             }
         }
 
         // Find the affiliate in our data
-        const matchedAffiliate = eligibleAffiliates.find(a => a.id === affiliateId);
+        const matchedAffiliate = eligibleAffiliates.find(
+            (a) => a.id === affiliateId,
+        );
 
         if (!matchedAffiliate) {
             // Define the percentage chance of showing Ko-fi when affiliate ID isn't found
@@ -162,26 +208,39 @@ AFFILIATE ID:`;
 
             // Only show Ko-fi ad if the random value is below our threshold
             if (randomValue < kofiShowPercentage) {
-                log(`Affiliate ID ${affiliateId} not found in eligible affiliates, showing Ko-fi (${randomValue} < ${kofiShowPercentage}%)`);
+                log(
+                    `Affiliate ID ${affiliateId} not found in eligible affiliates, showing Ko-fi (${randomValue} < ${kofiShowPercentage}%)`,
+                );
                 // Find the Ko-fi affiliate in our data
-                const kofiAffiliate = affiliatesData.find(a => a.id === "kofi");
-                
+                const kofiAffiliate = affiliatesData.find(
+                    (a) => a.id === "kofi",
+                );
+
                 // Check if Ko-fi is blocked in the user's country
-                if (kofiAffiliate && userCountry && 
-                    kofiAffiliate.blockedCountries && 
-                    kofiAffiliate.blockedCountries.includes(userCountry)) {
-                    log(`Ko-fi affiliate is blocked in user's country (${userCountry}), skipping ad`);
+                if (
+                    kofiAffiliate &&
+                    userCountry &&
+                    kofiAffiliate.blockedCountries &&
+                    kofiAffiliate.blockedCountries.includes(userCountry)
+                ) {
+                    log(
+                        `Ko-fi affiliate is blocked in user's country (${userCountry}), skipping ad`,
+                    );
                     return null;
                 }
-                
+
                 return kofiAffiliate || null;
             } else {
-                log(`Affiliate ID ${affiliateId} not found in eligible affiliates, skipping ad (${randomValue} >= ${kofiShowPercentage}%)`);
+                log(
+                    `Affiliate ID ${affiliateId} not found in eligible affiliates, skipping ad (${randomValue} >= ${kofiShowPercentage}%)`,
+                );
                 return null;
             }
         }
 
-        log(`Found relevant affiliate: ${matchedAffiliate.name} (${matchedAffiliate.id})`);
+        log(
+            `Found relevant affiliate: ${matchedAffiliate.name} (${matchedAffiliate.id})`,
+        );
         return matchedAffiliate;
     } catch (error) {
         errorLog(`Error finding relevant affiliate: ${error.message}`);
@@ -197,15 +256,20 @@ AFFILIATE ID:`;
  * @param {boolean} markerFound - Whether the p-ads marker was found
  * @returns {Promise<string|null>} - The ad string or null if generation failed
  */
-export async function generateAffiliateAd(affiliateId, content = '', messages = [], markerFound = false) {
+export async function generateAffiliateAd(
+    affiliateId,
+    content = "",
+    messages = [],
+    markerFound = false,
+) {
     if (!affiliateId) {
-        log('No affiliate ID provided for ad generation');
+        log("No affiliate ID provided for ad generation");
         return null;
     }
 
     try {
         // Find the affiliate in our data
-        const affiliate = affiliatesData.find(a => a.id === affiliateId);
+        const affiliate = affiliatesData.find((a) => a.id === affiliateId);
 
         if (!affiliate) {
             log(`Affiliate ID ${affiliateId} not found in affiliate data`);
@@ -216,20 +280,21 @@ export async function generateAffiliateAd(affiliateId, content = '', messages = 
         const referralLink = `${REDIRECT_BASE_URL}${affiliateId}`;
 
         // Get base ad text - simplified approach for all types
-        let adTextSource = '';
+        let adTextSource = "";
 
         // Use the ad_text field if available
         if (affiliate.ad_text) {
-            adTextSource = `\n---\n\n🌸 **Ad** 🌸\n${affiliate.ad_text.replace('{url}', referralLink)}`;
+            adTextSource = `\n---\n\n🌸 **Ad** 🌸\n${affiliate.ad_text.replace("{url}", referralLink)}`;
         }
-    
 
         // First, contextualize and translate ad text if content is provided
         if (content && content.trim().length > 0) {
             // Collect context from the conversation
-            const lastMessages = messages.slice(-3).map(m => m.content || "").filter(Boolean);
+            const lastMessages = messages
+                .slice(-3)
+                .map((m) => m.content || "")
+                .filter(Boolean);
             const conversationContext = [...lastMessages, content].join("\n");
-
 
             // Create a prompt that adapts the ad to the conversation context
             const contextualPrompt = `
@@ -259,26 +324,47 @@ RESPONSE:`;
 
             try {
                 // Use openai-large model for better link preservation
-                const completion = await generateTextPortkey([{role:"system", content: "You are an expert advertising copywriter who creates short, concise, and highly personalized ads based on conversation context."}, { role: "user", content: contextualPrompt }], { model: 'openai-large' });
-                const response = completion.choices[0]?.message?.content?.trim();
+                const completion = await generateTextPortkey(
+                    [
+                        {
+                            role: "system",
+                            content:
+                                "You are an expert advertising copywriter who creates short, concise, and highly personalized ads based on conversation context.",
+                        },
+                        { role: "user", content: contextualPrompt },
+                    ],
+                    { model: "openai-large" },
+                );
+                const response =
+                    completion.choices[0]?.message?.content?.trim();
 
                 if (response && response.length > 0) {
                     // Check if the response indicates English
-                    if (response.toUpperCase().startsWith('ENGLISH:')) {
+                    if (response.toUpperCase().startsWith("ENGLISH:")) {
                         // Keep original text, strip the "ENGLISH:" prefix
                         adTextSource = response.substring(8).trim();
-                        log(`Content detected as English, contextualized ad text for ${affiliate.name} (${affiliateId})`);
+                        log(
+                            `Content detected as English, contextualized ad text for ${affiliate.name} (${affiliateId})`,
+                        );
                     } else {
                         // Extract language and translated text
-                        const colonIndex = response.indexOf(':');
+                        const colonIndex = response.indexOf(":");
                         if (colonIndex > 0) {
-                            const detectedLanguage = response.substring(0, colonIndex).trim();
-                            adTextSource = response.substring(colonIndex + 1).trim();
-                            log(`Contextualized and translated ad for ${affiliate.name} (${affiliateId}) to ${detectedLanguage}`);
+                            const detectedLanguage = response
+                                .substring(0, colonIndex)
+                                .trim();
+                            adTextSource = response
+                                .substring(colonIndex + 1)
+                                .trim();
+                            log(
+                                `Contextualized and translated ad for ${affiliate.name} (${affiliateId}) to ${detectedLanguage}`,
+                            );
                         } else {
                             // If format is unexpected, use the response as is
                             adTextSource = response;
-                            log(`Received unformatted contextualized ad for ${affiliate.name} (${affiliateId})`);
+                            log(
+                                `Received unformatted contextualized ad for ${affiliate.name} (${affiliateId})`,
+                            );
                         }
                     }
                 }
@@ -287,18 +373,19 @@ RESPONSE:`;
                 // Continue with original text if translation fails
             }
         }
-        
+
         // Image ads temporarily disabled
         // Format the final ad - with or without image based on markerFound
         let adText;
         // Always use standard format without image
         // Use different prefix for Ko-fi (direct support) vs sponsors
-        const prefix = affiliateId === 'kofi' 
-            ? '**Support Pollinations.AI:**' 
-            : '**Sponsor:**';
+        const prefix =
+            affiliateId === "kofi"
+                ? "**Support Pollinations.AI:**"
+                : "**Sponsor:**";
         adText = `\n\n---\n\n${prefix}\n${adTextSource}`;
         log(`Generated standard ad for ${affiliate.name} (${affiliateId})`);
-        
+
         return adText;
     } catch (error) {
         errorLog(`Error generating affiliate ad: ${error.message}`);
@@ -316,17 +403,18 @@ export function extractReferralLinkInfo(content) {
     const result = {
         linkCount: 0,
         linkTexts: [],
-        linkTextsString: '',
+        linkTextsString: "",
         topicsOrIds: [],
-        topicsOrIdsString: '',
-        affiliateIds: []
+        topicsOrIdsString: "",
+        affiliateIds: [],
     };
 
     if (!content) return result;
 
     // Regular expression to find referral links in the content
     // Format: [text](https://pollinations.ai/redirect/[id])
-    const referralLinkRegex = /\[([^\]]+)\]\((https:\/\/pollinations\.ai\/redirect\/([a-zA-Z0-9]+))[^\)]*\)/g;
+    const referralLinkRegex =
+        /\[([^\]]+)\]\((https:\/\/pollinations\.ai\/redirect\/([a-zA-Z0-9]+))[^\)]*\)/g;
 
     let match;
     while ((match = referralLinkRegex.exec(content)) !== null) {
@@ -349,8 +437,8 @@ export function extractReferralLinkInfo(content) {
     }
 
     // Join arrays into strings for analytics
-    result.linkTextsString = result.linkTexts.join(',');
-    result.topicsOrIdsString = result.topicsOrIds.join(',');
+    result.linkTextsString = result.linkTexts.join(",");
+    result.topicsOrIdsString = result.topicsOrIds.join(",");
 
     return result;
 }

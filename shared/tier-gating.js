@@ -1,9 +1,8 @@
-
 export const TIER_HIERARCHY = {
-    'anonymous': 0,
-    'seed': 1,
-    'flower': 2,
-    'nectar': 3
+    anonymous: 0,
+    seed: 1,
+    flower: 2,
+    nectar: 3,
 };
 
 export function hasSufficientTier(userTier, requiredTier) {

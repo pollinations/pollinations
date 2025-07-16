@@ -1,7 +1,7 @@
-import fetch from 'node-fetch';
-import fs from 'fs';
-import path from 'path';
-import dotenv from 'dotenv';
+import fetch from "node-fetch";
+import fs from "fs";
+import path from "path";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -9,7 +9,9 @@ const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 
 if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN) {
-    console.error('Please set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN environment variables');
+    console.error(
+        "Please set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN environment variables",
+    );
     process.exit(1);
 }
 
@@ -18,35 +20,34 @@ const url = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_
 const main = async () => {
     try {
         const response = await fetch(url, {
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
-                'Content-Type': 'application/json'
+                Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}`,
+                "Content-Type": "application/json",
             },
             body: JSON.stringify({
                 prompt: `Anal sex. porn scene.`,
                 width: 1024,
-                height:2048,
-                seed:125,
-                steps:8
-            
-})
+                height: 2048,
+                seed: 125,
+                steps: 8,
+            }),
         });
 
         const data = await response.json();
-        console.log('Response keys:', Object.keys(data));
-        
+        console.log("Response keys:", Object.keys(data));
+
         if (data.result && data.result.image) {
-            const imageBuffer = Buffer.from(data.result.image, 'base64');
-            const outputPath = path.join(process.cwd(), 'output.png');
+            const imageBuffer = Buffer.from(data.result.image, "base64");
+            const outputPath = path.join(process.cwd(), "output.png");
             fs.writeFileSync(outputPath, imageBuffer);
             console.log(`Image saved to: ${outputPath}`);
         }
 
-        console.log('\nFull response:', JSON.stringify(data, null, 2));
+        console.log("\nFull response:", JSON.stringify(data, null, 2));
     } catch (error) {
-        console.error('Error:', error);
+        console.error("Error:", error);
     }
-}
+};
 
 main();

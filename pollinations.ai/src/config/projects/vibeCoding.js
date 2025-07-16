@@ -111,5 +111,14 @@ export const vibeCodingProjects = [
     stars: 1,
     submissionDate: "2025-07-13",
     order: 1
+  },
+  {
+    name: "Berrry Computer",
+    url: "https://berrry.app",
+    description: "Make tiny self-contained web apps with AI. Find a tweet with an interesting app idea, mention @BerrryComputer in a reply, and get back an app on a unique subdomain. Uses pollinations.ai to create dynamic AI experiences in generated apps.",
+    author: "@vgrichina",
+    authorUrl: "https://github.com/vgrichina",
+    submissionDate: "2025-07-16",
+    order: 1
   }
 ];

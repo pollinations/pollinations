@@ -184,6 +184,7 @@ export function getClientIp(req) {
 
 	return "unknown";
 }
+
 /**
  * Helper function to extract value from query parameters
  * @param {string} url - Request URL
@@ -198,6 +199,7 @@ function extractFromQuery(url, fields) {
 	}
 	return { value: null, source: null };
 }
+
 /**
  * Helper function to extract value from headers (supports both Cloudflare and Express styles)
  * @param {Object} headers - Request headers

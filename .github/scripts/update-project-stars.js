@@ -6,10 +6,10 @@
  * This script can be used in two ways:
  *
  * 1. Without arguments: Updates the project list file with star counts
- *    - Reads the project list file
+ *    - Imports all project data from category files
  *    - Finds all GitHub repository URLs
  *    - Fetches star counts for repositories that don't already have them
- *    - Updates the file with the star counts
+ *    - Updates the files with the star counts
  *
  * 2. With owner/repo argument: Fetches and outputs star count for a specific repository
  *    - Fetches the star count for the specified repository
@@ -19,7 +19,6 @@
  *   - Update project list: node update-project-stars.js
  *   - Get stars for repo: node update-project-stars.js owner/repo
  *
- * Example: node update-project-stars.js pollinations/pollinations
  */
 
 const fs = require("fs");
@@ -96,7 +95,7 @@ function fetchStarCount(owner, repo) {
 	});
 }
 
-// Format star count for display
+// Function to format star count for display
 function formatStarCount(stars) {
 	if (stars < 1000) {
 		return stars.toString();
@@ -141,7 +140,81 @@ async function fetchAndDisplayStars(ownerRepo) {
 	}
 }
 
-// Function to process the project list file
+// All project categories with their file paths
+const projectCategories = {
+    vibeCoding: {
+        data: vibeCodingProjects,
+        filePath: path.join(
+            "pollinations.ai",
+            "src",
+            "config",
+            "projects",
+            "vibeCoding.js",
+        ),
+    },
+    creative: {
+        data: creativeProjects,
+        filePath: path.join(
+            "pollinations.ai",
+            "src",
+            "config",
+            "projects",
+            "creative.js",
+        ),
+    },
+    games: {
+        data: gamesProjects,
+        filePath: path.join(
+            "pollinations.ai",
+            "src",
+            "config",
+            "projects",
+            "games.js",
+        ),
+    },
+    hackAndBuild: {
+        data: hackAndBuildProjects,
+        filePath: path.join(
+            "pollinations.ai",
+            "src",
+            "config",
+            "projects",
+            "hackAndBuild.js",
+        ),
+    },
+    chat: {
+        data: chatProjects,
+        filePath: path.join(
+            "pollinations.ai",
+            "src",
+            "config",
+            "projects",
+            "chat.js",
+        ),
+    },
+    socialBots: {
+        data: socialBotsProjects,
+        filePath: path.join(
+            "pollinations.ai",
+            "src",
+            "config",
+            "projects",
+            "socialBots.js",
+        ),
+    },
+    learn: {
+        data: learnProjects,
+        filePath: path.join(
+            "pollinations.ai",
+            "src",
+            "config",
+            "projects",
+            "learn.js",
+        ),
+    },
+};
+
+// Function to process all project files
 async function processProjectList() {
 	try {
 		// Read the file

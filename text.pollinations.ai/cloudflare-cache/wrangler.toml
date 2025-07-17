@@ -12,7 +12,6 @@ binding = "AI"
 [[vectorize]]
 binding = "VECTORIZE_INDEX"
 index_name = "pollinations-text-cache-bge-m3-v1"
-experimental_remote = true
 
 # R2 bucket for text storage
 [[r2_buckets]]

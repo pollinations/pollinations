@@ -291,7 +291,7 @@ export default {
 				body: parsedBody,
 			};
 			const token = extractToken(requestForTokenExtraction);
-			const isEligible = isSemanticCacheEligibleForToken(token);
+			const isEligible = isSemanticCacheEligibleForToken(token, env);
 
 			const eligibility = {
 				eligible: isEligible,

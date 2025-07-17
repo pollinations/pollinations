@@ -3,38 +3,72 @@
  * Replaces the complex token/domain whitelist system with a simple username list
  */
 
-import { extractToken } from "../../../shared/extractFromRequest.js";
-
 // Simple configuration - edit this directly or import from external file
 // This works in both Cloudflare Workers and Node.js environments
-const SEMANTIC_CACHE_CONFIG = {
-	enabled: true,
-	tokens: [
-		// Add your allowed tokens here - these will be checked directly
+
+// Get tokens from environment variables with multiple fallbacks
+function getTokensFromConfig(env = null) {
+	// Base fallback tokens for development
+	const baseTokens = [
 		"test-token-123", // For testing with Authorization header
 		"body-token-456", // For testing with token in body
 		"semantic-test-789", // Additional test token
-	],
-	allowAll: false,
-};
+	];
+
+	// First check Node.js process.env (works with .env files)
+	// This maintains consistency with the rest of the project
+	if (typeof process !== 'undefined' && process.env?.SEMANTIC_CACHE_TOKENS) {
+		const envTokens = process.env.SEMANTIC_CACHE_TOKENS
+			.split(',')
+			.map(token => token.trim())
+			.filter(token => token.length > 0);
+		return envTokens.length > 0 ? envTokens : baseTokens;
+	}
+
+	// Then check Cloudflare Workers env (for production secrets)
+	if (env?.SEMANTIC_CACHE_TOKENS) {
+		const envTokens = env.SEMANTIC_CACHE_TOKENS
+			.split(',')
+			.map(token => token.trim())
+			.filter(token => token.length > 0);
+		return envTokens.length > 0 ? envTokens : baseTokens;
+	}
+
+	// Fallback to base tokens for local development
+	return baseTokens;
+}
+
+// Simple static configuration - tokens loaded once at startup
+function createSemanticCacheConfig(env = null) {
+	return {
+		enabled: true,
+		tokens: getTokensFromConfig(env), // Load tokens once at startup
+		allowAll: false,
+	};
+}
+
+// Default config for backward compatibility
+const SEMANTIC_CACHE_CONFIG = createSemanticCacheConfig();
 
 /**
  * Get semantic cache configuration
+ * @param {Object} env - Cloudflare Workers environment (optional)
  * @returns {Object} Configuration object
  */
-function getSemanticCacheConfig() {
-	return SEMANTIC_CACHE_CONFIG;
+function getSemanticCacheConfig(env = null) {
+	return env ? createSemanticCacheConfig(env) : SEMANTIC_CACHE_CONFIG;
 }
 
 /**
  * Check if a specific token is eligible for semantic caching
  * @param {string} token - The token to check
+ * @param {Object} env - Cloudflare Workers environment (optional)
  * @returns {boolean} True if token is eligible
  */
-function isTokenEligible(token) {
+function isTokenEligible(token, env = null) {
 	if (!token) return false;
 
-	const config = getSemanticCacheConfig();
+	const config = getSemanticCacheConfig(env);
 
 	// Check if semantic caching is globally enabled
 	if (!config.enabled) {
@@ -57,14 +91,16 @@ function isTokenEligible(token) {
 /**
  * Main function to determine if a token should get semantic caching
  * Extracts token from request and checks against SEMANTIC_CACHE_CONFIG
+ * @param {Object} req - Request object
+ * @param {Object} env - Cloudflare Workers environment (optional)
  */
-export function isSemanticCacheEligible(req) {
+export function isSemanticCacheEligible(req, env = null) {
 	try {
 		// Extract token from request
 		const token = extractToken(req);
 
 		// Check if token is eligible
-		const eligible = isTokenEligible(token);
+		const eligible = isTokenEligible(token, env);
 
 		let authType = "anonymous";
 		let authInfo = "no authentication";
@@ -98,9 +134,11 @@ export function isSemanticCacheEligible(req) {
 /**
  * Simple eligibility check that can be called with token directly
  * This is the main function for other code to use
+ * @param {string} token - The token to check
+ * @param {Object} env - Cloudflare Workers environment (optional)
  */
-export function isSemanticCacheEligibleForToken(token) {
-	return isTokenEligible(token);
+export function isSemanticCacheEligibleForToken(token, env = null) {
+	return isTokenEligible(token, env);
 }
 
 /**

@@ -8,10 +8,10 @@ compatibility_date = "2023-05-18"
 [ai]
 binding = "AI"
 
-# Vectorize index for semantic caching
+# Vectorize index for semantic caching (BGE-M3, 1024 dimensions)
 [[vectorize]]
 binding = "VECTORIZE_INDEX"
-index_name = "pollinations-text-cache-v1"
+index_name = "pollinations-text-cache-bge-m3-v1"
 experimental_remote = true
 
 # R2 bucket for text storage

@@ -292,3 +292,10 @@ image.pollinations.ai/temp_logs/
 .wrangler/
 image.pollinations.ai/cloudflare-cache/all_keys.txt
 image.pollinations.ai/cloudflare-cache/scripts/catgpt_keys.txt
+
+# Kiro AI assistant files
+.kiro/
+
+# Semantic cache debug files
+semantic_similarities.csv
+averages.txt

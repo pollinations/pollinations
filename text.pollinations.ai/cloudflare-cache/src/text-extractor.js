@@ -18,19 +18,10 @@ export function extractSemanticText(requestBody) {
 			return extractFromMessages(parsed.messages);
 		}
 
-		// Handle direct text requests
-		if (typeof parsed.prompt === "string") {
-			return parsed.prompt.trim();
-		}
-
-		// Handle other text fields
-		if (typeof parsed.text === "string") {
-			return parsed.text.trim();
-		}
-
 		// Fallback to raw body if no structured format found
 		return requestBody;
 	} catch (err) {
+		console.error("Error parsing request body:", err);
 		// If JSON parsing fails, return raw text
 		return requestBody;
 	}
@@ -39,6 +30,7 @@ export function extractSemanticText(requestBody) {
 /**
  * Extract meaningful text from OpenAI-style messages array
  * Focuses on user and assistant messages for semantic matching
+ * Filters out system messages as requested
  * @param {Array} messages - Array of message objects
  * @returns {string} - Combined text for semantic comparison
  */
@@ -66,10 +58,10 @@ function extractFromMessages(messages) {
 				parts.push(`[ASSISTANT] ${content}`);
 				break;
 
-			case "system":
-				// Include system messages but with lower priority
-				parts.push(`[SYSTEM] ${content}`);
-				break;
+			// Filter out system messages from semantic caching
+			// case "system":
+			//   parts.push(`[SYSTEM] ${content}`);
+			//   break;
 
 			default:
 				// Skip other roles for cleaner semantic matching
@@ -122,6 +114,47 @@ export function extractModelName(requestBody) {
 	} catch (err) {
 		// If JSON parsing fails, return unknown
 		return "unknown";
+	}
+}
+
+/**
+ * Extract the seed value from a request body
+ * @param {string} requestBody - Raw request body as string
+ * @returns {string|null} - Seed value or null if not found
+ */
+export function extractSeed(requestBody) {
+	try {
+		const parsed = JSON.parse(requestBody);
+
+		// Check for seed as a top-level parameter (primary location)
+		if (typeof parsed.seed === "number" || typeof parsed.seed === "string") {
+			return String(parsed.seed);
+		}
+
+		return null;
+	} catch (err) {
+		// If JSON parsing fails, return null
+		return null;
+	}
+}
+
+/**
+ * Extract seed from URL query parameters
+ * @param {string} url - The request URL
+ * @returns {string|null} - Seed value or null if not found
+ */
+export function extractSeedFromUrl(url) {
+	try {
+		const urlObj = new URL(url, "http://x"); // Use dummy base for relative URLs
+		const seedParam = urlObj.searchParams.get("seed");
+		
+		if (seedParam !== null) {
+			return seedParam;
+		}
+		
+		return null;
+	} catch (err) {
+		return null;
 	}
 }
 

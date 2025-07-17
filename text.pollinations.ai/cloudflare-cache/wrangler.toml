@@ -12,6 +12,7 @@ binding = "AI"
 [[vectorize]]
 binding = "VECTORIZE_INDEX"
 index_name = "pollinations-text-cache-bge-m3-v1"
+experimental_remote = true
 
 # R2 bucket for text storage
 [[r2_buckets]]
@@ -51,8 +52,7 @@ binding = "AI"
 
 [[env.staging.vectorize]]
 binding = "VECTORIZE_INDEX"
-index_name = "pollinations-text-cache-v1"  # Same vectorize index
-experimental_remote = true
+index_name = "pollinations-text-cache-bge-m3-v1"  # New BGE-M3 vectorize index
 
 [[env.staging.r2_buckets]]
 binding = "TEXT_BUCKET"

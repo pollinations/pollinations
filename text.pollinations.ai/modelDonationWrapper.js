@@ -1,31 +1,35 @@
 /**
  * modelDonationWrapper.js
- * 
- * This module provides a wrapper for model handlers to catch errors and return 
+ *
+ * This module provides a wrapper for model handlers to catch errors and return
  * a donation message when models run out of credits.
  */
 
-import debug from 'debug';
+import debug from "debug";
 
-const log = debug('pollinations:donation-wrapper');
-const errorLog = debug('pollinations:donation-wrapper:error');
+const log = debug("pollinations:donation-wrapper");
+const errorLog = debug("pollinations:donation-wrapper:error");
 
 /**
  * Creates a wrapped version of a model handler that catches errors
  * and returns a donation message.
- * 
+ *
  * @param {Function} modelHandler - The original model handler function
  * @param {string} modelName - The name of the model being wrapped
  * @param {Object} options - Options for the wrapper
  * @returns {Function} A wrapped handler function
  */
-export function wrapModelWithDonationMessage(modelHandler, modelName, options = {}) {
+export function wrapModelWithDonationMessage(
+    modelHandler,
+    modelName,
+    options = {},
+) {
     // Donation message configuration
     const donationConfig = {
         threshold: options.threshold || 50,
         currentDonations: options.currentDonations || 47,
-        kofiLink: options.kofiLink || 'https://ko-fi.com/pollinationsai',
-        ...options
+        kofiLink: options.kofiLink || "https://ko-fi.com/pollinationsai",
+        ...options,
     };
 
     // Return the wrapped handler function
@@ -35,8 +39,7 @@ export function wrapModelWithDonationMessage(modelHandler, modelName, options = 
             const result = await modelHandler(messages, handlerOptions);
 
             // console.log("rrresult", result)
-            if (result?.error)
-                throw result.error;
+            if (result?.error) throw result.error;
             return result;
         } catch (error) {
             // Log the original error
@@ -53,17 +56,20 @@ export function wrapModelWithDonationMessage(modelHandler, modelName, options = 
                         index: 0,
                         message: {
                             role: "assistant",
-                            content: formatDonationMessage(modelName, donationConfig)
+                            content: formatDonationMessage(
+                                modelName,
+                                donationConfig,
+                            ),
                         },
-                        finish_reason: "stop"
-                    }
+                        finish_reason: "stop",
+                    },
                 ],
                 usage: {
                     prompt_tokens: 0,
                     completion_tokens: 0,
-                    total_tokens: 0
+                    total_tokens: 0,
                 },
-                donation_request: true
+                donation_request: true,
             };
 
             log(`Returning donation message for ${modelName}`);
@@ -74,14 +80,14 @@ export function wrapModelWithDonationMessage(modelHandler, modelName, options = 
 
 /**
  * Formats a donation message for the specified model
- * 
+ *
  * @param {string} modelName - The model that needs donations
  * @param {Object} config - Donation configuration
  * @returns {string} Formatted donation message
  */
 function formatDonationMessage(modelName, config) {
     const remainingNeeded = config.threshold - config.currentDonations;
-    
+
     return `
 ## Claude is powered by Pollinations.ai
 

@@ -1,20 +1,25 @@
 import { AzureKeyCredential } from "@azure/core-auth";
-import ContentSafetyClient, { isUnexpected } from "@azure-rest/ai-content-safety";
-import 'dotenv/config';
+import ContentSafetyClient, {
+    isUnexpected,
+} from "@azure-rest/ai-content-safety";
+import "dotenv/config";
 
 // Initialize the client with API key authentication
 const endpoint = process.env.AZURE_CONTENT_SAFETY_ENDPOINT;
 const apiKey = process.env.AZURE_CONTENT_SAFETY_API_KEY;
 
 if (!endpoint || !apiKey) {
-  console.warn("Azure Content Safety not configured - missing AZURE_CONTENT_SAFETY_ENDPOINT or AZURE_CONTENT_SAFETY_API_KEY");
+    console.warn(
+        "Azure Content Safety not configured - missing AZURE_CONTENT_SAFETY_ENDPOINT or AZURE_CONTENT_SAFETY_API_KEY",
+    );
 }
 
 const credential = apiKey ? new AzureKeyCredential(apiKey) : null;
-const client = endpoint && credential ? ContentSafetyClient(endpoint, credential) : null;
+const client =
+    endpoint && credential ? ContentSafetyClient(endpoint, credential) : null;
 
 // Categories we check for
-const CATEGORIES = ['Hate', 'SelfHarm', 'Sexual', 'Violence'];
+const CATEGORIES = ["Hate", "SelfHarm", "Sexual", "Violence"];
 
 // Severity levels: 0 (safe), 2 (low), 4 (medium), 6 (high)
 const SEVERITY_THRESHOLD = 4; // Block medium and high severity content
@@ -25,47 +30,66 @@ const SEVERITY_THRESHOLD = 4; // Block medium and high severity content
  * @returns {Promise<{safe: boolean, violations: Array<{category: string, severity: number}>, formattedViolations: string}>}
  */
 export async function analyzeTextSafety(text) {
-  if (!client) {
-    console.warn("Azure Content Safety not configured - skipping text analysis");
-    return { safe: true, violations: [], formattedViolations: "No violations detected" };
-  }
-
-  try {
-    const analyzeTextOption = { text: text };
-    const analyzeTextParameters = { body: analyzeTextOption };
-
-    const result = await client.path("/text:analyze").post(analyzeTextParameters);
-
-    if (isUnexpected(result)) {
-      console.error("Azure Content Safety text analysis error:", result);
-      // In case of error, we'll be permissive and allow the content
-      return { safe: true, violations: [], formattedViolations: "No violations detected" };
+    if (!client) {
+        console.warn(
+            "Azure Content Safety not configured - skipping text analysis",
+        );
+        return {
+            safe: true,
+            violations: [],
+            formattedViolations: "No violations detected",
+        };
     }
 
-    const violations = [];
-    let safe = true;
+    try {
+        const analyzeTextOption = { text: text };
+        const analyzeTextParameters = { body: analyzeTextOption };
 
-    for (const analysis of result.body.categoriesAnalysis) {
-      if (analysis.severity >= SEVERITY_THRESHOLD) {
-        safe = false;
-        violations.push({
-          category: analysis.category,
-          severity: analysis.severity
-        });
-      }
+        const result = await client
+            .path("/text:analyze")
+            .post(analyzeTextParameters);
+
+        if (isUnexpected(result)) {
+            console.error("Azure Content Safety text analysis error:", result);
+            // In case of error, we'll be permissive and allow the content
+            return {
+                safe: true,
+                violations: [],
+                formattedViolations: "No violations detected",
+            };
+        }
+
+        const violations = [];
+        let safe = true;
+
+        for (const analysis of result.body.categoriesAnalysis) {
+            if (analysis.severity >= SEVERITY_THRESHOLD) {
+                safe = false;
+                violations.push({
+                    category: analysis.category,
+                    severity: analysis.severity,
+                });
+            }
+        }
+
+        // Format violations as part of the result
+        const formattedViolations =
+            violations.length === 0
+                ? "No violations detected"
+                : violations
+                      .map((v) => `${v.category} (severity: ${v.severity})`)
+                      .join(", ");
+
+        return { safe, violations, formattedViolations };
+    } catch (error) {
+        console.error("Azure Content Safety text analysis error:", error);
+        // In case of error, we'll be permissive and allow the content
+        return {
+            safe: true,
+            violations: [],
+            formattedViolations: "No violations detected",
+        };
     }
-    
-    // Format violations as part of the result
-    const formattedViolations = violations.length === 0 ?
-      "No violations detected" :
-      violations.map(v => `${v.category} (severity: ${v.severity})`).join(", ");
-
-    return { safe, violations, formattedViolations };
-  } catch (error) {
-    console.error("Azure Content Safety text analysis error:", error);
-    // In case of error, we'll be permissive and allow the content
-    return { safe: true, violations: [], formattedViolations: "No violations detected" };
-  }
 }
 
 /**
@@ -74,71 +98,90 @@ export async function analyzeTextSafety(text) {
  * @returns {Promise<{safe: boolean, violations: Array<{category: string, severity: number}>, formattedViolations: string}>}
  */
 export async function analyzeImageSafety(imageData) {
-  if (!client) {
-    console.warn("Azure Content Safety not configured - skipping image analysis");
-    return { safe: true, violations: [], formattedViolations: "No violations detected" };
-  }
-
-  try {
-    // Convert buffer to base64 if needed
-    const base64Image = Buffer.isBuffer(imageData) 
-      ? imageData.toString('base64') 
-      : imageData;
-
-    const analyzeImageOption = { image: { content: base64Image } };
-    const analyzeImageParameters = { body: analyzeImageOption };
-
-    const result = await client.path("/image:analyze").post(analyzeImageParameters);
-
-    if (isUnexpected(result)) {
-      console.error("Azure Content Safety image analysis error:", result);
-      // In case of error, we'll be permissive and allow the content
-      return { safe: true, violations: [], formattedViolations: "No violations detected" };
+    if (!client) {
+        console.warn(
+            "Azure Content Safety not configured - skipping image analysis",
+        );
+        return {
+            safe: true,
+            violations: [],
+            formattedViolations: "No violations detected",
+        };
     }
 
-    const violations = [];
-    let safe = true;
+    try {
+        // Convert buffer to base64 if needed
+        const base64Image = Buffer.isBuffer(imageData)
+            ? imageData.toString("base64")
+            : imageData;
 
-    for (const analysis of result.body.categoriesAnalysis) {
-      if (analysis.severity >= SEVERITY_THRESHOLD) {
-        safe = false;
-        violations.push({
-          category: analysis.category,
-          severity: analysis.severity
-        });
-      }
+        const analyzeImageOption = { image: { content: base64Image } };
+        const analyzeImageParameters = { body: analyzeImageOption };
+
+        const result = await client
+            .path("/image:analyze")
+            .post(analyzeImageParameters);
+
+        if (isUnexpected(result)) {
+            console.error("Azure Content Safety image analysis error:", result);
+            // In case of error, we'll be permissive and allow the content
+            return {
+                safe: true,
+                violations: [],
+                formattedViolations: "No violations detected",
+            };
+        }
+
+        const violations = [];
+        let safe = true;
+
+        for (const analysis of result.body.categoriesAnalysis) {
+            if (analysis.severity >= SEVERITY_THRESHOLD) {
+                safe = false;
+                violations.push({
+                    category: analysis.category,
+                    severity: analysis.severity,
+                });
+            }
+        }
+
+        // Format violations as part of the result
+        const formattedViolations =
+            violations.length === 0
+                ? "No violations detected"
+                : violations
+                      .map((v) => `${v.category} (severity: ${v.severity})`)
+                      .join(", ");
+
+        return { safe, violations, formattedViolations };
+    } catch (error) {
+        console.error("Azure Content Safety image analysis error:", error);
+        // In case of error, we'll be permissive and allow the content
+        return {
+            safe: true,
+            violations: [],
+            formattedViolations: "No violations detected",
+        };
     }
-    
-    // Format violations as part of the result
-    const formattedViolations = violations.length === 0 ?
-      "No violations detected" :
-      violations.map(v => `${v.category} (severity: ${v.severity})`).join(", ");
-
-    return { safe, violations, formattedViolations };
-  } catch (error) {
-    console.error("Azure Content Safety image analysis error:", error);
-    // In case of error, we'll be permissive and allow the content
-    return { safe: true, violations: [], formattedViolations: "No violations detected" };
-  }
 }
 
 /**
  * Formats violations into a human-readable message
  * @deprecated Use the formattedViolations property from analyzeTextSafety/analyzeImageSafety results instead
- * @param {Array<{category: string, severity: number}>} violations 
+ * @param {Array<{category: string, severity: number}>} violations
  * @returns {string}
  */
 export function formatViolations(violations) {
-  if (violations.length === 0) return "No violations detected";
-  
-  return violations
-    .map(v => `${v.category} (severity: ${v.severity})`)
-    .join(", ");
+    if (violations.length === 0) return "No violations detected";
+
+    return violations
+        .map((v) => `${v.category} (severity: ${v.severity})`)
+        .join(", ");
 }
 
 // Export configuration for testing
 export const config = {
-  SEVERITY_THRESHOLD,
-  CATEGORIES,
-  isConfigured: !!client
+    SEVERITY_THRESHOLD,
+    CATEGORIES,
+    isConfigured: !!client,
 };

@@ -15,12 +15,12 @@ const logPerf = debug("pollinations:perf");
  * Main function to get and print chat completion from Pollinations Text API.
  */
 async function main() {
-	const chatCompletion = await memoizedPimpPrompt(
-		"dolphin octopus retro telephone",
-		42,
-	);
-	// Print the completion returned by the API.
-	process.stdout.write(chatCompletion);
+    const chatCompletion = await memoizedPimpPrompt(
+        "dolphin octopus retro telephone",
+        42,
+    );
+    // Print the completion returned by the API.
+    process.stdout.write(chatCompletion);
 }
 
 /**
@@ -31,24 +31,22 @@ async function main() {
  * @returns {Promise<string>} The chat completion response.
  */
 async function pimpPromptRaw(prompt, seed) {
-	try {
-		prompt = urldecode(prompt);
-	} catch (error) {
-		logError("Error decoding prompt:", error);
-		// If decoding fails, use the original prompt
-	}
-	let response = "";
-	logPimp("pimping prompt", prompt);
-	const startTime = Date.now();
-	try {
-		// const apiUrl = `https://pollinations-text-cache-staging.thomash-efd.workers.dev/`;
-		const apiUrl = `https://text.pollinations.ai/`;
-
-		const body = JSON.stringify({
-			messages: [
-				{
-					role: "system",
-					content: `Instruction Set for Image Prompt Diversification:
+    try {
+        prompt = urldecode(prompt);
+    } catch (error) {
+        logError("Error decoding prompt:", error);
+        // If decoding fails, use the original prompt
+    }
+    let response = "";
+    logPimp("pimping prompt", prompt);
+    const startTime = Date.now();
+    try {
+        const apiUrl = `https://text.pollinations.ai/`;
+        const body = JSON.stringify({
+            messages: [
+                {
+                    role: "system",
+                    content: `Instruction Set for Image Prompt Diversification:
 
 - If the prompt is in a language other than English, translate it to English first.
 - Imagine details such as setting, colors, lighting, and overall mood.
@@ -64,69 +62,69 @@ async function pimpPromptRaw(prompt, seed) {
 - Dont omit any details from the originalprompt.
 
 Respond only with the new prompt. Nothing Else.`,
-				},
-				{
-					role: "user",
-					content: "Prompt: " + prompt,
-				},
-			],
-			seed: seed,
-			model: "openai",
-			referrer: "image.pollinations.ai",
-		});
+                },
+                {
+                    role: "user",
+                    content: "Prompt: " + prompt,
+                },
+            ],
+            seed: seed,
+            model: "openai",
+            referrer: "image.pollinations.ai",
+        });
 
-		// Add authentication token if available
-		const headers = {
-			"Content-Type": "application/json",
-			Referer: "image.pollinations.ai",
-		};
+        // Add authentication token if available
+        const headers = {
+            "Content-Type": "application/json",
+            Referer: "image.pollinations.ai",
+        };
 
-		// Use POLLINATIONS_KEY from environment if available
-		if (process.env.POLLINATIONS_KEY) {
-			headers["Authorization"] = `Bearer ${process.env.POLLINATIONS_KEY}`;
-			logPimp("Using POLLINATIONS_KEY for authentication");
-		}
+        // Use POLLINATIONS_KEY from environment if available
+        if (process.env.POLLINATIONS_KEY) {
+            headers["Authorization"] = `Bearer ${process.env.POLLINATIONS_KEY}`;
+            logPimp("Using POLLINATIONS_KEY for authentication");
+        }
 
-		response = await Promise.race([
-			fetch(apiUrl, {
-				method: "POST",
-				headers: headers,
-				body: body,
-			}).then((res) => {
-				if (res.status !== 200) {
-					throw new Error(
-						`Error enhancing prompt: ${res.status} - ${res.statusText}`,
-					);
-				}
-				return res.text();
-			}),
-			new Promise((_, reject) =>
-				setTimeout(() => reject(new Error("Timeout")), 5000),
-			),
-		]);
-	} catch (error) {
-		logError("Error:", error.message);
-		logError(error.stack);
-		return prompt;
-	}
-	const endTime = Date.now();
-	logPerf(`Prompt pimping took ${endTime - startTime}ms`);
-	return response + "\n\n" + prompt;
+        response = await Promise.race([
+            fetch(apiUrl, {
+                method: "POST",
+                headers: headers,
+                body: body,
+            }).then((res) => {
+                if (res.status !== 200) {
+                    throw new Error(
+                        `Error enhancing prompt: ${res.status} - ${res.statusText}`,
+                    );
+                }
+                return res.text();
+            }),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Timeout")), 5000),
+            ),
+        ]);
+    } catch (error) {
+        logError("Error:", error.message);
+        logError(error.stack);
+        return prompt;
+    }
+    const endTime = Date.now();
+    logPerf(`Prompt pimping took ${endTime - startTime}ms`);
+    return response + "\n\n" + prompt;
 }
 
 // Memoize the pimpPrompt function
 const memoize = (fn) => {
-	const cache = new Map();
-	return async (arg, seed) => {
-		const cacheKey = `${arg}-${seed}`;
-		logPimp("cache key", cacheKey);
-		if (cache.has(cacheKey)) {
-			return cache.get(cacheKey);
-		}
-		const result = await fn(arg, seed);
-		cache.set(cacheKey, result);
-		return result;
-	};
+    const cache = new Map();
+    return async (arg, seed) => {
+        const cacheKey = `${arg}-${seed}`;
+        logPimp("cache key", cacheKey);
+        if (cache.has(cacheKey)) {
+            return cache.get(cacheKey);
+        }
+        const result = await fn(arg, seed);
+        cache.set(cacheKey, result);
+        return result;
+    };
 };
 
 export const pimpPrompt = memoize(pimpPromptRaw);

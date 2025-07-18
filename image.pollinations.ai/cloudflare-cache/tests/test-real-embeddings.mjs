@@ -58,7 +58,7 @@ async function generateEmbedding(ai, text) {
 	const normalizedText = normalizePrompt(text);
 
 	try {
-		const response = await ai.run("@cf/baai/bge-base-en-v1.5", {
+		const response = await ai.run("@cf/baai/bge-m3", {
 			text: normalizedText, // String format like production (not array)
 			pooling: "cls", // Direct property like production (not in options)
 		});
@@ -78,7 +78,7 @@ async function testEmbeddingSimilarities(ai) {
 	console.log(`\n🧪 Testing Real BGE Embeddings\n`);
 	console.log(`📝 Base prompt: "${basePrompt}"`);
 	console.log(`📝 Normalized: "${normalizePrompt(basePrompt)}"`);
-	console.log(`📝 Model: @cf/baai/bge-base-en-v1.5 with CLS pooling\n`);
+	console.log(`📝 Model: @cf/baai/bge-m3 with CLS pooling\n`);
 
 	try {
 		// Generate base embedding

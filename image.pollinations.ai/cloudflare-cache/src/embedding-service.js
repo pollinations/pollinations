@@ -12,7 +12,7 @@
 export function createEmbeddingService(ai) {
 	return {
 		ai,
-		model: "@cf/baai/bge-base-en-v1.5",
+		model: "@cf/baai/bge-m3",
 	};
 }
 

@@ -82,10 +82,17 @@ function extractFromMessages(messages) {
 	const fullHistory = parts.join("\n");
 
 	// Apply weighted semantic embeddings if enabled
+	// Only use weighting if we have more than the configured number of turns
 	if (SEMANTIC_WEIGHTING_ENABLED && messages.length > 0) {
-		const recentTurns = extractRecentTurns(messages, RECENT_TURNS_COUNT);
-		if (recentTurns && recentTurns.trim().length > 0) {
-			return createWeightedInput(fullHistory, recentTurns);
+		const relevantMessages = messages.filter(msg => msg.role === "user" || msg.role === "assistant");
+		const totalTurns = Math.floor(relevantMessages.length / 2); // Each turn = user + assistant
+		
+		// Only apply weighting if we have more turns than the recent turns count
+		if (totalTurns > RECENT_TURNS_COUNT) {
+			const recentTurns = extractRecentTurns(messages, RECENT_TURNS_COUNT);
+			if (recentTurns && recentTurns.trim().length > 0) {
+				return createWeightedInput(fullHistory, recentTurns);
+			}
 		}
 	}
 
@@ -108,29 +115,29 @@ function extractRecentTurns(messages, turnCount) {
 		(msg) => msg.role === "user" || msg.role === "assistant",
 	);
 
-	// Extract recent turns by counting actual conversation turns
-	// A turn is defined as a user message followed by an assistant message
-	const recentParts = [];
-	let turnsFound = 0;
+	if (relevantMessages.length === 0) {
+		return "";
+	}
+
+	// Extract exactly the specified number of recent turns
+	// A turn is a user-assistant pair, so we need turnCount * 2 messages
+	const messagesToTake = Math.min(turnCount * 2, relevantMessages.length);
+	const recentMessages = relevantMessages.slice(-messagesToTake);
 	
-	// Work backwards through messages to find complete turns
-	for (let i = relevantMessages.length - 1; i >= 0 && turnsFound < turnCount; i--) {
-		const message = relevantMessages[i];
+	const recentParts = [];
+	for (const message of recentMessages) {
 		if (!message.content) continue;
 
-		const content =
-			typeof message.content === "string"
-				? message.content.trim()
-				: JSON.stringify(message.content);
-
+		const content = typeof message.content === "string" 
+			? message.content.trim() 
+			: JSON.stringify(message.content);
+		
 		if (!content) continue;
 
 		if (message.role === "user") {
-			recentParts.unshift(`[USER] ${content}`);
-			// Count a turn when we find a user message (assuming it's paired with an assistant response)
-			turnsFound++;
+			recentParts.push(`[USER] ${content}`);
 		} else if (message.role === "assistant") {
-			recentParts.unshift(`[ASSISTANT] ${content}`);
+			recentParts.push(`[ASSISTANT] ${content}`);
 		}
 	}
 

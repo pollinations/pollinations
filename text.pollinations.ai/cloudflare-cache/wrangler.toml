@@ -1,6 +1,18 @@
 name = "pollinations-text-cache"
 main = "src/index.js"
 compatibility_date = "2023-05-18"
+# compatibility_flags = ["nodejs_compat"]  # Removed - using Web Crypto API instead
+
+# R2 bucket for text storage
+# AI binding for embedding generation
+[ai]
+binding = "AI"
+
+# Vectorize index for semantic caching (BGE-M3, 1024 dimensions)
+[[vectorize]]
+binding = "VECTORIZE_INDEX"
+index_name = "pollinations-text-cache-bge-m3-v1"
+experimental_remote = true
 
 # R2 bucket for text storage
 [[r2_buckets]]
@@ -13,6 +25,9 @@ ORIGIN_HOST = "text-origin.pollinations.ai"
 #ORIGIN_HOST ="http://163.172.149.24:16385"
 # Enable debug logging (set to "true" to enable, "false" to disable)
 DEBUG = "cache:*"
+# Note: SEMANTIC_CACHE_TOKENS is now a secret (not in version control)
+# Local development: use .dev.vars file
+# Production: use 'wrangler secret put SEMANTIC_CACHE_TOKENS'
 
 # Increase limits for long-running operations
 # This requires a paid Workers Unbound plan
@@ -25,3 +40,25 @@ enabled = true      # Enable logs for local development
 
 [observability.logs]
 invocation_logs = true
+
+# Staging environment for testing new features
+# Uses same bindings (vectorize, R2, AI) but different URL
+[env.staging]
+workers_dev = true  # Deploy to *.workers.dev subdomain
+
+# Same bindings as production
+[env.staging.ai]
+binding = "AI"
+
+[[env.staging.vectorize]]
+binding = "VECTORIZE_INDEX"
+index_name = "pollinations-text-cache-bge-m3-v1"  # New BGE-M3 vectorize index
+
+[[env.staging.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text"  # Same R2 bucket
+
+[env.staging.vars]
+ORIGIN_HOST = "text-origin.pollinations.ai"  # Same origin
+DEBUG = "cache:*"
+ENVIRONMENT = "staging"  # Environment indicator

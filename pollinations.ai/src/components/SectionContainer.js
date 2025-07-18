@@ -11,18 +11,18 @@ export const SectionContainer = styled.div`
     We'll read from props.backgroundConfig — which includes {color, image, gradient}.
   */
   background-color: ${(props) =>
-      props.backgroundConfig?.color
-          ? props.backgroundConfig.color
-          : "transparent"};
+		props.backgroundConfig?.color
+			? props.backgroundConfig.color
+			: "transparent"};
 
   background-image: ${(props) => {
-      const { image, gradient } = props.backgroundConfig || {};
-      if (!image) return "none";
-      if (gradient) {
-          return `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.9)), url(${image})`;
-      }
-      return `url(${image})`;
-  }};
+		const { image, gradient } = props.backgroundConfig || {};
+		if (!image) return "none";
+		if (gradient) {
+			return `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.9)), url(${image})`;
+		}
+		return `url(${image})`;
+	}};
 
   background-size: cover;
   background-position: center center;

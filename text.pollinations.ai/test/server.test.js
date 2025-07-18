@@ -1,18 +1,18 @@
 import test from "ava";
 import request from "supertest";
 import app, {
-    getIp,
-    getRequestData,
-    sendErrorResponse,
-    sendOpenAIResponse,
-    sendContentResponse,
-    processRequest,
-    getQueue,
+	getIp,
+	getRequestData,
+	sendErrorResponse,
+	sendOpenAIResponse,
+	sendContentResponse,
+	processRequest,
+	getQueue,
 } from "../server.js";
 
 // Increase timeout for all tests
 test.beforeEach((t) => {
-    t.timeout(30000); // 30 seconds
+	t.timeout(30000); // 30 seconds
 });
 
 /**
@@ -30,10 +30,10 @@ test.beforeEach((t) => {
  * 3. The array should contain at least one model
  */
 test("GET /models should return available models", async (t) => {
-    const response = await request(app).get("/models?code=BeesKnees");
-    t.is(response.status, 200, "Response status should be 200");
-    t.true(Array.isArray(response.body), "Response body should be an array");
-    t.true(response.body.length > 0, "Array should contain at least one model");
+	const response = await request(app).get("/models?code=BeesKnees");
+	t.is(response.status, 200, "Response status should be 200");
+	t.true(Array.isArray(response.body), "Response body should be an array");
+	t.true(response.body.length > 0, "Array should contain at least one model");
 });
 
 /**
@@ -46,9 +46,9 @@ test("GET /models should return available models", async (t) => {
  * 2. The response should contain text
  */
 test("GET /:prompt should handle a valid prompt", async (t) => {
-    const response = await request(app).get("/hello?code=BeesKnees");
-    t.is(response.status, 200, "Response status should be 200");
-    t.truthy(response.text, "Response should contain text");
+	const response = await request(app).get("/hello?code=BeesKnees");
+	t.is(response.status, 200, "Response status should be 200");
+	t.truthy(response.text, "Response should contain text");
 });
 
 /**
@@ -61,15 +61,15 @@ test("GET /:prompt should handle a valid prompt", async (t) => {
  * 2. The response should contain text
  */
 test("POST / should handle a valid request", async (t) => {
-    const response = await request(app)
-        .post("/")
-        .set("Content-Type", "application/json")
-        .send({
-            messages: [{ role: "user", content: "Hello" }],
-            code: "BeesKnees",
-        });
-    t.is(response.status, 200, "Response status should be 200");
-    t.truthy(response.text, "Response should contain text");
+	const response = await request(app)
+		.post("/")
+		.set("Content-Type", "application/json")
+		.send({
+			messages: [{ role: "user", content: "Hello" }],
+			code: "BeesKnees",
+		});
+	t.is(response.status, 200, "Response status should be 200");
+	t.truthy(response.text, "Response should contain text");
 });
 
 /**
@@ -82,16 +82,16 @@ test("POST / should handle a valid request", async (t) => {
  * 2. The response body should contain data
  */
 test("POST /openai should handle a valid request", async (t) => {
-    try {
-        const response = await request(app)
-            .post("/openai")
-            .query({ code: "BeesKnees" }) // Add code parameter
-            .send({ messages: [{ role: "user", content: "Hello" }] });
-        t.is(response.status, 200, "Response status should be 200");
-        t.truthy(response.body, "Response body should contain data");
-    } catch (error) {
-        t.fail(error.message);
-    }
+	try {
+		const response = await request(app)
+			.post("/openai")
+			.query({ code: "BeesKnees" }) // Add code parameter
+			.send({ messages: [{ role: "user", content: "Hello" }] });
+		t.is(response.status, 200, "Response status should be 200");
+		t.truthy(response.body, "Response body should contain data");
+	} catch (error) {
+		t.fail(error.message);
+	}
 });
 
 /**
@@ -104,13 +104,13 @@ test("POST /openai should handle a valid request", async (t) => {
  * 2. The response text should indicate invalid messages array
  */
 test("POST / should return 400 for invalid messages array", async (t) => {
-    const response = await request(app).post("/").send({ messages: "invalid" });
+	const response = await request(app).post("/").send({ messages: "invalid" });
 
-    t.is(response.status, 400, "Response status should be 400");
-    t.true(
-        response.text.includes("Invalid messages"),
-        "Response should indicate invalid messages",
-    );
+	t.is(response.status, 400, "Response status should be 400");
+	t.true(
+		response.text.includes("Invalid messages"),
+		"Response should indicate invalid messages",
+	);
 });
 
 /**
@@ -123,29 +123,25 @@ test("POST / should return 400 for invalid messages array", async (t) => {
  * 2. The response text for both requests should be identical
  */
 test("POST / should cache responses", async (t) => {
-    const requestBody = {
-        messages: [{ role: "user", content: "Cache test" }],
-        cache: true,
-        code: "BeesKnees",
-    };
+	const requestBody = {
+		messages: [{ role: "user", content: "Cache test" }],
+		cache: true,
+		code: "BeesKnees",
+	};
 
-    const response1 = await request(app)
-        .post("/")
-        .set("Content-Type", "application/json")
-        .send(requestBody);
-    t.is(response1.status, 200, "First response status should be 200");
+	const response1 = await request(app)
+		.post("/")
+		.set("Content-Type", "application/json")
+		.send(requestBody);
+	t.is(response1.status, 200, "First response status should be 200");
 
-    const response2 = await request(app)
-        .post("/")
-        .set("Content-Type", "application/json")
-        .send(requestBody);
-    t.is(response2.status, 200, "Second response status should be 200");
+	const response2 = await request(app)
+		.post("/")
+		.set("Content-Type", "application/json")
+		.send(requestBody);
+	t.is(response2.status, 200, "Second response status should be 200");
 
-    t.is(
-        response1.text,
-        response2.text,
-        "Cached responses should be identical",
-    );
+	t.is(response1.text, response2.text, "Cached responses should be identical");
 });
 
 /**
@@ -159,29 +155,29 @@ test("POST / should cache responses", async (t) => {
  * 3. The response should contain properly formatted streaming data
  */
 test("POST /openai should handle streaming requests", async (t) => {
-    const response = await request(app)
-        .post("/openai?code=BeesKnees")
-        .send({
-            messages: [{ role: "user", content: "Hello" }],
-            stream: true,
-        });
+	const response = await request(app)
+		.post("/openai?code=BeesKnees")
+		.send({
+			messages: [{ role: "user", content: "Hello" }],
+			stream: true,
+		});
 
-    t.is(response.status, 200, "Response status should be 200");
-    t.is(
-        response.headers["content-type"],
-        "text/event-stream; charset=utf-8",
-        "Content-Type should be text/event-stream",
-    );
-    t.is(
-        response.headers["cache-control"],
-        "no-cache",
-        "Cache-Control should be no-cache",
-    );
-    t.is(
-        response.headers["connection"],
-        "keep-alive",
-        "Connection should be keep-alive",
-    );
+	t.is(response.status, 200, "Response status should be 200");
+	t.is(
+		response.headers["content-type"],
+		"text/event-stream; charset=utf-8",
+		"Content-Type should be text/event-stream",
+	);
+	t.is(
+		response.headers["cache-control"],
+		"no-cache",
+		"Cache-Control should be no-cache",
+	);
+	t.is(
+		response.headers["connection"],
+		"keep-alive",
+		"Connection should be keep-alive",
+	);
 });
 
 /**
@@ -194,20 +190,20 @@ test("POST /openai should handle streaming requests", async (t) => {
  * 2. The response should have the correct OpenAI API structure
  */
 test("POST /openai should return OpenAI formatted responses", async (t) => {
-    const response = await request(app)
-        .post("/openai?code=BeesKnees")
-        .send({ messages: [{ role: "user", content: "Hello" }] });
+	const response = await request(app)
+		.post("/openai?code=BeesKnees")
+		.send({ messages: [{ role: "user", content: "Hello" }] });
 
-    t.is(response.status, 200, "Response status should be 200");
-    t.truthy(response.body.choices, "Response should have choices array");
-    t.truthy(
-        response.body.choices[0].message,
-        "Response should have message in first choice",
-    );
-    t.truthy(
-        response.body.choices[0].message.content,
-        "Response should have content in message",
-    );
+	t.is(response.status, 200, "Response status should be 200");
+	t.truthy(response.body.choices, "Response should have choices array");
+	t.truthy(
+		response.body.choices[0].message,
+		"Response should have message in first choice",
+	);
+	t.truthy(
+		response.body.choices[0].message.content,
+		"Response should have content in message",
+	);
 });
 
 /**
@@ -221,30 +217,30 @@ test("POST /openai should return OpenAI formatted responses", async (t) => {
  * 3. Both responses should maintain OpenAI format
  */
 test("POST /openai should cache responses", async (t) => {
-    const requestBody = {
-        messages: [{ role: "user", content: "Cache test openai" }],
-        code: "BeesKnees",
-    };
+	const requestBody = {
+		messages: [{ role: "user", content: "Cache test openai" }],
+		code: "BeesKnees",
+	};
 
-    const response1 = await request(app)
-        .post("/openai?code=BeesKnees")
-        .send(requestBody);
-    t.is(response1.status, 200, "First response status should be 200");
+	const response1 = await request(app)
+		.post("/openai?code=BeesKnees")
+		.send(requestBody);
+	t.is(response1.status, 200, "First response status should be 200");
 
-    const response2 = await request(app)
-        .post("/openai?code=BeesKnees")
-        .send(requestBody);
-    t.is(response2.status, 200, "Second response status should be 200");
+	const response2 = await request(app)
+		.post("/openai?code=BeesKnees")
+		.send(requestBody);
+	t.is(response2.status, 200, "Second response status should be 200");
 
-    t.deepEqual(
-        response1.body,
-        response2.body,
-        "Cached responses should be identical",
-    );
-    t.truthy(
-        response1.body.choices,
-        "Cached response should maintain OpenAI format",
-    );
+	t.deepEqual(
+		response1.body,
+		response2.body,
+		"Cached responses should be identical",
+	);
+	t.truthy(
+		response1.body.choices,
+		"Cached response should maintain OpenAI format",
+	);
 });
 
 /**
@@ -256,14 +252,14 @@ test("POST /openai should cache responses", async (t) => {
  * 1. The response status should be 200 (OK)
  */
 test("POST /openai should handle invalid model", async (t) => {
-    const response = await request(app)
-        .post("/openai?code=BeesKnees")
-        .send({
-            messages: [{ role: "user", content: "Hello" }],
-            model: "invalid-model",
-        });
+	const response = await request(app)
+		.post("/openai?code=BeesKnees")
+		.send({
+			messages: [{ role: "user", content: "Hello" }],
+			model: "invalid-model",
+		});
 
-    t.is(response.status, 200, "Response status should be 200");
+	t.is(response.status, 200, "Response status should be 200");
 });
 
 /**
@@ -285,20 +281,17 @@ test("POST /openai should handle invalid model", async (t) => {
  * 1. The response should include the system message in processing
  */
 test("POST /openai should handle system messages", async (t) => {
-    const response = await request(app)
-        .post("/openai?code=BeesKnees")
-        .send({
-            messages: [
-                { role: "system", content: "You are a helpful assistant" },
-                { role: "user", content: "Hello" },
-            ],
-        });
+	const response = await request(app)
+		.post("/openai?code=BeesKnees")
+		.send({
+			messages: [
+				{ role: "system", content: "You are a helpful assistant" },
+				{ role: "user", content: "Hello" },
+			],
+		});
 
-    t.is(response.status, 200, "Response status should be 200");
-    t.truthy(
-        response.body.choices[0].message,
-        "Response should contain message",
-    );
+	t.is(response.status, 200, "Response status should be 200");
+	t.truthy(response.body.choices[0].message, "Response should contain message");
 });
 
 /**
@@ -310,14 +303,14 @@ test("POST /openai should handle system messages", async (t) => {
  * 1. Different temperatures should be accepted
  */
 test("POST /openai should handle temperature parameter", async (t) => {
-    const response = await request(app)
-        .post("/openai?code=BeesKnees")
-        .send({
-            messages: [{ role: "user", content: "Hello" }],
-            temperature: 0.7,
-        });
+	const response = await request(app)
+		.post("/openai?code=BeesKnees")
+		.send({
+			messages: [{ role: "user", content: "Hello" }],
+			temperature: 0.7,
+		});
 
-    t.is(response.status, 200, "Response status should be 200");
+	t.is(response.status, 200, "Response status should be 200");
 });
 
 /**
@@ -329,8 +322,8 @@ test("POST /openai should handle temperature parameter", async (t) => {
  * 1. Request without code should be handled
  */
 test("GET / should handle missing authentication code", async (t) => {
-    const response = await request(app).get("/hello");
-    t.is(response.status, 200, "Response status should be 200");
+	const response = await request(app).get("/hello");
+	t.is(response.status, 200, "Response status should be 200");
 });
 
 /**
@@ -342,12 +335,12 @@ test("GET / should handle missing authentication code", async (t) => {
  * 1. Empty messages should now be handled normally as validation was removed
  */
 test("POST /openai should handle empty messages", async (t) => {
-    const response = await request(app)
-        .post("/openai?code=BeesKnees")
-        .send({ messages: [] });
+	const response = await request(app)
+		.post("/openai?code=BeesKnees")
+		.send({ messages: [] });
 
-    // Since validation was removed, we expect the request to proceed normally
-    t.is(response.status, 200, "Response status should be 200");
+	// Since validation was removed, we expect the request to proceed normally
+	t.is(response.status, 200, "Response status should be 200");
 });
 
 /**
@@ -359,19 +352,19 @@ test("POST /openai should handle empty messages", async (t) => {
  * 1. The response status should be 200 (OK)
  */
 test("server should format responses as OpenAI format", async (t) => {
-    try {
-        const response = await request(app)
-            .post("/openai")
-            .send({
-                messages: [{ role: "user", content: "Hello" }],
-                model: "qwen",
-                stream: true,
-            })
-            .expect(200);
-        t.pass();
-    } catch (error) {
-        t.fail(error.message);
-    }
+	try {
+		const response = await request(app)
+			.post("/openai")
+			.send({
+				messages: [{ role: "user", content: "Hello" }],
+				model: "qwen",
+				stream: true,
+			})
+			.expect(200);
+		t.pass();
+	} catch (error) {
+		t.fail(error.message);
+	}
 });
 
 /**
@@ -383,18 +376,18 @@ test("server should format responses as OpenAI format", async (t) => {
  * 1. The response status should be 200 (OK)
  */
 test("server should handle streaming responses with error", async (t) => {
-    try {
-        const response = await request(app)
-            .post("/openai")
-            .send({
-                messages: [{ role: "user", content: "Hello" }],
-                model: "qwen",
-                stream: true,
-            });
-        t.pass();
-    } catch (error) {
-        t.fail(error.message);
-    }
+	try {
+		const response = await request(app)
+			.post("/openai")
+			.send({
+				messages: [{ role: "user", content: "Hello" }],
+				model: "qwen",
+				stream: true,
+			});
+		t.pass();
+	} catch (error) {
+		t.fail(error.message);
+	}
 });
 
 /**
@@ -407,12 +400,12 @@ test("server should handle streaming responses with error", async (t) => {
  * 2. The response body should contain an error message
  */
 test("should handle malformed request body", async (t) => {
-    const response = await request(app)
-        .post("/")
-        .send({ messages: "not an array" }) // Malformed messages
-        .query({ code: "BeesKnees" });
-    t.is(response.status, 400);
-    t.truthy(response.body.error);
+	const response = await request(app)
+		.post("/")
+		.send({ messages: "not an array" }) // Malformed messages
+		.query({ code: "BeesKnees" });
+	t.is(response.status, 400);
+	t.truthy(response.body.error);
 });
 
 /**
@@ -425,12 +418,12 @@ test("should handle malformed request body", async (t) => {
  * 2. The response body should contain an error message
  */
 test("should handle missing messages", async (t) => {
-    const response = await request(app)
-        .post("/")
-        .send({}) // Missing messages field
-        .query({ code: "BeesKnees" });
-    t.is(response.status, 400);
-    t.truthy(response.body.error);
+	const response = await request(app)
+		.post("/")
+		.send({}) // Missing messages field
+		.query({ code: "BeesKnees" });
+	t.is(response.status, 400);
+	t.truthy(response.body.error);
 });
 
 /**
@@ -442,12 +435,12 @@ test("should handle missing messages", async (t) => {
  * 1. The response status should be 200 (OK)
  */
 test("should handle roblox referrer", async (t) => {
-    const response = await request(app)
-        .post("/")
-        .set("Referer", "https://www.roblox.com")
-        .send({ messages: [{ role: "user", content: "test" }] })
-        .query({ code: "BeesKnees" });
-    t.is(response.status, 200);
+	const response = await request(app)
+		.post("/")
+		.set("Referer", "https://www.roblox.com")
+		.send({ messages: [{ role: "user", content: "test" }] })
+		.query({ code: "BeesKnees" });
+	t.is(response.status, 200);
 });
 
 /**
@@ -459,12 +452,12 @@ test("should handle roblox referrer", async (t) => {
  * 1. The response status should be 200 (OK)
  */
 test("should handle pollinations referrer", async (t) => {
-    const response = await request(app)
-        .post("/")
-        .set("Referer", "https://image.pollinations.ai")
-        .send({ messages: [{ role: "user", content: "test" }] })
-        .query({ code: "BeesKnees" });
-    t.is(response.status, 200);
+	const response = await request(app)
+		.post("/")
+		.set("Referer", "https://image.pollinations.ai")
+		.send({ messages: [{ role: "user", content: "test" }] })
+		.query({ code: "BeesKnees" });
+	t.is(response.status, 200);
 });
 
 /**
@@ -477,17 +470,15 @@ test("should handle pollinations referrer", async (t) => {
  * 2. The response body should contain a list of models in OpenAI format
  */
 test("GET /openai/models should return available models in OpenAI format", async (t) => {
-    try {
-        const response = await request(app).get(
-            "/openai/models?code=BeesKnees",
-        );
-        t.is(response.status, 200);
-        t.true(Array.isArray(response.body.data));
-        t.true(response.body.data.length > 0);
-        t.true(response.body.data.every((model) => model.id && model.owned_by));
-    } catch (error) {
-        t.fail(error.message);
-    }
+	try {
+		const response = await request(app).get("/openai/models?code=BeesKnees");
+		t.is(response.status, 200);
+		t.true(Array.isArray(response.body.data));
+		t.true(response.body.data.length > 0);
+		t.true(response.body.data.every((model) => model.id && model.owned_by));
+	} catch (error) {
+		t.fail(error.message);
+	}
 });
 
 /**
@@ -500,31 +491,31 @@ test("GET /openai/models should return available models in OpenAI format", async
  * 2. The response body should contain data in the OpenAI format
  */
 test("POST /v1/chat/completions should handle a valid request", async (t) => {
-    try {
-        const response = await request(app)
-            .post("/v1/chat/completions")
-            .query({ code: "BeesKnees" })
-            .send({ messages: [{ role: "user", content: "Hello" }] });
-        t.is(response.status, 200, "Response status should be 200");
-        t.truthy(response.body, "Response body should contain data");
-        t.truthy(response.body.choices, "Response should have choices array");
-        t.truthy(
-            response.body.choices[0].message,
-            "Response should have message in first choice",
-        );
-        t.truthy(
-            response.body.choices[0].message.content,
-            "Response should have content in message",
-        );
-        t.truthy(response.body.id, "Response should have an id");
-        t.is(
-            response.body.object,
-            "chat.completion",
-            "Response object should be chat.completion",
-        );
-    } catch (error) {
-        t.fail(error.message);
-    }
+	try {
+		const response = await request(app)
+			.post("/v1/chat/completions")
+			.query({ code: "BeesKnees" })
+			.send({ messages: [{ role: "user", content: "Hello" }] });
+		t.is(response.status, 200, "Response status should be 200");
+		t.truthy(response.body, "Response body should contain data");
+		t.truthy(response.body.choices, "Response should have choices array");
+		t.truthy(
+			response.body.choices[0].message,
+			"Response should have message in first choice",
+		);
+		t.truthy(
+			response.body.choices[0].message.content,
+			"Response should have content in message",
+		);
+		t.truthy(response.body.id, "Response should have an id");
+		t.is(
+			response.body.object,
+			"chat.completion",
+			"Response object should be chat.completion",
+		);
+	} catch (error) {
+		t.fail(error.message);
+	}
 });
 
 /**
@@ -538,29 +529,29 @@ test("POST /v1/chat/completions should handle a valid request", async (t) => {
  * 3. The response should contain properly formatted streaming data
  */
 test("POST /v1/chat/completions should handle streaming requests", async (t) => {
-    const response = await request(app)
-        .post("/v1/chat/completions?code=BeesKnees")
-        .send({
-            messages: [{ role: "user", content: "Hello" }],
-            stream: true,
-        });
+	const response = await request(app)
+		.post("/v1/chat/completions?code=BeesKnees")
+		.send({
+			messages: [{ role: "user", content: "Hello" }],
+			stream: true,
+		});
 
-    t.is(response.status, 200, "Response status should be 200");
-    t.is(
-        response.headers["content-type"],
-        "text/event-stream; charset=utf-8",
-        "Content-Type should be text/event-stream",
-    );
-    t.is(
-        response.headers["cache-control"],
-        "no-cache",
-        "Cache-Control should be no-cache",
-    );
-    t.is(
-        response.headers["connection"],
-        "keep-alive",
-        "Connection should be keep-alive",
-    );
+	t.is(response.status, 200, "Response status should be 200");
+	t.is(
+		response.headers["content-type"],
+		"text/event-stream; charset=utf-8",
+		"Content-Type should be text/event-stream",
+	);
+	t.is(
+		response.headers["cache-control"],
+		"no-cache",
+		"Cache-Control should be no-cache",
+	);
+	t.is(
+		response.headers["connection"],
+		"keep-alive",
+		"Connection should be keep-alive",
+	);
 });
 
 /**
@@ -572,13 +563,13 @@ test("POST /v1/chat/completions should handle streaming requests", async (t) => 
  * 1. The response should still process the request since validation was removed
  */
 test("POST /v1/chat/completions with invalid messages format", async (t) => {
-    const response = await request(app)
-        .post("/v1/chat/completions")
-        .send({ messages: "invalid" });
+	const response = await request(app)
+		.post("/v1/chat/completions")
+		.send({ messages: "invalid" });
 
-    // Since validation was removed, the request will proceed to processing
-    // The actual behavior will depend on how getRequestData handles this case
-    t.is(response.status, 200, "Response status should be 200");
+	// Since validation was removed, the request will proceed to processing
+	// The actual behavior will depend on how getRequestData handles this case
+	t.is(response.status, 200, "Response status should be 200");
 });
 
 /**
@@ -590,12 +581,12 @@ test("POST /v1/chat/completions with invalid messages format", async (t) => {
  * 1. The response should still process the request since validation was removed
  */
 test("POST /v1/chat/completions with empty messages", async (t) => {
-    const response = await request(app)
-        .post("/v1/chat/completions")
-        .send({ messages: [] });
+	const response = await request(app)
+		.post("/v1/chat/completions")
+		.send({ messages: [] });
 
-    // Since validation was removed, we expect the request to proceed normally
-    t.is(response.status, 200, "Response status should be 200");
+	// Since validation was removed, we expect the request to proceed normally
+	t.is(response.status, 200, "Response status should be 200");
 });
 
 /**
@@ -603,157 +594,157 @@ test("POST /v1/chat/completions with empty messages", async (t) => {
  */
 
 test("getIp should handle various header combinations", (t) => {
-    const testCases = [
-        {
-            req: { headers: { "x-bb-ip": "1.2.3.4" } },
-            expected: "1.2.3",
-        },
-        {
-            req: { headers: { "x-nf-client-connection-ip": "5.6.7.8" } },
-            expected: "5.6.7",
-        },
-        {
-            req: { headers: { "x-real-ip": "9.10.11.12" } },
-            expected: "9.10.11",
-        },
-        {
-            req: { headers: { "x-forwarded-for": "13.14.15.16" } },
-            expected: "13.14.15",
-        },
-        {
-            req: { headers: { referer: "17.18.19.20" } },
-            expected: "17.18.19",
-        },
-        {
-            req: { headers: {}, socket: { remoteAddress: "21.22.23.24" } },
-            expected: "21.22.23",
-        },
-    ];
+	const testCases = [
+		{
+			req: { headers: { "x-bb-ip": "1.2.3.4" } },
+			expected: "1.2.3",
+		},
+		{
+			req: { headers: { "x-nf-client-connection-ip": "5.6.7.8" } },
+			expected: "5.6.7",
+		},
+		{
+			req: { headers: { "x-real-ip": "9.10.11.12" } },
+			expected: "9.10.11",
+		},
+		{
+			req: { headers: { "x-forwarded-for": "13.14.15.16" } },
+			expected: "13.14.15",
+		},
+		{
+			req: { headers: { referer: "17.18.19.20" } },
+			expected: "17.18.19",
+		},
+		{
+			req: { headers: {}, socket: { remoteAddress: "21.22.23.24" } },
+			expected: "21.22.23",
+		},
+	];
 
-    testCases.forEach(({ req, expected }) => {
-        const result = getIp(req);
-        t.is(result, expected);
-    });
+	testCases.forEach(({ req, expected }) => {
+		const result = getIp(req);
+		t.is(result, expected);
+	});
 });
 
 test("getRequestData should parse request data correctly", (t) => {
-    const testCases = [
-        {
-            req: {
-                method: "POST",
-                path: "/openai",
-                body: {
-                    messages: [{ role: "user", content: "test" }],
-                    model: "openai",
-                },
-                query: { code: "test" },
-                headers: {},
-            },
-            expected: {
-                messages: [{ role: "user", content: "test" }],
-                model: "openai",
-                jsonMode: false,
-                seed: null,
-                temperature: undefined,
-                referrer: "unknown",
-                stream: false,
-                isPrivate: true,
-            },
-        },
-        {
-            req: {
-                method: "POST",
-                path: "/",
-                body: {
-                    messages: [{ role: "user", content: "test" }],
-                    model: "openai",
-                },
-                query: { code: "test" },
-                headers: {},
-            },
-            expected: {
-                messages: [{ role: "user", content: "test" }],
-                model: "openai",
-                jsonMode: false,
-                seed: null,
-                temperature: undefined,
-                referrer: "unknown",
-                stream: false,
-                isPrivate: false,
-            },
-        },
-        {
-            req: {
-                method: "GET",
-                params: { 0: "test prompt" },
-                query: { code: "test" },
-                headers: {},
-            },
-            expected: {
-                messages: [{ role: "user", content: "test prompt" }],
-                jsonMode: false,
-                seed: null,
-                model: "openai",
-                temperature: undefined,
-                referrer: "unknown",
-                stream: false,
-                isPrivate: false,
-            },
-        },
-    ];
+	const testCases = [
+		{
+			req: {
+				method: "POST",
+				path: "/openai",
+				body: {
+					messages: [{ role: "user", content: "test" }],
+					model: "openai",
+				},
+				query: { code: "test" },
+				headers: {},
+			},
+			expected: {
+				messages: [{ role: "user", content: "test" }],
+				model: "openai",
+				jsonMode: false,
+				seed: null,
+				temperature: undefined,
+				referrer: "unknown",
+				stream: false,
+				isPrivate: true,
+			},
+		},
+		{
+			req: {
+				method: "POST",
+				path: "/",
+				body: {
+					messages: [{ role: "user", content: "test" }],
+					model: "openai",
+				},
+				query: { code: "test" },
+				headers: {},
+			},
+			expected: {
+				messages: [{ role: "user", content: "test" }],
+				model: "openai",
+				jsonMode: false,
+				seed: null,
+				temperature: undefined,
+				referrer: "unknown",
+				stream: false,
+				isPrivate: false,
+			},
+		},
+		{
+			req: {
+				method: "GET",
+				params: { 0: "test prompt" },
+				query: { code: "test" },
+				headers: {},
+			},
+			expected: {
+				messages: [{ role: "user", content: "test prompt" }],
+				jsonMode: false,
+				seed: null,
+				model: "openai",
+				temperature: undefined,
+				referrer: "unknown",
+				stream: false,
+				isPrivate: false,
+			},
+		},
+	];
 
-    testCases.forEach(({ req, expected }) => {
-        const result = getRequestData(req);
-        t.deepEqual(result, expected);
-    });
+	testCases.forEach(({ req, expected }) => {
+		const result = getRequestData(req);
+		t.deepEqual(result, expected);
+	});
 });
 
 test("sendErrorResponse should format error responses correctly", async (t) => {
-    const res = {
-        status: function (code) {
-            t.is(code, 500);
-            return this;
-        },
-        json: function (data) {
-            t.deepEqual(data, {
-                error: "Test error",
-                status: 500,
-                details: { foo: "bar" },
-            });
-        },
-    };
-    const error = new Error("Test error");
-    error.response = { data: { foo: "bar" } };
+	const res = {
+		status: function (code) {
+			t.is(code, 500);
+			return this;
+		},
+		json: function (data) {
+			t.deepEqual(data, {
+				error: "Test error",
+				status: 500,
+				details: { foo: "bar" },
+			});
+		},
+	};
+	const error = new Error("Test error");
+	error.response = { data: { foo: "bar" } };
 
-    await sendErrorResponse(res, {}, error, { model: "test" });
+	await sendErrorResponse(res, {}, error, { model: "test" });
 });
 
 test("sendOpenAIResponse should set headers and send JSON response", (t) => {
-    const res = {
-        setHeader: function (name, value) {
-            t.pass();
-        },
-        json: function (data) {
-            t.deepEqual(data, { foo: "bar" });
-        },
-    };
+	const res = {
+		setHeader: function (name, value) {
+			t.pass();
+		},
+		json: function (data) {
+			t.deepEqual(data, { foo: "bar" });
+		},
+	};
 
-    sendOpenAIResponse(res, { foo: "bar" });
+	sendOpenAIResponse(res, { foo: "bar" });
 });
 
 test("sendContentResponse should set headers and send text response", (t) => {
-    const res = {
-        setHeader: function (name, value) {
-            t.pass();
-        },
-        send: function (data) {
-            t.is(data, "test content");
-        },
-    };
+	const res = {
+		setHeader: function (name, value) {
+			t.pass();
+		},
+		send: function (data) {
+			t.is(data, "test content");
+		},
+	};
 
-    sendContentResponse(res, {
-        choices: [{ message: { content: "test content" } }],
-    });
+	sendContentResponse(res, {
+		choices: [{ message: { content: "test content" } }],
+	});
 });
 
 // test('processRequest should handle cached responses', async t => {

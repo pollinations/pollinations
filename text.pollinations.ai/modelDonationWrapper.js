@@ -20,62 +20,59 @@ const errorLog = debug("pollinations:donation-wrapper:error");
  * @returns {Function} A wrapped handler function
  */
 export function wrapModelWithDonationMessage(
-    modelHandler,
-    modelName,
-    options = {},
+	modelHandler,
+	modelName,
+	options = {},
 ) {
-    // Donation message configuration
-    const donationConfig = {
-        threshold: options.threshold || 50,
-        currentDonations: options.currentDonations || 47,
-        kofiLink: options.kofiLink || "https://ko-fi.com/pollinationsai",
-        ...options,
-    };
+	// Donation message configuration
+	const donationConfig = {
+		threshold: options.threshold || 50,
+		currentDonations: options.currentDonations || 47,
+		kofiLink: options.kofiLink || "https://ko-fi.com/pollinationsai",
+		...options,
+	};
 
-    // Return the wrapped handler function
-    return async function wrappedHandler(messages, handlerOptions = {}) {
-        try {
-            // Attempt to run the original model handler
-            const result = await modelHandler(messages, handlerOptions);
+	// Return the wrapped handler function
+	return async function wrappedHandler(messages, handlerOptions = {}) {
+		try {
+			// Attempt to run the original model handler
+			const result = await modelHandler(messages, handlerOptions);
 
-            // console.log("rrresult", result)
-            if (result?.error) throw result.error;
-            return result;
-        } catch (error) {
-            // Log the original error
-            errorLog(`Error in ${modelName} model:`, error);
+			// console.log("rrresult", result)
+			if (result?.error) throw result.error;
+			return result;
+		} catch (error) {
+			// Log the original error
+			errorLog(`Error in ${modelName} model:`, error);
 
-            // Create a user-friendly message about the error
-            const errorMessage = {
-                id: `donation-${Date.now()}`,
-                object: "chat.completion",
-                created: Math.floor(Date.now() / 1000),
-                model: modelName,
-                choices: [
-                    {
-                        index: 0,
-                        message: {
-                            role: "assistant",
-                            content: formatDonationMessage(
-                                modelName,
-                                donationConfig,
-                            ),
-                        },
-                        finish_reason: "stop",
-                    },
-                ],
-                usage: {
-                    prompt_tokens: 0,
-                    completion_tokens: 0,
-                    total_tokens: 0,
-                },
-                donation_request: true,
-            };
+			// Create a user-friendly message about the error
+			const errorMessage = {
+				id: `donation-${Date.now()}`,
+				object: "chat.completion",
+				created: Math.floor(Date.now() / 1000),
+				model: modelName,
+				choices: [
+					{
+						index: 0,
+						message: {
+							role: "assistant",
+							content: formatDonationMessage(modelName, donationConfig),
+						},
+						finish_reason: "stop",
+					},
+				],
+				usage: {
+					prompt_tokens: 0,
+					completion_tokens: 0,
+					total_tokens: 0,
+				},
+				donation_request: true,
+			};
 
-            log(`Returning donation message for ${modelName}`);
-            return errorMessage;
-        }
-    };
+			log(`Returning donation message for ${modelName}`);
+			return errorMessage;
+		}
+	};
 }
 
 /**
@@ -86,9 +83,9 @@ export function wrapModelWithDonationMessage(
  * @returns {string} Formatted donation message
  */
 function formatDonationMessage(modelName, config) {
-    const remainingNeeded = config.threshold - config.currentDonations;
+	const remainingNeeded = config.threshold - config.currentDonations;
 
-    return `
+	return `
 ## Claude is powered by Pollinations.ai
 
 We're currently experiencing high demand for ${modelName}. Our AI models rely on external APIs that require credits.

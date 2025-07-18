@@ -20,40 +20,40 @@ import { authTools } from "./services/authService.js";
 
 // Export all tools as a flat array
 const toolDefinitions = [
-    // Image tools
-    ...imageTools,
+	// Image tools
+	...imageTools,
 
-    // Text tools
-    ...textTools,
+	// Text tools
+	...textTools,
 
-    // Audio tools
-    ...audioTools,
-    ...authTools,
-    // Resource tools
-    // ...resourceTools
+	// Audio tools
+	...audioTools,
+	...authTools,
+	// Resource tools
+	// ...resourceTools
 ];
 
 /**
  * Starts the MCP server with STDIO transport
  */
 export async function startMcpServer() {
-    try {
-        // Setup AbortController polyfill for older Node.js versions
-        // await setupAbortControllerPolyfill();
+	try {
+		// Setup AbortController polyfill for older Node.js versions
+		// await setupAbortControllerPolyfill();
 
-        try {
-            // Initialize audio player for audio tools
-            global.audioPlayer = player();
-        } catch (error) {
-            console.error("Failed to initialize audio player:", error);
-        }
+		try {
+			// Initialize audio player for audio tools
+			global.audioPlayer = player();
+		} catch (error) {
+			console.error("Failed to initialize audio player:", error);
+		}
 
-        // Create the MCP server with tool definitions
-        const server = new McpServer(
-            {
-                name: "pollinations-mcp",
-                version: "1.0.10",
-                instructions: `# 🚀 Pollinations MCP Server
+		// Create the MCP server with tool definitions
+		const server = new McpServer(
+			{
+				name: "pollinations-mcp",
+				version: "1.0.10",
+				instructions: `# 🚀 Pollinations MCP Server
 
 ## 💫 Available Capabilities
 This MCP server provides tools for **images**, **text**, **audio** and **Pollinations login** management through simple commands. ✨
@@ -75,44 +75,44 @@ When interacting with the Pollinations MCP server, use **vibey** Gen-Z language 
 
 ## 🤔 Usage Help
 These tools enable creative content generation with Pollinations APIs. The assistant can help with using these tools effectively.`,
-            },
-            {
-                capabilities: {
-                    tools: {},
-                },
-            },
-        );
+			},
+			{
+				capabilities: {
+					tools: {},
+				},
+			},
+		);
 
-        // Register all tools using the spread operator to pass the tool definition arrays
-        toolDefinitions.forEach((tool) => server.tool(...tool));
+		// Register all tools using the spread operator to pass the tool definition arrays
+		toolDefinitions.forEach((tool) => server.tool(...tool));
 
-        // Set up error handler for the server
-        server.onerror = (error) => {
-            console.error(`Server error: ${error.message}`);
-        };
+		// Set up error handler for the server
+		server.onerror = (error) => {
+			console.error(`Server error: ${error.message}`);
+		};
 
-        // Set up additional error handlers
-        process.on("uncaughtException", (error) => {
-            console.error(`Uncaught exception: ${error.message}`);
-        });
+		// Set up additional error handlers
+		process.on("uncaughtException", (error) => {
+			console.error(`Uncaught exception: ${error.message}`);
+		});
 
-        process.on("unhandledRejection", (reason) => {
-            console.error(`Unhandled rejection: ${reason}`);
-        });
+		process.on("unhandledRejection", (reason) => {
+			console.error(`Unhandled rejection: ${reason}`);
+		});
 
-        // Create and connect the STDIO transport
-        const transport = new StdioServerTransport();
-        await server.connect(transport);
+		// Create and connect the STDIO transport
+		const transport = new StdioServerTransport();
+		await server.connect(transport);
 
-        console.error("Pollinations Multimodal MCP server running on stdio");
+		console.error("Pollinations Multimodal MCP server running on stdio");
 
-        // Handle process termination
-        process.on("SIGINT", () => process.exit(0));
-        process.on("SIGTERM", () => process.exit(0));
-    } catch (error) {
-        console.error(`Failed to start MCP server: ${error.message}`);
-        process.exit(1);
-    }
+		// Handle process termination
+		process.on("SIGINT", () => process.exit(0));
+		process.on("SIGTERM", () => process.exit(0));
+	} catch (error) {
+		console.error(`Failed to start MCP server: ${error.message}`);
+		process.exit(1);
+	}
 }
 
 // // If this file is run directly, start the server

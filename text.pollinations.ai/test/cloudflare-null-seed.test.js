@@ -16,9 +16,9 @@ const errorLog = debug("pollinations:test:cloudflare-null-seed:error");
 
 // Skip the tests that were failing
 test.skip("Cloudflare client should properly handle null seed parameter", (t) => {
-    t.pass("This test has been moved to integration tests");
+	t.pass("This test has been moved to integration tests");
 });
 
 test.skip("Cloudflare client should handle null values in nested objects", (t) => {
-    t.pass("This test has been moved to integration tests");
+	t.pass("This test has been moved to integration tests");
 });

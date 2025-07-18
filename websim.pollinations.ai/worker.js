@@ -24,9 +24,9 @@ Please include open-graph metatags and use a Pollinations image for the thumbnai
 
 // Main handler function
 export default {
-    async fetch(request, env) {
-        return handleRequest(request, env);
-    },
+	async fetch(request, env) {
+		return handleRequest(request, env);
+	},
 };
 
 /**
@@ -36,29 +36,29 @@ export default {
  * @returns {Response} The response
  */
 async function handleRequest(request, env) {
-    // Handle CORS preflight requests
-    if (request.method === "OPTIONS") {
-        return handleCorsPreflightRequest();
-    }
+	// Handle CORS preflight requests
+	if (request.method === "OPTIONS") {
+		return handleCorsPreflightRequest();
+	}
 
-    const url = new URL(request.url);
-    const path = decodeURIComponent(url.pathname);
+	const url = new URL(request.url);
+	const path = decodeURIComponent(url.pathname);
 
-    // Handle quick filters and redirects
-    const pathResponse = processPath(path, request);
-    if (pathResponse) return pathResponse;
+	// Handle quick filters and redirects
+	const pathResponse = processPath(path, request);
+	if (pathResponse) return pathResponse;
 
-    // Extract prompt from path
-    const prompt = extractPromptFromPath(path);
-    if (!prompt) {
-        return new Response("Pass a prompt after /", {
-            status: 400,
-            headers: getCorsHeaders(),
-        });
-    }
+	// Extract prompt from path
+	const prompt = extractPromptFromPath(path);
+	if (!prompt) {
+		return new Response("Pass a prompt after /", {
+			status: 400,
+			headers: getCorsHeaders(),
+		});
+	}
 
-    // Generate HTML from prompt
-    return generateHtml(prompt, request, env);
+	// Generate HTML from prompt
+	return generateHtml(prompt, request, env);
 }
 
 /**
@@ -66,11 +66,11 @@ async function handleRequest(request, env) {
  * @returns {Object} CORS headers
  */
 function getCorsHeaders() {
-    return {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    };
+	return {
+		"Access-Control-Allow-Origin": "*",
+		"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+		"Access-Control-Allow-Headers": "Content-Type, Authorization",
+	};
 }
 
 /**
@@ -78,15 +78,15 @@ function getCorsHeaders() {
  * @returns {Response} A response with CORS headers
  */
 function handleCorsPreflightRequest() {
-    const headers = {
-        ...getCorsHeaders(),
-        "Access-Control-Max-Age": "86400", // 24 hours
-    };
+	const headers = {
+		...getCorsHeaders(),
+		"Access-Control-Max-Age": "86400", // 24 hours
+	};
 
-    return new Response(null, {
-        status: 204,
-        headers,
-    });
+	return new Response(null, {
+		status: 204,
+		headers,
+	});
 }
 
 /**
@@ -96,30 +96,30 @@ function handleCorsPreflightRequest() {
  * @returns {Response|null} A response for redirects/errors or null to continue processing
  */
 function processPath(path, request) {
-    // Quick filters for common non-content requests
-    if (path === "/favicon.ico" || path.startsWith("/.")) {
-        return new Response("Not found", {
-            status: 404,
-            headers: getCorsHeaders(),
-        });
-    }
+	// Quick filters for common non-content requests
+	if (path === "/favicon.ico" || path.startsWith("/.")) {
+		return new Response("Not found", {
+			status: 404,
+			headers: getCorsHeaders(),
+		});
+	}
 
-    // Enforce trailing slash only if there are 2 or less slashes in the path
-    if (shouldRedirectWithTrailingSlash(path)) {
-        const redirectUrl = new URL(request.url);
-        redirectUrl.pathname += "/";
+	// Enforce trailing slash only if there are 2 or less slashes in the path
+	if (shouldRedirectWithTrailingSlash(path)) {
+		const redirectUrl = new URL(request.url);
+		redirectUrl.pathname += "/";
 
-        // Create a new response with the same status and redirect URL, but with CORS headers
-        return new Response(null, {
-            status: 301,
-            headers: {
-                ...getCorsHeaders(),
-                Location: redirectUrl.toString(),
-            },
-        });
-    }
+		// Create a new response with the same status and redirect URL, but with CORS headers
+		return new Response(null, {
+			status: 301,
+			headers: {
+				...getCorsHeaders(),
+				Location: redirectUrl.toString(),
+			},
+		});
+	}
 
-    return null;
+	return null;
 }
 
 /**
@@ -128,15 +128,15 @@ function processPath(path, request) {
  * @returns {boolean} Whether to redirect
  */
 function shouldRedirectWithTrailingSlash(path) {
-    if (path === "/" || path.endsWith("/")) {
-        return false;
-    }
+	if (path === "/" || path.endsWith("/")) {
+		return false;
+	}
 
-    // Count the number of slashes in the path
-    const slashCount = (path.match(/\//g) || []).length;
+	// Count the number of slashes in the path
+	const slashCount = (path.match(/\//g) || []).length;
 
-    // Only redirect if there are 1 or less slashes (including the leading slash)
-    return slashCount <= 1;
+	// Only redirect if there are 1 or less slashes (including the leading slash)
+	return slashCount <= 1;
 }
 
 /**
@@ -145,7 +145,7 @@ function shouldRedirectWithTrailingSlash(path) {
  * @returns {string} The extracted prompt
  */
 function extractPromptFromPath(path) {
-    return path.slice(1, path.endsWith("/") ? -1 : undefined);
+	return path.slice(1, path.endsWith("/") ? -1 : undefined);
 }
 
 /**
@@ -156,35 +156,35 @@ function extractPromptFromPath(path) {
  * @returns {Response} The HTML response
  */
 async function generateHtml(prompt, request, env) {
-    // Get URL for query parameters
-    const url = new URL(request.url);
+	// Get URL for query parameters
+	const url = new URL(request.url);
 
-    // Make upstream request to text API
-    const upstream = await fetchFromTextApi(prompt, url, env);
+	// Make upstream request to text API
+	const upstream = await fetchFromTextApi(prompt, url, env);
 
-    if (!upstream.ok || !upstream.body) {
-        return new Response(`Upstream error ${upstream.status}`, {
-            status: 502,
-            headers: getCorsHeaders(),
-        });
-    }
+	if (!upstream.ok || !upstream.body) {
+		return new Response(`Upstream error ${upstream.status}`, {
+			status: 502,
+			headers: getCorsHeaders(),
+		});
+	}
 
-    // Process the stream
-    const htmlStream = upstream.body
-        .pipeThrough(new TextDecoderStream()) // bytes ➜ text
-        .pipeThrough(createSseToHtmlTransformer())
-        .pipeThrough(createHtmlGateTransformer())
-        .pipeThrough(new TextEncoderStream()); // text ➜ bytes
+	// Process the stream
+	const htmlStream = upstream.body
+		.pipeThrough(new TextDecoderStream()) // bytes ➜ text
+		.pipeThrough(createSseToHtmlTransformer())
+		.pipeThrough(createHtmlGateTransformer())
+		.pipeThrough(new TextEncoderStream()); // text ➜ bytes
 
-    // Return the response with CORS headers
-    return new Response(htmlStream, {
-        headers: {
-            "Content-Type": "text/html; charset=utf-8",
-            "Content-Encoding": "identity",
-            "Cache-Control": "no-cache",
-            ...getCorsHeaders(),
-        },
-    });
+	// Return the response with CORS headers
+	return new Response(htmlStream, {
+		headers: {
+			"Content-Type": "text/html; charset=utf-8",
+			"Content-Encoding": "identity",
+			"Cache-Control": "no-cache",
+			...getCorsHeaders(),
+		},
+	});
 }
 
 /**
@@ -195,31 +195,31 @@ async function generateHtml(prompt, request, env) {
  * @returns {Promise<Response>} The upstream response
  */
 function fetchFromTextApi(prompt, url, env) {
-    // Get model from query parameter or use default
-    const model = url.searchParams.get("model") || "openai-large";
+	// Get model from query parameter or use default
+	const model = url.searchParams.get("model") || "openai-large";
 
-    // Prepare headers with Bearer token
-    const headers = {
-        "Content-Type": "application/json",
-    };
+	// Prepare headers with Bearer token
+	const headers = {
+		"Content-Type": "application/json",
+	};
 
-    // Add Authorization header if TEXT_API_TOKEN is available
-    if (env.TEXT_API_TOKEN) {
-        headers["Authorization"] = `Bearer ${env.TEXT_API_TOKEN}`;
-    }
+	// Add Authorization header if TEXT_API_TOKEN is available
+	if (env.TEXT_API_TOKEN) {
+		headers["Authorization"] = `Bearer ${env.TEXT_API_TOKEN}`;
+	}
 
-    return fetch("https://text.pollinations.ai/v1/chat/completions", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-            model,
-            stream: true,
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: prompt },
-            ],
-        }),
-    });
+	return fetch("https://text.pollinations.ai/v1/chat/completions", {
+		method: "POST",
+		headers,
+		body: JSON.stringify({
+			model,
+			stream: true,
+			messages: [
+				{ role: "system", content: systemPrompt },
+				{ role: "user", content: prompt },
+			],
+		}),
+	});
 }
 
 /**
@@ -227,25 +227,25 @@ function fetchFromTextApi(prompt, url, env) {
  * @returns {TransformStream} The SSE to HTML transformer
  */
 function createSseToHtmlTransformer() {
-    return new TransformStream({
-        start() {
-            this.buf = "";
-        },
-        transform(chunk, ctrl) {
-            this.buf += chunk;
-            const lines = this.buf.split("\n");
-            this.buf = lines.pop();
-            for (let l of lines) {
-                l = l.trim();
-                if (!l || l === "data: [DONE]") continue;
-                if (l.startsWith("data:")) l = l.slice(5).trim();
-                try {
-                    const html = JSON.parse(l).choices?.[0]?.delta?.content;
-                    if (html) ctrl.enqueue(html);
-                } catch {}
-            }
-        },
-    });
+	return new TransformStream({
+		start() {
+			this.buf = "";
+		},
+		transform(chunk, ctrl) {
+			this.buf += chunk;
+			const lines = this.buf.split("\n");
+			this.buf = lines.pop();
+			for (let l of lines) {
+				l = l.trim();
+				if (!l || l === "data: [DONE]") continue;
+				if (l.startsWith("data:")) l = l.slice(5).trim();
+				try {
+					const html = JSON.parse(l).choices?.[0]?.delta?.content;
+					if (html) ctrl.enqueue(html);
+				} catch {}
+			}
+		},
+	});
 }
 
 /**
@@ -253,35 +253,34 @@ function createSseToHtmlTransformer() {
  * @returns {TransformStream} The HTML gate transformer
  */
 function createHtmlGateTransformer() {
-    return new TransformStream({
-        start() {
-            this.prefixBuf = "";
-            this.afterOpen = false;
-            this.done = false;
-            this.tailBuf = "";
-        },
-        transform(chunk, ctrl) {
-            if (this.done) return; // ignore the rest
+	return new TransformStream({
+		start() {
+			this.prefixBuf = "";
+			this.afterOpen = false;
+			this.done = false;
+			this.tailBuf = "";
+		},
+		transform(chunk, ctrl) {
+			if (this.done) return; // ignore the rest
 
-            let text = chunk;
-            if (!this.afterOpen) {
-                this.prefixBuf += text;
-                const lower = this.prefixBuf.toLowerCase();
-                const idx = lower.indexOf("<html");
-                if (idx === -1) return; // still waiting
-                // found <html …>
-                this.afterOpen = true;
-                text = this.prefixBuf.slice(idx); // drop everything before it
-                this.prefixBuf = null;
-            }
+			let text = chunk;
+			if (!this.afterOpen) {
+				this.prefixBuf += text;
+				const lower = this.prefixBuf.toLowerCase();
+				const idx = lower.indexOf("<html");
+				if (idx === -1) return; // still waiting
+				// found <html …>
+				this.afterOpen = true;
+				text = this.prefixBuf.slice(idx); // drop everything before it
+				this.prefixBuf = null;
+			}
 
-            // already streaming; emit chunk
-            ctrl.enqueue(text);
+			// already streaming; emit chunk
+			ctrl.enqueue(text);
 
-            // keep last few KB to look for closing tag
-            this.tailBuf = (this.tailBuf + text).slice(-8192);
-            if (this.tailBuf.toLowerCase().includes("</html>"))
-                this.done = true; // stop further output
-        },
-    });
+			// keep last few KB to look for closing tag
+			this.tailBuf = (this.tailBuf + text).slice(-8192);
+			if (this.tailBuf.toLowerCase().includes("</html>")) this.done = true; // stop further output
+		},
+	});
 }

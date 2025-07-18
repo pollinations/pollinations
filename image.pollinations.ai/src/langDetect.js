@@ -7,14 +7,14 @@ const logError = debug("pollinations:error");
 const logLang = debug("pollinations:lang");
 
 export function detectEnglish(text) {
-    return new Promise((resolve, reject) => {
-        exec(`python langdetect.py "${text}"`, (err, stdout, stderr) => {
-            if (err) {
-                logError("ERROR", err);
-                reject(err);
-            }
-            // logLang("stdout", stdout);
-            resolve(stdout.trim() === "en");
-        });
-    });
+	return new Promise((resolve, reject) => {
+		exec(`python langdetect.py "${text}"`, (err, stdout, stderr) => {
+			if (err) {
+				logError("ERROR", err);
+				reject(err);
+			}
+			// logLang("stdout", stdout);
+			resolve(stdout.trim() === "en");
+		});
+	});
 }

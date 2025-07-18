@@ -39,9 +39,8 @@ runTest('should correctly apply weighting and tags to recent turns', () => {
     '[ASSISTANT] Glad to hear that.',
   ].join('\n');
 
+  // With RECENT_TURNS_COUNT = 2, should include exactly the last 2 messages
   const recentTurns = [
-    '[USER] How are you?',
-    '[ASSISTANT] I am doing great. How about you?',
     '[USER] I am fine.',
     '[ASSISTANT] Glad to hear that.',
   ].join(' ');
@@ -67,52 +66,48 @@ runTest('should handle empty messages array', () => {
     assert.strictEqual(result, '', 'Should return an empty string for empty messages array.');
 });
 
-runTest('should skip weighting for short conversations (≤ recent turn count)', () => {
+runTest('should skip weighting for short conversations (≤ recent message count)', () => {
     const messages = [
         { role: 'user', content: 'First message' },
         { role: 'assistant', content: 'First response' }
     ];
 
-    // With only 1 turn (≤ RECENT_TURNS_COUNT of 2), should NOT use weighting
+    // With only 2 messages (≤ RECENT_TURNS_COUNT of 2), should NOT use weighting
     const expectedOutput = '[USER] First message [ASSISTANT] First response';
 
     const result = extractAndNormalizeSemanticText(JSON.stringify({ messages }));
-    assert.strictEqual(result, expectedOutput, 'Should skip weighting for conversations with ≤ recent turn count.');
+    assert.strictEqual(result, expectedOutput, 'Should skip weighting for conversations with ≤ recent message count.');
 });
 
-runTest('should apply weighting only when conversation has more turns than configured', () => {
+runTest('should apply weighting only when conversation has more messages than configured', () => {
     const messages = [
-        { role: 'user', content: 'Turn 1 user' },
-        { role: 'assistant', content: 'Turn 1 assistant' },
-        { role: 'user', content: 'Turn 2 user' },
-        { role: 'assistant', content: 'Turn 2 assistant' },
-        { role: 'user', content: 'Turn 3 user' },
-        { role: 'assistant', content: 'Turn 3 assistant' }
+        { role: 'user', content: 'Message 1' },
+        { role: 'assistant', content: 'Response 1' },
+        { role: 'user', content: 'Message 2' },
+        { role: 'assistant', content: 'Response 2' },
+        { role: 'user', content: 'Message 3' }
     ];
 
-    // With 3 turns (> RECENT_TURNS_COUNT of 2), should use weighting
+    // With 5 messages (> RECENT_TURNS_COUNT of 2), should use weighting
     const fullHistory = [
-        '[USER] Turn 1 user',
-        '[ASSISTANT] Turn 1 assistant',
-        '[USER] Turn 2 user',
-        '[ASSISTANT] Turn 2 assistant',
-        '[USER] Turn 3 user',
-        '[ASSISTANT] Turn 3 assistant'
+        '[USER] Message 1',
+        '[ASSISTANT] Response 1',
+        '[USER] Message 2',
+        '[ASSISTANT] Response 2',
+        '[USER] Message 3'
     ].join('\n');
 
-    // Should include exactly the last 2 turns (4 messages)
+    // Should include exactly the last 2 messages
     const recentTurns = [
-        '[USER] Turn 2 user',
-        '[ASSISTANT] Turn 2 assistant',
-        '[USER] Turn 3 user',
-        '[ASSISTANT] Turn 3 assistant'
+        '[ASSISTANT] Response 2',
+        '[USER] Message 3'
     ].join(' ');
 
     const weightedInput = `${fullHistory}${HISTORY_SEPARATOR}${LATEST_EXCHANGE_START_TAG} ${recentTurns} ${LATEST_EXCHANGE_END_TAG}`;
     const expectedOutput = weightedInput.replace(/\s+/g, ' ').trim();
 
     const result = extractAndNormalizeSemanticText(JSON.stringify({ messages }));
-    assert.strictEqual(result, expectedOutput, 'Should apply weighting with exactly the configured number of recent turns.');
+    assert.strictEqual(result, expectedOutput, 'Should apply weighting with exactly the configured number of recent messages.');
 });
 
 

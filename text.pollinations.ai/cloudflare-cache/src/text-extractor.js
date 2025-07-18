@@ -82,13 +82,12 @@ function extractFromMessages(messages) {
 	const fullHistory = parts.join("\n");
 
 	// Apply weighted semantic embeddings if enabled
-	// Only use weighting if we have more than the configured number of turns
+	// Only use weighting if we have more messages than the configured count
 	if (SEMANTIC_WEIGHTING_ENABLED && messages.length > 0) {
 		const relevantMessages = messages.filter(msg => msg.role === "user" || msg.role === "assistant");
-		const totalTurns = Math.floor(relevantMessages.length / 2); // Each turn = user + assistant
 		
-		// Only apply weighting if we have more turns than the recent turns count
-		if (totalTurns > RECENT_TURNS_COUNT) {
+		// Only apply weighting if we have more messages than the recent message count
+		if (relevantMessages.length > RECENT_TURNS_COUNT) {
 			const recentTurns = extractRecentTurns(messages, RECENT_TURNS_COUNT);
 			if (recentTurns && recentTurns.trim().length > 0) {
 				return createWeightedInput(fullHistory, recentTurns);
@@ -119,9 +118,8 @@ function extractRecentTurns(messages, turnCount) {
 		return "";
 	}
 
-	// Extract exactly the specified number of recent turns
-	// A turn is a user-assistant pair, so we need turnCount * 2 messages
-	const messagesToTake = Math.min(turnCount * 2, relevantMessages.length);
+	// Extract exactly the specified number of recent messages
+	const messagesToTake = Math.min(turnCount, relevantMessages.length);
 	const recentMessages = relevantMessages.slice(-messagesToTake);
 	
 	const recentParts = [];

@@ -377,7 +377,7 @@ export default {
 							similarity: similar.similarity,
 							cacheKey: similar.cacheKey,
 							userPrefix: userPrefix,
-							input: requestText,
+							input: textToEmbed,
 							response: responseText
 						};
 						console.log(`[SEMANTIC_EVAL] ${JSON.stringify(structuredLog)}`);

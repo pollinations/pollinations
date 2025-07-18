@@ -232,1456 +232,1471 @@
 // ];
 
 const templatesAndPrompts = [
-	{
-		template:
-			"professional 3d model {prompt} . octane render, highly detailed, volumetric, dramatic lighting",
-		prompts: [
-			"car",
-			"person",
-			"animal",
-			"building",
-			"natural landscape",
-			"surreal dreamscape",
-			"fourth dimension architecture",
-		],
-	},
-	{
-		template:
-			"analog film photo {prompt} . faded film, desaturated, 35mm photo, grainy, vignette, vintage, Kodachrome, Lomography, found footage",
-		prompts: [
-			"city street",
-			"beach",
-			"mountain landscape",
-			"old barn",
-			"abandoned place",
-			"concept of time",
-			"exploration of loneliness",
-		],
-	},
-	{
-		template:
-			"anime artwork {prompt} . anime style, key visual, vibrant, studio anime, highly detailed",
-		prompts: [
-			"main character",
-			"fantasy creature",
-			"futuristic vehicle",
-			"natural landscape",
-			"cityscape",
-			"inner psyche",
-			"alternate reality",
-		],
-	},
-	{
-		template:
-			"professional 3d model {prompt} . octane render, highly detailed, volumetric, dramatic lighting",
-		prompts: [
-			"car",
-			"person",
-			"animal",
-			"building",
-			"natural landscape",
-			"surreal dreamscape",
-			"fourth dimension architecture",
-		],
-	},
-	{
-		template:
-			"analog film photo {prompt} . faded film, desaturated, 35mm photo, grainy, vignette, vintage, Kodachrome, Lomography, found footage",
-		prompts: [
-			"city street",
-			"beach",
-			"mountain landscape",
-			"old barn",
-			"abandoned place",
-			"concept of time",
-			"exploration of loneliness",
-		],
-	},
-	{
-		template:
-			"anime artwork {prompt} . anime style, key visual, vibrant, studio anime, highly detailed",
-		prompts: [
-			"main character",
-			"fantasy creature",
-			"futuristic vehicle",
-			"natural landscape",
-			"cityscape",
-			"inner psyche",
-			"alternate reality",
-		],
-	},
-	{
-		template:
-			"{prompt} . shallow depth of field, vignette, highly detailed, high budget, bokeh, moody, epic, gorgeous, film grain, grainy",
-		prompts: [
-			"person portrait",
-			"still life",
-			"landscape",
-			"architectural",
-			"automotive",
-			"dreamlike abstraction",
-			"surreal alternate dimension",
-		],
-	},
-	{
-		template:
-			"comic {prompt} . graphic illustration, comic art, graphic novel art, vibrant, highly detailed",
-		prompts: [
-			"superhero",
-			"fantasy character",
-			"sci-fi scene",
-			"everyday scene",
-			"action sequence",
-			"epic metaphor",
-			"visualized philosophy",
-		],
-	},
-	{
-		template:
-			"play-doh style {prompt} . sculpture, clay art, centered composition, Claymation",
-		prompts: [
-			"animal",
-			"person",
-			"vehicle",
-			"building",
-			"food",
-			"shape of a memory",
-			"anthropomorphic emotion",
-		],
-	},
-	{
-		template:
-			"breathtaking {prompt} . award-winning, professional, highly detailed",
-		prompts: [
-			"landscape photo",
-			"cityscape",
-			"character portrait",
-			"still life",
-			"architectural interior",
-			"beauty of knowledge",
-			"wonder of the universe",
-		],
-	},
-	{
-		template:
-			"ethereal fantasy concept art of {prompt} . magnificent, celestial, ethereal, painterly, epic, majestic, magical, fantasy art, cover art, dreamy",
-		prompts: [
-			"mystical creature",
-			"natural landscape",
-			"castle",
-			"wizard tower",
-			"futuristic city",
-			"stream of consciousness",
-			"evolution of humanity",
-		],
-	},
-	{
-		template:
-			"isometric style {prompt} . vibrant, beautiful, crisp, detailed, ultra detailed, intricate",
-		prompts: [
-			"cityscape",
-			"room interior",
-			"fantasy landscape",
-			"sci-fi scene",
-			"everyday scene",
-			"complex philosophy",
-			"synaptic connections",
-		],
-	},
-	{
-		template:
-			"line art drawing {prompt} . professional, sleek, modern, minimalist, graphic, line art, vector graphics",
-		prompts: [
-			"animal",
-			"person",
-			"still life",
-			"landscape",
-			"architectural",
-			"visual metaphor",
-			"emotional topology",
-		],
-	},
-	{
-		template:
-			"low-poly style {prompt} . low-poly game art, polygon mesh, jagged, blocky, wireframe edges, centered composition",
-		prompts: [
-			"animal",
-			"vehicle",
-			"building",
-			"landscape",
-			"object",
-			"fragmented reality",
-			"digital consciousness",
-		],
-	},
-	{
-		template:
-			"neonpunk style {prompt} . cyberpunk, vaporwave, neon, vibes, vibrant, stunningly beautiful, crisp, detailed, sleek, ultramodern",
-		prompts: [
-			"cityscape",
-			"character",
-			"vehicle",
-			"room interior",
-			"abstract landscape",
-			"technological singularity",
-			"transhuman ideation",
-		],
-	},
-	{
-		template:
-			"origami style {prompt} . paper art, pleated paper, folded, origami art, pleats, cut and fold, centered composition",
-		prompts: [
-			"animal",
-			"plant",
-			"object",
-			"building",
-			"person",
-			"unfolding awareness",
-			"recursive patterns",
-		],
-	},
-	{
-		template:
-			"cinematic still {prompt} . emotional, harmonious, vignette, highly detailed, high budget, bokeh, cinemascope, moody, gorgeous, film grain, grainy",
-		prompts: [
-			"portrait",
-			"landscape",
-			"cityscape",
-			"still life",
-			"intimate scene",
-			"spiritual awakening",
-			"samsara illusion",
-		],
-	},
-	{
-		template:
-			"cinematic photo {prompt} . 35mm photograph, film, bokeh, professional, 4k, highly detailed",
-		prompts: [
-			"landscape",
-			"street scene",
-			"architectural",
-			"automotive",
-			"still life",
-			" rollercoaster of life",
-			"lacrimation of time",
-		],
-	},
-	{
-		template:
-			"anime artwork {prompt} . anime style, key visual, vibrant, studio anime, highly detailed",
-		prompts: [
-			"main character",
-			"fantasy creature",
-			"futuristic vehicle",
-			"natural landscape",
-			"cityscape",
-			"battle of good vs evil",
-			"hero's journey within",
-		],
-	},
-	{
-		template:
-			"manga style {prompt} . vibrant, high-energy, detailed, iconic, Japanese comic style",
-		prompts: [
-			"action scene",
-			"emotional moment",
-			"fantasy landscape",
-			"sci-fi technology",
-			"school setting",
-			"alternate timeline",
-			"dream within a dream",
-		],
-	},
-	{
-		template:
-			"concept art {prompt} . digital artwork, illustrative, painterly, matte painting, highly detailed",
-		prompts: [
-			"futuristic city",
-			"alien world",
-			"medieval building",
-			"mystical landscape",
-			"vehicle design",
-			"sentient machine life",
-			"multiverse theory",
-		],
-	},
-	{
-		template:
-			"pixel-art {prompt} . low-res, blocky, pixel art style, 8-bit graphics",
-		prompts: [
-			"character",
-			"creature",
-			"landscape",
-			"spaceship",
-			"everyday scene",
-			"platonic forms",
-			"holographic simulation",
-		],
-	},
+    {
+        template:
+            "professional 3d model {prompt} . octane render, highly detailed, volumetric, dramatic lighting",
+        prompts: [
+            "car",
+            "person",
+            "animal",
+            "building",
+            "natural landscape",
+            "surreal dreamscape",
+            "fourth dimension architecture",
+        ],
+    },
+    {
+        template:
+            "analog film photo {prompt} . faded film, desaturated, 35mm photo, grainy, vignette, vintage, Kodachrome, Lomography, found footage",
+        prompts: [
+            "city street",
+            "beach",
+            "mountain landscape",
+            "old barn",
+            "abandoned place",
+            "concept of time",
+            "exploration of loneliness",
+        ],
+    },
+    {
+        template:
+            "anime artwork {prompt} . anime style, key visual, vibrant, studio anime, highly detailed",
+        prompts: [
+            "main character",
+            "fantasy creature",
+            "futuristic vehicle",
+            "natural landscape",
+            "cityscape",
+            "inner psyche",
+            "alternate reality",
+        ],
+    },
+    {
+        template:
+            "professional 3d model {prompt} . octane render, highly detailed, volumetric, dramatic lighting",
+        prompts: [
+            "car",
+            "person",
+            "animal",
+            "building",
+            "natural landscape",
+            "surreal dreamscape",
+            "fourth dimension architecture",
+        ],
+    },
+    {
+        template:
+            "analog film photo {prompt} . faded film, desaturated, 35mm photo, grainy, vignette, vintage, Kodachrome, Lomography, found footage",
+        prompts: [
+            "city street",
+            "beach",
+            "mountain landscape",
+            "old barn",
+            "abandoned place",
+            "concept of time",
+            "exploration of loneliness",
+        ],
+    },
+    {
+        template:
+            "anime artwork {prompt} . anime style, key visual, vibrant, studio anime, highly detailed",
+        prompts: [
+            "main character",
+            "fantasy creature",
+            "futuristic vehicle",
+            "natural landscape",
+            "cityscape",
+            "inner psyche",
+            "alternate reality",
+        ],
+    },
+    {
+        template:
+            "{prompt} . shallow depth of field, vignette, highly detailed, high budget, bokeh, moody, epic, gorgeous, film grain, grainy",
+        prompts: [
+            "person portrait",
+            "still life",
+            "landscape",
+            "architectural",
+            "automotive",
+            "dreamlike abstraction",
+            "surreal alternate dimension",
+        ],
+    },
+    {
+        template:
+            "comic {prompt} . graphic illustration, comic art, graphic novel art, vibrant, highly detailed",
+        prompts: [
+            "superhero",
+            "fantasy character",
+            "sci-fi scene",
+            "everyday scene",
+            "action sequence",
+            "epic metaphor",
+            "visualized philosophy",
+        ],
+    },
+    {
+        template:
+            "play-doh style {prompt} . sculpture, clay art, centered composition, Claymation",
+        prompts: [
+            "animal",
+            "person",
+            "vehicle",
+            "building",
+            "food",
+            "shape of a memory",
+            "anthropomorphic emotion",
+        ],
+    },
+    {
+        template:
+            "breathtaking {prompt} . award-winning, professional, highly detailed",
+        prompts: [
+            "landscape photo",
+            "cityscape",
+            "character portrait",
+            "still life",
+            "architectural interior",
+            "beauty of knowledge",
+            "wonder of the universe",
+        ],
+    },
+    {
+        template:
+            "ethereal fantasy concept art of {prompt} . magnificent, celestial, ethereal, painterly, epic, majestic, magical, fantasy art, cover art, dreamy",
+        prompts: [
+            "mystical creature",
+            "natural landscape",
+            "castle",
+            "wizard tower",
+            "futuristic city",
+            "stream of consciousness",
+            "evolution of humanity",
+        ],
+    },
+    {
+        template:
+            "isometric style {prompt} . vibrant, beautiful, crisp, detailed, ultra detailed, intricate",
+        prompts: [
+            "cityscape",
+            "room interior",
+            "fantasy landscape",
+            "sci-fi scene",
+            "everyday scene",
+            "complex philosophy",
+            "synaptic connections",
+        ],
+    },
+    {
+        template:
+            "line art drawing {prompt} . professional, sleek, modern, minimalist, graphic, line art, vector graphics",
+        prompts: [
+            "animal",
+            "person",
+            "still life",
+            "landscape",
+            "architectural",
+            "visual metaphor",
+            "emotional topology",
+        ],
+    },
+    {
+        template:
+            "low-poly style {prompt} . low-poly game art, polygon mesh, jagged, blocky, wireframe edges, centered composition",
+        prompts: [
+            "animal",
+            "vehicle",
+            "building",
+            "landscape",
+            "object",
+            "fragmented reality",
+            "digital consciousness",
+        ],
+    },
+    {
+        template:
+            "neonpunk style {prompt} . cyberpunk, vaporwave, neon, vibes, vibrant, stunningly beautiful, crisp, detailed, sleek, ultramodern",
+        prompts: [
+            "cityscape",
+            "character",
+            "vehicle",
+            "room interior",
+            "abstract landscape",
+            "technological singularity",
+            "transhuman ideation",
+        ],
+    },
+    {
+        template:
+            "origami style {prompt} . paper art, pleated paper, folded, origami art, pleats, cut and fold, centered composition",
+        prompts: [
+            "animal",
+            "plant",
+            "object",
+            "building",
+            "person",
+            "unfolding awareness",
+            "recursive patterns",
+        ],
+    },
+    {
+        template:
+            "cinematic still {prompt} . emotional, harmonious, vignette, highly detailed, high budget, bokeh, cinemascope, moody, gorgeous, film grain, grainy",
+        prompts: [
+            "portrait",
+            "landscape",
+            "cityscape",
+            "still life",
+            "intimate scene",
+            "spiritual awakening",
+            "samsara illusion",
+        ],
+    },
+    {
+        template:
+            "cinematic photo {prompt} . 35mm photograph, film, bokeh, professional, 4k, highly detailed",
+        prompts: [
+            "landscape",
+            "street scene",
+            "architectural",
+            "automotive",
+            "still life",
+            " rollercoaster of life",
+            "lacrimation of time",
+        ],
+    },
+    {
+        template:
+            "anime artwork {prompt} . anime style, key visual, vibrant, studio anime, highly detailed",
+        prompts: [
+            "main character",
+            "fantasy creature",
+            "futuristic vehicle",
+            "natural landscape",
+            "cityscape",
+            "battle of good vs evil",
+            "hero's journey within",
+        ],
+    },
+    {
+        template:
+            "manga style {prompt} . vibrant, high-energy, detailed, iconic, Japanese comic style",
+        prompts: [
+            "action scene",
+            "emotional moment",
+            "fantasy landscape",
+            "sci-fi technology",
+            "school setting",
+            "alternate timeline",
+            "dream within a dream",
+        ],
+    },
+    {
+        template:
+            "concept art {prompt} . digital artwork, illustrative, painterly, matte painting, highly detailed",
+        prompts: [
+            "futuristic city",
+            "alien world",
+            "medieval building",
+            "mystical landscape",
+            "vehicle design",
+            "sentient machine life",
+            "multiverse theory",
+        ],
+    },
+    {
+        template:
+            "pixel-art {prompt} . low-res, blocky, pixel art style, 8-bit graphics",
+        prompts: [
+            "character",
+            "creature",
+            "landscape",
+            "spaceship",
+            "everyday scene",
+            "platonic forms",
+            "holographic simulation",
+        ],
+    },
 
-	{
-		template:
-			"glitch art portrait {prompt} . digital distortion, VHS overlay, retro cyber effects, pixelated errors",
-		prompts: [
-			"man",
-			"woman",
-			"nonbinary person",
-			"fantasy character",
-			"sci-fi cyborg",
-			"fragmented identity",
-			"decay of memory",
-		],
-	},
-	{
-		template:
-			"HDR urban photography {prompt} . high dynamic range, crisp details, vivid colors, cityscape focus",
-		prompts: [
-			"street scene",
-			"downtown",
-			"bridge",
-			"plaza",
-			"park",
-			"the urban hive mind",
-			"peaks and valleys of capitalism",
-		],
-	},
-	{
-		template:
-			"charcoal sketch {prompt} . rough textures, gradations of black and white, smudged shading, realistic",
-		prompts: [
-			"person",
-			"still life",
-			"animal",
-			"landscape",
-			"architectural",
-			"negative space as subject",
-			"varieties of void",
-		],
-	},
-	{
-		template:
-			"psychedelic abstract {prompt} . vibrant swirls, optical illusions, bold colors, reminiscent of 1960s art",
-		prompts: [
-			"swirling vortex",
-			"cosmic waves",
-			"sacred geometry",
-			"kaleidoscopic pattern",
-			"visionary portal",
-			"tunnel to the collective unconscious",
-			"archetypal forms and flows",
-		],
-	},
-	{
-		template:
-			"8mm vintage travel film {prompt} . grainy texture, sepia tones, flickering effect, nostalgic feel",
-		prompts: [
-			"bustling market",
-			"quiet village",
-			"winding road",
-			"misty harbor",
-			"verdant valley",
-			"wanderlust and epiphany",
-			"impermanence and decay",
-		],
-	},
-	{
-		template:
-			"digital vector illustration {prompt} . clean lines, flat colors, Adobe Illustrator style, modern graphic",
-		prompts: [
-			"animal",
-			"person",
-			"still life",
-			"landscape",
-			"architectural",
-			"symbolic iconography",
-			"maximalist reductionism",
-		],
-	},
-	{
-		template:
-			"macro nature photography {prompt} . extreme close-up, detailed textures, bokeh background, vivid flora or fauna",
-		prompts: [
-			"insect",
-			"flower",
-			"leaf",
-			"fungus",
-			"raindrops",
-			"the universe in a dewdrop",
-			"fractals within fractals",
-		],
-	},
-	{
-		template:
-			"gothic fantasy {prompt} . dark and brooding atmosphere, medieval architecture, mythical creatures",
-		prompts: [
-			"ominous castle",
-			"forbidden forest",
-			"witches coven",
-			"vampire lair",
-			"ghostly apparition",
-			"plague of abstraction",
-			"allegorical psychomachia",
-		],
-	},
-	{
-		template:
-			"holographic 3D model {prompt} . futuristic, shimmering rainbow effects, translucent, light-interactive",
-		prompts: [
-			"vehicle",
-			"building",
-			"creature",
-			"object",
-			"avatar",
-			"simulacrum of consciousness",
-			"holographic neural mapping",
-		],
-	},
-	{
-		template:
-			"experimental mixed media {prompt} . collage elements, diverse materials, avant-garde, textural contrasts",
-		prompts: [
-			"surreal portrait",
-			"dreamlike landscape",
-			"abstract still life",
-			"psychedelic patterns",
-			"figurative sculpture",
-			"chaos into order",
-			"the collective unconscious",
-		],
-	},
+    {
+        template:
+            "glitch art portrait {prompt} . digital distortion, VHS overlay, retro cyber effects, pixelated errors",
+        prompts: [
+            "man",
+            "woman",
+            "nonbinary person",
+            "fantasy character",
+            "sci-fi cyborg",
+            "fragmented identity",
+            "decay of memory",
+        ],
+    },
+    {
+        template:
+            "HDR urban photography {prompt} . high dynamic range, crisp details, vivid colors, cityscape focus",
+        prompts: [
+            "street scene",
+            "downtown",
+            "bridge",
+            "plaza",
+            "park",
+            "the urban hive mind",
+            "peaks and valleys of capitalism",
+        ],
+    },
+    {
+        template:
+            "charcoal sketch {prompt} . rough textures, gradations of black and white, smudged shading, realistic",
+        prompts: [
+            "person",
+            "still life",
+            "animal",
+            "landscape",
+            "architectural",
+            "negative space as subject",
+            "varieties of void",
+        ],
+    },
+    {
+        template:
+            "psychedelic abstract {prompt} . vibrant swirls, optical illusions, bold colors, reminiscent of 1960s art",
+        prompts: [
+            "swirling vortex",
+            "cosmic waves",
+            "sacred geometry",
+            "kaleidoscopic pattern",
+            "visionary portal",
+            "tunnel to the collective unconscious",
+            "archetypal forms and flows",
+        ],
+    },
+    {
+        template:
+            "8mm vintage travel film {prompt} . grainy texture, sepia tones, flickering effect, nostalgic feel",
+        prompts: [
+            "bustling market",
+            "quiet village",
+            "winding road",
+            "misty harbor",
+            "verdant valley",
+            "wanderlust and epiphany",
+            "impermanence and decay",
+        ],
+    },
+    {
+        template:
+            "digital vector illustration {prompt} . clean lines, flat colors, Adobe Illustrator style, modern graphic",
+        prompts: [
+            "animal",
+            "person",
+            "still life",
+            "landscape",
+            "architectural",
+            "symbolic iconography",
+            "maximalist reductionism",
+        ],
+    },
+    {
+        template:
+            "macro nature photography {prompt} . extreme close-up, detailed textures, bokeh background, vivid flora or fauna",
+        prompts: [
+            "insect",
+            "flower",
+            "leaf",
+            "fungus",
+            "raindrops",
+            "the universe in a dewdrop",
+            "fractals within fractals",
+        ],
+    },
+    {
+        template:
+            "gothic fantasy {prompt} . dark and brooding atmosphere, medieval architecture, mythical creatures",
+        prompts: [
+            "ominous castle",
+            "forbidden forest",
+            "witches coven",
+            "vampire lair",
+            "ghostly apparition",
+            "plague of abstraction",
+            "allegorical psychomachia",
+        ],
+    },
+    {
+        template:
+            "holographic 3D model {prompt} . futuristic, shimmering rainbow effects, translucent, light-interactive",
+        prompts: [
+            "vehicle",
+            "building",
+            "creature",
+            "object",
+            "avatar",
+            "simulacrum of consciousness",
+            "holographic neural mapping",
+        ],
+    },
+    {
+        template:
+            "experimental mixed media {prompt} . collage elements, diverse materials, avant-garde, textural contrasts",
+        prompts: [
+            "surreal portrait",
+            "dreamlike landscape",
+            "abstract still life",
+            "psychedelic patterns",
+            "figurative sculpture",
+            "chaos into order",
+            "the collective unconscious",
+        ],
+    },
 
-	// Previous templates omitted
+    // Previous templates omitted
 
-	{
-		template:
-			"risograph art print {prompt} . layered colors, grainy texture, limited color palette, retro vibe",
-		prompts: [
-			"botanical illustration",
-			"cityscape",
-			"character portrait",
-			"abstract geometric",
-			"nature landscape",
-			"multiverse fragments",
-			"symbolic archetypes",
-		],
-	},
-	{
-		template:
-			"minimalist Scandinavian design {prompt} . clean lines, muted colors, functional and modern, natural elements",
-		prompts: [
-			"furniture",
-			"clothing",
-			"houseware",
-			"textiles",
-			"lighting",
-			"reductive essentialism",
-			"negative space equilibrium",
-		],
-	},
-	{
-		template:
-			"Japanese ink wash painting {prompt} . sumi-e style, brush strokes, monochrome, Zen-like simplicity",
-		prompts: [
-			"landscape",
-			"animal",
-			"flower",
-			"bamboo",
-			"seasons",
-			"tranquil impermanence",
-			"wabi-sabi aesthetics",
-		],
-	},
-	{
-		template:
-			"graffiti street art {prompt} . bold colors, urban style, spray paint textures, street culture",
-		prompts: [
-			"character",
-			"typography",
-			"abstract shapes",
-			"pop culture",
-			"social commentary",
-			"semiotic disobedience",
-			"hegemonic intervention",
-		],
-	},
-	{
-		template:
-			"noir film scene {prompt} . black and white, high contrast, shadowy, 1940s detective film vibe",
-		prompts: [
-			"back alley",
-			"smoky office",
-			"pool hall",
-			"train station",
-			"nightclub",
-			"jungian shadow",
-			"moral ambiguity",
-		],
-	},
-	{
-		template:
-			"virtual reality landscape {prompt} . futuristic, immersive, 360-degree view, digital world",
-		prompts: [
-			"alien planet",
-			"cyberspace",
-			"mystical realm",
-			"synthetic nature",
-			"simulated city",
-			"the sublime terrarium",
-			"cartesian perspectivalism",
-		],
-	},
-	{
-		template:
-			"bioluminescent underwater scene {prompt} . glowing creatures, deep sea, mysterious, vibrant colors",
-		prompts: [
-			"jellyfish",
-			"seabed",
-			"coral reef",
-			"giant squid",
-			"sunken ship",
-			"the collective bioluminescent consciousness",
-			"deep sea surrealism",
-		],
-	},
-	{
-		template:
-			"medieval manuscript illustration {prompt} . illuminated letters, gold leaf, intricate borders, historical",
-		prompts: [
-			"fantasy story",
-			"nature scene",
-			"castle siege",
-			"royal court",
-			"religious event",
-			"alchemical allegories",
-			"esoteric symbolism",
-		],
-	},
-	{
-		template:
-			"surreal cosmic landscape {prompt} . otherworldly, starry skies, floating elements, dreamy colors",
-		prompts: [
-			"alien world",
-			"mystical realm",
-			"heavenly clouds",
-			"sacred geometry",
-			"magic portal",
-			"dark surrealist astrology",
-			"Jungian dreamscape",
-		],
-	},
-	{
-		template:
-			"claymation character design {prompt} . stop-motion style, textured, whimsical, playful",
-		prompts: [
-			"human",
-			"animal",
-			"fantasy creature",
-			"robot",
-			"monster",
-			"uncanny embodiment",
-			"dreamlike archetypes",
-		],
-	},
-	{
-		template:
-			"woodblock print nature scene {prompt} . traditional Japanese style, layered, natural patterns",
-		prompts: [
-			"mountains",
-			"forest",
-			"garden",
-			"river",
-			"ocean",
-			"seasonal impermanence ",
-			"landscape as mindscape",
-		],
-	},
-	{
-		template:
-			"interactive 3D game environment {prompt} . immersive, realistic textures, dynamic lighting, engaging",
-		prompts: [
-			"fantasy world",
-			"sci-fi city",
-			"natural landscape",
-			"ancient ruins",
-			"alien planet",
-		],
-	},
-	{
-		template:
-			"pop art advertisement {prompt} . bold colors, comic style, 1960s vibe, catchy tagline",
-		prompts: ["soda", "fast food", "appliance", "fashion", "electronics"],
-	},
-	{
-		template:
-			"ambient mood scene {prompt} . soft lighting, calming colors, tranquil, soothing atmosphere",
-		prompts: [
-			"candlelit room",
-			"rainy window",
-			"sunset sky",
-			"forest glen",
-			"quiet cafe",
-		],
-	},
-	{
-		template:
-			"steampunk gadget design {prompt} . mechanical parts, bronze and copper, Victorian era, intricate gears",
-		prompts: [
-			"time machine",
-			"robot",
-			"vehicle",
-			"weapon",
-			"analytical device",
-		],
-	},
-	{
-		template:
-			"Cyberpunk city at night {prompt} . neon lights, futuristic buildings, dystopian, rain-soaked streets",
-		prompts: [
-			"downtown",
-			"plaza",
-			"alleyway",
-			"apartment block",
-			"cabaret bar",
-		],
-	},
-	{
-		template:
-			"Impressionist landscape painting {prompt} . quick brush strokes, light effects, vibrant, Monet-inspired",
-		prompts: [
-			"garden",
-			"riverbank",
-			"poppy field",
-			"lily pond",
-			"forest scene",
-		],
-	},
-	{
-		template:
-			"Cubist abstract composition {prompt} . geometric shapes, fragmented objects, Picasso-esque style",
-		prompts: [
-			"portrait",
-			"still life",
-			"cityscape",
-			"orchestral scene",
-			"dancer",
-		],
-	},
-	{
-		template:
-			"Candid urban photography {prompt} . spontaneous, street life, black and white, human elements",
-		prompts: [
-			"market scene",
-			"café patrons",
-			"park bench",
-			"subway station",
-			"street performers",
-		],
-	},
-	{
-		template:
-			"Augmented reality art experience {prompt} . immersive, interactive, blending real and virtual elements",
-		prompts: [
-			"abstract shapes",
-			"fantasy forest",
-			"spatial installation",
-			"simulated ruins",
-			"light sculptures",
-		],
-	},
-	{
-		template:
-			"Contemporary performance art scene {prompt} . dynamic, conceptual, human expression, avant-garde",
-		prompts: [
-			"movement study",
-			"interpretive dance",
-			"theatrical tableau",
-			"spoken word poetry",
-			"body painting",
-		],
-	},
-	{
-		template:
-			"Infrared landscape photography {prompt} . surreal colors, otherworldly, ethereal, nature-focused",
-		prompts: ["forest", "desert", "waterfront", "canyon", "mountain vista"],
-	},
-	{
-		template:
-			"Land art installation {prompt} . natural materials, outdoor setting, earthworks, environmental theme",
-		prompts: [
-			"field of wheat",
-			"stone pathway",
-			"spiraling rocks",
-			"driftwood structure",
-			"earthen mounds",
-		],
-	},
-	{
-		template:
-			"Korean Minhwa painting {prompt} . folk art, vibrant colors, mythical creatures, traditional motifs",
-		prompts: ["tiger", "dragon", "phoenix", "noble scholar", "mountain spirit"],
-	},
-	{
-		template:
-			"Stop-motion animation scene {prompt} . frame-by-frame, detailed, whimsical, story-driven",
-		prompts: [
-			"clay forest",
-			"paper ocean",
-			"fabric meadow",
-			"woodland characters",
-			"city of toys",
-		],
-	},
-	{
-		template:
-			"Political caricature {prompt} . exaggerated features, humorous, critical, editorial style",
-		prompts: [
-			"world leader",
-			"corporate executive",
-			"limelight politician",
-			"financial elite",
-			"media tycoon",
-		],
-	},
-	{
-		template:
-			"Eco-futuristic city design {prompt} . green architecture, sustainable living spaces, integration with nature",
-		prompts: [
-			"residential complex",
-			"office towers",
-			"urban farm",
-			"solar structures",
-			"green skyline",
-		],
-	},
-	{
-		template:
-			"Victorian fashion sketch {prompt} . detailed period clothing, elegant postures, ornate accessories",
-		prompts: [
-			"noblewoman",
-			"debutante",
-			"opera patron",
-			"military officer",
-			"servant girl",
-		],
-	},
-	{
-		template:
-			"Artistic gourmet dish presentation {prompt} . culinary art, creative plating, vibrant colors, gastronomy focus",
-		prompts: [
-			"salad",
-			"quiche",
-			"seafood platter",
-			"berry tart",
-			"charcuterie board",
-		],
-	},
-	{
-		template:
-			"West African mask design {prompt} . bold patterns, ritual significance, cultural symbolism",
-		prompts: [
-			"spirit guide",
-			"royal visage",
-			"character archetype",
-			"symbolic animal",
-			"ceremonial disguise",
-		],
-	},
-	{
-		template:
-			"Surrealist dreamscape {prompt} . subconscious imagery, Freudian symbols, bizarre landscapes",
-		prompts: [
-			"melting clocks",
-			"floating stairs",
-			"eyeballs and clouds",
-			"giant insects",
-			"levitating objects",
-		],
-	},
-	{
-		template:
-			"Plein air city drawing {prompt} . on-site sketching, lively street scenes, watercolor and ink",
-		prompts: [
-			"busy intersection",
-			"public market",
-			"riverside walk",
-			"construction site ",
-			"subway platform",
-		],
-	},
-	{
-		template:
-			"Abstract animation sequence {prompt} . non-linear storytelling, experimental visuals, mixed media",
-		prompts: [
-			"rippling patterns",
-			"cosmic waves",
-			"morphing geometry",
-			"surreal metamorphosis",
-			"psychedelic visions",
-		],
-	},
-	{
-		template:
-			"Revivalist building design {prompt} . classical elements, symmetry, grandeur, inspired by Ancient Greece and Rome",
-		prompts: [
-			"government institution",
-			"museum facade",
-			"university library",
-			"grand hotel lobby",
-			"stock exchange interior",
-		],
-	},
-	{
-		template:
-			"Stained glass window design {prompt} . vibrant colors, light effects, intricate patterns",
-		prompts: [
-			"natural landscape",
-			"religious scene",
-			"fantasy story",
-			"geometric pattern",
-			"art nouveau style",
-		],
-	},
-	{
-		template:
-			"Expressive art therapy painting {prompt} . emotional release, abstract expression, therapeutic process",
-		prompts: [
-			"anger issues",
-			"grief process",
-			"self-discovery",
-			"stress relief",
-			"healing trauma",
-		],
-	},
-	{
-		template:
-			"Traditional puppet character {prompt} . handcrafted, intricate costumes, storytelling tools",
-		prompts: [
-			"folklore hero",
-			"trickster fox",
-			"wizard mentor",
-			"animal companion",
-			"comedic sidekick",
-		],
-	},
-	{
-		template:
-			"Fantasy makeup look {prompt} . creative face painting, theatrical effects, character transformation",
-		prompts: [
-			"forest nymph",
-			"techno android",
-			"demonic entity",
-			"mythical siren",
-			"cyberpunk hacker",
-		],
-	},
-	{
-		template:
-			"Ancient Mural Reconstruction {prompt} . historic scenes, faded frescoes, archaeological style",
-		prompts: [
-			"daily life vignettes",
-			"royal procession",
-			"ritual ceremony",
-			"battle epic",
-			"afterlife myth",
-		],
-	},
-	{
-		template:
-			"Rococo-Inspired Scene {prompt} . ornate, gold leaf, pastel colors, opulent, 18th-century elegance",
-		prompts: [
-			"aristocratic portrait",
-			"palace ballroom",
-			"lush royal garden",
-			"theatrical performance",
-			"mythological painting",
-		],
-	},
-	{
-		template:
-			"Digital Glitch Art {prompt} . malfunction aesthetics, pixel shatter, color dispersion, modern digital",
-		prompts: [
-			"fractured self-portrait",
-			"corrupted cityscape",
-			"disintegrating dancer",
-			"chromatic serenity errors",
-			"condensed quantum foam",
-		],
-	},
-	{
-		template:
-			"Art Brut/Outsider Art {prompt} . raw, non-conformist, intense expression, untrained artist style",
-		prompts: [
-			"visionary symbols",
-			"extreme emotions",
-			"psychological archetypes",
-			"social commentary",
-			"personal metaphor",
-		],
-	},
-	{
-		template:
-			"Psychedelic Poster Design {prompt} . 1960s revival, trippy visuals, bright neon, Hendrix-era vibe",
-		prompts: [
-			"music festival",
-			"counterculture film",
-			"mind-bending book cover",
-			"spiritual happening",
-			"fantasy gig poster",
-		],
-	},
-	{
-		template:
-			"Artisanal Jewelry Design {prompt} . handcrafted jewelry, intricate metalwork, gemstone details, luxury craftsmanship",
-		prompts: [
-			"gemstone pendant",
-			"art deco ring",
-			"nature-inspired bracelet",
-			"pearl drop earrings",
-			"labyrinth locket",
-		],
-	},
-	{
-		template:
-			"Sandstone Carving {prompt} . ancient style, detailed relief work, weathered stone texture",
-		prompts: [
-			"epic battle scene",
-			"sacred symbols",
-			"royal history",
-			"spiritual deities",
-			"intricate geometric motifs",
-		],
-	},
-	{
-		template:
-			"Hyperrealistic Miniature Painting {prompt} . small scale, detailed brushwork, lifelike miniatures",
-		prompts: [
-			"berries and blossoms",
-			"seashells and sand",
-			"watch parts",
-			"cocktail garnishes",
-			"dessert buffet",
-		],
-	},
-	{
-		template:
-			"Aerospace Concept Art {prompt} . futuristic spacecraft, interstellar travel, high-tech, NASA-inspired",
-		prompts: [
-			"Mars exploration",
-			"asteroid mining vessel",
-			"deep space station",
-			"laser-powered shuttle",
-			"cryogenic hibernation craft",
-		],
-	},
-	{
-		template:
-			"Mandala Art {prompt} . symmetrical, intricate patterns, spiritual symbolism, colorful",
-		prompts: [
-			"chakra energies",
-			"healing themes",
-			"natural elements",
-			"cosmic symbols",
-			"culture and tradition",
-		],
-	},
-	{
-		template:
-			"Silhouette Animation {prompt} . contrast, shadow play, narrative storytelling, Lotte Reiniger style",
-		prompts: [
-			"folk tale",
-			"fable",
-			"gothic tale",
-			"romantic vignette",
-			"magical adventure",
-		],
-	},
-	{
-		template:
-			"Shadow Box Art {prompt} . layered paper, depth illusion, diorama style, intricate cutouts",
-		prompts: [
-			"storybook scene ",
-			"memory capsule",
-			"mythical landscape",
-			"secret garden",
-			"dreamy cityscape",
-		],
-	},
-	{
-		template:
-			"Street Mural in 3D {prompt} . optical illusion, large-scale, urban art, interactive pavement",
-		prompts: [
-			"deep sea diving ",
-			"alternate universe",
-			"surreal funhouse",
-			"magical library labyrinth",
-			"giant robot battle arena",
-		],
-	},
-	{
-		template:
-			"Art Therapy Collage {prompt} . mixed media, emotional expression, personal narratives, therapeutic process",
-		prompts: [
-			"loneliness and connection",
-			"inner critic work",
-			"overcoming trauma",
-			"processing loss",
-			"finding hope",
-		],
-	},
-	{
-		template:
-			"Lace Making {prompt} . delicate patterns, textile art, traditional craftsmanship, intricate",
-		prompts: [
-			"floral motifs",
-			"geometric designs",
-			"ornate heirloom",
-			"sheer butterfly wings",
-			"spiderweb filigree",
-		],
-	},
-	{
-		template:
-			"Botanical Illustration {prompt} . scientific accuracy, detailed plant life, naturalist style",
-		prompts: [
-			"rare orchids",
-			"medicinal herbs",
-			"carnivorous species",
-			"rainforest varieties",
-			"desert succulents",
-		],
-	},
-	{
-		template:
-			"Encaustic (Wax) Painting {prompt} . ancient technique, layered wax, textural, vibrant",
-		prompts: [
-			"abstract expression",
-			"conceptual portrait",
-			"dreamlike landscape",
-			"symbolism and archetypes",
-			"vibrant minimalism",
-		],
-	},
-	{
-		template:
-			"Paper Quilling Art {prompt} . rolled paper, 3D effects, intricate designs, decorative",
-		prompts: [
-			"synaptic mind map",
-			"flower bouquet",
-			"animal portrait",
-			"topographical landscape ",
-			"mathematical patterns",
-		],
-	},
-	{
-		template:
-			"Neo-Expressionist Painting {prompt} . bold colors, emotive, modern abstraction, Basquiat-inspired",
-		prompts: [
-			"urban commentary",
-			"raw self-portrait",
-			"primal symbolism",
-			"jazz musicians",
-			"psychological exploration",
-		],
-	},
+    {
+        template:
+            "risograph art print {prompt} . layered colors, grainy texture, limited color palette, retro vibe",
+        prompts: [
+            "botanical illustration",
+            "cityscape",
+            "character portrait",
+            "abstract geometric",
+            "nature landscape",
+            "multiverse fragments",
+            "symbolic archetypes",
+        ],
+    },
+    {
+        template:
+            "minimalist Scandinavian design {prompt} . clean lines, muted colors, functional and modern, natural elements",
+        prompts: [
+            "furniture",
+            "clothing",
+            "houseware",
+            "textiles",
+            "lighting",
+            "reductive essentialism",
+            "negative space equilibrium",
+        ],
+    },
+    {
+        template:
+            "Japanese ink wash painting {prompt} . sumi-e style, brush strokes, monochrome, Zen-like simplicity",
+        prompts: [
+            "landscape",
+            "animal",
+            "flower",
+            "bamboo",
+            "seasons",
+            "tranquil impermanence",
+            "wabi-sabi aesthetics",
+        ],
+    },
+    {
+        template:
+            "graffiti street art {prompt} . bold colors, urban style, spray paint textures, street culture",
+        prompts: [
+            "character",
+            "typography",
+            "abstract shapes",
+            "pop culture",
+            "social commentary",
+            "semiotic disobedience",
+            "hegemonic intervention",
+        ],
+    },
+    {
+        template:
+            "noir film scene {prompt} . black and white, high contrast, shadowy, 1940s detective film vibe",
+        prompts: [
+            "back alley",
+            "smoky office",
+            "pool hall",
+            "train station",
+            "nightclub",
+            "jungian shadow",
+            "moral ambiguity",
+        ],
+    },
+    {
+        template:
+            "virtual reality landscape {prompt} . futuristic, immersive, 360-degree view, digital world",
+        prompts: [
+            "alien planet",
+            "cyberspace",
+            "mystical realm",
+            "synthetic nature",
+            "simulated city",
+            "the sublime terrarium",
+            "cartesian perspectivalism",
+        ],
+    },
+    {
+        template:
+            "bioluminescent underwater scene {prompt} . glowing creatures, deep sea, mysterious, vibrant colors",
+        prompts: [
+            "jellyfish",
+            "seabed",
+            "coral reef",
+            "giant squid",
+            "sunken ship",
+            "the collective bioluminescent consciousness",
+            "deep sea surrealism",
+        ],
+    },
+    {
+        template:
+            "medieval manuscript illustration {prompt} . illuminated letters, gold leaf, intricate borders, historical",
+        prompts: [
+            "fantasy story",
+            "nature scene",
+            "castle siege",
+            "royal court",
+            "religious event",
+            "alchemical allegories",
+            "esoteric symbolism",
+        ],
+    },
+    {
+        template:
+            "surreal cosmic landscape {prompt} . otherworldly, starry skies, floating elements, dreamy colors",
+        prompts: [
+            "alien world",
+            "mystical realm",
+            "heavenly clouds",
+            "sacred geometry",
+            "magic portal",
+            "dark surrealist astrology",
+            "Jungian dreamscape",
+        ],
+    },
+    {
+        template:
+            "claymation character design {prompt} . stop-motion style, textured, whimsical, playful",
+        prompts: [
+            "human",
+            "animal",
+            "fantasy creature",
+            "robot",
+            "monster",
+            "uncanny embodiment",
+            "dreamlike archetypes",
+        ],
+    },
+    {
+        template:
+            "woodblock print nature scene {prompt} . traditional Japanese style, layered, natural patterns",
+        prompts: [
+            "mountains",
+            "forest",
+            "garden",
+            "river",
+            "ocean",
+            "seasonal impermanence ",
+            "landscape as mindscape",
+        ],
+    },
+    {
+        template:
+            "interactive 3D game environment {prompt} . immersive, realistic textures, dynamic lighting, engaging",
+        prompts: [
+            "fantasy world",
+            "sci-fi city",
+            "natural landscape",
+            "ancient ruins",
+            "alien planet",
+        ],
+    },
+    {
+        template:
+            "pop art advertisement {prompt} . bold colors, comic style, 1960s vibe, catchy tagline",
+        prompts: ["soda", "fast food", "appliance", "fashion", "electronics"],
+    },
+    {
+        template:
+            "ambient mood scene {prompt} . soft lighting, calming colors, tranquil, soothing atmosphere",
+        prompts: [
+            "candlelit room",
+            "rainy window",
+            "sunset sky",
+            "forest glen",
+            "quiet cafe",
+        ],
+    },
+    {
+        template:
+            "steampunk gadget design {prompt} . mechanical parts, bronze and copper, Victorian era, intricate gears",
+        prompts: [
+            "time machine",
+            "robot",
+            "vehicle",
+            "weapon",
+            "analytical device",
+        ],
+    },
+    {
+        template:
+            "Cyberpunk city at night {prompt} . neon lights, futuristic buildings, dystopian, rain-soaked streets",
+        prompts: [
+            "downtown",
+            "plaza",
+            "alleyway",
+            "apartment block",
+            "cabaret bar",
+        ],
+    },
+    {
+        template:
+            "Impressionist landscape painting {prompt} . quick brush strokes, light effects, vibrant, Monet-inspired",
+        prompts: [
+            "garden",
+            "riverbank",
+            "poppy field",
+            "lily pond",
+            "forest scene",
+        ],
+    },
+    {
+        template:
+            "Cubist abstract composition {prompt} . geometric shapes, fragmented objects, Picasso-esque style",
+        prompts: [
+            "portrait",
+            "still life",
+            "cityscape",
+            "orchestral scene",
+            "dancer",
+        ],
+    },
+    {
+        template:
+            "Candid urban photography {prompt} . spontaneous, street life, black and white, human elements",
+        prompts: [
+            "market scene",
+            "café patrons",
+            "park bench",
+            "subway station",
+            "street performers",
+        ],
+    },
+    {
+        template:
+            "Augmented reality art experience {prompt} . immersive, interactive, blending real and virtual elements",
+        prompts: [
+            "abstract shapes",
+            "fantasy forest",
+            "spatial installation",
+            "simulated ruins",
+            "light sculptures",
+        ],
+    },
+    {
+        template:
+            "Contemporary performance art scene {prompt} . dynamic, conceptual, human expression, avant-garde",
+        prompts: [
+            "movement study",
+            "interpretive dance",
+            "theatrical tableau",
+            "spoken word poetry",
+            "body painting",
+        ],
+    },
+    {
+        template:
+            "Infrared landscape photography {prompt} . surreal colors, otherworldly, ethereal, nature-focused",
+        prompts: ["forest", "desert", "waterfront", "canyon", "mountain vista"],
+    },
+    {
+        template:
+            "Land art installation {prompt} . natural materials, outdoor setting, earthworks, environmental theme",
+        prompts: [
+            "field of wheat",
+            "stone pathway",
+            "spiraling rocks",
+            "driftwood structure",
+            "earthen mounds",
+        ],
+    },
+    {
+        template:
+            "Korean Minhwa painting {prompt} . folk art, vibrant colors, mythical creatures, traditional motifs",
+        prompts: [
+            "tiger",
+            "dragon",
+            "phoenix",
+            "noble scholar",
+            "mountain spirit",
+        ],
+    },
+    {
+        template:
+            "Stop-motion animation scene {prompt} . frame-by-frame, detailed, whimsical, story-driven",
+        prompts: [
+            "clay forest",
+            "paper ocean",
+            "fabric meadow",
+            "woodland characters",
+            "city of toys",
+        ],
+    },
+    {
+        template:
+            "Political caricature {prompt} . exaggerated features, humorous, critical, editorial style",
+        prompts: [
+            "world leader",
+            "corporate executive",
+            "limelight politician",
+            "financial elite",
+            "media tycoon",
+        ],
+    },
+    {
+        template:
+            "Eco-futuristic city design {prompt} . green architecture, sustainable living spaces, integration with nature",
+        prompts: [
+            "residential complex",
+            "office towers",
+            "urban farm",
+            "solar structures",
+            "green skyline",
+        ],
+    },
+    {
+        template:
+            "Victorian fashion sketch {prompt} . detailed period clothing, elegant postures, ornate accessories",
+        prompts: [
+            "noblewoman",
+            "debutante",
+            "opera patron",
+            "military officer",
+            "servant girl",
+        ],
+    },
+    {
+        template:
+            "Artistic gourmet dish presentation {prompt} . culinary art, creative plating, vibrant colors, gastronomy focus",
+        prompts: [
+            "salad",
+            "quiche",
+            "seafood platter",
+            "berry tart",
+            "charcuterie board",
+        ],
+    },
+    {
+        template:
+            "West African mask design {prompt} . bold patterns, ritual significance, cultural symbolism",
+        prompts: [
+            "spirit guide",
+            "royal visage",
+            "character archetype",
+            "symbolic animal",
+            "ceremonial disguise",
+        ],
+    },
+    {
+        template:
+            "Surrealist dreamscape {prompt} . subconscious imagery, Freudian symbols, bizarre landscapes",
+        prompts: [
+            "melting clocks",
+            "floating stairs",
+            "eyeballs and clouds",
+            "giant insects",
+            "levitating objects",
+        ],
+    },
+    {
+        template:
+            "Plein air city drawing {prompt} . on-site sketching, lively street scenes, watercolor and ink",
+        prompts: [
+            "busy intersection",
+            "public market",
+            "riverside walk",
+            "construction site ",
+            "subway platform",
+        ],
+    },
+    {
+        template:
+            "Abstract animation sequence {prompt} . non-linear storytelling, experimental visuals, mixed media",
+        prompts: [
+            "rippling patterns",
+            "cosmic waves",
+            "morphing geometry",
+            "surreal metamorphosis",
+            "psychedelic visions",
+        ],
+    },
+    {
+        template:
+            "Revivalist building design {prompt} . classical elements, symmetry, grandeur, inspired by Ancient Greece and Rome",
+        prompts: [
+            "government institution",
+            "museum facade",
+            "university library",
+            "grand hotel lobby",
+            "stock exchange interior",
+        ],
+    },
+    {
+        template:
+            "Stained glass window design {prompt} . vibrant colors, light effects, intricate patterns",
+        prompts: [
+            "natural landscape",
+            "religious scene",
+            "fantasy story",
+            "geometric pattern",
+            "art nouveau style",
+        ],
+    },
+    {
+        template:
+            "Expressive art therapy painting {prompt} . emotional release, abstract expression, therapeutic process",
+        prompts: [
+            "anger issues",
+            "grief process",
+            "self-discovery",
+            "stress relief",
+            "healing trauma",
+        ],
+    },
+    {
+        template:
+            "Traditional puppet character {prompt} . handcrafted, intricate costumes, storytelling tools",
+        prompts: [
+            "folklore hero",
+            "trickster fox",
+            "wizard mentor",
+            "animal companion",
+            "comedic sidekick",
+        ],
+    },
+    {
+        template:
+            "Fantasy makeup look {prompt} . creative face painting, theatrical effects, character transformation",
+        prompts: [
+            "forest nymph",
+            "techno android",
+            "demonic entity",
+            "mythical siren",
+            "cyberpunk hacker",
+        ],
+    },
+    {
+        template:
+            "Ancient Mural Reconstruction {prompt} . historic scenes, faded frescoes, archaeological style",
+        prompts: [
+            "daily life vignettes",
+            "royal procession",
+            "ritual ceremony",
+            "battle epic",
+            "afterlife myth",
+        ],
+    },
+    {
+        template:
+            "Rococo-Inspired Scene {prompt} . ornate, gold leaf, pastel colors, opulent, 18th-century elegance",
+        prompts: [
+            "aristocratic portrait",
+            "palace ballroom",
+            "lush royal garden",
+            "theatrical performance",
+            "mythological painting",
+        ],
+    },
+    {
+        template:
+            "Digital Glitch Art {prompt} . malfunction aesthetics, pixel shatter, color dispersion, modern digital",
+        prompts: [
+            "fractured self-portrait",
+            "corrupted cityscape",
+            "disintegrating dancer",
+            "chromatic serenity errors",
+            "condensed quantum foam",
+        ],
+    },
+    {
+        template:
+            "Art Brut/Outsider Art {prompt} . raw, non-conformist, intense expression, untrained artist style",
+        prompts: [
+            "visionary symbols",
+            "extreme emotions",
+            "psychological archetypes",
+            "social commentary",
+            "personal metaphor",
+        ],
+    },
+    {
+        template:
+            "Psychedelic Poster Design {prompt} . 1960s revival, trippy visuals, bright neon, Hendrix-era vibe",
+        prompts: [
+            "music festival",
+            "counterculture film",
+            "mind-bending book cover",
+            "spiritual happening",
+            "fantasy gig poster",
+        ],
+    },
+    {
+        template:
+            "Artisanal Jewelry Design {prompt} . handcrafted jewelry, intricate metalwork, gemstone details, luxury craftsmanship",
+        prompts: [
+            "gemstone pendant",
+            "art deco ring",
+            "nature-inspired bracelet",
+            "pearl drop earrings",
+            "labyrinth locket",
+        ],
+    },
+    {
+        template:
+            "Sandstone Carving {prompt} . ancient style, detailed relief work, weathered stone texture",
+        prompts: [
+            "epic battle scene",
+            "sacred symbols",
+            "royal history",
+            "spiritual deities",
+            "intricate geometric motifs",
+        ],
+    },
+    {
+        template:
+            "Hyperrealistic Miniature Painting {prompt} . small scale, detailed brushwork, lifelike miniatures",
+        prompts: [
+            "berries and blossoms",
+            "seashells and sand",
+            "watch parts",
+            "cocktail garnishes",
+            "dessert buffet",
+        ],
+    },
+    {
+        template:
+            "Aerospace Concept Art {prompt} . futuristic spacecraft, interstellar travel, high-tech, NASA-inspired",
+        prompts: [
+            "Mars exploration",
+            "asteroid mining vessel",
+            "deep space station",
+            "laser-powered shuttle",
+            "cryogenic hibernation craft",
+        ],
+    },
+    {
+        template:
+            "Mandala Art {prompt} . symmetrical, intricate patterns, spiritual symbolism, colorful",
+        prompts: [
+            "chakra energies",
+            "healing themes",
+            "natural elements",
+            "cosmic symbols",
+            "culture and tradition",
+        ],
+    },
+    {
+        template:
+            "Silhouette Animation {prompt} . contrast, shadow play, narrative storytelling, Lotte Reiniger style",
+        prompts: [
+            "folk tale",
+            "fable",
+            "gothic tale",
+            "romantic vignette",
+            "magical adventure",
+        ],
+    },
+    {
+        template:
+            "Shadow Box Art {prompt} . layered paper, depth illusion, diorama style, intricate cutouts",
+        prompts: [
+            "storybook scene ",
+            "memory capsule",
+            "mythical landscape",
+            "secret garden",
+            "dreamy cityscape",
+        ],
+    },
+    {
+        template:
+            "Street Mural in 3D {prompt} . optical illusion, large-scale, urban art, interactive pavement",
+        prompts: [
+            "deep sea diving ",
+            "alternate universe",
+            "surreal funhouse",
+            "magical library labyrinth",
+            "giant robot battle arena",
+        ],
+    },
+    {
+        template:
+            "Art Therapy Collage {prompt} . mixed media, emotional expression, personal narratives, therapeutic process",
+        prompts: [
+            "loneliness and connection",
+            "inner critic work",
+            "overcoming trauma",
+            "processing loss",
+            "finding hope",
+        ],
+    },
+    {
+        template:
+            "Lace Making {prompt} . delicate patterns, textile art, traditional craftsmanship, intricate",
+        prompts: [
+            "floral motifs",
+            "geometric designs",
+            "ornate heirloom",
+            "sheer butterfly wings",
+            "spiderweb filigree",
+        ],
+    },
+    {
+        template:
+            "Botanical Illustration {prompt} . scientific accuracy, detailed plant life, naturalist style",
+        prompts: [
+            "rare orchids",
+            "medicinal herbs",
+            "carnivorous species",
+            "rainforest varieties",
+            "desert succulents",
+        ],
+    },
+    {
+        template:
+            "Encaustic (Wax) Painting {prompt} . ancient technique, layered wax, textural, vibrant",
+        prompts: [
+            "abstract expression",
+            "conceptual portrait",
+            "dreamlike landscape",
+            "symbolism and archetypes",
+            "vibrant minimalism",
+        ],
+    },
+    {
+        template:
+            "Paper Quilling Art {prompt} . rolled paper, 3D effects, intricate designs, decorative",
+        prompts: [
+            "synaptic mind map",
+            "flower bouquet",
+            "animal portrait",
+            "topographical landscape ",
+            "mathematical patterns",
+        ],
+    },
+    {
+        template:
+            "Neo-Expressionist Painting {prompt} . bold colors, emotive, modern abstraction, Basquiat-inspired",
+        prompts: [
+            "urban commentary",
+            "raw self-portrait",
+            "primal symbolism",
+            "jazz musicians",
+            "psychological exploration",
+        ],
+    },
 
-	{
-		template:
-			"Technical Illustration: Machinery {prompt} . Precision engineering, detailed components, industrial aesthetic",
-		prompts: [
-			"Cross-section of a jet engine",
-			"Intricacies of a gearbox mechanism",
-			"Complex hydraulic system diagram",
-			"Articulation of a robotic arm",
-			"Structural details of a suspension bridge",
-		],
-	},
-	{
-		template:
-			"Microscopic Imagery {prompt} . Cellular beauty, scientific accuracy, vibrant colors",
-		prompts: [
-			"Interconnected neuron network",
-			"Detailed structure of a virus",
-			"Flow of blood cells under a microscope",
-			"Anatomy of a plant cell",
-			"Diverse microbial ecosystem",
-		],
-	},
-	{
-		template:
-			"Technical Diagram: Electronics {prompt} . Schematic precision, functional design, modern technology",
-		prompts: [
-			"Detailed layout of a motherboard",
-			"Circuitry of a wireless communication system",
-			"Complex sensor network diagram",
-			"Solar panel system configuration",
-			"Inner workings of a smartphone",
-		],
-	},
-	{
-		template:
-			"3D Rendering: Architectural {prompt} . Structural elegance, architectural marvels, photorealistic detail",
-		prompts: [
-			"Framework of a modern skyscraper",
-			"Cross-sectional view of a stadium",
-			"Layout of a residential complex",
-			"Design of a futuristic airport terminal",
-			"Reconstruction of a historical monument",
-		],
-	},
-	{
-		template:
-			"Particle Systems Visualization {prompt} . Dynamic simulations, fluid movements, abstract forms",
-		prompts: [
-			"Airflow dynamics in a wind tunnel",
-			"Simulation of water current patterns",
-			"Visualization of magnetic field lines",
-			"Particle collisions in an accelerator",
-			"Modeling of gravity waves",
-		],
-	},
-	{
-		template:
-			"Point Cloud Imaging {prompt} . Spatial complexity, 3D data representation, topographical accuracy",
-		prompts: [
-			"3D model of an urban cityscape",
-			"Topographical mapping of mountain ranges",
-			"Forest ecosystem spatial analysis",
-			"Detailed vehicle 3D scan",
-			"Digital reconstruction of a historical site",
-		],
-	},
-	{
-		template:
-			"Exploded View Illustration {prompt} . Deconstructed complexity, mechanical insights, clear visualization",
-		prompts: [
-			"Disassembled watch mechanism",
-			"Components of a drone",
-			"Gears system of a bicycle",
-			"Computer hardware breakdown",
-			"Exploded view of engine parts",
-		],
-	},
-	{
-		template:
-			"Blueprint Design: Vehicle {prompt} . Engineering precision, technical layouts, innovative designs",
-		prompts: [
-			"Detailed sports car layout",
-			"Structural blueprint of an aircraft",
-			"Sailing yacht design schematics",
-			"Space shuttle technical blueprint",
-			"Blueprint of a high-speed train",
-		],
-	},
-	{
-		template:
-			"Anatomical Study: Human Body {prompt} . Biological intricacy, lifelike representations, medical precision",
-		prompts: [
-			"Detailed muscular system",
-			"Skeletal structure illustration",
-			"Comprehensive nervous system mapping",
-			"Cardiovascular system diagram",
-			"Respiratory system in detail",
-		],
-	},
-	{
-		template:
-			"Astronomical Chart {prompt} . Celestial wonders, cosmic exploration, stellar beauty",
-		prompts: [
-			"Orbital paths in the solar system",
-			"Map of the night sky constellations",
-			"Galactic structure and components",
-			"Diagram of a celestial event",
-			"Discovery of new exoplanets",
-		],
-	},
-	{
-		template:
-			"Renaissance Engineering Sketches {prompt} . Historical ingenuity, classical design, Da Vinci-inspired",
-		prompts: [
-			"Concept of a Da Vinci-inspired flying machine",
-			"Sketch of a medieval siege engine",
-			"Design of an early mechanical clock",
-			"Blueprint of a historical ship",
-			"Innovative bridge design from the Renaissance era",
-		],
-	},
-	{
-		template:
-			"Fantasy Cartography {prompt} . Imaginary worlds, adventurous routes, mythical landmarks",
-		prompts: [
-			"Map of a hidden treasure island",
-			"Landscape of a fairy-tale kingdom",
-			"Route through a dragon's territory",
-			"Diagram of a magical underwater city",
-			"Layout of a mystical forest",
-		],
-	},
-	{
-		template:
-			"Steampunk Inventions {prompt} . Retro-futuristic machinery, Victorian-era aesthetics, imaginative designs",
-		prompts: [
-			"Blueprint of a steampunk airship",
-			"Design of a clockwork robot",
-			"Sketch of a steam-powered vehicle",
-			"Concept for a mechanical city",
-			"Illustration of a gadget-filled laboratory",
-		],
-	},
-	{
-		template:
-			"Retro Sci-Fi Illustrations {prompt} . Vintage space age, atomic era designs, nostalgic futurism",
-		prompts: [
-			"Poster of a 1950s space colony",
-			"Artwork of an alien encounter",
-			"Design of a retro rocket ship",
-			"Scene from a classic sci-fi movie",
-			"Futuristic cityscape in a retro style",
-		],
-	},
-	{
-		template:
-			"Dystopian Cityscapes {prompt} . Post-apocalyptic environments, urban decay, surreal atmospheres",
-		prompts: [
-			"Ruins of a future metropolis",
-			"Abandoned urban jungle",
-			"Skylines of a fallen civilization",
-			"Survivors in a dystopian landscape",
-			"Overgrown city reclaimed by nature",
-		],
-	},
-	{
-		template:
-			"Surreal Dreamscapes {prompt} . Dreamlike visuals, abstract forms, ethereal themes",
-		prompts: [
-			"Landscape from a lucid dream",
-			"Otherworldly natural phenomenon",
-			"Surreal combination of elements",
-			"Imaginary realm of consciousness",
-			"Abstract interpretation of a dream",
-		],
-	},
-	{
-		template:
-			"Bio-Mechanical Concepts {prompt} . Fusion of organic and mechanical, futuristic symbiosis, intricate details",
-		prompts: [
-			"Cyborg wildlife illustration",
-			"Mechanized plant structures",
-			"Hybrid organism design",
-			"Alien machinery infused with life",
-			"Robotic and organic ecosystem",
-		],
-	},
-	{
-		template:
-			"Art Deco Revival {prompt} . Modern twist on classic style, geometric elegance, luxurious patterns",
-		prompts: [
-			"Contemporary building in Art Deco style",
-			"Futuristic vehicle with Art Deco elements",
-			"Art Deco inspired fashion design",
-			"Modern interpretation of a classic Art Deco poster",
-			"Interior design blending modernity and Art Deco",
-		],
-	},
-	{
-		template:
-			"Whimsical Food Art {prompt} . Playful food arrangements, imaginative culinary creations, colorful compositions",
-		prompts: [
-			"Landscape made of various fruits",
-			"Portraits using assorted vegetables",
-			"Cityscape crafted from baked goods",
-			"Underwater scene with seafood elements",
-			"Garden scene using sweets and pastries",
-		],
-	},
-	{
-		template:
-			"Optical Illusion Art {prompt} . Mind-bending designs, visual tricks, perception-challenging",
-		prompts: [
-			"Impossible geometric structure",
-			"Art piece that changes with perspective",
-			"Mural that plays with depth perception",
-			"Illustration with hidden images",
-			"3D artwork on a flat surface",
-		],
-	},
-	{
-		template:
-			"Mythical Creature Design {prompt} . Legendary beings, fantastical anatomy, imaginative interpretation",
-		prompts: [
-			"Reimagined version of a centaur",
-			"Design of a modern-day dragon",
-			"Sketch of an underwater leviathan",
-			"Concept art for a forest sprite",
-			"Illustration of a mythical hybrid creature",
-		],
-	},
-	{
-		template:
-			"professional 3d model {prompt} . octane render, highly detailed, volumetric, dramatic lighting",
-		prompts: [
-			"car",
-			"person",
-			"animal",
-			"building",
-			"natural landscape",
-			"surreal dreamscape",
-			"fourth dimension architecture",
-		],
-	},
-	{
-		template:
-			"analog film photo {prompt} . faded film, desaturated, 35mm photo, grainy, vignette, vintage, Kodachrome, Lomography, found footage",
-		prompts: [
-			"city street",
-			"beach",
-			"mountain landscape",
-			"old barn",
-			"abandoned place",
-			"concept of time",
-			"exploration of loneliness",
-		],
-	},
-	{
-		template:
-			"anime artwork {prompt} . anime style, key visual, vibrant, studio anime, highly detailed",
-		prompts: [
-			"main character",
-			"fantasy creature",
-			"futuristic vehicle",
-			"natural landscape",
-			"cityscape",
-			"inner psyche",
-			"alternate reality",
-		],
-	},
-	{
-		template:
-			"fauvism painting of {prompt} . bold colors, expressive brush strokes, simplified forms ",
-		prompts: [
-			"figure",
-			"still life",
-			"landscape",
-			"interior scene",
-			"abstract composition",
-		],
-	},
-	{
-		template:
-			"art nouveau illustration of a {prompt} . flowing organic lines, floral motifs, elegant style",
-		prompts: ["woman", "insect", "plant", "building facade", "ornate border"],
-	},
-	{
-		template:
-			"pointillism painting of {prompt} . tiny dots of pure color, mix optically, Seurat style",
-		prompts: [
-			"park scene",
-			"river landscape",
-			"cafe interior",
-			"dreamlike setting",
-			"shimmering light effect",
-		],
-	},
-	{
-		template:
-			"ukiyo-e woodblock print of a {prompt} . flat shapes, visible brush strokes, Japanese style",
-		prompts: [
-			"geisha",
-			"samurai",
-			"bird",
-			"flower",
-			"mountain vista",
-			"river scene",
-		],
-	},
-	{
-		template:
-			"pop surrealism painting featuring {prompt} . imaginative, dreamlike, boldly stylized",
-		prompts: [
-			"a figure",
-			"a creature",
-			"a landscape",
-			"an impossible object",
-			"a surreal sculpture",
-		],
-	},
-	{
-		template:
-			"op art piece with {prompt} . optical illusions, disorienting patterns, seem to vibrate",
-		prompts: [
-			"black and white geometry",
-			"impossible shapes",
-			"kinetic spirals",
-			"light illusions",
-			"hypnotic waves",
-		],
-	},
-	{
-		template:
-			"minimalist painting of a {prompt} . extremely simplified, basic colors and shapes",
-		prompts: [
-			"figure",
-			"fruit",
-			"vardscape",
-			"shapes",
-			"geometric composition",
-		],
-	},
-	{
-		template:
-			"action painting featuring {prompt} . bold strokes, splatters, drips, dynamic style",
-		prompts: [
-			"vibrant colors",
-			"thickly applied paint",
-			"gestural brushwork",
-			"emotional intensity",
-			"abstract expressionism",
-		],
-	},
-	{
-		template:
-			"romantic seascape with {prompt} . turbulent oceans, awe-inspiring skies, J.M.W Turner style",
-		prompts: [
-			"stormy waves",
-			"rocky cliffs",
-			"old shipwrecks",
-			"dark clouds and light rays",
-			"lone ship fighting the elements",
-		],
-	},
-	{
-		template:
-			"nonsense poetry illustration depicting {prompt} . avant-garde, surreal juxtapositions ",
-		prompts: [
-			"an unlikely animal duo",
-			"a peculiar contraption",
-			"an absurdist garden",
-			"a nonsensical food dish",
-			"an impossible room layout",
-		],
-	},
-	{
-		template:
-			"magic realism painting of a {prompt} . dreamlike precision, marvelous realism",
-		prompts: [
-			"mysterious figure",
-			"floating object",
-			"impossible perspective",
-			"eccentric characters",
-			"rendezvous with mythical creature",
-		],
-	},
+    {
+        template:
+            "Technical Illustration: Machinery {prompt} . Precision engineering, detailed components, industrial aesthetic",
+        prompts: [
+            "Cross-section of a jet engine",
+            "Intricacies of a gearbox mechanism",
+            "Complex hydraulic system diagram",
+            "Articulation of a robotic arm",
+            "Structural details of a suspension bridge",
+        ],
+    },
+    {
+        template:
+            "Microscopic Imagery {prompt} . Cellular beauty, scientific accuracy, vibrant colors",
+        prompts: [
+            "Interconnected neuron network",
+            "Detailed structure of a virus",
+            "Flow of blood cells under a microscope",
+            "Anatomy of a plant cell",
+            "Diverse microbial ecosystem",
+        ],
+    },
+    {
+        template:
+            "Technical Diagram: Electronics {prompt} . Schematic precision, functional design, modern technology",
+        prompts: [
+            "Detailed layout of a motherboard",
+            "Circuitry of a wireless communication system",
+            "Complex sensor network diagram",
+            "Solar panel system configuration",
+            "Inner workings of a smartphone",
+        ],
+    },
+    {
+        template:
+            "3D Rendering: Architectural {prompt} . Structural elegance, architectural marvels, photorealistic detail",
+        prompts: [
+            "Framework of a modern skyscraper",
+            "Cross-sectional view of a stadium",
+            "Layout of a residential complex",
+            "Design of a futuristic airport terminal",
+            "Reconstruction of a historical monument",
+        ],
+    },
+    {
+        template:
+            "Particle Systems Visualization {prompt} . Dynamic simulations, fluid movements, abstract forms",
+        prompts: [
+            "Airflow dynamics in a wind tunnel",
+            "Simulation of water current patterns",
+            "Visualization of magnetic field lines",
+            "Particle collisions in an accelerator",
+            "Modeling of gravity waves",
+        ],
+    },
+    {
+        template:
+            "Point Cloud Imaging {prompt} . Spatial complexity, 3D data representation, topographical accuracy",
+        prompts: [
+            "3D model of an urban cityscape",
+            "Topographical mapping of mountain ranges",
+            "Forest ecosystem spatial analysis",
+            "Detailed vehicle 3D scan",
+            "Digital reconstruction of a historical site",
+        ],
+    },
+    {
+        template:
+            "Exploded View Illustration {prompt} . Deconstructed complexity, mechanical insights, clear visualization",
+        prompts: [
+            "Disassembled watch mechanism",
+            "Components of a drone",
+            "Gears system of a bicycle",
+            "Computer hardware breakdown",
+            "Exploded view of engine parts",
+        ],
+    },
+    {
+        template:
+            "Blueprint Design: Vehicle {prompt} . Engineering precision, technical layouts, innovative designs",
+        prompts: [
+            "Detailed sports car layout",
+            "Structural blueprint of an aircraft",
+            "Sailing yacht design schematics",
+            "Space shuttle technical blueprint",
+            "Blueprint of a high-speed train",
+        ],
+    },
+    {
+        template:
+            "Anatomical Study: Human Body {prompt} . Biological intricacy, lifelike representations, medical precision",
+        prompts: [
+            "Detailed muscular system",
+            "Skeletal structure illustration",
+            "Comprehensive nervous system mapping",
+            "Cardiovascular system diagram",
+            "Respiratory system in detail",
+        ],
+    },
+    {
+        template:
+            "Astronomical Chart {prompt} . Celestial wonders, cosmic exploration, stellar beauty",
+        prompts: [
+            "Orbital paths in the solar system",
+            "Map of the night sky constellations",
+            "Galactic structure and components",
+            "Diagram of a celestial event",
+            "Discovery of new exoplanets",
+        ],
+    },
+    {
+        template:
+            "Renaissance Engineering Sketches {prompt} . Historical ingenuity, classical design, Da Vinci-inspired",
+        prompts: [
+            "Concept of a Da Vinci-inspired flying machine",
+            "Sketch of a medieval siege engine",
+            "Design of an early mechanical clock",
+            "Blueprint of a historical ship",
+            "Innovative bridge design from the Renaissance era",
+        ],
+    },
+    {
+        template:
+            "Fantasy Cartography {prompt} . Imaginary worlds, adventurous routes, mythical landmarks",
+        prompts: [
+            "Map of a hidden treasure island",
+            "Landscape of a fairy-tale kingdom",
+            "Route through a dragon's territory",
+            "Diagram of a magical underwater city",
+            "Layout of a mystical forest",
+        ],
+    },
+    {
+        template:
+            "Steampunk Inventions {prompt} . Retro-futuristic machinery, Victorian-era aesthetics, imaginative designs",
+        prompts: [
+            "Blueprint of a steampunk airship",
+            "Design of a clockwork robot",
+            "Sketch of a steam-powered vehicle",
+            "Concept for a mechanical city",
+            "Illustration of a gadget-filled laboratory",
+        ],
+    },
+    {
+        template:
+            "Retro Sci-Fi Illustrations {prompt} . Vintage space age, atomic era designs, nostalgic futurism",
+        prompts: [
+            "Poster of a 1950s space colony",
+            "Artwork of an alien encounter",
+            "Design of a retro rocket ship",
+            "Scene from a classic sci-fi movie",
+            "Futuristic cityscape in a retro style",
+        ],
+    },
+    {
+        template:
+            "Dystopian Cityscapes {prompt} . Post-apocalyptic environments, urban decay, surreal atmospheres",
+        prompts: [
+            "Ruins of a future metropolis",
+            "Abandoned urban jungle",
+            "Skylines of a fallen civilization",
+            "Survivors in a dystopian landscape",
+            "Overgrown city reclaimed by nature",
+        ],
+    },
+    {
+        template:
+            "Surreal Dreamscapes {prompt} . Dreamlike visuals, abstract forms, ethereal themes",
+        prompts: [
+            "Landscape from a lucid dream",
+            "Otherworldly natural phenomenon",
+            "Surreal combination of elements",
+            "Imaginary realm of consciousness",
+            "Abstract interpretation of a dream",
+        ],
+    },
+    {
+        template:
+            "Bio-Mechanical Concepts {prompt} . Fusion of organic and mechanical, futuristic symbiosis, intricate details",
+        prompts: [
+            "Cyborg wildlife illustration",
+            "Mechanized plant structures",
+            "Hybrid organism design",
+            "Alien machinery infused with life",
+            "Robotic and organic ecosystem",
+        ],
+    },
+    {
+        template:
+            "Art Deco Revival {prompt} . Modern twist on classic style, geometric elegance, luxurious patterns",
+        prompts: [
+            "Contemporary building in Art Deco style",
+            "Futuristic vehicle with Art Deco elements",
+            "Art Deco inspired fashion design",
+            "Modern interpretation of a classic Art Deco poster",
+            "Interior design blending modernity and Art Deco",
+        ],
+    },
+    {
+        template:
+            "Whimsical Food Art {prompt} . Playful food arrangements, imaginative culinary creations, colorful compositions",
+        prompts: [
+            "Landscape made of various fruits",
+            "Portraits using assorted vegetables",
+            "Cityscape crafted from baked goods",
+            "Underwater scene with seafood elements",
+            "Garden scene using sweets and pastries",
+        ],
+    },
+    {
+        template:
+            "Optical Illusion Art {prompt} . Mind-bending designs, visual tricks, perception-challenging",
+        prompts: [
+            "Impossible geometric structure",
+            "Art piece that changes with perspective",
+            "Mural that plays with depth perception",
+            "Illustration with hidden images",
+            "3D artwork on a flat surface",
+        ],
+    },
+    {
+        template:
+            "Mythical Creature Design {prompt} . Legendary beings, fantastical anatomy, imaginative interpretation",
+        prompts: [
+            "Reimagined version of a centaur",
+            "Design of a modern-day dragon",
+            "Sketch of an underwater leviathan",
+            "Concept art for a forest sprite",
+            "Illustration of a mythical hybrid creature",
+        ],
+    },
+    {
+        template:
+            "professional 3d model {prompt} . octane render, highly detailed, volumetric, dramatic lighting",
+        prompts: [
+            "car",
+            "person",
+            "animal",
+            "building",
+            "natural landscape",
+            "surreal dreamscape",
+            "fourth dimension architecture",
+        ],
+    },
+    {
+        template:
+            "analog film photo {prompt} . faded film, desaturated, 35mm photo, grainy, vignette, vintage, Kodachrome, Lomography, found footage",
+        prompts: [
+            "city street",
+            "beach",
+            "mountain landscape",
+            "old barn",
+            "abandoned place",
+            "concept of time",
+            "exploration of loneliness",
+        ],
+    },
+    {
+        template:
+            "anime artwork {prompt} . anime style, key visual, vibrant, studio anime, highly detailed",
+        prompts: [
+            "main character",
+            "fantasy creature",
+            "futuristic vehicle",
+            "natural landscape",
+            "cityscape",
+            "inner psyche",
+            "alternate reality",
+        ],
+    },
+    {
+        template:
+            "fauvism painting of {prompt} . bold colors, expressive brush strokes, simplified forms ",
+        prompts: [
+            "figure",
+            "still life",
+            "landscape",
+            "interior scene",
+            "abstract composition",
+        ],
+    },
+    {
+        template:
+            "art nouveau illustration of a {prompt} . flowing organic lines, floral motifs, elegant style",
+        prompts: [
+            "woman",
+            "insect",
+            "plant",
+            "building facade",
+            "ornate border",
+        ],
+    },
+    {
+        template:
+            "pointillism painting of {prompt} . tiny dots of pure color, mix optically, Seurat style",
+        prompts: [
+            "park scene",
+            "river landscape",
+            "cafe interior",
+            "dreamlike setting",
+            "shimmering light effect",
+        ],
+    },
+    {
+        template:
+            "ukiyo-e woodblock print of a {prompt} . flat shapes, visible brush strokes, Japanese style",
+        prompts: [
+            "geisha",
+            "samurai",
+            "bird",
+            "flower",
+            "mountain vista",
+            "river scene",
+        ],
+    },
+    {
+        template:
+            "pop surrealism painting featuring {prompt} . imaginative, dreamlike, boldly stylized",
+        prompts: [
+            "a figure",
+            "a creature",
+            "a landscape",
+            "an impossible object",
+            "a surreal sculpture",
+        ],
+    },
+    {
+        template:
+            "op art piece with {prompt} . optical illusions, disorienting patterns, seem to vibrate",
+        prompts: [
+            "black and white geometry",
+            "impossible shapes",
+            "kinetic spirals",
+            "light illusions",
+            "hypnotic waves",
+        ],
+    },
+    {
+        template:
+            "minimalist painting of a {prompt} . extremely simplified, basic colors and shapes",
+        prompts: [
+            "figure",
+            "fruit",
+            "vardscape",
+            "shapes",
+            "geometric composition",
+        ],
+    },
+    {
+        template:
+            "action painting featuring {prompt} . bold strokes, splatters, drips, dynamic style",
+        prompts: [
+            "vibrant colors",
+            "thickly applied paint",
+            "gestural brushwork",
+            "emotional intensity",
+            "abstract expressionism",
+        ],
+    },
+    {
+        template:
+            "romantic seascape with {prompt} . turbulent oceans, awe-inspiring skies, J.M.W Turner style",
+        prompts: [
+            "stormy waves",
+            "rocky cliffs",
+            "old shipwrecks",
+            "dark clouds and light rays",
+            "lone ship fighting the elements",
+        ],
+    },
+    {
+        template:
+            "nonsense poetry illustration depicting {prompt} . avant-garde, surreal juxtapositions ",
+        prompts: [
+            "an unlikely animal duo",
+            "a peculiar contraption",
+            "an absurdist garden",
+            "a nonsensical food dish",
+            "an impossible room layout",
+        ],
+    },
+    {
+        template:
+            "magic realism painting of a {prompt} . dreamlike precision, marvelous realism",
+        prompts: [
+            "mysterious figure",
+            "floating object",
+            "impossible perspective",
+            "eccentric characters",
+            "rendezvous with mythical creature",
+        ],
+    },
 ];
 
 // calculate and export prompts array which is a list of all prompts (substituting into the templates)
 
 export const prompts = templatesAndPrompts
-	.map((templateAndPrompt) => {
-		return templateAndPrompt.prompts.map((prompt) => {
-			return {
-				searchPrompt: templateAndPrompt.template.replace("{prompt}", prompt),
-				template: templateAndPrompt.template,
-				prompt: prompt,
-			};
-		});
-	})
-	.flat();
+    .map((templateAndPrompt) => {
+        return templateAndPrompt.prompts.map((prompt) => {
+            return {
+                searchPrompt: templateAndPrompt.template.replace(
+                    "{prompt}",
+                    prompt,
+                ),
+                template: templateAndPrompt.template,
+                prompt: prompt,
+            };
+        });
+    })
+    .flat();

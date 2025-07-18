@@ -1,11 +1,11 @@
 import React from "react";
 import {
-	Box,
-	Paper,
-	Typography,
-	Link,
-	useMediaQuery,
-	useTheme,
+    Box,
+    Paper,
+    Typography,
+    Link,
+    useMediaQuery,
+    useTheme,
 } from "@mui/material";
 import { Colors, Fonts } from "../../config/global";
 import styled from "@emotion/styled";
@@ -67,10 +67,10 @@ const ResponseText = styled(Typography)`
 `;
 
 const LabelStyle = {
-	color: `${Colors.offwhite}99`,
-	fontSize: "0.9em",
-	fontFamily: Fonts?.parameter || "inherit",
-	marginBottom: "4px",
+    color: `${Colors.offwhite}99`,
+    fontSize: "0.9em",
+    fontFamily: Fonts?.parameter || "inherit",
+    marginBottom: "4px",
 };
 
 /**
@@ -81,61 +81,64 @@ const LabelStyle = {
  * @param {boolean} props.isEditMode - Edit mode state
  */
 export const TextDisplay = ({ entry, isLoading, isEditMode }) => {
-	const theme = useTheme();
-	const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
+    const theme = useTheme();
+    const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
 
-	if (!entry || !entry.response) {
-		return null;
-	}
+    if (!entry || !entry.response) {
+        return null;
+    }
 
-	// Create a URL that can be opened - using the entry ID or a default
-	// Use the full absolute URL with domain
-	const responseUrl = entry.id
-		? `https://text.pollinations.ai/api/text/${entry.id}`
-		: `https://text.pollinations.ai/api/textResponse?prompt=${encodeURIComponent(entry.parameters?.messages?.[1]?.content || "")}&response=${encodeURIComponent(entry.response)}`;
+    // Create a URL that can be opened - using the entry ID or a default
+    // Use the full absolute URL with domain
+    const responseUrl = entry.id
+        ? `https://text.pollinations.ai/api/text/${entry.id}`
+        : `https://text.pollinations.ai/api/textResponse?prompt=${encodeURIComponent(entry.parameters?.messages?.[1]?.content || "")}&response=${encodeURIComponent(entry.response)}`;
 
-	const handleResponseClick = (e) => {
-		e.preventDefault();
-		trackEvent({
-			action: "click_text_response",
-			category: "text_feed",
-		});
-		// Ensure we're opening the absolute URL in a new tab
-		window.open(responseUrl, "_blank", "noopener,noreferrer");
-	};
+    const handleResponseClick = (e) => {
+        e.preventDefault();
+        trackEvent({
+            action: "click_text_response",
+            category: "text_feed",
+        });
+        // Ensure we're opening the absolute URL in a new tab
+        window.open(responseUrl, "_blank", "noopener,noreferrer");
+    };
 
-	const ResponseContent = (
-		<Box width="100%" display="flex" flexDirection="column">
-			{isEditMode && <Typography sx={LabelStyle}>Response</Typography>}
-			<ResponseContainer elevation={0} onClick={handleResponseClick}>
-				<ResponseText variant="body1" sx={{ opacity: isLoading ? 0.7 : 1 }}>
-					{entry.response}
-				</ResponseText>
-			</ResponseContainer>
-		</Box>
-	);
+    const ResponseContent = (
+        <Box width="100%" display="flex" flexDirection="column">
+            {isEditMode && <Typography sx={LabelStyle}>Response</Typography>}
+            <ResponseContainer elevation={0} onClick={handleResponseClick}>
+                <ResponseText
+                    variant="body1"
+                    sx={{ opacity: isLoading ? 0.7 : 1 }}
+                >
+                    {entry.response}
+                </ResponseText>
+            </ResponseContainer>
+        </Box>
+    );
 
-	return (
-		<Box
-			display="flex"
-			justifyContent="center"
-			width="100%"
-			sx={{
-				maxWidth: "1000px",
-			}}
-		>
-			{isDesktop
-				? <Link
-						href={responseUrl}
-						target="_blank"
-						rel="noopener"
-						onClick={handleResponseClick}
-						underline="none"
-						sx={{ width: "100%" }}
-					>
-						{ResponseContent}
-					</Link>
-				: ResponseContent}
-		</Box>
-	);
+    return (
+        <Box
+            display="flex"
+            justifyContent="center"
+            width="100%"
+            sx={{
+                maxWidth: "1000px",
+            }}
+        >
+            {isDesktop
+                ? <Link
+                      href={responseUrl}
+                      target="_blank"
+                      rel="noopener"
+                      onClick={handleResponseClick}
+                      underline="none"
+                      sx={{ width: "100%" }}
+                  >
+                      {ResponseContent}
+                  </Link>
+                : ResponseContent}
+        </Box>
+    );
 };

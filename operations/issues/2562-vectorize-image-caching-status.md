@@ -139,7 +139,7 @@ Response status: 522  ← Cloudflare timeout, not cache issue
 - **Origin Impact**: Zero latency impact (async embedding storage)
 
 **🔧 TECHNICAL IMPLEMENTATION:**
-- **Embedding Model**: BGE @cf/baai/bge-m3 (768-dimensional vectors)
+- **Embedding Model**: BGE @cf/baai/bge-base-en-v1.5 (768-dimensional vectors)
 - **Bucket Strategy**: Resolution + seed isolation (`512x512_seed42`)
 - **Metadata Fields**: bucket, model, seed, width, height, cacheKey
 - **Cache Flow**: exact cache → semantic cache → origin fallback

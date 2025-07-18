@@ -20,5 +20,5 @@ const log = debug("pollinations:test");
  */
 
 test.skip("feed and streaming tests are skipped to avoid hanging", (t) => {
-	t.pass("This test is skipped to avoid hanging the test suite");
+    t.pass("This test is skipped to avoid hanging the test suite");
 });

@@ -290,13 +290,3 @@ text.pollinations.ai/v2/
 .dev.vars
 image.pollinations.ai/temp_logs/
 .wrangler/
-image.pollinations.ai/cloudflare-cache/all_keys.txt
-image.pollinations.ai/cloudflare-cache/scripts/catgpt_keys.txt
-
-# Kiro AI assistant files
-.kiro/
-
-# Semantic cache debug files
-semantic_similarities.csv
-averages.txt
-text.pollinations.ai/cloudflare-cache/semantic_cache_evaluation.jsonl

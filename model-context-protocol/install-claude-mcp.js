@@ -6,31 +6,31 @@ import os from "os";
 
 // Determine the Claude Desktop config file path based on the operating system
 const getConfigPath = () => {
-	switch (os.platform()) {
-		case "darwin": // macOS
-			return path.join(
-				os.homedir(),
-				"Library",
-				"Application Support",
-				"Claude",
-				"claude_desktop_config.json",
-			);
-		case "win32": // Windows
-			return path.join(
-				os.homedir(),
-				"AppData",
-				"Roaming",
-				"Claude",
-				"claude_desktop_config.json",
-			);
-		default: // Linux and others
-			return path.join(
-				os.homedir(),
-				".config",
-				"Claude",
-				"claude_desktop_config.json",
-			);
-	}
+    switch (os.platform()) {
+        case "darwin": // macOS
+            return path.join(
+                os.homedir(),
+                "Library",
+                "Application Support",
+                "Claude",
+                "claude_desktop_config.json",
+            );
+        case "win32": // Windows
+            return path.join(
+                os.homedir(),
+                "AppData",
+                "Roaming",
+                "Claude",
+                "claude_desktop_config.json",
+            );
+        default: // Linux and others
+            return path.join(
+                os.homedir(),
+                ".config",
+                "Claude",
+                "claude_desktop_config.json",
+            );
+    }
 };
 
 const configPath = getConfigPath();
@@ -39,11 +39,11 @@ console.log(`Claude Desktop config path: ${configPath}`);
 // Read existing config or create a new one
 let config = {};
 try {
-	const configData = fs.readFileSync(configPath, "utf8");
-	config = JSON.parse(configData);
-	console.log("Existing Claude Desktop config found");
+    const configData = fs.readFileSync(configPath, "utf8");
+    config = JSON.parse(configData);
+    console.log("Existing Claude Desktop config found");
 } catch (error) {
-	console.log("Creating new Claude Desktop config");
+    console.log("Creating new Claude Desktop config");
 }
 
 // Ensure mcpServers section exists
@@ -51,21 +51,21 @@ config.mcpServers = config.mcpServers || {};
 
 // Add or update the pollinations MCP server configuration
 config.mcpServers.pollinations = {
-	command: "npx",
-	args: ["@pollinations/model-context-protocol"],
-	disabled: false,
-	alwaysAllow: [],
+    command: "npx",
+    args: ["@pollinations/model-context-protocol"],
+    disabled: false,
+    alwaysAllow: [],
 };
 
 // Write the updated config back to the file
 const configDir = path.dirname(configPath);
 if (!fs.existsSync(configDir)) {
-	fs.mkdirSync(configDir, { recursive: true });
-	console.log(`Created directory: ${configDir}`);
+    fs.mkdirSync(configDir, { recursive: true });
+    console.log(`Created directory: ${configDir}`);
 }
 
 fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 console.log(
-	`Pollinations MCP server installed in Claude Desktop config at ${configPath}`,
+    `Pollinations MCP server installed in Claude Desktop config at ${configPath}`,
 );
 console.log("Please restart Claude Desktop to apply the changes");

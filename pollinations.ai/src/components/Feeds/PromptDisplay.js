@@ -6,10 +6,10 @@ import TextareaAutosize from "react-textarea-autosize";
 import ReactMarkdown from "react-markdown";
 
 const LabelStyle = {
-	color: Colors.gray2,
-	fontSize: "0.9em",
-	fontFamily: Fonts?.parameter || "inherit",
-	marginBottom: "4px",
+    color: Colors.gray2,
+    fontSize: "0.9em",
+    fontFamily: Fonts?.parameter || "inherit",
+    marginBottom: "4px",
 };
 
 // Styled components for display
@@ -43,8 +43,8 @@ const StyledTextArea = styled(TextareaAutosize)`
 
 // Create the styled component with the shouldForwardProp option to filter out isEditMode
 const PromptContainer = styled(Box, {
-	shouldForwardProp: (prop) =>
-		prop !== "isEditMode" && prop !== "backgroundColor",
+    shouldForwardProp: (prop) =>
+        prop !== "isEditMode" && prop !== "backgroundColor",
 })`
   width: 100%; /* Explicitly set width to 100% */
   min-height: 130px;
@@ -138,296 +138,299 @@ const ResizeHandle = styled.div`
  * @param {Function} props.setSharedPrompt - Shared prompt setter (for text feed)
  */
 export function PromptDisplay({
-	itemType = "text",
-	backgroundColor = Colors.offblack,
-	item,
-	isLoading,
-	isEditMode,
-	onPromptChange,
-	onEditModeSwitch,
-	setIsInputChanged,
-	promptTooltip,
-	sharedPrompt,
-	setSharedPrompt,
+    itemType = "text",
+    backgroundColor = Colors.offblack,
+    item,
+    isLoading,
+    isEditMode,
+    onPromptChange,
+    onEditModeSwitch,
+    setIsInputChanged,
+    promptTooltip,
+    sharedPrompt,
+    setSharedPrompt,
 }) {
-	// Local prompt state
-	const [localPrompt, setLocalPrompt] = useState("");
+    // Local prompt state
+    const [localPrompt, setLocalPrompt] = useState("");
 
-	// Track the prompt container height
-	const [promptHeight, setPromptHeight] = useState(() => {
-		return localStorage.getItem("promptHeight")
-			? parseInt(localStorage.getItem("promptHeight"), 10)
-			: 200;
-	});
+    // Track the prompt container height
+    const [promptHeight, setPromptHeight] = useState(() => {
+        return localStorage.getItem("promptHeight")
+            ? parseInt(localStorage.getItem("promptHeight"), 10)
+            : 200;
+    });
 
-	// Add previous edit mode state tracking
-	const prevEditModeRef = useRef(isEditMode);
+    // Add previous edit mode state tracking
+    const prevEditModeRef = useRef(isEditMode);
 
-	// Add theme and media query for responsive design
-	const theme = useTheme();
-	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+    // Add theme and media query for responsive design
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-	// Ref for the container element
-	const containerRef = useRef(null);
-	// Ref for the resize handle
-	const resizeHandleRef = useRef(null);
+    // Ref for the container element
+    const containerRef = useRef(null);
+    // Ref for the resize handle
+    const resizeHandleRef = useRef(null);
 
-	// Debug logs for props
-	useEffect(() => {
-		// Removed excessive logging
-	}, [isEditMode, sharedPrompt, item]);
+    // Debug logs for props
+    useEffect(() => {
+        // Removed excessive logging
+    }, [isEditMode, sharedPrompt, item]);
 
-	// Figure out the current prompt based on item type and state
-	const getPromptFromItem = () => {
-		if (itemType === "text" && item?.parameters?.messages) {
-			const userMessage = item.parameters.messages.find(
-				(msg) => msg?.role === "user",
-			);
-			const prompt = userMessage?.content || "";
-			return prompt;
-		}
+    // Figure out the current prompt based on item type and state
+    const getPromptFromItem = () => {
+        if (itemType === "text" && item?.parameters?.messages) {
+            const userMessage = item.parameters.messages.find(
+                (msg) => msg?.role === "user",
+            );
+            const prompt = userMessage?.content || "";
+            return prompt;
+        }
 
-		// Handle item.prompt which could be a string or an object
-		if (item?.prompt) {
-			if (typeof item.prompt === "object") {
-				// Return the object directly; getPromptContent will handle it later
-				return item.prompt;
-			}
-			return item.prompt;
-		}
+        // Handle item.prompt which could be a string or an object
+        if (item?.prompt) {
+            if (typeof item.prompt === "object") {
+                // Return the object directly; getPromptContent will handle it later
+                return item.prompt;
+            }
+            return item.prompt;
+        }
 
-		return "";
-	};
+        return "";
+    };
 
-	// Use shared prompt if available, otherwise use local or item prompt
-	const currentPrompt =
-		sharedPrompt !== undefined
-			? sharedPrompt
-			: localPrompt || getPromptFromItem();
+    // Use shared prompt if available, otherwise use local or item prompt
+    const currentPrompt =
+        sharedPrompt !== undefined
+            ? sharedPrompt
+            : localPrompt || getPromptFromItem();
 
-	// Ensure currentPrompt is a string for ReactMarkdown
-	const getPromptContent = (prompt) => {
-		// Removed repetitive log
+    // Ensure currentPrompt is a string for ReactMarkdown
+    const getPromptContent = (prompt) => {
+        // Removed repetitive log
 
-		if (typeof prompt === "string") {
-			return prompt;
-		}
-		// Handle object prompts (e.g. {type: 'text', content: 'string'})
-		if (prompt && typeof prompt === "object") {
-			// If it has a text or content property, use that
-			if (prompt.text) {
-				// Removed repetitive log
-				return prompt.text;
-			}
-			if (prompt.content) {
-				// Removed repetitive log
-				return prompt.content;
-			}
-			// Last resort: stringify the object
-			const stringified = JSON.stringify(prompt);
-			// Removed repetitive log
-			return stringified;
-		}
-		// Default to empty string for null/undefined/other types
-		// Removed repetitive log
-		return "";
-	};
+        if (typeof prompt === "string") {
+            return prompt;
+        }
+        // Handle object prompts (e.g. {type: 'text', content: 'string'})
+        if (prompt && typeof prompt === "object") {
+            // If it has a text or content property, use that
+            if (prompt.text) {
+                // Removed repetitive log
+                return prompt.text;
+            }
+            if (prompt.content) {
+                // Removed repetitive log
+                return prompt.content;
+            }
+            // Last resort: stringify the object
+            const stringified = JSON.stringify(prompt);
+            // Removed repetitive log
+            return stringified;
+        }
+        // Default to empty string for null/undefined/other types
+        // Removed repetitive log
+        return "";
+    };
 
-	// Handle prompt changes
-	const handlePromptChange = (newPrompt) => {
-		// If current prompt is an object with a text field, preserve the object structure
-		const updatedValue =
-			typeof currentPrompt === "object" &&
-			currentPrompt !== null &&
-			"text" in currentPrompt
-				? { ...currentPrompt, text: newPrompt }
-				: newPrompt;
+    // Handle prompt changes
+    const handlePromptChange = (newPrompt) => {
+        // If current prompt is an object with a text field, preserve the object structure
+        const updatedValue =
+            typeof currentPrompt === "object" &&
+            currentPrompt !== null &&
+            "text" in currentPrompt
+                ? { ...currentPrompt, text: newPrompt }
+                : newPrompt;
 
-		if (setSharedPrompt) {
-			setSharedPrompt(updatedValue);
-		} else {
-			setLocalPrompt(updatedValue);
-		}
+        if (setSharedPrompt) {
+            setSharedPrompt(updatedValue);
+        } else {
+            setLocalPrompt(updatedValue);
+        }
 
-		if (onPromptChange) {
-			onPromptChange(updatedValue);
-		}
+        if (onPromptChange) {
+            onPromptChange(updatedValue);
+        }
 
-		if (setIsInputChanged) {
-			setIsInputChanged(true);
-		}
-	};
+        if (setIsInputChanged) {
+            setIsInputChanged(true);
+        }
+    };
 
-	// Initialize local prompt from item when it changes
-	useEffect(() => {
-		const promptFromItem = getPromptFromItem();
+    // Initialize local prompt from item when it changes
+    useEffect(() => {
+        const promptFromItem = getPromptFromItem();
 
-		// Only update the prompt if:
-		// 1. We're in feed mode and the item has changed, or
-		// 2. We've just switched from edit mode to feed mode
-		const wasInEditMode = prevEditModeRef.current;
-		const isNowInFeedMode = !isEditMode;
-		const switchedToFeedMode = wasInEditMode && isNowInFeedMode;
+        // Only update the prompt if:
+        // 1. We're in feed mode and the item has changed, or
+        // 2. We've just switched from edit mode to feed mode
+        const wasInEditMode = prevEditModeRef.current;
+        const isNowInFeedMode = !isEditMode;
+        const switchedToFeedMode = wasInEditMode && isNowInFeedMode;
 
-		if (promptFromItem && (switchedToFeedMode || (!isEditMode && item))) {
-			setLocalPrompt(promptFromItem);
-		}
+        if (promptFromItem && (switchedToFeedMode || (!isEditMode && item))) {
+            setLocalPrompt(promptFromItem);
+        }
 
-		// Update the previous edit mode ref
-		prevEditModeRef.current = isEditMode;
-	}, [item, isEditMode]);
+        // Update the previous edit mode ref
+        prevEditModeRef.current = isEditMode;
+    }, [item, isEditMode]);
 
-	// Setup resize handling
-	useEffect(() => {
-		if (!containerRef.current || !resizeHandleRef.current) return;
+    // Setup resize handling
+    useEffect(() => {
+        if (!containerRef.current || !resizeHandleRef.current) return;
 
-		// Set initial height based on device type
-		if (isMobile) {
-			containerRef.current.style.height = "200px";
-		} else {
-			containerRef.current.style.height = `${promptHeight}px`;
-		}
+        // Set initial height based on device type
+        if (isMobile) {
+            containerRef.current.style.height = "200px";
+        } else {
+            containerRef.current.style.height = `${promptHeight}px`;
+        }
 
-		let isResizing = false;
-		let startY = 0;
-		let startHeight = 0;
+        let isResizing = false;
+        let startY = 0;
+        let startHeight = 0;
 
-		const handleMouseDown = (e) => {
-			// Only handle resize if clicking on the resize handle and not on mobile
-			if (
-				!isMobile &&
-				(e.target === resizeHandleRef.current ||
-					resizeHandleRef.current.contains(e.target))
-			) {
-				isResizing = true;
-				startY = e.clientY;
-				startHeight = containerRef.current.offsetHeight;
-				e.preventDefault(); // Prevent text selection during resize
-			}
-		};
+        const handleMouseDown = (e) => {
+            // Only handle resize if clicking on the resize handle and not on mobile
+            if (
+                !isMobile &&
+                (e.target === resizeHandleRef.current ||
+                    resizeHandleRef.current.contains(e.target))
+            ) {
+                isResizing = true;
+                startY = e.clientY;
+                startHeight = containerRef.current.offsetHeight;
+                e.preventDefault(); // Prevent text selection during resize
+            }
+        };
 
-		const handleMouseMove = (e) => {
-			if (!isResizing || isMobile) return;
+        const handleMouseMove = (e) => {
+            if (!isResizing || isMobile) return;
 
-			const newHeight = startHeight + (e.clientY - startY);
-			if (newHeight > 130) {
-				// Enforce minimum height
-				containerRef.current.style.height = `${newHeight}px`;
-			}
-		};
+            const newHeight = startHeight + (e.clientY - startY);
+            if (newHeight > 130) {
+                // Enforce minimum height
+                containerRef.current.style.height = `${newHeight}px`;
+            }
+        };
 
-		const handleMouseUp = () => {
-			if (isResizing && !isMobile) {
-				const newHeight = containerRef.current.clientHeight;
-				localStorage.setItem("promptHeight", newHeight.toString());
-				setPromptHeight(newHeight);
-				isResizing = false;
-			}
-		};
+        const handleMouseUp = () => {
+            if (isResizing && !isMobile) {
+                const newHeight = containerRef.current.clientHeight;
+                localStorage.setItem("promptHeight", newHeight.toString());
+                setPromptHeight(newHeight);
+                isResizing = false;
+            }
+        };
 
-		// Add event listeners
-		resizeHandleRef.current.addEventListener("mousedown", handleMouseDown);
-		document.addEventListener("mousemove", handleMouseMove);
-		document.addEventListener("mouseup", handleMouseUp);
+        // Add event listeners
+        resizeHandleRef.current.addEventListener("mousedown", handleMouseDown);
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseup", handleMouseUp);
 
-		// Ensure mobile height stays fixed
-		const resizeObserver = new ResizeObserver(() => {
-			if (isMobile && containerRef.current) {
-				containerRef.current.style.height = "200px";
-			}
-		});
+        // Ensure mobile height stays fixed
+        const resizeObserver = new ResizeObserver(() => {
+            if (isMobile && containerRef.current) {
+                containerRef.current.style.height = "200px";
+            }
+        });
 
-		resizeObserver.observe(containerRef.current);
+        resizeObserver.observe(containerRef.current);
 
-		return () => {
-			if (resizeHandleRef.current) {
-				resizeHandleRef.current.removeEventListener(
-					"mousedown",
-					handleMouseDown,
-				);
-			}
-			document.removeEventListener("mousemove", handleMouseMove);
-			document.removeEventListener("mouseup", handleMouseUp);
-			resizeObserver.disconnect();
-		};
-	}, [isMobile, promptHeight]);
+        return () => {
+            if (resizeHandleRef.current) {
+                resizeHandleRef.current.removeEventListener(
+                    "mousedown",
+                    handleMouseDown,
+                );
+            }
+            document.removeEventListener("mousemove", handleMouseMove);
+            document.removeEventListener("mouseup", handleMouseUp);
+            resizeObserver.disconnect();
+        };
+    }, [isMobile, promptHeight]);
 
-	// Render the tooltip label
-	const renderTooltipLabel = () => {
-		if (React.isValidElement(promptTooltip)) {
-			return <>{promptTooltip}</>;
-		}
+    // Render the tooltip label
+    const renderTooltipLabel = () => {
+        if (React.isValidElement(promptTooltip)) {
+            return <>{promptTooltip}</>;
+        }
 
-		return typeof promptTooltip === "string" ? promptTooltip : "Prompt";
-	};
+        return typeof promptTooltip === "string" ? promptTooltip : "Prompt";
+    };
 
-	return (
-		<Box width="100%">
-			{isEditMode && (
-				<Typography sx={LabelStyle}>{renderTooltipLabel()}</Typography>
-			)}
+    return (
+        <Box width="100%">
+            {isEditMode && (
+                <Typography sx={LabelStyle}>{renderTooltipLabel()}</Typography>
+            )}
 
-			<Box position="relative" sx={{ width: "100%" }}>
-				<PromptContainer
-					ref={containerRef}
-					className="prompt-container"
-					isEditMode={isEditMode}
-					onClick={!isEditMode ? onEditModeSwitch : undefined}
-					sx={isMobile ? { height: "200px !important" } : {}}
-				>
-					{isEditMode
-						? <StyledTextArea
-								value={getPromptContent(currentPrompt)}
-								onChange={(e) => handlePromptChange(e.target.value)}
-								placeholder="Enter your prompt here..."
-								minRows={3}
-								maxRows={12}
-								style={{
-									width: "100%",
-									fontFamily: Fonts.parameter,
-									fontSize: "1.1em",
-									lineHeight: "1.5em",
-								}}
-							/>
-						: <Box sx={{ padding: "15px" }}>
-								{itemType === "text"
-									? <Typography
-											sx={{
-												fontFamily: Fonts.parameter,
-												fontSize: "1.1em",
-												color: Colors.offwhite,
-												margin: 0,
-												lineHeight: "1.5em",
-												whiteSpace: "pre-wrap",
-												wordBreak: "break-word",
-											}}
-										>
-											{getPromptContent(currentPrompt)}
-										</Typography>
-									: <ReactMarkdown
-											components={{
-												p: ({ node, ...props }) => (
-													<p
-														style={{
-															margin: 0,
-															fontFamily: Fonts.parameter,
-															fontSize: "1.1em",
-															color: Colors.offwhite,
-															lineHeight: "1.5em",
-														}}
-														{...props}
-													/>
-												),
-											}}
-										>
-											{getPromptContent(currentPrompt)}
-										</ReactMarkdown>}
-							</Box>}
-				</PromptContainer>
+            <Box position="relative" sx={{ width: "100%" }}>
+                <PromptContainer
+                    ref={containerRef}
+                    className="prompt-container"
+                    isEditMode={isEditMode}
+                    onClick={!isEditMode ? onEditModeSwitch : undefined}
+                    sx={isMobile ? { height: "200px !important" } : {}}
+                >
+                    {isEditMode
+                        ? <StyledTextArea
+                              value={getPromptContent(currentPrompt)}
+                              onChange={(e) =>
+                                  handlePromptChange(e.target.value)
+                              }
+                              placeholder="Enter your prompt here..."
+                              minRows={3}
+                              maxRows={12}
+                              style={{
+                                  width: "100%",
+                                  fontFamily: Fonts.parameter,
+                                  fontSize: "1.1em",
+                                  lineHeight: "1.5em",
+                              }}
+                          />
+                        : <Box sx={{ padding: "15px" }}>
+                              {itemType === "text"
+                                  ? <Typography
+                                        sx={{
+                                            fontFamily: Fonts.parameter,
+                                            fontSize: "1.1em",
+                                            color: Colors.offwhite,
+                                            margin: 0,
+                                            lineHeight: "1.5em",
+                                            whiteSpace: "pre-wrap",
+                                            wordBreak: "break-word",
+                                        }}
+                                    >
+                                        {getPromptContent(currentPrompt)}
+                                    </Typography>
+                                  : <ReactMarkdown
+                                        components={{
+                                            p: ({ node, ...props }) => (
+                                                <p
+                                                    style={{
+                                                        margin: 0,
+                                                        fontFamily:
+                                                            Fonts.parameter,
+                                                        fontSize: "1.1em",
+                                                        color: Colors.offwhite,
+                                                        lineHeight: "1.5em",
+                                                    }}
+                                                    {...props}
+                                                />
+                                            ),
+                                        }}
+                                    >
+                                        {getPromptContent(currentPrompt)}
+                                    </ReactMarkdown>}
+                          </Box>}
+                </PromptContainer>
 
-				{/* Only show resize handle on non-mobile devices */}
-				{!isMobile && <ResizeHandle ref={resizeHandleRef} />}
-			</Box>
-		</Box>
-	);
+                {/* Only show resize handle on non-mobile devices */}
+                {!isMobile && <ResizeHandle ref={resizeHandleRef} />}
+            </Box>
+        </Box>
+    );
 }

@@ -10,7 +10,7 @@
  * @returns {Object} - Tool definition object
  */
 export function createToolDefinition(schema, handler) {
-	return { schema, handler };
+    return { schema, handler };
 }
 
 /**
@@ -20,7 +20,7 @@ export function createToolDefinition(schema, handler) {
  * @returns {Object} - MCP response object
  */
 export function createMCPResponse(content) {
-	return { content };
+    return { content };
 }
 
 /**
@@ -31,10 +31,10 @@ export function createMCPResponse(content) {
  * @returns {Object} - Text content object
  */
 export function createTextContent(text, stringify = false) {
-	return {
-		type: "text",
-		text: stringify ? JSON.stringify(text, null, 2) : text,
-	};
+    return {
+        type: "text",
+        text: stringify ? JSON.stringify(text, null, 2) : text,
+    };
 }
 
 /**
@@ -45,11 +45,11 @@ export function createTextContent(text, stringify = false) {
  * @returns {Object} - Image content object
  */
 export function createImageContent(data, mimeType) {
-	return {
-		type: "image",
-		data,
-		mimeType,
-	};
+    return {
+        type: "image",
+        data,
+        mimeType,
+    };
 }
 
 /**
@@ -61,24 +61,24 @@ export function createImageContent(data, mimeType) {
  * @returns {string} - Complete URL
  */
 export function buildUrl(baseUrl, path, params = {}) {
-	// Build the query parameters
-	const queryParams = new URLSearchParams();
+    // Build the query parameters
+    const queryParams = new URLSearchParams();
 
-	// Add all non-undefined parameters
-	Object.entries(params).forEach(([key, value]) => {
-		if (value !== undefined) {
-			queryParams.append(key, value);
-		}
-	});
+    // Add all non-undefined parameters
+    Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+            queryParams.append(key, value);
+        }
+    });
 
-	// Construct the URL
-	let url = `${baseUrl}/${path}`;
+    // Construct the URL
+    let url = `${baseUrl}/${path}`;
 
-	// Add query parameters if they exist
-	const queryString = queryParams.toString();
-	if (queryString) {
-		url += `?${queryString}`;
-	}
+    // Add query parameters if they exist
+    const queryString = queryParams.toString();
+    if (queryString) {
+        url += `?${queryString}`;
+    }
 
-	return url;
+    return url;
 }

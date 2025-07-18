@@ -5,8 +5,8 @@ const WORKER_VERSION = "2.0.0-simplified";
 
 // Unified logging function with category support
 function log(category, message, ...args) {
-  const prefix = category ? `[${category}]` : '';
-  console.log(`[${WORKER_VERSION}]${prefix} ${message}`, ...args);
+    const prefix = category ? `[${category}]` : '';
+    console.log(`[${WORKER_VERSION}]${prefix} ${message}`, ...args);
 }
 
 const NON_CACHE_PATHS = ['/models', '/feed', '/openai/models'];
@@ -15,39 +15,39 @@ const NON_CACHE_PATHS = ['/models', '/feed', '/openai/models'];
  * Prepare metadata for caching
  */
 function prepareMetadata(request, url, response, contentSize, isStreaming, hasRequestBody = false) {
-  // Create metadata object with core response properties
-  const metadata = {
-    // Original URL information
-    originalUrl: url.toString(),
-    cachedAt: new Date().toISOString(),
-    isStreaming: isStreaming.toString(),
-    responseSize: contentSize.toString(),
+    // Create metadata object with core response properties
+    const metadata = {
+        // Original URL information
+        originalUrl: url.toString(),
+        cachedAt: new Date().toISOString(),
+        isStreaming: isStreaming.toString(),
+        responseSize: contentSize.toString(),
+        
+        // Response metadata
+        response_content_type: response.headers.get('content-type') || '',
+        response_cache_control: response.headers.get('cache-control') || '',
+        method: request.method,
+        status: response.status.toString(),
+        statusText: response.statusText,
+        
+        // Request body reference
+        hasRequestBody: hasRequestBody.toString(),
+        
+        // Original headers as JSON for future reconstruction
+        headers: JSON.stringify(Object.fromEntries(response.headers))
+    };
     
-    // Response metadata
-    response_content_type: response.headers.get('content-type') || '',
-    response_cache_control: response.headers.get('cache-control') || '',
-    method: request.method,
-    status: response.status.toString(),
-    statusText: response.statusText,
+    // Add all request headers to metadata - no transformation
+    for (const [key, value] of request.headers.entries()) {
+        metadata[key] = value;
+    }
     
-    // Request body reference
-    hasRequestBody: hasRequestBody.toString(),
-    
-    // Original headers as JSON for future reconstruction
-    headers: JSON.stringify(Object.fromEntries(response.headers))
-  };
-  
-  // Add all request headers to metadata - no transformation
-  for (const [key, value] of request.headers.entries()) {
-    metadata[key] = value;
-  }
-  
-  // Add all Cloudflare-specific data from the cf object if available
-  if (request.cf && typeof request.cf === 'object') {
-    // Add all properties from request.cf without transformation
-    for (const [key, value] of Object.entries(request.cf)) {
-      // Convert any non-string values to strings
-      if (value !== null && value !== undefined) {
+    // Add all Cloudflare-specific data from the cf object if available
+    if (request.cf && typeof request.cf === 'object') {
+        // Add all properties from request.cf without transformation
+        for (const [key, value] of Object.entries(request.cf)) {
+            // Convert any non-string values to strings
+            if (value !== null && value !== undefined) {
         metadata[key] = typeof value === 'string' ? value : String(value);
       }
     }

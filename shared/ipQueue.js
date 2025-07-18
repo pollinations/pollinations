@@ -21,10 +21,10 @@ const authLog = debug("pollinations:auth");
 const queues = new Map();
 
 const tierCaps = {
-	anonymous: 1,
-	seed: 3,
-	flower: 7,
-	nectar: 50,
+    anonymous: 1,
+    seed: 3,
+    flower: 7,
+    nectar: 50,
 };
 
 /**
@@ -39,30 +39,30 @@ const tierCaps = {
  * @returns {Promise<any>} Result of the function execution
  */
 export async function enqueue(req, fn, { interval = 6000, cap = 1 } = {}) {
-	// Extract useful request info for logging
-	const url = req.url || "no-url";
-	const method = req.method || "no-method";
-	const path = url.split("?")[0] || "no-path";
-	let ip =
-		req.headers?.get?.("cf-connecting-ip") ||
-		req.headers?.["cf-connecting-ip"] ||
-		req.ip ||
-		"unknown";
+    // Extract useful request info for logging
+    const url = req.url || "no-url";
+    const method = req.method || "no-method";
+    const path = url.split("?")[0] || "no-path";
+    let ip =
+        req.headers?.get?.("cf-connecting-ip") ||
+        req.headers?.["cf-connecting-ip"] ||
+        req.ip ||
+        "unknown";
 
-	authLog("Processing request: %s %s from IP: %s", method, path, ip);
+    authLog("Processing request: %s %s from IP: %s", method, path, ip);
 
-	// Get authentication status
-	authLog("Checking authentication for request: %s", path);
-	const authResult = await shouldBypassQueue(req);
+    // Get authentication status
+    authLog("Checking authentication for request: %s", path);
+    const authResult = await shouldBypassQueue(req);
 
-	// Log the authentication result with tier information
-	authLog(
-		"Authentication result: reason=%s, authenticated=%s, userId=%s, tier=%s",
-		authResult.reason,
-		authResult.authenticated,
-		authResult.userId || "none",
-		authResult.tier || "none",
-	);
+    // Log the authentication result with tier information
+    authLog(
+        "Authentication result: reason=%s, authenticated=%s, userId=%s, tier=%s",
+        authResult.reason,
+        authResult.authenticated,
+        authResult.userId || "none",
+        authResult.tier || "none",
+    );
 
 	// Check if there's an error in the auth result (invalid token)
 	if (authResult.error) {

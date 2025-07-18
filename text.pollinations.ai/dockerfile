@@ -1,0 +1,7 @@
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --production
+COPY . .
+EXPOSE 16385
+CMD ["npm", "start"]

@@ -6,10 +6,10 @@ import github from "./github.svg";
 import x from "./x.svg";
 
 export const ICONS = {
-    discord,
-    github,
-    instagram,
-    x,
-    tiktok,
-    linkedin,
+	discord,
+	github,
+	instagram,
+	x,
+	tiktok,
+	linkedin,
 };

@@ -29,10 +29,10 @@ ${context}
 Apply the following transformations to the text in order:
 
 ${transformations
-    .map((t) => t(props))
-    .filter(Boolean)
-    .map((s) => `- ${s}`)
-    .join("\n")}
+	.map((t) => t(props))
+	.filter(Boolean)
+	.map((s) => `- ${s}`)
+	.join("\n")}
 
 Only output the final text, nothing else. Links should be in markdown format.
 
@@ -41,25 +41,25 @@ ${text}
 `;
 
 export function LLMTextManipulator({ text, transforms = [] }) {
-    const theme = useTheme();
-    const isXs = useMediaQuery(theme.breakpoints.only("xs"));
-    const userLanguage = navigator.language || navigator.userLanguage;
+	const theme = useTheme();
+	const isXs = useMediaQuery(theme.breakpoints.only("xs"));
+	const userLanguage = navigator.language || navigator.userLanguage;
 
-    const prompt = combine(text, [translate, ...transforms], {
-        isXs,
-        userLanguage,
-    });
-    const transformedText = usePollinationsText(prompt);
+	const prompt = combine(text, [translate, ...transforms], {
+		isXs,
+		userLanguage,
+	});
+	const transformedText = usePollinationsText(prompt);
 
-    if (!transformedText) {
-        return <span>Generating...</span>;
-    }
+	if (!transformedText) {
+		return <span>Generating...</span>;
+	}
 
-    return (
-        <MarkDownStyle>
-            <ReactMarkdown>{transformedText}</ReactMarkdown>
-        </MarkDownStyle>
-    );
+	return (
+		<MarkDownStyle>
+			<ReactMarkdown>{transformedText}</ReactMarkdown>
+		</MarkDownStyle>
+	);
 }
 
 const MarkDownStyle = styled.div`

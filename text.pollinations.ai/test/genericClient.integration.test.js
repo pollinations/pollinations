@@ -10,13 +10,13 @@ dotenv.config();
 
 // Configure higher timeout for all tests
 test.beforeEach((t) => {
-    t.timeout(40000); // 40 seconds in milliseconds
+	t.timeout(40000); // 40 seconds in milliseconds
 });
 
 // Handle unhandled rejections
 process.on("unhandledRejection", (reason, promise) => {
-    errorLog("Unhandled Rejection at:", promise, "reason:", reason);
-    // Don't exit the process, just log the error
+	errorLog("Unhandled Rejection at:", promise, "reason:", reason);
+	// Don't exit the process, just log the error
 });
 
 /**
@@ -30,43 +30,43 @@ process.on("unhandledRejection", (reason, promise) => {
  * 3. The response should match the expected format
  */
 test.serial("should create and use a client with Azure OpenAI", async (t) => {
-    // Skip if no API key is available
-    if (!process.env.AZURE_OPENAI_API_KEY) {
-        t.pass("Skipping test due to missing API key");
-        return;
-    }
+	// Skip if no API key is available
+	if (!process.env.AZURE_OPENAI_API_KEY) {
+		t.pass("Skipping test due to missing API key");
+		return;
+	}
 
-    // Create a client for Azure OpenAI
-    const client = createOpenAICompatibleClient({
-        endpoint: process.env.AZURE_OPENAI_ENDPOINT,
-        authHeaderName: "api-key",
-        authHeaderValue: () => process.env.AZURE_OPENAI_API_KEY,
-        modelMapping: { "test-model": "gpt-4o-mini" },
-        systemPrompts: { "test-model": "You are a helpful assistant." },
-        defaultOptions: { model: "test-model", temperature: 0.7 },
-        providerName: "AzureOpenAI",
-    });
+	// Create a client for Azure OpenAI
+	const client = createOpenAICompatibleClient({
+		endpoint: process.env.AZURE_OPENAI_ENDPOINT,
+		authHeaderName: "api-key",
+		authHeaderValue: () => process.env.AZURE_OPENAI_API_KEY,
+		modelMapping: { "test-model": "gpt-4o-mini" },
+		systemPrompts: { "test-model": "You are a helpful assistant." },
+		defaultOptions: { model: "test-model", temperature: 0.7 },
+		providerName: "AzureOpenAI",
+	});
 
-    try {
-        const messages = [{ role: "user", content: "Hello, how are you?" }];
-        const response = await client(messages);
+	try {
+		const messages = [{ role: "user", content: "Hello, how are you?" }];
+		const response = await client(messages);
 
-        // Verify response format
-        t.truthy(response.choices, "Response should have choices array");
-        t.truthy(response.choices[0].message, "Response should have a message");
-        t.is(
-            response.choices[0].message.role,
-            "assistant",
-            "Message role should be assistant",
-        );
-        t.truthy(
-            response.choices[0].message.content,
-            "Message should have content",
-        );
-    } catch (error) {
-        // If API returns an error, skip the test
-        t.pass(`Skipping test due to API error: ${error.message}`);
-    }
+		// Verify response format
+		t.truthy(response.choices, "Response should have choices array");
+		t.truthy(response.choices[0].message, "Response should have a message");
+		t.is(
+			response.choices[0].message.role,
+			"assistant",
+			"Message role should be assistant",
+		);
+		t.truthy(
+			response.choices[0].message.content,
+			"Message should have content",
+		);
+	} catch (error) {
+		// If API returns an error, skip the test
+		t.pass(`Skipping test due to API error: ${error.message}`);
+	}
 });
 
 /**
@@ -80,51 +80,48 @@ test.serial("should create and use a client with Azure OpenAI", async (t) => {
  * 3. The response should be formatted according to the custom formatter
  */
 test.serial("should support custom response formatting", async (t) => {
-    // Skip if no API key is available
-    if (!process.env.AZURE_OPENAI_API_KEY) {
-        t.pass("Skipping test due to missing API key");
-        return;
-    }
+	// Skip if no API key is available
+	if (!process.env.AZURE_OPENAI_API_KEY) {
+		t.pass("Skipping test due to missing API key");
+		return;
+	}
 
-    // Create a client with a custom response formatter
-    const client = createOpenAICompatibleClient({
-        endpoint: process.env.AZURE_OPENAI_ENDPOINT,
-        authHeaderName: "api-key",
-        authHeaderValue: () => process.env.AZURE_OPENAI_API_KEY,
-        modelMapping: { "test-model": "gpt-4o-mini" },
-        systemPrompts: { "test-model": "You are a helpful assistant." },
-        defaultOptions: { model: "test-model", temperature: 0.7 },
-        providerName: "AzureOpenAI",
-        formatResponse: (data, requestId, startTime, modelName) => {
-            return {
-                text: data.choices[0].message.content,
-                model: modelName,
-                requestId: requestId,
-                processingTime: Date.now() - startTime,
-            };
-        },
-    });
+	// Create a client with a custom response formatter
+	const client = createOpenAICompatibleClient({
+		endpoint: process.env.AZURE_OPENAI_ENDPOINT,
+		authHeaderName: "api-key",
+		authHeaderValue: () => process.env.AZURE_OPENAI_API_KEY,
+		modelMapping: { "test-model": "gpt-4o-mini" },
+		systemPrompts: { "test-model": "You are a helpful assistant." },
+		defaultOptions: { model: "test-model", temperature: 0.7 },
+		providerName: "AzureOpenAI",
+		formatResponse: (data, requestId, startTime, modelName) => {
+			return {
+				text: data.choices[0].message.content,
+				model: modelName,
+				requestId: requestId,
+				processingTime: Date.now() - startTime,
+			};
+		},
+	});
 
-    try {
-        const messages = [{ role: "user", content: "Hello, how are you?" }];
-        const response = await client(messages);
+	try {
+		const messages = [{ role: "user", content: "Hello, how are you?" }];
+		const response = await client(messages);
 
-        // Verify custom response format
-        t.truthy(response.text, "Response should have text field");
-        t.is(
-            response.model,
-            "gpt-4o-mini",
-            "Response should have correct model name",
-        );
-        t.truthy(response.requestId, "Response should have requestId");
-        t.truthy(
-            response.processingTime,
-            "Response should have processingTime",
-        );
-    } catch (error) {
-        // If API returns an error, skip the test
-        t.pass(`Skipping test due to API error: ${error.message}`);
-    }
+		// Verify custom response format
+		t.truthy(response.text, "Response should have text field");
+		t.is(
+			response.model,
+			"gpt-4o-mini",
+			"Response should have correct model name",
+		);
+		t.truthy(response.requestId, "Response should have requestId");
+		t.truthy(response.processingTime, "Response should have processingTime");
+	} catch (error) {
+		// If API returns an error, skip the test
+		t.pass(`Skipping test due to API error: ${error.message}`);
+	}
 });
 
 /**
@@ -137,31 +134,31 @@ test.serial("should support custom response formatting", async (t) => {
  * 2. The error should contain information about the failure
  */
 test.serial("should handle errors gracefully", async (t) => {
-    // Create a client with an invalid API key
-    const client = createOpenAICompatibleClient({
-        endpoint: process.env.AZURE_OPENAI_ENDPOINT,
-        authHeaderName: "api-key",
-        authHeaderValue: () => "invalid_api_key",
-        modelMapping: { "test-model": "gpt-4o-mini" },
-        systemPrompts: { "test-model": "You are a helpful assistant." },
-        defaultOptions: { model: "test-model", temperature: 0.7 },
-        providerName: "AzureOpenAI",
-    });
+	// Create a client with an invalid API key
+	const client = createOpenAICompatibleClient({
+		endpoint: process.env.AZURE_OPENAI_ENDPOINT,
+		authHeaderName: "api-key",
+		authHeaderValue: () => "invalid_api_key",
+		modelMapping: { "test-model": "gpt-4o-mini" },
+		systemPrompts: { "test-model": "You are a helpful assistant." },
+		defaultOptions: { model: "test-model", temperature: 0.7 },
+		providerName: "AzureOpenAI",
+	});
 
-    const messages = [{ role: "user", content: "Hello, how are you?" }];
+	const messages = [{ role: "user", content: "Hello, how are you?" }];
 
-    // Expect an error to be thrown
-    const error = await t.throwsAsync(async () => {
-        await client(messages);
-    });
+	// Expect an error to be thrown
+	const error = await t.throwsAsync(async () => {
+		await client(messages);
+	});
 
-    // Log the error for debugging
-    console.log("Error:", error.message);
+	// Log the error for debugging
+	console.log("Error:", error.message);
 
-    // Verify error contains useful information
-    t.truthy(error.message, "Error should have a message");
-    t.true(
-        error.message.includes("AzureOpenAI"),
-        "Error should mention the provider",
-    );
+	// Verify error contains useful information
+	t.truthy(error.message, "Error should have a message");
+	t.true(
+		error.message.includes("AzureOpenAI"),
+		"Error should mention the provider",
+	);
 });

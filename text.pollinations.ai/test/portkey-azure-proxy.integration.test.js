@@ -10,13 +10,13 @@ dotenv.config();
 
 // Configure higher timeout for all tests
 test.beforeEach((t) => {
-    t.timeout(60000); // 60 seconds in milliseconds
+	t.timeout(60000); // 60 seconds in milliseconds
 });
 
 // Handle unhandled rejections
 process.on("unhandledRejection", (reason, promise) => {
-    errorLog("Unhandled Rejection at:", promise, "reason:", reason);
-    // Don't exit the process, just log the error
+	errorLog("Unhandled Rejection at:", promise, "reason:", reason);
+	// Don't exit the process, just log the error
 });
 
 /**
@@ -29,55 +29,53 @@ process.on("unhandledRejection", (reason, promise) => {
  * 2. The response should contain meaningful text
  */
 test.serial(
-    "should generate text with openai model (gpt-4o-mini)",
-    async (t) => {
-        const messages = [{ role: "user", content: "Hello, how are you?" }];
-        const options = { model: "openai", temperature: 0.7 };
+	"should generate text with openai model (gpt-4o-mini)",
+	async (t) => {
+		const messages = [{ role: "user", content: "Hello, how are you?" }];
+		const options = { model: "openai", temperature: 0.7 };
 
-        try {
-            const response = await generateTextPortkey(messages, options);
+		try {
+			const response = await generateTextPortkey(messages, options);
 
-            // If API is available and returns a valid response
-            if (
-                response.choices &&
-                response.choices[0] &&
-                response.choices[0].message
-            ) {
-                t.is(
-                    typeof response.choices[0].message.content,
-                    "string",
-                    "Response should be a string",
-                );
-                t.true(
-                    response.choices[0].message.content.length > 0,
-                    "Response should not be empty",
-                );
-                t.is(
-                    response.choices[0].message.role,
-                    "assistant",
-                    "Response role should be assistant",
-                );
+			// If API is available and returns a valid response
+			if (
+				response.choices &&
+				response.choices[0] &&
+				response.choices[0].message
+			) {
+				t.is(
+					typeof response.choices[0].message.content,
+					"string",
+					"Response should be a string",
+				);
+				t.true(
+					response.choices[0].message.content.length > 0,
+					"Response should not be empty",
+				);
+				t.is(
+					response.choices[0].message.role,
+					"assistant",
+					"Response role should be assistant",
+				);
 
-                // Log the response for debugging
-                log(
-                    "Response from openai (gpt-4o-mini):",
-                    response.choices[0].message.content,
-                );
-                log("Response metadata:", {
-                    model: response.model,
-                    usage: response.usage,
-                });
-            } else if (response.error) {
-                // If API returns an error, skip the test
-                t.pass(
-                    "Skipping test due to API error: " + response.error.message,
-                );
-            }
-        } catch (error) {
-            // If there's an exception, skip the test
-            t.pass("Skipping test due to exception: " + error.message);
-        }
-    },
+				// Log the response for debugging
+				log(
+					"Response from openai (gpt-4o-mini):",
+					response.choices[0].message.content,
+				);
+				log("Response metadata:", {
+					model: response.model,
+					usage: response.usage,
+				});
+			} else if (response.error) {
+				// If API returns an error, skip the test
+				t.pass("Skipping test due to API error: " + response.error.message);
+			}
+		} catch (error) {
+			// If there's an exception, skip the test
+			t.pass("Skipping test due to exception: " + error.message);
+		}
+	},
 );
 
 /**
@@ -90,60 +88,55 @@ test.serial(
  * 2. The response should contain meaningful text
  */
 test.serial(
-    "should generate text with openai-large model (gpt-4o)",
-    async (t) => {
-        const messages = [
-            {
-                role: "user",
-                content: "Explain quantum computing in simple terms.",
-            },
-        ];
-        const options = { model: "openai-large", temperature: 0.7 };
+	"should generate text with openai-large model (gpt-4o)",
+	async (t) => {
+		const messages = [
+			{ role: "user", content: "Explain quantum computing in simple terms." },
+		];
+		const options = { model: "openai-large", temperature: 0.7 };
 
-        try {
-            const response = await generateTextPortkey(messages, options);
+		try {
+			const response = await generateTextPortkey(messages, options);
 
-            // If API is available and returns a valid response
-            if (
-                response.choices &&
-                response.choices[0] &&
-                response.choices[0].message
-            ) {
-                t.is(
-                    typeof response.choices[0].message.content,
-                    "string",
-                    "Response should be a string",
-                );
-                t.true(
-                    response.choices[0].message.content.length > 0,
-                    "Response should not be empty",
-                );
-                t.is(
-                    response.choices[0].message.role,
-                    "assistant",
-                    "Response role should be assistant",
-                );
+			// If API is available and returns a valid response
+			if (
+				response.choices &&
+				response.choices[0] &&
+				response.choices[0].message
+			) {
+				t.is(
+					typeof response.choices[0].message.content,
+					"string",
+					"Response should be a string",
+				);
+				t.true(
+					response.choices[0].message.content.length > 0,
+					"Response should not be empty",
+				);
+				t.is(
+					response.choices[0].message.role,
+					"assistant",
+					"Response role should be assistant",
+				);
 
-                // Log the response for debugging
-                log(
-                    "Response from openai-large (gpt-4o):",
-                    response.choices[0].message.content,
-                );
-                log("Response metadata:", {
-                    model: response.model,
-                    usage: response.usage,
-                });
-            } else if (response.error) {
-                // If API returns an error, skip the test
-                t.pass(
-                    "Skipping test due to API error: " + response.error.message,
-                );
-            }
-        } catch (error) {
-            // If there's an exception, skip the test
-            t.pass("Skipping test due to exception: " + error.message);
-        }
-    },
+				// Log the response for debugging
+				log(
+					"Response from openai-large (gpt-4o):",
+					response.choices[0].message.content,
+				);
+				log("Response metadata:", {
+					model: response.model,
+					usage: response.usage,
+				});
+			} else if (response.error) {
+				// If API returns an error, skip the test
+				t.pass("Skipping test due to API error: " + response.error.message);
+			}
+		} catch (error) {
+			// If there's an exception, skip the test
+			t.pass("Skipping test due to exception: " + error.message);
+		}
+	},
 );
 
 /**
@@ -156,55 +149,53 @@ test.serial(
  * 2. The response should contain meaningful text
  */
 test.serial(
-    "should generate text with openai-reasoning model (o1-mini)",
-    async (t) => {
-        const messages = [{ role: "user", content: "What is 15 + 27?" }];
-        const options = { model: "openai-reasoning", temperature: 0.7 };
+	"should generate text with openai-reasoning model (o1-mini)",
+	async (t) => {
+		const messages = [{ role: "user", content: "What is 15 + 27?" }];
+		const options = { model: "openai-reasoning", temperature: 0.7 };
 
-        try {
-            const response = await generateTextPortkey(messages, options);
+		try {
+			const response = await generateTextPortkey(messages, options);
 
-            // If API is available and returns a valid response
-            if (
-                response.choices &&
-                response.choices[0] &&
-                response.choices[0].message
-            ) {
-                t.is(
-                    typeof response.choices[0].message.content,
-                    "string",
-                    "Response should be a string",
-                );
-                t.true(
-                    response.choices[0].message.content.length > 0,
-                    "Response should not be empty",
-                );
-                t.is(
-                    response.choices[0].message.role,
-                    "assistant",
-                    "Response role should be assistant",
-                );
+			// If API is available and returns a valid response
+			if (
+				response.choices &&
+				response.choices[0] &&
+				response.choices[0].message
+			) {
+				t.is(
+					typeof response.choices[0].message.content,
+					"string",
+					"Response should be a string",
+				);
+				t.true(
+					response.choices[0].message.content.length > 0,
+					"Response should not be empty",
+				);
+				t.is(
+					response.choices[0].message.role,
+					"assistant",
+					"Response role should be assistant",
+				);
 
-                // Log the response for debugging
-                log(
-                    "Response from openai-reasoning (o1-mini):",
-                    response.choices[0].message.content,
-                );
-                log("Response metadata:", {
-                    model: response.model,
-                    usage: response.usage,
-                });
-            } else if (response.error) {
-                // If API returns an error, skip the test
-                t.pass(
-                    "Skipping test due to API error: " + response.error.message,
-                );
-            }
-        } catch (error) {
-            // If there's an exception, skip the test
-            t.pass("Skipping test due to exception: " + error.message);
-        }
-    },
+				// Log the response for debugging
+				log(
+					"Response from openai-reasoning (o1-mini):",
+					response.choices[0].message.content,
+				);
+				log("Response metadata:", {
+					model: response.model,
+					usage: response.usage,
+				});
+			} else if (response.error) {
+				// If API returns an error, skip the test
+				t.pass("Skipping test due to API error: " + response.error.message);
+			}
+		} catch (error) {
+			// If there's an exception, skip the test
+			t.pass("Skipping test due to exception: " + error.message);
+		}
+	},
 );
 
 /**
@@ -216,55 +207,52 @@ test.serial(
  * 1. The response should be valid JSON
  */
 test.serial("should handle JSON mode correctly", async (t) => {
-    const messages = [
-        {
-            role: "user",
-            content:
-                "Generate a JSON object with name, age, and hobbies fields.",
-        },
-    ];
-    const options = { model: "openai", jsonMode: true };
+	const messages = [
+		{
+			role: "user",
+			content: "Generate a JSON object with name, age, and hobbies fields.",
+		},
+	];
+	const options = { model: "openai", jsonMode: true };
 
-    try {
-        const response = await generateTextPortkey(messages, options);
+	try {
+		const response = await generateTextPortkey(messages, options);
 
-        // If API is available and returns a valid response
-        if (
-            response.choices &&
-            response.choices[0] &&
-            response.choices[0].message
-        ) {
-            const content = response.choices[0].message.content;
-            t.is(typeof content, "string", "Response should be a string");
+		// If API is available and returns a valid response
+		if (
+			response.choices &&
+			response.choices[0] &&
+			response.choices[0].message
+		) {
+			const content = response.choices[0].message.content;
+			t.is(typeof content, "string", "Response should be a string");
 
-            // Try to parse as JSON
-            try {
-                const parsed = JSON.parse(content);
-                t.true(
-                    typeof parsed === "object",
-                    "Parsed content should be an object",
-                );
-                t.true(parsed !== null, "Parsed content should not be null");
+			// Try to parse as JSON
+			try {
+				const parsed = JSON.parse(content);
+				t.true(
+					typeof parsed === "object",
+					"Parsed content should be an object",
+				);
+				t.true(parsed !== null, "Parsed content should not be null");
 
-                // Log the parsed JSON for debugging
-                log("Parsed JSON response:", parsed);
-            } catch (e) {
-                // If JSON parsing fails but we're in JSON mode, that's a test failure
-                // unless the API returned an error
-                if (response.error) {
-                    t.pass("Skipping JSON parsing test due to API error");
-                } else {
-                    t.fail(
-                        `Response in JSON mode is not valid JSON: ${e.message}`,
-                    );
-                }
-            }
-        } else if (response.error) {
-            // If API returns an error, skip the test
-            t.pass("Skipping test due to API error: " + response.error.message);
-        }
-    } catch (error) {
-        // If there's an exception, skip the test
-        t.pass("Skipping test due to exception: " + error.message);
-    }
+				// Log the parsed JSON for debugging
+				log("Parsed JSON response:", parsed);
+			} catch (e) {
+				// If JSON parsing fails but we're in JSON mode, that's a test failure
+				// unless the API returned an error
+				if (response.error) {
+					t.pass("Skipping JSON parsing test due to API error");
+				} else {
+					t.fail(`Response in JSON mode is not valid JSON: ${e.message}`);
+				}
+			}
+		} else if (response.error) {
+			// If API returns an error, skip the test
+			t.pass("Skipping test due to API error: " + response.error.message);
+		}
+	} catch (error) {
+		// If there's an exception, skip the test
+		t.pass("Skipping test due to exception: " + error.message);
+	}
 });

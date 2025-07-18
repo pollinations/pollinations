@@ -1,894 +1,862 @@
 {
-    "schema_version": "1.0.0",
-    "metadata": {
-        "name": "Pollinations.AI API",
-        "description": "An open-source gen AI platform providing free text, image, and audio generation APIs",
-        "logo": "https://pollinations.ai/favicon-32x32.png",
-        "contact_url": "https://discord.gg/k9F7SyTgqn",
-        "legal_info_url": "https://github.com/pollinations/pollinations/blob/master/LICENSE"
-    },
-    "openapi": {
-        "openapi": "3.0.0",
-        "info": {
-            "title": "Pollinations.AI API",
-            "description": "An open-source gen AI platform providing free text, image, and audio generation APIs",
-            "version": "1.0.1",
-            "contact": {
-                "name": "Pollinations.AI",
-                "url": "https://pollinations.ai",
-                "email": "hello@pollinations.ai"
-            },
-            "license": {
-                "name": "MIT",
-                "url": "https://github.com/pollinations/pollinations/blob/master/LICENSE"
-            }
-        },
-        "servers": [
-            {
-                "url": "https://image.pollinations.ai",
-                "description": "Image Generation API"
-            },
-            {
-                "url": "https://text.pollinations.ai",
-                "description": "Text Generation API"
-            },
-            {
-                "url": "https://api.pollinations.ai/v1",
-                "description": "OpenAI-compatible API"
-            }
-        ],
-        "paths": {
-            "/prompt/{prompt}": {
-                "get": {
-                    "summary": "Generate an image from a text prompt",
-                    "description": "Creates an image based on the provided text prompt using the specified model",
-                    "operationId": "generateImage",
-                    "tags": ["Image Generation"],
-                    "parameters": [
-                        {
-                            "name": "prompt",
-                            "in": "path",
-                            "description": "Text description of the image to generate",
-                            "required": true,
-                            "schema": {
-                                "type": "string"
-                            }
-                        },
-                        {
-                            "name": "width",
-                            "in": "query",
-                            "description": "Width of the generated image",
-                            "required": false,
-                            "schema": {
-                                "type": "integer",
-                                "default": 1024,
-                                "minimum": 64,
-                                "maximum": 2048
-                            }
-                        },
-                        {
-                            "name": "height",
-                            "in": "query",
-                            "description": "Height of the generated image",
-                            "required": false,
-                            "schema": {
-                                "type": "integer",
-                                "default": 1024,
-                                "minimum": 64,
-                                "maximum": 2048
-                            }
-                        },
-                        {
-                            "name": "model",
-                            "in": "query",
-                            "description": "Model to use for image generation",
-                            "required": false,
-                            "schema": {
-                                "type": "string",
-                                "enum": ["flux", "turbo"],
-                                "default": "flux"
-                            }
-                        },
-                        {
-                            "name": "steps",
-                            "in": "query",
-                            "description": "Number of diffusion steps (more steps = higher quality but slower)",
-                            "required": false,
-                            "schema": {
-                                "type": "integer",
-                                "default": 30,
-                                "minimum": 10,
-                                "maximum": 150
-                            }
-                        },
-                        {
-                            "name": "seed",
-                            "in": "query",
-                            "description": "Random seed for reproducible results",
-                            "required": false,
-                            "schema": {
-                                "type": "integer"
-                            }
-                        },
-                        {
-                            "name": "guidance_scale",
-                            "in": "query",
-                            "description": "How closely to follow the prompt (higher = more faithful but less creative)",
-                            "required": false,
-                            "schema": {
-                                "type": "number",
-                                "default": 7.5,
-                                "minimum": 1.0,
-                                "maximum": 20.0
-                            }
-                        },
-                        {
-                            "name": "negative_prompt",
-                            "in": "query",
-                            "description": "Things to avoid in the generated image",
-                            "required": false,
-                            "schema": {
-                                "type": "string"
-                            }
-                        },
-                        {
-                            "name": "referrer",
-                            "in": "query",
-                            "description": "Referrer information for tracking",
-                            "required": false,
-                            "schema": {
-                                "type": "string"
-                            }
-                        },
-                        {
-                            "name": "special_bee",
-                            "in": "query",
-                            "description": "Special Bee program identifier for higher rate limits",
-                            "required": false,
-                            "schema": {
-                                "type": "string"
-                            }
-                        }
-                    ],
-                    "responses": {
-                        "200": {
-                            "description": "Successfully generated image",
-                            "content": {
-                                "image/png": {
-                                    "schema": {
-                                        "type": "string",
-                                        "format": "binary"
-                                    }
-                                }
-                            }
-                        },
-                        "400": {
-                            "description": "Invalid request parameters"
-                        },
-                        "429": {
-                            "description": "Rate limit exceeded"
-                        },
-                        "500": {
-                            "description": "Server error"
-                        }
-                    }
-                }
-            },
-            "/{prompt}": {
-                "get": {
-                    "summary": "Generate text from a prompt",
-                    "description": "Creates text based on the provided prompt using the specified model",
-                    "operationId": "generateText",
-                    "tags": ["Text Generation"],
-                    "parameters": [
-                        {
-                            "name": "prompt",
-                            "in": "path",
-                            "description": "Text prompt for generation",
-                            "required": true,
-                            "schema": {
-                                "type": "string"
-                            }
-                        },
-                        {
-                            "name": "model",
-                            "in": "query",
-                            "description": "Model to use for text generation",
-                            "required": false,
-                            "schema": {
-                                "type": "string",
-                                "enum": [
-                                    "openai",
-                                    "openai-large",
-                                    "openai-reasoning",
-                                    "qwen-coder",
-                                    "llama",
-                                    "llamascout",
-                                    "mistral",
-                                    "unity",
-                                    "midijourney",
-                                    "rtist",
-                                    "searchgpt",
-                                    "evil",
-                                    "deepseek-reasoning",
-                                    "deepseek-reasoning-large",
-                                    "phi",
-                                    "llama-vision",
-                                    "gemini",
-                                    "hormoz",
-                                    "hypnosis-tracy",
-                                    "deepseek",
-                                    "sur",
-                                    "openai-audio"
-                                ],
-                                "default": "openai"
-                            }
-                        },
-                        {
-                            "name": "voice",
-                            "in": "query",
-                            "description": "Voice to use for text-to-speech (only when model=openai-audio)",
-                            "required": false,
-                            "schema": {
-                                "type": "string",
-                                "enum": [
-                                    "alloy",
-                                    "echo",
-                                    "fable",
-                                    "onyx",
-                                    "nova",
-                                    "shimmer",
-                                    "coral",
-                                    "verse",
-                                    "ballad",
-                                    "ash",
-                                    "sage",
-                                    "amuch",
-                                    "dan"
-                                ],
-                                "default": "nova"
-                            }
-                        },
-                        {
-                            "name": "max_tokens",
-                            "in": "query",
-                            "description": "Maximum number of tokens to generate",
-                            "required": false,
-                            "schema": {
-                                "type": "integer",
-                                "default": 1000,
-                                "minimum": 1,
-                                "maximum": 4096
-                            }
-                        },
-                        {
-                            "name": "temperature",
-                            "in": "query",
-                            "description": "Sampling temperature (higher = more creative, lower = more deterministic)",
-                            "required": false,
-                            "schema": {
-                                "type": "number",
-                                "default": 0.7,
-                                "minimum": 0.0,
-                                "maximum": 2.0
-                            }
-                        },
-                        {
-                            "name": "system",
-                            "in": "query",
-                            "description": "System prompt to guide the model's behavior",
-                            "required": false,
-                            "schema": {
-                                "type": "string"
-                            }
-                        },
-                        {
-                            "name": "stream",
-                            "in": "query",
-                            "description": "Whether to stream the response",
-                            "required": false,
-                            "schema": {
-                                "type": "boolean",
-                                "default": false
-                            }
-                        },
-                        {
-                            "name": "referrer",
-                            "in": "query",
-                            "description": "Referrer information for tracking",
-                            "required": false,
-                            "schema": {
-                                "type": "string"
-                            }
-                        },
-                        {
-                            "name": "special_bee",
-                            "in": "query",
-                            "description": "Special Bee program identifier for higher rate limits",
-                            "required": false,
-                            "schema": {
-                                "type": "string"
-                            }
-                        }
-                    ],
-                    "responses": {
-                        "200": {
-                            "description": "Successfully generated text",
-                            "content": {
-                                "text/plain": {
-                                    "schema": {
-                                        "type": "string"
-                                    }
-                                },
-                                "audio/mpeg": {
-                                    "schema": {
-                                        "type": "string",
-                                        "format": "binary"
-                                    }
-                                }
-                            }
-                        },
-                        "400": {
-                            "description": "Invalid request parameters"
-                        },
-                        "429": {
-                            "description": "Rate limit exceeded"
-                        },
-                        "500": {
-                            "description": "Server error"
-                        }
-                    }
-                }
-            },
-            "/models": {
-                "get": {
-                    "summary": "List available text models",
-                    "description": "Returns a list of available text generation models",
-                    "operationId": "listTextModels",
-                    "tags": ["Text Generation"],
-                    "responses": {
-                        "200": {
-                            "description": "List of available models",
-                            "content": {
-                                "application/json": {
-                                    "schema": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "object",
-                                            "properties": {
-                                                "name": {
-                                                    "type": "string"
-                                                },
-                                                "description": {
-                                                    "type": "string"
-                                                },
-                                                "provider": {
-                                                    "type": "string"
-                                                },
-                                                "input_modalities": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "text",
-                                                            "image",
-                                                            "audio"
-                                                        ]
-                                                    }
-                                                },
-                                                "output_modalities": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "text",
-                                                            "audio"
-                                                        ]
-                                                    }
-                                                },
-                                                "vision": {
-                                                    "type": "boolean"
-                                                },
-                                                "audio": {
-                                                    "type": "boolean"
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "500": {
-                            "description": "Server error"
-                        }
-                    }
-                }
-            },
-            "/chat/completions": {
-                "post": {
-                    "summary": "Generate chat completions (OpenAI-compatible)",
-                    "description": "Creates a model response for the given chat conversation",
-                    "operationId": "createChatCompletion",
-                    "tags": ["Text Generation", "OpenAI-compatible"],
-                    "requestBody": {
-                        "required": true,
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": ["messages"],
-                                    "properties": {
-                                        "model": {
-                                            "type": "string",
-                                            "description": "ID of the model to use",
-                                            "default": "openai"
-                                        },
-                                        "messages": {
-                                            "type": "array",
-                                            "description": "A list of messages comprising the conversation so far",
-                                            "items": {
-                                                "type": "object",
-                                                "required": ["role", "content"],
-                                                "properties": {
-                                                    "role": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "system",
-                                                            "user",
-                                                            "assistant",
-                                                            "function"
-                                                        ],
-                                                        "description": "The role of the author of this message"
-                                                    },
-                                                    "content": {
-                                                        "type": "string",
-                                                        "description": "The contents of the message"
-                                                    },
-                                                    "name": {
-                                                        "type": "string",
-                                                        "description": "The name of the author of this message (only required for function role)"
-                                                    },
-                                                    "function_call": {
-                                                        "type": "object",
-                                                        "description": "The name and arguments of a function that should be called"
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        "functions": {
-                                            "type": "array",
-                                            "description": "A list of functions the model may generate JSON inputs for",
-                                            "items": {
-                                                "type": "object",
-                                                "required": [
-                                                    "name",
-                                                    "parameters"
-                                                ],
-                                                "properties": {
-                                                    "name": {
-                                                        "type": "string",
-                                                        "description": "The name of the function"
-                                                    },
-                                                    "description": {
-                                                        "type": "string",
-                                                        "description": "A description of what the function does"
-                                                    },
-                                                    "parameters": {
-                                                        "type": "object",
-                                                        "description": "The parameters the function accepts, described as a JSON Schema object"
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        "function_call": {
-                                            "type": "string",
-                                            "description": "Controls how the model calls functions",
-                                            "enum": ["none", "auto"]
-                                        },
-                                        "temperature": {
-                                            "type": "number",
-                                            "description": "Sampling temperature",
-                                            "default": 0.7,
-                                            "minimum": 0,
-                                            "maximum": 2
-                                        },
-                                        "max_tokens": {
-                                            "type": "integer",
-                                            "description": "Maximum number of tokens to generate",
-                                            "default": 1000
-                                        },
-                                        "stream": {
-                                            "type": "boolean",
-                                            "description": "Whether to stream the response",
-                                            "default": false
-                                        },
-                                        "referrer": {
-                                            "type": "string",
-                                            "description": "Referrer information for tracking"
-                                        },
-                                        "special_bee": {
-                                            "type": "string",
-                                            "description": "Special Bee program identifier for higher rate limits"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "responses": {
-                        "200": {
-                            "description": "Successful response",
-                            "content": {
-                                "application/json": {
-                                    "schema": {
-                                        "type": "object",
-                                        "properties": {
-                                            "id": {
-                                                "type": "string"
-                                            },
-                                            "object": {
-                                                "type": "string"
-                                            },
-                                            "created": {
-                                                "type": "integer"
-                                            },
-                                            "model": {
-                                                "type": "string"
-                                            },
-                                            "choices": {
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "index": {
-                                                            "type": "integer"
-                                                        },
-                                                        "message": {
-                                                            "type": "object",
-                                                            "properties": {
-                                                                "role": {
-                                                                    "type": "string"
-                                                                },
-                                                                "content": {
-                                                                    "type": "string"
-                                                                },
-                                                                "function_call": {
-                                                                    "type": "object"
-                                                                }
-                                                            }
-                                                        },
-                                                        "finish_reason": {
-                                                            "type": "string"
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                            "usage": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "prompt_tokens": {
-                                                        "type": "integer"
-                                                    },
-                                                    "completion_tokens": {
-                                                        "type": "integer"
-                                                    },
-                                                    "total_tokens": {
-                                                        "type": "integer"
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "400": {
-                            "description": "Invalid request parameters"
-                        },
-                        "429": {
-                            "description": "Rate limit exceeded"
-                        },
-                        "500": {
-                            "description": "Server error"
-                        }
-                    }
-                }
-            },
-            "/audio/speech": {
-                "post": {
-                    "summary": "Generate speech from text (OpenAI-compatible)",
-                    "description": "Converts text to speech using the specified voice",
-                    "operationId": "createSpeech",
-                    "tags": ["Audio Generation", "OpenAI-compatible"],
-                    "requestBody": {
-                        "required": true,
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": ["input", "voice"],
-                                    "properties": {
-                                        "model": {
-                                            "type": "string",
-                                            "description": "ID of the model to use",
-                                            "default": "openai-audio"
-                                        },
-                                        "input": {
-                                            "type": "string",
-                                            "description": "The text to convert to speech"
-                                        },
-                                        "voice": {
-                                            "type": "string",
-                                            "description": "The voice to use for generation",
-                                            "enum": [
-                                                "alloy",
-                                                "echo",
-                                                "fable",
-                                                "onyx",
-                                                "nova",
-                                                "shimmer",
-                                                "coral",
-                                                "verse",
-                                                "ballad",
-                                                "ash",
-                                                "sage",
-                                                "amuch",
-                                                "dan"
-                                            ],
-                                            "default": "nova"
-                                        },
-                                        "response_format": {
-                                            "type": "string",
-                                            "description": "The format of the audio response",
-                                            "enum": [
-                                                "mp3",
-                                                "opus",
-                                                "aac",
-                                                "flac"
-                                            ],
-                                            "default": "mp3"
-                                        },
-                                        "speed": {
-                                            "type": "number",
-                                            "description": "The speed of the generated audio",
-                                            "minimum": 0.25,
-                                            "maximum": 4.0,
-                                            "default": 1.0
-                                        },
-                                        "referrer": {
-                                            "type": "string",
-                                            "description": "Referrer information for tracking"
-                                        },
-                                        "special_bee": {
-                                            "type": "string",
-                                            "description": "Special Bee program identifier for higher rate limits"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "responses": {
-                        "200": {
-                            "description": "Successfully generated audio",
-                            "content": {
-                                "audio/mpeg": {
-                                    "schema": {
-                                        "type": "string",
-                                        "format": "binary"
-                                    }
-                                },
-                                "audio/opus": {
-                                    "schema": {
-                                        "type": "string",
-                                        "format": "binary"
-                                    }
-                                },
-                                "audio/aac": {
-                                    "schema": {
-                                        "type": "string",
-                                        "format": "binary"
-                                    }
-                                },
-                                "audio/flac": {
-                                    "schema": {
-                                        "type": "string",
-                                        "format": "binary"
-                                    }
-                                }
-                            }
-                        },
-                        "400": {
-                            "description": "Invalid request parameters"
-                        },
-                        "429": {
-                            "description": "Rate limit exceeded"
-                        },
-                        "500": {
-                            "description": "Server error"
-                        }
-                    }
-                }
-            },
-            "/audio/transcriptions": {
-                "post": {
-                    "summary": "Transcribe audio to text (OpenAI-compatible)",
-                    "description": "Transcribes audio into the input language",
-                    "operationId": "createTranscription",
-                    "tags": ["Audio Processing", "OpenAI-compatible"],
-                    "requestBody": {
-                        "required": true,
-                        "content": {
-                            "multipart/form-data": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": ["file"],
-                                    "properties": {
-                                        "file": {
-                                            "type": "string",
-                                            "format": "binary",
-                                            "description": "The audio file to transcribe"
-                                        },
-                                        "model": {
-                                            "type": "string",
-                                            "description": "ID of the model to use",
-                                            "default": "openai-audio"
-                                        },
-                                        "language": {
-                                            "type": "string",
-                                            "description": "The language of the input audio"
-                                        },
-                                        "prompt": {
-                                            "type": "string",
-                                            "description": "An optional text to guide the model's style"
-                                        },
-                                        "response_format": {
-                                            "type": "string",
-                                            "description": "The format of the transcript output",
-                                            "enum": [
-                                                "json",
-                                                "text",
-                                                "srt",
-                                                "verbose_json",
-                                                "vtt"
-                                            ],
-                                            "default": "json"
-                                        },
-                                        "temperature": {
-                                            "type": "number",
-                                            "description": "The sampling temperature",
-                                            "minimum": 0,
-                                            "maximum": 1,
-                                            "default": 0
-                                        },
-                                        "referrer": {
-                                            "type": "string",
-                                            "description": "Referrer information for tracking"
-                                        },
-                                        "special_bee": {
-                                            "type": "string",
-                                            "description": "Special Bee program identifier for higher rate limits"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "responses": {
-                        "200": {
-                            "description": "Successfully transcribed audio",
-                            "content": {
-                                "application/json": {
-                                    "schema": {
-                                        "type": "object",
-                                        "properties": {
-                                            "text": {
-                                                "type": "string"
-                                            }
-                                        }
-                                    }
-                                },
-                                "text/plain": {
-                                    "schema": {
-                                        "type": "string"
-                                    }
-                                }
-                            }
-                        },
-                        "400": {
-                            "description": "Invalid request parameters"
-                        },
-                        "429": {
-                            "description": "Rate limit exceeded"
-                        },
-                        "500": {
-                            "description": "Server error"
-                        }
-                    }
-                }
-            }
-        },
-        "components": {
-            "schemas": {
-                "Error": {
-                    "type": "object",
-                    "properties": {
-                        "error": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string"
-                                },
-                                "type": {
-                                    "type": "string"
-                                },
-                                "code": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    },
-    "auth": {
-        "type": "none",
-        "instructions": "No authentication required. All endpoints are freely accessible."
-    },
-    "examples": [
-        {
-            "name": "Generate an image",
-            "description": "Generate an image of a sunset over the ocean",
-            "request": {
-                "url": "https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?width=1280&height=720&seed=42"
-            }
-        },
-        {
-            "name": "Generate text",
-            "description": "Generate text about artificial intelligence",
-            "request": {
-                "url": "https://text.pollinations.ai/What%20is%20artificial%20intelligence?model=mistral&seed=42"
-            }
-        },
-        {
-            "name": "Generate text with system prompt",
-            "description": "Generate text with a custom system prompt",
-            "request": {
-                "url": "https://text.pollinations.ai/What%20is%20artificial%20intelligence?system=You%20are%20a%20helpful%20AI%20assistant"
-            }
-        },
-        {
-            "name": "Generate text with POST request",
-            "description": "Generate text using a POST request with messages",
-            "request": {
-                "method": "POST",
-                "url": "https://text.pollinations.ai/",
-                "headers": {
-                    "Content-Type": "application/json"
-                },
-                "body": {
-                    "messages": [
-                        {
-                            "role": "system",
-                            "content": "You are a helpful assistant."
-                        },
-                        {
-                            "role": "user",
-                            "content": "What is artificial intelligence?"
-                        }
-                    ],
-                    "model": "mistral",
-                    "seed": 42
-                }
-            }
-        },
-        {
-            "name": "Generate audio",
-            "description": "Generate audio from text using text-to-speech",
-            "request": {
-                "url": "https://audio.pollinations.ai/Hello%20world?model=openai-audio&voice=nova"
-            }
-        }
-    ]
+	"schema_version": "1.0.0",
+	"metadata": {
+		"name": "Pollinations.AI API",
+		"description": "An open-source gen AI platform providing free text, image, and audio generation APIs",
+		"logo": "https://pollinations.ai/favicon-32x32.png",
+		"contact_url": "https://discord.gg/k9F7SyTgqn",
+		"legal_info_url": "https://github.com/pollinations/pollinations/blob/master/LICENSE"
+	},
+	"openapi": {
+		"openapi": "3.0.0",
+		"info": {
+			"title": "Pollinations.AI API",
+			"description": "An open-source gen AI platform providing free text, image, and audio generation APIs",
+			"version": "1.0.1",
+			"contact": {
+				"name": "Pollinations.AI",
+				"url": "https://pollinations.ai",
+				"email": "hello@pollinations.ai"
+			},
+			"license": {
+				"name": "MIT",
+				"url": "https://github.com/pollinations/pollinations/blob/master/LICENSE"
+			}
+		},
+		"servers": [
+			{
+				"url": "https://image.pollinations.ai",
+				"description": "Image Generation API"
+			},
+			{
+				"url": "https://text.pollinations.ai",
+				"description": "Text Generation API"
+			},
+			{
+				"url": "https://api.pollinations.ai/v1",
+				"description": "OpenAI-compatible API"
+			}
+		],
+		"paths": {
+			"/prompt/{prompt}": {
+				"get": {
+					"summary": "Generate an image from a text prompt",
+					"description": "Creates an image based on the provided text prompt using the specified model",
+					"operationId": "generateImage",
+					"tags": ["Image Generation"],
+					"parameters": [
+						{
+							"name": "prompt",
+							"in": "path",
+							"description": "Text description of the image to generate",
+							"required": true,
+							"schema": {
+								"type": "string"
+							}
+						},
+						{
+							"name": "width",
+							"in": "query",
+							"description": "Width of the generated image",
+							"required": false,
+							"schema": {
+								"type": "integer",
+								"default": 1024,
+								"minimum": 64,
+								"maximum": 2048
+							}
+						},
+						{
+							"name": "height",
+							"in": "query",
+							"description": "Height of the generated image",
+							"required": false,
+							"schema": {
+								"type": "integer",
+								"default": 1024,
+								"minimum": 64,
+								"maximum": 2048
+							}
+						},
+						{
+							"name": "model",
+							"in": "query",
+							"description": "Model to use for image generation",
+							"required": false,
+							"schema": {
+								"type": "string",
+								"enum": ["flux", "turbo"],
+								"default": "flux"
+							}
+						},
+						{
+							"name": "steps",
+							"in": "query",
+							"description": "Number of diffusion steps (more steps = higher quality but slower)",
+							"required": false,
+							"schema": {
+								"type": "integer",
+								"default": 30,
+								"minimum": 10,
+								"maximum": 150
+							}
+						},
+						{
+							"name": "seed",
+							"in": "query",
+							"description": "Random seed for reproducible results",
+							"required": false,
+							"schema": {
+								"type": "integer"
+							}
+						},
+						{
+							"name": "guidance_scale",
+							"in": "query",
+							"description": "How closely to follow the prompt (higher = more faithful but less creative)",
+							"required": false,
+							"schema": {
+								"type": "number",
+								"default": 7.5,
+								"minimum": 1.0,
+								"maximum": 20.0
+							}
+						},
+						{
+							"name": "negative_prompt",
+							"in": "query",
+							"description": "Things to avoid in the generated image",
+							"required": false,
+							"schema": {
+								"type": "string"
+							}
+						},
+						{
+							"name": "referrer",
+							"in": "query",
+							"description": "Referrer information for tracking",
+							"required": false,
+							"schema": {
+								"type": "string"
+							}
+						},
+						{
+							"name": "special_bee",
+							"in": "query",
+							"description": "Special Bee program identifier for higher rate limits",
+							"required": false,
+							"schema": {
+								"type": "string"
+							}
+						}
+					],
+					"responses": {
+						"200": {
+							"description": "Successfully generated image",
+							"content": {
+								"image/png": {
+									"schema": {
+										"type": "string",
+										"format": "binary"
+									}
+								}
+							}
+						},
+						"400": {
+							"description": "Invalid request parameters"
+						},
+						"429": {
+							"description": "Rate limit exceeded"
+						},
+						"500": {
+							"description": "Server error"
+						}
+					}
+				}
+			},
+			"/{prompt}": {
+				"get": {
+					"summary": "Generate text from a prompt",
+					"description": "Creates text based on the provided prompt using the specified model",
+					"operationId": "generateText",
+					"tags": ["Text Generation"],
+					"parameters": [
+						{
+							"name": "prompt",
+							"in": "path",
+							"description": "Text prompt for generation",
+							"required": true,
+							"schema": {
+								"type": "string"
+							}
+						},
+						{
+							"name": "model",
+							"in": "query",
+							"description": "Model to use for text generation",
+							"required": false,
+							"schema": {
+								"type": "string",
+								"enum": [
+									"openai",
+									"openai-large",
+									"openai-reasoning",
+									"qwen-coder",
+									"llama",
+									"llamascout",
+									"mistral",
+									"unity",
+									"midijourney",
+									"rtist",
+									"searchgpt",
+									"evil",
+									"deepseek-reasoning",
+									"deepseek-reasoning-large",
+									"phi",
+									"llama-vision",
+									"gemini",
+									"hormoz",
+									"hypnosis-tracy",
+									"deepseek",
+									"sur",
+									"openai-audio"
+								],
+								"default": "openai"
+							}
+						},
+						{
+							"name": "voice",
+							"in": "query",
+							"description": "Voice to use for text-to-speech (only when model=openai-audio)",
+							"required": false,
+							"schema": {
+								"type": "string",
+								"enum": [
+									"alloy",
+									"echo",
+									"fable",
+									"onyx",
+									"nova",
+									"shimmer",
+									"coral",
+									"verse",
+									"ballad",
+									"ash",
+									"sage",
+									"amuch",
+									"dan"
+								],
+								"default": "nova"
+							}
+						},
+						{
+							"name": "max_tokens",
+							"in": "query",
+							"description": "Maximum number of tokens to generate",
+							"required": false,
+							"schema": {
+								"type": "integer",
+								"default": 1000,
+								"minimum": 1,
+								"maximum": 4096
+							}
+						},
+						{
+							"name": "temperature",
+							"in": "query",
+							"description": "Sampling temperature (higher = more creative, lower = more deterministic)",
+							"required": false,
+							"schema": {
+								"type": "number",
+								"default": 0.7,
+								"minimum": 0.0,
+								"maximum": 2.0
+							}
+						},
+						{
+							"name": "system",
+							"in": "query",
+							"description": "System prompt to guide the model's behavior",
+							"required": false,
+							"schema": {
+								"type": "string"
+							}
+						},
+						{
+							"name": "stream",
+							"in": "query",
+							"description": "Whether to stream the response",
+							"required": false,
+							"schema": {
+								"type": "boolean",
+								"default": false
+							}
+						},
+						{
+							"name": "referrer",
+							"in": "query",
+							"description": "Referrer information for tracking",
+							"required": false,
+							"schema": {
+								"type": "string"
+							}
+						},
+						{
+							"name": "special_bee",
+							"in": "query",
+							"description": "Special Bee program identifier for higher rate limits",
+							"required": false,
+							"schema": {
+								"type": "string"
+							}
+						}
+					],
+					"responses": {
+						"200": {
+							"description": "Successfully generated text",
+							"content": {
+								"text/plain": {
+									"schema": {
+										"type": "string"
+									}
+								},
+								"audio/mpeg": {
+									"schema": {
+										"type": "string",
+										"format": "binary"
+									}
+								}
+							}
+						},
+						"400": {
+							"description": "Invalid request parameters"
+						},
+						"429": {
+							"description": "Rate limit exceeded"
+						},
+						"500": {
+							"description": "Server error"
+						}
+					}
+				}
+			},
+			"/models": {
+				"get": {
+					"summary": "List available text models",
+					"description": "Returns a list of available text generation models",
+					"operationId": "listTextModels",
+					"tags": ["Text Generation"],
+					"responses": {
+						"200": {
+							"description": "List of available models",
+							"content": {
+								"application/json": {
+									"schema": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"name": {
+													"type": "string"
+												},
+												"description": {
+													"type": "string"
+												},
+												"provider": {
+													"type": "string"
+												},
+												"input_modalities": {
+													"type": "array",
+													"items": {
+														"type": "string",
+														"enum": ["text", "image", "audio"]
+													}
+												},
+												"output_modalities": {
+													"type": "array",
+													"items": {
+														"type": "string",
+														"enum": ["text", "audio"]
+													}
+												},
+												"vision": {
+													"type": "boolean"
+												},
+												"audio": {
+													"type": "boolean"
+												}
+											}
+										}
+									}
+								}
+							}
+						},
+						"500": {
+							"description": "Server error"
+						}
+					}
+				}
+			},
+			"/chat/completions": {
+				"post": {
+					"summary": "Generate chat completions (OpenAI-compatible)",
+					"description": "Creates a model response for the given chat conversation",
+					"operationId": "createChatCompletion",
+					"tags": ["Text Generation", "OpenAI-compatible"],
+					"requestBody": {
+						"required": true,
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": ["messages"],
+									"properties": {
+										"model": {
+											"type": "string",
+											"description": "ID of the model to use",
+											"default": "openai"
+										},
+										"messages": {
+											"type": "array",
+											"description": "A list of messages comprising the conversation so far",
+											"items": {
+												"type": "object",
+												"required": ["role", "content"],
+												"properties": {
+													"role": {
+														"type": "string",
+														"enum": ["system", "user", "assistant", "function"],
+														"description": "The role of the author of this message"
+													},
+													"content": {
+														"type": "string",
+														"description": "The contents of the message"
+													},
+													"name": {
+														"type": "string",
+														"description": "The name of the author of this message (only required for function role)"
+													},
+													"function_call": {
+														"type": "object",
+														"description": "The name and arguments of a function that should be called"
+													}
+												}
+											}
+										},
+										"functions": {
+											"type": "array",
+											"description": "A list of functions the model may generate JSON inputs for",
+											"items": {
+												"type": "object",
+												"required": ["name", "parameters"],
+												"properties": {
+													"name": {
+														"type": "string",
+														"description": "The name of the function"
+													},
+													"description": {
+														"type": "string",
+														"description": "A description of what the function does"
+													},
+													"parameters": {
+														"type": "object",
+														"description": "The parameters the function accepts, described as a JSON Schema object"
+													}
+												}
+											}
+										},
+										"function_call": {
+											"type": "string",
+											"description": "Controls how the model calls functions",
+											"enum": ["none", "auto"]
+										},
+										"temperature": {
+											"type": "number",
+											"description": "Sampling temperature",
+											"default": 0.7,
+											"minimum": 0,
+											"maximum": 2
+										},
+										"max_tokens": {
+											"type": "integer",
+											"description": "Maximum number of tokens to generate",
+											"default": 1000
+										},
+										"stream": {
+											"type": "boolean",
+											"description": "Whether to stream the response",
+											"default": false
+										},
+										"referrer": {
+											"type": "string",
+											"description": "Referrer information for tracking"
+										},
+										"special_bee": {
+											"type": "string",
+											"description": "Special Bee program identifier for higher rate limits"
+										}
+									}
+								}
+							}
+						}
+					},
+					"responses": {
+						"200": {
+							"description": "Successful response",
+							"content": {
+								"application/json": {
+									"schema": {
+										"type": "object",
+										"properties": {
+											"id": {
+												"type": "string"
+											},
+											"object": {
+												"type": "string"
+											},
+											"created": {
+												"type": "integer"
+											},
+											"model": {
+												"type": "string"
+											},
+											"choices": {
+												"type": "array",
+												"items": {
+													"type": "object",
+													"properties": {
+														"index": {
+															"type": "integer"
+														},
+														"message": {
+															"type": "object",
+															"properties": {
+																"role": {
+																	"type": "string"
+																},
+																"content": {
+																	"type": "string"
+																},
+																"function_call": {
+																	"type": "object"
+																}
+															}
+														},
+														"finish_reason": {
+															"type": "string"
+														}
+													}
+												}
+											},
+											"usage": {
+												"type": "object",
+												"properties": {
+													"prompt_tokens": {
+														"type": "integer"
+													},
+													"completion_tokens": {
+														"type": "integer"
+													},
+													"total_tokens": {
+														"type": "integer"
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						},
+						"400": {
+							"description": "Invalid request parameters"
+						},
+						"429": {
+							"description": "Rate limit exceeded"
+						},
+						"500": {
+							"description": "Server error"
+						}
+					}
+				}
+			},
+			"/audio/speech": {
+				"post": {
+					"summary": "Generate speech from text (OpenAI-compatible)",
+					"description": "Converts text to speech using the specified voice",
+					"operationId": "createSpeech",
+					"tags": ["Audio Generation", "OpenAI-compatible"],
+					"requestBody": {
+						"required": true,
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": ["input", "voice"],
+									"properties": {
+										"model": {
+											"type": "string",
+											"description": "ID of the model to use",
+											"default": "openai-audio"
+										},
+										"input": {
+											"type": "string",
+											"description": "The text to convert to speech"
+										},
+										"voice": {
+											"type": "string",
+											"description": "The voice to use for generation",
+											"enum": [
+												"alloy",
+												"echo",
+												"fable",
+												"onyx",
+												"nova",
+												"shimmer",
+												"coral",
+												"verse",
+												"ballad",
+												"ash",
+												"sage",
+												"amuch",
+												"dan"
+											],
+											"default": "nova"
+										},
+										"response_format": {
+											"type": "string",
+											"description": "The format of the audio response",
+											"enum": ["mp3", "opus", "aac", "flac"],
+											"default": "mp3"
+										},
+										"speed": {
+											"type": "number",
+											"description": "The speed of the generated audio",
+											"minimum": 0.25,
+											"maximum": 4.0,
+											"default": 1.0
+										},
+										"referrer": {
+											"type": "string",
+											"description": "Referrer information for tracking"
+										},
+										"special_bee": {
+											"type": "string",
+											"description": "Special Bee program identifier for higher rate limits"
+										}
+									}
+								}
+							}
+						}
+					},
+					"responses": {
+						"200": {
+							"description": "Successfully generated audio",
+							"content": {
+								"audio/mpeg": {
+									"schema": {
+										"type": "string",
+										"format": "binary"
+									}
+								},
+								"audio/opus": {
+									"schema": {
+										"type": "string",
+										"format": "binary"
+									}
+								},
+								"audio/aac": {
+									"schema": {
+										"type": "string",
+										"format": "binary"
+									}
+								},
+								"audio/flac": {
+									"schema": {
+										"type": "string",
+										"format": "binary"
+									}
+								}
+							}
+						},
+						"400": {
+							"description": "Invalid request parameters"
+						},
+						"429": {
+							"description": "Rate limit exceeded"
+						},
+						"500": {
+							"description": "Server error"
+						}
+					}
+				}
+			},
+			"/audio/transcriptions": {
+				"post": {
+					"summary": "Transcribe audio to text (OpenAI-compatible)",
+					"description": "Transcribes audio into the input language",
+					"operationId": "createTranscription",
+					"tags": ["Audio Processing", "OpenAI-compatible"],
+					"requestBody": {
+						"required": true,
+						"content": {
+							"multipart/form-data": {
+								"schema": {
+									"type": "object",
+									"required": ["file"],
+									"properties": {
+										"file": {
+											"type": "string",
+											"format": "binary",
+											"description": "The audio file to transcribe"
+										},
+										"model": {
+											"type": "string",
+											"description": "ID of the model to use",
+											"default": "openai-audio"
+										},
+										"language": {
+											"type": "string",
+											"description": "The language of the input audio"
+										},
+										"prompt": {
+											"type": "string",
+											"description": "An optional text to guide the model's style"
+										},
+										"response_format": {
+											"type": "string",
+											"description": "The format of the transcript output",
+											"enum": ["json", "text", "srt", "verbose_json", "vtt"],
+											"default": "json"
+										},
+										"temperature": {
+											"type": "number",
+											"description": "The sampling temperature",
+											"minimum": 0,
+											"maximum": 1,
+											"default": 0
+										},
+										"referrer": {
+											"type": "string",
+											"description": "Referrer information for tracking"
+										},
+										"special_bee": {
+											"type": "string",
+											"description": "Special Bee program identifier for higher rate limits"
+										}
+									}
+								}
+							}
+						}
+					},
+					"responses": {
+						"200": {
+							"description": "Successfully transcribed audio",
+							"content": {
+								"application/json": {
+									"schema": {
+										"type": "object",
+										"properties": {
+											"text": {
+												"type": "string"
+											}
+										}
+									}
+								},
+								"text/plain": {
+									"schema": {
+										"type": "string"
+									}
+								}
+							}
+						},
+						"400": {
+							"description": "Invalid request parameters"
+						},
+						"429": {
+							"description": "Rate limit exceeded"
+						},
+						"500": {
+							"description": "Server error"
+						}
+					}
+				}
+			}
+		},
+		"components": {
+			"schemas": {
+				"Error": {
+					"type": "object",
+					"properties": {
+						"error": {
+							"type": "object",
+							"properties": {
+								"message": {
+									"type": "string"
+								},
+								"type": {
+									"type": "string"
+								},
+								"code": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"auth": {
+		"type": "none",
+		"instructions": "No authentication required. All endpoints are freely accessible."
+	},
+	"examples": [
+		{
+			"name": "Generate an image",
+			"description": "Generate an image of a sunset over the ocean",
+			"request": {
+				"url": "https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?width=1280&height=720&seed=42"
+			}
+		},
+		{
+			"name": "Generate text",
+			"description": "Generate text about artificial intelligence",
+			"request": {
+				"url": "https://text.pollinations.ai/What%20is%20artificial%20intelligence?model=mistral&seed=42"
+			}
+		},
+		{
+			"name": "Generate text with system prompt",
+			"description": "Generate text with a custom system prompt",
+			"request": {
+				"url": "https://text.pollinations.ai/What%20is%20artificial%20intelligence?system=You%20are%20a%20helpful%20AI%20assistant"
+			}
+		},
+		{
+			"name": "Generate text with POST request",
+			"description": "Generate text using a POST request with messages",
+			"request": {
+				"method": "POST",
+				"url": "https://text.pollinations.ai/",
+				"headers": {
+					"Content-Type": "application/json"
+				},
+				"body": {
+					"messages": [
+						{ "role": "system", "content": "You are a helpful assistant." },
+						{ "role": "user", "content": "What is artificial intelligence?" }
+					],
+					"model": "mistral",
+					"seed": 42
+				}
+			}
+		},
+		{
+			"name": "Generate audio",
+			"description": "Generate audio from text using text-to-speech",
+			"request": {
+				"url": "https://audio.pollinations.ai/Hello%20world?model=openai-audio&voice=nova"
+			}
+		}
+	]
 }

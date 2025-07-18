@@ -26,7 +26,7 @@ This plan outlines the implementation of semantic image caching using Cloudflare
 
 ### Technology Stack
 - **Cloudflare Vectorize**: Vector database for embedding storage and similarity search
-- **Workers AI**: `@cf/baai/bge-base-en-v1.5` model for generating text embeddings (768 dimensions)
+- **Workers AI**: `@cf/baai/bge-m3` model for generating text embeddings (768 dimensions)
 - **Cloudflare R2**: Existing image storage backend
 - **Cloudflare Workers**: Existing cache proxy infrastructure
 
@@ -74,7 +74,7 @@ export const cacheImageWithEmbedding = async (cache, prompt, params, imageBuffer
 ```javascript
 export const createEmbeddingService = (ai) => ({
   ai,
-  model: "@cf/baai/bge-base-en-v1.5",
+  model: "@cf/baai/bge-m3",
 });
 
 export const generateEmbedding = async (service, prompt, params) => {

@@ -12,13 +12,13 @@ dotenv.config();
 
 // Configure higher timeout for all tests
 test.beforeEach((t) => {
-    t.timeout(60000); // 60 seconds in milliseconds
+	t.timeout(60000); // 60 seconds in milliseconds
 });
 
 // Handle unhandled rejections
 process.on("unhandledRejection", (reason, promise) => {
-    errorLog("Unhandled Rejection at:", promise, "reason:", reason);
-    // Don't exit the process, just log the error
+	errorLog("Unhandled Rejection at:", promise, "reason:", reason);
+	// Don't exit the process, just log the error
 });
 
 /**
@@ -31,53 +31,47 @@ process.on("unhandledRejection", (reason, promise) => {
  * 2. The results should contain relevant information
  */
 test.serial("performWebSearch should return search results", async (t) => {
-    try {
-        const query = "latest developments in artificial intelligence";
-        const results = await performWebSearch({ query, num_results: 5 });
+	try {
+		const query = "latest developments in artificial intelligence";
+		const results = await performWebSearch({ query, num_results: 5 });
 
-        // Parse the results
-        const parsedResults = JSON.parse(results);
+		// Parse the results
+		const parsedResults = JSON.parse(results);
 
-        // Check if we got results
-        if (Array.isArray(parsedResults) && parsedResults.length > 0) {
-            t.true(
-                parsedResults.length > 0,
-                "Should return at least one search result",
-            );
+		// Check if we got results
+		if (Array.isArray(parsedResults) && parsedResults.length > 0) {
+			t.true(
+				parsedResults.length > 0,
+				"Should return at least one search result",
+			);
 
-            // Check the structure of the first result
-            const firstResult = parsedResults[0];
-            t.truthy(firstResult.title, "Result should have a title");
-            t.truthy(firstResult.snippet, "Result should have a snippet");
-            t.truthy(firstResult.url, "Result should have a URL");
+			// Check the structure of the first result
+			const firstResult = parsedResults[0];
+			t.truthy(firstResult.title, "Result should have a title");
+			t.truthy(firstResult.snippet, "Result should have a snippet");
+			t.truthy(firstResult.url, "Result should have a URL");
 
-            // Check that the results are relevant to the query
-            const relevantResults = parsedResults.filter(
-                (result) =>
-                    result.title.toLowerCase().includes("ai") ||
-                    result.title
-                        .toLowerCase()
-                        .includes("artificial intelligence") ||
-                    result.snippet.toLowerCase().includes("ai") ||
-                    result.snippet
-                        .toLowerCase()
-                        .includes("artificial intelligence"),
-            );
+			// Check that the results are relevant to the query
+			const relevantResults = parsedResults.filter(
+				(result) =>
+					result.title.toLowerCase().includes("ai") ||
+					result.title.toLowerCase().includes("artificial intelligence") ||
+					result.snippet.toLowerCase().includes("ai") ||
+					result.snippet.toLowerCase().includes("artificial intelligence"),
+			);
 
-            t.true(
-                relevantResults.length > 0,
-                "At least one result should be relevant to the query",
-            );
-        } else if (parsedResults.error) {
-            // If there's an error, skip the test
-            t.pass(
-                `Skipping test due to search API error: ${parsedResults.error}`,
-            );
-        }
-    } catch (error) {
-        // If there's an exception, skip the test
-        t.pass(`Skipping test due to exception: ${error.message}`);
-    }
+			t.true(
+				relevantResults.length > 0,
+				"At least one result should be relevant to the query",
+			);
+		} else if (parsedResults.error) {
+			// If there's an error, skip the test
+			t.pass(`Skipping test due to search API error: ${parsedResults.error}`);
+		}
+	} catch (error) {
+		// If there's an exception, skip the test
+		t.pass(`Skipping test due to exception: ${error.message}`);
+	}
 });
 
 /**
@@ -90,48 +84,44 @@ test.serial("performWebSearch should return search results", async (t) => {
  * 2. The content should be properly converted to markdown
  */
 test.serial("performWebScrape should scrape web pages", async (t) => {
-    try {
-        const urls = ["https://en.wikipedia.org/wiki/Artificial_intelligence"];
-        const results = await performWebScrape({ urls });
+	try {
+		const urls = ["https://en.wikipedia.org/wiki/Artificial_intelligence"];
+		const results = await performWebScrape({ urls });
 
-        // Parse the results
-        const parsedResults = JSON.parse(results);
+		// Parse the results
+		const parsedResults = JSON.parse(results);
 
-        // Check if we got results
-        if (parsedResults.results && parsedResults.results.length > 0) {
-            t.true(
-                parsedResults.results.length > 0,
-                "Should return at least one scrape result",
-            );
+		// Check if we got results
+		if (parsedResults.results && parsedResults.results.length > 0) {
+			t.true(
+				parsedResults.results.length > 0,
+				"Should return at least one scrape result",
+			);
 
-            // Check the structure of the first result
-            const firstResult = parsedResults.results[0];
-            t.truthy(firstResult.url, "Result should have a URL");
-            t.truthy(firstResult.content, "Result should have content");
-            t.true(firstResult.success, "Scraping should be successful");
+			// Check the structure of the first result
+			const firstResult = parsedResults.results[0];
+			t.truthy(firstResult.url, "Result should have a URL");
+			t.truthy(firstResult.content, "Result should have content");
+			t.true(firstResult.success, "Scraping should be successful");
 
-            // Check that the content is properly formatted as markdown
-            t.true(
-                firstResult.content.includes("#"),
-                "Content should contain markdown headings",
-            );
-            t.true(
-                firstResult.content
-                    .toLowerCase()
-                    .includes("artificial intelligence") ||
-                    firstResult.content.toLowerCase().includes("ai"),
-                "Content should be relevant to the URL",
-            );
-        } else if (parsedResults.error) {
-            // If there's an error, skip the test
-            t.pass(
-                `Skipping test due to scrape API error: ${parsedResults.error}`,
-            );
-        }
-    } catch (error) {
-        // If there's an exception, skip the test
-        t.pass(`Skipping test due to exception: ${error.message}`);
-    }
+			// Check that the content is properly formatted as markdown
+			t.true(
+				firstResult.content.includes("#"),
+				"Content should contain markdown headings",
+			);
+			t.true(
+				firstResult.content.toLowerCase().includes("artificial intelligence") ||
+					firstResult.content.toLowerCase().includes("ai"),
+				"Content should be relevant to the URL",
+			);
+		} else if (parsedResults.error) {
+			// If there's an error, skip the test
+			t.pass(`Skipping test due to scrape API error: ${parsedResults.error}`);
+		}
+	} catch (error) {
+		// If there's an exception, skip the test
+		t.pass(`Skipping test due to exception: ${error.message}`);
+	}
 });
 
 /**
@@ -144,46 +134,46 @@ test.serial("performWebScrape should scrape web pages", async (t) => {
  * 2. The response should cite sources
  */
 test.serial("generateTextSearch should answer factual questions", async (t) => {
-    try {
-        const messages = [
-            {
-                role: "user",
-                content:
-                    "What is the capital of France? Please search the web to verify.",
-            },
-        ];
+	try {
+		const messages = [
+			{
+				role: "user",
+				content:
+					"What is the capital of France? Please search the web to verify.",
+			},
+		];
 
-        const response = await generateTextSearch(messages);
+		const response = await generateTextSearch(messages);
 
-        // Check if we got a valid response
-        if (
-            response.choices &&
-            response.choices[0] &&
-            response.choices[0].message
-        ) {
-            const content = response.choices[0].message.content;
-            t.truthy(content, "Response should have content");
+		// Check if we got a valid response
+		if (
+			response.choices &&
+			response.choices[0] &&
+			response.choices[0].message
+		) {
+			const content = response.choices[0].message.content;
+			t.truthy(content, "Response should have content");
 
-            // Check that the response contains the correct answer
-            t.true(
-                content.toLowerCase().includes("paris"),
-                "Response should mention Paris as the capital of France",
-            );
+			// Check that the response contains the correct answer
+			t.true(
+				content.toLowerCase().includes("paris"),
+				"Response should mention Paris as the capital of France",
+			);
 
-            // Check that the response cites sources or provides factual information
-            // The model might not always include explicit URLs
-            t.pass("Response received with factual information");
+			// Check that the response cites sources or provides factual information
+			// The model might not always include explicit URLs
+			t.pass("Response received with factual information");
 
-            // Log the content for debugging
-            log("Response content: %s", content);
-        } else if (response.error) {
-            // If there's an error, skip the test
-            t.pass(`Skipping test due to API error: ${response.error.message}`);
-        }
-    } catch (error) {
-        // If there's an exception, skip the test
-        t.pass(`Skipping test due to exception: ${error.message}`);
-    }
+			// Log the content for debugging
+			log("Response content: %s", content);
+		} else if (response.error) {
+			// If there's an error, skip the test
+			t.pass(`Skipping test due to API error: ${response.error.message}`);
+		}
+	} catch (error) {
+		// If there's an exception, skip the test
+		t.pass(`Skipping test due to exception: ${error.message}`);
+	}
 });
 
 /**
@@ -196,49 +186,49 @@ test.serial("generateTextSearch should answer factual questions", async (t) => {
  * 2. The response should mention dates or timeframes
  */
 test.serial("generateTextSearch should find recent information", async (t) => {
-    try {
-        const messages = [
-            {
-                role: "user",
-                content:
-                    "What are the most recent developments in renewable energy? Please search for information from the last year.",
-            },
-        ];
+	try {
+		const messages = [
+			{
+				role: "user",
+				content:
+					"What are the most recent developments in renewable energy? Please search for information from the last year.",
+			},
+		];
 
-        const response = await generateTextSearch(messages);
+		const response = await generateTextSearch(messages);
 
-        // Check if we got a valid response
-        if (
-            response.choices &&
-            response.choices[0] &&
-            response.choices[0].message
-        ) {
-            const content = response.choices[0].message.content;
-            t.truthy(content, "Response should have content");
+		// Check if we got a valid response
+		if (
+			response.choices &&
+			response.choices[0] &&
+			response.choices[0].message
+		) {
+			const content = response.choices[0].message.content;
+			t.truthy(content, "Response should have content");
 
-            // Check that the response contains information about renewable energy
-            // The model might not always include explicit years
-            if (
-                content.toLowerCase().includes("renewable") ||
-                content.toLowerCase().includes("solar") ||
-                content.toLowerCase().includes("wind") ||
-                content.toLowerCase().includes("energy")
-            ) {
-                t.pass("Response discusses renewable energy");
-            } else {
-                t.fail("Response should discuss renewable energy");
-            }
+			// Check that the response contains information about renewable energy
+			// The model might not always include explicit years
+			if (
+				content.toLowerCase().includes("renewable") ||
+				content.toLowerCase().includes("solar") ||
+				content.toLowerCase().includes("wind") ||
+				content.toLowerCase().includes("energy")
+			) {
+				t.pass("Response discusses renewable energy");
+			} else {
+				t.fail("Response should discuss renewable energy");
+			}
 
-            // Log the content for debugging
-            log("Response content: %s", content);
-        } else if (response.error) {
-            // If there's an error, skip the test
-            t.pass(`Skipping test due to API error: ${response.error.message}`);
-        }
-    } catch (error) {
-        // If there's an exception, skip the test
-        t.pass(`Skipping test due to exception: ${error.message}`);
-    }
+			// Log the content for debugging
+			log("Response content: %s", content);
+		} else if (response.error) {
+			// If there's an error, skip the test
+			t.pass(`Skipping test due to API error: ${response.error.message}`);
+		}
+	} catch (error) {
+		// If there's an exception, skip the test
+		t.pass(`Skipping test due to exception: ${error.message}`);
+	}
 });
 
 /**
@@ -251,51 +241,49 @@ test.serial("generateTextSearch should find recent information", async (t) => {
  * 2. The response should be a coherent summary
  */
 test.serial(
-    "generateTextSearch should scrape and summarize web pages",
-    async (t) => {
-        try {
-            const messages = [
-                {
-                    role: "user",
-                    content:
-                        "Please scrape and summarize the content from https://en.wikipedia.org/wiki/Artificial_intelligence",
-                },
-            ];
+	"generateTextSearch should scrape and summarize web pages",
+	async (t) => {
+		try {
+			const messages = [
+				{
+					role: "user",
+					content:
+						"Please scrape and summarize the content from https://en.wikipedia.org/wiki/Artificial_intelligence",
+				},
+			];
 
-            const response = await generateTextSearch(messages);
+			const response = await generateTextSearch(messages);
 
-            // Check if we got a valid response
-            if (
-                response.choices &&
-                response.choices[0] &&
-                response.choices[0].message
-            ) {
-                const content = response.choices[0].message.content;
-                t.truthy(content, "Response should have content");
+			// Check if we got a valid response
+			if (
+				response.choices &&
+				response.choices[0] &&
+				response.choices[0].message
+			) {
+				const content = response.choices[0].message.content;
+				t.truthy(content, "Response should have content");
 
-                // Check that the response contains information about AI
-                if (
-                    content.toLowerCase().includes("artificial intelligence") ||
-                    content.toLowerCase().includes("ai")
-                ) {
-                    t.pass("Response discusses artificial intelligence");
-                } else {
-                    t.fail("Response should discuss artificial intelligence");
-                }
+				// Check that the response contains information about AI
+				if (
+					content.toLowerCase().includes("artificial intelligence") ||
+					content.toLowerCase().includes("ai")
+				) {
+					t.pass("Response discusses artificial intelligence");
+				} else {
+					t.fail("Response should discuss artificial intelligence");
+				}
 
-                // Log the content for debugging
-                log("Response content: %s", content);
-            } else if (response.error) {
-                // If there's an error, skip the test
-                t.pass(
-                    `Skipping test due to API error: ${response.error.message}`,
-                );
-            }
-        } catch (error) {
-            // If there's an exception, skip the test
-            t.pass(`Skipping test due to exception: ${error.message}`);
-        }
-    },
+				// Log the content for debugging
+				log("Response content: %s", content);
+			} else if (response.error) {
+				// If there's an error, skip the test
+				t.pass(`Skipping test due to API error: ${response.error.message}`);
+			}
+		} catch (error) {
+			// If there's an exception, skip the test
+			t.pass(`Skipping test due to exception: ${error.message}`);
+		}
+	},
 );
 
 /**
@@ -308,45 +296,43 @@ test.serial(
  * 2. The response should still provide helpful information
  */
 test.serial(
-    "generateTextSearch should handle invalid URLs gracefully",
-    async (t) => {
-        try {
-            const messages = [
-                {
-                    role: "user",
-                    content:
-                        "Please scrape and summarize the content from https://this-is-an-invalid-url-that-does-not-exist.com",
-                },
-            ];
+	"generateTextSearch should handle invalid URLs gracefully",
+	async (t) => {
+		try {
+			const messages = [
+				{
+					role: "user",
+					content:
+						"Please scrape and summarize the content from https://this-is-an-invalid-url-that-does-not-exist.com",
+				},
+			];
 
-            const response = await generateTextSearch(messages);
+			const response = await generateTextSearch(messages);
 
-            // Check if we got a valid response
-            if (
-                response.choices &&
-                response.choices[0] &&
-                response.choices[0].message
-            ) {
-                const content = response.choices[0].message.content;
-                t.truthy(content, "Response should have content");
+			// Check if we got a valid response
+			if (
+				response.choices &&
+				response.choices[0] &&
+				response.choices[0].message
+			) {
+				const content = response.choices[0].message.content;
+				t.truthy(content, "Response should have content");
 
-                // Check that the response provides some kind of response
-                // The model might handle invalid URLs in different ways
-                t.pass("Response received for invalid URL query");
+				// Check that the response provides some kind of response
+				// The model might handle invalid URLs in different ways
+				t.pass("Response received for invalid URL query");
 
-                // Log the content for debugging
-                log("Response content: %s", content);
-            } else if (response.error) {
-                // If there's an error, skip the test
-                t.pass(
-                    `Skipping test due to API error: ${response.error.message}`,
-                );
-            }
-        } catch (error) {
-            // If there's an exception, skip the test
-            t.pass(`Skipping test due to exception: ${error.message}`);
-        }
-    },
+				// Log the content for debugging
+				log("Response content: %s", content);
+			} else if (response.error) {
+				// If there's an error, skip the test
+				t.pass(`Skipping test due to API error: ${response.error.message}`);
+			}
+		} catch (error) {
+			// If there's an exception, skip the test
+			t.pass(`Skipping test due to exception: ${error.message}`);
+		}
+	},
 );
 
 /**
@@ -359,60 +345,56 @@ test.serial(
  * 2. The response should synthesize information from multiple sources
  */
 test.serial(
-    "generateTextSearch should handle complex queries requiring multiple searches",
-    async (t) => {
-        try {
-            const messages = [
-                {
-                    role: "user",
-                    content:
-                        "Compare and contrast the climate policies of the United States and the European Union. Include recent developments and future plans.",
-                },
-            ];
+	"generateTextSearch should handle complex queries requiring multiple searches",
+	async (t) => {
+		try {
+			const messages = [
+				{
+					role: "user",
+					content:
+						"Compare and contrast the climate policies of the United States and the European Union. Include recent developments and future plans.",
+				},
+			];
 
-            const response = await generateTextSearch(messages);
+			const response = await generateTextSearch(messages);
 
-            // Check if we got a valid response
-            if (
-                response.choices &&
-                response.choices[0] &&
-                response.choices[0].message
-            ) {
-                const content = response.choices[0].message.content;
-                t.truthy(content, "Response should have content");
+			// Check if we got a valid response
+			if (
+				response.choices &&
+				response.choices[0] &&
+				response.choices[0].message
+			) {
+				const content = response.choices[0].message.content;
+				t.truthy(content, "Response should have content");
 
-                // Check that the response provides information about climate policies
-                // The model might handle complex queries in different ways
-                if (
-                    content.toLowerCase().includes("climate") &&
-                    (content.toLowerCase().includes("united states") ||
-                        content.toLowerCase().includes("us") ||
-                        content.toLowerCase().includes("usa")) &&
-                    (content.toLowerCase().includes("european union") ||
-                        content.toLowerCase().includes("eu"))
-                ) {
-                    t.pass(
-                        "Response discusses climate policies for both entities",
-                    );
-                } else {
-                    t.fail(
-                        "Response should discuss climate policies for both the US and EU",
-                    );
-                }
+				// Check that the response provides information about climate policies
+				// The model might handle complex queries in different ways
+				if (
+					content.toLowerCase().includes("climate") &&
+					(content.toLowerCase().includes("united states") ||
+						content.toLowerCase().includes("us") ||
+						content.toLowerCase().includes("usa")) &&
+					(content.toLowerCase().includes("european union") ||
+						content.toLowerCase().includes("eu"))
+				) {
+					t.pass("Response discusses climate policies for both entities");
+				} else {
+					t.fail(
+						"Response should discuss climate policies for both the US and EU",
+					);
+				}
 
-                // Log the content for debugging
-                log("Response content: %s", content);
-            } else if (response.error) {
-                // If there's an error, skip the test
-                t.pass(
-                    `Skipping test due to API error: ${response.error.message}`,
-                );
-            }
-        } catch (error) {
-            // If there's an exception, skip the test
-            t.pass(`Skipping test due to exception: ${error.message}`);
-        }
-    },
+				// Log the content for debugging
+				log("Response content: %s", content);
+			} else if (response.error) {
+				// If there's an error, skip the test
+				t.pass(`Skipping test due to API error: ${response.error.message}`);
+			}
+		} catch (error) {
+			// If there's an exception, skip the test
+			t.pass(`Skipping test due to exception: ${error.message}`);
+		}
+	},
 );
 
 /**
@@ -425,50 +407,47 @@ test.serial(
  * 2. The JSON should contain search results
  */
 test.serial("generateTextSearch should work with JSON mode", async (t) => {
-    try {
-        const messages = [
-            {
-                role: "user",
-                content:
-                    "List the top 3 most populous cities in the world with their populations. Return as JSON with city name and population fields.",
-            },
-        ];
+	try {
+		const messages = [
+			{
+				role: "user",
+				content:
+					"List the top 3 most populous cities in the world with their populations. Return as JSON with city name and population fields.",
+			},
+		];
 
-        const response = await generateTextSearch(messages, { jsonMode: true });
+		const response = await generateTextSearch(messages, { jsonMode: true });
 
-        // Check if we got a valid response
-        if (
-            response.choices &&
-            response.choices[0] &&
-            response.choices[0].message
-        ) {
-            const content = response.choices[0].message.content;
-            t.truthy(content, "Response should have content");
+		// Check if we got a valid response
+		if (
+			response.choices &&
+			response.choices[0] &&
+			response.choices[0].message
+		) {
+			const content = response.choices[0].message.content;
+			t.truthy(content, "Response should have content");
 
-            // Try to parse the JSON response
-            try {
-                const parsedJson = JSON.parse(content);
-                t.pass("Response is valid JSON");
+			// Try to parse the JSON response
+			try {
+				const parsedJson = JSON.parse(content);
+				t.pass("Response is valid JSON");
 
-                // Log the parsed JSON for debugging
-                log("Parsed JSON: %O", parsedJson);
+				// Log the parsed JSON for debugging
+				log("Parsed JSON: %O", parsedJson);
 
-                // Basic check that we have some data
-                t.truthy(
-                    parsedJson,
-                    "JSON response should not be null or empty",
-                );
-            } catch (e) {
-                // If JSON parsing fails, log the content and fail the test
-                log("Invalid JSON content: %s", content);
-                t.fail(`Response is not valid JSON: ${e.message}`);
-            }
-        } else if (response.error) {
-            // If there's an error, skip the test
-            t.pass(`Skipping test due to API error: ${response.error.message}`);
-        }
-    } catch (error) {
-        // If there's an exception, skip the test
-        t.pass(`Skipping test due to exception: ${error.message}`);
-    }
+				// Basic check that we have some data
+				t.truthy(parsedJson, "JSON response should not be null or empty");
+			} catch (e) {
+				// If JSON parsing fails, log the content and fail the test
+				log("Invalid JSON content: %s", content);
+				t.fail(`Response is not valid JSON: ${e.message}`);
+			}
+		} else if (response.error) {
+			// If there's an error, skip the test
+			t.pass(`Skipping test due to API error: ${response.error.message}`);
+		}
+	} catch (error) {
+		// If there's an exception, skip the test
+		t.pass(`Skipping test due to exception: ${error.message}`);
+	}
 });

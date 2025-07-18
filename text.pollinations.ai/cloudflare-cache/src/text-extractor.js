@@ -3,6 +3,14 @@
  * Extracts meaningful content from chat requests for better semantic matching
  */
 
+import {
+	SEMANTIC_WEIGHTING_ENABLED,
+	RECENT_TURNS_COUNT,
+	HISTORY_SEPARATOR,
+	LATEST_EXCHANGE_START_TAG,
+	LATEST_EXCHANGE_END_TAG,
+} from "./config.js";
+
 /**
  * Extract semantic text from a chat request for caching purposes
  * Focuses on user messages and system context, ignoring model parameters
@@ -31,8 +39,9 @@ export function extractSemanticText(requestBody) {
  * Extract meaningful text from OpenAI-style messages array
  * Focuses on user and assistant messages for semantic matching
  * Filters out system messages as requested
+ * Implements weighted semantic embeddings by emphasizing recent conversation turns
  * @param {Array} messages - Array of message objects
- * @returns {string} - Combined text for semantic comparison
+ * @returns {string} - Combined text for semantic comparison, with recent turns emphasized
  */
 function extractFromMessages(messages) {
 	const parts = [];
@@ -70,7 +79,86 @@ function extractFromMessages(messages) {
 		}
 	}
 
-	return parts.join("\n");
+	const fullHistory = parts.join("\n");
+
+	// Apply weighted semantic embeddings if enabled
+	if (SEMANTIC_WEIGHTING_ENABLED && messages.length > 0) {
+		const recentTurns = extractRecentTurns(messages, RECENT_TURNS_COUNT);
+		if (recentTurns && recentTurns.trim().length > 0) {
+			return createWeightedInput(fullHistory, recentTurns);
+		}
+	}
+
+	return fullHistory;
+}
+
+/**
+ * Extract recent conversation turns for weighted semantic embeddings
+ * @param {Array} messages - Array of message objects
+ * @param {number} turnCount - Number of recent turns to extract
+ * @returns {string} - Recent turns formatted for weighting
+ */
+function extractRecentTurns(messages, turnCount) {
+	if (!messages || messages.length === 0 || turnCount <= 0) {
+		return "";
+	}
+
+	// Filter to only user and assistant messages for recent turns
+	const relevantMessages = messages.filter(
+		(msg) => msg.role === "user" || msg.role === "assistant",
+	);
+
+	// Extract recent turns by counting actual conversation turns
+	// A turn is defined as a user message followed by an assistant message
+	const recentParts = [];
+	let turnsFound = 0;
+	
+	// Work backwards through messages to find complete turns
+	for (let i = relevantMessages.length - 1; i >= 0 && turnsFound < turnCount; i--) {
+		const message = relevantMessages[i];
+		if (!message.content) continue;
+
+		const content =
+			typeof message.content === "string"
+				? message.content.trim()
+				: JSON.stringify(message.content);
+
+		if (!content) continue;
+
+		if (message.role === "user") {
+			recentParts.unshift(`[USER] ${content}`);
+			// Count a turn when we find a user message (assuming it's paired with an assistant response)
+			turnsFound++;
+		} else if (message.role === "assistant") {
+			recentParts.unshift(`[ASSISTANT] ${content}`);
+		}
+	}
+
+	return recentParts.join(" ");
+}
+
+/**
+ * Create weighted input by combining full history with emphasized recent turns
+ * Uses hybrid approach: mathematical weighting (repetition) + semantic highlighting (structural tags)
+ * @param {string} fullHistory - Complete conversation history
+ * @param {string} recentTurns - Recent conversation turns to emphasize
+ * @returns {string} - Weighted input for embedding generation with structural markup
+ */
+function createWeightedInput(fullHistory, recentTurns) {
+	if (!recentTurns || recentTurns.trim().length === 0) {
+		return fullHistory;
+	}
+
+	// Create marked-up recent history with structural tags
+	// This provides both mathematical weight (repetition) and semantic highlighting (tags)
+	const markedUpRecentHistory = `${LATEST_EXCHANGE_START_TAG} ${recentTurns} ${LATEST_EXCHANGE_END_TAG}`;
+
+	// Combine full history with marked-up recent turns using clear separator
+	// This gives the BGE-M3 model multiple signals:
+	// 1. Mathematical weight from repetition
+	// 2. Semantic highlighting from structural tags
+	// 3. Clear separation for model to distinguish sections
+	return `${fullHistory}${HISTORY_SEPARATOR}${markedUpRecentHistory}`;
 }
 
 /**

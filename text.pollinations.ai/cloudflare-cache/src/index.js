@@ -366,6 +366,25 @@ export default {
 					console.log(
 						`[CACHE] Semantic HIT for model ${modelName}. Key: ${similar.cacheKey}, Similarity: ${similar.similarity}`,
 					);
+					
+					// Log structured data for evaluation - input text and response
+					try {
+						const responseText = await cachedResponse.clone().text();
+						const structuredLog = {
+							type: "SEMANTIC_CACHE_HIT",
+							timestamp: new Date().toISOString(),
+							model: modelName,
+							similarity: similar.similarity,
+							cacheKey: similar.cacheKey,
+							userPrefix: userPrefix,
+							input: requestText,
+							response: responseText
+						};
+						console.log(`[SEMANTIC_EVAL] ${JSON.stringify(structuredLog)}`);
+					} catch (evalLogError) {
+						console.error(`[SEMANTIC_EVAL] Error logging structured data: ${evalLogError.message}`);
+					}
+					
 					cachedResponse.headers.set("x-cache-type", "semantic");
 					cachedResponse.headers.set(
 						"x-semantic-similarity",

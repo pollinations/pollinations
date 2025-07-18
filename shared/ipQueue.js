@@ -23,8 +23,8 @@ const queues = new Map();
 const tierCaps = {
   "anonymous": 1,
   "seed": 3,
-  "flower": 10,
-  "nectar": 30,
+  "flower": 7,
+  "nectar": 50,
 }
 
 /**
@@ -36,11 +36,9 @@ const tierCaps = {
  * @param {Object} options - Queue options
  * @param {number} [options.interval=6000] - Time between requests in ms
  * @param {number} [options.cap=1] - Number of requests allowed per interval
- * @param {boolean} [options.forceQueue=false] - Force queuing even for authenticated requests
- * @param {number} [options.maxQueueSize] - Maximum queue size per IP (throws error if exceeded)
  * @returns {Promise<any>} Result of the function execution
  */
-export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false, maxQueueSize }={}) {
+export async function enqueue(req, fn, { interval=6000, cap=1 }={}) {
   // Extract useful request info for logging
   const url = req.url || 'no-url';
   const method = req.method || 'no-method';
@@ -107,6 +105,7 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
 
   cap = tierCaps[authResult.tier] || 1;
 
+  const maxQueueSize = cap * 5; 
   // Apply tier-based concurrency limits for token-authenticated requests
   if (authResult.tokenAuth) {
     
@@ -123,6 +122,25 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
   const currentQueueSize = queues.get(ip)?.size || 0;
   const currentPending = queues.get(ip)?.pending || 0;
   const totalInQueue = currentQueueSize + currentPending;
+  
+  // Capture queue information for logging
+  const queueInfo = {
+    ip: ip,
+    queueSize: currentQueueSize,
+    pending: currentPending,
+    total: totalInQueue,
+    position: totalInQueue + 1, // This request's position in queue
+    enqueuedAt: new Date().toISOString(),
+    tier: authResult.tier || 'anonymous',
+    authenticated: authResult.authenticated || false
+  };
+  
+  // Store queue info in request object for later access
+  if (req && typeof req === 'object') {
+    req.queueInfo = queueInfo;
+  }
+  
+  log('Queue info captured: %O', queueInfo);
   
   // Check if adding to queue would exceed maxQueueSize
   if (maxQueueSize && totalInQueue >= maxQueueSize) {
@@ -143,13 +161,15 @@ export async function enqueue(req, fn, { interval=6000, cap=1, forceQueue=false,
   }
   
   // Otherwise, queue the function based on IP
-  log('Request queued for IP: %s (queue size: %d, pending: %d, forceQueue: %s)', 
-      ip, currentQueueSize, currentPending, forceQueue);
+  log('Request queued for IP: %s (queue size: %d, pending: %d)', 
+      ip, currentQueueSize, currentPending);
   
   // Create queue for this IP if it doesn't exist
   if (!queues.has(ip)) {
     log('Creating new queue for IP: %s with interval: %dms, cap: %d', ip, interval, cap);
-    queues.set(ip, new PQueue({ concurrency: cap, interval }));
+    queues.set(ip, new PQueue({ concurrency: cap, 
+      interval 
+    }));
   }
   
   // Add to queue and return

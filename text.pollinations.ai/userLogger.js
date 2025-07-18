@@ -39,7 +39,7 @@ function ensureLogDir() {
 /**
  * Log user request/response to file
  */
-function logUserRequest(username, requestData, response = null, error = null) {
+function logUserRequest(username, requestData, response = null, error = null, queueInfo = null) {
     if (!shouldLogUser(username)) return;
     
     ensureLogDir();
@@ -54,6 +54,16 @@ function logUserRequest(username, requestData, response = null, error = null) {
             temperature: requestData.temperature,
             stream: requestData.stream
         },
+        queueInfo: queueInfo ? {
+            ip: queueInfo.ip,
+            queueSize: queueInfo.queueSize,
+            pending: queueInfo.pending,
+            total: queueInfo.total,
+            position: queueInfo.position,
+            enqueuedAt: queueInfo.enqueuedAt,
+            tier: queueInfo.tier,
+            authenticated: queueInfo.authenticated
+        } : null,
         response: response ? {
             content: response.choices?.[0]?.message?.content,
             usage: response.usage,

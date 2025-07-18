@@ -197,7 +197,7 @@ async function handleRequest(req, res, requestData) {
         
         // Log user request/response if enabled
         if (authResult.username) {
-            logUserRequest(authResult.username, finalRequestData, completion);
+            logUserRequest(authResult.username, finalRequestData, completion, null, req.queueInfo);
         }
         
         // Check if completion contains an error
@@ -218,7 +218,7 @@ async function handleRequest(req, res, requestData) {
             
             // Log error for debugging if user is being tracked
             if (authResult.username) {
-                logUserRequest(authResult.username, finalRequestData, null, error);
+                logUserRequest(authResult.username, finalRequestData, null, error, req.queueInfo);
             }
             
             await sendErrorResponse(res, req, error, requestData, errorObj.status || 500);
@@ -500,39 +500,10 @@ async function processRequest(req, res, requestData) {
     }
     
     // Use shared queue for rate limiting with max queue size
-    try {
-        await enqueue(req, () => handleRequest(req, res, requestData), { 
-            ...queueConfig, 
-            maxQueueSize: 30 
-        });
-    } catch (error) {
-        // Handle queue full error
-        if (error.status === 429) {
-            errorLog('Queue full for IP %s: %s', ip, error.message);
-            const errorResponse = {
-                error: 'Too Many Requests. Booo!',
-                status: 429,
-                details: {
-                    message: 'Request queue is full. Please try again later. Boo!',
-                    queueInfo: error.queueInfo,
-                    timestamp: new Date().toISOString()
-                }
-            };
-            
-            if (requestData.stream) {
-                // For streaming requests, send error as a stream
-                await sendAsOpenAIStream(res, { 
-                    error: errorResponse.error, 
-                    choices: [{ message: { content: errorResponse.details.message } }] 
-                }, req);
-                return;
-            } else {
-                return res.status(429).json(errorResponse);
-            }
-        }
-        // Re-throw other errors
-        throw error;
-    }
+    await enqueue(req, () => handleRequest(req, res, requestData), { 
+        ...queueConfig, 
+    });
+ 
 
     // Note: We've removed the duplicate handleRequest calls that were causing the headers error
     // The shared enqueue function above now handles all queue logic, including authentication status

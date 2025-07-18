@@ -303,7 +303,7 @@ const checkCacheAndGenerate = async (req, res) => {
         // Update progress and process the image
         progress.setProcessing();
         return generateImage();
-      }, { ...queueConfig, forceQueue: true, maxQueueSize: 5 });
+      }, queueConfig);
 
       return result;
     });

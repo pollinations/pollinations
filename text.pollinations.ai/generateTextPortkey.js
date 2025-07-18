@@ -15,7 +15,7 @@ const MODEL_MAPPING = {
     // Azure OpenAI models
     'openai-fast': 'gpt-4.1-nano-roblox',
     'openai': 'gpt-4o-mini',
-    'openai-large': 'azure-gpt-4.1',
+    'openai-large': 'gpt-4o-mini',
     'openai-roblox': 'gpt-4.1-nano-roblox',
     //'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
     'openai-reasoning': 'o3', // Maps to custom MonoAI endpoint
@@ -30,14 +30,18 @@ const MODEL_MAPPING = {
     'grok': 'azure-grok',
     // Cloudflare models
     'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+    'llama-roblox': 'meta-llama/Meta-Llama-3.1-8B-Instruct-fast',
+    'llama-fast-roblox': '@cf/meta/llama-3.2-11b-vision-instruct',
     'llamascout': '@cf/meta/llama-4-scout-17b-16e-instruct',
-    'deepseek-reasoning': 'azure-deepseek-r1-0528',
+    'deepseek-reasoning': 'deepseek-ai/DeepSeek-R1-0528',
     //'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
     'phi': 'phi-4-instruct',
     //'phi-mini': 'phi-4-mini-instruct',
     // Scaleway models
     'qwen-coder': 'qwen2.5-coder-32b-instruct',
     'mistral': 'mistral-small-3.1-24b-instruct-2503',  // Updated to use Scaleway Mistral model
+    'mistral-roblox': '@cf/mistralai/mistral-small-3.1-24b-instruct',  // Cloudflare Mistral Small
+    'mistral-nemo-roblox': 'mistralai/Mistral-Nemo-Instruct-2407',  // Nebius Mistral Nemo
     // Modal models
     'hormoz': 'Hormoz-8B',
     // OpenRouter models
@@ -84,12 +88,16 @@ const SYSTEM_PROMPTS = {
     //'gemini': BASE_PROMPTS.conversational,
     // Cloudflare models
     'llama': BASE_PROMPTS.conversational,
+    'llama-roblox': BASE_PROMPTS.conversational,
+    'llama-fast-roblox': BASE_PROMPTS.conversational,
     'deepseek-reasoning': BASE_PROMPTS.conversational,
     //'llamaguard': BASE_PROMPTS.moderation,
     'phi': BASE_PROMPTS.conversational,
     //'phi-mini': BASE_PROMPTS.conversational,
     // Scaleway models
     'mistral': BASE_PROMPTS.conversational,
+    'mistral-roblox': BASE_PROMPTS.conversational,
+    'mistral-nemo-roblox': BASE_PROMPTS.conversational,
     'qwen-coder': BASE_PROMPTS.coding,
     //'gemini-thinking': BASE_PROMPTS.gemini + ' When appropriate, show your reasoning step by step.',
     // Modal models
@@ -195,8 +203,8 @@ const baseOpenRouterConfig = {
 // MonoAI configuration for o3 model
 const baseMonoAIConfig = {
     provider: 'openai',
-    'custom-host': 'https://www.chatwithmono.xyz/api/pollinations',
-    // No auth key required as this is a free endpoint
+    'custom-host': 'https://chatgpt.loves-being-a.dev/v1',
+    authKey: process.env.CHATWITHMONO_API_KEY,
 };
 
 // DeepSeek model configuration
@@ -219,11 +227,19 @@ const baseDeepSeekReasoningConfig = {
     'max-tokens': 8192
 };
 
+// Base configuration for Nebius models
+const baseNebiusConfig = {
+    provider: 'openai',
+    'custom-host': 'https://api.studio.nebius.com/v1',
+    authKey: process.env.NEBIUS_API_KEY,
+    'max-tokens': 8192,
+    temperature: 0.7,
+};
+
 // ElixpoSearch custom endpoint configuration
 const baseElixpoSearchConfig = {
     provider: 'openai',
     'custom-host': process.env.ELIXPOSEARCH_ENDPOINT,
-    authKey: process.env.ELIXPOSEARCH_API_KEY,
     'max-tokens': 4096
 };
 
@@ -288,6 +304,18 @@ function createMistralModelConfig(additionalConfig = {}) {
 }
 
 /**
+ * Creates a Nebius model configuration
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - Nebius model configuration
+ */
+function createNebiusModelConfig(additionalConfig = {}) {
+    return {
+        ...baseNebiusConfig,
+        ...additionalConfig
+    };
+}
+
+/**
  * Creates a Modal model configuration
  * @param {Object} additionalConfig - Additional configuration to merge with base config
  * @returns {Object} - Modal model configuration
@@ -333,12 +361,6 @@ export const portkeyConfig = {
             process.env.AZURE_GENERAL_ENDPOINT,
             `grok-3-mini`,
             'pollinations-safety'
-    ),
-    'azure-deepseek-r1-0528': () => createAzureModelConfig(
-        process.env.AZURE_GENERAL_API_KEY,
-        process.env.AZURE_GENERAL_ENDPOINT,
-        `DeepSeek-R1-0528`,
-        'pollinations-safety'
     ),
     // Azure OpenAI model configurations
     'gpt-4.1-nano': () => createAzureModelConfig(
@@ -448,7 +470,13 @@ export const portkeyConfig = {
     // Cloudflare model configurations
     '@cf/meta/llama-3.3-70b-instruct-fp8-fast': () => createCloudflareModelConfig(),
     '@cf/meta/llama-3.1-8b-instruct': () => createCloudflareModelConfig(),
+    '@cf/meta/llama-3.1-8b-instruct-fp8': () => createCloudflareModelConfig(),
     '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b': () => createCloudflareModelConfig(),
+    '@cf/mistralai/mistral-small-3.1-24b-instruct': () => createCloudflareModelConfig({
+        'max-tokens': 8192,
+        temperature: 0.3,
+        'model': '@cf/mistralai/mistral-small-3.1-24b-instruct'
+    }),
     '@hf/thebloke/llamaguard-7b-awq': () => ({
         ...createCloudflareModelConfig(),
         'max-tokens': 4000
@@ -490,6 +518,16 @@ export const portkeyConfig = {
     'mistral-small-3.1-24b-instruct-2503': () => createMistralModelConfig({
         'max-tokens': 8192,
         'model': "mistral-small-3.1-24b-instruct-2503"
+    }),
+    // Nebius model configurations
+    'meta-llama/Meta-Llama-3.1-8B-Instruct-fast': () => createNebiusModelConfig({
+        model: 'meta-llama/Meta-Llama-3.1-8B-Instruct-fast'
+    }),
+    'mistralai/Mistral-Nemo-Instruct-2407': () => createNebiusModelConfig({
+        model: 'mistralai/Mistral-Nemo-Instruct-2407'
+    }),
+    'deepseek-ai/DeepSeek-R1-0528': () => createNebiusModelConfig({
+        model: 'deepseek-ai/DeepSeek-R1-0528'
     }),
     // Modal model configurations
     'Hormoz-8B': () => createModalModelConfig(),

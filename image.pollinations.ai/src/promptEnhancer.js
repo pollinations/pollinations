@@ -38,7 +38,9 @@ async function pimpPromptRaw(prompt, seed) {
     logPimp("pimping prompt", prompt);
     const startTime = Date.now();
     try {
+        // const apiUrl = `https://pollinations-text-cache-staging.thomash-efd.workers.dev/`;
         const apiUrl = `https://text.pollinations.ai/`;
+       
         const body = JSON.stringify({
             messages: [
                 {

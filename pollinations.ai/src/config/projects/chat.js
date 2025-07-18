@@ -350,5 +350,14 @@ export const chatProjects = [
         order: 1,
     },
 
+    {
+      name: "AI Dream Girl Studio",
+      url: "https://www.tiktok.com/@herinyourhead",
+      description:
+        "AI Dream Girl Studio is a content creation pipeline built around hyper-realistic AI-generated female characters. We use Pollinations to generate high-fidelity visuals of emotional, seductive, and stylized women in cinematic settings. These characters are brought to life through AI video animation, voiceovers, and storytelling to create viral social content for entertainment and monetization. Pollinations is the core engine behind our character design and visual style.",
+      author: "https://www.tiktok.com/@herinyourhead",
+      submissionDate: "2025-07-17",
+      order: 1,
+    },
     // Duplicate removed - AI drafterplus already exists at the top of the file
 ];

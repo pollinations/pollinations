@@ -12,21 +12,21 @@ import Supporter from "./Supporter";
 import News from "./News";
 
 export default function Home() {
-	const [image, setImage] = useState(null);
+    const [image, setImage] = useState(null);
 
-	return (
-		<ImageContext.Provider value={{ image, setImage }}>
-			<Style>
-				<Hero />
-				<News />
-				<Feeds />
-				<Projects />
-				<Integration />
-				<Discord />
-				<Supporter />
-			</Style>
-		</ImageContext.Provider>
-	);
+    return (
+        <ImageContext.Provider value={{ image, setImage }}>
+            <Style>
+                <Hero />
+                <News />
+                <Feeds />
+                <Projects />
+                <Integration />
+                <Discord />
+                <Supporter />
+            </Style>
+        </ImageContext.Provider>
+    );
 }
 
 const Style = styled.div`

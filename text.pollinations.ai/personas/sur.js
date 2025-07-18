@@ -98,23 +98,23 @@ If the user finds any of the responses bad or not to taste they can put a thumbs
 // - Use abstract conceptual styles that are not too literal. keep it sophisticated and abstract.
 
 function readFilesAndAppend(folderPath) {
-	let combinedContent = "";
+    let combinedContent = "";
 
-	const files = fs.readdirSync(folderPath);
-	files.forEach((filename) => {
-		const filePath = path.join(folderPath, filename);
-		if (fs.lstatSync(filePath).isFile()) {
-			const fileContent = fs.readFileSync(filePath, "utf-8");
-			combinedContent += `# ${filename}\n\n${fileContent}\n\n`;
-		}
-	});
+    const files = fs.readdirSync(folderPath);
+    files.forEach((filename) => {
+        const filePath = path.join(folderPath, filename);
+        if (fs.lstatSync(filePath).isFile()) {
+            const fileContent = fs.readFileSync(filePath, "utf-8");
+            combinedContent += `# ${filename}\n\n${fileContent}\n\n`;
+        }
+    });
 
-	return combinedContent;
+    return combinedContent;
 }
 
 const folderPath = path.join(
-	path.dirname(new URL(import.meta.url).pathname),
-	"backgroundKnowledge",
+    path.dirname(new URL(import.meta.url).pathname),
+    "backgroundKnowledge",
 );
 const knowledgeContext = readFilesAndAppend(folderPath);
 

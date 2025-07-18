@@ -17,16 +17,16 @@ const currentDirPath = path.dirname(currentFilePath);
  * @param {string} localEnvPath - Optional path to local .env file (defaults to process.cwd()/.env)
  */
 export function loadEnvironments(localEnvPath = null) {
-	// Load shared .env file first
-	const sharedEnvPath = path.resolve(currentDirPath, ".env");
-	dotenv.config({ path: sharedEnvPath });
+    // Load shared .env file first
+    const sharedEnvPath = path.resolve(currentDirPath, ".env");
+    dotenv.config({ path: sharedEnvPath });
 
-	// Load local .env file (takes precedence over shared)
-	if (localEnvPath) {
-		dotenv.config({ path: localEnvPath });
-	} else {
-		dotenv.config(); // Use default .env file in current working directory
-	}
+    // Load local .env file (takes precedence over shared)
+    if (localEnvPath) {
+        dotenv.config({ path: localEnvPath });
+    } else {
+        dotenv.config(); // Use default .env file in current working directory
+    }
 }
 
 // Auto-load environments when this module is imported

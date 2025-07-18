@@ -16,7 +16,7 @@ This implementation adds semantic image caching to the Pollinations image servic
 3. **Origin Fallback** - Generate new image if no matches found
 
 ### Key Features
-- **BGE Model Integration**: Uses `@cf/baai/bge-m3` with CLS pooling for 768-dimensional embeddings
+- **BGE Model Integration**: Uses `@cf/baai/bge-base-en-v1.5` with CLS pooling for 768-dimensional embeddings
 - **Resolution Bucketing**: Each resolution is its own bucket (e.g., `1024x1024`, `768x1024`, `1920x1080`)
 - **Metadata Filtering**: Indexed properties for fast Vectorize queries
 - **Asynchronous Updates**: Embedding storage doesn't impact request latency
@@ -79,7 +79,7 @@ wrangler deploy
 - **Efficient Filtering**: Fast metadata-based queries using indexed bucket property
 
 ### BGE Model Settings
-- **Model**: `@cf/baai/bge-m3`
+- **Model**: `@cf/baai/bge-base-en-v1.5`
 - **Dimensions**: 768
 - **Pooling**: `cls` (better accuracy on longer inputs)
 

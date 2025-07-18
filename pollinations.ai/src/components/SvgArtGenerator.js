@@ -13,32 +13,32 @@ const Container = styled.div`
 `;
 
 const SvgArtGenerator = ({
-	width = "100%",
-	height = "100%",
-	style,
-	prompt = "Create a minimalist, abstract SVG artwork with simple geometric curved lines and ping pong balls slowly interacting with them. Make it minmal and mesmerizing, add subtle animations. Make sure the background is transparent. Use the colors yellow only.",
+    width = "100%",
+    height = "100%",
+    style,
+    prompt = "Create a minimalist, abstract SVG artwork with simple geometric curved lines and ping pong balls slowly interacting with them. Make it minmal and mesmerizing, add subtle animations. Make sure the background is transparent. Use the colors yellow only.",
 }) => {
-	const [seed, setSeed] = useState(1);
+    const [seed, setSeed] = useState(1);
 
-	useEffect(() => {
-		const interval = setInterval(() => {
-			setSeed((seed) => (seed + 1) % 5);
-		}, 10000);
-		return () => clearInterval(interval);
-	}, []);
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setSeed((seed) => (seed + 1) % 5);
+        }, 10000);
+        return () => clearInterval(interval);
+    }, []);
 
-	const svgArt = usePollinationsText(
-		`${prompt}. Make it exactly ${width}x${height} pixels. 
+    const svgArt = usePollinationsText(
+        `${prompt}. Make it exactly ${width}x${height} pixels. 
      Ensure it's valid SVG markup with subtle animations using <animate> tags.
      Keep it minimal and abstract.`,
-		{ seed },
-	);
+        { seed },
+    );
 
-	return (
-		<Container width={width} height={height} style={style}>
-			<div dangerouslySetInnerHTML={{ __html: svgArt }} />
-		</Container>
-	);
+    return (
+        <Container width={width} height={height} style={style}>
+            <div dangerouslySetInnerHTML={{ __html: svgArt }} />
+        </Container>
+    );
 };
 
 export default SvgArtGenerator;

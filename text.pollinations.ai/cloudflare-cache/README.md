@@ -11,21 +11,17 @@ The implementation follows the "thin proxy" design principle:
 
 ## Quick Setup
 
-1. Copy the `.env.example` file to `.env` and set your semantic cache tokens:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your tokens
-   ```
+Run the setup script to create the R2 bucket and deploy the worker:
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+```bash
+./setup.sh
+```
 
-3. Deploy with automated secret management:
-   ```bash
-   npm run deploy
-   ```
+This script will:
+1. Install Wrangler if needed
+2. Log in to Cloudflare (browser authentication)
+3. Create the R2 bucket if it doesn't exist
+4. Deploy the worker
 
 That's it! Your Cloudflare Worker will now cache text responses in R2 and serve them through Cloudflare's CDN.
 
@@ -57,97 +53,6 @@ If you prefer to set things up manually:
    ```
    npm run deploy
    ```
-
-## Semantic Cache Token Management
-
-The semantic cache system uses tokens to control access. Tokens are managed as secrets (not in version control):
-
-### Local Development
-
-1. Copy the example file:
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Edit `.env` with your local development tokens:
-   ```bash
-   SEMANTIC_CACHE_TOKENS=test-token-123,body-token-456,your-dev-token
-   ```
-
-3. Run local development:
-   ```bash
-   npm run dev
-   ```
-
-### Production Deployment
-
-**Automated Deployment (Recommended):**
-
-1. Make sure your `.env` file contains all production secrets:
-   ```bash
-   SEMANTIC_CACHE_TOKENS=token1,token2,token3
-   CLOUDFLARE_ACCOUNT_ID=your-account-id
-   CLOUDFLARE_AUTH_TOKEN=your-auth-token
-   VECTORIZE_CACHE=true
-   ```
-
-2. Deploy with one command:
-   ```bash
-   npm run deploy
-   ```
-   
-   This will automatically:
-   - Read secrets from your `.env` file
-   - Set all secrets using `wrangler secret put`
-   - Deploy the worker
-
-**Manual Deployment (Alternative):**
-
-```bash
-# Set secrets manually
-wrangler secret put SEMANTIC_CACHE_TOKENS
-wrangler secret put CLOUDFLARE_ACCOUNT_ID
-wrangler secret put CLOUDFLARE_AUTH_TOKEN
-wrangler secret put VECTORIZE_CACHE
-
-# Deploy without setting secrets
-npm run deploy:simple
-```
-
-### Staging Environment
-
-For testing new features without disrupting production, use the staging environment:
-
-**Deploy to Staging:**
-```bash
-npm run deploy:staging
-```
-
-**Benefits:**
-- ✅ Same vectorize index and R2 bucket as production
-- ✅ Separate URL: `https://pollinations-text-cache-staging.<YOUR_SUBDOMAIN>.workers.dev`
-- ✅ Same secrets and configuration
-- ✅ Test semantic cache features safely
-- ✅ No impact on production cache
-
-**Other Staging Commands:**
-```bash
-# Local development with staging config
-npm run dev:staging
-
-# View staging logs
-npm run logs:staging
-
-# Deploy staging without setting secrets
-npm run deploy:staging:simple
-```
-
-This approach:
-- ✅ Keeps sensitive tokens out of version control
-- ✅ Uses `.env` files (consistent with rest of project)
-- ✅ Supports different tokens for local vs production
-- ✅ Uses Cloudflare's secure secrets management for production
-- ✅ Maintains simple one-command deployment
 
 ## Tunnel Setup
 

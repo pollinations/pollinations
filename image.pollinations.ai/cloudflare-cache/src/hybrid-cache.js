@@ -10,9 +10,9 @@
  */
 
 import {
-	createSemanticCache,
-	findSimilarImage,
-	cacheImageEmbedding,
+    createSemanticCache,
+    findSimilarImage,
+    cacheImageEmbedding,
 } from "./semantic-cache.js";
 
 /**
@@ -21,14 +21,14 @@ import {
  * @returns {Object} - Hybrid cache instance
  */
 export function createHybridCache(env) {
-	// Only create semantic cache if bindings are available
-	const hasSemanticSupport = env.VECTORIZE_INDEX && env.AI;
+    // Only create semantic cache if bindings are available
+    const hasSemanticSupport = env.VECTORIZE_INDEX && env.AI;
 
-	return {
-		r2: env.IMAGE_BUCKET,
-		semanticCache: hasSemanticSupport ? createSemanticCache(env) : null,
-		hasSemanticSupport,
-	};
+    return {
+        r2: env.IMAGE_BUCKET,
+        semanticCache: hasSemanticSupport ? createSemanticCache(env) : null,
+        hasSemanticSupport,
+    };
 }
 
 /**
@@ -39,44 +39,44 @@ export function createHybridCache(env) {
  * @returns {Promise<Object|null>} - Similar image info or null
  */
 export async function checkSemanticCache(hybridCache, prompt, params) {
-	// Skip semantic cache if not supported
-	if (!hybridCache.hasSemanticSupport || !hybridCache.semanticCache) {
-		console.log("[HYBRID] Semantic cache not available, skipping");
-		return null;
-	}
+    // Skip semantic cache if not supported
+    if (!hybridCache.hasSemanticSupport || !hybridCache.semanticCache) {
+        console.log("[HYBRID] Semantic cache not available, skipping");
+        return null;
+    }
 
-	// Skip if no prompt provided
-	if (!prompt || typeof prompt !== "string") {
-		console.log("[HYBRID] No valid prompt for semantic search");
-		return null;
-	}
+    // Skip if no prompt provided
+    if (!prompt || typeof prompt !== "string") {
+        console.log("[HYBRID] No valid prompt for semantic search");
+        return null;
+    }
 
-	try {
-		console.log("[HYBRID] Checking semantic cache for similar images...");
-		const similarImage = await findSimilarImage(
-			hybridCache.semanticCache,
-			prompt,
-			params,
-		);
+    try {
+        console.log("[HYBRID] Checking semantic cache for similar images...");
+        const similarImage = await findSimilarImage(
+            hybridCache.semanticCache,
+            prompt,
+            params,
+        );
 
-		if (similarImage) {
-			console.log(
-				`[HYBRID] Found semantic match: ${similarImage.cacheKey} (similarity: ${similarImage.similarity.toFixed(3)})`,
-			);
-			return {
-				cacheKey: similarImage.cacheKey,
-				similarity: similarImage.similarity,
-				bucket: similarImage.bucket,
-				cacheType: "semantic",
-			};
-		}
+        if (similarImage) {
+            console.log(
+                `[HYBRID] Found semantic match: ${similarImage.cacheKey} (similarity: ${similarImage.similarity.toFixed(3)})`,
+            );
+            return {
+                cacheKey: similarImage.cacheKey,
+                similarity: similarImage.similarity,
+                bucket: similarImage.bucket,
+                cacheType: "semantic",
+            };
+        }
 
-		console.log("[HYBRID] No semantic matches found");
-		return null;
-	} catch (error) {
-		console.error("[HYBRID] Semantic cache check failed:", error);
-		return null; // Graceful fallback
-	}
+        console.log("[HYBRID] No semantic matches found");
+        return null;
+    } catch (error) {
+        console.error("[HYBRID] Semantic cache check failed:", error);
+        return null; // Graceful fallback
+    }
 }
 
 /**
@@ -88,44 +88,49 @@ export async function checkSemanticCache(hybridCache, prompt, params) {
  * @param {ExecutionContext} ctx - Execution context for waitUntil
  */
 export function storeImageEmbeddingAsync(
-	hybridCache,
-	cacheKey,
-	prompt,
-	params,
-	ctx,
+    hybridCache,
+    cacheKey,
+    prompt,
+    params,
+    ctx,
 ) {
-	// Skip if semantic cache not supported
-	if (!hybridCache.hasSemanticSupport || !hybridCache.semanticCache) {
-		return;
-	}
+    // Skip if semantic cache not supported
+    if (!hybridCache.hasSemanticSupport || !hybridCache.semanticCache) {
+        return;
+    }
 
-	// Skip if no prompt provided
-	if (!prompt || typeof prompt !== "string") {
-		return;
-	}
+    // Skip if no prompt provided
+    if (!prompt || typeof prompt !== "string") {
+        return;
+    }
 
-	try {
-		console.log(`[HYBRID] Scheduling async embedding storage for: ${cacheKey}`);
+    try {
+        console.log(
+            `[HYBRID] Scheduling async embedding storage for: ${cacheKey}`,
+        );
 
-		// Use waitUntil to store embedding asynchronously without blocking response
-		ctx.waitUntil(
-			cacheImageEmbedding(
-				hybridCache.semanticCache,
-				cacheKey,
-				prompt,
-				params,
-			).catch((error) => {
-				console.error("[HYBRID] Async embedding storage failed:", error);
-				// Don't throw - this shouldn't break the request
-			}),
-		);
-	} catch (error) {
-		console.error(
-			"[HYBRID] Failed to schedule async embedding storage:",
-			error,
-		);
-		// Don't throw - this shouldn't break the request
-	}
+        // Use waitUntil to store embedding asynchronously without blocking response
+        ctx.waitUntil(
+            cacheImageEmbedding(
+                hybridCache.semanticCache,
+                cacheKey,
+                prompt,
+                params,
+            ).catch((error) => {
+                console.error(
+                    "[HYBRID] Async embedding storage failed:",
+                    error,
+                );
+                // Don't throw - this shouldn't break the request
+            }),
+        );
+    } catch (error) {
+        console.error(
+            "[HYBRID] Failed to schedule async embedding storage:",
+            error,
+        );
+        // Don't throw - this shouldn't break the request
+    }
 }
 
 /**
@@ -134,26 +139,26 @@ export function storeImageEmbeddingAsync(
  * @returns {string|null} - Extracted prompt or null
  */
 export function extractPromptFromUrl(url) {
-	try {
-		// Extract prompt from path like /prompt/sunset+over+ocean
-		const pathMatch = url.pathname.match(/^\/prompt\/(.+)$/);
-		if (pathMatch) {
-			// Decode the prompt, but do not replace '+' with spaces in the path
-			const prompt = decodeURIComponent(pathMatch[1]).trim();
-			return prompt || null;
-		}
+    try {
+        // Extract prompt from path like /prompt/sunset+over+ocean
+        const pathMatch = url.pathname.match(/^\/prompt\/(.+)$/);
+        if (pathMatch) {
+            // Decode the prompt, but do not replace '+' with spaces in the path
+            const prompt = decodeURIComponent(pathMatch[1]).trim();
+            return prompt || null;
+        }
 
-		// Extract prompt from query parameter
-		const promptParam = url.searchParams.get("prompt");
-		if (promptParam) {
-			return promptParam.trim() || null;
-		}
+        // Extract prompt from query parameter
+        const promptParam = url.searchParams.get("prompt");
+        if (promptParam) {
+            return promptParam.trim() || null;
+        }
 
-		return null;
-	} catch (error) {
-		console.error("[HYBRID] Error extracting prompt from URL:", error);
-		return null;
-	}
+        return null;
+    } catch (error) {
+        console.error("[HYBRID] Error extracting prompt from URL:", error);
+        return null;
+    }
 }
 
 /**
@@ -162,24 +167,24 @@ export function extractPromptFromUrl(url) {
  * @returns {Object} - Extracted parameters
  */
 export function extractImageParams(url) {
-	const params = {};
+    const params = {};
 
-	// Extract common image parameters
-	const width = url.searchParams.get("width");
-	const height = url.searchParams.get("height");
-	const model = url.searchParams.get("model");
-	const style = url.searchParams.get("style");
-	const quality = url.searchParams.get("quality");
-	const seed = url.searchParams.get("seed"); // Extract seed parameter for proper isolation
-	const nologo = url.searchParams.get("nologo"); // Extract nologo parameter for proper isolation
+    // Extract common image parameters
+    const width = url.searchParams.get("width");
+    const height = url.searchParams.get("height");
+    const model = url.searchParams.get("model");
+    const style = url.searchParams.get("style");
+    const quality = url.searchParams.get("quality");
+    const seed = url.searchParams.get("seed"); // Extract seed parameter for proper isolation
+    const nologo = url.searchParams.get("nologo"); // Extract nologo parameter for proper isolation
 
-	if (width) params.width = width;
-	if (height) params.height = height;
-	if (model) params.model = model;
-	if (style) params.style = style;
-	if (quality) params.quality = quality;
-	if (seed) params.seed = seed; // Include seed in parameters
-	if (nologo) params.nologo = nologo; // Include nologo in parameters
+    if (width) params.width = width;
+    if (height) params.height = height;
+    if (model) params.model = model;
+    if (style) params.style = style;
+    if (quality) params.quality = quality;
+    if (seed) params.seed = seed; // Include seed in parameters
+    if (nologo) params.nologo = nologo; // Include nologo in parameters
 
-	return params;
+    return params;
 }

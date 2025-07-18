@@ -11,127 +11,132 @@ const logPerf = debug("pollinations:perf");
 const logTranslate = debug("pollinations:translate");
 
 export async function detectLanguage(promptAnyLanguage) {
-	const controller = new AbortController();
-	const detectPromise = fetchDetection(promptAnyLanguage, controller.signal);
-	const timeoutPromise = new Promise((resolve) => {
-		setTimeout(() => {
-			controller.abort();
-			resolve(null);
-		}, 1000);
-	});
+    const controller = new AbortController();
+    const detectPromise = fetchDetection(promptAnyLanguage, controller.signal);
+    const timeoutPromise = new Promise((resolve) => {
+        setTimeout(() => {
+            controller.abort();
+            resolve(null);
+        }, 1000);
+    });
 
-	return Promise.race([detectPromise, timeoutPromise]);
+    return Promise.race([detectPromise, timeoutPromise]);
 }
 
 export async function translateIfNecessary(promptAnyLanguage) {
-	// convert underscores and - etc to spaces
-	promptAnyLanguage = promptAnyLanguage.replace(/[-_]/g, " ");
+    // convert underscores and - etc to spaces
+    promptAnyLanguage = promptAnyLanguage.replace(/[-_]/g, " ");
 
-	return lock.acquire("translate", async () => {
-		promptAnyLanguage = "" + promptAnyLanguage;
-		try {
-			const translateStart = Date.now();
-			const detectedLanguage = await detectLanguage(promptAnyLanguage);
+    return lock.acquire("translate", async () => {
+        promptAnyLanguage = "" + promptAnyLanguage;
+        try {
+            const translateStart = Date.now();
+            const detectedLanguage = await detectLanguage(promptAnyLanguage);
 
-			if (detectedLanguage === "en") {
-				return promptAnyLanguage;
-			}
+            if (detectedLanguage === "en") {
+                return promptAnyLanguage;
+            }
 
-			const controller = new AbortController();
-			const translatePromise = fetchTranslation(
-				promptAnyLanguage,
-				controller.signal,
-			);
-			const timeoutPromise = new Promise((resolve) => {
-				setTimeout(() => {
-					controller.abort();
-					resolve(null);
-				}, 1000);
-			});
+            const controller = new AbortController();
+            const translatePromise = fetchTranslation(
+                promptAnyLanguage,
+                controller.signal,
+            );
+            const timeoutPromise = new Promise((resolve) => {
+                setTimeout(() => {
+                    controller.abort();
+                    resolve(null);
+                }, 1000);
+            });
 
-			const result = await Promise.race([translatePromise, timeoutPromise]);
+            const result = await Promise.race([
+                translatePromise,
+                timeoutPromise,
+            ]);
 
-			if (result) {
-				logTranslate(
-					"translate input",
-					promptAnyLanguage,
-					"translateResult",
-					result,
-				);
-				const translatedPrompt = result.translatedText;
-				const translateEnd = Date.now();
-				logPerf(`Translation duration: ${translateEnd - translateStart}ms`);
-				logTranslate(
-					"translated prompt to english ",
-					promptAnyLanguage,
-					"---",
-					translatedPrompt,
-				);
+            if (result) {
+                logTranslate(
+                    "translate input",
+                    promptAnyLanguage,
+                    "translateResult",
+                    result,
+                );
+                const translatedPrompt = result.translatedText;
+                const translateEnd = Date.now();
+                logPerf(
+                    `Translation duration: ${translateEnd - translateStart}ms`,
+                );
+                logTranslate(
+                    "translated prompt to english ",
+                    promptAnyLanguage,
+                    "---",
+                    translatedPrompt,
+                );
 
-				return translatedPrompt + "\n\n" + promptAnyLanguage;
-			} else {
-				return promptAnyLanguage;
-			}
-		} catch (e) {
-			logError("error translating", e.message);
-			return promptAnyLanguage;
-		}
-	});
+                return translatedPrompt + "\n\n" + promptAnyLanguage;
+            } else {
+                return promptAnyLanguage;
+            }
+        } catch (e) {
+            logError("error translating", e.message);
+            return promptAnyLanguage;
+        }
+    });
 }
 
 async function fetchDetection(promptAnyLanguage, signal) {
-	try {
-		const host = await getNextTranslationServerUrl();
-		const result = await fetch(`${host}/detect`, {
-			method: "POST",
-			body: JSON.stringify({
-				q: promptAnyLanguage,
-			}),
-			headers: { "Content-Type": "application/json" },
-			signal,
-		});
+    try {
+        const host = await getNextTranslationServerUrl();
+        const result = await fetch(`${host}/detect`, {
+            method: "POST",
+            body: JSON.stringify({
+                q: promptAnyLanguage,
+            }),
+            headers: { "Content-Type": "application/json" },
+            signal,
+        });
 
-		const resultJson = await result.json();
+        const resultJson = await result.json();
 
-		return resultJson[0]?.language;
-	} catch (e) {
-		logError("error fetching detection", e.message);
-		return "en";
-	}
+        return resultJson[0]?.language;
+    } catch (e) {
+        logError("error fetching detection", e.message);
+        return "en";
+    }
 }
 
 async function fetchTranslation(promptAnyLanguage, signal) {
-	try {
-		const host = await getNextTranslationServerUrl();
-		const result = await fetch(`${host}/translate`, {
-			method: "POST",
-			body: JSON.stringify({
-				q: promptAnyLanguage,
-				source: "auto",
-				target: "en",
-			}),
-			headers: { "Content-Type": "application/json" },
-			signal,
-		});
+    try {
+        const host = await getNextTranslationServerUrl();
+        const result = await fetch(`${host}/translate`, {
+            method: "POST",
+            body: JSON.stringify({
+                q: promptAnyLanguage,
+                source: "auto",
+                target: "en",
+            }),
+            headers: { "Content-Type": "application/json" },
+            signal,
+        });
 
-		const resultJson = await result.json();
+        const resultJson = await result.json();
 
-		return resultJson;
-	} catch (e) {
-		logError("error fetching translation", e.message);
-		return null;
-	}
+        return resultJson;
+    } catch (e) {
+        logError("error fetching translation", e.message);
+        return null;
+    }
 }
 
 // Function to sanitize a string to ensure it contains valid UTF-8 characters
 export function sanitizeString(str) {
-	if (!str) return str;
+    if (!str) return str;
 
-	logTranslate("sanitizeString", str);
+    logTranslate("sanitizeString", str);
 
-	// Only remove control characters while preserving valid Unicode characters
-	const sanitized = str.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
+    // Only remove control characters while preserving valid Unicode characters
+    const sanitized = str.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
 
-	logTranslate("sanitized", sanitized);
-	return sanitized;
+    logTranslate("sanitized", sanitized);
+    return sanitized;
 }

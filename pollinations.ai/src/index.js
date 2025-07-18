@@ -11,14 +11,14 @@ const container = document.getElementById("root");
 const root = createRoot(container); // Create a root
 
 root.render(
-	<ThemeProvider theme={theme}>
-		<CssBaseline />
-		<BrowserRouter
-			future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-		>
-			<ScrollToTop>
-				<App />
-			</ScrollToTop>
-		</BrowserRouter>
-	</ThemeProvider>,
+    <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <BrowserRouter
+            future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+            <ScrollToTop>
+                <App />
+            </ScrollToTop>
+        </BrowserRouter>
+    </ThemeProvider>,
 );

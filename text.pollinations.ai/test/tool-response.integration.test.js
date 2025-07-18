@@ -10,13 +10,13 @@ dotenv.config();
 
 // Configure higher timeout for all tests
 test.beforeEach((t) => {
-	t.timeout(60000); // 60 seconds in milliseconds
+    t.timeout(60000); // 60 seconds in milliseconds
 });
 
 // Handle unhandled rejections
 process.on("unhandledRejection", (reason, promise) => {
-	errorLog("Unhandled Rejection at:", promise, "reason:", reason);
-	// Don't exit the process, just log the error
+    errorLog("Unhandled Rejection at:", promise, "reason:", reason);
+    // Don't exit the process, just log the error
 });
 
 /**
@@ -30,54 +30,57 @@ process.on("unhandledRejection", (reason, promise) => {
  * 3. The response should reference information from the search results
  */
 test.serial(
-	"generateTextSearch should properly incorporate tool responses",
-	async (t) => {
-		try {
-			// Use a specific query that will trigger a search and has verifiable facts
-			const messages = [
-				{
-					role: "user",
-					content:
-						"What is the population of Tokyo? Please search for the most recent data.",
-				},
-			];
+    "generateTextSearch should properly incorporate tool responses",
+    async (t) => {
+        try {
+            // Use a specific query that will trigger a search and has verifiable facts
+            const messages = [
+                {
+                    role: "user",
+                    content:
+                        "What is the population of Tokyo? Please search for the most recent data.",
+                },
+            ];
 
-			const response = await generateTextSearch(messages);
+            const response = await generateTextSearch(messages);
 
-			// Check if we got a valid response
-			if (
-				response.choices &&
-				response.choices[0] &&
-				response.choices[0].message
-			) {
-				const content = response.choices[0].message.content;
-				t.truthy(content, "Response should have content");
+            // Check if we got a valid response
+            if (
+                response.choices &&
+                response.choices[0] &&
+                response.choices[0].message
+            ) {
+                const content = response.choices[0].message.content;
+                t.truthy(content, "Response should have content");
 
-				// The response should contain:
-				// 1. A population number
-				t.true(
-					/\d{1,2}(\.\d+)?\s*(million|m)/.test(content.toLowerCase()) ||
-						/\d{7,8}/.test(content),
-					"Response should include Tokyo population numbers",
-				);
+                // The response should contain:
+                // 1. A population number
+                t.true(
+                    /\d{1,2}(\.\d+)?\s*(million|m)/.test(
+                        content.toLowerCase(),
+                    ) || /\d{7,8}/.test(content),
+                    "Response should include Tokyo population numbers",
+                );
 
-				// 2. Reference to the source or year
-				t.true(
-					content.toLowerCase().includes("according to") ||
-						content.toLowerCase().includes("as of") ||
-						/20\d\d/.test(content),
-					"Response should reference source or timeframe",
-				);
+                // 2. Reference to the source or year
+                t.true(
+                    content.toLowerCase().includes("according to") ||
+                        content.toLowerCase().includes("as of") ||
+                        /20\d\d/.test(content),
+                    "Response should reference source or timeframe",
+                );
 
-				// Log the content for debugging
-				log("Response content: %s", content);
-			} else if (response.error) {
-				t.pass(`Skipping test due to API error: ${response.error.message}`);
-			}
-		} catch (error) {
-			t.pass(`Skipping test due to exception: ${error.message}`);
-		}
-	},
+                // Log the content for debugging
+                log("Response content: %s", content);
+            } else if (response.error) {
+                t.pass(
+                    `Skipping test due to API error: ${response.error.message}`,
+                );
+            }
+        } catch (error) {
+            t.pass(`Skipping test due to exception: ${error.message}`);
+        }
+    },
 );
 
 /**
@@ -90,50 +93,52 @@ test.serial(
  * 2. Tool calls should be processed sequentially
  */
 test.serial(
-	"generateTextSearch should not make parallel tool calls",
-	async (t) => {
-		try {
-			// Use a query that might typically trigger multiple searches
-			const messages = [
-				{
-					role: "user",
-					content:
-						"Compare the populations of Tokyo and New York City. Search for recent data.",
-				},
-			];
+    "generateTextSearch should not make parallel tool calls",
+    async (t) => {
+        try {
+            // Use a query that might typically trigger multiple searches
+            const messages = [
+                {
+                    role: "user",
+                    content:
+                        "Compare the populations of Tokyo and New York City. Search for recent data.",
+                },
+            ];
 
-			const response = await generateTextSearch(messages);
+            const response = await generateTextSearch(messages);
 
-			// Check if we got a valid response
-			if (
-				response.choices &&
-				response.choices[0] &&
-				response.choices[0].message
-			) {
-				const message = response.choices[0].message;
+            // Check if we got a valid response
+            if (
+                response.choices &&
+                response.choices[0] &&
+                response.choices[0].message
+            ) {
+                const message = response.choices[0].message;
 
-				// If there are tool calls, there should be exactly one
-				if (message.tool_calls) {
-					t.is(
-						message.tool_calls.length,
-						1,
-						"Should only make one tool call at a time",
-					);
-					t.is(
-						message.tool_calls[0].function.name,
-						"web_search",
-						"Should be a web search call",
-					);
-				}
+                // If there are tool calls, there should be exactly one
+                if (message.tool_calls) {
+                    t.is(
+                        message.tool_calls.length,
+                        1,
+                        "Should only make one tool call at a time",
+                    );
+                    t.is(
+                        message.tool_calls[0].function.name,
+                        "web_search",
+                        "Should be a web search call",
+                    );
+                }
 
-				// Log for debugging
-				log("Tool calls:", message.tool_calls);
-				log("Content:", message.content);
-			} else if (response.error) {
-				t.pass(`Skipping test due to API error: ${response.error.message}`);
-			}
-		} catch (error) {
-			t.pass(`Skipping test due to exception: ${error.message}`);
-		}
-	},
+                // Log for debugging
+                log("Tool calls:", message.tool_calls);
+                log("Content:", message.content);
+            } else if (response.error) {
+                t.pass(
+                    `Skipping test due to API error: ${response.error.message}`,
+                );
+            }
+        } catch (error) {
+            t.pass(`Skipping test due to exception: ${error.message}`);
+        }
+    },
 );

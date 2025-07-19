@@ -8,7 +8,6 @@ import path from "path";
 import dotenv from "dotenv";
 import { availableModels } from "./availableModels.js";
 import { getHandler } from "./availableModels.js";
-import { sendToAnalytics } from "./sendToAnalytics.js";
 import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
 import { processRequestForAds } from "./ads/initRequestFilter.js";
 import { createStreamingAdWrapper } from "./ads/streamingAdWrapper.js";
@@ -310,16 +309,6 @@ async function handleRequest(req, res, requestData) {
 			getIp(req),
 		);
 
-		// Track successful completion with token usage
-		await sendToAnalytics(req, "textGenerated", {
-			...requestData,
-			success: true,
-			responseLength: responseText?.length,
-			streamMode: requestData.stream,
-			plainTextMode: req.method === "GET",
-			...tokenUsage,
-		});
-
 		if (requestData.stream) {
 			log("Sending streaming response with sendAsOpenAIStream");
 			// Add requestData to completion object for access in streaming ad wrapper
@@ -422,14 +411,6 @@ export async function sendErrorResponse(
 		clientInfo,
 		requestData: sanitizedRequestData,
 		stack: error.stack,
-	});
-
-	// Track error event
-	await sendToAnalytics(req, "textGenerationError", {
-		error: error.message,
-		errorType: error.name,
-		statusCode: responseStatus,
-		model: requestData?.model,
 	});
 
 	res.status(responseStatus).json(errorResponse);

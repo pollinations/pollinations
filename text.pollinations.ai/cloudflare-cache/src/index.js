@@ -1,12 +1,53 @@
 // No imports needed for Web Crypto API
+import { sendToAnalytics } from "./analytics.js";
 
 // Worker version to track which deployment is running
 const WORKER_VERSION = "2.0.0-simplified";
+
+// Analytics event constants - harmonized with image endpoint for GA4 consistency
+const EVENTS = {
+    REQUEST: "textRequested",
+    SERVED_FROM_CACHE: "textServedFromCache",
+    GENERATED: "textGenerated",
+    FAILED: "textGenerationFailed"
+};
+
+// Cache status constants
+const CACHE_STATUS = {
+    HIT: "hit",
+    MISS: "miss",
+    PENDING: "pending"
+};
 
 // Unified logging function with category support
 function log(category, message, ...args) {
     const prefix = category ? `[${category}]` : "";
     console.log(`[${WORKER_VERSION}]${prefix} ${message}`, ...args);
+}
+
+/**
+ * Helper function to send analytics with cleaner syntax, matching image endpoint pattern
+ * @param {Request} request - The original request
+ * @param {string} eventName - The event name from EVENTS constants
+ * @param {string} cacheStatus - The cache status from CACHE_STATUS constants
+ * @param {Object} params - Additional analytics parameters
+ * @param {Object} env - Environment variables
+ * @param {ExecutionContext} ctx - The execution context
+ */
+function sendTextAnalytics(request, eventName, cacheStatus, params, env, ctx) {
+    // Simple logging
+    console.log(
+        `[ANALYTICS] Sending event ${eventName} with cacheStatus=${cacheStatus}`,
+    );
+
+    // Create a single params object with all necessary data
+    const analyticsData = {
+        ...params,
+        cacheStatus,
+    };
+
+    // Send the analytics using the proper GA4 integration
+    ctx.waitUntil(sendToAnalytics(request, eventName, analyticsData, env));
 }
 
 const NON_CACHE_PATHS = ["/models", "/feed", "/openai/models"];
@@ -114,6 +155,24 @@ export default {
             // Log request information
             log("request", `${request.method} ${url.pathname}`);
 
+            // Common analytics parameters
+            const analyticsParams = {
+                method: request.method,
+                pathname: url.pathname,
+                userAgent: request.headers.get("user-agent") || "",
+                referer: request.headers.get("referer") || ""
+            };
+
+            // Send text requested analytics event
+            sendTextAnalytics(
+                request,
+                EVENTS.REQUEST,
+                CACHE_STATUS.PENDING,
+                analyticsParams,
+                env,
+                ctx,
+            );
+
             // Check if the path should be excluded from caching
             if (NON_CACHE_PATHS.some((path) => url.pathname.startsWith(path))) {
                 log(
@@ -131,6 +190,17 @@ export default {
             const cachedResponse = await getCachedResponse(env, key);
             if (cachedResponse) {
                 log("cache", "✅ Cache hit!");
+                
+                // Send analytics for cache hit
+                sendTextAnalytics(
+                    request,
+                    EVENTS.SERVED_FROM_CACHE,
+                    CACHE_STATUS.HIT,
+                    analyticsParams,
+                    env,
+                    ctx,
+                );
+                
                 return cachedResponse;
             }
 
@@ -148,6 +218,21 @@ export default {
                     "cache",
                     `Not caching error response with status ${originResp.status}`,
                 );
+                
+                // Send analytics for failed request
+                sendTextAnalytics(
+                    request,
+                    EVENTS.FAILED,
+                    CACHE_STATUS.MISS,
+                    {
+                        ...analyticsParams,
+                        error: `HTTP ${originResp.status}: ${originResp.statusText}`,
+                        statusCode: originResp.status
+                    },
+                    env,
+                    ctx,
+                );
+                
                 return originResp;
             }
 
@@ -185,6 +270,21 @@ export default {
                     log(
                         "cache",
                         `✅ Cached response: ${key} (${content.byteLength} bytes)`,
+                    );
+
+                    // Send analytics for cache miss but successful generation
+                    sendTextAnalytics(
+                        request,
+                        EVENTS.GENERATED,
+                        CACHE_STATUS.MISS,
+                        {
+                            ...analyticsParams,
+                            responseSize: content.byteLength,
+                            isStreaming: false,
+                            contentType: originResp.headers.get("content-type") || ""
+                        },
+                        env,
+                        ctx,
                     );
 
                     // Return the original response
@@ -273,6 +373,21 @@ export default {
                                 log(
                                     "cache",
                                     `✅ Response cached successfully (${totalSize} bytes)`,
+                                );
+
+                                // Send analytics for successful streaming response
+                                sendTextAnalytics(
+                                    request,
+                                    EVENTS.GENERATED,
+                                    CACHE_STATUS.MISS,
+                                    {
+                                        ...analyticsParams,
+                                        responseSize: totalSize,
+                                        isStreaming: true,
+                                        contentType: originResp.headers.get("content-type") || ""
+                                    },
+                                    env,
+                                    ctx,
                                 );
 
                                 // Free memory

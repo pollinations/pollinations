@@ -14,6 +14,10 @@ ORIGIN_HOST = "text-origin.pollinations.ai"
 # Enable debug logging (set to "true" to enable, "false" to disable)
 DEBUG = "cache:*"
 
+# GA4 Analytics (secrets set via: wrangler secret put GA_MEASUREMENT_ID)
+GA_MEASUREMENT_ID = ""
+GA_API_SECRET = ""
+
 # Increase limits for long-running operations
 # This requires a paid Workers Unbound plan
 [limits]

@@ -36,18 +36,18 @@ export async function sendToAnalytics(request, name, params = {}, env) {
 
         // Get URL components
         const url = new URL(request.url);
-        const pathname = url.pathname;
 
-        // Extract the prompt from URL path
-        const originalPrompt = pathname.startsWith("/prompt/")
-            ? decodeURIComponent(pathname.split("/prompt/")[1])
-            : "";
-
-        // Process query parameters into safeParams format
-        const safeParams = {};
-        for (const [key, value] of url.searchParams.entries()) {
-            safeParams[key] = value;
+        // Rely on worker-supplied extraction to avoid double work. Fallback only if missing.
+        let originalPrompt = params.originalPrompt || "";
+        if (!originalPrompt && url.pathname.startsWith("/prompt/")) {
+            originalPrompt = decodeURIComponent(url.pathname.split("/prompt/")[1]);
         }
+
+        // Use safeParams from worker when provided, otherwise fall back to URL search params
+        const safeParams =
+            params.safeParams && typeof params.safeParams === "object"
+                ? params.safeParams
+                : Object.fromEntries(url.searchParams.entries());
 
         // Get client information - check URL params first, then headers
         const referrer =
@@ -61,6 +61,7 @@ export async function sendToAnalytics(request, name, params = {}, env) {
         // Combine all parameter sources with priority
         const combinedParams = {
             referrer,
+            originalPrompt,
             ...safeParams,
             ...params,
             userAgent,

@@ -29,3 +29,17 @@ enabled = true      # Enable logs for local development
 
 [observability.logs]
 invocation_logs = true
+
+# ===========================================
+# ENVIRONMENT SETUP INSTRUCTIONS
+# ===========================================
+# This configuration uses environment variables from the .env file.
+# Make sure your .env file in the root directory includes:
+#
+# GA_MEASUREMENT_ID=your-ga-measurement-id
+# GA_API_SECRET=your-ga-api-secret
+# CLOUDFLARE_ACCOUNT_ID=your-cloudflare-account-id
+#
+# The deploy.sh script will automatically create a .dev.vars file
+# for local development using these values.
+# ===========================================

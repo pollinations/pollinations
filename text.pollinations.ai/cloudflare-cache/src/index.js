@@ -85,21 +85,107 @@ function prepareMetadata(
         headers: JSON.stringify(Object.fromEntries(response.headers)),
     };
 
-    // Add all request headers to metadata - no transformation
+    // Track metadata sizes for debugging
+    const metadataSizes = {};
+    let totalSize = 0;
+
+    // Calculate sizes for core metadata
+    for (const [key, value] of Object.entries(metadata)) {
+        const size = new TextEncoder().encode(key + value).length;
+        metadataSizes[key] = size;
+        totalSize += size;
+    }
+
+    // Add only essential request headers to metadata (exclude cookie and redundant headers)
+    const essentialHeaders = [
+        'user-agent',      // For analytics and debugging
+        'referer',         // For analytics
+        'accept',          // For content negotiation
+        'accept-language', // For localization
+        'accept-encoding', // For compression handling
+        'cache-control',   // For cache behavior
+        'host',           // For routing
+        'cf-connecting-ip' // For IP tracking
+    ];
+    
+    const requestHeaderSizes = {};
     for (const [key, value] of request.headers.entries()) {
+        // Skip cookie header (biggest space consumer) and other redundant headers
+        if (key.toLowerCase() === 'cookie') {
+            log("cache", `  ⏭️ Skipping cookie header (${new TextEncoder().encode(key + value).length} bytes)`);
+            continue;
+        }
+        
+        // Skip redundant sec-* headers
+        if (key.toLowerCase().startsWith('sec-ch-') || 
+            key.toLowerCase().startsWith('sec-fetch-') ||
+            key.toLowerCase() === 'upgrade-insecure-requests' ||
+            key.toLowerCase() === 'if-none-match') {
+            continue;
+        }
+        
+        // Only include essential headers or keep all others for now (can be refined further)
         metadata[key] = value;
+        const size = new TextEncoder().encode(key + value).length;
+        requestHeaderSizes[key] = size;
+        metadataSizes[`header_${key}`] = size;
+        totalSize += size;
     }
 
     // Add all Cloudflare-specific data from the cf object if available
+    const cfSizes = {};
     if (request.cf && typeof request.cf === "object") {
         // Add all properties from request.cf without transformation
         for (const [key, value] of Object.entries(request.cf)) {
             // Convert any non-string values to strings
             if (value !== null && value !== undefined) {
-                metadata[key] =
-                    typeof value === "string" ? value : String(value);
+                const stringValue = typeof value === "string" ? value : String(value);
+                metadata[key] = stringValue;
+                const size = new TextEncoder().encode(key + stringValue).length;
+                cfSizes[key] = size;
+                metadataSizes[`cf_${key}`] = size;
+                totalSize += size;
             }
         }
+    }
+
+    // Log detailed size information
+    log("cache", `📊 Metadata size analysis (total: ${totalSize} bytes):`);
+    
+    // Log core metadata sizes
+    const coreSize = Object.entries(metadataSizes)
+        .filter(([key]) => !key.startsWith('header_') && !key.startsWith('cf_'))
+        .reduce((sum, [, size]) => sum + size, 0);
+    log("cache", `  Core metadata: ${coreSize} bytes`);
+    
+    // Log request headers sizes (top 10 largest)
+    const headerEntries = Object.entries(requestHeaderSizes)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 10);
+    const headerTotalSize = Object.values(requestHeaderSizes).reduce((sum, size) => sum + size, 0);
+    log("cache", `  Request headers: ${headerTotalSize} bytes (${Object.keys(requestHeaderSizes).length} headers)`);
+    headerEntries.forEach(([key, size]) => {
+        log("cache", `    ${key}: ${size} bytes`);
+    });
+    
+    // Log Cloudflare data sizes (top 10 largest)
+    if (Object.keys(cfSizes).length > 0) {
+        const cfEntries = Object.entries(cfSizes)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 10);
+        const cfTotalSize = Object.values(cfSizes).reduce((sum, size) => sum + size, 0);
+        log("cache", `  Cloudflare data: ${cfTotalSize} bytes (${Object.keys(cfSizes).length} properties)`);
+        cfEntries.forEach(([key, size]) => {
+            log("cache", `    ${key}: ${size} bytes`);
+        });
+    }
+
+    // Log warning if approaching or exceeding typical limits
+    if (totalSize > 8000) {
+        log("cache", `⚠️  Metadata size (${totalSize} bytes) is approaching Cloudflare's limit!`);
+    }
+    if (totalSize > 10000) {
+        log("cache", `🚨 Metadata size (${totalSize} bytes) likely exceeds Cloudflare's limit!`);
     }
 
     return metadata;

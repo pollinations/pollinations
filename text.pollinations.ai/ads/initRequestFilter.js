@@ -148,27 +148,27 @@ export async function generateAdForContent(
 
                     // Track per-user ad impression metrics
                     if (authenticatedUserId) {
-                        // Existing general metric
-                        incrementUserMetric(
-                            authenticatedUserId,
-                            "ad_impressions",
-                        );
+                        // DISABLED: Metrics updates causing DB contention (GitHub Issue #3258)
+                        // incrementUserMetric(
+                        //     authenticatedUserId,
+                        //     "ad_impressions",
+                        // );
 
-                        // NEW: Privacy-specific metrics
-                        incrementUserMetric(
-                            authenticatedUserId,
-                            "privacy_protected_impressions",
-                        );
-                        incrementUserMetric(
-                            authenticatedUserId,
-                            "nexad_impressions_without_ip",
-                        );
+                        // DISABLED: Privacy-specific metrics
+                        // incrementUserMetric(
+                        //     authenticatedUserId,
+                        //     "privacy_protected_impressions",
+                        // );
+                        // incrementUserMetric(
+                        //     authenticatedUserId,
+                        //     "nexad_impressions_without_ip",
+                        // );
 
-                        // NEW: Ad source specific metrics
-                        incrementUserMetric(
-                            authenticatedUserId,
-                            "nexad_impressions",
-                        );
+                        // DISABLED: Ad source specific metrics
+                        // incrementUserMetric(
+                        //     authenticatedUserId,
+                        //     "nexad_impressions",
+                        // );
                     }
                 }
 
@@ -227,17 +227,17 @@ export async function generateAdForContent(
 
                     // Track per-user ad impression metrics for Ko-fi fallback
                     if (authenticatedUserId) {
-                        // Existing general metric
-                        incrementUserMetric(
-                            authenticatedUserId,
-                            "ad_impressions",
-                        );
+                        // DISABLED: Metrics updates causing DB contention (GitHub Issue #3258)
+                        // incrementUserMetric(
+                        //     authenticatedUserId,
+                        //     "ad_impressions",
+                        // );
 
-                        // NEW: Ad source specific metric
-                        incrementUserMetric(
-                            authenticatedUserId,
-                            "kofi_fallback_impressions",
-                        );
+                        // DISABLED: Ad source specific metric
+                        // incrementUserMetric(
+                        //     authenticatedUserId,
+                        //     "kofi_fallback_impressions",
+                        // );
                     }
                 }
 

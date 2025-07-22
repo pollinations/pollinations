@@ -8,7 +8,6 @@ import path from "path";
 import dotenv from "dotenv";
 import { availableModels } from "./availableModels.js";
 import { getHandler } from "./availableModels.js";
-import { sendToAnalytics } from "./sendToAnalytics.js";
 import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
 import { processRequestForAds } from "./ads/initRequestFilter.js";
 import { createStreamingAdWrapper } from "./ads/streamingAdWrapper.js";
@@ -128,6 +127,7 @@ setupFeedEndpoint(app);
 
 // Helper function to handle both GET and POST requests
 async function handleRequest(req, res, requestData) {
+	const startTime = Date.now();
 	log("Request: model=%s referrer=%s", requestData.model, requestData.referrer);
 	log("Request data: %O", requestData);
 
@@ -212,12 +212,14 @@ async function handleRequest(req, res, requestData) {
 
 		// Log user request/response if enabled
 		if (authResult.username) {
+			const totalProcessingTime = Date.now() - startTime;
 			logUserRequest(
 				authResult.username,
 				finalRequestData,
 				completion,
 				null,
 				req.queueInfo,
+				totalProcessingTime,
 			);
 		}
 
@@ -243,12 +245,14 @@ async function handleRequest(req, res, requestData) {
 
 			// Log error for debugging if user is being tracked
 			if (authResult.username) {
+				const totalProcessingTime = Date.now() - startTime;
 				logUserRequest(
 					authResult.username,
 					finalRequestData,
 					null,
 					error,
 					req.queueInfo,
+					totalProcessingTime,
 				);
 			}
 
@@ -309,16 +313,6 @@ async function handleRequest(req, res, requestData) {
 			},
 			getIp(req),
 		);
-
-		// Track successful completion with token usage
-		await sendToAnalytics(req, "textGenerated", {
-			...requestData,
-			success: true,
-			responseLength: responseText?.length,
-			streamMode: requestData.stream,
-			plainTextMode: req.method === "GET",
-			...tokenUsage,
-		});
 
 		if (requestData.stream) {
 			log("Sending streaming response with sendAsOpenAIStream");
@@ -422,14 +416,6 @@ export async function sendErrorResponse(
 		clientInfo,
 		requestData: sanitizedRequestData,
 		stack: error.stack,
-	});
-
-	// Track error event
-	await sendToAnalytics(req, "textGenerationError", {
-		error: error.message,
-		errorType: error.name,
-		statusCode: responseStatus,
-		model: requestData?.model,
 	});
 
 	res.status(responseStatus).json(errorResponse);

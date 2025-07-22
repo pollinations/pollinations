@@ -186,6 +186,22 @@ const models = [
 		},
 	},
 	{
+		name: "gemma-roblox",
+		description: "Gemma 2 9B IT Fast (Nebius)",
+		handler: generateTextPortkey,
+		provider: "nebius",
+		tier: "anonymous",
+		community: false,
+		aliases: "gemma-2-9b-it-fast",
+		input_modalities: ["text"],
+		output_modalities: ["text"],
+		tools: true,
+		pricing: {
+			prompt: 0.03,
+			completion: 0.09,
+		},
+	},
+	{
 		name: "llama-fast-roblox",
 		description: "Llama 3.2 1B  (Cloudflare)",
 		handler: generateTextPortkey,

@@ -1,12 +1,53 @@
 // No imports needed for Web Crypto API
+import { sendToAnalytics } from "./analytics.js";
 
 // Worker version to track which deployment is running
 const WORKER_VERSION = "2.0.0-simplified";
+
+// Analytics event constants - harmonized with image endpoint for GA4 consistency
+const EVENTS = {
+    REQUEST: "textRequested",
+    SERVED_FROM_CACHE: "textServedFromCache",
+    GENERATED: "textGenerated",
+    FAILED: "textGenerationFailed"
+};
+
+// Cache status constants
+const CACHE_STATUS = {
+    HIT: "hit",
+    MISS: "miss",
+    PENDING: "pending"
+};
 
 // Unified logging function with category support
 function log(category, message, ...args) {
     const prefix = category ? `[${category}]` : "";
     console.log(`[${WORKER_VERSION}]${prefix} ${message}`, ...args);
+}
+
+/**
+ * Helper function to send analytics with cleaner syntax, matching image endpoint pattern
+ * @param {Request} request - The original request
+ * @param {string} eventName - The event name from EVENTS constants
+ * @param {string} cacheStatus - The cache status from CACHE_STATUS constants
+ * @param {Object} params - Additional analytics parameters
+ * @param {Object} env - Environment variables
+ * @param {ExecutionContext} ctx - The execution context
+ */
+function sendTextAnalytics(request, eventName, cacheStatus, params, env, ctx) {
+    // Simple logging
+    console.log(
+        `[ANALYTICS] Sending event ${eventName} with cacheStatus=${cacheStatus}`,
+    );
+
+    // Create a single params object with all necessary data
+    const analyticsData = {
+        ...params,
+        cacheStatus,
+    };
+
+    // Send the analytics using the proper GA4 integration
+    ctx.waitUntil(sendToAnalytics(request, eventName, analyticsData, env));
 }
 
 const NON_CACHE_PATHS = ["/models", "/feed", "/openai/models"];
@@ -44,21 +85,107 @@ function prepareMetadata(
         headers: JSON.stringify(Object.fromEntries(response.headers)),
     };
 
-    // Add all request headers to metadata - no transformation
+    // Track metadata sizes for debugging
+    const metadataSizes = {};
+    let totalSize = 0;
+
+    // Calculate sizes for core metadata
+    for (const [key, value] of Object.entries(metadata)) {
+        const size = new TextEncoder().encode(key + value).length;
+        metadataSizes[key] = size;
+        totalSize += size;
+    }
+
+    // Add only essential request headers to metadata (exclude cookie and redundant headers)
+    const essentialHeaders = [
+        'user-agent',      // For analytics and debugging
+        'referer',         // For analytics
+        'accept',          // For content negotiation
+        'accept-language', // For localization
+        'accept-encoding', // For compression handling
+        'cache-control',   // For cache behavior
+        'host',           // For routing
+        'cf-connecting-ip' // For IP tracking
+    ];
+    
+    const requestHeaderSizes = {};
     for (const [key, value] of request.headers.entries()) {
+        // Skip cookie header (biggest space consumer) and other redundant headers
+        if (key.toLowerCase() === 'cookie') {
+            log("cache", `  ⏭️ Skipping cookie header (${new TextEncoder().encode(key + value).length} bytes)`);
+            continue;
+        }
+        
+        // Skip redundant sec-* headers
+        if (key.toLowerCase().startsWith('sec-ch-') || 
+            key.toLowerCase().startsWith('sec-fetch-') ||
+            key.toLowerCase() === 'upgrade-insecure-requests' ||
+            key.toLowerCase() === 'if-none-match') {
+            continue;
+        }
+        
+        // Only include essential headers or keep all others for now (can be refined further)
         metadata[key] = value;
+        const size = new TextEncoder().encode(key + value).length;
+        requestHeaderSizes[key] = size;
+        metadataSizes[`header_${key}`] = size;
+        totalSize += size;
     }
 
     // Add all Cloudflare-specific data from the cf object if available
+    const cfSizes = {};
     if (request.cf && typeof request.cf === "object") {
         // Add all properties from request.cf without transformation
         for (const [key, value] of Object.entries(request.cf)) {
             // Convert any non-string values to strings
             if (value !== null && value !== undefined) {
-                metadata[key] =
-                    typeof value === "string" ? value : String(value);
+                const stringValue = typeof value === "string" ? value : String(value);
+                metadata[key] = stringValue;
+                const size = new TextEncoder().encode(key + stringValue).length;
+                cfSizes[key] = size;
+                metadataSizes[`cf_${key}`] = size;
+                totalSize += size;
             }
         }
+    }
+
+    // Log detailed size information
+    log("cache", `📊 Metadata size analysis (total: ${totalSize} bytes):`);
+    
+    // Log core metadata sizes
+    const coreSize = Object.entries(metadataSizes)
+        .filter(([key]) => !key.startsWith('header_') && !key.startsWith('cf_'))
+        .reduce((sum, [, size]) => sum + size, 0);
+    log("cache", `  Core metadata: ${coreSize} bytes`);
+    
+    // Log request headers sizes (top 10 largest)
+    const headerEntries = Object.entries(requestHeaderSizes)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 10);
+    const headerTotalSize = Object.values(requestHeaderSizes).reduce((sum, size) => sum + size, 0);
+    log("cache", `  Request headers: ${headerTotalSize} bytes (${Object.keys(requestHeaderSizes).length} headers)`);
+    headerEntries.forEach(([key, size]) => {
+        log("cache", `    ${key}: ${size} bytes`);
+    });
+    
+    // Log Cloudflare data sizes (top 10 largest)
+    if (Object.keys(cfSizes).length > 0) {
+        const cfEntries = Object.entries(cfSizes)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 10);
+        const cfTotalSize = Object.values(cfSizes).reduce((sum, size) => sum + size, 0);
+        log("cache", `  Cloudflare data: ${cfTotalSize} bytes (${Object.keys(cfSizes).length} properties)`);
+        cfEntries.forEach(([key, size]) => {
+            log("cache", `    ${key}: ${size} bytes`);
+        });
+    }
+
+    // Log warning if approaching or exceeding typical limits
+    if (totalSize > 8000) {
+        log("cache", `⚠️  Metadata size (${totalSize} bytes) is approaching Cloudflare's limit!`);
+    }
+    if (totalSize > 10000) {
+        log("cache", `🚨 Metadata size (${totalSize} bytes) likely exceeds Cloudflare's limit!`);
     }
 
     return metadata;
@@ -114,6 +241,24 @@ export default {
             // Log request information
             log("request", `${request.method} ${url.pathname}`);
 
+            // Common analytics parameters
+            const analyticsParams = {
+                method: request.method,
+                pathname: url.pathname,
+                userAgent: request.headers.get("user-agent") || "",
+                referer: request.headers.get("referer") || ""
+            };
+
+            // Send text requested analytics event
+            sendTextAnalytics(
+                request,
+                EVENTS.REQUEST,
+                CACHE_STATUS.PENDING,
+                analyticsParams,
+                env,
+                ctx,
+            );
+
             // Check if the path should be excluded from caching
             if (NON_CACHE_PATHS.some((path) => url.pathname.startsWith(path))) {
                 log(
@@ -131,6 +276,17 @@ export default {
             const cachedResponse = await getCachedResponse(env, key);
             if (cachedResponse) {
                 log("cache", "✅ Cache hit!");
+                
+                // Send analytics for cache hit
+                sendTextAnalytics(
+                    request,
+                    EVENTS.SERVED_FROM_CACHE,
+                    CACHE_STATUS.HIT,
+                    analyticsParams,
+                    env,
+                    ctx,
+                );
+                
                 return cachedResponse;
             }
 
@@ -148,6 +304,21 @@ export default {
                     "cache",
                     `Not caching error response with status ${originResp.status}`,
                 );
+                
+                // Send analytics for failed request
+                sendTextAnalytics(
+                    request,
+                    EVENTS.FAILED,
+                    CACHE_STATUS.MISS,
+                    {
+                        ...analyticsParams,
+                        error: `HTTP ${originResp.status}: ${originResp.statusText}`,
+                        statusCode: originResp.status
+                    },
+                    env,
+                    ctx,
+                );
+                
                 return originResp;
             }
 
@@ -185,6 +356,21 @@ export default {
                     log(
                         "cache",
                         `✅ Cached response: ${key} (${content.byteLength} bytes)`,
+                    );
+
+                    // Send analytics for cache miss but successful generation
+                    sendTextAnalytics(
+                        request,
+                        EVENTS.GENERATED,
+                        CACHE_STATUS.MISS,
+                        {
+                            ...analyticsParams,
+                            responseSize: content.byteLength,
+                            isStreaming: false,
+                            contentType: originResp.headers.get("content-type") || ""
+                        },
+                        env,
+                        ctx,
                     );
 
                     // Return the original response
@@ -273,6 +459,21 @@ export default {
                                 log(
                                     "cache",
                                     `✅ Response cached successfully (${totalSize} bytes)`,
+                                );
+
+                                // Send analytics for successful streaming response
+                                sendTextAnalytics(
+                                    request,
+                                    EVENTS.GENERATED,
+                                    CACHE_STATUS.MISS,
+                                    {
+                                        ...analyticsParams,
+                                        responseSize: totalSize,
+                                        isStreaming: true,
+                                        contentType: originResp.headers.get("content-type") || ""
+                                    },
+                                    env,
+                                    ctx,
                                 );
 
                                 // Free memory

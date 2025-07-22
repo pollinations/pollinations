@@ -127,6 +127,7 @@ setupFeedEndpoint(app);
 
 // Helper function to handle both GET and POST requests
 async function handleRequest(req, res, requestData) {
+	const startTime = Date.now();
 	log("Request: model=%s referrer=%s", requestData.model, requestData.referrer);
 	log("Request data: %O", requestData);
 
@@ -211,12 +212,14 @@ async function handleRequest(req, res, requestData) {
 
 		// Log user request/response if enabled
 		if (authResult.username) {
+			const totalProcessingTime = Date.now() - startTime;
 			logUserRequest(
 				authResult.username,
 				finalRequestData,
 				completion,
 				null,
 				req.queueInfo,
+				totalProcessingTime,
 			);
 		}
 
@@ -242,12 +245,14 @@ async function handleRequest(req, res, requestData) {
 
 			// Log error for debugging if user is being tracked
 			if (authResult.username) {
+				const totalProcessingTime = Date.now() - startTime;
 				logUserRequest(
 					authResult.username,
 					finalRequestData,
 					null,
 					error,
 					req.queueInfo,
+					totalProcessingTime,
 				);
 			}
 

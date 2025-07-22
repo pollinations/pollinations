@@ -1,8 +1,6 @@
-"use strict";
-import fetch from "node-fetch";
-import urldecode from "urldecode";
 import debug from "debug";
 import dotenv from "dotenv";
+import urldecode from "urldecode";
 
 // Load environment variables
 dotenv.config();
@@ -12,25 +10,13 @@ const logPimp = debug("pollinations:pimp");
 const logPerf = debug("pollinations:perf");
 
 /**
- * Main function to get and print chat completion from Pollinations Text API.
- */
-async function main() {
-    const chatCompletion = await memoizedPimpPrompt(
-        "dolphin octopus retro telephone",
-        42,
-    );
-    // Print the completion returned by the API.
-    process.stdout.write(chatCompletion);
-}
-
-/**
  * Function to get chat completion from Pollinations Text API.
  * If it takes longer than 5 seconds, returns the original prompt.
  * @param {string} prompt - The input prompt for the API.
  * @param {number} seed - The seed value for reproducible results.
  * @returns {Promise<string>} The chat completion response.
  */
-async function pimpPromptRaw(prompt, seed) {
+async function pimpPromptRaw(prompt: string, seed: number): Promise<string> {
     try {
         prompt = urldecode(prompt);
     } catch (error) {
@@ -65,7 +51,7 @@ Respond only with the new prompt. Nothing Else.`,
                 },
                 {
                     role: "user",
-                    content: "Prompt: " + prompt,
+                    content: `Prompt: ${prompt}`,
                 },
             ],
             seed: seed,
@@ -76,7 +62,7 @@ Respond only with the new prompt. Nothing Else.`,
         // Add authentication token if available
         const headers = {
             "Content-Type": "application/json",
-            Referer: "image.pollinations.ai",
+            "Referer": "image.pollinations.ai",
         };
 
         // Use POLLINATIONS_KEY from environment if available
@@ -98,7 +84,7 @@ Respond only with the new prompt. Nothing Else.`,
                 }
                 return res.text();
             }),
-            new Promise((_, reject) =>
+            new Promise<never>((_, reject) =>
                 setTimeout(() => reject(new Error("Timeout")), 5000),
             ),
         ]);
@@ -109,19 +95,19 @@ Respond only with the new prompt. Nothing Else.`,
     }
     const endTime = Date.now();
     logPerf(`Prompt pimping took ${endTime - startTime}ms`);
-    return response + "\n\n" + prompt;
+    return `${response}\n\n${prompt}`;
 }
 
 // Memoize the pimpPrompt function
-const memoize = (fn) => {
-    const cache = new Map();
-    return async (arg, seed) => {
-        const cacheKey = `${arg}-${seed}`;
+const memoize = (fn: (prompt: string, seed: number) => Promise<string>) => {
+    const cache = new Map<string, string>();
+    return async (prompt: string, seed: number) => {
+        const cacheKey = `${prompt}-${seed}`;
         logPimp("cache key", cacheKey);
         if (cache.has(cacheKey)) {
             return cache.get(cacheKey);
         }
-        const result = await fn(arg, seed);
+        const result = await fn(prompt, seed);
         cache.set(cacheKey, result);
         return result;
     };

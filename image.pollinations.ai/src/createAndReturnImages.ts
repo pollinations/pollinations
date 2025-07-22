@@ -1,28 +1,31 @@
-import fetch from "node-fetch";
+import debug from "debug";
+import dotenv from "dotenv";
 import { fileTypeFromBuffer } from "file-type";
-import {
-    addPollinationsLogoWithImagemagick,
-    getLogoPath,
-} from "./imageOperations.js";
-import FormData from "form-data";
+
+// Import shared authentication utilities
+import sharp from "sharp";
+import { hasSufficientTier } from "../../shared/tier-gating.js";
 import {
     fetchFromLeastBusyFluxServer,
     getNextTurboServerUrl,
-} from "./availableServers.js";
-import debug from "debug";
-import { writeExifMetadata } from "./writeExifMetadata.js";
-import { sanitizeString } from "./translateIfNecessary.js";
-// Import shared authentication utilities
-import sharp from "sharp";
-import dotenv from "dotenv";
-// Import GPT Image logging utilities
-import { logGptImagePrompt, logGptImageError } from "./utils/gptImageLogger.js";
+} from "./availableServers.ts";
 import {
-    analyzeTextSafety,
+    addPollinationsLogoWithImagemagick,
+    getLogoPath,
+} from "./imageOperations.ts";
+import { sanitizeString } from "./translateIfNecessary.ts";
+import {
     analyzeImageSafety,
-    formatViolations,
-} from "./utils/azureContentSafety.js";
-import { hasSufficientTier } from "../../shared/tier-gating.js";
+    analyzeTextSafety,
+    type ContentSafetyFlags,
+} from "./utils/azureContentSafety.ts";
+
+// Import GPT Image logging utilities
+import { logGptImageError, logGptImagePrompt } from "./utils/gptImageLogger.ts";
+import { writeExifMetadata } from "./writeExifMetadata.ts";
+import type { ImageParams } from "./params.ts";
+import { withTimeoutSignal } from "./util.ts";
+import type { ProgressManager } from "./progressBar.ts";
 
 dotenv.config();
 
@@ -36,16 +39,43 @@ const logCloudflare = debug("pollinations:cloudflare");
 const TARGET_PIXEL_COUNT = 1024 * 1024; // 1 megapixel
 
 // Performance tracking variables
-let total_start_time = Date.now();
-let accumulated_fetch_duration = 0;
+const totalStartTime = Date.now();
+let accumulatedFetchDurations = 0;
+
+type ScaledDimensions = {
+    scaledWidth: number;
+    scaledHeight: number;
+    scalingFactor: number;
+};
+
+export type ImageGenerationResult = {
+    buffer: Buffer;
+    isMature: boolean;
+    isChild: boolean;
+};
+
+export type AuthResult = {
+    authenticated: boolean;
+    tokenAuth: boolean;
+    referrerAuth: boolean;
+    bypass: boolean;
+    reason: string;
+    userId: string | null;
+    username: string | null;
+    tier: string;
+    debugInfo: object;
+};
 
 /**
  * Calculates scaled dimensions while maintaining aspect ratio
  * @param {number} width - Original width
  * @param {number} height - Original height
- * @returns {{ scaledWidth: number, scaledHeight: number, scalingFactor: number }}
+ * @returns {ScaledDimensions}
  */
-export function calculateScaledDimensions(width, height) {
+export function calculateScaledDimensions(
+    width: number,
+    height: number,
+): ScaledDimensions {
     const currentPixels = width * height;
     if (currentPixels >= TARGET_PIXEL_COUNT) {
         return { scaledWidth: width, scaledHeight: height, scalingFactor: 1 };
@@ -58,7 +88,7 @@ export function calculateScaledDimensions(width, height) {
     return { scaledWidth, scaledHeight, scalingFactor };
 }
 
-async function fetchFromTurboServer(params) {
+async function fetchFromTurboServer(params: object) {
     const host = await getNextTurboServerUrl();
     return fetch(`${host}/generate`, params);
 }
@@ -70,13 +100,11 @@ async function fetchFromTurboServer(params) {
  * @param {number} concurrentRequests - The number of concurrent requests.
  * @returns {Promise<Array>} - The generated images.
  */
-
-/**
- * Calls the Web UI with the given parameters and returns image buffers.
- * @param {{ jobs: Job[], safeParams: Object, concurrentRequests: number, ip: string }} params
- * @returns {Promise<Array<{buffer: Buffer, [key: string]: any}>>}
- */
-export const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
+export const callComfyUI = async (
+    prompt: string,
+    safeParams: ImageParams,
+    concurrentRequests: number,
+): Promise<ImageGenerationResult> => {
     try {
         logOps(
             "concurrent requests",
@@ -117,10 +145,11 @@ export const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
         );
 
         // Start timing for fetch
-        const fetch_start_time = Date.now();
+        const fetchStartTime = Date.now();
+
+        let response = null;
 
         // Single attempt - no retry logic
-        let response;
         try {
             const fetchFunction =
                 safeParams.model === "turbo"
@@ -133,31 +162,27 @@ export const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
                 },
                 body: JSON.stringify(body),
             });
-            if (!response.ok) {
-                logError("Error from server. input was", body);
-                throw new Error(`Server responded with ${response.status}`);
-            }
         } catch (error) {
             logError(`Fetch failed: ${error.message}`);
             throw error;
         }
 
-        const fetch_end_time = Date.now();
+        const fetchEndTime = Date.now();
 
         // Calculate the time spent in fetch
-        const fetch_duration = fetch_end_time - fetch_start_time;
-        logPerf(`Fetch duration: ${fetch_duration}ms`);
-        accumulated_fetch_duration += fetch_duration;
+        const fetchDuration = fetchEndTime - fetchStartTime;
+        logPerf(`Fetch duration: ${fetchDuration}ms`);
+        accumulatedFetchDurations += fetchDuration;
 
         // Calculate the total time the app has been running
-        const total_time = Date.now() - total_start_time;
+        const totalTime = Date.now() - totalStartTime;
 
         // Calculate and print the percentage of time spent in fetch
-        const fetch_percentage =
-            (accumulated_fetch_duration / total_time) * 100;
-        logPerf(`Fetch time percentage: ${fetch_percentage}%`);
+        const fetchPercentage = (accumulatedFetchDurations / totalTime) * 100;
+        logPerf(`Fetch time percentage: ${fetchPercentage}%`);
 
-        if (!response?.ok) {
+        if (!response.ok) {
+            logError("Error from server. input was", body);
             throw new Error(`Server responded with ${response.status}`);
         }
 
@@ -195,6 +220,7 @@ export const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
                 mozjpeg: true,
             })
             .toBuffer();
+
         return { buffer: jpegBuffer, ...rest };
     } catch (e) {
         logError("Error in callComfyUI:", e);
@@ -211,11 +237,11 @@ export const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
  */
 async function callCloudflareModel(
-    prompt,
-    safeParams,
-    modelPath,
-    additionalParams = {},
-) {
+    prompt: string,
+    safeParams: ImageParams,
+    modelPath: string,
+    additionalParams: object = {},
+): Promise<ImageGenerationResult> {
     const { accountId, apiToken } = getCloudflareCredentials();
 
     if (!accountId || !apiToken) {
@@ -274,14 +300,14 @@ async function callCloudflareModel(
 
     // Check content type to determine how to handle the response
     const contentType = response.headers.get("content-type");
-    let imageBuffer;
+    let imageBuffer = null;
 
-    if (contentType && contentType.includes("image/")) {
+    if (contentType?.includes("image/")) {
         // Direct binary image response (typical for SDXL)
         logCloudflare(
             `Received binary image from Cloudflare ${modelPath} with content type: ${contentType}`,
         );
-        imageBuffer = await response.buffer();
+        imageBuffer = Buffer.from(await response.arrayBuffer());
         logCloudflare(`Image buffer size: ${imageBuffer.length} bytes`);
     } else {
         // JSON response with base64 encoded image (typical for Flux)
@@ -312,10 +338,13 @@ async function callCloudflareModel(
 /**
  * Calls the Cloudflare Flux API to generate images
  * @param {string} prompt - The prompt for image generation
- * @param {Object} safeParams - The parameters for image generation
- * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
+ * @param {ImageParams} safeParams - The parameters for image generation
+ * @returns {Promise<ImageGenerationResult>}
  */
-async function callCloudflareFlux(prompt, safeParams) {
+async function callCloudflareFlux(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
     return callCloudflareModel(
         prompt,
         safeParams,
@@ -327,10 +356,13 @@ async function callCloudflareFlux(prompt, safeParams) {
 /**
  * Calls the Cloudflare SDXL API to generate images
  * @param {string} prompt - The prompt for image generation
- * @param {Object} safeParams - The parameters for image generation
- * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
+ * @param {ImageParams} safeParams - The parameters for image generation
+ * @returns {Promise<ImageGenerationResult>}
  */
-async function callCloudflareSDXL(prompt, safeParams) {
+async function callCloudflareSDXL(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
     return callCloudflareModel(
         prompt,
         safeParams,
@@ -341,10 +373,13 @@ async function callCloudflareSDXL(prompt, safeParams) {
 /**
  * Calls the Cloudflare Dreamshaper API to generate images
  * @param {string} prompt - The prompt for image generation
- * @param {Object} safeParams - The parameters for image generation
- * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
+ * @param {ImageParams} safeParams - The parameters for image generation
+ * @returns {Promise<ImageGenerationResult>}
  */
-async function callCloudflareDreamshaper(prompt, safeParams) {
+async function callCloudflareDreamshaper(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
     try {
         // Append seed to prompt if it's non-default
         let modifiedPrompt = prompt;
@@ -394,7 +429,7 @@ async function callCloudflareDreamshaper(prompt, safeParams) {
  * @param {number} n - Number to round
  * @returns {number} - Nearest multiple of 8
  */
-function roundToMultipleOf8(n) {
+function roundToMultipleOf8(n: number): number {
     return Math.round(n / 8) * 8;
 }
 
@@ -402,7 +437,7 @@ function roundToMultipleOf8(n) {
  * Common Cloudflare API configuration
  * @returns {{accountId: string, apiToken: string}} Cloudflare credentials
  */
-function getCloudflareCredentials() {
+function getCloudflareCredentials(): { accountId: string; apiToken: string } {
     const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
     const apiToken = process.env.CLOUDFLARE_API_TOKEN;
     return { accountId, apiToken };
@@ -413,32 +448,15 @@ function getCloudflareCredentials() {
  * @param {Buffer} buffer - The image buffer to convert.
  * @returns {Promise<Buffer>} - The converted image buffer.
  */
-export async function convertToJpeg(buffer) {
-    try {
-        const fileType = await fileTypeFromBuffer(buffer);
-        if (!fileType || (fileType.ext !== "jpg" && fileType.ext !== "jpeg")) {
-            const result = await sharp(buffer).jpeg().toBuffer();
-            return result;
-        }
-        return buffer;
-    } catch (error) {
-        throw error;
+export async function convertToJpeg(buffer: Buffer): Promise<Buffer> {
+    const fileType = await fileTypeFromBuffer(buffer);
+    // no need to check for jpeg here, according to type information
+    if (!fileType || fileType.ext !== "jpg") {
+        const result = await sharp(buffer).jpeg().toBuffer();
+        return result;
     }
+    return buffer;
 }
-
-/**
- * Updates progress bar if progress object is available
- * @param {Object} progress - Progress tracking object
- * @param {string} requestId - Request ID for progress tracking
- * @param {number} percentage - Progress percentage
- * @param {string} stage - Current stage of processing
- * @param {string} message - Progress message
- */
-const updateProgress = (progress, requestId, percentage, stage, message) => {
-    if (progress) {
-        progress.updateBar(requestId, percentage, stage, message);
-    }
-};
 
 /**
  * Helper function to call Azure GPT Image with specific endpoint
@@ -449,11 +467,11 @@ const updateProgress = (progress, requestId, percentage, stage, message) => {
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
  */
 const callAzureGPTImageWithEndpoint = async (
-    prompt,
-    safeParams,
-    userInfo,
-    endpointIndex,
-) => {
+    prompt: string,
+    safeParams: ImageParams,
+    userInfo: AuthResult,
+    endpointIndex: number,
+): Promise<ImageGenerationResult> => {
     const apiKey = process.env[`GPT_IMAGE_${endpointIndex}_AZURE_API_KEY`];
     let endpoint = process.env[`GPT_IMAGE_${endpointIndex}_ENDPOINT`];
 
@@ -495,11 +513,11 @@ const callAzureGPTImageWithEndpoint = async (
         // output_compression: outputCompression,
         // moderation: "low",
         n: 1,
+        background: safeParams.transparent ? "transparent" : undefined,
     };
 
     // Add background parameter for transparent images when using gptimage model
     if (safeParams.transparent) {
-        requestBody.background = "transparent";
         logCloudflare(
             "Adding background=transparent parameter for gptimage model",
         );
@@ -518,7 +536,7 @@ const callAzureGPTImageWithEndpoint = async (
 
     logCloudflare("Calling Azure GPT Image API with params:", requestBody);
 
-    let response;
+    let response = null;
 
     if (isEditMode) {
         // For edit mode, always use FormData (multipart/form-data)
@@ -556,7 +574,8 @@ const callAzureGPTImageWithEndpoint = async (
                         );
                     }
 
-                    const buffer = await imageResponse.buffer();
+                    const imageArrayBuffer = await imageResponse.arrayBuffer();
+                    const buffer = Buffer.from(imageArrayBuffer);
 
                     // Only check safety after we've successfully fetched the image
                     logCloudflare(
@@ -591,9 +610,11 @@ const callAzureGPTImageWithEndpoint = async (
                     }
 
                     // Use the image[] array notation as required by Azure OpenAI API
-                    formData.append("image[]", buffer, {
-                        filename: `image${i}${extension}`,
-                    });
+                    formData.append(
+                        "image[]",
+                        await imageResponse.blob(),
+                        extension,
+                    );
                 } catch (error) {
                     // More specific error handling for image processing
                     logError(`Error processing image ${i + 1}:`, error.message);
@@ -622,17 +643,14 @@ const callAzureGPTImageWithEndpoint = async (
         // Log the endpoint and headers for debugging
         logCloudflare(`Sending edit request to endpoint: ${endpoint}`);
 
-        // Get the headers from formData
-        const formHeaders = formData.getHeaders();
-
         // Single attempt - no retry logic
         response = await fetch(endpoint, {
             method: "POST",
             headers: {
-                ...formHeaders,
                 Authorization: `Bearer ${apiKey}`,
             },
-            body: formData,
+            // biome-ignore lint: linter is confused here
+            body: formData as any,
         });
 
         logCloudflare(`Edit request response status: ${response.status}`);
@@ -651,15 +669,10 @@ const callAzureGPTImageWithEndpoint = async (
     if (!response.ok) {
         // Clone the response before consuming its body
         const errorResponse = response.clone();
-        try {
-            const errorText = await errorResponse.text();
-            throw new Error(
-                `Azure GPT Image API error: ${response.status} - error ${errorText}`,
-            );
-        } catch (textError) {
-            // If we can't read the response as text, just throw with the status
-            throw textError;
-        }
+        const errorText = await errorResponse.text();
+        throw new Error(
+            `Azure GPT Image API error: ${response.status} - error ${errorText}`,
+        );
     }
 
     const data = await response.json();
@@ -687,7 +700,11 @@ const callAzureGPTImageWithEndpoint = async (
  * @param {Object} userInfo - Complete user authentication info object with authenticated, userId, tier, etc.
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
  */
-export const callAzureGPTImage = async (prompt, safeParams, userInfo = {}) => {
+export const callAzureGPTImage = async (
+    prompt: string,
+    safeParams: ImageParams,
+    userInfo: AuthResult,
+): Promise<ImageGenerationResult> => {
     try {
         // Extract user tier with fallback to 'seed'
         const userTier = userInfo.tier || "seed";
@@ -721,16 +738,19 @@ export const callAzureGPTImage = async (prompt, safeParams, userInfo = {}) => {
  * @param {Object} safeParams - The parameters for image generation
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
  */
-const callKontextAPI = async (prompt, safeParams) => {
+const callKontextAPI = async (
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> => {
     try {
         logOps("Calling Kontext API with prompt:", prompt);
 
         const formData = new FormData();
         formData.append("prompt", prompt);
-        formData.append("guidance_scale", safeParams.guidance_scale || 2.5);
-        formData.append("num_inference_steps", 17); // Hard-coded for consistent performance
-        formData.append("width", safeParams.width);
-        formData.append("height", safeParams.height);
+        formData.append("guidance_scale", "2.5");
+        formData.append("num_inference_steps", "17"); // Hard-coded for consistent performance
+        formData.append("width", safeParams.width.toString());
+        formData.append("height", safeParams.height.toString());
 
         // If there's an image in safeParams (array format), download and add it to the form data
         if (safeParams.image && safeParams.image.length > 0) {
@@ -738,13 +758,8 @@ const callKontextAPI = async (prompt, safeParams) => {
                 const imageUrl = safeParams.image[0]; // Use first image from array
                 const imageResponse = await fetch(imageUrl);
                 if (imageResponse.ok) {
-                    const imageBuffer = Buffer.from(
-                        await imageResponse.arrayBuffer(),
-                    );
-                    formData.append("image", imageBuffer, {
-                        filename: "input.jpg",
-                        contentType: "image/jpeg",
-                    });
+                    const imageBlob = await imageResponse.blob();
+                    formData.append("image", imageBlob, "jpg");
                     logOps(
                         "Added input image to Kontext API request:",
                         imageUrl,
@@ -769,12 +784,16 @@ const callKontextAPI = async (prompt, safeParams) => {
             headers["Authorization"] = `Bearer ${process.env.FLUX_KONTEXT_KEY}`;
         }
 
-        const response = await fetch("http://51.159.184.240:8000/generate", {
-            method: "POST",
-            headers,
-            body: formData,
-            timeout: 120000, // 2 minute timeout
-        });
+        const response = await withTimeoutSignal(
+            (signal) =>
+                fetch("http://51.159.184.240:8000/generate", {
+                    method: "POST",
+                    headers,
+                    body: formData,
+                    signal,
+                }),
+            120000, // 2 minute timeout
+        );
 
         if (!response.ok) {
             throw new Error(
@@ -809,13 +828,13 @@ const callKontextAPI = async (prompt, safeParams) => {
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean, [key: string]: any}>}
  */
 const generateImage = async (
-    prompt,
-    safeParams,
-    concurrentRequests,
-    progress,
-    requestId,
-    userInfo,
-) => {
+    prompt: string,
+    safeParams: ImageParams,
+    concurrentRequests: number,
+    progress: ProgressManager,
+    requestId: string,
+    userInfo: AuthResult,
+): Promise<ImageGenerationResult> => {
     // Model selection strategy using a more functional approach
     if (safeParams.model === "gptimage") {
         // Detailed logging of authentication info for GPT image access
@@ -840,8 +859,7 @@ const generateImage = async (
             throw new Error(errorText);
         } else {
             // For gptimage model, always throw errors instead of falling back
-            updateProgress(
-                progress,
+            progress.updateBar(
                 requestId,
                 30,
                 "Processing",
@@ -885,8 +903,7 @@ const generateImage = async (
                     throw error;
                 }
 
-                updateProgress(
-                    progress,
+                progress.updateBar(
                     requestId,
                     35,
                     "Processing",
@@ -924,8 +941,7 @@ const generateImage = async (
         }
 
         try {
-            updateProgress(
-                progress,
+            progress.updateBar(
                 requestId,
                 30,
                 "Processing",
@@ -941,8 +957,7 @@ const generateImage = async (
 
     if (safeParams.model === "flux") {
         try {
-            updateProgress(
-                progress,
+            progress.updateBar(
                 requestId,
                 30,
                 "Processing",
@@ -958,9 +973,8 @@ const generateImage = async (
     }
     try {
         return await callComfyUI(prompt, safeParams, concurrentRequests);
-    } catch (error) {
-        updateProgress(
-            progress,
+    } catch (_error) {
+        progress.updateBar(
             requestId,
             35,
             "Processing",
@@ -972,12 +986,15 @@ const generateImage = async (
 
 // GPT Image logging functions have been moved to utils/gptImageLogger.js
 
+// TODO: fix the types here
 /**
  * Extracts and normalizes maturity flags from image generation result
  * @param {Object} result - The image generation result
  * @returns {{isMature: boolean, isChild: boolean}}
  */
-const extractMaturityFlags = (result) => {
+const extractMaturityFlags = (
+    result: ImageGenerationResult,
+): ContentSafetyFlags => {
     const isMature = result?.isMature || result?.has_nsfw_concept;
     const concept = result?.concept;
     const isChild =
@@ -998,11 +1015,11 @@ const extractMaturityFlags = (result) => {
  * @returns {Object} - Metadata object
  */
 const prepareMetadata = (
-    prompt,
-    originalPrompt,
-    safeParams,
-    wasTransformedForBadDomain,
-) => {
+    prompt: string,
+    originalPrompt: string,
+    safeParams: ImageParams,
+    wasTransformedForBadDomain: boolean,
+): ImageParams & { prompt: string; originalPrompt: string } => {
     // When a prompt was transformed due to bad domain, always use the original prompt in metadata
     // This ensures clients never see the transformed prompt
     return wasTransformedForBadDomain
@@ -1022,18 +1039,18 @@ const prepareMetadata = (
  * @returns {Promise<Buffer>} - The processed image buffer
  */
 const processImageBuffer = async (
-    buffer,
-    maturityFlags,
-    safeParams,
-    metadataObj,
-    maturity,
-    progress,
-    requestId,
-) => {
+    buffer: Buffer,
+    maturityFlags: ContentSafetyFlags,
+    safeParams: ImageParams,
+    metadataObj: object,
+    maturity: object,
+    progress: ProgressManager,
+    requestId: string,
+): Promise<Buffer> => {
     const { isMature, isChild } = maturityFlags;
 
     // Add logo
-    updateProgress(progress, requestId, 80, "Processing", "Adding logo...");
+    progress.updateBar(requestId, 80, "Processing", "Adding logo...");
     const logoPath = getLogoPath(safeParams, isChild, isMature);
     let processedBuffer = !logoPath
         ? buffer
@@ -1045,8 +1062,7 @@ const processImageBuffer = async (
 
     // Convert format if not gptimage
     if (safeParams.model !== "gptimage") {
-        updateProgress(
-            progress,
+        progress.updateBar(
             requestId,
             85,
             "Processing",
@@ -1054,8 +1070,7 @@ const processImageBuffer = async (
         );
         processedBuffer = await convertToJpeg(processedBuffer);
     } else {
-        updateProgress(
-            progress,
+        progress.updateBar(
             requestId,
             85,
             "Processing",
@@ -1064,13 +1079,7 @@ const processImageBuffer = async (
     }
 
     // Add metadata
-    updateProgress(
-        progress,
-        requestId,
-        90,
-        "Processing",
-        "Writing metadata...",
-    );
+    progress.updateBar(requestId, 90, "Processing", "Writing metadata...");
     return await writeExifMetadata(processedBuffer, metadataObj, maturity);
 };
 
@@ -1087,18 +1096,18 @@ const processImageBuffer = async (
  * @returns {Promise<{buffer: Buffer, isChild: boolean, isMature: boolean}>}
  */
 export async function createAndReturnImageCached(
-    prompt,
-    safeParams,
-    concurrentRequests,
-    originalPrompt,
-    progress,
-    requestId,
-    wasTransformedForBadDomain = false,
-    userInfo = {},
-) {
+    prompt: string,
+    safeParams: ImageParams,
+    concurrentRequests: number,
+    originalPrompt: string,
+    progress: ProgressManager,
+    requestId: string,
+    wasTransformedForBadDomain: boolean = false,
+    userInfo: AuthResult,
+): Promise<ImageGenerationResult> {
     try {
         // Update generation progress
-        updateProgress(progress, requestId, 60, "Generation", "Calling API...");
+        progress.updateBar(requestId, 60, "Generation", "Calling API...");
 
         // Generate the image using the appropriate model
         const result = await generateImage(
@@ -1109,20 +1118,8 @@ export async function createAndReturnImageCached(
             requestId,
             userInfo,
         );
-        updateProgress(
-            progress,
-            requestId,
-            70,
-            "Generation",
-            "API call complete",
-        );
-        updateProgress(
-            progress,
-            requestId,
-            75,
-            "Processing",
-            "Checking safety...",
-        );
+        progress.updateBar(requestId, 70, "Generation", "API call complete");
+        progress.updateBar(requestId, 75, "Processing", "Checking safety...");
 
         // Extract maturity flags
         const maturityFlags = extractMaturityFlags(result);

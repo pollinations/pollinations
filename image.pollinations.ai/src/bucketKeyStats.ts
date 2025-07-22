@@ -1,7 +1,7 @@
 import { writeFileSync } from "fs";
 import Table from "cli-table3";
 import debug from "debug";
-import { generalImageQueue } from "./generalImageQueue.js";
+import { generalImageQueue } from "./generalImageQueue";
 
 const logStats = debug("pollinations:stats");
 

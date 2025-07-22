@@ -1,5 +1,5 @@
-import cliProgress from "cli-progress";
-import colors from "ansi-colors";
+import colors, { type StyleFunction } from "ansi-colors";
+import { type Bar, MultiBar, Presets } from "cli-progress";
 import debug from "debug";
 
 const logProgress = debug("pollinations:progress");
@@ -16,16 +16,20 @@ const progressColors = [
 ];
 
 // Simple hash function to get consistent color for each ID
-function getColorForId(id) {
+function getColorForId(id: string): StyleFunction {
     const hash = id.split("").reduce((acc, char) => {
         return char.charCodeAt(0) + ((acc << 5) - acc);
     }, 0);
     return progressColors[Math.abs(hash) % progressColors.length];
 }
 
-class ProgressManager {
+export class ProgressManager {
+    multibar: MultiBar;
+    bars: Map<string, Bar>;
+    startTimes: Map<string, number>;
+
     constructor() {
-        this.multibar = new cliProgress.MultiBar(
+        this.multibar = new MultiBar(
             {
                 clearOnComplete: false,
                 hideCursor: true,
@@ -49,14 +53,14 @@ class ProgressManager {
                 noTTYOutput: true,
                 notTTYSchedule: 100,
             },
-            cliProgress.Presets.shades_classic,
+            Presets.shades_classic,
         );
 
         this.bars = new Map();
         this.startTimes = new Map();
     }
 
-    createBar(id, title) {
+    createBar(id: string, title: string) {
         const bar = this.multibar.create(100, 0, {
             id,
             title,
@@ -69,7 +73,7 @@ class ProgressManager {
         return bar;
     }
 
-    updateBar(id, progress, step, status) {
+    updateBar(id: string, progress: number, step: string, status: string) {
         const bar = this.bars.get(id);
         if (bar) {
             bar.update(progress, { step, status });
@@ -77,7 +81,7 @@ class ProgressManager {
         }
     }
 
-    completeBar(id, status = "Complete") {
+    completeBar(id: string, status: string = "Complete") {
         const bar = this.bars.get(id);
         if (bar) {
             const startTime = this.startTimes.get(id);
@@ -93,7 +97,7 @@ class ProgressManager {
         }
     }
 
-    errorBar(id, error) {
+    errorBar(id: string, error: string) {
         const bar = this.bars.get(id);
         if (bar) {
             const startTime = this.startTimes.get(id);
@@ -115,11 +119,11 @@ class ProgressManager {
         this.multibar.stop();
     }
 
-    setQueued(id, position) {
+    setQueued(id: string, position: number) {
         this.updateBar(id, 0, "Queue", `Position: ${position}`);
     }
 
-    setProcessing(id) {
+    setProcessing(id: string) {
         this.updateBar(id, 10, "Processing", "Started");
     }
 }
@@ -128,11 +132,13 @@ export const createProgressTracker = () => {
     const progress = new ProgressManager();
 
     return {
-        startRequest: (requestId) => {
+        startRequest: (requestId: string) => {
             progress.createBar(requestId, `${requestId}`);
             return progress;
         },
     };
 };
+
+export type ProgressTracker = ReturnType<typeof createProgressTracker>;
 
 export default ProgressManager;

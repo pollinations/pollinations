@@ -1,30 +1,33 @@
-import urldecode from "urldecode";
-import http from "http";
-import { parse } from "url";
-import { registerFeedListener, sendToFeedListeners } from "./feedListeners.js";
-import { createAndReturnImageCached } from "./createAndReturnImages.js";
-import { makeParamsSafe } from "./makeParamsSafe.js";
-import { cacheImagePromise } from "./cacheGeneratedImages.js";
-import { normalizeAndTranslatePrompt } from "./normalizeAndTranslatePrompt.js";
-import { countJobs } from "./generalImageQueue.js";
-import sleep from "await-sleep";
-import { MODELS } from "./models.js";
-import { countFluxJobs } from "./availableServers.js";
-import { handleRegisterEndpoint } from "./availableServers.js";
+import type { IncomingMessage, ServerResponse } from "node:http";
+import { parse } from "node:url";
 import debug from "debug";
-import { createProgressTracker } from "./progressBar.js";
-import fs from "fs";
-import path from "path";
+import urldecode from "urldecode";
+import {
+    addAuthDebugHeaders,
+    createAuthDebugResponse,
+    handleAuthentication,
+} from "../../shared/auth-utils.js";
+import { extractToken, getIp } from "../../shared/extractFromRequest.js";
 
 // Import shared utilities
 import { enqueue } from "../../shared/ipQueue.js";
+import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
+import { cacheImagePromise } from "./cacheGeneratedImages.js";
 import {
-    isValidToken,
-    handleAuthentication,
-    addAuthDebugHeaders,
-    createAuthDebugResponse,
-} from "../../shared/auth-utils.js";
-import { extractToken, getIp } from "../../shared/extractFromRequest.js";
+    type AuthResult,
+    createAndReturnImageCached,
+    type ImageGenerationResult,
+} from "./createAndReturnImages.js";
+import { registerFeedListener, sendToFeedListeners } from "./feedListeners.js";
+import { makeParamsSafe } from "./makeParamsSafe.js";
+import { MODELS } from "./models.js";
+import {
+    normalizeAndTranslatePrompt,
+    type TimingStep,
+} from "./normalizeAndTranslatePrompt.js";
+import type { ImageParams } from "./params.js";
+import { createProgressTracker, type ProgressManager } from "./progressBar.js";
+import { sleep } from "./util.ts";
 
 // Queue configuration for image service
 const QUEUE_CONFIG = {
@@ -36,19 +39,19 @@ const logError = debug("pollinations:error");
 const logApi = debug("pollinations:api");
 const logAuth = debug("pollinations:auth");
 
-export let currentJobs = [];
+export const currentJobs = [];
 
 // In-memory store for tracking IP violations
-const ipViolations = new Map();
+const ipViolations = new Map<string, number>();
 const MAX_VIOLATIONS = 5;
 
 // Check if an IP is blocked
-const isIpBlocked = (ip) => {
+const isIpBlocked = (ip: string) => {
     return (ipViolations.get(ip) || 0) >= MAX_VIOLATIONS;
 };
 
 // Increment violations for an IP
-const incrementIpViolations = (ip) => {
+const incrementIpViolations = (ip: string) => {
     const currentViolations = ipViolations.get(ip) || 0;
     ipViolations.set(ip, currentViolations + 1);
     return currentViolations + 1;
@@ -58,14 +61,20 @@ const incrementIpViolations = (ip) => {
  * @function
  * @param {Object} res - The response object.
  */
-const setCORSHeaders = (res) => {
+const setCORSHeaders = (res: ServerResponse) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    res.setHeader(
-        "Access-Control-Expose-Headers",
-        "X-Auth-Status, X-Auth-Reason, X-Debug-Token, X-Debug-Token-Source, X-Debug-Referrer, X-Debug-Legacy-Token-Match, X-Debug-Allowlist-Match, X-Debug-User-Id",
-    );
+    res.setHeader("Access-Control-Expose-Headers", [
+        "X-Auth-Status",
+        "X-Auth-Reason",
+        "X-Debug-Token",
+        "X-Debug-Token-Source",
+        "X-Debug-Referrer",
+        "X-Debug-Legacy-Token-Match",
+        "X-Debug-Allowlist-Match",
+        "X-Debug-User-Id",
+    ]);
 };
 
 /**
@@ -73,9 +82,13 @@ const setCORSHeaders = (res) => {
  * @function
  * @param {Object} req - The request object.
  * @param {Object} res - The response object.
- * @returns {Promise<Object|boolean>}
+ * @returns {Promise<boolean>}
  */
-const preMiddleware = async function (pathname, req, res) {
+const preMiddleware = async (
+    pathname: string,
+    req: IncomingMessage,
+    res: ServerResponse,
+): Promise<boolean> => {
     logApi("requestListener", req.url);
 
     if (pathname.startsWith("/feed")) {
@@ -98,6 +111,17 @@ const preMiddleware = async function (pathname, req, res) {
     return true;
 };
 
+type ImageGenParams = {
+    req: IncomingMessage;
+    timingInfo: TimingStep[];
+    originalPrompt: string;
+    safeParams: ImageParams;
+    referrer: string | null;
+    progress: ProgressManager;
+    requestId: string;
+    authResult: AuthResult;
+};
+
 /**
  * @async
  * @function
@@ -113,7 +137,7 @@ const imageGen = async ({
     progress,
     requestId,
     authResult,
-}) => {
+}: ImageGenParams): Promise<ImageGenerationResult> => {
     const ip = getIp(req);
 
     // Check if IP is blocked
@@ -274,8 +298,11 @@ const imageGen = async ({
  * @param {Object} res - The response object.
  * @returns {Promise<void>}
  */
-const checkCacheAndGenerate = async (req, res) => {
-    let { pathname, query } = parse(req.url, true);
+const checkCacheAndGenerate = async (
+    req: IncomingMessage,
+    res: ServerResponse,
+): Promise<void> => {
+    const { pathname, query } = parse(req.url, true);
 
     const needsProcessing = await preMiddleware(pathname, req, res);
 
@@ -314,7 +341,7 @@ const checkCacheAndGenerate = async (req, res) => {
             originalPrompt,
             safeParams,
             async () => {
-                const ip = getIp(req);
+                // const ip = getIp(req);
 
                 progress.updateBar(requestId, 10, "Queueing", "Request queued");
                 timingInfo = [
@@ -353,7 +380,7 @@ const checkCacheAndGenerate = async (req, res) => {
 
                 // Determine queue configuration based on token
                 // Note: ipQueue.js now handles tier-based cap logic automatically for token auth
-                let queueConfig;
+                let queueConfig = null;
                 if (hasValidToken) {
                     // Token authentication - ipQueue will automatically apply tier-based caps
                     queueConfig = { interval: 0 }; // cap will be set by ipQueue based on tier
@@ -377,7 +404,7 @@ const checkCacheAndGenerate = async (req, res) => {
                     req,
                     async () => {
                         // Update progress and process the image
-                        progress.setProcessing();
+                        progress.setProcessing(requestId);
                         return generateImage();
                     },
                     { ...queueConfig, forceQueue: true, maxQueueSize: 5 },
@@ -409,7 +436,7 @@ const checkCacheAndGenerate = async (req, res) => {
                 .replace(/^-|-$/g, "") // Remove leading/trailing hyphens
                 .toLowerCase();
 
-            const filename = (baseFilename || "generated-image") + ".jpg";
+            const filename = `${baseFilename || "generated-image"}.jpg`;
             headers["Content-Disposition"] = `inline; filename="${filename}"`;
         }
 
@@ -474,6 +501,7 @@ const checkCacheAndGenerate = async (req, res) => {
                 ...safeParams,
                 referrer,
             },
+            queueInfo: null,
         };
 
         // Add queue info for 429 errors
@@ -550,14 +578,14 @@ server.on("connection", (socket) => {
         socket.destroy();
     });
 
-    socket.on("error", (error) => {
+    socket.on("error", (_error) => {
         socket.destroy();
     });
 });
 
 server.listen(process.env.PORT || 16384);
 
-function relativeTiming(timingInfo) {
+function relativeTiming(timingInfo: TimingStep[]) {
     return timingInfo.map((info) => ({
         ...info,
         timestamp: info.timestamp - timingInfo[0].timestamp,

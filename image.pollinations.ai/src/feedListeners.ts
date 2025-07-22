@@ -1,18 +1,28 @@
-import { parse } from "url";
 import debug from "debug";
-import { isMature } from "./utils/mature.js";
+import { isMature } from "./utils/mature.ts";
 import "dotenv/config";
+import type { IncomingMessage, ServerResponse } from "node:http";
 
 const logFeed = debug("pollinations:feed");
 const logAuth = debug("pollinations:auth");
 
 let feedListeners = [];
-let lastStates = [];
+const lastStates = [];
+
+function getAbsoluteUrl(req: IncomingMessage): URL {
+    const host = req.headers.host;
+    const protocol = req.headers["x-forwarded-proto"] || "http";
+    const base = `${protocol}://${host}`;
+    return new URL(req.url, base);
+}
 
 // create a server sent event stream
-export const registerFeedListener = async (req, res) => {
+export const registerFeedListener = async (
+    req: IncomingMessage,
+    res: ServerResponse,
+) => {
     // Parse the URL to extract query parameters
-    const { query } = parse(req.url, true);
+    const parsedUrl = getAbsoluteUrl(req);
 
     // Set CORS headers
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -26,7 +36,8 @@ export const registerFeedListener = async (req, res) => {
     });
 
     // Check if the password query parameter matches the FEED_PASSWORD
-    const isAuthenticated = query.password === process.env.FEED_PASSWORD;
+    const isAuthenticated =
+        parsedUrl.searchParams.get("password") === process.env.FEED_PASSWORD;
 
     if (isAuthenticated) {
         logAuth("Authenticated feed access granted");
@@ -43,7 +54,9 @@ export const registerFeedListener = async (req, res) => {
         );
     });
 
-    const pastResults = parseInt(query.past_results) || 20;
+    const pastResults =
+        parseInt(parsedUrl.searchParams.get("past_results")) || 20;
+
     const statesToSend = lastStates.slice(-pastResults);
 
     for (const lastState of statesToSend) {
@@ -51,7 +64,14 @@ export const registerFeedListener = async (req, res) => {
     }
 };
 
-export const sendToFeedListeners = (data, options = {}) => {
+export type SendToListenersOptions = {
+    saveAsLastState?: boolean;
+};
+
+export const sendToFeedListeners = (
+    data,
+    options: SendToListenersOptions = {},
+) => {
     // Check if prompt contains mature content and flag it
     if (data?.prompt && !data?.isMature) {
         data.isMature = isMature(data.prompt);

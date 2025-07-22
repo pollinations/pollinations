@@ -137,8 +137,8 @@ export const handler = async function (event, context) {
     const userId =
         event.queryStringParameters && event.queryStringParameters.user_id;
     if (userId) {
-        // Use shared utility to increment ad_clicks metric
-        incrementUserMetric(userId, "ad_clicks");
+        // DISABLED: Metrics updates causing DB contention (GitHub Issue #3258)
+        // incrementUserMetric(userId, "ad_clicks");
     } else {
         console.log(
             "No user_id found in query parameters. Skipping per-user ad_clicks increment.",

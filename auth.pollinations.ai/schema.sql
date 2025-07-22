@@ -29,3 +29,5 @@ CREATE TABLE IF NOT EXISTS api_tokens (
 CREATE INDEX IF NOT EXISTS idx_oauth_state_created ON oauth_state(created_at);
 -- Index for looking up tokens by user
 CREATE INDEX IF NOT EXISTS idx_api_tokens_user_id ON api_tokens(user_id);
+-- Critical index for token validation performance (GitHub Issue #3258)
+CREATE INDEX IF NOT EXISTS idx_api_tokens_token ON api_tokens(token);

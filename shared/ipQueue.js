@@ -23,7 +23,7 @@ const queues = new Map();
 const tierCaps = {
     anonymous: 1,
     seed: 3,
-    flower: 14,
+    flower: 7,
     nectar: 50,
 };
 

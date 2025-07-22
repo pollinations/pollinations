@@ -45,6 +45,7 @@ function logUserRequest(
 	response = null,
 	error = null,
 	queueInfo = null,
+	processingTimeMs = null,
 ) {
 	if (!shouldLogUser(username)) return;
 
@@ -54,6 +55,7 @@ function logUserRequest(
 	const logEntry = {
 		timestamp,
 		username,
+		processingTimeMs,
 		request: {
 			model: requestData.model,
 			messages: requestData.messages || [],

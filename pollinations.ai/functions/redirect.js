@@ -178,8 +178,8 @@ export const handler = async function (event, context) {
         const userId =
             event.queryStringParameters && event.queryStringParameters.user_id;
         if (userId) {
-            // Use shared utility to increment affiliate_clicks metric
-            incrementUserMetric(userId, "affiliate_clicks");
+            // DISABLED: Metrics updates causing DB contention (GitHub Issue #3258)
+            // incrementUserMetric(userId, "affiliate_clicks");
         } else {
             console.log(
                 "No user_id found in query parameters. Skipping per-user affiliate_clicks increment.",

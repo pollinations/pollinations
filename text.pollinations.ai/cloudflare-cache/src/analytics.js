@@ -1,6 +1,6 @@
 /**
- * Analytics functionality for Cloudflare Worker
- * This mirrors the sendToAnalytics functionality from the main image.pollinations.ai service
+ * Analytics functionality for Text Cloudflare Worker
+ * This mirrors the sendToAnalytics functionality from the main text.pollinations.ai service
  * Following the "thin proxy" design principle - minimal processing, direct forwarding
  */
 
@@ -26,8 +26,8 @@ export async function sendToAnalytics(request, name, params = {}, env) {
         }
 
         // Extract measurement ID and API secret from environment
-        const measurementId = env.GA_MEASUREMENT_ID;
-        const apiSecret = env.GA_API_SECRET;
+        const measurementId = env?.GA_MEASUREMENT_ID || process.env.GA_MEASUREMENT_ID;
+        const apiSecret = env?.GA_API_SECRET || process.env.GA_API_SECRET;
 
         if (!measurementId || !apiSecret) {
             console.log("Missing analytics credentials. Aborting.");
@@ -36,18 +36,23 @@ export async function sendToAnalytics(request, name, params = {}, env) {
 
         // Get URL components
         const url = new URL(request.url);
+        const pathname = url.pathname;
 
-        // Rely on worker-supplied extraction to avoid double work. Fallback only if missing.
-        let originalPrompt = params.originalPrompt || "";
-        if (!originalPrompt && url.pathname.startsWith("/prompt/")) {
-            originalPrompt = decodeURIComponent(url.pathname.split("/prompt/")[1]);
+        // Extract the prompt from URL path or request body for text generation
+        let originalPrompt = "";
+        if (pathname.startsWith("/") && pathname.length > 1) {
+            // GET request with prompt in path
+            originalPrompt = decodeURIComponent(pathname.substring(1));
+        } else if (request.method === "POST") {
+            // POST request - prompt would be in request body (already processed)
+            originalPrompt = params.prompt || params.content || "";
         }
 
-        // Use safeParams from worker when provided, otherwise fall back to URL search params
-        const safeParams =
-            params.safeParams && typeof params.safeParams === "object"
-                ? params.safeParams
-                : Object.fromEntries(url.searchParams.entries());
+        // Process query parameters into safeParams format
+        const safeParams = {};
+        for (const [key, value] of url.searchParams.entries()) {
+            safeParams[key] = value;
+        }
 
         // Get client information - check URL params first, then headers
         const referrer =
@@ -142,13 +147,10 @@ function processParameters(params) {
         result[key] = processValue(value);
     }
 
-    // Set defaults for important parameters if they're missing
-    if (!("model" in result)) result.model = "flux";
-    if (!("width" in result)) result.width = 1024;
-    if (!("height" in result)) result.height = 1024;
-    if (!("seed" in result)) result.seed = 42;
-    if (!("negative_prompt" in result))
-        result.negative_prompt = "worst quality, blurry";
+    // Set defaults for important parameters if they're missing (text-specific)
+    if (!("model" in result)) result.model = "openai";
+    if (!("messages" in result)) result.messages = 1;
+    if (!("stream" in result)) result.stream = false;
     if (!("cacheStatus" in result)) result.cacheStatus = "unknown";
 
     return result;

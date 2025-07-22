@@ -47,6 +47,7 @@ const MODEL_MAPPING = {
 	mistral: "mistral-small-3.1-24b-instruct-2503", // Updated to use Scaleway Mistral model
 	"mistral-roblox": "@cf/mistralai/mistral-small-3.1-24b-instruct", // Cloudflare Mistral Small
 	"mistral-nemo-roblox": "mistralai/Mistral-Nemo-Instruct-2407", // Nebius Mistral Nemo
+	'gemma-roblox': 'google/gemma-2-9b-it-fast', // Nebius Gemma 2 9B IT Fast
 	// Modal models
 	hormoz: "Hormoz-8B",
 	// OpenRouter models
@@ -108,6 +109,7 @@ const SYSTEM_PROMPTS = {
 	mistral: BASE_PROMPTS.conversational,
 	"mistral-roblox": BASE_PROMPTS.conversational,
 	"mistral-nemo-roblox": BASE_PROMPTS.conversational,
+	'gemma-roblox': BASE_PROMPTS.conversational,
 	"qwen-coder": BASE_PROMPTS.coding,
 	//'gemini-thinking': BASE_PROMPTS.gemini + ' When appropriate, show your reasoning step by step.',
 	// Modal models
@@ -562,6 +564,11 @@ export const portkeyConfig = {
 	"deepseek-ai/DeepSeek-R1-0528": () =>
 		createNebiusModelConfig({
 			model: "deepseek-ai/DeepSeek-R1-0528",
+		}),
+	"google/gemma-2-9b-it-fast": () =>
+		createNebiusModelConfig({
+			model: "google/gemma-2-9b-it-fast",
+			'max-tokens': 1024,
 		}),
 	// Modal model configurations
 	"Hormoz-8B": () => createModalModelConfig(),

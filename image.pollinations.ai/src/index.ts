@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
+import http from "node:http";
 import { parse } from "node:url";
 import debug from "debug";
 import urldecode from "urldecode";
@@ -25,7 +26,7 @@ import {
     normalizeAndTranslatePrompt,
     type TimingStep,
 } from "./normalizeAndTranslatePrompt.js";
-import type { ImageParams } from "./params.js";
+import { ImageParamsSchema, type ImageParams } from "./params.js";
 import { createProgressTracker, type ProgressManager } from "./progressBar.js";
 import { sleep } from "./util.ts";
 
@@ -311,24 +312,18 @@ const checkCacheAndGenerate = async (
     const originalPrompt = urldecode(
         pathname.split("/prompt/")[1] || "random_prompt",
     );
-    const { ...safeParams } = makeParamsSafe(query);
-    const referrer =
-        query.headers?.referer ||
-        query.headers?.referrer ||
-        query.headers?.Referer ||
-        query.headers?.Referrer ||
-        req.headers?.referer ||
-        req.headers?.referrer ||
-        req.headers?.["referer"] ||
-        req.headers?.["referrer"] ||
-        req.headers?.origin;
+
+    const safeParams = ImageParamsSchema.parse(query);
+
+    const referrer = req.headers?.["referer"] || req.headers?.origin;
+
     const requestId = Math.random().toString(36).substring(7);
     const progress = createProgressTracker().startRequest(requestId);
     progress.updateBar(requestId, 0, "Starting", "Request received");
 
     logApi("Request details:", { originalPrompt, safeParams, referrer });
 
-    let timingInfo = []; // Moved outside try block
+    let timingInfo = [];
 
     try {
         // Call authentication ONCE and reuse the result

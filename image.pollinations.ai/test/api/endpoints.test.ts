@@ -68,11 +68,13 @@ describe("/prompt endpoint", () => {
 
         await Promise.all(
             models.map(async (model: string) => {
+                const testReferrer = process.env.VITE_TEST_REFERRER;
+                expect(testReferrer).toBeDefined();
                 const response = await fetch(
                     `${BASE_URL}/prompt/cat%20playing?model=${model}`,
                     {
                         headers: {
-                            Referer: "pollinations-testing",
+                            Referer: testReferrer || "",
                         },
                     },
                 );
@@ -84,7 +86,7 @@ describe("/prompt endpoint", () => {
                 checkCorsHeaders(response);
             }),
         );
-    }, 60000);
+    }, 120000);
 
     it("should accept width and height parameters", async () => {
         const response = await fetch(
@@ -214,4 +216,3 @@ describe("Error handling", () => {
         expect([200, 400, 404]).toContain(response.status);
     }, 10000);
 });
-

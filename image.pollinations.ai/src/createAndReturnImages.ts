@@ -986,14 +986,22 @@ const generateImage = async (
 
 // GPT Image logging functions have been moved to utils/gptImageLogger.js
 
-// TODO: fix the types here
+// TODO: Check if this type is still used and where @voodohop
+// see https://github.com/pollinations/pollinations/issues/3276
+interface NSFWContentSafetyFlags {
+    has_nsfw_concept?: boolean;
+    concept?: {
+        special_scores?: Record<string, number>;
+    };
+}
+
 /**
  * Extracts and normalizes maturity flags from image generation result
  * @param {Object} result - The image generation result
  * @returns {{isMature: boolean, isChild: boolean}}
  */
 const extractMaturityFlags = (
-    result: ImageGenerationResult,
+    result: ImageGenerationResult & NSFWContentSafetyFlags,
 ): ContentSafetyFlags => {
     const isMature = result?.isMature || result?.has_nsfw_concept;
     const concept = result?.concept;

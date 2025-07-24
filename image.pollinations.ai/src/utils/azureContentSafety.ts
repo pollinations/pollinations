@@ -19,17 +19,38 @@ const client =
     endpoint && credential ? ContentSafetyClient(endpoint, credential) : null;
 
 // Categories we check for
-const CATEGORIES = ["Hate", "SelfHarm", "Sexual", "Violence"];
+const CATEGORIES = ["Hate", "SelfHarm", "Sexual", "Violence"] as const;
 
 // Severity levels: 0 (safe), 2 (low), 4 (medium), 6 (high)
 const SEVERITY_THRESHOLD = 4; // Block medium and high severity content
 
+export type ContentSafetyResults = {
+    safe: boolean;
+    violations: ContentViolation[];
+    formattedViolations: string;
+};
+
+export type ContentViolationCategory = (typeof CATEGORIES)[number];
+export type ContentViolationSeverity = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+export type ContentViolation = {
+    category: ContentViolationCategory;
+    severity: ContentViolationSeverity;
+};
+
+export type ContentSafetyFlags = {
+    isMature: boolean;
+    isChild: boolean;
+};
+
 /**
  * Analyzes text content for safety violations
  * @param {string} text - The text to analyze
- * @returns {Promise<{safe: boolean, violations: Array<{category: string, severity: number}>, formattedViolations: string}>}
+ * @returns {Promise<ContentViolationResults>}
  */
-export async function analyzeTextSafety(text) {
+export async function analyzeTextSafety(
+    text: string,
+): Promise<ContentSafetyResults> {
     if (!client) {
         console.warn(
             "Azure Content Safety not configured - skipping text analysis",
@@ -73,13 +94,7 @@ export async function analyzeTextSafety(text) {
         }
 
         // Format violations as part of the result
-        const formattedViolations =
-            violations.length === 0
-                ? "No violations detected"
-                : violations
-                      .map((v) => `${v.category} (severity: ${v.severity})`)
-                      .join(", ");
-
+        const formattedViolations = formatViolations(violations);
         return { safe, violations, formattedViolations };
     } catch (error) {
         console.error("Azure Content Safety text analysis error:", error);
@@ -95,9 +110,11 @@ export async function analyzeTextSafety(text) {
 /**
  * Analyzes image content for safety violations
  * @param {Buffer|string} imageData - The image buffer or base64 string
- * @returns {Promise<{safe: boolean, violations: Array<{category: string, severity: number}>, formattedViolations: string}>}
+ * @returns {Promise<ContentViolationResults>}
  */
-export async function analyzeImageSafety(imageData) {
+export async function analyzeImageSafety(
+    imageData: Buffer | string,
+): Promise<ContentSafetyResults> {
     if (!client) {
         console.warn(
             "Azure Content Safety not configured - skipping image analysis",
@@ -146,13 +163,7 @@ export async function analyzeImageSafety(imageData) {
         }
 
         // Format violations as part of the result
-        const formattedViolations =
-            violations.length === 0
-                ? "No violations detected"
-                : violations
-                      .map((v) => `${v.category} (severity: ${v.severity})`)
-                      .join(", ");
-
+        const formattedViolations = formatViolations(violations);
         return { safe, violations, formattedViolations };
     } catch (error) {
         console.error("Azure Content Safety image analysis error:", error);
@@ -167,11 +178,10 @@ export async function analyzeImageSafety(imageData) {
 
 /**
  * Formats violations into a human-readable message
- * @deprecated Use the formattedViolations property from analyzeTextSafety/analyzeImageSafety results instead
  * @param {Array<{category: string, severity: number}>} violations
  * @returns {string}
  */
-export function formatViolations(violations) {
+function formatViolations(violations: ContentViolation[]): string {
     if (violations.length === 0) return "No violations detected";
 
     return violations

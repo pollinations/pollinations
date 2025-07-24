@@ -1,15 +1,12 @@
-import { exec } from "child_process";
-import tempfile from "tempfile";
-import fs from "fs/promises";
-import { fileTypeFromBuffer } from "file-type";
-import FormData from "form-data";
-import fetch from "node-fetch";
-import { MODELS } from "./models.js";
+import { exec } from "node:child_process";
+import fs from "node:fs/promises";
 import debug from "debug";
+import { fileTypeFromBuffer } from "file-type";
+import tempfile from "tempfile";
+import { MODELS } from "./models.js";
+import { ImageParams } from "./params.js";
 
 const logError = debug("pollinations:error");
-const logPerf = debug("pollinations:perf");
-const logOps = debug("pollinations:ops");
 
 /**
  * Applies a blur effect to the image using ImageMagick.
@@ -17,8 +14,16 @@ const logOps = debug("pollinations:ops");
  * @param {number} [size=8] - The size of the blur effect.
  * @returns {Promise<Buffer>} - The blurred image buffer.
  */
-export async function blurImage(buffer, size = 12) {
-    const { ext } = await fileTypeFromBuffer(buffer);
+export async function blurImage(
+    buffer: Buffer,
+    size: number = 12,
+): Promise<Buffer> {
+    const fileTypeResult = await fileTypeFromBuffer(buffer);
+    if (!fileTypeResult) {
+        throw new Error("Failed to determine file type");
+    }
+    const { ext } = fileTypeResult;
+
     const tempImageFile = tempfile({ extension: ext });
     const tempOutputFile = tempfile({ extension: ext });
 
@@ -27,7 +32,7 @@ export async function blurImage(buffer, size = 12) {
     return new Promise((resolve, reject) => {
         const command = `convert ${tempImageFile} -blur 0x${size} ${tempOutputFile}`;
         try {
-            exec(command, async (error, stdout, stderr) => {
+            exec(command, async (error, _stdout, _stderr) => {
                 try {
                     if (error) {
                         logError(`error: ${error.message}`);
@@ -58,8 +63,17 @@ export async function blurImage(buffer, size = 12) {
  * @param {number} height - The desired height.
  * @returns {Promise<Buffer>} - The resized image buffer.
  */
-export async function resizeImage(buffer, width, height) {
-    const { ext } = await fileTypeFromBuffer(buffer);
+export async function resizeImage(
+    buffer: Buffer,
+    width: number,
+    height: number,
+): Promise<Buffer> {
+    const fileTypeResult = await fileTypeFromBuffer(buffer);
+    if (!fileTypeResult) {
+        throw new Error("Failed to determine file type");
+    }
+    const { ext } = fileTypeResult;
+
     const tempImageFile = tempfile({ extension: ext });
     const tempOutputFile = tempfile({ extension: "jpg" });
 
@@ -79,7 +93,7 @@ export async function resizeImage(buffer, width, height) {
     return new Promise((resolve, reject) => {
         const command = `convert ${tempImageFile} -resize ${width}x${height}! ${tempOutputFile}`;
         try {
-            exec(command, async (error, stdout, stderr) => {
+            exec(command, async (error, _stdout, _stderr) => {
                 try {
                     if (error) {
                         logError(`error: ${error.message}`);
@@ -110,10 +124,14 @@ export async function resizeImage(buffer, width, height) {
  * @param {boolean} isMature - Flag indicating if the image is considered mature content.
  * @returns {string|null} - The path to the logo file or null if no logo should be added.
  */
-export function getLogoPath(safeParams, isChild, isMature) {
+export function getLogoPath(
+    safeParams: ImageParams,
+    isChild: boolean,
+    isMature: boolean,
+): string | null {
     if (
         !MODELS[safeParams.model].type.startsWith("meoow") &&
-        (safeParams["nologo"] || safeParams["nofeed"] || isChild || isMature)
+        (safeParams.nologo || safeParams.nofeed || isChild || isMature)
     ) {
         return null;
     }
@@ -128,12 +146,18 @@ export function getLogoPath(safeParams, isChild, isMature) {
  * @returns {Promise<Buffer>} - The image buffer with the logo added.
  */
 export async function addPollinationsLogoWithImagemagick(
-    buffer,
-    logoPath,
-    safeParams,
-) {
-    const { ext } = await fileTypeFromBuffer(buffer);
+    buffer: Buffer,
+    logoPath: string,
+    safeParams: ImageParams,
+): Promise<Buffer> {
+    const fileTypeResult = await fileTypeFromBuffer(buffer);
+    if (!fileTypeResult) {
+        throw new Error("Failed to determine file type");
+    }
+    const { ext } = fileTypeResult;
+
     const tempImageFile = tempfile({ extension: ext });
+
     // Use PNG for gptimage model, JPG otherwise
     const outputExt = "png";
     const tempOutputFile = tempfile({ extension: outputExt });
@@ -146,9 +170,15 @@ export async function addPollinationsLogoWithImagemagick(
 
     return new Promise((resolve, reject) => {
         // Note: -background none is crucial for preserving transparency
-        const command = `convert -background none -gravity southeast -geometry ${targetWidth}x${targetHeight}+10+10 ${tempImageFile} ${logoPath} -composite ${tempOutputFile}`;
+        const command = [
+            `convert`,
+            `-background none`,
+            `-gravity southeast`,
+            `-geometry ${targetWidth}x${targetHeight}+10+10 ${tempImageFile} ${logoPath}`,
+            `-composite ${tempOutputFile}`,
+        ].join(" ");
         try {
-            exec(command, async (error, stdout, stderr) => {
+            exec(command, async (error, _stdout, _stderr) => {
                 try {
                     if (error) {
                         logError(`error: ${error.message}`);

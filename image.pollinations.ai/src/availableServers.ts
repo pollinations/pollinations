@@ -1,15 +1,37 @@
-import fetch from "node-fetch";
-import PQueue from "p-queue";
 import debug from "debug";
+import PQueue from "p-queue";
+import { IncomingMessage, ServerResponse } from "node:http";
 
 const logError = debug("pollinations:error");
 const logServer = debug("pollinations:server");
 
+type Server = {
+    url: string;
+    queue: PQueue;
+    startTime: number;
+    lastHeartbeat: number;
+    totalRequests: number;
+    errors: number;
+};
+
+type ServerMap = typeof SERVERS;
+type ServerType = keyof ServerMap;
+
+type ServerInfo = {
+    type: ServerType;
+    url: string;
+    queueSize: number;
+    totalRequests: number;
+    errors: number;
+    errorRate: string;
+    requestsPerSecond: string;
+};
+
 // Server storage by type
 const SERVERS = {
-    flux: [],
-    translate: [],
-    turbo: [],
+    flux: [] as Server[],
+    translate: [] as Server[],
+    turbo: [] as Server[],
 };
 
 const SERVER_TIMEOUT = 45000; // 45 seconds
@@ -19,8 +41,7 @@ const MAIN_SERVER_URL =
 
 const concurrency = 2;
 
-// Decay errors every minute
-setInterval(() => {
+function decayErrors() {
     Object.values(SERVERS).forEach((servers) => {
         servers.forEach((server) => {
             if (server.errors > 0) {
@@ -31,38 +52,47 @@ setInterval(() => {
             }
         });
     });
-}, 60 * 1000); // Every 1 minute
+}
 
-// Log server queue info every 5 seconds
-setInterval(() => {
-    Object.entries(SERVERS).forEach(([type, servers]) => {
-        if (servers.length > 0) {
-            const serverQueueInfo = servers.map((server) => ({
-                type,
-                url: server.url,
-                queueSize: server.queue.size + server.queue.pending,
-                totalRequests: server.totalRequests,
-                errors: server.errors,
-                errorRate:
-                    ((server.errors / server.totalRequests) * 100 || 0).toFixed(
-                        2,
-                    ) + "%",
-                requestsPerSecond: (
-                    server.totalRequests /
-                    ((Date.now() - server.startTime) / 1000)
-                ).toFixed(2),
-            }));
-            console.table(serverQueueInfo);
-        }
+function errorRate(server: Server): number {
+    return (server.errors / server.totalRequests) * 100 || 0;
+}
+
+function requestsPerSecond(server: Server): number {
+    return server.totalRequests / ((Date.now() - server.startTime) / 1000);
+}
+
+function serverInfo(server: Server, type: ServerType): ServerInfo {
+    return {
+        type,
+        url: server.url,
+        queueSize: server.queue.size + server.queue.pending,
+        totalRequests: server.totalRequests,
+        errors: server.errors,
+        errorRate: `${errorRate(server).toFixed(2)}%`,
+        requestsPerSecond: requestsPerSecond(server).toFixed(2),
+    };
+}
+
+function serverQueueInfo(servers: ServerMap): ServerInfo[] {
+    return Object.entries(servers).flatMap(([type, servers]) => {
+        return servers.map((server) => serverInfo(server, type as ServerType));
     });
-}, 10000);
+}
+//            console.table(serverQueueInfo);
+
+// Decay errors every minute
+setInterval(decayErrors, 60 * 1000); // Every 1 minute
+
+// Log server queue info every 10 seconds
+setInterval(() => console.table(serverQueueInfo(SERVERS)), 10000);
 
 /**
  * Returns the total number of jobs for a specific type
- * @param {string} type - The type of service (default: 'flux')
+ * @param {ServerType} type - The type of service (default: 'flux')
  * @returns {number} Total number of jobs (size + pending) across all queues
  */
-export const countJobs = (type = "flux") => {
+export const countJobs = (type: ServerType = "flux"): number => {
     const servers = SERVERS[type] || [];
     return servers.reduce((total, server) => {
         return total + server.queue.size + server.queue.pending;
@@ -77,9 +107,9 @@ export const countFluxJobs = () => countJobs("flux");
  * @param {string} url - The URL of the server.
  * @param {string} type - The type of service (default: 'flux')
  */
-export const registerServer = (url, type = "flux") => {
+export const registerServer = (url: string, type: ServerType = "flux") => {
     // Only allow predefined types, fall back to 'flux' for unknown types
-    if (!SERVERS.hasOwnProperty(type)) {
+    if (!Object.hasOwn(SERVERS, type)) {
         logServer(
             `Warning: Unknown server type "${type}", defaulting to "flux"`,
         );
@@ -108,10 +138,12 @@ export const registerServer = (url, type = "flux") => {
 
 /**
  * Returns the next available server URL for a specific type
- * @param {string} type - The type of service (default: 'flux')
+ * @param {ServerType} type - The type of service (default: 'flux')
  * @returns {Promise<string>} - The next server URL
  */
-export const getNextServerUrl = async (type = "flux") => {
+export const getNextServerUrl = async (
+    type: ServerType = "flux",
+): Promise<string> => {
     const servers = SERVERS[type] || [];
     if (servers.length === 0) {
         await fetchServersFromMainServer();
@@ -152,19 +184,21 @@ async function fetchServersFromMainServer() {
         logServer(
             `[${new Date().toISOString()}] Fetching servers from ${MAIN_SERVER_URL}...`,
         );
+
         const response = await fetch(MAIN_SERVER_URL);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const servers = await response.json();
+
         logServer(
             `[${new Date().toISOString()}] Received ${servers.length} servers from main server:`,
         );
-        servers.forEach((server, index) => {
+        servers.forEach((server: ServerInfo, index: number) => {
             logServer(`  ${index + 1}. ${server.url}`);
         });
 
-        servers.forEach((server) => {
+        servers.forEach((server: ServerInfo) => {
             registerServer(server.url, server.type);
         });
         logServer(
@@ -180,10 +214,13 @@ async function fetchServersFromMainServer() {
 
 /**
  * Handles the /register endpoint requests.
- * @param {Object} req - The request object.
+ * @param {IncomingMessage} req - The request object.
  * @param {Object} res - The response object.
  */
-export const handleRegisterEndpoint = (req, res) => {
+export const handleRegisterEndpoint = (
+    req: IncomingMessage,
+    res: ServerResponse,
+) => {
     if (req.method === "POST") {
         let body = "";
         req.on("data", (chunk) => {
@@ -208,43 +245,24 @@ export const handleRegisterEndpoint = (req, res) => {
                         }),
                     );
                 }
-            } catch (error) {
+            } catch (_error) {
                 res.end(
                     JSON.stringify({ success: false, message: "Invalid JSON" }),
                 );
             }
         });
     } else if (req.method === "GET") {
-        const availableServers = Object.entries(SERVERS)
-            .map(([type, servers]) =>
-                servers.map((server) => ({ ...server, type })),
-            )
-            .flat();
+        const availableServersInfo = Object.entries(SERVERS).flatMap(
+            ([type, servers]) =>
+                servers.map((server) => serverInfo(server, type as ServerType)),
+        );
         // res.writeHead(200, {
         //     'Content-Type': 'application/json',
         //     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
         //     'Pragma': 'no-cache',
         //     'Expires': '0'
         // });
-        res.end(
-            JSON.stringify(
-                availableServers.map((server) => ({
-                    url: server.url,
-                    queueSize: server.queue.size + server.queue.pending,
-                    totalRequests: server.totalRequests,
-                    errors: server.errors,
-                    errorRate:
-                        (
-                            (server.errors / server.totalRequests) * 100 || 0
-                        ).toFixed(2) + "%",
-                    requestsPerSecond: (
-                        server.totalRequests /
-                        ((Date.now() - server.startTime) / 1000)
-                    ).toFixed(2),
-                    type: server.type,
-                })),
-            ),
-        );
+        res.end(JSON.stringify(availableServersInfo));
     } else {
         res.end(
             JSON.stringify({ success: false, message: "Method not allowed" }),
@@ -254,10 +272,10 @@ export const handleRegisterEndpoint = (req, res) => {
 
 /**
  * Filters out inactive servers based on the SERVER_TIMEOUT.
- * @param {Array} servers - The list of servers.
- * @returns {Array} - The filtered list of active servers.
+ * @param {Server[]} servers - The list of servers.
+ * @returns {Server[]} - The filtered list of active servers.
  */
-export const filterActiveServers = (servers) => {
+export const filterActiveServers = (servers: Server[]): Server[] => {
     const now = Date.now();
     return servers.filter(
         (server) => now - server.lastHeartbeat < SERVER_TIMEOUT,
@@ -267,11 +285,14 @@ export const filterActiveServers = (servers) => {
 
 /**
  * Fetches data from the least busy server of a specific type
- * @param {string} type - The type of service (default: 'flux')
- * @param {Object} options - The fetch options
+ * @param {ServerType} type - The type of service (default: 'flux')
+ * @param {RequestInit} options - The fetch init options
  * @returns {Promise<Response>} - The fetch response
  */
-export const fetchFromLeastBusyServer = async (type = "flux", options) => {
+export const fetchFromLeastBusyServer = async (
+    type: ServerType = "flux",
+    options: RequestInit,
+): Promise<Response> => {
     const serverUrl = await getNextServerUrl(type);
     const server = SERVERS[type].find((s) => s.url === serverUrl);
 
@@ -279,22 +300,29 @@ export const fetchFromLeastBusyServer = async (type = "flux", options) => {
         throw new Error(`Server ${serverUrl} not found for type ${type}`);
     }
 
-    return server.queue.add(async () => {
-        server.totalRequests++;
-        try {
-            const response = await fetch(serverUrl + "/generate", options);
-            if (!response.ok) {
+    return server.queue.add(
+        async () => {
+            server.totalRequests++;
+            try {
+                const response = await fetch(`${serverUrl}/generate`, options);
+                if (!response.ok) {
+                    server.errors++;
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response;
+            } catch (error) {
                 server.errors++;
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw error;
             }
-            return response;
-        } catch (error) {
-            server.errors++;
-            throw error;
-        }
-    });
+        },
+        {
+            // throw on timeout instead of quitely resolving to void
+            // please check if this causes any issues @voodoohop
+            throwOnTimeout: true,
+        },
+    );
 };
 
 // Wrapper for backward compatibility
-export const fetchFromLeastBusyFluxServer = (options) =>
+export const fetchFromLeastBusyFluxServer = (options: RequestInit) =>
     fetchFromLeastBusyServer("flux", options);

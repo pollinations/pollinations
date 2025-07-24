@@ -1,26 +1,26 @@
-import {
-    detectLanguage,
-    sanitizeString,
-    translateIfNecessary,
-} from "./translateIfNecessary.js";
-import { pimpPrompt } from "./promptEnhancer.js";
-import { badDomainHandler } from "./utils/BadDomainHandler.js";
+import type { IncomingMessage } from "node:http";
 import debug from "debug";
+import type { ImageParams } from "./params.ts";
+import { pimpPrompt } from "./promptEnhancer.ts";
+import { detectLanguage, sanitizeString } from "./translateIfNecessary.ts";
+import { badDomainHandler } from "./utils/badDomainHandler.ts";
 
 const logPrompt = debug("pollinations:prompt");
 const logPerf = debug("pollinations:perf");
 const logError = debug("pollinations:error");
 const memoizedPrompts = new Map();
 
+export type TimingStep = { step: string; timestamp: number };
+
 export const normalizeAndTranslatePrompt = async (
-    originalPrompt,
-    req,
-    timingInfo,
-    safeParams = {},
+    originalPrompt: string,
+    req: IncomingMessage,
+    timingInfo: TimingStep[],
+    safeParams: ImageParams,
     referrer = null,
 ) => {
     // if it is not a string make it a string
-    originalPrompt = "" + originalPrompt;
+    originalPrompt = `${originalPrompt}`;
 
     let { enhance, seed } = safeParams;
 

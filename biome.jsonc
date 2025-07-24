@@ -2,5 +2,19 @@
     "formatter": {
         "indentStyle": "space",
         "indentWidth": 4
+    },
+    "javascript": {
+        "formatter": {
+            "quoteProperties": "preserve",
+            "quoteStyle": "double"
+        }
+    },
+    "linter": {
+        "enabled": true,
+        "rules": {
+            "complexity": {
+                "useLiteralKeys": "off"
+            }
+        }
     }
 }

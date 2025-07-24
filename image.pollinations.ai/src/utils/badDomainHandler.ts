@@ -1,5 +1,5 @@
-import fetch from "node-fetch";
 import debug from "debug";
+import { IncomingHttpHeaders } from "node:http";
 
 const logger = debug("pollinations:badDomain");
 const memoizedResults = new Map();
@@ -10,7 +10,10 @@ const memoizedResults = new Map();
  * @param {string|null} explicitReferrer - Optional explicitly provided referrer
  * @returns {string|null} - Extracted referrer
  */
-function getRefererFromHeaders(headers, explicitReferrer) {
+function getRefererFromHeaders(
+    headers: IncomingHttpHeaders,
+    explicitReferrer: string | null = null,
+): string | null {
     if (explicitReferrer) {
         logger(`Using explicitly provided referrer: ${explicitReferrer}`);
         return explicitReferrer;
@@ -18,15 +21,13 @@ function getRefererFromHeaders(headers, explicitReferrer) {
 
     logger(`Headers received: ${JSON.stringify(headers)}`);
 
-    const referrer =
-        headers?.referer ||
-        headers?.referrer ||
-        headers?.["referer"] ||
-        headers?.["referrer"] ||
-        headers?.origin;
+    const referrer = headers?.referer || headers?.referrer || headers?.origin;
 
     logger(`Detected referrer from headers: ${referrer || "none"}`);
-    return referrer;
+
+    // the type is thrown off by referrer, which is not a valid header
+    // maybe we can remove this check?
+    return (referrer as string) || null;
 }
 
 /**
@@ -34,7 +35,7 @@ function getRefererFromHeaders(headers, explicitReferrer) {
  * @param {string} referrer - The referrer domain to check
  * @returns {boolean} - Whether the domain is in the bad domains list
  */
-export function isBadDomain(referrer) {
+export function isBadDomain(referrer: string): boolean {
     if (!referrer) return false;
 
     const badDomains = process.env.BAD_DOMAINS
@@ -64,18 +65,24 @@ export function isBadDomain(referrer) {
  * @param {string} prompt - The original prompt to transform
  * @returns {Promise<string>} - The transformed prompt
  */
-export async function transformToOpposite(prompt) {
+export async function transformToOpposite(prompt: string): Promise<string> {
     try {
-        const systemPrompt = `Transform the following image prompt into its semantic opposite, inverting key attributes like age, gender, clothing status, and subject matter. 
-Focus on the opposites that make the result most exaggerated and funny.    
-Return ONLY the transformed prompt, with no additional explanation or commentary.`;
+        const systemPrompt = [
+            `Transform the following image prompt into its semantic opposite,`,
+            `inverting key attributes like age, gender, clothing status, and subject matter.`,
+            `Focus on the opposites that make the result most exaggerated and funny.`,
+            `Return ONLY the transformed prompt, with no additional explanation or commentary.`,
+        ].join(" ");
 
         // Encode both the system prompt and user prompt for URL
         const encodedSystemPrompt = encodeURIComponent(systemPrompt);
         const encodedPrompt = encodeURIComponent(prompt);
 
         // Call text.pollinations.ai with a simple GET request
-        const url = `https://text.pollinations.ai/${encodedPrompt}?system=${encodedSystemPrompt}&referrer=https://image.pollinations.ai`;
+        const url = [
+            `https://text.pollinations.ai/${encodedPrompt}`,
+            `?system=${encodedSystemPrompt}&referrer=https://image.pollinations.ai`,
+        ].join("");
 
         logger(`Transforming prompt to opposite: ${prompt}`);
 
@@ -103,7 +110,7 @@ Return ONLY the transformed prompt, with no additional explanation or commentary
  * @param {string} url - The URL to extract the domain from
  * @returns {string} - The extracted domain
  */
-export function extractDomain(url) {
+export function extractDomain(url: string): string {
     try {
         // Handle URLs that don't start with a protocol
         const fullUrl = url.startsWith("http") ? url : `https://${url}`;
@@ -115,20 +122,27 @@ export function extractDomain(url) {
     }
 }
 
+type ProcessPromtResult = {
+    prompt: string;
+    originalPrompt: string;
+    wasTransformed: boolean;
+    referrer: string | null;
+};
+
 /**
  * Processes a prompt based on referrer information
  * @param {string} prompt - Original prompt to process
  * @param {object} headers - HTTP headers to extract referrer from
  * @param {string|null} explicitReferrer - Optional explicitly provided referrer
  * @param {number} transformProbability - Probability (0.0-1.0) to transform bad domain prompts
- * @returns {Promise<object>} - Result object with processed prompt and metadata
+ * @returns {Promise<ProcessPromtResult>} - Result object with processed prompt and metadata
  */
 export async function processPrompt(
-    prompt,
-    headers = {},
-    explicitReferrer = null,
-    transformProbability = 0.6,
-) {
+    prompt: string,
+    headers: IncomingHttpHeaders = {},
+    explicitReferrer: string | null = null,
+    transformProbability: number = 0.6,
+): Promise<ProcessPromtResult> {
     // Extract referrer
     const referrer = getRefererFromHeaders(headers, explicitReferrer);
 
@@ -141,7 +155,7 @@ export async function processPrompt(
     }
 
     // Default result - no transformation
-    let result = {
+    const result = {
         prompt: prompt, // Processed prompt (might be transformed)
         originalPrompt: prompt, // Always the original input
         wasTransformed: false, // Flag indicating if transformation occurred

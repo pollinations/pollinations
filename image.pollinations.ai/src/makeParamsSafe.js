@@ -1,4 +1,4 @@
-import { MODELS } from "./models.js";
+import { MODELS } from "./models.ts";
 
 /**
  * Sanitizes and adjusts parameters for image generation.

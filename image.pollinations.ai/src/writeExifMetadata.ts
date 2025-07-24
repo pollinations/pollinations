@@ -4,6 +4,10 @@ import debug from "debug";
 
 const logPerf = debug("pollinations:perf");
 
+interface SafeParams {
+    model: string;
+}
+
 /**
  * Writes EXIF metadata to the image buffer.
  * @param {Buffer} buffer - The image buffer.
@@ -11,7 +15,11 @@ const logPerf = debug("pollinations:perf");
  * @param {Object} maturity - Additional metadata to embed.
  * @returns {Promise<Buffer>} - The image buffer with metadata.
  */
-export const writeExifMetadata = async (buffer, safeParams, maturity) => {
+export const writeExifMetadata = async (
+    buffer: Buffer,
+    safeParams: SafeParams | any,
+    maturity: any,
+): Promise<Buffer> => {
     const exif_start_time = Date.now();
 
     const metadata = {

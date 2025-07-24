@@ -1,7 +1,4 @@
-import crypto from "crypto";
-import fs from "fs/promises";
-import { existsSync, mkdirSync } from "fs";
-import path from "path";
+import crypto from "node:crypto";
 import debug from "debug";
 
 const MAX_CACHE_SIZE = process.env.NODE_ENV === "test" ? 2 : 500000;
@@ -11,7 +8,7 @@ const logError = debug("pollinations:error");
 const logCache = debug("pollinations:cache");
 
 // Function to generate a cache path
-const generateCachePath = (prompt, extraParams) => {
+const generateCachePath = (prompt: string, extraParams: object): string => {
     if (!prompt) {
         prompt = "random prompt";
     }
@@ -46,7 +43,7 @@ const generateCachePath = (prompt, extraParams) => {
 };
 
 // Function to check if an image is cached
-export const isImageCached = (prompt, extraParams) => {
+export const isImageCached = (prompt: string, extraParams: object): boolean => {
     const cachePath = generateCachePath(prompt, extraParams);
     if (memCache.has(cachePath)) {
         // Move to end of Map to mark as recently used
@@ -59,7 +56,7 @@ export const isImageCached = (prompt, extraParams) => {
 };
 
 // Function to retrieve a cached image
-export const getCachedImage = (prompt = "", extraParams) => {
+export const getCachedImage = (prompt: string = "", extraParams: object) => {
     const cachePath = generateCachePath(prompt, extraParams);
     if (memCache.has(cachePath)) {
         // Move to end of Map to mark as recently used
@@ -73,9 +70,9 @@ export const getCachedImage = (prompt = "", extraParams) => {
 
 // New function that caches promises immediately to prevent duplicate generation
 export const cacheImagePromise = async (
-    prompt,
-    extraParams,
-    bufferPromiseCreator,
+    prompt: string,
+    extraParams: object,
+    bufferPromiseCreator: { (): Promise<any>; (): any },
 ) => {
     const cachePath = generateCachePath(prompt, extraParams);
 

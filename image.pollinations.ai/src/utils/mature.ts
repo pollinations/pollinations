@@ -1,8 +1,8 @@
-import { words } from "../config/matureWords.js";
+import { words } from "../config/matureWords.ts";
 
-const wordsSet = new Set([...words, ...words.map((word) => word + "s")]);
+const wordsSet = new Set([...words, ...words.map((word) => `${word}s`)]);
 
-export const isMature = (raw_input) => {
+export const isMature = (raw_input: string): boolean => {
     // Convert input to lowercase for case-insensitive matching
     const input = raw_input.toLowerCase();
 

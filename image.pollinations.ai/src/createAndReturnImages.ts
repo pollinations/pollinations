@@ -610,9 +610,11 @@ const callAzureGPTImageWithEndpoint = async (
                     }
 
                     // Use the image[] array notation as required by Azure OpenAI API
+                    // Create a Blob from the already-read arrayBuffer instead of calling blob() again
+                    const imageBlob = new Blob([imageArrayBuffer], { type: contentType });
                     formData.append(
                         "image[]",
-                        await imageResponse.blob(),
+                        imageBlob,
                         extension,
                     );
                 } catch (error) {

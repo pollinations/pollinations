@@ -1,11 +1,10 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import sharp from "sharp";
+import { beforeAll, describe, expect, it } from "vitest";
 import { createAndReturnImageCached } from "../../src/createAndReturnImages.js";
 import { writeExifMetadata } from "../../src/writeExifMetadata.js";
-import { MODELS } from "../../src/models.js";
-import fs from "fs";
-import path from "path";
-import os from "os";
-import sharp from "sharp";
 
 describe("Image Generation Integration Tests", () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "image-test-"));

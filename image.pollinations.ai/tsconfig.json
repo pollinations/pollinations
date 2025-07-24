@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "lib": ["ES2022", "DOM", "DOM.Iterable"],
+        "jsx": "preserve",
+        "module": "ESNext",
+        "moduleResolution": "NodeNext",
+        "allowImportingTsExtensions": true,
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["src/*"]
+        },
+        "allowJs": true,
+        "skipLibCheck": true,
+        "checkJs": false,
+        "esModuleInterop": true,
+        "isolatedModules": true,
+        "strict": false,
+        "noEmit": true,
+        "outDir": "./dist"
+    },
+
+    "include": ["src"],
+    "exclude": ["node_modules", "dist"]
+}

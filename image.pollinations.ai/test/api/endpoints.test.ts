@@ -55,7 +55,7 @@ describe("/prompt endpoint", () => {
         try {
             expect(response.status).toBe(200);
         } catch (error) {
-            console.error("Body:", response.body);
+            console.error("Body:", await response.json());
             throw error;
         }
         expect(response.headers.get("content-type")).toContain("image/jpeg");
@@ -87,7 +87,7 @@ describe("/prompt endpoint", () => {
                 try {
                     expect(response.status).toBe(200);
                 } catch (error) {
-                    console.error("Body:", response.body);
+                    console.error("Body:", await response.json());
                     throw error;
                 }
                 expect(response.headers.get("content-type")).toContain(
@@ -106,7 +106,7 @@ describe("/prompt endpoint", () => {
         try {
             expect(response.status).toBe(200);
         } catch (error) {
-            console.error("Body:", response.body);
+            console.error("Body:", await response.json());
             throw error;
         }
         expect(response.headers.get("content-type")).toContain("image/jpeg");

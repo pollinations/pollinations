@@ -40,6 +40,7 @@
 
           buildInputs = with pkgs; [
             zsh
+            git
             sops
             age
             uv

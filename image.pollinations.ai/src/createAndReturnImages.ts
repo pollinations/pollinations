@@ -34,7 +34,6 @@ const logError = debug("pollinations:error");
 const logPerf = debug("pollinations:perf");
 const logOps = debug("pollinations:ops");
 const logCloudflare = debug("pollinations:cloudflare");
-const logTier = debug("pollinations:tier");
 
 // Constants
 const TARGET_PIXEL_COUNT = 1024 * 1024; // 1 megapixel
@@ -82,11 +81,11 @@ export function calculateScaledDimensions(
         return { scaledWidth: width, scaledHeight: height, scalingFactor: 1 };
     }
 
-	const scalingFactor = Math.sqrt(TARGET_PIXEL_COUNT / currentPixels);
-	const scaledWidth = Math.round(width * scalingFactor);
-	const scaledHeight = Math.round(height * scalingFactor);
+    const scalingFactor = Math.sqrt(TARGET_PIXEL_COUNT / currentPixels);
+    const scaledWidth = Math.round(width * scalingFactor);
+    const scaledHeight = Math.round(height * scalingFactor);
 
-	return { scaledWidth, scaledHeight, scalingFactor };
+    return { scaledWidth, scaledHeight, scalingFactor };
 }
 
 async function fetchFromTurboServer(params: object) {
@@ -114,36 +113,36 @@ export const callComfyUI = async (
             safeParams,
         );
 
-		// Linear scaling of steps between 6 (at concurrentRequests=2) and 1 (at concurrentRequests=36)
-		const steps = Math.max(
-			1,
-			Math.round(4 - ((concurrentRequests - 2) * (3 - 1)) / (10 - 2)),
-		);
-		logOps("calculated_steps", steps);
+        // Linear scaling of steps between 6 (at concurrentRequests=2) and 1 (at concurrentRequests=36)
+        const steps = Math.max(
+            1,
+            Math.round(4 - ((concurrentRequests - 2) * (3 - 1)) / (10 - 2)),
+        );
+        logOps("calculated_steps", steps);
 
-		prompt = sanitizeString(prompt);
+        prompt = sanitizeString(prompt);
 
-		// Calculate scaled dimensions
-		const { scaledWidth, scaledHeight, scalingFactor } =
-			calculateScaledDimensions(safeParams.width, safeParams.height);
+        // Calculate scaled dimensions
+        const { scaledWidth, scaledHeight, scalingFactor } =
+            calculateScaledDimensions(safeParams.width, safeParams.height);
 
-		const body = {
-			prompts: [prompt],
-			width: scaledWidth,
-			height: scaledHeight,
-			seed: safeParams.seed,
-			negative_prompt: safeParams.negative_prompt,
-			steps: steps,
-		};
+        const body = {
+            prompts: [prompt],
+            width: scaledWidth,
+            height: scaledHeight,
+            seed: safeParams.seed,
+            negative_prompt: safeParams.negative_prompt,
+            steps: steps,
+        };
 
-		logOps(
-			"calling prompt",
-			body.prompts,
-			"width",
-			body.width,
-			"height",
-			body.height,
-		);
+        logOps(
+            "calling prompt",
+            body.prompts,
+            "width",
+            body.width,
+            "height",
+            body.height,
+        );
 
         // Start timing for fetch
         const fetchStartTime = Date.now();
@@ -187,32 +186,32 @@ export const callComfyUI = async (
             throw new Error(`Server responded with ${response.status}`);
         }
 
-		const jsonResponse = await response.json();
+        const jsonResponse = await response.json();
 
-		const { image, ...rest } = Array.isArray(jsonResponse)
-			? jsonResponse[0]
-			: jsonResponse;
+        const { image, ...rest } = Array.isArray(jsonResponse)
+            ? jsonResponse[0]
+            : jsonResponse;
 
-		if (!image) {
-			logError("image is null");
-			throw new Error("image is null");
-		}
+        if (!image) {
+            logError("image is null");
+            throw new Error("image is null");
+        }
 
-		logOps("decoding base64 image");
+        logOps("decoding base64 image");
 
-		const buffer = Buffer.from(image, "base64");
+        const buffer = Buffer.from(image, "base64");
 
-		// Resize back to original dimensions if scaling was applied
-		if (scalingFactor > 1) {
-			const resizedBuffer = await sharp(buffer)
-				.resize(safeParams.width, safeParams.height, {
-					fit: "fill",
-					withoutEnlargement: false,
-				})
-				.jpeg()
-				.toBuffer();
-			return { buffer: resizedBuffer, ...rest };
-		}
+        // Resize back to original dimensions if scaling was applied
+        if (scalingFactor > 1) {
+            const resizedBuffer = await sharp(buffer)
+                .resize(safeParams.width, safeParams.height, {
+                    fit: "fill",
+                    withoutEnlargement: false,
+                })
+                .jpeg()
+                .toBuffer();
+            return { buffer: resizedBuffer, ...rest };
+        }
 
         // Convert to JPEG even if no resize was needed
         const jpegBuffer = await sharp(buffer)
@@ -245,59 +244,59 @@ async function callCloudflareModel(
 ): Promise<ImageGenerationResult> {
     const { accountId, apiToken } = getCloudflareCredentials();
 
-	if (!accountId || !apiToken) {
-		throw new Error("Cloudflare credentials not configured");
-	}
+    if (!accountId || !apiToken) {
+        throw new Error("Cloudflare credentials not configured");
+    }
 
-	// Limit prompt to 2048 characters
-	const truncatedPrompt = prompt.slice(0, 2048);
+    // Limit prompt to 2048 characters
+    const truncatedPrompt = prompt.slice(0, 2048);
 
-	const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/${modelPath}`;
-	logCloudflare(`Calling Cloudflare model: ${modelPath}`, url);
+    const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/${modelPath}`;
+    logCloudflare(`Calling Cloudflare model: ${modelPath}`, url);
 
-	// Round width and height to nearest multiple of 8
-	const width = roundToMultipleOf8(safeParams.width || 1024);
-	const height = roundToMultipleOf8(safeParams.height || 1024);
+    // Round width and height to nearest multiple of 8
+    const width = roundToMultipleOf8(safeParams.width || 1024);
+    const height = roundToMultipleOf8(safeParams.height || 1024);
 
-	const requestBody = {
-		prompt: truncatedPrompt,
-		width: width,
-		height: height,
-		seed: safeParams.seed || Math.floor(Math.random() * 1000000),
-		...additionalParams,
-	};
+    const requestBody = {
+        prompt: truncatedPrompt,
+        width: width,
+        height: height,
+        seed: safeParams.seed || Math.floor(Math.random() * 1000000),
+        ...additionalParams,
+    };
 
-	logCloudflare(
-		`Cloudflare ${modelPath} request body:`,
-		JSON.stringify(requestBody, null, 2),
-	);
+    logCloudflare(
+        `Cloudflare ${modelPath} request body:`,
+        JSON.stringify(requestBody, null, 2),
+    );
 
-	const response = await fetch(url, {
-		method: "POST",
-		headers: {
-			Authorization: `Bearer ${apiToken}`,
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify(requestBody),
-	});
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${apiToken}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+    });
 
-	// Check if response is successful
-	if (!response.ok) {
-		const errorText = await response.text();
-		logError(
-			`Cloudflare ${modelPath} API request failed, status:`,
-			response.status,
-			"response:",
-			errorText,
-		);
-		logError(
-			`Cloudflare ${modelPath} API request headers:`,
-			JSON.stringify(Object.fromEntries([...response.headers]), null, 2),
-		);
-		throw new Error(
-			`Cloudflare ${modelPath} API request failed with status ${response.status}: ${errorText}`,
-		);
-	}
+    // Check if response is successful
+    if (!response.ok) {
+        const errorText = await response.text();
+        logError(
+            `Cloudflare ${modelPath} API request failed, status:`,
+            response.status,
+            "response:",
+            errorText,
+        );
+        logError(
+            `Cloudflare ${modelPath} API request headers:`,
+            JSON.stringify(Object.fromEntries([...response.headers]), null, 2),
+        );
+        throw new Error(
+            `Cloudflare ${modelPath} API request failed with status ${response.status}: ${errorText}`,
+        );
+    }
 
     // Check content type to determine how to handle the response
     const contentType = response.headers.get("content-type");
@@ -333,7 +332,7 @@ async function callCloudflareModel(
         imageBuffer = Buffer.from(data.result.image, "base64");
     }
 
-	return { buffer: imageBuffer, isMature: false, isChild: false };
+    return { buffer: imageBuffer, isMature: false, isChild: false };
 }
 
 /**
@@ -388,41 +387,41 @@ async function callCloudflareDreamshaper(
             modifiedPrompt = `${prompt}, seed:${safeParams.seed}`;
         }
 
-		// Create a minimal params object with only width and height
-		const dreamshaperParams = {
-			width: safeParams.width || 1024,
-			height: safeParams.height || 1024,
-		};
+        // Create a minimal params object with only width and height
+        const dreamshaperParams = {
+            width: safeParams.width || 1024,
+            height: safeParams.height || 1024,
+        };
 
-		// Create a modified safeParams without the seed
-		const modifiedSafeParams = { ...safeParams };
-		delete modifiedSafeParams.seed;
+        // Create a modified safeParams without the seed
+        const modifiedSafeParams = { ...safeParams };
+        delete modifiedSafeParams.seed;
 
-		// Call the model with the minimal parameters
-		logCloudflare(
-			`Using Dreamshaper with prompt: ${modifiedPrompt} and parameters:`,
-			JSON.stringify(dreamshaperParams, null, 2),
-		);
-		const result = await callCloudflareModel(
-			modifiedPrompt,
-			modifiedSafeParams,
-			"lykon/dreamshaper-8-lcm",
-			dreamshaperParams,
-		);
-		return result;
-	} catch (error) {
-		// Log detailed error information
-		logError("Dreamshaper detailed error:", error);
-		if (error.response) {
-			try {
-				const responseText = await error.response.text();
-				logError("Dreamshaper response text:", responseText);
-			} catch (textError) {
-				logError("Could not get response text:", textError.message);
-			}
-		}
-		throw error;
-	}
+        // Call the model with the minimal parameters
+        logCloudflare(
+            `Using Dreamshaper with prompt: ${modifiedPrompt} and parameters:`,
+            JSON.stringify(dreamshaperParams, null, 2),
+        );
+        const result = await callCloudflareModel(
+            modifiedPrompt,
+            modifiedSafeParams,
+            "lykon/dreamshaper-8-lcm",
+            dreamshaperParams,
+        );
+        return result;
+    } catch (error) {
+        // Log detailed error information
+        logError("Dreamshaper detailed error:", error);
+        if (error.response) {
+            try {
+                const responseText = await error.response.text();
+                logError("Dreamshaper response text:", responseText);
+            } catch (textError) {
+                logError("Could not get response text:", textError.message);
+            }
+        }
+        throw error;
+    }
 }
 
 /**
@@ -476,32 +475,34 @@ const callAzureGPTImageWithEndpoint = async (
     const apiKey = process.env[`GPT_IMAGE_${endpointIndex}_AZURE_API_KEY`];
     let endpoint = process.env[`GPT_IMAGE_${endpointIndex}_ENDPOINT`];
 
-	if (!apiKey || !endpoint) {
-		throw new Error(
-			`Azure API key or endpoint ${endpointIndex} not found in environment variables`,
-		);
-	}
+    if (!apiKey || !endpoint) {
+        throw new Error(
+            `Azure API key or endpoint ${endpointIndex} not found in environment variables`,
+        );
+    }
 
-	// Check if we need to use the edits endpoint instead of generations
-	const isEditMode = safeParams.image && safeParams.image.length > 0;
-	if (isEditMode) {
-		// Replace 'generations' with 'edits' in the endpoint URL
-		endpoint = endpoint.replace("/images/generations", "/images/edits");
-		logCloudflare(`Using Azure endpoint ${endpointIndex} in edit mode`);
-	} else {
-		logCloudflare(`Using Azure endpoint ${endpointIndex} in generation mode`);
-	}
+    // Check if we need to use the edits endpoint instead of generations
+    const isEditMode = safeParams.image && safeParams.image.length > 0;
+    if (isEditMode) {
+        // Replace 'generations' with 'edits' in the endpoint URL
+        endpoint = endpoint.replace("/images/generations", "/images/edits");
+        logCloudflare(`Using Azure endpoint ${endpointIndex} in edit mode`);
+    } else {
+        logCloudflare(
+            `Using Azure endpoint ${endpointIndex} in generation mode`,
+        );
+    }
 
-	// Map safeParams to Azure API parameters
-	const size = `${safeParams.width}x${safeParams.height}`;
+    // Map safeParams to Azure API parameters
+    const size = `${safeParams.width}x${safeParams.height}`;
 
-	// Determine quality based on safeParams or use medium as default
-	const quality = safeParams.quality || "medium";
+    // Determine quality based on safeParams or use medium as default
+    const quality = safeParams.quality || "medium";
 
-	// Set output format to png if model is gptimage, otherwise jpeg
-	const outputFormat = "png";
-	// Default compression to 100 (best quality)
-	// const outputCompression = 70;
+    // Set output format to png if model is gptimage, otherwise jpeg
+    const outputFormat = "png";
+    // Default compression to 100 (best quality)
+    // const outputCompression = 70;
 
     // Build request body
     const requestBody = {
@@ -522,86 +523,91 @@ const callAzureGPTImageWithEndpoint = async (
         );
     }
 
-	// We'll only use the requestBody for generation mode
-	// For edit mode, we'll use FormData instead
+    // We'll only use the requestBody for generation mode
+    // For edit mode, we'll use FormData instead
 
-	// Note: Azure GPT Image API doesn't support the 'seed' parameter
-	// We'll log the seed for reference but not include it in the request
-	if (safeParams.seed) {
-		logCloudflare(
-			`Seed value ${safeParams.seed} not supported by Azure GPT Image API, ignoring`,
-		);
-	}
+    // Note: Azure GPT Image API doesn't support the 'seed' parameter
+    // We'll log the seed for reference but not include it in the request
+    if (safeParams.seed) {
+        logCloudflare(
+            `Seed value ${safeParams.seed} not supported by Azure GPT Image API, ignoring`,
+        );
+    }
 
-	logCloudflare("Calling Azure GPT Image API with params:", requestBody);
+    logCloudflare("Calling Azure GPT Image API with params:", requestBody);
 
     let response = null;
 
-	if (isEditMode) {
-		// For edit mode, always use FormData (multipart/form-data)
-		const formData = new FormData();
+    if (isEditMode) {
+        // For edit mode, always use FormData (multipart/form-data)
+        const formData = new FormData();
 
-		// Add the prompt
-		formData.append("prompt", sanitizeString(prompt));
+        // Add the prompt
+        formData.append("prompt", sanitizeString(prompt));
 
-		// Handle images based on their type
-		try {
-			// Convert to array if it's a string (backward compatible)
-			const imageUrls = Array.isArray(safeParams.image)
-				? safeParams.image
-				: [safeParams.image];
+        // Handle images based on their type
+        try {
+            // Convert to array if it's a string (backward compatible)
+            const imageUrls = Array.isArray(safeParams.image)
+                ? safeParams.image
+                : [safeParams.image];
 
-			if (imageUrls.length === 0) {
-				// Handle errors for missing image
-				throw new Error(
-					"Image URL is required for GPT Image edit mode but was not provided",
-				);
-			}
+            if (imageUrls.length === 0) {
+                // Handle errors for missing image
+                throw new Error(
+                    "Image URL is required for GPT Image edit mode but was not provided",
+                );
+            }
 
-			// Process each image in the array
-			for (let i = 0; i < imageUrls.length; i++) {
-				const imageUrl = imageUrls[i];
-				try {
-					logCloudflare(
-						`Fetching image ${i + 1}/${imageUrls.length} from URL: ${imageUrl}`,
-					);
+            // Process each image in the array
+            for (let i = 0; i < imageUrls.length; i++) {
+                const imageUrl = imageUrls[i];
+                try {
+                    logCloudflare(
+                        `Fetching image ${i + 1}/${imageUrls.length} from URL: ${imageUrl}`,
+                    );
 
-					const imageResponse = await fetch(imageUrl);
-					if (!imageResponse.ok) {
-						throw new Error(`Failed to fetch image from URL: ${imageUrl}`);
-					}
+                    const imageResponse = await fetch(imageUrl);
+                    if (!imageResponse.ok) {
+                        throw new Error(
+                            `Failed to fetch image from URL: ${imageUrl}`,
+                        );
+                    }
 
                     const imageArrayBuffer = await imageResponse.arrayBuffer();
                     const buffer = Buffer.from(imageArrayBuffer);
 
-					// Only check safety after we've successfully fetched the image
-					logCloudflare(
-						`Checking safety of input image ${i + 1}/${imageUrls.length}`,
-					);
-					const imageSafetyResult = await analyzeImageSafety(buffer);
+                    // Only check safety after we've successfully fetched the image
+                    logCloudflare(
+                        `Checking safety of input image ${i + 1}/${imageUrls.length}`,
+                    );
+                    const imageSafetyResult = await analyzeImageSafety(buffer);
 
-					if (!imageSafetyResult.safe) {
-						const errorMessage = `Input image ${i + 1} contains unsafe content: ${imageSafetyResult.formattedViolations}`;
-						const error = new Error(errorMessage);
-						await logGptImageError(
-							prompt,
-							safeParams,
-							userInfo,
-							error,
-							imageSafetyResult,
-						);
-						throw error;
-					}
+                    if (!imageSafetyResult.safe) {
+                        const errorMessage = `Input image ${i + 1} contains unsafe content: ${imageSafetyResult.formattedViolations}`;
+                        const error = new Error(errorMessage);
+                        await logGptImageError(
+                            prompt,
+                            safeParams,
+                            userInfo,
+                            error,
+                            imageSafetyResult,
+                        );
+                        throw error;
+                    }
 
-					// Determine file extension from Content-Type header
-					const contentType = imageResponse.headers.get("content-type") || "";
-					let extension = ".png"; // Default extension
+                    // Determine file extension from Content-Type header
+                    const contentType =
+                        imageResponse.headers.get("content-type") || "";
+                    let extension = ".png"; // Default extension
 
-					// Extract extension from content type (e.g., "image/jpeg" -> "jpeg")
-					if (contentType.startsWith("image/")) {
-						const mimeExtension = contentType.split("/")[1].split(";")[0]; // Handle cases like "image/jpeg; charset=utf-8"
-						extension = `.${mimeExtension}`;
-					}
+                    // Extract extension from content type (e.g., "image/jpeg" -> "jpeg")
+                    if (contentType.startsWith("image/")) {
+                        const mimeExtension = contentType
+                            .split("/")[1]
+                            .split(";")[0]; // Handle cases like "image/jpeg; charset=utf-8"
+                        extension = `.${mimeExtension}`;
+                    }
 
                     // Use the image[] array notation as required by Azure OpenAI API
                     formData.append(
@@ -622,20 +628,20 @@ const callAzureGPTImageWithEndpoint = async (
             throw new Error(`Failed to process image: ${error.message}`);
         }
 
-		// Add other parameters
-		formData.append("quality", quality);
-		formData.append("n", "1");
+        // Add other parameters
+        formData.append("quality", quality);
+        formData.append("n", "1");
 
-		// Add background parameter for transparent images when using gptimage model
-		if (safeParams.transparent) {
-			formData.append("background", "transparent");
-			logCloudflare(
-				"Adding background=transparent parameter for gptimage edit mode",
-			);
-		}
+        // Add background parameter for transparent images when using gptimage model
+        if (safeParams.transparent) {
+            formData.append("background", "transparent");
+            logCloudflare(
+                "Adding background=transparent parameter for gptimage edit mode",
+            );
+        }
 
-		// Log the endpoint and headers for debugging
-		logCloudflare(`Sending edit request to endpoint: ${endpoint}`);
+        // Log the endpoint and headers for debugging
+        logCloudflare(`Sending edit request to endpoint: ${endpoint}`);
 
         // Single attempt - no retry logic
         response = await fetch(endpoint, {
@@ -647,18 +653,18 @@ const callAzureGPTImageWithEndpoint = async (
             body: formData as any,
         });
 
-		logCloudflare(`Edit request response status: ${response.status}`);
-	} else {
-		// Standard JSON request for generation - single attempt, no retry logic
-		response = await fetch(endpoint, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${apiKey}`,
-			},
-			body: JSON.stringify(requestBody),
-		});
-	}
+        logCloudflare(`Edit request response status: ${response.status}`);
+    } else {
+        // Standard JSON request for generation - single attempt, no retry logic
+        response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify(requestBody),
+        });
+    }
 
     if (!response.ok) {
         // Clone the response before consuming its body
@@ -669,22 +675,22 @@ const callAzureGPTImageWithEndpoint = async (
         );
     }
 
-	const data = await response.json();
+    const data = await response.json();
 
-	if (!data.data || !data.data[0] || !data.data[0].b64_json) {
-		throw new Error("Invalid response from Azure GPT Image API");
-	}
+    if (!data.data || !data.data[0] || !data.data[0].b64_json) {
+        throw new Error("Invalid response from Azure GPT Image API");
+    }
 
-	// Convert base64 to buffer
-	const imageBuffer = Buffer.from(data.data[0].b64_json, "base64");
+    // Convert base64 to buffer
+    const imageBuffer = Buffer.from(data.data[0].b64_json, "base64");
 
-	// Azure doesn't provide content safety information directly, so we'll set defaults
-	// In a production environment, you might want to use a separate content moderation service
-	return {
-		buffer: imageBuffer,
-		isMature: false, // Default assumption
-		isChild: false, // Default assumption
-	};
+    // Azure doesn't provide content safety information directly, so we'll set defaults
+    // In a production environment, you might want to use a separate content moderation service
+    return {
+        buffer: imageBuffer,
+        isMature: false, // Default assumption
+        isChild: false, // Default assumption
+    };
 };
 
 /**
@@ -703,27 +709,27 @@ export const callAzureGPTImage = async (
         // Extract user tier with fallback to 'seed'
         const userTier = userInfo.tier || "seed";
 
-		// Stage-based endpoint selection instead of random
-		// seed stage → GPT_IMAGE_1_ENDPOINT (standard endpoint)
-		// flower/nectar stage → GPT_IMAGE_2_ENDPOINT (advanced endpoint)
-		// const endpointIndex = (userTier === 'seed') ? 1 : 2;
+        // Stage-based endpoint selection instead of random
+        // seed stage → GPT_IMAGE_1_ENDPOINT (standard endpoint)
+        // flower/nectar stage → GPT_IMAGE_2_ENDPOINT (advanced endpoint)
+        // const endpointIndex = (userTier === 'seed') ? 1 : 2;
 
-		const endpointIndex = Math.random() < 0.5 ? 1 : 2;
-		logCloudflare(
-			`Using Azure GPT Image endpoint ${endpointIndex} for user tier: ${userTier}`,
-			userInfo.userId ? `(userId: ${userInfo.userId})` : "(anonymous)",
-		);
+        const endpointIndex = Math.random() < 0.5 ? 1 : 2;
+        logCloudflare(
+            `Using Azure GPT Image endpoint ${endpointIndex} for user tier: ${userTier}`,
+            userInfo.userId ? `(userId: ${userInfo.userId})` : "(anonymous)",
+        );
 
-		return await callAzureGPTImageWithEndpoint(
-			prompt,
-			safeParams,
-			userInfo,
-			endpointIndex,
-		);
-	} catch (error) {
-		logError("Error calling Azure GPT Image API:", error);
-		throw error;
-	}
+        return await callAzureGPTImageWithEndpoint(
+            prompt,
+            safeParams,
+            userInfo,
+            endpointIndex,
+        );
+    } catch (error) {
+        logError("Error calling Azure GPT Image API:", error);
+        throw error;
+    }
 };
 
 /**
@@ -771,12 +777,12 @@ const callKontextAPI = async (
             }
         }
 
-		const headers = {};
+        const headers = {};
 
-		// Add Bearer token if FLUX_KONTEXT_KEY is available
-		if (process.env.FLUX_KONTEXT_KEY) {
-			headers["Authorization"] = `Bearer ${process.env.FLUX_KONTEXT_KEY}`;
-		}
+        // Add Bearer token if FLUX_KONTEXT_KEY is available
+        if (process.env.FLUX_KONTEXT_KEY) {
+            headers["Authorization"] = `Bearer ${process.env.FLUX_KONTEXT_KEY}`;
+        }
 
         const response = await withTimeoutSignal(
             (signal) =>
@@ -789,26 +795,26 @@ const callKontextAPI = async (
             120000, // 2 minute timeout
         );
 
-		if (!response.ok) {
-			throw new Error(
-				`Kontext API error: ${response.status} ${response.statusText}`,
-			);
-		}
+        if (!response.ok) {
+            throw new Error(
+                `Kontext API error: ${response.status} ${response.statusText}`,
+            );
+        }
 
-		const buffer = Buffer.from(await response.arrayBuffer());
+        const buffer = Buffer.from(await response.arrayBuffer());
 
-		logOps("Kontext API response received, buffer size:", buffer.length);
+        logOps("Kontext API response received, buffer size:", buffer.length);
 
-		// Return with default maturity flags (assuming generated art is safe)
-		return {
-			buffer,
-			isMature: false,
-			isChild: false,
-		};
-	} catch (error) {
-		logError("Error calling Kontext API:", error);
-		throw new Error(`Kontext API generation failed: ${error.message}`);
-	}
+        // Return with default maturity flags (assuming generated art is safe)
+        return {
+            buffer,
+            isMature: false,
+            isChild: false,
+        };
+    } catch (error) {
+        logError("Error calling Kontext API:", error);
+        throw new Error(`Kontext API generation failed: ${error.message}`);
+    }
 };
 
 /**
@@ -860,62 +866,42 @@ const generateImage = async (
                 "Checking prompt safety...",
             );
 
-		if (!isNectarTier) {
-			safeParams.model = "flux";
-			logTier(
-				"❌ Switching model from gptimage to flux (user not nectar tier)",
-			);
-			logTier(
-				"Final decision: tier=%s, userId=%s, switched to flux",
-				userInfo?.tier || "none",
-				userInfo?.userId || "none",
-			);
-		} else {
-			logTier("✅ Keeping gptimage model (user has nectar tier)");
-			logTier(
-				"Final decision: tier=%s, userId=%s, keeping gptimage",
-				userInfo?.tier || "none",
-				userInfo?.userId || "none",
-			);
-		}
-		logTier("=== END TIER CHECK ===");
-	}
+            try {
+                // Check prompt safety with Azure Content Safety
+                const promptSafetyResult = await analyzeTextSafety(prompt);
 
-	// Model selection strategy using a more functional approach
-	if (safeParams.model === "gptimage") {
-		// Detailed logging of authentication info for GPT image access
-		logError(
-			"GPT Image authentication check:",
-			userInfo
-				? `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || "none"}, tier=${userInfo.tier || "none"}`
-				: "No userInfo provided",
-		);
+                // Log the prompt with safety analysis results
+                await logGptImagePrompt(
+                    prompt,
+                    safeParams,
+                    userInfo,
+                    promptSafetyResult,
+                );
 
-		// Restrict GPT Image model to users with valid authentication
-		if (!hasSufficientTier(userInfo.tier, "flower")) {
-			const errorText =
-				"Access to gpt-image-1 is currently limited to users in the flower tier. We will be opening up access gradually. Please authenticate at https://auth.pollinations.ai and request a tier upgrade at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml";
-			logError(errorText);
-			progress.updateBar(
-				requestId,
-				35,
-				"Auth",
-				"GPT Image requires authorization",
-			);
-			throw new Error(errorText);
-		} else {
-			// For gptimage model, always throw errors instead of falling back
-			updateProgress(
-				progress,
-				requestId,
-				30,
-				"Processing",
-				"Checking prompt safety...",
-			);
+                if (!promptSafetyResult.safe) {
+                    const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
+                    logError(
+                        "Azure Content Safety rejected prompt:",
+                        errorMessage,
+                    );
+                    progress.updateBar(
+                        requestId,
+                        100,
+                        "Error",
+                        "Prompt contains unsafe content",
+                    );
 
-			try {
-				// Check prompt safety with Azure Content Safety
-				const promptSafetyResult = await analyzeTextSafety(prompt);
+                    // Log the error with safety analysis results
+                    const error = new Error(errorMessage);
+                    await logGptImageError(
+                        prompt,
+                        safeParams,
+                        userInfo,
+                        error,
+                        promptSafetyResult,
+                    );
+                    throw error;
+                }
 
                 progress.updateBar(
                     requestId,
@@ -931,42 +917,28 @@ const generateImage = async (
                     error.message,
                 );
 
-				if (!promptSafetyResult.safe) {
-					const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
-					logError("Azure Content Safety rejected prompt:", errorMessage);
-					progress.updateBar(
-						requestId,
-						100,
-						"Error",
-						"Prompt contains unsafe content",
-					);
+                await logGptImageError(prompt, safeParams, userInfo, error);
 
-					// Log the error with safety analysis results
-					const error = new Error(errorMessage);
-					await logGptImageError(
-						prompt,
-						safeParams,
-						userInfo,
-						error,
-						promptSafetyResult,
-					);
-					throw error;
-				}
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+    }
 
-				updateProgress(
-					progress,
-					requestId,
-					35,
-					"Processing",
-					"Trying Azure GPT Image...",
-				);
-				return await callAzureGPTImage(prompt, safeParams, userInfo);
-			} catch (error) {
-				// Log the error but don't fall back - propagate it to the caller
-				logError(
-					"Azure GPT Image generation or safety check failed:",
-					error.message,
-				);
+    if (safeParams.model === "kontext") {
+        // Kontext model requires seed tier or higher
+        if (!hasSufficientTier(userInfo.tier, "seed")) {
+            const errorText =
+                "Access to kontext model is limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.";
+            logError(errorText);
+            progress.updateBar(
+                requestId,
+                35,
+                "Auth",
+                "Kontext model requires seed tier",
+            );
+            throw new Error(errorText);
+        }
 
         try {
             progress.updateBar(
@@ -1039,7 +1011,7 @@ const extractMaturityFlags = (
             ?.slice(1)
             .some((score) => score > -0.05);
 
-	return { isMature, isChild };
+    return { isMature, isChild };
 };
 
 /**
@@ -1157,41 +1129,41 @@ export async function createAndReturnImageCached(
         progress.updateBar(requestId, 70, "Generation", "API call complete");
         progress.updateBar(requestId, 75, "Processing", "Checking safety...");
 
-		// Extract maturity flags
-		const maturityFlags = extractMaturityFlags(result);
-		const { isMature, isChild } = maturityFlags;
-		logError("isMature", isMature, "concepts", isChild);
+        // Extract maturity flags
+        const maturityFlags = extractMaturityFlags(result);
+        const { isMature, isChild } = maturityFlags;
+        logError("isMature", isMature, "concepts", isChild);
 
-		// Safety check
-		if (safeParams.safe && isMature) {
-			throw new Error(
-				"NSFW content detected. This request cannot be fulfilled when safe mode is enabled.",
-			);
-		}
+        // Safety check
+        if (safeParams.safe && isMature) {
+            throw new Error(
+                "NSFW content detected. This request cannot be fulfilled when safe mode is enabled.",
+            );
+        }
 
-		// Prepare metadata
-		const { buffer: _buffer, ...maturity } = result;
-		const metadataObj = prepareMetadata(
-			prompt,
-			originalPrompt,
-			safeParams,
-			wasTransformedForBadDomain,
-		);
+        // Prepare metadata
+        const { buffer: _buffer, ...maturity } = result;
+        const metadataObj = prepareMetadata(
+            prompt,
+            originalPrompt,
+            safeParams,
+            wasTransformedForBadDomain,
+        );
 
-		// Process the image buffer
-		const processedBuffer = await processImageBuffer(
-			result.buffer,
-			maturityFlags,
-			safeParams,
-			metadataObj,
-			maturity,
-			progress,
-			requestId,
-		);
+        // Process the image buffer
+        const processedBuffer = await processImageBuffer(
+            result.buffer,
+            maturityFlags,
+            safeParams,
+            metadataObj,
+            maturity,
+            progress,
+            requestId,
+        );
 
-		return { buffer: processedBuffer, isChild, isMature };
-	} catch (error) {
-		logError("Error in createAndReturnImageCached:", error);
-		throw error;
-	}
+        return { buffer: processedBuffer, isChild, isMature };
+    } catch (error) {
+        logError("Error in createAndReturnImageCached:", error);
+        throw error;
+    }
 }

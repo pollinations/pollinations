@@ -256,7 +256,7 @@ function displayDomains() {
     let domainHtml = '';
     
     if (currentDomains.length > 0) {
-        domainHtml = '<strong>🌐 Regirstered:</strong><div style="margin-top:10px">';
+        domainHtml = '<strong>🌐 Registered:</strong><div style="margin-top:10px">';
         for (const domain of currentDomains) {
             // Use data attributes instead of inline onclick handlers
             domainHtml += '<span class="domain-item">' + domain + 

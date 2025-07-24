@@ -52,7 +52,12 @@ describe("/prompt endpoint", () => {
             `${BASE_URL}/prompt/a%20beautiful%20sunset`,
         );
 
-        expect(response.status).toBe(200);
+        try {
+            expect(response.status).toBe(200);
+        } catch (error) {
+            console.error("Body:", response.body);
+            throw error;
+        }
         expect(response.headers.get("content-type")).toContain("image/jpeg");
         checkCorsHeaders(response);
 
@@ -79,7 +84,12 @@ describe("/prompt endpoint", () => {
                     },
                 );
 
-                expect(response.status).toBe(200);
+                try {
+                    expect(response.status).toBe(200);
+                } catch (error) {
+                    console.error("Body:", response.body);
+                    throw error;
+                }
                 expect(response.headers.get("content-type")).toContain(
                     "image/jpeg",
                 );
@@ -93,7 +103,12 @@ describe("/prompt endpoint", () => {
             `${BASE_URL}/prompt/abstract%20art?width=512&height=512`,
         );
 
-        expect(response.status).toBe(200);
+        try {
+            expect(response.status).toBe(200);
+        } catch (error) {
+            console.error("Body:", response.body);
+            throw error;
+        }
         expect(response.headers.get("content-type")).toContain("image/jpeg");
         checkCorsHeaders(response);
     }, 30000);

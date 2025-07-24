@@ -45,6 +45,27 @@
             age
             uv
             nodejs_24
+            
+            # Image processing dependencies for image.pollinations.ai
+            vips
+            pkg-config
+            glib
+            
+            # ExifTool dependencies
+            exiftool
+            perl
+            
+            # Build tools for native Node.js modules
+            gcc
+            gnumake
+            python3
+            
+            # Additional image processing libraries
+            imagemagick
+            libjpeg
+            libpng
+            libtiff
+            libwebp
           ];
 
           shellHook = ''

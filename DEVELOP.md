@@ -11,14 +11,21 @@ This does the following:
 
 There should be no need to install anything else manually.
 
-###### Mac Installation
-To install Nix on Mac, run the following command:
+###### Installation
+To install Nix, run the following command:
 ```bash
 curl -fsSL https://install.determinate.systems/nix | sh -s -- install --determinate
 ```
 
 After installation:
 1. Set up your SOPS age key (see SOPS section below)
+
+```bash
+# replace /path/to/keys.txt with the path to your keys.txt file
+mkdir -p $HOME/.config/sops/age/
+mv /path/to/keys.txt $HOME/.config/sops/age/
+```
+
 2. Create a new shell session
 3. Run `nix develop` to enter the development environment
 
@@ -31,6 +38,6 @@ The variables are kept encrypted in `**/.encrypted.env` files, and only decrypte
 ###### Common SOPS commands:
 | Command | Description |
 | :--- | :--- |
-| `sops decrypt > output_file` | dump decrypted content |
-| `sops encrypt input_file > output_file` | encrypt new file |
+| `sops decrypt > .env` | dump decrypted content |
+| `sops encrypt .env > .encrypted.env` | encrypt new file |
 | `sops edit .encrypted.env` | exit file via temp file (hint: set `EDITOR=/editor/executable`) |

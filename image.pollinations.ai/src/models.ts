@@ -27,11 +27,11 @@ export const MODELS = {
         maxSideLength: 768,
     },
 
-    // Azure GPT Image model
-    gptimage: {
-        type: "azure",
-        enhance: false,
-        maxSideLength: 1024,
-        tier: "flower",
-    },
+    // // Azure GPT Image model
+    // gptimage: {
+    //     type: "azure",
+    //     enhance: false,
+    //     maxSideLength: 1024,
+    //     tier: "flower",
+    // },
 } as const;

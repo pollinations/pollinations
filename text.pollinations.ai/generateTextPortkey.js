@@ -20,7 +20,7 @@ const MODEL_MAPPING = {
 	// Azure OpenAI models
 	"openai-fast": "gpt-4.1-nano-roblox",
 	openai: "gpt-4o-mini",
-	"openai-large": "gpt-4o-mini",
+	"openai-large": "azure-gpt-4.1",
 	"openai-roblox": "gpt-4.1-nano-roblox",
 	//'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
 	"openai-reasoning": "o3", // Maps to custom MonoAI endpoint
@@ -462,12 +462,15 @@ export const portkeyConfig = {
 			process.env.AZURE_O4MINI_ENDPOINT,
 			"o4-mini",
 		),
-	"gpt-4o-mini-audio-preview": () =>
-		createAzureModelConfig(
+	"gpt-4o-mini-audio-preview": () => ({
+		...createAzureModelConfig(
 			process.env.AZURE_OPENAI_AUDIO_API_KEY,
 			process.env.AZURE_OPENAI_AUDIO_ENDPOINT,
 			"gpt-4o-mini-audio-preview",
 		),
+		"max-tokens": 512,
+		"max-completion-tokens": 512,
+	}),
 	"gpt-4o-audio-preview": () =>
 		createAzureModelConfig(
 			process.env.AZURE_OPENAI_AUDIO_LARGE_API_KEY,

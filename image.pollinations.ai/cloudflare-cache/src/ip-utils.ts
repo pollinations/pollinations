@@ -7,7 +7,7 @@
  * @param {Request} req - The request object
  * @returns {string} The client IP address or 'unknown'
  */
-export function getClientIp(req) {
+export function getClientIp(req: Request): string {
     // Handle Cloudflare Workers Request
     if (req.headers && typeof req.headers.get === "function") {
         return (
@@ -24,7 +24,7 @@ export function getClientIp(req) {
             req.headers["cf-connecting-ip"] ||
             req.headers["x-real-ip"] ||
             (req.headers["x-forwarded-for"] || "").split(",")[0].trim() ||
-            req.connection?.remoteAddress ||
+            // req.connection?.remoteAddress || // produces a type error, is this needed @voodoohop?
             "unknown"
         );
     }

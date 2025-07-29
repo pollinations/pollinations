@@ -1,31 +1,23 @@
-import { generateCacheKey, cacheResponse } from "./cache-utils.js";
-import { proxyToOrigin } from "./image-proxy.js";
 import { sendToAnalytics } from "./analytics.js";
+import { cacheResponse, generateCacheKey } from "./cache-utils.js";
+import { SEMANTIC_CACHE_ENABLED } from "./config.js";
+import { extractImageParams, extractPromptFromUrl } from "./hybrid-cache.js";
+import { proxyToOrigin } from "./image-proxy.js";
 import {
-    createSemanticCache,
-    checkSemanticCacheAndRespond,
     cacheImageEmbedding,
     checkExactCacheAndRespond,
+    checkSemanticCacheAndRespond,
+    createSemanticCache,
+    type SemanticCacheDebugInfo,
 } from "./semantic-cache.js";
-import { extractPromptFromUrl, extractImageParams } from "./hybrid-cache.js";
-import { SEMANTIC_CACHE_ENABLED } from "./config.js";
 
-import { getClientIp } from "./ip-utils.js";
+type CacheStatus = "pending" | "hit" | "miss";
 
-// Cache status constants for better readability
-const CACHE_STATUS = {
-    PENDING: "pending",
-    HIT: "hit",
-    MISS: "miss",
-};
-
-// Event name constants for consistency
-const EVENTS = {
-    REQUEST: "imageRequested", // Start of the request
-    SERVED_FROM_CACHE: "imageServedFromCache", // Cache hit
-    GENERATED: "imageGenerated", // Cache miss with successful generation
-    FAILED: "imageGenerationFailed", // Error during generation
-};
+type CacheEvent =
+    | "imageRequested"
+    | "imageServedFromCache"
+    | "imageGenerated"
+    | "imageGenerationFailed";
 
 /**
  * Helper function to send analytics with cleaner syntax
@@ -36,7 +28,14 @@ const EVENTS = {
  * @param {Object} env - Environment variables
  * @param {ExecutionContext} ctx - The execution context
  */
-function sendImageAnalytics(request, eventName, cacheStatus, params, env, ctx) {
+function sendImageAnalytics(
+    request: Request,
+    eventName: CacheEvent,
+    cacheStatus: CacheStatus,
+    params: Record<string, any>,
+    env: Env,
+    ctx: ExecutionContext,
+) {
     // Simple logging
     console.log(
         `[ANALYTICS] Sending event ${eventName} with cacheStatus=${cacheStatus}`,
@@ -62,18 +61,16 @@ function sendImageAnalytics(request, eventName, cacheStatus, params, env, ctx) {
  * 4. Caches the response for future requests
  */
 export default {
-    async fetch(request, env, ctx) {
+    async fetch(request: Request, env: Env, ctx: ExecutionContext) {
         // Get basic request details
         const url = new URL(request.url);
-        const clientIP = getClientIp(request);
 
         console.log(`Request: ${request.method} ${url.pathname}`);
 
         // Create semantic cache instance
-        let semanticCache = null;
-        if (SEMANTIC_CACHE_ENABLED) {
-            semanticCache = createSemanticCache(env);
-        }
+        const semanticCache = SEMANTIC_CACHE_ENABLED
+            ? createSemanticCache(env)
+            : null;
 
         // Extract the prompt for analytics and semantic caching using consistent decoding
         const semanticPrompt = extractPromptFromUrl(url);
@@ -112,8 +109,8 @@ export default {
         if (url.pathname.startsWith("/prompt/")) {
             sendImageAnalytics(
                 request,
-                EVENTS.REQUEST,
-                CACHE_STATUS.PENDING,
+                "imageRequested",
+                "pending",
                 analyticsParams,
                 env,
                 ctx,
@@ -137,8 +134,8 @@ export default {
             if (url.pathname.startsWith("/prompt/")) {
                 sendImageAnalytics(
                     request,
-                    EVENTS.SERVED_FROM_CACHE,
-                    CACHE_STATUS.HIT,
+                    "imageServedFromCache",
+                    "hit",
                     analyticsParams,
                     env,
                     ctx,
@@ -149,10 +146,13 @@ export default {
         }
 
         // Check semantic cache for similar images (after exact cache miss)
-        let semanticDebugInfo = null;
-        if (SEMANTIC_CACHE_ENABLED) {
+        let semanticDebugInfo: SemanticCacheDebugInfo | undefined;
+        if (semanticCache) {
             console.log("[DEBUG] Starting semantic cache check...");
             try {
+                if (semanticCache === null || semanticPrompt === null) {
+                    throw new Error("Semantic cache not configured");
+                }
                 const semanticResult = await checkSemanticCacheAndRespond(
                     semanticCache,
                     semanticPrompt,
@@ -170,8 +170,8 @@ export default {
                         );
                         sendImageAnalytics(
                             request,
-                            EVENTS.SERVED_FROM_CACHE,
-                            CACHE_STATUS.HIT,
+                            "imageServedFromCache",
+                            "hit",
                             {
                                 ...analyticsParams,
                                 cacheType: "semantic",
@@ -215,7 +215,7 @@ export default {
             );
 
             // Store embedding asynchronously for semantic caching
-            if (SEMANTIC_CACHE_ENABLED) {
+            if (semanticCache && semanticPrompt) {
                 ctx.waitUntil(
                     cacheImageEmbedding(
                         semanticCache,
@@ -230,8 +230,8 @@ export default {
             if (url.pathname.startsWith("/prompt/")) {
                 sendImageAnalytics(
                     request,
-                    EVENTS.GENERATED,
-                    CACHE_STATUS.MISS,
+                    "imageGenerated",
+                    "miss",
                     analyticsParams,
                     env,
                     ctx,
@@ -255,8 +255,8 @@ export default {
                 };
                 sendImageAnalytics(
                     request,
-                    EVENTS.FAILED,
-                    CACHE_STATUS.MISS,
+                    "imageGenerationFailed",
+                    "miss",
                     errorParams,
                     env,
                     ctx,
@@ -270,7 +270,10 @@ export default {
 
         // Add semantic debug headers if we performed a semantic search
         if (SEMANTIC_CACHE_ENABLED && semanticDebugInfo?.searchPerformed) {
-            if (semanticDebugInfo.bestSimilarity !== null) {
+            if (
+                semanticDebugInfo.bestSimilarity &&
+                semanticCache?.similarityThreshold
+            ) {
                 newHeaders.set(
                     "x-semantic-best-similarity",
                     semanticDebugInfo.bestSimilarity.toFixed(3),

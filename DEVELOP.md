@@ -38,6 +38,6 @@ The variables are kept encrypted in `**/.encrypted.env` files, and only decrypte
 ###### Common SOPS commands:
 | Command | Description |
 | :--- | :--- |
-| `sops decrypt > .env` | dump decrypted content |
+| `sops decrypt .encrypted.env  > .env` | dump decrypted content |
 | `sops encrypt .env > .encrypted.env` | encrypt new file |
 | `sops edit .encrypted.env` | exit file via temp file (hint: set `EDITOR=/editor/executable`) |

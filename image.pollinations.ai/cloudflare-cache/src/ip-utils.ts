@@ -21,9 +21,9 @@ export function getClientIp(req: Request): string {
     // Handle Express/Node.js request
     if (req.headers && typeof req.headers === "object") {
         return (
-            req.headers["cf-connecting-ip"] ||
-            req.headers["x-real-ip"] ||
-            (req.headers["x-forwarded-for"] || "").split(",")[0].trim() ||
+            req.headers.get("cf-connecting-ip") ||
+            req.headers.get("x-real-ip") ||
+            (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() ||
             // req.connection?.remoteAddress || // produces a type error, is this needed @voodoohop?
             "unknown"
         );

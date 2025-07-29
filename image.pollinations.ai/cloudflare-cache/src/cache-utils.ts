@@ -4,6 +4,7 @@
  */
 
 import { getClientIp } from "./ip-utils.js";
+import { removeUndefined } from "./util.js";
 
 /**
  * Apply model-specific caching rules to the URL
@@ -221,8 +222,8 @@ export async function cacheResponse(
         };
 
         const metadata = {
-            httpMetadata,
-            customMetadata: {
+            httpMetadata: removeUndefined(httpMetadata),
+            customMetadata: removeUndefined({
                 // Essential metadata
                 originalUrl: (originalUrl || "").substring(0, 2048),
                 cachedAt: new Date().toISOString(),
@@ -243,25 +244,8 @@ export async function cacheResponse(
 
                 // Bot Management information if available
                 ...filterBotManagement(request?.cf?.botManagement),
-            },
+            }),
         };
-
-        // Remove undefined values from httpMetadata
-        Object.keys(metadata.httpMetadata).forEach((key) => {
-            if (
-                metadata.httpMetadata[key] === undefined ||
-                metadata.httpMetadata[key] === null
-            ) {
-                delete metadata.httpMetadata[key];
-            }
-        });
-
-        // Remove empty values from customMetadata to save space
-        Object.keys(metadata.customMetadata).forEach((key) => {
-            if (!metadata.customMetadata[key]) {
-                delete metadata.customMetadata[key];
-            }
-        });
 
         // Store the object with metadata
         await env.IMAGE_BUCKET.put(cacheKey, imageBuffer, metadata);

@@ -10,19 +10,26 @@
  */
 
 import {
+    cacheImageEmbedding,
     createSemanticCache,
     findSimilarImage,
-    cacheImageEmbedding,
+    type SemanticCache,
 } from "./semantic-cache.js";
+
+type HybridCache = {
+    r2: R2Bucket;
+    semanticCache: SemanticCache | null;
+    hasSemanticSupport: boolean;
+};
 
 /**
  * Create hybrid cache instance
  * @param {Object} env - Environment bindings
  * @returns {Object} - Hybrid cache instance
  */
-export function createHybridCache(env) {
+export function createHybridCache(env: Env): HybridCache {
     // Only create semantic cache if bindings are available
-    const hasSemanticSupport = env.VECTORIZE_INDEX && env.AI;
+    const hasSemanticSupport = !!env.VECTORIZE_INDEX && !!env.AI;
 
     return {
         r2: env.IMAGE_BUCKET,
@@ -31,14 +38,23 @@ export function createHybridCache(env) {
     };
 }
 
+type HybridCacheResponse = {
+    cacheKey?: VectorizeVectorMetadata;
+    similarity?: number;
+    bucket?: string;
+    cacheType: "semantic" | "exact";
+};
+
 /**
  * Check semantic cache for similar images (after exact cache miss)
  * @param {Object} hybridCache - Hybrid cache instance
  * @param {string} prompt - Image prompt from URL
- * @param {Object} params - Request parameters
- * @returns {Promise<Object|null>} - Similar image info or null
+ * @returns {Promise<HybridCacheResponse|null>} - Similar image info or null
  */
-export async function checkSemanticCache(hybridCache, prompt, params) {
+export async function checkSemanticCache(
+    hybridCache: HybridCache,
+    prompt: string,
+): Promise<HybridCacheResponse | null> {
     // Skip semantic cache if not supported
     if (!hybridCache.hasSemanticSupport || !hybridCache.semanticCache) {
         console.log("[HYBRID] Semantic cache not available, skipping");
@@ -56,12 +72,13 @@ export async function checkSemanticCache(hybridCache, prompt, params) {
         const similarImage = await findSimilarImage(
             hybridCache.semanticCache,
             prompt,
-            params,
         );
 
         if (similarImage) {
+            const formattedSimilarity =
+                similarImage.similarity?.toFixed(3) || "null";
             console.log(
-                `[HYBRID] Found semantic match: ${similarImage.cacheKey} (similarity: ${similarImage.similarity.toFixed(3)})`,
+                `[HYBRID] Found semantic match: ${similarImage.cacheKey} (similarity: ${formattedSimilarity})`,
             );
             return {
                 cacheKey: similarImage.cacheKey,
@@ -88,11 +105,11 @@ export async function checkSemanticCache(hybridCache, prompt, params) {
  * @param {ExecutionContext} ctx - Execution context for waitUntil
  */
 export function storeImageEmbeddingAsync(
-    hybridCache,
-    cacheKey,
-    prompt,
-    params,
-    ctx,
+    hybridCache: HybridCache,
+    cacheKey: string,
+    prompt: string,
+    params: object,
+    ctx: ExecutionContext,
 ) {
     // Skip if semantic cache not supported
     if (!hybridCache.hasSemanticSupport || !hybridCache.semanticCache) {
@@ -115,7 +132,6 @@ export function storeImageEmbeddingAsync(
                 hybridCache.semanticCache,
                 cacheKey,
                 prompt,
-                params,
             ).catch((error) => {
                 console.error(
                     "[HYBRID] Async embedding storage failed:",
@@ -138,7 +154,7 @@ export function storeImageEmbeddingAsync(
  * @param {URL} url - Request URL
  * @returns {string|null} - Extracted prompt or null
  */
-export function extractPromptFromUrl(url) {
+export function extractPromptFromUrl(url: URL): string | null {
     try {
         // Extract prompt from path like /prompt/sunset+over+ocean
         const pathMatch = url.pathname.match(/^\/prompt\/(.+)$/);
@@ -166,8 +182,8 @@ export function extractPromptFromUrl(url) {
  * @param {URL} url - Request URL
  * @returns {Object} - Extracted parameters
  */
-export function extractImageParams(url) {
-    const params = {};
+export function extractImageParams(url: URL): Record<string, string> {
+    const params: Record<string, string> = {};
 
     // Extract common image parameters
     const width = url.searchParams.get("width");

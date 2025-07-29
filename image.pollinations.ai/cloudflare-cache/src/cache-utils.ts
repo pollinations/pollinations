@@ -10,13 +10,13 @@ import { getClientIp } from "./ip-utils.js";
  * @param {URL} url - The URL object to transform
  * @returns {URL} - The transformed URL object
  */
-function applyModelSpecificRules(url) {
+function applyModelSpecificRules(url: URL): URL {
     // Get the model parameter
     const model = url.searchParams.get("model");
 
     // Define model-specific rules that return new URL parameters
     const modelRules = {
-        gptimage: (currentUrl) => {
+        gptimage: (currentUrl: URL) => {
             // For gptimage, always use the same seed for consistent caching
             const newUrl = new URL(currentUrl);
             newUrl.searchParams.set("seed", "42");
@@ -39,7 +39,7 @@ function applyModelSpecificRules(url) {
  * @param {URL} url - The URL object
  * @returns {string} - The cache key
  */
-export function generateCacheKey(url) {
+export function generateCacheKey(url: URL): string {
     // Apply model-specific rules first
     const transformedUrl = applyModelSpecificRules(url);
 
@@ -111,12 +111,12 @@ function createHash(str) {
  * @returns {Promise<boolean>} - Whether the caching was successful
  */
 export async function cacheResponse(
-    cacheKey,
-    response,
-    env,
-    originalUrl,
-    request,
-) {
+    cacheKey: string,
+    response: Response,
+    env: Env,
+    originalUrl: string,
+    request: Request,
+): Promise<boolean> {
     try {
         // Store the image in R2 using the cache key directly
         const imageBuffer = await response.arrayBuffer();
@@ -138,7 +138,11 @@ export async function cacheResponse(
         const requestId = request?.headers?.get("cf-ray") || ""; // Cloudflare Ray ID uniquely identifies the request
 
         // Helper function to sanitize and limit string length
-        const sanitizeValue = (value, maxLength = 256, key = null) => {
+        const sanitizeValue = (
+            value: any,
+            maxLength: number = 256,
+            key: string | null = null,
+        ) => {
             if (value === undefined || value === null) return undefined;
             if (typeof value === "string") return value.substring(0, maxLength);
             if (Array.isArray(value)) {
@@ -149,7 +153,7 @@ export async function cacheResponse(
                 if (key === "detectionIds") {
                     try {
                         return JSON.stringify(value);
-                    } catch (e) {
+                    } catch (_) {
                         return undefined;
                     }
                 }
@@ -196,7 +200,7 @@ export async function cacheResponse(
                     // Special case for detectionIds
                     try {
                         filtered[key] = JSON.stringify(value);
-                    } catch (e) {
+                    } catch (_) {
                         // Skip if can't stringify
                     }
                 }
@@ -205,15 +209,19 @@ export async function cacheResponse(
         };
 
         // Create metadata object with content type and original URL
+        const httpMetadata: R2HTTPMetadata = {
+            contentType: response.headers.get("content-type") || "image/jpeg",
+            contentEncoding:
+                response.headers.get("content-encoding") || undefined,
+            contentDisposition:
+                response.headers.get("content-disposition") || undefined,
+            contentLanguage:
+                response.headers.get("content-language") || undefined,
+            cacheControl: response.headers.get("cache-control") || undefined,
+        };
+
         const metadata = {
-            httpMetadata: {
-                contentType:
-                    response.headers.get("content-type") || "image/jpeg",
-                contentEncoding: response.headers.get("content-encoding"),
-                contentDisposition: response.headers.get("content-disposition"),
-                contentLanguage: response.headers.get("content-language"),
-                cacheControl: response.headers.get("cache-control"),
-            },
+            httpMetadata,
             customMetadata: {
                 // Essential metadata
                 originalUrl: (originalUrl || "").substring(0, 2048),

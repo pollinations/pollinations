@@ -24,8 +24,8 @@
           name = "config.zsh";
           text = ''
             # initialize shell
-            export SHELL=${pkgs.zsh}/bin/zsh;
-            source $HOME/.zshrc
+            eval "$(${pkgs.starship}/bin/starship init zsh)"
+            ${pkgs.figlet}/bin/figlet -f small "Pollinations"
           '';
         };
 
@@ -40,26 +40,28 @@
 
           buildInputs = with pkgs; [
             zsh
+            starship
+            figlet
             git
             sops
             age
             uv
             nodejs_24
-            
+
             # Image processing dependencies for image.pollinations.ai
             vips
             pkg-config
             glib
-            
+
             # ExifTool dependencies
             exiftool
             perl
-            
+
             # Build tools for native Node.js modules
             gcc
             gnumake
             python3
-            
+
             # Additional image processing libraries
             imagemagick
             libjpeg

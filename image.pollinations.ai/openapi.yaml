@@ -1,0 +1,412 @@
+openapi: 3.0.3
+info:
+  title: Pollinations Image API
+  description: |
+    The Pollinations Image API provides AI-powered image generation capabilities.
+    Generate images from text prompts using various AI models including Flux, Turbo, and GPT Image.
+    
+    ## Features
+    - Multiple AI models (Flux, Turbo, Kontext, GPT Image)
+    - Customizable image dimensions and quality
+    - Content safety and moderation
+    - Real-time generation progress tracking
+    - Caching for improved performance
+    - Authentication support for enhanced features
+    
+    ## Rate Limiting
+    - Standard users: 1 request per 10 seconds per IP
+    - Authenticated users: Higher limits based on tier
+    
+    ## Authentication
+    Authentication is optional but provides benefits like higher rate limits and priority processing.
+    Include your token in the Authorization header: `Bearer YOUR_TOKEN`
+  version: 1.0.0
+  contact:
+    name: Pollinations Support
+    url: https://pollinations.ai
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://image.pollinations.ai
+    description: Production server
+
+paths:
+  /prompt/{prompt}:
+    get:
+      summary: Generate image from text prompt
+      description: |
+        Generate an image based on a text prompt. The prompt is URL-encoded in the path.
+        Various parameters can be provided as query parameters to customize the generation.
+      operationId: generateImage
+      parameters:
+        - name: prompt
+          in: path
+          required: true
+          description: The text prompt for image generation (URL-encoded)
+          schema:
+            type: string
+            example: "a beautiful sunset over mountains"
+        - name: model
+          in: query
+          description: The AI model to use for generation
+          schema:
+            type: string
+            enum: [flux, turbo, kontext, gptimage]
+            default: flux
+        - name: width
+          in: query
+          description: Image width in pixels
+          schema:
+            type: integer
+            minimum: 64
+            maximum: 1512
+            default: 1024
+        - name: height
+          in: query
+          description: Image height in pixels
+          schema:
+            type: integer
+            minimum: 64
+            maximum: 1512
+            default: 1024
+        - name: seed
+          in: query
+          description: Random seed for reproducible results
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 1844674407370955
+            default: 42
+        - name: enhance
+          in: query
+          description: Whether to enhance the prompt automatically
+          schema:
+            type: boolean
+            default: true
+        - name: nologo
+          in: query
+          description: Whether to exclude the Pollinations logo
+          schema:
+            type: boolean
+            default: false
+        - name: nofeed
+          in: query
+          description: Whether to exclude from public feed (private generation)
+          schema:
+            type: boolean
+            default: false
+        - name: safe
+          in: query
+          description: Enable additional safety filtering
+          schema:
+            type: boolean
+            default: false
+        - name: quality
+          in: query
+          description: Image quality setting
+          schema:
+            type: string
+            enum: [low, medium, high, hd]
+            default: medium
+        - name: negative_prompt
+          in: query
+          description: Negative prompt to avoid certain elements
+          schema:
+            type: string
+            default: "worst quality, blurry"
+        - name: image
+          in: query
+          description: Reference image URL(s) for image-to-image generation (comma-separated for multiple)
+          schema:
+            type: string
+            example: "https://example.com/image.jpg"
+        - name: transparent
+          in: query
+          description: Generate image with transparent background
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Successfully generated image
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: image/jpeg
+            Cache-Control:
+              schema:
+                type: string
+                example: "public, max-age=31536000, immutable"
+            Content-Disposition:
+              schema:
+                type: string
+                example: 'inline; filename="generated-image.jpg"'
+            X-Auth-Status:
+              schema:
+                type: string
+                enum: [authenticated, unauthenticated]
+              description: Authentication status of the request
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - invalid or missing authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - content policy violation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too many requests - rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /models:
+    get:
+      summary: Get available models
+      description: Retrieve a list of all available AI models for image generation
+      operationId: getModels
+      responses:
+        '200':
+          description: List of available models
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: "no-store, no-cache, must-revalidate, proxy-revalidate"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                example: ["flux", "turbo", "kontext", "gptimage"]
+
+  /register:
+    get:
+      summary: Get registered servers
+      description: Get information about currently registered generation servers
+      operationId: getRegisteredServers
+      responses:
+        '200':
+          description: List of registered servers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServerInfo'
+    post:
+      summary: Register a new server
+      description: Register a new generation server with the system
+      operationId: registerServer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServerRegistration'
+      responses:
+        '200':
+          description: Server registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /feed:
+    get:
+      summary: Real-time generation feed
+      description: |
+        Server-Sent Events (SSE) endpoint for real-time updates on image generation progress.
+        This endpoint streams live updates about ongoing generations and completed images.
+      operationId: getFeed
+      responses:
+        '200':
+          description: SSE stream of generation updates
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: Server-sent events stream with generation updates
+
+  /crossdomain.xml:
+    get:
+      summary: Cross-domain policy file
+      description: Adobe Flash cross-domain policy file for legacy compatibility
+      operationId: getCrossDomainPolicy
+      responses:
+        '200':
+          description: Cross-domain policy XML
+          content:
+            application/xml:
+              schema:
+                type: string
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type
+          example: "Bad Request"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Invalid parameter value"
+        details:
+          type: object
+          description: Additional error details
+        debug:
+          type: object
+          description: Debug information (when available)
+        timingInfo:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimingInfo'
+        requestId:
+          type: string
+          description: Unique request identifier
+        requestParameters:
+          type: object
+          description: Parameters that were sent with the request
+
+    RateLimitErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            queueInfo:
+              type: object
+              description: Information about the current queue status
+              properties:
+                position:
+                  type: integer
+                  description: Position in queue
+                estimatedWaitTime:
+                  type: integer
+                  description: Estimated wait time in seconds
+
+    SuccessResponse:
+      type: object
+      required:
+        - success
+        - message
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Operation completed successfully"
+
+    ServerInfo:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Server URL
+        type:
+          type: string
+          description: Server type
+          enum: [flux, turbo, translate]
+        queueSize:
+          type: integer
+          description: Current queue size
+        totalRequests:
+          type: integer
+          description: Total requests processed
+        errors:
+          type: integer
+          description: Number of errors
+        errorRate:
+          type: string
+          description: Error rate percentage
+        requestsPerSecond:
+          type: string
+          description: Requests per second rate
+        lastHeartbeat:
+          type: integer
+          description: Last heartbeat timestamp
+
+    ServerRegistration:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Server URL to register
+          example: "https://server.example.com"
+        type:
+          type: string
+          description: Server type
+          enum: [flux, turbo, translate]
+          default: flux
+
+    TimingInfo:
+      type: object
+      properties:
+        step:
+          type: string
+          description: Processing step name
+        timestamp:
+          type: integer
+          description: Relative timestamp in milliseconds
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        Optional authentication token for enhanced features and higher rate limits.
+        Include your token in the Authorization header.
+
+security:
+  - BearerAuth: []
+  - {}
+
+tags:
+  - name: Image Generation
+    description: Core image generation functionality
+  - name: System
+    description: System information and server management
+  - name: Real-time
+    description: Real-time updates and streaming

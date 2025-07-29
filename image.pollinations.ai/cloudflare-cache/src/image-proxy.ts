@@ -12,7 +12,11 @@ import { getClientIp } from "./ip-utils.js";
  * @param {string} originHost - The host to proxy the request to
  * @returns {Promise<Response>} - The response from the origin
  */
-export async function proxyToOrigin(request, env, originHost) {
+export async function proxyToOrigin(
+    request: Request,
+    env: Env,
+    originHost?: string,
+): Promise<Response> {
     // Log the original request details
     const clientIP = getClientIp(request);
     console.log("Proxying request from client IP:", clientIP);

@@ -17,12 +17,17 @@ const MAX_STRING_LENGTH = 150;
  * @param {Object} env - Environment variables
  * @returns {Promise<Response|undefined>} Response from Google Analytics
  */
-export async function sendToAnalytics(request, name, params = {}, env) {
+export async function sendToAnalytics(
+    request: Request,
+    name: string,
+    params: Record<string, string> = {},
+    env: Env,
+): Promise<Response | null> {
     try {
         console.log("Sending analytics for event:", name);
         if (!request || !name) {
             console.log("Missing required parameters. Aborting analytics.");
-            return;
+            return null;
         }
 
         // Extract measurement ID and API secret from environment
@@ -31,7 +36,7 @@ export async function sendToAnalytics(request, name, params = {}, env) {
 
         if (!measurementId || !apiSecret) {
             console.log("Missing analytics credentials. Aborting.");
-            return;
+            return null;
         }
 
         // Get URL components
@@ -40,7 +45,9 @@ export async function sendToAnalytics(request, name, params = {}, env) {
         // Rely on worker-supplied extraction to avoid double work. Fallback only if missing.
         let originalPrompt = params.originalPrompt || "";
         if (!originalPrompt && url.pathname.startsWith("/prompt/")) {
-            originalPrompt = decodeURIComponent(url.pathname.split("/prompt/")[1]);
+            originalPrompt = decodeURIComponent(
+                url.pathname.split("/prompt/")[1],
+            );
         }
 
         // Use safeParams from worker when provided, otherwise fall back to URL search params
@@ -105,7 +112,7 @@ export async function sendToAnalytics(request, name, params = {}, env) {
         return response;
     } catch (error) {
         console.error("Error in sendToAnalytics:", error);
-        return undefined;
+        return null;
     }
 }
 
@@ -114,8 +121,10 @@ export async function sendToAnalytics(request, name, params = {}, env) {
  * @param {Object} params - Parameters to process
  * @returns {Object} Processed parameters
  */
-function processParameters(params) {
-    const result = {};
+function processParameters(
+    params: Record<string, string>,
+): Record<string, string | number> {
+    const result: Record<string, string | number> = {};
 
     // Process all parameters
     for (const [key, value] of Object.entries(params)) {
@@ -159,7 +168,7 @@ function processParameters(params) {
  * @param {any} value - Parameter value
  * @returns {any} Processed value
  */
-function processValue(value) {
+function processValue(value: any) {
     // Only truncate strings, pass everything else through as-is
     if (typeof value === "string") {
         return value.substring(0, MAX_STRING_LENGTH);

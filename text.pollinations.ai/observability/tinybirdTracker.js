@@ -146,7 +146,6 @@ export async function sendTinybirdEvent(eventData) {
                 const details = usage.completion_tokens_details;
                 tinybirdEvent.usage_completion_tokens_details_text_tokens = details.text_tokens;
                 tinybirdEvent.usage_completion_tokens_details_audio_tokens = details.audio_tokens;
-                tinybirdEvent.usage_completion_tokens_details_image_tokens = details.image_tokens;
             }
             
             // Flatten prompt_tokens_details
@@ -155,7 +154,6 @@ export async function sendTinybirdEvent(eventData) {
                 const details = usage.prompt_tokens_details;
                 tinybirdEvent.usage_prompt_tokens_details_text_tokens = details.text_tokens;
                 tinybirdEvent.usage_prompt_tokens_details_audio_tokens = details.audio_tokens;
-                tinybirdEvent.usage_prompt_tokens_details_image_tokens = details.image_tokens;
                 tinybirdEvent.usage_prompt_tokens_details_cached_tokens = details.cached_tokens;
             } 
         }

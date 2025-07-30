@@ -624,7 +624,19 @@ server.on("connection", (socket) => {
     });
 });
 
-server.listen(process.env.PORT || 16384);
+const port = process.env.PORT || 16384;
+server.listen(port, () => {
+    console.log(`🌸 Image server listening on port ${port}`);
+    console.log(`🔗 Test URL: http://localhost:${port}/prompt/pollinations`);
+    
+    // Debug environment info
+    const debugEnv = process.env.DEBUG;
+    if (debugEnv) {
+        console.log(`🐛 Debug mode: ${debugEnv}`);
+    } else {
+        console.log(`💡 Pro tip: Want debug logs? Run with DEBUG=* for all the deets! ✨`);
+    }
+});
 
 function relativeTiming(timingInfo: TimingStep[]) {
     return timingInfo.map((info) => ({

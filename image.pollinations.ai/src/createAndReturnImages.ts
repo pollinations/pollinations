@@ -27,6 +27,9 @@ import type { ImageParams } from "./params.ts";
 import { withTimeoutSignal } from "./util.ts";
 import type { ProgressManager } from "./progressBar.ts";
 
+// Import model handlers
+import { callBPAIGenWithKontextFallback } from "./models/bpaigenModel.ts";
+
 dotenv.config();
 
 // Loggers
@@ -734,90 +737,7 @@ export const callAzureGPTImage = async (
     }
 };
 
-/**
- * Calls the external Flux Kontext API to generate images
- * @param {string} prompt - The prompt for image generation
- * @param {Object} safeParams - The parameters for image generation
- * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
- */
-const callKontextAPI = async (
-    prompt: string,
-    safeParams: ImageParams,
-): Promise<ImageGenerationResult> => {
-    try {
-        logOps("Calling Kontext API with prompt:", prompt);
 
-        const formData = new FormData();
-        formData.append("prompt", prompt);
-        formData.append("guidance_scale", "2.5");
-        formData.append("num_inference_steps", "17"); // Hard-coded for consistent performance
-        formData.append("width", safeParams.width.toString());
-        formData.append("height", safeParams.height.toString());
-
-        // If there's an image in safeParams (array format), download and add it to the form data
-        if (safeParams.image && safeParams.image.length > 0) {
-            try {
-                const imageUrl = safeParams.image[0]; // Use first image from array
-                const imageResponse = await fetch(imageUrl);
-                if (imageResponse.ok) {
-                    const imageBlob = await imageResponse.blob();
-                    formData.append("image", imageBlob, "jpg");
-                    logOps(
-                        "Added input image to Kontext API request:",
-                        imageUrl,
-                    );
-                } else {
-                    logError(
-                        "Failed to fetch input image:",
-                        imageUrl,
-                        imageResponse.status,
-                    );
-                }
-            } catch (error) {
-                logError("Error processing input image:", error.message);
-                // Continue without image if there's an error
-            }
-        }
-
-        const headers = {};
-
-        // Add Bearer token if FLUX_KONTEXT_KEY is available
-        if (process.env.FLUX_KONTEXT_KEY) {
-            headers["Authorization"] = `Bearer ${process.env.FLUX_KONTEXT_KEY}`;
-        }
-
-        const response = await withTimeoutSignal(
-            (signal) =>
-                fetch("http://51.159.184.240:8000/generate", {
-                    method: "POST",
-                    headers,
-                    body: formData,
-                    signal,
-                }),
-            120000, // 2 minute timeout
-        );
-
-        if (!response.ok) {
-            throw new Error(
-                `Kontext API error: ${response.status} ${response.statusText}`,
-            );
-        }
-
-        const buffer = Buffer.from(await response.arrayBuffer());
-
-        logOps("Kontext API response received, buffer size:", buffer.length);
-
-        // Return with default maturity flags (assuming generated art is safe)
-        return {
-            buffer,
-            isMature: false,
-            isChild: false,
-        };
-    } catch (error) {
-        logError("Error calling Kontext API:", error);
-        throw new Error(`Kontext API generation failed: ${error.message}`);
-    }
-};
 
 /**
  * Generates an image using the appropriate model based on safeParams
@@ -928,7 +848,7 @@ const generateImage = async (
     }
 
     if (safeParams.model === "kontext") {
-        // Kontext model requires seed tier or higher
+        // BPAIGen+Kontext hybrid model requires seed tier or higher
         if (!hasSufficientTier(userInfo.tier, "seed")) {
             const errorText =
                 "Access to kontext model is limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.";
@@ -943,15 +863,10 @@ const generateImage = async (
         }
 
         try {
-            progress.updateBar(
-                requestId,
-                30,
-                "Processing",
-                "Generating image with Kontext...",
-            );
-            return await callKontextAPI(prompt, safeParams);
+            // Use BPAIGen with Kontext fallback for enhanced reliability and quality
+            return await callBPAIGenWithKontextFallback(prompt, safeParams, progress, requestId);
         } catch (error) {
-            logError("Kontext API failed:", error.message);
+            logError("Both BPAIGen and Kontext failed:", error.message);
             progress.updateBar(requestId, 100, "Error", error.message);
             throw error;
         }

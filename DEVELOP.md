@@ -41,3 +41,12 @@ The variables are kept encrypted in `**/.encrypted.env` files, and only decrypte
 | `sops decrypt .encrypted.env  > .env` | dump decrypted content |
 | `sops encrypt .env > .encrypted.env` | encrypt new file |
 | `sops edit .encrypted.env` | exit file via temp file (hint: set `EDITOR=/editor/executable`) |
+
+##### Debugging
+For verbose logging and debugging across all services, you can use:
+
+```bash
+DEBUG=* npm start
+```
+
+This will enable comprehensive debug output to help troubleshoot issues during development.

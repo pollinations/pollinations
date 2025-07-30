@@ -82,6 +82,7 @@ export async function sendTinybirdEvent(eventData) {
 
             // Model and provider info
             model: modelName,
+            model_used: eventData.modelUsed, // Track the actual model used by the provider (from response)
             provider,
 
             // Performance metrics

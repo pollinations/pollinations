@@ -136,27 +136,7 @@ export async function sendTinybirdEvent(eventData) {
             }),
         };
 
-        // Add flattened usage fields for detailed token tracking
-        if (eventData.status === "success" && eventData.usage) {
-            const usage = eventData.usage;
-            
-            // Flatten completion_tokens_details
-            if (usage.completion_tokens_details) {
-                tinybirdEvent.usage_completion_tokens = usage.completion_tokens;
-                const details = usage.completion_tokens_details;
-                tinybirdEvent.usage_completion_tokens_details_text_tokens = details.text_tokens;
-                tinybirdEvent.usage_completion_tokens_details_audio_tokens = details.audio_tokens;
-            }
-            
-            // Flatten prompt_tokens_details
-            if (usage.prompt_tokens_details) {
-                tinybirdEvent.usage_prompt_tokens = usage.prompt_tokens;
-                const details = usage.prompt_tokens_details;
-                tinybirdEvent.usage_prompt_tokens_details_text_tokens = details.text_tokens;
-                tinybirdEvent.usage_prompt_tokens_details_audio_tokens = details.audio_tokens;
-                tinybirdEvent.usage_prompt_tokens_details_cached_tokens = details.cached_tokens;
-            } 
-        }
+        // Usage data is now automatically extracted by Tinybird from the nested response.usage object
 
         // Simplified user logging with a consistent format
         const userIdentifier = eventData.username
@@ -182,7 +162,7 @@ export async function sendTinybirdEvent(eventData) {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${TINYBIRD_API_KEY}`,
                     },
-                    body: JSON.stringify(event),
+                    body: JSON.stringify(tinybirdEvent),
                     signal: controller.signal,
                 },
             );

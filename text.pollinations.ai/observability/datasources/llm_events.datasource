@@ -1,5 +1,6 @@
 
 DESCRIPTION >
+    -- v2: Added usage detail columns
     Store LLM events with usage metrics, costs, and metadata
 
 SCHEMA >
@@ -49,8 +50,8 @@ SCHEMA >
     `usage_prompt_tokens_details_text_tokens` UInt16 `json:$.usage_prompt_tokens_details_text_tokens` DEFAULT 0,
     `usage_prompt_tokens_details_audio_tokens` UInt16 `json:$.usage_prompt_tokens_details_audio_tokens` DEFAULT 0,
     `usage_prompt_tokens_details_image_tokens` UInt16 `json:$.usage_prompt_tokens_details_image_tokens` DEFAULT 0,
-    `usage_prompt_tokens_details_cached_tokens` UInt16 `json:$.usage_prompt_tokens_details_cached_tokens` DEFAULT 0
-    `usage_prompt_tokens` UInt16 `json:$.usage_prompt_tokens` DEFAULT 0
+    `usage_prompt_tokens_details_cached_tokens` UInt16 `json:$.usage_prompt_tokens_details_cached_tokens` DEFAULT 0,
+    `usage_prompt_tokens` UInt16 `json:$.usage_prompt_tokens` DEFAULT 0,
 
 ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
@@ -58,4 +59,4 @@ ENGINE_SORTING_KEY "timestamp, organization, project, environment, user, chat_id
 ENGINE_PRIMARY_KEY "timestamp, organization, project"
 
 FORWARD_QUERY > 
-  SELECT timestamp, organization, project, environment, user, chat_id, message_id, model, prompt_tokens, completion_tokens, defaultValueOfTypeName('UInt16') AS cached_tokens, total_tokens, response_time, duration, cost, exception, traceback, response_status, messages, response_choices, proxy_metadata, provider, llm_api_duration_ms, end_time, id, stream, call_type, api_key, log_event_type, cache_hit, response, response_id, response_object, embedding
+  SELECT timestamp, organization, project, environment, user, chat_id, message_id, model, prompt_tokens, completion_tokens, defaultValueOfTypeName('UInt16') AS cached_tokens, total_tokens, response_time, duration, cost, exception, traceback, response_status, messages, response_choices, proxy_metadata, provider, llm_api_duration_ms, end_time, id, stream, call_type, api_key, log_event_type, cache_hit, response, response_id, response_object, embedding, defaultValueOfTypeName('UInt16') AS usage_completion_tokens_details_text_tokens, defaultValueOfTypeName('UInt16') AS usage_completion_tokens_details_audio_tokens, defaultValueOfTypeName('UInt16') AS usage_completion_tokens_details_image_tokens, defaultValueOfTypeName('UInt16') AS usage_completion_tokens, defaultValueOfTypeName('UInt16') AS usage_prompt_tokens_details_text_tokens, defaultValueOfTypeName('UInt16') AS usage_prompt_tokens_details_audio_tokens, defaultValueOfTypeName('UInt16') AS usage_prompt_tokens_details_image_tokens, defaultValueOfTypeName('UInt16') AS usage_prompt_tokens_details_cached_tokens, defaultValueOfTypeName('UInt16') AS usage_prompt_tokens

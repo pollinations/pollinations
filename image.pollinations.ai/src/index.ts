@@ -9,6 +9,7 @@ import {
     handleAuthentication,
 } from "../../shared/auth-utils.js";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
+import { sendTinybirdEvent } from "../observability/tinybirdTracker.js";
 
 // Import shared utilities
 import { enqueue } from "../../shared/ipQueue.js";
@@ -148,6 +149,8 @@ const imageGen = async ({
         );
     }
 
+    const startTime = Date.now();
+    
     try {
         timingInfo.push({ step: "Start processing", timestamp: Date.now() });
 
@@ -262,6 +265,27 @@ const imageGen = async ({
         progress.completeBar(requestId, "Image generation complete");
         progress.stop();
 
+        // Send telemetry to Tinybird
+        const endTime = new Date();
+        const duration = endTime.getTime() - startTime;
+        sendTinybirdEvent({
+            startTime: new Date(startTime),
+            endTime,
+            requestId,
+            model: safeParams.model || "unknown",
+            duration,
+            status: "success",
+            project: "image.pollinations.ai",
+            environment: process.env.NODE_ENV || "production",
+            // Include user information from authResult
+            user: authResult?.username || authResult?.userId || "anonymous",
+            username: authResult?.username,
+            organization: authResult?.userId ? "pollinations" : undefined,
+            tier: authResult?.tier || "seed",
+        }).catch((err) => {
+            logError("Failed to send Tinybird telemetry for success:", err);
+        });
+
         return { buffer, ...maturity };
     } catch (error) {
         // Check if this was a prohibited content error
@@ -286,6 +310,28 @@ const imageGen = async ({
             prompt: originalPrompt,
             params: safeParams,
             referrer,
+        });
+
+        // Send error telemetry to Tinybird
+        const endTime = new Date();
+        const duration = endTime.getTime() - startTime;
+        sendTinybirdEvent({
+            startTime: new Date(startTime),
+            endTime,
+            requestId,
+            model: safeParams?.model || "unknown",
+            duration,
+            status: "error",
+            error,
+            project: "image.pollinations.ai",
+            environment: process.env.NODE_ENV || "production",
+            // Include user information from authResult if available
+            user: authResult?.username || authResult?.userId || "anonymous",
+            username: authResult?.username,
+            organization: authResult?.userId ? "pollinations" : undefined,
+            tier: authResult?.tier || "seed",
+        }).catch((err) => {
+            logError("Failed to send Tinybird telemetry for error:", err);
         });
 
         throw error;

@@ -70,8 +70,8 @@ export async function sendTinybirdEvent(eventData) {
         const provider = getProviderNameFromModel(modelName);
         log(`Provider for model ${modelName}: ${provider}`);
 
-        // Construct the event object with defaults and conditionals using spread operator
-        const event = {
+        // Construct the event object: start with a shallow copy so any extra fields (ip, ua, country, etc.) are preserved
+        const tinybirdEvent = {
             // Standard timestamps and identifiers
             start_time: eventData.startTime?.toISOString(),
             end_time: eventData.endTime?.toISOString(),
@@ -134,6 +134,30 @@ export async function sendTinybirdEvent(eventData) {
                 traceback: eventData.error?.stack || "",
             }),
         };
+
+        // Add flattened usage fields for detailed token tracking
+        if (eventData.status === "success" && eventData.usage) {
+            const usage = eventData.usage;
+            
+            // Flatten completion_tokens_details
+            if (usage.completion_tokens_details) {
+                tinybirdEvent.usage_completion_tokens = usage.completion_tokens;
+                const details = usage.completion_tokens_details;
+                tinybirdEvent.usage_completion_tokens_details_text_tokens = details.text_tokens;
+                tinybirdEvent.usage_completion_tokens_details_audio_tokens = details.audio_tokens;
+                tinybirdEvent.usage_completion_tokens_details_image_tokens = details.image_tokens;
+            }
+            
+            // Flatten prompt_tokens_details
+            if (usage.prompt_tokens_details) {
+                tinybirdEvent.usage_prompt_tokens = usage.prompt_tokens;
+                const details = usage.prompt_tokens_details;
+                tinybirdEvent.usage_prompt_tokens_details_text_tokens = details.text_tokens;
+                tinybirdEvent.usage_prompt_tokens_details_audio_tokens = details.audio_tokens;
+                tinybirdEvent.usage_prompt_tokens_details_image_tokens = details.image_tokens;
+                tinybirdEvent.usage_prompt_tokens_details_cached_tokens = details.cached_tokens;
+            } 
+        }
 
         // Simplified user logging with a consistent format
         const userIdentifier = eventData.username

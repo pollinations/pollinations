@@ -153,6 +153,17 @@ export async function sendTinybirdEvent(eventData) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
+        // Log the complete payload being sent to Tinybird for debugging
+        log(`📤 TINYBIRD PAYLOAD - Full event data being sent:`);
+        log(`   🎯 model: "${event.model}"`);
+        log(`   🔧 model_used: "${event.model_used}"`);
+        log(`   👤 user: "${event.user}"`);
+        log(`   ⏱️  duration: ${event.duration}ms`);
+        log(`   💰 cost: $${event.cost}`);
+        log(`   📊 usage:`, event.usage || 'N/A');
+        log(`   🏢 provider: "${event.provider}"`);
+        log(`   📋 Full JSON payload:`, JSON.stringify(event, null, 2));
+
         try {
             const response = await fetch(
                 `${TINYBIRD_API_URL}/v0/events?name=llm_events`,

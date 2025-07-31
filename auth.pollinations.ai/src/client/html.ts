@@ -38,17 +38,24 @@ export const generateHTML = () => `<!DOCTYPE html>
                     <b>Free</b> &nbsp;|&nbsp; <b>Anonymous</b> 
                 </span>
             </div>
-            <div style="margin-top: 12px; font-size: 1.05em; color: #7a3cff;">
+            <div style="margin-top: 12px; margin-bottom: 12px; font-size: 1.05em; color: #7a3cff;">
                 <i>Gen-AI API for everyone <span style="font-size:1.2em;">🌟</span></i>
             </div>
         </div>
 
-        <!-- 🔐 Authentication -->
-        <div id="auth-section" style="margin-top: 40px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div id="auth-section" style="display:flex; align-items:center; gap:1em; flex-wrap:wrap;">
             <button id="auth-button" onclick="startAuth()">Login with GitHub</button>
             <button id="logout-button" onclick="logout()" class="hidden">Logout</button>
             <div id="badge-container" class="hidden"></div>
+            <div id="cost-section" class="hidden">
+                <div class="cost-display loading" id="cost-display">
+                    <span class="cost-label">PLN</span>
+                    <span id="cost-value" class="cost-value">•••</span>
+                </div>
+            </div>
         </div>
+
+
 
         <!-- 👤 Account Section -->
         <div id="account-section">

@@ -77,11 +77,12 @@ window.addEventListener('load', function() {
             document.getElementById('user-section').classList.remove('hidden');
             document.getElementById('domain-section').classList.remove('hidden');
             
-            // Automatically load user info, domains, token and preferences
+            // Automatically load user info, domains, token, preferences, and cost
             getUserInfo();
             getDomains();
             getApiToken();
             getUserPreferences();
+            getUserCost();
             // Hide intro text when user is logged in (stored session)
             const introEl = document.getElementById('intro-text');
             if (introEl) introEl.classList.add('hidden');
@@ -116,6 +117,7 @@ window.logout = function() {
     // Hide sections
     document.getElementById('user-section').classList.add('hidden');
     document.getElementById('domain-section').classList.add('hidden');
+    document.getElementById('cost-section').classList.add('hidden');
     
     // Show logout message
     showStatus('auth-status', '👋 Logged out successfully', 'info');
@@ -152,6 +154,7 @@ function handleTokenError() {
     // Hide sections
     document.getElementById('user-section').classList.add('hidden');
     document.getElementById('domain-section').classList.add('hidden');
+    document.getElementById('cost-section').classList.add('hidden');
     
     // Show logout message
     showStatus('auth-status', '⏰ Your session has expired. Please log in again.', 'info');
@@ -203,10 +206,11 @@ async function getUserInfo() {
             // Optionally clear the old user-info badge
             showStatus('user-info', '', 'info');
             
-            // Now that we have the user ID, get domains and token
+            // Now that we have the user ID, get domains, token, tier, and cost
             getDomains();
             getApiToken();
             getUserTier();
+            getUserCost();
         } else {
             // Check if unauthorized (token expired or invalid)
             if (response.status === 401) {
@@ -595,6 +599,70 @@ window.copyApiToken = async function() {
         }
     } catch (err) {
         console.error('Failed to copy token:', err);
+    }
+}
+
+// Get user cost from Tinybird
+async function getUserCost() {
+    if (!authToken || !userId) {
+        // Hide cost section if not authenticated
+        document.getElementById('cost-section').classList.add('hidden');
+        return;
+    }
+
+    // Show cost section with loading animation
+    const costSection = document.getElementById('cost-section');
+    const costDisplay = document.getElementById('cost-display');
+    const costValue = document.getElementById('cost-value');
+    
+    costSection.classList.remove('hidden');
+    costDisplay.classList.add('loading');
+    costValue.textContent = '•••';
+
+    try {
+        // Get username from localStorage for the API call
+        const username = localStorage.getItem('github_username');
+        if (!username) {
+            costDisplay.classList.remove('loading');
+            costValue.textContent = '?';
+            return;
+        }
+
+        const tinybirdUrl = 'https://api.europe-west2.gcp.tinybird.co/v0/pipes/get_llm_costs.json';
+        const tinybirdToken = 'p.eyJ1IjogIjY2ZTg5NDU1LTAzYTgtNGZkNS1iNjg3LWU5NDdhMzY5OThkMyIsICJpZCI6ICJhZjVkZTNiNi04NmVhLTQ4ODMtYjZlYi1iYzJjYjZjOTE3ZjEiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.XH20kZ7QLFsM8sNDsr8w-xS3K8TKb6ieHAysh3K50Co';
+        
+        const response = await fetch(tinybirdUrl + '?token=' + tinybirdToken + '&username=' + encodeURIComponent(username));
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Add a small delay to show the loading animation
+            setTimeout(() => {
+                costDisplay.classList.remove('loading');
+                
+                if (data.data && data.data.length > 0) {
+                    const totalCost = data.data[0].total_cost;
+                    
+                    // Format cost as rounded integer without dollar sign
+                    const formattedCost = Math.round(totalCost).toString();
+                    costValue.textContent = formattedCost;
+                } else {
+                    costValue.textContent = '0';
+                }
+            }, 800); // Small delay to show the animation
+        } else {
+            console.error('Failed to fetch cost data:', response.statusText);
+            setTimeout(() => {
+                costDisplay.classList.remove('loading');
+                costValue.textContent = '!';
+            }, 500);
+        }
+    } catch (error) {
+        console.error('Error fetching user cost:', error);
+        setTimeout(() => {
+            costDisplay.classList.remove('loading');
+            costValue.textContent = '!';
+        }, 500);
     }
 }
 

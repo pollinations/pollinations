@@ -124,7 +124,13 @@ h3 {
 
 /* Ensure logout button height aligns with badge */
 #logout-button {
-    padding: 12px 24px; /* keep consistent */
+    padding: 14px 24px; /* increased to match visual height of other elements */
+    width: auto;
+    min-width: fit-content;
+    white-space: nowrap;
+    display: inline-block;
+    font-size: 1rem;
+    font-weight: 600;
 }
 
 /* Adjust badge padding to match button height */
@@ -141,8 +147,8 @@ button {
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    margin-right: 10px;
-    margin-bottom: 10px;
+    margin-right: 0px;
+    margin-bottom: 0px;
     font-family: 'Space Grotesk', sans-serif;
     position: relative;
     overflow: hidden;
@@ -213,7 +219,12 @@ input:focus {
     100% { border-color: var(--color-secondary); }
 }
 
-.hidden { display: none; }
+.hidden { display: none !important; }
+
+/* Ensure logout button is properly hidden when it has the hidden class */
+#logout-button.hidden {
+    display: none !important;
+}
 
 /* Updated layout: stack input above button */
 .input-group {
@@ -835,8 +846,125 @@ input:checked + .toggle-slider:before {
     color: #666;
 }
 
+/* Removed margin-left: auto to keep elements left-aligned */
 .auth-section button + #badge-container {
-    margin-left: auto;
+    margin-left: 10px;
+}
+
+/* 🌟 Pollen Cost Display - Enhanced Psychedelic Style */
+.cost-display {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: 3px solid transparent;
+    border-radius: 25px;
+    background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%) padding-box,
+                linear-gradient(45deg, var(--color-primary), var(--color-secondary), var(--color-accent), var(--color-primary)) border-box;
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 15px rgba(255, 97, 216, 0.15), 
+                0 2px 8px rgba(5, 255, 161, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    animation: cost-border-glow 6s linear infinite;
+    cursor: default;
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+    transform: translateZ(0); /* Hardware acceleration */
+}
+
+.cost-display::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: cost-shine 3s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.cost-display:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(255, 97, 216, 0.25), 
+                0 3px 12px rgba(5, 255, 161, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.cost-display .cost-icon {
+    font-size: 1.3rem;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+.cost-display .cost-label {
+    background: linear-gradient(45deg, var(--color-primary), var(--color-secondary), var(--color-accent), var(--color-primary));
+    background-size: 300% 300%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    animation: cost-shimmer 4s ease-in-out infinite;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.cost-display .cost-value {
+    background: linear-gradient(45deg, var(--color-primary), var(--color-secondary), var(--color-accent), var(--color-primary));
+    background-size: 300% 300%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+    font-size: 1.15rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: cost-shimmer 4s ease-in-out infinite 0.5s;
+    font-family: 'Space Grotesk', monospace;
+    letter-spacing: -0.5px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Loading animation for cost display */
+.cost-display.loading {
+    animation: cost-loading-border 2s linear infinite;
+}
+
+.cost-display.loading .cost-value {
+    animation: cost-loading-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes cost-loading-border {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes cost-border-glow {
+    0% { background-position: 0% 50%; }
+    25% { background-position: 100% 50%; }
+    50% { background-position: 100% 100%; }
+    75% { background-position: 0% 100%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes cost-loading-shimmer {
+    0% { background-position: 200% 0%; }
+    100% { background-position: -200% 0%; }
+}
+
+@keyframes cost-shine {
+    0% { left: -100%; }
+    50% { left: 100%; }
+    100% { left: 100%; }
+}
+
+@keyframes cost-shimmer {
+    0% { background-position: 200% 0%; }
+    50% { background-position: -200% 0%; }
+    100% { background-position: 200% 0%; }
 }
 
 .token-wrapper {
@@ -893,10 +1021,50 @@ input:checked + .toggle-slider:before {
     pointer-events: none;
 }
 
-/* Ensure user info appears on its own line below the logout button */
+/* Keep badge container inline with other elements */
 #auth-section #badge-container {
-    flex: 0 0 100%;  /* Force full-width row inside flex container */
-    margin-top: 8px; /* Small spacing from buttons */
+    /* Removed flex: 0 0 100% to keep elements on same line */
+    margin-top: 0; /* Keep aligned with buttons */
+}
+
+/* Responsive auth section */
+#auth-section {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    flex-wrap: wrap;
+    margin-bottom: 1em;
+}
+
+/* Ensure consistent spacing for wrapped elements */
+#auth-section > * {
+    margin-bottom: 0.5em;
+}
+
+/* Responsive breakpoints */
+@media (max-width: 600px) {
+    #auth-section {
+        gap: 0.5em;
+        justify-content: flex-start;
+    }
+    
+    #auth-section > * {
+        margin-bottom: 0.75em;
+    }
+    
+    .cost-display {
+        font-size: 0.9rem;
+        padding: 10px 20px;
+    }
+    
+    button {
+        font-size: 0.9rem;
+        padding: 10px 20px;
+    }
+    
+    #logout-button {
+        padding: 12px 20px;
+    }
 }
 
 /* CTA Hole Style – looks like a cut-out label inside cards */

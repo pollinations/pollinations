@@ -133,11 +133,18 @@ export async function sendTinybirdEvent(eventData) {
 
             // Always include basic response object to prevent null response_id
             // For success cases, include full response data; for error cases, include minimal id
-
-            response_id: eventData.requestId,
-            object: "chat.completion",
-            // Pass the usage object directly without transformation
-            usage: eventData.usage,
+            response:
+                eventData.status === "success"
+                    ? {
+                          id: eventData.requestId,
+                          object: "chat.completion",
+                          // Pass the usage object directly without transformation
+                          usage: eventData.usage,
+                      }
+                    : {
+                          // Minimal response object for failed requests to satisfy schema
+                          id: eventData.requestId,
+                      },
 
             // Conditionally add error info
             ...(eventData.status === "error" && {

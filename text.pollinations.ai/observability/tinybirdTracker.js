@@ -55,14 +55,27 @@ export async function sendTinybirdEvent(eventData) {
                 prompt_tokens = 0,
                 completion_tokens = 0,
                 cached_tokens = 0,
+                prompt_tokens_details = {},
+                completion_tokens_details = {},
             } = eventData.usage;
+
+            // Extract audio tokens from details if available
+            const prompt_audio_tokens = prompt_tokens_details?.audio_tokens || 0;
+            const completion_audio_tokens = completion_tokens_details?.audio_tokens || 0;
+
+            // Log audio token usage if present
+            if (prompt_audio_tokens > 0 || completion_audio_tokens > 0) {
+                log(`Audio tokens detected - Prompt: ${prompt_audio_tokens}, Completion: ${completion_audio_tokens}`);
+            }
 
             // Calculate cost using direct references
             // Pricing in availableModels.js is per million tokens, so we need to divide token counts by 1,000,000
             totalCost =
-                (prompt_tokens / 1000000) * pricing.prompt +
-                (completion_tokens / 1000000) * pricing.completion +
-                (cached_tokens / 1000000) * (pricing.cache || 0);
+                (prompt_tokens / 1000000) * (pricing?.prompt_text || 0) +
+                (completion_tokens / 1000000) * (pricing?.completion_text || 0) +
+                (cached_tokens / 1000000) * (pricing?.prompt_cache || 0) +
+                (prompt_audio_tokens / 1000000) * (pricing?.prompt_audio || 0) +
+                (completion_audio_tokens / 1000000) * (pricing?.completion_audio || 0);
         }
 
         // Get the provider for the model

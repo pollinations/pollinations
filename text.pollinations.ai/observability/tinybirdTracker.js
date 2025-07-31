@@ -62,17 +62,20 @@ export async function sendTinybirdEvent(eventData) {
             // Extract audio tokens from details if available
             const prompt_audio_tokens = prompt_tokens_details?.audio_tokens || 0;
             const completion_audio_tokens = completion_tokens_details?.audio_tokens || 0;
+            const prompt_text_tokens = prompt_tokens_details?.text_tokens || (prompt_tokens - prompt_audio_tokens);
+            const completion_text_tokens = completion_tokens_details?.text_tokens || (completion_tokens - completion_audio_tokens);
 
-            // Log audio token usage if present
+            // Log token breakdown if audio tokens are present
             if (prompt_audio_tokens > 0 || completion_audio_tokens > 0) {
-                log(`Audio tokens detected - Prompt: ${prompt_audio_tokens}, Completion: ${completion_audio_tokens}`);
+                log(`Token breakdown - Prompt: ${prompt_text_tokens} text + ${prompt_audio_tokens} audio = ${prompt_tokens} total`);
+                log(`Token breakdown - Completion: ${completion_text_tokens} text + ${completion_audio_tokens} audio = ${completion_tokens} total`);
             }
 
-            // Calculate cost using direct references
+            // Calculate cost properly - text and audio tokens are separate, not additive
             // Pricing in availableModels.js is per million tokens, so we need to divide token counts by 1,000,000
             totalCost =
-                (prompt_tokens / 1000000) * (pricing?.prompt_text || 0) +
-                (completion_tokens / 1000000) * (pricing?.completion_text || 0) +
+                (prompt_text_tokens / 1000000) * (pricing?.prompt_text || 0) +
+                (completion_text_tokens / 1000000) * (pricing?.completion_text || 0) +
                 (cached_tokens / 1000000) * (pricing?.prompt_cache || 0) +
                 (prompt_audio_tokens / 1000000) * (pricing?.prompt_audio || 0) +
                 (completion_audio_tokens / 1000000) * (pricing?.completion_audio || 0);

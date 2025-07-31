@@ -18,10 +18,10 @@ const errorLog = debug("pollinations:portkey:error");
 // Model mapping for Portkey
 const MODEL_MAPPING = {
 	// Azure OpenAI models
-	"openai-fast": "gpt-4.1-nano-roblox",
-	openai: "gpt-4.1-nano-roblox",
+	"openai-fast": "gpt-4.1-nano",
+	"openai": "gpt-4.1-nano",
 	"openai-large": "azure-gpt-4.1",
-	"openai-roblox": "gpt-4.1-nano-roblox",
+	"openai-roblox": "gpt-4.1-nano",
 	//'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
 	"openai-reasoning": "o3", // Maps to custom MonoAI endpoint
 	searchgpt: "gpt-4o-mini-search-preview", // Maps to custom MonoAI endpoint

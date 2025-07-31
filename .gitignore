@@ -1,3 +1,7 @@
+
+# Crush
+.crush/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -290,3 +294,4 @@ text.pollinations.ai/v2/
 .dev.vars
 image.pollinations.ai/temp_logs/
 .wrangler/
+.crush/

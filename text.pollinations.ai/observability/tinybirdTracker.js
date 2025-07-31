@@ -113,9 +113,7 @@ export async function sendTinybirdEvent(eventData) {
             cost: totalCost,
 
             // User info
-            user: eventData.username || eventData.user || "anonymous",
-            username: eventData.username,
-
+            user: eventData.user,
             // Status and event type constants
             standard_logging_object_status: eventData.status,
             log_event_type: "chat_completion",
@@ -145,7 +143,7 @@ export async function sendTinybirdEvent(eventData) {
                       }
                     : {
                           // Minimal response object for failed requests to satisfy schema
-                          id: eventData.requestId || `req_${Date.now()}`,
+                          id: eventData.requestId,
                       },
 
             // Conditionally add error info
@@ -158,11 +156,9 @@ export async function sendTinybirdEvent(eventData) {
         // Usage data is now automatically extracted by Tinybird from the nested response.usage object
 
         // Simplified user logging with a consistent format
-        const userIdentifier = eventData.username
-            ? `Username: ${eventData.username}`
-            : eventData.user && eventData.user !== "anonymous"
-              ? `UserID: ${eventData.user}`
-              : "Anonymous user";
+        const userIdentifier = eventData.user
+            ? `UserID: ${eventData.user}`
+            : "Anonymous user";
 
         log(
             `Sending telemetry to Tinybird for ${eventData.model} call - ${userIdentifier}${eventData.tier ? `, Tier: ${eventData.tier}` : ""}`,

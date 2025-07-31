@@ -43,14 +43,13 @@ SCHEMA >
 
     `embedding` Array(Float32) `json:$.embedding[:]` DEFAULT [],
 
-    `usage_completion_tokens_details_text_tokens` UInt16 `json:$.usage_completion_tokens_details_text_tokens` DEFAULT 0,
-    `usage_completion_tokens_details_audio_tokens` UInt16 `json:$.usage_completion_tokens_details_audio_tokens` DEFAULT 0,
-    `usage_completion_tokens` UInt16 `json:$.usage_completion_tokens` DEFAULT 0,
-    
-    `usage_prompt_tokens_details_text_tokens` UInt16 `json:$.usage_prompt_tokens_details_text_tokens` DEFAULT 0,
-    `usage_prompt_tokens_details_audio_tokens` UInt16 `json:$.usage_prompt_tokens_details_audio_tokens` DEFAULT 0,
-    `usage_prompt_tokens_details_cached_tokens` UInt16 `json:$.usage_prompt_tokens_details_cached_tokens` DEFAULT 0,
-    `usage_prompt_tokens` UInt16 `json:$.usage_prompt_tokens` DEFAULT 0,
+    `usage_completion_tokens_details_text_tokens` UInt16 `json:$.usage.completion_tokens_details.text_tokens` DEFAULT 0,
+    `usage_completion_tokens_details_audio_tokens` UInt16 `json:$.usage.completion_tokens_details.audio_tokens` DEFAULT 0,
+    `usage_completion_tokens` UInt16 `json:$.usage.completion_tokens` DEFAULT 0,
+    `usage_prompt_tokens_details_text_tokens` UInt16 `json:$.usage.prompt_tokens_details.text_tokens` DEFAULT 0,
+    `usage_prompt_tokens_details_audio_tokens` UInt16 `json:$.usage.prompt_tokens_details.audio_tokens` DEFAULT 0,
+    `usage_prompt_tokens_details_cached_tokens` UInt16 `json:$.usage.prompt_tokens_details.cached_tokens` DEFAULT 0,
+    `usage_prompt_tokens` UInt16 `json:$.usage.prompt_tokens` DEFAULT 0,
 
 ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"

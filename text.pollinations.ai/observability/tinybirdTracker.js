@@ -55,14 +55,33 @@ export async function sendTinybirdEvent(eventData) {
                 prompt_tokens = 0,
                 completion_tokens = 0,
                 cached_tokens = 0,
+                prompt_tokens_details = {},
+                completion_tokens_details = {},
             } = eventData.usage;
 
-            // Calculate cost using direct references
+            // Extract audio tokens from details if available
+            // Handle both standard and alternative field names, and null details
+            const prompt_audio_tokens = prompt_tokens_details?.audio_tokens || eventData.usage.audio_prompt_tokens || 0;
+            const completion_audio_tokens = completion_tokens_details?.audio_tokens || eventData.usage.audio_completion_tokens || 0;
+            
+            // Calculate text tokens, handling null details gracefully
+            const prompt_text_tokens = prompt_tokens_details?.text_tokens || (prompt_tokens - prompt_audio_tokens);
+            const completion_text_tokens = completion_tokens_details?.text_tokens || (completion_tokens - completion_audio_tokens);
+
+            // Log token breakdown if audio tokens are present
+            if (prompt_audio_tokens > 0 || completion_audio_tokens > 0) {
+                log(`Token breakdown - Prompt: ${prompt_text_tokens} text + ${prompt_audio_tokens} audio = ${prompt_tokens} total`);
+                log(`Token breakdown - Completion: ${completion_text_tokens} text + ${completion_audio_tokens} audio = ${completion_tokens} total`);
+            }
+
+            // Calculate cost properly - text and audio tokens are separate, not additive
             // Pricing in availableModels.js is per million tokens, so we need to divide token counts by 1,000,000
             totalCost =
-                (prompt_tokens / 1000000) * pricing.prompt +
-                (completion_tokens / 1000000) * pricing.completion +
-                (cached_tokens / 1000000) * (pricing.cache || 0);
+                (prompt_text_tokens / 1000000) * (pricing?.prompt_text || 0) +
+                (completion_text_tokens / 1000000) * (pricing?.completion_text || 0) +
+                (cached_tokens / 1000000) * (pricing?.prompt_cache || 0) +
+                (prompt_audio_tokens / 1000000) * (pricing?.prompt_audio || 0) +
+                (completion_audio_tokens / 1000000) * (pricing?.completion_audio || 0);
         }
 
         // Get the provider for the model
@@ -94,9 +113,7 @@ export async function sendTinybirdEvent(eventData) {
             cost: totalCost,
 
             // User info
-            user: eventData.username || eventData.user || "anonymous",
-            username: eventData.username,
-
+            user: eventData.user,
             // Status and event type constants
             standard_logging_object_status: eventData.status,
             log_event_type: "chat_completion",
@@ -126,7 +143,7 @@ export async function sendTinybirdEvent(eventData) {
                       }
                     : {
                           // Minimal response object for failed requests to satisfy schema
-                          id: eventData.requestId || `req_${Date.now()}`,
+                          id: eventData.requestId,
                       },
 
             // Conditionally add error info
@@ -136,34 +153,12 @@ export async function sendTinybirdEvent(eventData) {
             }),
         };
 
-        // Add flattened usage fields for detailed token tracking
-        if (eventData.status === "success" && eventData.usage) {
-            const usage = eventData.usage;
-            
-            // Flatten completion_tokens_details
-            if (usage.completion_tokens_details) {
-                tinybirdEvent.usage_completion_tokens = usage.completion_tokens;
-                const details = usage.completion_tokens_details;
-                tinybirdEvent.usage_completion_tokens_details_text_tokens = details.text_tokens;
-                tinybirdEvent.usage_completion_tokens_details_audio_tokens = details.audio_tokens;
-            }
-            
-            // Flatten prompt_tokens_details
-            if (usage.prompt_tokens_details) {
-                tinybirdEvent.usage_prompt_tokens = usage.prompt_tokens;
-                const details = usage.prompt_tokens_details;
-                tinybirdEvent.usage_prompt_tokens_details_text_tokens = details.text_tokens;
-                tinybirdEvent.usage_prompt_tokens_details_audio_tokens = details.audio_tokens;
-                tinybirdEvent.usage_prompt_tokens_details_cached_tokens = details.cached_tokens;
-            } 
-        }
+        // Usage data is now automatically extracted by Tinybird from the nested response.usage object
 
         // Simplified user logging with a consistent format
-        const userIdentifier = eventData.username
-            ? `Username: ${eventData.username}`
-            : eventData.user && eventData.user !== "anonymous"
-              ? `UserID: ${eventData.user}`
-              : "Anonymous user";
+        const userIdentifier = eventData.user
+            ? `UserID: ${eventData.user}`
+            : "Anonymous user";
 
         log(
             `Sending telemetry to Tinybird for ${eventData.model} call - ${userIdentifier}${eventData.tier ? `, Tier: ${eventData.tier}` : ""}`,
@@ -172,6 +167,17 @@ export async function sendTinybirdEvent(eventData) {
         // Create an abort controller for timeout
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+        // Log the complete payload being sent to Tinybird for debugging
+        log(`📤 TINYBIRD PAYLOAD - Full event data being sent:`);
+        log(`   🎯 model: "${tinybirdEvent.model}"`);
+        log(`   🔧 model_used: "${tinybirdEvent.model_used}"`);
+        log(`   👤 user: "${tinybirdEvent.user}"`);
+        log(`   ⏱️  duration: ${tinybirdEvent.duration}ms`);
+        log(`   💰 cost: $${tinybirdEvent.cost}`);
+        log(`   📊 usage:`, tinybirdEvent.usage || 'N/A');
+        log(`   🏢 provider: "${tinybirdEvent.provider}"`);
+        log(`   📋 Full JSON payload:`, JSON.stringify(tinybirdEvent, null, 2));
 
         try {
             const response = await fetch(
@@ -182,7 +188,7 @@ export async function sendTinybirdEvent(eventData) {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${TINYBIRD_API_KEY}`,
                     },
-                    body: JSON.stringify(event),
+                    body: JSON.stringify(tinybirdEvent),
                     signal: controller.signal,
                 },
             );

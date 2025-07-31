@@ -60,8 +60,11 @@ export async function sendTinybirdEvent(eventData) {
             } = eventData.usage;
 
             // Extract audio tokens from details if available
-            const prompt_audio_tokens = prompt_tokens_details?.audio_tokens || 0;
-            const completion_audio_tokens = completion_tokens_details?.audio_tokens || 0;
+            // Handle both standard and alternative field names, and null details
+            const prompt_audio_tokens = prompt_tokens_details?.audio_tokens || eventData.usage.audio_prompt_tokens || 0;
+            const completion_audio_tokens = completion_tokens_details?.audio_tokens || eventData.usage.audio_completion_tokens || 0;
+            
+            // Calculate text tokens, handling null details gracefully
             const prompt_text_tokens = prompt_tokens_details?.text_tokens || (prompt_tokens - prompt_audio_tokens);
             const completion_text_tokens = completion_tokens_details?.text_tokens || (completion_tokens - completion_audio_tokens);
 

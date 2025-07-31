@@ -98,7 +98,6 @@ const models = [
 	// 	output_modalities: ["text"],
 	// 	pricing: {
 	// 		prompt_text: 2.0,
-	// 		prompt_image: 2.0,
 	// 		prompt_cache: 0.5,
 	// 		completion_text: 8.0,
 	// 	},
@@ -280,7 +279,6 @@ const models = [
 		tools: false,
 		pricing: {
 			prompt_text: 0.075,
-			prompt_image: 0.075,
 			prompt_audio: 0.075,
 			completion_text: 0.3,
 		},

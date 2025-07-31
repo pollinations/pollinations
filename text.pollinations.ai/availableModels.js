@@ -252,7 +252,7 @@ const models = [
 	{
 		name: "deepseek-reasoning",
 		description: "DeepSeek R1 0528",
-		maxInputChars: 9000,
+		maxInputChars: 10000,
 		handler: generateTextPortkey,
 		reasoning: true,
 		provider: "nebius",
@@ -346,6 +346,22 @@ const models = [
 		pricing: {
 			prompt: 10.0,
 			completion: 20.0,
+		},
+	},
+	{
+		name: "glm",
+		description: "GLM-4 9B Chat (Intelligence.io)",
+		handler: generateTextPortkey,
+		provider: "intelligence",
+		tier: "anonymous",
+		community: false,
+		aliases: "glm-4-9b-chat",
+		input_modalities: ["text"],
+		output_modalities: ["text"],
+		tools: true,
+		pricing: {
+			prompt: 0.1,
+			completion: 0.3,
 		},
 	},
 

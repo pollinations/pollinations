@@ -168,14 +168,14 @@ export async function sendTinybirdEvent(eventData) {
 
         // Log the complete payload being sent to Tinybird for debugging
         log(`📤 TINYBIRD PAYLOAD - Full event data being sent:`);
-        log(`   🎯 model: "${event.model}"`);
-        log(`   🔧 model_used: "${event.model_used}"`);
-        log(`   👤 user: "${event.user}"`);
-        log(`   ⏱️  duration: ${event.duration}ms`);
-        log(`   💰 cost: $${event.cost}`);
-        log(`   📊 usage:`, event.usage || 'N/A');
-        log(`   🏢 provider: "${event.provider}"`);
-        log(`   📋 Full JSON payload:`, JSON.stringify(event, null, 2));
+        log(`   🎯 model: "${tinybirdEvent.model}"`);
+        log(`   🔧 model_used: "${tinybirdEvent.model_used}"`);
+        log(`   👤 user: "${tinybirdEvent.user}"`);
+        log(`   ⏱️  duration: ${tinybirdEvent.duration}ms`);
+        log(`   💰 cost: $${tinybirdEvent.cost}`);
+        log(`   📊 usage:`, tinybirdEvent.usage || 'N/A');
+        log(`   🏢 provider: "${tinybirdEvent.provider}"`);
+        log(`   📋 Full JSON payload:`, JSON.stringify(tinybirdEvent, null, 2));
 
         try {
             const response = await fetch(

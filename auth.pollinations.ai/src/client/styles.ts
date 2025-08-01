@@ -1150,13 +1150,13 @@ input:checked + .toggle-slider:before {
     padding: 10px 20px;
     border: 3px solid transparent;
     border-radius: 25px;
-    background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%) padding-box,
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%) padding-box,
                 linear-gradient(45deg, var(--color-primary), var(--color-secondary), var(--color-accent), var(--color-primary)) border-box;
     font-weight: 600;
     font-size: 0.95rem;
-    box-shadow: 0 4px 15px rgba(255, 97, 216, 0.15), 
-                0 2px 8px rgba(5, 255, 161, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 15px rgba(255, 97, 216, 0.25), 
+                0 2px 8px rgba(5, 255, 161, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
     animation: psychedelic-glow 6s linear infinite;
     cursor: default;
     user-select: none;
@@ -1180,9 +1180,9 @@ input:checked + .toggle-slider:before {
 
 .cost-display:hover {
     transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 6px 20px rgba(255, 97, 216, 0.25), 
-                0 3px 12px rgba(5, 255, 161, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    box-shadow: 0 6px 20px rgba(255, 97, 216, 0.35), 
+                0 3px 12px rgba(5, 255, 161, 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .cost-display .cost-label,

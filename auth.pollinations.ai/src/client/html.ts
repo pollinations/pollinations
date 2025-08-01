@@ -76,7 +76,7 @@ export const generateHTML = () => `<!DOCTYPE html>
                             </div>
                         </div>
                         <div class="cost-chart-total">
-                            <span class="chart-total-label">Total:</span>
+                            <span class="chart-total-label">⬇</span>
                             <span id="chart-total-value" class="chart-total-value">•••</span>
                             <span class="chart-total-unit">PLN</span>
                         </div>

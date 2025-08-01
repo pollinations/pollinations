@@ -11,7 +11,7 @@ export interface VectorStore<TMetadata> {
         id: string,
         vector: number[],
         metadata: TMetadata,
-    ) => Promise<void>;
+    ) => Promise<boolean>;
     findNearest: (
         vector: number[],
         bucket: string,
@@ -39,9 +39,8 @@ export function createVectorizeStore<
         id: string,
         vector: number[],
         metadata: TMetadata,
-    ): Promise<void> => {
+    ): Promise<boolean> => {
         try {
-            console.log(metadata.bucket);
             await vectorize.upsert([
                 {
                     id,
@@ -49,12 +48,14 @@ export function createVectorizeStore<
                     values: vector,
                 },
             ]);
+            return true;
         } catch (error) {
             console.error("[VECTORIZE] Failed to store embedding:", {
                 message: error.message,
                 stack: error.stack,
                 name: error.name,
             });
+            return false;
         }
     };
 
@@ -64,7 +65,6 @@ export function createVectorizeStore<
         topK: number = 1,
     ): Promise<VectorStoreMatch<TMetadata>[]> => {
         try {
-            console.log(bucket);
             const results = await vectorize.query(vector, {
                 topK,
                 returnValues: false,

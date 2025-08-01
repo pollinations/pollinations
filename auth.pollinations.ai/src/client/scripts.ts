@@ -695,47 +695,47 @@ window.navigateChart = function(direction) {
 // Update chart title based on current view and offset
 function updateChartTitle() {
     const chartTitle = document.getElementById('chart-title');
+    const now = new Date();
     const offset = dateOffsets[currentChartView];
     
     switch (currentChartView) {
         case 'day':
-            if (offset === 0) {
-                chartTitle.textContent = '📊 Today';
-            } else if (offset === -1) {
-                chartTitle.textContent = '📊 Yesterday';
-            } else if (offset === 1) {
-                chartTitle.textContent = '📊 Tomorrow';
-            } else if (offset < 0) {
-                chartTitle.textContent = '📊 ' + Math.abs(offset) + ' days ago';
-            } else {
-                chartTitle.textContent = '📊 ' + offset + ' days ahead';
-            }
+            // Format: Day Month Year (e.g., "1 Aug 2025")
+            const targetDate = new Date(now);
+            targetDate.setDate(now.getDate() + offset);
+            const dayStr = targetDate.toLocaleDateString('en-US', { 
+                day: 'numeric', 
+                month: 'short', 
+                year: 'numeric' 
+            });
+            chartTitle.textContent = '📊 ' + dayStr;
             break;
         case 'week':
-            if (offset === 0) {
-                chartTitle.textContent = '📊 This Week';
-            } else if (offset === -1) {
-                chartTitle.textContent = '📊 Last Week';
-            } else if (offset === 1) {
-                chartTitle.textContent = '📊 Next Week';
-            } else if (offset < 0) {
-                chartTitle.textContent = '📊 ' + Math.abs(offset) + ' weeks ago';
-            } else {
-                chartTitle.textContent = '📊 ' + offset + ' weeks ahead';
-            }
+            // Format: Start Day Month Year (e.g., "28 Jul 2025")
+            const targetWeekDate = new Date(now);
+            targetWeekDate.setDate(now.getDate() + (offset * 7));
+            
+            // Calculate start of ISO week (Monday)
+            const dayOfWeek = targetWeekDate.getDay();
+            const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            const weekStart = new Date(targetWeekDate);
+            weekStart.setDate(targetWeekDate.getDate() + mondayOffset);
+            
+            const weekStr = weekStart.toLocaleDateString('en-US', { 
+                day: 'numeric', 
+                month: 'short', 
+                year: 'numeric' 
+            });
+            chartTitle.textContent = '📊 ' + weekStr;
             break;
         case 'month':
-            if (offset === 0) {
-                chartTitle.textContent = '📊 This Month';
-            } else if (offset === -1) {
-                chartTitle.textContent = '📊 Last Month';
-            } else if (offset === 1) {
-                chartTitle.textContent = '📊 Next Month';
-            } else if (offset < 0) {
-                chartTitle.textContent = '📊 ' + Math.abs(offset) + ' months ago';
-            } else {
-                chartTitle.textContent = '📊 ' + offset + ' months ahead';
-            }
+            // Format: Month Year (e.g., "Aug 2025")
+            const targetMonth = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+            const monthStr = targetMonth.toLocaleDateString('en-US', { 
+                month: 'short', 
+                year: 'numeric' 
+            });
+            chartTitle.textContent = '📊 ' + monthStr;
             break;
     }
 }
@@ -964,7 +964,7 @@ function renderCostChart(data) {
                 timeStr = defaultTime.getHours ? defaultTime.getHours().toString().padStart(2, '0') + ':00' : defaultTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
         
-        costStr = item.total_cost.toFixed(2);
+        costStr = Math.round(item.total_cost).toString();
         tooltip.textContent = timeStr + ' | ' + costStr + ' PLN';
         
         bar.appendChild(tooltip);

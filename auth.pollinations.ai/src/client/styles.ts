@@ -861,7 +861,7 @@ input:checked + .toggle-slider:before {
     border: 2px solid transparent;
     background-clip: padding-box;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .cost-chart-container::before {
@@ -1035,6 +1035,9 @@ input:checked + .toggle-slider:before {
 
 .cost-chart-wrapper {
     position: relative;
+    overflow: visible;
+    padding: 30px 20px 10px 20px;
+    margin: -20px -10px 0 -10px;
 }
 
 .cost-chart {
@@ -1048,7 +1051,7 @@ input:checked + .toggle-slider:before {
     border-radius: 12px;
     border: 1px solid rgba(255, 204, 0, 0.2);
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .cost-chart.loading {
@@ -1103,8 +1106,9 @@ input:checked + .toggle-slider:before {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s;
-    z-index: 20;
+    z-index: 9999;
     margin-bottom: 5px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .cost-bar:hover .cost-bar-tooltip {

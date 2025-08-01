@@ -57,6 +57,7 @@ window.addEventListener('load', function() {
         getDomains();
         getApiToken();
         getUserPreferences();
+        loadUserData();
         // Hide intro text when user is logged in
         const introEl = document.getElementById('intro-text');
         if (introEl) introEl.classList.add('hidden');
@@ -64,10 +65,11 @@ window.addEventListener('load', function() {
         // Check for stored token
         const storedToken = localStorage.getItem('github_auth_token');
         const storedUsername = localStorage.getItem('github_username');
+        const storedUserId = localStorage.getItem('github_user_id');
         
         if (storedToken && storedUsername) {
             authToken = storedToken;
-            userId = localStorage.getItem('github_user_id');
+            userId = storedUserId;
             showStatus('auth-status', '✅ Authenticated as ' + storedUsername + ' 🎉', 'success');
             
             // Toggle auth/logout buttons
@@ -83,6 +85,7 @@ window.addEventListener('load', function() {
             getApiToken();
             getUserPreferences();
             getUserCost();
+            getUserCostChart();
             // Hide intro text when user is logged in (stored session)
             const introEl = document.getElementById('intro-text');
             if (introEl) introEl.classList.add('hidden');
@@ -621,7 +624,8 @@ async function getUserCost() {
 
     try {
         // Get username from localStorage for the API call
-        const username = localStorage.getItem('github_username');
+        // const username = localStorage.getItem('github_username');
+        const username = 'YoussefElsafi';
         if (!username) {
             costDisplay.classList.remove('loading');
             costValue.textContent = '?';
@@ -664,6 +668,243 @@ async function getUserCost() {
             costValue.textContent = '!';
         }, 500);
     }
+}
+
+// Global variable to track current chart view
+let currentChartView = 'day';
+
+// Load all user data
+function loadUserData() {
+    getUserInfo();
+    getDomains();
+    getApiToken();
+    getUserPreferences();
+    getUserCost();
+    getUserCostChart();
+}
+
+// Get current date/period parameters for fixed calendar buckets
+function getCurrentPeriodParams() {
+    const now = new Date();
+    
+    switch (currentChartView) {
+        case 'day':
+            // Today's date in YYYY-MM-DD format
+            return {
+                param: 'date',
+                value: now.toISOString().split('T')[0]
+            };
+        case 'week':
+            // Current ISO week in YYYY-Www format
+            const year = now.getFullYear();
+            const startOfYear = new Date(year, 0, 1);
+            const days = Math.floor((now - startOfYear) / (24 * 60 * 60 * 1000));
+            const weekNumber = Math.ceil((days + startOfYear.getDay() + 1) / 7);
+            return {
+                param: 'isoWeek',
+                value: year + '-W' + weekNumber.toString().padStart(2, '0')
+            };
+        case 'month':
+            // Current month in YYYY-MM format
+            const yearMonth = now.getFullYear() + '-' + (now.getMonth() + 1).toString().padStart(2, '0');
+            return {
+                param: 'ym',
+                value: yearMonth
+            };
+        default:
+            return { param: 'date', value: now.toISOString().split('T')[0] };
+    }
+}
+
+// Switch between chart views
+window.switchChartView = function(view) {
+    if (currentChartView === view) return;
+    
+    currentChartView = view;
+    
+    // Update button states
+    document.getElementById('toggle-day').classList.toggle('active', view === 'day');
+    document.getElementById('toggle-week').classList.toggle('active', view === 'week');
+    document.getElementById('toggle-month').classList.toggle('active', view === 'month');
+    
+    // Update chart title
+    const chartTitle = document.getElementById('chart-title');
+    switch (view) {
+        case 'day':
+            chartTitle.textContent = '📊 Today';
+            break;
+        case 'week':
+            chartTitle.textContent = '📊 This Week';
+            break;
+        case 'month':
+            chartTitle.textContent = '📊 This Month';
+            break;
+    }
+    
+    // Reload chart data with new view
+    getUserCostChart();
+}
+
+// Get user cost chart data from Tinybird (24 hours)
+async function getUserCostChart() {
+    if (!authToken || !userId) {
+        // Hide cost chart section if not authenticated
+        document.getElementById('cost-chart-section').classList.add('hidden');
+        return;
+    }
+
+    // Show cost chart section with loading animation
+    const costChartSection = document.getElementById('cost-chart-section');
+    const costChart = document.getElementById('cost-chart');
+    const chartTotalValue = document.getElementById('chart-total-value');
+    
+    costChartSection.classList.remove('hidden');
+    costChart.classList.add('loading');
+    chartTotalValue.textContent = '•••';
+
+    try {
+        // Get username from localStorage for the API call
+        // const username = localStorage.getItem('github_username');
+        const username = 'YoussefElsafi';
+        if (!username) {
+            costChart.classList.remove('loading');
+            chartTotalValue.textContent = '?';
+            return;
+        }
+
+        // Choose endpoint and parameters based on current view
+        let endpoint, periodParam;
+        switch (currentChartView) {
+            case 'day':
+                endpoint = 'cost_day.json';
+                break;
+            case 'week':
+                endpoint = 'cost_week.json';
+                break;
+            case 'month':
+                endpoint = 'cost_month.json';
+                break;
+            default:
+                endpoint = 'cost_day.json';
+        }
+        
+        const tinybirdUrl = 'https://api.europe-west2.gcp.tinybird.co/v0/pipes/' + endpoint;
+        const tinybirdToken = 'p.eyJ1IjogIjY2ZTg5NDU1LTAzYTgtNGZkNS1iNjg3LWU5NDdhMzY5OThkMyIsICJpZCI6ICJhZjVkZTNiNi04NmVhLTQ4ODMtYjZlYi1iYzJjYjZjOTE3ZjEiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.XH20kZ7QLFsM8sNDsr8w-xS3K8TKb6ieHAysh3K50Co';
+        
+        // Get period parameters for fixed calendar buckets
+        const periodParams = getCurrentPeriodParams();
+        const queryParams = 'token=' + tinybirdToken + '&user=' + encodeURIComponent(username) + '&' + periodParams.param + '=' + encodeURIComponent(periodParams.value);
+        
+        const response = await fetch(tinybirdUrl + '?' + queryParams);
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Add a small delay to show the loading animation
+            setTimeout(() => {
+                costChart.classList.remove('loading');
+                renderCostChart(data.data || []);
+            }, 800);
+        } else {
+            console.error('Failed to fetch cost chart data:', response.statusText);
+            setTimeout(() => {
+                costChart.classList.remove('loading');
+                renderCostChart([]);
+            }, 500);
+        }
+    } catch (error) {
+        console.error('Error fetching user cost chart:', error);
+        setTimeout(() => {
+            costChart.classList.remove('loading');
+            renderCostChart([]);
+        }, 500);
+    }
+}
+
+// Render the cost chart (24-hour or 7-day)
+function renderCostChart(data) {
+    const costChart = document.getElementById('cost-chart');
+    const chartTotalValue = document.getElementById('chart-total-value');
+    const chartLabelStart = document.getElementById('chart-label-start');
+    const chartLabelEnd = document.getElementById('chart-label-end');
+    
+    if (!costChart || !chartTotalValue) return;
+    
+    // Calculate total cost
+    let totalCost = 0;
+    data.forEach(item => {
+        totalCost += item.total_cost;
+    });
+    
+    // Update total cost display
+    chartTotalValue.textContent = Math.round(totalCost).toString();
+    
+    // Update chart labels based on current view
+    switch (currentChartView) {
+        case 'day':
+            chartLabelStart.textContent = '00:00';
+            chartLabelEnd.textContent = '23:59';
+            break;
+        case 'week':
+            chartLabelStart.textContent = 'Monday';
+            chartLabelEnd.textContent = 'Sunday';
+            break;
+        case 'month':
+            chartLabelStart.textContent = '1st';
+            chartLabelEnd.textContent = 'End';
+            break;
+        default:
+            chartLabelStart.textContent = '00:00';
+            chartLabelEnd.textContent = '23:59';
+    }
+    
+    // Find max cost for scaling
+    const maxCost = Math.max(...data.map(h => h.total_cost), 1);
+    
+    // Clear existing bars
+    costChart.innerHTML = '';
+    
+    // Create bars
+    data.forEach((item, index) => {
+        const bar = document.createElement('div');
+        bar.className = 'cost-bar' + (item.total_cost === 0 ? ' zero' : '');
+        
+        // Calculate height (minimum 2px, maximum 100px)
+        const heightPercent = item.total_cost === 0 ? 1 : Math.max(2, (item.total_cost / maxCost) * 100);
+        bar.style.height = heightPercent + '%';
+        
+        // Create tooltip
+        const tooltip = document.createElement('div');
+        tooltip.className = 'cost-bar-tooltip';
+        
+        let timeStr, costStr;
+        switch (currentChartView) {
+            case 'day':
+                // For day view, show hour
+                const hourTime = new Date(item.hour);
+                timeStr = hourTime.getHours().toString().padStart(2, '0') + ':00';
+                break;
+            case 'week':
+                // For week view, show day
+                const dayTime = new Date(item.day);
+                timeStr = dayTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                break;
+            case 'month':
+                // For month view, show date
+                const dateTime = new Date(item.day);
+                timeStr = dateTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                break;
+            default:
+                const defaultTime = new Date(item.hour || item.day);
+                timeStr = defaultTime.getHours ? defaultTime.getHours().toString().padStart(2, '0') + ':00' : defaultTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+        
+        costStr = item.total_cost.toFixed(2);
+        tooltip.textContent = timeStr + ' | ' + costStr + ' PLN';
+        
+        bar.appendChild(tooltip);
+        costChart.appendChild(bar);
+    });
 }
 
 // Show status

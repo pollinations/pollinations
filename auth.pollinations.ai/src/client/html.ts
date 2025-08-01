@@ -60,6 +60,34 @@ export const generateHTML = () => `<!DOCTYPE html>
         <!-- 👤 Account Section -->
         <div id="account-section">
             <div id="user-section" class="hidden">
+                <!-- 📊 Cost Bar Graph with Toggle -->
+                <div id="cost-chart-section" class="cost-chart-container hidden">
+                    <div class="cost-chart-header">
+                        <div class="cost-chart-title-section">
+                            <h2 id="chart-title">📊 Last 24 Hours</h2>
+                            <div class="cost-chart-toggle">
+                                <button id="toggle-day" class="chart-toggle-btn active" onclick="switchChartView('day')">Day</button>
+                                <button id="toggle-week" class="chart-toggle-btn" onclick="switchChartView('week')">Week</button>
+                                <button id="toggle-month" class="chart-toggle-btn" onclick="switchChartView('month')">Month</button>
+                            </div>
+                        </div>
+                        <div class="cost-chart-total">
+                            <span class="chart-total-label">Total:</span>
+                            <span id="chart-total-value" class="chart-total-value">•••</span>
+                            <span class="chart-total-unit">PLN</span>
+                        </div>
+                    </div>
+                    <div class="cost-chart-wrapper">
+                        <div id="cost-chart" class="cost-chart loading">
+                            <!-- 24 bars will be generated here -->
+                        </div>
+                        <div class="cost-chart-labels">
+                            <span id="chart-label-start" class="chart-label-start">24h ago</span>
+                            <span id="chart-label-end" class="chart-label-end">Now</span>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 🌟 Tier Section -->
                 <div id="tier-section" class="tier-container hidden">
                     <div class="tier-header">

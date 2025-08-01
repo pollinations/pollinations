@@ -851,6 +851,259 @@ input:checked + .toggle-slider:before {
     margin-left: 10px;
 }
 
+/* 📊 24-Hour Cost Bar Graph - Psychedelic Style */
+.cost-chart-container {
+    margin-top: 15px;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #fff9e6 0%, #fffbf0 100%);
+    border-radius: 18px;
+    padding: 20px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    position: relative;
+    overflow: hidden;
+}
+
+.cost-chart-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 18px;
+    padding: 2px;
+    background: linear-gradient(45deg, var(--color-accent), var(--color-primary), var(--color-secondary), var(--color-accent));
+    background-size: 300% 300%;
+    animation: border-flow 8s linear infinite;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    z-index: -1;
+}
+
+.cost-chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.cost-chart-title-section {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.cost-chart-toggle {
+    display: flex;
+    gap: 4px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
+    border-radius: 25px;
+    padding: 4px;
+    border: 2px solid var(--color-accent);
+    box-shadow: 0 2px 8px rgba(255, 204, 0, 0.15);
+}
+
+.chart-toggle-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: 'Space Grotesk', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: transparent;
+    color: var(--color-text);
+    opacity: 0.7;
+    position: relative;
+    overflow: hidden;
+}
+
+.chart-toggle-btn:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+.chart-toggle-btn.active {
+    background: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
+    color: white;
+    opacity: 1;
+    box-shadow: 0 3px 10px rgba(255, 97, 216, 0.3);
+    transform: translateY(-1px);
+}
+
+.chart-toggle-btn.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: button-shine 2s ease-in-out infinite;
+}
+
+@keyframes button-shine {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+.cost-chart-header h2 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    background: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.cost-chart-total {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+    border-radius: 20px;
+    border: 2px solid var(--color-accent);
+    box-shadow: 0 2px 8px rgba(255, 204, 0, 0.15);
+}
+
+.chart-total-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text);
+    opacity: 0.8;
+}
+
+.chart-total-value {
+    font-size: 1.1rem;
+    font-weight: 800;
+    background: linear-gradient(45deg, var(--color-accent), var(--color-primary));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-family: 'Space Grotesk', monospace;
+}
+
+.chart-total-unit {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text);
+    opacity: 0.7;
+}
+
+.cost-chart-wrapper {
+    position: relative;
+}
+
+.cost-chart {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    height: 120px;
+    padding: 10px 0;
+    gap: 2px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 248, 248, 0.9) 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 204, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.cost-chart.loading {
+    animation: chart-loading-pulse 2s ease-in-out infinite;
+}
+
+.cost-chart.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 204, 0, 0.3), transparent);
+    animation: loading-sweep 2s ease-in-out infinite;
+}
+
+.cost-bar {
+    flex: 1;
+    background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-secondary) 50%, var(--color-accent) 100%);
+    border-radius: 3px 3px 0 0;
+    min-height: 2px;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    transform-origin: bottom;
+}
+
+.cost-bar:hover {
+    transform: scaleY(1.1) scaleX(1.2);
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(255, 97, 216, 0.4);
+}
+
+.cost-bar.zero {
+    background: linear-gradient(180deg, rgba(200, 200, 200, 0.3) 0%, rgba(150, 150, 150, 0.2) 100%);
+    min-height: 1px;
+}
+
+.cost-bar-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 20;
+    margin-bottom: 5px;
+}
+
+.cost-bar:hover .cost-bar-tooltip {
+    opacity: 1;
+}
+
+.cost-chart-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 0.75rem;
+    color: var(--color-text);
+    opacity: 0.6;
+    font-weight: 500;
+}
+
+@keyframes border-flow {
+    0%, 100% { background-position: 0% 50%; }
+    25% { background-position: 100% 50%; }
+    50% { background-position: 100% 100%; }
+    75% { background-position: 0% 100%; }
+}
+
+@keyframes chart-loading-pulse {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
+}
+
+@keyframes loading-sweep {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
 /* 🌟 Pollen Cost Display - Psychedelic Style */
 .cost-display {
     display: inline-flex;

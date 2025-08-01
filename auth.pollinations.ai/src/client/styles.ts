@@ -375,7 +375,7 @@ input:focus {
 }
 
 code {
-    background: var(--color-gray-light);
+    background: white;
     padding: 8px 12px;
     border-radius: 8px;
     font-family: monospace;
@@ -575,18 +575,21 @@ code::after {
 .domain-finder {
     margin-top: 16px;
     padding: 12px;
-    font-size: 1.2em;
+    font-size: 1em;
 }
 
 .domain-finder-title {
-    font-variant: small-caps;
+
     font-weight: bold;
     color: rgb(255,179,0);
+    font-size: 1.4em;
 }
 
 .domain-finder-list {
-    margin: 8px 0 0 16px;
+    margin: 4px 0 0 8px;
+    padding-left: 1.2em;
     color: var(--color-gray-light);
+    line-height: 1.3;
 }
 
 .domain-network-tab {
@@ -641,7 +644,6 @@ code::after {
 
 .token-warning-text {
     font-style: italic;
-    font-weight: bold;
     color: var(--color-accent);
     background: var(--color-black);
     padding: 2px 6px;
@@ -1361,9 +1363,18 @@ flex: 1 1 auto;
 .token-value.copyable {
     cursor: pointer;
     position: relative;
+    padding: 4px 8px;
+    border-radius: 4px;
+    opacity: 0.8;
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+    background: rgba(255, 204, 0, var(--alpha-05));
 }
 
 .token-value.copyable:hover {
+    opacity: 1;
+    background: rgba(255, 204, 0, var(--alpha-10));
+    transform: scale(1.05);
 }
 
 .token-value.copied::after {

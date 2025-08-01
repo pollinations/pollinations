@@ -221,15 +221,11 @@ export const generateHTML = () => `<!DOCTYPE html>
                     <ul class="token-warning-list">
                         <li class="token-warning-item">
                             <span class="token-warning-emoji">⚠️</span>
-                            <span class="token-warning-text">
-                                Never share your token publicly anywhere
-                            </span>
+                            <span class="token-warning-text">Never share your token publicly anywhere</span>
                         </li>
                         <li class="token-warning-item">
                             <span class="token-warning-emoji">🚧</span>
-                            <span class="token-warning-text">
-                                Don't commit tokens to Git/GitHub repositories
-                            </span>
+                            <span class="token-warning-text">Don't commit tokens to Git/GitHub repositories</span>
                         </li>
                     </ul>
                     <div class="token-error">

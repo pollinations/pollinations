@@ -673,6 +673,73 @@ async function getUserCost() {
 // Global variable to track current chart view
 let currentChartView = 'day';
 
+// Global variables to track date offsets for navigation
+let dateOffsets = {
+    day: 0,    // offset in days from today
+    week: 0,   // offset in weeks from current week
+    month: 0   // offset in months from current month
+};
+
+// Navigate chart by offset (direction: -1 for previous, +1 for next)
+window.navigateChart = function(direction) {
+    // Update offset for current view
+    dateOffsets[currentChartView] += direction;
+    
+    // Update chart title to reflect the navigation
+    updateChartTitle();
+    
+    // Reload chart data with new offset
+    getUserCostChart();
+}
+
+// Update chart title based on current view and offset
+function updateChartTitle() {
+    const chartTitle = document.getElementById('chart-title');
+    const offset = dateOffsets[currentChartView];
+    
+    switch (currentChartView) {
+        case 'day':
+            if (offset === 0) {
+                chartTitle.textContent = '📊 Today';
+            } else if (offset === -1) {
+                chartTitle.textContent = '📊 Yesterday';
+            } else if (offset === 1) {
+                chartTitle.textContent = '📊 Tomorrow';
+            } else if (offset < 0) {
+                chartTitle.textContent = '📊 ' + Math.abs(offset) + ' days ago';
+            } else {
+                chartTitle.textContent = '📊 ' + offset + ' days ahead';
+            }
+            break;
+        case 'week':
+            if (offset === 0) {
+                chartTitle.textContent = '📊 This Week';
+            } else if (offset === -1) {
+                chartTitle.textContent = '📊 Last Week';
+            } else if (offset === 1) {
+                chartTitle.textContent = '📊 Next Week';
+            } else if (offset < 0) {
+                chartTitle.textContent = '📊 ' + Math.abs(offset) + ' weeks ago';
+            } else {
+                chartTitle.textContent = '📊 ' + offset + ' weeks ahead';
+            }
+            break;
+        case 'month':
+            if (offset === 0) {
+                chartTitle.textContent = '📊 This Month';
+            } else if (offset === -1) {
+                chartTitle.textContent = '📊 Last Month';
+            } else if (offset === 1) {
+                chartTitle.textContent = '📊 Next Month';
+            } else if (offset < 0) {
+                chartTitle.textContent = '📊 ' + Math.abs(offset) + ' months ago';
+            } else {
+                chartTitle.textContent = '📊 ' + offset + ' months ahead';
+            }
+            break;
+    }
+}
+
 // Load all user data
 function loadUserData() {
     getUserInfo();
@@ -683,30 +750,39 @@ function loadUserData() {
     getUserCostChart();
 }
 
-// Get current date/period parameters for fixed calendar buckets
+// Get current date/period parameters for fixed calendar buckets with navigation offset
 function getCurrentPeriodParams() {
     const now = new Date();
+    const offset = dateOffsets[currentChartView];
     
     switch (currentChartView) {
         case 'day':
-            // Today's date in YYYY-MM-DD format
+            // Date with day offset in YYYY-MM-DD format
+            const targetDate = new Date(now);
+            targetDate.setDate(now.getDate() + offset);
             return {
                 param: 'date',
-                value: now.toISOString().split('T')[0]
+                value: targetDate.toISOString().split('T')[0]
             };
         case 'week':
-            // Current ISO week in YYYY-Www format
-            const year = now.getFullYear();
-            const startOfYear = new Date(year, 0, 1);
-            const days = Math.floor((now - startOfYear) / (24 * 60 * 60 * 1000));
-            const weekNumber = Math.ceil((days + startOfYear.getDay() + 1) / 7);
+            // ISO week with week offset in YYYY-Www format
+            const targetWeekDate = new Date(now);
+            targetWeekDate.setDate(now.getDate() + (offset * 7));
+            
+            // Calculate ISO week number
+            const jan4 = new Date(targetWeekDate.getFullYear(), 0, 4);
+            const weekStart = new Date(jan4);
+            weekStart.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
+            const weekNumber = Math.floor((targetWeekDate - weekStart) / (7 * 24 * 60 * 60 * 1000)) + 1;
+            
             return {
                 param: 'isoWeek',
-                value: year + '-W' + weekNumber.toString().padStart(2, '0')
+                value: targetWeekDate.getFullYear() + '-W' + String(weekNumber).padStart(2, '0')
             };
         case 'month':
-            // Current month in YYYY-MM format
-            const yearMonth = now.getFullYear() + '-' + (now.getMonth() + 1).toString().padStart(2, '0');
+            // Month with month offset in YYYY-MM format
+            const targetMonth = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+            const yearMonth = targetMonth.getFullYear() + '-' + String(targetMonth.getMonth() + 1).padStart(2, '0');
             return {
                 param: 'ym',
                 value: yearMonth
@@ -727,19 +803,8 @@ window.switchChartView = function(view) {
     document.getElementById('toggle-week').classList.toggle('active', view === 'week');
     document.getElementById('toggle-month').classList.toggle('active', view === 'month');
     
-    // Update chart title
-    const chartTitle = document.getElementById('chart-title');
-    switch (view) {
-        case 'day':
-            chartTitle.textContent = '📊 Today';
-            break;
-        case 'week':
-            chartTitle.textContent = '📊 This Week';
-            break;
-        case 'month':
-            chartTitle.textContent = '📊 This Month';
-            break;
-    }
+    // Update chart title based on current offset
+    updateChartTitle();
     
     // Reload chart data with new view
     getUserCostChart();

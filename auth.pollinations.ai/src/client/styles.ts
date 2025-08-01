@@ -899,6 +899,12 @@ input:checked + .toggle-slider:before {
     flex-wrap: wrap;
 }
 
+.cost-chart-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .cost-chart-toggle {
     display: flex;
     gap: 4px;
@@ -952,6 +958,34 @@ input:checked + .toggle-slider:before {
 @keyframes button-shine {
     0% { left: -100%; }
     100% { left: 100%; }
+}
+
+.chart-nav-btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: 'Space Grotesk', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
+    color: var(--color-text);
+    opacity: 0.8;
+    border: 1px solid rgba(255, 204, 0, 0.2);
+}
+
+.chart-nav-btn:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, var(--color-accent) 0%, #ffcc00 100%);
+    color: #333;
+    box-shadow: 0 3px 10px rgba(255, 204, 0, 0.3);
+}
+
+.chart-nav-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 5px rgba(255, 204, 0, 0.2);
 }
 
 .cost-chart-header h2 {

@@ -65,10 +65,14 @@ export const generateHTML = () => `<!DOCTYPE html>
                     <div class="cost-chart-header">
                         <div class="cost-chart-title-section">
                             <h2 id="chart-title">📊 Last 24 Hours</h2>
-                            <div class="cost-chart-toggle">
-                                <button id="toggle-day" class="chart-toggle-btn active" onclick="switchChartView('day')">Day</button>
-                                <button id="toggle-week" class="chart-toggle-btn" onclick="switchChartView('week')">Week</button>
-                                <button id="toggle-month" class="chart-toggle-btn" onclick="switchChartView('month')">Month</button>
+                            <div class="cost-chart-controls">
+                                <button id="nav-prev" class="chart-nav-btn" onclick="navigateChart(-1)">←</button>
+                                <div class="cost-chart-toggle">
+                                    <button id="toggle-day" class="chart-toggle-btn active" onclick="switchChartView('day')">Day</button>
+                                    <button id="toggle-week" class="chart-toggle-btn" onclick="switchChartView('week')">Week</button>
+                                    <button id="toggle-month" class="chart-toggle-btn" onclick="switchChartView('month')">Month</button>
+                                </div>
+                                <button id="nav-next" class="chart-nav-btn" onclick="navigateChart(1)">→</button>
                             </div>
                         </div>
                         <div class="cost-chart-total">

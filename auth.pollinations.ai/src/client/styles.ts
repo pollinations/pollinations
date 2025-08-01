@@ -1,8 +1,6 @@
-// Psychedelic Gen-Z style CSS for Pollinations.AI Auth
 export const CSS = `
 /* ===================================================================== */
 /*                    POLLINATIONS.AI AUTH STYLES                       */
-/*                   Psychedelic Gen-Z Design System                    */
 /* ===================================================================== */
 
 /* FONTS */
@@ -16,30 +14,24 @@ export const CSS = `
 :root {
     --color-primary: #ff61d8;
     --color-secondary: #05ffa1;
-    --color-accent: #ffcc00;
+    --color-accent:rgb(255, 200, 0);
+
     --color-text: #000000;
-    --color-bg: #ffffff;
-    
-    /* Semantic colors */
-    --color-white: #ffffff;
-    --color-black: #000000;
-    --color-gray-light: #f0f0f0;  
-    --color-gray-medium: #888;    
-    --color-gray-dark: #333;      
-    --color-gray-muted: #ccc;    
+    --color-bg: #f0f0f0;
+    --color-gray-light: #888;
+    --color-gray-dark: #333;
+
+    --color-purple: #7a3cff;
+
     --color-error: #ff3b5c;
-    --color-purple: #7e57c2;
-    --color-purple-dark: #5e35b1;
+    --color-success: #00796b;
+
     --color-dark-bg: #1a1a1a;
     --color-dark-bg-light: #2d2d2d;
-    
-    /* Tier colors */
-    --color-tier-seed-start: #7ed56f;
-    --color-tier-seed-end: #28b485;
-    --color-tier-flower-end: #ff3b5c;
-    --color-tier-nectar-end: #ff9500;
-    
-    /* Transparency levels */
+
+    --color-white: var(--color-bg);
+    --color-black: var(--color-text);
+
     --alpha-05: 0.05;
     --alpha-08: 0.08;
     --alpha-10: 0.1;
@@ -49,34 +41,25 @@ export const CSS = `
     --alpha-60: 0.6;
     --alpha-80: 0.8;
     --alpha-90: 0.9;
-    
-    /* Gradient patterns */
+
     --gradient-primary-secondary: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-    --gradient-primary-secondary-accent: linear-gradient(135deg, var(--color-primary), var(--color-secondary), var(--color-accent));
-    --gradient-psychedelic-bg: linear-gradient(135deg, rgba(255, 97, 216, var(--alpha-10)) 0%, rgba(5, 255, 161, var(--alpha-10)) 100%);
-    --gradient-psychedelic-bg-light: linear-gradient(135deg, rgba(255, 97, 216, var(--alpha-05)), rgba(5, 255, 161, var(--alpha-05)));
-    --gradient-psychedelic-bg-subtle: linear-gradient(135deg, rgba(5, 255, 161, var(--alpha-08)) 0%, rgba(255, 97, 216, var(--alpha-08)) 100%);
-    --gradient-psychedelic-border: linear-gradient(45deg, var(--color-accent), var(--color-primary), var(--color-secondary), var(--color-accent));
-    --gradient-tier-seed: linear-gradient(135deg, var(--color-tier-seed-start), var(--color-tier-seed-end));
-    --gradient-tier-flower: linear-gradient(135deg, var(--color-primary), var(--color-tier-flower-end));
-    --gradient-tier-nectar: linear-gradient(135deg, var(--color-accent), var(--color-tier-nectar-end));
+    --gradient-brand-cycle: linear-gradient(45deg, var(--color-primary), var(--color-secondary), var(--color-accent), var(--color-primary));
+    --gradient-psychedelic-bg: linear-gradient(135deg, rgba(255, 97, 216, var(--alpha-08)) 0%, rgba(5, 255, 161, var(--alpha-08)) 100%);
+    --gradient-psychedelic-bg-1: linear-gradient(45deg, rgba(255, 97, 216, var(--alpha-08)) 0%, rgba(5, 255, 161, var(--alpha-08)) 70%, rgba(255, 200, 0, var(--alpha-08)) 100%);
+    --gradient-psychedelic-bg-2: linear-gradient(225deg, rgba(5, 255, 161, var(--alpha-08)) 0%, rgba(255, 200, 0, var(--alpha-08)) 60%, rgba(255, 97, 216, var(--alpha-08)) 100%);
+    --gradient-psychedelic-bg-3: linear-gradient(315deg, rgba(255, 200, 0, var(--alpha-08)) 0%, rgba(255, 97, 216, var(--alpha-08)) 40%, rgba(5, 255, 161, var(--alpha-08)) 100%);
+    --gradient-psychedelic-bg-4: linear-gradient(180deg, rgba(255, 97, 216, var(--alpha-08)) 20%, rgba(5, 255, 161, var(--alpha-08)) 80%);
+    --gradient-psychedelic-bg-5: linear-gradient(90deg, rgba(5, 255, 161, var(--alpha-08)) 0%, rgba(255, 97, 216, var(--alpha-08)) 50%, rgba(255, 200, 0, var(--alpha-08)) 100%);
     --gradient-neutral-gray: linear-gradient(135deg, var(--color-gray-light) 0%, var(--color-gray-medium) 100%);
     --gradient-accent-primary: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary) 100%);
-    --gradient-text-psychedelic: linear-gradient(45deg, var(--color-primary), var(--color-secondary), var(--color-accent), var(--color-primary));
-    
-    /* Container background gradients */
-    --gradient-container-green: linear-gradient(135deg, #e8fff6 0%, #f0fff4 100%);
-    --gradient-container-purple: linear-gradient(135deg, #fdf0ff 0%, #f0f7ff 100%);
-    --gradient-container-warm: linear-gradient(135deg, #fff9e6 0%, #fffbf0 100%);
-    --gradient-container-light: linear-gradient(135deg, var(--color-white) 0%, #fafafa 100%);
-    
-    /* Loading/overlay gradients */
+
+    --gradient-container-light: linear-gradient(135deg, var(--color-bg) 0%, #fafafa 100%);
+    --gradient-container-subtle: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
+
     --gradient-loading-overlay: linear-gradient(180deg, rgba(255, 255, 255, var(--alpha-80)) 0%, rgba(248, 248, 248, var(--alpha-90)) 100%);
     --gradient-loading-sweep: linear-gradient(90deg, transparent, rgba(255, 204, 0, var(--alpha-30)), transparent);
     --gradient-loading-gray: linear-gradient(180deg, rgba(200, 200, 200, var(--alpha-30)) 0%, rgba(150, 150, 150, var(--alpha-20)) 100%);
-    
-    /* Utility gradients */
-    --gradient-gray-white: linear-gradient(90deg, var(--color-gray-light), var(--color-white));
+
     --gradient-gray-light: linear-gradient(135deg, var(--color-gray-medium) 0%, #eaeaea 100%);
 }
 
@@ -89,58 +72,67 @@ export const CSS = `
     transition: all 0.2s;
 }
 
-body { 
+body {
     font-family: 'Space Grotesk', sans-serif;
-    max-width: 800px; 
-    margin: 0 auto; 
+    max-width: 800px;
+    margin: 0 auto;
     padding: 20px;
-    background-color: var(--color-bg);
+    background-color: white;
     color: var(--color-text);
     overflow-x: hidden;
 }
 
-.container { 
+.container {
     background: white;
-    padding: 30px; 
+    padding: 30px;
     border-radius: 16px;
     position: relative;
-    border: 3px solid var(--cycle-primary, var(--color-primary));
-    animation: color-cycle 10s infinite linear;
+    border: 3px solid var(--color-primary);
+    animation: smooth-border-cycle 10s infinite linear;
 }
 
 /* ===================================================================== */
 /*                           ANIMATIONS                                 */
 /* ===================================================================== */
 
-/* ===================================================================== */
-/*                    UNIVERSAL ANIMATIONS SYSTEM                       */
-/* ===================================================================== */
-
-/* Universal color cycling - handles all color transitions */
 @keyframes color-cycle {
-    0% { 
-        --cycle-primary: var(--color-primary); 
-        --cycle-secondary: var(--color-secondary); 
-        --cycle-accent: var(--color-accent); 
+    0% {
+        --cycle-primary: var(--color-primary);
+        --cycle-secondary: var(--color-secondary);
+        --cycle-accent: var(--color-accent);
     }
-    33% { 
-        --cycle-primary: var(--color-secondary); 
-        --cycle-secondary: var(--color-accent); 
-        --cycle-accent: var(--color-primary); 
+    33% {
+        --cycle-primary: var(--color-secondary);
+        --cycle-secondary: var(--color-accent);
+        --cycle-accent: var(--color-primary);
     }
-    66% { 
-        --cycle-primary: var(--color-accent); 
-        --cycle-secondary: var(--color-primary); 
-        --cycle-accent: var(--color-secondary); 
+    66% {
+        --cycle-primary: var(--color-accent);
+        --cycle-secondary: var(--color-primary);
+        --cycle-accent: var(--color-secondary);
     }
-    100% { 
-        --cycle-primary: var(--color-primary); 
-        --cycle-secondary: var(--color-secondary); 
-        --cycle-accent: var(--color-accent); 
+    100% {
+        --cycle-primary: var(--color-primary);
+        --cycle-secondary: var(--color-secondary);
+        --cycle-accent: var(--color-accent);
     }
 }
 
-/* Universal background movement - handles all gradient/position animations */
+@keyframes smooth-border-cycle {
+    0% {
+        border-color: var(--color-primary);
+    }
+    33% {
+        border-color: var(--color-secondary);
+    }
+    66% {
+        border-color: var(--color-accent);
+    }
+    100% {
+        border-color: var(--color-primary);
+    }
+}
+
 @keyframes flow {
     0%, 100% { background-position: 0% 50%; }
     25% { background-position: 100% 50%; }
@@ -148,24 +140,49 @@ body {
     75% { background-position: 0% 100%; }
 }
 
-/* Universal sweep/pulse - handles all transform animations */
 @keyframes pulse {
     0%, 100% { opacity: 0.8; transform: translateX(-100%); }
     50% { opacity: 1; transform: translateX(100%); }
 }
 
-/* Simple bounce animation for emojis and vertical movements */
+@keyframes tier-bg-shift {
+    0% { background-position: 0% 50%; }
+    25% { background-position: 100% 50%; }
+    50% { background-position: 100% 100%; }
+    75% { background-position: 0% 100%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes tier-shine {
+    0% { left: -100%; }
+    50% { left: 100%; }
+    100% { left: 100%; }
+}
+
+@keyframes ad-bg-pulse {
+    0% { background-position: 0% 0%; }
+    25% { background-position: 100% 0%; }
+    50% { background-position: 100% 100%; }
+    75% { background-position: 0% 100%; }
+    100% { background-position: 0% 0%; }
+}
+
+@keyframes ad-glow-rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 @keyframes bounce {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-5px); }
 }
 
-h1, h2, h3 { 
+h1, h2, h3 {
     position: relative;
     z-index: 1;
 }
 
-h1 { 
+h1 {
     font-size: clamp(1.8rem, 6vw, 2.5rem);
     margin-bottom: 1.5rem;
     font-weight: 700;
@@ -182,8 +199,7 @@ h1::after {
     z-index: -1;
     background-color: var(--color-secondary);
     transform: skew(-15deg);
-    background-color: var(--cycle-secondary, var(--color-secondary));
-    animation: color-cycle 8s infinite linear;
+    animation: smooth-border-cycle 8s infinite linear;
 }
 
 h2 {
@@ -196,7 +212,7 @@ h3 {
     font-size: 1.4rem;
 }
 
-.production-badge { 
+.production-badge {
     background: var(--color-accent);
     color: black;
     padding: 4px 12px;
@@ -210,19 +226,17 @@ h3 {
     animation: color-cycle 7s infinite linear;
 }
 
-/* Funky login button */
 #auth-button {
     font-size: 1.1rem;
     padding: 14px 32px;
-    background: var(--gradient-primary-secondary-accent);
+    background: var(--gradient-brand-cycle);
     background-size: 300% 300%;
     animation: flow 6s ease infinite;
     border-radius: 40px;
 }
 
-/* Ensure logout button height aligns with badge */
 #logout-button {
-    padding: 14px 24px; /* increased to match visual height of other elements */
+    padding: 14px 24px;
     width: auto;
     min-width: fit-content;
     white-space: nowrap;
@@ -231,12 +245,11 @@ h3 {
     font-weight: 600;
 }
 
-/* Adjust badge padding to match button height */
 .profile-badge {
     padding: 12px 24px;
 }
 
-button { 
+button {
     background: var(--color-primary);
     color: white;
     border: none;
@@ -269,7 +282,7 @@ button:hover::before {
     left: 0;
 }
 
-.status { 
+.status {
     margin-top: 20px;
     padding: 15px;
     border-radius: 12px;
@@ -300,7 +313,7 @@ button:hover::before {
 /*                         FORM ELEMENTS                               */
 /* ===================================================================== */
 
-input { 
+input {
     padding: 12px 16px;
     font-size: 1rem;
     border: 2px solid var(--color-gray-light);
@@ -318,12 +331,10 @@ input:focus {
 
 .hidden { display: none !important; }
 
-/* Ensure logout button is properly hidden when it has the hidden class */
 #logout-button.hidden {
     display: none !important;
 }
 
-/* Updated layout: stack input above button */
 .input-group {
     display: flex;
     flex-direction: column;
@@ -333,10 +344,10 @@ input:focus {
 }
 
 .input-group button {
-    margin-right: 0; /* remove inline gap now that layout is vertical */
+    margin-right: 0;
 }
 
-.domain-item { 
+.domain-item {
     display: inline-block;
     padding: 6px 12px;
     margin: 5px 5px 5px 0;
@@ -363,7 +374,7 @@ input:focus {
     opacity: 1;
 }
 
-code { 
+code {
     background: var(--color-gray-light);
     padding: 8px 12px;
     border-radius: 8px;
@@ -407,28 +418,21 @@ code::after {
     animation: bounce 2s infinite alternate;
 }
 
-/* Brand (logo + text) styling with subtle animated gradient */
 .emoji-title .brand {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-weight: 700;
-    font-size: clamp(1.4rem, 5vw, 2.2rem); /* smaller than before */
-    color: var(--color-text); /* solid black */
+    font-size: clamp(1.4rem, 5vw, 2.2rem);
 }
 
-/* Secondary line (Auth) uses playful font */
 .emoji-title .auth-title {
-    width: 100%; /* force it on new line */
+    width: 100%;
     font-family: 'Pacifico', cursive;
     font-size: clamp(1.6rem, 5vw, 2.4rem);
     display: inline-block;
-    margin-top: 4px;
 }
 
-/* Title logo styling */
 .title-logo {
-    height: 1.4em; /* revert to smaller size */
+    height: 1.4em;
     width: auto;
     margin-right: 6px;
 }
@@ -437,20 +441,16 @@ code::after {
 /*                        UTILITY CLASSES                              */
 /* ===================================================================== */
 
-/* ===== CARD CONTAINER UTILITY CLASSES ===== */
-/* Base card styling - common to all card containers */
 .card-base {
     margin-top: 15px;
     border-radius: 18px;
     transition: all 0.3s ease;
 }
 
-/* Card hover effect - common lift animation */
 .card-hover:hover {
     transform: translateY(-3px);
 }
 
-/* Card padding variations */
 .card-padding-compact {
     padding: 15px 20px;
 }
@@ -459,137 +459,236 @@ code::after {
     padding: 20px 24px;
 }
 
-/* ===== HOVER EFFECT UTILITY CLASSES ===== */
-/* Standard lift hover - for most interactive items */
 .hover-lift:hover {
     transform: translateY(-2px);
 }
 
-/* Psychedelic lift hover - for special highlighted items */
 .hover-lift-psychedelic:hover {
     transform: translateY(-2px);
 }
 
 /* ===================================================================== */
-/*                          HELP SECTION                               */
+/*                      INLINE STYLE REPLACEMENTS                      */
 /* ===================================================================== */
-.help-section {
-    background: var(--gradient-psychedelic-bg);
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 30px;
-    border: 2px dashed var(--color-primary);
+
+.hero-subtitle {
+    font-size: 1.25em;
+    color: var(--color-gray-dark);
+    margin-top: 8px;
 }
 
-.help-section summary {
-    cursor: pointer;
-    user-select: none;
-    list-style: none;
+.hero-highlight {
+    background: var(--color-bg);
+    border-radius: 6px;
+    padding: 2px 8px;
 }
 
-.help-section summary::-webkit-details-marker {
-    display: none;
-}
-
-.help-section summary h2 {
-    margin: 0;
-}
-
-.help-section[open] summary {
-    margin-bottom: 15px;
-}
-
-.help-section .help-content {
-    display: grid;
-    gap: 20px;
-    margin-top: 15px;
-}
-
-.help-item {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    transition: transform 0.2s;
-}
-
-.help-item h3 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    color: var(--color-primary);
-}
-
-.help-item p {
-    margin: 10px 0;
-    line-height: 1.6;
-}
-
-.help-details {
-    margin-top: 15px;
-    padding-left: 10px;
-}
-
-.help-details ul {
-    list-style: none;
-    padding-left: 0;
-}
-
-.help-details li {
-    margin: 8px 0;
-    padding-left: 20px;
-    position: relative;
-}
-
-.help-details li::before {
-    content: "→";
-    position: absolute;
-    left: 0;
-    color: var(--color-secondary);
+.hero-features {
+    color: var(--color-accent);
     font-weight: bold;
 }
 
-.pro-tips {
-    list-style: none;
-    padding: 0;
+.hero-description {
+    margin-top: 10px;
+    font-size: 1.1em;
+    color: var(--color-gray-light);
 }
 
-.pro-tips li {
-    margin: 12px 0;
+.hero-badge {
+    display: inline-block;
+    background: var(--color-bg);
+    border-radius: 6px;
+    padding: 2px 10px;
+}
+
+.hero-tagline {
+    margin-top: 12px;
+    margin-bottom: 12px;
+    font-size: 1.05em;
+    color: var(--color-purple);
+}
+
+.auth-section-flex {
     display: flex;
-    align-items: flex-start;
-    gap: 10px;
+    align-items: center;
+    gap: 1em;
+    flex-wrap: wrap;
 }
 
-.tip-emoji {
-    font-size: 20px;
-    flex-shrink: 0;
+.tier-seed { color: var(--color-secondary); font-weight: bold; }
+.tier-flower { color: var(--color-primary); font-weight: bold; }
+.tier-nectar { color: var(--color-accent); font-weight: bold; }
+.tier-beta { color: var(--color-purple); font-style: italic; }
+.tier-automatic { font-style: italic; }
+.tier-pilots { font-weight: bold; text-decoration: underline dotted var(--color-primary); }
+.tier-higher { font-weight: bold; color: var(--color-accent); }
+.tier-usage { font-style: italic; }
+.tier-upgrade-text { color: var(--color-black); }
+
+.domain-info {
+    font-style: italic;
+    font-weight: 500;
+    color: var(--color-purple);
 }
 
-/* Enhanced code blocks for help section */
-.help-item code {
-    background: var(--gradient-gray-white);
-    font-size: 0.9rem;
+.domain-primary { font-weight: 700; color: var(--color-black); }
+.domain-keyword { font-weight: 700; color: var(--color-primary); font-style: italic; }
+.domain-or { color: var(--color-gray-light); }
+.domain-referrer { font-weight: 700; color: var(--color-accent); }
+
+.domain-examples {
+    margin: 18px 0 10px 0;
 }
+
+.domain-examples-content {
+    margin-bottom: 16px;
+    line-height: 1.7;
+}
+
+.domain-simple-way {
+    margin-bottom: 12px;
+}
+
+.domain-simple-label {
+    color: var(--color-gray-dark);
+    font-style: italic;
+    letter-spacing: 0.5px;
+}
+
+.domain-simple-desc {
+    color: var(--color-gray-light);
+    font-style: italic;
+}
+
+.domain-example-list {
+    margin-left: 1.2em;
+    font-style: oblique;
+    color: var(--color-gray-light);
+}
+
+.domain-code {
+    background: var(--color-bg);
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.domain-finder {
+    margin-top: 16px;
+    padding: 12px;
+    font-size: 1.2em;
+}
+
+.domain-finder-title {
+    font-variant: small-caps;
+    font-weight: bold;
+    color: rgb(255,179,0);
+}
+
+.domain-finder-list {
+    margin: 8px 0 0 16px;
+    color: var(--color-gray-light);
+}
+
+.domain-network-tab {
+    text-decoration: underline dashed var(--color-accent);
+}
+
+.domain-referrer-header {
+    font-style: italic;
+    text-decoration: underline dotted var(--color-primary);
+}
+
+.token-info {
+    font-style: italic;
+    color: var(--color-gray-dark);
+}
+
+.token-secure { color: var(--color-success); font-style: italic; }
+.token-private { color: var(--color-purple); }
+.token-backend { font-style: italic; }
+
+.token-warning-title {
+    display: inline-block;
+    font-weight: 900;
+    color: var(--color-error);
+    font-style: italic;
+    font-size: 1.18em;
+    letter-spacing: 0.7px;
+    text-shadow: 0 2px 10px var(--color-error)22;
+    margin-bottom: 0.3em;
+    border-bottom: 2px solid var(--color-error);
+    padding-bottom: 2px;
+}
+
+.token-warning-list {
+    margin: 14px 0 12px 0;
+    padding-left: 1.4em;
+    font-size: 1.09em;
+    list-style: none;
+}
+
+.token-warning-item {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.token-warning-emoji {
+    font-size: 1.1em;
+    margin-right: 0.6em;
+    color: var(--color-accent);
+}
+
+.token-warning-text {
+    font-style: italic;
+    font-weight: bold;
+    color: var(--color-accent);
+    background: var(--color-black);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.token-error {
+    color: var(--color-error);
+    font-size: 0.98em;
+    font-style: italic;
+    margin-left: 2.2em;
+    margin-top: -4px;
+}
+
+.usage-gray { color: var(--color-gray-light); }
+.usage-beta {
+    color: var(--color-purple);
+    font-weight: bold;
+    font-style: italic;
+}
+.usage-levelup { color: var(--color-primary); }
+.usage-ads { color: var(--color-gray-light); }
+.usage-tier { color: var(--color-accent); }
+
+.emoji-large { font-size: 1.2em; }
+.emoji-medium { font-size: 1.1em; }
 
 /* ===================================================================== */
 /*                        TOKEN DISPLAY                                */
 /* ===================================================================== */
 
-/* Tier display styling */
 .tier-container {
-    background: var(--gradient-container-green);
+    background: var(--gradient-psychedelic-bg-1);
     border: 2px solid var(--color-secondary);
     position: relative;
 }
 
-.tier-badge {
-    display: inline-block;
-    padding: 8px 20px;
-    border-radius: 30px;
+.ad-section {
+    background: var(--gradient-psychedelic-bg-2);
+    border: 2px solid var(--color-primary);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
 }
 
-/* Preferences styling */
 .preferences-container {
-    background: var(--gradient-container-purple);
+    background: var(--gradient-container-subtle);
     border: 2px solid #e9c6ff;
 }
 
@@ -612,7 +711,7 @@ code::after {
 }
 
 .toggle-label {
-    /* Allow the label to take only the width it needs so the switch appears right next to it */
+
     flex: 0 0 auto;
     margin-right: 10px;
     font-weight: 600;
@@ -659,16 +758,16 @@ code::after {
 /*                      TIER & SUBSCRIPTION                            */
 /* ===================================================================== */
 
-/* Toggle Switch */
+
 .toggle-switch {
     position: relative;
     display: inline-block;
     width: 64px;
-    height: 34px; /* Bigger pill for better tap targets */
+    height: 34px;
 }
 
 .toggle-switch input {
-    /* Visually hidden but still clickable over the switch area */
+
     position: absolute;
     top: 0;
     left: 0;
@@ -677,7 +776,7 @@ code::after {
     margin: 0;
     cursor: pointer;
     opacity: 0;
-    z-index: 2; /* place above slider so clicks reach the checkbox */
+    z-index: 2;
 }
 
 .toggle-slider {
@@ -712,30 +811,6 @@ input:checked + .toggle-slider {
 
 input:checked + .toggle-slider:before {
     transform: translateX(32px);
-}
-
-.tier-badge::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, var(--alpha-20));
-    transform: skewX(-25deg);
-    animation: pulse 3s infinite;
-}
-
-.tier-badge.seed {
-    background: var(--gradient-tier-seed);
-}
-
-.tier-badge.flower {
-    background: var(--gradient-tier-flower);
-}
-
-.tier-badge.nectar {
-    background: var(--gradient-tier-nectar);
 }
 
 .tier-description {
@@ -779,35 +854,19 @@ input:checked + .toggle-slider:before {
 }
 
 .tier-pill.seed.active {
-    background: var(--gradient-tier-seed);
+    background: var(--color-secondary);
 }
 
 .tier-pill.flower.active {
-    background: var(--gradient-tier-flower);
+    background: var(--color-primary);
 }
 
 .tier-pill.nectar.active {
-    background: var(--gradient-tier-nectar);
+    background: var(--color-accent);
 }
 
-.tier-benefit-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 15px;
-    background: white;
-    border-radius: 12px;
-    transition: transform 0.2s;
-}
-
-.tier-emoji {
-    font-size: 20px;
-    flex-shrink: 0;
-}
-
-/* 💬 Inline Help Blocks */
 .help-block {
-    background: var(--gradient-psychedelic-bg-light);
+    background: var(--gradient-psychedelic-bg);
     border: 2px dashed var(--color-primary);
     border-radius: 14px;
     margin: 15px 0;
@@ -833,11 +892,9 @@ input:checked + .toggle-slider:before {
     position: relative;
 }
 
-/* Hide default disclosure arrow */
 .help-block summary::-webkit-details-marker { display: none; }
 .help-block summary::marker { content: ""; }
 
-/* Custom + / - icon */
 .help-block summary::after {
     content: '＋';
     font-size: 20px;
@@ -873,15 +930,8 @@ input:checked + .toggle-slider:before {
     font-weight: bold;
 }
 
-/* 🆕 Profile Card styling */
-.profile-card {
-    background: var(--gradient-psychedelic-bg);
-    border: 2px solid var(--color-secondary);
-}
-
-/* 💼 Access Card styling */
 .access-card {
-    background: var(--gradient-psychedelic-bg-subtle);
+    background: var(--gradient-psychedelic-bg);
     border: 2px solid var(--color-accent);
 }
 
@@ -893,7 +943,6 @@ input:checked + .toggle-slider:before {
     margin-top: 10px;
 }
 
-/* Profile badge styling */
 .profile-badge {
     display: inline-flex;
     align-items: center;
@@ -919,20 +968,14 @@ input:checked + .toggle-slider:before {
     color: var(--color-gray-dark);
 }
 
-/* Removed margin-left: auto to keep elements left-aligned */
 .auth-section button + #badge-container {
     margin-left: 10px;
 }
 
-/* ===================================================================== */
-/*                       CHARTS & COST DISPLAY                         */
-/* ===================================================================== */
-
-/* 📊 24-Hour Cost Bar Graph - Psychedelic Style */
 .cost-chart-container {
     margin-top: 15px;
     margin-bottom: 20px;
-    background: var(--gradient-container-warm);
+    background: var(--gradient-container-light);
     border-radius: 18px;
     padding: 20px;
     border: 2px solid transparent;
@@ -950,7 +993,7 @@ input:checked + .toggle-slider:before {
     bottom: 0;
     border-radius: 18px;
     padding: 2px;
-    background: var(--gradient-psychedelic-border);
+    background: var(--gradient-brand-cycle);
     background-size: 300% 300%;
     animation: flow 8s linear infinite;
     mask: linear-gradient(var(--color-white) 0 0) content-box, linear-gradient(var(--color-white) 0 0);
@@ -1022,8 +1065,6 @@ input:checked + .toggle-slider:before {
     transform: translateY(-1px);
     text-shadow: 0 1px 2px rgba(0, 0, 0, var(--alpha-20));
 }
-
-
 
 .chart-nav-btn {
     padding: 8px 12px;
@@ -1165,11 +1206,11 @@ input:checked + .toggle-slider:before {
     border-radius: 12px;
     border: 1px solid rgba(255, 204, 0, var(--alpha-20));
     position: relative;
-    overflow: visible; /* allow hover tooltips to overflow */
+    overflow: visible;
 }
 
 .cost-chart.loading {
-    /* Keep clipping during loading animation */
+
     overflow: hidden;
     animation: chart-loading-pulse 2s ease-in-out infinite;
 }
@@ -1241,8 +1282,6 @@ input:checked + .toggle-slider:before {
     font-weight: 500;
 }
 
-
-
 /* ===================================================================== */
 /*                           TYPOGRAPHY                                 */
 /* ===================================================================== */
@@ -1251,7 +1290,6 @@ h1, h2, h3 {
     font-family: 'Space Grotesk', monospace;
 }
 
-/* 🌟 Pollen Cost Display - Psychedelic Style */
 .cost-display {
     display: inline-flex;
     align-items: center;
@@ -1260,7 +1298,7 @@ h1, h2, h3 {
     border: 3px solid transparent;
     border-radius: 25px;
     background: linear-gradient(135deg, var(--color-dark-bg) 0%, var(--color-dark-bg-light) 100%) padding-box,
-                var(--gradient-text-psychedelic) border-box;
+                var(--gradient-brand-cycle) border-box;
     font-weight: 600;
     font-size: 0.95rem;
     animation: flow 8s linear infinite;
@@ -1272,15 +1310,13 @@ h1, h2, h3 {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-
-
 .cost-display:hover {
     transform: translateY(-2px) scale(1.02);
 }
 
 .cost-display .cost-label,
 .cost-display .cost-value {
-    background: var(--gradient-text-psychedelic);
+    background: var(--gradient-brand-cycle);
     background-size: 300% 300%;
     background-clip: text;
     -webkit-background-clip: text;
@@ -1301,7 +1337,6 @@ h1, h2, h3 {
     letter-spacing: -0.5px;
 }
 
-/* Loading state */
 .cost-display.loading {
     animation: flow 2s linear infinite;
 }
@@ -1309,10 +1344,6 @@ h1, h2, h3 {
 .cost-display.loading .cost-value {
     animation: flow 1.5s ease-in-out infinite;
 }
-
-
-
-
 
 .token-wrapper {
 display: flex;
@@ -1333,10 +1364,8 @@ flex: 1 1 auto;
 }
 
 .token-value.copyable:hover {
-
 }
 
-/* Show a checkmark icon when copied */
 .token-value.copied::after {
     content: '✅';
     position: absolute;
@@ -1356,7 +1385,6 @@ flex: 1 1 auto;
     display: flex;
     align-items: center;
     justify-content: center;
-
 }
 
 .copy-token-btn:hover {
@@ -1368,7 +1396,6 @@ flex: 1 1 auto;
     pointer-events: none;
 }
 
-/* Auth section layout */
 #auth-section {
     display: flex;
     align-items: center;
@@ -1381,12 +1408,11 @@ flex: 1 1 auto;
     margin-top: 0;
 }
 
-/* Responsive design */
 @media (max-width: 600px) {
     #auth-section {
         gap: 0.5em;
     }
-    
+
     .cost-display,
     button {
         font-size: 0.9rem;
@@ -1395,7 +1421,7 @@ flex: 1 1 auto;
 }
 
 @media (max-width: 600px) {
-    /* Make chart navigation controls stack & fit mobile screens */
+
     .cost-chart-controls {
         flex-wrap: wrap;
         justify-content: space-between;
@@ -1403,26 +1429,22 @@ flex: 1 1 auto;
         gap: 8px;
     }
 
-    /* Each direct child should consume full width when wrapped */
     .cost-chart-controls > * {
         flex: 1 1 100%;
     }
 
-    /* Previous/Next arrow buttons shrink appropriately */
     .chart-nav-btn {
         flex: 0 0 15%;
         padding: 6px 8px;
         font-size: 0.8rem;
     }
 
-    /* Toggle container occupies remaining width */
     .cost-chart-toggle {
         flex: 1 1 60%;
         display: flex;
         justify-content: center;
     }
 
-    /* Toggle buttons scale down and fill equally */
     .chart-toggle-btn {
         flex: 1 1 33%;
         min-width: 0;
@@ -1432,11 +1454,6 @@ flex: 1 1 auto;
     }
 }
 
-/* ===================================================================== */
-/*                      MISCELLANEOUS & CTA                            */
-/* ===================================================================== */
-
-/* CTA Hole Style – looks like a cut-out label inside cards */
 a.cta-hole {
     display: inline-block;
     background: var(--color-bg);
@@ -1451,14 +1468,10 @@ a.cta-hole {
     transition: transform 0.2s;
 }
 
-
-
 a.cta-hole:focus {
     outline: none;
-
 }
 
-/* Tagline under Auth heading */
 .intro-tagline {
     font-size: 1.15rem;
     margin: -10px 0 24px 0;

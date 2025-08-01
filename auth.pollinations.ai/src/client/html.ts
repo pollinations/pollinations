@@ -7,7 +7,7 @@ export const generateHTML = () => `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pollinations.AI Auth</title>
+    <title>Authentification</title>
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
     <link rel="icon" href="/media/favicon-32x32.png" sizes="32x32" type="image/png">
     <link rel="icon" href="/media/favicon-16x16.png" sizes="16x16" type="image/png">
@@ -20,30 +20,29 @@ export const generateHTML = () => `<!DOCTYPE html>
     <div class="container">
         <h1 class="emoji-title">
             <span class="brand">
-                <img src="https://raw.githubusercontent.com/pollinations/pollinations/master/operations/assets/pollinations_ai_logo_black.svg" alt="Pollinations Logo" class="title-logo" />
-                Pollinations.AI
+                <img src="https://raw.githubusercontent.com/pollinations/pollinations/master/operations/assets/pollinations_ai_logo_text_black.png" alt="Pollinations Logo" class="title-logo" />
             </span>
             <span class="auth-title">🐝 Auth 🌸</span>
         </h1>
         
         <!-- Intro section with tagline (visible only when logged out) -->
         <div id="intro-text">
-            <div style="font-size: 1.25em; color: #222; margin-top: 8px;">
-                <span style="background: #fffbe7; border-radius: 6px; padding: 2px 8px;">
-                    <b>Sign in</b> to unlock <span style="color: #ffb300; font-weight: bold;">all models &amp; features</span>
+            <div class="hero-subtitle">
+                <span class="hero-highlight">
+                    <b>Sign in</b> to unlock <span class="hero-features">all models &amp; features</span>
                 </span>
             </div>
-            <div style="margin-top: 10px; font-size: 1.1em; color: #444;">
-                <span style="display: inline-block; background: #ffe3fa; border-radius: 6px; padding: 2px 10px;">
+            <div class="hero-description">
+                <span class="hero-badge">
                     <b>Free</b> &nbsp;|&nbsp; <b>Anonymous</b> 
                 </span>
             </div>
-            <div style="margin-top: 12px; margin-bottom: 12px; font-size: 1.05em; color: #7a3cff;">
-                <i>Gen-AI API for everyone <span style="font-size:1.2em;">🌟</span></i>
+            <div class="hero-tagline">
+                <i>Gen-AI API for everyone <span class="emoji-large">🌟</span></i>
             </div>
         </div>
 
-        <div id="auth-section" style="display:flex; align-items:center; gap:1em; flex-wrap:wrap;">
+        <div id="auth-section" class="auth-section-flex">
             <button id="auth-button" onclick="startAuth()">Login with GitHub</button>
             <button id="logout-button" onclick="logout()" class="hidden">Logout</button>
             <div id="badge-container" class="hidden"></div>
@@ -104,9 +103,9 @@ export const generateHTML = () => `<!DOCTYPE html>
                     </div>
                     <div class="tier-description">
                         <p>
-                            <span style="color:#2ecc40; font-weight:bold;">Seed</span> tier is <span style="font-style:italic;"><b>automatic</b></span> on first login.<br>
-                            <span style="color:#ff61d8; font-weight:bold;">Flower</span> and <span style="color:#ffb300; font-weight:bold;">Nectar</span> are assigned in <span style="font-weight:bold; text-decoration:underline dotted #ff61d8;">limited pilots</span> while we're in <span style="color:#7a3cff; font-style:italic;"><b>beta</b></span>.<br>
-                            <span style="font-weight:bold; color:#ffb300;">Higher tiers</span> = <span style="font-style:italic;">more Gen‑AI usage</span>!
+                            <span class="tier-seed">Seed</span> tier is <span class="tier-automatic"><b>automatic</b></span> on first login.<br>
+                            <span class="tier-flower">Flower</span> and <span class="tier-nectar">Nectar</span> are assigned in <span class="tier-pilots">limited pilots</span> while we're in <span class="tier-beta"><b>beta</b></span>.<br>
+                            <span class="tier-higher">Higher tiers</span> = <span class="tier-usage">more Gen‑AI usage</span>!
                         </p>
                     </div>
                     <h4>Current:</h4>
@@ -121,8 +120,8 @@ export const generateHTML = () => `<!DOCTYPE html>
                             <span class="tier-emoji">🍯</span> Nectar
                         </div>
                         <p>
-                            <span style="font-size:1.2em;"></span>
-                            <b><i>Want to <span style="color:black;">upgrade</span> to <span style="color:#ff61d8;">Flower</span> or <span style="color:#ffb300;">Nectar</span> tier?</i></b>
+                            <span class="emoji-large"></span>
+                            <b><i>Want to <span class="tier-upgrade-text">upgrade</span> to <span class="tier-flower">Flower</span> or <span class="tier-nectar">Nectar</span> tier?</i></b>
                             <br>
                             <br>
                             <a href="https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml" target="_blank" class="cta-hole hover-lift">Request access!</a>
@@ -130,20 +129,15 @@ export const generateHTML = () => `<!DOCTYPE html>
                     </div>
                 </div>
 
-                <div id="preferences-section" class="preferences-container card-base card-hover card-padding-compact hidden">
+                <div id="preferences-section" class="ad-section card-base card-hover hidden">
                     <div class="preferences-header">
                         <h2>🪧 Ads</h2>
                     </div>
-
-
                         <div>
-                            <span style="color:#444;">
-                                    <span style="color:#444;">
+                            <span class="usage-gray">
+                                    <span class="usage-gray">
                                         <b>When active, anonymous contextual ads</b> are be added in some GenAI API responses. 
                                     </span>
-           
-
-            
                     </div>
                     <div class="preference-item">
                         <label for="ads-toggle" class="toggle-label">Show Ads</label>
@@ -153,8 +147,8 @@ export const generateHTML = () => `<!DOCTYPE html>
                         </div>
                         <span id="ads-status" class="preference-status">Loading...</span>
                     </div><br>
-                            <span style="color:#7a3cff; font-weight:bold; font-style:italic;">
-                                🚀 Beta (soon!): <span style="color:#ff61d8;">Level up faster</span> — <span style="color:#444;">More Ads</span> <span style="color:#ffb300;">= Higher Tier</span>
+                            <span class="usage-beta">
+                                🚀 Beta (soon!): <span class="usage-levelup">Level up faster</span> — <span class="usage-ads">More Ads</span> <span class="usage-tier">= Higher Tier</span>
                             </span>
                     <p><b><i>Want credit card payments instead?</i></b> 💳 
                     <br>
@@ -169,12 +163,12 @@ export const generateHTML = () => `<!DOCTYPE html>
             <div id="domain-section" class="hidden">
                 <div class="access-card card-base card-hover card-padding-comfortable">
                     <h2>🔑 Referrer / Domain</h2>
-                    <p class="section-info" style="font-style:italic; font-weight:500; color:#6c2cff;">
-                        <span style="font-weight:700; color:black;">Enter the primary </span>
-                        <span style="font-weight:700; color:#ff61d8; font-style:italic;">domain</span>
-                        <span style="color:#444;"> or </span>
-                        <span style="font-weight:700; color:#ffb300;">referrer</span>
-                        <span style="color:#444;"> your app calls from.</span>
+                    <p class="section-info domain-info">
+                        <span class="domain-primary">Enter the primary </span>
+                        <span class="domain-keyword">domain</span>
+                        <span class="domain-or"> or </span>
+                        <span class="domain-referrer">referrer</span>
+                        <span class="domain-or"> your app calls from.</span>
                     </p>
                     <div class="input-group">
                         <input type="text" id="new-domain" placeholder="example.com">
@@ -184,30 +178,30 @@ export const generateHTML = () => `<!DOCTYPE html>
                 </div>
                 <details class="help-block">
                     <summary>
-                        <span style="font-size:1.1em;">🤔</span>
+                        <span class="emoji-medium">🤔</span>
                         <b>How to find your domain</b>
-                        <span style="font-size:1.1em;"></span>
+                        <span class="emoji-medium"></span>
                     </summary>
-                    <div style="margin: 18px 0 10px 0;">
-                        <div style="margin-bottom: 16px; line-height: 1.7;">
-                            <p style="margin-bottom: 12px;">
-                                <b style="color:#3a3a3a; font-style:italic; letter-spacing:0.5px;">Simple way:</b>
-                                <span style="color:#666; font-style:italic;">Just enter the domain (including subdomains) of your deployed site.</span>
+                    <div class="domain-examples">
+                        <div class="domain-examples-content">
+                            <p class="domain-simple-way">
+                                <b class="domain-simple-label">Simple way:</b>
+                                <span class="domain-simple-desc">Just enter the domain (including subdomains) of your deployed site.</span>
                             </p>
                             
-                            <p style="margin-left:1.2em; font-style:oblique; color:#888;">
-                                Examples: <code style="background:#f0f0f0; padding:2px 4px; border-radius:3px;">myapp.com</code>, 
-                                <code style="background:#f0f0f0; padding:2px 4px; border-radius:3px;">username.github.io</code>, 
-                                <code style="background:#f0f0f0; padding:2px 4px; border-radius:3px;">myapp.vercel.app</code>
+                            <p class="domain-example-list">
+                                Examples: <code class="domain-code">myapp.com</code>, 
+                                <code class="domain-code">username.github.io</code>, 
+                                <code class="domain-code">myapp.vercel.app</code>
                             </p>
                             
-                            <div style="margin-top: 16px; padding: 12px; font-size:1.2em;">
-                                <span style="font-variant:small-caps; font-weight:bold; color:rgb(255,179,0)">🕵️‍♂️ Find your referrer:</span>
-                                <ol style="margin: 8px 0 0 16px; color:#666;">
+                            <div class="domain-finder">
+                                <span class="domain-finder-title">🕵️‍♂️ Find your referrer:</span>
+                                <ol class="domain-finder-list">
                                     <li>Open browser developer tools (F12 or right-click → Inspect)</li>
-                                    <li>Go to the <b style="text-decoration:underline dashed #ffb300;">Network</b> tab</li>
+                                    <li>Go to the <b class="domain-network-tab">Network</b> tab</li>
                                     <li>Make an API request from your app</li>
-                                    <li>Click the request and look for the <b style="font-style:italic; text-decoration:underline dotted #ff61d8;">Referrer</b> header</li>
+                                    <li>Click the request and look for the <b class="domain-referrer-header">Referrer</b> header</li>
                                 </ol>
                             </div>
                         </div>
@@ -217,29 +211,29 @@ export const generateHTML = () => `<!DOCTYPE html>
                 <div class="access-card card-base card-hover card-padding-comfortable">
                     <h2>🔑 API Token</h2>
 
-                    <p class="section-info" style="font-style:italic; color:#2d3748;">
-                        <b>Generate</b> a <span style="color:#00796b; font-style:italic;"><b>secure</b></span>, <span style="color:#6d28d9;"><b>private</b></span> token for your <span style="font-style:italic;">backend</span> or <span style="font-style:italic;">server-side</span> integrations.
+                    <p class="section-info token-info">
+                        <b>Generate</b> a <span class="token-secure"><b>secure</b></span>, <span class="token-private"><b>private</b></span> token for your <span class="token-backend">backend</span> or <span class="token-backend">server-side</span> integrations.
                     </p>
 
-                    <span style="display:inline-block; font-weight:900; color:#d7263d; font-style:italic; font-size:1.18em; letter-spacing:0.7px; text-shadow:0 2px 10px #d7263d22; margin-bottom:0.3em; border-bottom:2px solid #d7263d; padding-bottom:2px;">
+                    <span class="token-warning-title">
                         🔒 Keep your token secure!
                     </span>
-                    <ul style="margin: 14px 0 12px 0; padding-left: 1.4em; font-size:1.09em; list-style:none;">
-                        <li style="margin-bottom:10px; display:flex; align-items:center;">
-                            <span style="font-size:1.1em; margin-right:0.6em; color:#f9ca24;">⚠️</span>
-                            <span style="font-style:italic; font-weight:bold; color:#f9ca24; background:black; padding:2px 6px; border-radius:4px;">
+                    <ul class="token-warning-list">
+                        <li class="token-warning-item">
+                            <span class="token-warning-emoji">⚠️</span>
+                            <span class="token-warning-text">
                                 Never share your token publicly anywhere
                             </span>
                         </li>
-                        <li style="display:flex; align-items:center; margin-bottom:0;">
-                            <span style="font-size:1.1em; margin-right:0.6em; color:#f9ca24;">🚧</span>
-                            <span style="color:#f9ca24; font-weight:bold; background:black; padding:2px 6px; border-radius:4px;">
+                        <li class="token-warning-item">
+                            <span class="token-warning-emoji">🚧</span>
+                            <span class="token-warning-text">
                                 Don't commit tokens to Git/GitHub repositories
                             </span>
                         </li>
                     </ul>
-                    <div style="color:red; font-size:0.98em; font-style:italic; margin-left:2.2em; margin-top:-4px;">
-                        <span style="font-size:1.1em; margin-right:0.4em">✨</span> Use <b>.env</b> files to store tokens safely
+                    <div class="token-error">
+                        <span class="emoji-medium">✨</span> Use <b>.env</b> files to store tokens safely
                     </div>
 
                     <div id="token-info" class="status"><em>Loading token information...</em></div>

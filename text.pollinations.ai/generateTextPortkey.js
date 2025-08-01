@@ -487,12 +487,15 @@ export const portkeyConfig = {
 			process.env.AZURE_O4MINI_ENDPOINT,
 			"o4-mini",
 		),
-	"gpt-4o-mini-audio-preview": () =>
-		createAzureModelConfig(
+	"gpt-4o-mini-audio-preview": () => ({
+		...createAzureModelConfig(
 			process.env.AZURE_OPENAI_AUDIO_API_KEY,
 			process.env.AZURE_OPENAI_AUDIO_ENDPOINT,
 			"gpt-4o-mini-audio-preview",
 		),
+		"max-tokens": 512,
+		"max-completion-tokens": 512,
+	}),
 	"gpt-4o-audio-preview": () =>
 		createAzureModelConfig(
 			process.env.AZURE_OPENAI_AUDIO_LARGE_API_KEY,

@@ -12,11 +12,11 @@ export const MODELS = {
         maxSideLength: 1280,
     },
 
-    // Flux Kontext general purpose model
+    // BPAIGen with Kontext fallback - general purpose model
     kontext: {
-        type: "kontext",
+        type: "bpaigen-kontext",
         enhance: true,
-        maxSideLength: 640,
+        maxSideLength: 1216, // BPAIGen's higher resolution capability
         tier: "seed",
     },
 

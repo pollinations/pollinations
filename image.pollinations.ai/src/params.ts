@@ -76,6 +76,7 @@ export const ImageParamsSchema = z
             })
             .catch([]),
         transparent: sanitizedBoolean.catch(false),
+        guidance_scale: z.coerce.number().optional().catch(undefined),
     })
     .transform((data) => {
         // adjust width and height to fit the selected model

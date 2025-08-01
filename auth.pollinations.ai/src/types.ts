@@ -6,6 +6,8 @@ export interface Env {
     GITHUB_CLIENT_SECRET: string;
     JWT_SECRET: string;
     ADMIN_API_KEY: string;
+    TINYBIRD_API_KEY: string;
+    TINYBIRD_BASE_URL: string;
 }
 
 export interface User {

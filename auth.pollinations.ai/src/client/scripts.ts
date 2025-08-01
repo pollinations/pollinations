@@ -633,10 +633,16 @@ async function getUserCost() {
             return;
         }
 
-        const tinybirdUrl = 'https://api.europe-west2.gcp.tinybird.co/v0/pipes/get_llm_costs.json';
-        const tinybirdToken = 'p.eyJ1IjogIjY2ZTg5NDU1LTAzYTgtNGZkNS1iNjg3LWU5NDdhMzY5OThkMyIsICJpZCI6ICJhZjVkZTNiNi04NmVhLTQ4ODMtYjZlYi1iYzJjYjZjOTE3ZjEiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.XH20kZ7QLFsM8sNDsr8w-xS3K8TKb6ieHAysh3K50Co';
+        // Get Tinybird configuration from environment
+        const configResponse = await fetch('/api/config');
+        if (!configResponse.ok) {
+            costDisplay.classList.remove('loading');
+            costValue.textContent = '?';
+            return;
+        }
+        const config = await configResponse.json();
         
-        const response = await fetch(tinybirdUrl + '?token=' + tinybirdToken + '&username=' + encodeURIComponent(username));
+        const response = await fetch(config.tinybirdUrl + '?token=' + config.tinybirdToken + '&username=' + encodeURIComponent(username));
         
         if (response.ok) {
             const data = await response.json();

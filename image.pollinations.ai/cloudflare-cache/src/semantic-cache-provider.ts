@@ -8,6 +8,7 @@ import { SEMANTIC_SIMILARITY_THRESHOLD } from "./config.js";
 import {
     createEmbeddingService,
     type EmbeddingService,
+    EmbeddingServiceDeps,
     generateEmbedding,
     getResolutionBucket,
 } from "./embedding-service.js";
@@ -57,13 +58,16 @@ function setHttpMetadataHeaders(
  * @param {Object} env - Environment bindings
  * @returns {Object} - Semantic cache instance
  */
-export function createSemanticCache(env: Env): SemanticCache {
+export function createSemanticCache(env: Cloudflare.Env): SemanticCache {
     return {
         r2: env.IMAGE_BUCKET,
         vectorize: env.VECTORIZE_INDEX,
         ai: env.AI,
         similarityThreshold: SEMANTIC_SIMILARITY_THRESHOLD, // Centralized threshold configuration
-        embeddingService: createEmbeddingService(env.AI),
+        embeddingService: {
+            ai: env.AI,
+            model: "@cf/baai/bge-base-en-v1.5",
+        },
     };
 }
 
@@ -72,7 +76,7 @@ export type SemanticCache = {
     vectorize: VectorizeIndex;
     ai: Ai;
     similarityThreshold: number;
-    embeddingService: EmbeddingService;
+    embeddingService: EmbeddingServiceDeps;
 };
 
 type FindSimilarImageResult = {

@@ -14,7 +14,9 @@ import {
     createSemanticCache,
     findSimilarImage,
     type SemanticCache,
-} from "./semantic-cache.js";
+} from "./semantic-cache-provider.js";
+
+type Env = Cloudflare.Env;
 
 type HybridCache = {
     r2: R2Bucket;

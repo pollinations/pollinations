@@ -1,15 +1,15 @@
-import { sendToAnalytics } from "./analytics.js";
-import { cacheResponse, generateCacheKey } from "./cache-utils.js";
-import { SEMANTIC_CACHE_ENABLED } from "./config.js";
-import { extractImageParams, extractPromptFromUrl } from "./hybrid-cache.js";
-import { proxyToOrigin } from "./image-proxy.js";
+import { sendToAnalytics } from "./analytics.ts";
+import { cacheResponse, generateCacheKey } from "./cache-utils.ts";
+import { SEMANTIC_CACHE_ENABLED } from "./config.ts";
+import { extractImageParams, extractPromptFromUrl } from "./hybrid-cache.ts";
+import { proxyToOrigin } from "./image-proxy.ts";
 import {
     cacheImageEmbedding,
     checkExactCacheAndRespond,
     checkSemanticCacheAndRespond,
     createSemanticCache,
     type SemanticCacheDebugInfo,
-} from "./semantic-cache.js";
+} from "./semantic-cache-provider.ts";
 
 type CacheStatus = "pending" | "hit" | "miss";
 
@@ -33,7 +33,7 @@ function sendImageAnalytics(
     eventName: CacheEvent,
     cacheStatus: CacheStatus,
     params: Record<string, any>,
-    env: Env,
+    env: Cloudflare.Env,
     ctx: ExecutionContext,
 ) {
     // Simple logging
@@ -61,7 +61,7 @@ function sendImageAnalytics(
  * 4. Caches the response for future requests
  */
 export default {
-    async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    async fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext) {
         // Get basic request details
         const url = new URL(request.url);
 

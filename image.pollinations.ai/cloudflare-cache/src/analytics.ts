@@ -4,7 +4,7 @@
  * Following the "thin proxy" design principle - minimal processing, direct forwarding
  */
 
-import { getClientIp } from "./ip-utils.js";
+import { getClientIp } from "./ip-utils.ts";
 
 // Define maximum string length for truncation
 const MAX_STRING_LENGTH = 150;
@@ -21,7 +21,7 @@ export async function sendToAnalytics(
     request: Request,
     name: string,
     params: Record<string, string> = {},
-    env: Env,
+    env: Cloudflare.Env,
 ): Promise<Response | null> {
     try {
         console.log("Sending analytics for event:", name);
@@ -81,6 +81,7 @@ export async function sendToAnalytics(
 
         // Build the payload
         const payload = {
+            // TODO: this is questionable from a data privacy perspective
             client_id: clientIP,
             events: [
                 {
@@ -168,7 +169,8 @@ function processParameters(
  * @param {any} value - Parameter value
  * @returns {any} Processed value
  */
-function processValue(value: any) {
+// biome-ignore lint: no use in typing this in more detail
+function processValue(value: any): any {
     // Only truncate strings, pass everything else through as-is
     if (typeof value === "string") {
         return value.substring(0, MAX_STRING_LENGTH);

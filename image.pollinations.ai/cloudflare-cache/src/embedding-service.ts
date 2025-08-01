@@ -4,20 +4,27 @@
  * Uses BGE model with CLS pooling for improved accuracy
  */
 
-export type EmbeddingService = {
+export type EmbeddingServiceDeps = {
     ai: Ai;
     model: "@cf/baai/bge-base-en-v1.5";
 };
 
+export type EmbeddingService = (prompt: string) => Promise<number[] | null>;
+
 /**
  * Create an embedding service instance
- * @param {Object} ai - Workers AI binding
- * @returns {Object} - Service instance
+ * @param {Ai} ai - Workers AI binding
+ * @returns {function} - Service function
  */
 export function createEmbeddingService(ai: Ai): EmbeddingService {
-    return {
-        ai,
-        model: "@cf/baai/bge-base-en-v1.5",
+    return async (prompt: string) => {
+        return await generateEmbedding(
+            {
+                ai,
+                model: "@cf/baai/bge-base-en-v1.5",
+            },
+            prompt,
+        );
     };
 }
 
@@ -36,21 +43,21 @@ function isAsyncResponse(response: unknown): response is AsyncResponse {
  * @returns {Promise<number[]>} - 768-dimensional embedding vector
  */
 export async function generateEmbedding(
-    service: EmbeddingService,
+    service: EmbeddingServiceDeps,
     prompt: string,
-): Promise<number[]> {
+): Promise<number[] | null> {
     try {
         // Normalize the prompt for consistent embeddings
         const normalizedText = normalizePromptForEmbedding(prompt);
 
         console.log(
-            `[EMBEDDING] Generating embedding for: "${normalizedText.substring(0, 100)}..."`,
+            `[EMBEDDING] Generating embedding for: "${normalizedText.substring(0, 64)} [...]"`,
         );
 
         // Generate embedding using Workers AI with CLS pooling for better accuracy
         const response = await service.ai.run(service.model, {
             text: normalizedText,
-            pooling: "cls", // Use CLS pooling for better accuracy on longer inputs
+            pooling: "cls",
         });
 
         if (isAsyncResponse(response)) {
@@ -61,8 +68,8 @@ export async function generateEmbedding(
 
         return response.data[0]; // 768-dimensional vector
     } catch (error) {
-        console.error("[EMBEDDING] Error generating embedding:", error);
-        throw error;
+        console.error("[EMBEDDING] Failed to generate embedding:", error);
+        return null;
     }
 }
 
@@ -76,11 +83,8 @@ export function normalizePromptForEmbedding(prompt: string): string {
     // Model, style, and quality are handled through metadata filtering and bucketing
     let normalized = prompt.toLowerCase().trim();
 
-    // Remove all punctuation for consistent embeddings
-    // This ensures "test." and "test..." and "test" all produce the same embedding
+    // Remove all punctuation and normalize whitespace
     normalized = normalized.replace(/[^\w\s]/g, " ");
-
-    // Normalize whitespace (replace multiple spaces with single space)
     normalized = normalized.replace(/\s+/g, " ").trim();
 
     return normalized;

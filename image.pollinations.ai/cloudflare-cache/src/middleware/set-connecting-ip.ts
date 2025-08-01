@@ -8,6 +8,6 @@ export const setConnectingIp = createMiddleware<Env>(async (c, next) => {
         c.req.header("x-forwarded-for")?.split(",")[0].trim() ||
         "unknown";
     c.set("connectingIp", ip);
-    console.debug("Setting connecting IP:", ip);
+    console.debug("[CONNECTING IP]:", ip);
     await next();
 });

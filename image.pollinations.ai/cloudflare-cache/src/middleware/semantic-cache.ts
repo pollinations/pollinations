@@ -75,7 +75,7 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
                 );
                 c.header("X-Cache", "HIT");
                 c.header("X-Cache-Semantic", "HIT");
-                c.header("X-Sematic-Similarity", `${nearestSimilarity}`);
+                c.header("X-Semantic-Similarity", `${nearestSimilarity}`);
                 c.header("X-Semantic-Bucket", metadata.bucket);
                 c.header("X-Semantic-Threshold", `${c.env.SEMANTIC_THRESHOLD}`);
 
@@ -115,7 +115,10 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
                     embedding,
                     metadata,
                 );
-                console.log("[SEMANTIC] Stored embedding result", result);
+                console.debug(
+                    "[SEMANTIC] Stored embedding successfully:",
+                    result,
+                );
             })(),
         );
     } else {

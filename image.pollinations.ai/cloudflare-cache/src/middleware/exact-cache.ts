@@ -33,7 +33,12 @@ export const exactCache = createMiddleware<Env>(async (c, next) => {
     await next();
 
     // store response image in R2 on the way out
-    if (c.res?.ok && c.res.headers.get("content-type")?.includes("image/")) {
+    if (
+        c.res?.ok &&
+        c.res.headers.get("content-type")?.includes("image/") &&
+        // don't store it if there is a semantic hit
+        !(c.res.headers.get("x-cache") === "HIT")
+    ) {
         console.debug("[EXACT] Caching image response");
         c.executionCtx.waitUntil(cacheResponse(cacheKey, c));
     }

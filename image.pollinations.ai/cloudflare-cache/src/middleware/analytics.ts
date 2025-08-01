@@ -26,23 +26,23 @@ type AnalyticsParams = {
 
 type ImageRequestedEvent = {
     name: "imageRequested";
-    params: Record<string, string | number>;
+    extraParams?: Record<string, string | number>;
 };
 
 type ImageServedFromCacheEvent = {
     name: "imageServedFromCache";
     cacheType: "exact" | "semantic";
-    params: Record<string, string | number>;
+    extraParams?: Record<string, string | number>;
 };
 
 type ImageGeneratedEvent = {
     name: "imageGenerated";
-    params: Record<string, string | number>;
+    extraParams?: Record<string, string | number>;
 };
 
 type ImageGenerationFailedEvent = {
     name: "imageGenerationFailed";
-    params: Record<string, string | number>;
+    extraParams?: Record<string, string | number>;
 };
 
 export type ImageCacheEvent =
@@ -57,36 +57,61 @@ type AnalyticsEvent = {
 };
 
 export const googleAnalytics = createMiddleware<Env>(async (c, next) => {
-    // initialize analyticsEvents array
-    c.set("analyticsEvents", []);
+    const events: ImageCacheEvent[] = [{ name: "imageRequested" }];
 
+    // run middeware stack and proxy first
     await next();
 
-    if (
-        c.env.GA_MEASUREMENT_ID &&
-        c.env.GA_API_SECRET &&
-        c.var.analyticsEvents.length > 0
-    ) {
+    // add analytics based on response
+    if (!c.res.ok) {
+        events.push({
+            name: "imageGenerationFailed",
+            extraParams: {
+                error: `HTTP ${c.res.status}: ${c.res.statusText}`,
+            },
+        });
+    } else if (c.res.headers.get("x-cache-exact") === "HIT") {
+        events.push({
+            name: "imageServedFromCache",
+            cacheType: "exact",
+        });
+    } else if (c.res.headers.get("x-cache-semantic") === "HIT") {
+        events.push({
+            name: "imageServedFromCache",
+            cacheType: "semantic",
+        });
+    } else if (c.res.headers.get("x-cache") === "MISS") {
+        events.push({
+            name: "imageGenerated",
+        });
+    } else {
+        console.debug("[ANALYTICS] Ambiguous response, needs investigation");
+    }
+
+    // send it
+    if (c.env.GA_MEASUREMENT_ID && c.env.GA_API_SECRET && events.length > 0) {
         const config = {
             measurementId: c.env.GA_MEASUREMENT_ID,
             apiSecret: c.env.GA_API_SECRET,
         };
         const userId = await buildUserId(c);
-        const events = c.var.analyticsEvents.map((event) => ({
+        const augmentedEvents = events.map((event) => ({
             name: event.name,
             params: limitStringLength(
                 buildAnalyticsParams(c, event),
                 MAX_STRING_LENGTH,
             ),
         }));
-        c.executionCtx.waitUntil(sendAnalytics(config, userId, events));
+        c.executionCtx.waitUntil(
+            sendAnalytics(config, userId, augmentedEvents),
+        );
     }
     return null;
 });
 
 async function sendAnalytics(
     config: AnalyticsConfig,
-    userId: string,
+    clientId: string,
     events: AnalyticsEvent[],
 ) {
     console.debug(
@@ -101,7 +126,7 @@ async function sendAnalytics(
     ].join("");
 
     const payload = {
-        userId,
+        client_id: clientId,
         events,
     };
 
@@ -114,7 +139,10 @@ async function sendAnalytics(
         body: JSON.stringify(payload),
     });
 
-    console.log(`[Analytics] Response for ${events.length} events:`, response);
+    console.log(
+        `[Analytics] Response status for ${events.length} events:`,
+        response.status,
+    );
 }
 
 function buildAnalyticsParams(
@@ -143,7 +171,7 @@ function buildAnalyticsParams(
         ...trackedHeaders,
         cacheStatus: deriveCacheStatus(event),
         originalPrompt,
-        ...event.params,
+        ...event.extraParams,
         ...(event.name === "imageServedFromCache"
             ? { cacheType: event.cacheType }
             : {}),
@@ -167,7 +195,7 @@ function limitStringLength(
 async function buildUserId(c: Context<Env>): Promise<string> {
     const ip = c.req.header("cf-connecting-ip") || c.req.header("x-real-ip");
     const userAgent = c.req.header("user-agent");
-    return await createSimpleHash(`${ip.substring(0, 8)}${userAgent}`);
+    return await createSimpleHash(`${ip.substring(0, 11)}${userAgent}`);
 }
 
 function deriveCacheStatus(event: ImageCacheEvent): CacheStatus {

@@ -3,7 +3,8 @@
  * Following the "thin proxy" design principle - keeping logic simple and minimal
  */
 
-import { getClientIp } from "./ip-utils.js";
+import type { Context } from "hono";
+import type { Env } from "./env.js";
 import { removeUndefined } from "./util.js";
 
 /**
@@ -71,7 +72,7 @@ export function generateCacheKey(url: URL): string {
     const hash = createHash(fullPath);
 
     // Replace problematic characters in the path
-    const safePath = fullPath.replace(/[\/\s\?=&]/g, "_");
+    const safePath = fullPath.replace(/[/\s?=&]/g, "_");
 
     // Combine path with hash, ensuring it fits within a safe limit (1000 bytes)
     // Allow 10 chars for the hash and hyphen
@@ -89,7 +90,7 @@ export function generateCacheKey(url: URL): string {
  * @param {string} str - The string to hash
  * @returns {string} - The hashed string
  */
-function createHash(str) {
+function createHash(str: string): string {
     // Simple hash function
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
@@ -113,41 +114,38 @@ function createHash(str) {
  */
 export async function cacheResponse(
     cacheKey: string,
-    response: Response,
-    env: Env,
-    originalUrl: string,
-    request: Request,
+    c: Context<Env>,
 ): Promise<boolean> {
     try {
         // Store the image in R2 using the cache key directly
-        const imageBuffer = await response.arrayBuffer();
+        const imageBuffer = await c.res.clone().arrayBuffer();
 
         // Get client information from request
-        const clientIp = getClientIp(request);
+        const clientIp = c.get("connectingIp");
 
         // Get additional client information
-        const userAgent = request?.headers?.get("user-agent") || "";
+        const userAgent = c.req.header("user-agent") || "";
         const referer =
-            request?.headers?.get("referer") ||
-            request?.headers?.get("referrer") ||
-            "";
-        const acceptLanguage = request?.headers?.get("accept-language") || "";
+            c.req.header("referer") || c.req.header("referrer") || "";
+        const acceptLanguage = c.req.header("accept-language") || "";
+        const requestId = c.req.header("cf-ray") || ""; // Cloudflare Ray ID uniquely identifies the request
 
         // Get request-specific information
-        const method = request?.method || "GET";
+        const method = c.req.method || "GET";
         const requestTime = new Date().toISOString();
-        const requestId = request?.headers?.get("cf-ray") || ""; // Cloudflare Ray ID uniquely identifies the request
 
         // Helper function to sanitize and limit string length
         const sanitizeValue = (
-            value: any,
+            value: string | object | unknown[] | null | undefined,
             maxLength: number = 256,
             key: string | null = null,
         ) => {
             if (value === undefined || value === null) return undefined;
             if (typeof value === "string") return value.substring(0, maxLength);
             if (Array.isArray(value)) {
-                return value.map((item) => sanitizeValue(item, maxLength));
+                return value.map((item: string | object | unknown[]) =>
+                    sanitizeValue(item, maxLength),
+                );
             }
             if (typeof value === "object") {
                 // Special case for detectionIds - stringify it
@@ -165,7 +163,7 @@ export async function cacheResponse(
         };
 
         // Filter CF data to exclude object values
-        const filterCfData = (cf) => {
+        const filterCfData = (cf: object) => {
             if (!cf) return {};
 
             const filtered = {};
@@ -180,7 +178,7 @@ export async function cacheResponse(
                     // Special case for detectionIds
                     try {
                         filtered[key] = JSON.stringify(value);
-                    } catch (e) {
+                    } catch (_) {
                         // Skip if can't stringify
                     }
                 }
@@ -189,7 +187,7 @@ export async function cacheResponse(
         };
 
         // Filter botManagement to exclude object values
-        const filterBotManagement = (botManagement) => {
+        const filterBotManagement = (botManagement: object) => {
             if (!botManagement) return {};
 
             const filtered = {};
@@ -211,21 +209,18 @@ export async function cacheResponse(
 
         // Create metadata object with content type and original URL
         const httpMetadata: R2HTTPMetadata = {
-            contentType: response.headers.get("content-type") || "image/jpeg",
-            contentEncoding:
-                response.headers.get("content-encoding") || undefined,
-            contentDisposition:
-                response.headers.get("content-disposition") || undefined,
-            contentLanguage:
-                response.headers.get("content-language") || undefined,
-            cacheControl: response.headers.get("cache-control") || undefined,
+            contentType: c.res.headers.get("content-type") || "image/jpeg",
+            contentEncoding: c.res.headers.get("content-encoding"),
+            contentDisposition: c.res.headers.get("content-disposition"),
+            contentLanguage: c.res.headers.get("content-language"),
+            cacheControl: c.res.headers.get("cache-control"),
         };
 
         const metadata = {
             httpMetadata: removeUndefined(httpMetadata),
             customMetadata: removeUndefined({
                 // Essential metadata
-                originalUrl: (originalUrl || "").substring(0, 2048),
+                originalUrl: (c.req.url || "").substring(0, 2048),
                 cachedAt: new Date().toISOString(),
                 clientIp: clientIp,
 
@@ -240,20 +235,19 @@ export async function cacheResponse(
                 requestId,
 
                 // Cloudflare information - spread filtered cf data
-                ...filterCfData(request?.cf),
+                ...filterCfData(c.req.raw.cf),
 
                 // Bot Management information if available
-                ...filterBotManagement(request?.cf?.botManagement),
+                ...filterBotManagement(c.req.raw.cf?.botManagement as object),
             }),
         };
 
         // Store the object with metadata
-        await env.IMAGE_BUCKET.put(cacheKey, imageBuffer, metadata);
+        await c.env.IMAGE_BUCKET.put(cacheKey, imageBuffer, metadata);
 
-        console.log(`Cached image for key ${cacheKey}`);
         return true;
     } catch (error) {
-        console.error("Error caching response:", error);
+        console.error("[EXACT] Error caching response:", error);
         return false;
     }
 }

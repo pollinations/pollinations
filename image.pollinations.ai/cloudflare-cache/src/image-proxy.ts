@@ -5,6 +5,8 @@
 
 import { getClientIp } from "./ip-utils.js";
 
+type Env = Cloudflare.Env;
+
 /**
  * Proxy a request to the original service
  * @param {Request} request - The original request

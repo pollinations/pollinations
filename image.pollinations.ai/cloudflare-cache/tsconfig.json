@@ -1,10 +1,12 @@
 {
     "compilerOptions": {
-        "target": "es2022",
+        "target": "esnext",
         "module": "esnext",
         "moduleResolution": "bundler",
-        "lib": ["es2022", "dom", "dom.iterable"],
+        "lib": ["esnext"],
         "types": ["@cloudflare/workers-types"],
+        "jsx": "react-jsx",
+        "jsxImportSource": "hono/jsx",
 
         "strict": false,
         "noImplicitAny": false,
@@ -13,6 +15,7 @@
 
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
+        "allowImportingTsExtensions": true,
 
         "noEmit": true,
         "resolveJsonModule": true,

@@ -98,7 +98,7 @@ export const generateHTML = () => `<!DOCTYPE html>
                 </div>
 
                 <!-- 🌟 Tier Section -->
-                <div id="tier-section" class="tier-container hidden">
+                <div id="tier-section" class="tier-container card-base card-hover card-padding-compact hidden">
                     <div class="tier-header">
                         <h2>✨ Tier</h2>
                     </div>
@@ -125,12 +125,12 @@ export const generateHTML = () => `<!DOCTYPE html>
                             <b><i>Want to <span style="color:black;">upgrade</span> to <span style="color:#ff61d8;">Flower</span> or <span style="color:#ffb300;">Nectar</span> tier?</i></b>
                             <br>
                             <br>
-                            <a href="https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml" target="_blank" class="cta-hole">Request access!</a>
+                            <a href="https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml" target="_blank" class="cta-hole hover-lift">Request access!</a>
                         </p>
                     </div>
                 </div>
 
-                <div id="preferences-section" class="preferences-container hidden">
+                <div id="preferences-section" class="preferences-container card-base card-hover card-padding-compact hidden">
                     <div class="preferences-header">
                         <h2>🪧 Ads</h2>
                     </div>
@@ -159,7 +159,7 @@ export const generateHTML = () => `<!DOCTYPE html>
                     <p><b><i>Want credit card payments instead?</i></b> 💳 
                     <br>
                     <br>
-                    <a href="https://github.com/pollinations/pollinations/issues/2202" target="_blank" class="cta-hole">Vote/discuss</a></p>
+                    <a href="https://github.com/pollinations/pollinations/issues/2202" target="_blank" class="cta-hole hover-lift">Vote/discuss</a></p>
                 </div>
             </div>
         </div>
@@ -167,7 +167,7 @@ export const generateHTML = () => `<!DOCTYPE html>
         <!-- 🔑 Allowed Section -->
         <div id="whitelist-section">
             <div id="domain-section" class="hidden">
-                <div class="access-card">
+                <div class="access-card card-base card-hover card-padding-comfortable">
                     <h2>🔑 Referrer / Domain</h2>
                     <p class="section-info" style="font-style:italic; font-weight:500; color:#6c2cff;">
                         <span style="font-weight:700; color:black;">Enter the primary </span>
@@ -214,7 +214,7 @@ export const generateHTML = () => `<!DOCTYPE html>
                     </div>
                 </details>
 
-                <div class="access-card">
+                <div class="access-card card-base card-hover card-padding-comfortable">
                     <h2>🔑 API Token</h2>
 
                     <p class="section-info" style="font-style:italic; color:#2d3748;">

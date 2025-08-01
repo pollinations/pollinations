@@ -624,8 +624,7 @@ async function getUserCost() {
 
     try {
         // Get username from localStorage for the API call
-        // const username = localStorage.getItem('github_username');
-        const username = 'YoussefElsafi';
+        const username = localStorage.getItem('github_username');
         if (!username) {
             costDisplay.classList.remove('loading');
             costValue.textContent = '?';
@@ -829,8 +828,7 @@ async function getUserCostChart() {
 
     try {
         // Get username from localStorage for the API call
-        // const username = localStorage.getItem('github_username');
-        const username = 'YoussefElsafi';
+        const username = localStorage.getItem('github_username');
         if (!username) {
             costChart.classList.remove('loading');
             chartTotalValue.textContent = '?';

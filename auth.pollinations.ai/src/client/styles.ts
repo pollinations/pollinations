@@ -885,18 +885,18 @@ input:checked + .toggle-slider:before {
 
 .cost-chart-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
     margin-bottom: 20px;
     flex-wrap: wrap;
-    gap: 15px;
+    gap: 20px;
 }
 
-.cost-chart-title-section {
+.cost-chart-narrative {
     display: flex;
     align-items: center;
-    gap: 20px;
-    flex-wrap: wrap;
+    gap: 12px;
+    flex-wrap: nowrap;
 }
 
 .cost-chart-controls {
@@ -907,28 +907,29 @@ input:checked + .toggle-slider:before {
 
 .cost-chart-toggle {
     display: flex;
-    gap: 4px;
-    background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
-    border-radius: 25px;
-    padding: 4px;
-    border: 2px solid var(--color-accent);
-    box-shadow: 0 2px 8px rgba(255, 204, 0, 0.15);
+    gap: 2px;
+    background: linear-gradient(135deg, rgba(255, 97, 216, 0.1) 0%, rgba(5, 255, 161, 0.1) 100%);
+    border-radius: 30px;
+    padding: 3px;
+    border: 2px solid var(--color-primary);
+    background-clip: padding-box;
+    box-shadow: 0 4px 12px rgba(255, 204, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 .chart-toggle-btn {
-    padding: 8px 16px;
+    padding: 6px 14px;
     border: none;
-    border-radius: 20px;
+    border-radius: 25px;
     font-size: 0.85rem;
-    font-weight: 600;
+    font-weight: 700;
     font-family: 'Space Grotesk', sans-serif;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     background: transparent;
     color: var(--color-text);
-    opacity: 0.7;
-    position: relative;
-    overflow: hidden;
+    opacity: 0.6;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .chart-toggle-btn:hover {
@@ -937,11 +938,12 @@ input:checked + .toggle-slider:before {
 }
 
 .chart-toggle-btn.active {
-    background: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
     color: white;
     opacity: 1;
-    box-shadow: 0 3px 10px rgba(255, 97, 216, 0.3);
+    box-shadow: 0 3px 8px rgba(255, 97, 216, 0.4), 0 1px 3px rgba(0, 0, 0, 0.1);
     transform: translateY(-1px);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .chart-toggle-btn.active::before {
@@ -972,20 +974,35 @@ input:checked + .toggle-slider:before {
     background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
     color: var(--color-text);
     opacity: 0.8;
-    border: 1px solid rgba(255, 204, 0, 0.2);
+    border: 1px solid var(--color-primary);
 }
 
 .chart-nav-btn:hover {
     opacity: 1;
     transform: translateY(-1px);
-    background: linear-gradient(135deg, var(--color-accent) 0%, #ffcc00 100%);
+    background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary) 100%);
     color: #333;
-    box-shadow: 0 3px 10px rgba(255, 204, 0, 0.3);
+    box-shadow: 0 3px 10px var(--color-primary);
 }
 
 .chart-nav-btn:active {
     transform: translateY(0);
-    box-shadow: 0 1px 5px rgba(255, 204, 0, 0.2);
+    box-shadow: 0 1px 5px var(--color-primary);
+}
+
+.chart-nav-btn.inactive {
+    opacity: 0.3;
+    cursor: not-allowed;
+    background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
+    color: #ccc;
+}
+
+.chart-nav-btn.inactive:hover {
+    opacity: 0.3;
+    transform: none;
+    background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
+    color: #ccc;
+    box-shadow: none;
 }
 
 .cost-chart-header h2 {
@@ -996,6 +1013,8 @@ input:checked + .toggle-slider:before {
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    width: auto;
+    text-align: left;
 }
 
 .cost-chart-total {
@@ -1033,6 +1052,42 @@ input:checked + .toggle-slider:before {
     opacity: 0.7;
 }
 
+.copy-chart-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    margin-left: 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--color-text);
+    opacity: 0.6;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.copy-chart-btn:hover {
+    opacity: 1;
+    background: rgba(255, 204, 0, 0.1);
+    transform: scale(1.1);
+}
+
+.copy-chart-btn:active {
+    transform: scale(0.95);
+}
+
+.copy-chart-btn.copied {
+    background: var(--color-primary) !important;
+    color: white !important;
+    opacity: 1 !important;
+}
+
+.copy-chart-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
 .cost-chart-wrapper {
     position: relative;
     overflow: visible;
@@ -1051,10 +1106,12 @@ input:checked + .toggle-slider:before {
     border-radius: 12px;
     border: 1px solid rgba(255, 204, 0, 0.2);
     position: relative;
-    overflow: visible;
+    overflow: visible; /* allow hover tooltips to overflow */
 }
 
 .cost-chart.loading {
+    /* Keep clipping during loading animation */
+    overflow: hidden;
     animation: chart-loading-pulse 2s ease-in-out infinite;
 }
 
@@ -1243,21 +1300,21 @@ input:checked + .toggle-slider:before {
 }
 
 @keyframes loading-shimmer {
-    0% { background-position: 200% 0%; }
-    100% { background-position: -200% 0%; }
+0% { background-position: 200% 0%; }
+100% { background-position: -200% 0%; }
 }
 
 .token-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-top: 6px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 10px;
+flex-wrap: wrap;
+margin-top: 6px;
 }
 
 .token-wrapper .token-value {
-    flex: 1 1 auto;
+flex: 1 1 auto;
 }
 
 .token-value.copyable {
@@ -1324,6 +1381,44 @@ input:checked + .toggle-slider:before {
     button {
         font-size: 0.9rem;
         padding: 10px 20px;
+    }
+}
+
+@media (max-width: 600px) {
+    /* Make chart navigation controls stack & fit mobile screens */
+    .cost-chart-controls {
+        flex-wrap: wrap;
+        justify-content: space-between;
+        width: 100%;
+        gap: 8px;
+    }
+
+    /* Each direct child should consume full width when wrapped */
+    .cost-chart-controls > * {
+        flex: 1 1 100%;
+    }
+
+    /* Previous/Next arrow buttons shrink appropriately */
+    .chart-nav-btn {
+        flex: 0 0 15%;
+        padding: 6px 8px;
+        font-size: 0.8rem;
+    }
+
+    /* Toggle container occupies remaining width */
+    .cost-chart-toggle {
+        flex: 1 1 60%;
+        display: flex;
+        justify-content: center;
+    }
+
+    /* Toggle buttons scale down and fill equally */
+    .chart-toggle-btn {
+        flex: 1 1 33%;
+        min-width: 0;
+        text-align: center;
+        padding: 4px 2px;
+        font-size: 0.75rem;
     }
 }
 

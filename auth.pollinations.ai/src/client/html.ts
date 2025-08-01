@@ -49,8 +49,8 @@ export const generateHTML = () => `<!DOCTYPE html>
             <div id="badge-container" class="hidden"></div>
             <div id="cost-section" class="hidden">
                 <div class="cost-display loading" id="cost-display">
-                    <span class="cost-label">PLN</span>
                     <span id="cost-value" class="cost-value">•••</span>
+                    <span class="cost-label">PLN</span>
                 </div>
             </div>
         </div>
@@ -63,22 +63,27 @@ export const generateHTML = () => `<!DOCTYPE html>
                 <!-- 📊 Cost Bar Graph with Toggle -->
                 <div id="cost-chart-section" class="cost-chart-container hidden">
                     <div class="cost-chart-header">
-                        <div class="cost-chart-title-section">
-                            <h2 id="chart-title">📊 Last 24 Hours</h2>
-                            <div class="cost-chart-controls">
-                                <button id="nav-prev" class="chart-nav-btn" onclick="navigateChart(-1)">←</button>
-                                <div class="cost-chart-toggle">
-                                    <button id="toggle-day" class="chart-toggle-btn active" onclick="switchChartView('day')">Day</button>
-                                    <button id="toggle-week" class="chart-toggle-btn" onclick="switchChartView('week')">Week</button>
-                                    <button id="toggle-month" class="chart-toggle-btn" onclick="switchChartView('month')">Month</button>
-                                </div>
-                                <button id="nav-next" class="chart-nav-btn" onclick="navigateChart(1)">→</button>
+                        <div class="cost-chart-narrative">
+                            <h2 id="chart-title">📊 Today</h2>
+                            <div class="cost-chart-total">
+                                <span id="chart-total-value" class="chart-total-value">-•••</span>
+                                <span class="chart-total-unit">PLN</span>
+                                <button id="copy-chart-json" class="copy-chart-btn" onclick="copyChartJson()" title="Copy chart JSON data">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                </button>
                             </div>
                         </div>
-                        <div class="cost-chart-total">
-                            <span class="chart-total-label">⬇</span>
-                            <span id="chart-total-value" class="chart-total-value">•••</span>
-                            <span class="chart-total-unit">PLN</span>
+                        <div class="cost-chart-controls">
+                            <button id="nav-prev" class="chart-nav-btn" onclick="navigateChart(-1)">←</button>
+                            <div class="cost-chart-toggle">
+                                <button id="toggle-day" class="chart-toggle-btn active" onclick="switchChartView('day')">Day</button>
+                                <button id="toggle-week" class="chart-toggle-btn" onclick="switchChartView('week')">Week</button>
+                                <button id="toggle-month" class="chart-toggle-btn" onclick="switchChartView('month')">Month</button>
+                            </div>
+                            <button id="nav-next" class="chart-nav-btn" onclick="navigateChart(1)">→</button>
                         </div>
                     </div>
                     <div class="cost-chart-wrapper">

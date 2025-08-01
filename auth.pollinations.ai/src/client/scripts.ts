@@ -12,6 +12,8 @@ let currentDomains = [];
 let apiToken = null;
 let userTier = 'seed';
 let userPreferences = {};
+// AbortController for cost chart requests to prevent outdated responses when navigating quickly
+let costChartAbortController = null;
 
 // Define all functions in global scope so they can be accessed by inline event handlers
 
@@ -646,9 +648,9 @@ async function getUserCost() {
                 if (data.data && data.data.length > 0) {
                     const totalCost = data.data[0].total_cost;
                     
-                    // Format cost as rounded integer without dollar sign
+                    // Format cost as rounded integer with plus sign
                     const formattedCost = Math.round(totalCost).toString();
-                    costValue.textContent = formattedCost;
+                    costValue.textContent = '+' + formattedCost;
                 } else {
                     costValue.textContent = '0';
                 }
@@ -679,16 +681,57 @@ let dateOffsets = {
     month: 0   // offset in months from current month
 };
 
+// Global variable to store current chart JSON data for copy functionality
+let currentChartData = null;
+
+// Debouncing for chart data fetching
+let chartDataFetchTimeout = null;
+
+// Update navigation button states based on current offset
+function updateNavigationButtons() {
+    const nextBtn = document.getElementById('nav-next');
+    const isAtPresent = dateOffsets[currentChartView] >= 0;
+    
+    if (nextBtn) {
+        if (isAtPresent) {
+            nextBtn.classList.add('inactive');
+        } else {
+            nextBtn.classList.remove('inactive');
+        }
+    }
+}
+
+// Debounced function to fetch chart data
+function debouncedGetUserCostChart() {
+    // Clear existing timeout
+    if (chartDataFetchTimeout) {
+        clearTimeout(chartDataFetchTimeout);
+    }
+    
+    // Set new timeout to fetch data after 300ms of inactivity
+    chartDataFetchTimeout = setTimeout(() => {
+        getUserCostChart();
+    }, 300);
+}
+
 // Navigate chart by offset (direction: -1 for previous, +1 for next)
 window.navigateChart = function(direction) {
+    // Prevent navigation to future dates
+    if (direction > 0 && dateOffsets[currentChartView] >= 0) {
+        return; // Don't allow going into the future
+    }
+    
     // Update offset for current view
     dateOffsets[currentChartView] += direction;
     
-    // Update chart title to reflect the navigation
+    // Update chart title to reflect the navigation (immediate feedback)
     updateChartTitle();
     
-    // Reload chart data with new offset
-    getUserCostChart();
+    // Update navigation button states (immediate feedback)
+    updateNavigationButtons();
+    
+    // Debounced chart data reload
+    debouncedGetUserCostChart();
 }
 
 // Update chart title based on current view and offset
@@ -696,6 +739,12 @@ function updateChartTitle() {
     const chartTitle = document.getElementById('chart-title');
     const now = new Date();
     const offset = dateOffsets[currentChartView];
+    
+    // Show "Today" only for Day mode when viewing current day
+    if (offset === 0 && currentChartView === 'day') {
+        chartTitle.textContent = '📊 Today';
+        return;
+    }
     
     switch (currentChartView) {
         case 'day':
@@ -795,15 +844,57 @@ function getCurrentPeriodParams() {
 window.switchChartView = function(view) {
     if (currentChartView === view) return;
     
+    // Calculate the current date being viewed before switching
+    const now = new Date();
+    const currentOffset = dateOffsets[currentChartView];
+    let currentViewingDate;
+    
+    // Get the actual date currently being viewed
+    switch (currentChartView) {
+        case 'day':
+            currentViewingDate = new Date(now);
+            currentViewingDate.setDate(now.getDate() + currentOffset);
+            break;
+        case 'week':
+            currentViewingDate = new Date(now);
+            currentViewingDate.setDate(now.getDate() + (currentOffset * 7));
+            break;
+        case 'month':
+            currentViewingDate = new Date(now.getFullYear(), now.getMonth() + currentOffset, now.getDate());
+            break;
+    }
+    
+    // Switch to new view
+    const oldView = currentChartView;
     currentChartView = view;
+    
+    // Calculate equivalent offset for the new view to show the same date
+    switch (view) {
+        case 'day':
+            const daysDiff = Math.floor((currentViewingDate - now) / (1000 * 60 * 60 * 24));
+            dateOffsets[view] = daysDiff;
+            break;
+        case 'week':
+            const weeksDiff = Math.floor((currentViewingDate - now) / (1000 * 60 * 60 * 24 * 7));
+            dateOffsets[view] = weeksDiff;
+            break;
+        case 'month':
+            const monthsDiff = (currentViewingDate.getFullYear() - now.getFullYear()) * 12 + 
+                              (currentViewingDate.getMonth() - now.getMonth());
+            dateOffsets[view] = monthsDiff;
+            break;
+    }
     
     // Update button states
     document.getElementById('toggle-day').classList.toggle('active', view === 'day');
     document.getElementById('toggle-week').classList.toggle('active', view === 'week');
     document.getElementById('toggle-month').classList.toggle('active', view === 'month');
     
-    // Update chart title based on current offset
+    // Update chart title based on new offset
     updateChartTitle();
+    
+    // Update navigation button states
+    updateNavigationButtons();
     
     // Reload chart data with new view
     getUserCostChart();
@@ -858,10 +949,20 @@ async function getUserCostChart() {
         const periodParams = getCurrentPeriodParams();
         const queryParams = 'token=' + tinybirdToken + '&user=' + encodeURIComponent(username) + '&' + periodParams.param + '=' + encodeURIComponent(periodParams.value);
         
-        const response = await fetch(tinybirdUrl + '?' + queryParams);
+        // Abort any ongoing request so that only the latest response is used
+if (costChartAbortController) {
+    costChartAbortController.abort();
+}
+costChartAbortController = new AbortController();
+const { signal } = costChartAbortController;
+
+const response = await fetch(tinybirdUrl + '?' + queryParams, { signal });
         
         if (response.ok) {
             const data = await response.json();
+            
+            // Store the complete JSON response for copy functionality
+            currentChartData = data;
             
             // Add a small delay to show the loading animation
             setTimeout(() => {
@@ -870,6 +971,8 @@ async function getUserCostChart() {
             }, 800);
         } else {
             console.error('Failed to fetch cost chart data:', response.statusText);
+            // Clear chart data on error
+            currentChartData = null;
             setTimeout(() => {
                 costChart.classList.remove('loading');
                 renderCostChart([]);
@@ -899,8 +1002,8 @@ function renderCostChart(data) {
         totalCost += item.total_cost;
     });
     
-    // Update total cost display
-    chartTotalValue.textContent = Math.round(totalCost).toString();
+    // Update total cost display with minus sign
+    chartTotalValue.textContent = '-' + Math.round(totalCost).toString();
     
     // Update chart labels based on current view
     switch (currentChartView) {
@@ -968,6 +1071,9 @@ function renderCostChart(data) {
         bar.appendChild(tooltip);
         costChart.appendChild(bar);
     });
+    
+    // Update navigation button states after chart renders
+    updateNavigationButtons();
 }
 
 // Show status
@@ -976,5 +1082,55 @@ function showStatus(elementId, message, type) {
     if (!element) return;
     element.className = 'status ' + (type || 'info');
     element.innerHTML = message;
+}
+
+// Copy chart JSON data to clipboard
+async function copyChartJson() {
+    if (!currentChartData) {
+        console.warn('No chart data available to copy');
+        return;
+    }
+
+    try {
+        // Extract only the data array from the response
+        const dataTooCopy = currentChartData.data || [];
+        const jsonString = JSON.stringify(dataTooCopy, null, 2);
+        await navigator.clipboard.writeText(jsonString);
+        
+        // Show enhanced visual feedback
+        const copyBtn = document.getElementById('copy-chart-json');
+        if (copyBtn) {
+            const originalTitle = copyBtn.title;
+            
+            // Add copied class for animated feedback
+            copyBtn.classList.add('copied');
+            copyBtn.title = '✓ Copied!';
+            
+            // Reset after animation
+            setTimeout(() => {
+                copyBtn.classList.remove('copied');
+                copyBtn.title = originalTitle;
+            }, 2000);
+        }
+        
+        console.log('Chart JSON copied to clipboard');
+    } catch (err) {
+        console.error('Failed to copy chart JSON:', err);
+        
+        // Fallback: try to select text manually
+        try {
+            const dataTooCopy = currentChartData.data || [];
+            const jsonString = JSON.stringify(dataTooCopy, null, 2);
+            const textArea = document.createElement('textarea');
+            textArea.value = jsonString;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            console.log('Chart JSON copied to clipboard (fallback)');
+        } catch (fallbackErr) {
+            console.error('Fallback copy also failed:', fallbackErr);
+        }
+    }
 }
 </script>`;

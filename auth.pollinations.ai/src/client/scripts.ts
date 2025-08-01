@@ -742,7 +742,7 @@ function updateChartTitle() {
     
     // Show "Today" only for Day mode when viewing current day
     if (offset === 0 && currentChartView === 'day') {
-        chartTitle.textContent = '📊 Today';
+        chartTitle.textContent = 'Today';
         return;
     }
     
@@ -756,7 +756,7 @@ function updateChartTitle() {
                 month: 'short', 
                 year: 'numeric' 
             });
-            chartTitle.textContent = '📊 ' + dayStr;
+            chartTitle.textContent = dayStr;
             break;
         case 'week':
             // Format: Start Day Month Year (e.g., "28 Jul 2025")

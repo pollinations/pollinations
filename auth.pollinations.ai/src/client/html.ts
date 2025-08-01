@@ -63,7 +63,7 @@ export const generateHTML = () => `<!DOCTYPE html>
                 <div id="cost-chart-section" class="cost-chart-container hidden">
                     <div class="cost-chart-header">
                         <div class="cost-chart-narrative">
-                            <h2 id="chart-title">📊 Today</h2>
+                            <h2 id="chart-title">Today</h2>
                             <div class="cost-chart-total">
                                 <span id="chart-total-value" class="chart-total-value">-•••</span>
                                 <span class="chart-total-unit">PLN</span>

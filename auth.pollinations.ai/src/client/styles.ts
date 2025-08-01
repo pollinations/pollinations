@@ -851,7 +851,7 @@ input:checked + .toggle-slider:before {
     margin-left: 10px;
 }
 
-/* 🌟 Pollen Cost Display - Enhanced Psychedelic Style */
+/* 🌟 Pollen Cost Display - Psychedelic Style */
 .cost-display {
     display: inline-flex;
     align-items: center;
@@ -866,12 +866,13 @@ input:checked + .toggle-slider:before {
     box-shadow: 0 4px 15px rgba(255, 97, 216, 0.15), 
                 0 2px 8px rgba(5, 255, 161, 0.1),
                 inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    animation: cost-border-glow 6s linear infinite;
+    animation: psychedelic-glow 6s linear infinite;
     cursor: default;
     user-select: none;
     position: relative;
     overflow: hidden;
-    transform: translateZ(0); /* Hardware acceleration */
+    transform: translateZ(0);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .cost-display::before {
@@ -882,7 +883,7 @@ input:checked + .toggle-slider:before {
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    animation: cost-shine 3s ease-in-out infinite;
+    animation: shine-sweep 3s ease-in-out infinite;
     pointer-events: none;
 }
 
@@ -893,78 +894,66 @@ input:checked + .toggle-slider:before {
                 inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
-.cost-display .cost-icon {
-    font-size: 1.3rem;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
-}
-
-.cost-display .cost-label {
-    background: linear-gradient(45deg, var(--color-primary), var(--color-secondary), var(--color-accent), var(--color-primary));
-    background-size: 300% 300%;
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-weight: 700;
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    animation: cost-shimmer 4s ease-in-out infinite;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
+.cost-display .cost-label,
 .cost-display .cost-value {
     background: linear-gradient(45deg, var(--color-primary), var(--color-secondary), var(--color-accent), var(--color-primary));
     background-size: 300% 300%;
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    font-weight: 800;
-    font-size: 1.15rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    animation: cost-shimmer 4s ease-in-out infinite 0.5s;
-    font-family: 'Space Grotesk', monospace;
-    letter-spacing: -0.5px;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    animation: text-shimmer 4s ease-in-out infinite;
 }
 
-/* Loading animation for cost display */
+.cost-display .cost-label {
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.cost-display .cost-value {
+    font-weight: 800;
+    font-size: 1.15rem;
+    font-family: 'Space Grotesk', monospace;
+    letter-spacing: -0.5px;
+    animation-delay: 0.5s;
+}
+
+/* Loading state */
 .cost-display.loading {
-    animation: cost-loading-border 2s linear infinite;
+    animation: loading-pulse 2s linear infinite;
 }
 
 .cost-display.loading .cost-value {
-    animation: cost-loading-shimmer 1.5s ease-in-out infinite;
+    animation: loading-shimmer 1.5s ease-in-out infinite;
 }
 
-@keyframes cost-loading-border {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-@keyframes cost-border-glow {
-    0% { background-position: 0% 50%; }
+/* Unified animations */
+@keyframes psychedelic-glow {
+    0%, 100% { background-position: 0% 50%; }
     25% { background-position: 100% 50%; }
     50% { background-position: 100% 100%; }
     75% { background-position: 0% 100%; }
-    100% { background-position: 0% 50%; }
 }
 
-@keyframes cost-loading-shimmer {
+@keyframes text-shimmer {
+    0%, 100% { background-position: 200% 0%; }
+    50% { background-position: -200% 0%; }
+}
+
+@keyframes shine-sweep {
+    0%, 100% { left: -100%; }
+    50% { left: 100%; }
+}
+
+@keyframes loading-pulse {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+@keyframes loading-shimmer {
     0% { background-position: 200% 0%; }
     100% { background-position: -200% 0%; }
-}
-
-@keyframes cost-shine {
-    0% { left: -100%; }
-    50% { left: 100%; }
-    100% { left: 100%; }
-}
-
-@keyframes cost-shimmer {
-    0% { background-position: 200% 0%; }
-    50% { background-position: -200% 0%; }
-    100% { background-position: 200% 0%; }
 }
 
 .token-wrapper {
@@ -1021,13 +1010,7 @@ input:checked + .toggle-slider:before {
     pointer-events: none;
 }
 
-/* Keep badge container inline with other elements */
-#auth-section #badge-container {
-    /* Removed flex: 0 0 100% to keep elements on same line */
-    margin-top: 0; /* Keep aligned with buttons */
-}
-
-/* Responsive auth section */
+/* Auth section layout */
 #auth-section {
     display: flex;
     align-items: center;
@@ -1036,34 +1019,20 @@ input:checked + .toggle-slider:before {
     margin-bottom: 1em;
 }
 
-/* Ensure consistent spacing for wrapped elements */
-#auth-section > * {
-    margin-bottom: 0.5em;
+#auth-section #badge-container {
+    margin-top: 0;
 }
 
-/* Responsive breakpoints */
+/* Responsive design */
 @media (max-width: 600px) {
     #auth-section {
         gap: 0.5em;
-        justify-content: flex-start;
     }
     
-    #auth-section > * {
-        margin-bottom: 0.75em;
-    }
-    
-    .cost-display {
-        font-size: 0.9rem;
-        padding: 10px 20px;
-    }
-    
+    .cost-display,
     button {
         font-size: 0.9rem;
         padding: 10px 20px;
-    }
-    
-    #logout-button {
-        padding: 12px 20px;
     }
 }
 

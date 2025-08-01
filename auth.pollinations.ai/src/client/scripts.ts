@@ -39,14 +39,12 @@ window.addEventListener('load', function() {
         // Show user section and domain section
         document.getElementById('user-section').classList.remove('hidden');
         document.getElementById('domain-section').classList.remove('hidden');
-        // Toggle auth/logout buttons
+        // Toggle auth/logout buttons and show user badge section
         document.getElementById('auth-button').classList.add('hidden');
-        document.getElementById('logout-button').classList.remove('hidden');
+        document.getElementById('user-badge-section').classList.remove('hidden');
         
-        // Store in localStorage for persistence
+        // Store token in localStorage for persistence
         localStorage.setItem('github_auth_token', token);
-        localStorage.setItem('github_username', username);
-        localStorage.setItem('github_user_id', params.get('user_id') || '');
         
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -63,16 +61,15 @@ window.addEventListener('load', function() {
     } else {
         // Check for stored token
         const storedToken = localStorage.getItem('github_auth_token');
-        const storedUsername = localStorage.getItem('github_username');
         
-        if (storedToken && storedUsername) {
+        if (storedToken) {
             authToken = storedToken;
-            userId = localStorage.getItem('github_user_id');
-            showStatus('auth-status', '✅ Authenticated as ' + storedUsername + ' 🎉', 'success');
+            // Get user info from API using the token
+            getUserInfo();
             
-            // Toggle auth/logout buttons
+            // Toggle auth/logout buttons and show user badge section
             document.getElementById('auth-button').classList.add('hidden');
-            document.getElementById('logout-button').classList.remove('hidden');
+            document.getElementById('user-badge-section').classList.remove('hidden');
             
             document.getElementById('user-section').classList.remove('hidden');
             document.getElementById('domain-section').classList.remove('hidden');
@@ -98,10 +95,8 @@ window.startAuth = function() {
 
 // Logout function
 window.logout = function() {
-    // Clear stored data
+    // Clear stored token only
     localStorage.removeItem('github_auth_token');
-    localStorage.removeItem('github_username');
-    localStorage.removeItem('github_user_id');
     
     // Reset UI
     authToken = null;
@@ -109,9 +104,9 @@ window.logout = function() {
     currentDomains = [];
     apiToken = null;
     
-    // Toggle auth/logout buttons
+    // Toggle auth/logout buttons and hide user badge section
     document.getElementById('auth-button').classList.remove('hidden');
-    document.getElementById('logout-button').classList.add('hidden');
+    document.getElementById('user-badge-section').classList.add('hidden');
     
     // Hide sections
     document.getElementById('user-section').classList.add('hidden');
@@ -120,12 +115,8 @@ window.logout = function() {
     // Show logout message
     showStatus('auth-status', '👋 Logged out successfully', 'info');
     
-    // Clear badge
-    const badgeEl = document.getElementById('badge-container');
-    if (badgeEl) {
-        badgeEl.innerHTML = '';
-        badgeEl.classList.add('hidden');
-    }
+    // Clear any auth status
+    showStatus('auth-status', '', 'info');
     // Show intro text when user logs out
     const introEl = document.getElementById('intro-text');
     if (introEl) introEl.classList.remove('hidden');
@@ -133,10 +124,8 @@ window.logout = function() {
 
 // Handle token errors (expired or invalid tokens)
 function handleTokenError() {
-    // Clear stored data
+    // Clear stored token only
     localStorage.removeItem('github_auth_token');
-    localStorage.removeItem('github_username');
-    localStorage.removeItem('github_user_id');
     
     // Reset UI
     authToken = null;
@@ -145,9 +134,9 @@ function handleTokenError() {
     apiToken = null;
     userTier = 'seed';
     
-    // Toggle auth/logout buttons
+    // Toggle auth/logout buttons and hide user badge section
     document.getElementById('auth-button').classList.remove('hidden');
-    document.getElementById('logout-button').classList.add('hidden');
+    document.getElementById('user-badge-section').classList.add('hidden');
     
     // Hide sections
     document.getElementById('user-section').classList.add('hidden');
@@ -156,12 +145,8 @@ function handleTokenError() {
     // Show logout message
     showStatus('auth-status', '⏰ Your session has expired. Please log in again.', 'info');
     
-    // Clear badge
-    const badgeEl2 = document.getElementById('badge-container');
-    if (badgeEl2) {
-        badgeEl2.innerHTML = '';
-        badgeEl2.classList.add('hidden');
-    }
+    // Clear any auth status
+    showStatus('auth-status', '', 'info');
     // Show intro text when session expires or token invalid
     const introEl = document.getElementById('intro-text');
     if (introEl) introEl.classList.remove('hidden');
@@ -185,23 +170,10 @@ async function getUserInfo() {
             const data = await response.json();
             userId = data.github_user_id;
             
-            // Store user ID for persistence
-            localStorage.setItem('github_user_id', userId);
-            
-            const userHtml = '<div class="profile-badge">' +
-              '<span class="gh-icon">🐙</span>' +
-              '<span class="username">@' + data.username + '</span>' +
-              '<span class="user-id">#' + userId + '</span>' +
-            '</div>';
-            // Inject into badge container next to logout button
-            const badgeEl = document.getElementById('badge-container');
-            if (badgeEl) {
-              badgeEl.innerHTML = userHtml;
-              badgeEl.classList.remove('hidden');
-            }
-
-            // Optionally clear the old user-info badge
-            showStatus('user-info', '', 'info');
+            // Show user info in a clean, minimal way - use username from API response
+            console.log('User data:', data); // Debug: let's see what properties are available
+            const username = data.username || data.login || data.github_username || 'user';
+            showStatus('auth-status', '✅ @' + username + ' (#' + userId + ')', 'success');
             
             // Now that we have the user ID, get domains and token
             getDomains();
@@ -534,9 +506,9 @@ async function getApiToken() {
             apiToken = data.token;
             
             if (apiToken) {
-                showStatus('token-info', '<code class="token-value copyable" id="api-token-value" onclick="copyApiToken()" title="Click to copy">' + apiToken + '</code>', 'info');
+                document.getElementById('token-info').innerHTML = '<code class="token-value copyable" id="api-token-value" onclick="copyApiToken()" title="Click to copy">' + apiToken + '</code>';
             } else {
-                showStatus('token-info', '⚠️ No API token found. Generate one first! 🔄', 'info');
+                document.getElementById('token-info').innerHTML = '<em>⚠️ No API token found. Generate one first! 🔄</em>';
             }
         } else {
             // Check if unauthorized (token expired or invalid)
@@ -570,7 +542,7 @@ window.generateApiToken = async function() {
             const data = await response.json();
             apiToken = data.token;
             
-            showStatus('token-info', '<code class="token-value copyable" id="api-token-value" onclick="copyApiToken()" title="Click to copy">' + apiToken + '</code>', 'success');
+            document.getElementById('token-info').innerHTML = '<code class="token-value copyable" id="api-token-value" onclick="copyApiToken()" title="Click to copy">' + apiToken + '</code>';
         } else {
             showStatus('token-info', '❌ Error: ' + response.statusText, 'error');
         }

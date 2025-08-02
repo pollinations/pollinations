@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import debug from "debug";
-import { findModelByName } from "../availableModels.js";
+import { findModelByName, availableModels } from "../availableModels.js";
 
 /**
  * Get the provider name for a model by looking it up in availableModels
@@ -40,9 +40,54 @@ export async function sendTinybirdEvent(eventData) {
     );
 
     try {
-        // Get the model and its pricing directly
-        const model = findModelByName(eventData.model);
+        // Enhanced model resolution for accurate pricing:
+        // 1. First try to find a model by the actual model used (from API response)
+        // 2. Then try to find a model whose original_name matches the actual model used
+        // 3. Finally fall back to the requested model name
+        // 4. Check if the requested model has a known original_name that matches what was actually used
+        let model = null;
+        let modelForPricing = null;
+        let resolutionMethod = null;
+        
+        // Try to find model by actual model used first
+        if (eventData.modelUsed) {
+            model = findModelByName(eventData.modelUsed);
+            if (model) {
+                modelForPricing = eventData.modelUsed;
+                resolutionMethod = 'direct_match';
+                log(`✅ Found direct match for actual model: ${eventData.modelUsed}`);
+            } else {
+                // Try to find a model whose original_name matches the actual model used
+                model = availableModels.find(m => m.original_name === eventData.modelUsed);
+                if (model) {
+                    modelForPricing = model.name;
+                    resolutionMethod = 'original_name_match';
+                    log(`✅ Found model by original_name match: ${model.name} (original_name: ${model.original_name}) for actual model: ${eventData.modelUsed}`);
+                }
+            }
+        }
+        
+        // If no match found, try the requested model
+        if (!model && eventData.model) {
+            model = findModelByName(eventData.model);
+            if (model) {
+                modelForPricing = eventData.model;
+                resolutionMethod = 'requested_model';
+                
+                // Check if the model has an original_name that matches what was actually used
+                if (eventData.modelUsed && model.original_name === eventData.modelUsed) {
+                    log(`✅ Perfect match: requested model ${eventData.model} has original_name ${model.original_name} matching actual model`);
+                } else if (eventData.modelUsed && eventData.modelUsed !== eventData.model) {
+                    log(`⚠️  Using fallback pricing: requested=${eventData.model}, actual=${eventData.modelUsed}, original_name=${model.original_name || 'null'}`);
+                }
+            }
+        }
+        
         const pricing = model?.pricing;
+        
+        if (!model) {
+            log(`❌ No model found for pricing: requested=${eventData.model}, actual=${eventData.modelUsed}`);
+        }
 
         // Simply reference cost components from the usage object directly
         // without transformations or data manipulation

@@ -78,10 +78,10 @@ Add this to your MCP client configuration:
     }
   }
 }
-
-
 ```
+
 ### Run with npx (no installation required)
+```bash
 npx @pollinations/model-context-protocol
 ```
 

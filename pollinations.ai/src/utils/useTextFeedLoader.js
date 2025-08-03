@@ -159,7 +159,7 @@ function estimateGeneratedEntries() {
     const now = Date.now();
     const differenceInSeconds = (now - launchDate) / 1000;
     // Reduced text generation rate to be more realistic (text is slower than images)
-    const entriesGeneratedSinceLaunch = Math.round(differenceInSeconds * 2.5); 
+    const entriesGeneratedSinceLaunch = Math.round(differenceInSeconds * 30); 
     
     // Starting value plus calculated growth
     return 23554400 + entriesGeneratedSinceLaunch;

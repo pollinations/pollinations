@@ -71,15 +71,52 @@ const formatProjectName = (project) => {
 const formatAuthor = (project) => {
     if (!project.author) return "-";
 
+    const author = project.author;
+
     // Check if the author is a URL
     const urlPattern = /^https?:\/\//i;
-    if (urlPattern.test(project.author)) {
+    if (urlPattern.test(author)) {
         // If it's a URL, return a simple link with text 'Link'
-        return `[Link](${project.author})`;
+        return `[Link](${author})`;
+    }
+
+    // Check if it's an email address
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (emailPattern.test(author)) {
+        // For emails, create a mailto link with truncated display text
+        const displayText = author.length > 15 ? author.substring(0, 12) + "..." : author;
+        return `[${displayText}](mailto:${author})`;
+    }
+
+    // For regular usernames/names, truncate if too long
+    if (author.length > 20) {
+        return author.substring(0, 17) + "...";
     }
 
     // Otherwise return the author name as is
-    return project.author;
+    return author;
+};
+
+// Function to truncate long descriptions
+const truncateDescription = (description, maxLength = 80) => {
+    if (!description) {
+        return "-";
+    }
+    
+    if (description.length <= maxLength) {
+        return description;
+    }
+    
+    // Find the last space before the max length to avoid cutting words
+    const truncated = description.substring(0, maxLength);
+    const lastSpaceIndex = truncated.lastIndexOf(' ');
+    
+    if (lastSpaceIndex > 0) {
+        return truncated.substring(0, lastSpaceIndex) + "...";
+    }
+    
+    // If no space found, just truncate at max length
+    return truncated + "...";
 };
 
 // Function to generate markdown table for a category
@@ -144,7 +181,7 @@ const generateCategoryTable = (categoryKey, categoryTitle) => {
             typeEmoji = "🖥️ ";
         }
 
-        markdown += `| ${newTag}${typeEmoji}${languageEmoji}${formatProjectName(project)} | ${project.description || "-"} | ${formatAuthor(project)} |\n`;
+        markdown += `| ${newTag}${typeEmoji}${languageEmoji}${formatProjectName(project)} | ${truncateDescription(project.description)} | ${formatAuthor(project)} |\n`;
     }
 
     return markdown + "\n";

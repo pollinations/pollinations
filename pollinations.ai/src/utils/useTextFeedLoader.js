@@ -12,7 +12,7 @@ export function useTextFeedLoader(onNewEntry, setLastEntry) {
     // Set up listener to increment counter when new entries are received
     useEffect(() => {
         // Create wrapper function that increments the counter
-        // Temporarily set to increment by 1
+        // Increment by 1 for more realistic text generation pace
         const incrementCounter = () => {
             setEntriesGenerated((count) => count + 1);
         };
@@ -155,6 +155,12 @@ export function useTextFeedLoader(onNewEntry, setLastEntry) {
  * Used as a starting point, will be incremented with each new entry
  */
 function estimateGeneratedEntries() {
-    // Temporarily return 0 to hide the total number
-    return 0;
+    const launchDate = 1738974161902; // Same as image feed for consistency
+    const now = Date.now();
+    const differenceInSeconds = (now - launchDate) / 1000;
+    // Reduced text generation rate to be more realistic (text is slower than images)
+    const entriesGeneratedSinceLaunch = Math.round(differenceInSeconds * 30); 
+    
+    // Starting value plus calculated growth
+    return 23554400 + entriesGeneratedSinceLaunch;
 }

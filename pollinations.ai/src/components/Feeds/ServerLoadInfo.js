@@ -136,10 +136,6 @@ export function ServerLoadInfo({
 }
 
 function CountBadge({ itemsGenerated }) {
-    // Temporarily hide the count display
-    return null;
-
-    // The code below is temporarily disabled
     // Ensure we always have a number, defaulting to 0 if undefined
     const safeItemCount =
         itemsGenerated !== undefined && itemsGenerated !== null
@@ -213,8 +209,8 @@ function TimingInfo({ item }) {
 
 // Updated RateDisplay component to include load bars
 function RateDisplay({ rate, itemType }) {
-    // Temporarily set multiplier to 1
-    const adjustedRate = rate ? (parseFloat(rate) * 1).toFixed(1) : "0.0";
+    // Multiply rate by 5 as per issue #1793
+    const adjustedRate = rate ? (parseFloat(rate) * 5).toFixed(1) : "0.0";
     const displayRate = adjustedRate;
 
     // Updated Scaling Logic: Use thresholds to determine number of bars

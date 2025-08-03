@@ -5,6 +5,15 @@
 
 export const creativeProjects = [
     {
+        name: "🇷🇺 Aimpress",
+        url: "https://aimpress.ru/",
+        description: "AIMpress is a web-based image generation platform that allows users to create AI-generated images by writing their own prompts. Users can also optionally select styles, effects, and aspect ratios to customize their results. Every generated image is automatically saved and published to a public archive, effectively creating a massive and growing stock of AI-generated visuals. This database is searchable, allowing users to discover and reuse images based on prompts, styles, or tags.",
+        author: "support@aimpress.ru",
+        submissionDate: "2025-08-03",
+        language: "ru-RU",
+        order: 1,
+    },
+    {
         name: "Imagine Draw AI 🎨",
         url: "https://imaginedrawai.vercel.app/",
         description: "This AI image was created for free using ImagineDraw AI a powerful tool to generate unlimited AI images with just a text prompt. No login, no limits, 100% free!",

@@ -5,6 +5,14 @@
 
 export const creativeProjects = [
     {
+        name: "Vizbo 📱",
+        url: "https://vizboapp.com/",
+        description: "Vizbo is a mobile app for AI powered vision board creation.",
+        author: "visbo.app@gmail.com",
+        submissionDate: "2025-08-03",
+        order: 1,
+    },
+    {
         name: "Imagine Draw AI 🎨",
         url: "https://imaginedrawai.vercel.app/",
         description: "This AI image was created for free using ImagineDraw AI a powerful tool to generate unlimited AI images with just a text prompt. No login, no limits, 100% free!",

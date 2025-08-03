@@ -5,6 +5,15 @@
 
 export const creativeProjects = [
     {
+        name: "Evolve AI 🤖",
+        url: "https://evolve-ai-gamma.vercel.app/",
+        description: "Evolve AI is an intelligent assistant platform that brings together a variety of cutting-edge AI tools to simplify and automate user tasks. It integrates multiple APIs from Pollinations to enable features such as advanced text-to-speech, code generation, code editing, AI-based image generation, and more. The platform is designed to evolve with user needs, combining creativity and productivity into one cohesive experience.",
+        author: "@chandankumarm55",
+        repo: "https://github.com/chandankumarm55/Evolve-ai",
+        submissionDate: "2025-08-03",
+        order: 1,
+    },
+    {
         name: "Imagine Draw AI 🎨",
         url: "https://imaginedrawai.vercel.app/",
         description: "This AI image was created for free using ImagineDraw AI a powerful tool to generate unlimited AI images with just a text prompt. No login, no limits, 100% free!",

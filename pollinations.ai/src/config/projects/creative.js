@@ -5,6 +5,15 @@
 
 export const creativeProjects = [
     {
+        name: "What is this? ❔",
+        url: "https://whatisthis.pinkpixel.dev/",
+        description: "A fun AI-powered object identification tool that helps you identify mysterious objects with just a photo upload. Uses advanced AI vision to analyze photos and tell you exactly what that mysterious object is and what it's used for, plus provides interesting facts about the object.",
+        author: "@sizzlebop",
+        repo: "https://github.com/pinkpixel-dev/what-is-this",
+        submissionDate: "2025-08-03",
+        order: 1,
+    },
+    {
         name: "Imagine Draw AI 🎨",
         url: "https://imaginedrawai.vercel.app/",
         description: "This AI image was created for free using ImagineDraw AI a powerful tool to generate unlimited AI images with just a text prompt. No login, no limits, 100% free!",

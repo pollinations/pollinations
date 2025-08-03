@@ -5,6 +5,33 @@
 
 export const creativeProjects = [
     {
+        name: "Evolve AI 🤖",
+        url: "https://evolve-ai-gamma.vercel.app/",
+        description: "Evolve AI is an intelligent assistant platform that brings together a variety of cutting-edge AI tools to simplify and automate user tasks. It integrates multiple APIs from Pollinations to enable features such as advanced text-to-speech, code generation, code editing, AI-based image generation, and more. The platform is designed to evolve with user needs, combining creativity and productivity into one cohesive experience.",
+        author: "@chandankumarm55",
+        repo: "https://github.com/chandankumarm55/Evolve-ai",
+        submissionDate: "2025-08-03",
+        order: 1
+    },
+    {
+        name: "What is this? ❔",
+        url: "https://whatisthis.pinkpixel.dev/",
+        description: "A fun AI-powered object identification tool that helps you identify mysterious objects with just a photo upload. Uses advanced AI vision to analyze photos and tell you exactly what that mysterious object is and what it's used for, plus provides interesting facts about the object.",
+        author: "@sizzlebop",
+        repo: "https://github.com/pinkpixel-dev/what-is-this",
+        submissionDate: "2025-08-03",
+        order: 1
+    },
+    {
+        name: "🇷🇺 Aimpress",
+        url: "https://aimpress.ru/",
+        description: "AIMpress is a web-based image generation platform that allows users to create AI-generated images by writing their own prompts. Users can also optionally select styles, effects, and aspect ratios to customize their results. Every generated image is automatically saved and published to a public archive, effectively creating a massive and growing stock of AI-generated visuals. This database is searchable, allowing users to discover and reuse images based on prompts, styles, or tags.",
+        author: "support@aimpress.ru",
+        submissionDate: "2025-08-03",
+        language: "ru-RU",
+        order: 1,
+    },
+    {
         name: "Vizbo 📱",
         url: "https://vizboapp.com/",
         description: "Vizbo is a mobile app for AI powered vision board creation.",

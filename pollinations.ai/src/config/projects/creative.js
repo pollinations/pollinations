@@ -5,6 +5,15 @@
 
 export const creativeProjects = [
     {
+        name: "Imagine Draw AI 🎨",
+        url: "https://imaginedrawai.vercel.app/",
+        description: "This AI image was created for free using ImagineDraw AI a powerful tool to generate unlimited AI images with just a text prompt. No login, no limits, 100% free!",
+        author: "TechWithAiTelugu",
+        repo: "https://github.com/TechWithAiTelugu",
+        submissionDate: "2025-08-03",
+        order: 1,
+    },
+    {
         name: "EzPromptla",
         url: "https://ezpromptla.netlify.app",
         description:

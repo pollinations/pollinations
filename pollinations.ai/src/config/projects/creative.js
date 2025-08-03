@@ -5,6 +5,15 @@
 
 export const creativeProjects = [
     {
+        name: "Evolve AI 🤖",
+        url: "https://evolve-ai-gamma.vercel.app/",
+        description: "Evolve AI is an intelligent assistant platform that brings together a variety of cutting-edge AI tools to simplify and automate user tasks. It integrates multiple APIs from Pollinations to enable features such as advanced text-to-speech, code generation, code editing, AI-based image generation, and more. The platform is designed to evolve with user needs, combining creativity and productivity into one cohesive experience.",
+        author: "@chandankumarm55",
+        repo: "https://github.com/chandankumarm55/Evolve-ai",
+        submissionDate: "2025-08-03",
+        order: 1
+    },
+    {
         name: "What is this? ❔",
         url: "https://whatisthis.pinkpixel.dev/",
         description: "A fun AI-powered object identification tool that helps you identify mysterious objects with just a photo upload. Uses advanced AI vision to analyze photos and tell you exactly what that mysterious object is and what it's used for, plus provides interesting facts about the object.",

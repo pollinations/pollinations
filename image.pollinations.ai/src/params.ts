@@ -1,5 +1,8 @@
 import { z } from "zod";
 import { MODELS } from "./models.js";
+import Debug from "debug";
+
+const log = Debug("pollinations:image.params");
 
 type ModelName = keyof typeof MODELS;
 
@@ -17,7 +20,7 @@ const sanitizedBoolean = z
 const sanitizedSeed = z.preprocess((v) => {
     const seed = String(v);
     return Number.isInteger(parseInt(seed)) ? parseInt(seed) : 42;
-}, z.int());
+}, z.int().catch(42));
 
 const sanitizedSideLength = z.preprocess((v) => {
     return Number.isInteger(parseInt(v as string))
@@ -73,6 +76,7 @@ export const ImageParamsSchema = z
             })
             .catch([]),
         transparent: sanitizedBoolean.catch(false),
+        guidance_scale: z.coerce.number().optional().catch(undefined),
     })
     .transform((data) => {
         // adjust width and height to fit the selected model

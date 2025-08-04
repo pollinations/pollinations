@@ -18,10 +18,10 @@ const errorLog = debug("pollinations:portkey:error");
 // Model mapping for Portkey
 const MODEL_MAPPING = {
 	// Azure OpenAI models
-	"openai-fast": "gpt-4.1-nano-roblox",
-	openai: "gpt-4o-mini",
-	"openai-large": "gpt-4o-mini",
-	"openai-roblox": "gpt-4.1-nano-roblox",
+	"openai-fast": "gpt-4.1-nano",
+	"openai": "gpt-4.1-nano",
+	"openai-large": "azure-gpt-4.1",
+	"openai-roblox": "gpt-4.1-nano",
 	//'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
 	"openai-reasoning": "o3", // Maps to custom MonoAI endpoint
 	searchgpt: "gpt-4o-mini-search-preview", // Maps to custom MonoAI endpoint
@@ -48,6 +48,8 @@ const MODEL_MAPPING = {
 	"mistral-roblox": "@cf/mistralai/mistral-small-3.1-24b-instruct", // Cloudflare Mistral Small
 	"mistral-nemo-roblox": "mistralai/Mistral-Nemo-Instruct-2407", // Nebius Mistral Nemo
 	'gemma-roblox': 'google/gemma-2-9b-it-fast', // Nebius Gemma 2 9B IT Fast
+	// Intelligence.io models
+	glm: "THUDM/glm-4-9b-chat", // Intelligence.io GLM-4 9B Chat
 	// Modal models
 	hormoz: "Hormoz-8B",
 	// OpenRouter models
@@ -112,6 +114,8 @@ const SYSTEM_PROMPTS = {
 	'gemma-roblox': BASE_PROMPTS.conversational,
 	"qwen-coder": BASE_PROMPTS.coding,
 	//'gemini-thinking': BASE_PROMPTS.gemini + ' When appropriate, show your reasoning step by step.',
+	// Intelligence.io models
+	glm: BASE_PROMPTS.conversational,
 	// Modal models
 	hormoz: BASE_PROMPTS.hormoz,
 	// OpenRouter models
@@ -259,6 +263,15 @@ const baseElixpoSearchConfig = {
 	"max-tokens": 4096,
 };
 
+// Base configuration for Intelligence.io models
+const baseIntelligenceConfig = {
+	provider: "openai",
+	"custom-host": "https://api.intelligence.io.solutions/api/v1",
+	authKey: process.env.IOINTELLIGENCE_API_KEY,
+	"max-tokens": 8192,
+	temperature: 0.7,
+};
+
 /**
  * Creates a DeepSeek model configuration
  * @param {Object} additionalConfig - Additional configuration to merge with base config
@@ -367,6 +380,18 @@ function createElixpoSearchModelConfig(additionalConfig = {}) {
 	};
 }
 
+/**
+ * Creates an Intelligence.io model configuration
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - Intelligence.io model configuration
+ */
+function createIntelligenceModelConfig(additionalConfig = {}) {
+	return {
+		...baseIntelligenceConfig,
+		...additionalConfig,
+	};
+}
+
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
 	// Azure Grok model configuration
@@ -462,12 +487,15 @@ export const portkeyConfig = {
 			process.env.AZURE_O4MINI_ENDPOINT,
 			"o4-mini",
 		),
-	"gpt-4o-mini-audio-preview": () =>
-		createAzureModelConfig(
+	"gpt-4o-mini-audio-preview": () => ({
+		...createAzureModelConfig(
 			process.env.AZURE_OPENAI_AUDIO_API_KEY,
 			process.env.AZURE_OPENAI_AUDIO_ENDPOINT,
 			"gpt-4o-mini-audio-preview",
 		),
+		"max-tokens": 512,
+		"max-completion-tokens": 512,
+	}),
 	"gpt-4o-audio-preview": () =>
 		createAzureModelConfig(
 			process.env.AZURE_OPENAI_AUDIO_LARGE_API_KEY,
@@ -564,11 +592,17 @@ export const portkeyConfig = {
 	"deepseek-ai/DeepSeek-R1-0528": () =>
 		createNebiusModelConfig({
 			model: "deepseek-ai/DeepSeek-R1-0528",
+			"max-tokens": 2000,
 		}),
 	"google/gemma-2-9b-it-fast": () =>
 		createNebiusModelConfig({
 			model: "google/gemma-2-9b-it-fast",
 			'max-tokens': 1024,
+		}),
+	// Intelligence.io model configurations
+	"THUDM/glm-4-9b-chat": () =>
+		createIntelligenceModelConfig({
+			model: "THUDM/glm-4-9b-chat",
 		}),
 	// Modal model configurations
 	"Hormoz-8B": () => createModalModelConfig(),

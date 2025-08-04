@@ -9,6 +9,7 @@ import {
     handleAuthentication,
 } from "../../shared/auth-utils.js";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
+import { sendImageTelemetry } from "./utils/telemetry.js";
 
 // Import shared utilities
 import { enqueue } from "../../shared/ipQueue.js";
@@ -148,6 +149,8 @@ const imageGen = async ({
         );
     }
 
+    const startTime = Date.now();
+    
     try {
         timingInfo.push({ step: "Start processing", timestamp: Date.now() });
 
@@ -262,6 +265,17 @@ const imageGen = async ({
         progress.completeBar(requestId, "Image generation complete");
         progress.stop();
 
+        // Send telemetry to Tinybird
+        const endTime = new Date();
+        const duration = endTime.getTime() - startTime;
+        sendImageTelemetry({
+            requestId,
+            model: safeParams.model || "unknown",
+            duration,
+            status: "success",
+            authResult,
+        });
+
         return { buffer, ...maturity };
     } catch (error) {
         // Check if this was a prohibited content error
@@ -286,6 +300,18 @@ const imageGen = async ({
             prompt: originalPrompt,
             params: safeParams,
             referrer,
+        });
+
+        // Send error telemetry to Tinybird
+        const endTime = new Date();
+        const duration = endTime.getTime() - startTime;
+        sendImageTelemetry({
+            requestId,
+            model: safeParams?.model || "unknown",
+            duration,
+            status: "error",
+            authResult,
+            error,
         });
 
         throw error;
@@ -578,7 +604,19 @@ server.on("connection", (socket) => {
     });
 });
 
-server.listen(process.env.PORT || 16384);
+const port = process.env.PORT || 16384;
+server.listen(port, () => {
+    console.log(`🌸 Image server listening on port ${port}`);
+    console.log(`🔗 Test URL: http://localhost:${port}/prompt/pollinations`);
+    
+    // Debug environment info
+    const debugEnv = process.env.DEBUG;
+    if (debugEnv) {
+        console.log(`🐛 Debug mode: ${debugEnv}`);
+    } else {
+        console.log(`💡 Pro tip: Want debug logs? Run with DEBUG=* for all the deets! ✨`);
+    }
+});
 
 function relativeTiming(timingInfo: TimingStep[]) {
     return timingInfo.map((info) => ({

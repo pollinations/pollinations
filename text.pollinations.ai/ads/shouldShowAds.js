@@ -13,11 +13,17 @@ const TEST_ADS_MARKER = "p-ads";
 
 const SKIP_USER_AGENTS = ["Roblox/Linux"];
 // Parse bad domains from environment variable (comma-separated list)
+// Add vk.com as a blocked domain due to advertiser complaints
 const BAD_DOMAINS = process.env.BAD_DOMAINS
     ? process.env.BAD_DOMAINS.split(",").map((domain) =>
           domain.trim().toLowerCase(),
       )
     : [];
+
+// Always include vk.com in blocked domains
+if (!BAD_DOMAINS.includes('vk.com')) {
+    BAD_DOMAINS.push('vk.com');
+}
 
 import debug from "debug";
 
@@ -158,9 +164,9 @@ export async function shouldShowAds(
 
         if (isBadDomain) {
             log(
-                `Bad domain detected in referrer: ${requestData.referrer}, forcing 100% ad probability`,
+                `Bad domain detected in referrer: ${requestData.referrer}, blocking ads`,
             );
-            return { shouldShowAd: true, markerFound: true, isBadDomain: true };
+            return { shouldShowAd: false, markerFound: false, isBadDomain: true };
         }
     }
 

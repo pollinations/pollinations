@@ -26,12 +26,24 @@ import fs from 'fs/promises';
 import path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
 
 const execAsync = promisify(exec);
 
 const AVAILABLE_MODELS_PATH = './availableModels.js';
-const AUTH_TOKEN = 'TbtyMKDZj_PCgCJb';
+const AUTH_TOKEN = process.env.POLLINATIONS_AI_TOKEN;
 const API_BASE = 'http://localhost:16385';
+const API_ENDPOINT = 'http://localhost:16385/openai';
+
+// Check if AUTH_TOKEN is available
+if (!AUTH_TOKEN) {
+    console.error('❌ ERROR: POLLINATIONS_AI_TOKEN environment variable is not set!');
+    console.error('💡 Please set POLLINATIONS_AI_TOKEN in your .env file');
+    process.exit(1);
+}
 
 console.log('🌍 Mode: LOCAL DEVELOPMENT ONLY');
 console.log(`📡 API Base: ${API_BASE}`);
@@ -134,10 +146,12 @@ async function testModelForOriginalName(modelName, modelMetadata = null) {
         const connectTimeout = 30;
         
         // Use -s to suppress progress, --show-error to still show real errors
-        const curlCommand = `curl -s --show-error --max-time ${maxTime} --connect-timeout ${connectTimeout} -X POST ${API_BASE}/openai \\
+        const curlCommand = `curl -s --show-error --max-time ${maxTime} --connect-timeout ${connectTimeout} -X POST ${API_ENDPOINT} \\
             -H "Content-Type: application/json" \\
             -H "Authorization: Bearer ${AUTH_TOKEN}" \\
             -d '${JSON.stringify(requestPayload).replace(/'/g, "'\"'\"'")}'`;
+        
+        console.log(`  🔧 Debug - Curl command: ${curlCommand.replace(AUTH_TOKEN, AUTH_TOKEN.substring(0, 8) + '...')}`);
         
         const { stdout, stderr } = await execAsync(curlCommand);
         const duration = Date.now() - startTime;
@@ -180,6 +194,7 @@ async function testModelForOriginalName(modelName, modelMetadata = null) {
         }
         
         try {
+            console.log(`  🔍 Debug - Raw response: ${stdout}`);
             const response = JSON.parse(stdout);
             
             if (response.error) {

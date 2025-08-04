@@ -159,6 +159,7 @@ export async function sendTinybirdEvent(eventData) {
 
             // User info
             user: eventData.user,
+            referrer: eventData.referrer || "unknown",
             // Status and event type constants
             standard_logging_object_status: eventData.status,
             log_event_type: "chat_completion",

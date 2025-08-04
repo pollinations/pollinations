@@ -199,7 +199,10 @@ async function handleRequest(req, res, requestData) {
 		// Add user info to request data - using authResult directly as a thin proxy
 		const requestWithUserInfo = {
 			...finalRequestData,
-			userInfo: authResult,
+			userInfo: {
+				...authResult,
+				referrer: requestData.referrer || "unknown",
+			},
 		};
 
 		const completion = await generateTextBasedOnModel(

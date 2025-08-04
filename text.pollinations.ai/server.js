@@ -393,7 +393,7 @@ export async function sendErrorResponse(
 				referrer: requestData.referrer || "unknown",
 				messageCount: requestData.messages ? requestData.messages.length : 0,
 				totalMessageLength: requestData.messages
-					? requestData.messages.reduce(
+					? requestData.messages?.reduce?.(
 							(total, msg) =>
 								total +
 								(typeof msg?.content === "string" ? msg.content.length : 0),

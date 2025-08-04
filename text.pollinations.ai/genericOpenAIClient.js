@@ -340,6 +340,7 @@ export function createOpenAICompatibleClient(config) {
                     normalizedOptions.userInfo?.username ||
                     normalizedOptions.userInfo?.userId ||
                     "anonymous",
+                referrer: normalizedOptions.userInfo?.referrer || "unknown",
                 organization: normalizedOptions.userInfo?.userId
                     ? "pollinations"
                     : undefined,

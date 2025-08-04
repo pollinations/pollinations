@@ -24,35 +24,20 @@ type AnalyticsParams = {
     seed: number;
 } & Record<string, string | number>;
 
-type ImageRequestedEvent = {
-    name: "imageRequested";
+type ImageEventName =
+    | "imageRequested"
+    | "imageServedFromSemanticCache"
+    | "imageServedFromExactCache"
+    | "imageGenerated"
+    | "imageGenerationFailed";
+
+export type ImageCacheEvent = {
+    name: ImageEventName;
     extraParams?: Record<string, string | number>;
 };
-
-type ImageServedFromCacheEvent = {
-    name: "imageServedFromCache";
-    cacheType: "exact" | "semantic";
-    extraParams?: Record<string, string | number>;
-};
-
-type ImageGeneratedEvent = {
-    name: "imageGenerated";
-    extraParams?: Record<string, string | number>;
-};
-
-type ImageGenerationFailedEvent = {
-    name: "imageGenerationFailed";
-    extraParams?: Record<string, string | number>;
-};
-
-export type ImageCacheEvent =
-    | ImageRequestedEvent
-    | ImageServedFromCacheEvent
-    | ImageGeneratedEvent
-    | ImageGenerationFailedEvent;
 
 type AnalyticsEvent = {
-    name: string;
+    name: ImageEventName;
     params: Record<string, string | number>;
 };
 
@@ -72,13 +57,14 @@ export const googleAnalytics = createMiddleware<Env>(async (c, next) => {
         });
     } else if (c.res.headers.get("x-cache-exact") === "HIT") {
         events.push({
-            name: "imageServedFromCache",
-            cacheType: "exact",
+            name: "imageServedFromExactCache",
         });
     } else if (c.res.headers.get("x-cache-semantic") === "HIT") {
         events.push({
-            name: "imageServedFromCache",
-            cacheType: "semantic",
+            name: "imageServedFromSemanticCache",
+            extraParams: {
+                semanticSimilarity: c.res.headers.get("x-semantic-similarity"),
+            },
         });
     } else if (c.res.headers.get("x-cache") === "MISS") {
         events.push({
@@ -139,7 +125,7 @@ async function sendAnalytics(
         body: JSON.stringify(payload),
     });
 
-    console.log(
+    console.debug(
         `[Analytics] Response status for ${events.length} events:`,
         response.status,
     );
@@ -172,9 +158,6 @@ function buildAnalyticsParams(
         cacheStatus: deriveCacheStatus(event),
         originalPrompt,
         ...event.extraParams,
-        ...(event.name === "imageServedFromCache"
-            ? { cacheType: event.cacheType }
-            : {}),
     };
 }
 

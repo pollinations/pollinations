@@ -1,13 +1,16 @@
 import { createMiddleware } from "hono/factory";
-import { createEmbeddingService } from "~/embedding-service.ts";
-import type { Env } from "~/env.ts";
+import {
+    createEmbeddingService,
+    variableThreshold,
+} from "../embedding-service.ts";
+import type { Env } from "../env.ts";
 import {
     createSimpleHash,
     dedent,
     extractPromptFromUrl,
     setHttpMetadataHeaders,
-} from "~/util.ts";
-import { buildMetadata, createVectorizeStore } from "~/vector-store.ts";
+} from "../util.ts";
+import { buildMetadata, createVectorizeStore } from "../vector-store.ts";
 
 export const semanticCache = createMiddleware<Env>(async (c, next) => {
     // @ts-ignore
@@ -64,7 +67,13 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
             similarity: nearestSimilarity,
         });
 
-        if (nearestSimilarity >= c.env.SEMANTIC_THRESHOLD) {
+        const threshold = variableThreshold(
+            prompt.length,
+            c.env.SEMANTIC_THRESHOLD_SHORT,
+            c.env.SEMANTIC_THRESHOLD_LONG,
+        );
+
+        if (nearestSimilarity >= threshold) {
             console.debug("[SEMANTIC] Cache hit");
             const cachedImage = await c.env.IMAGE_BUCKET.get(nearestCacheKey);
             if (cachedImage) {
@@ -77,7 +86,14 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
                 c.header("X-Cache-Semantic", "HIT");
                 c.header("X-Semantic-Similarity", `${nearestSimilarity}`);
                 c.header("X-Semantic-Bucket", metadata.bucket);
-                c.header("X-Semantic-Threshold", `${c.env.SEMANTIC_THRESHOLD}`);
+                c.header(
+                    "X-Semantic-Threshold-Short",
+                    `${c.env.SEMANTIC_THRESHOLD_SHORT}`,
+                );
+                c.header(
+                    "X-Semantic-Threshold-Long",
+                    `${c.env.SEMANTIC_THRESHOLD_LONG}`,
+                );
 
                 return c.body(cachedImage.body);
             } else {
@@ -90,7 +106,15 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
                 c.header("X-Cache-Semantic", "MISS");
                 c.header("X-Sematic-Similarity", `${nearestSimilarity}`);
                 c.header("X-Semantic-Bucket", metadata.bucket);
-                c.header("X-Semantic-Threshold", `${c.env.SEMANTIC_THRESHOLD}`);
+                c.header(
+                    "X-Semantic-Threshold-Short",
+                    `${c.env.SEMANTIC_THRESHOLD_SHORT}`,
+                );
+                c.header(
+                    "X-Semantic-Threshold-Long",
+                    `${c.env.SEMANTIC_THRESHOLD_LONG}`,
+                );
+
                 return next();
             }
         }

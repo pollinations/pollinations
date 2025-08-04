@@ -6,7 +6,7 @@
 
 export type EmbeddingServiceDeps = {
     ai: Ai;
-    model: "@cf/baai/bge-base-en-v1.5";
+    model: "@cf/baai/bge-m3";
 };
 
 export type EmbeddingService = (prompt: string) => Promise<number[] | null>;
@@ -21,7 +21,7 @@ export function createEmbeddingService(ai: Ai): EmbeddingService {
         return await generateEmbedding(
             {
                 ai,
-                model: "@cf/baai/bge-base-en-v1.5",
+                model: "@cf/baai/bge-m3",
             },
             prompt,
         );
@@ -61,9 +61,11 @@ export async function generateEmbedding(
         });
 
         if (isAsyncResponse(response)) {
-            throw new Error("Async (batch) embedding generation not handled");
+            throw new Error(
+                "[EMBEDDING] Async (batch) embedding generation not handled",
+            );
         } else if (!response.data || !Array.isArray(response.data[0])) {
-            throw new Error("Invalid embedding response format");
+            throw new Error("[EMBEDDING] Invalid embedding response format");
         }
 
         return response.data[0]; // 768-dimensional vector
@@ -134,4 +136,33 @@ export function getResolutionBucket(
     }
 
     return bucket;
+}
+
+function mapRange(
+    value: number,
+    inMin: number,
+    inMax: number,
+    outMin: number,
+    outMax: number,
+): number {
+    return ((value - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
+}
+
+function clamp(value: number, min: number, max: number): number {
+    return Math.min(Math.max(value, min), max);
+}
+
+export function variableThreshold(
+    promtLength: number,
+    min: number,
+    max: number,
+) {
+    const averageTokenLength = 4;
+    const minLength = averageTokenLength * 5;
+    const maxLength = averageTokenLength * 100;
+    return clamp(
+        mapRange(promtLength, minLength, maxLength, min, max),
+        min,
+        max,
+    );
 }

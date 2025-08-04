@@ -454,6 +454,22 @@ const models = [
 		},
 	},
 	{
+		name: "horizon",
+		description: "OpenRouter Horizon Beta",
+		handler: generateTextPortkey,
+		provider: "openrouter",
+		tier: "anonymous",
+		community: false,
+		aliases: "horizon-beta",
+		input_modalities: ["text"],
+		output_modalities: ["text"],
+		tools: true,
+		pricing: {
+			prompt_text: 0.0,
+			completion_text: 0.0,
+		},
+	},
+	{
 		name: "elixposearch",
 		description: "Elixpo Search",
 		handler: generateTextPortkey,

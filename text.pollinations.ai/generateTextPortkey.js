@@ -54,6 +54,7 @@ const MODEL_MAPPING = {
 	// Modal models
 	hormoz: "Hormoz-8B",
 	// OpenRouter models
+	horizon: "openrouter/horizon-beta",
 	//'claude': 'anthropic/claude-3.5-haiku-20241022',
 	// Cloudflare models
 	//'qwen-qwq': '@cf/qwen/qwq-32b',
@@ -121,6 +122,7 @@ const SYSTEM_PROMPTS = {
 	// Modal models
 	hormoz: BASE_PROMPTS.hormoz,
 	// OpenRouter models
+	horizon: BASE_PROMPTS.conversational,
 	//'claude': 'You are Claude, a helpful AI assistant created by Anthropic. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.',
 	// Cloudflare models
 	//'qwen-qwq': BASE_PROMPTS.conversational,
@@ -651,6 +653,8 @@ export const portkeyConfig = {
 	}),
 	"DeepSeek-V3-0324": () => createDeepSeekModelConfig(),
 	"MAI-DS-R1": () => createDeepSeekReasoningConfig(),
+	// OpenRouter models
+	"openrouter/horizon-beta": () => createOpenRouterModelConfig({ model: "openrouter/horizon-beta" }),
 	// Custom endpoints
 	"elixposearch-endpoint": () => createElixpoSearchModelConfig(),
 };

@@ -35,21 +35,23 @@ const MODEL_MAPPING = {
 	grok: "azure-grok",
 	// Cloudflare models
 	llama: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-	"llama-roblox": "meta-llama/Meta-Llama-3.1-8B-Instruct-fast",
+	"llama-roblox": "meta-llama/Meta-Llama-3.1-8B-Instruct",
 	"llama-fast-roblox": "@cf/meta/llama-3.2-11b-vision-instruct",
 	llamascout: "@cf/meta/llama-4-scout-17b-16e-instruct",
-	"deepseek-reasoning": "deepseek-ai/DeepSeek-R1-0528",
+	"deepseek-reasoning": "deepseek-ai/DeepSeek-R1-0528", // IO Intelligence DeepSeek R1
 	//'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
 	phi: "phi-4-instruct",
 	//'phi-mini': 'phi-4-mini-instruct',
 	// Scaleway models
-	"qwen-coder": "qwen2.5-coder-32b-instruct",
+
+	qwen: "qwen3-235b-a22b-instruct-2507",
 	mistral: "mistral-small-3.1-24b-instruct-2503", // Updated to use Scaleway Mistral model
 	"mistral-roblox": "@cf/mistralai/mistral-small-3.1-24b-instruct", // Cloudflare Mistral Small
 	"mistral-nemo-roblox": "mistralai/Mistral-Nemo-Instruct-2407", // Nebius Mistral Nemo
 	'gemma-roblox': 'google/gemma-2-9b-it-fast', // Nebius Gemma 2 9B IT Fast
 	// Intelligence.io models
 	glm: "THUDM/glm-4-9b-chat", // Intelligence.io GLM-4 9B Chat
+	"qwen-coder": "Intel/Qwen3-Coder-480B-A35B-Instruct-int4-mixed-ar", // Intelligence.io Qwen3 Coder 480B
 	// Modal models
 	hormoz: "Hormoz-8B",
 	// OpenRouter models
@@ -112,10 +114,12 @@ const SYSTEM_PROMPTS = {
 	"mistral-roblox": BASE_PROMPTS.conversational,
 	"mistral-nemo-roblox": BASE_PROMPTS.conversational,
 	'gemma-roblox': BASE_PROMPTS.conversational,
-	"qwen-coder": BASE_PROMPTS.coding,
+
+	qwen: BASE_PROMPTS.conversational,
 	//'gemini-thinking': BASE_PROMPTS.gemini + ' When appropriate, show your reasoning step by step.',
 	// Intelligence.io models
 	glm: BASE_PROMPTS.conversational,
+	"qwen-coder": BASE_PROMPTS.conversational,
 	// Modal models
 	hormoz: BASE_PROMPTS.hormoz,
 	// OpenRouter models
@@ -559,9 +563,10 @@ export const portkeyConfig = {
 		createScalewayModelConfig({
 			"max-tokens": 8000, // Set specific token limit for Qwen Coder
 		}),
+	"qwen3-235b-a22b-instruct-2507": () => createScalewayModelConfig(),
 	"llama-3.3-70b-instruct": () => createScalewayModelConfig(),
 	"deepseek-r1-distill-llama-70b": () => createScalewayModelConfig(),
-	"qwen-coder": () => createScalewayModelConfig(),
+
 	"evil-mistral": () => createScalewayModelConfig(),
 	surscaleway: () => createScalewayModelConfig(),
 	"qwen-reasoning": () => createScalewayModelConfig(),
@@ -581,9 +586,9 @@ export const portkeyConfig = {
 			model: "mistral-small-3.1-24b-instruct-2503",
 		}),
 	// Nebius model configurations
-	"meta-llama/Meta-Llama-3.1-8B-Instruct-fast": () =>
+	"meta-llama/Meta-Llama-3.1-8B-Instruct": () =>
 		createNebiusModelConfig({
-			model: "meta-llama/Meta-Llama-3.1-8B-Instruct-fast",
+			model: "meta-llama/Meta-Llama-3.1-8B-Instruct",
 		}),
 	"mistralai/Mistral-Nemo-Instruct-2407": () =>
 		createNebiusModelConfig({
@@ -603,6 +608,15 @@ export const portkeyConfig = {
 	"THUDM/glm-4-9b-chat": () =>
 		createIntelligenceModelConfig({
 			model: "THUDM/glm-4-9b-chat",
+		}),
+	"deepseek-ai/DeepSeek-R1-0528": () =>
+		createIntelligenceModelConfig({
+			model: "deepseek-ai/DeepSeek-R1-0528",
+			"max-tokens": 2000,
+		}),
+	"Intel/Qwen3-Coder-480B-A35B-Instruct-int4-mixed-ar": () =>
+		createIntelligenceModelConfig({
+			model: "Intel/Qwen3-Coder-480B-A35B-Instruct-int4-mixed-ar",
 		}),
 	// Modal model configurations
 	"Hormoz-8B": () => createModalModelConfig(),

@@ -5,6 +5,16 @@
 
 export const vibeCodingProjects = [
   {
+    name: "Visiora - Image Generation using AI 🎨",
+    url: "https://visiora-img.netlify.app/",
+    description: "A modern web application that transforms text prompts into stunning AI-generated images. Built with React and powered by Pollinations AI, it features multiple AI models (Flux, Turbo, Kontext), flexible image dimensions, seed control for reproducible results, and a responsive design that works seamlessly across all devices.",
+    author: "@Kandariarjun07",
+    repo: "https://github.com/Kandariarjun07/Visiora",
+    stars: 0,
+    submissionDate: "2025-08-05",
+    order: 1
+  },
+  {
     name: "PairFusion",
     url: "https://pair-fusion.vercel.app/",
     description: "A real-time AI powered, scalable and feature-rich collaborative IDE built for modern development teams. Experience seamless pair programming, instant feedback, and a professional-grade toolset designed for maximum productivity.",

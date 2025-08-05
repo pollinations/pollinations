@@ -295,3 +295,5 @@ text.pollinations.ai/v2/
 image.pollinations.ai/temp_logs/
 .wrangler/
 .crush/
+# Tinybird CLI configuration (contains sensitive tokens)
+.tinyb

@@ -157,6 +157,9 @@ export default {
                 case "/api/check-domain":
                     return handleCheckDomain(request, env, corsHeaders);
 
+                case "/api/config":
+                    return handleGetConfig(request, env, corsHeaders);
+
                 case "/api/token":
                     if (request.method === "GET") {
                         return handleGetApiToken(request, env, corsHeaders);
@@ -1449,6 +1452,28 @@ async function handleAdminUpdatePreferences(
         );
     } catch (error) {
         console.error("Error updating preferences:", error);
+        return createErrorResponse(500, "Internal server error", corsHeaders);
+    }
+}
+
+// Get configuration values for client-side use
+function handleGetConfig(
+    request: Request,
+    env: Env,
+    corsHeaders: Record<string, string>,
+): Response {
+    try {
+        const config = {
+            tinybirdUrl: `${env.TINYBIRD_BASE_URL}get_llm_costs.json`,
+            tinybirdToken: env.TINYBIRD_API_KEY,
+        };
+
+        return new Response(JSON.stringify(config), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+    } catch (error) {
+        console.error("Error getting config:", error);
         return createErrorResponse(500, "Internal server error", corsHeaders);
     }
 }

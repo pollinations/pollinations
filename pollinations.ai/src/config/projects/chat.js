@@ -5,6 +5,15 @@
 
 export const chatProjects = [
   {
+    name: "Botzy AI 🇵🇰",
+    url: "https://botzy.hexabiz.com.pk",
+    description: "A free, unlimited, multilingual AI chatbot designed for Pakistani users. Supports Urdu, English, and Roman Urdu with multiple intelligent engines: L1T3-Ωᴹ² (multimodal), L1T3-Σᴹ² (ultra-fast), and 𝚂cεηεBαsε (witty personality inspired by Karachi's culture). Features context-aware responses and community engagement.",
+    author: "@zakrya6665",
+    submissionDate: "2025-08-05",
+    language: "ur-PK",
+    order: 1
+  },
+  {
     name: "Island",
     url: "https://islandapps.dev/chat",
     description: "Island AI is a free, modern ChatGPT alternative featuring smart multimodal chat, integrated web search, a polished interface, and a unique Questioning Mode that asks clarifying questions before delivering precise, real-time responses.",

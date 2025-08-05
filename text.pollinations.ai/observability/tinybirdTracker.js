@@ -22,6 +22,54 @@ const TINYBIRD_API_URL =
     process.env.TINYBIRD_API_URL || "https://api.europe-west2.gcp.tinybird.co";
 const TINYBIRD_API_KEY = process.env.TINYBIRD_API_KEY;
 
+// Staging workspace configuration
+const TINYBIRD_STAGING_API_KEY = process.env.TINYBIRD_STAGING_API_KEY;
+const ENABLE_DUAL_INGESTION = process.env.ENABLE_DUAL_INGESTION === 'true';
+
+/**
+ * Send event to a specific Tinybird workspace
+ * @param {Object} event - The event data to send
+ * @param {string} apiUrl - The Tinybird API URL
+ * @param {string} apiKey - The API key for the workspace
+ * @param {string} workspaceName - Name of the workspace (for logging)
+ * @param {AbortSignal} signal - Abort signal for timeout
+ * @returns {Promise} - Promise that resolves when the event is sent
+ */
+async function sendToWorkspace(event, apiUrl, apiKey, workspaceName, signal) {
+    try {
+        const response = await fetch(
+            `${apiUrl}/v0/events?name=llm_events`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify(event),
+                signal: signal,
+            },
+        );
+
+        const responseText = await response
+            .text()
+            .catch(() => "Could not read response text");
+
+        if (!response.ok) {
+            errorLog(
+                `Failed to send telemetry to Tinybird ${workspaceName}: ${response.status} ${responseText}`,
+            );
+        } else {
+            log(`Tinybird ${workspaceName} response: ${response.status} ${responseText}`);
+        }
+    } catch (fetchError) {
+        const errorMessage =
+            fetchError.name === "AbortError"
+                ? `Tinybird ${workspaceName} telemetry request timed out after 5 seconds`
+                : `Fetch error when sending telemetry to Tinybird ${workspaceName}: ${fetchError.message}`;
+        errorLog(errorMessage);
+    }
+}
+
 /**
  * Send LLM call telemetry to Tinybird
  * @param {Object} eventData - The event data to send to Tinybird
@@ -224,40 +272,41 @@ export async function sendTinybirdEvent(eventData) {
         log(`   🏢 provider: "${tinybirdEvent.provider}"`);
         log(`   📋 Full JSON payload:`, JSON.stringify(tinybirdEvent, null, 2));
 
-        try {
-            const response = await fetch(
-                `${TINYBIRD_API_URL}/v0/events?name=llm_events`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${TINYBIRD_API_KEY}`,
-                    },
-                    body: JSON.stringify(tinybirdEvent),
-                    signal: controller.signal,
-                },
+        // Send to production workspace
+        const promises = [];
+        
+        if (TINYBIRD_API_KEY) {
+            promises.push(
+                sendToWorkspace(
+                    tinybirdEvent,
+                    TINYBIRD_API_URL,
+                    TINYBIRD_API_KEY,
+                    'production',
+                    controller.signal
+                )
             );
-
-            const responseText = await response
-                .text()
-                .catch(() => "Could not read response text");
-
-            if (!response.ok) {
-                errorLog(
-                    `Failed to send telemetry to Tinybird: ${response.status} ${responseText}`,
-                );
-            } else {
-                log(`Tinybird response: ${response.status} ${responseText}`);
-                log(
-                    `Successfully sent telemetry event for model: ${modelName}, provider: ${provider}`,
-                );
-            }
-        } catch (fetchError) {
-            const errorMessage =
-                fetchError.name === "AbortError"
-                    ? "Tinybird telemetry request timed out after 5 seconds"
-                    : `Fetch error when sending telemetry to Tinybird: ${fetchError.message}`;
-            errorLog(errorMessage);
+        }
+        
+        // Send to staging workspace if dual ingestion is enabled
+        if (ENABLE_DUAL_INGESTION && TINYBIRD_STAGING_API_KEY) {
+            promises.push(
+                sendToWorkspace(
+                    tinybirdEvent,
+                    TINYBIRD_API_URL,
+                    TINYBIRD_STAGING_API_KEY,
+                    'staging',
+                    controller.signal
+                )
+            );
+        }
+        
+        try {
+            await Promise.allSettled(promises);
+            log(
+                `Successfully sent telemetry event for model: ${modelName}, provider: ${provider}`,
+            );
+        } catch (error) {
+            errorLog("Error in dual workspace ingestion: %O", error);
         } finally {
             clearTimeout(timeoutId);
         }

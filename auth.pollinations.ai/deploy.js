@@ -6,6 +6,9 @@ const path = require("path");
 
 // Get environment file path from ENV_FILE environment variable or use default
 const envFile = process.env.ENV_FILE || ".dev.vars.prod";
+
+// Get deployment environment from DEPLOY_ENV environment variable or use default
+const deployEnv = process.env.DEPLOY_ENV || "production";
 const devVarsPath = path.join(__dirname, envFile);
 
 // Check if environment file exists
@@ -49,7 +52,7 @@ if (missingVars.length > 0) {
 
 // Build the deploy command with full path to npx
 const npxPath = "npx";
-let deployCommand = `${npxPath} wrangler deploy --env production`;
+let deployCommand = `${npxPath} wrangler deploy --env ${deployEnv}`;
 
 // Add environment variables to the command
 Object.entries(envVars).forEach(([key, value]) => {
@@ -61,7 +64,7 @@ Object.entries(envVars).forEach(([key, value]) => {
     }
 });
 
-console.log(`Deploying with environment variables from ${envFile}...`);
+console.log(`Deploying to ${deployEnv} with environment variables from ${envFile}...`);
 
 try {
     // Execute the deploy command

@@ -6,11 +6,9 @@
     "scripts": {
         "dev": "wrangler dev --port 3333",
         "deploy": "node deploy.js",
-        "deploy:staging":"wrangler deploy --env=staging",
-        "deploy:prod": "ENV_FILE=.dev.vars.prod node deploy.js",
-        "deploy:local": "ENV_FILE=.dev.vars node deploy.js",
+        "deploy:staging": "ENV_FILE=.dev.vars.staging DEPLOY_ENV=staging node deploy.js",
+        "deploy:prod": "ENV_FILE=.dev.vars.prod DEPLOY_ENV=production node deploy.js",
         "deploy:with-migrations": "ENV_FILE=.dev.vars.prod node deploy-with-migrations.js",
-        "deploy:with-migrations:local": "ENV_FILE=.dev.vars node deploy-with-migrations.js",
         "apply-user-tiers": "npx wrangler d1 execute github_auth --env production --file ./migrations/user_tiers.sql",
         "check-db-tables": "npx wrangler d1 execute github_auth --env production --command \"SELECT name FROM sqlite_master WHERE type='table';\"",
         "test": "node test.js"

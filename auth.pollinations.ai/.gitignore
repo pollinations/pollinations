@@ -3,6 +3,7 @@ dist/
 .wrangler/
 .dev.vars
 .dev.vars.prod
+.dev.vars.staging
 .env
 *.log
 backups/

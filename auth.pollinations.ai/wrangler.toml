@@ -42,8 +42,7 @@ TINYBIRD_BASE_URL = "placeholder"
 
 [env.staging]
 workers_dev = true
-name = "github-auth-simple"
-route = { pattern = "auth.pollinations.ai/*", zone_name = "pollinations.ai" }
+name = "github-auth-simple-staging"
 
 # Smart Placement disabled - it actually made performance 33% worse
 # Better to rely on default Cloudflare edge routing
@@ -53,8 +52,8 @@ binding = "DB"
 database_name = "github_auth"
 database_id = "4145d600-1df6-44a2-9769-5d5f731deb77"
 
-# Environment variables for production with placeholders
-# These will be overridden by secrets in the Cloudflare dashboard
+# Secrets will be set via wrangler secret put commands
+# Placeholder vars to eliminate warnings - secrets will override these
 [env.staging.vars]
 GITHUB_CLIENT_ID = "placeholder"
 GITHUB_CLIENT_SECRET = "placeholder"

@@ -355,10 +355,6 @@ export function createOpenAICompatibleClient(config) {
             // Use custom response formatter if provided
             // Pass only choices[0] to formatResponse, reconstruct after
 
-            // elixposearch hack
-            if (!data.choices && Array.isArray(data)) {
-                data = { choices: data };
-            }
 
             const originalChoice =
                 data.choices && data.choices[0] ? data.choices[0] : {};

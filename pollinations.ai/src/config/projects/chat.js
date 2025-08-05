@@ -5,6 +5,15 @@
 
 export const chatProjects = [
   {
+    name: "Island",
+    url: "https://islandapps.dev/chat",
+    description: "Island AI is a free, modern ChatGPT alternative featuring smart multimodal chat, integrated web search, a polished interface, and a unique Questioning Mode that asks clarifying questions before delivering precise, real-time responses.",
+    author: "@techcow2",
+    repo: "https://github.com/techcow2/Island",
+    submissionDate: "2025-08-05",
+    order: 1
+  },
+  {
     name: "UltimaX Intelligence",
     url: "https://umint-ai.hf.space",
     description: "UltimaX Intelligence is a free AI platform that unifies multiple premium AI models into one seamless experience. Powered by the Pollinations open-source AI community and integrated with Open-WebUI, it provides an intuitive interface similar to ChatGPT but with more advanced features. Users can access a variety of powerful tools without any cost, registration, or login. All conversations are temporary and are not saved, ensuring privacy and simplicity.",

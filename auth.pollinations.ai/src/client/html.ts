@@ -20,7 +20,7 @@ export const generateHTML = () => `<!DOCTYPE html>
     <div class="container">
         <h1 class="emoji-title">
             <span class="brand">
-                <img src="https://raw.githubusercontent.com/pollinations/pollinations/master/operations/assets/pollinations_ai_logo_black.svg" alt="Pollinations Logo" class="title-logo" />
+                <img src="https://raw.githubusercontent.com/pollinations/pollinations/master/assets/pollinations_ai_logo_black.svg" alt="Pollinations Logo" class="title-logo" />
                 Pollinations.AI
             </span>
             <span class="auth-title">🐝 Auth 🌸</span>

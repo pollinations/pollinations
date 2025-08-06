@@ -15,7 +15,7 @@ export const chatProjects = [
   },
   {
     name: "Island",
-    url: "https://islandapps.dev/chat",
+    url: "https://islandai.app",
     description: "Island AI is a free, modern ChatGPT alternative featuring smart multimodal chat, integrated web search, a polished interface, and a unique Questioning Mode that asks clarifying questions before delivering precise, real-time responses.",
     author: "@techcow2",
     repo: "https://github.com/techcow2/Island",

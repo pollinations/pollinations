@@ -60,19 +60,6 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
         );
         const nearestSimilarity = nearest[0]?.score;
 
-        const nearestCacheKey = nearest[0]?.metadata?.cacheKey?.toString();
-        if (nearestCacheKey == null) {
-            console.error(
-                "[SEMANTIC] Nearest entry found, but it had no cache key",
-            );
-            return next();
-        }
-
-        console.debug("[SEMANTIC] Nearest entry:", {
-            cacheKey: nearestCacheKey,
-            similarity: nearestSimilarity,
-        });
-
         const threshold = variableThreshold(
             prompt.length,
             c.env.SEMANTIC_THRESHOLD_SHORT,
@@ -80,6 +67,19 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
         );
 
         if (nearestSimilarity >= threshold) {
+            const nearestCacheKey = nearest[0]?.metadata?.cacheKey?.toString();
+            if (!nearestCacheKey) {
+                console.error(
+                    "[SEMANTIC] Nearest entry found, but it had no cache key",
+                );
+                return next();
+            }
+
+            console.debug("[SEMANTIC] Nearest entry:", {
+                cacheKey: nearestCacheKey,
+                similarity: nearestSimilarity,
+            });
+
             console.debug("[SEMANTIC] Cache hit");
             const cachedImage = await c.env.IMAGE_BUCKET.get(nearestCacheKey);
             if (cachedImage) {

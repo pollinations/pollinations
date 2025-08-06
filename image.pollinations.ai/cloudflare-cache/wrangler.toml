@@ -39,6 +39,13 @@ invocation_logs = false
 
 # Test environment configuration
 [env.test]
+[env.test.vars]
+ORIGIN_HOST = "image-origin.pollinations.ai"
+DEBUG_ANALYTICS = false  # Set to "true" to enable detailed analytics debugging
+SEMANTIC_CACHE_ENABLED = true
+SEMANTIC_THRESHOLD_SHORT = 0.95
+SEMANTIC_THRESHOLD_LONG = 0.995
+
 [[env.test.r2_buckets]]
 binding = "IMAGE_BUCKET"
 bucket_name = "pollinations-images"

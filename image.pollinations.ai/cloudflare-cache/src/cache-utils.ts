@@ -4,7 +4,6 @@
  */
 
 import type { Context } from "hono";
-import type { Env } from "./env.js";
 import { removeUndefined } from "./util.js";
 
 /**
@@ -106,15 +105,11 @@ function createHash(str: string): string {
 /**
  * Store a response in R2
  * @param {string} cacheKey - The cache key
- * @param {Response} response - The response to cache
- * @param {Object} env - The environment object
- * @param {string} originalUrl - The original URL that was requested
- * @param {Request} request - The original request object
  * @returns {Promise<boolean>} - Whether the caching was successful
  */
 export async function cacheResponse(
     cacheKey: string,
-    c: Context<Env>,
+    c: Context,
 ): Promise<boolean> {
     try {
         // Store the image in R2 using the cache key directly

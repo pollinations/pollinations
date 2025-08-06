@@ -1,5 +1,6 @@
 import { env } from "cloudflare:test";
-import { test as baseTest, expect, describe } from "vitest";
+import { test as baseTest, describe, expect } from "vitest";
+import type { EmbeddingService } from "../src/embedding-service.ts";
 import {
     createEmbeddingService,
     variableThreshold,
@@ -7,7 +8,7 @@ import {
 import { cosineSimilarity } from "./util.ts";
 
 const test = baseTest.extend<{ embed: EmbeddingService }>({
-    embed: async ({ test: _ }, use) => {
+    embed: async ({ task: _ }, use) => {
         await use(createEmbeddingService(env.AI));
     },
 });
@@ -47,9 +48,9 @@ describe("Slight differences with important implications should be below thresho
     });
 
     test("medium prompts", async ({ embed }) => {
-        const promptA = `A hyper-realistic and atmospheric photo of a sleek, modified blue Nissan GT-R R35 sports car, mid-drift around a sharp, wet corner on a narrow street in Shinjuku, Tokyo. The scene is at night, during a heavy downpour, with rain splashing and creating visible droplets in the air.`;
+        const promptA = `A hyper-realistic and atmospheric photo of a sleek, modified blue Nissan GT-R R35 sports car, mid-drift around a sharp, wet corner on a narrow street in Shinjuku, Tokyo. The scene is at night, during a heavy downpour, with rain splashing and creating visible droplets in the air. The car's tires are smoking, and its aggressive angle of attack suggests high speed and controlled chaos.`;
 
-        const promptB = `A hyper-realistic and atmospheric photo of a sleek, modified greq Nissan GT-R R35 sports car, mid-drift around a sharp, wet corner on a narrow street in Shinjuku, Tokyo. The scene is at night, during a heavy downpour, with rain splashing and creating visible droplets in the air.`;
+        const promptB = `A hyper-realistic and atmospheric photo of a sleek, modified grey Nissan GT-R R35 sports car, mid-drift around a sharp, wet corner on a narrow street in Shinjuku, Tokyo. The scene is at night, during a heavy downpour, with rain splashing and creating visible droplets in the air. The car's tires are smoking, and its aggressive angle of attack suggests high speed and controlled chaos.`;
 
         const [ra, rb] = await Promise.all([embed(promptA), embed(promptB)]);
         expect(cosineSimilarity(ra, rb)).toBeLessThan(

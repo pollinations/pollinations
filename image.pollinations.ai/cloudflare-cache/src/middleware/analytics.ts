@@ -1,6 +1,5 @@
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
-import type { Env } from "../env.ts";
 import { createSimpleHash, extractPromptFromUrl } from "../util.ts";
 
 const MAX_STRING_LENGTH = 150;
@@ -33,12 +32,16 @@ type ImageEventName =
 
 export type ImageCacheEvent = {
     name: ImageEventName;
-    extraParams?: Record<string, string | number>;
+    extraParams?: Record<string, string | number | null>;
 };
 
 type AnalyticsEvent = {
     name: ImageEventName;
     params: Record<string, string | number>;
+};
+
+type Env = {
+    Bindings: Cloudflare.Env;
 };
 
 export const googleAnalytics = createMiddleware<Env>(async (c, next) => {
@@ -92,7 +95,6 @@ export const googleAnalytics = createMiddleware<Env>(async (c, next) => {
             sendAnalytics(config, userId, augmentedEvents),
         );
     }
-    return null;
 });
 
 async function sendAnalytics(
@@ -132,7 +134,7 @@ async function sendAnalytics(
 }
 
 function buildAnalyticsParams(
-    c: Context<Env>,
+    c: Context,
     event: ImageCacheEvent,
 ): AnalyticsParams {
     const defaultParams = {
@@ -150,7 +152,7 @@ function buildAnalyticsParams(
         language: c.req.header("accept-language") || "",
     };
 
-    const originalPrompt = extractPromptFromUrl(new URL(c.req.url));
+    const originalPrompt = extractPromptFromUrl(new URL(c.req.url)) || "[null]";
 
     return {
         ...defaultParams,
@@ -175,10 +177,10 @@ function limitStringLength(
     );
 }
 
-async function buildUserId(c: Context<Env>): Promise<string> {
+async function buildUserId(c: Context): Promise<string> {
     const ip = c.req.header("cf-connecting-ip") || c.req.header("x-real-ip");
     const userAgent = c.req.header("user-agent");
-    return await createSimpleHash(`${ip.substring(0, 11)}${userAgent}`);
+    return await createSimpleHash(`${ip?.substring(0, 11) || ""}${userAgent}`);
 }
 
 function deriveCacheStatus(event: ImageCacheEvent): CacheStatus {

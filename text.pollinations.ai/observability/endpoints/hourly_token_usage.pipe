@@ -17,9 +17,7 @@ SQL >
     FROM llm_events
     WHERE
         1 = 1
-        {% if defined(username) %} AND user = {{ String(username, 'YoussefElsafi') }}
-        {% else %} AND user = 'YoussefElsafi'
-        {% end %}
+        {% if defined(username) and username != [''] %} AND user IN {{ Array(username) }} {% end %}
         {% if defined(start_date) %} AND timestamp >= {{ DateTime(start_date) }}
         {% else %} AND timestamp >= now() - interval 6 day
         {% end %}

@@ -4,67 +4,87 @@
  * Uses BGE model with CLS pooling for improved accuracy
  */
 
+export type EmbeddingServiceDeps = {
+    ai: Ai;
+    model: "@cf/baai/bge-base-en-v1.5";
+};
+
+export type EmbeddingService = (prompt: string) => Promise<number[] | null>;
+
 /**
  * Create an embedding service instance
- * @param {Object} ai - Workers AI binding
- * @returns {Object} - Service instance
+ * @param {Ai} ai - Workers AI binding
+ * @returns {function} - Service function
  */
-export function createEmbeddingService(ai) {
-    return {
-        ai,
-        model: "@cf/baai/bge-base-en-v1.5",
+export function createEmbeddingService(ai: Ai): EmbeddingService {
+    return async (prompt: string) => {
+        return await generateEmbedding(
+            {
+                ai,
+                model: "@cf/baai/bge-base-en-v1.5",
+            },
+            prompt,
+        );
     };
+}
+
+function isAsyncResponse(response: unknown): response is AsyncResponse {
+    return (
+        typeof response === "object" &&
+        response !== null &&
+        "request_id" in response
+    );
 }
 
 /**
  * Generate embedding for a prompt using BGE model with CLS pooling
- * @param {Object} service - Embedding service instance
+ * @param {EmbeddingService} service - Embedding service instance
  * @param {string} prompt - The image prompt
- * @param {Object} params - Request parameters
- * @returns {Promise<Array>} - 768-dimensional embedding vector
+ * @returns {Promise<number[]>} - 768-dimensional embedding vector
  */
-export async function generateEmbedding(service, prompt, params = {}) {
+export async function generateEmbedding(
+    service: EmbeddingServiceDeps,
+    prompt: string,
+): Promise<number[] | null> {
     try {
         // Normalize the prompt for consistent embeddings
-        const normalizedText = normalizePromptForEmbedding(prompt, params);
+        const normalizedText = normalizePromptForEmbedding(prompt);
 
         console.log(
-            `[EMBEDDING] Generating embedding for: "${normalizedText.substring(0, 100)}..."`,
+            `[EMBEDDING] Generating embedding for: "${normalizedText.substring(0, 64)} [...]"`,
         );
 
         // Generate embedding using Workers AI with CLS pooling for better accuracy
         const response = await service.ai.run(service.model, {
             text: normalizedText,
-            pooling: "cls", // Use CLS pooling for better accuracy on longer inputs
+            pooling: "cls",
         });
 
-        if (!response.data || !Array.isArray(response.data[0])) {
+        if (isAsyncResponse(response)) {
+            throw new Error("Async (batch) embedding generation not handled");
+        } else if (!response.data || !Array.isArray(response.data[0])) {
             throw new Error("Invalid embedding response format");
         }
 
         return response.data[0]; // 768-dimensional vector
     } catch (error) {
-        console.error("[EMBEDDING] Error generating embedding:", error);
-        throw error;
+        console.error("[EMBEDDING] Failed to generate embedding:", error);
+        return null;
     }
 }
 
 /**
  * Normalize prompt for consistent embeddings with semantic parameters
  * @param {string} prompt - Original prompt
- * @param {Object} params - Request parameters
  * @returns {string} - Normalized text for embedding
  */
-export function normalizePromptForEmbedding(prompt, params = {}) {
+export function normalizePromptForEmbedding(prompt: string): string {
     // Clean and normalize the prompt - only use the pure prompt text
     // Model, style, and quality are handled through metadata filtering and bucketing
     let normalized = prompt.toLowerCase().trim();
 
-    // Remove all punctuation for consistent embeddings
-    // This ensures "test." and "test..." and "test" all produce the same embedding
+    // Remove all punctuation and normalize whitespace
     normalized = normalized.replace(/[^\w\s]/g, " ");
-
-    // Normalize whitespace (replace multiple spaces with single space)
     normalized = normalized.replace(/\s+/g, " ").trim();
 
     return normalized;
@@ -83,12 +103,12 @@ export function normalizePromptForEmbedding(prompt, params = {}) {
  * @returns {string} - Resolution bucket key with complete parameter isolation
  */
 export function getResolutionBucket(
-    width = 1024,
-    height = 1024,
-    seed = null,
-    nologo = null,
-    image = null,
-) {
+    width: number = 1024,
+    height: number = 1024,
+    seed: string | number | null = null,
+    nologo: boolean = false,
+    image: string | null = null,
+): string {
     const resolution = `${width}x${height}`;
 
     // Build bucket key with relevant visual parameters
@@ -102,9 +122,7 @@ export function getResolutionBucket(
 
     // Include nologo status since images with/without logos are visually different
     if (nologo !== null && nologo !== undefined) {
-        const nologoValue =
-            nologo === true || nologo === "true" ? "true" : "false";
-        bucket += `_nologo${nologoValue}`;
+        bucket += `_nologo${nologo}`;
     }
 
     // Include image parameter for image-to-image vs text-only isolation

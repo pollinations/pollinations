@@ -6,6 +6,7 @@ type Env = {
     Bindings: Cloudflare.Env;
     Variables: {
         cacheKey: string;
+        connectingIp: string;
     };
 };
 

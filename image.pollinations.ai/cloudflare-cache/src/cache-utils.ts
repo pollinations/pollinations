@@ -6,6 +6,14 @@
 import type { Context } from "hono";
 import { removeUndefined } from "./util.js";
 
+type Env = {
+    Bindings: Cloudflare.Env;
+    Variables: {
+        connectingIp: string;
+        cacheKey: string;
+    };
+};
+
 /**
  * Apply model-specific caching rules to the URL
  * @param {URL} url - The URL object to transform
@@ -109,7 +117,7 @@ function createHash(str: string): string {
  */
 export async function cacheResponse(
     cacheKey: string,
-    c: Context,
+    c: Context<Env>,
 ): Promise<boolean> {
     try {
         // Store the image in R2 using the cache key directly

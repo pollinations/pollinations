@@ -75,7 +75,7 @@ export function extractPromptFromUrl(url: URL): string | null {
 
         return null;
     } catch (error) {
-        console.error("[HYBRID] Error extracting prompt from URL:", error);
+        console.error("[UTIL] Error extracting prompt from URL:", error);
         return null;
     }
 }

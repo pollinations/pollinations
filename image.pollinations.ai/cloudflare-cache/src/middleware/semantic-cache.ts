@@ -3,7 +3,6 @@ import {
     createEmbeddingService,
     variableThreshold,
 } from "../embedding-service.ts";
-import type { Env } from "../env.ts";
 import {
     createSimpleHash,
     dedent,
@@ -11,6 +10,13 @@ import {
     setHttpMetadataHeaders,
 } from "../util.ts";
 import { buildMetadata, createVectorizeStore } from "../vector-store.ts";
+
+type Env = {
+    Bindings: Cloudflare.Env;
+    Variables: {
+        cacheKey: string;
+    };
+};
 
 export const semanticCache = createMiddleware<Env>(async (c, next) => {
     // @ts-ignore

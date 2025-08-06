@@ -1,7 +1,13 @@
 import { createMiddleware } from "hono/factory";
 import { cacheResponse, generateCacheKey } from "../cache-utils.ts";
-import type { Env } from "../env.ts";
 import { setHttpMetadataHeaders } from "../util.ts";
+
+type Env = {
+    Bindings: Cloudflare.Env;
+    Variables: {
+        cacheKey: string;
+    };
+};
 
 export const exactCache = createMiddleware<Env>(async (c, next) => {
     // skip entirely if no-cache header is set
@@ -42,5 +48,4 @@ export const exactCache = createMiddleware<Env>(async (c, next) => {
         console.debug("[EXACT] Caching image response");
         c.executionCtx.waitUntil(cacheResponse(cacheKey, c));
     }
-    return null;
 });

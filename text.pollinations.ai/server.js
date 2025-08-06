@@ -91,7 +91,7 @@ app.use((req, res, next) => {
 });
 
 // Remove the custom JSON parsing middleware and use the standard bodyParser
-app.use(bodyParser.json({ limit: "5mb" }));
+app.use(bodyParser.json({ limit: "20mb" }));
 app.use(cors());
 // New route handler for root path
 app.get("/", (req, res) => {

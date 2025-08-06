@@ -3,20 +3,22 @@
  * Following the "thin proxy" design principle - keeping logic simple and minimal
  */
 
-import { getClientIp } from "./ip-utils.js";
+import type { Context } from "hono";
+import type { Env } from "./env.js";
+import { removeUndefined } from "./util.js";
 
 /**
  * Apply model-specific caching rules to the URL
  * @param {URL} url - The URL object to transform
  * @returns {URL} - The transformed URL object
  */
-function applyModelSpecificRules(url) {
+function applyModelSpecificRules(url: URL): URL {
     // Get the model parameter
     const model = url.searchParams.get("model");
 
     // Define model-specific rules that return new URL parameters
     const modelRules = {
-        gptimage: (currentUrl) => {
+        gptimage: (currentUrl: URL) => {
             // For gptimage, always use the same seed for consistent caching
             const newUrl = new URL(currentUrl);
             newUrl.searchParams.set("seed", "42");
@@ -39,7 +41,7 @@ function applyModelSpecificRules(url) {
  * @param {URL} url - The URL object
  * @returns {string} - The cache key
  */
-export function generateCacheKey(url) {
+export function generateCacheKey(url: URL): string {
     // Apply model-specific rules first
     const transformedUrl = applyModelSpecificRules(url);
 
@@ -70,7 +72,7 @@ export function generateCacheKey(url) {
     const hash = createHash(fullPath);
 
     // Replace problematic characters in the path
-    const safePath = fullPath.replace(/[\/\s\?=&]/g, "_");
+    const safePath = fullPath.replace(/[/\s?=&]/g, "_");
 
     // Combine path with hash, ensuring it fits within a safe limit (1000 bytes)
     // Allow 10 chars for the hash and hyphen
@@ -88,7 +90,7 @@ export function generateCacheKey(url) {
  * @param {string} str - The string to hash
  * @returns {string} - The hashed string
  */
-function createHash(str) {
+function createHash(str: string): string {
     // Simple hash function
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
@@ -111,45 +113,46 @@ function createHash(str) {
  * @returns {Promise<boolean>} - Whether the caching was successful
  */
 export async function cacheResponse(
-    cacheKey,
-    response,
-    env,
-    originalUrl,
-    request,
-) {
+    cacheKey: string,
+    c: Context<Env>,
+): Promise<boolean> {
     try {
         // Store the image in R2 using the cache key directly
-        const imageBuffer = await response.arrayBuffer();
+        const imageBuffer = await c.res.clone().arrayBuffer();
 
         // Get client information from request
-        const clientIp = getClientIp(request);
+        const clientIp = c.get("connectingIp");
 
         // Get additional client information
-        const userAgent = request?.headers?.get("user-agent") || "";
+        const userAgent = c.req.header("user-agent") || "";
         const referer =
-            request?.headers?.get("referer") ||
-            request?.headers?.get("referrer") ||
-            "";
-        const acceptLanguage = request?.headers?.get("accept-language") || "";
+            c.req.header("referer") || c.req.header("referrer") || "";
+        const acceptLanguage = c.req.header("accept-language") || "";
+        const requestId = c.req.header("cf-ray") || ""; // Cloudflare Ray ID uniquely identifies the request
 
         // Get request-specific information
-        const method = request?.method || "GET";
+        const method = c.req.method || "GET";
         const requestTime = new Date().toISOString();
-        const requestId = request?.headers?.get("cf-ray") || ""; // Cloudflare Ray ID uniquely identifies the request
 
         // Helper function to sanitize and limit string length
-        const sanitizeValue = (value, maxLength = 256, key = null) => {
+        const sanitizeValue = (
+            value: string | object | unknown[] | null | undefined,
+            maxLength: number = 256,
+            key: string | null = null,
+        ) => {
             if (value === undefined || value === null) return undefined;
             if (typeof value === "string") return value.substring(0, maxLength);
             if (Array.isArray(value)) {
-                return value.map((item) => sanitizeValue(item, maxLength));
+                return value.map((item: string | object | unknown[]) =>
+                    sanitizeValue(item, maxLength),
+                );
             }
             if (typeof value === "object") {
                 // Special case for detectionIds - stringify it
                 if (key === "detectionIds") {
                     try {
                         return JSON.stringify(value);
-                    } catch (e) {
+                    } catch (_) {
                         return undefined;
                     }
                 }
@@ -160,7 +163,7 @@ export async function cacheResponse(
         };
 
         // Filter CF data to exclude object values
-        const filterCfData = (cf) => {
+        const filterCfData = (cf: object) => {
             if (!cf) return {};
 
             const filtered = {};
@@ -175,7 +178,7 @@ export async function cacheResponse(
                     // Special case for detectionIds
                     try {
                         filtered[key] = JSON.stringify(value);
-                    } catch (e) {
+                    } catch (_) {
                         // Skip if can't stringify
                     }
                 }
@@ -184,7 +187,7 @@ export async function cacheResponse(
         };
 
         // Filter botManagement to exclude object values
-        const filterBotManagement = (botManagement) => {
+        const filterBotManagement = (botManagement: object) => {
             if (!botManagement) return {};
 
             const filtered = {};
@@ -196,7 +199,7 @@ export async function cacheResponse(
                     // Special case for detectionIds
                     try {
                         filtered[key] = JSON.stringify(value);
-                    } catch (e) {
+                    } catch (_) {
                         // Skip if can't stringify
                     }
                 }
@@ -205,18 +208,19 @@ export async function cacheResponse(
         };
 
         // Create metadata object with content type and original URL
+        const httpMetadata: R2HTTPMetadata = {
+            contentType: c.res.headers.get("content-type") || "image/jpeg",
+            contentEncoding: c.res.headers.get("content-encoding"),
+            contentDisposition: c.res.headers.get("content-disposition"),
+            contentLanguage: c.res.headers.get("content-language"),
+            cacheControl: c.res.headers.get("cache-control"),
+        };
+
         const metadata = {
-            httpMetadata: {
-                contentType:
-                    response.headers.get("content-type") || "image/jpeg",
-                contentEncoding: response.headers.get("content-encoding"),
-                contentDisposition: response.headers.get("content-disposition"),
-                contentLanguage: response.headers.get("content-language"),
-                cacheControl: response.headers.get("cache-control"),
-            },
-            customMetadata: {
+            httpMetadata: removeUndefined(httpMetadata),
+            customMetadata: removeUndefined({
                 // Essential metadata
-                originalUrl: (originalUrl || "").substring(0, 2048),
+                originalUrl: (c.req.url || "").substring(0, 2048),
                 cachedAt: new Date().toISOString(),
                 clientIp: clientIp,
 
@@ -231,37 +235,19 @@ export async function cacheResponse(
                 requestId,
 
                 // Cloudflare information - spread filtered cf data
-                ...filterCfData(request?.cf),
+                ...filterCfData(c.req.raw.cf),
 
                 // Bot Management information if available
-                ...filterBotManagement(request?.cf?.botManagement),
-            },
+                ...filterBotManagement(c.req.raw.cf?.botManagement as object),
+            }),
         };
 
-        // Remove undefined values from httpMetadata
-        Object.keys(metadata.httpMetadata).forEach((key) => {
-            if (
-                metadata.httpMetadata[key] === undefined ||
-                metadata.httpMetadata[key] === null
-            ) {
-                delete metadata.httpMetadata[key];
-            }
-        });
-
-        // Remove empty values from customMetadata to save space
-        Object.keys(metadata.customMetadata).forEach((key) => {
-            if (!metadata.customMetadata[key]) {
-                delete metadata.customMetadata[key];
-            }
-        });
-
         // Store the object with metadata
-        await env.IMAGE_BUCKET.put(cacheKey, imageBuffer, metadata);
+        await c.env.IMAGE_BUCKET.put(cacheKey, imageBuffer, metadata);
 
-        console.log(`Cached image for key ${cacheKey}`);
         return true;
     } catch (error) {
-        console.error("Error caching response:", error);
+        console.error("[EXACT] Error caching response:", error);
         return false;
     }
 }

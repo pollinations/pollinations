@@ -1,5 +1,5 @@
 name = "pollinations-image-cache"
-main = "src/index.js"
+main = "src/index.ts"
 compatibility_date = "2023-05-18"
 # The account_id will be automatically read from the CLOUDFLARE_ACCOUNT_ID environment variable
 
@@ -11,7 +11,7 @@ bucket_name = "pollinations-images"
 # Vectorize index for semantic caching
 [[vectorize]]
 binding = "VECTORIZE_INDEX"
-index_name = "pollinations-image-cache-v2"
+index_name = "pollinations-image-cache-test"
 
 # Workers AI for embeddings
 [ai]
@@ -20,7 +20,9 @@ binding = "AI"
 # Environment variables
 [vars]
 ORIGIN_HOST = "image-origin.pollinations.ai"
-DEBUG_ANALYTICS = "false"  # Set to "true" to enable detailed analytics debugging
+DEBUG_ANALYTICS = false  # Set to "true" to enable detailed analytics debugging
+SEMANTIC_CACHE_ENABLED = true
+SEMANTIC_THRESHOLD = 0.95
 
 # Increase limits for long-running operations
 # This requires a paid Workers Unbound plan

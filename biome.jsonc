@@ -16,5 +16,13 @@
                 "useLiteralKeys": "off"
             }
         }
+    },
+    "files": {
+        "includes": [
+            "**",
+            "!node_modules",
+            "!dist",
+            "!**/worker-configuration.d.ts"
+        ]
     }
 }

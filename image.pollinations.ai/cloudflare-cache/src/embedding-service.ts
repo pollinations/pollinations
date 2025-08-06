@@ -55,10 +55,10 @@ export async function generateEmbedding(
         );
 
         // Generate embedding using Workers AI with CLS pooling for better accuracy
-        const response = await service.ai.run(service.model, {
+        const response = (await service.ai.run(service.model, {
             text: normalizedText,
             pooling: "cls",
-        });
+        })) as BGEM3OuputEmbedding;
 
         if (isAsyncResponse(response)) {
             throw new Error(
@@ -68,7 +68,7 @@ export async function generateEmbedding(
             throw new Error("[EMBEDDING] Invalid embedding response format");
         }
 
-        return response.data[0]; // 768-dimensional vector
+        return response.data[0];
     } catch (error) {
         console.error("[EMBEDDING] Failed to generate embedding:", error);
         return null;

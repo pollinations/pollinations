@@ -13,14 +13,39 @@ const test = baseTest.extend<{ embed: EmbeddingService }>({
     },
 });
 
-test("Similar prompts create high semantic similarity", async () => {
-    const embed = createEmbeddingService(env.AI);
-    const [ra, rb] = await Promise.all([
-        embed("A large mouse wearing a tuxedo."),
-        embed("A big mouse wearing a tuxedo."),
-    ]);
+test("cosineSimilarity should return the same results as the embedding model", async ({
+    embed,
+}) => {
+    const [promptA, promptB] = [
+        "A biig shark wearing a tuxedo.",
+        "A biiig shark wearing a tuxedo.",
+    ];
+
+    const [ra, rb] = await Promise.all([embed(promptA), embed(promptB)]);
+    const testSimilarityResult = cosineSimilarity(ra, rb);
+
+    const cloudflareSimilarityResult = (await env.AI.run("@cf/baai/bge-m3", {
+        query: promptA,
+        contexts: [{ text: promptB }],
+    })) as BGEM3OuputQuery;
+
+    expect(testSimilarityResult).toBeCloseTo(
+        cloudflareSimilarityResult.response[0].score,
+    );
+});
+
+test("Similar prompts create high semantic similarity", async ({ embed }) => {
+    const [promptA, promptB] = [
+        "A biig shark wearing a tuxedo.",
+        "A biiig shark wearing a tuxedo.",
+    ];
+    const [ra, rb] = await Promise.all([embed(promptA), embed(promptB)]);
     expect(cosineSimilarity(ra, rb)).toBeGreaterThan(
-        env.SEMANTIC_THRESHOLD_SHORT,
+        variableThreshold(
+            promptA.length,
+            env.SEMANTIC_THRESHOLD_SHORT,
+            env.SEMANTIC_THRESHOLD_LONG,
+        ),
     );
     console.log(cosineSimilarity(ra, rb));
 });

@@ -27,27 +27,26 @@ export type VectorMetadata = {
     height: number;
     cachedAt: number;
     image?: string;
-    seed?: string;
+    seed?: number;
 };
 
 type MetadataValue = string | number | boolean;
 
 export function createVectorizeStore<
     TMetadata extends Record<string, MetadataValue>,
->(vectorize: VectorizeIndex): VectorStore<TMetadata> {
+>(vectorize: Vectorize): VectorStore<TMetadata> {
     const storeEmbedding = async (
         id: string,
         vector: number[],
         metadata: TMetadata,
     ): Promise<boolean> => {
         try {
-            await vectorize.upsert([
-                {
-                    id,
-                    metadata,
-                    values: vector,
-                },
-            ]);
+            const item = {
+                id,
+                metadata,
+                values: vector,
+            };
+            await vectorize.upsert([item]);
             return true;
         } catch (error) {
             console.error("[VECTORIZE] Failed to store embedding:", {
@@ -94,9 +93,9 @@ export function createVectorizeStore<
 }
 
 export function buildMetadata(cacheKey: string, url: URL): VectorMetadata {
-    const width = parseInt(url.searchParams.get("width")) || 1024;
-    const height = parseInt(url.searchParams.get("height")) || 1024;
-    const seed = url.searchParams.get("seed");
+    const width = parseInt(url.searchParams.get("width") || "") || 1024;
+    const height = parseInt(url.searchParams.get("height") || "") || 1024;
+    const seed = parseInt(url.searchParams.get("seed") || "") || undefined;
     const model = url.searchParams.get("model") || "flux";
     const nologo = url.searchParams.get("nologo") === "true";
     const image = url.searchParams.get("image");
@@ -112,6 +111,6 @@ export function buildMetadata(cacheKey: string, url: URL): VectorMetadata {
         nologo,
         bucket,
         ...(image ? { image: image.substring(0, 8) } : {}),
-        ...(seed ? { seed: seed.toString() } : {}),
+        ...(seed ? { seed } : {}),
     };
 }

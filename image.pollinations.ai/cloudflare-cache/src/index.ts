@@ -17,6 +17,7 @@ app.use(
     }),
 );
 
+// cache and proxy image requests
 app.all(
     "/prompt/:prompt",
     googleAnalytics,
@@ -26,12 +27,9 @@ app.all(
     async (c) => {
         const clientIP = c.get("connectingIp");
         const targetUrl = new URL(c.req.url);
-        targetUrl.hostname = c.env.ORIGIN_HOST || "image.pollinations.ai";
+        targetUrl.hostname = c.env.ORIGIN_HOST;
         targetUrl.port = "";
-        console.debug(
-            "[PROXY] Forwarding request to origin:",
-            targetUrl.toString(),
-        );
+        console.debug("[PROXY] Forwarding to origin:", targetUrl.toString());
         const response = await proxy(targetUrl, {
             ...c.req,
             headers: {
@@ -46,5 +44,24 @@ app.all(
         return response;
     },
 );
+
+// proxy other requests as is
+app.all("*", setConnectingIp, async (c) => {
+    const clientIP = c.get("connectingIp");
+    const targetUrl = new URL(c.req.url);
+    targetUrl.hostname = c.env.ORIGIN_HOST;
+    targetUrl.port = "";
+    console.debug("[PROXY] Forwarding to origin:", targetUrl.toString());
+    return proxy(targetUrl, {
+        ...c.req,
+        headers: {
+            ...c.req.header(),
+            "x-forwarded-for": clientIP,
+            "x-forwarded-host": c.req.header("host"),
+            "x-real-ip": clientIP,
+            "cf-connecting-ip": clientIP,
+        },
+    });
+});
 
 export default app;

@@ -1,6 +1,5 @@
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
-import type { Env } from "../env.ts";
 import { createSimpleHash, extractPromptFromUrl } from "../util.ts";
 
 const MAX_STRING_LENGTH = 150;
@@ -24,36 +23,25 @@ type AnalyticsParams = {
     seed: number;
 } & Record<string, string | number>;
 
-type ImageRequestedEvent = {
-    name: "imageRequested";
-    extraParams?: Record<string, string | number>;
-};
+type ImageEventName =
+    | "imageRequested"
+    | "imageServedFromSemanticCache"
+    | "imageServedFromExactCache"
+    | "imageGenerated"
+    | "imageGenerationFailed";
 
-type ImageServedFromCacheEvent = {
-    name: "imageServedFromCache";
-    cacheType: "exact" | "semantic";
-    extraParams?: Record<string, string | number>;
+export type ImageCacheEvent = {
+    name: ImageEventName;
+    extraParams?: Record<string, string | number | null>;
 };
-
-type ImageGeneratedEvent = {
-    name: "imageGenerated";
-    extraParams?: Record<string, string | number>;
-};
-
-type ImageGenerationFailedEvent = {
-    name: "imageGenerationFailed";
-    extraParams?: Record<string, string | number>;
-};
-
-export type ImageCacheEvent =
-    | ImageRequestedEvent
-    | ImageServedFromCacheEvent
-    | ImageGeneratedEvent
-    | ImageGenerationFailedEvent;
 
 type AnalyticsEvent = {
-    name: string;
+    name: ImageEventName;
     params: Record<string, string | number>;
+};
+
+type Env = {
+    Bindings: Cloudflare.Env;
 };
 
 export const googleAnalytics = createMiddleware<Env>(async (c, next) => {
@@ -70,16 +58,21 @@ export const googleAnalytics = createMiddleware<Env>(async (c, next) => {
                 error: `HTTP ${c.res.status}: ${c.res.statusText}`,
             },
         });
-    } else if (c.res.headers.get("x-cache-exact") === "HIT") {
-        events.push({
-            name: "imageServedFromCache",
-            cacheType: "exact",
-        });
-    } else if (c.res.headers.get("x-cache-semantic") === "HIT") {
-        events.push({
-            name: "imageServedFromCache",
-            cacheType: "semantic",
-        });
+    } else if (c.res.headers.get("x-cache") === "HIT") {
+        if (c.res.headers.get("x-cache-type") === "EXACT") {
+            events.push({
+                name: "imageServedFromExactCache",
+            });
+        } else if (c.res.headers.get("x-cache-type") === "SEMANTIC") {
+            events.push({
+                name: "imageServedFromSemanticCache",
+                extraParams: {
+                    semanticSimilarity: c.res.headers.get(
+                        "x-semantic-similarity",
+                    ),
+                },
+            });
+        }
     } else if (c.res.headers.get("x-cache") === "MISS") {
         events.push({
             name: "imageGenerated",
@@ -106,7 +99,6 @@ export const googleAnalytics = createMiddleware<Env>(async (c, next) => {
             sendAnalytics(config, userId, augmentedEvents),
         );
     }
-    return null;
 });
 
 async function sendAnalytics(
@@ -139,14 +131,14 @@ async function sendAnalytics(
         body: JSON.stringify(payload),
     });
 
-    console.log(
+    console.debug(
         `[Analytics] Response status for ${events.length} events:`,
         response.status,
     );
 }
 
 function buildAnalyticsParams(
-    c: Context<Env>,
+    c: Context,
     event: ImageCacheEvent,
 ): AnalyticsParams {
     const defaultParams = {
@@ -164,7 +156,7 @@ function buildAnalyticsParams(
         language: c.req.header("accept-language") || "",
     };
 
-    const originalPrompt = extractPromptFromUrl(new URL(c.req.url));
+    const originalPrompt = extractPromptFromUrl(new URL(c.req.url)) || "[null]";
 
     return {
         ...defaultParams,
@@ -172,9 +164,6 @@ function buildAnalyticsParams(
         cacheStatus: deriveCacheStatus(event),
         originalPrompt,
         ...event.extraParams,
-        ...(event.name === "imageServedFromCache"
-            ? { cacheType: event.cacheType }
-            : {}),
     };
 }
 
@@ -192,10 +181,10 @@ function limitStringLength(
     );
 }
 
-async function buildUserId(c: Context<Env>): Promise<string> {
+async function buildUserId(c: Context): Promise<string> {
     const ip = c.req.header("cf-connecting-ip") || c.req.header("x-real-ip");
     const userAgent = c.req.header("user-agent");
-    return await createSimpleHash(`${ip.substring(0, 11)}${userAgent}`);
+    return await createSimpleHash(`${ip?.substring(0, 11) || ""}${userAgent}`);
 }
 
 function deriveCacheStatus(event: ImageCacheEvent): CacheStatus {

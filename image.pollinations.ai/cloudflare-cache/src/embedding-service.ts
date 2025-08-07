@@ -48,7 +48,7 @@ export async function generateEmbedding(
 ): Promise<number[] | null> {
     try {
         // Normalize the prompt for consistent embeddings
-        // const normalizedText = normalizePromptForEmbedding(prompt);
+        const normalizedText = normalizePromptForEmbedding(prompt);
 
         console.log(
             `[EMBEDDING] Generating embedding for: "${prompt.substring(0, 64)} [...]"`,
@@ -56,7 +56,7 @@ export async function generateEmbedding(
 
         // Generate embedding using Workers AI with CLS pooling for better accuracy
         const response = (await service.ai.run(service.model, {
-            text: prompt,
+            text: normalizedText,
             pooling: "cls",
         })) as BGEM3OuputEmbedding;
 

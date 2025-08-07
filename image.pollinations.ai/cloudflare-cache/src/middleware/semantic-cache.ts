@@ -1,3 +1,4 @@
+import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import {
     createEmbeddingService,
@@ -10,7 +11,7 @@ import {
     setHttpMetadataHeaders,
 } from "../util.ts";
 import { buildMetadata, createVectorizeStore } from "../vector-store.ts";
-import { Context } from "hono";
+import { normalizePromptForEmbedding } from "../embedding-service.ts";
 
 type Env = {
     Bindings: Cloudflare.Env;
@@ -33,7 +34,6 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
 
     const prompt = extractPromptFromUrl(new URL(c.req.url));
 
-    console.log(prompt);
     const embedding = await embeddingService(prompt);
     if (embedding === null) {
         // skip if embedding failed
@@ -62,16 +62,24 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
         );
         const nearestSimilarity = nearest[0]?.score;
         const nearestCacheKey = nearest[0]?.metadata?.cacheKey?.toString();
-        console.log("[SEMANTIC] Nearest:", {
-            similarity: nearestSimilarity,
-            cacheKey: nearestCacheKey,
-        });
-
         const threshold = variableThreshold(
             prompt.length,
             c.env.SEMANTIC_THRESHOLD_SHORT,
             c.env.SEMANTIC_THRESHOLD_LONG,
         );
+
+        const incomingPrompt = prompt;
+        const normalizedIncomingPrompt = normalizePromptForEmbedding(prompt);
+        const nearestPrompt = promptFromCacheKey(nearestCacheKey);
+        console.log("[SEMANTIC] Evaluating:", {
+            incomingPrompt,
+            normalizedIncomingPrompt,
+            nearestPrompt,
+            nearestCacheKey,
+            similarity: nearestSimilarity,
+            variableThreshold: threshold,
+            hit: nearestSimilarity >= threshold,
+        });
 
         if (nearestSimilarity >= threshold) {
             if (!nearestCacheKey) {
@@ -150,6 +158,15 @@ function addSemanticCacheHeaders(c: Context, result: SemanticCacheResult) {
     if (result.status === "HIT") c.header("X-Cache-Type", "SEMANTIC");
     c.header("X-Sematic-Similarity", `${result.nearestSimilarity}`);
     c.header("X-Semantic-Bucket", result.bucket);
-    // c.header("X-Semantic-Threshold-Short", `${c.env.SEMANTIC_THRESHOLD_SHORT}`);
-    // c.header("X-Semantic-Threshold-Long", `${c.env.SEMANTIC_THRESHOLD_LONG}`);
+}
+
+function promptFromCacheKey(cacheKey?: string): string {
+    if (!cacheKey) return "";
+    const withoutPromptPrefix = cacheKey.replace(/^_prompt_/, "");
+    const withoutSuffix = withoutPromptPrefix.replace(/-[0-9a-f]+$/i, "");
+    const withoutQueryParams = withoutSuffix.replace(
+        /(_[a-zA-Z]+_[a-zA-Z0-9-]+)+$/,
+        "",
+    );
+    return decodeURIComponent(withoutQueryParams);
 }

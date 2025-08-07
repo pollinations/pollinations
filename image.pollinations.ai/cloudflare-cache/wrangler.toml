@@ -22,8 +22,8 @@ binding = "AI"
 ORIGIN_HOST = "image-origin.pollinations.ai"
 DEBUG_ANALYTICS = false  # Set to "true" to enable detailed analytics debugging
 SEMANTIC_CACHE_ENABLED = true
-SEMANTIC_THRESHOLD_SHORT = 0.95
-SEMANTIC_THRESHOLD_LONG = 0.995
+SEMANTIC_THRESHOLD_SHORT = 0.85
+SEMANTIC_THRESHOLD_LONG = 0.95
 
 # Increase limits for long-running operations
 # This requires a paid Workers Unbound plan

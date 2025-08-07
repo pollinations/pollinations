@@ -38,16 +38,19 @@ const MODEL_MAPPING = {
 	"llama-roblox": "meta-llama/Meta-Llama-3.1-8B-Instruct-fast",
 	"llama-fast-roblox": "@cf/meta/llama-3.2-11b-vision-instruct",
 	llamascout: "@cf/meta/llama-4-scout-17b-16e-instruct",
-	"deepseek-reasoning": "deepseek-ai/DeepSeek-R1-0528",
+	"deepseek-reasoning": "deepseek-ai/deepseek-r1-0528-maas",
 	//'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
 	phi: "phi-4-instruct",
 	//'phi-mini': 'phi-4-mini-instruct',
 	// Scaleway models
+	qwen: "qwen3-235b-a22b-instruct-2507",
 	"qwen-coder": "qwen2.5-coder-32b-instruct",
 	mistral: "mistral-small-3.1-24b-instruct-2503", // Updated to use Scaleway Mistral model
 	"mistral-roblox": "@cf/mistralai/mistral-small-3.1-24b-instruct", // Cloudflare Mistral Small
 	"mistral-nemo-roblox": "mistralai/Mistral-Nemo-Instruct-2407", // Nebius Mistral Nemo
 	'gemma-roblox': 'google/gemma-2-9b-it-fast', // Nebius Gemma 2 9B IT Fast
+	gemini: 'gemini-2.5-flash-lite', // Google Vertex AI Gemini 2.5 Flash Lite
+	geminisearch: 'gemini-2.5-flash-lite-search', // Google Vertex AI Gemini 2.5 Flash Lite with Search grounding
 	// Intelligence.io models
 	glm: "THUDM/glm-4-9b-chat", // Intelligence.io GLM-4 9B Chat
 	// Modal models
@@ -60,6 +63,8 @@ const MODEL_MAPPING = {
 	deepseek: "DeepSeek-V3-0324",
 	// Custom endpoints
 	elixposearch: "elixposearch-endpoint",
+	// AWS Bedrock Lambda endpoint
+	claudyclaude: "eu.anthropic.claude-sonnet-4-20250514-v1:0",
 };
 
 // Base prompts that can be reused across different models
@@ -82,6 +87,8 @@ You never use phrases that imply moral superiority or a sense of authority, incl
 	coding: `You are an expert coding assistant with deep knowledge of programming languages, software architecture, and best practices. Your purpose is to help users write high-quality, efficient, and maintainable code. You provide clear explanations, suggest improvements, and help debug issues while following industry best practices.`,
 	moderation:
 		"You are a content moderation assistant. Your task is to analyze the input and identify any harmful, unsafe, or inappropriate content.",
+	searchGrounded:
+		"You are an AI assistant with access to live web search. For factual or current-event questions, always use the search tool and ground your response in retrieved results, citing sources. Be concise unless the user asks for detailed information. If no information is found, say so. Do not speculate or provide unverified information.",
 	hormoz:
 		"You are Hormoz, a helpful AI assistant created by Muhammadreza Haghiri. You provide accurate and thoughtful responses.",
 };
@@ -112,6 +119,8 @@ const SYSTEM_PROMPTS = {
 	"mistral-roblox": BASE_PROMPTS.conversational,
 	"mistral-nemo-roblox": BASE_PROMPTS.conversational,
 	'gemma-roblox': BASE_PROMPTS.conversational,
+	gemini: BASE_PROMPTS.conversational,
+	geminisearch: BASE_PROMPTS.searchGrounded,
 	"qwen-coder": BASE_PROMPTS.coding,
 	//'gemini-thinking': BASE_PROMPTS.gemini + ' When appropriate, show your reasoning step by step.',
 	// Intelligence.io models
@@ -126,6 +135,10 @@ const SYSTEM_PROMPTS = {
 	deepseek: BASE_PROMPTS.conversational,
 	// Cohere models
 	//'command-r': BASE_PROMPTS.conversational
+	// Custom endpoints
+	elixposearch: BASE_PROMPTS.pollySearch(new Date().toISOString().split('T')[0]),
+	// AWS Bedrock Lambda endpoint
+	claudyclaude: 'You are Claude Sonnet 4, a helpful AI assistant created by Anthropic. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.',
 };
 
 // Default options
@@ -392,6 +405,27 @@ function createIntelligenceModelConfig(additionalConfig = {}) {
 	};
 }
 
+// Base configuration for AWS Bedrock Lambda endpoint
+const baseBedrockLambdaConfig = {
+	provider: "openai",
+	"custom-host": "https://wy52nbh46eujlxcz3v55sxodgm0raail.lambda-url.eu-north-1.on.aws/api/v1",
+	authKey: process.env.AWS_BEARER_TOKEN_BEDROCK,
+	// "max-tokens": 4096,
+	// temperature: 0.7,
+};
+
+/**
+ * Creates an AWS Bedrock Lambda model configuration
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - AWS Bedrock Lambda model configuration
+ */
+function createBedrockLambdaModelConfig(additionalConfig = {}) {
+	return {
+		...baseBedrockLambdaConfig,
+		...additionalConfig,
+	};
+}
+
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
 	// Azure Grok model configuration
@@ -502,12 +536,15 @@ export const portkeyConfig = {
 			process.env.AZURE_OPENAI_AUDIO_LARGE_ENDPOINT,
 			"gpt-4o-audio-preview",
 		),
-	"azure-gpt-4.1": () =>
-		createAzureModelConfig(
+	"azure-gpt-4.1": () => ({
+		...createAzureModelConfig(
 			process.env.AZURE_OPENAI_41_API_KEY,
 			process.env.AZURE_OPENAI_41_ENDPOINT,
 			"gpt-4.1",
 		),
+		"max-tokens": 1024,
+		"max-completion-tokens": 1024,
+	}),
 	"azure-gpt-4.1-xlarge": () =>
 		createAzureModelConfig(
 			process.env.AZURE_OPENAI_XLARGE_API_KEY,
@@ -555,6 +592,7 @@ export const portkeyConfig = {
 		"max-tokens": 4096, // Reduced from 8192 to avoid context length errors
 	}),
 	// Scaleway model configurations
+	"qwen3-235b-a22b-instruct-2507": () => createScalewayModelConfig(),
 	"qwen2.5-coder-32b-instruct": () =>
 		createScalewayModelConfig({
 			"max-tokens": 8000, // Set specific token limit for Qwen Coder
@@ -643,10 +681,36 @@ export const portkeyConfig = {
 		"vertex-model-id": "gemini-2.0-flash-thinking",
 		"strict-openai-compliance": "false",
 	}),
+	"gemini-2.5-flash-lite": () => ({
+		provider: "vertex-ai",
+		authKey: googleCloudAuth.getAccessToken,
+		"vertex-project-id": process.env.GCLOUD_PROJECT_ID,
+		"vertex-region": "us-central1",
+		"vertex-model-id": "gemini-2.5-flash-lite",
+		"strict-openai-compliance": "false",
+	}),
+	"gemini-2.5-flash-lite-search": () => ({
+		provider: "vertex-ai",
+		authKey: googleCloudAuth.getAccessToken,
+		"vertex-project-id": process.env.GCLOUD_PROJECT_ID,
+		"vertex-region": "us-central1",
+		"vertex-model-id": "gemini-2.5-flash-lite",
+		"strict-openai-compliance": "false",
+	}),
+	"deepseek-ai/deepseek-r1-0528-maas": () => ({
+		provider: "openai",
+		authKey: googleCloudAuth.getAccessToken,
+		"custom-host": `https://us-central1-aiplatform.googleapis.com/v1/projects/${process.env.GCLOUD_PROJECT_ID}/locations/us-central1/endpoints/openapi`,
+		"strict-openai-compliance": "false",
+	}),
 	"DeepSeek-V3-0324": () => createDeepSeekModelConfig(),
 	"MAI-DS-R1": () => createDeepSeekReasoningConfig(),
 	// Custom endpoints
 	"elixposearch-endpoint": () => createElixpoSearchModelConfig(),
+	// AWS Bedrock Lambda endpoint
+	"eu.anthropic.claude-sonnet-4-20250514-v1:0": () => createBedrockLambdaModelConfig({
+		model: "eu.anthropic.claude-sonnet-4-20250514-v1:0",
+	}),
 };
 
 /**
@@ -764,6 +828,26 @@ export const generateTextPortkey = createOpenAICompatibleClient({
 			if (modelName === "azure-grok" && requestBody.seed !== undefined) {
 				log(`Setting seed to null for grok model (was: ${requestBody.seed})`);
 				requestBody.seed = null;
+			}
+
+			// Add Google Search grounding for Gemini Search model
+			if (modelName === "gemini-2.5-flash-lite-search") {
+				log(`Adding Google Search grounding tool for ${modelName}`);
+				// Override model name to use the actual Vertex AI model name
+				requestBody.model = "gemini-2.5-flash-lite";
+				// Add google_search tool for grounding with Google Search
+				// This enables real-time search results grounding for Gemini responses
+				if (!requestBody.tools) {
+					requestBody.tools = [];
+				}
+				// Add the google_search tool (for newer models like gemini-2.0-flash-001)
+				// Note: older models use google_search_retrieval instead
+				requestBody.tools.push({
+					type: "function",
+					function: {
+						name: "google_search"
+					}
+				});
 			}
 
 			// Apply model-specific parameter filtering

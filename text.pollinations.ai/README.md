@@ -27,6 +27,14 @@ This repository contains the source code for the Pollinations.ai Text Generation
 
 3. Set up environment variables (API keys, etc.) in a `.env` file.
 
+   **For Vertex AI Authentication** (✅ Currently Working):
+   ```bash
+   GOOGLE_APPLICATION_CREDENTIALS=/home/ubuntu/pollinations/text.pollinations.ai/credentials/google_vertex_key.json
+   GCLOUD_PROJECT_ID=stellar-verve-465920-b7
+   ```
+   
+   See `VERTEX_AI_SETUP_GUIDE.md` for complete authentication setup details.
+
 4. Start the server:
    ```
    npm start

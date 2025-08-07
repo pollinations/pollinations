@@ -240,7 +240,7 @@ const models = [
 		provider: "vertex-ai",
 		tier: "seed",
 		community: false,
-		aliases: "gemini-2.5-flash-lite-search",
+		aliases: "searchgpt",
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true,

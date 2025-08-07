@@ -3,15 +3,15 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { test as baseTest, beforeEach, describe, expect } from "vitest";
+import { test as baseTest, describe, expect } from "vitest";
 import worker from "../src";
-import { MockVectorize } from "./mock-vectorize";
+import { createMockVectorize } from "./mock-vectorize";
 
 const test = baseTest.extend<{ env: Cloudflare.Env }>({
     env: async ({ task: _ }, use) => {
         await use({
             ...env,
-            VECTORIZE_INDEX: new MockVectorize(),
+            VECTORIZE_INDEX: createMockVectorize(),
         });
     },
 });

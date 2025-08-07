@@ -1,6 +1,6 @@
 name = "pollinations-image-cache"
 main = "src/index.ts"
-compatibility_date = "2023-05-18"
+compatibility_date = "2025-08-01"
 # The account_id will be automatically read from the CLOUDFLARE_ACCOUNT_ID environment variable
 
 # R2 bucket for image storage

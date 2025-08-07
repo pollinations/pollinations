@@ -4,12 +4,12 @@
         "module": "esnext",
         "moduleResolution": "bundler",
         "lib": ["esnext"],
-        "types": [
-            "@cloudflare/workers-types",
-            "@cloudflare/vitest-pool-workers"
-        ],
+        "types": ["@cloudflare/vitest-pool-workers"],
         "jsx": "react-jsx",
         "jsxImportSource": "hono/jsx",
+
+        "forceConsistentCasingInFileNames": true,
+        "isolatedModules": true,
 
         "strict": false,
         "noImplicitAny": false,
@@ -19,6 +19,8 @@
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
         "allowImportingTsExtensions": true,
+        "allowJs": true,
+        "checkJs": false,
 
         "noEmit": true,
         "resolveJsonModule": true,
@@ -26,9 +28,9 @@
         "skipLibCheck": true,
         "baseUrl": ".",
         "paths": {
-            "@src/*": ["src/*"]
+            "@/*": ["src/*"]
         }
     },
-    "include": ["src", "worker-configuration.d.ts"],
+    "include": ["worker-configuration.d.ts", "src/**/*.ts"],
     "exclude": ["node_modules", "dist"]
 }

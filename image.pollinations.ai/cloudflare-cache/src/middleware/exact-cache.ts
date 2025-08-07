@@ -23,20 +23,22 @@ export const exactCache = createMiddleware<Env>(async (c, next) => {
     try {
         const cachedImage = await c.env.IMAGE_BUCKET.get(cacheKey);
         if (cachedImage) {
-            console.debug("[EXACT] Cache hit");
+            console.log("[EXACT] Cache hit");
             setHttpMetadataHeaders(c, cachedImage.httpMetadata);
             c.header("Cache-Control", "public, max-age=31536000, immutable");
             c.header("X-Cache", "HIT");
-            c.header("X-Cache-Exact", "HIT");
+            c.header("X-Cache-Type", "EXACT");
 
             return c.body(cachedImage.body);
+        } else {
+            c.header("X-Cache", "MISS");
+            console.log("[EXACT] Cache miss");
         }
     } catch (error) {
         console.error("[EXACT] Error retrieving cached image:", error);
     }
 
     // No match found, continue handling the request
-    console.debug("[EXACT] Cache miss");
     await next();
 
     // store response image in R2 on the way out

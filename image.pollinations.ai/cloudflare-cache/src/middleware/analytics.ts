@@ -58,17 +58,21 @@ export const googleAnalytics = createMiddleware<Env>(async (c, next) => {
                 error: `HTTP ${c.res.status}: ${c.res.statusText}`,
             },
         });
-    } else if (c.res.headers.get("x-cache-exact") === "HIT") {
-        events.push({
-            name: "imageServedFromExactCache",
-        });
-    } else if (c.res.headers.get("x-cache-semantic") === "HIT") {
-        events.push({
-            name: "imageServedFromSemanticCache",
-            extraParams: {
-                semanticSimilarity: c.res.headers.get("x-semantic-similarity"),
-            },
-        });
+    } else if (c.res.headers.get("x-cache") === "HIT") {
+        if (c.res.headers.get("x-cache-type") === "EXACT") {
+            events.push({
+                name: "imageServedFromExactCache",
+            });
+        } else if (c.res.headers.get("x-cache-type") === "SEMANTIC") {
+            events.push({
+                name: "imageServedFromSemanticCache",
+                extraParams: {
+                    semanticSimilarity: c.res.headers.get(
+                        "x-semantic-similarity",
+                    ),
+                },
+            });
+        }
     } else if (c.res.headers.get("x-cache") === "MISS") {
         events.push({
             name: "imageGenerated",

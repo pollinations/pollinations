@@ -10,7 +10,6 @@
         "dev": "wrangler dev --port 8787 --experimental-vectorize-bind-to-prod",
         "dev:simple": "wrangler dev",
         "logs": "wrangler tail",
-        "test:semantic": "bash ../../test-semantic-cache-isolation.sh",
         "cf-typegen": "wrangler types --env-interface CloudflareBindings"
     },
     "keywords": [
@@ -23,9 +22,9 @@
     "author": "Pollinations",
     "license": "MIT",
     "devDependencies": {
-        "@cloudflare/vitest-pool-workers": "^0.8.59",
+        "@cloudflare/vitest-pool-workers": "^0.8.61",
         "vitest": "^3.2.4",
-        "wrangler": "^4.4.0"
+        "wrangler": "^4.28.1"
     },
     "dependencies": {
         "dotenv": "^17.0.1",

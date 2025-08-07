@@ -133,7 +133,7 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 export function variableThreshold(
-    promtLength: number,
+    promptLength: number,
     min: number,
     max: number,
 ) {
@@ -141,7 +141,7 @@ export function variableThreshold(
     const minLength = averageTokenLength * 5;
     const maxLength = averageTokenLength * 100;
     return clamp(
-        mapRange(promtLength, minLength, maxLength, min, max),
+        mapRange(promptLength, minLength, maxLength, min, max),
         min,
         max,
     );

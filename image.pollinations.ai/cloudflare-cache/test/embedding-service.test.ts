@@ -29,6 +29,7 @@ test("cosineSimilarity should return the same results as the embedding model", a
         contexts: [{ text: promptB }],
     })) as BGEM3OuputQuery;
 
+    console.log(cloudflareSimilarityResult);
     expect(testSimilarityResult).toBeCloseTo(
         cloudflareSimilarityResult.response[0].score,
     );

@@ -34,7 +34,7 @@ type MetadataValue = string | number | boolean;
 
 export function createVectorizeStore<
     TMetadata extends Record<string, MetadataValue>,
->(vectorize: VectorizeIndex): VectorStore<TMetadata> {
+>(vectorize: Vectorize): VectorStore<TMetadata> {
     const storeEmbedding = async (
         id: string,
         vector: number[],
@@ -46,10 +46,6 @@ export function createVectorizeStore<
                 metadata,
                 values: vector,
             };
-            console.log("[VECTORIZE] Storing embedding:", {
-                ...item,
-                values: "[redacted]",
-            });
             await vectorize.upsert([item]);
             return true;
         } catch (error) {

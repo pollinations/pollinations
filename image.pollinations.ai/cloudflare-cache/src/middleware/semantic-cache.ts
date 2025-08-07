@@ -10,6 +10,7 @@ import {
     setHttpMetadataHeaders,
 } from "../util.ts";
 import { buildMetadata, createVectorizeStore } from "../vector-store.ts";
+import { Context } from "hono";
 
 type Env = {
     Bindings: Cloudflare.Env;
@@ -32,6 +33,7 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
 
     const prompt = extractPromptFromUrl(new URL(c.req.url));
 
+    console.log(prompt);
     const embedding = await embeddingService(prompt);
     if (embedding === null) {
         // skip if embedding failed
@@ -60,8 +62,10 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
         );
         const nearestSimilarity = nearest[0]?.score;
         const nearestCacheKey = nearest[0]?.metadata?.cacheKey?.toString();
-        console.debug("[SEMANTIC] Nearest similarity:", nearestSimilarity);
-        console.debug("[SEMANTIC] Nearest cacheKey:", nearestCacheKey);
+        console.log("[SEMANTIC] Nearest:", {
+            similarity: nearestSimilarity,
+            cacheKey: nearestCacheKey,
+        });
 
         const threshold = variableThreshold(
             prompt.length,
@@ -81,22 +85,11 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
             const cachedImage = await c.env.IMAGE_BUCKET.get(nearestCacheKey);
             if (cachedImage) {
                 setHttpMetadataHeaders(c, cachedImage.httpMetadata);
-                c.header(
-                    "Cache-Control",
-                    "public, max-age=31536000, immutable",
-                );
-                c.header("X-Cache", "HIT");
-                c.header("X-Cache-Semantic", "HIT");
-                c.header("X-Semantic-Similarity", `${nearestSimilarity}`);
-                c.header("X-Semantic-Bucket", metadata.bucket);
-                c.header(
-                    "X-Semantic-Threshold-Short",
-                    `${c.env.SEMANTIC_THRESHOLD_SHORT}`,
-                );
-                c.header(
-                    "X-Semantic-Threshold-Long",
-                    `${c.env.SEMANTIC_THRESHOLD_LONG}`,
-                );
+                addSemanticCacheHeaders(c, {
+                    status: "HIT",
+                    nearestSimilarity,
+                    bucket: metadata.bucket,
+                });
 
                 return c.body(cachedImage.body);
             } else {
@@ -106,29 +99,21 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
                     found in R2, which likely means the vector store is 
                     out of sync with R2.
                 `);
-                c.header("X-Cache-Semantic", "MISS");
-                c.header("X-Sematic-Similarity", `${nearestSimilarity}`);
-                c.header("X-Semantic-Bucket", metadata.bucket);
-                c.header(
-                    "X-Semantic-Threshold-Short",
-                    `${c.env.SEMANTIC_THRESHOLD_SHORT}`,
-                );
-                c.header(
-                    "X-Semantic-Threshold-Long",
-                    `${c.env.SEMANTIC_THRESHOLD_LONG}`,
-                );
-
-                return next();
             }
+        } else {
+            console.debug("[SEMANTIC] No semantic matches found");
         }
-        console.debug("[SEMANTIC] No semantic matches found");
+
+        console.log("[SEMANTIC] Cache miss");
+        addSemanticCacheHeaders(c, {
+            status: "MISS",
+            nearestSimilarity,
+            bucket: metadata.bucket,
+        });
     } catch (error) {
         console.error("[SEMANTIC] Error retrieving cached image:", error);
     }
 
-    // No match found, continue handling the request and store the embedding
-    // in the vectorStore on the way out if it was successful.
-    console.debug("[SEMANTIC] Cache miss");
     await next();
 
     if (c.res?.ok) {
@@ -153,3 +138,18 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
     }
     return null;
 });
+
+type SemanticCacheResult = {
+    status: "HIT" | "MISS";
+    nearestSimilarity: number;
+    bucket: string;
+};
+
+function addSemanticCacheHeaders(c: Context, result: SemanticCacheResult) {
+    c.header("X-Cache", result.status);
+    if (result.status === "HIT") c.header("X-Cache-Type", "SEMANTIC");
+    c.header("X-Sematic-Similarity", `${result.nearestSimilarity}`);
+    c.header("X-Semantic-Bucket", result.bucket);
+    // c.header("X-Semantic-Threshold-Short", `${c.env.SEMANTIC_THRESHOLD_SHORT}`);
+    // c.header("X-Semantic-Threshold-Long", `${c.env.SEMANTIC_THRESHOLD_LONG}`);
+}

@@ -65,6 +65,7 @@ const MODEL_MAPPING = {
 	elixposearch: "elixposearch-endpoint",
 	// AWS Bedrock Lambda endpoint
 	claudyclaude: "eu.anthropic.claude-sonnet-4-20250514-v1:0",
+	"nova-fast": "eu.amazon.nova-micro-v1:0",
 };
 
 // Base prompts that can be reused across different models
@@ -139,6 +140,7 @@ const SYSTEM_PROMPTS = {
 	elixposearch: BASE_PROMPTS.pollySearch(new Date().toISOString().split('T')[0]),
 	// AWS Bedrock Lambda endpoint
 	claudyclaude: 'You are Claude Sonnet 4, a helpful AI assistant created by Anthropic. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.',
+	"nova-fast": 'You are Amazon Nova Micro, a fast and efficient AI assistant. You provide helpful, accurate responses while being concise and to the point.',
 };
 
 // Default options
@@ -711,11 +713,15 @@ export const portkeyConfig = {
 	"eu.anthropic.claude-sonnet-4-20250514-v1:0": () => createBedrockLambdaModelConfig({
 		model: "eu.anthropic.claude-sonnet-4-20250514-v1:0",
 	}),
+	"eu.amazon.nova-micro-v1:0": () => createBedrockLambdaModelConfig({
+		model: "awsbedrock/amazon.nova-micro-v1:0",
+	}),
 };
 
 /**
  * Generates text using a local Portkey gateway with Azure OpenAI models
  */
+
 export const generateTextPortkey = createOpenAICompatibleClient({
 	// Use Portkey API Gateway URL from .env with fallback to localhost
 	endpoint: () =>

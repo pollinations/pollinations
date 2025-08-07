@@ -584,6 +584,22 @@ const models = [
 			completion_text: 15.0,
 		},
 	},
+	{
+		name: "nova-fast",
+		description: "Amazon Nova Micro (Bedrock)",
+		handler: generateTextPortkey,
+		provider: "bedrock",
+		community: false,
+		tier: "anonymous",
+		aliases: "nova-micro-v1",
+		input_modalities: ["text"],
+		output_modalities: ["text"],
+		tools: true,
+		pricing: {
+			prompt_text: 0.035,
+			completion_text: 0.14,
+		},
+	},
 ];
 
 // Use the models array directly without sorting

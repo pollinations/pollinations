@@ -32,7 +32,7 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
     const embeddingService = createEmbeddingService(c.env.AI);
     const vectorStore = createVectorizeStore(c.env.VECTORIZE_INDEX);
 
-    const prompt = extractPromptFromUrl(new URL(c.req.url));
+    const prompt = extractPromptFromUrl(new URL(c.req.url)) || "";
 
     const embedding = await embeddingService(prompt);
     if (embedding === null) {
@@ -144,7 +144,6 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
     } else {
         console.error("[SEMANTIC] Error: request was not OK");
     }
-    return null;
 });
 
 type SemanticCacheResult = {
@@ -156,7 +155,7 @@ type SemanticCacheResult = {
 function addSemanticCacheHeaders(c: Context, result: SemanticCacheResult) {
     c.header("X-Cache", result.status);
     if (result.status === "HIT") c.header("X-Cache-Type", "SEMANTIC");
-    c.header("X-Sematic-Similarity", `${result.nearestSimilarity}`);
+    c.header("X-Semantic-Similarity", `${result.nearestSimilarity}`);
     c.header("X-Semantic-Bucket", result.bucket);
 }
 

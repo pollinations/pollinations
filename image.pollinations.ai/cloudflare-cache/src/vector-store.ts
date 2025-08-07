@@ -93,9 +93,9 @@ export function createVectorizeStore<
 }
 
 export function buildMetadata(cacheKey: string, url: URL): VectorMetadata {
-    const width = parseInt(url.searchParams.get("width")) || 1024;
-    const height = parseInt(url.searchParams.get("height")) || 1024;
-    const seed = parseInt(url.searchParams.get("seed")) || null;
+    const width = parseInt(url.searchParams.get("width") || "") || 1024;
+    const height = parseInt(url.searchParams.get("height") || "") || 1024;
+    const seed = parseInt(url.searchParams.get("seed") || "") || undefined;
     const model = url.searchParams.get("model") || "flux";
     const nologo = url.searchParams.get("nologo") === "true";
     const image = url.searchParams.get("image");

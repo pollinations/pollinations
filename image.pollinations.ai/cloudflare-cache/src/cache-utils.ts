@@ -84,10 +84,7 @@ export function generateCacheKey(url: URL): string {
     // Combine path with hash, ensuring it fits within a safe limit (1000 bytes)
     // Allow 10 chars for the hash and hyphen
     const maxPathLength = 990;
-    const trimmedPath =
-        safePath.length > maxPathLength
-            ? safePath.substring(0, maxPathLength)
-            : safePath;
+    const trimmedPath = safePath.substring(0, maxPathLength);
 
     return `${trimmedPath}-${hash}`;
 }

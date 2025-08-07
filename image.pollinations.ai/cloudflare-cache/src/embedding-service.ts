@@ -47,16 +47,13 @@ export async function generateEmbedding(
     prompt: string,
 ): Promise<number[] | null> {
     try {
-        // Normalize the prompt for consistent embeddings
-        const normalizedText = normalizePromptForEmbedding(prompt);
-
         console.log(
             `[EMBEDDING] Generating embedding for: "${prompt.substring(0, 64)} [...]"`,
         );
 
         // Generate embedding using Workers AI with CLS pooling for better accuracy
         const response = (await service.ai.run(service.model, {
-            text: normalizedText,
+            text: prompt,
             pooling: "cls",
         })) as BGEM3OuputEmbedding;
 
@@ -73,23 +70,6 @@ export async function generateEmbedding(
         console.error("[EMBEDDING] Failed to generate embedding:", error);
         return null;
     }
-}
-
-/**
- * Normalize prompt for consistent embeddings with semantic parameters
- * @param {string} prompt - Original prompt
- * @returns {string} - Normalized text for embedding
- */
-export function normalizePromptForEmbedding(prompt: string): string {
-    // Clean and normalize the prompt - only use the pure prompt text
-    // Model, style, and quality are handled through metadata filtering and bucketing
-    let normalized = prompt.toLowerCase().trim();
-
-    // Remove all punctuation and normalize whitespace
-    normalized = normalized.replace(/[^\w\s]/g, " ");
-    normalized = normalized.replace(/\s+/g, " ").trim();
-
-    return normalized;
 }
 
 /**

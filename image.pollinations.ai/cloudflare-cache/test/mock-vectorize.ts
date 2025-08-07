@@ -1,17 +1,16 @@
 import { cosineSimilarity } from "./util.ts";
 
 // Our in-memory mock that behaves like a real VectorizeIndex
-export class MockVectorize implements Vectorize {
-    // Store vectors in a simple array
-    private vectors: VectorizeVector[] = [];
+export function createMockVectorize(): Vectorize {
+    let storedVectors: VectorizeVector[] = [];
 
-    async query(
+    async function query(
         vector: number[],
         options: VectorizeQueryOptions,
     ): Promise<VectorizeMatches> {
         const topK = options?.topK ?? 10;
 
-        const scoredVectors = this.vectors
+        const scoredVectors = storedVectors
             .map((storedVector) => ({
                 ...storedVector,
                 score: cosineSimilarity(vector, [...storedVector.values]),
@@ -33,52 +32,67 @@ export class MockVectorize implements Vectorize {
         }));
 
         console.log("[QUERY] Matches:", debugMatches(matches));
-        return { matches, count: this.vectors.length };
+        return { matches, count: matches.length };
     }
 
-    async insert(vectors: VectorizeVector[]): Promise<VectorizeAsyncMutation> {
+    async function insert(
+        vectors: VectorizeVector[],
+    ): Promise<VectorizeAsyncMutation> {
         for (const vector of vectors) {
-            if (this.vectors.some((v) => v.id === vector.id)) {
+            if (storedVectors.some((v) => v.id === vector.id)) {
                 throw new Error(`Vector with ID ${vector.id} already exists.`);
             }
-            this.vectors.push({ ...vector });
+            storedVectors.push({ ...vector });
         }
-        console.log("[INSERT] Vectors:", debugVectors(this.vectors));
-        return { mutationId: `insert-${Date.now().toString}` };
+        console.log("[INSERT] Vectors:", debugVectors(storedVectors));
+        return { mutationId: `insert-${Date.now().toString()}` };
     }
 
-    async upsert(vectors: VectorizeVector[]): Promise<VectorizeAsyncMutation> {
+    async function upsert(
+        vectors: VectorizeVector[],
+    ): Promise<VectorizeAsyncMutation> {
         for (const vector of vectors) {
-            const index = this.vectors.findIndex((v) => v.id === vector.id);
+            const index = storedVectors.findIndex((v) => v.id === vector.id);
             if (index !== -1) {
-                this.vectors[index] = { ...vector }; // Update existing
+                storedVectors[index] = { ...vector }; // Update existing
             } else {
-                this.vectors.push({ ...vector }); // Insert new
+                storedVectors.push({ ...vector }); // Insert new
             }
         }
-        console.log("[UPSERT] Vectors:", debugVectors(this.vectors));
-        return { mutationId: `upsert-${Date.now().toString}` };
+        console.log("[UPSERT] Vectors:", debugVectors(storedVectors));
+        return { mutationId: `upsert-${Date.now().toString()}` };
     }
 
-    async deleteByIds(ids: string[]): Promise<VectorizeAsyncMutation> {
-        this.vectors = this.vectors.filter((v) => !ids.includes(v.id));
-        return { mutationId: `deleteByIds-${Date.now().toString}` };
+    async function deleteByIds(ids: string[]): Promise<VectorizeAsyncMutation> {
+        storedVectors = storedVectors.filter((v) => !ids.includes(v.id));
+        console.log("[DELETE BY IDS] Vectors:", debugVectors(storedVectors));
+        return { mutationId: `deleteByIds-${Date.now().toString()}` };
     }
 
-    async getByIds(ids: string[]): Promise<VectorizeVector[]> {
-        return this.vectors.filter((v) => ids.includes(v.id));
+    async function getByIds(ids: string[]): Promise<VectorizeVector[]> {
+        return storedVectors.filter((v) => ids.includes(v.id));
     }
 
-    public describe(): Promise<VectorizeIndexInfo> {
+    function describe(): Promise<VectorizeIndexInfo> {
         throw new Error("Method not implemented.");
     }
 
-    public queryById(
+    function queryById(
         _vectorId: string,
         _options?: VectorizeQueryOptions,
     ): Promise<VectorizeMatches> {
         throw new Error("Method not implemented.");
     }
+
+    return {
+        query,
+        insert,
+        upsert,
+        deleteByIds,
+        getByIds,
+        describe,
+        queryById,
+    };
 }
 
 function debugMatches(vectors: VectorizeMatch[]) {

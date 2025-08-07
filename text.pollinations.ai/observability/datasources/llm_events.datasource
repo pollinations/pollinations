@@ -1,5 +1,6 @@
 
 DESCRIPTION >
+    -- v2: Added usage detail columns
     Store LLM events with usage metrics, costs, and metadata
 
 SCHEMA >
@@ -8,9 +9,11 @@ SCHEMA >
     `project` String `json:$.proxy_metadata.project` DEFAULT '',
     `environment` String `json:$.proxy_metadata.environment` DEFAULT '',
     `user` String `json:$.user` DEFAULT 'unknown',
+    `referrer` String `json:$.referrer` DEFAULT 'unknown',
     `chat_id` String `json:$.proxy_metadata.chat_id` DEFAULT '',
     `message_id` String `json:$.message_id`,
     `model` LowCardinality(String) `json:$.model` DEFAULT 'unknown',
+    `model_used` Nullable(String) `json:$.model_used`,
     `prompt_tokens` UInt16 `json:$.response.usage.prompt_tokens` DEFAULT 0,
     `completion_tokens` UInt16 `json:$.response.usage.completion_tokens` DEFAULT 0,
     `cached_tokens` UInt16 `json:$.response.usage.cached_tokens` DEFAULT 0,
@@ -39,7 +42,15 @@ SCHEMA >
     `response_id` String `json:$.response.id`,
     `response_object` String `json:$.response.object` DEFAULT 'unknown',
 
-    `embedding` Array(Float32) `json:$.embedding[:]` DEFAULT []
+    `embedding` Array(Float32) `json:$.embedding[:]` DEFAULT [],
+
+    `usage_completion_tokens_details_text_tokens` UInt16 `json:$.response.usage.completion_tokens_details.text_tokens` DEFAULT 0,
+    `usage_completion_tokens_details_audio_tokens` UInt16 `json:$.response.usage.completion_tokens_details.audio_tokens` DEFAULT 0,
+    `usage_completion_tokens` UInt16 `json:$.response.usage.completion_tokens` DEFAULT 0,
+    `usage_prompt_tokens_details_text_tokens` UInt16 `json:$.response.usage.prompt_tokens_details.text_tokens` DEFAULT 0,
+    `usage_prompt_tokens_details_audio_tokens` UInt16 `json:$.response.usage.prompt_tokens_details.audio_tokens` DEFAULT 0,
+    `usage_prompt_tokens_details_cached_tokens` UInt16 `json:$.response.usage.prompt_tokens_details.cached_tokens` DEFAULT 0,
+    `usage_prompt_tokens` UInt16 `json:$.response.usage.prompt_tokens` DEFAULT 0,
 
 ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
@@ -47,4 +58,4 @@ ENGINE_SORTING_KEY "timestamp, organization, project, environment, user, chat_id
 ENGINE_PRIMARY_KEY "timestamp, organization, project"
 
 FORWARD_QUERY > 
-  SELECT timestamp, organization, project, environment, user, chat_id, message_id, model, prompt_tokens, completion_tokens, defaultValueOfTypeName('UInt16') AS cached_tokens, total_tokens, response_time, duration, cost, exception, traceback, response_status, messages, response_choices, proxy_metadata, provider, llm_api_duration_ms, end_time, id, stream, call_type, api_key, log_event_type, cache_hit, response, response_id, response_object, embedding
+  SELECT timestamp, organization, project, environment, user, defaultValueOfTypeName('String') AS referrer, chat_id, message_id, model, model_used, prompt_tokens, completion_tokens, cached_tokens, total_tokens, response_time, duration, cost, exception, traceback, response_status, messages, response_choices, proxy_metadata, provider, llm_api_duration_ms, end_time, id, stream, call_type, api_key, log_event_type, cache_hit, response, response_id, response_object, embedding, usage_completion_tokens_details_text_tokens, usage_completion_tokens_details_audio_tokens, usage_completion_tokens, usage_prompt_tokens_details_text_tokens, usage_prompt_tokens_details_audio_tokens, usage_prompt_tokens_details_cached_tokens, usage_prompt_tokens

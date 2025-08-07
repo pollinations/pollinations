@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import debug from "debug";
-import { findModelByName } from "../availableModels.js";
+import { findModelByName, availableModels } from "../availableModels.js";
 
 /**
  * Get the provider name for a model by looking it up in availableModels
@@ -40,9 +40,54 @@ export async function sendTinybirdEvent(eventData) {
     );
 
     try {
-        // Get the model and its pricing directly
-        const model = findModelByName(eventData.model);
+        // Enhanced model resolution for accurate pricing:
+        // 1. First try to find a model by the actual model used (from API response)
+        // 2. Then try to find a model whose original_name matches the actual model used
+        // 3. Finally fall back to the requested model name
+        // 4. Check if the requested model has a known original_name that matches what was actually used
+        let model = null;
+        let modelForPricing = null;
+        let resolutionMethod = null;
+        
+        // Try to find model by actual model used first
+        if (eventData.modelUsed) {
+            model = findModelByName(eventData.modelUsed);
+            if (model) {
+                modelForPricing = eventData.modelUsed;
+                resolutionMethod = 'direct_match';
+                log(`✅ Found direct match for actual model: ${eventData.modelUsed}`);
+            } else {
+                // Try to find a model whose original_name matches the actual model used
+                model = availableModels.find(m => m.original_name === eventData.modelUsed);
+                if (model) {
+                    modelForPricing = model.name;
+                    resolutionMethod = 'original_name_match';
+                    log(`✅ Found model by original_name match: ${model.name} (original_name: ${model.original_name}) for actual model: ${eventData.modelUsed}`);
+                }
+            }
+        }
+        
+        // If no match found, try the requested model
+        if (!model && eventData.model) {
+            model = findModelByName(eventData.model);
+            if (model) {
+                modelForPricing = eventData.model;
+                resolutionMethod = 'requested_model';
+                
+                // Check if the model has an original_name that matches what was actually used
+                if (eventData.modelUsed && model.original_name === eventData.modelUsed) {
+                    log(`✅ Perfect match: requested model ${eventData.model} has original_name ${model.original_name} matching actual model`);
+                } else if (eventData.modelUsed && eventData.modelUsed !== eventData.model) {
+                    log(`⚠️  Using fallback pricing: requested=${eventData.model}, actual=${eventData.modelUsed}, original_name=${model.original_name || 'null'}`);
+                }
+            }
+        }
+        
         const pricing = model?.pricing;
+        
+        if (!model) {
+            log(`❌ No model found for pricing: requested=${eventData.model}, actual=${eventData.modelUsed}`);
+        }
 
         // Simply reference cost components from the usage object directly
         // without transformations or data manipulation
@@ -55,14 +100,33 @@ export async function sendTinybirdEvent(eventData) {
                 prompt_tokens = 0,
                 completion_tokens = 0,
                 cached_tokens = 0,
+                prompt_tokens_details = {},
+                completion_tokens_details = {},
             } = eventData.usage;
 
-            // Calculate cost using direct references
+            // Extract audio tokens from details if available
+            // Handle both standard and alternative field names, and null details
+            const prompt_audio_tokens = prompt_tokens_details?.audio_tokens || eventData.usage.audio_prompt_tokens || 0;
+            const completion_audio_tokens = completion_tokens_details?.audio_tokens || eventData.usage.audio_completion_tokens || 0;
+            
+            // Calculate text tokens, handling null details gracefully
+            const prompt_text_tokens = prompt_tokens_details?.text_tokens || (prompt_tokens - prompt_audio_tokens);
+            const completion_text_tokens = completion_tokens_details?.text_tokens || (completion_tokens - completion_audio_tokens);
+
+            // Log token breakdown if audio tokens are present
+            if (prompt_audio_tokens > 0 || completion_audio_tokens > 0) {
+                log(`Token breakdown - Prompt: ${prompt_text_tokens} text + ${prompt_audio_tokens} audio = ${prompt_tokens} total`);
+                log(`Token breakdown - Completion: ${completion_text_tokens} text + ${completion_audio_tokens} audio = ${completion_tokens} total`);
+            }
+
+            // Calculate cost properly - text and audio tokens are separate, not additive
             // Pricing in availableModels.js is per million tokens, so we need to divide token counts by 1,000,000
             totalCost =
-                (prompt_tokens / 1000000) * pricing.prompt +
-                (completion_tokens / 1000000) * pricing.completion +
-                (cached_tokens / 1000000) * (pricing.cache || 0);
+                (prompt_text_tokens / 1000000) * (pricing?.prompt_text || 0) +
+                (completion_text_tokens / 1000000) * (pricing?.completion_text || 0) +
+                (cached_tokens / 1000000) * (pricing?.prompt_cache || 0) +
+                (prompt_audio_tokens / 1000000) * (pricing?.prompt_audio || 0) +
+                (completion_audio_tokens / 1000000) * (pricing?.completion_audio || 0);
         }
 
         // Get the provider for the model
@@ -70,8 +134,8 @@ export async function sendTinybirdEvent(eventData) {
         const provider = getProviderNameFromModel(modelName);
         log(`Provider for model ${modelName}: ${provider}`);
 
-        // Construct the event object with defaults and conditionals using spread operator
-        const event = {
+        // Construct the event object: start with a shallow copy so any extra fields (ip, ua, country, etc.) are preserved
+        const tinybirdEvent = {
             // Standard timestamps and identifiers
             start_time: eventData.startTime?.toISOString(),
             end_time: eventData.endTime?.toISOString(),
@@ -82,6 +146,7 @@ export async function sendTinybirdEvent(eventData) {
 
             // Model and provider info
             model: modelName,
+            model_used: eventData.modelUsed, // Track the actual model used by the provider (from response)
             provider,
 
             // Performance metrics
@@ -93,9 +158,8 @@ export async function sendTinybirdEvent(eventData) {
             cost: totalCost,
 
             // User info
-            user: eventData.username || eventData.user || "anonymous",
-            username: eventData.username,
-
+            user: eventData.user,
+            referrer: eventData.referrer || "unknown",
             // Status and event type constants
             standard_logging_object_status: eventData.status,
             log_event_type: "chat_completion",
@@ -125,7 +189,7 @@ export async function sendTinybirdEvent(eventData) {
                       }
                     : {
                           // Minimal response object for failed requests to satisfy schema
-                          id: eventData.requestId || `req_${Date.now()}`,
+                          id: eventData.requestId,
                       },
 
             // Conditionally add error info
@@ -135,12 +199,12 @@ export async function sendTinybirdEvent(eventData) {
             }),
         };
 
+        // Usage data is now automatically extracted by Tinybird from the nested response.usage object
+
         // Simplified user logging with a consistent format
-        const userIdentifier = eventData.username
-            ? `Username: ${eventData.username}`
-            : eventData.user && eventData.user !== "anonymous"
-              ? `UserID: ${eventData.user}`
-              : "Anonymous user";
+        const userIdentifier = eventData.user
+            ? `UserID: ${eventData.user}`
+            : "Anonymous user";
 
         log(
             `Sending telemetry to Tinybird for ${eventData.model} call - ${userIdentifier}${eventData.tier ? `, Tier: ${eventData.tier}` : ""}`,
@@ -149,6 +213,17 @@ export async function sendTinybirdEvent(eventData) {
         // Create an abort controller for timeout
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+        // Log the complete payload being sent to Tinybird for debugging
+        log(`📤 TINYBIRD PAYLOAD - Full event data being sent:`);
+        log(`   🎯 model: "${tinybirdEvent.model}"`);
+        log(`   🔧 model_used: "${tinybirdEvent.model_used}"`);
+        log(`   👤 user: "${tinybirdEvent.user}"`);
+        log(`   ⏱️  duration: ${tinybirdEvent.duration}ms`);
+        log(`   💰 cost: $${tinybirdEvent.cost}`);
+        log(`   📊 usage:`, tinybirdEvent.usage || 'N/A');
+        log(`   🏢 provider: "${tinybirdEvent.provider}"`);
+        log(`   📋 Full JSON payload:`, JSON.stringify(tinybirdEvent, null, 2));
 
         try {
             const response = await fetch(
@@ -159,7 +234,7 @@ export async function sendTinybirdEvent(eventData) {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${TINYBIRD_API_KEY}`,
                     },
-                    body: JSON.stringify(event),
+                    body: JSON.stringify(tinybirdEvent),
                     signal: controller.signal,
                 },
             );

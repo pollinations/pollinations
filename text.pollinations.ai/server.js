@@ -91,7 +91,7 @@ app.use((req, res, next) => {
 });
 
 // Remove the custom JSON parsing middleware and use the standard bodyParser
-app.use(bodyParser.json({ limit: "5mb" }));
+app.use(bodyParser.json({ limit: "20mb" }));
 app.use(cors());
 // New route handler for root path
 app.get("/", (req, res) => {
@@ -199,7 +199,10 @@ async function handleRequest(req, res, requestData) {
 		// Add user info to request data - using authResult directly as a thin proxy
 		const requestWithUserInfo = {
 			...finalRequestData,
-			userInfo: authResult,
+			userInfo: {
+				...authResult,
+				referrer: requestData.referrer || "unknown",
+			},
 		};
 
 		const completion = await generateTextBasedOnModel(
@@ -393,7 +396,7 @@ export async function sendErrorResponse(
 				referrer: requestData.referrer || "unknown",
 				messageCount: requestData.messages ? requestData.messages.length : 0,
 				totalMessageLength: requestData.messages
-					? requestData.messages.reduce(
+					? requestData.messages?.reduce?.(
 							(total, msg) =>
 								total +
 								(typeof msg?.content === "string" ? msg.content.length : 0),

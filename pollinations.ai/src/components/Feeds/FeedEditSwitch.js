@@ -1,7 +1,7 @@
 import React from "react";
 import { GeneralButton } from "../GeneralButton";
 import { Colors, Fonts } from "../../config/global";
-import { noLink } from "../../config/llmTransforms";
+import { doNotRephrase, noLink, translate } from "../../config/llmTransforms";
 import { Box } from "@mui/material";
 import { LLMTextManipulator } from "../LLMTextManipulator";
 
@@ -45,7 +45,7 @@ export function FeedEditSwitch({
             >
                 <LLMTextManipulator
                     text={feedModeText1}
-                    transforms={[noLink]}
+                    transforms={[noLink, doNotRephrase]}
                 />
             </GeneralButton>
             <GeneralButton
@@ -61,7 +61,7 @@ export function FeedEditSwitch({
             >
                 <LLMTextManipulator
                     text={feedModeText2}
-                    transforms={[noLink]}
+                    transforms={[noLink, doNotRephrase]}
                 />
             </GeneralButton>
         </Box>

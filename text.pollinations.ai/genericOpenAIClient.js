@@ -309,10 +309,12 @@ export function createOpenAICompatibleClient(config) {
             );
             const completionTime = Date.now() - startTime;
 
+            const modelUsed = data.model || modelName;
+            
             log(`[${requestId}] Successfully generated text`, {
                 timestamp: new Date().toISOString(),
                 completionTimeMs: completionTime,
-                modelUsed: data.model || modelName,
+                modelUsed,
                 // Pass the complete usage object instead of extracting fields
                 usage: data.usage,
             });
@@ -324,6 +326,7 @@ export function createOpenAICompatibleClient(config) {
                 endTime,
                 requestId,
                 model: normalizedOptions.model, // Use friendly model name from request options
+                modelUsed, // Track the actual model used by the provider
                 duration: completionTime,
                 status: "success",
                 // Pass the entire usage object rather than individual fields
@@ -337,6 +340,7 @@ export function createOpenAICompatibleClient(config) {
                     normalizedOptions.userInfo?.username ||
                     normalizedOptions.userInfo?.userId ||
                     "anonymous",
+                referrer: normalizedOptions.userInfo?.referrer || "unknown",
                 organization: normalizedOptions.userInfo?.userId
                     ? "pollinations"
                     : undefined,
@@ -413,6 +417,7 @@ export function createOpenAICompatibleClient(config) {
                     normalizedOptions.userInfo?.userId ||
                     "anonymous",
                 username: normalizedOptions.userInfo?.username, // Explicitly include username field
+                referrer: normalizedOptions.userInfo?.referrer || "unknown",
                 organization: normalizedOptions.userInfo?.userId
                     ? "pollinations"
                     : undefined,

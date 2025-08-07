@@ -1267,10 +1267,16 @@ For **backend services, scripts, and server applications**, tokens provide the h
 
 The Bearer authentication scheme is the recommended approach for backend applications, especially when integrating with our OpenAI-compatible endpoints:
 
-```http
-GET /your-endpoint HTTP/1.1
-Host: api.pollinations.ai
-Authorization: Bearer YOUR_TOKEN
+```sh
+curl https://text.pollinations.ai/openai \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "model": "openai",
+    "messages": [
+      {"role": "user", "content": "Tell me about yourself."}
+    ]
+  }'  
 ```
 
 ### Tiers & Rate Limits

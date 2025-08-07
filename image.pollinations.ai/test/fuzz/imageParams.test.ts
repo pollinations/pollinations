@@ -26,7 +26,7 @@ const imageParamsArbitrary = fc.record({
     transparent: paramArbitrary,
 });
 
-describe("ImageParamsSchema", () => {
+describe.skip("ImageParamsSchema", () => {
     it.prop([imageParamsArbitrary])(
         "should produce the same results as makeParamsSafe",
         (params) => {

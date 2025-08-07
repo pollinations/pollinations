@@ -11,7 +11,6 @@ import {
     setHttpMetadataHeaders,
 } from "../util.ts";
 import { buildMetadata, createVectorizeStore } from "../vector-store.ts";
-import { normalizePromptForEmbedding } from "../embedding-service.ts";
 
 type Env = {
     Bindings: Cloudflare.Env;
@@ -69,12 +68,11 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
         );
 
         const incomingPrompt = prompt;
-        const normalizedIncomingPrompt = normalizePromptForEmbedding(prompt);
-        const nearestPrompt = promptFromCacheKey(nearestCacheKey);
+        const nearestPromptReconstructed = promptFromCacheKey(nearestCacheKey);
+
         console.log("[SEMANTIC] Evaluating:", {
             incomingPrompt,
-            normalizedIncomingPrompt,
-            nearestPrompt,
+            nearestPromptReconstructed,
             nearestCacheKey,
             similarity: nearestSimilarity,
             variableThreshold: threshold,

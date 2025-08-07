@@ -1,5 +1,10 @@
 import { createMiddleware } from "hono/factory";
-import type { Env } from "../env.ts";
+
+type Env = {
+    Variables: {
+        connectingIp: string;
+    };
+};
 
 export const setConnectingIp = createMiddleware<Env>(async (c, next) => {
     const ip =

@@ -48,11 +48,13 @@ const MODEL_MAPPING = {
 	"mistral-roblox": "@cf/mistralai/mistral-small-3.1-24b-instruct", // Cloudflare Mistral Small
 	"mistral-nemo-roblox": "mistralai/Mistral-Nemo-Instruct-2407", // Nebius Mistral Nemo
 	'gemma-roblox': 'google/gemma-2-9b-it-fast', // Nebius Gemma 2 9B IT Fast
+	"qwen": "Qwen/Qwen3-30B-A3B", // Nebius Qwen 3 30B A3B
 	// Intelligence.io models
 	glm: "THUDM/glm-4-9b-chat", // Intelligence.io GLM-4 9B Chat
 	// Modal models
 	hormoz: "Hormoz-8B",
 	// OpenRouter models
+	horizon: "openrouter/horizon-beta",
 	//'claude': 'anthropic/claude-3.5-haiku-20241022',
 	// Cloudflare models
 	//'qwen-qwq': '@cf/qwen/qwq-32b',
@@ -112,6 +114,7 @@ const SYSTEM_PROMPTS = {
 	"mistral-roblox": BASE_PROMPTS.conversational,
 	"mistral-nemo-roblox": BASE_PROMPTS.conversational,
 	'gemma-roblox': BASE_PROMPTS.conversational,
+	qwen: BASE_PROMPTS.conversational,
 	"qwen-coder": BASE_PROMPTS.coding,
 	//'gemini-thinking': BASE_PROMPTS.gemini + ' When appropriate, show your reasoning step by step.',
 	// Intelligence.io models
@@ -119,6 +122,7 @@ const SYSTEM_PROMPTS = {
 	// Modal models
 	hormoz: BASE_PROMPTS.hormoz,
 	// OpenRouter models
+	horizon: BASE_PROMPTS.conversational,
 	//'claude': 'You are Claude, a helpful AI assistant created by Anthropic. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.',
 	// Cloudflare models
 	//'qwen-qwq': BASE_PROMPTS.conversational,
@@ -599,6 +603,10 @@ export const portkeyConfig = {
 			model: "google/gemma-2-9b-it-fast",
 			'max-tokens': 1024,
 		}),
+	"Qwen/Qwen3-30B-A3B": () =>
+		createNebiusModelConfig({
+			model: "Qwen/Qwen3-30B-A3B",
+		}),
 	// Intelligence.io model configurations
 	"THUDM/glm-4-9b-chat": () =>
 		createIntelligenceModelConfig({
@@ -645,6 +653,8 @@ export const portkeyConfig = {
 	}),
 	"DeepSeek-V3-0324": () => createDeepSeekModelConfig(),
 	"MAI-DS-R1": () => createDeepSeekReasoningConfig(),
+	// OpenRouter models
+	"openrouter/horizon-beta": () => createOpenRouterModelConfig({ model: "openrouter/horizon-beta" }),
 	// Custom endpoints
 	"elixposearch-endpoint": () => createElixpoSearchModelConfig(),
 };

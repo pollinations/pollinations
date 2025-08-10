@@ -52,7 +52,7 @@ Next, review the [API documentation](https://github.com/pollinations/pollination
 - Code examples in multiple languages
 - Rate limits and usage guidelines
 - OpenAI-compatible interfaces
-- Referrer requirements and Special Bee program
+- Referrer requirements and tier system
 - Real-time feeds API for monitoring generations
 
 Understanding these documents will ensure you can accurately represent Pollinations.AI's capabilities when integrating with repositories and answer any questions that might arise during the PR review process.

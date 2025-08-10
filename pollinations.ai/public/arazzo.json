@@ -98,8 +98,8 @@
                     "in": "query"
                 },
                 {
-                    "name": "special_bee",
-                    "description": "Special Bee program identifier for higher rate limits",
+                    "name": "tier",
+                    "description": "Tier identifier for higher rate limits",
                     "required": false,
                     "type": "string",
                     "in": "query"
@@ -205,8 +205,8 @@
                     "in": "query"
                 },
                 {
-                    "name": "special_bee",
-                    "description": "Special Bee program identifier for higher rate limits",
+                    "name": "tier",
+                    "description": "Tier identifier for higher rate limits",
                     "required": false,
                     "type": "string",
                     "in": "query"
@@ -277,8 +277,8 @@
                     "in": "query"
                 },
                 {
-                    "name": "special_bee",
-                    "description": "Special Bee program identifier for higher rate limits",
+                    "name": "tier",
+                    "description": "Tier identifier for higher rate limits",
                     "required": false,
                     "type": "string",
                     "in": "query"

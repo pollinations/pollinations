@@ -81,7 +81,7 @@ export const generateHTML = () => `<!DOCTYPE html>
                             <b><i>Want to <span style="color:black;">upgrade</span> to <span style="color:#ff61d8;">Flower</span> or <span style="color:#ffb300;">Nectar</span> tier?</i></b>
                             <br>
                             <br>
-                            <a href="https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml" target="_blank" class="cta-hole">Request access!</a>
+                            <span style="color:#666; font-style:italic;">Higher tier access is currently limited during beta.</span>
                         </p>
                     </div>
                 </div>

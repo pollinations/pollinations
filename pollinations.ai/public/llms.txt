@@ -61,7 +61,7 @@ Usage-Guideline: No API keys or authentication required
 Usage-Guideline: Free to use for all purposes
 Usage-Guideline: Please respect content policies and avoid generating harmful content
 Usage-Guideline: Consider adding attribution when using generated content
-Usage-Guideline: Special Bee program available for domain verification and referrer recognition
+Usage-Guideline: Tier system available for domain verification and referrer recognition
 
 # Contact Information
 Contact: https://discord.gg/k9F7SyTgqn

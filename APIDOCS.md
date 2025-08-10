@@ -1292,15 +1292,14 @@ Pollinations.AI offers different access tiers, each with varying rate limits and
 
 **How to Access Tiers:**
 1. Get access to **Seed** tier: Visit ***[auth.pollinations.ai](https://auth.pollinations.ai)*** to register your application's referrer or create a token.
-2. Get tier **upgrade** (to Flower or Nectar): Submit a ***[Special Bee request](https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml)*** or apply directly through [auth.pollinations.ai](https://auth.pollinations.ai).
+2. Get tier **upgrade** (to Flower or Nectar): Apply directly through [auth.pollinations.ai](https://auth.pollinations.ai). Higher tiers are currently available in limited beta.
 
-### Special Bee (Tier Upgrade) ✅🐝🍯
+### Tier Upgrades
 
-**Special Bee requests are for upgrading to Flower or Nectar tiers**, unlocking unlimited usage and State-of-the-Art (SOTA) models for your application.
+**Higher tiers (Flower and Nectar) are available in limited beta**, unlocking unlimited usage and State-of-the-Art (SOTA) models for your application.
 
-**Two ways to request tier upgrade:**
-1. **Self-serve**: Visit [auth.pollinations.ai](https://auth.pollinations.ai) to register your domain and request a tier upgrade.
-2. **GitHub request**: For special cases or custom arrangements, [Submit a Special Bee Request](https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml).
+**How to request tier upgrade:**
+Visit [auth.pollinations.ai](https://auth.pollinations.ai) to register your domain and request a tier upgrade.
 
 **Flower/Nectar tier benefits:**
 - Less limited rate limits → **Unlimited usage** (Nectar) / Significantly higher (Flower)

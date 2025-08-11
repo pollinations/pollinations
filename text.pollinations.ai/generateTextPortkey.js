@@ -22,6 +22,9 @@ const MODEL_MAPPING = {
 	"openai": "gpt-4.1-nano",
 	"openai-large": "azure-gpt-4.1",
 	"openai-roblox": "gpt-4.1-nano",
+	"gpt": "azure-gpt-5",
+	"gpt5": "azure-gpt-5",
+	"gpt-5-nano": "gpt-5-nano",
 	//'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
 	"openai-reasoning": "o3", // Maps to custom MonoAI endpoint
 	searchgpt: "gpt-4o-mini-search-preview", // Maps to custom MonoAI endpoint
@@ -65,7 +68,7 @@ const MODEL_MAPPING = {
 	elixposearch: "elixposearch-endpoint",
 	// AWS Bedrock Lambda endpoint
 	claudyclaude: "eu.anthropic.claude-sonnet-4-20250514-v1:0",
-	"nova-fast": "eu.amazon.nova-micro-v1:0",
+	"nova-fast": "amazon.nova-micro-v1:0",
 };
 
 // Base prompts that can be reused across different models
@@ -101,6 +104,9 @@ const SYSTEM_PROMPTS = {
 	openai: BASE_PROMPTS.conversational,
 	"openai-large": BASE_PROMPTS.conversational,
 	"openai-roblox": BASE_PROMPTS.conversational,
+	"gpt": BASE_PROMPTS.conversational,
+	"gpt5": BASE_PROMPTS.conversational,
+	"gpt-5-nano": BASE_PROMPTS.conversational,
 	"openai-reasoning": BASE_PROMPTS.conversational,
 	searchgpt: BASE_PROMPTS.conversational,
 	// Grok model
@@ -268,7 +274,7 @@ const baseNebiusConfig = {
 	"custom-host": "https://api.studio.nebius.com/v1",
 	authKey: process.env.NEBIUS_API_KEY,
 	"max-tokens": 8192,
-	temperature: 0.7,
+	// temperature: 0.7,
 };
 
 // ElixpoSearch custom endpoint configuration
@@ -410,7 +416,7 @@ function createIntelligenceModelConfig(additionalConfig = {}) {
 // Base configuration for AWS Bedrock Lambda endpoint
 const baseBedrockLambdaConfig = {
 	provider: "openai",
-	"custom-host": "https://wy52nbh46eujlxcz3v55sxodgm0raail.lambda-url.eu-north-1.on.aws/api/v1",
+	"custom-host": "https://s4gu3klsuhlqkol3x3qq6bv6em0cwqnu.lambda-url.us-east-1.on.aws/api/v1",
 	authKey: process.env.AWS_BEARER_TOKEN_BEDROCK,
 	// "max-tokens": 4096,
 	// temperature: 0.7,
@@ -444,6 +450,18 @@ export const portkeyConfig = {
 			process.env.AZURE_OPENAI_NANO_API_KEY,
 			process.env.AZURE_OPENAI_NANO_ENDPOINT,
 			"gpt-4.1-nano",
+		),
+	"gpt-5-nano": () =>
+		createAzureModelConfig(
+			process.env.AZURE_OPENAI_NANO_5_API_KEY,
+			process.env.AZURE_OPENAI_NANO_5_ENDPOINT,
+			"gpt-5-nano",
+		),
+	"azure-gpt-5": () =>
+		createAzureModelConfig(
+			process.env.AZURE_OPENAI_GPT_5_API_KEY,
+			process.env.AZURE_OPENAI_GPT_5_ENDPOINT,
+			"gpt-5",
 		),
 	"gpt-4.1-nano-roblox": () => {
 		// Randomly select one of the 3 roblox endpoints
@@ -713,7 +731,7 @@ export const portkeyConfig = {
 	"eu.anthropic.claude-sonnet-4-20250514-v1:0": () => createBedrockLambdaModelConfig({
 		model: "eu.anthropic.claude-sonnet-4-20250514-v1:0",
 	}),
-	"eu.amazon.nova-micro-v1:0": () => createBedrockLambdaModelConfig({
+	"amazon.nova-micro-v1:0": () => createBedrockLambdaModelConfig({
 		model: "awsbedrock/amazon.nova-micro-v1:0",
 	}),
 };
@@ -747,10 +765,10 @@ export const generateTextPortkey = createOpenAICompatibleClient({
 	},
 
 	// Transform request to add Azure-specific headers based on the model
-	transformRequest: async (requestBody) => {
+	transformRequest: async (requestBody, originalModelName) => {
 		try {
-			// Get the model name from the request (already mapped by genericOpenAIClient)
-			const modelName = requestBody.model; // This is already mapped by genericOpenAIClient
+			// Get the mapped model name from the request (already mapped by genericOpenAIClient)
+			const modelName = requestBody.model; // This is the mapped model name for the API
 
 			// Get the model configuration object
 			const configFn = portkeyConfig[modelName];
@@ -781,9 +799,10 @@ export const generateTextPortkey = createOpenAICompatibleClient({
 			requestBody._additionalHeaders = additionalHeaders;
 
 			// Check if the model has a specific maxInputChars limit in availableModels.js
-			// Use the model name from requestBody instead of options which isn't available here
-			const modelConfig = findModelByName(requestBody.model);
-
+			// Use the original model name to look up the configuration in availableModels.js
+			const modelConfig = findModelByName(originalModelName || requestBody.model);
+		
+			log("Model config:", modelConfig);
 			// Check model-specific character limit (only if model defines maxInputChars)
 			if (modelConfig && modelConfig.maxInputChars) {
 				const totalChars = countMessageCharacters(requestBody.messages);
@@ -798,6 +817,35 @@ export const generateTextPortkey = createOpenAICompatibleClient({
 						`Input text exceeds maximum length of ${modelConfig.maxInputChars} characters for model ${requestBody.model} (current: ${totalChars})`,
 					);
 				}
+			}
+
+			// Handle Bedrock models requirement: conversations must start with user message after system messages
+			// AWS Bedrock requires the first non-system message to be a user message and doesn't accept empty content
+			if (modelConfig && modelConfig.provider === 'bedrock') {
+				// First, filter out all empty user messages (Bedrock doesn't accept empty content)
+				requestBody.messages = requestBody.messages.filter(msg => {
+					// remove messages with empty content
+					if (msg.content && typeof msg.content === 'string' && msg.content.trim() === '') {
+						return false;
+					}
+					return true;
+				});
+				
+				// Then, find the first non-system message and ensure it's a user message
+				const firstNonSystemIndex = requestBody.messages.findIndex(msg => msg.role !== 'system');
+				
+				if (firstNonSystemIndex !== -1 && requestBody.messages[firstNonSystemIndex].role !== 'user') {
+					log(`Bedrock model detected (${originalModelName}), inserting placeholder user message before first non-system message`);
+					
+					// Insert a placeholder user message before the first non-system message
+					requestBody.messages = [
+						...requestBody.messages.slice(0, firstNonSystemIndex), // All system messages
+						{ role: 'user', content: '-' }, // Insert placeholder user message
+						...requestBody.messages.slice(firstNonSystemIndex) // All remaining messages
+					];
+				}
+				
+				log(`Final Bedrock messages: roles are [${requestBody.messages.map(m => m.role).join(', ')}]`);
 			}
 
 			// For models with specific token limits or those using defaults
@@ -843,17 +891,13 @@ export const generateTextPortkey = createOpenAICompatibleClient({
 				requestBody.model = "gemini-2.5-flash-lite";
 				// Add google_search tool for grounding with Google Search
 				// This enables real-time search results grounding for Gemini responses
-				if (!requestBody.tools) {
-					requestBody.tools = [];
-				}
 				// Add the google_search tool (for newer models like gemini-2.0-flash-001)
-				// Note: older models use google_search_retrieval instead
-				requestBody.tools.push({
+				requestBody.tools = [{
 					type: "function",
 					function: {
 						name: "google_search"
 					}
-				});
+				}];
 			}
 
 			// Apply model-specific parameter filtering

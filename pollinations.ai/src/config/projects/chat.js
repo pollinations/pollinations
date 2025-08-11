@@ -4,6 +4,15 @@
  */
 
 export const chatProjects = [
+{
+  name: "EasyGen",
+  url: "https://easygenme.netlify.app/",
+  description: "AI-powered tool that generates Mermaid diagrams and flowcharts from plain-language prompts. Offers instant preview, editable source, and supports multiple diagram types for developers, designers, and educators.",
+  author: "@Ellweb3",
+  submissionDate: "2025-08-11",
+  language: "en",
+  order: 1
+},
   {
     name: "Botzy AI 🇵🇰",
     url: "https://botzy.hexabiz.com.pk",

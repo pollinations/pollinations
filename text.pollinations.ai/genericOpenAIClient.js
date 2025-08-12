@@ -354,6 +354,8 @@ export function createOpenAICompatibleClient(config) {
 
             // Use custom response formatter if provided
             // Pass only choices[0] to formatResponse, reconstruct after
+
+
             const originalChoice =
                 data.choices && data.choices[0] ? data.choices[0] : {};
             const formattedChoice = formatResponse

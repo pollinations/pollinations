@@ -137,7 +137,11 @@ export async function sendTinybirdEvent(eventData) {
 
             // Status and caching flags
             standard_logging_object_status: eventData.status,
-            cache_hit: false,
+            cache_hit: eventData.cache_hit || false,
+            cache_semantic_threshold: eventData.cache_semantic_threshold || 0,
+            cache_semantic_similarity: eventData.cache_semantic_similarity || 0,
+            cache_key: eventData.cache_key || '',
+            cf_ray: eventData.cf_ray || '',
             stream: Boolean(eventData.stream),
 
             // Minimal proxy metadata (only environment is ingested)

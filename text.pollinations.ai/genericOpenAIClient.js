@@ -341,6 +341,7 @@ export function createOpenAICompatibleClient(config) {
                     normalizedOptions.userInfo?.userId ||
                     "anonymous",
                 referrer: normalizedOptions.userInfo?.referrer || "unknown",
+                cf_ray: normalizedOptions.userInfo?.cf_ray || "",
                 organization: normalizedOptions.userInfo?.userId
                     ? "pollinations"
                     : undefined,
@@ -418,6 +419,7 @@ export function createOpenAICompatibleClient(config) {
                     "anonymous",
                 username: normalizedOptions.userInfo?.username, // Explicitly include username field
                 referrer: normalizedOptions.userInfo?.referrer || "unknown",
+                cf_ray: normalizedOptions.userInfo?.cf_ray || "",
                 organization: normalizedOptions.userInfo?.userId
                     ? "pollinations"
                     : undefined,

@@ -31,10 +31,7 @@ export async function sendTinybirdEvent(eventData) {
         return;
     }
 
-    // Log the friendly model name we received
-    log(
-        `Sending telemetry to Tinybird for model: ${eventData.model || "unknown"}`,
-    );
+
 
     try {
         // Resolve model and pricing using enhanced fallback logic
@@ -81,12 +78,7 @@ export async function sendTinybirdEvent(eventData) {
             if (isTextOnlyModality) {
                 prompt_text_tokens = prompt_tokens;
                 completion_text_tokens = completion_tokens;
-                log(`Text-only modality detected - using total token counts`);
             }
-
-            // Log token breakdown for debugging
-            log(`Token breakdown - Prompt: ${prompt_text_tokens} text + ${prompt_audio_tokens} audio + ${prompt_cached_tokens} cached = ${prompt_tokens} total`);
-            log(`Token breakdown - Completion: ${completion_text_tokens} text + ${completion_audio_tokens} audio = ${completion_tokens} total`);
 
             // Set token counts
             tokenData.completion_text_token_generated = completion_text_tokens;
@@ -149,70 +141,81 @@ export async function sendTinybirdEvent(eventData) {
                 environment:
                     eventData.environment || process.env.NODE_ENV || "development",
             },
+
+            // Include raw choices data for moderation detection (not sent to text_events)
+            choices: eventData.choices,
         };
 
         // Token counts, pricing, and calculated total cost are sent as top-level fields
 
-        // Simplified user logging with a consistent format
-        const userIdentifier = eventData.user
-            ? `UserID: ${eventData.user}`
-            : "Anonymous user";
 
-        log(
-            `Sending telemetry to Tinybird for ${eventData.model} call - ${userIdentifier}${eventData.tier ? `, Tier: ${eventData.tier}` : ""}`,
-        );
 
         // Create an abort controller for timeout
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-        // Log the complete payload being sent to Tinybird for debugging
-        log(`📤 TINYBIRD PAYLOAD - Full event data being sent:`);
-        log(`   🎯 model: "${tinybirdEvent.model}"`);
-        log(`   🔧 model_used: "${tinybirdEvent.model_used}"`);
-        log(`   👤 user: "${tinybirdEvent.user}"`);
-        log(
-            `   ⏱️  response_time: ${tinybirdEvent.response_time}ms`,
-        );
-        log(`   🔢 tokens: prompt_text=${tokenData.prompt_text_token_generated}, completion_text=${tokenData.completion_text_token_generated}, cached=${tokenData.prompt_cached_token_generated}`);
-        log(`   💰 prices: prompt_text=${tokenData.prompt_text_token_price}, completion_text=${tokenData.completion_text_token_price}`);
-        log(`   💵 total_cost: $${totalCost.toFixed(6)}`);
-        log(`   📊 token_data:`, tokenData);
-        log(`   🏢 provider: "${tinybirdEvent.provider}"`);
-        // Only log full payload in development to avoid performance impact
-        if (process.env.NODE_ENV === 'development') {
-            log(`   📋 Full JSON payload:`, JSON.stringify(tinybirdEvent, null, 2));
-        } else {
-            log(`   📋 Payload summary: model=${tinybirdEvent.model}, cost=${tinybirdEvent.cost}, tokens=${tinybirdEvent.completion_text_token_generated + tinybirdEvent.prompt_text_token_generated}`);
-        }
+        // Log summary for telemetry tracking
+        log(`📤 Sending telemetry: ${tinybirdEvent.model} | $${totalCost.toFixed(6)} | ${tinybirdEvent.completion_text_token_generated + tinybirdEvent.prompt_text_token_generated} tokens`);
+
+        // Helper function to send data to Tinybird endpoint
+        const sendToTinybird = async (endpoint, data, controller, description = "telemetry") => {
+            const response = await fetch(`${TINYBIRD_API_URL}/v0/events?name=${endpoint}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${TINYBIRD_API_KEY}`,
+                },
+                body: JSON.stringify(data),
+                signal: controller.signal,
+            });
+
+            const responseText = await response.text().catch(() => "Could not read response text");
+            
+            if (!response.ok) {
+                errorLog(`Failed to send ${description} to Tinybird: ${response.status} ${responseText}`);
+                return false;
+            }
+            return true;
+        };
 
         try {
-            const response = await fetch(
-                `${TINYBIRD_API_URL}/v0/events?name=text_events`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${TINYBIRD_API_KEY}`,
-                    },
-                    body: JSON.stringify(tinybirdEvent),
-                    signal: controller.signal,
-                },
-            );
+            // Send main telemetry data (exclude choices to avoid mixing moderation fields)
+            const { choices: _omitChoices, ...textEventsEvent } = tinybirdEvent;
+            const success = await sendToTinybird("text_events", textEventsEvent, controller);
+            
+            if (success) {
+                log(`✅ Telemetry sent: ${modelName}`);
+            }
 
-            const responseText = await response
-                .text()
-                .catch(() => "Could not read response text");
+            // Send moderation data if present
+            const firstChoice = tinybirdEvent.choices?.[0];
+            const cfrDirect = firstChoice?.content_filter_results;
+            const cfrInMessage = firstChoice?.message?.content_filter_results;
 
-            if (!response.ok) {
-                errorLog(
-                    `Failed to send telemetry to Tinybird: ${response.status} ${responseText}`,
-                );
-            } else {
-                log(`Tinybird response: ${response.status} ${responseText}`);
-                log(
-                    `Successfully sent telemetry event for model: ${modelName}, provider: ${provider}`,
-                );
+            if (cfrDirect || cfrInMessage) {
+                log(`🛡️ Moderation data detected, sending to text_moderation datasource`);
+
+                // Normalize content_filter_results to choice level if needed
+                const moderationEvent = !cfrDirect && cfrInMessage && firstChoice ? {
+                    ...tinybirdEvent,
+                    choices: [{ ...firstChoice, content_filter_results: cfrInMessage }, ...tinybirdEvent.choices.slice(1)]
+                } : tinybirdEvent;
+
+                // Use separate controller for moderation request
+                const moderationController = new AbortController();
+                const moderationTimeoutId = setTimeout(() => moderationController.abort(), 5000);
+                
+                try {
+                    const moderationSuccess = await sendToTinybird("text_moderation", moderationEvent, moderationController, "moderation telemetry");
+                    if (moderationSuccess) {
+                        log(`🛡️ Moderation data sent: ${modelName}`);
+                    }
+                } catch (modErr) {
+                    const msg = modErr.name === 'AbortError' ? 'Moderation telemetry request timed out after 5 seconds' : `Fetch error when sending moderation telemetry to Tinybird: ${modErr.message}`;
+                    errorLog(msg);
+                } finally {
+                    clearTimeout(moderationTimeoutId);
+                }
             }
         } catch (fetchError) {
             const errorMessage =

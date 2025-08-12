@@ -324,13 +324,14 @@ export function createOpenAICompatibleClient(config) {
             sendTinybirdEvent({
                 startTime: new Date(startTime),
                 endTime,
-                requestId,
-                model: normalizedOptions.model, // Use friendly model name from request options
-                modelUsed, // Track the actual model used by the provider
+                model: normalizedOptions.model,
+                modelUsed: data.model,
                 duration: completionTime,
                 status: "success",
                 // Pass the entire usage object rather than individual fields
                 usage: data.usage,
+                // Include raw response data for moderation detection
+                choices: data.choices,
                 project: "text.pollinations.ai",
                 environment: process.env.NODE_ENV || "production",
                 // Spread all user information for better data retention
@@ -352,6 +353,8 @@ export function createOpenAICompatibleClient(config) {
                     err,
                 );
             });
+
+
 
             // Use custom response formatter if provided
             // Pass only choices[0] to formatResponse, reconstruct after

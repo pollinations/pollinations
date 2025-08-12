@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import debug from "debug";
 import { findModelByName, availableModels } from "../availableModels.js";
+import { calculateTotalCost } from "./costCalculator.js";
 
 /**
  * Get the provider name for a model by looking it up in availableModels
@@ -11,6 +12,8 @@ function getProviderNameFromModel(modelName) {
     const model = findModelByName(modelName);
     return model?.provider || "Unknown";
 }
+
+
 
 // Load environment variables
 dotenv.config();
@@ -89,117 +92,111 @@ export async function sendTinybirdEvent(eventData) {
             log(`❌ No model found for pricing: requested=${eventData.model}, actual=${eventData.modelUsed}`);
         }
 
-        // Simply reference cost components from the usage object directly
-        // without transformations or data manipulation
-        let totalCost = 0;
+        // Extract token counts and pricing information
+        let tokenData = {
+            completion_text_token_generated: 0,
+            completion_audio_token_generated: 0,
+            prompt_text_token_generated: 0,
+            prompt_audio_token_generated: 0,
+            prompt_cached_token_generated: 0,
+            completion_text_token_price: 0,
+            completion_audio_token_price: 0,
+            prompt_text_token_price: 0,
+            prompt_audio_token_price: 0,
+            prompt_cached_token_price: 0,
+        };
 
-        // Only calculate cost if we absolutely need to for downstream services
         if (eventData.usage) {
             // Access usage data directly following the thin proxy principle
             const {
                 prompt_tokens = 0,
                 completion_tokens = 0,
-                cached_tokens = 0,
                 prompt_tokens_details = {},
                 completion_tokens_details = {},
             } = eventData.usage;
 
-            // Extract audio tokens from details if available
-            // Handle both standard and alternative field names, and null details
+            // Extract tokens from details, with fallbacks for different API formats
             const prompt_audio_tokens = prompt_tokens_details?.audio_tokens || eventData.usage.audio_prompt_tokens || 0;
             const completion_audio_tokens = completion_tokens_details?.audio_tokens || eventData.usage.audio_completion_tokens || 0;
+            const prompt_cached_tokens = prompt_tokens_details?.cached_tokens || 0;
             
-            // Calculate text tokens, handling null details gracefully
-            const prompt_text_tokens = prompt_tokens_details?.text_tokens || (prompt_tokens - prompt_audio_tokens);
-            const completion_text_tokens = completion_tokens_details?.text_tokens || (completion_tokens - completion_audio_tokens);
+            // Extract text tokens - prefer explicit text_tokens, fallback to calculation
+            let prompt_text_tokens = prompt_tokens_details?.text_tokens ?? (prompt_tokens - prompt_audio_tokens);
+            let completion_text_tokens = completion_tokens_details?.text_tokens ?? (completion_tokens - completion_audio_tokens);
 
-            // Log token breakdown if audio tokens are present
-            if (prompt_audio_tokens > 0 || completion_audio_tokens > 0) {
-                log(`Token breakdown - Prompt: ${prompt_text_tokens} text + ${prompt_audio_tokens} audio = ${prompt_tokens} total`);
-                log(`Token breakdown - Completion: ${completion_text_tokens} text + ${completion_audio_tokens} audio = ${completion_tokens} total`);
+            // Special case: If text is the only modality (no audio, no cached tokens), 
+            // use the total token counts to ensure we capture all text tokens
+            const isTextOnlyModality = prompt_audio_tokens === 0 && completion_audio_tokens === 0 && prompt_cached_tokens === 0;
+            if (isTextOnlyModality) {
+                prompt_text_tokens = prompt_tokens;
+                completion_text_tokens = completion_tokens;
+                log(`Text-only modality detected - using total token counts`);
             }
 
-            // Calculate cost properly - text and audio tokens are separate, not additive
-            // Pricing in availableModels.js is per million tokens, so we need to divide token counts by 1,000,000
-            totalCost =
-                (prompt_text_tokens / 1000000) * (pricing?.prompt_text || 0) +
-                (completion_text_tokens / 1000000) * (pricing?.completion_text || 0) +
-                (cached_tokens / 1000000) * (pricing?.prompt_cache || 0) +
-                (prompt_audio_tokens / 1000000) * (pricing?.prompt_audio || 0) +
-                (completion_audio_tokens / 1000000) * (pricing?.completion_audio || 0);
+            // Log token breakdown for debugging
+            log(`Token breakdown - Prompt: ${prompt_text_tokens} text + ${prompt_audio_tokens} audio + ${prompt_cached_tokens} cached = ${prompt_tokens} total`);
+            log(`Token breakdown - Completion: ${completion_text_tokens} text + ${completion_audio_tokens} audio = ${completion_tokens} total`);
+
+            // Set token counts
+            tokenData.completion_text_token_generated = completion_text_tokens;
+            tokenData.completion_audio_token_generated = completion_audio_tokens;
+            tokenData.prompt_text_token_generated = prompt_text_tokens;
+            tokenData.prompt_audio_token_generated = prompt_audio_tokens;
+            tokenData.prompt_cached_token_generated = prompt_cached_tokens;
+
+            // Set pricing information (per million tokens from availableModels.js)
+            if (pricing) {
+                tokenData.completion_text_token_price = pricing.completion_text || 0;
+                tokenData.completion_audio_token_price = pricing.completion_audio || 0;
+                tokenData.prompt_text_token_price = pricing.prompt_text || 0;
+                tokenData.prompt_audio_token_price = pricing.prompt_audio || 0;
+                tokenData.prompt_cached_token_price = pricing.prompt_cache || 0;
+            }
         }
+
+        // Calculate total cost based on token usage and pricing
+        const totalCost = calculateTotalCost(tokenData);
 
         // Get the provider for the model
         const modelName = eventData.model || "unknown";
         const provider = getProviderNameFromModel(modelName);
         log(`Provider for model ${modelName}: ${provider}`);
 
-        // Construct the event object: start with a shallow copy so any extra fields (ip, ua, country, etc.) are preserved
+        // Construct the event payload with token counts and pricing
         const tinybirdEvent = {
-            // Standard timestamps and identifiers
+            // Timestamps
             start_time: eventData.startTime?.toISOString(),
             end_time: eventData.endTime?.toISOString(),
-            message_id: eventData.requestId,
-            id: eventData.requestId,
-
-            // Ensure response_id field is always present without intrusive data transformations
 
             // Model and provider info
             model: modelName,
-            model_used: eventData.modelUsed, // Track the actual model used by the provider (from response)
+            model_used: eventData.modelUsed,
             provider,
 
-            // Performance metrics
-            duration: eventData.duration,
-            llm_api_duration_ms: eventData.duration,
-            standard_logging_object_response_time: eventData.duration,
+            // Performance metric captured by datasource
+            response_time: eventData.duration,
 
-            // Cost information
+            // Token counts and pricing with calculated total cost
+            ...tokenData,
             cost: totalCost,
 
             // User info
             user: eventData.user,
             referrer: eventData.referrer || "unknown",
-            // Status and event type constants
+
+            // Status and caching flags
             standard_logging_object_status: eventData.status,
-            log_event_type: "chat_completion",
-            call_type: "completion",
             cache_hit: false,
+            stream: Boolean(eventData.stream),
 
-            // Metadata
+            // Minimal proxy metadata (only environment is ingested)
             proxy_metadata: {
-                organization: eventData.organization || "pollinations",
-                project: eventData.project || "text.pollinations.ai",
                 environment:
-                    eventData.environment ||
-                    process.env.NODE_ENV ||
-                    "development",
-                chat_id: eventData.chatId || "",
+                    eventData.environment || process.env.NODE_ENV || "development",
             },
-
-            // Always include basic response object to prevent null response_id
-            // For success cases, include full response data; for error cases, include minimal id
-            response:
-                eventData.status === "success"
-                    ? {
-                          id: eventData.requestId,
-                          object: "chat.completion",
-                          // Pass the usage object directly without transformation
-                          usage: eventData.usage,
-                      }
-                    : {
-                          // Minimal response object for failed requests to satisfy schema
-                          id: eventData.requestId,
-                      },
-
-            // Conditionally add error info
-            ...(eventData.status === "error" && {
-                exception: eventData.error?.message || "Unknown error",
-                traceback: eventData.error?.stack || "",
-            }),
         };
 
-        // Usage data is now automatically extracted by Tinybird from the nested response.usage object
+        // Token counts, pricing, and calculated total cost are sent as top-level fields
 
         // Simplified user logging with a consistent format
         const userIdentifier = eventData.user
@@ -219,15 +216,19 @@ export async function sendTinybirdEvent(eventData) {
         log(`   🎯 model: "${tinybirdEvent.model}"`);
         log(`   🔧 model_used: "${tinybirdEvent.model_used}"`);
         log(`   👤 user: "${tinybirdEvent.user}"`);
-        log(`   ⏱️  duration: ${tinybirdEvent.duration}ms`);
-        log(`   💰 cost: $${tinybirdEvent.cost}`);
-        log(`   📊 usage:`, tinybirdEvent.usage || 'N/A');
+        log(
+            `   ⏱️  response_time: ${tinybirdEvent.response_time}ms`,
+        );
+        log(`   🔢 tokens: prompt_text=${tokenData.prompt_text_token_generated}, completion_text=${tokenData.completion_text_token_generated}, cached=${tokenData.prompt_cached_token_generated}`);
+        log(`   💰 prices: prompt_text=${tokenData.prompt_text_token_price}, completion_text=${tokenData.completion_text_token_price}`);
+        log(`   💵 total_cost: $${totalCost.toFixed(6)}`);
+        log(`   📊 token_data:`, tokenData);
         log(`   🏢 provider: "${tinybirdEvent.provider}"`);
         log(`   📋 Full JSON payload:`, JSON.stringify(tinybirdEvent, null, 2));
 
         try {
             const response = await fetch(
-                `${TINYBIRD_API_URL}/v0/events?name=llm_events`,
+                `${TINYBIRD_API_URL}/v0/events?name=text_events`,
                 {
                     method: "POST",
                     headers: {

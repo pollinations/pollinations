@@ -1,0 +1,34 @@
+
+DESCRIPTION >
+    Store LLM events with usage metrics, costs, and metadata
+
+SCHEMA >
+    `timestamp` DateTime `json:$.start_time`,
+    `end_time` DateTime `json:$.end_time`,
+    `response_time` Float32 `json:$.standard_logging_object_response_time` DEFAULT 0,
+    `response_status` LowCardinality(String) `json:$.standard_logging_object_status` DEFAULT 'unknown',
+    `environment` String `json:$.proxy_metadata.environment` DEFAULT '',
+    `user` String `json:$.user` DEFAULT 'unknown',
+    `referrer` String `json:$.referrer` DEFAULT 'unknown',
+    `provider` LowCardinality(String) `json:$.provider` DEFAULT 'unknown',
+    `model` LowCardinality(String) `json:$.model` DEFAULT 'unknown',
+    `model_used` Nullable(String) `json:$.model_used`,
+    `stream` Bool `json:$.stream` DEFAULT false,
+    `cache_hit` Bool `json:$.cache_hit` DEFAULT false,
+    `cost` Float32 `json:$.cost` DEFAULT 0,
+    `token_generated_completion_text` UInt16 `json:$.completion_text_token_generated` DEFAULT 0,
+    `token_generated_completion_audio` UInt16 `json:$.completion_audio_token_generated` DEFAULT 0,
+    `token_generated_prompt_text` UInt16 `json:$.prompt_text_token_generated` DEFAULT 0,
+    `token_generated_prompt_audio` UInt16 `json:$.prompt_audio_token_generated` DEFAULT 0,
+    `token_generated_prompt_cached` UInt16 `json:$.prompt_cached_token_generated` DEFAULT 0,
+    `token_price_completion_text` Float32 `json:$.completion_text_token_price` DEFAULT 0,
+    `token_price_completion_audio` Float32 `json:$.completion_audio_token_price` DEFAULT 0,
+    `token_price_prompt_text` Float32 `json:$.prompt_text_token_price` DEFAULT 0,
+    `token_price_prompt_audio` Float32 `json:$.prompt_audio_token_price` DEFAULT 0,
+    `token_price_prompt_cached` Float32 `json:$.prompt_cached_token_price` DEFAULT 0,
+
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
+ENGINE_SORTING_KEY "timestamp, environment, user"
+ENGINE_PRIMARY_KEY "timestamp, environment, user"

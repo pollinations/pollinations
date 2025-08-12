@@ -1,17 +1,8 @@
 import dotenv from "dotenv";
 import debug from "debug";
-import { findModelByName, availableModels } from "../availableModels.js";
 import { calculateTotalCost } from "./costCalculator.js";
-
-/**
- * Get the provider name for a model by looking it up in availableModels
- * @param {string} modelName - The name of the model
- * @returns {string} - The provider name or 'Unknown' if not found
- */
-function getProviderNameFromModel(modelName) {
-    const model = findModelByName(modelName);
-    return model?.provider || "Unknown";
-}
+import { getProviderNameFromModel, resolveModelForPricing } from "./modelResolver.js";
+import { TOKENS_PER_MILLION } from "./constants.js";
 
 
 
@@ -21,9 +12,12 @@ dotenv.config();
 const log = debug("pollinations:tinybird");
 const errorLog = debug("pollinations:tinybird:error");
 
-const TINYBIRD_API_URL =
-    process.env.TINYBIRD_API_URL || "https://api.europe-west2.gcp.tinybird.co";
+const TINYBIRD_API_URL = process.env.TINYBIRD_API_URL || "https://api.europe-west2.gcp.tinybird.co";
 const TINYBIRD_API_KEY = process.env.TINYBIRD_API_KEY;
+
+if (!TINYBIRD_API_KEY) {
+    log("TINYBIRD_API_KEY not set, telemetry will be skipped");
+}
 
 /**
  * Send LLM call telemetry to Tinybird
@@ -43,54 +37,11 @@ export async function sendTinybirdEvent(eventData) {
     );
 
     try {
-        // Enhanced model resolution for accurate pricing:
-        // 1. First try to find a model by the actual model used (from API response)
-        // 2. Then try to find a model whose original_name matches the actual model used
-        // 3. Finally fall back to the requested model name
-        // 4. Check if the requested model has a known original_name that matches what was actually used
-        let model = null;
-        let modelForPricing = null;
-        let resolutionMethod = null;
-        
-        // Try to find model by actual model used first
-        if (eventData.modelUsed) {
-            model = findModelByName(eventData.modelUsed);
-            if (model) {
-                modelForPricing = eventData.modelUsed;
-                resolutionMethod = 'direct_match';
-                log(`✅ Found direct match for actual model: ${eventData.modelUsed}`);
-            } else {
-                // Try to find a model whose original_name matches the actual model used
-                model = availableModels.find(m => m.original_name === eventData.modelUsed);
-                if (model) {
-                    modelForPricing = model.name;
-                    resolutionMethod = 'original_name_match';
-                    log(`✅ Found model by original_name match: ${model.name} (original_name: ${model.original_name}) for actual model: ${eventData.modelUsed}`);
-                }
-            }
-        }
-        
-        // If no match found, try the requested model
-        if (!model && eventData.model) {
-            model = findModelByName(eventData.model);
-            if (model) {
-                modelForPricing = eventData.model;
-                resolutionMethod = 'requested_model';
-                
-                // Check if the model has an original_name that matches what was actually used
-                if (eventData.modelUsed && model.original_name === eventData.modelUsed) {
-                    log(`✅ Perfect match: requested model ${eventData.model} has original_name ${model.original_name} matching actual model`);
-                } else if (eventData.modelUsed && eventData.modelUsed !== eventData.model) {
-                    log(`⚠️  Using fallback pricing: requested=${eventData.model}, actual=${eventData.modelUsed}, original_name=${model.original_name || 'null'}`);
-                }
-            }
-        }
-        
-        const pricing = model?.pricing;
-        
-        if (!model) {
-            log(`❌ No model found for pricing: requested=${eventData.model}, actual=${eventData.modelUsed}`);
-        }
+        // Resolve model and pricing using enhanced fallback logic
+        const { model, modelForPricing, resolutionMethod, pricing } = resolveModelForPricing(
+            eventData.model, 
+            eventData.modelUsed
+        );
 
         // Extract token counts and pricing information
         let tokenData = {
@@ -224,7 +175,12 @@ export async function sendTinybirdEvent(eventData) {
         log(`   💵 total_cost: $${totalCost.toFixed(6)}`);
         log(`   📊 token_data:`, tokenData);
         log(`   🏢 provider: "${tinybirdEvent.provider}"`);
-        log(`   📋 Full JSON payload:`, JSON.stringify(tinybirdEvent, null, 2));
+        // Only log full payload in development to avoid performance impact
+        if (process.env.NODE_ENV === 'development') {
+            log(`   📋 Full JSON payload:`, JSON.stringify(tinybirdEvent, null, 2));
+        } else {
+            log(`   📋 Payload summary: model=${tinybirdEvent.model}, cost=${tinybirdEvent.cost}, tokens=${tinybirdEvent.completion_text_token_generated + tinybirdEvent.prompt_text_token_generated}`);
+        }
 
         try {
             const response = await fetch(

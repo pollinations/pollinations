@@ -506,7 +506,7 @@ const models = [
 		name: "bidara",
 		description: "BIDARA (Biomimetic Designer and Research Assistant by NASA)",
 		handler: bidara,
-		// openai-large
+		// openai-fast
 		provider: "azure",
 		tier: "anonymous",
 		community: true,
@@ -514,9 +514,9 @@ const models = [
 		output_modalities: ["text"],
 		tools: true,
 		pricing: {
-			prompt_text: 1.71,
-			prompt_cache: 0.43,
-			completion_text: 6.84,
+			prompt_text: 0.09,
+			prompt_cache: 0.03,
+			completion_text: 0.35,
 		},
 	},
 ];

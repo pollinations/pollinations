@@ -1,6 +1,6 @@
 import debug from "debug";
 import { findModelByName, availableModels } from "../availableModels.js";
-import { DEFAULT_PROVIDER } from './constants.js';
+const DEFAULT_PROVIDER = 'unknown';
 
 const log = debug("pollinations:model-resolver");
 

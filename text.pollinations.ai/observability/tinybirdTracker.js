@@ -2,7 +2,6 @@ import dotenv from "dotenv";
 import debug from "debug";
 import { calculateTotalCost } from "./costCalculator.js";
 import { getProviderNameFromModel, resolveModelForPricing } from "./modelResolver.js";
-import { TOKENS_PER_MILLION } from "./constants.js";
 
 
 

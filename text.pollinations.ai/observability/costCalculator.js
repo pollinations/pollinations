@@ -1,6 +1,6 @@
 import debug from "debug";
-import { TOKENS_PER_MILLION } from './constants.js';
-import { validateTokenData } from './validation.js';
+
+const TOKENS_PER_MILLION = 1_000_000;
 
 const log = debug("pollinations:cost-calculator");
 
@@ -20,7 +20,6 @@ const log = debug("pollinations:cost-calculator");
  * @returns {number} - Total cost in dollars
  */
 export function calculateTotalCost(tokenData) {
-    validateTokenData(tokenData);
     
     const completionTextCost = (tokenData.completion_text_token_generated * tokenData.completion_text_token_price) / TOKENS_PER_MILLION;
     const completionAudioCost = (tokenData.completion_audio_token_generated * tokenData.completion_audio_token_price) / TOKENS_PER_MILLION;
@@ -41,7 +40,6 @@ export function calculateTotalCost(tokenData) {
  * @returns {Object} - Breakdown of costs by component
  */
 export function calculateCostBreakdown(tokenData) {
-    validateTokenData(tokenData);
     
     return {
         completionTextCost: (tokenData.completion_text_token_generated * tokenData.completion_text_token_price) / TOKENS_PER_MILLION,

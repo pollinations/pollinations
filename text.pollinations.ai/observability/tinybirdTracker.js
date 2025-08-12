@@ -71,11 +71,14 @@ export async function sendTinybirdEvent(eventData) {
             let prompt_text_tokens = prompt_tokens_details?.text_tokens ?? (prompt_tokens - prompt_audio_tokens);
             let completion_text_tokens = completion_tokens_details?.text_tokens ?? (completion_tokens - completion_audio_tokens);
 
-            // Special case: If text is the only modality (no audio, no cached tokens), 
-            // use the total token counts to ensure we capture all text tokens
-            const isTextOnlyModality = prompt_audio_tokens === 0 && completion_audio_tokens === 0 && prompt_cached_tokens === 0;
-            if (isTextOnlyModality) {
+            // Independent logic: Use total token counts when each modality is text-only
+            const isPromptTextOnly = prompt_audio_tokens === 0 && prompt_cached_tokens === 0;
+            const isCompletionTextOnly = completion_audio_tokens === 0;
+            
+            if (isPromptTextOnly) {
                 prompt_text_tokens = prompt_tokens;
+            }
+            if (isCompletionTextOnly) {
                 completion_text_tokens = completion_tokens;
             }
 

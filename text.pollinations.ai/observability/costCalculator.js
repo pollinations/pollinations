@@ -34,18 +34,4 @@ export function calculateTotalCost(tokenData) {
     return totalCost;
 }
 
-/**
- * Calculate individual cost components for detailed analysis
- * @param {Object} tokenData - Token usage and pricing data
- * @returns {Object} - Breakdown of costs by component
- */
-export function calculateCostBreakdown(tokenData) {
-    
-    return {
-        completionTextCost: (tokenData.completion_text_token_generated * tokenData.completion_text_token_price) / TOKENS_PER_MILLION,
-        completionAudioCost: (tokenData.completion_audio_token_generated * tokenData.completion_audio_token_price) / TOKENS_PER_MILLION,
-        promptTextCost: (tokenData.prompt_text_token_generated * tokenData.prompt_text_token_price) / TOKENS_PER_MILLION,
-        promptAudioCost: (tokenData.prompt_audio_token_generated * tokenData.prompt_audio_token_price) / TOKENS_PER_MILLION,
-        promptCachedCost: (tokenData.prompt_cached_token_generated * tokenData.prompt_cached_token_price) / TOKENS_PER_MILLION,
-    };
-}
+

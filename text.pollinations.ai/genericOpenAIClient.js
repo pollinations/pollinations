@@ -56,8 +56,9 @@ export function createOpenAICompatibleClient(config) {
             options,
         });
 
-        // Declare normalizedOptions in outer scope so it's available in catch block
+        // Declare normalizedOptions and modelName in outer scope so they're available in catch block
         let normalizedOptions;
+        let modelName;
 
         try {
             // Check if API key is available
@@ -70,7 +71,7 @@ export function createOpenAICompatibleClient(config) {
 
             // Determine which model to use
             const modelKey = normalizedOptions.model;
-            const modelName =
+            modelName =
                 modelMapping[modelKey] ||
                 modelMapping[Object.keys(modelMapping)[0]];
 
@@ -295,8 +296,12 @@ export function createOpenAICompatibleClient(config) {
                 const error = new Error(errorMessage);
                 error.status = response.status;
                 error.details = errorDetails;
+                
+
 
                 error.model = modelName;
+
+
 
                 throw error;
             }
@@ -387,24 +392,19 @@ export function createOpenAICompatibleClient(config) {
                 choices: [formattedChoice],
             };
 
-            log(
-                `[${requestId}] Final response:`,
-                JSON.stringify(data, null, 2),
-            );
-
-            return data;
         } catch (error) {
             errorLog(`[${requestId}] Error in text generation`, {
                 timestamp: new Date().toISOString(),
                 error: error.message,
-                name: error.name,
-                stack: error.stack,
-                completionTimeMs: Date.now() - startTime,
+                model: modelName,
+                provider: config.provider,
+                requestId,
             });
 
             // Send error telemetry to Tinybird
             const endTime = new Date();
             const completionTime = endTime.getTime() - startTime;
+
             sendTinybirdEvent({
                 startTime: new Date(startTime),
                 endTime,

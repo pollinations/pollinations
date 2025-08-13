@@ -2,28 +2,19 @@ DESCRIPTION >
     Store OpenAI moderation results with cf_ray for joining with main events table
 
 SCHEMA >
-    `cf_ray` String `json:$.cf_ray` DEFAULT '',
+    `id` String `json:$.id` DEFAULT '',
 
-    -- OpenAI Moderation Parameters (direct JSON path mapping)
-    `moderation_hate_filtered` Bool `json:$.choices[0].content_filter_results.hate.filtered` DEFAULT false,
-    `moderation_hate_severity` LowCardinality(String) `json:$.choices[0].content_filter_results.hate.severity` DEFAULT 'safe',
-    
-    `protected_material_code_detected` Bool `json:$.choices[0].content_filter_results.protected_material_code.detected` DEFAULT false,
-    `protected_material_code_filtered` Bool `json:$.choices[0].content_filter_results.protected_material_code.filtered` DEFAULT false,
-    
-    `protected_material_text_detected` Bool `json:$.choices[0].content_filter_results.protected_material_text.detected` DEFAULT false,
-    `protected_material_text_filtered` Bool `json:$.choices[0].content_filter_results.protected_material_text.filtered` DEFAULT false,
-    
-    `self_harm_filtered` Bool `json:$.choices[0].content_filter_results.self_harm.filtered` DEFAULT false,
-    `self_harm_severity` LowCardinality(String) `json:$.choices[0].content_filter_results.self_harm.severity` DEFAULT 'safe',
-    
-    `sexual_filtered` Bool `json:$.choices[0].content_filter_results.sexual.filtered` DEFAULT false,
-    `sexual_severity` LowCardinality(String) `json:$.choices[0].content_filter_results.sexual.severity` DEFAULT 'safe',
-    
-    `violence_filtered` Bool `json:$.choices[0].content_filter_results.violence.filtered` DEFAULT false,
-    `violence_severity` LowCardinality(String) `json:$.choices[0].content_filter_results.violence.severity` DEFAULT 'safe'
+    -- OpenAI Moderation Parameters (severity levels and detection flags only)
+    `hate_severity` LowCardinality(String) `json:$.hate.severity` DEFAULT 'safe',
+    `self_harm_severity` LowCardinality(String) `json:$.self_harm.severity` DEFAULT 'safe',
+    `sexual_severity` LowCardinality(String) `json:$.sexual.severity` DEFAULT 'safe',
+    `violence_severity` LowCardinality(String) `json:$.violence.severity` DEFAULT 'safe',
+    `protected_material_code_detected` Bool `json:$.protected_material_code.detected` DEFAULT false,
+    `protected_material_text_detected` Bool `json:$.protected_material_text.detected` DEFAULT false
 
 ENGINE "MergeTree" 
-ENGINE_PARTITION_KEY "cf_ray"
-ENGINE_SORTING_KEY "cf_ray"
-ENGINE_PRIMARY_KEY "cf_ray"
+ENGINE_PARTITION_KEY "id"
+ENGINE_SORTING_KEY "id"
+ENGINE_PRIMARY_KEY "id"
+
+

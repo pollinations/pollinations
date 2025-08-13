@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import debug from "debug";
 import { calculateTotalCost } from "./costCalculator.js";
 import { getProviderNameFromModel, resolveModelForPricing } from "./modelResolver.js";
+import { generatePollinationsId, getOrGenerateId } from "./idGenerator.js";
 
 
 
@@ -10,6 +11,8 @@ dotenv.config();
 
 const log = debug("pollinations:tinybird");
 const errorLog = debug("pollinations:tinybird:error");
+
+
 
 const TINYBIRD_API_URL = process.env.TINYBIRD_API_URL || "https://api.europe-west2.gcp.tinybird.co";
 const TINYBIRD_API_KEY = process.env.TINYBIRD_API_KEY;
@@ -135,7 +138,7 @@ export async function sendTinybirdEvent(eventData) {
             cache_semantic_threshold: eventData.cache_semantic_threshold || 0,
             cache_semantic_similarity: eventData.cache_semantic_similarity || 0,
             cache_key: eventData.cache_key || '',
-            cf_ray: eventData.cf_ray || '',
+            id: getOrGenerateId(eventData.cf_ray),
             stream: Boolean(eventData.stream),
 
             // Minimal proxy metadata (only environment is ingested)
@@ -189,26 +192,20 @@ export async function sendTinybirdEvent(eventData) {
                 log(`✅ Telemetry sent: ${modelName}`);
             }
 
-            // Send moderation data if present
-            const firstChoice = tinybirdEvent.choices?.[0];
-            const cfrDirect = firstChoice?.content_filter_results;
-            const cfrInMessage = firstChoice?.message?.content_filter_results;
+            // Send moderation data if present (Azure OpenAI only)
+            const cfr = tinybirdEvent.choices?.[0]?.content_filter_results || 
+                       tinybirdEvent.choices?.[0]?.message?.content_filter_results;
 
-            if (cfrDirect || cfrInMessage) {
-                log(`🛡️ Moderation data detected, sending to text_moderation datasource`);
-
-                // Normalize content_filter_results to choice level if needed
-                const moderationEvent = !cfrDirect && cfrInMessage && firstChoice ? {
-                    ...tinybirdEvent,
-                    choices: [{ ...firstChoice, content_filter_results: cfrInMessage }, ...tinybirdEvent.choices.slice(1)]
-                } : tinybirdEvent;
-
-                // Use separate controller for moderation request
+            if (cfr) {
                 const moderationController = new AbortController();
                 const moderationTimeoutId = setTimeout(() => moderationController.abort(), 5000);
                 
                 try {
-                    const moderationSuccess = await sendToTinybird("text_moderation", moderationEvent, moderationController, "moderation telemetry");
+                    const moderationSuccess = await sendToTinybird("text_moderation", {
+                        id: tinybirdEvent.id || generatePollinationsId(),
+                        ...cfr
+                    }, moderationController, "moderation telemetry");
+                    
                     if (moderationSuccess) {
                         log(`🛡️ Moderation data sent: ${modelName}`);
                     }

@@ -8,7 +8,7 @@ SCHEMA >
     `response_time` Float32 `json:$.standard_logging_object_response_time` DEFAULT 0,
     
     `response_status` LowCardinality(String) `json:$.standard_logging_object_status` DEFAULT 'unknown',
-    `cf_ray` String `json:$.cf_ray` DEFAULT '',
+    `id` String `json:$.id` DEFAULT '',
     `environment` String `json:$.proxy_metadata.environment` DEFAULT '',
 
     `user` String `json:$.user` DEFAULT 'unknown',

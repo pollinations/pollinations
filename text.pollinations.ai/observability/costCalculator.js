@@ -27,25 +27,25 @@ export function resolvePricing(responseModel) {
 /**
  * Calculate the total cost for an LLM request based on token usage and pricing
  * @param {Object} tokenData - Token usage and pricing data
- * @param {number} tokenData.completion_text_token_generated - Number of completion text tokens
- * @param {number} tokenData.completion_audio_token_generated - Number of completion audio tokens
- * @param {number} tokenData.prompt_text_token_generated - Number of prompt text tokens
- * @param {number} tokenData.prompt_audio_token_generated - Number of prompt audio tokens
- * @param {number} tokenData.prompt_cached_token_generated - Number of cached prompt tokens
- * @param {number} tokenData.completion_text_token_price - Price per million completion text tokens
- * @param {number} tokenData.completion_audio_token_price - Price per million completion audio tokens
- * @param {number} tokenData.prompt_text_token_price - Price per million prompt text tokens
- * @param {number} tokenData.prompt_audio_token_price - Price per million prompt audio tokens
- * @param {number} tokenData.prompt_cached_token_price - Price per million cached prompt tokens
+ * @param {number} tokenData.token_count_completion_text - Number of completion text tokens
+ * @param {number} tokenData.token_count_completion_audio - Number of completion audio tokens
+ * @param {number} tokenData.token_count_prompt_text - Number of prompt text tokens
+ * @param {number} tokenData.token_count_prompt_audio - Number of prompt audio tokens
+ * @param {number} tokenData.token_count_prompt_cached - Number of cached prompt tokens
+ * @param {number} tokenData.token_price_completion_text - Price per million completion text tokens
+ * @param {number} tokenData.token_price_completion_audio - Price per million completion audio tokens
+ * @param {number} tokenData.token_price_prompt_text - Price per million prompt text tokens
+ * @param {number} tokenData.token_price_prompt_audio - Price per million prompt audio tokens
+ * @param {number} tokenData.token_price_prompt_cached - Price per million cached prompt tokens
  * @returns {number} - Total cost in dollars
  */
 export function calculateTotalCost(tokenData) {
     
-    const completionTextCost = (tokenData.completion_text_token_generated * tokenData.completion_text_token_price) / TOKENS_PER_MILLION;
-    const completionAudioCost = (tokenData.completion_audio_token_generated * tokenData.completion_audio_token_price) / TOKENS_PER_MILLION;
-    const promptTextCost = (tokenData.prompt_text_token_generated * tokenData.prompt_text_token_price) / TOKENS_PER_MILLION;
-    const promptAudioCost = (tokenData.prompt_audio_token_generated * tokenData.prompt_audio_token_price) / TOKENS_PER_MILLION;
-    const promptCachedCost = (tokenData.prompt_cached_token_generated * tokenData.prompt_cached_token_price) / TOKENS_PER_MILLION;
+    const completionTextCost = (tokenData.token_count_completion_text * tokenData.token_price_completion_text) / TOKENS_PER_MILLION;
+    const completionAudioCost = (tokenData.token_count_completion_audio * tokenData.token_price_completion_audio) / TOKENS_PER_MILLION;
+    const promptTextCost = (tokenData.token_count_prompt_text * tokenData.token_price_prompt_text) / TOKENS_PER_MILLION;
+    const promptAudioCost = (tokenData.token_count_prompt_audio * tokenData.token_price_prompt_audio) / TOKENS_PER_MILLION;
+    const promptCachedCost = (tokenData.token_count_prompt_cached * tokenData.token_price_prompt_cached) / TOKENS_PER_MILLION;
     
     const totalCost = completionTextCost + completionAudioCost + promptTextCost + promptAudioCost + promptCachedCost;
     

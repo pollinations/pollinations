@@ -31,94 +31,64 @@ export async function sendTinybirdEvent(eventData) {
     }
 
     try {
-        // Step 1: Simple model_used - just use the response model as-is
-        const modelUsed = eventData.modelUsed || null;
+        // Extract model and pricing information
+        const modelUsed = eventData.modelUsed ?? null;
+        const pricing = resolvePricing(modelUsed);
 
-        // Step 2: Resolve pricing - no fallback, null if no match
-        const pricing = resolvePricing(eventData.modelUsed);
-
-        // Extract token counts and pricing information
-        let tokenData = {
-            completion_text_token_generated: 0,
-            completion_audio_token_generated: 0,
-            prompt_text_token_generated: 0,
-            prompt_audio_token_generated: 0,
-            prompt_cached_token_generated: 0,
-            completion_text_token_price: 0,
-            completion_audio_token_price: 0,
-            prompt_text_token_price: 0,
-            prompt_audio_token_price: 0,
-            prompt_cached_token_price: 0,
-        };
-
-        if (eventData.usage) {
-            // Access usage data directly following the thin proxy principle
+        // Extract token counts from usage data
+        const extractTokenCounts = (usage) => {
+            if (!usage) return {};
+            
             const {
                 prompt_tokens = 0,
                 completion_tokens = 0,
                 prompt_tokens_details = {},
                 completion_tokens_details = {},
-            } = eventData.usage;
+            } = usage;
 
-            // Extract tokens from details, with fallbacks for different API formats
-            const prompt_audio_tokens =
-                prompt_tokens_details?.audio_tokens ||
-                eventData.usage.audio_prompt_tokens ||
-                0;
-            const completion_audio_tokens =
-                completion_tokens_details?.audio_tokens ||
-                eventData.usage.audio_completion_tokens ||
-                0;
-            const prompt_cached_tokens =
-                prompt_tokens_details?.cached_tokens || 0;
+            // Extract audio and cached tokens
+            const prompt_audio = prompt_tokens_details?.audio_tokens ?? usage.audio_prompt_tokens ?? 0;
+            const completion_audio = completion_tokens_details?.audio_tokens ?? usage.audio_completion_tokens ?? 0;
+            const prompt_cached = prompt_tokens_details?.cached_tokens ?? 0;
 
-            // Extract text tokens - prefer explicit text_tokens, fallback to calculation
-            let prompt_text_tokens =
-                prompt_tokens_details?.text_tokens ??
-                prompt_tokens - prompt_audio_tokens;
-            let completion_text_tokens =
-                completion_tokens_details?.text_tokens ??
-                completion_tokens - completion_audio_tokens;
+            // Calculate text tokens with fallback to total when only text
+            const prompt_text = (!prompt_audio && !prompt_cached) 
+                ? prompt_tokens
+                : (prompt_tokens_details?.text_tokens ?? prompt_tokens - prompt_audio - prompt_cached);
+            
+            const completion_text = !completion_audio
+                ? completion_tokens
+                : (completion_tokens_details?.text_tokens ?? completion_tokens - completion_audio);
 
-            // Independent logic: Use total token counts when each modality is text-only
-            const isPromptTextOnly =
-                prompt_audio_tokens === 0 && prompt_cached_tokens === 0;
-            const isCompletionTextOnly = completion_audio_tokens === 0;
+            return {
+                token_count_completion_text: completion_text,
+                token_count_completion_audio: completion_audio,
+                token_count_prompt_text: prompt_text,
+                token_count_prompt_audio: prompt_audio,
+                token_count_prompt_cached: prompt_cached,
+            };
+        };
 
-            if (isPromptTextOnly) {
-                prompt_text_tokens = prompt_tokens;
-            }
-            if (isCompletionTextOnly) {
-                completion_text_tokens = completion_tokens;
-            }
-
-            // Set token counts
-            tokenData.completion_text_token_generated = completion_text_tokens;
-            tokenData.completion_audio_token_generated =
-                completion_audio_tokens;
-            tokenData.prompt_text_token_generated = prompt_text_tokens;
-            tokenData.prompt_audio_token_generated = prompt_audio_tokens;
-            tokenData.prompt_cached_token_generated = prompt_cached_tokens;
-
-            // Set pricing information (per million tokens from availableModels.js)
-            if (pricing) {
-                tokenData.completion_text_token_price =
-                    pricing.completion_text || 0;
-                tokenData.completion_audio_token_price =
-                    pricing.completion_audio || 0;
-                tokenData.prompt_text_token_price = pricing.prompt_text || 0;
-                tokenData.prompt_audio_token_price = pricing.prompt_audio || 0;
-                tokenData.prompt_cached_token_price = pricing.prompt_cache || 0;
-            }
-        }
+        // Build token data with counts and prices
+        const tokenCounts = extractTokenCounts(eventData.usage);
+        const tokenData = {
+            ...tokenCounts,
+            ...(pricing && {
+                token_price_completion_text: pricing.completion_text ?? 0,
+                token_price_completion_audio: pricing.completion_audio ?? 0,
+                token_price_prompt_text: pricing.prompt_text ?? 0,
+                token_price_prompt_audio: pricing.prompt_audio ?? 0,
+                token_price_prompt_cached: pricing.prompt_cache ?? 0,
+            }),
+        };
 
         // Calculate total cost based on token usage and pricing
-        const totalCost = calculateTotalCost(tokenData);
+        const totalCost = calculateTotalCost(tokenData) ?? 0;
 
-        // Extract model name and provider info
+        // Extract model and provider info
         const modelName = eventData.model;
         const model = findModelByName(modelName);
-        const provider = model?.provider || 'unknown';
+        const provider = model?.provider ?? 'unknown';
         log(`Provider for model ${modelName}: ${provider}`);
 
         // Construct the event payload with token counts and pricing
@@ -141,23 +111,20 @@ export async function sendTinybirdEvent(eventData) {
 
             // User info
             user: eventData.user,
-            referrer: eventData.referrer || "unknown",
+            referrer: eventData.referrer ?? "unknown",
 
             // Status and caching flags
             standard_logging_object_status: eventData.status,
-            cache_hit: eventData.cache_hit || false,
-            cache_semantic_threshold: eventData.cache_semantic_threshold || 0,
-            cache_semantic_similarity: eventData.cache_semantic_similarity || 0,
-            cache_key: eventData.cache_key || "",
+            cache_hit: Boolean(eventData.cache_hit),
+            cache_semantic_threshold: eventData.cache_semantic_threshold ?? 0,
+            cache_semantic_similarity: eventData.cache_semantic_similarity ?? 0,
+            cache_key: eventData.cache_key ?? "",
             id: getOrGenerateId(eventData.cf_ray),
             stream: Boolean(eventData.stream),
 
             // Minimal proxy metadata (only environment is ingested)
             proxy_metadata: {
-                environment:
-                    eventData.environment ||
-                    process.env.NODE_ENV ||
-                    "development",
+                environment: eventData.environment ?? process.env.NODE_ENV ?? "development",
             },
 
             // Include raw choices data for moderation detection (not sent to text_events)
@@ -173,10 +140,10 @@ export async function sendTinybirdEvent(eventData) {
         // Log summary for telemetry tracking
         log(
             `📤 Sending telemetry: ${
-                tinybirdEvent.model
-            } | $${totalCost.toFixed(6)} | ${
-                tinybirdEvent.completion_text_token_generated +
-                tinybirdEvent.prompt_text_token_generated
+                tinybirdEvent.model_requested
+            } | $$${totalCost.toFixed(6)} | ${
+                tinybirdEvent.token_count_completion_text +
+                tinybirdEvent.token_count_prompt_text
             } tokens`
         );
 
@@ -242,7 +209,7 @@ export async function sendTinybirdEvent(eventData) {
                     const moderationSuccess = await sendToTinybird(
                         "text_moderation",
                         {
-                            id: tinybirdEvent.id || generatePollinationsId(),
+                            id: tinybirdEvent.id ?? generatePollinationsId(),
                             ...cfr,
                         },
                         moderationController,

@@ -1,6 +1,13 @@
 import debug from "debug";
+import dotenv from "dotenv";
 // Import shared utilities for authentication and environment handling
 import { extractReferrer } from "../shared/extractFromRequest.js";
+
+// Load environment variables including .env.local overrides
+// Load .env.local first (higher priority), then .env as fallback
+dotenv.config();
+
+dotenv.config({ path: '.env.local' });
 
 const log = debug("pollinations:requestUtils");
 

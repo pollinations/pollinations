@@ -133,7 +133,7 @@ export async function sendTinybirdEvent(eventData) {
             provider,
 
             // Performance metric captured by datasource
-            response_time: eventData.duration,
+            standard_logging_object_response_time: eventData.duration,
 
             // Token counts and pricing with calculated total cost
             ...tokenData,

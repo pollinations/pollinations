@@ -14,7 +14,6 @@ import {
 } from "./wrappedModels.js";
 
 const models = [
-	// All Pollinations.AI models
 	{
 		name: "openai",
 		original_name: "gpt-4.1-nano-2025-04-14",
@@ -28,9 +27,9 @@ const models = [
 		output_modalities: ["text"],
 		tools: true,
 		pricing: {
-			prompt_text: 0.09,
+			prompt_text: 0.10,
 			prompt_cache: 0.03,
-			completion_text: 0.35,
+			completion_text: 0.39,
 		},
 	},
 	{
@@ -45,11 +44,6 @@ const models = [
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true,
-		pricing: {
-			prompt_text: 0.09,
-			prompt_cache: 0.03,
-			completion_text: 0.35,
-		},
 	},
 	{
 		name: "openai-large",
@@ -65,9 +59,9 @@ const models = [
 		output_modalities: ["text"],
 		tools: true,
 		pricing: {
-			prompt_text: 1.71,
-			prompt_cache: 0.43,
-			completion_text: 6.84,
+			prompt_text: 1.91,
+			prompt_cache: 0.48,
+			completion_text: 7.64,
 		},
 	},
 	{
@@ -82,48 +76,7 @@ const models = [
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true,
-		pricing: {
-			prompt_text: 0.09,
-			prompt_cache: 0.03,
-			completion_text: 0.35,
-		},
 	},
-	// {
-	// 	name: "openai-reasoning",
-	// 	description:
-	// 		"OpenAI O3 (provided by hcap.ai - https://discord.gg/hTwkYTry)",
-	// 	handler: generateTextPortkey,
-	// 	reasoning: true,
-	// 	provider: "chatwithmono.xyz",
-	// 	tier: "anonymous",
-	// 	community: false,
-	// 	aliases: "o3",
-	// 	input_modalities: ["text", "image"],
-	// 	output_modalities: ["text"],
-	// 	pricing: {
-	// 		prompt_text: 2.0,
-	// 		prompt_cache: 0.5,
-	// 		completion_text: 8.0,
-	// 	},
-	// },
-	// {
-	//   name: "searchgpt",
-	//   description: "OpenAI GPT-4o Mini Search Preview (provided by chatwithmono.xyz)",
-	//   handler: generateTextPortkey,
-	//   search: true,
-	//   provider: "chatwithmono.xyz",
-	//   tier: "anonymous",
-	//   community: false,
-	//   aliases: "gpt-4o-mini-search",
-	//   input_modalities: ["text"],
-	//   output_modalities: ["text"],
-	//   tools: true,
-	//   pricing: {
-	//     prompt: 0.15,
-	//     completion: 0.6,
-	//     cache: 0.0375,
-	//   },
-	// },
 	{
 		name: "qwen-coder",
 		original_name: "qwen2.5-coder-32b-instruct",
@@ -161,7 +114,7 @@ const models = [
 	{
 		name: "llama-roblox",
 		original_name: "meta-llama/Meta-Llama-3.1-8B-Instruct-fast",
-		description: "Llama 3.1 8B Instruct (Nebius)",
+		description: "Llama 3.1 8B Instruct",
 		handler: generateTextPortkey,
 		provider: "nebius",
 		tier: "anonymous",
@@ -178,7 +131,7 @@ const models = [
 	{
 		name: "mistral-nemo-roblox",
 		original_name: "mistralai/Mistral-Nemo-Instruct-2407",
-		description: "Mistral Nemo Instruct 2407 (Nebius)",
+		description: "Mistral Nemo Instruct 2407",
 		handler: generateTextPortkey,
 		provider: "nebius",
 		tier: "anonymous",
@@ -192,22 +145,6 @@ const models = [
 			completion_text: 0.12,
 		},
 	},
-	// {
-	// 	name: "gemma-roblox",
-	// 	description: "Gemma 2 9B IT Fast (Nebius)",
-	// 	handler: generateTextPortkey,
-	// 	provider: "nebius",
-	// 	tier: "anonymous",
-	// 	community: false,
-	// 	aliases: "gemma-2-9b-it-fast",
-	// 	input_modalities: ["text"],
-	// 	output_modalities: ["text"],
-	// 	tools: true,
-	// 	pricing: {
-	// 		prompt_text: 0.03,
-	// 		completion_text: 0.09,
-	// 	},
-	// },
 	{
 		name: "llama-fast-roblox",
 		original_name: "@cf/meta/llama-3.2-11b-vision-instruct",
@@ -221,8 +158,8 @@ const models = [
 		output_modalities: ["text"],
 		tools: true,
 		pricing: {
-			prompt_text: 0.027,
-			completion_text: 0.201,
+			prompt_text: 0.049,
+			completion_text: 0.68,
 		},
 	},
 	{
@@ -255,8 +192,8 @@ const models = [
 		output_modalities: ["text"],
 		tools: true,
 		pricing: {
-			prompt_text: 0.351,
-			completion_text: 0.555,
+			prompt_text: 0.35,
+			completion_text: 0.56,
 		},
 	},
 	{
@@ -274,58 +211,8 @@ const models = [
 		output_modalities: ["text"],
 		tools: false,
 		pricing: {
-			prompt_text: 1.269,
-			completion_text: 5.08,
-		},
-	},
-	// {
-	// 	name: "phi",
-	// 	description: "Phi-4 Mini Instruct",
-	// 	handler: generateTextPortkey,
-	// 	provider: "azure",
-	// 	tier: "anonymous",
-	// 	community: false,
-	// 	aliases: "phi-4-mini-instruct",
-	// 	input_modalities: ["text", "image", "audio"],
-	// 	output_modalities: ["text"],
-	// 	tools: false,
-	// 	pricing: {
-	// 		prompt_text: 0.075,
-	// 		prompt_audio: 0.075,
-	// 		completion_text: 0.3,
-	// 	},
-	// },
-	// {
-	// 	name: "deepseek",
-	// 	description: "DeepSeek V3",
-	// 	maxInputChars: 9000,
-	// 	handler: generateTextPortkey,
-	// 	provider: "azure",
-	// 	tier: "flower",
-	// 	community: false,
-	// 	aliases: "deepseek-v3",
-	// 	input_modalities: ["text"],
-	// 	output_modalities: ["text"],
-	// 	tools: false,
-	// 	pricing: {
-	// 		prompt_text: 1.25,
-	// 		completion_text: 5.0,
-	// 	},
-	// },
-	{
-		name: "grok",
-		description: "xAI Grok-3 Mini",
-		handler: generateTextPortkey,
-		provider: "azure",
-		tier: "seed",
-		community: false,
-		aliases: "grok-3-mini",
-		input_modalities: ["text"],
-		output_modalities: ["text"],
-		tools: true,
-		pricing: {
-			prompt_text: 0.275,
-			completion_text: 1.38,
+			prompt_text: 1.485,
+			completion_text: 5.94,
 		},
 	},
 	{
@@ -357,53 +244,41 @@ const models = [
 		output_modalities: ["audio", "text"],
 		tools: true,
 		pricing: {
-			prompt_text: 0.141,
-			prompt_audio: 9.3953,
-			completion_text: 0.563718,
-			completion_audio: 18.790571,
-		},
-	},
-	{
-		name: "glm",
-		description: "GLM-4 9B Chat (Intelligence.io)",
-		handler: generateTextPortkey,
-		provider: "intelligence",
-		tier: "anonymous",
-		community: false,
-		aliases: "glm-4-9b-chat",
-		input_modalities: ["text"],
-		output_modalities: ["text"],
-		tools: true,
-		pricing: {
-			prompt: 0.1,
-			completion: 0.3,
+			prompt_text: 0.1432,
+			prompt_audio: 9.5466,
+			completion_text: 0.572793,
+			completion_audio: 19.093079,
 		},
 	},
 
-	// All community models - Reuse upstream endpoints
+
+	// community models - use upstream endpoints
+	{
+		name: "elixposearch",
+		description: "Elixpo Search",
+		handler: generateTextPortkey,
+		provider: "azure",
+		tier: "anonymous",
+		community: true,
+		input_modalities: ["text"],
+		output_modalities: ["text"],
+		tools: false,
+	},
 	{
 		name: "unity",
-		original_name: "mistral-small-3.1-24b-instruct-2503",
 		description: "Unity Unrestricted Agent",
-		handler: unityMistralLarge,
-		// mistral
-		provider: "scaleway",
+		handler: unityMistralLarge,		provider: "scaleway",
 		uncensored: true,
 		tier: "seed",
 		community: true,
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true,
-		pricing: {
-			prompt_text: 0.15,
-			completion_text: 0.35,
-		},
 	},
 	{
 		name: "mirexa",
 		description: "Mirexa AI Companion",
 		handler: generateTextMirexa,
-		// openai-large
 		provider: "azure",
 		tier: "seed",
 		community: true,
@@ -415,7 +290,6 @@ const models = [
 		name: "midijourney",
 		description: "MIDIjourney",
 		handler: midijourney,
-		// openai-large
 		provider: "azure",
 		tier: "anonymous",
 		community: true,
@@ -425,10 +299,8 @@ const models = [
 	},
 	{
 		name: "rtist",
-		original_name: "gpt-4.1-2025-04-14",
 		description: "Rtist",
 		handler: rtist,
-		// openai-large
 		provider: "azure",
 		tier: "seed",
 		community: true,
@@ -438,10 +310,8 @@ const models = [
 	},
 	{
 		name: "evil",
-		original_name: "mistral-small-3.1-24b-instruct-2503",
 		description: "Evil",
 		handler: evilMistral,
-		// mistral
 		provider: "scaleway",
 		uncensored: true,
 		tier: "seed",
@@ -449,22 +319,6 @@ const models = [
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true,
-	},
-	{
-		name: "elixposearch",
-		description: "Elixpo Search",
-		handler: generateTextPortkey,
-		provider: "azure",
-		tier: "anonymous",
-		community: true,
-		input_modalities: ["text"],
-		output_modalities: ["text"],
-		tools: false,
-		pricing: {
-			prompt_text: 0.09,
-			prompt_cache: 0.03,
-			completion_text: 0.35,
-		},
 	},
 	{
 		name: "hypnosis-tracy",
@@ -481,7 +335,6 @@ const models = [
 		name: "sur",
 		description: "Sur AI Assistant",
 		handler: surMistral,
-		// mistral
 		provider: "scaleway",
 		tier: "seed",
 		community: true,
@@ -493,7 +346,6 @@ const models = [
 		name: "bidara",
 		description: "BIDARA (Biomimetic Designer and Research Assistant by NASA)",
 		handler: bidara,
-		// openai-fast
 		provider: "azure",
 		tier: "anonymous",
 		community: true,

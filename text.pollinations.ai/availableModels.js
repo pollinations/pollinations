@@ -321,17 +321,6 @@ const models = [
 		tools: true,
 	},
 	{
-		name: "hypnosis-tracy",
-		description: "Hypnosis Tracy",
-		handler: hypnosisTracy,
-		provider: "azure",
-		tier: "seed",
-		community: true,
-		input_modalities: ["text", "audio"],
-		output_modalities: ["audio", "text"],
-		tools: true,
-	},
-	{
 		name: "sur",
 		description: "Sur AI Assistant",
 		handler: surMistral,

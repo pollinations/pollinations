@@ -74,8 +74,17 @@ If you prefer to set up manually, follow these steps:
 4. **Set environment variable**:
    Add to your `.env` file:
    ```
-   GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/credentials/google_vertex_key.json
-   GCLOUD_PROJECT_ID=YOUR_PROJECT_ID
+   GOOGLE_APPLICATION_CREDENTIALS=/home/ubuntu/pollinations/text.pollinations.ai/credentials/google_vertex_key.json
+   GCLOUD_PROJECT_ID=stellar-verve-465920-b7
+   ```
+
+   **Note**: If you encounter "Key creation is not allowed" error, you need to disable the organizational policy:
+   ```bash
+   # Via gcloud CLI (requires Organization Policy Administrator role)
+   gcloud resource-manager org-policies disable-enforce iam.disableServiceAccountKeyCreation --organization=231606865087
+   
+   # Or via Google Cloud Console:
+   # Go to IAM Admin > Organization Policies > "Disable service account key creation" > Edit > Set Enforcement to "off"
    ```
 
 ## How It Works
@@ -85,6 +94,29 @@ The application uses a dedicated module (`googleCloudAuth.js`) to handle Google 
 1. The module uses the service account credentials specified by the `GOOGLE_APPLICATION_CREDENTIALS` environment variable
 2. It provides functions to get and refresh access tokens
 3. It automatically refreshes the token every 50 minutes (tokens typically expire after 60 minutes)
+
+## Testing Authentication
+
+To test that programmatic authentication is working:
+
+```bash
+# Test the authentication setup
+node test-programmatic-auth.js
+```
+
+Expected output:
+```
+🎉 SUCCESS: Programmatic authentication is fully configured!
+🚀 You can now make Vertex AI requests without manual login.
+```
+
+## Current Status
+
+✅ **WORKING** - Service account authentication is fully configured and tested as of August 6, 2025
+- Service Account: `vertex-ai-client@stellar-verve-465920-b7.iam.gserviceaccount.com`
+- Key File: `credentials/google_vertex_key.json`
+- Environment Variables: Configured in `.env`
+- Vertex AI API: Successfully tested with DeepSeek model
 
 ## Usage in Code
 

@@ -63,6 +63,8 @@ install_gcloud_cli() {
 }
 
 # Step 2: Initialize gcloud and authenticate
+# NOTE: As of August 6, 2025 - Successfully configured for stellar-verve-465920-b7
+# Service account: vertex-ai-client@stellar-verve-465920-b7.iam.gserviceaccount.com
 init_gcloud() {
   print_message "Step 2: Initializing gcloud and authenticating..."
   

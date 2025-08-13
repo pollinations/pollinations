@@ -57,5 +57,5 @@ export const generateTextMirexa = wrapModelWithContext(
 export const bidara = wrapModelWithContext(
     bidaraSystemPrompt,
     generateTextPortkey,
-    "openai",
+    "openai-fast",
 );

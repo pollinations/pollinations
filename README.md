@@ -1,12 +1,12 @@
 <div align="center">
-  <img src="operations/assets/pollinations_ai_logo_text_black.png" alt="Pollinations.AI Logo" width="100%"/>
+  <img src="assets/pollinations_ai_logo_text_black.png" alt="Pollinations.AI Logo" width="100%"/>
 </div>
 
 ## 🆕 Latest News
 
 - **🔐 Auth Dashboard** - New and live! Visit [auth.pollinations.ai](https://auth.pollinations.ai) to manage your API tokens and referrer domains. [Learn more](APIDOCS.md#authentication-).
 - **🏆 Tier System:** Seed, Flower, Nectar—higher tiers unlock more features. [Details](APIDOCS.md#tiers)
-- **🔍 Special Bee:** Request Flower/Nectar upgrade. [Apply here](https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml)
+- **🔍 Tier System:** Seed, Flower, Nectar tiers. Higher tiers available during limited beta.
 - **💲 Support Us** - You can now support us with our new **Tip Us** button. Optionally connect your Discord account to **Ko-Fi** to get premium Discord roles!
 - **🎵 Audio Generation** - New text-to-speech and speech-to-text capabilities are now available! Try the `openai-audio` model - see our [API documentation](APIDOCS.md#audio-generation-api) for details.
 - **🤖 AI Code Assistant** - We're excited to announce MentatBot, the autonomous AI coding assistant that implements new features directly from GitHub issues! Simply [create an issue](https://github.com/pollinations/pollinations/issues/new) describing what you'd like to see, and MentatBot will analyze and implement it. [Learn more](https://mentat.ai/).

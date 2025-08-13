@@ -1,13 +1,23 @@
+import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
-import { createEmbeddingService } from "~/embedding-service.ts";
-import type { Env } from "~/env.ts";
+import {
+    createEmbeddingService,
+    variableThreshold,
+} from "../embedding-service.ts";
 import {
     createSimpleHash,
     dedent,
     extractPromptFromUrl,
     setHttpMetadataHeaders,
-} from "~/util.ts";
-import { buildMetadata, createVectorizeStore } from "~/vector-store.ts";
+} from "../util.ts";
+import { buildMetadata, createVectorizeStore } from "../vector-store.ts";
+
+type Env = {
+    Bindings: Cloudflare.Env;
+    Variables: {
+        cacheKey: string;
+    };
+};
 
 export const semanticCache = createMiddleware<Env>(async (c, next) => {
     // @ts-ignore
@@ -21,7 +31,7 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
     const embeddingService = createEmbeddingService(c.env.AI);
     const vectorStore = createVectorizeStore(c.env.VECTORIZE_INDEX);
 
-    const prompt = extractPromptFromUrl(new URL(c.req.url));
+    const prompt = extractPromptFromUrl(new URL(c.req.url)) || "";
 
     const embedding = await embeddingService(prompt);
     if (embedding === null) {
@@ -50,34 +60,42 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
             metadata.bucket,
         );
         const nearestSimilarity = nearest[0]?.score;
-
         const nearestCacheKey = nearest[0]?.metadata?.cacheKey?.toString();
-        if (nearestCacheKey == null) {
-            console.error(
-                "[SEMANTIC] Nearest entry found, but it had no cache key",
-            );
-            return next();
-        }
+        const threshold = variableThreshold(
+            prompt.length,
+            c.env.SEMANTIC_THRESHOLD_SHORT,
+            c.env.SEMANTIC_THRESHOLD_LONG,
+        );
 
-        console.debug("[SEMANTIC] Nearest entry:", {
-            cacheKey: nearestCacheKey,
+        const incomingPrompt = prompt;
+        const nearestPromptReconstructed = promptFromCacheKey(nearestCacheKey);
+
+        console.log("[SEMANTIC] Evaluating:", {
+            incomingPrompt,
+            nearestPromptReconstructed,
+            nearestCacheKey,
             similarity: nearestSimilarity,
+            variableThreshold: threshold,
+            hit: nearestSimilarity >= threshold,
         });
 
-        if (nearestSimilarity >= c.env.SEMANTIC_THRESHOLD) {
+        if (nearestSimilarity >= threshold) {
+            if (!nearestCacheKey) {
+                console.error(
+                    "[SEMANTIC] Nearest entry found, but it had no cache key",
+                );
+                return next();
+            }
+
             console.debug("[SEMANTIC] Cache hit");
             const cachedImage = await c.env.IMAGE_BUCKET.get(nearestCacheKey);
             if (cachedImage) {
                 setHttpMetadataHeaders(c, cachedImage.httpMetadata);
-                c.header(
-                    "Cache-Control",
-                    "public, max-age=31536000, immutable",
-                );
-                c.header("X-Cache", "HIT");
-                c.header("X-Cache-Semantic", "HIT");
-                c.header("X-Semantic-Similarity", `${nearestSimilarity}`);
-                c.header("X-Semantic-Bucket", metadata.bucket);
-                c.header("X-Semantic-Threshold", `${c.env.SEMANTIC_THRESHOLD}`);
+                addSemanticCacheHeaders(c, {
+                    status: "HIT",
+                    nearestSimilarity,
+                    bucket: metadata.bucket,
+                });
 
                 return c.body(cachedImage.body);
             } else {
@@ -87,21 +105,21 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
                     found in R2, which likely means the vector store is 
                     out of sync with R2.
                 `);
-                c.header("X-Cache-Semantic", "MISS");
-                c.header("X-Sematic-Similarity", `${nearestSimilarity}`);
-                c.header("X-Semantic-Bucket", metadata.bucket);
-                c.header("X-Semantic-Threshold", `${c.env.SEMANTIC_THRESHOLD}`);
-                return next();
             }
+        } else {
+            console.debug("[SEMANTIC] No semantic matches found");
         }
-        console.debug("[SEMANTIC] No semantic matches found");
+
+        console.log("[SEMANTIC] Cache miss");
+        addSemanticCacheHeaders(c, {
+            status: "MISS",
+            nearestSimilarity,
+            bucket: metadata.bucket,
+        });
     } catch (error) {
         console.error("[SEMANTIC] Error retrieving cached image:", error);
     }
 
-    // No match found, continue handling the request and store the embedding
-    // in the vectorStore on the way out if it was successful.
-    console.debug("[SEMANTIC] Cache miss");
     await next();
 
     if (c.res?.ok) {
@@ -124,5 +142,28 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
     } else {
         console.error("[SEMANTIC] Error: request was not OK");
     }
-    return null;
 });
+
+type SemanticCacheResult = {
+    status: "HIT" | "MISS";
+    nearestSimilarity: number;
+    bucket: string;
+};
+
+function addSemanticCacheHeaders(c: Context, result: SemanticCacheResult) {
+    c.header("X-Cache", result.status);
+    if (result.status === "HIT") c.header("X-Cache-Type", "SEMANTIC");
+    c.header("X-Semantic-Similarity", `${result.nearestSimilarity}`);
+    c.header("X-Semantic-Bucket", result.bucket);
+}
+
+function promptFromCacheKey(cacheKey?: string): string {
+    if (!cacheKey) return "";
+    const withoutPromptPrefix = cacheKey.replace(/^_prompt_/, "");
+    const withoutSuffix = withoutPromptPrefix.replace(/-[0-9a-f]+$/i, "");
+    const withoutQueryParams = withoutSuffix.replace(
+        /(_[a-zA-Z]+_[a-zA-Z0-9-]+)+$/,
+        "",
+    );
+    return decodeURIComponent(withoutQueryParams);
+}

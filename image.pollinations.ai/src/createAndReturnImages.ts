@@ -770,7 +770,7 @@ const generateImage = async (
         // Restrict GPT Image model to users with valid authentication
         if (!hasSufficientTier(userInfo.tier, "flower")) {
             const errorText =
-                "Access to gpt-image-1 is currently limited to users in the flower tier. We will be opening up access gradually. Please authenticate at https://auth.pollinations.ai and request a tier upgrade at https://github.com/pollinations/pollinations/issues/new?template=special-bee-request.yml";
+                "Access to gpt-image-1 is currently limited to users in the flower tier. We will be opening up access gradually. Please authenticate at https://auth.pollinations.ai for tier upgrade information.";
             logError(errorText);
             progress.updateBar(
                 requestId,

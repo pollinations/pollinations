@@ -141,9 +141,9 @@
                             }
                         },
                         {
-                            "name": "special_bee",
+                            "name": "tier",
                             "in": "query",
-                            "description": "Special Bee program identifier for higher rate limits",
+                            "description": "Tier identifier for higher rate limits",
                             "required": false,
                             "schema": {
                                 "type": "string"
@@ -302,9 +302,9 @@
                             }
                         },
                         {
-                            "name": "special_bee",
+                            "name": "tier",
                             "in": "query",
-                            "description": "Special Bee program identifier for higher rate limits",
+                            "description": "Tier identifier for higher rate limits",
                             "required": false,
                             "schema": {
                                 "type": "string"
@@ -506,9 +506,9 @@
                                             "type": "string",
                                             "description": "Referrer information for tracking"
                                         },
-                                        "special_bee": {
+                                        "tier": {
                                             "type": "string",
-                                            "description": "Special Bee program identifier for higher rate limits"
+                                            "description": "Tier identifier for higher rate limits"
                                         }
                                     }
                                 }
@@ -659,9 +659,9 @@
                                             "type": "string",
                                             "description": "Referrer information for tracking"
                                         },
-                                        "special_bee": {
+                                        "tier": {
                                             "type": "string",
-                                            "description": "Special Bee program identifier for higher rate limits"
+                                            "description": "Tier identifier for higher rate limits"
                                         }
                                     }
                                 }
@@ -765,9 +765,9 @@
                                             "type": "string",
                                             "description": "Referrer information for tracking"
                                         },
-                                        "special_bee": {
+                                        "tier": {
                                             "type": "string",
-                                            "description": "Special Bee program identifier for higher rate limits"
+                                            "description": "Tier identifier for higher rate limits"
                                         }
                                     }
                                 }

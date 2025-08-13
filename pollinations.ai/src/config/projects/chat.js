@@ -4,6 +4,15 @@
  */
 
 export const chatProjects = [
+{
+  name: "EasyGen",
+  url: "https://easygenme.netlify.app/",
+  description: "AI-powered tool that generates Mermaid diagrams and flowcharts from plain-language prompts. Offers instant preview, editable source, and supports multiple diagram types for developers, designers, and educators.",
+  author: "@Ellweb3",
+  submissionDate: "2025-08-11",
+  language: "en",
+  order: 1
+},
   {
     name: "Botzy AI 🇵🇰",
     url: "https://botzy.hexabiz.com.pk",
@@ -15,7 +24,7 @@ export const chatProjects = [
   },
   {
     name: "Island",
-    url: "https://islandapps.dev/chat",
+    url: "https://islandai.app",
     description: "Island AI is a free, modern ChatGPT alternative featuring smart multimodal chat, integrated web search, a polished interface, and a unique Questioning Mode that asks clarifying questions before delivering precise, real-time responses.",
     author: "@techcow2",
     repo: "https://github.com/techcow2/Island",

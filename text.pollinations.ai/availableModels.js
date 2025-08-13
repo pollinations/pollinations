@@ -17,6 +17,7 @@ const models = [
 	// All Pollinations.AI models
 	{
 		name: "openai",
+		original_name: "gpt-4.1-nano-2025-04-14",
 		description: "OpenAI GPT-4.1 Nano",
 		handler: generateTextPortkey,
 		provider: "azure",
@@ -33,7 +34,8 @@ const models = [
 		},
 	},
 	{
-		name: "openai-fast",	
+		name: "openai-fast",
+		original_name: "gpt-4.1-nano-2025-04-14",	
 		description: "OpenAI GPT-4.1 Nano",
 		handler: generateTextPortkey,
 		provider: "azure",
@@ -51,6 +53,7 @@ const models = [
 	},
 	{
 		name: "openai-large",
+		original_name: "gpt-4.1-2025-04-14",
 		description: "OpenAI GPT-4.1",
 		maxInputChars: 9000,
 		handler: generateTextPortkey,
@@ -69,6 +72,7 @@ const models = [
 	},
 	{
 		name: "openai-roblox",
+		original_name: "gpt-4.1-nano-2025-04-14",
 		description: "OpenAI GPT-4.1 Nano",
 		handler: generateTextPortkey,
 		provider: "azure",
@@ -122,6 +126,7 @@ const models = [
 	// },
 	{
 		name: "qwen-coder",
+		original_name: "qwen2.5-coder-32b-instruct",
 		description: "Qwen 2.5 Coder 32B",
 		handler: generateTextPortkey,
 		provider: "scaleway",
@@ -138,6 +143,7 @@ const models = [
 	},
 	{
 		name: "llamascout",
+		original_name: "@cf/meta/llama-4-scout-17b-16e-instruct",
 		description: "Llama 4 Scout 17B",
 		handler: generateTextPortkey,
 		provider: "cloudflare",
@@ -154,6 +160,7 @@ const models = [
 	},
 	{
 		name: "llama-roblox",
+		original_name: "meta-llama/Meta-Llama-3.1-8B-Instruct-fast",
 		description: "Llama 3.1 8B Instruct (Nebius)",
 		handler: generateTextPortkey,
 		provider: "nebius",
@@ -170,6 +177,7 @@ const models = [
 	},
 	{
 		name: "mistral-nemo-roblox",
+		original_name: "mistralai/Mistral-Nemo-Instruct-2407",
 		description: "Mistral Nemo Instruct 2407 (Nebius)",
 		handler: generateTextPortkey,
 		provider: "nebius",
@@ -202,6 +210,7 @@ const models = [
 	// },
 	{
 		name: "llama-fast-roblox",
+		original_name: "@cf/meta/llama-3.2-11b-vision-instruct",
 		description: "Llama 3.2 1B",
 		handler: generateTextPortkey,
 		provider: "cloudflare",
@@ -218,13 +227,14 @@ const models = [
 	},
 	{
 		name: "mistral",
+		original_name: "mistral-small-3.1-24b-instruct-2503",
 		description: "Mistral Small 3.1 24B",
 		handler: generateTextPortkey,
 		provider: "scaleway",
 		tier: "anonymous",
 		community: false,
 		aliases: "mistral-small-3.1-24b-instruct",
-		input_modalities: ["text", "image"],
+		input_modalities: ["text"],
 		output_modalities: ["text"],
 		tools: true,
 		pricing: {
@@ -234,6 +244,7 @@ const models = [
 	},
 	{
 		name: "mistral-roblox",
+		original_name: "@cf/mistralai/mistral-small-3.1-24b-instruct",
 		description: "Mistral Small 3.1 24B",
 		handler: generateTextPortkey,
 		provider: "cloudflare",
@@ -250,6 +261,7 @@ const models = [
 	},
 	{
 		name: "deepseek-reasoning",
+		original_name: "deepseek-ai/DeepSeek-R1-0528",
 		description: "DeepSeek R1 0528",
 		maxInputChars: 10000,
 		handler: generateTextPortkey,
@@ -318,6 +330,7 @@ const models = [
 	},
 	{
 		name: "openai-audio",
+		original_name: "gpt-4o-mini-audio-preview-2024-12-17",
 		description: "OpenAI GPT-4o Mini Audio Preview",
 		maxInputChars: 2000,
 		voices: [
@@ -370,6 +383,7 @@ const models = [
 	// All community models - Reuse upstream endpoints
 	{
 		name: "unity",
+		original_name: "mistral-small-3.1-24b-instruct-2503",
 		description: "Unity Unrestricted Agent",
 		handler: unityMistralLarge,
 		// mistral
@@ -396,11 +410,6 @@ const models = [
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true,
-		pricing: {
-			prompt_text: 1.71,
-			prompt_cache: 0.43,
-			completion_text: 6.84,
-		},
 	},
 	{
 		name: "midijourney",
@@ -413,14 +422,10 @@ const models = [
 		input_modalities: ["text"],
 		output_modalities: ["text"],
 		tools: true,
-		pricing: {
-			prompt_text: 1.71,
-			prompt_cache: 0.43,
-			completion_text: 6.84,
-		},
 	},
 	{
 		name: "rtist",
+		original_name: "gpt-4.1-2025-04-14",
 		description: "Rtist",
 		handler: rtist,
 		// openai-large
@@ -430,14 +435,10 @@ const models = [
 		input_modalities: ["text"],
 		output_modalities: ["text"],
 		tools: true,
-		pricing: {
-			prompt_text: 1.71,
-			prompt_cache: 0.43,
-			completion_text: 6.84,
-		},
 	},
 	{
 		name: "evil",
+		original_name: "mistral-small-3.1-24b-instruct-2503",
 		description: "Evil",
 		handler: evilMistral,
 		// mistral
@@ -448,10 +449,6 @@ const models = [
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true,
-		pricing: {
-			prompt_text: 0.15,
-			completion_text: 0.35,
-		},
 	},
 	{
 		name: "elixposearch",
@@ -479,12 +476,6 @@ const models = [
 		input_modalities: ["text", "audio"],
 		output_modalities: ["audio", "text"],
 		tools: true,
-		pricing: {
-			prompt_text: 0.141,
-			prompt_audio: 9.3953,
-			completion_text: 0.563718,
-			completion_audio: 18.790571,
-		},
 	},
 	{
 		name: "sur",
@@ -497,10 +488,6 @@ const models = [
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true,
-		pricing: {
-			prompt_text: 0.15,
-			completion_text: 0.35,
-		},
 	},
 	{
 		name: "bidara",
@@ -513,11 +500,6 @@ const models = [
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true,
-		pricing: {
-			prompt_text: 0.09,
-			prompt_cache: 0.03,
-			completion_text: 0.35,
-		},
 	},
 ];
 

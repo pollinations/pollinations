@@ -1,37 +1,43 @@
-name = "github-auth-simple"
+name = "pollinations-auth"
 main = "src/index.ts"
-compatibility_date = "2024-01-01"
+compatibility_date = "2025-08-01"
 
 [dev]
 port = 3000
 
 [[d1_databases]]
 binding = "DB"
-database_name = "github_auth"
-database_id = "4145d600-1df6-44a2-9769-5d5f731deb77"
+database_name = "pollinations_auth"
+database_id = "84aa7e13-a53f-4b57-a910-ef048e437930"
+migrations_dir = "drizzle/migrations"
 
 # Environment variables declaration with placeholders
 # These will be overridden by secrets in the Cloudflare dashboard
 [vars]
-GITHUB_CLIENT_ID = "placeholder"
-GITHUB_CLIENT_SECRET = "placeholder"
-JWT_SECRET = "placeholder"
+POLAR_SUCCESS_URL = "http://localhost:3000/success"
 
 [env.production]
-name = "github-auth-simple"
 route = { pattern = "auth.pollinations.ai/*", zone_name = "pollinations.ai" }
-
-# Smart Placement disabled - it actually made performance 33% worse
-# Better to rely on default Cloudflare edge routing
 
 [[env.production.d1_databases]]
 binding = "DB"
-database_name = "github_auth"
-database_id = "4145d600-1df6-44a2-9769-5d5f731deb77"
+database_name = "pollinations_auth"
+database_id = "84aa7e13-a53f-4b57-a910-ef048e437930"
 
 # Environment variables for production with placeholders
 # These will be overridden by secrets in the Cloudflare dashboard
 [env.production.vars]
-GITHUB_CLIENT_ID = "placeholder"
-GITHUB_CLIENT_SECRET = "placeholder"
-JWT_SECRET = "placeholder"
+POLAR_SUCCESS_URL = "https://auth.pollinations.ai/success"
+
+[env.test]
+
+[[env.test.d1_databases]]
+binding = "DB"
+database_name = "pollinations_auth"
+database_id = "84aa7e13-a53f-4b57-a910-ef048e437930"
+
+[env.test.vars]
+GITHUB_CLIENT_ID = "test_github_client_id"
+GITHUB_CLIENT_SECRET = "test_github_client_secret"
+POLAR_ACCESS_TOKEN = "test_polar_token"
+POLAR_SUCCESS_URL = "http://localhost:3000/success"

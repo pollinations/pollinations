@@ -17,6 +17,7 @@ import {
 	getUserMappedModel,
 } from "./requestUtils.js";
 import { logUserRequest } from "./userLogger.js";
+import { checkAndLogMonitoredStrings, extractTextFromMessages } from "./utils/stringMonitor.js";
 
 // Import shared utilities
 import { enqueue } from "../shared/ipQueue.js";
@@ -194,6 +195,12 @@ async function handleRequest(req, res, requestData) {
 					return;
 				}
 			}
+		}
+
+		// Monitor for specific strings in user input if user is authenticated
+		if (authResult.username && finalRequestData.messages) {
+			const inputText = extractTextFromMessages(finalRequestData.messages);
+			await checkAndLogMonitoredStrings(inputText, authResult.username, "messages");
 		}
 
 		// Add user info to request data - using authResult directly as a thin proxy
@@ -421,7 +428,11 @@ export async function sendErrorResponse(
 		stack: error.stack,
 	});
 
-	res.status(responseStatus).json(errorResponse);
+	try {
+		res.status(responseStatus).json(errorResponse);
+	} catch (error) {
+		console.error("Error sending error response:", error);
+	}
 }
 
 // Generate a unique ID with pllns_ prefix

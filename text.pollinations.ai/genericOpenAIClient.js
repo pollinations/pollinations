@@ -13,6 +13,11 @@ import {
 import { createSseStreamConverter } from "./sseStreamConverter.js";
 import { sendTinybirdEvent } from "./observability/tinybirdTracker.js";
 
+
+
+const log = debug(`pollinations:genericopenai`);
+const errorLog = debug(`pollinations:error`);
+
 /**
  * Creates a client function for OpenAI-compatible APIs
  * @param {Object} config - Configuration for the client
@@ -42,8 +47,6 @@ export function createOpenAICompatibleClient(config) {
         supportsSystemMessages = true,
     } = config;
 
-    const log = debug(`pollinations:genericopenai`);
-    const errorLog = debug(`pollinations:genericopenai:error`);
 
     // Return the client function
     return async function (messages, options = {}) {
@@ -140,7 +143,7 @@ export function createOpenAICompatibleClient(config) {
 
             // Apply custom request transformation if provided
             const finalRequestBody = transformRequest
-                ? await transformRequest(cleanedRequestBody)
+                ? await transformRequest(cleanedRequestBody, modelKey)
                 : cleanedRequestBody;
 
             log(`[${requestId}] Sending request to Generic OpenAI API`, {
@@ -297,7 +300,8 @@ export function createOpenAICompatibleClient(config) {
                 error.details = errorDetails;
 
                 error.model = modelName;
-
+                errorLog(`[${requestId}] Error from Generic OpenAI API:`, errorDetails);
+                errorLog(`[${requestId}] Error from Generic OpenAI API: messages roles:`, messages.map((m) => m.role));
                 throw error;
             }
 

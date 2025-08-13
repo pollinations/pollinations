@@ -36,8 +36,8 @@ export async function sendTinybirdEvent(eventData) {
 
 
     try {
-        // Resolve model and pricing using enhanced fallback logic
-        const { model, modelForPricing, resolutionMethod, pricing } = resolveModelForPricing(
+        // Resolve pricing information
+        const { pricing } = resolveModelForPricing(
             eventData.model, 
             eventData.modelUsed
         );

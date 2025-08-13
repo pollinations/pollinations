@@ -2,6 +2,9 @@
 DESCRIPTION >
     Store LLM events with usage metrics, costs, and metadata
 
+FORWARD_QUERY >
+    SELECT timestamp, end_time, response_time, response_status, id, environment, user, referrer, provider, model AS model_requested, model_used, stream, cache_hit, cache_semantic_threshold, cache_semantic_similarity, cache_key, cost, token_generated_completion_text, token_generated_completion_audio, token_generated_prompt_text, token_generated_prompt_audio, token_generated_prompt_cached, token_price_completion_text, token_price_completion_audio, token_price_prompt_text, token_price_prompt_audio, token_price_prompt_cached
+
 SCHEMA >
     `timestamp` DateTime `json:$.start_time`,
     `end_time` DateTime `json:$.end_time`,
@@ -15,7 +18,7 @@ SCHEMA >
     `referrer` String `json:$.referrer` DEFAULT 'unknown',
 
     `provider` LowCardinality(String) `json:$.provider` DEFAULT 'unknown',
-    `model` LowCardinality(String) `json:$.model` DEFAULT 'unknown',
+    `model_requested` LowCardinality(String) `json:$.model_requested` DEFAULT 'unknown',
     `model_used` Nullable(String) `json:$.model_used`,
     `stream` Bool `json:$.stream` DEFAULT false,
 

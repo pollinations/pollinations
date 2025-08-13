@@ -3,7 +3,8 @@ DESCRIPTION >
     Store LLM events with usage metrics, costs, and metadata
 
 FORWARD_QUERY >
-    SELECT timestamp, end_time, response_time, response_status, id, environment, user, referrer, provider, model AS model_requested, model_used, stream, cache_hit, cache_semantic_threshold, cache_semantic_similarity, cache_key, cost, token_generated_completion_text, token_generated_completion_audio, token_generated_prompt_text, token_generated_prompt_audio, token_generated_prompt_cached, token_price_completion_text, token_price_completion_audio, token_price_prompt_text, token_price_prompt_audio, token_price_prompt_cached
+    SELECT timestamp, end_time, response_time, response_status, id, environment, user, referrer, provider, model_requested, model_used, stream, cache_hit, cache_semantic_threshold, cache_semantic_similarity, cache_key, cost, defaultValueOfTypeName('UInt32') AS token_count_completion_text, defaultValueOfTypeName('UInt32') AS token_count_completion_audio, defaultValueOfTypeName('UInt32') AS token_count_prompt_text, defaultValueOfTypeName('UInt32') AS token_count_prompt_audio, defaultValueOfTypeName('UInt32') AS token_count_prompt_cached, token_price_completion_text, token_price_completion_audio, token_price_prompt_text, token_price_prompt_audio, token_price_prompt_cached
+
 
 SCHEMA >
     `timestamp` DateTime `json:$.start_time`,

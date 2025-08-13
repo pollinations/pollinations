@@ -1,25 +1,28 @@
 {
-    "name": "github-auth-simple",
+    "name": "pollinations-auth",
     "version": "1.0.0",
-    "description": "Simple GitHub OAuth proxy for Pollinations",
+    "description": "Next generation auth service for Pollinations",
     "main": "src/index.ts",
     "scripts": {
-        "dev": "wrangler dev --port 3333",
-        "deploy": "node deploy.js",
-        "deploy:prod": "ENV_FILE=.dev.vars.prod node deploy.js",
-        "deploy:local": "ENV_FILE=.dev.vars node deploy.js",
-        "deploy:with-migrations": "ENV_FILE=.dev.vars.prod node deploy-with-migrations.js",
-        "deploy:with-migrations:local": "ENV_FILE=.dev.vars node deploy-with-migrations.js",
-        "apply-user-tiers": "npx wrangler d1 execute github_auth --env production --file ./migrations/user_tiers.sql",
-        "check-db-tables": "npx wrangler d1 execute github_auth --env production --command \"SELECT name FROM sqlite_master WHERE type='table';\"",
-        "test": "node test.js"
+        "dev": "sops exec-file --no-fifo .encrypted.vars.env 'wrangler dev --env-file {}'",
+        "test": "npx vitest run",
+        "gen:auth-schema": "npx @better-auth/cli@latest generate --config betterAuth.config.ts --output src/db/schema/better-auth.ts",
+        "gen:cf-types": "sops exec-file --no-fifo .encrypted.vars.env 'wrangler types --env-file {}'"
     },
     "dependencies": {
-        "@cloudflare/workers-types": "^4.20241218.0",
-        "jose": "^5.2.0"
+        "@polar-sh/better-auth": "^1.1.0",
+        "@polar-sh/sdk": "^0.34.11",
+        "better-auth": "^1.3.6",
+        "drizzle-orm": "^0.44.4",
+        "hono": "^4.9.1",
+        "jose": "^5.10.0"
     },
     "devDependencies": {
-        "typescript": "^5.3.3",
-        "wrangler": "^4.16.1"
+        "@cloudflare/vitest-pool-workers": "^0.8.62",
+        "drizzle-kit": "^0.31.4",
+        "msw": "^2.10.4",
+        "typescript": "^5.9.2",
+        "vitest": "^3.2.4",
+        "wrangler": "^4.28.1"
     }
 }

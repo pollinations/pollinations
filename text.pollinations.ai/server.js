@@ -428,7 +428,11 @@ export async function sendErrorResponse(
 		stack: error.stack,
 	});
 
-	res.status(responseStatus).json(errorResponse);
+	try {
+		res.status(responseStatus).json(errorResponse);
+	} catch (error) {
+		console.error("Error sending error response:", error);
+	}
 }
 
 // Generate a unique ID with pllns_ prefix

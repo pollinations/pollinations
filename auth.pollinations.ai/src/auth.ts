@@ -2,7 +2,7 @@ import { checkout, polar, usage } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { apiKey, openAPI } from "better-auth/plugins";
+import { admin, apiKey, openAPI } from "better-auth/plugins";
 import { drizzle } from "drizzle-orm/d1";
 import * as betterAuthSchema from "./db/schema/better-auth.ts";
 
@@ -46,6 +46,7 @@ export function createAuth(env: Cloudflare.Env) {
                 clientSecret: env.GITHUB_CLIENT_SECRET,
             },
         },
-        plugins: [polarPlugin, apiKeyPlugin, openAPI()],
+        plugins: [polarPlugin, apiKeyPlugin, openAPI(), admin()],
+        telemetry: { enabled: false },
     });
 }

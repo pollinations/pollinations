@@ -18,9 +18,9 @@
         "jose": "^5.10.0"
     },
     "devDependencies": {
-        "@cloudflare/vitest-pool-workers": "^0.8.62",
+        "@cloudflare/vitest-pool-workers": "^0.8.63",
         "drizzle-kit": "^0.31.4",
-        "msw": "^2.10.4",
+        "msw": "^2.10.5",
         "typescript": "^5.9.2",
         "vitest": "^3.2.4",
         "wrangler": "^4.28.1"

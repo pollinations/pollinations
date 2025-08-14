@@ -1,28 +1,30 @@
 name = "pollinations-auth"
 main = "src/index.ts"
 compatibility_date = "2025-08-01"
+compatibility_flags = [ "nodejs_compat" ]
 
 [dev]
 port = 3000
 
 [[d1_databases]]
 binding = "DB"
-database_name = "pollinations_auth"
-database_id = "84aa7e13-a53f-4b57-a910-ef048e437930"
-migrations_dir = "drizzle/migrations"
+database_name = "pollinations-auth"
+database_id = "cc225cad-b9a2-4595-8323-6602e7680511"
+migrations_dir = "drizzle"
 
 # Environment variables declaration with placeholders
 # These will be overridden by secrets in the Cloudflare dashboard
 [vars]
 POLAR_SUCCESS_URL = "http://localhost:3000/success"
 
+
 [env.production]
 route = { pattern = "auth.pollinations.ai/*", zone_name = "pollinations.ai" }
 
 [[env.production.d1_databases]]
 binding = "DB"
-database_name = "pollinations_auth"
-database_id = "84aa7e13-a53f-4b57-a910-ef048e437930"
+database_name = "pollinations-auth"
+database_id = "cc225cad-b9a2-4595-8323-6602e7680511"
 
 # Environment variables for production with placeholders
 # These will be overridden by secrets in the Cloudflare dashboard
@@ -33,8 +35,8 @@ POLAR_SUCCESS_URL = "https://auth.pollinations.ai/success"
 
 [[env.test.d1_databases]]
 binding = "DB"
-database_name = "pollinations_auth"
-database_id = "84aa7e13-a53f-4b57-a910-ef048e437930"
+database_name = "pollinations-auth"
+database_id = "cc225cad-b9a2-4595-8323-6602e7680511"
 
 [env.test.vars]
 GITHUB_CLIENT_ID = "test_github_client_id"

@@ -2,8 +2,23 @@ import { Hono } from "hono";
 import { appendTrailingSlash } from "hono/trailing-slash";
 import type { MockHandlerMap } from "./fetch";
 import { createHonoMockHandler } from "./fetch";
+import { PolarEvent } from "@/db/schema/event";
 
-export function createPolarMockHandlers(): MockHandlerMap {
+export type MockPolarState = {
+    events: PolarEvent[];
+};
+
+export type MockAPI<TState> = {
+    state: TState;
+    handlerMap: MockHandlerMap;
+    reset: () => void;
+};
+
+export function createMockPolar(): MockAPI<MockPolarState> {
+    const state: MockPolarState = {
+        events: [],
+    };
+
     const polarAPI = new Hono();
     polarAPI.use("*", appendTrailingSlash());
     polarAPI.get("/v1/customers/", (c) => {
@@ -34,6 +49,23 @@ export function createPolarMockHandlers(): MockHandlerMap {
         };
         return c.json(mockCustomer, 201);
     });
+    polarAPI.post("/v1/events/ingest", async (c) => {
+        const body: { events: PolarEvent[] } = await c.req.json();
+        state.events.push(...body.events);
+        return c.json({ inserted: body.events.length });
+    });
 
-    return { "sandbox-api.polar.sh": createHonoMockHandler(polarAPI) };
+    const handlerMap = {
+        "sandbox-api.polar.sh": createHonoMockHandler(polarAPI),
+    };
+
+    const reset = () => {
+        state.events = [];
+    };
+
+    return {
+        state,
+        reset,
+        handlerMap,
+    };
 }

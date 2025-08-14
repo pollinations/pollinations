@@ -25,7 +25,18 @@ export default defineWorkersConfig(async () => {
                     },
                 },
             },
+            deps: {
+                optimizer: {
+                    ssr: {
+                        enabled: true,
+                        include: [
+                            "@polar-sh/sdk",
+                            "@polar-sh/better-auth",
+                            "better-auth",
+                        ],
+                    },
+                },
+            },
         },
     };
 });
-

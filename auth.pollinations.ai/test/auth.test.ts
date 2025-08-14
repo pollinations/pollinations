@@ -2,11 +2,13 @@ import { SELF } from "cloudflare:test";
 import { afterEach, beforeEach, expect, test } from "vitest";
 import { setupFetchMock, teardownFetchMock } from "./mocks/fetch";
 import { createGithubMockHandlers } from "./mocks/github";
-import { createPolarMockHandlers } from "./mocks/polar";
+import { createMockPolar } from "./mocks/polar";
+
+const mockPolar = createMockPolar();
 
 const mockHandlers = {
     ...createGithubMockHandlers(),
-    ...createPolarMockHandlers(),
+    ...mockPolar.handlerMap,
 };
 
 beforeEach(() => setupFetchMock(mockHandlers));

@@ -49,6 +49,7 @@ CREATE TABLE `session` (
 	`ip_address` text,
 	`user_agent` text,
 	`user_id` text NOT NULL,
+	`impersonated_by` text,
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
@@ -60,7 +61,11 @@ CREATE TABLE `user` (
 	`email_verified` integer NOT NULL,
 	`image` text,
 	`created_at` integer NOT NULL,
-	`updated_at` integer NOT NULL
+	`updated_at` integer NOT NULL,
+	`role` text,
+	`banned` integer,
+	`ban_reason` text,
+	`ban_expires` integer
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `user_email_unique` ON `user` (`email`);--> statement-breakpoint
@@ -71,4 +76,18 @@ CREATE TABLE `verification` (
 	`expires_at` integer NOT NULL,
 	`created_at` integer,
 	`updated_at` integer
+);
+--> statement-breakpoint
+CREATE TABLE `event` (
+	`id` text PRIMARY KEY NOT NULL,
+	`name` text NOT NULL,
+	`user_id` text NOT NULL,
+	`request_id` text NOT NULL,
+	`processing_id` text,
+	`status` text DEFAULT 'pending' NOT NULL,
+	`metadata` text NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	`sent_at` integer,
+	`delivery_attempts` integer DEFAULT 0 NOT NULL
 );

@@ -128,7 +128,7 @@ const models = [
 	//     cache: 0.0375,
 	//   },
 	// },
->>>>>>> origin/master
+
 	{
 		name: "qwen-coder",
 		original_name: "qwen2.5-coder-32b-instruct",
@@ -263,7 +263,7 @@ const models = [
 	// 		completion_text: 0.4,
 	// 	},
 	// },
->>>>>>> origin/master
+
 	{
 		name: "llama-fast-roblox",
 		original_name: "@cf/meta/llama-3.2-11b-vision-instruct",
@@ -399,7 +399,7 @@ const models = [
 	// 		completion_text: 1.38,
 	// 	},
 	// },
->>>>>>> origin/master
+
 	{
 		name: "openai-audio",
 		original_name: "gpt-4o-mini-audio-preview-2024-12-17",
@@ -472,7 +472,7 @@ const models = [
 		description: "MIDIjourney",
 		handler: midijourney,
 		// openai-large
->>>>>>> origin/master
+
 		provider: "azure",
 		tier: "anonymous",
 		community: true,
@@ -530,7 +530,7 @@ const models = [
 	// 		completion_text: 0.35,
 	// 	},
 	// },
->>>>>>> origin/master
+
 	{
 		name: "unity",
 		description: "Unity Unrestricted Agent",

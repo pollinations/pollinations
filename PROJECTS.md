@@ -189,6 +189,7 @@ Pollinations.AI is used in various projects, including:
 | [Pollinations Chat](https://websim.ai/@AdrianoDev1/pollinations-ai-assistant/4) | Pollinations' integrated AI for text and images, totally free and unlimited. | @adrianoprogramer |
 | [LiteAI](https://liteai.chat/) | A free, fast, and anonymous AI chat and image generation platform with no login... | LiteAI Team |
 | 🤖 [UR Imagine & Chat AI](https://urimagine.netlify.app/) | A versatile AI platform offering both image generation and chat... | @ur_imagine |
+| 🤖 [Pollix AI](http://t.me/pollixrobot) | Pollix AI is your multilingual AI assistant in Telegram for fast replies, image understanding, and clean answers. | @bladedevoff |
 
 ### Social Bots 🤖
 

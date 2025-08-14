@@ -17,6 +17,14 @@ export const socialBotsProjects = [
     discoveredDate: "2025-06-04T09:29:31.740Z"
   },
   {
+    name: "Pollix AI",
+    url: "http://t.me/pollixrobot",
+    description: "Pollix AI is your multilingual AI assistant for fast replies, image understanding, and clean answers.",
+    author: "@bladedevoff",
+    submissionDate: "2025-08-14",
+    order: 1
+  },
+  {
     name: "Anyai",
     url: "https://discord.gg/anyai",
     description: "A Discord bot and community for AI-driven content.",

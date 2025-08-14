@@ -2,10 +2,6 @@
 DESCRIPTION >
     Store LLM events with usage metrics, costs, and metadata
 
-FORWARD_QUERY >
-    SELECT timestamp, end_time, response_time, response_status, id, environment, user, referrer, provider, model_requested, model_used, stream, cache_hit, cache_semantic_threshold, cache_semantic_similarity, cache_key, cost, defaultValueOfTypeName('UInt32') AS token_count_completion_text, defaultValueOfTypeName('UInt32') AS token_count_completion_audio, defaultValueOfTypeName('UInt32') AS token_count_prompt_text, defaultValueOfTypeName('UInt32') AS token_count_prompt_audio, defaultValueOfTypeName('UInt32') AS token_count_prompt_cached, token_price_completion_text, token_price_completion_audio, token_price_prompt_text, token_price_prompt_audio, token_price_prompt_cached
-
-
 SCHEMA >
     `timestamp` DateTime `json:$.start_time`,
     `end_time` DateTime `json:$.end_time`,
@@ -30,16 +26,18 @@ SCHEMA >
 
     `cost` Float64 `json:$.cost` DEFAULT 0,
 
-    `token_count_completion_text` UInt32 `json:$.token_count_completion_text` DEFAULT 0,
-    `token_count_completion_audio` UInt32 `json:$.token_count_completion_audio` DEFAULT 0,
-    `token_count_prompt_text` UInt32 `json:$.token_count_prompt_text` DEFAULT 0,
-    `token_count_prompt_audio` UInt32 `json:$.token_count_prompt_audio` DEFAULT 0,
-    `token_count_prompt_cached` UInt32 `json:$.token_count_prompt_cached` DEFAULT 0,
-    `token_price_completion_text` Float64 `json:$.token_price_completion_text` DEFAULT 0,
-    `token_price_completion_audio` Float64 `json:$.token_price_completion_audio` DEFAULT 0,
     `token_price_prompt_text` Float64 `json:$.token_price_prompt_text` DEFAULT 0,
     `token_price_prompt_audio` Float64 `json:$.token_price_prompt_audio` DEFAULT 0,
     `token_price_prompt_cached` Float64 `json:$.token_price_prompt_cached` DEFAULT 0,
+    `token_price_completion_text` Float64 `json:$.token_price_completion_text` DEFAULT 0,
+    `token_price_completion_audio` Float64 `json:$.token_price_completion_audio` DEFAULT 0,
+
+    `token_count_prompt_text` UInt32 `json:$.token_count_prompt_text` DEFAULT 0,
+    `token_count_prompt_audio` UInt32 `json:$.token_count_prompt_audio` DEFAULT 0,
+    `token_count_prompt_cached` UInt32 `json:$.token_count_prompt_cached` DEFAULT 0,
+    `token_count_completion_text` UInt32 `json:$.token_count_completion_text` DEFAULT 0,
+    `token_count_completion_audio` UInt32 `json:$.token_count_completion_audio` DEFAULT 0,
+
 
 ENGINE "MergeTree" 
 ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"

@@ -19,11 +19,6 @@ SCHEMA >
     `model_used` Nullable(String) `json:$.model_used`,
     `stream` Bool `json:$.stream` DEFAULT false,
 
-    `cache_hit` Bool `json:$.cache_hit` DEFAULT false,
-    `cache_semantic_threshold` Float32 `json:$.cache_semantic_threshold` DEFAULT 0,
-    `cache_semantic_similarity` Float32 `json:$.cache_semantic_similarity` DEFAULT 0,
-    `cache_key` String `json:$.cache_key` DEFAULT '',
-
     `cost` Float64 `json:$.cost` DEFAULT 0,
 
     `token_price_prompt_text` Float64 `json:$.token_price_prompt_text` DEFAULT 0,
@@ -43,3 +38,6 @@ ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
 ENGINE_SORTING_KEY "timestamp, environment, user"
 ENGINE_PRIMARY_KEY "timestamp, environment, user"
+
+FORWARD_QUERY > 
+  SELECT timestamp, end_time, response_time, response_status, id, environment, user, referrer, provider, model_requested, model_used, stream, cost, token_price_prompt_text, token_price_prompt_audio, token_price_prompt_cached, token_price_completion_text, token_price_completion_audio, token_count_prompt_text, token_count_prompt_audio, token_count_prompt_cached, token_count_completion_text, token_count_completion_audio

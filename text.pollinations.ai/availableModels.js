@@ -16,7 +16,6 @@ import {
 const models = [
 	{
 		name: "openai",
-		original_name: "gpt-4.1-nano-2025-04-14",
 		description: "OpenAI GPT-4.1 Nano",
 		handler: generateTextPortkey,
 		provider: "azure",
@@ -26,6 +25,7 @@ const models = [
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true,
+		original_name: "gpt-4.1-nano-2025-04-14",
 		pricing: {
 			prompt_text: 0.10,
 			prompt_cache: 0.03,
@@ -34,7 +34,6 @@ const models = [
 	},
 	{
 		name: "openai-fast",
-		original_name: "gpt-4.1-nano-2025-04-14",	
 		description: "OpenAI GPT-4.1 Nano",
 		handler: generateTextPortkey,
 		provider: "azure",
@@ -66,7 +65,6 @@ const models = [
 	},
 	{
 		name: "openai-roblox",
-		original_name: "gpt-4.1-nano-2025-04-14",
 		description: "OpenAI GPT-4.1 Nano",
 		handler: generateTextPortkey,
 		provider: "azure",

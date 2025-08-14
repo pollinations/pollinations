@@ -7,7 +7,7 @@ import {
 } from "../../shared/auth-utils.js";
 
 // Probability of adding referral links (8%)
-const REFERRAL_LINK_PROBABILITY = 0.08;
+const REFERRAL_LINK_PROBABILITY = 0.03;
 
 const TEST_ADS_MARKER = "p-ads";
 

@@ -110,13 +110,26 @@ Expected output:
 🚀 You can now make Vertex AI requests without manual login.
 ```
 
-## Current Status
+## Current Working Configuration
 
-✅ **WORKING** - Service account authentication is fully configured and tested as of August 6, 2025
+✅ **FULLY WORKING** - Programmatic authentication tested and verified (August 2025)
+
+**Service Account Details:**
+- Project ID: `stellar-verve-465920-b7`
 - Service Account: `vertex-ai-client@stellar-verve-465920-b7.iam.gserviceaccount.com`
 - Key File: `credentials/google_vertex_key.json`
-- Environment Variables: Configured in `.env`
-- Vertex AI API: Successfully tested with DeepSeek model
+- Permissions: `roles/aiplatform.user`
+
+**Environment Variables (.env):**
+```bash
+GOOGLE_APPLICATION_CREDENTIALS=/home/ubuntu/pollinations/text.pollinations.ai/credentials/google_vertex_key.json
+GCLOUD_PROJECT_ID=stellar-verve-465920-b7
+```
+
+**Benefits:**
+- ✅ No manual `gcloud auth login` required
+- ✅ Automatic token refresh every 50 minutes
+- ✅ Fully tested with DeepSeek model on Vertex AI
 
 ## Usage in Code
 

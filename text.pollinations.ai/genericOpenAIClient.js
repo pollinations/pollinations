@@ -59,8 +59,9 @@ export function createOpenAICompatibleClient(config) {
             options,
         });
 
-        // Declare normalizedOptions in outer scope so it's available in catch block
+        // Declare normalizedOptions and modelName in outer scope so they're available in catch block
         let normalizedOptions;
+        let modelName;
 
         try {
             // Check if API key is available
@@ -73,7 +74,7 @@ export function createOpenAICompatibleClient(config) {
 
             // Determine which model to use
             const modelKey = normalizedOptions.model;
-            const modelName =
+            modelName =
                 modelMapping[modelKey] ||
                 modelMapping[Object.keys(modelMapping)[0]];
 
@@ -298,6 +299,8 @@ export function createOpenAICompatibleClient(config) {
                 const error = new Error(errorMessage);
                 error.status = response.status;
                 error.details = errorDetails;
+                
+
 
                 error.model = modelName;
                 errorLog(`[${requestId}] Error from Generic OpenAI API:`, errorDetails);
@@ -328,13 +331,14 @@ export function createOpenAICompatibleClient(config) {
             sendTinybirdEvent({
                 startTime: new Date(startTime),
                 endTime,
-                requestId,
-                model: normalizedOptions.model, // Use friendly model name from request options
-                modelUsed, // Track the actual model used by the provider
+                model: normalizedOptions.model,
+                modelUsed: data.model,
                 duration: completionTime,
                 status: "success",
                 // Pass the entire usage object rather than individual fields
                 usage: data.usage,
+                // Include raw response data for moderation detection
+                choices: data.choices,
                 project: "text.pollinations.ai",
                 environment: process.env.NODE_ENV || "production",
                 // Spread all user information for better data retention
@@ -345,6 +349,7 @@ export function createOpenAICompatibleClient(config) {
                     normalizedOptions.userInfo?.userId ||
                     "anonymous",
                 referrer: normalizedOptions.userInfo?.referrer || "unknown",
+                cf_ray: normalizedOptions.userInfo?.cf_ray || "",
                 organization: normalizedOptions.userInfo?.userId
                     ? "pollinations"
                     : undefined,
@@ -355,6 +360,8 @@ export function createOpenAICompatibleClient(config) {
                     err,
                 );
             });
+
+
 
             // Use custom response formatter if provided
             // Pass only choices[0] to formatResponse, reconstruct after
@@ -387,24 +394,19 @@ export function createOpenAICompatibleClient(config) {
                 choices: [formattedChoice],
             };
 
-            log(
-                `[${requestId}] Final response:`,
-                JSON.stringify(data, null, 2),
-            );
-
-            return data;
         } catch (error) {
             errorLog(`[${requestId}] Error in text generation`, {
                 timestamp: new Date().toISOString(),
                 error: error.message,
-                name: error.name,
-                stack: error.stack,
-                completionTimeMs: Date.now() - startTime,
+                model: modelName,
+                provider: config.provider,
+                requestId,
             });
 
             // Send error telemetry to Tinybird
             const endTime = new Date();
             const completionTime = endTime.getTime() - startTime;
+
             sendTinybirdEvent({
                 startTime: new Date(startTime),
                 endTime,
@@ -422,6 +424,7 @@ export function createOpenAICompatibleClient(config) {
                     "anonymous",
                 username: normalizedOptions.userInfo?.username, // Explicitly include username field
                 referrer: normalizedOptions.userInfo?.referrer || "unknown",
+                cf_ray: normalizedOptions.userInfo?.cf_ray || "",
                 organization: normalizedOptions.userInfo?.userId
                     ? "pollinations"
                     : undefined,

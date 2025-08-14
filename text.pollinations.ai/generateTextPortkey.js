@@ -69,6 +69,8 @@ const MODEL_MAPPING = {
 	// AWS Bedrock Lambda endpoint
 	claudyclaude: "eu.anthropic.claude-sonnet-4-20250514-v1:0",
 	"nova-fast": "amazon.nova-micro-v1:0",
+	"roblox-rp": "roblox-rp", // Random selection from multiple Bedrock models
+	claude: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
 };
 
 // Base prompts that can be reused across different models
@@ -147,6 +149,8 @@ const SYSTEM_PROMPTS = {
 	// AWS Bedrock Lambda endpoint
 	claudyclaude: 'You are Claude Sonnet 4, a helpful AI assistant created by Anthropic. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.',
 	"nova-fast": 'You are Amazon Nova Micro, a fast and efficient AI assistant. You provide helpful, accurate responses while being concise and to the point.',
+	"roblox-rp": BASE_PROMPTS.conversational,
+	claude: 'You are Claude 3.5 Haiku, a helpful AI assistant created by Anthropic. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.',
 };
 
 // Default options
@@ -734,6 +738,28 @@ export const portkeyConfig = {
 	"amazon.nova-micro-v1:0": () => createBedrockLambdaModelConfig({
 		model: "awsbedrock/amazon.nova-micro-v1:0",
 	}),
+	"us.anthropic.claude-3-5-haiku-20241022-v1:0": () => createBedrockLambdaModelConfig({
+		model: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+	}),
+	"roblox-rp": () => {
+		// Randomly select one of the 4 Bedrock models for roblox-rp
+		const bedrockModels = [
+			// "meta.llama3-1-8b-instruct-v1:0", 
+			"meta.llama3-8b-instruct-v1:0",
+			"mistral.mistral-small-2402-v1:0"
+		];
+
+		const randomIndex = Math.floor(Math.random() * bedrockModels.length);
+		const selectedModel = bedrockModels[randomIndex];
+
+		log(
+			`Selected random Bedrock model for roblox-rp ${randomIndex + 1}/${bedrockModels.length}: ${selectedModel}`,
+		);
+
+		return createBedrockLambdaModelConfig({
+			model: selectedModel,
+		});
+	},
 };
 
 /**
@@ -882,6 +908,14 @@ export const generateTextPortkey = createOpenAICompatibleClient({
 			if (modelName === "azure-grok" && requestBody.seed !== undefined) {
 				log(`Setting seed to null for grok model (was: ${requestBody.seed})`);
 				requestBody.seed = null;
+			}
+
+			// Handle roblox-rp random model selection
+			if (modelName === "roblox-rp") {
+				// Get the actual selected model from the config
+				const actualModel = config.model;
+				log(`Overriding roblox-rp model name to actual selected model: ${actualModel}`);
+				requestBody.model = actualModel;
 			}
 
 			// Add Google Search grounding for Gemini Search model

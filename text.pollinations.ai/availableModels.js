@@ -187,7 +187,7 @@ const models = [
 	},
 	{
 		name: "llama-roblox",
-		description: "Llama 3.1 8B Instruct (Nebius)",
+		description: "Llama 3.1 8B Instruct",
 		handler: generateTextPortkey,
 		provider: "nebius",
 		tier: "anonymous",
@@ -601,21 +601,21 @@ const models = [
 			completion_text: 0.35,
 		},
 	},
-	{
-		name: "claudyclaude",
-		description: "Claude Sonnet 4",
-		handler: generateTextPortkey,
-		provider: "bedrock",
-		tier: "nectar",
-		// community: false,
-		input_modalities: ["text"],
-		output_modalities: ["text"],
-		tools: true,
-		pricing: {
-			prompt_text: 3.0,
-			completion_text: 15.0,
-		},
-	},
+	// {
+	// 	name: "claudyclaude",
+	// 	description: "Claude Sonnet 4",
+	// 	handler: generateTextPortkey,
+	// 	provider: "bedrock",
+	// 	tier: "nectar",
+	// 	// community: false,
+	// 	input_modalities: ["text"],
+	// 	output_modalities: ["text"],
+	// 	tools: true,
+	// 	pricing: {
+	// 		prompt_text: 3.0,
+	// 		completion_text: 15.0,
+	// 	},
+	// },
 	{
 		name: "nova-fast",
 		description: "Amazon Nova Micro (Bedrock)",
@@ -632,6 +632,36 @@ const models = [
 			completion_text: 0.14,
 		},
 	},
+	{
+		name: "roblox-rp",
+		description: "Roblox RP Multi-Model (Random Bedrock Selection)",
+		handler: generateTextPortkey,
+		provider: "bedrock",
+		tier: "anonymous",
+		community: false,
+		input_modalities: ["text"],
+		output_modalities: ["text"],
+		tools: true,
+		pricing: {
+			prompt_text: 0.15,
+			completion_text: 0.60,
+		},
+	},
+	// {
+	// 	name: "claude",
+	// 	description: "Claude 3.5 Haiku",
+	// 	handler: generateTextPortkey,
+	// 	provider: "bedrock",
+	// 	tier: "seed",
+	// 	community: false,
+	// 	input_modalities: ["text"],
+	// 	output_modalities: ["text"],
+	// 	tools: true,
+	// 	pricing: {
+	// 		prompt_text: 0.25,
+	// 		completion_text: 1.25,
+	// 	},
+	// },
 ];
 
 // Use the models array directly without sorting

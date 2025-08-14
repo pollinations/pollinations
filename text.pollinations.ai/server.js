@@ -25,7 +25,9 @@ import { handleAuthentication } from "../shared/auth-utils.js";
 import { getIp } from "../shared/extractFromRequest.js";
 import { hasSufficientTier } from "../shared/tier-gating.js";
 
-// Load environment variables
+// Load environment variables including .env.local overrides
+// Load .env.local first (higher priority), then .env as fallback
+dotenv.config({ path: '.env.local' });
 dotenv.config();
 
 // Shared authentication and queue is initialized automatically in ipQueue.js

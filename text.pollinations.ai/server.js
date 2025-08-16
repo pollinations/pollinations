@@ -211,6 +211,7 @@ async function handleRequest(req, res, requestData) {
 			userInfo: {
 				...authResult,
 				referrer: requestData.referrer || "unknown",
+				cf_ray: req.headers["cf-ray"] || "",
 			},
 		};
 
@@ -390,6 +391,7 @@ export async function sendErrorResponse(
 		userAgent: req.headers["user-agent"] || "unknown",
 		referer: req.headers["referer"] || "unknown",
 		origin: req.headers["origin"] || "unknown",
+		cf_ray: req.headers["cf-ray"] || "",
 	};
 
 	// Extract request parameters (sanitized)

@@ -3,6 +3,7 @@ DESCRIPTION >
 
 SCHEMA >
     `id` String `json:$.id` DEFAULT '',
+    `timestamp` DateTime `json:$.timestamp`,
 
     -- OpenAI Moderation Parameters (severity levels and detection flags only)
     `hate_severity` LowCardinality(String) `json:$.hate.severity` DEFAULT 'safe',
@@ -13,7 +14,7 @@ SCHEMA >
     `protected_material_text_detected` Bool `json:$.protected_material_text.detected` DEFAULT false
 
 ENGINE "MergeTree" 
-ENGINE_PARTITION_KEY "id"
+ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
 ENGINE_SORTING_KEY "id"
 ENGINE_PRIMARY_KEY "id"
 

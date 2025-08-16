@@ -2,40 +2,19 @@ DESCRIPTION >
     Store OpenAI moderation results with cf_ray for joining with main events table
 
 SCHEMA >
-    `id` String,
-    -- NOTE: Current field mappings may not align perfectly with actual OpenAI/Azure moderation API response structure
-    -- The API returns nested content_filter_results with filtered/severity/detected flags per category
-    -- Consider updating JSON paths and field structure if ingestion issues occur
-    `timestamp` DateTime `json:$.timestamp` DEFAULT now(),
-    `choice_index` UInt8 `json:$.choice_index` DEFAULT 0,
+    `id` String `json:$.id` DEFAULT '',
 
-    -- Core moderation categories with both severity and filtered status
+    -- OpenAI Moderation Parameters (severity levels and detection flags only)
     `hate_severity` LowCardinality(String) `json:$.hate.severity` DEFAULT 'safe',
-    `hate_filtered` Bool `json:$.hate.filtered` DEFAULT false,
     `self_harm_severity` LowCardinality(String) `json:$.self_harm.severity` DEFAULT 'safe',
-    `self_harm_filtered` Bool `json:$.self_harm.filtered` DEFAULT false,
     `sexual_severity` LowCardinality(String) `json:$.sexual.severity` DEFAULT 'safe',
-    `sexual_filtered` Bool `json:$.sexual.filtered` DEFAULT false,
     `violence_severity` LowCardinality(String) `json:$.violence.severity` DEFAULT 'safe',
-    `violence_filtered` Bool `json:$.violence.filtered` DEFAULT false,
-
-    -- Protected material detection
     `protected_material_code_detected` Bool `json:$.protected_material_code.detected` DEFAULT false,
-    `protected_material_code_filtered` Bool `json:$.protected_material_code.filtered` DEFAULT false,
-    `protected_material_code_url` Nullable(String) `json:$.protected_material_code.citation.URL` DEFAULT NULL,
-    `protected_material_code_license` Nullable(String) `json:$.protected_material_code.citation.license` DEFAULT NULL,
-    `protected_material_text_detected` Bool `json:$.protected_material_text.detected` DEFAULT false,
-    `protected_material_text_filtered` Bool `json:$.protected_material_text.filtered` DEFAULT false,
-
-    -- Additional detection categories
-    `jailbreak_detected` Bool `json:$.jailbreak.detected` DEFAULT false,
-    `jailbreak_filtered` Bool `json:$.jailbreak.filtered` DEFAULT false,
-    `profanity_detected` Bool `json:$.profanity.detected` DEFAULT false,
-    `profanity_filtered` Bool `json:$.profanity.filtered` DEFAULT false
+    `protected_material_text_detected` Bool `json:$.protected_material_text.detected` DEFAULT false
 
 ENGINE "MergeTree" 
-ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
-ENGINE_SORTING_KEY "timestamp, id"
-ENGINE_PRIMARY_KEY "timestamp, id"
+ENGINE_PARTITION_KEY "id"
+ENGINE_SORTING_KEY "id"
+ENGINE_PRIMARY_KEY "id"
 
 

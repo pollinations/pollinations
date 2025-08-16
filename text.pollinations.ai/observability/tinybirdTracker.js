@@ -1,207 +1,244 @@
-// Tinybird telemetry tracking for text.pollinations.ai
-// Sends events to Tinybird for analytics and monitoring
+import dotenv from "dotenv";
+import debug from "debug";
+import { calculateTotalCost, resolvePricing } from "./costCalculator.js";
+import { findModelByName } from "../availableModels.js";
+import { generatePollinationsId, getOrGenerateId } from "./idGenerator.js";
 
-const TINYBIRD_BASE_URL = "https://api.tinybird.co/v0/events";
+// Load environment variables
+dotenv.config();
 
-// Rate limiting configuration
-const RATE_LIMIT_CONFIG = {
-    windowMs: 60000, // 1 minute
-    maxRequests: 100, // max requests per window
-    skipSuccessfulGets: true
-};
+const log = debug("pollinations:tinybird");
+const errorLog = debug("pollinations:tinybird:error");
 
-// Request rate limiter using Map to track requests per IP
-const rateLimitMap = new Map();
+const TINYBIRD_API_URL =
+    process.env.TINYBIRD_API_URL || "https://api.europe-west2.gcp.tinybird.co";
+const TINYBIRD_API_KEY = process.env.TINYBIRD_API_KEY;
 
-function isRateLimited(ip) {
-    const now = Date.now();
-    const windowStart = now - RATE_LIMIT_CONFIG.windowMs;
-    
-    if (!rateLimitMap.has(ip)) {
-        rateLimitMap.set(ip, []);
+if (!TINYBIRD_API_KEY) {
+    log("TINYBIRD_API_KEY not set, telemetry will be skipped");
+}
+
+/**
+ * Send LLM call telemetry to Tinybird
+ * @param {Object} eventData - The event data to send to Tinybird
+ * @returns {Promise} - Promise that resolves when the event is sent
+ */
+export async function sendTinybirdEvent(eventData) {
+    // Skip if Tinybird API key is not set - this is optional functionality
+    if (!TINYBIRD_API_KEY) {
+        log("TINYBIRD_API_KEY not set, skipping telemetry");
+        return;
     }
-    
-    const requests = rateLimitMap.get(ip);
-    // Remove old requests outside the window
-    const validRequests = requests.filter(timestamp => timestamp > windowStart);
-    rateLimitMap.set(ip, validRequests);
-    
-    return validRequests.length >= RATE_LIMIT_CONFIG.maxRequests;
-}
 
-function recordRequest(ip) {
-    const now = Date.now();
-    if (!rateLimitMap.has(ip)) {
-        rateLimitMap.set(ip, []);
-    }
-    rateLimitMap.get(ip).push(now);
-}
+    try {
+        // Extract model and pricing information
+        const modelUsed = eventData.modelUsed ?? null;
+        const pricing = resolvePricing(modelUsed);
 
-// Generate a unique ID for tracking
-function generatePollinationsId() {
-    return Math.random().toString(36).substring(2, 15) + 
-           Math.random().toString(36).substring(2, 15);
-}
-
-// Send data to Tinybird with retry logic
-async function sendToTinybird(datasource, data, controller = null, eventType = "event") {
-    const maxRetries = 3;
-    const baseDelay = 1000; // 1 second
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            const response = await fetch(`${TINYBIRD_BASE_URL}?name=${datasource}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${process.env.TINYBIRD_TOKEN}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-                signal: controller?.signal
-            });
+        // Extract token counts from usage data
+        const extractTokenCounts = (usage) => {
+            if (!usage) return {};
             
-            if (response.ok) {
-                console.log(`✅ ${eventType} sent to Tinybird ${datasource}:`, data.id || 'no-id');
-                return true;
-            } else {
-                const errorText = await response.text();
-                console.warn(`⚠️ Tinybird ${datasource} ${eventType} failed (attempt ${attempt}):`, response.status, errorText);
-                
-                if (response.status === 429) {
-                    // Rate limited, wait longer
-                    const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 1000;
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    continue;
-                }
-                
-                if (attempt === maxRetries) {
-                    return false;
-                }
-            }
-        } catch (error) {
-            console.error(`❌ Tinybird ${datasource} ${eventType} error (attempt ${attempt}):`, error.message);
+            const {
+                prompt_tokens = 0,
+                completion_tokens = 0,
+                prompt_tokens_details = {},
+                completion_tokens_details = {},
+            } = usage;
+
+            // Extract audio and cached tokens
+            const prompt_audio = prompt_tokens_details?.audio_tokens ?? usage.audio_prompt_tokens ?? 0;
+            const completion_audio = completion_tokens_details?.audio_tokens ?? usage.audio_completion_tokens ?? 0;
+            const prompt_cached = prompt_tokens_details?.cached_tokens ?? 0;
+
+            // Calculate text tokens with fallback to total when only text
+            const prompt_text = (!prompt_audio && !prompt_cached) 
+                ? prompt_tokens
+                : (prompt_tokens_details?.text_tokens ?? prompt_tokens - prompt_audio - prompt_cached);
             
-            if (attempt === maxRetries) {
+            const completion_text = !completion_audio
+                ? completion_tokens
+                : (completion_tokens_details?.text_tokens ?? completion_tokens - completion_audio);
+
+            return {
+                token_count_completion_text: completion_text,
+                token_count_completion_audio: completion_audio,
+                token_count_prompt_text: prompt_text,
+                token_count_prompt_audio: prompt_audio,
+                token_count_prompt_cached: prompt_cached,
+            };
+        };
+
+        // Build token data with counts and prices
+        const tokenCounts = extractTokenCounts(eventData.usage);
+        const tokenData = {
+            ...tokenCounts,
+            ...(pricing && {
+                token_price_completion_text: pricing.completion_text ?? 0,
+                token_price_completion_audio: pricing.completion_audio ?? 0,
+                token_price_prompt_text: pricing.prompt_text ?? 0,
+                token_price_prompt_audio: pricing.prompt_audio ?? 0,
+                token_price_prompt_cached: pricing.prompt_cache ?? 0,
+            }),
+        };
+
+        // Calculate total cost based on token usage and pricing
+        const totalCost = calculateTotalCost(tokenData) ?? 0;
+
+        // Extract model and provider info
+        const modelName = eventData.model;
+        const model = findModelByName(modelName);
+        const provider = model?.provider ?? 'unknown';
+        log(`Provider for model ${modelName}: ${provider}`);
+
+        // Construct the event payload with token counts and pricing
+        const tinybirdEvent = {
+            // Timestamps
+            start_time: eventData.startTime?.toISOString(),
+            end_time: eventData.endTime?.toISOString(),
+
+            // Model and provider info
+            model_requested: modelName,
+            model_used: modelUsed,
+            provider,
+
+            // Performance metric captured by datasource
+            standard_logging_object_response_time: eventData.duration,
+
+            // Token counts and pricing with calculated total cost
+            ...tokenData,
+            cost: totalCost,
+
+            // User info
+            user: eventData.user,
+            referrer: eventData.referrer ?? "unknown",
+
+            // Status and caching flags
+            standard_logging_object_status: eventData.status,
+            cache_hit: Boolean(eventData.cache_hit),
+            cache_semantic_threshold: eventData.cache_semantic_threshold ?? 0,
+            cache_semantic_similarity: eventData.cache_semantic_similarity ?? 0,
+            cache_key: eventData.cache_key ?? "",
+            id: getOrGenerateId(eventData.cf_ray),
+            stream: Boolean(eventData.stream),
+
+            // Minimal proxy metadata (only environment is ingested)
+            proxy_metadata: {
+                environment: eventData.environment ?? process.env.NODE_ENV ?? "development",
+            },
+
+            // Include raw choices data for moderation detection (not sent to text_events)
+            choices: eventData.choices,
+        };
+
+        // Token counts, pricing, and calculated total cost are sent as top-level fields
+
+        // Create an abort controller for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+        // Log summary for telemetry tracking
+        log(
+            `📤 Sending telemetry: ${
+                tinybirdEvent.model_requested
+            } | $$${totalCost.toFixed(6)} | ${
+                tinybirdEvent.token_count_completion_text +
+                tinybirdEvent.token_count_prompt_text
+            } tokens`
+        );
+
+        // Helper function to send data to Tinybird endpoint
+        const sendToTinybird = async (
+            endpoint,
+            data,
+            controller,
+            description = "telemetry"
+        ) => {
+            const response = await fetch(
+                `${TINYBIRD_API_URL}/v0/events?name=${endpoint}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${TINYBIRD_API_KEY}`,
+                    },
+                    body: JSON.stringify(data),
+                    signal: controller.signal,
+                }
+            );
+
+            const responseText = await response
+                .text()
+                .catch(() => "Could not read response text");
+
+            if (!response.ok) {
+                errorLog(
+                    `Failed to send ${description} to Tinybird: ${response.status} ${responseText}`
+                );
                 return false;
             }
-            
-            // Exponential backoff with jitter
-            const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 1000;
-            await new Promise(resolve => setTimeout(resolve, delay));
-        }
-    }
-    
-    return false;
-}
-
-// Main telemetry function
-async function sendTelemetry(tinybirdEvent, request, response, controller = null) {
-    try {
-        // Rate limiting check
-        const clientIP = request.headers.get('cf-connecting-ip') || 
-                        request.headers.get('x-forwarded-for') || 
-                        'unknown';
-        
-        if (isRateLimited(clientIP)) {
-            console.log(`🚫 Rate limited telemetry for IP: ${clientIP}`);
-            return;
-        }
-        
-        recordRequest(clientIP);
-        
-        // Prepare base event data
-        const baseEventData = {
-            id: tinybirdEvent.id || generatePollinationsId(),
-            timestamp: tinybirdEvent.timestamp || new Date().toISOString(),
-            cf_ray: request.headers.get('cf-ray') || null,
-            user_agent: request.headers.get('user-agent') || null,
-            referer: request.headers.get('referer') || null,
-            ip: clientIP,
-            model: tinybirdEvent.model || null,
-            provider: tinybirdEvent.provider || null,
-            input_tokens: tinybirdEvent.input_tokens || 0,
-            output_tokens: tinybirdEvent.output_tokens || 0,
-            total_tokens: tinybirdEvent.total_tokens || 0,
-            duration_ms: tinybirdEvent.duration_ms || 0,
-            status_code: response?.status || 200,
-            error_message: tinybirdEvent.error_message || null,
-            user_id: tinybirdEvent.user_id || null,
-            api_key_hash: tinybirdEvent.api_key_hash || null,
-            tier: tinybirdEvent.tier || 'anonymous',
-            stream: tinybirdEvent.stream || false,
-            cache_hit: tinybirdEvent.cache_hit || false,
-            queue_time_ms: tinybirdEvent.queue_time_ms || 0,
-            processing_time_ms: tinybirdEvent.processing_time_ms || 0
+            return true;
         };
-        
-        // Send main event
-        const eventSuccess = await sendToTinybird(
-            "text_events", 
-            baseEventData, 
-            controller, 
-            "main telemetry"
-        );
-        
-        // Send moderation data if present
-        if (tinybirdEvent.moderation_results) {
-            const cfr = tinybirdEvent.moderation_results.choices?.[0]?.content_filter_results;
+
+        try {
+            // Send main telemetry data (exclude choices to avoid mixing moderation fields)
+            const { choices: _omitChoices, ...textEventsEvent } = tinybirdEvent;
+            const success = await sendToTinybird(
+                "text_events",
+                textEventsEvent,
+                controller
+            );
+
+            if (success) {
+                log(`✅ Telemetry sent: ${modelName}`);
+            }
+
+            // Send moderation data if present (Azure OpenAI only)
+            const cfr =
+                tinybirdEvent.choices?.[0]?.content_filter_results ||
+                tinybirdEvent.choices?.[0]?.message?.content_filter_results;
+
             if (cfr) {
-                const moderationSuccess = await sendToTinybird(
-                    "text_moderation",
-                    {
-                        id: tinybirdEvent.id ?? generatePollinationsId(),
-                        timestamp: tinybirdEvent.timestamp,
-                        ...cfr,
-                    },
-                    controller,
-                    "moderation telemetry"
+                const moderationController = new AbortController();
+                const moderationTimeoutId = setTimeout(
+                    () => moderationController.abort(),
+                    5000
                 );
-                
-                if (!moderationSuccess) {
-                    console.warn("⚠️ Failed to send moderation telemetry");
+
+                try {
+                    const moderationSuccess = await sendToTinybird(
+                        "text_moderation",
+                        {
+                            id: tinybirdEvent.id ?? generatePollinationsId(),
+                            ...cfr,
+                        },
+                        moderationController,
+                        "moderation telemetry"
+                    );
+
+                    if (moderationSuccess) {
+                        log(`🛡️ Moderation data sent: ${modelName}`);
+                    }
+                } catch (modErr) {
+                    const msg =
+                        modErr.name === "AbortError"
+                            ? "Moderation telemetry request timed out after 5 seconds"
+                            : `Fetch error when sending moderation telemetry to Tinybird: ${modErr.message}`;
+                    errorLog(msg);
+                } finally {
+                    clearTimeout(moderationTimeoutId);
                 }
             }
+        } catch (fetchError) {
+            const errorMessage =
+                fetchError.name === "AbortError"
+                    ? "Tinybird telemetry request timed out after 5 seconds"
+                    : `Fetch error when sending telemetry to Tinybird: ${fetchError.message}`;
+            errorLog(errorMessage);
+        } finally {
+            clearTimeout(timeoutId);
         }
-        
-        // Send error data if present
-        if (tinybirdEvent.error_details) {
-            const errorSuccess = await sendToTinybird(
-                "text_errors",
-                {
-                    id: tinybirdEvent.id || generatePollinationsId(),
-                    timestamp: tinybirdEvent.timestamp || new Date().toISOString(),
-                    cf_ray: baseEventData.cf_ray,
-                    error_type: tinybirdEvent.error_details.type || 'unknown',
-                    error_message: tinybirdEvent.error_details.message || null,
-                    error_stack: tinybirdEvent.error_details.stack || null,
-                    model: baseEventData.model,
-                    provider: baseEventData.provider,
-                    user_id: baseEventData.user_id,
-                    status_code: baseEventData.status_code
-                },
-                controller,
-                "error telemetry"
-            );
-            
-            if (!errorSuccess) {
-                console.warn("⚠️ Failed to send error telemetry");
-            }
-        }
-        
-        if (!eventSuccess) {
-            console.warn("⚠️ Failed to send main telemetry event");
-        }
-        
     } catch (error) {
-        console.error("❌ Telemetry error:", error);
+        errorLog("Error sending telemetry to Tinybird: %O", error);
     }
 }
-
-// Export functions
-export {
-    sendTelemetry,
-    sendToTinybird,
-    generatePollinationsId,
-    isRateLimited,
-    recordRequest
-};

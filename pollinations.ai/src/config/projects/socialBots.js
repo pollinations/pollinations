@@ -20,7 +20,7 @@ export const socialBotsProjects = [
     name: "Pollix AI",
     url: "http://t.me/pollixrobot",
     description: "Pollix AI is your multilingual AI assistant for fast replies, image understanding, and clean answers.",
-    author: "@bladedevoff",
+    author: "@bladedev",
     submissionDate: "2025-08-14",
     order: 1
   },

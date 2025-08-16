@@ -18,4 +18,6 @@ ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
 ENGINE_SORTING_KEY "id"
 ENGINE_PRIMARY_KEY "id"
 
+FORWARD_QUERY > 
+  SELECT id, defaultValueOfTypeName('DateTime') AS timestamp, hate_severity, self_harm_severity, sexual_severity, violence_severity, protected_material_code_detected, protected_material_text_detected
 

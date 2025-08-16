@@ -2,7 +2,7 @@ DESCRIPTION >
     Store OpenAI moderation results with cf_ray for joining with main events table
 
 SCHEMA >
-    `id` String,
+    `id` String `json:$.id`,
     -- NOTE: Current field mappings may not align perfectly with actual OpenAI/Azure moderation API response structure
     -- The API returns nested content_filter_results with filtered/severity/detected flags per category
     -- Consider updating JSON paths and field structure if ingestion issues occur
@@ -37,5 +37,8 @@ ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
 ENGINE_SORTING_KEY "timestamp, id"
 ENGINE_PRIMARY_KEY "timestamp, id"
+
+FORWARD_QUERY > 
+  SELECT id, defaultValueOfTypeName('DateTime') AS timestamp, defaultValueOfTypeName('UInt8') AS choice_index, hate_severity, defaultValueOfTypeName('Bool') AS hate_filtered, self_harm_severity, defaultValueOfTypeName('Bool') AS self_harm_filtered, sexual_severity, defaultValueOfTypeName('Bool') AS sexual_filtered, violence_severity, defaultValueOfTypeName('Bool') AS violence_filtered, protected_material_code_detected, defaultValueOfTypeName('Bool') AS protected_material_code_filtered, defaultValueOfTypeName('Nullable(String)') AS protected_material_code_url, defaultValueOfTypeName('Nullable(String)') AS protected_material_code_license, protected_material_text_detected, defaultValueOfTypeName('Bool') AS protected_material_text_filtered, defaultValueOfTypeName('Bool') AS jailbreak_detected, defaultValueOfTypeName('Bool') AS jailbreak_filtered, defaultValueOfTypeName('Bool') AS profanity_detected, defaultValueOfTypeName('Bool') AS profanity_filtered
 
 

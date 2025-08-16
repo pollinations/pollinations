@@ -210,6 +210,7 @@ export async function sendTinybirdEvent(eventData) {
                         "text_moderation",
                         {
                             id: tinybirdEvent.id ?? generatePollinationsId(),
+                            timestamp: tinybirdEvent.start_time || new Date().toISOString(),
                             ...cfr,
                         },
                         moderationController,

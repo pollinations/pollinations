@@ -9,6 +9,7 @@ import {
 	generatePortkeyHeaders,
 } from "./portkeyUtils.js";
 import { findModelByName } from "./availableModels.js";
+import { sanitizeMessagesWithPlaceholder } from "./utils/messageSanitizer.js";
 
 dotenv.config();
 
@@ -824,11 +825,24 @@ export const generateTextPortkey = createOpenAICompatibleClient({
 			// Set the headers as a property on the request object that will be used by genericOpenAIClient
 			requestBody._additionalHeaders = additionalHeaders;
 
-			// Check if the model has a specific maxInputChars limit in availableModels.js
-			// Use the original model name to look up the configuration in availableModels.js
+			// Determine model configuration early (used by sanitizer and limits)
 			const modelConfig = findModelByName(originalModelName || requestBody.model);
-		
 			log("Model config:", modelConfig);
+
+			// Sanitize messages and apply provider-specific fixes
+			if (Array.isArray(requestBody.messages)) {
+				const { messages: sanitized, replacedCount } = sanitizeMessagesWithPlaceholder(
+					requestBody.messages,
+					modelConfig,
+					originalModelName,
+				);
+				requestBody.messages = sanitized;
+				if (replacedCount > 0) {
+					log(`Replaced ${replacedCount} empty user message content with placeholder`);
+				}
+			}
+
+			// Check if the model has a specific maxInputChars limit in availableModels.js
 			// Check model-specific character limit (only if model defines maxInputChars)
 			if (modelConfig && modelConfig.maxInputChars) {
 				const totalChars = countMessageCharacters(requestBody.messages);
@@ -843,35 +857,6 @@ export const generateTextPortkey = createOpenAICompatibleClient({
 						`Input text exceeds maximum length of ${modelConfig.maxInputChars} characters for model ${requestBody.model} (current: ${totalChars})`,
 					);
 				}
-			}
-
-			// Handle Bedrock models requirement: conversations must start with user message after system messages
-			// AWS Bedrock requires the first non-system message to be a user message and doesn't accept empty content
-			if (modelConfig && modelConfig.provider === 'bedrock') {
-				// First, filter out all empty user messages (Bedrock doesn't accept empty content)
-				requestBody.messages = requestBody.messages.filter(msg => {
-					// remove messages with empty content
-					if (msg.content && typeof msg.content === 'string' && msg.content.trim() === '') {
-						return false;
-					}
-					return true;
-				});
-				
-				// Then, find the first non-system message and ensure it's a user message
-				const firstNonSystemIndex = requestBody.messages.findIndex(msg => msg.role !== 'system');
-				
-				if (firstNonSystemIndex !== -1 && requestBody.messages[firstNonSystemIndex].role !== 'user') {
-					log(`Bedrock model detected (${originalModelName}), inserting placeholder user message before first non-system message`);
-					
-					// Insert a placeholder user message before the first non-system message
-					requestBody.messages = [
-						...requestBody.messages.slice(0, firstNonSystemIndex), // All system messages
-						{ role: 'user', content: '-' }, // Insert placeholder user message
-						...requestBody.messages.slice(firstNonSystemIndex) // All remaining messages
-					];
-				}
-				
-				log(`Final Bedrock messages: roles are [${requestBody.messages.map(m => m.role).join(', ')}]`);
 			}
 
 			// For models with specific token limits or those using defaults

@@ -42,7 +42,7 @@ const MODEL_MAPPING = {
 	"llama-roblox": "meta-llama/Meta-Llama-3.1-8B-Instruct-fast",
 	"llama-fast-roblox": "@cf/meta/llama-3.2-11b-vision-instruct",
 	llamascout: "@cf/meta/llama-4-scout-17b-16e-instruct",
-	"deepseek-reasoning": "deepseek-ai/deepseek-r1-0528-maas",
+	"deepseek-reasoning": "us.deepseek.r1-v1:0",
 	//'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
 	phi: "phi-4-instruct",
 	//'phi-mini': 'phi-4-mini-instruct',
@@ -72,6 +72,8 @@ const MODEL_MAPPING = {
 	"nova-fast": "amazon.nova-micro-v1:0",
 	"roblox-rp": "roblox-rp", // Random selection from multiple Bedrock models
 	claude: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+	"openai-reasoning": "openai/o3", // Navy API endpoint
+	gemini: "google/gemini-2.5-flash-lite", // Navy API endpoint
 };
 
 // Base prompts that can be reused across different models
@@ -152,6 +154,8 @@ const SYSTEM_PROMPTS = {
 	"nova-fast": 'You are Amazon Nova Micro, a fast and efficient AI assistant. You provide helpful, accurate responses while being concise and to the point.',
 	"roblox-rp": BASE_PROMPTS.conversational,
 	claude: 'You are Claude 3.5 Haiku, a helpful AI assistant created by Anthropic. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.',
+	"openai-reasoning": 'You are OpenAI o3, an advanced reasoning model. You excel at complex problem-solving, mathematical reasoning, and logical analysis. Take time to think through problems step-by-step.',
+	gemini: 'You are Gemini 2.5 Flash Lite, a helpful AI assistant created by Google. You provide accurate, helpful responses and can assist with a wide range of tasks.',
 };
 
 // Default options
@@ -761,6 +765,23 @@ export const portkeyConfig = {
 			model: selectedModel,
 		});
 	},
+	// Navy API endpoint
+	"openai/o3": () => ({
+		provider: "openai",
+		"custom-host": process.env.API_NAVY_ENDPOINT,
+		model: "openai/o3",
+		"max-tokens": 8192,
+	}),
+	"google/gemini-2.5-flash-lite": () => ({
+		provider: "openai",
+		"custom-host": process.env.API_NAVY_ENDPOINT,
+		model: "google/gemini-2.5-flash-lite",
+		"max-tokens": 8192,
+	}),
+	"us.deepseek.r1-v1:0": () => createBedrockLambdaModelConfig({
+		model: "us.deepseek.r1-v1:0",
+		"max-tokens": 2000,
+	}),
 };
 
 /**

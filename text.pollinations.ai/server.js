@@ -93,8 +93,24 @@ app.use((req, res, next) => {
 	next();
 });
 
-// Remove the custom JSON parsing middleware and use the standard bodyParser
-app.use(bodyParser.json({ limit: "20mb" }));
+// JSON body parser
+const BODY_PARSER_LIMIT = "20mb";  // Limit size
+app.use(bodyParser.json({ limit: BODY_PARSER_LIMIT }));
+app.use((error, req, res, next) => {
+	if (error.type === 'entity.too.large') {  // Handle the error specifically
+		// Server-side logging
+		errorLog(`Request body exceeds ${BODY_PARSER_LIMIT} limit from ${getIp(req)}.`);
+		// Client-side logging
+		const errorResponse = {
+			error: "Your request is too large, if it includes a file/image. Please ensure the file/image size is under 10MB.",
+			status: 413
+		};
+		// Send the JSON error response to the client
+		return res.status(413).json(errorResponse);
+	}
+	next(error);
+});
+
 app.use(cors());
 // New route handler for root path
 app.get("/", (req, res) => {

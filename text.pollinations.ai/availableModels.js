@@ -251,6 +251,7 @@ const models = [
 	{
 		name: "gpt-5-nano",
 		description: "OpenAI GPT-5 Nano",
+		original_name: "gpt-5-nano-2025-08-07",
 		handler: generateTextPortkey,
 		provider: "azure",
 		tier: "anonymous",
@@ -359,6 +360,7 @@ const models = [
 	{
 		name: "nova-fast",
 		description: "Amazon Nova Micro (Bedrock)",
+		original_name: "amazon.nova-micro-v1:0",
 		handler: generateTextPortkey,
 		provider: "bedrock",
 		community: false,
@@ -376,6 +378,7 @@ const models = [
 	{
 		name: "roblox-rp",
 		description: "Roblox RP Multi-Model (Random Bedrock Selection)",
+		original_name: "mistral.mistral-small-2402-v1:0",
 		handler: generateTextPortkey,
 		provider: "bedrock",
 		tier: "anonymous",

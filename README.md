@@ -9,8 +9,7 @@
 - **🔍 Tier System:** Seed, Flower, Nectar tiers. Higher tiers available during limited beta.
 - **💲 Support Us** - You can now support us with our new **Tip Us** button. Optionally connect your Discord account to **Ko-Fi** to get premium Discord roles!
 - **🎵 Audio Generation** - New text-to-speech and speech-to-text capabilities are now available! Try the `higgs (Higgs v2 audio)` model - see our [API documentation](APIDOCS.md#audio-generation-api) for details.
-- **🤖 AI Code Assistant** - We are excited to clarify that we are _using_ advanced AI coding assistants such as MentatBot **and** Claude Code Bot to implement new features from GitHub issues. Just [create an issue](https://github.com/pollinations/pollinations/issues/new) describing what you'd like to see, and MentatBot will analyze and implement it. [Learn more](https://mentat.ai/).
-- **🖼️ ** - Introducing our new state-of-the-art text-to-image model, , which generates high-resolution, contextually accurate visuals from any prompt. Learn more about OpenAI's latest image generation model [here](https://openai.com/index/introducing-4o-image-generation/).
+- **🤖 AI Code Assistant** - We are excited to introduce advanced AI coding assistants such as MentatBot **and** Claude Code Bot to implement new features from GitHub issues. Just [create an issue](https://github.com/pollinations/pollinations/issues/new) describing what you'd like to see, and MentatBot will analyze and implement it. [Learn more](https://mentat.ai/).
 
 ---
 

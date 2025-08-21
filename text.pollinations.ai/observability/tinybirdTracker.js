@@ -119,9 +119,9 @@ export async function sendTinybirdEvent(eventData) {
 
             // Status and caching flags
             standard_logging_object_status: eventData.status,
-            cache_exact_hit: Boolean(eventData.cache_hit),
-            cache_semantic_threshold: Math.max(0, Math.min(1, eventData.cache_semantic_threshold ?? 0)),
-            cache_semantic_similarity: Math.max(0, Math.min(1, eventData.cache_semantic_similarity ?? 0)),
+            cache_hit: Boolean(eventData.cache_hit),
+            cache_semantic_threshold: eventData.cache_semantic_threshold ?? null,
+            cache_semantic_similarity: eventData.cache_semantic_similarity ?? null,
             cache_key: eventData.cache_key ?? "",
             id: getOrGenerateId(eventData.cf_ray),
             stream: Boolean(eventData.stream),

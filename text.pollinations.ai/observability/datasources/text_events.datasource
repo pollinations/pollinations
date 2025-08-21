@@ -42,10 +42,10 @@ SCHEMA >
 `moderation_protected_material_text_detected`  Bool `json:$.moderation.protected_material_text.detected` DEFAULT false,
 
 -- Cache (exact + semantic), all inline
-`cache_hit`       Bool     `json:$.cache_exact_hit` DEFAULT false,
+`cache_hit`       Bool     `json:$.cache_hit` DEFAULT false,
 `cache_type`      LowCardinality(String) `json:$.cache_type` DEFAULT 'unknown',
-`cache_semantic_similarity` Float32 `json:$.cache_semantic_similarity` DEFAULT 0,
-`cache_semantic_threshold`  Float32 `json:$.cache_semantic_threshold` DEFAULT 0,
+`cache_semantic_similarity` Nullable(Float32) `json:$.cache_semantic_similarity`,
+`cache_semantic_threshold`  Nullable(Float32) `json:$.cache_semantic_threshold`,
 `cache_key`        String  `json:$.cache_key` DEFAULT '',
 
 ENGINE "MergeTree" 
@@ -74,6 +74,6 @@ SELECT
   defaultValueOfTypeName('Bool') AS moderation_protected_material_text_detected, 
   defaultValueOfTypeName('Bool') AS cache_hit, 
   defaultValueOfTypeName('LowCardinality(String)') AS cache_type, 
-  defaultValueOfTypeName('Float32') AS cache_semantic_similarity, 
-  defaultValueOfTypeName('Float32') AS cache_semantic_threshold, 
+  NULL AS cache_semantic_similarity, 
+  NULL AS cache_semantic_threshold, 
   defaultValueOfTypeName('String') AS cache_key

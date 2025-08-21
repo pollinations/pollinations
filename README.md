@@ -372,6 +372,7 @@ Pollinations.AI is used in various projects, including:
 | Polli API Dashboard | Dashboard for managing/interacting with Pollinations API. | - |
 | 🇨🇳 [imggen.top 🇨🇳](https://www.imggen.top/) | Create stunning AI-generated images in seconds with our free AI image... | [lipengliang2...](mailto:lipengliang2012@163.com) |
 | 🇨🇳 [Quicker Pollinations AI](https://getquicker.net/Sharedaction?code=9ac738ed-a4b2-4ded-933c-08dd5f710a8b&fromMyShare=true) | This project provides a free API interface supporting various text and image... | [Link](https://linux.do/u/s_s/summary) |
+| [UltimaX Intelligence CLI](https://huggingface.co/spaces/umint/cli) ([⭐ 0](https://huggingface.co/spaces/umint/cli/tree/main)) | Extension of the UltimaX Intelligence project based on Pollinations Python SDK... | @hadadarjt |
 
 ### Chat 💬
 

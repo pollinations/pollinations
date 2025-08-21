@@ -1,43 +1,79 @@
 
 DESCRIPTION >
-    Store LLM events with usage metrics, costs, and metadata
+Store LLM events with usage, cost, metadata, moderation, and cache info
 
 SCHEMA >
-    `timestamp` DateTime `json:$.start_time`,
-    `end_time` DateTime `json:$.end_time`,
-    `response_time` Float32 `json:$.standard_logging_object_response_time` DEFAULT 0,
-    
-    `response_status` LowCardinality(String) `json:$.standard_logging_object_status` DEFAULT 'unknown',
-    `id` String `json:$.id` DEFAULT '',
-    `environment` String `json:$.proxy_metadata.environment` DEFAULT '',
+`timestamp` DateTime             `json:$.start_time`,
+`end_time`  DateTime             `json:$.end_time`,
+`response_time` Float32          `json:$.standard_logging_object_response_time` DEFAULT 0,
 
-    `user` String `json:$.user` DEFAULT 'unknown',
-    `referrer` String `json:$.referrer` DEFAULT 'unknown',
+`response_status` LowCardinality(String) `json:$.standard_logging_object_status` DEFAULT 'unknown',
+`id`              String         `json:$.id` DEFAULT '',
+`environment`     LowCardinality(String) `json:$.proxy_metadata.environment` DEFAULT '',
 
-    `provider` LowCardinality(String) `json:$.provider` DEFAULT 'unknown',
-    `model_requested` LowCardinality(String) `json:$.model_requested` DEFAULT 'unknown',
-    `model_used` Nullable(String) `json:$.model_used`,
-    `stream` Bool `json:$.stream` DEFAULT false,
+`user`     LowCardinality(String) `json:$.user` DEFAULT 'unknown',
+`referrer` LowCardinality(String) `json:$.referrer` DEFAULT 'unknown',
 
-    `cost` Float64 `json:$.cost` DEFAULT 0,
+`provider`        LowCardinality(String) `json:$.provider` DEFAULT 'unknown',
+`model_requested` LowCardinality(String) `json:$.model_requested` DEFAULT 'unknown',
+`model_used`      LowCardinality(String) `json:$.model_used` DEFAULT 'unknown',
+`stream`          Bool            `json:$.stream` DEFAULT false,
 
-    `token_price_prompt_text` Float64 `json:$.token_price_prompt_text` DEFAULT 0,
-    `token_price_prompt_audio` Float64 `json:$.token_price_prompt_audio` DEFAULT 0,
-    `token_price_prompt_cached` Float64 `json:$.token_price_prompt_cached` DEFAULT 0,
-    `token_price_completion_text` Float64 `json:$.token_price_completion_text` DEFAULT 0,
-    `token_price_completion_audio` Float64 `json:$.token_price_completion_audio` DEFAULT 0,
+`cost` Float64 `json:$.cost` DEFAULT 0,
 
-    `token_count_prompt_text` UInt32 `json:$.token_count_prompt_text` DEFAULT 0,
-    `token_count_prompt_audio` UInt32 `json:$.token_count_prompt_audio` DEFAULT 0,
-    `token_count_prompt_cached` UInt32 `json:$.token_count_prompt_cached` DEFAULT 0,
-    `token_count_completion_text` UInt32 `json:$.token_count_completion_text` DEFAULT 0,
-    `token_count_completion_audio` UInt32 `json:$.token_count_completion_audio` DEFAULT 0,
+`token_price_prompt_text`       Float64 `json:$.token_price_prompt_text` DEFAULT 0,
+`token_price_prompt_audio`      Float64 `json:$.token_price_prompt_audio` DEFAULT 0,
+`token_price_prompt_cached`     Float64 `json:$.token_price_prompt_cached` DEFAULT 0,
+`token_price_completion_text`   Float64 `json:$.token_price_completion_text` DEFAULT 0,
+`token_price_completion_audio`  Float64 `json:$.token_price_completion_audio` DEFAULT 0,
 
+`token_count_prompt_text`       UInt32  `json:$.token_count_prompt_text` DEFAULT 0,
+`token_count_prompt_audio`      UInt32  `json:$.token_count_prompt_audio` DEFAULT 0,
+`token_count_prompt_cached`     UInt32  `json:$.token_count_prompt_cached` DEFAULT 0,
+`token_count_completion_text`   UInt32  `json:$.token_count_completion_text` DEFAULT 0,
+`token_count_completion_audio`  UInt32  `json:$.token_count_completion_audio` DEFAULT 0,
+
+-- Moderation (inline)
+`moderation_hate_severity`       LowCardinality(String) `json:$.moderation.hate.severity` DEFAULT 'unknown',
+`moderation_self_harm_severity`  LowCardinality(String) `json:$.moderation.self_harm.severity` DEFAULT 'unknown',
+`moderation_sexual_severity`     LowCardinality(String) `json:$.moderation.sexual.severity` DEFAULT 'unknown',
+`moderation_violence_severity`   LowCardinality(String) `json:$.moderation.violence.severity` DEFAULT 'unknown',
+`moderation_protected_material_code_detected`  Bool `json:$.moderation.protected_material_code.detected` DEFAULT false,
+`moderation_protected_material_text_detected`  Bool `json:$.moderation.protected_material_text.detected` DEFAULT false,
+
+-- Cache (exact + semantic), all inline
+`cache_hit`       Bool     `json:$.cache_exact_hit` DEFAULT false,
+`cache_type`      LowCardinality(String) `json:$.cache_type` DEFAULT 'unknown',
+`cache_similarity` Float32 `json:$.cache_similarity` DEFAULT -1,
+`cache_threshold`  Float32 `json:$.cache_threshold` DEFAULT 0,
+`cache_key`        String  `json:$.cache_key` DEFAULT '',
 
 ENGINE "MergeTree" 
 ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
 ENGINE_SORTING_KEY "timestamp, environment, user"
 ENGINE_PRIMARY_KEY "timestamp, environment, user"
 
-FORWARD_QUERY > 
-  SELECT timestamp, end_time, response_time, response_status, id, environment, user, referrer, provider, model_requested, model_used, stream, cost, token_price_prompt_text, token_price_prompt_audio, token_price_prompt_cached, token_price_completion_text, token_price_completion_audio, token_count_prompt_text, token_count_prompt_audio, token_count_prompt_cached, token_count_completion_text, token_count_completion_audio
+FORWARD_QUERY >
+SELECT 
+  timestamp, end_time, response_time, response_status, id, 
+  CAST(environment, 'LowCardinality(String)') AS environment, 
+  CAST(user, 'LowCardinality(String)') AS user, 
+  CAST(referrer, 'LowCardinality(String)') AS referrer, 
+  provider, model_requested, 
+  CAST(coalesce(model_used, 'unknown'), 'LowCardinality(String)') AS model_used, 
+  stream, cost, 
+  token_price_prompt_text, token_price_prompt_audio, token_price_prompt_cached, 
+  token_price_completion_text, token_price_completion_audio, 
+  token_count_prompt_text, token_count_prompt_audio, token_count_prompt_cached, 
+  token_count_completion_text, token_count_completion_audio, 
+  defaultValueOfTypeName('LowCardinality(String)') AS moderation_hate_severity, 
+  defaultValueOfTypeName('LowCardinality(String)') AS moderation_self_harm_severity, 
+  defaultValueOfTypeName('LowCardinality(String)') AS moderation_sexual_severity, 
+  defaultValueOfTypeName('LowCardinality(String)') AS moderation_violence_severity, 
+  defaultValueOfTypeName('Bool') AS moderation_protected_material_code_detected, 
+  defaultValueOfTypeName('Bool') AS moderation_protected_material_text_detected, 
+  defaultValueOfTypeName('Bool') AS cache_hit, 
+  defaultValueOfTypeName('LowCardinality(String)') AS cache_type, 
+  defaultValueOfTypeName('Float32') AS cache_similarity, 
+  defaultValueOfTypeName('Float32') AS cache_threshold, 
+  defaultValueOfTypeName('String') AS cache_key

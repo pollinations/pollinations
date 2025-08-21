@@ -91,6 +91,10 @@ export async function sendTinybirdEvent(eventData) {
         const provider = model?.provider ?? 'unknown';
         log(`Provider for model ${modelName}: ${provider}`);
 
+        // Extract moderation data from choices if present (Azure OpenAI)
+        const cfr = eventData.choices?.[0]?.content_filter_results || 
+                   eventData.choices?.[0]?.message?.content_filter_results;
+
         // Construct the event payload with token counts and pricing
         const tinybirdEvent = {
             // Timestamps
@@ -115,12 +119,20 @@ export async function sendTinybirdEvent(eventData) {
 
             // Status and caching flags
             standard_logging_object_status: eventData.status,
-            cache_hit: Boolean(eventData.cache_hit),
-            cache_semantic_threshold: eventData.cache_semantic_threshold ?? 0,
-            cache_semantic_similarity: eventData.cache_semantic_similarity ?? 0,
+            cache_exact_hit: Boolean(eventData.cache_hit),
+            cache_threshold: eventData.cache_semantic_threshold ?? 0,
+            cache_similarity: eventData.cache_semantic_similarity ?? 0,
             cache_key: eventData.cache_key ?? "",
             id: getOrGenerateId(eventData.cf_ray),
             stream: Boolean(eventData.stream),
+
+            // Moderation data (flat fields to match datasource)
+            moderation_hate_severity: cfr?.hate?.severity ?? 'safe',
+            moderation_self_harm_severity: cfr?.self_harm?.severity ?? 'safe',
+            moderation_sexual_severity: cfr?.sexual?.severity ?? 'safe',
+            moderation_violence_severity: cfr?.violence?.severity ?? 'safe',
+            moderation_protected_material_code_detected: cfr?.protected_material_code?.detected ?? false,
+            moderation_protected_material_text_detected: cfr?.protected_material_text?.detected ?? false,
 
             // Minimal proxy metadata (only environment is ingested)
             proxy_metadata: {
@@ -193,43 +205,6 @@ export async function sendTinybirdEvent(eventData) {
                 log(`✅ Telemetry sent: ${modelName}`);
             }
 
-            // Send moderation data if present (Azure OpenAI only)
-            const cfr =
-                tinybirdEvent.choices?.[0]?.content_filter_results ||
-                tinybirdEvent.choices?.[0]?.message?.content_filter_results;
-
-            if (cfr) {
-                const moderationController = new AbortController();
-                const moderationTimeoutId = setTimeout(
-                    () => moderationController.abort(),
-                    5000
-                );
-
-                try {
-                    const moderationSuccess = await sendToTinybird(
-                        "text_moderation",
-                        {
-                            id: tinybirdEvent.id ?? generatePollinationsId(),
-                            timestamp: tinybirdEvent.start_time || new Date().toISOString(),
-                            ...cfr,
-                        },
-                        moderationController,
-                        "moderation telemetry"
-                    );
-
-                    if (moderationSuccess) {
-                        log(`🛡️ Moderation data sent: ${modelName}`);
-                    }
-                } catch (modErr) {
-                    const msg =
-                        modErr.name === "AbortError"
-                            ? "Moderation telemetry request timed out after 5 seconds"
-                            : `Fetch error when sending moderation telemetry to Tinybird: ${modErr.message}`;
-                    errorLog(msg);
-                } finally {
-                    clearTimeout(moderationTimeoutId);
-                }
-            }
         } catch (fetchError) {
             const errorMessage =
                 fetchError.name === "AbortError"

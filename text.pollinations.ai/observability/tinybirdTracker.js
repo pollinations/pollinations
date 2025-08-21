@@ -139,7 +139,7 @@ export async function sendTinybirdEvent(eventData) {
                 environment: eventData.environment ?? process.env.NODE_ENV ?? "development",
             },
 
-            // Include raw choices data for moderation detection (not sent to text_events)
+            // Include raw choices data for moderation detection (excluded later at line 197)
             choices: eventData.choices,
         };
 

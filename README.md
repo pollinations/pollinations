@@ -85,7 +85,7 @@ Add this to your MCP client configuration:
 npx @pollinations/model-context-protocol
 ```
 
-Community alternatives like [MCPollinations](https://github.com/pinkpixel-dev/MCPollinations) are also available.
+Community alternatives like [MCPollinations](https://github.com/pinkpixel-dev/MCPollinations) and [Sequa MCP Server](https://mcp.sequa.ai/v1/pollinations/contribute) are also available.
 
 AI assistants can:
 - Generate images from text descriptions

@@ -54,12 +54,11 @@ Generates an image based on a text description.
 | `seed`     | No       | Seed for reproducible results.                                                     |         |
 | `width`    | No       | Width of the generated image in pixels.                                            | 1024    |
 | `height`   | No       | Height of the generated image in pixels.                                           | 1024    |
-| `image`    | No       | URL of input image for image-to-image generation/editing (kontext & gptimage).    |         |
+| `image`    | No       | URL of input image for image-to-image generation/editing (kontext model).    |         |
 | `nologo`   | No       | Set to `true` to disable the Pollinations logo overlay (for registered users).     | `false` |
 | `private`  | No       | Set to `true` to prevent the image from appearing in the public feed.              | `false` |
 | `enhance`  | No       | Set to `true` to enhance the prompt using an LLM for more detail.                  | `false` |
 | `safe`     | No       | Set to `true` for strict NSFW filtering (throws error if detected).                | `false` |
-| `transparent` | No    | Set to `true` to generate images with transparent backgrounds (gptimage model only). | `false` |
 | `referrer` | No\*     | Referrer URL/Identifier. See [Referrer Section](#referrer).                        |         |
 
 **Return:** Image file (typically JPEG) 🖼️
@@ -78,8 +77,6 @@ curl -o sunset.jpg "https://image.pollinations.ai/prompt/A%20beautiful%20sunset%
 # With parameters
 curl -o sunset_large.jpg "https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?width=1280&height=720&seed=42&model=flux"
 
-# With transparent background (gptimage model only)
-curl -o logo_transparent.png "https://image.pollinations.ai/prompt/A%20company%20logo%20on%20transparent%20background?model=gptimage&transparent=true"
 
 # Image-to-image generation with kontext model
 curl -o logo_cake.png "https://image.pollinations.ai/prompt/bake_a_cake_from_this_logo?model=kontext&image=https://avatars.githubusercontent.com/u/86964862"
@@ -98,8 +95,7 @@ params = {
     "seed": 42,
     "model": "flux",
     # "nologo": "true", # Optional, set to "true" for registered referrers/tokens
-    # "transparent": "true", # Optional - generates transparent background (gptimage model only)
-    # "image": "https://example.com/input-image.jpg", # Optional - for image-to-image generation (kontext & gptimage)
+    # "image": "https://example.com/input-image.jpg", # Optional - for image-to-image generation (kontext model)
     # "referrer": "MyPythonApp" # Optional for referrer-based authentication
 }
 encoded_prompt = urllib.parse.quote(prompt)

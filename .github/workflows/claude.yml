@@ -35,7 +35,7 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          allowed_tools: "web_search"
+          allowed_tools: "mcp_sequa_search_web"
           disallowed_tools: ""
           mcp_config: |
             {

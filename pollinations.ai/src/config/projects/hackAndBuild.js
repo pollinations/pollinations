@@ -15,10 +15,10 @@ export const hackAndBuildProjects = [
   {
     name: "Sequa MCP Server",
     url: "https://mcp.sequa.ai/v1/pollinations/contribute",
-    description: "A Model Context Protocol server from Sequa.ai that provides deep knowledge of the Pollinations codebase. Offers documentation, context, and guidance to coding agents working on Pollinations projects.",
+    description: "A Model Context Protocol server from Sequa.ai that provides deep knowledge of the Pollinations codebase. Offers documentation, context, and guidance to coding agents working on Pollinations projects. Configure MCP: https://mcp.sequa.ai/v1/pollinations/contribute",
     author: "@sequa_ai",
     category: "sdkLibraries",
-    submissionDate: "2025-08-22",
+    submissionDate: "2025-08-24",
     order: 1
   },
   {

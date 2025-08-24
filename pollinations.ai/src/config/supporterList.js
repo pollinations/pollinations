@@ -34,4 +34,14 @@ export const SUPPORTER_LIST = [
         url: "https://modal.com/",
         description: "High-performance AI infrastructure",
     },
+    {
+        name: "NavyAI",
+        url: "https://api.navy/",
+        description: "AI API provider for OpenAI o3 and Gemini models",
+    },
+    {
+        name: "Nebius",
+        url: "https://nebius.com/",
+        description: "AI-optimized cloud infrastructure with NVIDIA GPU clusters",
+    },
 ];

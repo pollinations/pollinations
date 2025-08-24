@@ -35,7 +35,8 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          allowed_tools: "web_search"
+          # Web search requires organization-level permission in Anthropic Console
+          # allowed_tools: "web_search"
           mcp_config: |
             {
               "mcpServers": {

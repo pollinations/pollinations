@@ -256,5 +256,13 @@ export const hackAndBuildProjects = [
     repo: "https://github.com/SuperShivam5000/querynator5000",
     submissionDate: "2025-07-13",
     order: 1
+  },
+  {
+    name: "UltimaX Intelligence CLI",
+    url: "https://huggingface.co/spaces/umint/cli",
+    description: "Extension of the UltimaX Intelligence project based on Pollinations Python SDK.",
+    author: "@hadadarjt",
+    submissionDate: "2025-08-21",
+    order: 1
   }
 ];

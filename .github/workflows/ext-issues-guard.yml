@@ -6,7 +6,6 @@ on:
 permissions:
     contents: read
     issues: write
-    projects: write # needed for classic projects; also required for Projects v2 mutations
 
 jobs:
     guard:

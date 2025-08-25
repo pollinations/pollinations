@@ -58,7 +58,7 @@ jobs:
                         query($id: ID!) {
                           node(id: $id) {
                             ... on Issue {
-                              projectItems: projectV2Items(first: 50) {
+                              projectItems: projectItems(first: 50) {
                                 nodes { id project { title } }
                               }
                             }

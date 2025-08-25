@@ -8,33 +8,42 @@ permissions:
   issues: write
 
 jobs:
-  guard:
+  label:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Label by user type
+      - name: Debug association
+        run: |
+          echo "author_association=${{ github.event.issue.author_association }}"
+
+      # Outside collaborator
+      - name: Label collab-issue
+        if: ${{ github.event.issue.author_association == 'COLLABORATOR' }}
         uses: actions/github-script@v7
         with:
           script: |
-            const assoc = context.payload.issue.author_association;
-            const currentLabels = (context.payload.issue.labels || []).map(l => l.name);
-
-            let label = null;
-
-            if (["MEMBER","OWNER"].includes(assoc)) {
-              core.info("Internal org member/owner detected — no label.");
-            } else if (assoc === "COLLABORATOR") {
-              label = "collab-issue";
-            } else {
-              label = "ext-issue";
-            }
-
-            if (label && !currentLabels.includes(label)) {
+            const current = (context.payload.issue.labels || []).map(l => l.name);
+            if (!current.includes("collab-issue")) {
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.payload.issue.number,
-                labels: [label]
+                labels: ["collab-issue"]
               });
-              core.info(`Applied label: ${label}`);
             }
 
+      # Everyone else who is NOT MEMBER/OWNER/COLLABORATOR
+      - name: Label ext-issue
+        if: ${{ !contains(fromJson('["MEMBER","OWNER","COLLABORATOR"]'), github.event.issue.author_association) }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const current = (context.payload.issue.labels || []).map(l => l.name);
+            if (!current.includes("ext-issue")) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.issue.number,
+                labels: ["ext-issue"]
+              });
+            }

@@ -1,4 +1,4 @@
-name: External issue guard TEST
+name: New Issue Labeler
 on:
     issues:
         types: [opened]

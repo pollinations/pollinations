@@ -1,0 +1,87 @@
+name: External issue guard
+on:
+    issues:
+        types: [opened, reopened, edited, transferred]
+
+permissions:
+    contents: read
+    issues: write
+    projects: write # needed for classic projects; also required for Projects v2 mutations
+
+jobs:
+    guard:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Label based on user type
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const association = context.payload.issue.author_association;
+                      let label = null;
+                      
+                      if (!['MEMBER', 'OWNER'].includes(association)) {
+                        if (association === 'COLLABORATOR') {
+                          label = 'collab-issue';
+                        } else {
+                          label = 'ext-issue';
+                        }
+                      }
+                      
+                      if (label) {
+                        await github.rest.issues.addLabels({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          issue_number: context.payload.issue.number,
+                          labels: [label]
+                        });
+                      }
+
+            - name: Remove external issues from Projects v2
+              if: contains(fromJson('["ext-issue"]'), steps.*.outputs.label || 'ext-issue')
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const association = context.payload.issue.author_association;
+                      // Only remove if it's an external issue (not collaborator or member/owner)
+                      if (['MEMBER', 'OWNER', 'COLLABORATOR'].includes(association)) {
+                        core.info('Skipping project removal for internal user');
+                        return;
+                      }
+
+                      const { graphql } = github;
+                      const issueNodeId = context.payload.issue.node_id;
+
+                      // Small delay for project automations to finish
+                      await new Promise(resolve => setTimeout(resolve, 8000));
+
+                      // Fetch Project v2 items attached to this issue
+                      const q = `
+                        query($id: ID!) {
+                          node(id: $id) {
+                            ... on Issue {
+                              projectItems: projectV2Items(first: 50) {
+                                nodes { id project { title } }
+                              }
+                            }
+                          }
+                        }
+                      `;
+                      const data = await graphql(q, { id: issueNodeId });
+                      const items = data?.node?.projectItems?.nodes ?? [];
+                      if (items.length === 0) {
+                        core.info('No project items found to remove');
+                        return;
+                      }
+
+                      for (const it of items) {
+                        try {
+                          await graphql(`
+                            mutation($itemId: ID!) {
+                              deleteProjectV2Item(input: { itemId: $itemId }) { deletedItemId }
+                            }
+                          `, { itemId: it.id });
+                          core.info(`Removed from Project v2: ${it.project?.title ?? '(untitled)'}`);
+                        } catch (e) {
+                          core.warning(`Failed to delete Project v2 item ${it.id}: ${e.message}`);
+                        }
+                      }

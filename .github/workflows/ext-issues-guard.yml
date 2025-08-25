@@ -1,7 +1,7 @@
 name: External issue guard
 on:
     issues:
-        types: [opened, reopened, edited, transferred]
+        types: [opened]
 
 permissions:
     contents: read

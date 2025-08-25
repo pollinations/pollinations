@@ -1,86 +1,40 @@
 name: New Issue Labeler
 on:
-    issues:
-        types: [opened]
+  issues:
+    types: [opened]
 
 permissions:
-    contents: read
-    issues: write
-    repository-projects: write
+  contents: read
+  issues: write
 
 jobs:
-    guard:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Label based on user type
-              uses: actions/github-script@v7
-              with:
-                  script: |
-                      const association = context.payload.issue.author_association;
-                      let label = null;
-                      
-                      if (!['MEMBER', 'OWNER'].includes(association)) {
-                        if (association === 'COLLABORATOR') {
-                          label = 'collab-issue';
-                        } else {
-                          label = 'ext-issue';
-                        }
-                      }
-                      
-                      if (label) {
-                        await github.rest.issues.addLabels({
-                          owner: context.repo.owner,
-                          repo: context.repo.repo,
-                          issue_number: context.payload.issue.number,
-                          labels: [label]
-                        });
-                      }
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Label by user type
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const assoc = context.payload.issue.author_association;
+            const currentLabels = (context.payload.issue.labels || []).map(l => l.name);
 
-            - name: Remove external issues from Projects v2
-              uses: actions/github-script@v7
-              with:
-                  script: |
-                      const association = context.payload.issue.author_association;
-                      // Only remove if it's an external issue (not collaborator or member/owner)
-                      if (['MEMBER', 'OWNER', 'COLLABORATOR'].includes(association)) {
-                        core.info('Skipping project removal for internal user');
-                        return;
-                      }
+            let label = null;
 
-                      const { graphql } = github;
-                      const issueNodeId = context.payload.issue.node_id;
+            if (["MEMBER","OWNER"].includes(assoc)) {
+              core.info("Internal org member/owner detected — no label.");
+            } else if (assoc === "COLLABORATOR") {
+              label = "collab-issue";
+            } else {
+              label = "ext-issue";
+            }
 
-                      // Small delay for project automations to finish
-                      await new Promise(resolve => setTimeout(resolve, 8000));
+            if (label && !currentLabels.includes(label)) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.issue.number,
+                labels: [label]
+              });
+              core.info(`Applied label: ${label}`);
+            }
 
-                      // Fetch Project v2 items attached to this issue
-                      const q = `
-                        query($id: ID!) {
-                          node(id: $id) {
-                            ... on Issue {
-                              projectItems: projectItems(first: 50) {
-                                nodes { id project { title } }
-                              }
-                            }
-                          }
-                        }
-                      `;
-                      const data = await graphql(q, { id: issueNodeId });
-                      const items = data?.node?.projectItems?.nodes ?? [];
-                      if (items.length === 0) {
-                        core.info('No project items found to remove');
-                        return;
-                      }
-
-                      for (const it of items) {
-                        try {
-                          await graphql(`
-                            mutation($itemId: ID!) {
-                              deleteProjectV2Item(input: { itemId: $itemId }) { deletedItemId }
-                            }
-                          `, { itemId: it.id });
-                          core.info(`Removed from Project v2: ${it.project?.title ?? '(untitled)'}`);
-                        } catch (e) {
-                          core.warning(`Failed to delete Project v2 item ${it.id}: ${e.message}`);
-                        }
-                      }

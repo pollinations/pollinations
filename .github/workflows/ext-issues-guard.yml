@@ -1,4 +1,4 @@
-name: External issue guard
+name: External issue guard TEST
 on:
     issues:
         types: [opened]

@@ -1,7 +1,7 @@
 name: New Issue Labeler
 on:
   issues:
-    types: [opened]
+    types: [opened, transferred]
 
 permissions:
   contents: read
@@ -10,40 +10,39 @@ permissions:
 jobs:
   label:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Debug association
-        run: |
-          echo "author_association=${{ github.event.issue.author_association }}"
-
-      # Outside collaborator
-      - name: Label collab-issue
-        if: ${{ github.event.issue.author_association == 'COLLABORATOR' }}
+      - name: Label by user type
         uses: actions/github-script@v7
         with:
           script: |
+            const author = context.payload.issue.user.login;
+            const assoc  = context.payload.issue.author_association;
             const current = (context.payload.issue.labels || []).map(l => l.name);
-            if (!current.includes("collab-issue")) {
-              await github.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.payload.issue.number,
-                labels: ["collab-issue"]
-              });
+
+            // allow-list of known org members (because in public repos GitHub sometimes reports them as "CONTRIBUTOR")
+            const INTERNAL_USERS = [
+              "ElliotEtag",   // add org usernames here
+              "voodoohop",
+              "eulervoid",
+              "ale-rls"
+            ];
+
+            let label = null;
+
+            if (INTERNAL_USERS.includes(author)) {
+              console.log(`Internal user ${author}, skipping label`);
+            } else if (assoc === "COLLABORATOR") {
+              label = "collab-issue";
+            } else {
+              label = "ext-issue";
             }
 
-      # Everyone else who is NOT MEMBER/OWNER/COLLABORATOR
-      - name: Label ext-issue
-        if: ${{ !contains(fromJson('["MEMBER","OWNER","COLLABORATOR"]'), github.event.issue.author_association) }}
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const current = (context.payload.issue.labels || []).map(l => l.name);
-            if (!current.includes("ext-issue")) {
+            if (label && !current.includes(label)) {
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.payload.issue.number,
-                labels: ["ext-issue"]
+                labels: [label]
               });
+              console.log(`Applied label: ${label}`);
             }

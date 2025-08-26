@@ -1,0 +1,11 @@
+services:
+  image:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pollinations-image
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    restart: unless-stopped

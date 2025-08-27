@@ -1,17 +1,36 @@
 {
     "compilerOptions": {
-        "target": "ES2022",
-        "module": "commonjs",
-        "lib": ["ES2022"],
-        "outDir": "./dist",
-        "rootDir": "./src",
-        "strict": true,
-        "esModuleInterop": true,
-        "skipLibCheck": true,
+        "target": "esnext",
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "lib": ["esnext", "dom"],
+        "types": ["@cloudflare/vitest-pool-workers", "vite/client"],
+        "jsx": "react-jsx",
+        "jsxImportSource": "react",
+
         "forceConsistentCasingInFileNames": true,
+        "isolatedModules": true,
+
+        "strict": true,
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "noImplicitReturns": true,
+
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "allowImportingTsExtensions": true,
+        "allowJs": true,
+        "checkJs": false,
+
+        "noEmit": true,
         "resolveJsonModule": true,
-        "noEmit": true
+        "sourceMap": true,
+        "skipLibCheck": true,
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["src/*"]
+        }
     },
-    "include": ["src/**/*"],
+    "include": ["worker-configuration.d.ts", "src/**/*.ts", "src/**/*.tsx"],
     "exclude": ["node_modules", "dist"]
 }

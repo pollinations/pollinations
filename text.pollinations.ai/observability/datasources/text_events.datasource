@@ -12,12 +12,12 @@ SCHEMA >
 `environment`     LowCardinality(String) `json:$.proxy_metadata.environment` DEFAULT '',
 
 `user`     LowCardinality(String) `json:$.user` DEFAULT 'unknown',
+`tier`     LowCardinality(String) `json:$.tier` DEFAULT 'unknown',
 `referrer` LowCardinality(String) `json:$.referrer` DEFAULT 'unknown',
 
 `provider`        LowCardinality(String) `json:$.provider` DEFAULT 'unknown',
 `model_requested` LowCardinality(String) `json:$.model_requested` DEFAULT 'unknown',
 `model_used`      LowCardinality(String) `json:$.model_used` DEFAULT 'unknown',
-`stream`          Bool            `json:$.stream` DEFAULT false,
 
 `cost` Float64 `json:$.cost` DEFAULT 0,
 
@@ -50,13 +50,13 @@ SCHEMA >
 
 ENGINE "MergeTree" 
 ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
-ENGINE_SORTING_KEY "timestamp, environment, user"
+ENGINE_SORTING_KEY "timestamp, environment, user, tier"
 ENGINE_PRIMARY_KEY "timestamp, environment, user"
 
 FORWARD_QUERY >
 SELECT 
   timestamp, end_time, response_time, response_status, id, 
-  environment, user, referrer, provider, model_requested, model_used, stream, cost, 
+  environment, user, tier, referrer, provider, model_requested, model_used, cost, 
   token_price_prompt_text, token_price_prompt_audio, token_price_prompt_cached, 
   token_price_completion_text, token_price_completion_audio, 
   token_count_prompt_text, token_count_prompt_audio, token_count_prompt_cached, 

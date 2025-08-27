@@ -223,6 +223,9 @@ async function handleRequest(req, res, requestData) {
 		// Ensure completion has the request ID
 		completion.id = requestId;
 
+		// Add user tier information to completion for tracking
+		completion.user_tier = authResult.tier || "anonymous";
+
 		// Log user request/response if enabled
 		if (authResult.username) {
 			const totalProcessingTime = Date.now() - startTime;

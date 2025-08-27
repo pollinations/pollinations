@@ -210,15 +210,18 @@ async function testModelForOriginalName(modelName, modelMetadata = null) {
             }
             
             const originalName = response.model;
+            const userTier = response.user_tier || 'unknown';
+            
             if (originalName && originalName !== modelName) {
-                console.log(`  ✅ ${modelName} → ${originalName} (DIFFERENT) (${duration}ms)`);
+                console.log(`  ✅ ${modelName} → ${originalName} (DIFFERENT) | User Tier: ${userTier} (${duration}ms)`);
             } else {
-                console.log(`  ✅ ${modelName} → ${originalName || modelName} (SAME) (${duration}ms)`);
+                console.log(`  ✅ ${modelName} → ${originalName || modelName} (SAME) | User Tier: ${userTier} (${duration}ms)`);
             }
             
             return { 
                 modelName, 
                 originalName, 
+                userTier,
                 duration,
                 success: true 
             };
@@ -393,7 +396,8 @@ async function discoverAllOriginalNames() {
         console.log(`\n🔄 MODELS WITH DIFFERENT ORIGINAL NAMES:`);
         console.log('-'.repeat(80));
         different.forEach(result => {
-            console.log(`  ${result.modelName.padEnd(25)} → ${result.originalName}`);
+            const tierInfo = result.userTier ? ` | Tier: ${result.userTier}` : '';
+            console.log(`  ${result.modelName.padEnd(25)} → ${result.originalName}${tierInfo}`);
         });
     }
     
@@ -401,7 +405,8 @@ async function discoverAllOriginalNames() {
         console.log(`\n✅ MODELS WITH SAME NAMES:`);
         console.log('-'.repeat(80));
         same.forEach(result => {
-            console.log(`  ${result.modelName}`);
+            const tierInfo = result.userTier ? ` | Tier: ${result.userTier}` : '';
+            console.log(`  ${result.modelName}${tierInfo}`);
         });
     }
     
@@ -537,6 +542,9 @@ async function testSingleModel(modelName) {
     
     if (result.success) {
         console.log(`\n✅ SUCCESS: ${result.modelName}`);
+        if (result.userTier) {
+            console.log(`👤 User Tier: ${result.userTier}`);
+        }
         if (result.originalName) {
             if (result.originalName !== result.modelName) {
                 console.log(`🔄 Original name: ${result.originalName}`);

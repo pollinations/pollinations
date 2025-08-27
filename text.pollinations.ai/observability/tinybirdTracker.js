@@ -115,6 +115,7 @@ export async function sendTinybirdEvent(eventData) {
 
             // User info
             user: eventData.user,
+            tier: eventData.tier ?? "anonymous",
             referrer: eventData.referrer ?? "unknown",
 
             // Status and caching flags
@@ -124,7 +125,6 @@ export async function sendTinybirdEvent(eventData) {
             cache_semantic_similarity: eventData.cache_semantic_similarity ?? null,
             cache_key: eventData.cache_key ?? "",
             id: getOrGenerateId(eventData.cf_ray),
-            stream: Boolean(eventData.stream),
 
             // Moderation data (flat fields to match datasource)
             moderation_hate_severity: cfr?.hate?.severity ?? 'safe',

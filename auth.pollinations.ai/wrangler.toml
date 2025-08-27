@@ -6,30 +6,39 @@ compatibility_flags = [ "nodejs_compat" ]
 [dev]
 port = 3000
 
+[assets]
+not_found_handling = "single-page-application"
+run_worker_first = [ "/api/*" ]
+
 [[d1_databases]]
 binding = "DB"
 database_name = "pollinations-auth"
 database_id = "cc225cad-b9a2-4595-8323-6602e7680511"
 migrations_dir = "drizzle"
 
-# Environment variables declaration with placeholders
-# These will be overridden by secrets in the Cloudflare dashboard
 [vars]
-POLAR_SUCCESS_URL = "http://localhost:3000/success"
+ENVIRONMENT = "development"
+PUBLIC_BASE_URL = "http://localhost:3000"
+PUBLIC_AUTH_PATH = "/api/auth"
+POLAR_SUCCESS_URL = "http://localhost:3000"
 
+[triggers]
+crons = [ "* * * * *" ] # Trigger every minute
 
 [env.production]
-route = { pattern = "auth.pollinations.ai/*", zone_name = "pollinations.ai" }
+route = { pattern = "api.pollinations.ai/*", zone_name = "pollinations.ai" }
 
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "pollinations-auth"
 database_id = "cc225cad-b9a2-4595-8323-6602e7680511"
+migrations_dir = "drizzle"
 
-# Environment variables for production with placeholders
-# These will be overridden by secrets in the Cloudflare dashboard
 [env.production.vars]
-POLAR_SUCCESS_URL = "https://auth.pollinations.ai/success"
+ENVIRONMENT = "production"
+BASE_URL = "https://api.pollinations.ai"
+AUTH_BASE_PATH = "/api/auth"
+POLAR_SUCCESS_URL = "https://api.pollinations.ai"
 
 [env.test]
 
@@ -39,6 +48,9 @@ database_name = "pollinations-auth"
 database_id = "cc225cad-b9a2-4595-8323-6602e7680511"
 
 [env.test.vars]
+ENVIRONMENT = "test"
+BASE_URL = "https://api.pollinations.ai"
+AUTH_BASE_PATH = "/api/auth"
 GITHUB_CLIENT_ID = "test_github_client_id"
 GITHUB_CLIENT_SECRET = "test_github_client_secret"
 POLAR_ACCESS_TOKEN = "test_polar_token"

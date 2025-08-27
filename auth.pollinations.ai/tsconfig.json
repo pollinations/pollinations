@@ -3,16 +3,16 @@
         "target": "esnext",
         "module": "esnext",
         "moduleResolution": "bundler",
-        "lib": ["esnext"],
-        "types": ["@cloudflare/vitest-pool-workers"],
+        "lib": ["esnext", "dom"],
+        "types": ["@cloudflare/vitest-pool-workers", "vite/client"],
         "jsx": "react-jsx",
-        "jsxImportSource": "hono/jsx",
+        "jsxImportSource": "react",
 
         "forceConsistentCasingInFileNames": true,
         "isolatedModules": true,
 
         "strict": true,
-        "noImplicitAny": false,
+        "noImplicitAny": true,
         "noImplicitThis": true,
         "noImplicitReturns": true,
 
@@ -31,6 +31,6 @@
             "@/*": ["src/*"]
         }
     },
-    "include": ["worker-configuration.d.ts", "src/**/*.ts"],
+    "include": ["worker-configuration.d.ts", "src/**/*.ts", "src/**/*.tsx"],
     "exclude": ["node_modules", "dist"]
 }

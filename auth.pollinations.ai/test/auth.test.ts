@@ -26,10 +26,8 @@ type SessionData = {
     session: unknown;
 };
 
-test("complete signup and session creation", async () => {
-    const signupUrl = new URL(
-        "http://localhost:3000/api/v1/auth/sign-in/social",
-    );
+test("signup and session creation", async () => {
+    const signupUrl = new URL("http://localhost:3000/api/auth/sign-in/social");
 
     const signupResponse = await SELF.fetch(signupUrl.toString(), {
         method: "POST",
@@ -46,13 +44,14 @@ test("complete signup and session creation", async () => {
     const signupData = (await signupResponse.json()) as SignupData;
     const forwardUrl = new URL(signupData.url);
     const state = forwardUrl.searchParams.get("state");
+    if (!state) throw new Error("State param is missing");
 
     // complete OAuth callback
     const callbackUrl = new URL(
-        "http://localhost:3000/api/v1/auth/callback/github",
+        "http://localhost:3000/api/auth/callback/github",
     );
     callbackUrl.searchParams.set("code", "test_code");
-    callbackUrl.searchParams.set("state", state || "null");
+    callbackUrl.searchParams.set("state", state);
 
     const callbackResponse = await SELF.fetch(callbackUrl.toString(), {
         method: "GET",
@@ -78,7 +77,7 @@ test("complete signup and session creation", async () => {
 
     // verify session by accessing a protected endpoint
     const sessionResponse = await SELF.fetch(
-        "http://localhost:3000/api/v1/auth/get-session",
+        "http://localhost:3000/api/auth/get-session",
         {
             method: "GET",
             headers: {
@@ -89,7 +88,6 @@ test("complete signup and session creation", async () => {
     );
 
     expect(sessionResponse.status).toBe(200);
-
     const sessionData = (await sessionResponse.json()) as SessionData;
     expect(sessionData.user).toBeDefined();
     expect(sessionData.user.email).toBe("test@example.com");

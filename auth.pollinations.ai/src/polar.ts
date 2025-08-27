@@ -39,14 +39,11 @@ export async function processPolarEvents(env: Cloudflare.Env) {
     }
 }
 
-// this should probably use a transaction but its not supported
-// we could move this to durable objects to get around this limitation
 async function preparePendingEvents(
     db: DrizzleD1Database,
 ): Promise<[string, PolarEvent[]]> {
     const processingId = crypto.randomUUID();
 
-    // Get all pending events
     const pending = await db
         .update(event)
         .set({ status: "processing", processingId })

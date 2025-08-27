@@ -1,31 +1,36 @@
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { createAuth } from "./auth.ts";
-import { drizzle } from "drizzle-orm/d1";
+import { handleError } from "./error.ts";
 import { processPolarEvents } from "./polar.ts";
-import * as eventSchema from "./db/schema/event.ts";
+import { polarRoutes } from "./routes/polar.ts";
 
 type Env = {
     Bindings: Cloudflare.Env;
 };
 
+const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", (c) => {
+    return createAuth(c.env).handler(c.req.raw);
+});
+
 const app = new Hono<Env>()
-    .on(["POST", "GET"], "/api/v1/auth/*", (c) => {
-        return createAuth(c.env).handler(c.req.raw);
+    .basePath("/api")
+    .route("/auth", authRoutes)
+    .route("/polar", polarRoutes)
+    .get("/generate/image/:prompt", async (c) => {
+        return c.json({ success: false });
     })
-    .get("/", async (c) => {
-        const auth = createAuth(c.env);
-        const session = await auth.api.getSession({
-            headers: c.req.raw.headers,
-        });
-        return c.text(`Hello, ${JSON.stringify(session?.user, null, 2)}`);
-    })
-    .get("/text", async (c) => {
-        const auth = createAuth(c.env);
-        const session = await auth.api.getSession({
-            headers: c.req.raw.headers,
-        });
-        const db = drizzle(c.env.DB, { schema: eventSchema });
+    .get("/generate/text/:prompt", async (c) => {
+        return c.json({ success: false });
     });
+
+app.notFound((c) => {
+    return handleError(new HTTPException(404, { message: "Not Found" }), c);
+});
+
+app.onError(handleError);
+
+export type AppRoutes = typeof app;
 
 export default {
     fetch: app.fetch,

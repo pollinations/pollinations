@@ -12,7 +12,7 @@ SCHEMA >
 `environment`     LowCardinality(String) `json:$.proxy_metadata.environment` DEFAULT '',
 
 `user`     LowCardinality(String) `json:$.user` DEFAULT 'unknown',
-`tier`     LowCardinality(String) `json:$.tier` DEFAULT 'anonymous',
+`tier`     LowCardinality(String) `json:$.tier` DEFAULT 'unknown',
 `referrer` LowCardinality(String) `json:$.referrer` DEFAULT 'unknown',
 
 `provider`        LowCardinality(String) `json:$.provider` DEFAULT 'unknown',

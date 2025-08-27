@@ -6,7 +6,7 @@ import {
 import { randomBytes } from "node:crypto";
 import { beforeAll, beforeEach, expect, test } from "vitest";
 import type { InsertPolarEvent } from "../src/db/schema/event";
-import worker from "../src/index.ts";
+import worker from "../src/index.tsx";
 import { storePolarEvents } from "../src/polar";
 import { setupFetchMock } from "./mocks/fetch.ts";
 import { createMockPolar } from "./mocks/polar.ts";
@@ -57,7 +57,7 @@ function createImageGenerationEvent(
     };
 }
 
-test("Scheduled handler", async () => {
+test("Scheduled handler sends events to Polar.sh", async () => {
     const events = Array.from({ length: 10000 }).map((_, i) => {
         if (i % 2 === 0) return createImageGenerationEvent();
         else return createTextGenerationEvent();

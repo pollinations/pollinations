@@ -26,6 +26,11 @@
             # initialize shell
             eval "$(${pkgs.starship}/bin/starship init zsh)"
             ${pkgs.figlet}/bin/figlet -f small "Pollinations"
+            # shell improvements
+            source ${pkgs.zsh-syntax-highlighting}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+            source ${pkgs.zsh-autosuggestions}/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+            fpath=(${pkgs.zsh-completions}/share/zsh/site-functions $fpath)
+            autoload -U compinit && compinit
           '';
         };
 
@@ -40,6 +45,9 @@
 
           buildInputs = with pkgs; [
             zsh
+            zsh-syntax-highlighting
+            zsh-autosuggestions
+            zsh-completions
             starship
             figlet
             git

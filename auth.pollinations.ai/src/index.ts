@@ -4,6 +4,7 @@ import { createAuth } from "./auth.ts";
 import { handleError } from "./error.ts";
 import { processPolarEvents } from "./polar.ts";
 import { polarRoutes } from "./routes/polar.ts";
+import { proxyRoutes } from "./routes/proxy.ts";
 
 type Env = {
     Bindings: Cloudflare.Env;
@@ -17,12 +18,7 @@ const app = new Hono<Env>()
     .basePath("/api")
     .route("/auth", authRoutes)
     .route("/polar", polarRoutes)
-    .get("/generate/image/:prompt", async (c) => {
-        return c.json({ success: false });
-    })
-    .get("/generate/text/:prompt", async (c) => {
-        return c.json({ success: false });
-    });
+    .route("/generate", proxyRoutes);
 
 app.notFound((c) => {
     return handleError(new HTTPException(404, { message: "Not Found" }), c);

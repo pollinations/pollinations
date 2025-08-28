@@ -1,5 +1,5 @@
 import type { Session, User } from "better-auth";
-import { Factory } from "hono/factory";
+import { createMiddleware } from "hono/factory";
 import { createAuth } from "../auth.ts";
 
 type Env = {
@@ -11,9 +11,7 @@ type Env = {
     };
 };
 
-const factory = new Factory<Env>();
-
-export const auth = factory.createMiddleware(async (c, next) => {
+export const auth = createMiddleware<Env>(async (c, next) => {
     const auth = createAuth(c.env);
     c.set("auth", auth);
 

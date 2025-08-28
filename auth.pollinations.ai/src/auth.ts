@@ -21,9 +21,10 @@ export function createAuth(env: Cloudflare.Env) {
     const db = drizzle(env.DB);
 
     const apiKeyPlugin = apiKey({
+        enableMetadata: true,
         permissions: {
             defaultPermissions: {
-                "model_access": ["flower_tier"],
+                "tier": ["flower"],
             },
         },
     });

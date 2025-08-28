@@ -51,7 +51,6 @@ async function preparePendingEvents(
         .returning();
 
     if (pending.length === 0) return [processingId, []];
-
     return [processingId, pending];
 }
 

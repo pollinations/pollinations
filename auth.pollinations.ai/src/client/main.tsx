@@ -1,17 +1,18 @@
 import { createRouter, RouterProvider } from "@tanstack/react-router";
+import type { Session, User } from "better-auth";
+import { apiKeyClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
+import { hc } from "hono/client";
 import {
     type FC,
     type PropsWithChildren,
     StrictMode,
-    useMemo,
     useEffect,
+    useMemo,
 } from "react";
 import ReactDOM from "react-dom/client";
-import { routeTree } from "./routeTree.gen";
-import { hc } from "hono/client";
 import type { AppRoutes } from "../index.ts";
-import type { Session, User } from "better-auth";
+import { routeTree } from "./routeTree.gen";
 
 // Register the router instance for type safety
 declare module "@tanstack/react-router" {
@@ -20,16 +21,19 @@ declare module "@tanstack/react-router" {
     }
 }
 
-const auth = createAuthClient({
+const authClient = createAuthClient({
     baseURL: import.meta.env.PUBLIC_BASE_URL,
     basePath: import.meta.env.PUBLIC_AUTH_PATH,
+    plugins: [apiKeyClient()],
 });
+export type AuthClient = typeof authClient;
 
-const api = hc<AppRoutes>("/api");
+const apiClient = hc<AppRoutes>("/api");
+export type ApiClient = (typeof apiClient)["api"];
 
 export type RouterContext = {
-    auth: typeof auth;
-    api: typeof api;
+    auth: AuthClient;
+    api: ApiClient;
     user: User | null;
     session: Session | null;
     isLoading: boolean;
@@ -38,8 +42,8 @@ export type RouterContext = {
 const router = createRouter({
     routeTree,
     context: {
-        auth,
-        api,
+        auth: authClient,
+        api: apiClient.api,
         user: null,
         session: null,
         isLoading: true,
@@ -47,7 +51,7 @@ const router = createRouter({
 });
 
 const App: FC<PropsWithChildren> = () => {
-    const session = auth.useSession();
+    const session = authClient.useSession();
 
     useEffect(() => {
         if (session.isPending) return;
@@ -56,8 +60,8 @@ const App: FC<PropsWithChildren> = () => {
 
     const context = useMemo(() => {
         return {
-            auth,
-            api,
+            auth: authClient,
+            api: apiClient.api,
             user: session.data?.user || null,
             session: session.data?.session || null,
             isLoading: session.isPending,

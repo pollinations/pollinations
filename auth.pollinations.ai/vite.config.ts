@@ -1,8 +1,9 @@
 import { cloudflare } from "@cloudflare/vite-plugin";
+import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
-import tailwindcss from "@tailwindcss/vite";
+import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
     server: { port: 3000 },
@@ -16,7 +17,15 @@ export default defineConfig({
         }),
         react(),
         tailwindcss(),
+        tsconfigPaths(),
         cloudflare(),
     ],
     envPrefix: ["PUBLIC_"],
+    optimizeDeps: {
+        esbuildOptions: {
+            loader: {
+                ".js": "jsx",
+            },
+        },
+    },
 });

@@ -1,1 +1,66 @@
+/** biome-ignore-all lint/suspicious/noUnknownAtRules: used to apply tailwind classes */
 @import "tailwindcss";
+
+*,
+::before,
+::after {
+    box-sizing: border-box;
+}
+
+@theme {
+    --font-heading: LC Mogi, ui-serif, serif;
+    --font-subheading: Basteleur, ui-serif, serif;
+    --font-body: Uncut Sans Variable, ui-monospace, monospace;
+    --text-base: 16px;
+}
+
+@layer base {
+    html {
+        color-scheme: light;
+    }
+
+    * {
+        @apply border-gray-800;
+    }
+
+    html,
+    body {
+        @apply text-green-950 bg-emerald-100 font-body text-base;
+        @apply py-8 min-h-screen;
+    }
+
+    body {
+        max-width: 980px;
+        @apply mx-auto;
+    }
+
+    h1 {
+        @apply font-heading;
+    }
+
+    h1 {
+        @apply text-6xl;
+    }
+
+    h2 {
+        @apply text-4xl;
+    }
+
+    h3 {
+        @apply text-3xl;
+    }
+
+    h4,
+    h5,
+    h6 {
+        @apply text-2xl;
+    }
+
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        @apply font-subheading tracking-tight;
+    }
+}

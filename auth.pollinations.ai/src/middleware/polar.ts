@@ -1,6 +1,6 @@
 import { Polar } from "@polar-sh/sdk";
 import type { Session, User } from "better-auth";
-import { Factory } from "hono/factory";
+import { createMiddleware } from "hono/factory";
 import type { createAuth } from "../auth.ts";
 
 type Env = {
@@ -13,9 +13,7 @@ type Env = {
     };
 };
 
-const factory = new Factory<Env>();
-
-export const polar = factory.createMiddleware(async (c, next) => {
+export const polar = createMiddleware<Env>(async (c, next) => {
     const polar = new Polar({
         accessToken: c.env.POLAR_ACCESS_TOKEN,
         server: "sandbox",

@@ -33,9 +33,9 @@ source nunchaku_env/bin/activate
 echo "Upgrading pip..."
 pip install --upgrade pip
 
-# Install PyTorch with CUDA support
-echo "Installing PyTorch with CUDA 11.8..."
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+# Install PyTorch with CUDA support (CRITICAL: Use 2.5.1+cu121 for nunchaku compatibility)
+echo "Installing PyTorch 2.5.1 with CUDA 12.1..."
+pip install torch==2.5.1+cu121 torchvision==0.20.1+cu121 torchaudio==2.5.1+cu121 --index-url https://download.pytorch.org/whl/cu121
 
 # Install core dependencies
 echo "Installing core dependencies..."

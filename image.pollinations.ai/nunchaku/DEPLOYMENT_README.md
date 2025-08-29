@@ -16,7 +16,7 @@ cd image.pollinations.ai/nunchaku
 
 1. **System Dependencies**: Updates packages and installs Python, pip, venv, git, curl, wget
 2. **Python Environment**: Creates virtual environment and installs:
-   - PyTorch with CUDA 11.8 support
+   - **PyTorch 2.5.1+cu121** (CRITICAL: Required for nunchaku compatibility)
    - diffusers, transformers, accelerate
    - FastAPI, uvicorn, python-multipart, aiohttp
    - protobuf, sentencepiece (FLUX tokenizer)
@@ -99,10 +99,14 @@ curl -X POST "http://your-ip:8765/generate" \
 
 ## Troubleshooting
 
-1. **CUDA Issues**: Ensure GPU instance with CUDA 11.8+ support
-2. **Memory Issues**: Requires ~8GB+ GPU memory for FLUX.1-schnell
-3. **Authentication Issues**: Verify HF token has access to black-forest-labs/FLUX.1-schnell
-4. **Port Issues**: Ensure port 8765 is open in security group
+1. **PyTorch Version Issues**: 
+   - **CRITICAL**: Must use PyTorch 2.5.1+cu121 for nunchaku compatibility
+   - Error: `undefined symbol: _ZN3c106detail23torchInternalAssertFailE` = wrong PyTorch version
+   - Solution: `pip install torch==2.5.1+cu121 torchvision==0.20.1+cu121 torchaudio==2.5.1+cu121 --index-url https://download.pytorch.org/whl/cu121`
+2. **CUDA Issues**: Ensure GPU instance with CUDA 12.1+ support
+3. **Memory Issues**: Requires ~8GB+ GPU memory for FLUX.1-schnell
+4. **Authentication Issues**: Verify HF token has access to black-forest-labs/FLUX.1-schnell
+5. **Port Issues**: Ensure port 8765 is open in security group
 
 ## Security Group Configuration
 
@@ -132,11 +136,28 @@ aws ec2 modify-instance-attribute \
 
 **Automated deployment available with AWS CLI authentication.**
 
-## Current Production Deployment
+## Current Production Deployments
 
-✅ **Live Instance**: 34.238.131.212:8765 (i-02e19443f56f3e19c)
+✅ **Live Instance 1**: 34.238.131.212:8765 (i-02e19443f56f3e19c)
+- PyTorch: 2.4.1+cu121 (working)
 - Systemd service: `flux-server.service` running
 - Security groups: `launch-wizard-7` + `pollinations-shared-sg`
 - Model: `mit-han-lab/svdq-int4-flux.1-schnell` with nunchaku optimization
 - External API access: **WORKING**
 - Performance: ~2-4 seconds per image generation
+
+✅ **Live Instance 2**: 100.26.134.136:8765 (i-0670795cf636f0a43)
+- PyTorch: 2.5.1+cu121 (latest compatible)
+- Systemd service: `flux-server.service` configured
+- Security groups: `pollinations-shared-sg` (sg-0f426a194bfb9df86)
+- Model: `mit-han-lab/svdq-int4-flux.1-schnell` with nunchaku optimization
+- Status: **READY FOR TESTING**
+
+## PyTorch Version Compatibility Matrix
+
+| PyTorch Version | CUDA Version | Nunchaku Status | Notes |
+|----------------|--------------|-----------------|-------|
+| 2.4.1+cu121    | CUDA 12.1    | ✅ Working      | Proven stable |
+| 2.5.1+cu121    | CUDA 12.1    | ✅ Working      | Latest compatible |
+| 2.7.1+cu118    | CUDA 11.8    | ❌ Fails        | Symbol mismatch |
+| 2.7.1+cu121    | CUDA 12.1    | ❌ Fails        | Symbol mismatch |

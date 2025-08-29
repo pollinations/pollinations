@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 MODEL_ID = "black-forest-labs/FLUX.1-schnell"
 MODEL_CACHE = "model-cache"
-QUANT_MODEL_PATH = "mit-han-lab/svdq-int4-flux.1-schnell"
+QUANT_MODEL_PATH = "nunchaku-tech/nunchaku-flux.1-schnell"
 
 class ImageRequest(BaseModel):
     prompts: List[str] = ["a photo of an astronaut riding a horse on mars"]

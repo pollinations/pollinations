@@ -102,7 +102,6 @@ export const countJobs = (type: ServerType = "flux"): number => {
 // Wrapper for backward compatibility
 export const countFluxJobs = () => countJobs("flux");
 
-
 /**
  * Registers a new server or updates its last heartbeat time.
  * @param {string} url - The URL of the server.
@@ -136,9 +135,6 @@ export const registerServer = (url: string, type: ServerType = "flux") => {
         logServer(`Registered new ${type} server ${url}`);
     }
 };
-
-// Register hardcoded test server after function declaration
-registerServer("http://54.221.16.149:8765", "flux");
 
 /**
  * Returns the next available server URL for a specific type

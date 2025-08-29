@@ -80,10 +80,8 @@ async def lifespan(app: FastAPI):
     heartbeat_task = None
     try:
         print("Loading FLUX pipeline...")
-        transformer = NunchakuFluxTransformer2dModel.from_pretrained(QUANT_MODEL_PATH)
         pipe = FluxPipeline.from_pretrained(
-            MODEL_ID,
-            transformer=transformer,
+            QUANT_MODEL_PATH,
             torch_dtype=torch.bfloat16
         ).to("cuda")
         print("FLUX pipeline loaded successfully")

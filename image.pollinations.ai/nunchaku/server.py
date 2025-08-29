@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import torch
 from diffusers import FluxPipeline
-from nunchaku.models.transformer_flux import NunchakuFluxTransformer2dModel
+from nunchaku import NunchakuFluxTransformer2dModel
 from safety_checker.censor import check_safety
 import requests
 import logging
@@ -29,7 +29,7 @@ class ImageRequest(BaseModel):
     prompts: List[str] = ["a photo of an astronaut riding a horse on mars"]
     width: int = 1024
     height: int = 1024
-    steps: int = 4
+    steps: int = 2
     seed: int | None = None
     safety_checker_adj: float = 0.5  # Controls sensitivity of NSFW detection
 

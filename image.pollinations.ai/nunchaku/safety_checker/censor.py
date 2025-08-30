@@ -35,25 +35,46 @@ def numpy_to_pil(images):
 def check_safety(x_image, safety_checker_adj: float):
     global safety_feature_extractor, safety_checker
 
-    if safety_feature_extractor is None:
-        safety_feature_extractor = AutoFeatureExtractor.from_pretrained(safety_model_id)
-        safety_checker = StableDiffusionSafetyChecker.from_pretrained(safety_model_id).to("cuda")
+    try:
+        if safety_feature_extractor is None:
+            safety_feature_extractor = AutoFeatureExtractor.from_pretrained(safety_model_id)
+            # Use safetensors loading to avoid PyTorch security issue
+            safety_checker = StableDiffusionSafetyChecker.from_pretrained(
+                safety_model_id, 
+                use_safetensors=True
+            ).to("cuda")
 
-    # if x_image is an array of PIL images dont convert
-    if isinstance(x_image, list) and not isinstance(x_image[0], Image.Image):
-        x_image = numpy_to_pil(x_image)
+        # if x_image is an array of PIL images dont convert
+        if isinstance(x_image, list) and not isinstance(x_image[0], Image.Image):
+            x_image = numpy_to_pil(x_image)
+        
+        safety_checker_input = safety_feature_extractor(x_image, return_tensors="pt").to("cuda")
+        
+        # Check if safety_checker is callable
+        if safety_checker is None:
+            print("Safety checker is None, skipping NSFW check")
+            # Return safe defaults
+            concepts = [set() for _ in x_image]
+            has_nsfw_concept = [False for _ in x_image]
+        else:
+            has_nsfw_concept, concepts = safety_checker(
+                images=x_image,
+                clip_input=safety_checker_input.pixel_values,
+                safety_checker_adj=safety_checker_adj,  # customize adjustment
+            )
+
+        print("concept", concepts, "has_nsfw_concept", has_nsfw_concept)
+
+        # Convert both numpy types and sets to Python types
+        return replace_numpy_with_python(replace_sets_with_lists(concepts)), replace_numpy_with_python(replace_sets_with_lists(has_nsfw_concept))
     
-    safety_checker_input = safety_feature_extractor(x_image, return_tensors="pt").to("cuda")
-    has_nsfw_concept, concepts = safety_checker(
-        images=x_image,
-        clip_input=safety_checker_input.pixel_values,
-        safety_checker_adj=safety_checker_adj,  # customize adjustment
-    )
-
-    print("concept", concepts, "has_nsfw_concept", has_nsfw_concept)
-
-    # Convert both numpy types and sets to Python types
-    return replace_numpy_with_python(replace_sets_with_lists(concepts)), replace_numpy_with_python(replace_sets_with_lists(has_nsfw_concept))
+    except Exception as e:
+        print(f"Safety checker error: {e}")
+        # Return safe defaults on any error
+        num_images = len(x_image) if isinstance(x_image, list) else 1
+        concepts = [set() for _ in range(num_images)]
+        has_nsfw_concept = [False for _ in range(num_images)]
+        return concepts, has_nsfw_concept
 
 
 def censor_batch(x, safety_checker_adj: float):

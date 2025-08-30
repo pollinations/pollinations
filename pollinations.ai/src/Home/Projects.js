@@ -84,7 +84,7 @@ const Projects = () => {
     };
 
     return (
-        <SectionContainer backgroundConfig={SectionBG.project}>
+        <SectionContainer id="projects" backgroundConfig={SectionBG.project}>
             <SectionSubContainer>
                 <SectionTitle title={PROJECT_TITLE} />
             </SectionSubContainer>

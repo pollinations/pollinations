@@ -13,6 +13,15 @@ export const hackAndBuildProjects = [
     stars: 27
   },
   {
+    name: "Sequa MCP Server",
+    url: "https://mcp.sequa.ai/v1/pollinations/contribute",
+    description: "A Model Context Protocol server from Sequa.ai that provides deep knowledge of the Pollinations codebase. Offers documentation, context, and guidance to coding agents working on Pollinations projects. Configure MCP: https://mcp.sequa.ai/v1/pollinations/contribute",
+    author: "@sequa_ai",
+    category: "sdkLibraries",
+    submissionDate: "2025-08-24",
+    order: 1
+  },
+  {
     name: "pollinations_ai",
     url: "https://pub.dev/packages/pollinations_ai",
     description: "Dart/Flutter package for Pollinations API.",
@@ -246,6 +255,14 @@ export const hackAndBuildProjects = [
     author: "@SuperShivam5000",
     repo: "https://github.com/SuperShivam5000/querynator5000",
     submissionDate: "2025-07-13",
+    order: 1
+  },
+  {
+    name: "UltimaX Intelligence CLI",
+    url: "https://huggingface.co/spaces/umint/cli",
+    description: "Extension of the UltimaX Intelligence project based on Pollinations Python SDK.",
+    author: "@hadadarjt",
+    submissionDate: "2025-08-21",
     order: 1
   }
 ];

@@ -35,6 +35,21 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          allowed_tools: "mcp_sequa_search_web"
+          disallowed_tools: ""
+          mcp_config: |
+            {
+              "mcpServers": {
+                "sequa": {
+                  "command": "npx",
+                  "args": [
+                    "-y",
+                    "@sequa-ai/sequa-mcp@latest",
+                    "https://mcp.sequa.ai/v1/pollinations/contribute"
+                  ]
+                }
+              }
+            }
 
           # This is an optional setting that allows Claude to read CI results on PRs
           additional_permissions: |

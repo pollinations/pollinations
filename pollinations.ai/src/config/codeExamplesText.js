@@ -417,6 +417,12 @@ The Pollinations MCP server enables AI assistants like Claude to generate images
 npx @pollinations/model-context-protocol
 \`\`\`
 
+### Sequa MCP Server (Codebase Knowledge)
+- **Sequa MCP**: Provides deep knowledge of the Pollinations codebase for AI assistants
+  - [Sequa.AI Website](https://sequa.ai)
+  - Configure MCP: \`https://mcp.sequa.ai/v1/pollinations/contribute\`
+  - Features: Documentation, context, and guidance for coding agents working on Pollinations projects
+
 ### Community Alternatives
 - **MCPollinations**: A community-maintained alternative by Pink Pixel with similar capabilities
   - [GitHub Repository](https://github.com/pinkpixel-dev/MCPollinations)
@@ -428,6 +434,7 @@ npx @pollinations/model-context-protocol
 - Generate images from text descriptions
 - Create text-to-speech audio with various voice options
 - List available models and capabilities
+- Deep codebase understanding (Sequa MCP)
 - No authentication required
 
 For more details, see the [MCP Server Documentation](https://github.com/pollinations/pollinations/tree/master/model-context-protocol).`,

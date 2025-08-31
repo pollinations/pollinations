@@ -270,7 +270,7 @@ export const hackAndBuildProjects = [
     url: "https://agent.makululinux.com/",
     description: "A next-generation development environment that leverages a sophisticated multi-agent system where specialized AIs (Architect, Coder, QA Engineer) collaborate to build complex projects from a single prompt. Features multiple modes including Coder Mode for full-stack applications, Content Mode for writing, Canvas Mode for interactive editing, and advanced workflows like Test-Driven Development and automated Docker orchestration.",
     author: "@raymerjacque",
-    repo: "https://github.com/raymerjacque/Makulu-Agent-Portal.git",
+    repo: "https://github.com/raymerjacque/Makulu-Agent-Portal",
     submissionDate: "2025-08-31",
     order: 1
   }

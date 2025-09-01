@@ -6,6 +6,7 @@ import type { FC, PropsWithChildren } from "react";
 import { useState } from "react";
 import { cn } from "@/util.ts";
 import { Button } from "../components/button.tsx";
+import { Fragment } from "react";
 
 type ApiKey = {
     id: string;
@@ -22,8 +23,12 @@ type ApiKeyManagerProps = {
     onDelete: (id: string) => Promise<void>;
 };
 
-const Cell: FC<PropsWithChildren> = ({ children }) => {
-    return <span className="flex items-center">{children}</span>;
+const Cell: FC<React.ComponentProps<"div">> = ({ children, ...props }) => {
+    return (
+        <span className="flex items-center" {...props}>
+            {children}
+        </span>
+    );
 };
 
 export const ApiKeyList: FC<ApiKeyManagerProps> = ({
@@ -49,10 +54,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 <span className="font-bold">Created</span>
                 <span className="font-bold">Actions</span>
                 {apiKeys.map((apiKey) => (
-                    <>
+                    <Fragment key={apiKey.id}>
                         <Cell>{apiKey.name}</Cell>
-                        <Cell>{apiKey.metadata?.["description"] || ""}</Cell>
-                        <Cell>{apiKey.permissions?.["tier"]?.[0] || ""}</Cell>
+                        <Cell>{apiKey.metadata?.["description"] || "—"}</Cell>
+                        <Cell>{apiKey.permissions?.["tier"]?.[0] || "—"}</Cell>
                         <Cell>{apiKey.start}</Cell>
                         <Cell>
                             {formatDistanceToNow(apiKey.createdAt, {
@@ -68,7 +73,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         >
                             Delete
                         </Button>
-                    </>
+                    </Fragment>
                 ))}
             </div>
         </>
@@ -323,7 +328,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     return (
         <Dialog.Root open={isOpen} onOpenChange={({ open }) => setIsOpen(open)}>
             <Dialog.Trigger>
-                <Button>Create API Key</Button>
+                <Button as="div">Create API Key</Button>
             </Dialog.Trigger>
             <Dialog.Backdrop className="fixed inset-0 bg-green-950/50" />
             <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4">

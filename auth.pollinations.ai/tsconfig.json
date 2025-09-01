@@ -3,7 +3,7 @@
         "target": "esnext",
         "module": "esnext",
         "moduleResolution": "bundler",
-        "lib": ["esnext", "dom"],
+        "lib": ["esnext", "dom", "dom.iterable"],
         "types": ["@cloudflare/vitest-pool-workers", "vite/client"],
         "jsx": "react-jsx",
         "jsxImportSource": "react",
@@ -15,6 +15,7 @@
         "noImplicitAny": true,
         "noImplicitThis": true,
         "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
 
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,

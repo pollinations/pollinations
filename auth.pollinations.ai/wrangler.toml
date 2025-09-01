@@ -22,11 +22,26 @@ PUBLIC_BASE_URL = "http://localhost:3000"
 PUBLIC_AUTH_PATH = "/api/auth"
 POLAR_SUCCESS_URL = "http://localhost:3000"
 
+[env.staging]
+route = { pattern = "staging.pollinations.ai/*", zone_name = "pollinations.ai" }
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "pollinations-auth-staging"
+database_id = "dbd3274b-92ac-45d3-a07a-b070eb212654"
+migrations_dir = "drizzle"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+PUBLIC_BASE_URL = "https://staging.pollinations.ai"
+PUBLIC_AUTH_PATH = "/api/auth"
+POLAR_SUCCESS_URL = "https://staging.pollinations.ai"
+
 [triggers]
 crons = [ "* * * * *" ] # Trigger every minute
 
 [env.production]
-route = { pattern = "api.pollinations.ai/*", zone_name = "pollinations.ai" }
+route = { pattern = "beta.pollinations.ai/*", zone_name = "pollinations.ai" }
 
 [[env.production.d1_databases]]
 binding = "DB"
@@ -36,9 +51,9 @@ migrations_dir = "drizzle"
 
 [env.production.vars]
 ENVIRONMENT = "production"
-BASE_URL = "https://api.pollinations.ai"
-AUTH_BASE_PATH = "/api/auth"
-POLAR_SUCCESS_URL = "https://api.pollinations.ai"
+PUBLIC_BASE_URL = "https://beta.pollinations.ai"
+PUBLIC_AUTH_PATH = "/api/auth"
+POLAR_SUCCESS_URL = "https://beta.pollinations.ai"
 
 [env.test]
 
@@ -49,7 +64,7 @@ database_id = "cc225cad-b9a2-4595-8323-6602e7680511"
 
 [env.test.vars]
 ENVIRONMENT = "test"
-BASE_URL = "https://api.pollinations.ai"
+BASE_URL = "http://localhost:3000"
 AUTH_BASE_PATH = "/api/auth"
 GITHUB_CLIENT_ID = "test_github_client_id"
 GITHUB_CLIENT_SECRET = "test_github_client_secret"

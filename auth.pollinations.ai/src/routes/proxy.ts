@@ -18,11 +18,11 @@ export const proxyRoutes = new Hono<Env>()
         console.log("generating image");
         const prompt = c.req.param("prompt");
         const model = c.req.query("model") || "flux";
-        const isFreeUsage = freeModels.includes(model);
+        const isFreeModel = freeModels.includes(model);
         const user = c.get("user");
-        if (!isFreeUsage && !user) {
+        if (!isFreeModel && !user) {
             throw new HTTPException(401, {
-                message: "You must be signed in to use this model",
+                message: "You must be signed in to use this model.",
             });
         }
 
@@ -47,9 +47,9 @@ export const proxyRoutes = new Hono<Env>()
             },
         });
 
-        if (response.ok && !isFreeUsage) {
+        if (response.ok && !isFreeModel) {
             if (!user)
-                throw new Error("Missing user, this should never happen");
+                throw new Error("Missing user, this should never happen.");
             const events: InsertPolarEvent[] = [
                 {
                     id: generateRandomId(),

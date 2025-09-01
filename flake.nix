@@ -4,6 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     flake-utils.url = "github:numtide/flake-utils";
+    pipelight.url = "github:pipelight/pipelight";
   };
 
   outputs =
@@ -11,6 +12,7 @@
       self,
       nixpkgs,
       flake-utils,
+      pipelight,
     }:
     flake-utils.lib.eachSystem flake-utils.lib.defaultSystems (
       system:
@@ -43,7 +45,10 @@
         devShells.default = pkgs.mkShell {
           name = "pollinations";
 
-          buildInputs = with pkgs; [
+          buildInputs = [
+            pipelight.packages.${system}.default
+          ]
+          ++ (with pkgs; [
             zsh
             zsh-syntax-highlighting
             zsh-autosuggestions
@@ -76,7 +81,7 @@
             libpng
             libtiff
             libwebp
-          ];
+          ]);
 
           shellHook = ''
             # runs each time the shell is entered

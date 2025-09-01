@@ -7,7 +7,6 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
     server: { port: 3000 },
-    base: "http://localhost:3000",
     plugins: [
         tanstackRouter({
             target: "react",

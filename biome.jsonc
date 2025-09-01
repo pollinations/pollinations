@@ -13,7 +13,8 @@
         "enabled": true,
         "rules": {
             "complexity": {
-                "useLiteralKeys": "off"
+                "useLiteralKeys": "off",
+                "noBannedTypes": "off"
             },
             "correctness": {
                 "useUniqueElementIds": "off"

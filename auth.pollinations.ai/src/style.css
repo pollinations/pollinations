@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/suspicious/noUnknownAtRules: used to apply tailwind classes */
+/** biome-ignore-all lint/suspicious/noUnknownAtRules: tailwind handles it */
 @import "tailwindcss";
 
 *,

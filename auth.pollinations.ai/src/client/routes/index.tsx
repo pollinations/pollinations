@@ -7,7 +7,8 @@ import {
     type CreateApiKey,
     type CreateApiKeyResponse,
 } from "../components/api-key.tsx";
-import { Button, LinkButton } from "../components/button.tsx";
+import { Button } from "../components/button.tsx";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -16,9 +17,10 @@ export const Route = createFileRoute("/")({
         const honoPolar = hc<PolarRoutes>("/api/polar");
         const stateResult = await honoPolar.customer.state.$get();
         const customer = stateResult.ok ? await stateResult.json() : null;
+
         const apiKeysResult = await context.auth.apiKey.list();
         const apiKeys = apiKeysResult.data ? apiKeysResult.data : [];
-        console.log(apiKeys);
+
         return { auth: context.auth, user: context.user, customer, apiKeys };
     },
 });
@@ -26,7 +28,10 @@ export const Route = createFileRoute("/")({
 function RouteComponent() {
     const router = useRouter();
     const { auth, user, customer, apiKeys } = Route.useLoaderData();
-    const balance = customer?.activeMeters[0]?.balance;
+    const meter = customer?.activeMeters.filter(
+        (meter) => meter.meterId === "776f38e7-d0a1-434f-90ef-6f31d66639d9",
+    )[0];
+    const balance = meter?.balance || 0;
 
     const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -35,8 +40,8 @@ function RouteComponent() {
         setIsSigningOut(true);
         try {
             await auth.signOut();
-            router.clearCache();
             await router.invalidate();
+            router.clearExpiredCache();
         } catch (error) {
             console.error("Sign out failed:", error);
         } finally {
@@ -93,28 +98,37 @@ function RouteComponent() {
                 <div className="flex justify-between gap-3">
                     <h2 className="font-bold flex-1">Pollen</h2>
                     <span className="text-3xl font-heading">Buy</span>
-                    <LinkButton
+                    <Link to="/imprint" />
+                    <Button
+                        as={"a"}
                         variant="pink"
                         href="/api/polar/checkout/pollen-bundle-small"
+                        target="_blank"
                     >
-                        Small
-                    </LinkButton>
-                    <LinkButton
+                        10 $
+                    </Button>
+                    <Button
+                        as="a"
                         variant="blue"
                         href="/api/polar/checkout/pollen-bundle-medium"
+                        target="_blank"
                     >
-                        Medium
-                    </LinkButton>
-                    <LinkButton
+                        25 $
+                    </Button>
+                    <Button
+                        as="a"
                         variant="red"
                         href="/api/polar/checkout/pollen-bundle-large"
+                        target="_blank"
                     >
-                        Large
-                    </LinkButton>
+                        50 $
+                    </Button>
                 </div>
-                {balance && (
-                    <p className="text-3xl">Balance: {balance.toFixed(2)}</p>
-                )}
+                <Button as="a" href="/api/polar/customer/portal">
+                    Portal
+                </Button>
+
+                <p className="text-3xl">Balance: {balance.toFixed(2)}</p>
             </div>
             <ApiKeyList
                 apiKeys={apiKeys}

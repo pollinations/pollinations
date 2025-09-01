@@ -1,6 +1,6 @@
-import type { FC } from "react";
+import type { Link, LinkProps } from "@tanstack/react-router";
+import type { PropsWithChildren } from "react";
 import { cn } from "../../util.ts";
-import { Link, LinkProps } from "@tanstack/react-router";
 
 const variants = {
     default: "bg-green-950 text-green-100",
@@ -24,14 +24,7 @@ const shapes = {
     rect: "rounded-none",
 };
 
-type ButtonStyles = {
-    variant?: keyof typeof variants;
-    size?: keyof typeof sizes;
-    shape?: keyof typeof shapes;
-    className?: string;
-};
-
-const buttonClasses = ({ variant, size, shape, className }: ButtonStyles) =>
+const buttonClasses = ({ variant, size, shape, className }: BaseButtonProps) =>
     cn(
         "rounded-full self-center placeholder-green-950 font-medium",
         "hover:filter hover:brightness-105 cursor-pointer",
@@ -41,43 +34,48 @@ const buttonClasses = ({ variant, size, shape, className }: ButtonStyles) =>
         className,
     );
 
-export type ButtonProps = React.ComponentPropsWithoutRef<"button"> &
-    ButtonStyles;
+type BaseButtonProps = {
+    variant?: keyof typeof variants;
+    size?: keyof typeof sizes;
+    shape?: keyof typeof shapes;
+    className?: string;
+};
 
-export const Button: FC<ButtonProps> = ({
+type ButtonElement =
+    | React.ElementType<{}, "a">
+    | React.ElementType<{}, "div">
+    | React.ElementType<{}, "button">;
+
+type ButtonAsElementProps<T extends ButtonElement> =
+    PropsWithChildren<BaseButtonProps> & {
+        as?: T extends typeof Link ? never : T;
+    } & Omit<React.ComponentPropsWithoutRef<T>, keyof BaseButtonProps>;
+
+type ButtonAsLinkProps = PropsWithChildren<BaseButtonProps> & {
+    as: typeof Link;
+} & Omit<LinkProps, keyof BaseButtonProps>;
+
+type ButtonProps<T extends React.ElementType> = T extends ButtonElement
+    ? ButtonAsElementProps<T>
+    : ButtonAsLinkProps;
+
+export function Button<T extends React.ElementType>({
+    as,
     children,
     variant,
     size,
     shape,
     className,
     ...buttonProps
-}) => {
+}: ButtonProps<T>) {
+    const Component = as || "button";
+
     return (
-        <button
+        <Component
             className={buttonClasses({ variant, size, shape, className })}
             {...buttonProps}
         >
             {children}
-        </button>
+        </Component>
     );
-};
-
-export type LinkButtonProps = LinkProps & ButtonStyles;
-
-export const LinkButton: FC<LinkButtonProps> = ({
-    children,
-    variant,
-    size,
-    shape,
-    className,
-    ...buttonProps
-}) => {
-    return (
-        <Link
-            className={buttonClasses({ variant, size, shape, className })}
-            {...buttonProps}
-        >
-            {children}
-        </Link>
-    );
-};
+}

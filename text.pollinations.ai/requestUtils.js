@@ -62,7 +62,7 @@ export function getRequestData(req) {
     const tools = data.tools || undefined;
     const tool_choice = data.tool_choice || undefined;
 
-    // Extract reasoning_effort parameter for o3-mini model
+    // Extract reasoning_effort parameter for o4-mini model
     const reasoning_effort = data.reasoning_effort || undefined;
 
     // Preserve the original response_format object if it exists

@@ -3,7 +3,7 @@ import { createMiddleware } from "hono/factory";
 import { createAuth } from "../auth.ts";
 
 type Env = {
-    Bindings: Cloudflare.Env;
+    Bindings: CloudflareBindings;
     Variables: {
         auth: ReturnType<typeof createAuth>;
         session?: Session;
@@ -11,7 +11,7 @@ type Env = {
     };
 };
 
-export const auth = createMiddleware<Env>(async (c, next) => {
+export const authenticate = createMiddleware<Env>(async (c, next) => {
     const auth = createAuth(c.env);
     c.set("auth", auth);
 

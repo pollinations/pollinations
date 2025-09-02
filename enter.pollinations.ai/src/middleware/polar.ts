@@ -1,14 +1,9 @@
 import { Polar } from "@polar-sh/sdk";
-import type { Session, User } from "better-auth";
 import { createMiddleware } from "hono/factory";
-import type { createAuth } from "../auth.ts";
 
 type Env = {
-    Bindings: Cloudflare.Env;
+    Bindings: CloudflareBindings;
     Variables: {
-        auth: ReturnType<typeof createAuth>;
-        session?: Session;
-        user?: User;
         polar: Polar;
     };
 };

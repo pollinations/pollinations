@@ -28,7 +28,7 @@ export async function processPolarEvents(env: Cloudflare.Env) {
     const [processingId, events] = await preparePendingEvents(db);
     if (events.length === 0) return;
     try {
-        const inserted = await sendToPolar(events, env);
+        const inserted = await sendPolarEvents(events, env);
         if (inserted !== events.length) {
             throw new Error("Number of inserted events did not match");
         }
@@ -79,7 +79,7 @@ async function confirmProcessingEvents(
         .where(eq(event.processingId, processingId));
 }
 
-async function sendToPolar(
+async function sendPolarEvents(
     events: PolarEvent[],
     env: Cloudflare.Env,
 ): Promise<number> {

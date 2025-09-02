@@ -1,13 +1,10 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import z from "zod";
-import { auth } from "../middleware/auth.ts";
+import { authenticate } from "../middleware/authenticate.ts";
 import { polar } from "../middleware/polar.ts";
 import { validator } from "../validator.ts";
-
-type Env = {
-    Bindings: CloudflareBindings;
-};
+import type { Env } from "../env.ts";
 
 const productSlugSchema = z.literal([
     "pollen-bundle-small",
@@ -24,7 +21,7 @@ const products: ProductMap = {
 };
 
 export const polarRoutes = new Hono<Env>()
-    .use("*", auth)
+    .use("*", authenticate)
     .use("*", polar)
     .get("/customer/state", async (c) => {
         const user = c.get("user");

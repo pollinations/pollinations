@@ -2,19 +2,16 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { proxy } from "hono/proxy";
 import type { InsertPolarEvent } from "@/db/schema/event";
-import { auth } from "@/middleware/auth.ts";
+import { authenticate } from "@/middleware/authenticate";
 import { polar } from "@/middleware/polar.ts";
 import { processPolarEvents, storePolarEvents } from "@/polar.ts";
 import { generateRandomId } from "@/util.ts";
-
-type Env = {
-    Bindings: Cloudflare.Env;
-};
+import type { Env } from "../env.ts";
 
 const freeModels = ["flux"];
 
 export const proxyRoutes = new Hono<Env>()
-    .get("/image/:prompt", auth, polar, async (c) => {
+    .get("/image/:prompt", authenticate, polar, async (c) => {
         console.log("generating image");
         const prompt = c.req.param("prompt");
         const model = c.req.query("model") || "flux";
@@ -40,6 +37,7 @@ export const proxyRoutes = new Hono<Env>()
             ...c.req,
             headers: {
                 ...c.req.header(),
+                "x-request-id": c.get("requestId"),
                 "x-forwarded-for": clientIP,
                 "x-forwarded-host": c.req.header("host"),
                 "x-real-ip": clientIP,
@@ -55,7 +53,7 @@ export const proxyRoutes = new Hono<Env>()
                     id: generateRandomId(),
                     name: "image_generation",
                     userId: user?.id,
-                    requestId: c.req.header("cf-ray-id") || "",
+                    requestId: c.get("requestId"),
                     metadata: {
                         model,
                         totalPrice: 0.05,

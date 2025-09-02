@@ -5,6 +5,7 @@ import { handleError } from "./error.ts";
 import { processPolarEvents } from "./polar.ts";
 import { polarRoutes } from "./routes/polar.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
+import { requestId } from "hono/request-id";
 
 type Env = {
     Bindings: Cloudflare.Env;
@@ -15,6 +16,7 @@ const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", (c) => {
 });
 
 const app = new Hono<Env>()
+    .use(requestId())
     .basePath("/api")
     .route("/auth", authRoutes)
     .route("/polar", polarRoutes)

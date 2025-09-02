@@ -22,7 +22,6 @@ const MODEL_MAPPING = {
 	"openai-fast": "gpt-4.1-nano",
 	"openai": "gpt-4.1-nano",
 	"openai-large": "azure-gpt-4.1",
-	"openai-roblox": "gpt-4.1-nano",
 	"gpt": "azure-gpt-5",
 	"gpt5": "azure-gpt-5",
 	"gpt-5-nano": "gpt-5-nano",
@@ -50,7 +49,7 @@ const MODEL_MAPPING = {
 	qwen: "qwen3-235b-a22b-instruct-2507",
 	"qwen-coder": "qwen2.5-coder-32b-instruct",
 	mistral: "mistral-small-3.1-24b-instruct-2503", // Updated to use Scaleway Mistral model
-	"mistral-naughty": "mistralai/Mistral-Nemo-Instruct-2407", // Scaleway Mistral Small 3.2 24B
+	"mistral-romance": "mistral.mistral-small-2402-v1:0", // AWS Bedrock Mistral Small
 	"mistral-roblox": "@cf/mistralai/mistral-small-3.1-24b-instruct", // Cloudflare Mistral Small
 	"mistral-nemo-roblox": "mistralai/Mistral-Nemo-Instruct-2407", // Nebius Mistral Nemo
 	'gemma-roblox': 'google/gemma-2-9b-it-fast', // Nebius Gemma 2 9B IT Fast
@@ -70,7 +69,7 @@ const MODEL_MAPPING = {
 	// AWS Bedrock Lambda endpoint
 	claudyclaude: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
 	"nova-fast": "amazon.nova-micro-v1:0",
-	"roblox-rp": "roblox-rp", // Random selection from multiple Bedrock models
+	"roblox-rp": "us.meta.llama3-1-8b-instruct-v1:0", // Cross-region inference profile ID
 	claude: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
 	// "openai-reasoning": "openai/o3", // Navy API endpoint
 	gemini: "gemini-2.5-flash-lite", // Navy API endpoint
@@ -129,7 +128,7 @@ const SYSTEM_PROMPTS = {
 	//'phi-mini': BASE_PROMPTS.conversational,
 	// Scaleway models
 	mistral: BASE_PROMPTS.conversational,
-	"mistral-naughty": BASE_PROMPTS.adultCompanion,
+	"mistral-romance": BASE_PROMPTS.conversational,
 	"mistral-roblox": BASE_PROMPTS.conversational,
 	"mistral-nemo-roblox": BASE_PROMPTS.conversational,
 	'gemma-roblox': BASE_PROMPTS.conversational,
@@ -154,7 +153,7 @@ const SYSTEM_PROMPTS = {
 	// AWS Bedrock Lambda endpoint
 	claudyclaude: 'You are Claude Sonnet 4, a helpful AI assistant created by Anthropic. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.',
 	"nova-fast": 'You are Amazon Nova Micro, a fast and efficient AI assistant. You provide helpful, accurate responses while being concise and to the point.',
-	"roblox-rp": BASE_PROMPTS.conversational,
+	"roblox-rp": 'You are Gemini 2.5 Flash Lite, a helpful AI assistant created by Google. You provide accurate, helpful responses and can assist with a wide range of tasks including roleplay scenarios.',
 	claude: 'You are Claude 3.5 Haiku, a helpful AI assistant created by Anthropic. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.',
 	"openai-reasoning": 'You are OpenAI o4-mini, an advanced reasoning model. You excel at complex problem-solving, mathematical reasoning, and logical analysis. Take time to think through problems step-by-step.',
 	gemini: 'You are Gemini 2.5 Flash Lite, a helpful AI assistant created by Google. You provide accurate, helpful responses and can assist with a wide range of tasks.',
@@ -744,25 +743,21 @@ export const portkeyConfig = {
 	"us.anthropic.claude-3-5-haiku-20241022-v1:0": () => createBedrockLambdaModelConfig({
 		model: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
 	}),
-	"roblox-rp": () => {
-		// Randomly select one of the 4 Bedrock models for roblox-rp
-		const bedrockModels = [
-			// "meta.llama3-1-8b-instruct-v1:0", 
-			"meta.llama3-8b-instruct-v1:0",
-			"mistral.mistral-small-2402-v1:0"
-		];
-
-		const randomIndex = Math.floor(Math.random() * bedrockModels.length);
-		const selectedModel = bedrockModels[randomIndex];
-
-		log(
-			`Selected random Bedrock model for roblox-rp ${randomIndex + 1}/${bedrockModels.length}: ${selectedModel}`,
-		);
-
-		return createBedrockLambdaModelConfig({
-			model: selectedModel,
-		});
-	},
+	"mistral.mistral-small-2402-v1:0": () => createBedrockLambdaModelConfig({
+		model: "mistral.mistral-small-2402-v1:0",
+	}),
+	"meta.llama3-1-8b-instruct-v1:0": () => createBedrockLambdaModelConfig({
+		model: "meta.llama3-1-8b-instruct-v1:0",
+	}),
+	"us.meta.llama3-2-1b-instruct-v1:0": () => createBedrockLambdaModelConfig({
+		model: "us.meta.llama3-2-1b-instruct-v1:0",
+	}),
+	"us.meta.llama3-2-3b-instruct-v1:0": () => createBedrockLambdaModelConfig({
+		model: "us.meta.llama3-2-3b-instruct-v1:0",
+	}),
+	"us.meta.llama3-1-8b-instruct-v1:0": () => createBedrockLambdaModelConfig({
+		model: "us.meta.llama3-1-8b-instruct-v1:0",
+	}),
 	// Navy API endpoint
 	"o4-mini": () => ({
 		...baseMonoAIConfig,
@@ -772,6 +767,9 @@ export const portkeyConfig = {
 	"us.deepseek.r1-v1:0": () => createBedrockLambdaModelConfig({
 		model: "us.deepseek.r1-v1:0",
 		"max-tokens": 2000,
+	}),
+	"mistral.mistral-small-2402-v1:0": () => createBedrockLambdaModelConfig({
+		model: "mistral.mistral-small-2402-v1:0",
 	}),
 };
 

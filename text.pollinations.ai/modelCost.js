@@ -5,8 +5,8 @@
  * indexed by the original model name returned by the LLM providers.
  */
 
-import { createLogger } from './utils/logger.js';
-const log = createLogger('modelCost');
+import debug from 'debug';
+const log = debug('text.pollinations.ai:modelCost');
 
 /**
  * Default cost values applied when specific cost fields are missing

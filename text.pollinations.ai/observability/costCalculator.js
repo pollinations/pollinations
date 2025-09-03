@@ -1,8 +1,7 @@
 import debug from "debug";
 import { resolveCost as getCost } from '../modelCost.js';
-import { createLogger } from '../utils/logger.js';
 
-const log = createLogger('costCalculator');
+const log = debug('text.pollinations.ai:costCalculator');
 
 // Constant for token cost calculations
 const TOKENS_PER_MILLION = 1000000;

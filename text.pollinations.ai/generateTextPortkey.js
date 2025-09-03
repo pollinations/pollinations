@@ -16,64 +16,7 @@ dotenv.config();
 export const log = debug("pollinations:portkey");
 const errorLog = debug("pollinations:portkey:error");
 
-// Model mapping for Portkey
-const MODEL_MAPPING = {
-	// Azure OpenAI models
-	"openai-fast": "gpt-4.1-nano",
-	"openai": "gpt-5-nano",
-	"openai-large": "azure-gpt-4.1",
-	"gpt": "azure-gpt-5",
-	"gpt5": "azure-gpt-5",
-	"gpt-5-nano": "gpt-5-nano",
-	//'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
-	"openai-reasoning": "o4-mini", // Maps to api.navy endpoint
-	searchgpt: "gpt-4o-mini-search-preview", // Maps to custom MonoAI endpoint
-	"openai-audio": "gpt-4o-mini-audio-preview",
-	// 'openai-audio': 'gpt-4o-audio-preview',
-	//'roblox-rp': 'gpt-4o-mini-roblox-rp', // Roblox roleplay model
-	//'command-r': 'Cohere-command-r-plus-08-2024-jt', // Cohere Command R Plus model
-	//'gemini': 'gemini-2.5-flash-preview-04-17',
-	//'gemini-thinking': 'gemini-2.0-flash-thinking-exp-01-21',
-	// Azure Grok model
-	grok: "azure-grok",
-	// Cloudflare models
-	llama: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-	"llama-roblox": "meta-llama/Meta-Llama-3.1-8B-Instruct-fast",
-	"llama-fast-roblox": "@cf/meta/llama-3.2-11b-vision-instruct",
-	llamascout: "@cf/meta/llama-4-scout-17b-16e-instruct",
-	"deepseek-reasoning": "us.deepseek.r1-v1:0",
-	//'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
-	phi: "phi-4-instruct",
-	//'phi-mini': 'phi-4-mini-instruct',
-	// Scaleway models
-	qwen: "qwen3-235b-a22b-instruct-2507",
-	"qwen-coder": "qwen2.5-coder-32b-instruct",
-	mistral: "mistral-small-3.1-24b-instruct-2503", // Updated to use Scaleway Mistral model
-	"mistral-romance": "mistral.mistral-small-2402-v1:0", // AWS Bedrock Mistral Small
-	"mistral-roblox": "@cf/mistralai/mistral-small-3.1-24b-instruct", // Cloudflare Mistral Small
-	"mistral-nemo-roblox": "mistralai/Mistral-Nemo-Instruct-2407", // Nebius Mistral Nemo
-	'gemma-roblox': 'google/gemma-2-9b-it-fast', // Nebius Gemma 2 9B IT Fast
-	geminisearch: 'gemini-2.5-flash-lite-search', // Google Vertex AI Gemini 2.5 Flash Lite with Search grounding
-	// Intelligence.io models
-	glm: "THUDM/glm-4-9b-chat", // Intelligence.io GLM-4 9B Chat
-	// Modal models
-	hormoz: "Hormoz-8B",
-	// OpenRouter models
-	//'claude': 'anthropic/claude-3.5-haiku-20241022',
-	// Cloudflare models
-	//'qwen-qwq': '@cf/qwen/qwq-32b',
-	// DeepSeek models
-	deepseek: "DeepSeek-V3-0324",
-	// Custom endpoints
-	elixposearch: "elixposearch-endpoint",
-	// AWS Bedrock Lambda endpoint
-	claudyclaude: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-	"nova-fast": "amazon.nova-micro-v1:0",
-	"roblox-rp": "us.meta.llama3-1-8b-instruct-v1:0", // Cross-region inference profile ID
-	claude: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-	// "openai-reasoning": "openai/o3", // Navy API endpoint
-	gemini: "gemini-2.5-flash-lite", // Navy API endpoint
-};
+// Model mapping is now handled via mappedModel field in availableModels.js
 
 // Base prompts that can be reused across different models
 const BASE_PROMPTS = {
@@ -830,7 +773,8 @@ export async function generateTextPortkey(messages, options = {}) {
 		try {
 			// Map the virtual model name to the real model name for API calls
 			const virtualModelName = processedOptions.model;
-			const modelName = MODEL_MAPPING[virtualModelName] || virtualModelName;
+			const modelDef = findModelByName(virtualModelName);
+			const modelName = modelDef?.mappedModel || virtualModelName;
 			
 			// Update the options with the mapped model name
 			processedOptions.model = modelName;

@@ -10,7 +10,7 @@ import {
 	rtist,
 	evilCommandR as evilMistral,
 	generateTextMirexa,
-	bidara,
+	bidara
 } from "./wrappedModels.js";
 
 const models = [
@@ -24,13 +24,7 @@ const models = [
 		aliases: ["gpt-5-nano"],
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
-		tools: true,
-		original_name: "gpt-5-nano-2025-08-07",
-		pricing: {
-			prompt_text: 0.055,
-			prompt_cache: 0.0055,
-			completion_text: 0.44,
-		},
+		tools: true
 	},
 	{
 		name: "openai-fast",
@@ -42,30 +36,23 @@ const models = [
 		aliases: ["gpt-4.1-nano"],
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
-		tools: true,
+		tools: true
 	},
 	{
 		name: "openai-large",
-		original_name: "gpt-4.1-2025-04-14",
 		description: "OpenAI GPT-4.1",
 		maxInputChars: 5000,
 		handler: generateTextPortkey,
 		provider: "azure",
-		tier: "flower",
+		tier: "seed",
 		community: false,
 		aliases: ["gpt-4.1"],
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
-		tools: true,
-		pricing: {
-			prompt_text: 1.91,
-			prompt_cache: 0.48,
-			completion_text: 7.64,
-		},
+		tools: true
 	},
 	{
 		name: "qwen-coder",
-		original_name: "qwen2.5-coder-32b-instruct",
 		description: "Qwen 2.5 Coder 32B",
 		handler: generateTextPortkey,
 		provider: "scaleway",
@@ -74,15 +61,10 @@ const models = [
 		aliases: ["qwen2.5-coder-32b-instruct"],
 		input_modalities: ["text"],
 		output_modalities: ["text"],
-		tools: true,
-		pricing: {
-			prompt_text: 0.9,
-			completion_text: 0.9,
-		},
+		tools: true
 	},
 	{
 		name: "mistral",
-		original_name: "mistral-small-3.1-24b-instruct-2503",
 		description: "Mistral Small 3.1 24B",
 		handler: generateTextPortkey,
 		provider: "scaleway",
@@ -91,15 +73,10 @@ const models = [
 		aliases: ["mistral-small-3.1-24b-instruct"],
 		input_modalities: ["text"],
 		output_modalities: ["text"],
-		tools: true,
-		pricing: {
-			prompt_text: 0.15,
-			completion_text: 0.35,
-		},
+		tools: true
 	},
 	{
 		name: "mistral-romance",
-		original_name: "mistral.mistral-small-2402-v1:0",
 		description: "Mistral Small 2402 (Bedrock) - Romance Companion",
 		handler: generateTextPortkey,
 		provider: "bedrock",
@@ -108,15 +85,10 @@ const models = [
 		aliases: ["mistral-nemo-instruct-2407-romance","mistral-roblox"],
 		input_modalities: ["text"],
 		output_modalities: ["text"],
-		tools: true,
-		pricing: {
-			prompt_text: 0.15,
-			completion_text: 0.45,
-		},
+		tools: true
 	},
 	{
 		name: "deepseek-reasoning",
-		original_name: "us.deepseek.r1-v1:0",
 		description: "DeepSeek R1 0528 (Bedrock)",
 		maxInputChars: 5000,
 		handler: generateTextPortkey,
@@ -127,15 +99,10 @@ const models = [
 		aliases: ["deepseek-r1-0528"],
 		input_modalities: ["text"],
 		output_modalities: ["text"],
-		tools: false,
-		pricing: {
-			prompt_text: 1.35,
-			completion_text: 5.4,
-		},
+		tools: false
 	},
 	{
 		name: "openai-audio",
-		original_name: "gpt-4o-mini-audio-preview-2024-12-17",
 		description: "OpenAI GPT-4o Mini Audio Preview",
 		maxInputChars: 2000,
 		voices: [
@@ -160,18 +127,11 @@ const models = [
 		aliases: ["gpt-4o-mini-audio-preview"],
 		input_modalities: ["text", "image", "audio"],
 		output_modalities: ["audio", "text"],
-		tools: true,
-		pricing: {
-			prompt_text: 0.1432,
-			prompt_audio: 9.5466,
-			completion_text: 0.572793,
-			completion_audio: 19.093079,
-		},
+		tools: true
 	},
 	{
 		name: "gpt-5-nano",
 		description: "OpenAI GPT-5 Nano",
-		original_name: "gpt-5-nano-2025-08-07",
 		handler: generateTextPortkey,
 		provider: "azure",
 		tier: "anonymous",
@@ -179,17 +139,11 @@ const models = [
 		aliases: ["gpt-5-nano"],
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
-		tools: true,
-		pricing: {
-			prompt_text: 0.055,
-			prompt_cache: 0.0055,
-			completion_text: 0.44,
-		},
+		tools: true
 	},
 	{
 		name: "nova-fast",
 		description: "Amazon Nova Micro (Bedrock)",
-		original_name: "amazon.nova-micro-v1:0",
 		handler: generateTextPortkey,
 		provider: "bedrock",
 		community: false,
@@ -197,17 +151,11 @@ const models = [
 		aliases: ["nova-micro-v1"],
 		input_modalities: ["text"],
 		output_modalities: ["text"],
-		tools: true,
-		pricing: {
-			prompt_text: 0.035,
-			prompt_cache: 0.00875,
-			completion_text: 0.14,
-		},
+		tools: true
 	},
 	{
 		name: "roblox-rp",
 		description: "Llama 3.1 8B Instruct (Cross-Region Bedrock)",
-		original_name: "us.meta.llama3-1-8b-instruct-v1:0",
 		handler: generateTextPortkey,
 		provider: "bedrock",
 		tier: "seed",
@@ -215,15 +163,10 @@ const models = [
 		aliases: ["llama-roblox","llama-fast-roblox"],
 		input_modalities: ["text"],
 		output_modalities: ["text"],
-		tools: true,
-		pricing: {
-			prompt_text: 0.15,
-			completion_text: 0.60,
-		},
+		tools: true
 	},
 	{
 		name: "claudyclaude",
-		original_name: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
 		description: "Claude 3.5 Haiku (Bedrock)",
 		handler: generateTextPortkey,
 		provider: "bedrock",
@@ -233,15 +176,10 @@ const models = [
 		aliases: ["claude-3-5-haiku"],
 		input_modalities: ["text"],
 		output_modalities: ["text"],
-		tools: true,
-		pricing: {
-			prompt_text: 0.8,
-			completion_text: 4.0,
-		},
+		tools: true
 	},
 	{
 		name: "openai-reasoning",
-		original_name: "openai/o4-mini",
 		description: "OpenAI o4-mini (api.navy)",
 		handler: generateTextPortkey,
 		provider: "api.navy",
@@ -251,15 +189,10 @@ const models = [
 		reasoning: true,
 		input_modalities: ["text"],
 		output_modalities: ["text"],
-		tools: true,
-		pricing: {
-			prompt_text: 0.0,
-			completion_text: 0.0,
-		},
+		tools: true
 	},
 	{
 		name: "gemini",
-		original_name: "google/gemini-2.5-flash-lite",
 		description: "Gemini 2.5 Flash Lite (api.navy)",
 		handler: generateTextPortkey,
 		provider: "api.navy",
@@ -268,16 +201,12 @@ const models = [
 		aliases: ["gemini-2.5-flash-lite"],
 		input_modalities: ["text"],
 		output_modalities: ["text"],
-		tools: true,
-		pricing: {
-			prompt_text: 0.0,
-			completion_text: 0.0,
-		},
+		tools: true
 	},
 	// {
 	// 	name: "geminisearch",
-	// 	original_name: "gemini-2.5-flash-lite-search",
-	// 	description: "Gemini 2.5 Flash Lite Search",
+	//
+		// 	description: "Gemini 2.5 Flash Lite Search",
 	// 	handler: generateTextPortkey,
 	// 	provider: "api.navy",
 	// 	tier: "anonymous",
@@ -286,11 +215,8 @@ const models = [
 	// 	input_modalities: ["text"],
 	// 	output_modalities: ["text"],
 	// 	tools: true,
-	// 	pricing: {
-	// 		prompt_text: 0.5,
-	// 		completion_text: 2.0,
-	// 	},
-	// },
+	//
+		// },
 	// community models - use upstream endpoints
 	// {
 	// 	name: "elixposearch",
@@ -312,7 +238,7 @@ const models = [
 		community: true,
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
-		tools: true,
+		tools: true
 	},
 	{
 		name: "mirexa",
@@ -323,7 +249,7 @@ const models = [
 		community: true,
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
-		tools: true,
+		tools: true
 	},
 	{
 		name: "midijourney",
@@ -334,7 +260,7 @@ const models = [
 		community: true,
 		input_modalities: ["text"],
 		output_modalities: ["text"],
-		tools: true,
+		tools: true
 	},
 	{
 		name: "rtist",
@@ -345,7 +271,7 @@ const models = [
 		community: true,
 		input_modalities: ["text"],
 		output_modalities: ["text"],
-		tools: true,
+		tools: true
 	},
 	{
 		name: "evil",
@@ -357,7 +283,7 @@ const models = [
 		community: true,
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
-		tools: true,
+		tools: true
 	},
 	{
 		name: "sur",
@@ -368,7 +294,7 @@ const models = [
 		community: true,
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
-		tools: true,
+		tools: true
 	},
 	{
 		name: "bidara",
@@ -379,7 +305,7 @@ const models = [
 		community: true,
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
-		tools: true,
+		tools: true
 	},
 
 ];
@@ -388,16 +314,7 @@ const models = [
 const unsortedModels = models;
 
 // Define default pricing values
-const DEFAULT_PRICING = { prompt: 1, completion: 4, cache: 0.25 };
 
-// Set default pricing using functional approach
-const modelsWithPricing = unsortedModels.map((model) => ({
-	...model,
-	pricing: {
-		...DEFAULT_PRICING,
-		...model.pricing,
-	},
-}));
 
 // Now export the processed models with proper functional approach
 export const availableModels = modelsWithPricing.map((model) => {
@@ -407,7 +324,7 @@ export const availableModels = modelsWithPricing.map((model) => {
 	return {
 		...model,
 		vision: inputs.includes("image"),
-		audio: inputs.includes("audio") || outputs.includes("audio"),
+		audio: inputs.includes("audio") || outputs.includes("audio")
 	};
 });
 

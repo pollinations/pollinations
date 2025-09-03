@@ -1,25 +1,24 @@
 import debug from "debug";
-import { availableModels } from "../availableModels.js";
+import { resolvePricing as getPricing } from '../modelPricing.js';
+import { createLogger } from '../utils/logger.js';
 
-const TOKENS_PER_MILLION = 1_000_000;
-
-const log = debug("pollinations:cost-calculator");
+const log = createLogger('costCalculator');
 
 /**
- * Simple pricing resolution: only try response model, no fallback
- * @param {string|null} responseModel - The model name from LLM response
- * @returns {Object|null} - Pricing object from availableModels.js or null if not found
+ * Resolve pricing for a model based on the response model name
+ * @param {string} responseModel - The model name from the LLM response
+ * @returns {Object|null} - Pricing object from modelPricing.js or null if not found
  */
 export function resolvePricing(responseModel) {
-    // Only try to find pricing using response model (match by original_name)
+    // Use the new pricing module to resolve pricing by original name
     if (responseModel) {
-        const modelByOriginalName = availableModels.find(m => m.original_name === responseModel);
-        if (modelByOriginalName && modelByOriginalName.pricing) {
-            log(`Using response model for pricing: ${responseModel} -> ${modelByOriginalName.name}`);
-            return modelByOriginalName.pricing;
+        const pricing = getPricing(responseModel);
+        if (pricing) {
+            log(`Resolved pricing for response model: ${responseModel}`);
+            return pricing;
         }
     }
-    
+
     log(`No pricing found for response model: ${responseModel}`);
     return null;
 }

@@ -4,6 +4,9 @@ import { createLogger } from '../utils/logger.js';
 
 const log = createLogger('costCalculator');
 
+// Constant for token cost calculations
+const TOKENS_PER_MILLION = 1000000;
+
 /**
  * Resolve pricing for a model based on the response model name
  * @param {string} responseModel - The model name from the LLM response

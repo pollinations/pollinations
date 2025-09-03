@@ -35,6 +35,11 @@ const MODEL_PRICING = {
 		prompt_cache: 0.48,
 		completion_text: 7.64
 	},
+	"gpt-4.1-nano-2025-04-14": {
+		prompt_text: 0.055,
+		prompt_cache: 0.0055,
+		completion_text: 0.44
+	},
 	"gpt-4o-mini-audio-preview-2024-12-17": {
 		prompt_text: 0.15,
 		prompt_cache: 0.075,

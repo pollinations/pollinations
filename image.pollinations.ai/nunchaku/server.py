@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import torch
 from diffusers import FluxPipeline
-from nunchaku import NunchakuFluxTransformer2dModel
+from nunchaku.models.transformer_flux import NunchakuFluxTransformer2dModel
 from safety_checker.censor import check_safety
 import requests
 import logging
@@ -23,13 +23,13 @@ logger = logging.getLogger(__name__)
 
 MODEL_ID = "black-forest-labs/FLUX.1-schnell"
 MODEL_CACHE = "model-cache"
-QUANT_MODEL_PATH = "nunchaku-tech/nunchaku-flux.1-schnell"
+QUANT_MODEL_PATH = "mit-han-lab/svdq-int4-flux.1-schnell"
 
 class ImageRequest(BaseModel):
     prompts: List[str] = ["a photo of an astronaut riding a horse on mars"]
     width: int = 1024
     height: int = 1024
-    steps: int = 2
+    steps: int = 4
     seed: int | None = None
     safety_checker_adj: float = 0.5  # Controls sensitivity of NSFW detection
 
@@ -80,8 +80,10 @@ async def lifespan(app: FastAPI):
     heartbeat_task = None
     try:
         print("Loading FLUX pipeline...")
+        transformer = NunchakuFluxTransformer2dModel.from_pretrained(QUANT_MODEL_PATH)
         pipe = FluxPipeline.from_pretrained(
-            QUANT_MODEL_PATH,
+            MODEL_ID,
+            transformer=transformer,
             torch_dtype=torch.bfloat16
         ).to("cuda")
         print("FLUX pipeline loaded successfully")

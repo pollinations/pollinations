@@ -1,0 +1,1411 @@
+Statistical profiling result from isolate-0x1cc13ff0-26809-v8.log, (14520 ticks, 2137 unaccounted, 0 excluded).
+
+ [Shared libraries]:
+   ticks  total  nonlib   name
+   4547   31.3%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+    257    1.8%          /usr/lib/x86_64-linux-gnu/libc.so.6
+     12    0.1%          /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.33
+      7    0.0%          [vdso]
+      1    0.0%          /usr/lib/x86_64-linux-gnu/libm.so.6
+
+ [JavaScript]:
+   ticks  total  nonlib   name
+     21    0.1%    0.2%  RegExp: ^[\^_`a-zA-Z\-0-9!#$%&'*+.|~]+$
+     21    0.1%    0.2%  JS: *eos node:internal/streams/end-of-stream:55:13
+     16    0.1%    0.2%  JS: *getAll node:internal/url:533:9
+     16    0.1%    0.2%  JS: *Readable.removeListener node:internal/streams/readable:1159:45
+     15    0.1%    0.2%  RegExp: [^\t\x20-\x7e\x80-\xff]
+     14    0.1%    0.1%  JS: *Readable.on node:internal/streams/readable:1127:33
+     13    0.1%    0.1%  JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+     13    0.1%    0.1%  JS: *emit node:events:471:44
+     12    0.1%    0.1%  JS: *matchKnownFields node:_http_incoming:276:26
+     12    0.1%    0.1%  JS: *Headers file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:51:13
+     11    0.1%    0.1%  JS: *wasm-function[20]
+     11    0.1%    0.1%  JS: *pipelineImpl node:internal/streams/pipeline:187:22
+     10    0.1%    0.1%  JS: *Readable.read node:internal/streams/readable:647:35
+      9    0.1%    0.1%  JS: *next /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/router/index.js:177:16
+      9    0.1%    0.1%  JS: *makeRequest node:internal/deps/undici/undici:10015:25
+      8    0.1%    0.1%  JS: *debug /home/ubuntu/pollinations/text.pollinations.ai/node_modules/debug/src/common.js:66:17
+      8    0.1%    0.1%  JS: *createAsyncIterator node:internal/streams/readable:1359:36
+      7    0.0%    0.1%  JS: *onclose node:internal/streams/end-of-stream:142:19
+      7    0.0%    0.1%  JS: *mainFetch node:internal/deps/undici/undici:10495:29
+      7    0.0%    0.1%  JS: *addListener node:events:615:58
+      7    0.0%    0.1%  JS: *_unrefTimer node:net:511:52
+      6    0.0%    0.1%  JS: *wrappedFn node:internal/errors:536:21
+      6    0.0%    0.1%  JS: *socketOnData node:_http_client:537:22
+      6    0.0%    0.1%  JS: *setUnrefTimeout node:internal/timers:389:25
+      6    0.0%    0.1%  JS: *processRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:520:30
+      6    0.0%    0.1%  JS: *httpNetworkOrCacheFetch node:internal/deps/undici/undici:10854:43
+      6    0.0%    0.1%  JS: *get node:_http_incoming:109:16
+      6    0.0%    0.1%  JS: *finish node:internal/streams/pipeline:222:18
+      5    0.0%    0.1%  JS: ^emit node:events:471:44
+      5    0.0%    0.1%  JS: ^_storeHeader node:_http_outgoing:410:22
+      5    0.0%    0.1%  JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:138:27
+      5    0.0%    0.1%  JS: *writeIterable node:internal/deps/undici/undici:6647:33
+      5    0.0%    0.1%  JS: *willEmitClose node:internal/streams/utils:285:23
+      5    0.0%    0.1%  JS: *sort node:internal/url:620:7
+      5    0.0%    0.1%  JS: *clearBuffer node:internal/streams/writable:744:21
+      5    0.0%    0.1%  JS: *_write node:internal/streams/writable:453:16
+      5    0.0%    0.1%  JS: *Readable.push node:internal/streams/readable:387:35
+      4    0.0%    0.0%  JS: wasm-to-js:iii:i
+      4    0.0%    0.0%  JS: ^handleRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:130:29
+      4    0.0%    0.0%  JS: *toString node:buffer:834:46
+      4    0.0%    0.0%  JS: *parserOnHeadersComplete node:_http_common:71:33
+      4    0.0%    0.0%  JS: *isWritable node:internal/streams/utils:182:20
+      4    0.0%    0.0%  JS: *get node:internal/streams/duplex:162:8
+      4    0.0%    0.0%  JS: *get node:internal/bootstrap/node:100:8
+      4    0.0%    0.0%  JS: *consumeBody file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/body.js:194:27
+      4    0.0%    0.0%  JS: *bufferToLowerCasedHeaderName node:internal/deps/undici/undici:1351:42
+      4    0.0%    0.0%  JS: *addRequest node:_http_agent:230:49
+      4    0.0%    0.0%  JS: *ReadableStream node:internal/webstreams/readablestream:252:14
+      3    0.0%    0.0%  RegExp: ^ *([A-Za-z0-9][A-Za-z0-9!#$&^_-]{0,126})\/([A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}) *$
+      3    0.0%    0.0%  JS: wasm-to-js:i:i
+      3    0.0%    0.0%  JS: ^writeH1 node:internal/deps/undici/undici:6399:21
+      3    0.0%    0.0%  JS: ^sendTinybirdEvent file:///home/ubuntu/pollinations/text.pollinations.ai/observability/tinybirdTracker.js:30:40
+      3    0.0%    0.0%  JS: ^schemeFetch node:internal/deps/undici/undici:10593:25
+      3    0.0%    0.0%  JS: ^onParserExecuteCommon node:_http_server:905:31
+      3    0.0%    0.0%  JS: ^onHeaders node:internal/deps/undici/undici:11171:22
+      3    0.0%    0.0%  JS: ^onEnd /home/ubuntu/pollinations/text.pollinations.ai/node_modules/raw-body/index.js:272:18
+      3    0.0%    0.0%  JS: ^mainFetch node:internal/deps/undici/undici:10495:29
+      3    0.0%    0.0%  JS: ^getRequestData file:///home/ubuntu/pollinations/text.pollinations.ai/requestUtils.js:12:31
+      3    0.0%    0.0%  JS: ^from node:internal/streams/from:15:14
+      3    0.0%    0.0%  JS: ^finish node:internal/streams/writable:949:16
+      3    0.0%    0.0%  JS: ^URLSearchParams node:internal/url:330:14
+      3    0.0%    0.0%  JS: ^Readable.read node:internal/streams/readable:647:35
+      3    0.0%    0.0%  JS: ^Body file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/body.js:32:13
+      3    0.0%    0.0%  JS: ^<anonymous> node:internal/deps/undici/undici:11029:39
+      3    0.0%    0.0%  JS: *writeOrBuffer node:internal/streams/writable:548:23
+      3    0.0%    0.0%  JS: *shouldBypassQueue file:///home/ubuntu/pollinations/shared/auth-utils.js:252:40
+      3    0.0%    0.0%  JS: *setupReadableByteStreamController node:internal/webstreams/readablestream:3232:43
+      3    0.0%    0.0%  JS: *resOnFinish node:_http_server:968:21
+      3    0.0%    0.0%  JS: *readableStreamDefaultReaderRead node:internal/webstreams/readablestream:2246:41
+      3    0.0%    0.0%  JS: *processPromiseRejections node:internal/process/promises:436:34
+      3    0.0%    0.0%  JS: *processHeader node:_http_outgoing:546:23
+      3    0.0%    0.0%  JS: *parseurl /home/ubuntu/pollinations/text.pollinations.ai/node_modules/parseurl/index.js:35:19
+      3    0.0%    0.0%  JS: *parserOnIncoming node:_http_server:1028:26
+      3    0.0%    0.0%  JS: *nextTick node:internal/process/task_queues:103:18
+      3    0.0%    0.0%  JS: *maybeReadMore_ node:internal/streams/readable:864:24
+      3    0.0%    0.0%  JS: *keylogNewListener node:_tls_wrap:779:27
+      3    0.0%    0.0%  JS: *isReadableNodeStream node:internal/streams/utils:36:30
+      3    0.0%    0.0%  JS: *get node:internal/streams/readable:132:8
+      3    0.0%    0.0%  JS: *extractFromQuery file:///home/ubuntu/pollinations/shared/extractFromRequest.js:195:26
+      3    0.0%    0.0%  JS: *execute node:internal/deps/undici/undici:5960:14
+      3    0.0%    0.0%  JS: *entries file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:187:11
+      3    0.0%    0.0%  JS: *emit /home/ubuntu/pollinations/shared/node_modules/memoizee/ext/promise.js:115:23
+      3    0.0%    0.0%  JS: *createDeferredPromise node:internal/util:541:31
+      3    0.0%    0.0%  JS: *append node:internal/deps/undici/undici:8703:13
+      3    0.0%    0.0%  JS: *addChunk node:internal/streams/readable:550:18
+      3    0.0%    0.0%  JS: *__classPrivateFieldGet file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:7:80
+      3    0.0%    0.0%  JS: *Transform._write node:internal/streams/transform:166:38
+      2    0.0%    0.0%  RegExp: ^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])$
+      2    0.0%    0.0%  RegExp: ^(?:(?:(?:[0-9a-fA-F]{1,4}):){7}(?:(?:[0-9a-fA-F]{1,4})|:)|(?:(?:[0-9a-fA-F]{1,4}):){6}(?:(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])|:(?:[0-9a-fA-F]{1,4})|:)|(?:(?:[0-9a-fA-F]{1,4}):){5}(?::(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])|(?::(?:[0-9a-fA-F]{1,4})){1,2}|:)|(?:(?:[0-9a-fA-F]{1,4}):){4}(?:(?::(?:[0-9a-fA-F]{1,4})){0,1}:(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])|(?::(?:[0-9a-fA-F]{1,4})){1,3}|:)|(?:(?:[0-9a-fA-F]{1,4}):){3}(?:(?::(?:[0-9a-fA-F]{1,4})){0,2}:(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])|(?::(?:[0-9a-fA-F]{1,4})){1,4}|:)|(?:(?:[0-9a-fA-F]{1,4}):){2}(?:(?::(?:[0-9a-fA-F]{1,4})){0,3}:(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])|(?::(?:[0-9a-fA-F]{1,4})){1,5}|:)|(?:(?:[0-9a-fA-F]{1,4}):){1}(?:(?::(?:[0-9a-fA-F]{1,4})){0,4}:(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])|(?::(?:[0-9a-fA-F]{1,4})){1,6}|:)|(?::(?:(?::(?:[0-9a-fA-F]{1,4})){0,5}:(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])|(?::(?:[0-9a-fA-F]{1,4})){1,7}|:)))(?:%[0-9a-zA-Z-.:]{1,})?$
+      2    0.0%    0.0%  RegExp: [^\u0021-\u00ff]
+      2    0.0%    0.0%  JS: ^writeOrBuffer node:internal/streams/writable:548:23
+      2    0.0%    0.0%  JS: ^toString node:buffer:834:46
+      2    0.0%    0.0%  JS: ^res.get /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/response.js:811:19
+      2    0.0%    0.0%  JS: ^removeListener node:events:686:28
+      2    0.0%    0.0%  JS: ^read /home/ubuntu/pollinations/text.pollinations.ai/node_modules/body-parser/lib/read.js:40:15
+      2    0.0%    0.0%  JS: ^pull node:internal/deps/undici/undici:5488:21
+      2    0.0%    0.0%  JS: ^prefinish node:internal/streams/writable:906:19
+      2    0.0%    0.0%  JS: ^pipelineImpl node:internal/streams/pipeline:187:22
+      2    0.0%    0.0%  JS: ^onwrite node:internal/streams/writable:615:17
+      2    0.0%    0.0%  JS: ^isBlobLike node:internal/deps/undici/undici:1180:24
+      2    0.0%    0.0%  JS: ^howMuchToRead node:internal/streams/readable:630:23
+      2    0.0%    0.0%  JS: ^getRawBody /home/ubuntu/pollinations/text.pollinations.ai/node_modules/raw-body/index.js:68:21
+      2    0.0%    0.0%  JS: ^getIp file:///home/ubuntu/pollinations/shared/extractFromRequest.js:60:22
+      2    0.0%    0.0%  JS: ^get node:net:695:16
+      2    0.0%    0.0%  JS: ^generateAdForContent file:///home/ubuntu/pollinations/text.pollinations.ai/ads/initRequestFilter.js:28:43
+      2    0.0%    0.0%  JS: ^execute node:internal/deps/undici/undici:5960:14
+      2    0.0%    0.0%  JS: ^destroy node:internal/streams/destroy:48:17
+      2    0.0%    0.0%  JS: ^cleanup node:internal/streams/readable:954:19
+      2    0.0%    0.0%  JS: ^allocate node:buffer:429:18
+      2    0.0%    0.0%  JS: ^addRequest node:_http_agent:230:49
+      2    0.0%    0.0%  JS: ^addEventListener node:internal/event_target:598:19
+      2    0.0%    0.0%  JS: ^_resume node:internal/deps/undici/undici:7990:21
+      2    0.0%    0.0%  JS: ^Socket.read node:net:772:33
+      2    0.0%    0.0%  JS: ^Readable.pipe node:internal/streams/readable:909:35
+      2    0.0%    0.0%  JS: ^Readable node:internal/streams/readable:320:18
+      2    0.0%    0.0%  JS: ^EventEmitter.init node:events:347:29
+      2    0.0%    0.0%  JS: ^<anonymous> node:internal/webstreams/readablestream:1735:24
+      2    0.0%    0.0%  JS: ^<anonymous> node:internal/streams/transform:128:17
+      2    0.0%    0.0%  JS: ^<anonymous> node:internal/deps/undici/undici:10342:54
+      2    0.0%    0.0%  JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/genericOpenAIClient.js:52:27
+      2    0.0%    0.0%  JS: ^#getSearchFromContext node:internal/url:847:24
+      2    0.0%    0.0%  JS: *writeH1 node:internal/deps/undici/undici:6399:21
+      2    0.0%    0.0%  JS: *wasm_on_header_value node:internal/deps/undici/undici:5849:33
+      2    0.0%    0.0%  JS: *wasm_on_header_field node:internal/deps/undici/undici:5844:33
+      2    0.0%    0.0%  JS: *unpipe node:internal/streams/readable:1049:18
+      2    0.0%    0.0%  JS: *resumeH1 node:internal/deps/undici/undici:6369:22
+      2    0.0%    0.0%  JS: *refresh node:internal/deps/undici/undici:2307:14
+      2    0.0%    0.0%  JS: *readableStreamClose node:internal/webstreams/readablestream:2013:29
+      2    0.0%    0.0%  JS: *readableByteStreamControllerClose node:internal/webstreams/readablestream:2497:43
+      2    0.0%    0.0%  JS: *readableByteStreamControllerCallPullIfNeeded node:internal/webstreams/readablestream:3110:54
+      2    0.0%    0.0%  JS: *readAllBytes node:internal/deps/undici/undici:4636:32
+      2    0.0%    0.0%  JS: *processHeader node:internal/deps/undici/undici:2111:27
+      2    0.0%    0.0%  JS: *prependListener node:events:629:29
+      2    0.0%    0.0%  JS: *pipe node:internal/streams/pipeline:411:14
+      2    0.0%    0.0%  JS: *parseParams node:internal/url:1217:21
+      2    0.0%    0.0%  JS: *onunpipe node:internal/streams/readable:936:20
+      2    0.0%    0.0%  JS: *onend node:internal/streams/end-of-stream:118:17
+      2    0.0%    0.0%  JS: *onStreamRead node:internal/stream_base_commons:168:22
+      2    0.0%    0.0%  JS: *onData file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:395:18
+      2    0.0%    0.0%  JS: *ok node:assert:151:12
+      2    0.0%    0.0%  JS: *maybeReadMore node:internal/streams/readable:857:23
+      2    0.0%    0.0%  JS: *isNodeStream node:internal/streams/utils:68:22
+      2    0.0%    0.0%  JS: *httpNetworkFetch node:internal/deps/undici/undici:10975:36
+      2    0.0%    0.0%  JS: *hasHooks node:internal/async_hooks:470:18
+      2    0.0%    0.0%  JS: *getTokenSource file:///home/ubuntu/pollinations/shared/extractFromRequest.js:143:31
+      2    0.0%    0.0%  JS: *getNodeRequestOptions file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/request.js:226:38
+      2    0.0%    0.0%  JS: *get origin node:internal/url:939:13
+      2    0.0%    0.0%  JS: *get node:net:2371:6
+      2    0.0%    0.0%  JS: *get node:internal/streams/readable:183:8
+      2    0.0%    0.0%  JS: *get node:internal/streams/readable:1523:8
+      2    0.0%    0.0%  JS: *get href node:internal/url:925:11
+      2    0.0%    0.0%  JS: *fromList node:internal/streams/readable:1582:18
+      2    0.0%    0.0%  JS: *extractReferrer file:///home/ubuntu/pollinations/shared/extractFromRequest.js:15:32
+      2    0.0%    0.0%  JS: *extractFromHeaders file:///home/ubuntu/pollinations/shared/extractFromRequest.js:210:28
+      2    0.0%    0.0%  JS: *enqueue file:///home/ubuntu/pollinations/shared/ipQueue.js:41:30
+      2    0.0%    0.0%  JS: *endReadable node:internal/streams/readable:1682:21
+      2    0.0%    0.0%  JS: *emitReadable_ node:internal/streams/readable:830:23
+      2    0.0%    0.0%  JS: *debug /home/ubuntu/pollinations/shared/node_modules/debug/src/common.js:66:17
+      2    0.0%    0.0%  JS: *cloneRequest node:internal/deps/undici/undici:10058:26
+      2    0.0%    0.0%  JS: *__name node:internal/deps/undici/undici:4:14
+      2    0.0%    0.0%  JS: *Writable.write node:internal/streams/writable:504:36
+      2    0.0%    0.0%  JS: *Writable.cork node:internal/streams/writable:513:35
+      2    0.0%    0.0%  JS: *URL node:internal/url:793:14
+      2    0.0%    0.0%  JS: *Readable node:internal/streams/readable:320:18
+      2    0.0%    0.0%  JS: *Body file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/body.js:32:13
+      2    0.0%    0.0%  JS: *<anonymous> node:internal/webstreams/readablestream:3266:5
+      2    0.0%    0.0%  JS: *<anonymous> node:internal/util:521:18
+      2    0.0%    0.0%  JS: *<anonymous> node:_http_outgoing:629:45
+      2    0.0%    0.0%  JS: *<anonymous> node:_http_outgoing:623:44
+      2    0.0%    0.0%  JS: *<anonymous> node:_http_agent:116:19
+      2    0.0%    0.0%  JS: *<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:49:21
+      2    0.0%    0.0%  JS: *<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:99:16
+      2    0.0%    0.0%  JS: *<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:137:14
+      2    0.0%    0.0%  JS: *<anonymous> file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:100:70
+      1    0.0%    0.0%  RegExp: data: (.*?)(?:\n\n|$)
+      1    0.0%    0.0%  RegExp: ^[!#$%&'*+.^_`|~0-9A-Za-z-]+$
+      1    0.0%    0.0%  RegExp: ^(delete|get|head|options|post|put)$
+      1    0.0%    0.0%  RegExp: [^\t\x20-\x7e\x80-\xff] {1}
+      1    0.0%    0.0%  RegExp: ;\s*charset\s*=
+      1    0.0%    0.0%  RegExp: ; *([!#$%&'*+.^_`|~0-9A-Za-z-]+) *= *("(?:[\u000b\u0020\u0021\u0023-\u005b\u005d-\u007e\u0080-\u00ff]|\\[\u000b\u0020-\u00ff])*"|[!#$%&'*+.^_`|~0-9A-Za-z-]+) *
+      1    0.0%    0.0%  RegExp: :\d{4}$|[^0-9a-z]
+      1    0.0%    0.0%  RegExp: (?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`.*\`)|(?:\>.*)|(?:\-\s.*)|(?:\d\.\s.*)
+      1    0.0%    0.0%  JS: wasm-function[47]
+      1    0.0%    0.0%  JS: ^write_ node:_http_outgoing:898:16
+      1    0.0%    0.0%  JS: ^validateReferrerPolicy file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/utils/referrer.js:82:39
+      1    0.0%    0.0%  JS: ^urlIsHttpHttpsScheme node:internal/deps/undici/undici:4662:34
+      1    0.0%    0.0%  JS: ^urlFormat node:url:573:19
+      1    0.0%    0.0%  JS: ^transform file:///home/ubuntu/pollinations/text.pollinations.ai/ads/streamingAdWrapper.js:46:18
+      1    0.0%    0.0%  JS: ^text node:internal/deps/undici/undici:5661:13
+      1    0.0%    0.0%  JS: ^text file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/body.js:157:12
+      1    0.0%    0.0%  JS: ^statusIsInformational node:_http_client:606:31
+      1    0.0%    0.0%  JS: ^socketOnData node:_http_client:537:22
+      1    0.0%    0.0%  JS: ^slowCases node:internal/util:204:19
+      1    0.0%    0.0%  JS: ^shouldBypassQueue file:///home/ubuntu/pollinations/shared/auth-utils.js:252:40
+      1    0.0%    0.0%  JS: ^shift node:internal/deps/undici/undici:628:12
+      1    0.0%    0.0%  JS: ^setupReadableByteStreamControllerFromSource node:internal/webstreams/readablestream:3275:53
+      1    0.0%    0.0%  JS: ^setSocketTimeout node:_http_client:957:26
+      1    0.0%    0.0%  JS: ^setHeader node:_http_outgoing:653:57
+      1    0.0%    0.0%  JS: ^set removed node:internal/event_target:519:14
+      1    0.0%    0.0%  JS: ^set node:net:2372:6
+      1    0.0%    0.0%  JS: ^runNextTicks node:internal/process/task_queues:58:22
+      1    0.0%    0.0%  JS: ^resolverFn node:internal/streams/end-of-stream:291:22
+      1    0.0%    0.0%  JS: ^resetSocketTimeout node:_http_server:1147:28
+      1    0.0%    0.0%  JS: ^request node:https:364:17
+      1    0.0%    0.0%  JS: ^removeSocket node:_http_agent:416:53
+      1    0.0%    0.0%  JS: ^removeEventListener node:internal/event_target:700:22
+      1    0.0%    0.0%  JS: ^realpathSync node:fs:2652:22
+      1    0.0%    0.0%  JS: ^readableStreamReaderGenericInitialize node:internal/webstreams/readablestream:2149:47
+      1    0.0%    0.0%  JS: ^readableStreamClose node:internal/deps/undici/undici:4619:33
+      1    0.0%    0.0%  JS: ^readableByteStreamControllerEnqueue node:internal/webstreams/readablestream:2774:45
+      1    0.0%    0.0%  JS: ^readableByteStreamControllerClose node:internal/webstreams/readablestream:2497:43
+      1    0.0%    0.0%  JS: ^readableByteStreamControllerClearAlgorithms node:internal/webstreams/readablestream:2555:53
+      1    0.0%    0.0%  JS: ^readMore node:internal/deps/undici/undici:5951:15
+      1    0.0%    0.0%  JS: ^process_params /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/router/index.js:338:47
+      1    0.0%    0.0%  JS: ^processTicksAndRejections node:internal/process/task_queues:67:35
+      1    0.0%    0.0%  JS: ^parserOnMessageComplete node:_http_common:136:33
+      1    0.0%    0.0%  JS: ^parserOnIncoming node:_http_server:1028:26
+      1    0.0%    0.0%  JS: ^parserOnHeaders node:_http_common:58:25
+      1    0.0%    0.0%  JS: ^parse /home/ubuntu/pollinations/text.pollinations.ai/node_modules/content-type/index.js:106:16
+      1    0.0%    0.0%  JS: ^parse /home/ubuntu/pollinations/text.pollinations.ai/node_modules/body-parser/lib/types/json.js:74:18
+      1    0.0%    0.0%  JS: ^once node:internal/util:518:14
+      1    0.0%    0.0%  JS: ^onWriteComplete node:internal/stream_base_commons:81:25
+      1    0.0%    0.0%  JS: ^onStreamRead node:internal/stream_base_commons:168:22
+      1    0.0%    0.0%  JS: ^onParserExecute node:_http_server:832:25
+      1    0.0%    0.0%  JS: ^onFinish node:internal/streams/writable:886:18
+      1    0.0%    0.0%  JS: ^normalizeOptions file:///home/ubuntu/pollinations/text.pollinations.ai/textGenerationUtils.js:110:33
+      1    0.0%    0.0%  JS: ^normalizeEncoding node:string_decoder:65:27
+      1    0.0%    0.0%  JS: ^noop node:internal/util/debuglog:46:14
+      1    0.0%    0.0%  JS: ^nextTick node:internal/process/task_queues:103:18
+      1    0.0%    0.0%  JS: ^next node:internal/per_context/primordials:330:9
+      1    0.0%    0.0%  JS: ^next /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/router/route.js:121:16
+      1    0.0%    0.0%  JS: ^isRelativeSpecifier node:internal/modules/esm/resolve:888:29
+      1    0.0%    0.0%  JS: ^isPromise /home/ubuntu/pollinations/shared/node_modules/is-promise/index.js:4:19
+      1    0.0%    0.0%  JS: ^isFull node:internal/fixed_queue:72:9
+      1    0.0%    0.0%  JS: ^isFormDataLike node:internal/deps/undici/undici:1499:28
+      1    0.0%    0.0%  JS: ^isEmpty node:internal/deps/undici/undici:618:14
+      1    0.0%    0.0%  JS: ^isContentDispositionField node:_http_outgoing:98:35
+      1    0.0%    0.0%  JS: ^insert node:internal/timers:366:16
+      1    0.0%    0.0%  JS: ^initHooksExist node:internal/async_hooks:478:24
+      1    0.0%    0.0%  JS: ^httpNetworkOrCacheFetch node:internal/deps/undici/undici:10854:43
+      1    0.0%    0.0%  JS: ^httpNetworkFetch node:internal/deps/undici/undici:10975:36
+      1    0.0%    0.0%  JS: ^header /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/response.js:777:29
+      1    0.0%    0.0%  JS: ^getUserPreferences file:///home/ubuntu/pollinations/shared/auth-utils.js:518:41
+      1    0.0%    0.0%  JS: ^getUserMappedModel file:///home/ubuntu/pollinations/text.pollinations.ai/requestUtils.js:123:35
+      1    0.0%    0.0%  JS: ^getTokenSource file:///home/ubuntu/pollinations/shared/extractFromRequest.js:143:31
+      1    0.0%    0.0%  JS: ^getProtohost /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/router/index.js:546:22
+      1    0.0%    0.0%  JS: ^getOptions node:internal/fs/utils:321:20
+      1    0.0%    0.0%  JS: ^getDefaultTriggerAsyncId node:internal/async_hooks:433:34
+      1    0.0%    0.0%  JS: ^get username node:internal/url:981:15
+      1    0.0%    0.0%  JS: ^get url file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/request.js:152:9
+      1    0.0%    0.0%  JS: ^get search node:internal/url:1076:13
+      1    0.0%    0.0%  JS: ^get password node:internal/url:995:15
+      1    0.0%    0.0%  JS: ^get node:internal/streams/writable:216:8
+      1    0.0%    0.0%  JS: ^get node:_http_outgoing:848:16
+      1    0.0%    0.0%  JS: ^get method file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/request.js:147:12
+      1    0.0%    0.0%  JS: ^get href node:internal/url:925:11
+      1    0.0%    0.0%  JS: ^get baseUrl node:internal/deps/undici/undici:4871:18
+      1    0.0%    0.0%  JS: ^get aborted node:internal/abort_controller:146:14
+      1    0.0%    0.0%  JS: ^generateSocketListenerWrapper node:_http_server:1190:39
+      1    0.0%    0.0%  JS: ^generatePortkeyHeaders file:///home/ubuntu/pollinations/text.pollinations.ai/portkeyUtils.js:67:38
+      1    0.0%    0.0%  JS: ^generatePollinationsId file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:435:32
+      1    0.0%    0.0%  JS: ^fromString node:buffer:477:20
+      1    0.0%    0.0%  JS: ^firstchar /home/ubuntu/pollinations/text.pollinations.ai/node_modules/body-parser/lib/types/json.js:188:20
+      1    0.0%    0.0%  JS: ^finishImpl node:internal/streams/pipeline:226:22
+      1    0.0%    0.0%  JS: ^finalizeResponse node:internal/deps/undici/undici:10685:30
+      1    0.0%    0.0%  JS: ^finalizeAndReportTiming node:internal/deps/undici/undici:10368:37
+      1    0.0%    0.0%  JS: ^fetching node:internal/deps/undici/undici:10428:22
+      1    0.0%    0.0%  JS: ^extractFromQuery file:///home/ubuntu/pollinations/shared/extractFromRequest.js:195:26
+      1    0.0%    0.0%  JS: ^extractBody node:internal/deps/undici/undici:5480:25
+      1    0.0%    0.0%  JS: ^etag /home/ubuntu/pollinations/text.pollinations.ai/node_modules/etag/index.js:70:15
+      1    0.0%    0.0%  JS: ^eos node:internal/streams/end-of-stream:55:13
+      1    0.0%    0.0%  JS: ^enqueue node:internal/webstreams/readablestream:1162:10
+      1    0.0%    0.0%  JS: ^enqueue file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/priority-queue.js:12:12
+      1    0.0%    0.0%  JS: ^endReadableNT node:internal/streams/readable:1692:23
+      1    0.0%    0.0%  JS: ^endReadable node:internal/streams/readable:1682:21
+      1    0.0%    0.0%  JS: ^end node:_http_outgoing:1034:45
+      1    0.0%    0.0%  JS: ^emitBeforeScript node:internal/async_hooks:509:26
+      1    0.0%    0.0%  JS: ^dispatchBufferFull node:internal/perf/performance:235:28
+      1    0.0%    0.0%  JS: ^dispatch node:internal/deps/undici/undici:11141:24
+      1    0.0%    0.0%  JS: ^detachSocket node:_http_server:292:62
+      1    0.0%    0.0%  JS: ^decode node:internal/encoding:440:11
+      1    0.0%    0.0%  JS: ^debug /home/ubuntu/pollinations/text.pollinations.ai/node_modules/body-parser/node_modules/debug/src/debug.js:65:17
+      1    0.0%    0.0%  JS: ^debug /home/ubuntu/pollinations/shared/node_modules/debug/src/common.js:66:17
+      1    0.0%    0.0%  JS: ^createDeferredPromise node:internal/deps/undici/undici:4435:35
+      1    0.0%    0.0%  JS: ^configureOrigin /home/ubuntu/pollinations/text.pollinations.ai/node_modules/cors/lib/index.js:36:27
+      1    0.0%    0.0%  JS: ^configureExposedHeaders /home/ubuntu/pollinations/text.pollinations.ai/node_modules/cors/lib/index.js:117:35
+      1    0.0%    0.0%  JS: ^clearTimeout node:timers:184:22
+      1    0.0%    0.0%  JS: ^checkError node:internal/streams/destroy:32:20
+      1    0.0%    0.0%  JS: ^byteLength node:buffer:770:20
+      1    0.0%    0.0%  JS: ^basename node:path:1402:11
+      1    0.0%    0.0%  JS: ^asyncResetHandle node:_http_agent:540:26
+      1    0.0%    0.0%  JS: ^afterWriteTick node:internal/streams/writable:693:24
+      1    0.0%    0.0%  JS: ^adjustOffset node:buffer:1152:22
+      1    0.0%    0.0%  JS: ^addAbortListener node:internal/deps/undici/undici:1503:30
+      1    0.0%    0.0%  JS: ^_send node:_http_outgoing:354:49
+      1    0.0%    0.0%  JS: ^_flushOutput node:_http_outgoing:1158:63
+      1    0.0%    0.0%  JS: ^_finish node:_http_outgoing:1116:53
+      1    0.0%    0.0%  JS: ^_finish node:_http_client:378:51
+      1    0.0%    0.0%  JS: ^_Request node:internal/deps/undici/undici:9569:18
+      1    0.0%    0.0%  JS: ^_HeadersList node:internal/deps/undici/undici:8674:18
+      1    0.0%    0.0%  JS: ^ZlibBase node:zlib:204:18
+      1    0.0%    0.0%  JS: ^Timeout node:internal/timers:170:14
+      1    0.0%    0.0%  JS: ^TLSSocket._init node:_tls_wrap:806:37
+      1    0.0%    0.0%  JS: ^StripBOMWrapper.end /home/ubuntu/pollinations/text.pollinations.ai/node_modules/iconv-lite/lib/bom-handling.js:49:41
+      1    0.0%    0.0%  JS: ^Socket.resume node:net:763:35
+      1    0.0%    0.0%  JS: ^Socket._writev node:net:964:36
+      1    0.0%    0.0%  JS: ^PerformanceResourceTiming node:internal/perf/resource_timing:26:14
+      1    0.0%    0.0%  JS: ^OutgoingMessage node:_http_outgoing:102:25
+      1    0.0%    0.0%  JS: ^Module.load node:internal/modules/cjs/loader:1262:33
+      1    0.0%    0.0%  JS: ^Module._compile node:internal/modules/cjs/loader:1489:37
+      1    0.0%    0.0%  JS: ^Intercept node:internal/deps/undici/undici:7532:57
+      1    0.0%    0.0%  JS: ^FormData file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/formdata-polyfill/esm.min.js:21:11
+      1    0.0%    0.0%  JS: ^DOMException node:internal/per_context/domexception:52:14
+      1    0.0%    0.0%  JS: ^Client node:internal/deps/undici/undici:7800:18
+      1    0.0%    0.0%  JS: ^Client node:internal/deps/undici/undici:7790:18
+      1    0.0%    0.0%  JS: ^AsyncResource node:async_hooks:163:14
+      1    0.0%    0.0%  JS: ^AbortController node:internal/abort_controller:377:1
+      1    0.0%    0.0%  JS: ^<instance_members_initializer> node:internal/webstreams/readablestream:821:1
+      1    0.0%    0.0%  JS: ^<anonymous> node:internal/webstreams/readablestream:3121:5
+      1    0.0%    0.0%  JS: ^<anonymous> node:internal/validators:575:46
+      1    0.0%    0.0%  JS: ^<anonymous> node:internal/validators:442:45
+      1    0.0%    0.0%  JS: ^<anonymous> node:internal/validators:394:40
+      1    0.0%    0.0%  JS: ^<anonymous> node:internal/validators:300:39
+      1    0.0%    0.0%  JS: ^<anonymous> node:internal/validators:161:40
+      1    0.0%    0.0%  JS: ^<anonymous> node:internal/streams/writable:916:21
+      1    0.0%    0.0%  JS: ^<anonymous> node:internal/streams/pipeline:55:73
+      1    0.0%    0.0%  JS: ^<anonymous> node:internal/fs/utils:693:42
+      1    0.0%    0.0%  JS: ^<anonymous> node:internal/deps/undici/undici:3866:14
+      1    0.0%    0.0%  JS: ^<anonymous> node:internal/deps/undici/undici:11144:28
+      1    0.0%    0.0%  JS: ^<anonymous> node:internal/deps/undici/undici:11056:52
+      1    0.0%    0.0%  JS: ^<anonymous> node:internal/deps/undici/undici:11011:57
+      1    0.0%    0.0%  JS: ^<anonymous> node:internal/deps/undici/undici:11004:73
+      1    0.0%    0.0%  JS: ^<anonymous> node:internal/deps/undici/undici:10512:27
+      1    0.0%    0.0%  JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/textGenerationUtils.js:313:34
+      1    0.0%    0.0%  JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:84:13
+      1    0.0%    0.0%  JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:203:34
+      1    0.0%    0.0%  JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/ads/shouldShowAds.js:80:46
+      1    0.0%    0.0%  JS: ^<anonymous> /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/node_modules/qs/lib/utils.js:92:48
+      1    0.0%    0.0%  JS: ^<anonymous> /home/ubuntu/pollinations/text.pollinations.ai/node_modules/cors/lib/index.js:204:37
+      1    0.0%    0.0%  JS: *writeToStream file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/body.js:389:30
+      1    0.0%    0.0%  JS: *write node:buffer:634:12
+      1    0.0%    0.0%  JS: *wasm_on_headers_complete node:internal/deps/undici/undici:5854:37
+      1    0.0%    0.0%  JS: *values node:internal/webstreams/readablestream:463:9
+      1    0.0%    0.0%  JS: *updateOutgoingData node:_http_server:753:28
+      1    0.0%    0.0%  JS: *trim_prefix /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/router/index.js:293:23
+      1    0.0%    0.0%  JS: *setCharset /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/utils.js:246:41
+      1    0.0%    0.0%  JS: *set node:internal/url:578:6
+      1    0.0%    0.0%  JS: *set node:internal/streams/readable:133:8
+      1    0.0%    0.0%  JS: *set node:internal/deps/undici/undici:9299:12
+      1    0.0%    0.0%  JS: *set /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/application.js:359:23
+      1    0.0%    0.0%  JS: *runMicrotask node:internal/process/task_queues:136:22
+      1    0.0%    0.0%  JS: *resume node:internal/streams/readable:1247:16
+      1    0.0%    0.0%  JS: *responseKeepAlive node:_http_client:717:27
+      1    0.0%    0.0%  JS: *resolve node:path:1181:10
+      1    0.0%    0.0%  JS: *res.get /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/response.js:811:19
+      1    0.0%    0.0%  JS: *remove node:internal/linkedlist:16:16
+      1    0.0%    0.0%  JS: *readableStreamHasBYOBReader node:internal/webstreams/readablestream:2079:37
+      1    0.0%    0.0%  JS: *readableByteStreamTee node:internal/webstreams/readablestream:1693:31
+      1    0.0%    0.0%  JS: *readableByteStreamControllerEnqueue node:internal/webstreams/readablestream:2774:45
+      1    0.0%    0.0%  JS: *readStream /home/ubuntu/pollinations/text.pollinations.ai/node_modules/raw-body/index.js:155:21
+      1    0.0%    0.0%  JS: *readStart node:_http_incoming:39:19
+      1    0.0%    0.0%  JS: *readMore node:internal/deps/undici/undici:5951:15
+      1    0.0%    0.0%  JS: *parserOnMessageComplete node:_http_common:136:33
+      1    0.0%    0.0%  JS: *parserOnBody node:_http_common:121:22
+      1    0.0%    0.0%  JS: *onwrite node:internal/streams/writable:615:17
+      1    0.0%    0.0%  JS: *onceWrapper node:events:633:21
+      1    0.0%    0.0%  JS: *onMessageComplete node:internal/deps/undici/undici:6198:24
+      1    0.0%    0.0%  JS: *onHeaders node:internal/deps/undici/undici:11171:22
+      1    0.0%    0.0%  JS: *onFree node:_http_agent:369:18
+      1    0.0%    0.0%  JS: *normalizeString node:path:79:25
+      1    0.0%    0.0%  JS: *next node:internal/url:223:7
+      1    0.0%    0.0%  JS: *newAsyncId node:internal/async_hooks:417:20
+      1    0.0%    0.0%  JS: *jsonParser /home/ubuntu/pollinations/text.pollinations.ai/node_modules/body-parser/lib/types/json.js:101:30
+      1    0.0%    0.0%  JS: *isWritableNodeStream node:internal/streams/utils:50:30
+      1    0.0%    0.0%  JS: *isWritableErrored node:internal/streams/utils:211:27
+      1    0.0%    0.0%  JS: *isValidHTTPToken node:internal/deps/undici/undici:1547:30
+      1    0.0%    0.0%  JS: *isUint8Array node:internal/util/types:13:22
+      1    0.0%    0.0%  JS: *isReadable node:internal/streams/utils:173:20
+      1    0.0%    0.0%  JS: *isPromise /home/ubuntu/pollinations/shared/node_modules/is-promise/index.js:4:19
+      1    0.0%    0.0%  JS: *isDestroyed node:internal/streams/utils:120:21
+      1    0.0%    0.0%  JS: *isBlobLike node:internal/deps/undici/undici:1180:24
+      1    0.0%    0.0%  JS: *invokePromiseCallback node:internal/webstreams/util:180:37
+      1    0.0%    0.0%  JS: *httpFetch node:internal/deps/undici/undici:10749:29
+      1    0.0%    0.0%  JS: *highWaterMarkFrom node:internal/streams/state:14:27
+      1    0.0%    0.0%  JS: *header /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/response.js:777:29
+      1    0.0%    0.0%  JS: *has node:internal/url:552:6
+      1    0.0%    0.0%  JS: *handle /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/application.js:165:29
+      1    0.0%    0.0%  JS: *getName node:https:236:43
+      1    0.0%    0.0%  JS: *getMaxListeners node:events:952:25
+      1    0.0%    0.0%  JS: *getIp file:///home/ubuntu/pollinations/shared/extractFromRequest.js:60:22
+      1    0.0%    0.0%  JS: *getHeader node:_http_outgoing:740:57
+      1    0.0%    0.0%  JS: *get signal node:internal/abort_controller:383:13
+      1    0.0%    0.0%  JS: *get searchParams node:internal/url:1090:19
+      1    0.0%    0.0%  JS: *get protocol node:internal/url:970:15
+      1    0.0%    0.0%  JS: *get node:internal/url:515:6
+      1    0.0%    0.0%  JS: *get node:internal/streams/writable:1010:8
+      1    0.0%    0.0%  JS: *get node:internal/streams/readable:1542:8
+      1    0.0%    0.0%  JS: *get node:internal/deps/undici/undici:9296:12
+      1    0.0%    0.0%  JS: *get hasHash node:internal/url:201:14
+      1    0.0%    0.0%  JS: *get file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:111:7
+      1    0.0%    0.0%  JS: *get aborted node:internal/abort_controller:146:14
+      1    0.0%    0.0%  JS: *get /home/ubuntu/pollinations/text.pollinations.ai/node_modules/debug/src/common.js:125:9
+      1    0.0%    0.0%  JS: *get /home/ubuntu/pollinations/shared/node_modules/debug/src/common.js:125:9
+      1    0.0%    0.0%  JS: *generatePortkeyHeaders file:///home/ubuntu/pollinations/text.pollinations.ai/portkeyUtils.js:67:38
+      1    0.0%    0.0%  JS: *generatePollinationsId file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:435:32
+      1    0.0%    0.0%  JS: *generateETag /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/utils.js:271:32
+      1    0.0%    0.0%  JS: *fromStringFast node:buffer:444:24
+      1    0.0%    0.0%  JS: *from node:internal/streams/from:15:14
+      1    0.0%    0.0%  JS: *flow node:internal/streams/readable:1280:14
+      1    0.0%    0.0%  JS: *finish node:internal/streams/writable:949:16
+      1    0.0%    0.0%  JS: *findModelByName file:///home/ubuntu/pollinations/text.pollinations.ai/availableModels.js:671:32
+      1    0.0%    0.0%  JS: *filterSimpleValues file:///home/ubuntu/pollinations/text.pollinations.ai/sendToAnalytics.js:14:28
+      1    0.0%    0.0%  JS: *fetch2 node:internal/deps/undici/undici:10310:20
+      1    0.0%    0.0%  JS: *fastparse /home/ubuntu/pollinations/text.pollinations.ai/node_modules/parseurl/index.js:95:20
+      1    0.0%    0.0%  JS: *extractFromBody file:///home/ubuntu/pollinations/shared/extractFromRequest.js:239:25
+      1    0.0%    0.0%  JS: *expressInit /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/middleware/init.js:29:30
+      1    0.0%    0.0%  JS: *enqueue node:internal/webstreams/readablestream:1162:10
+      1    0.0%    0.0%  JS: *emitCloseNT node:internal/streams/destroy:132:21
+      1    0.0%    0.0%  JS: *emitAfterScript node:internal/async_hooks:517:25
+      1    0.0%    0.0%  JS: *emit /home/ubuntu/pollinations/shared/node_modules/event-emitter/index.js:75:17
+      1    0.0%    0.0%  JS: *detachSocket node:_http_server:292:62
+      1    0.0%    0.0%  JS: *decode node:internal/encoding:440:11
+      1    0.0%    0.0%  JS: *createUnsafeBuffer node:internal/buffer:1061:28
+      1    0.0%    0.0%  JS: *contains node:internal/deps/undici/undici:8689:15
+      1    0.0%    0.0%  JS: *consumeBody node:internal/deps/undici/undici:5709:31
+      1    0.0%    0.0%  JS: *coarsenedSharedCurrentTime node:internal/deps/undici/undici:4201:40
+      1    0.0%    0.0%  JS: *clearIncoming node:_http_server:955:23
+      1    0.0%    0.0%  JS: *checkListener node:events:274:23
+      1    0.0%    0.0%  JS: *callback node:internal/streams/writable:764:63
+      1    0.0%    0.0%  JS: *assignSocket node:_http_server:281:62
+      1    0.0%    0.0%  JS: *assert node:internal/assert:11:16
+      1    0.0%    0.0%  JS: *arrayClone node:events:893:20
+      1    0.0%    0.0%  JS: *appendHeader node:internal/deps/undici/undici:8643:26
+      1    0.0%    0.0%  JS: *append node:internal/linkedlist:30:16
+      1    0.0%    0.0%  JS: *allocUnsafe node:buffer:404:42
+      1    0.0%    0.0%  JS: *addEventListener node:internal/event_target:598:19
+      1    0.0%    0.0%  JS: *_storeHeader node:_http_outgoing:410:22
+      1    0.0%    0.0%  JS: *_resume node:internal/deps/undici/undici:7990:21
+      1    0.0%    0.0%  JS: *_finish node:_http_outgoing:1116:53
+      1    0.0%    0.0%  JS: *_destroy node:internal/streams/destroy:89:18
+      1    0.0%    0.0%  JS: *_destroy node:_http_incoming:218:55
+      1    0.0%    0.0%  JS: *__classPrivateFieldSet file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:1:80
+      1    0.0%    0.0%  JS: *_PQueue_tryToStartAnother file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:263:66
+      1    0.0%    0.0%  JS: *ZlibBase node:zlib:204:18
+      1    0.0%    0.0%  JS: *URLSearchParams node:internal/url:330:14
+      1    0.0%    0.0%  JS: *Socket.read node:net:772:33
+      1    0.0%    0.0%  JS: *Readable.resume node:internal/streams/readable:1227:37
+      1    0.0%    0.0%  JS: *Readable.pause node:internal/streams/readable:1267:36
+      1    0.0%    0.0%  JS: *Pool node:internal/deps/undici/undici:8135:23
+      1    0.0%    0.0%  JS: *FastBuffer node:internal/buffer:960:14
+      1    0.0%    0.0%  JS: *Event node:internal/event_target:118:14
+      1    0.0%    0.0%  JS: *Duplex node:internal/streams/duplex:65:16
+      1    0.0%    0.0%  JS: *ClientRequest node:_http_client:134:23
+      1    0.0%    0.0%  JS: *Client node:internal/deps/undici/undici:7790:18
+      1    0.0%    0.0%  JS: *ArrayBufferViewGetByteLength node:internal/webstreams/util:96:38
+      1    0.0%    0.0%  JS: *<instance_members_initializer> node:internal/url:306:1
+      1    0.0%    0.0%  JS: *<anonymous> node:internal/validators:176:40
+      1    0.0%    0.0%  JS: *<anonymous> node:internal/deps/undici/undici:3866:14
+      1    0.0%    0.0%  JS: *<anonymous> node:internal/deps/undici/undici:3825:14
+      1    0.0%    0.0%  JS: *<anonymous> node:internal/deps/undici/undici:11029:39
+      1    0.0%    0.0%  JS: *<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:147:4
+      1    0.0%    0.0%  JS: *<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:412:23
+      1    0.0%    0.0%  JS: *<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:76:11
+      1    0.0%    0.0%  JS: *<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:213:34
+      1    0.0%    0.0%  JS: *<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:128:14
+      1    0.0%    0.0%  JS: *<anonymous> /home/ubuntu/pollinations/text.pollinations.ai/node_modules/cors/lib/index.js:219:57
+      1    0.0%    0.0%  JS: *<anonymous> /home/ubuntu/pollinations/shared/node_modules/memoizee/lib/configure-map.js:50:36
+
+ [C++]:
+   ticks  total  nonlib   name
+   6102   42.0%   62.9%  epoll_pwait@@GLIBC_2.6
+    146    1.0%    1.5%  __write@@GLIBC_2.2.5
+    128    0.9%    1.3%  __read@@GLIBC_2.2.5
+     43    0.3%    0.4%  __libc_malloc@@GLIBC_2.2.5
+     24    0.2%    0.2%  __libc_free@@GLIBC_2.2.5
+     23    0.2%    0.2%  pthread_cond_signal@@GLIBC_2.3.2
+     20    0.1%    0.2%  std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long)@@GLIBCXX_3.4.9
+     11    0.1%    0.1%  _IO_fwrite@@GLIBC_2.2.5
+     11    0.1%    0.1%  _IO_file_xsputn@@GLIBC_2.2.5
+      7    0.0%    0.1%  __pthread_rwlock_unlock@GLIBC_2.2.5
+      6    0.0%    0.1%  std::ostream& std::ostream::_M_insert<long>(long)@@GLIBCXX_3.4.9
+      6    0.0%    0.1%  operator new(unsigned long)@@GLIBCXX_3.4
+      6    0.0%    0.1%  __getpid@@GLIBC_2.2.5
+      5    0.0%    0.1%  __pthread_rwlock_wrlock@GLIBC_2.2.5
+      4    0.0%    0.0%  operator delete(void*)@@GLIBCXX_3.4
+      4    0.0%    0.0%  isprint@@GLIBC_2.2.5
+      4    0.0%    0.0%  __pthread_mutex_lock@GLIBC_2.2.5
+      3    0.0%    0.0%  std::ostream::sentry::sentry(std::ostream&)@@GLIBCXX_3.4
+      3    0.0%    0.0%  __pthread_rwlock_rdlock@GLIBC_2.2.5
+      3    0.0%    0.0%  __pthread_mutex_unlock@GLIBC_2.2.5
+      2    0.0%    0.0%  std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_int<long>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, long) const@@GLIBCXX_3.4
+      2    0.0%    0.0%  std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::reserve(unsigned long)@@GLIBCXX_3.4.21
+      2    0.0%    0.0%  sigemptyset@@GLIBC_2.2.5
+      2    0.0%    0.0%  operator new[](unsigned long)@@GLIBCXX_3.4
+      2    0.0%    0.0%  operator delete[](void*)@@GLIBCXX_3.4
+      2    0.0%    0.0%  operator delete(void*, unsigned long)@@CXXABI_1.3.9
+      2    0.0%    0.0%  fputc@@GLIBC_2.2.5
+      2    0.0%    0.0%  epoll_ctl@@GLIBC_2.3.2
+      2    0.0%    0.0%  __pthread_once@GLIBC_2.2.5
+      2    0.0%    0.0%  __pthread_getspecific@GLIBC_2.2.5
+      2    0.0%    0.0%  __lll_lock_wait_private@@GLIBC_PRIVATE
+      2    0.0%    0.0%  __errno_location@@GLIBC_2.2.5
+      1    0.0%    0.0%  writev@@GLIBC_2.2.5
+      1    0.0%    0.0%  std::ostream::operator<<(int)@@GLIBCXX_3.4
+      1    0.0%    0.0%  std::__detail::_Prime_rehash_policy::_M_next_bkt(unsigned long) const@@GLIBCXX_3.4.18
+      1    0.0%    0.0%  std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_replace(unsigned long, unsigned long, char const*, unsigned long)@@GLIBCXX_3.4.21
+      1    0.0%    0.0%  std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long)@@GLIBCXX_3.4.21
+      1    0.0%    0.0%  std::_Rb_tree_rebalance_for_erase(std::_Rb_tree_node_base*, std::_Rb_tree_node_base&)@@GLIBCXX_3.4
+      1    0.0%    0.0%  std::_Rb_tree_decrement(std::_Rb_tree_node_base*)@@GLIBCXX_3.4
+      1    0.0%    0.0%  malloc_usable_size@@GLIBC_2.2.5
+      1    0.0%    0.0%  __vsnprintf@@GLIBC_2.2.5
+      1    0.0%    0.0%  __mprotect@@GLIBC_PRIVATE
+      1    0.0%    0.0%  __madvise@@GLIBC_PRIVATE
+      1    0.0%    0.0%  __lll_lock_wake_private@@GLIBC_PRIVATE
+      1    0.0%    0.0%  __libc_calloc@@GLIBC_2.2.5
+      1    0.0%    0.0%  __clock_gettime@@GLIBC_PRIVATE
+
+ [Summary]:
+   ticks  total  nonlib   name
+    962    6.6%    9.9%  JavaScript
+   6597   45.4%   68.0%  C++
+    390    2.7%    4.0%  GC
+   4824   33.2%          Shared libraries
+   2137   14.7%          Unaccounted
+
+ [C++ entry points]:
+   ticks    cpp   total   name
+    121   42.5%    0.8%  __write@@GLIBC_2.2.5
+     40   14.0%    0.3%  __libc_malloc@@GLIBC_2.2.5
+     19    6.7%    0.1%  std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long)@@GLIBCXX_3.4.9
+     18    6.3%    0.1%  __libc_free@@GLIBC_2.2.5
+     11    3.9%    0.1%  _IO_file_xsputn@@GLIBC_2.2.5
+     10    3.5%    0.1%  _IO_fwrite@@GLIBC_2.2.5
+      8    2.8%    0.1%  pthread_cond_signal@@GLIBC_2.3.2
+      6    2.1%    0.0%  std::ostream& std::ostream::_M_insert<long>(long)@@GLIBCXX_3.4.9
+      6    2.1%    0.0%  __getpid@@GLIBC_2.2.5
+      5    1.8%    0.0%  operator new(unsigned long)@@GLIBCXX_3.4
+      5    1.8%    0.0%  __pthread_rwlock_wrlock@GLIBC_2.2.5
+      4    1.4%    0.0%  isprint@@GLIBC_2.2.5
+      4    1.4%    0.0%  __pthread_rwlock_unlock@GLIBC_2.2.5
+      3    1.1%    0.0%  std::ostream::sentry::sentry(std::ostream&)@@GLIBCXX_3.4
+      3    1.1%    0.0%  operator delete(void*)@@GLIBCXX_3.4
+      2    0.7%    0.0%  std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_int<long>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, long) const@@GLIBCXX_3.4
+      2    0.7%    0.0%  std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::reserve(unsigned long)@@GLIBCXX_3.4.21
+      2    0.7%    0.0%  operator new[](unsigned long)@@GLIBCXX_3.4
+      2    0.7%    0.0%  operator delete[](void*)@@GLIBCXX_3.4
+      2    0.7%    0.0%  __pthread_once@GLIBC_2.2.5
+      2    0.7%    0.0%  __pthread_mutex_unlock@GLIBC_2.2.5
+      1    0.4%    0.0%  std::ostream::operator<<(int)@@GLIBCXX_3.4
+      1    0.4%    0.0%  std::__detail::_Prime_rehash_policy::_M_next_bkt(unsigned long) const@@GLIBCXX_3.4.18
+      1    0.4%    0.0%  std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_replace(unsigned long, unsigned long, char const*, unsigned long)@@GLIBCXX_3.4.21
+      1    0.4%    0.0%  std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long)@@GLIBCXX_3.4.21
+      1    0.4%    0.0%  operator delete(void*, unsigned long)@@CXXABI_1.3.9
+      1    0.4%    0.0%  malloc_usable_size@@GLIBC_2.2.5
+      1    0.4%    0.0%  fputc@@GLIBC_2.2.5
+      1    0.4%    0.0%  __vsnprintf@@GLIBC_2.2.5
+      1    0.4%    0.0%  __madvise@@GLIBC_PRIVATE
+      1    0.4%    0.0%  __libc_calloc@@GLIBC_2.2.5
+
+ [Bottom up (heavy) profile]:
+  Note: percentage shows a share of a particular caller in the total
+  amount of its parent calls.
+  Callers occupying less than 1.0% are not shown.
+
+   ticks parent  name
+   6102   42.0%  epoll_pwait@@GLIBC_2.6
+
+   4547   31.3%  /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+   3304   72.7%    /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+    344   10.4%      JS: *clearBuffer node:internal/streams/writable:744:21
+    298   86.6%        JS: *Writable.uncork node:internal/streams/writable:520:37
+    192   64.4%          JS: ^end node:_http_outgoing:1034:45
+    108   56.3%            JS: ^send /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/response.js:111:25
+     69   35.9%            JS: *endFn node:internal/streams/pipeline:427:19
+     15    7.8%            JS: ^endFn node:internal/streams/pipeline:427:19
+     54   18.1%          JS: ^connectionCorkNT node:_http_outgoing:980:26
+     54  100.0%            JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+     52   17.4%          JS: ^write node:internal/deps/undici/undici:6700:12
+     32   61.5%            JS: *writeIterable node:internal/deps/undici/undici:6647:33
+     20   38.5%            JS: ^writeIterable node:internal/deps/undici/undici:6647:33
+     42   12.2%        JS: ^Writable.uncork node:internal/streams/writable:520:37
+     28   66.7%          JS: ^end node:_http_outgoing:1034:45
+     14   50.0%            JS: ^send /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/response.js:111:25
+     14   50.0%            JS: ^endFn node:internal/streams/pipeline:427:19
+      8   19.0%          JS: ^write node:internal/deps/undici/undici:6700:12
+      8  100.0%            JS: ^writeIterable node:internal/deps/undici/undici:6647:33
+      6   14.3%          JS: ^connectionCorkNT node:_http_outgoing:980:26
+      5   83.3%            JS: ^processTicksAndRejections node:internal/process/task_queues:67:35
+      1   16.7%            JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      4    1.2%        JS: *write node:internal/deps/undici/undici:6700:12
+      4  100.0%          JS: *writeIterable node:internal/deps/undici/undici:6647:33
+      4  100.0%            /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+    156    4.7%      JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/genericOpenAIClient.js:52:27
+    123   78.8%        /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+    118   95.9%          JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      5    4.1%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      5  100.0%            JS: ^processTicksAndRejections node:internal/process/task_queues:67:35
+     33   21.2%        JS: ^generateTextBasedOnModel file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:805:40
+     33  100.0%          JS: ^handleRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:130:29
+     30   90.9%            /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      3    9.1%            JS: *<anonymous> file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:100:70
+    135    4.1%      JS: *finish node:internal/streams/pipeline:222:18
+     84   62.2%        JS: *<anonymous> node:internal/util:521:18
+     80   95.2%          JS: *onfinish node:internal/streams/end-of-stream:99:20
+     40   50.0%            JS: *onFinish node:_http_outgoing:1029:18
+     36   45.0%            JS: *emit node:events:471:44
+      3    3.8%            JS: *finish node:internal/streams/writable:949:16
+      1    1.3%            JS: ^emit node:events:471:44
+      4    4.8%          JS: ^onfinish node:internal/streams/end-of-stream:99:20
+      3   75.0%            JS: *emit node:events:471:44
+      1   25.0%            JS: ^emit node:events:471:44
+     51   37.8%        JS: ^<anonymous> node:internal/streams/pipeline:441:49
+     51  100.0%          JS: *<anonymous> node:internal/util:521:18
+     51  100.0%            JS: *onclose node:internal/streams/end-of-stream:142:19
+    135    4.1%      /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+     17   12.6%        JS: ^defaultPrepareStackTrace node:internal/errors:95:34
+     17  100.0%          JS: ^ErrorPrepareStackTrace node:internal/errors:162:32
+     17  100.0%            JS: ^prepareStackTraceCallback node:internal/errors:131:35
+     15   11.1%        JS: ^getIp file:///home/ubuntu/pollinations/shared/extractFromRequest.js:60:22
+      5   33.3%          JS: ^processRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:520:30
+      3   60.0%            JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:652:22
+      1   20.0%            JS: ~<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:652:22
+      1   20.0%            JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:623:15
+      4   26.7%          JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:86:9
+      3   75.0%            JS: *handle /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/router/layer.js:86:49
+      1   25.0%            JS: ^handle /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/router/layer.js:86:49
+      3   20.0%          JS: ^handleRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:130:29
+      3  100.0%            /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      2   13.3%          JS: *processRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:520:30
+      1   50.0%            JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:652:22
+      1   50.0%            JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:623:15
+      1    6.7%          JS: ^sendErrorResponse file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:364:40
+      1  100.0%            JS: ^handleRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:130:29
+     13    9.6%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/genericOpenAIClient.js:52:27
+     13  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+     13  100.0%            JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      6    4.4%        JS: ^ClientRequest node:_http_client:134:23
+      6  100.0%          JS: ^request node:https:364:17
+      6  100.0%            JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:49:21
+      6    4.4%        /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      3   50.0%          JS: *Headers file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:51:13
+      2   66.7%            JS: ^Response file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/response.js:23:13
+      1   33.3%            JS: *getNodeRequestOptions file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/request.js:226:38
+      1   16.7%          JS: ^_HeadersList node:internal/deps/undici/undici:8674:18
+      1  100.0%            JS: ^makeResponse node:internal/deps/undici/undici:9255:26
+      1   16.7%          JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:137:14
+      1  100.0%            JS: *getNodeRequestOptions file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/request.js:226:38
+      1   16.7%          JS: *<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:137:14
+      1  100.0%            JS: *entries file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:187:11
+      4    3.0%        JS: ^sendToAnalytics file:///home/ubuntu/pollinations/text.pollinations.ai/sendToAnalytics.js:27:38
+      4  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      3   75.0%            JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      1   25.0%            /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      4    3.0%        JS: ^module.exports /home/ubuntu/pollinations/shared/node_modules/es5-ext/array/#/e-index-of.js:11:27
+      3   75.0%          JS: *<anonymous> /home/ubuntu/pollinations/shared/node_modules/memoizee/lib/configure-map.js:50:36
+      3  100.0%            JS: *shouldBypassQueue file:///home/ubuntu/pollinations/shared/auth-utils.js:252:40
+      1   25.0%          JS: *get /home/ubuntu/pollinations/shared/node_modules/memoizee/normalizers/get-1.js:8:17
+      1  100.0%            JS: ^<anonymous> /home/ubuntu/pollinations/shared/node_modules/memoizee/lib/configure-map.js:50:36
+      4    3.0%        JS: *createUnsafeBuffer node:internal/buffer:1061:28
+      2   50.0%          JS: *ZlibBase node:zlib:204:18
+      2  100.0%            JS: *BrotliDecompress node:zlib:833:26
+      1   25.0%          JS: ^createPool node:buffer:152:20
+      1  100.0%            JS: ^allocate node:buffer:429:18
+      1   25.0%          JS: ^allocate node:buffer:429:18
+      1  100.0%            JS: ^allocUnsafe node:buffer:404:42
+      3    2.2%        JS: ~isIPv6 node:internal/net:38:16
+      3  100.0%          JS: ~isIP node:internal/net:45:14
+      2   66.7%            JS: ~getServerName node:internal/deps/undici/undici:1280:27
+      1   33.3%            JS: ~lookupAndConnect node:net:1284:26
+      3    2.2%        JS: ^getUserMappedModel file:///home/ubuntu/pollinations/text.pollinations.ai/requestUtils.js:123:35
+      3  100.0%          JS: ^handleRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:130:29
+      2   66.7%            JS: *<anonymous> file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:100:70
+      1   33.3%            JS: ^enqueue file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:564:21
+      3    2.2%        JS: ^cloneAsUint8Array node:internal/webstreams/util:104:27
+      3  100.0%          JS: ^<anonymous> node:internal/webstreams/readablestream:1735:24
+      2   66.7%            JS: *runMicrotask node:internal/process/task_queues:136:22
+      1   33.3%            JS: *<anonymous> node:internal/process/task_queues:137:24
+      2    1.5%        JS: ~resolvePackageTargetString node:internal/modules/esm/resolve:385:36
+      2  100.0%          JS: ~resolvePackageTarget node:internal/modules/esm/resolve:490:30
+      2  100.0%            JS: ~resolvePackageTarget node:internal/modules/esm/resolve:490:30
+      2    1.5%        JS: ^removeSocket node:_http_agent:416:53
+      2  100.0%          JS: ^<anonymous> node:_http_agent:116:19
+      2  100.0%            JS: *emit node:events:471:44
+      2    1.5%        JS: ^handledRejection node:internal/process/promises:270:26
+      2  100.0%          JS: ^promiseRejectHandler node:internal/process/promises:181:30
+      1   50.0%            JS: *readableStreamClose node:internal/webstreams/readablestream:2013:29
+      1   50.0%            /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      2    1.5%        JS: ^format /home/ubuntu/pollinations/text.pollinations.ai/node_modules/content-type/index.js:65:17
+      2  100.0%          JS: ^setCharset /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/utils.js:246:41
+      2  100.0%            JS: ^send /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/response.js:111:25
+      2    1.5%        JS: ^filterSimpleValues file:///home/ubuntu/pollinations/text.pollinations.ai/sendToAnalytics.js:14:28
+      2  100.0%          JS: ^sendToAnalytics file:///home/ubuntu/pollinations/text.pollinations.ai/sendToAnalytics.js:27:38
+      2  100.0%            JS: ^sendAdSkippedAnalytics file:///home/ubuntu/pollinations/text.pollinations.ai/ads/adUtils.js:21:39
+      2    1.5%        JS: ^cleanNullAndUndefined file:///home/ubuntu/pollinations/text.pollinations.ai/textGenerationUtils.js:290:38
+      2  100.0%          JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/genericOpenAIClient.js:52:27
+      2  100.0%            JS: ^generateTextBasedOnModel file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:805:40
+      2    1.5%        JS: ^calculateServerName node:_http_agent:340:29
+      2  100.0%          JS: ^normalizeServerName node:_http_agent:335:29
+      2  100.0%            JS: ^addRequest node:_http_agent:230:49
+      2    1.5%        JS: ^_Request node:internal/deps/undici/undici:9569:18
+      1   50.0%          JS: ^fetch2 node:internal/deps/undici/undici:10310:20
+      1  100.0%            JS: ^fetch node:internal/deps/undici/undici:13507:61
+      1   50.0%          JS: *fetch2 node:internal/deps/undici/undici:10310:20
+      1  100.0%            JS: ^fetch node:internal/deps/undici/undici:13507:61
+      2    1.5%        JS: ^Headers file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:51:13
+      1   50.0%          JS: ^Response file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/response.js:23:13
+      1  100.0%            JS: ~<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:138:27
+      1   50.0%          JS: ^Request file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/request.js:48:13
+      1  100.0%            JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:49:21
+      2    1.5%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:137:14
+      2  100.0%          JS: ^raw file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:202:5
+      2  100.0%            JS: ^Headers file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:51:13
+    134    4.1%      JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+    127   94.8%        JS: ^requireBuiltin node:internal/bootstrap/realm:420:24
+     27   21.3%          JS: ~fetch node:internal/bootstrap/web/exposed-window-or-worker:67:24
+     27  100.0%            JS: ~_validateApiTokenDb file:///home/ubuntu/pollinations/shared/auth-utils.js:122:35
+      7    5.5%          JS: ~<anonymous> node:internal/streams/duplex:1:1
+      7  100.0%            JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      6    4.7%          JS: ~<anonymous> node:http2:1:1
+      6  100.0%            JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      6    4.7%          JS: ~<anonymous> node:crypto:1:1
+      6  100.0%            JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      5    3.9%          JS: ~<anonymous> node:internal/fs/promises:1:1
+      5  100.0%            JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      5    3.9%          JS: ^get node:internal/util:612:17
+      5  100.0%            /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      4    3.1%          JS: ~<anonymous> node:http:1:1
+      4  100.0%            JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      3    2.4%          JS: ~initCJSParseSync node:internal/modules/esm/translators:81:26
+      3  100.0%            JS: ~commonjsStrategy node:internal/modules/esm/translators:288:54
+      3    2.4%          JS: ~<anonymous> node:tls:1:1
+      3  100.0%            JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      3    2.4%          JS: ~<anonymous> node:internal/webstreams/readablestream:1:1
+      3  100.0%            JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      3    2.4%          JS: ~<anonymous> node:internal/cluster/primary:1:1
+      3  100.0%            JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      3    2.4%          JS: ~<anonymous> node:child_process:1:1
+      3  100.0%            JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      3    2.4%          JS: ~<anonymous> node:_http_agent:1:1
+      3  100.0%            JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      2    1.6%          JS: ~requireWithFallbackInDeps node:internal/bootstrap/realm:434:35
+      2  100.0%            JS: ~lib/dispatcher/client.js node:internal/deps/undici/undici:7550:29
+      2    1.6%          JS: ~getSource node:internal/modules/esm/load:42:25
+      2  100.0%            JS: ~defaultLoad node:internal/modules/esm/load:112:27
+      2    1.6%          JS: ~defaultResolve node:internal/modules/esm/loader:632:17
+      2  100.0%            JS: ~#cachedDefaultResolve node:internal/modules/esm/loader:585:24
+      2    1.6%          JS: ~asyncRunEntryPointWithESMLoader node:internal/modules/run_main:104:47
+      2  100.0%            JS: ~runEntryPointWithESMLoader node:internal/modules/run_main:140:36
+      2    1.6%          JS: ~<anonymous> node:stream:1:1
+      2  100.0%            JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      2    1.6%          JS: ~<anonymous> node:internal/streams/operators:1:1
+      2  100.0%            JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      2    1.6%          JS: ~<anonymous> node:internal/readline/interface:1:1
+      2  100.0%            JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      2    1.6%          JS: ~<anonymous> node:internal/http2/core:1:1
+      2  100.0%            JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      2    1.6%          JS: ~<anonymous> node:internal/crypto/hkdf:1:1
+      2  100.0%            JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      2    1.6%          JS: ~<anonymous> node:assert:1:1
+      2  100.0%            JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      2    1.6%          JS: ~<anonymous> node:_http_client:1:1
+      2  100.0%            JS: ^compileForInternalLoader node:internal/bootstrap/realm:383:27
+      6    4.5%        JS: ~compileForPublicLoader node:internal/bootstrap/realm:331:25
+      6  100.0%          JS: ~loadBuiltinModule node:internal/modules/helpers:99:27
+      6  100.0%            JS: ~builtinStrategy node:internal/modules/esm/translators:384:52
+     66    2.0%      JS: ^wrapSafe node:internal/modules/cjs/loader:1430:18
+     66  100.0%        JS: ^Module._compile node:internal/modules/cjs/loader:1489:37
+     50   75.8%          JS: ^Module._extensions..js node:internal/modules/cjs/loader:1562:37
+     50  100.0%            JS: ^Module.load node:internal/modules/cjs/loader:1262:33
+     16   24.2%          JS: ~Module._extensions..js node:internal/modules/cjs/loader:1562:37
+     16  100.0%            JS: ^Module.load node:internal/modules/cjs/loader:1262:33
+     63    1.9%      JS: ^TLSSocket.getPeerCertificate node:_tls_wrap:1116:50
+     57   90.5%        JS: ^onConnectSecure node:_tls_wrap:1663:25
+     36   63.2%          JS: ^emit node:events:471:44
+     36  100.0%            JS: ^TLSSocket._finishInit node:_tls_wrap:1050:43
+     21   36.8%          JS: *emit node:events:471:44
+     21  100.0%            JS: ^TLSSocket._finishInit node:_tls_wrap:1050:43
+      6    9.5%        JS: ~onConnectSecure node:_tls_wrap:1663:25
+      6  100.0%          JS: ^emit node:events:471:44
+      6  100.0%            JS: ^TLSSocket._finishInit node:_tls_wrap:1050:43
+     52    1.6%      JS: ^generateTextBasedOnModel file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:805:40
+     47   90.4%        JS: ^handleRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:130:29
+     42   89.4%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+     40   95.2%            JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      2    4.8%            /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      3    6.4%          JS: *<anonymous> file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:100:70
+      3  100.0%            JS: *_PQueue_tryToStartAnother file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:263:66
+      2    4.3%          JS: ^enqueue file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:564:21
+      2  100.0%            JS: ^<anonymous> file:///home/ubuntu/pollinations/shared/ipQueue.js:209:28
+      5    9.6%        /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      4   80.0%          JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      1   20.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%            JS: ^processTicksAndRejections node:internal/process/task_queues:67:35
+     48    1.5%      JS: ^processChunk node:zlib:480:22
+     48  100.0%        JS: ^ZlibBase._transform node:zlib:370:41
+     18   37.5%          JS: ^Transform._write node:internal/streams/transform:166:38
+      7   38.9%            JS: *writeOrBuffer node:internal/streams/writable:548:23
+      6   33.3%            JS: ^doWrite node:internal/streams/writable:587:17
+      5   27.8%            JS: ^writeOrBuffer node:internal/streams/writable:548:23
+     16   33.3%          JS: ^ZlibBase._flush node:zlib:304:37
+     16  100.0%            JS: ^final node:internal/streams/transform:126:15
+     13   27.1%          JS: *Transform._write node:internal/streams/transform:166:38
+      7   53.8%            JS: *writeOrBuffer node:internal/streams/writable:548:23
+      6   46.2%            JS: ^doWrite node:internal/streams/writable:587:17
+      1    2.1%          JS: ~ZlibBase._flush node:zlib:304:37
+      1  100.0%            JS: ~final node:internal/streams/transform:126:15
+     48    1.5%      JS: ^parse /home/ubuntu/pollinations/text.pollinations.ai/node_modules/body-parser/lib/types/json.js:74:18
+     47   97.9%        JS: ^<anonymous> /home/ubuntu/pollinations/text.pollinations.ai/node_modules/body-parser/lib/read.js:79:34
+     41   87.2%          JS: *runInAsyncScope node:async_hooks:200:18
+     26   63.4%            JS: ^invokeCallback /home/ubuntu/pollinations/text.pollinations.ai/node_modules/raw-body/index.js:230:29
+     15   36.6%            JS: *done /home/ubuntu/pollinations/text.pollinations.ai/node_modules/raw-body/index.js:213:17
+      6   12.8%          JS: ^runInAsyncScope node:async_hooks:200:18
+      6  100.0%            JS: ^invokeCallback /home/ubuntu/pollinations/text.pollinations.ai/node_modules/raw-body/index.js:230:29
+      1    2.1%        JS: ~<anonymous> /home/ubuntu/pollinations/text.pollinations.ai/node_modules/body-parser/lib/read.js:79:34
+      1  100.0%          JS: ^runInAsyncScope node:async_hooks:200:18
+      1  100.0%            JS: ^invokeCallback /home/ubuntu/pollinations/text.pollinations.ai/node_modules/raw-body/index.js:230:29
+     47    1.4%      JS: *get signal node:internal/abort_controller:383:13
+     30   63.8%        JS: *pipelineImpl node:internal/streams/pipeline:187:22
+     13   43.3%          JS: *pipeline node:internal/streams/pipeline:183:18
+     10   76.9%            JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:138:27
+      2   15.4%            JS: ^onHeaders node:internal/deps/undici/undici:11171:22
+      1    7.7%            JS: *onHeaders node:internal/deps/undici/undici:11171:22
+      6   20.0%          JS: ^<anonymous> node:stream/promises:20:22
+      6  100.0%            /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      6   20.0%          JS: *writeToStream file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/body.js:389:30
+      4   66.7%            JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:49:21
+      2   33.3%            JS: *<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:49:21
+      5   16.7%          JS: ^pipeline node:internal/streams/pipeline:183:18
+      4   80.0%            JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:138:27
+      1   20.0%            JS: ^onHeaders node:internal/deps/undici/undici:11171:22
+      9   19.1%        JS: ^_Request node:internal/deps/undici/undici:9569:18
+      8   88.9%          JS: ^fetch2 node:internal/deps/undici/undici:10310:20
+      8  100.0%            JS: ^fetch node:internal/deps/undici/undici:13507:61
+      1   11.1%          JS: *fetch2 node:internal/deps/undici/undici:10310:20
+      1  100.0%            JS: *fetch node:internal/deps/undici/undici:13507:61
+      8   17.0%        JS: ^sendTinybirdEvent file:///home/ubuntu/pollinations/text.pollinations.ai/observability/tinybirdTracker.js:30:40
+      8  100.0%          JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/genericOpenAIClient.js:52:27
+      8  100.0%            /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+     46    1.4%      JS: ^writevGeneric node:internal/stream_base_commons:123:23
+     45   97.8%        JS: ^Socket._writeGeneric node:net:927:42
+     44   97.8%          JS: ^Socket._writev node:net:964:36
+     44  100.0%            JS: ^doWrite node:internal/streams/writable:587:17
+      1    2.2%          JS: ^connect node:net:934:42
+      1  100.0%            JS: *onceWrapper node:events:633:21
+      1    2.2%        JS: ~Socket._writeGeneric node:net:927:42
+      1  100.0%          JS: ~Socket._writev node:net:964:36
+      1  100.0%            JS: ~doWrite node:internal/streams/writable:587:17
+     38    1.2%      JS: ^socketOnData node:_http_client:537:22
+     36   94.7%        JS: *addChunk node:internal/streams/readable:550:18
+     35   97.2%          JS: *Readable.push node:internal/streams/readable:387:35
+     32   91.4%            JS: ^onStreamRead node:internal/stream_base_commons:168:22
+      3    8.6%            JS: *onStreamRead node:internal/stream_base_commons:168:22
+      1    2.8%          JS: ^readableAddChunkPushByteMode node:internal/streams/readable:463:38
+      1  100.0%            JS: ^Readable.push node:internal/streams/readable:387:35
+      2    5.3%        JS: *emit node:events:471:44
+      2  100.0%          JS: ^addChunk node:internal/streams/readable:550:18
+      2  100.0%            JS: ^readableAddChunkPushByteMode node:internal/streams/readable:463:38
+     37    1.1%      JS: ^sendTinybirdEvent file:///home/ubuntu/pollinations/text.pollinations.ai/observability/tinybirdTracker.js:30:40
+     37  100.0%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/genericOpenAIClient.js:52:27
+     37  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+     37  100.0%            JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+     36    1.1%      JS: *ReadableStream node:internal/webstreams/readablestream:252:14
+     22   61.1%        JS: *httpNetworkFetch node:internal/deps/undici/undici:10975:36
+     22  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+     22  100.0%            JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+     14   38.9%        JS: ^extractBody node:internal/deps/undici/undici:5480:25
+     14  100.0%          JS: ^_Request node:internal/deps/undici/undici:9569:18
+     11   78.6%            JS: *fetch2 node:internal/deps/undici/undici:10310:20
+      3   21.4%            JS: ^fetch2 node:internal/deps/undici/undici:10310:20
+     66    1.5%    JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+
+   2137   14.7%  UNKNOWN
+     68    3.2%    /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+     47   69.1%      JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      4    5.9%      /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      4  100.0%        JS: ^processTicksAndRejections node:internal/process/task_queues:67:35
+      2    2.9%      JS: ^ensureSystemMessage file:///home/ubuntu/pollinations/text.pollinations.ai/textGenerationUtils.js:67:36
+      2  100.0%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/genericOpenAIClient.js:52:27
+      2  100.0%          JS: ^generateTextBasedOnModel file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:805:40
+      2  100.0%            JS: ^handleRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:130:29
+      2    2.9%      JS: ^dispatch node:internal/deps/undici/undici:11141:24
+      2  100.0%        JS: ^httpNetworkFetch node:internal/deps/undici/undici:10975:36
+      2  100.0%          JS: ^httpNetworkOrCacheFetch node:internal/deps/undici/undici:10854:43
+      2  100.0%            JS: ^httpFetch node:internal/deps/undici/undici:10749:29
+      1    1.5%      JS: ^transformRequest file:///home/ubuntu/pollinations/text.pollinations.ai/generateTextPortkey.js:768:20
+      1  100.0%        /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%            JS: ^processTicksAndRejections node:internal/process/task_queues:67:35
+      1    1.5%      JS: ^socketOnData node:_http_client:537:22
+      1  100.0%        JS: *addChunk node:internal/streams/readable:550:18
+      1  100.0%          JS: *Readable.push node:internal/streams/readable:387:35
+      1  100.0%            JS: *onStreamRead node:internal/stream_base_commons:168:22
+      1    1.5%      JS: ^handleRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:130:29
+      1  100.0%        JS: *<anonymous> file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:100:70
+      1  100.0%          JS: *_PQueue_tryToStartAnother file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:263:66
+      1  100.0%            JS: ^<anonymous> file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:99:28
+      1    1.5%      JS: ^generateTextBasedOnModel file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:805:40
+      1  100.0%        /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%          JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      1    1.5%      JS: ^findModelByName file:///home/ubuntu/pollinations/text.pollinations.ai/availableModels.js:671:32
+      1  100.0%        JS: ^transformRequest file:///home/ubuntu/pollinations/text.pollinations.ai/generateTextPortkey.js:768:20
+      1  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%            JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      1    1.5%      JS: ^fetch file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:48:36
+      1  100.0%        JS: ^sendToAnalytics file:///home/ubuntu/pollinations/text.pollinations.ai/sendToAnalytics.js:27:38
+      1  100.0%          JS: ^sendAdSkippedAnalytics file:///home/ubuntu/pollinations/text.pollinations.ai/ads/adUtils.js:21:39
+      1  100.0%            JS: ^shouldProceedWithAd file:///home/ubuntu/pollinations/text.pollinations.ai/ads/adUtils.js:69:36
+      1    1.5%      JS: ^cleanNullAndUndefined file:///home/ubuntu/pollinations/text.pollinations.ai/textGenerationUtils.js:290:38
+      1  100.0%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/genericOpenAIClient.js:52:27
+      1  100.0%          JS: ^generateTextBasedOnModel file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:805:40
+      1  100.0%            JS: ^handleRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:130:29
+      1    1.5%      JS: ^authHeaderValue file:///home/ubuntu/pollinations/text.pollinations.ai/generateTextPortkey.js:750:19
+      1  100.0%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/genericOpenAIClient.js:52:27
+      1  100.0%          JS: ^generateTextBasedOnModel file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:805:40
+      1  100.0%            JS: ^handleRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:130:29
+      1    1.5%      JS: ^<anonymous> node:internal/per_context/primordials:508:45
+      1  100.0%        JS: ^_link node:internal/modules/esm/module_job:109:14
+      1  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1    1.5%      JS: ^<anonymous> node:internal/deps/undici/undici:11029:39
+      1  100.0%        /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%          JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      1    1.5%      JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/genericOpenAIClient.js:52:27
+      1  100.0%        /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%          JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      1    1.5%      JS: *__name node:internal/deps/undici/undici:4:14
+      1  100.0%        JS: ^httpNetworkFetch node:internal/deps/undici/undici:10975:36
+      1  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%            JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      1    1.5%      JS: *Readable.on node:internal/streams/readable:1127:33
+      1  100.0%        JS: *readStream /home/ubuntu/pollinations/text.pollinations.ai/node_modules/raw-body/index.js:155:21
+      1  100.0%          JS: ^getRawBody /home/ubuntu/pollinations/text.pollinations.ai/node_modules/raw-body/index.js:68:21
+      1  100.0%            JS: *jsonParser /home/ubuntu/pollinations/text.pollinations.ai/node_modules/body-parser/lib/types/json.js:101:30
+     41    1.9%    JS: *Readable.on node:internal/streams/readable:1127:33
+      7   17.1%      JS: *eos node:internal/streams/end-of-stream:55:13
+      4   57.1%        JS: *pipelineImpl node:internal/streams/pipeline:187:22
+      2   50.0%          JS: ^pipeline node:internal/streams/pipeline:183:18
+      2  100.0%            JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:138:27
+      1   25.0%          JS: *writeToStream file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/body.js:389:30
+      1  100.0%            JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:49:21
+      1   25.0%          JS: *pipeline node:internal/streams/pipeline:183:18
+      1  100.0%            JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:138:27
+      2   28.6%        JS: *createAsyncIterator node:internal/streams/readable:1359:36
+      2  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1   50.0%            JS: ^fetchParams.controller.next node:internal/deps/undici/undici:11046:41
+      1   50.0%            JS: *consumeBody file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/body.js:194:27
+      1   14.3%        JS: ^destroyer node:internal/streams/pipeline:49:19
+      1  100.0%          JS: ^pipelineImpl node:internal/streams/pipeline:187:22
+      1  100.0%            JS: ^pipeline node:internal/streams/pipeline:183:18
+      5   12.2%      JS: ^parserOnIncomingClient node:_http_client:615:32
+      5  100.0%        JS: *parserOnHeadersComplete node:_http_common:71:33
+      3   60.0%          JS: *socketOnData node:_http_client:537:22
+      3  100.0%            JS: *addChunk node:internal/streams/readable:550:18
+      2   40.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      2  100.0%            JS: ^socketOnData node:_http_client:537:22
+      5   12.2%      JS: ^Readable.pipe node:internal/streams/readable:909:35
+      3   60.0%        JS: *pipe node:internal/streams/pipeline:411:14
+      3  100.0%          JS: *pipelineImpl node:internal/streams/pipeline:187:22
+      3  100.0%            JS: ^pipeline node:internal/streams/pipeline:183:18
+      2   40.0%        JS: ^pipe node:internal/streams/pipeline:411:14
+      1   50.0%          JS: ^pipelineImpl node:internal/streams/pipeline:187:22
+      1  100.0%            JS: ^pipeline node:internal/streams/pipeline:183:18
+      1   50.0%          JS: *pipelineImpl node:internal/streams/pipeline:187:22
+      1  100.0%            JS: ^pipeline node:internal/streams/pipeline:183:18
+      4    9.8%      JS: ^Transform node:internal/streams/transform:82:19
+      2   50.0%        JS: ^ZlibBase node:zlib:204:18
+      1   50.0%          JS: ^Zlib node:zlib:607:14
+      1  100.0%            JS: ^Gunzip node:zlib:731:16
+      1   50.0%          JS: ^Brotli node:zlib:793:16
+      1  100.0%            JS: ^BrotliDecompress node:zlib:833:26
+      2   50.0%        JS: ^PassThrough node:internal/streams/passthrough:38:21
+      2  100.0%          JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:138:27
+      2  100.0%            JS: *emit node:events:471:44
+      4    9.8%      JS: *Readable.pipe node:internal/streams/readable:909:35
+      4  100.0%        JS: *pipe node:internal/streams/pipeline:411:14
+      4  100.0%          JS: *pipelineImpl node:internal/streams/pipeline:187:22
+      2   50.0%            JS: *pipeline node:internal/streams/pipeline:183:18
+      1   25.0%            JS: ^pipeline node:internal/streams/pipeline:183:18
+      1   25.0%            JS: *writeToStream file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/body.js:389:30
+      3    7.3%      JS: *tickOnSocket node:_http_client:807:22
+      3  100.0%        JS: ^onSocketNT node:_http_client:875:20
+      3  100.0%          JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      2    4.9%      JS: ^tickOnSocket node:_http_client:807:22
+      2  100.0%        JS: ^onSocketNT node:_http_client:875:20
+      2  100.0%          JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      2    4.9%      JS: *writeIterable node:internal/deps/undici/undici:6647:33
+      2  100.0%        JS: *writeH1 node:internal/deps/undici/undici:6399:21
+      2  100.0%          JS: *_resume node:internal/deps/undici/undici:7990:21
+      2  100.0%            JS: ^resume node:internal/deps/undici/undici:7976:20
+      2    4.9%      JS: *pipelineImpl node:internal/streams/pipeline:187:22
+      2  100.0%        JS: ^pipeline node:internal/streams/pipeline:183:18
+      1   50.0%          JS: ^onHeaders node:internal/deps/undici/undici:11171:22
+      1  100.0%            JS: ^onHeaders node:internal/deps/undici/undici:2045:16
+      1   50.0%          JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:138:27
+      1  100.0%            JS: *emit node:events:471:44
+      2    4.9%      JS: *createAsyncIterator node:internal/streams/readable:1359:36
+      2  100.0%        /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1   50.0%          JS: ^fetchParams.controller.next node:internal/deps/undici/undici:11046:41
+      1  100.0%            JS: ^fetchParams.controller.resume node:internal/deps/undici/undici:11081:39
+      1   50.0%          JS: *consumeBody file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/body.js:194:27
+      1  100.0%            JS: ^text file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/body.js:157:12
+      1    2.4%      JS: ^writeIterable node:internal/deps/undici/undici:6647:33
+      1  100.0%        JS: ^writeH1 node:internal/deps/undici/undici:6399:21
+      1  100.0%          JS: ^write node:internal/deps/undici/undici:6333:14
+      1  100.0%            JS: ^_resume node:internal/deps/undici/undici:7990:21
+      1    2.4%      JS: *parserOnIncomingClient node:_http_client:615:32
+      1  100.0%        JS: *parserOnHeadersComplete node:_http_common:71:33
+      1  100.0%          JS: *socketOnData node:_http_client:537:22
+      1  100.0%            JS: *addChunk node:internal/streams/readable:550:18
+      1    2.4%      JS: *once node:events:657:44
+      1  100.0%        JS: ^<anonymous> node:_http_agent:116:19
+      1  100.0%          JS: *emit node:events:471:44
+      1  100.0%            JS: ^onFree node:_http_agent:369:18
+      1    2.4%      JS: *assignSocket node:_http_server:281:62
+      1  100.0%        JS: ^parserOnIncoming node:_http_server:1028:26
+      1  100.0%          JS: *parserOnHeadersComplete node:_http_common:71:33
+      1    2.4%      JS: *<anonymous> node:_http_agent:116:19
+      1  100.0%        JS: *onFree node:_http_agent:369:18
+      1  100.0%          JS: *emitFreeNT node:_http_client:799:20
+      1  100.0%            JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+     40    1.9%    JS: *get node:_http_incoming:109:16
+     14   35.0%      JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:381:25
+      7   50.0%        JS: *emit node:events:471:44
+      7  100.0%          JS: ^parserOnIncomingClient node:_http_client:615:32
+      7  100.0%            JS: *parserOnHeadersComplete node:_http_common:71:33
+      6   42.9%        JS: *parserOnIncomingClient node:_http_client:615:32
+      6  100.0%          JS: *parserOnHeadersComplete node:_http_common:71:33
+      6  100.0%            JS: *socketOnData node:_http_client:537:22
+      1    7.1%        JS: ^emit node:events:471:44
+      1  100.0%          JS: ^parserOnIncomingClient node:_http_client:615:32
+      1  100.0%            JS: ^parserOnHeadersComplete node:_http_common:71:33
+     12   30.0%      JS: *parserOnIncoming node:_http_server:1028:26
+     12  100.0%        JS: *parserOnHeadersComplete node:_http_common:71:33
+      8   20.0%      JS: ^parserOnIncoming node:_http_server:1028:26
+      7   87.5%        JS: *parserOnHeadersComplete node:_http_common:71:33
+      1   12.5%        JS: ^parserOnHeadersComplete node:_http_common:71:33
+      1    2.5%      JS: ^typeofrequest /home/ubuntu/pollinations/text.pollinations.ai/node_modules/type-is/index.js:123:24
+      1  100.0%        JS: ^checkType /home/ubuntu/pollinations/text.pollinations.ai/node_modules/body-parser/lib/types/json.js:244:29
+      1  100.0%          JS: ^jsonParser /home/ubuntu/pollinations/text.pollinations.ai/node_modules/body-parser/lib/types/json.js:101:30
+      1  100.0%            JS: ^handle /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/router/layer.js:86:49
+      1    2.5%      JS: ^shouldShowAds file:///home/ubuntu/pollinations/text.pollinations.ai/ads/shouldShowAds.js:33:36
+      1  100.0%        JS: ^generateAdForContent file:///home/ubuntu/pollinations/text.pollinations.ai/ads/initRequestFilter.js:28:43
+      1  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%            JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      1    2.5%      JS: ^getIp file:///home/ubuntu/pollinations/shared/extractFromRequest.js:60:22
+      1  100.0%        JS: ^handleRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:130:29
+      1  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%            JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      1    2.5%      JS: *getTokenSource file:///home/ubuntu/pollinations/shared/extractFromRequest.js:143:31
+      1  100.0%        JS: *shouldBypassQueue file:///home/ubuntu/pollinations/shared/auth-utils.js:252:40
+      1  100.0%          JS: *processRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:520:30
+      1  100.0%            JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:652:22
+      1    2.5%      JS: *getIp file:///home/ubuntu/pollinations/shared/extractFromRequest.js:60:22
+      1  100.0%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:86:9
+      1  100.0%          JS: *trim_prefix /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/router/index.js:293:23
+      1  100.0%            JS: *next /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/router/index.js:177:16
+      1    2.5%      JS: *enqueue file:///home/ubuntu/pollinations/shared/ipQueue.js:41:30
+      1  100.0%        JS: *processRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:520:30
+      1  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%            JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+     39    1.8%    JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/genericOpenAIClient.js:52:27
+     29   74.4%      /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+     29  100.0%        JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+     10   25.6%      JS: ^generateTextBasedOnModel file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:805:40
+     10  100.0%        JS: ^handleRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:130:29
+      9   90.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      9  100.0%            JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      1   10.0%          JS: *<anonymous> file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:100:70
+      1  100.0%            JS: *_PQueue_tryToStartAnother file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:263:66
+     34    1.6%    JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+     32    1.5%    JS: *eos node:internal/streams/end-of-stream:55:13
+     14   43.8%      JS: *pipelineImpl node:internal/streams/pipeline:187:22
+      4   28.6%        JS: ^pipeline node:internal/streams/pipeline:183:18
+      4  100.0%          JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:138:27
+      4  100.0%            JS: *emit node:events:471:44
+      4   28.6%        JS: ^<anonymous> node:stream/promises:20:22
+      4  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      4  100.0%            JS: ^pipeline node:stream/promises:19:18
+      4   28.6%        JS: *pipeline node:internal/streams/pipeline:183:18
+      4  100.0%          JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:138:27
+      3   75.0%            JS: *emit node:events:471:44
+      1   25.0%            JS: *parserOnIncomingClient node:_http_client:615:32
+      2   14.3%        JS: *writeToStream file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/body.js:389:30
+      2  100.0%          JS: *<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:49:21
+      2  100.0%            JS: *fetch file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:48:36
+      9   28.1%      JS: *createAsyncIterator node:internal/streams/readable:1359:36
+      9  100.0%        /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      6   66.7%          JS: *consumeBody file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/body.js:194:27
+      3   50.0%            JS: ^text file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/body.js:157:12
+      3   50.0%            JS: *text file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/body.js:157:12
+      3   33.3%          JS: ^fetchParams.controller.next node:internal/deps/undici/undici:11046:41
+      3  100.0%            JS: ^fetchParams.controller.resume node:internal/deps/undici/undici:11081:39
+      8   25.0%      JS: *pipe node:internal/streams/pipeline:411:14
+      8  100.0%        JS: *pipelineImpl node:internal/streams/pipeline:187:22
+      4   50.0%          JS: *writeToStream file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/body.js:389:30
+      3   75.0%            JS: *<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:49:21
+      1   25.0%            JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:49:21
+      3   37.5%          JS: ^pipeline node:internal/streams/pipeline:183:18
+      2   66.7%            JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:138:27
+      1   33.3%            JS: ^onHeaders node:internal/deps/undici/undici:11171:22
+      1   12.5%          JS: *pipeline node:internal/streams/pipeline:183:18
+      1  100.0%            JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:138:27
+      1    3.1%      JS: *mainFetch node:internal/deps/undici/undici:10495:29
+      1  100.0%        /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%          JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+     29    1.4%    JS: *emit node:events:471:44
+      6   20.7%      JS: *endReadableNT node:internal/streams/readable:1692:23
+      6  100.0%        JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      3   10.3%      JS: ^parserOnIncomingClient node:_http_client:615:32
+      2   66.7%        JS: ^parserOnHeadersComplete node:_http_common:71:33
+      2  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      2  100.0%            JS: ^socketOnData node:_http_client:537:22
+      1   33.3%        JS: *parserOnHeadersComplete node:_http_common:71:33
+      1  100.0%          JS: *socketOnData node:_http_client:537:22
+      1  100.0%            JS: *addChunk node:internal/streams/readable:550:18
+      3   10.3%      JS: *Readable.read node:internal/streams/readable:647:35
+      2   66.7%        JS: *resume_ node:internal/streams/readable:1254:17
+      2  100.0%          JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      1   33.3%        JS: *flow node:internal/streams/readable:1280:14
+      1  100.0%          JS: ^resume_ node:internal/streams/readable:1254:17
+      1  100.0%            JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      2    6.9%      JS: ^onFree node:_http_agent:369:18
+      2  100.0%        JS: *emit node:events:471:44
+      2  100.0%          JS: ^emitFreeNT node:_http_client:799:20
+      2  100.0%            JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      2    6.9%      JS: ^endReadableNT node:internal/streams/readable:1692:23
+      2  100.0%        JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      2    6.9%      JS: ^emitFreeNT node:_http_client:799:20
+      2  100.0%        JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      1    3.4%      JS: ^tickOnSocket node:_http_client:807:22
+      1  100.0%        JS: ^onSocketNT node:_http_client:875:20
+      1  100.0%          JS: ^processTicksAndRejections node:internal/process/task_queues:67:35
+      1    3.4%      JS: ^onFinish node:_http_outgoing:1029:18
+      1  100.0%        JS: *callback node:internal/streams/writable:764:63
+      1  100.0%          JS: *afterWriteTick node:internal/streams/writable:693:24
+      1  100.0%            JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      1    3.4%      JS: ^finish node:internal/streams/writable:949:16
+      1  100.0%        JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      1    3.4%      JS: ^emitRequestTimeout node:_http_client:846:28
+      1  100.0%        JS: *onceWrapper node:events:633:21
+      1  100.0%          JS: *emit node:events:471:44
+      1  100.0%            JS: ^Socket._onTimeout node:net:581:39
+      1    3.4%      JS: ^emitReadable_ node:internal/streams/readable:830:23
+      1  100.0%        JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      1    3.4%      JS: ^emitDrain node:internal/deps/undici/undici:7971:23
+      1  100.0%        JS: ^_resume node:internal/deps/undici/undici:7990:21
+      1  100.0%          JS: ^resume node:internal/deps/undici/undici:7976:20
+      1  100.0%            JS: ^Client.<computed> node:internal/deps/undici/undici:7768:25
+      1    3.4%      JS: ^emitCloseNT node:_http_server:1017:21
+      1  100.0%        JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      1    3.4%      JS: ^addChunk node:internal/streams/readable:550:18
+      1  100.0%        JS: ^readableAddChunkPushByteMode node:internal/streams/readable:463:38
+      1  100.0%          JS: ^Readable.push node:internal/streams/readable:387:35
+      1  100.0%            JS: ^onStreamRead node:internal/stream_base_commons:168:22
+      1    3.4%      JS: *emitFreeNT node:_http_client:799:20
+      1  100.0%        JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      1    3.4%      JS: *assignSocket node:_http_server:281:62
+      1  100.0%        JS: *parserOnIncoming node:_http_server:1028:26
+      1  100.0%          JS: *parserOnHeadersComplete node:_http_common:71:33
+      1    3.4%      JS: *Readable.on node:internal/streams/readable:1127:33
+      1  100.0%        JS: *writeIterable node:internal/deps/undici/undici:6647:33
+      1  100.0%          JS: ^writeH1 node:internal/deps/undici/undici:6399:21
+      1  100.0%            JS: *_resume node:internal/deps/undici/undici:7990:21
+     23    1.1%    JS: ^_Request node:internal/deps/undici/undici:9569:18
+     12   52.2%      JS: ^fetch2 node:internal/deps/undici/undici:10310:20
+     12  100.0%        JS: ^fetch node:internal/deps/undici/undici:13507:61
+     12  100.0%          JS: ^fetch node:internal/bootstrap/web/exposed-window-or-worker:67:24
+     11   91.7%            JS: ^sendTinybirdEvent file:///home/ubuntu/pollinations/text.pollinations.ai/observability/tinybirdTracker.js:30:40
+      1    8.3%            JS: ^_validateApiTokenDb file:///home/ubuntu/pollinations/shared/auth-utils.js:122:35
+     11   47.8%      JS: *fetch2 node:internal/deps/undici/undici:10310:20
+      6   54.5%        JS: ^fetch node:internal/deps/undici/undici:13507:61
+      6  100.0%          JS: ^fetch node:internal/bootstrap/web/exposed-window-or-worker:67:24
+      5   83.3%            JS: ^sendTinybirdEvent file:///home/ubuntu/pollinations/text.pollinations.ai/observability/tinybirdTracker.js:30:40
+      1   16.7%            JS: ^getUserPreferences file:///home/ubuntu/pollinations/shared/auth-utils.js:518:41
+      5   45.5%        JS: *fetch node:internal/deps/undici/undici:13507:61
+      5  100.0%          JS: ^fetch node:internal/bootstrap/web/exposed-window-or-worker:67:24
+      5  100.0%            JS: ^sendTinybirdEvent file:///home/ubuntu/pollinations/text.pollinations.ai/observability/tinybirdTracker.js:30:40
+     23    1.1%    JS: *Headers file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:51:13
+     11   47.8%      JS: ^Response file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/response.js:23:13
+     11  100.0%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:138:27
+      9   81.8%          JS: *emit node:events:471:44
+      9  100.0%            JS: ^parserOnIncomingClient node:_http_client:615:32
+      2   18.2%          JS: ^emit node:events:471:44
+      2  100.0%            JS: ^parserOnIncomingClient node:_http_client:615:32
+      5   21.7%      JS: *Response file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/response.js:23:13
+      5  100.0%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:138:27
+      4   80.0%          JS: *parserOnIncomingClient node:_http_client:615:32
+      4  100.0%            JS: *parserOnHeadersComplete node:_http_common:71:33
+      1   20.0%          JS: *emit node:events:471:44
+      1  100.0%            JS: ^parserOnIncomingClient node:_http_client:615:32
+      2    8.7%      JS: ^getNodeRequestOptions file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/request.js:226:38
+      2  100.0%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:49:21
+      2  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      2  100.0%            JS: ^fetch file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:48:36
+      2    8.7%      JS: *getNodeRequestOptions file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/request.js:226:38
+      1   50.0%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:49:21
+      1  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%            JS: ^fetch file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:48:36
+      1   50.0%        JS: *<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:49:21
+      1  100.0%          JS: *fetch file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:48:36
+      1  100.0%            JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/genericOpenAIClient.js:52:27
+      1    4.3%      JS: ^fromRawHeaders file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:245:31
+      1  100.0%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:138:27
+      1  100.0%          JS: *emit node:events:471:44
+      1  100.0%            JS: ^parserOnIncomingClient node:_http_client:615:32
+      1    4.3%      JS: *fromRawHeaders file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/headers.js:245:31
+      1  100.0%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:138:27
+      1  100.0%          JS: *emit node:events:471:44
+      1  100.0%            JS: ^parserOnIncomingClient node:_http_client:615:32
+      1    4.3%      JS: *Request file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/request.js:48:13
+      1  100.0%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:49:21
+      1  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%            JS: ^fetch file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:48:36
+     22    1.0%    JS: ^handleRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:130:29
+     11   50.0%      /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      9   81.8%        JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      2   18.2%        /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      2  100.0%          JS: ^processTicksAndRejections node:internal/process/task_queues:67:35
+      9   40.9%      JS: *<anonymous> file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:100:70
+      7   77.8%        JS: *_PQueue_tryToStartAnother file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:263:66
+      5   71.4%          JS: *<anonymous> file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:99:28
+      5  100.0%            JS: *enqueue file:///home/ubuntu/pollinations/shared/ipQueue.js:41:30
+      2   28.6%          JS: ^<anonymous> file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:99:28
+      2  100.0%            JS: *enqueue file:///home/ubuntu/pollinations/shared/ipQueue.js:41:30
+      2   22.2%        JS: ^_PQueue_tryToStartAnother file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:263:66
+      2  100.0%          JS: ^<anonymous> file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:99:28
+      2  100.0%            JS: *enqueue file:///home/ubuntu/pollinations/shared/ipQueue.js:41:30
+      2    9.1%      JS: ^enqueue file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:564:21
+      2  100.0%        JS: ^<anonymous> file:///home/ubuntu/pollinations/shared/ipQueue.js:209:28
+      2  100.0%          JS: ^<anonymous> file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:100:70
+      2  100.0%            JS: ^_PQueue_tryToStartAnother file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:263:66
+
+    257    1.8%  /usr/lib/x86_64-linux-gnu/libc.so.6
+    107   41.6%    /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+     18   16.8%      /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      6   33.3%        JS: *createUnsafeBuffer node:internal/buffer:1061:28
+      3   50.0%          JS: ^createPool node:buffer:152:20
+      3  100.0%            JS: *fromStringFast node:buffer:444:24
+      2   33.3%          JS: ^allocUnsafeSlow node:buffer:414:50
+      2  100.0%            JS: ^createFromString node:buffer:471:26
+      1   16.7%          JS: *ZlibBase node:zlib:204:18
+      1  100.0%            JS: ^Zlib node:zlib:607:14
+      2   11.1%        JS: ^firstchar /home/ubuntu/pollinations/text.pollinations.ai/node_modules/body-parser/lib/types/json.js:188:20
+      2  100.0%          JS: ^parse /home/ubuntu/pollinations/text.pollinations.ai/node_modules/body-parser/lib/types/json.js:74:18
+      2  100.0%            JS: ^<anonymous> /home/ubuntu/pollinations/text.pollinations.ai/node_modules/body-parser/lib/read.js:79:34
+      2   11.1%        /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1   50.0%          JS: ~replaceXRange /home/ubuntu/pollinations/text.pollinations.ai/node_modules/semver/classes/range.js:390:23
+      1  100.0%            JS: ~<anonymous> /home/ubuntu/pollinations/text.pollinations.ai/node_modules/semver/classes/range.js:386:10
+      1   50.0%          JS: ^_HeadersList node:internal/deps/undici/undici:8674:18
+      1  100.0%            JS: ^makeResponse node:internal/deps/undici/undici:9255:26
+      1    5.6%        JS: ~isIPv6 node:internal/net:38:16
+      1  100.0%          JS: ~isIP node:internal/net:45:14
+      1  100.0%            JS: ~getServerName node:internal/deps/undici/undici:1280:27
+      1    5.6%        JS: ~execute node:internal/deps/undici/undici:5960:14
+      1  100.0%          JS: ~readMore node:internal/deps/undici/undici:5951:15
+      1  100.0%            JS: ~<anonymous> node:internal/deps/undici/undici:6282:47
+      1    5.6%        JS: ^sendErrorResponse file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:364:40
+      1  100.0%          JS: ^handleRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:130:29
+      1  100.0%            JS: *<anonymous> file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:100:70
+      1    5.6%        JS: ^internalConnectMultiple node:net:1106:33
+      1  100.0%          JS: ^defaultTriggerAsyncIdScope node:internal/async_hooks:455:36
+      1  100.0%            JS: ^emitLookup node:net:1418:46
+      1    5.6%        JS: ^fetchParams.controller.resume node:internal/deps/undici/undici:11081:39
+      1  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%            JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      1    5.6%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/utils/stringMonitor.js:115:14
+      1  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%            JS: ^extractTextFromMessages file:///home/ubuntu/pollinations/text.pollinations.ai/utils/stringMonitor.js:109:40
+      1    5.6%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/textGenerationUtils.js:80:33
+      1  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%            JS: ^ensureSystemMessage file:///home/ubuntu/pollinations/text.pollinations.ai/textGenerationUtils.js:67:36
+      1    5.6%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/requestUtils.js:135:18
+      1  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%            JS: ^getUserMappedModel file:///home/ubuntu/pollinations/text.pollinations.ai/requestUtils.js:123:35
+     16   15.0%      JS: *finish node:internal/streams/pipeline:222:18
+     13   81.3%        JS: *<anonymous> node:internal/util:521:18
+     12   92.3%          JS: *onfinish node:internal/streams/end-of-stream:99:20
+      6   50.0%            JS: *onFinish node:_http_outgoing:1029:18
+      4   33.3%            JS: *emit node:events:471:44
+      2   16.7%            JS: *finish node:internal/streams/writable:949:16
+      1    7.7%          JS: ^onfinish node:internal/streams/end-of-stream:99:20
+      1  100.0%            JS: ^emit node:events:471:44
+      3   18.8%        JS: ^<anonymous> node:internal/streams/pipeline:441:49
+      3  100.0%          JS: *<anonymous> node:internal/util:521:18
+      3  100.0%            JS: *onclose node:internal/streams/end-of-stream:142:19
+     15   14.0%      JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/genericOpenAIClient.js:52:27
+     13   86.7%        /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+     12   92.3%          JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      1    7.7%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%            JS: ^processTicksAndRejections node:internal/process/task_queues:67:35
+      2   13.3%        JS: ^generateTextBasedOnModel file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:805:40
+      2  100.0%          JS: ^handleRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:130:29
+      2  100.0%            /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      3    2.8%      JS: ^onStreamRead node:internal/stream_base_commons:168:22
+      3    2.8%      JS: ^getUserMappedModel file:///home/ubuntu/pollinations/text.pollinations.ai/requestUtils.js:123:35
+      3  100.0%        JS: ^handleRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:130:29
+      3  100.0%          JS: *<anonymous> file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:100:70
+      2   66.7%            JS: *_PQueue_tryToStartAnother file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:263:66
+      1   33.3%            JS: ^_PQueue_tryToStartAnother file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:263:66
+      3    2.8%      JS: *parserOnHeadersComplete node:_http_common:71:33
+      3    2.8%      JS: *enqueue file:///home/ubuntu/pollinations/shared/ipQueue.js:41:30
+      3  100.0%        /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      3  100.0%          JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      2    1.9%      JS: ~<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/requestUtils.js:107:19
+      2  100.0%        /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      2  100.0%          JS: ~prepareModelsForOutput file:///home/ubuntu/pollinations/text.pollinations.ai/requestUtils.js:99:39
+      2  100.0%            JS: ~<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:122:20
+      2    1.9%      JS: ^randomBytes node:internal/crypto/random:97:21
+      2  100.0%        JS: ^generatePollinationsId file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:435:32
+      2  100.0%          JS: ^handleRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:130:29
+      2  100.0%            JS: *<anonymous> file:///home/ubuntu/pollinations/shared/node_modules/p-queue/dist/index.js:100:70
+      2    1.9%      JS: *getIp file:///home/ubuntu/pollinations/shared/extractFromRequest.js:60:22
+      1   50.0%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:86:9
+      1  100.0%          JS: *trim_prefix /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/router/index.js:293:23
+      1  100.0%            JS: *next /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/router/index.js:177:16
+      1   50.0%        JS: *processRequest file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:520:30
+      1  100.0%          JS: *<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/server.js:623:15
+      1  100.0%            JS: *dispatch /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/router/route.js:101:45
+      7    2.7%    JS: *URL node:internal/url:793:14
+      4   57.1%      JS: *Request file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/request.js:48:13
+      3   75.0%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:49:21
+      2   66.7%          JS: *fetch file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:48:36
+      2  100.0%            JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/genericOpenAIClient.js:52:27
+      1   33.3%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%            JS: ^fetch file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:48:36
+      1   25.0%        JS: *<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:49:21
+      1  100.0%          JS: *fetch file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:48:36
+      1  100.0%            JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/genericOpenAIClient.js:52:27
+      1   14.3%      JS: ^request node:https:364:17
+      1  100.0%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:49:21
+      1  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%            JS: ^fetch file:///home/ubuntu/pollinations/text.pollinations.ai/node_modules/node-fetch/src/index.js:48:36
+      1   14.3%      JS: ^extractReferrer file:///home/ubuntu/pollinations/shared/extractFromRequest.js:15:32
+      1  100.0%        JS: ^shouldBypassQueue file:///home/ubuntu/pollinations/shared/auth-utils.js:252:40
+      1  100.0%          JS: ^handleAuthentication file:///home/ubuntu/pollinations/shared/auth-utils.js:394:43
+      1  100.0%            JS: ~generateAdForContent file:///home/ubuntu/pollinations/text.pollinations.ai/ads/initRequestFilter.js:28:43
+      1   14.3%      JS: ^_Request node:internal/deps/undici/undici:9569:18
+      1  100.0%        JS: ^fetch2 node:internal/deps/undici/undici:10310:20
+      1  100.0%          JS: ^fetch node:internal/deps/undici/undici:13507:61
+      1  100.0%            JS: ^fetch node:internal/bootstrap/web/exposed-window-or-worker:67:24
+      6    2.3%    JS: *socketOnData node:_http_client:537:22
+      6  100.0%      JS: *addChunk node:internal/streams/readable:550:18
+      6  100.0%        JS: *Readable.push node:internal/streams/readable:387:35
+      6  100.0%          JS: ^onStreamRead node:internal/stream_base_commons:168:22
+
+    146    1.0%  __write@@GLIBC_2.2.5
+    121   82.9%    /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      9    7.4%      /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1   11.1%        JS: ~socketOnData node:_http_client:537:22
+      1  100.0%          JS: ^emit node:events:471:44
+      1  100.0%            JS: ^addChunk node:internal/streams/readable:550:18
+      1   11.1%        JS: ~shouldShowAds file:///home/ubuntu/pollinations/text.pollinations.ai/ads/shouldShowAds.js:33:36
+      1  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%            JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      1   11.1%        JS: ~replaceNexAdUrls file:///home/ubuntu/pollinations/text.pollinations.ai/ads/nexAdFormatter.js:22:26
+      1  100.0%          JS: ~htmlToMarkdown file:///home/ubuntu/pollinations/text.pollinations.ai/ads/nexAdFormatter.js:42:24
+      1  100.0%            JS: ~formatNexAd file:///home/ubuntu/pollinations/text.pollinations.ai/ads/nexAdFormatter.js:71:28
+      1   11.1%        JS: ~onwrite node:internal/streams/writable:615:17
+      1  100.0%          JS: ~onWriteComplete node:internal/stream_base_commons:81:25
+      1   11.1%        JS: ~match /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/router/layer.js:110:39
+      1  100.0%          JS: ~matchLayer /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/router/index.js:583:20
+      1  100.0%            JS: ~next /home/ubuntu/pollinations/text.pollinations.ai/node_modules/express/lib/router/index.js:177:16
+      1   11.1%        JS: ~formatConversations file:///home/ubuntu/pollinations/text.pollinations.ai/ads/nexAdClient.js:26:29
+      1  100.0%          JS: ~createNexAdRequest file:///home/ubuntu/pollinations/text.pollinations.ai/ads/nexAdClient.js:127:35
+      1  100.0%            JS: ^generateAdForContent file:///home/ubuntu/pollinations/text.pollinations.ai/ads/initRequestFilter.js:28:43
+      1   11.1%        JS: ^transform file:///home/ubuntu/pollinations/text.pollinations.ai/ads/streamingAdWrapper.js:46:18
+      1  100.0%          JS: ^Transform._write node:internal/streams/transform:166:38
+      1  100.0%            JS: ^writeOrBuffer node:internal/streams/writable:548:23
+      1   11.1%        JS: ^<anonymous> file:///home/ubuntu/pollinations/text.pollinations.ai/genericOpenAIClient.js:52:27
+      1  100.0%          /home/ubuntu/.nvm/versions/node/v20.19.2/bin/node
+      1  100.0%            JS: *processTicksAndRejections node:internal/process/task_queues:67:35
+      6    5.0%      JS: ^onStreamRead node:internal/stream_base_commons:168:22
+      6    5.0%      JS: *parserOnHeadersComplete node:_http_common:71:33
+      2    1.7%      JS: ~prepareExecution node:internal/process/pre_execution:97:26
+      2  100.0%        JS: ~prepareMainThreadExecution node:internal/process/pre_execution:53:36
+      2  100.0%          JS: ~<anonymous> node:internal/main/run_main_module:1:1
+      2    1.7%      JS: ~_Request node:internal/deps/undici/undici:9569:18
+      1   50.0%        JS: ~fetch2 node:internal/deps/undici/undici:10310:20
+      1  100.0%          JS: ~fetch node:internal/deps/undici/undici:13507:61
+      1  100.0%            JS: ~fetch node:internal/bootstrap/web/exposed-window-or-worker:67:24
+      1   50.0%        JS: ^fetch2 node:internal/deps/undici/undici:10310:20
+      1  100.0%          JS: ^fetch node:internal/deps/undici/undici:13507:61
+      1  100.0%            JS: ~fetch node:internal/bootstrap/web/exposed-window-or-worker:67:24
+      2    1.7%      JS: ^processTicksAndRejections node:internal/process/task_queues:67:35
+      2    1.7%      JS: ^decode node:internal/deps/cjs-module-lexer/lexer:55:17
+      1   50.0%        JS: ~tryParseObjectDefineOrKeys node:internal/deps/cjs-module-lexer/lexer:331:37
+      1  100.0%          JS: ^parseSource node:internal/deps/cjs-module-lexer/lexer:85:22
+      1  100.0%            JS: ~parseCJS node:internal/deps/cjs-module-lexer/lexer:40:19
+      1   50.0%        JS: ^tryParseRequire node:internal/deps/cjs-module-lexer/lexer:931:26
+      1  100.0%          JS: ^tryParseExportsDotAssign node:internal/deps/cjs-module-lexer/lexer:872:35
+      1  100.0%            JS: ^tryParseModuleExportsDotAssign node:internal/deps/cjs-module-lexer/lexer:857:41
+      2    1.7%      JS: ^__require node:internal/deps/undici/undici:5:49
+      1   50.0%        JS: ~lib/web/websocket/websocket.js node:internal/deps/undici/undici:12547:35
+      1  100.0%          JS: ^__require node:internal/deps/undici/undici:5:49
+      1  100.0%            JS: ~<anonymous> node:internal/deps/undici/undici:1:1
+      1   50.0%        JS: ~lib/dispatcher/env-http-proxy-agent.js node:internal/deps/undici/undici:8450:43
+      1  100.0%          JS: ^__require node:internal/deps/undici/undici:5:49
+      1  100.0%            JS: ~<anonymous> node:internal/deps/undici/undici:1:1
+      2    1.7%      JS: *onStreamRead node:internal/stream_base_commons:168:22
+

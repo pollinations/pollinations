@@ -199,8 +199,3 @@ export function getAllCost() {
 }
 
 
-// BACKWARD COMPATIBILITY: Export functions with original names for external APIs
-export const resolvePricing = resolveCost;
-export const getPricingWithDefaults = getCost;
-export const hasPricing = hasCost;
-export const getAllPricing = getAllCost;

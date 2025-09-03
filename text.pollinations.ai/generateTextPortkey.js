@@ -800,15 +800,40 @@ const clientConfig = {
 		);
 	},
 
-	// Transform request to add Azure-specific headers based on the model
-	transformRequest: async (requestBody, originalModelName) => {
+	// formatResponse: (message) => {
+	//     // fix deepseek-v3 response
+	//     if (!message.content && message.reasoning_content) {
+	//         message.content = message.reasoning_content;
+	//         message.reasoning_content = null;
+	//     }
+	//     if (message.content && message.reasoning_content) {
+	//         message.content = `<think>${message.reasoning_content}</think>${message.content}`;
+	//         message.reasoning_content = null;
+	//     }
+	//     return message;
+	// },
+
+	// System prompts and default options (model mapping now handled in transformRequest)
+	systemPrompts: SYSTEM_PROMPTS,
+	defaultOptions: DEFAULT_OPTIONS,
+};
+
+/**
+ * Generates text using a local Portkey gateway with Azure OpenAI models
+ */
+export async function generateTextPortkey(messages, options = {}) {
+	// Create a copy of options to avoid mutating the original
+	const processedOptions = { ...options };
+	
+	// Apply transformRequest logic inline (moved from clientConfig)
+	if (processedOptions.model) {
 		try {
 			// Map the virtual model name to the real model name for API calls
-			const virtualModelName = originalModelName || requestBody.model;
+			const virtualModelName = processedOptions.model;
 			const modelName = MODEL_MAPPING[virtualModelName] || virtualModelName;
 			
-			// Update the request body with the mapped model name
-			requestBody.model = modelName;
+			// Update the options with the mapped model name
+			processedOptions.model = modelName;
 
 			// Get the model configuration object
 			const configFn = portkeyConfig[modelName];
@@ -835,21 +860,21 @@ const clientConfig = {
 				JSON.stringify(additionalHeaders, null, 2),
 			);
 
-			// Set the headers as a property on the request object that will be used by genericOpenAIClient
-			requestBody._additionalHeaders = additionalHeaders;
+			// Set the headers as a property on the options object that will be used by genericOpenAIClient
+			processedOptions._additionalHeaders = additionalHeaders;
 
 			// Determine model configuration early (used by sanitizer and limits)
-			const modelConfig = findModelByName(originalModelName || requestBody.model);
+			const modelConfig = findModelByName(virtualModelName);
 			log("Model config:", modelConfig);
 
 			// Sanitize messages and apply provider-specific fixes
-			if (Array.isArray(requestBody.messages)) {
+			if (Array.isArray(messages)) {
 				const { messages: sanitized, replacedCount } = sanitizeMessagesWithPlaceholder(
-					requestBody.messages,
+					messages,
 					modelConfig,
-					originalModelName,
+					virtualModelName,
 				);
-				requestBody.messages = sanitized;
+				messages = sanitized;
 				if (replacedCount > 0) {
 					log(`Replaced ${replacedCount} empty user message content with placeholder`);
 				}
@@ -858,32 +883,32 @@ const clientConfig = {
 			// Check if the model has a specific maxInputChars limit in availableModels.js
 			// Check model-specific character limit (only if model defines maxInputChars)
 			if (modelConfig && modelConfig.maxInputChars) {
-				const totalChars = countMessageCharacters(requestBody.messages);
+				const totalChars = countMessageCharacters(messages);
 				if (totalChars > modelConfig.maxInputChars) {
 					errorLog(
 						"Input text exceeds model-specific limit of %d characters for model %s (current: %d)",
 						modelConfig.maxInputChars,
-						requestBody.model,
+						processedOptions.model,
 						totalChars,
 					);
 					throw new Error(
-						`Input text exceeds maximum length of ${modelConfig.maxInputChars} characters for model ${requestBody.model} (current: ${totalChars})`,
+						`Input text exceeds maximum length of ${modelConfig.maxInputChars} characters for model ${processedOptions.model} (current: ${totalChars})`,
 					);
 				}
 			}
 
 			// For models with specific token limits or those using defaults
-			if (!requestBody.max_tokens) {
+			if (!processedOptions.max_tokens) {
 				if (modelConfig && modelConfig.maxTokens) {
 					// Use model-specific maxTokens if defined
 					log(
 						`Setting max_tokens to model-specific value: ${modelConfig.maxTokens}`,
 					);
-					requestBody.max_tokens = modelConfig.maxTokens;
+					processedOptions.max_tokens = modelConfig.maxTokens;
 				} else if (config["max-tokens"]) {
 					// Fall back to provider default
 					log(`Setting max_tokens to default value: ${config["max-tokens"]}`);
-					requestBody.max_tokens = config["max-tokens"];
+					processedOptions.max_tokens = config["max-tokens"];
 				}
 			}
 
@@ -896,16 +921,16 @@ const clientConfig = {
 				"frequency_penalty",
 			];
 			samplingParams.forEach((param) => {
-				if (requestBody[param] === undefined && config[param] !== undefined) {
+				if (processedOptions[param] === undefined && config[param] !== undefined) {
 					log(`Setting ${param} to model default value: ${config[param]}`);
-					requestBody[param] = config[param];
+					processedOptions[param] = config[param];
 				}
 			});
 
 			// Fix for grok model: always set seed to null
-			if (modelName === "azure-grok" && requestBody.seed !== undefined) {
-				log(`Setting seed to null for grok model (was: ${requestBody.seed})`);
-				requestBody.seed = null;
+			if (modelName === "azure-grok" && processedOptions.seed !== undefined) {
+				log(`Setting seed to null for grok model (was: ${processedOptions.seed})`);
+				processedOptions.seed = null;
 			}
 
 			// Handle roblox-rp random model selection
@@ -913,18 +938,18 @@ const clientConfig = {
 				// Get the actual selected model from the config
 				const actualModel = config.model;
 				log(`Overriding roblox-rp model name to actual selected model: ${actualModel}`);
-				requestBody.model = actualModel;
+				processedOptions.model = actualModel;
 			}
 
 			// Add Google Search grounding for Gemini Search model
 			if (modelName === "gemini-2.5-flash-lite-search") {
 				log(`Adding Google Search grounding tool for ${modelName}`);
 				// Override model name to use the actual Vertex AI model name
-				requestBody.model = "gemini-2.5-flash-lite";
+				processedOptions.model = "gemini-2.5-flash-lite";
 				// Add google_search tool for grounding with Google Search
 				// This enables real-time search results grounding for Gemini responses
 				// Add the google_search tool (for newer models like gemini-2.0-flash-001)
-				requestBody.tools = [{
+				processedOptions.tools = [{
 					type: "function",
 					function: {
 						name: "google_search"
@@ -940,59 +965,41 @@ const clientConfig = {
 			};
 
 			// Check if the current model has parameter restrictions
-			const allowedParams = modelParameterAllowList[requestBody.model];
+			const allowedParams = modelParameterAllowList[processedOptions.model];
 			if (allowedParams) {
 				log(
-					`Applying parameter filter for model ${requestBody.model}, allowing only: ${allowedParams.join(", ")}`,
+					`Applying parameter filter for model ${processedOptions.model}, allowing only: ${allowedParams.join(", ")}`,
 				);
 
-				// Create a new request body with only allowed parameters
-				const filteredBody = {};
+				// Create a new options object with only allowed parameters
+				const filteredOptions = {};
 
 				// Only include parameters that are in the allow list
 				for (const param of allowedParams) {
-					if (requestBody[param] !== undefined) {
-						filteredBody[param] = requestBody[param];
+					if (processedOptions[param] !== undefined) {
+						filteredOptions[param] = processedOptions[param];
 					}
 				}
 
 				// Preserve the additional headers
-				if (requestBody._additionalHeaders) {
-					filteredBody._additionalHeaders = requestBody._additionalHeaders;
+				if (processedOptions._additionalHeaders) {
+					filteredOptions._additionalHeaders = processedOptions._additionalHeaders;
 				}
 
-				return filteredBody;
+				// Use filtered options
+				Object.assign(processedOptions, filteredOptions);
 			}
 
-			return requestBody;
 		} catch (error) {
 			errorLog("Error in request transformation:", error);
 			throw error;
 		}
-	},
-	// formatResponse: (message) => {
-	//     // fix deepseek-v3 response
-	//     if (!message.content && message.reasoning_content) {
-	//         message.content = message.reasoning_content;
-	//         message.reasoning_content = null;
-	//     }
-	//     if (message.content && message.reasoning_content) {
-	//         message.content = `<think>${message.reasoning_content}</think>${message.content}`;
-	//         message.reasoning_content = null;
-	//     }
-	//     return message;
-	// },
-
-	// System prompts and default options (model mapping now handled in transformRequest)
-	systemPrompts: SYSTEM_PROMPTS,
-	defaultOptions: DEFAULT_OPTIONS,
-};
-
-/**
- * Generates text using a local Portkey gateway with Azure OpenAI models
- */
-export async function generateTextPortkey(messages, options = {}) {
-	return await genericOpenAIClient(messages, options, clientConfig);
+	}
+	
+	// Remove transformRequest from clientConfig since we're handling it inline now
+	const { transformRequest, ...configWithoutTransform } = clientConfig;
+	
+	return await genericOpenAIClient(messages, processedOptions, configWithoutTransform);
 }
 
 function countMessageCharacters(messages) {

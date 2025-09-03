@@ -30,7 +30,6 @@ const errorLog = debug(`pollinations:error`);
  * @param {Object} config.defaultOptions - Default options for the client
  * @param {Function} config.formatResponse - Optional function to format the response
  * @param {Object} config.additionalHeaders - Optional additional headers to include in requests
- * @param {Function} config.transformRequest - Optional function to transform the request
  * @param {boolean|Function} config.supportsSystemMessages - Whether the API supports system messages (default: true)
  * @returns {Object} - API response object
  */
@@ -43,7 +42,6 @@ export async function genericOpenAIClient(messages, options = {}, config) {
         defaultOptions = {},
         formatResponse = null,
         additionalHeaders = {},
-        transformRequest = null,
         supportsSystemMessages = true,
     } = config;
         const startTime = Date.now();
@@ -136,10 +134,8 @@ export async function genericOpenAIClient(messages, options = {}, config) {
                 JSON.stringify(cleanedRequestBody, null, 2),
             );
 
-            // Apply custom request transformation if provided
-            const finalRequestBody = transformRequest
-                ? await transformRequest(cleanedRequestBody, modelKey)
-                : cleanedRequestBody;
+            // Request transformation is now handled in generateTextPortkey.js
+            const finalRequestBody = cleanedRequestBody;
 
             log(`[${requestId}] Sending request to Generic OpenAI API`, {
                 timestamp: new Date().toISOString(),

@@ -1,3 +1,4 @@
 .tinyb
 observability/fixtures/*.ndjson
 user_logs/
+.kiro

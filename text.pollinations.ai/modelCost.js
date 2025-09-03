@@ -1,17 +1,17 @@
 /**
- * Model pricing data and resolution functions
+ * Model cost data and resolution functions
  * 
- * This module contains all pricing information for text generation models,
+ * This module contains all cost information for text generation models,
  * indexed by the original model name returned by the LLM providers.
  */
 
 import { createLogger } from './utils/logger.js';
-const log = createLogger('modelPricing');
+const log = createLogger('modelCost');
 
 /**
- * Default pricing values applied when specific pricing fields are missing
+ * Default cost values applied when specific cost fields are missing
  */
-const DEFAULT_PRICING = {
+const DEFAULT_COST = {
 	prompt_text: 1.0,
 	completion_text: 4.0,
 	prompt_cache: 0.25,
@@ -20,10 +20,10 @@ const DEFAULT_PRICING = {
 };
 
 /**
- * Pricing data indexed by original model names
+ * Cost data indexed by original model names
  * Prices are per million tokens unless otherwise specified
  */
-const MODEL_PRICING = {
+const MODEL_COST = {
 	// OpenAI Models
 	"gpt-5-nano-2025-08-07": {
 		prompt_text: 0.055,
@@ -148,79 +148,86 @@ const MODEL_PRICING = {
 };
 
 /**
- * Resolve pricing for a model by its original name
+ * Resolve cost for a model by its original name
  * 
  * @param {string} originalName - The original model name returned by the LLM provider
  * @param {string|null} fallbackName - Optional fallback name to try if originalName fails
- * @returns {Object|null} - Pricing object with defaults applied, or null if not found
+ * @returns {Object|null} - Cost object with defaults applied, or null if not found
  */
-export function resolvePricing(originalName, fallbackName = null) {
+export function resolveCost(originalName, fallbackName = null) {
 	if (!originalName && !fallbackName) {
-		log('No model name provided for pricing resolution');
+		log('No model name provided for cost resolution');
 		return null;
 	}
 
 	// Try original name first
-	if (originalName && MODEL_PRICING[originalName]) {
-		const pricing = getPricingWithDefaults(originalName);
-		log(`Resolved pricing for ${originalName}`);
-		return pricing;
+	if (originalName && MODEL_COST[originalName]) {
+		const cost = getCostWithDefaults(originalName);
+		log(`Resolved cost for ${originalName}`);
+		return cost;
 	}
 
 	// Try fallback name if provided
-	if (fallbackName && MODEL_PRICING[fallbackName]) {
-		const pricing = getPricingWithDefaults(fallbackName);
-		log(`Resolved pricing for ${fallbackName} (fallback from ${originalName})`);
-		return pricing;
+	if (fallbackName && MODEL_COST[fallbackName]) {
+		const cost = getCostWithDefaults(fallbackName);
+		log(`Resolved cost for ${fallbackName} (fallback from ${originalName})`);
+		return cost;
 	}
 
-	log(`No pricing found for ${originalName}${fallbackName ? ` or ${fallbackName}` : ''}`);
+	log(`No cost found for ${originalName}${fallbackName ? ` or ${fallbackName}` : ''}`);
 	return null;
 }
 
 /**
- * Get pricing with default values applied for missing fields
+ * Get cost with default values applied for missing fields
  * 
  * @param {string} originalName - The original model name
- * @returns {Object} - Pricing object with defaults applied
+ * @returns {Object} - Cost object with defaults applied
  */
-export function getPricingWithDefaults(originalName) {
-	const pricing = MODEL_PRICING[originalName];
-	if (!pricing) {
+export function getCostWithDefaults(originalName) {
+	const cost = MODEL_COST[originalName];
+	if (!cost) {
 		return null;
 	}
 
 	return {
-		...DEFAULT_PRICING,
-		...pricing
+		...DEFAULT_COST,
+		...cost
 	};
 }
 
 /**
- * Check if pricing exists for a model
+ * Check if cost exists for a model
  * 
  * @param {string} originalName - The original model name
  * @param {string|null} fallbackName - Optional fallback name
- * @returns {boolean} - True if pricing exists
+ * @returns {boolean} - True if cost exists
  */
-export function hasPricing(originalName, fallbackName = null) {
-	return !!(MODEL_PRICING[originalName] || (fallbackName && MODEL_PRICING[fallbackName]));
+export function hasCost(originalName, fallbackName = null) {
+	return !!(MODEL_COST[originalName] || (fallbackName && MODEL_COST[fallbackName]));
 }
 
 /**
- * Get all pricing data (for admin/debugging purposes)
+ * Get all cost data (for admin/debugging purposes)
  * 
- * @returns {Object} - All pricing data
+ * @returns {Object} - All cost data
  */
-export function getAllPricing() {
-	return { ...MODEL_PRICING };
+export function getAllCost() {
+	return { ...MODEL_COST };
 }
 
 /**
- * Get default pricing values
+ * Get default cost values
  * 
- * @returns {Object} - Default pricing object
+ * @returns {Object} - Default cost object
  */
-export function getDefaultPricing() {
-	return { ...DEFAULT_PRICING };
+export function getDefaultCost() {
+	return { ...DEFAULT_COST };
 }
+
+// BACKWARD COMPATIBILITY: Export functions with original names for external APIs
+export const resolvePricing = resolveCost;
+export const getPricingWithDefaults = getCostWithDefaults;
+export const hasPricing = hasCost;
+export const getAllPricing = getAllCost;
+export const getDefaultPricing = getDefaultCost;

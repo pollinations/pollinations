@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
 /**
- * Test script to verify that pricing resolution works identically 
- * before and after the migration to separate pricing file
+ * Test script to verify that cost resolution works identically 
+ * before and after the migration to separate cost file
  */
 
-import { resolvePricing } from './observability/costCalculator.js';
-import { resolvePricing as directPricingResolve } from './modelPricing.js';
+import { resolveCost } from './observability/costCalculator.js';
+import { resolveCost as directCostResolve } from './modelCost.js';
 
-// Test cases with original model names that should have pricing
+// Test cases with original model names that should have cost data
 const testCases = [
     'gpt-5-nano-2025-08-07',
     'gpt-4.1-2025-04-14', 
@@ -24,18 +24,18 @@ const testCases = [
     'nonexistent-model' // Should return null
 ];
 
-console.log('🧪 Testing pricing resolution migration...\n');
+console.log('🧪 Testing cost resolution migration...\n');
 
 let allTestsPassed = true;
 
 for (const modelName of testCases) {
     console.log(`Testing: ${modelName}`);
     
-    // Test through costCalculator (should use new pricing module)
-    const costCalculatorResult = resolvePricing(modelName);
+    // Test through costCalculator (should use new cost module)
+    const costCalculatorResult = resolveCost(modelName);
     
-    // Test direct pricing module
-    const directResult = directPricingResolve(modelName);
+    // Test direct cost module
+    const directResult = directCostResolve(modelName);
     
     // Compare results
     const resultsMatch = JSON.stringify(costCalculatorResult) === JSON.stringify(directResult);
@@ -43,7 +43,7 @@ for (const modelName of testCases) {
     if (resultsMatch) {
         console.log(`  ✅ Results match`);
         if (costCalculatorResult) {
-            console.log(`     Pricing: prompt=${costCalculatorResult.prompt_text}, completion=${costCalculatorResult.completion_text}`);
+            console.log(`     Cost: prompt=${costCalculatorResult.prompt_text}, completion=${costCalculatorResult.completion_text}`);
         } else {
             console.log(`     Both returned null (expected for nonexistent models)`);
         }
@@ -57,7 +57,7 @@ for (const modelName of testCases) {
 }
 
 if (allTestsPassed) {
-    console.log('🎉 All pricing tests passed! Migration successful.');
+    console.log('🎉 All cost tests passed! Migration successful.');
 } else {
     console.log('❌ Some tests failed. Please check the implementation.');
     process.exit(1);

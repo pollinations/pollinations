@@ -1,5 +1,5 @@
 import debug from "debug";
-import { resolvePricing as getPricing } from '../modelPricing.js';
+import { resolveCost as getCost } from '../modelCost.js';
 import { createLogger } from '../utils/logger.js';
 
 const log = createLogger('costCalculator');
@@ -8,23 +8,26 @@ const log = createLogger('costCalculator');
 const TOKENS_PER_MILLION = 1000000;
 
 /**
- * Resolve pricing for a model based on the response model name
+ * Resolve cost for a model based on the response model name
  * @param {string} responseModel - The model name from the LLM response
- * @returns {Object|null} - Pricing object from modelPricing.js or null if not found
+ * @returns {Object|null} - Cost object from modelCost.js or null if not found
  */
-export function resolvePricing(responseModel) {
-    // Use the new pricing module to resolve pricing by original name
+export function resolveCost(responseModel) {
+    // Use the new cost module to resolve cost by original name
     if (responseModel) {
-        const pricing = getPricing(responseModel);
-        if (pricing) {
-            log(`Resolved pricing for response model: ${responseModel}`);
-            return pricing;
+        const cost = getCost(responseModel);
+        if (cost) {
+            log(`Resolved cost for response model: ${responseModel}`);
+            return cost;
         }
     }
 
-    log(`No pricing found for response model: ${responseModel}`);
+    log(`No cost found for response model: ${responseModel}`);
     return null;
 }
+
+// BACKWARD COMPATIBILITY: Export function with original name for external APIs
+export const resolvePricing = resolveCost;
 
 /**
  * Calculate the total cost for an LLM request based on token usage and pricing

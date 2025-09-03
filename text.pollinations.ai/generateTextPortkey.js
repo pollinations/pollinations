@@ -996,20 +996,17 @@ export async function generateTextPortkey(messages, options = {}) {
 		}
 	}
 	
-	// Remove transformRequest from clientConfig since we're handling it inline now
-	const { transformRequest, ...configWithoutTransform } = clientConfig;
-	
 	// Move additional headers from processedOptions to config for genericOpenAIClient
 	if (processedOptions._additionalHeaders) {
-		configWithoutTransform.additionalHeaders = {
-			...configWithoutTransform.additionalHeaders,
+		clientConfig.additionalHeaders = {
+			...clientConfig.additionalHeaders,
 			...processedOptions._additionalHeaders
 		};
 		// Remove from options since it's now in config
 		delete processedOptions._additionalHeaders;
 	}
 	
-	return await genericOpenAIClient(messages, processedOptions, configWithoutTransform);
+	return await genericOpenAIClient(messages, processedOptions, clientConfig);
 }
 
 function countMessageCharacters(messages) {

@@ -768,6 +768,17 @@ export async function generateTextPortkey(messages, options = {}) {
 	// Create a copy of options to avoid mutating the original
 	const processedOptions = { ...options };
 	
+	// Apply model transform if it exists
+	let processedMessages = messages;
+	if (processedOptions.model) {
+		const modelDef = findModelByName(processedOptions.model);
+		if (modelDef?.transform) {
+			const transformed = modelDef.transform(messages, processedOptions);
+			processedMessages = transformed.messages;
+			Object.assign(processedOptions, transformed.options);
+		}
+	}
+	
 	// Apply transformRequest logic inline (moved from clientConfig)
 	if (processedOptions.model) {
 		try {
@@ -812,13 +823,13 @@ export async function generateTextPortkey(messages, options = {}) {
 			log("Model config:", modelConfig);
 
 			// Sanitize messages and apply provider-specific fixes
-			if (Array.isArray(messages)) {
+			if (Array.isArray(processedMessages)) {
 				const { messages: sanitized, replacedCount } = sanitizeMessagesWithPlaceholder(
-					messages,
+					processedMessages,
 					modelConfig,
 					virtualModelName,
 				);
-				messages = sanitized;
+				processedMessages = sanitized;
 				if (replacedCount > 0) {
 					log(`Replaced ${replacedCount} empty user message content with placeholder`);
 				}
@@ -827,7 +838,7 @@ export async function generateTextPortkey(messages, options = {}) {
 			// Check if the model has a specific maxInputChars limit in availableModels.js
 			// Check model-specific character limit (only if model defines maxInputChars)
 			if (modelConfig && modelConfig.maxInputChars) {
-				const totalChars = countMessageCharacters(messages);
+				const totalChars = countMessageCharacters(processedMessages);
 				if (totalChars > modelConfig.maxInputChars) {
 					errorLog(
 						"Input text exceeds model-specific limit of %d characters for model %s (current: %d)",
@@ -950,7 +961,7 @@ export async function generateTextPortkey(messages, options = {}) {
 		delete processedOptions._additionalHeaders;
 	}
 	
-	return await genericOpenAIClient(messages, processedOptions, clientConfig);
+	return await genericOpenAIClient(processedMessages, processedOptions, clientConfig);
 }
 
 function countMessageCharacters(messages) {

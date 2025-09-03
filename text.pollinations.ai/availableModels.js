@@ -1,17 +1,18 @@
 // Import all handler functions
 import { generateTextPortkey } from "./generateTextPortkey.js";
 
-// Import wrapped models from the new file
-import {
-	surMistral,
-	hypnosisTracy,
-	unityMistralLarge,
-	midijourney,
-	rtist,
-	evilCommandR as evilMistral,
-	generateTextMirexa,
-	bidara
-} from "./wrappedModels.js";
+// Import transform function
+import { createMessageTransform } from "./transforms/createMessageTransform.js";
+
+// Import persona prompts
+import surSystemPrompt from "./personas/sur.js";
+import unityPrompt from "./personas/unity.js";
+import midijourneyPrompt from "./personas/midijourney.js";
+import rtistPrompt from "./personas/rtist.js";
+import evilPrompt from "./personas/evil.js";
+import hypnosisTracyPrompt from "./personas/hypnosisTracy.js";
+import mirexaSystemPrompt from "./personas/mirexa.js";
+import { bidaraSystemPrompt } from "./personas/bidara.js";
 
 const models = [
 	{
@@ -233,7 +234,10 @@ const models = [
 	{
 		name: "unity",
 		description: "Unity Unrestricted Agent",
-		handler: unityMistralLarge,		provider: "scaleway",
+		handler: generateTextPortkey,
+		mappedModel: "mistral-small-3.1-24b-instruct-2503",
+		transform: createMessageTransform(unityPrompt),
+		provider: "scaleway",
 		uncensored: true,
 		tier: "seed",
 		community: true,
@@ -244,7 +248,9 @@ const models = [
 	{
 		name: "mirexa",
 		description: "Mirexa AI Companion",
-		handler: generateTextMirexa,
+		handler: generateTextPortkey,
+		mappedModel: "azure-gpt-4.1",
+		transform: createMessageTransform(mirexaSystemPrompt),
 		provider: "azure",
 		tier: "seed",
 		community: true,
@@ -255,7 +261,9 @@ const models = [
 	{
 		name: "midijourney",
 		description: "MIDIjourney",
-		handler: midijourney,
+		handler: generateTextPortkey,
+		mappedModel: "azure-gpt-4.1",
+		transform: createMessageTransform(midijourneyPrompt),
 		provider: "azure",
 		tier: "anonymous",
 		community: true,
@@ -266,7 +274,9 @@ const models = [
 	{
 		name: "rtist",
 		description: "Rtist",
-		handler: rtist,
+		handler: generateTextPortkey,
+		mappedModel: "azure-gpt-4.1",
+		transform: createMessageTransform(rtistPrompt),
 		provider: "azure",
 		tier: "seed",
 		community: true,
@@ -277,7 +287,9 @@ const models = [
 	{
 		name: "evil",
 		description: "Evil",
-		handler: evilMistral,
+		handler: generateTextPortkey,
+		mappedModel: "mistral-small-3.1-24b-instruct-2503",
+		transform: createMessageTransform(evilPrompt),
 		provider: "scaleway",
 		uncensored: true,
 		tier: "seed",
@@ -300,7 +312,9 @@ const models = [
 	{
 		name: "bidara",
 		description: "BIDARA (Biomimetic Designer and Research Assistant by NASA)",
-		handler: bidara,
+		handler: generateTextPortkey,
+		mappedModel: "gpt-4.1-nano",
+		transform: createMessageTransform(bidaraSystemPrompt),
 		provider: "azure",
 		tier: "anonymous",
 		community: true,

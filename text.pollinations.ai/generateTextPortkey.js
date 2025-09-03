@@ -111,7 +111,15 @@ export async function generateTextPortkey(messages, options = {}) {
 					`No configuration found for model: ${modelName}. Available configs: ${Object.keys(portkeyConfig).join(", ")}`,
 				);
 			}
-			const config = configFn(); // Call the function to get the actual config
+			
+			// Call the function to get the actual config with error handling
+			let config;
+			try {
+				config = configFn();
+			} catch (error) {
+				errorLog(`Error executing config function for model ${modelName}:`, error);
+				throw new Error(`Failed to load configuration for model: ${modelName}. Error: ${error.message}`);
+			}
 
 			log(
 				"Processing request for model:",

@@ -1,23 +1,26 @@
-// Import all handler functions
-import { generateTextPortkey } from "./generateTextPortkey.js";
+// Import transform functions
+import { createMessageTransform } from "./transforms/createMessageTransform.js";
+import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
 
-// Import wrapped models from the new file
-import {
-	surMistral,
-	hypnosisTracy,
-	unityMistralLarge,
-	midijourney,
-	rtist,
-	evilCommandR as evilMistral,
-	generateTextMirexa,
-	bidara
-} from "./wrappedModels.js";
+// Import persona prompts
+import surSystemPrompt from "./personas/sur.js";
+import unityPrompt from "./personas/unity.js";
+import midijourneyPrompt from "./personas/midijourney.js";
+import rtistPrompt from "./personas/rtist.js";
+import evilPrompt from "./personas/evil.js";
+import hypnosisTracyPrompt from "./personas/hypnosisTracy.js";
+import mirexaSystemPrompt from "./personas/mirexa.js";
+import { bidaraSystemPrompt } from "./personas/bidara.js";
+
+// Import system prompts
+import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
 
 const models = [
 	{
 		name: "openai",
 		description: "OpenAI GPT-5 Nano",
-		handler: generateTextPortkey,
+		mappedModel: "gpt-5-nano",
+		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		provider: "azure",
 		tier: "anonymous",
 		community: false,
@@ -29,7 +32,8 @@ const models = [
 	{
 		name: "openai-fast",
 		description: "OpenAI GPT-4.1 Nano",
-		handler: generateTextPortkey,
+		mappedModel: "gpt-4.1-nano",
+		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		provider: "azure",
 		tier: "anonymous",
 		community: false,
@@ -42,7 +46,8 @@ const models = [
 		name: "openai-large",
 		description: "OpenAI GPT-4.1",
 		maxInputChars: 5000,
-		handler: generateTextPortkey,
+		mappedModel: "azure-gpt-4.1",
+		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		provider: "azure",
 		tier: "seed",
 		community: false,
@@ -54,7 +59,8 @@ const models = [
 	{
 		name: "qwen-coder",
 		description: "Qwen 2.5 Coder 32B",
-		handler: generateTextPortkey,
+		mappedModel: "qwen2.5-coder-32b-instruct",
+		transform: createSystemPromptTransform(BASE_PROMPTS.coding),
 		provider: "scaleway",
 		tier: "anonymous",
 		community: false,
@@ -66,7 +72,8 @@ const models = [
 	{
 		name: "mistral",
 		description: "Mistral Small 3.1 24B",
-		handler: generateTextPortkey,
+		mappedModel: "mistral-small-3.1-24b-instruct-2503",
+		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		provider: "scaleway",
 		tier: "anonymous",
 		community: false,
@@ -78,7 +85,8 @@ const models = [
 	{
 		name: "mistral-romance",
 		description: "Mistral Small 2402 (Bedrock) - Romance Companion",
-		handler: generateTextPortkey,
+		mappedModel: "mistral.mistral-small-2402-v1:0",
+		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		provider: "bedrock",
 		tier: "nectar",
 		hidden: true,
@@ -91,7 +99,8 @@ const models = [
 		name: "deepseek-reasoning",
 		description: "DeepSeek R1 0528 (Bedrock)",
 		maxInputChars: 5000,
-		handler: generateTextPortkey,
+		mappedModel: "us.deepseek.r1-v1:0",
+		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		reasoning: true,
 		provider: "bedrock",
 		tier: "seed",
@@ -120,7 +129,7 @@ const models = [
 			"amuch",
 			"dan",
 		],
-		handler: generateTextPortkey,
+		mappedModel: "gpt-4o-mini-audio-preview",
 		provider: "azure",
 		tier: "seed",
 		community: false,
@@ -132,7 +141,8 @@ const models = [
 	{
 		name: "nova-fast",
 		description: "Amazon Nova Micro (Bedrock)",
-		handler: generateTextPortkey,
+		mappedModel: "amazon.nova-micro-v1:0",
+		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		provider: "bedrock",
 		community: false,
 		tier: "anonymous",
@@ -144,7 +154,8 @@ const models = [
 	{
 		name: "roblox-rp",
 		description: "Llama 3.1 8B Instruct (Cross-Region Bedrock)",
-		handler: generateTextPortkey,
+		mappedModel: "us.meta.llama3-1-8b-instruct-v1:0",
+		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		provider: "bedrock",
 		tier: "seed",
 		community: false,
@@ -156,7 +167,8 @@ const models = [
 	{
 		name: "claudyclaude",
 		description: "Claude 3.5 Haiku (Bedrock)",
-		handler: generateTextPortkey,
+		mappedModel: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		provider: "bedrock",
 		tier: "nectar",
 		hidden: true,
@@ -169,7 +181,8 @@ const models = [
 	{
 		name: "openai-reasoning",
 		description: "OpenAI o4-mini (api.navy)",
-		handler: generateTextPortkey,
+		mappedModel: "o4-mini",
+		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		provider: "api.navy",
 		tier: "seed",
 		community: false,
@@ -182,7 +195,8 @@ const models = [
 	{
 		name: "gemini",
 		description: "Gemini 2.5 Flash Lite (api.navy)",
-		handler: generateTextPortkey,
+		mappedModel: "gemini-2.5-flash-lite",
+		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		provider: "api.navy",
 		tier: "anonymous",
 		community: false,
@@ -220,7 +234,9 @@ const models = [
 	{
 		name: "unity",
 		description: "Unity Unrestricted Agent",
-		handler: unityMistralLarge,		provider: "scaleway",
+		mappedModel: "mistral-small-3.1-24b-instruct-2503",
+		transform: createMessageTransform(unityPrompt),
+		provider: "scaleway",
 		uncensored: true,
 		tier: "seed",
 		community: true,
@@ -231,7 +247,8 @@ const models = [
 	{
 		name: "mirexa",
 		description: "Mirexa AI Companion",
-		handler: generateTextMirexa,
+		mappedModel: "azure-gpt-4.1",
+		transform: createMessageTransform(mirexaSystemPrompt),
 		provider: "azure",
 		tier: "seed",
 		community: true,
@@ -242,7 +259,8 @@ const models = [
 	{
 		name: "midijourney",
 		description: "MIDIjourney",
-		handler: midijourney,
+		mappedModel: "azure-gpt-4.1",
+		transform: createMessageTransform(midijourneyPrompt),
 		provider: "azure",
 		tier: "anonymous",
 		community: true,
@@ -253,7 +271,8 @@ const models = [
 	{
 		name: "rtist",
 		description: "Rtist",
-		handler: rtist,
+		mappedModel: "azure-gpt-4.1",
+		transform: createMessageTransform(rtistPrompt),
 		provider: "azure",
 		tier: "seed",
 		community: true,
@@ -264,7 +283,8 @@ const models = [
 	{
 		name: "evil",
 		description: "Evil",
-		handler: evilMistral,
+		mappedModel: "mistral-small-3.1-24b-instruct-2503",
+		transform: createMessageTransform(evilPrompt),
 		provider: "scaleway",
 		uncensored: true,
 		tier: "seed",
@@ -287,7 +307,8 @@ const models = [
 	{
 		name: "bidara",
 		description: "BIDARA (Biomimetic Designer and Research Assistant by NASA)",
-		handler: bidara,
+		mappedModel: "gpt-4.1-nano",
+		transform: createMessageTransform(bidaraSystemPrompt),
 		provider: "azure",
 		tier: "anonymous",
 		community: true,
@@ -331,15 +352,6 @@ export function findModelByName(modelName) {
 	); // Default to openai
 }
 
-/**
- * Get a handler function for a specific model
- * @param {string} modelName - The name of the model
- * @returns {Function} - The handler function for the model, or the default handler if not found
- */
-export function getHandler(modelName) {
-	const model = findModelByName(modelName);
-	return model.handler;
-}
 
 /**
  * Get all model names with their aliases

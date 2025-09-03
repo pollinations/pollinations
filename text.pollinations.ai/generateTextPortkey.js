@@ -804,8 +804,12 @@ export const generateTextPortkey = createOpenAICompatibleClient({
 	// Transform request to add Azure-specific headers based on the model
 	transformRequest: async (requestBody, originalModelName) => {
 		try {
-			// Get the mapped model name from the request (already mapped by genericOpenAIClient)
-			const modelName = requestBody.model; // This is the mapped model name for the API
+			// Map the virtual model name to the real model name for API calls
+			const virtualModelName = originalModelName || requestBody.model;
+			const modelName = MODEL_MAPPING[virtualModelName] || virtualModelName;
+			
+			// Update the request body with the mapped model name
+			requestBody.model = modelName;
 
 			// Get the model configuration object
 			const configFn = portkeyConfig[modelName];
@@ -980,8 +984,7 @@ export const generateTextPortkey = createOpenAICompatibleClient({
 	//     return message;
 	// },
 
-	// Model mapping, system prompts, and default options
-	modelMapping: MODEL_MAPPING,
+	// System prompts and default options (model mapping now handled in transformRequest)
 	systemPrompts: SYSTEM_PROMPTS,
 	defaultOptions: DEFAULT_OPTIONS,
 });

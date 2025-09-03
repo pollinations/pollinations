@@ -24,7 +24,6 @@ const errorLog = debug(`pollinations:error`);
  * @param {string|Function} config.endpoint - API endpoint URL or function that returns the URL
  * @param {string} config.authHeaderName - Name of the auth header (default: 'Authorization')
  * @param {Function} config.authHeaderValue - Function that returns the auth header value
- * @param {Object} config.modelMapping - Mapping of internal model names to API model names
  * @param {Object} config.systemPrompts - Default system prompts for different models
  * @param {Object} config.defaultOptions - Default options for the client
  * @param {Function} config.formatResponse - Optional function to format the response
@@ -38,7 +37,6 @@ export function createOpenAICompatibleClient(config) {
         endpoint,
         authHeaderName = "Authorization",
         authHeaderValue,
-        modelMapping = {},
         systemPrompts = {},
         defaultOptions = {},
         formatResponse = null,
@@ -72,11 +70,9 @@ export function createOpenAICompatibleClient(config) {
             // Normalize options with defaults
             normalizedOptions = normalizeOptions(options, defaultOptions);
 
-            // Determine which model to use
+            // Use the model name directly (mapping is now handled upstream)
             const modelKey = normalizedOptions.model;
-            modelName =
-                modelMapping[modelKey] ||
-                modelMapping[Object.keys(modelMapping)[0]];
+            modelName = normalizedOptions.model;
 
             // Validate and normalize messages
             const validatedMessages = validateAndNormalizeMessages(messages);

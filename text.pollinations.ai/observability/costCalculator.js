@@ -25,8 +25,6 @@ export function resolveCost(responseModel) {
     return null;
 }
 
-// BACKWARD COMPATIBILITY: Export function with original name for external APIs
-export const resolvePricing = resolveCost;
 
 /**
  * Calculate the total cost for an LLM request based on token usage and pricing

@@ -8,16 +8,6 @@
 import debug from 'debug';
 const log = debug('text.pollinations.ai:modelCost');
 
-/**
- * Default cost values applied when specific cost fields are missing
- */
-const DEFAULT_COST = {
-	prompt_text: 1.0,
-	completion_text: 4.0,
-	prompt_cache: 0.25,
-	prompt_audio: 0.0,
-	completion_audio: 0.0
-};
 
 /**
  * Cost data indexed by original model names
@@ -152,48 +142,40 @@ const MODEL_COST = {
  * 
  * @param {string} originalName - The original model name returned by the LLM provider
  * @param {string|null} fallbackName - Optional fallback name to try if originalName fails
- * @returns {Object|null} - Cost object with defaults applied, or null if not found
+ * @returns {Object} - Cost object with defaults applied
+ * @throws {Error} - Throws error if no cost data is found
  */
 export function resolveCost(originalName, fallbackName = null) {
 	if (!originalName && !fallbackName) {
-		log('No model name provided for cost resolution');
-		return null;
+		throw new Error('Missing cost data. Please contact support@pollinations.ai');
 	}
 
 	// Try original name first
 	if (originalName && MODEL_COST[originalName]) {
-		const cost = getCostWithDefaults(originalName);
+		const cost = getCost(originalName);
 		log(`Resolved cost for ${originalName}`);
 		return cost;
 	}
 
 	// Try fallback name if provided
 	if (fallbackName && MODEL_COST[fallbackName]) {
-		const cost = getCostWithDefaults(fallbackName);
+		const cost = getCost(fallbackName);
 		log(`Resolved cost for ${fallbackName} (fallback from ${originalName})`);
 		return cost;
 	}
 
-	log(`No cost found for ${originalName}${fallbackName ? ` or ${fallbackName}` : ''}`);
-	return null;
+	const modelName = originalName || fallbackName;
+	throw new Error(`Missing cost data for model "${modelName}". Please contact support@pollinations.ai`);
 }
 
 /**
- * Get cost with default values applied for missing fields
+ * Get cost data for a model
  * 
  * @param {string} originalName - The original model name
- * @returns {Object} - Cost object with defaults applied
+ * @returns {Object|null} - Cost object or null if not found
  */
-export function getCostWithDefaults(originalName) {
-	const cost = MODEL_COST[originalName];
-	if (!cost) {
-		return null;
-	}
-
-	return {
-		...DEFAULT_COST,
-		...cost
-	};
+export function getCost(originalName) {
+	return MODEL_COST[originalName] || null;
 }
 
 /**
@@ -216,18 +198,4 @@ export function getAllCost() {
 	return { ...MODEL_COST };
 }
 
-/**
- * Get default cost values
- * 
- * @returns {Object} - Default cost object
- */
-export function getDefaultCost() {
-	return { ...DEFAULT_COST };
-}
 
-// BACKWARD COMPATIBILITY: Export functions with original names for external APIs
-export const resolvePricing = resolveCost;
-export const getPricingWithDefaults = getCostWithDefaults;
-export const hasPricing = hasCost;
-export const getAllPricing = getAllCost;
-export const getDefaultPricing = getDefaultCost;

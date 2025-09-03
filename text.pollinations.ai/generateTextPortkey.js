@@ -103,16 +103,7 @@ export async function generateTextPortkey(messages, options = {}) {
 			processedOptions.model = modelName;
 
 			// Get the model configuration object
-			const configFn = portkeyConfig[modelName];
-
-			if (!configFn || typeof configFn !== 'function') {
-				errorLog(`No valid configuration function found for model: ${modelName}`);
-				throw new Error(
-					`No valid configuration function found for model: ${modelName}. Available configs: ${Object.keys(portkeyConfig).join(", ")}`,
-				);
-			}
-			
-			const config = configFn();
+			const config = portkeyConfig[modelName]();
 
 			log(
 				"Processing request for model:",

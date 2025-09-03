@@ -27,7 +27,7 @@ const MODEL_MAPPING = {
 	"gpt5": "azure-gpt-5",
 	"gpt-5-nano": "gpt-5-nano",
 	//'openai-xlarge': 'azure-gpt-4.1-xlarge', // Maps to the new xlarge endpoint
-	"openai-reasoning": "o3", // Maps to custom MonoAI endpoint
+	"openai-reasoning": "o4-mini", // Maps to custom MonoAI endpoint
 	searchgpt: "gpt-4o-mini-search-preview", // Maps to custom MonoAI endpoint
 	"openai-audio": "gpt-4o-mini-audio-preview",
 	// 'openai-audio': 'gpt-4o-audio-preview',
@@ -247,7 +247,7 @@ const baseOpenRouterConfig = {
 	"max-tokens": 4096,
 };
 
-// MonoAI configuration for o3 model
+// MonoAI configuration for o4-mini model
 const baseMonoAIConfig = {
 	provider: "openai",
 	"custom-host": "https://chatgpt.loves-being-a.dev/v1",
@@ -629,7 +629,7 @@ export const portkeyConfig = {
 	surscaleway: () => createScalewayModelConfig(),
 	"qwen-reasoning": () => createScalewayModelConfig(),
 	"openai-reasoning": () => ({ ...baseMonoAIConfig }),
-	o3: () => ({ ...baseMonoAIConfig }),
+	o4-mini: () => ({ ...baseMonoAIConfig }),
 	searchgpt: () => ({ ...baseMonoAIConfig }),
 	"gpt-4o-mini-search-preview": () => ({ ...baseMonoAIConfig }),
 	unity: () => createScalewayModelConfig(),

@@ -321,3 +321,6 @@ service-account-*.json
 
 # Gateway directory (embedded git repository)
 gateway/
+
+# Kiro AI agent files
+.kiro/

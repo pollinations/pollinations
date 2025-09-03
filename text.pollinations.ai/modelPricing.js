@@ -41,11 +41,11 @@ const MODEL_PRICING = {
 		completion_text: 0.44
 	},
 	"gpt-4o-mini-audio-preview-2024-12-17": {
-		prompt_text: 0.15,
+		prompt_text: 0.1432,
 		prompt_cache: 0.075,
-		completion_text: 0.6,
-		prompt_audio: 0.0,
-		completion_audio: 0.0
+		completion_text: 0.572793,
+		prompt_audio: 9.5466,
+		completion_audio: 19.093079
 	},
 
 	// Qwen Models
@@ -69,9 +69,9 @@ const MODEL_PRICING = {
 
 	// DeepSeek Models
 	"us.deepseek.r1-v1:0": {
-		prompt_text: 0.14,
-		prompt_cache: 0.035,
-		completion_text: 0.28
+		prompt_text: 1.35,
+		prompt_cache: 0.3375,
+		completion_text: 5.4
 	},
 
 	// Amazon Nova Models
@@ -83,28 +83,67 @@ const MODEL_PRICING = {
 
 	// Meta Llama Models
 	"us.meta.llama3-1-8b-instruct-v1:0": {
-		prompt_text: 0.4,
-		prompt_cache: 0.1,
-		completion_text: 1.6
+		prompt_text: 0.15,
+		prompt_cache: 0.0375,
+		completion_text: 0.60
 	},
 
 	// Anthropic Claude Models
 	"us.anthropic.claude-3-5-haiku-20241022-v1:0": {
-		prompt_text: 1.0,
-		prompt_cache: 0.25,
-		completion_text: 5.0
+		prompt_text: 0.8,
+		prompt_cache: 0.2,
+		completion_text: 4.0
 	},
 
-	// API.navy Models
+	// API.navy Models (Free)
 	"openai/o4-mini": {
-		prompt_text: 0.4,
-		prompt_cache: 0.1,
-		completion_text: 1.6
+		prompt_text: 0.0,
+		prompt_cache: 0.0,
+		completion_text: 0.0
 	},
 	"google/gemini-2.5-flash-lite": {
-		prompt_text: 0.4,
-		prompt_cache: 0.1,
-		completion_text: 1.6
+		prompt_text: 0.0,
+		prompt_cache: 0.0,
+		completion_text: 0.0
+	},
+	
+	// Commented-out models (for reference)
+	"gemini-2.5-flash-lite-search": {
+		prompt_text: 0.5,
+		prompt_cache: 0.125,
+		completion_text: 2.0
+	},
+
+	// Community models (using model names as keys)
+	"unity": {
+		prompt_text: 1.0,
+		prompt_cache: 0.25,
+		completion_text: 4.0
+	},
+	"mirexa": {
+		prompt_text: 1.0,
+		prompt_cache: 0.25,
+		completion_text: 4.0
+	},
+	"midijourney": {
+		prompt_text: 1.0,
+		prompt_cache: 0.25,
+		completion_text: 4.0
+	},
+	"rtist": {
+		prompt_text: 1.0,
+		prompt_cache: 0.25,
+		completion_text: 4.0
+	},
+	"evil": {
+		prompt_text: 1.0,
+		prompt_cache: 0.25,
+		completion_text: 4.0
+	},
+	"bidara": {
+		prompt_text: 1.0,
+		prompt_cache: 0.25,
+		completion_text: 4.0
 	}
 };
 

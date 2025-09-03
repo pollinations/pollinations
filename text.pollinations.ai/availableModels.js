@@ -130,18 +130,6 @@ const models = [
 		tools: true
 	},
 	{
-		name: "gpt-5-nano",
-		description: "OpenAI GPT-5 Nano",
-		handler: generateTextPortkey,
-		provider: "azure",
-		tier: "anonymous",
-		community: false,
-		aliases: ["gpt-5-nano"],
-		input_modalities: ["text", "image"],
-		output_modalities: ["text"],
-		tools: true
-	},
-	{
 		name: "nova-fast",
 		description: "Amazon Nova Micro (Bedrock)",
 		handler: generateTextPortkey,
@@ -285,17 +273,17 @@ const models = [
 		output_modalities: ["text"],
 		tools: true
 	},
-	{
-		name: "sur",
-		description: "Sur AI Assistant",
-		handler: surMistral,
-		provider: "scaleway",
-		tier: "seed",
-		community: true,
-		input_modalities: ["text", "image"],
-		output_modalities: ["text"],
-		tools: true
-	},
+	// {
+	// 	name: "sur",
+	// 	description: "Sur AI Assistant",
+	// 	handler: surMistral,
+	// 	provider: "scaleway",
+	// 	tier: "seed",
+	// 	community: true,
+	// 	input_modalities: ["text", "image"],
+	// 	output_modalities: ["text"],
+	// 	tools: true
+	// },
 	{
 		name: "bidara",
 		description: "BIDARA (Biomimetic Designer and Research Assistant by NASA)",

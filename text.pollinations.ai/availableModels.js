@@ -16,20 +16,20 @@ import {
 const models = [
 	{
 		name: "openai",
-		description: "OpenAI GPT-4.1 Nano",
+		description: "OpenAI GPT-5 Nano",
 		handler: generateTextPortkey,
 		provider: "azure",
 		tier: "anonymous",
 		community: false,
-		aliases: "gpt-4.1-nano",
+		aliases: ["gpt-5-nano"],
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true,
-		original_name: "gpt-4.1-nano-2025-04-14",
+		original_name: "gpt-5-nano-2025-08-07",
 		pricing: {
-			prompt_text: 0.10,
-			prompt_cache: 0.03,
-			completion_text: 0.39,
+			prompt_text: 0.055,
+			prompt_cache: 0.0055,
+			completion_text: 0.44,
 		},
 	},
 	{

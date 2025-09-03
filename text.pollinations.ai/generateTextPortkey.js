@@ -20,7 +20,7 @@ const errorLog = debug("pollinations:portkey:error");
 const MODEL_MAPPING = {
 	// Azure OpenAI models
 	"openai-fast": "gpt-4.1-nano",
-	"openai": "gpt-4.1-nano",
+	"openai": "gpt-5-nano",
 	"openai-large": "azure-gpt-4.1",
 	"openai-roblox": "gpt-4.1-nano",
 	"gpt": "azure-gpt-5",
@@ -629,7 +629,7 @@ export const portkeyConfig = {
 	surscaleway: () => createScalewayModelConfig(),
 	"qwen-reasoning": () => createScalewayModelConfig(),
 	"openai-reasoning": () => ({ ...baseMonoAIConfig }),
-	o4-mini: () => ({ ...baseMonoAIConfig }),
+	"o4-mini": () => ({ ...baseMonoAIConfig }),
 	searchgpt: () => ({ ...baseMonoAIConfig }),
 	"gpt-4o-mini-search-preview": () => ({ ...baseMonoAIConfig }),
 	unity: () => createScalewayModelConfig(),

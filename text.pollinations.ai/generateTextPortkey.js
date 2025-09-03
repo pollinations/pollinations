@@ -105,21 +105,14 @@ export async function generateTextPortkey(messages, options = {}) {
 			// Get the model configuration object
 			const configFn = portkeyConfig[modelName];
 
-			if (!configFn) {
-				errorLog(`No configuration found for model: ${modelName}`);
+			if (!configFn || typeof configFn !== 'function') {
+				errorLog(`No valid configuration function found for model: ${modelName}`);
 				throw new Error(
-					`No configuration found for model: ${modelName}. Available configs: ${Object.keys(portkeyConfig).join(", ")}`,
+					`No valid configuration function found for model: ${modelName}. Available configs: ${Object.keys(portkeyConfig).join(", ")}`,
 				);
 			}
 			
-			// Call the function to get the actual config with error handling
-			let config;
-			try {
-				config = configFn();
-			} catch (error) {
-				errorLog(`Error executing config function for model ${modelName}:`, error);
-				throw new Error(`Failed to load configuration for model: ${modelName}. Error: ${error.message}`);
-			}
+			const config = configFn();
 
 			log(
 				"Processing request for model:",

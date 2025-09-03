@@ -3,7 +3,6 @@ import debug from "debug";
 import {
     validateAndNormalizeMessages,
     cleanNullAndUndefined,
-    ensureSystemMessage,
     generateRequestId,
     cleanUndefined,
     normalizeOptions,
@@ -26,7 +25,6 @@ const errorLog = debug(`pollinations:error`);
  * @param {string|Function} config.endpoint - API endpoint URL or function that returns the URL
  * @param {string} config.authHeaderName - Name of the auth header (default: 'Authorization')
  * @param {Function} config.authHeaderValue - Function that returns the auth header value
- * @param {Object} config.systemPrompts - Default system prompts for different models
  * @param {Object} config.defaultOptions - Default options for the client
  * @param {Function} config.formatResponse - Optional function to format the response
  * @param {Object} config.additionalHeaders - Optional additional headers to include in requests
@@ -38,7 +36,6 @@ export async function genericOpenAIClient(messages, options = {}, config) {
         endpoint,
         authHeaderName = "Authorization",
         authHeaderValue,
-        systemPrompts = {},
         defaultOptions = {},
         formatResponse = null,
         additionalHeaders = {},
@@ -80,28 +77,17 @@ export async function genericOpenAIClient(messages, options = {}, config) {
             }
 
             // Process messages based on system message support
+            // Note: System prompts are now handled via transforms before reaching this client
             let processedMessages;
             if (supportsSystem) {
-                // Ensure system message is present if the model supports it
-                const defaultSystemPrompt = systemPrompts[modelKey] || null;
-                processedMessages = ensureSystemMessage(
-                    validatedMessages,
-                    normalizedOptions,
-                    defaultSystemPrompt,
-                );
+                // Use validated messages directly since transforms handle system prompts
+                processedMessages = validatedMessages;
             } else {
                 // For models that don't support system messages, convert them to user messages
                 log(
                     `[${requestId}] Model ${modelName} doesn't support system messages, converting to user messages`,
                 );
-                const defaultSystemPrompt = systemPrompts[modelKey] || null;
-                const messagesWithSystem = ensureSystemMessage(
-                    validatedMessages,
-                    normalizedOptions,
-                    defaultSystemPrompt,
-                );
-                processedMessages =
-                    convertSystemToUserMessages(messagesWithSystem);
+                processedMessages = convertSystemToUserMessages(validatedMessages);
             }
 
             // Build request body

@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import debug from "debug";
-import { calculateTotalCost, resolvePricing } from "./costCalculator.js";
+import { calculateTotalCost, resolveCost } from "./costCalculator.js";
 import { findModelByName } from "../availableModels.js";
 import { generatePollinationsId, getOrGenerateId } from "./idGenerator.js";
 
@@ -31,9 +31,9 @@ export async function sendTinybirdEvent(eventData) {
     }
 
     try {
-        // Extract model and pricing information
+        // Extract model and cost information
         const modelUsed = eventData.modelUsed ?? null;
-        const pricing = resolvePricing(modelUsed);
+        const cost = resolveCost(modelUsed);
 
         // Extract token counts from usage data
         const extractTokenCounts = (usage) => {
@@ -73,16 +73,16 @@ export async function sendTinybirdEvent(eventData) {
         const tokenCounts = extractTokenCounts(eventData.usage);
         const tokenData = {
             ...tokenCounts,
-            ...(pricing && {
-                token_price_completion_text: pricing.completion_text ?? 0,
-                token_price_completion_audio: pricing.completion_audio ?? 0,
-                token_price_prompt_text: pricing.prompt_text ?? 0,
-                token_price_prompt_audio: pricing.prompt_audio ?? 0,
-                token_price_prompt_cached: pricing.prompt_cache ?? 0,
+            ...(cost && {
+                token_price_completion_text: cost.completion_text ?? 0,
+                token_price_completion_audio: cost.completion_audio ?? 0,
+                token_price_prompt_text: cost.prompt_text ?? 0,
+                token_price_prompt_audio: cost.prompt_audio ?? 0,
+                token_price_prompt_cached: cost.prompt_cache ?? 0,
             }),
         };
 
-        // Calculate total cost based on token usage and pricing
+        // Calculate total cost based on token usage and cost data
         const totalCost = calculateTotalCost(tokenData) ?? 0;
 
         // Extract model and provider info
@@ -109,7 +109,7 @@ export async function sendTinybirdEvent(eventData) {
             // Performance metric captured by datasource
             standard_logging_object_response_time: eventData.duration,
 
-            // Token counts and pricing with calculated total cost
+            // Token counts and cost data with calculated total cost
             ...tokenData,
             cost: totalCost,
 
@@ -143,7 +143,7 @@ export async function sendTinybirdEvent(eventData) {
             choices: eventData.choices,
         };
 
-        // Token counts, pricing, and calculated total cost are sent as top-level fields
+        // Token counts, cost data, and calculated total cost are sent as top-level fields
 
         // Create an abort controller for timeout
         const controller = new AbortController();

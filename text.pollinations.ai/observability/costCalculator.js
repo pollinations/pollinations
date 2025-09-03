@@ -1,28 +1,32 @@
 import debug from "debug";
-import { availableModels } from "../availableModels.js";
+import { resolveCost as getCost } from '../modelCost.js';
 
-const TOKENS_PER_MILLION = 1_000_000;
+const log = debug('text.pollinations.ai:costCalculator');
 
-const log = debug("pollinations:cost-calculator");
+// Constant for token cost calculations
+const TOKENS_PER_MILLION = 1000000;
 
 /**
- * Simple pricing resolution: only try response model, no fallback
- * @param {string|null} responseModel - The model name from LLM response
- * @returns {Object|null} - Pricing object from availableModels.js or null if not found
+ * Resolve cost for a model based on the response model name
+ * @param {string} responseModel - The model name from the LLM response
+ * @returns {Object|null} - Cost object from modelCost.js or null if not found
  */
-export function resolvePricing(responseModel) {
-    // Only try to find pricing using response model (match by original_name)
+export function resolveCost(responseModel) {
+    // Use the new cost module to resolve cost by original name
     if (responseModel) {
-        const modelByOriginalName = availableModels.find(m => m.original_name === responseModel);
-        if (modelByOriginalName && modelByOriginalName.pricing) {
-            log(`Using response model for pricing: ${responseModel} -> ${modelByOriginalName.name}`);
-            return modelByOriginalName.pricing;
+        const cost = getCost(responseModel);
+        if (cost) {
+            log(`Resolved cost for response model: ${responseModel}`);
+            return cost;
         }
     }
-    
-    log(`No pricing found for response model: ${responseModel}`);
+
+    log(`No cost found for response model: ${responseModel}`);
     return null;
 }
+
+// BACKWARD COMPATIBILITY: Export function with original name for external APIs
+export const resolvePricing = resolveCost;
 
 /**
  * Calculate the total cost for an LLM request based on token usage and pricing

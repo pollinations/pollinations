@@ -5,6 +5,15 @@
 
 export const creativeProjects = [
   {
+    name: "🇨🇳 AI Image Generator",
+    url: "https://ai-pic.site/",
+    description: "Create Amazing Images with AI. Generate stunning images from text descriptions with AI optimized prompt word functions, unlimited generated images, real-time display of image generation progress. Supporting Chinese and English languages. (使用AI从文本描述生成令人惊叹的图像)",
+    author: "cf12436",
+    submissionDate: "2025-08-30",
+    language: "zh-CN",
+    order: 1
+  },
+  {
     name: "aitoolbox.software 🛠️",
     url: "https://aitoolbox.software/",
     description: "An open-source collection of AI-powered tools to boost your productivity and creativity.",

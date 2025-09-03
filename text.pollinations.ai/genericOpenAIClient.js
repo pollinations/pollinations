@@ -19,7 +19,9 @@ const log = debug(`pollinations:genericopenai`);
 const errorLog = debug(`pollinations:error`);
 
 /**
- * Creates a client function for OpenAI-compatible APIs
+ * Generic OpenAI-compatible API client function
+ * @param {Array} messages - Array of messages for the conversation
+ * @param {Object} options - Options for the request (default: {})
  * @param {Object} config - Configuration for the client
  * @param {string|Function} config.endpoint - API endpoint URL or function that returns the URL
  * @param {string} config.authHeaderName - Name of the auth header (default: 'Authorization')
@@ -28,11 +30,11 @@ const errorLog = debug(`pollinations:error`);
  * @param {Object} config.defaultOptions - Default options for the client
  * @param {Function} config.formatResponse - Optional function to format the response
  * @param {Object} config.additionalHeaders - Optional additional headers to include in requests
+ * @param {Function} config.transformRequest - Optional function to transform the request
  * @param {boolean|Function} config.supportsSystemMessages - Whether the API supports system messages (default: true)
- *                                                          Can be a function that receives options and returns boolean
- * @returns {Function} - Client function that handles API requests
+ * @returns {Object} - API response object
  */
-export function createOpenAICompatibleClient(config) {
+export async function genericOpenAIClient(messages, options = {}, config) {
     const {
         endpoint,
         authHeaderName = "Authorization",
@@ -44,10 +46,6 @@ export function createOpenAICompatibleClient(config) {
         transformRequest = null,
         supportsSystemMessages = true,
     } = config;
-
-
-    // Return the client function
-    return async function (messages, options = {}) {
         const startTime = Date.now();
         const requestId = generateRequestId();
 
@@ -435,5 +433,4 @@ export function createOpenAICompatibleClient(config) {
             // Simply throw the error
             throw error;
         }
-    };
 }

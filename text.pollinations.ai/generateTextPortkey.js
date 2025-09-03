@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { createOpenAICompatibleClient } from "./genericOpenAIClient.js";
+import { genericOpenAIClient } from "./genericOpenAIClient.js";
 import debug from "debug";
 import googleCloudAuth from "./auth/googleCloudAuth.js";
 import {
@@ -774,10 +774,9 @@ export const portkeyConfig = {
 };
 
 /**
- * Generates text using a local Portkey gateway with Azure OpenAI models
+ * Configuration object for the Portkey client
  */
-
-export const generateTextPortkey = createOpenAICompatibleClient({
+const clientConfig = {
 	// Use Portkey API Gateway URL from .env with fallback to localhost
 	endpoint: () =>
 		`${process.env.PORTKEY_GATEWAY_URL || "http://localhost:8787"}/v1/chat/completions`,
@@ -987,7 +986,14 @@ export const generateTextPortkey = createOpenAICompatibleClient({
 	// System prompts and default options (model mapping now handled in transformRequest)
 	systemPrompts: SYSTEM_PROMPTS,
 	defaultOptions: DEFAULT_OPTIONS,
-});
+};
+
+/**
+ * Generates text using a local Portkey gateway with Azure OpenAI models
+ */
+export async function generateTextPortkey(messages, options = {}) {
+	return await genericOpenAIClient(messages, options, clientConfig);
+}
 
 function countMessageCharacters(messages) {
 	return messages.reduce((total, message) => {

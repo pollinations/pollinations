@@ -873,21 +873,33 @@ const generateImage = async (
     }
 
     if (safeParams.model === "flux") {
+        progress.updateBar(requestId, 25, "Processing", "Using registered servers");
         try {
+            return await callComfyUI(prompt, safeParams, concurrentRequests);
+        } catch (error) {
             progress.updateBar(
                 requestId,
                 30,
                 "Processing",
-                "Trying Cloudflare Flux...",
+                `Registered servers failed: ${error}. Falling back to Cloudflare Flux...`,
             );
-            return await callCloudflareFlux(prompt, safeParams);
-        } catch (error) {
-            logError(
-                "Cloudflare Flux failed, trying Dreamshaper:",
-                error.message,
-            );
+            // Fallback to Cloudflare Flux
+            progress.updateBar(requestId, 35, "Processing", "Generating image with Cloudflare Flux...");
+            try {
+                return await callCloudflareFlux(prompt, safeParams);
+            } catch (error) {
+                progress.updateBar(
+                    requestId,
+                    40,
+                    "Processing",
+                    `Cloudflare Flux failed: ${error}. Falling back to Dreamshaper...`,
+                );
+                // Final fallback to Dreamshaper
+                return await callCloudflareDreamshaper(prompt, safeParams);
+            }
         }
     }
+
     try {
         return await callComfyUI(prompt, safeParams, concurrentRequests);
     } catch (_error) {

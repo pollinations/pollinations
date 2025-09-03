@@ -100,12 +100,15 @@ export function getRequestData(req) {
 /**
  * Prepares model data for output by removing pricing information and applying sorting.
  * Always sorts with community models (community: false first, then community: true).
+ * Filters out hidden models from public listings.
  * @param {Array} models - Array of model objects
- * @returns {Array} - Sanitized model array without pricing, properly sorted
+ * @returns {Array} - Sanitized model array without pricing, properly sorted, excluding hidden models
  */
 export function prepareModelsForOutput(models) {
-    // Remove pricing information from all models
-    const prepared = models.map(({ pricing, ...rest }) => rest);
+    // Remove pricing information from all models and filter out hidden models
+    const prepared = models
+        .filter((m) => !m.hidden)
+        .map(({ pricing, ...rest }) => rest);
 
     // Sort models with non-community first, then community models
     return [

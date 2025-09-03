@@ -7,7 +7,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import dotenv from "dotenv";
 import { availableModels } from "./availableModels.js";
-import { getHandler } from "./availableModels.js";
+import { generateTextPortkey } from "./generateTextPortkey.js";
 import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
 import { processRequestForAds } from "./ads/initRequestFilter.js";
 import { createStreamingAdWrapper } from "./ads/streamingAdWrapper.js";
@@ -846,15 +846,8 @@ async function generateTextBasedOnModel(messages, options) {
 			),
 		);
 
-		// Get the handler function for the specified model
-		const handler = getHandler(model);
-
-		if (!handler) {
-			throw new Error(`No handler found for model: ${model}`);
-		}
-
-		// Call the handler with the processed messages and options
-		const response = await handler(processedMessages, options);
+		// Call generateTextPortkey with the processed messages and options
+		const response = await generateTextPortkey(processedMessages, options);
 
 		// Log streaming response details
 		if (options.stream && response) {

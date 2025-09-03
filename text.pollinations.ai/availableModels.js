@@ -317,7 +317,7 @@ const unsortedModels = models;
 
 
 // Now export the processed models with proper functional approach
-export const availableModels = modelsWithPricing.map((model) => {
+export const availableModels = unsortedModels.map((model) => {
 	const inputs = model.input_modalities || [];
 	const outputs = model.output_modalities || [];
 

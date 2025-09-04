@@ -203,6 +203,7 @@ export const portkeyConfig = {
 	"qwen2.5-coder-32b-instruct": () =>
 		createScalewayModelConfig({
 			"max-tokens": 8000, // Set specific token limit for Qwen Coder
+			model: "qwen2.5-coder-32b-instruct",
 		}),
 	"llama-3.3-70b-instruct": () => createScalewayModelConfig(),
 	"deepseek-r1-distill-llama-70b": () => createScalewayModelConfig(),
@@ -210,7 +211,7 @@ export const portkeyConfig = {
 	surscaleway: () => createScalewayModelConfig(),
 	"qwen-reasoning": () => createScalewayModelConfig(),
 	"openai-reasoning": () => ({ ...baseMonoAIConfig }),
-	"o4-mini": () => ({ ...baseMonoAIConfig }),
+	"o4-mini": () => ({ ...baseMonoAIConfig }), 
 	searchgpt: () => ({ ...baseMonoAIConfig }),
 	"gpt-4o-mini-search-preview": () => ({ ...baseMonoAIConfig }),
 	unity: () => createScalewayModelConfig(),

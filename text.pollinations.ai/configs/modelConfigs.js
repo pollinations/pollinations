@@ -14,7 +14,7 @@ import {
 	createBedrockLambdaModelConfig,
 	createDeepSeekModelConfig,
 	createDeepSeekReasoningConfig,
-	baseMonoAIConfig,
+	createApiNavyModelConfig,
 } from "./providerConfigs.js";
 
 const log = debug("pollinations:portkey");
@@ -210,10 +210,10 @@ export const portkeyConfig = {
 	"evil-mistral": () => createScalewayModelConfig(),
 	surscaleway: () => createScalewayModelConfig(),
 	"qwen-reasoning": () => createScalewayModelConfig(),
-	"openai-reasoning": () => ({ ...baseMonoAIConfig }),
-	"o4-mini": () => ({ ...baseMonoAIConfig }), 
-	searchgpt: () => ({ ...baseMonoAIConfig }),
-	"gpt-4o-mini-search-preview": () => ({ ...baseMonoAIConfig }),
+	"openai-reasoning": () => createApiNavyModelConfig(),
+	"o4-mini": () => createApiNavyModelConfig(), 
+	searchgpt: () => createApiNavyModelConfig(),
+	"gpt-4o-mini-search-preview": () => createApiNavyModelConfig(),
 	unity: () => createScalewayModelConfig(),
 	"mis-unity": () =>
 		createScalewayModelConfig({
@@ -292,8 +292,7 @@ export const portkeyConfig = {
 	// 	"vertex-model-id": "gemini-2.5-flash-lite",
 	// 	"strict-openai-compliance": "false",
 	// }),
-	"gemini-2.5-flash-lite": () => ({
-		...baseMonoAIConfig,
+	"gemini-2.5-flash-lite": () => createApiNavyModelConfig({
 		model: "gemini-2.5-flash-lite"
 	}),
 	"gemini-2.5-flash-lite-search": () => ({
@@ -339,8 +338,7 @@ export const portkeyConfig = {
 		model: "us.meta.llama3-1-8b-instruct-v1:0",
 	}),
 	// Navy API endpoint
-	"o4-mini": () => ({
-		...baseMonoAIConfig,
+	"o4-mini": () => createApiNavyModelConfig({
 		model: "o4-mini",
 		"max-tokens": 8192,
 	}),

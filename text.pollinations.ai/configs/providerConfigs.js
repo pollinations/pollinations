@@ -8,12 +8,6 @@ import {
 
 dotenv.config();
 
-// Base configurations for different providers (without x-portkey- prefix)
-export const baseAzureConfig = {
-	provider: "azure-openai",
-	retry: "3",
-};
-
 /**
  * Creates an Azure model configuration
  * @param {string} apiKey - Azure API key
@@ -29,7 +23,8 @@ export function createAzureModelConfig(
 ) {
 	const deploymentId = extractDeploymentName(endpoint) || modelName;
 	return {
-		...baseAzureConfig,
+		provider: "azure-openai",
+		retry: "3",
 		"azure-api-key": apiKey,
 		"azure-resource-name": resourceName || extractResourceName(endpoint),
 		"azure-deployment-id": deploymentId,
@@ -39,112 +34,21 @@ export function createAzureModelConfig(
 	};
 }
 
-// Base configuration for Cloudflare models
-export const baseCloudflareConfig = {
-	provider: "openai",
-	"custom-host": `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
-	authKey: process.env.CLOUDFLARE_AUTH_TOKEN,
-	// Set default max_tokens to 8192 (increased from 256)
-	"max-tokens": 8192,
-};
 
-// Base configuration for Scaleway models
-export const baseScalewayConfig = {
-	provider: "openai",
-	"custom-host": `${process.env.SCALEWAY_BASE_URL || "https://api.scaleway.com/ai-apis/v1"}`,
-	authKey: process.env.SCALEWAY_API_KEY,
-	// Set default max_tokens to 8192 (increased from default)
-	"max-tokens": 8192,
-};
+/**
+ * Creates an API Navy model configuration
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - API Navy model configuration
+ */
+export function createApiNavyModelConfig(additionalConfig = {}) {
+	return {
+		provider: "openai",
+		authKey: process.env.APINAVY_API_KEY,
+		"custom-host": process.env.API_NAVY_ENDPOINT,
+		...additionalConfig,
+	};
+}
 
-// Base configuration for Mistral Scaleway model
-export const baseMistralConfig = {
-	provider: "openai",
-	"custom-host": process.env.SCALEWAY_MISTRAL_BASE_URL,
-	authKey: process.env.SCALEWAY_MISTRAL_API_KEY,
-	// Set default max_tokens to 8192
-	"max-tokens": 8192,
-	// Default temperature for Mistral models (low/focused)
-	temperature: 0.3,
-};
-
-// Base configuration for Modal models
-export const baseModalConfig = {
-	provider: "openai",
-	"custom-host": "https://pollinations--hormoz-serve.modal.run/v1",
-	authKey: process.env.HORMOZ_MODAL_KEY,
-	// Set default max_tokens to 4096
-	"max-tokens": 4096,
-};
-
-// Base configuration for OpenRouter models
-export const baseOpenRouterConfig = {
-	provider: "openai",
-	"custom-host": "https://openrouter.ai/api/v1",
-	authKey: process.env.OPENROUTER_API_KEY,
-	// Set default max_tokens to 4096
-	"max-tokens": 4096,
-};
-
-// Navy API configuration for o4-mini model
-export const baseMonoAIConfig = {
-	provider: "openai",
-	authKey: process.env.APINAVY_API_KEY,
-	"custom-host": process.env.API_NAVY_ENDPOINT,
-};
-
-// DeepSeek model configuration
-export const baseDeepSeekConfig = {
-	provider: "openai",
-	"custom-host": process.env.AZURE_DEEPSEEK_V3_ENDPOINT,
-	authKey: process.env.AZURE_DEEPSEEK_V3_API_KEY,
-	"auth-header-name": "Authorization",
-	"auth-header-value-prefix": "",
-	"max-tokens": 8192,
-};
-
-export const baseDeepSeekReasoningConfig = {
-	provider: "openai",
-	"custom-host": process.env.AZURE_DEEPSEEK_REASONING_ENDPOINT,
-	authKey: process.env.AZURE_DEEPSEEK_REASONING_API_KEY,
-	"auth-header-name": "Authorization",
-	"auth-header-value-prefix": "",
-	"max-tokens": 8192,
-};
-
-// Base configuration for Nebius models
-export const baseNebiusConfig = {
-	provider: "openai",
-	"custom-host": "https://api.studio.nebius.com/v1",
-	authKey: process.env.NEBIUS_API_KEY,
-	"max-tokens": 8192,
-	// temperature: 0.7,
-};
-
-// ElixpoSearch custom endpoint configuration
-export const baseElixpoSearchConfig = {
-	provider: "openai",
-	"custom-host": process.env.ELIXPOSEARCH_ENDPOINT,
-	"max-tokens": 4096,
-};
-
-// Base configuration for Intelligence.io models
-export const baseIntelligenceConfig = {
-	provider: "openai",
-	"custom-host": "https://api.intelligence.io.solutions/api/v1",
-	authKey: process.env.IOINTELLIGENCE_API_KEY,
-	"max-tokens": 8192,
-	temperature: 0.7,
-};
-
-// Base configuration for AWS Bedrock Lambda endpoint
-export const baseBedrockLambdaConfig = {
-	provider: "openai",
-	"custom-host": "https://s4gu3klsuhlqkol3x3qq6bv6em0cwqnu.lambda-url.us-east-1.on.aws/api/v1",
-	authKey: process.env.AWS_BEARER_TOKEN_BEDROCK,
-	// "max-tokens": 4096,
-	// temperature: 0.7,
-};
 
 /**
  * Creates a DeepSeek model configuration
@@ -153,7 +57,12 @@ export const baseBedrockLambdaConfig = {
  */
 export function createDeepSeekModelConfig(additionalConfig = {}) {
 	return {
-		...baseDeepSeekConfig,
+		provider: "openai",
+		"custom-host": process.env.AZURE_DEEPSEEK_V3_ENDPOINT,
+		authKey: process.env.AZURE_DEEPSEEK_V3_API_KEY,
+		"auth-header-name": "Authorization",
+		"auth-header-value-prefix": "",
+		"max-tokens": 8192,
 		...additionalConfig,
 	};
 }
@@ -165,7 +74,12 @@ export function createDeepSeekModelConfig(additionalConfig = {}) {
  */
 export function createDeepSeekReasoningConfig(additionalConfig = {}) {
 	return {
-		...baseDeepSeekReasoningConfig,
+		provider: "openai",
+		"custom-host": process.env.AZURE_DEEPSEEK_REASONING_ENDPOINT,
+		authKey: process.env.AZURE_DEEPSEEK_REASONING_API_KEY,
+		"auth-header-name": "Authorization",
+		"auth-header-value-prefix": "",
+		"max-tokens": 8192,
 		...additionalConfig,
 	};
 }
@@ -177,7 +91,10 @@ export function createDeepSeekReasoningConfig(additionalConfig = {}) {
  */
 export function createCloudflareModelConfig(additionalConfig = {}) {
 	return {
-		...baseCloudflareConfig,
+		provider: "openai",
+		"custom-host": `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
+		authKey: process.env.CLOUDFLARE_AUTH_TOKEN,
+		"max-tokens": 8192,
 		...additionalConfig,
 	};
 }
@@ -189,7 +106,10 @@ export function createCloudflareModelConfig(additionalConfig = {}) {
  */
 export function createScalewayModelConfig(additionalConfig = {}) {
 	return {
-		...baseScalewayConfig,
+		provider: "openai",
+		"custom-host": `${process.env.SCALEWAY_BASE_URL || "https://api.scaleway.com/ai-apis/v1"}`,
+		authKey: process.env.SCALEWAY_API_KEY,
+		"max-tokens": 8192,
 		...additionalConfig,
 	};
 }
@@ -201,7 +121,11 @@ export function createScalewayModelConfig(additionalConfig = {}) {
  */
 export function createMistralModelConfig(additionalConfig = {}) {
 	return {
-		...baseMistralConfig,
+		provider: "openai",
+		"custom-host": process.env.SCALEWAY_MISTRAL_BASE_URL,
+		authKey: process.env.SCALEWAY_MISTRAL_API_KEY,
+		"max-tokens": 8192,
+		temperature: 0.3,
 		...additionalConfig,
 	};
 }
@@ -213,7 +137,10 @@ export function createMistralModelConfig(additionalConfig = {}) {
  */
 export function createNebiusModelConfig(additionalConfig = {}) {
 	return {
-		...baseNebiusConfig,
+		provider: "openai",
+		"custom-host": "https://api.studio.nebius.com/v1",
+		authKey: process.env.NEBIUS_API_KEY,
+		"max-tokens": 8192,
 		...additionalConfig,
 	};
 }
@@ -225,7 +152,10 @@ export function createNebiusModelConfig(additionalConfig = {}) {
  */
 export function createModalModelConfig(additionalConfig = {}) {
 	return {
-		...baseModalConfig,
+		provider: "openai",
+		"custom-host": "https://pollinations--hormoz-serve.modal.run/v1",
+		authKey: process.env.HORMOZ_MODAL_KEY,
+		"max-tokens": 4096,
 		...additionalConfig,
 	};
 }
@@ -237,7 +167,10 @@ export function createModalModelConfig(additionalConfig = {}) {
  */
 export function createOpenRouterModelConfig(additionalConfig = {}) {
 	return {
-		...baseOpenRouterConfig,
+		provider: "openai",
+		"custom-host": "https://openrouter.ai/api/v1",
+		authKey: process.env.OPENROUTER_API_KEY,
+		"max-tokens": 4096,
 		...additionalConfig,
 	};
 }
@@ -249,7 +182,9 @@ export function createOpenRouterModelConfig(additionalConfig = {}) {
  */
 export function createElixpoSearchModelConfig(additionalConfig = {}) {
 	return {
-		...baseElixpoSearchConfig,
+		provider: "openai",
+		"custom-host": process.env.ELIXPOSEARCH_ENDPOINT,
+		"max-tokens": 4096,
 		...additionalConfig,
 	};
 }
@@ -261,7 +196,11 @@ export function createElixpoSearchModelConfig(additionalConfig = {}) {
  */
 export function createIntelligenceModelConfig(additionalConfig = {}) {
 	return {
-		...baseIntelligenceConfig,
+		provider: "openai",
+		"custom-host": "https://api.intelligence.io.solutions/api/v1",
+		authKey: process.env.IOINTELLIGENCE_API_KEY,
+		"max-tokens": 8192,
+		temperature: 0.7,
 		...additionalConfig,
 	};
 }
@@ -273,7 +212,9 @@ export function createIntelligenceModelConfig(additionalConfig = {}) {
  */
 export function createBedrockLambdaModelConfig(additionalConfig = {}) {
 	return {
-		...baseBedrockLambdaConfig,
+		provider: "openai",
+		"custom-host": "https://s4gu3klsuhlqkol3x3qq6bv6em0cwqnu.lambda-url.us-east-1.on.aws/api/v1",
+		authKey: process.env.AWS_BEARER_TOKEN_BEDROCK,
 		...additionalConfig,
 	};
 }

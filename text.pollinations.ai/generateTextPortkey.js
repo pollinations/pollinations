@@ -48,28 +48,15 @@ const clientConfig = {
 	additionalHeaders: {},
 
 	// Models that don't support system messages will have system messages converted to user messages
-	// This decision is made based on the model being requested
+	// This decision is now made based on the model definition in availableModels.js
 	supportsSystemMessages: (options) => {
-		// Check if it's a model that doesn't support system messages
-		return !["openai-reasoning", "o4-mini", "deepseek-reasoning"].includes(
-			options.model,
-		);
+		const modelDef = findModelByName(options.model);
+		// Default to true if not specified, only return false if explicitly set
+		return modelDef?.supportsSystemMessages !== false;
 	},
 
-	// formatResponse: (message) => {
-	//     // fix deepseek-v3 response
-	//     if (!message.content && message.reasoning_content) {
-	//         message.content = message.reasoning_content;
-	//         message.reasoning_content = null;
-	//     }
-	//     if (message.content && message.reasoning_content) {
-	//         message.content = `<think>${message.reasoning_content}</think>${message.content}`;
-	//         message.reasoning_content = null;
-	//     }
-	//     return message;
-	// },
 
-	// Default options (model mapping now handled in transformRequest, system prompts now handled via transforms)
+	// Default options
 	defaultOptions: DEFAULT_OPTIONS,
 };
 
@@ -85,29 +72,44 @@ export async function generateTextPortkey(messages, options = {}) {
 	if (processedOptions.model) {
 		const modelDef = findModelByName(processedOptions.model);
 		if (modelDef?.transform) {
-			const transformed = modelDef.transform(messages, processedOptions);
-			processedMessages = transformed.messages;
-			Object.assign(processedOptions, transformed.options);
+			try {
+				const transformed = modelDef.transform(messages, processedOptions);
+				const { messages: transformedMessages, options: transformedOptions } = transformed;
+				processedMessages = transformedMessages;
+				// Merge transformed options without reassigning the const
+				Object.assign(processedOptions, transformedOptions);
+			} catch (error) {
+				console.error('Transform execution failed:', error);
+				// Continue with original messages and options if transform fails
+			}
 		}
 	}
 	
 	// Apply transformRequest logic inline (moved from clientConfig)
 	if (processedOptions.model) {
 		try {
-			// Map the virtual model name to the real model name for API calls
+			// Get the model configuration directly from the model definition
 			const virtualModelName = processedOptions.model;
 			const modelDef = findModelByName(virtualModelName);
-			const modelName = modelDef?.mappedModel || virtualModelName;
 			
-			// Update the options with the mapped model name
-			processedOptions.model = modelName;
+			if (!modelDef?.config) {
+				throw new Error(`Model configuration not found for: ${virtualModelName}`);
+			}
 
-			// Get the model configuration object
-			const config = portkeyConfig[modelName]();
+			// Get the model configuration object directly from the model definition
+			const config = typeof modelDef.config === 'function' ? modelDef.config() : modelDef.config;
+
+			// Extract the actual model name - prefer config overrides, then model definition name, then virtual name
+			const actualModelName = config.model || config["azure-model-name"] || config["azure-deployment-id"] || modelDef.name || virtualModelName;
+			
+			// Update the model name in processedOptions to use the actual model name
+			processedOptions.model = actualModelName;
 
 			log(
 				"Processing request for model:",
-				modelName,
+				virtualModelName,
+				"→",
+				actualModelName,
 				"with provider:",
 				config.provider,
 			);
@@ -186,48 +188,14 @@ export async function generateTextPortkey(messages, options = {}) {
 				}
 			});
 
-			// Fix for grok model: always set seed to null
-			if (modelName === "azure-grok" && processedOptions.seed !== undefined) {
-				log(`Setting seed to null for grok model (was: ${processedOptions.seed})`);
-				processedOptions.seed = null;
-			}
 
-			// Handle roblox-rp random model selection
-			if (modelName === "roblox-rp") {
-				// Get the actual selected model from the config
-				const actualModel = config.model;
-				log(`Overriding roblox-rp model name to actual selected model: ${actualModel}`);
-				processedOptions.model = actualModel;
-			}
 
-			// Add Google Search grounding for Gemini Search model
-			if (modelName === "gemini-2.5-flash-lite-search") {
-				log(`Adding Google Search grounding tool for ${modelName}`);
-				// Override model name to use the actual Vertex AI model name
-				processedOptions.model = "gemini-2.5-flash-lite";
-				// Add google_search tool for grounding with Google Search
-				// This enables real-time search results grounding for Gemini responses
-				// Add the google_search tool (for newer models like gemini-2.0-flash-001)
-				processedOptions.tools = [{
-					type: "function",
-					function: {
-						name: "google_search"
-					}
-				}];
-			}
 
-			// Apply model-specific parameter filtering
-			// Some models like searchgpt only accept specific parameters
-			const modelParameterAllowList = {
-				"gpt-4o-mini-search-preview": ["messages", "stream", "model"], // Only these parameters are allowed for searchgpt
-				// Add more models as needed
-			};
-
-			// Check if the current model has parameter restrictions
-			const allowedParams = modelParameterAllowList[processedOptions.model];
-			if (allowedParams) {
+			// Apply model-specific parameter filtering if defined in model config
+			if (modelConfig && modelConfig.allowedParameters) {
+				const allowedParams = modelConfig.allowedParameters;
 				log(
-					`Applying parameter filter for model ${processedOptions.model}, allowing only: ${allowedParams.join(", ")}`,
+					`Applying parameter filter for model ${virtualModelName}, allowing only: ${allowedParams.join(", ")}`,
 				);
 
 				// Create a new options object with only allowed parameters
@@ -255,17 +223,18 @@ export async function generateTextPortkey(messages, options = {}) {
 		}
 	}
 	
-	// Move additional headers from processedOptions to config for genericOpenAIClient
+	// Create a fresh config with clean headers for this request
+	const requestConfig = {
+		...clientConfig,
+		additionalHeaders: processedOptions._additionalHeaders || {}
+	};
+	
+	// Remove from options since it's now in config
 	if (processedOptions._additionalHeaders) {
-		clientConfig.additionalHeaders = {
-			...clientConfig.additionalHeaders,
-			...processedOptions._additionalHeaders
-		};
-		// Remove from options since it's now in config
 		delete processedOptions._additionalHeaders;
 	}
 	
-	return await genericOpenAIClient(processedMessages, processedOptions, clientConfig);
+	return await genericOpenAIClient(processedMessages, processedOptions, requestConfig);
 }
 
 function countMessageCharacters(messages) {

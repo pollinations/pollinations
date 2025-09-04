@@ -105,6 +105,7 @@ const models = [
 		config: portkeyConfig["us.deepseek.r1-v1:0"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		reasoning: true,
+		supportsSystemMessages: false,
 		provider: "bedrock",
 		tier: "seed",
 		community: false,
@@ -191,6 +192,7 @@ const models = [
 		community: false,
 		aliases: ["o4-mini"],
 		reasoning: true,
+		supportsSystemMessages: false,
 		input_modalities: ["text"],
 		output_modalities: ["text"],
 		tools: true

@@ -48,12 +48,11 @@ const clientConfig = {
 	additionalHeaders: {},
 
 	// Models that don't support system messages will have system messages converted to user messages
-	// This decision is made based on the model being requested
+	// This decision is now made based on the model definition in availableModels.js
 	supportsSystemMessages: (options) => {
-		// Check if it's a model that doesn't support system messages
-		return !["openai-reasoning", "o4-mini", "deepseek-reasoning"].includes(
-			options.model,
-		);
+		const modelDef = findModelByName(options.model);
+		// Default to true if not specified, only return false if explicitly set
+		return modelDef?.supportsSystemMessages !== false;
 	},
 
 
@@ -178,48 +177,14 @@ export async function generateTextPortkey(messages, options = {}) {
 				}
 			});
 
-			// Fix for grok model: always set seed to null
-			if (virtualModelName === "azure-grok" && processedOptions.seed !== undefined) {
-				log(`Setting seed to null for grok model (was: ${processedOptions.seed})`);
-				processedOptions.seed = null;
-			}
 
-			// Handle roblox-rp random model selection
-			if (virtualModelName === "roblox-rp") {
-				// Get the actual selected model from the config
-				const actualModel = config.model;
-				log(`Overriding roblox-rp model name to actual selected model: ${actualModel}`);
-				processedOptions.model = actualModel;
-			}
 
-			// Add Google Search grounding for Gemini Search model
-			if (virtualModelName === "gemini-2.5-flash-lite-search") {
-				log(`Adding Google Search grounding tool for ${virtualModelName}`);
-				// Override model name to use the actual Vertex AI model name
-				processedOptions.model = "gemini-2.5-flash-lite";
-				// Add google_search tool for grounding with Google Search
-				// This enables real-time search results grounding for Gemini responses
-				// Add the google_search tool (for newer models like gemini-2.0-flash-001)
-				processedOptions.tools = [{
-					type: "function",
-					function: {
-						name: "google_search"
-					}
-				}];
-			}
 
-			// Apply model-specific parameter filtering
-			// Some models like searchgpt only accept specific parameters
-			const modelParameterAllowList = {
-				"gpt-4o-mini-search-preview": ["messages", "stream", "model"], // Only these parameters are allowed for searchgpt
-				// Add more models as needed
-			};
-
-			// Check if the current model has parameter restrictions
-			const allowedParams = modelParameterAllowList[processedOptions.model];
-			if (allowedParams) {
+			// Apply model-specific parameter filtering if defined in model config
+			if (modelConfig && modelConfig.allowedParameters) {
+				const allowedParams = modelConfig.allowedParameters;
 				log(
-					`Applying parameter filter for model ${processedOptions.model}, allowing only: ${allowedParams.join(", ")}`,
+					`Applying parameter filter for model ${virtualModelName}, allowing only: ${allowedParams.join(", ")}`,
 				);
 
 				// Create a new options object with only allowed parameters

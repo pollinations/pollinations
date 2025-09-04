@@ -64,7 +64,6 @@ export async function genericOpenAIClient(messages, options = {}, config) {
             normalizedOptions = normalizeOptions(options, defaultOptions);
 
             // Use the model name directly (mapping is now handled upstream)
-            const modelKey = normalizedOptions.model;
             modelName = normalizedOptions.model;
 
             // Validate and normalize messages
@@ -120,7 +119,6 @@ export async function genericOpenAIClient(messages, options = {}, config) {
                 JSON.stringify(cleanedRequestBody, null, 2),
             );
 
-            // Request transformation is now handled in generateTextPortkey.js
             const finalRequestBody = cleanedRequestBody;
 
             log(`[${requestId}] Sending request to Generic OpenAI API`, {
@@ -146,7 +144,6 @@ export async function genericOpenAIClient(messages, options = {}, config) {
                 [authHeaderName]: authHeaderValue(),
                 "Content-Type": "application/json",
                 ...additionalHeaders,
-                ...(finalRequestBody._additionalHeaders || {}),
             };
 
             // Remove the _additionalHeaders property from the request body as it's not part of the API

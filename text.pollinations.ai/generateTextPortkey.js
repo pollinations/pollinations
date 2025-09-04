@@ -56,20 +56,8 @@ const clientConfig = {
 		);
 	},
 
-	// formatResponse: (message) => {
-	//     // fix deepseek-v3 response
-	//     if (!message.content && message.reasoning_content) {
-	//         message.content = message.reasoning_content;
-	//         message.reasoning_content = null;
-	//     }
-	//     if (message.content && message.reasoning_content) {
-	//         message.content = `<think>${message.reasoning_content}</think>${message.content}`;
-	//         message.reasoning_content = null;
-	//     }
-	//     return message;
-	// },
 
-	// Default options (model mapping now handled in transformRequest, system prompts now handled via transforms)
+	// Default options
 	defaultOptions: DEFAULT_OPTIONS,
 };
 

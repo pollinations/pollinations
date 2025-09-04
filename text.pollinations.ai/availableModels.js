@@ -319,14 +319,9 @@ const models = [
 
 ];
 
-// Use the models array directly without sorting
-const unsortedModels = models;
-
-// Define default pricing values
-
 
 // Now export the processed models with proper functional approach
-export const availableModels = unsortedModels.map((model) => {
+export const availableModels = models.map((model) => {
 	const inputs = model.input_modalities || [];
 	const outputs = model.output_modalities || [];
 

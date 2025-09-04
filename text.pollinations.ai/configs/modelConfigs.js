@@ -202,11 +202,11 @@ export const portkeyConfig = {
 	"qwen3-235b-a22b-instruct-2507": () => createScalewayModelConfig(),
 	"qwen2.5-coder-32b-instruct": () =>
 		createScalewayModelConfig({
+			model: "qwen2.5-coder-32b-instruct", // Explicit model name for API
 			"max-tokens": 8000, // Set specific token limit for Qwen Coder
 		}),
 	"llama-3.3-70b-instruct": () => createScalewayModelConfig(),
 	"deepseek-r1-distill-llama-70b": () => createScalewayModelConfig(),
-	"qwen-coder": () => createScalewayModelConfig(),
 	"evil-mistral": () => createScalewayModelConfig(),
 	surscaleway: () => createScalewayModelConfig(),
 	"qwen-reasoning": () => createScalewayModelConfig(),

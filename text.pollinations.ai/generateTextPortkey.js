@@ -82,20 +82,24 @@ export async function generateTextPortkey(messages, options = {}) {
 	// Apply transformRequest logic inline (moved from clientConfig)
 	if (processedOptions.model) {
 		try {
-			// Map the virtual model name to the real model name for API calls
+			// Get the model definition and use its config directly
 			const virtualModelName = processedOptions.model;
 			const modelDef = findModelByName(virtualModelName);
-			const modelName = modelDef?.mappedModel || virtualModelName;
 			
-			// Update the options with the mapped model name
-			processedOptions.model = modelName;
+			// Get the model configuration object directly from the model definition
+			const config = modelDef?.config?.() || portkeyConfig["gpt-4.1-nano"](); // fallback to default
 
-			// Get the model configuration object
-			const config = portkeyConfig[modelName]();
+			// Extract the actual model name from config (different providers store it differently)
+			const actualModelName = config.model || config["azure-model-name"] || config["azure-deployment-id"] || virtualModelName;
+			
+			// Update the options with the actual model name for the API call
+			processedOptions.model = actualModelName;
 
 			log(
 				"Processing request for model:",
-				modelName,
+				virtualModelName,
+				"→",
+				actualModelName,
 				"with provider:",
 				config.provider,
 			);
@@ -175,13 +179,13 @@ export async function generateTextPortkey(messages, options = {}) {
 			});
 
 			// Fix for grok model: always set seed to null
-			if (modelName === "azure-grok" && processedOptions.seed !== undefined) {
+			if (virtualModelName === "azure-grok" && processedOptions.seed !== undefined) {
 				log(`Setting seed to null for grok model (was: ${processedOptions.seed})`);
 				processedOptions.seed = null;
 			}
 
 			// Handle roblox-rp random model selection
-			if (modelName === "roblox-rp") {
+			if (virtualModelName === "roblox-rp") {
 				// Get the actual selected model from the config
 				const actualModel = config.model;
 				log(`Overriding roblox-rp model name to actual selected model: ${actualModel}`);
@@ -189,8 +193,8 @@ export async function generateTextPortkey(messages, options = {}) {
 			}
 
 			// Add Google Search grounding for Gemini Search model
-			if (modelName === "gemini-2.5-flash-lite-search") {
-				log(`Adding Google Search grounding tool for ${modelName}`);
+			if (virtualModelName === "gemini-2.5-flash-lite-search") {
+				log(`Adding Google Search grounding tool for ${virtualModelName}`);
 				// Override model name to use the actual Vertex AI model name
 				processedOptions.model = "gemini-2.5-flash-lite";
 				// Add google_search tool for grounding with Google Search

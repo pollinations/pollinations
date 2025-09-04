@@ -122,7 +122,7 @@ export const portkeyConfig = {
 			process.env.AZURE_O1MINI_ENDPOINT,
 			"o1-mini",
 		),
-	"o4-mini": () =>
+	"o4-mini-azure": () =>
 		createAzureModelConfig(
 			process.env.AZURE_O4MINI_API_KEY,
 			process.env.AZURE_O4MINI_ENDPOINT,

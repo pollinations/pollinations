@@ -122,7 +122,7 @@ export const portkeyConfig = {
 			process.env.AZURE_O1MINI_ENDPOINT,
 			"o1-mini",
 		),
-	"o4-mini": () =>
+	"o4-mini-azure": () =>
 		createAzureModelConfig(
 			process.env.AZURE_O4MINI_API_KEY,
 			process.env.AZURE_O4MINI_ENDPOINT,
@@ -203,15 +203,15 @@ export const portkeyConfig = {
 	"qwen2.5-coder-32b-instruct": () =>
 		createScalewayModelConfig({
 			"max-tokens": 8000, // Set specific token limit for Qwen Coder
+			model: "qwen2.5-coder-32b-instruct",
 		}),
 	"llama-3.3-70b-instruct": () => createScalewayModelConfig(),
 	"deepseek-r1-distill-llama-70b": () => createScalewayModelConfig(),
-	"qwen-coder": () => createScalewayModelConfig(),
 	"evil-mistral": () => createScalewayModelConfig(),
 	surscaleway: () => createScalewayModelConfig(),
 	"qwen-reasoning": () => createScalewayModelConfig(),
 	"openai-reasoning": () => ({ ...baseMonoAIConfig }),
-	"o4-mini": () => ({ ...baseMonoAIConfig }),
+	"o4-mini": () => ({ ...baseMonoAIConfig }), 
 	searchgpt: () => ({ ...baseMonoAIConfig }),
 	"gpt-4o-mini-search-preview": () => ({ ...baseMonoAIConfig }),
 	unity: () => createScalewayModelConfig(),
@@ -292,7 +292,10 @@ export const portkeyConfig = {
 	// 	"vertex-model-id": "gemini-2.5-flash-lite",
 	// 	"strict-openai-compliance": "false",
 	// }),
-	"gemini-2.5-flash-lite": () => baseMonoAIConfig,
+	"gemini-2.5-flash-lite": () => ({
+		...baseMonoAIConfig,
+		model: "gemini-2.5-flash-lite"
+	}),
 	"gemini-2.5-flash-lite-search": () => ({
 		provider: "vertex-ai",
 		"vertex-project-id": process.env.GCLOUD_PROJECT_ID,

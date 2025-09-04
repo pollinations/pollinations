@@ -81,24 +81,20 @@ export async function generateTextPortkey(messages, options = {}) {
 	// Apply transformRequest logic inline (moved from clientConfig)
 	if (processedOptions.model) {
 		try {
-			// Get the model definition and use its config directly
+			// Map the virtual model name to the real model name for API calls
 			const virtualModelName = processedOptions.model;
 			const modelDef = findModelByName(virtualModelName);
+			const modelName = modelDef?.mappedModel || virtualModelName;
 			
-			// Get the model configuration object directly from the model definition
-			const config = modelDef?.config?.() || portkeyConfig["gpt-4.1-nano"](); // fallback to default
+			// Update the options with the mapped model name
+			processedOptions.model = modelName;
 
-			// Extract the actual model name from config (different providers store it differently)
-			const actualModelName = config.model || config["azure-model-name"] || config["azure-deployment-id"] || virtualModelName;
-			
-			// Update the options with the actual model name for the API call
-			processedOptions.model = actualModelName;
+			// Get the model configuration object
+			const config = portkeyConfig[modelName]();
 
 			log(
 				"Processing request for model:",
-				virtualModelName,
-				"→",
-				actualModelName,
+				modelName,
 				"with provider:",
 				config.provider,
 			);

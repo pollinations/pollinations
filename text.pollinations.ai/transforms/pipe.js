@@ -4,7 +4,14 @@
  * @returns {Function} Composed transform function
  */
 export function pipe(...transforms) {
-    return (messages, options) => transforms.reduce((acc, transform) => transform(acc.messages, acc.options), { messages, options });
+    return (messages, options) => 
+        transforms.reduce(
+            (acc, transform) => {
+                const result = transform(acc.messages, acc.options);
+                return { messages: result.messages, options: result.options };
+            }, 
+            { messages, options }
+        );
 }
 
 /**

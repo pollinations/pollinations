@@ -72,29 +72,36 @@ export async function generateTextPortkey(messages, options = {}) {
 	if (processedOptions.model) {
 		const modelDef = findModelByName(processedOptions.model);
 		if (modelDef?.transform) {
-			const transformed = modelDef.transform(messages, processedOptions);
-			processedMessages = transformed.messages;
-			Object.assign(processedOptions, transformed.options);
+			try {
+				const transformed = modelDef.transform(messages, processedOptions);
+				const { messages: transformedMessages, options: transformedOptions } = transformed;
+				processedMessages = transformedMessages;
+				// Merge transformed options without reassigning the const
+				Object.assign(processedOptions, transformedOptions);
+			} catch (error) {
+				console.error('Transform execution failed:', error);
+				// Continue with original messages and options if transform fails
+			}
 		}
 	}
 	
 	// Apply transformRequest logic inline (moved from clientConfig)
 	if (processedOptions.model) {
 		try {
-			// Map the virtual model name to the real model name for API calls
+			// Get the model configuration directly from the model definition
 			const virtualModelName = processedOptions.model;
 			const modelDef = findModelByName(virtualModelName);
-			const modelName = modelDef?.mappedModel || virtualModelName;
 			
-			// Update the options with the mapped model name
-			processedOptions.model = modelName;
+			if (!modelDef?.config) {
+				throw new Error(`Model configuration not found for: ${virtualModelName}`);
+			}
 
-			// Get the model configuration object
-			const config = portkeyConfig[modelName]();
+			// Get the model configuration object directly from the model definition
+			const config = typeof modelDef.config === 'function' ? modelDef.config() : modelDef.config;
 
 			log(
 				"Processing request for model:",
-				modelName,
+				virtualModelName,
 				"with provider:",
 				config.provider,
 			);

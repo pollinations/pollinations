@@ -223,17 +223,18 @@ export async function generateTextPortkey(messages, options = {}) {
 		}
 	}
 	
-	// Move additional headers from processedOptions to config for genericOpenAIClient
+	// Create a fresh config with clean headers for this request
+	const requestConfig = {
+		...clientConfig,
+		additionalHeaders: processedOptions._additionalHeaders || {}
+	};
+	
+	// Remove from options since it's now in config
 	if (processedOptions._additionalHeaders) {
-		clientConfig.additionalHeaders = {
-			...clientConfig.additionalHeaders,
-			...processedOptions._additionalHeaders
-		};
-		// Remove from options since it's now in config
 		delete processedOptions._additionalHeaders;
 	}
 	
-	return await genericOpenAIClient(processedMessages, processedOptions, clientConfig);
+	return await genericOpenAIClient(processedMessages, processedOptions, requestConfig);
 }
 
 function countMessageCharacters(messages) {

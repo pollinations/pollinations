@@ -22,7 +22,7 @@ const models = [
 	{
 		name: "openai",
 		description: "OpenAI GPT-5 Nano",
-		mappedModel: "gpt-5-nano",
+		config: portkeyConfig["gpt-5-nano"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		provider: "azure",
 		tier: "anonymous",
@@ -35,7 +35,7 @@ const models = [
 	{
 		name: "openai-fast",
 		description: "OpenAI GPT-4.1 Nano",
-		mappedModel: "gpt-4.1-nano",
+		config: portkeyConfig["gpt-4.1-nano"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		provider: "azure",
 		tier: "anonymous",
@@ -48,7 +48,7 @@ const models = [
 		name: "openai-large",
 		description: "OpenAI GPT-4.1",
 		maxInputChars: 5000,
-		mappedModel: "azure-gpt-4.1",
+		config: portkeyConfig["azure-gpt-4.1"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		provider: "azure",
 		tier: "seed",
@@ -61,7 +61,7 @@ const models = [
 	{
 		name: "qwen-coder",
 		description: "Qwen 2.5 Coder 32B",
-		mappedModel: "qwen2.5-coder-32b-instruct",
+		config: portkeyConfig["qwen2.5-coder-32b-instruct"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.coding),
 		provider: "scaleway",
 		tier: "anonymous",
@@ -74,7 +74,7 @@ const models = [
 	{
 		name: "mistral",
 		description: "Mistral Small 3.1 24B",
-		mappedModel: "mistral-small-3.1-24b-instruct-2503",
+		config: portkeyConfig["mistral-small-3.1-24b-instruct-2503"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		provider: "scaleway",
 		tier: "anonymous",
@@ -101,7 +101,7 @@ const models = [
 		name: "deepseek-reasoning",
 		description: "DeepSeek R1 0528 (Bedrock)",
 		maxInputChars: 5000,
-		mappedModel: "us.deepseek.r1-v1:0",
+		config: portkeyConfig["us.deepseek.r1-v1:0"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		reasoning: true,
 		supportsSystemMessages: false,
@@ -132,7 +132,7 @@ const models = [
 			"amuch",
 			"dan",
 		],
-		mappedModel: "gpt-4o-mini-audio-preview",
+		config: portkeyConfig["gpt-4o-mini-audio-preview"],
 		provider: "azure",
 		tier: "seed",
 		community: false,
@@ -144,7 +144,7 @@ const models = [
 	{
 		name: "nova-fast",
 		description: "Amazon Nova Micro (Bedrock)",
-		mappedModel: "amazon.nova-micro-v1:0",
+		config: portkeyConfig["amazon.nova-micro-v1:0"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		provider: "bedrock",
 		community: false,
@@ -157,7 +157,7 @@ const models = [
 	{
 		name: "roblox-rp",
 		description: "Llama 3.1 8B Instruct (Cross-Region Bedrock)",
-		mappedModel: "us.meta.llama3-1-8b-instruct-v1:0",
+		config: portkeyConfig["us.meta.llama3-1-8b-instruct-v1:0"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		provider: "bedrock",
 		tier: "seed",
@@ -184,7 +184,7 @@ const models = [
 	{
 		name: "openai-reasoning",
 		description: "OpenAI o4-mini (api.navy)",
-		mappedModel: "o4-mini",
+		config: portkeyConfig["o4-mini"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		provider: "api.navy",
 		tier: "seed",
@@ -199,7 +199,7 @@ const models = [
 	{
 		name: "gemini",
 		description: "Gemini 2.5 Flash Lite (api.navy)",
-		mappedModel: "gemini-2.5-flash-lite",
+		config: portkeyConfig["gemini-2.5-flash-lite"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		provider: "api.navy",
 		tier: "anonymous",

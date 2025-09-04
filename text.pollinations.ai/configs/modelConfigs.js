@@ -204,11 +204,6 @@ export const portkeyConfig = {
 		createScalewayModelConfig({
 			"max-tokens": 8000, // Set specific token limit for Qwen Coder
 		}),
-	"qwen-coder": () =>
-		createScalewayModelConfig({
-			model: "qwen2.5-coder-32b-instruct", // Map to correct API model name
-			"max-tokens": 8000, // Set specific token limit for Qwen Coder
-		}),
 	"llama-3.3-70b-instruct": () => createScalewayModelConfig(),
 	"deepseek-r1-distill-llama-70b": () => createScalewayModelConfig(),
 	"evil-mistral": () => createScalewayModelConfig(),

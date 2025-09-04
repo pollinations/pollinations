@@ -59,14 +59,14 @@ const models = [
 		tools: true
 	},
 	{
-		name: "qwen2.5-coder-32b-instruct",
+		name: "qwen-coder",
 		description: "Qwen 2.5 Coder 32B",
 		config: portkeyConfig["qwen2.5-coder-32b-instruct"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.coding),
 		provider: "scaleway",
 		tier: "anonymous",
 		community: false,
-		aliases: ["qwen-coder"],
+		aliases: ["qwen2.5-coder-32b-instruct"],
 		input_modalities: ["text"],
 		output_modalities: ["text"],
 		tools: true

@@ -99,8 +99,8 @@ export async function generateTextPortkey(messages, options = {}) {
 			// Get the model configuration object directly from the model definition
 			const config = typeof modelDef.config === 'function' ? modelDef.config() : modelDef.config;
 
-			// Extract the actual model name from the config
-			const actualModelName = config.model || config["azure-model-name"] || config["azure-deployment-id"] || virtualModelName;
+			// Extract the actual model name - prefer config overrides, then model definition name, then virtual name
+			const actualModelName = config.model || config["azure-model-name"] || config["azure-deployment-id"] || modelDef.name || virtualModelName;
 			
 			// Update the model name in processedOptions to use the actual model name
 			processedOptions.model = actualModelName;

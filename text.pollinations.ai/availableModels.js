@@ -61,7 +61,7 @@ const models = [
 	{
 		name: "qwen-coder",
 		description: "Qwen 2.5 Coder 32B",
-		config: portkeyConfig["qwen2.5-coder-32b-instruct"],
+		config: portkeyConfig["qwen-coder"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.coding),
 		provider: "scaleway",
 		tier: "anonymous",

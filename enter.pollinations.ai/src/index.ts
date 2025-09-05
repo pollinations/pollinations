@@ -6,6 +6,7 @@ import { processPolarEvents } from "./polar.ts";
 import { polarRoutes } from "./routes/polar.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { requestId } from "hono/request-id";
+import { logger } from "./middleware/logger.ts";
 import type { Env } from "./env.ts";
 
 const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", (c) => {
@@ -14,6 +15,7 @@ const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", (c) => {
 
 const app = new Hono<Env>()
     .use("*", requestId())
+    .use("*", logger)
     .basePath("/api")
     .route("/auth", authRoutes)
     .route("/polar", polarRoutes)

@@ -63,6 +63,17 @@ export const handleError: ErrorHandler<Env> = (err, c) => {
     }
 
     const status = 500;
+    c.var.log.error({
+        error: {
+            message: err.message || getDefaultErrorMessage(status),
+            code: getErrorCode(status),
+            details: {
+                name: err.name,
+                stack: err.stack,
+            },
+            cause: err.cause,
+        },
+    });
     const response: ErrorResponse = {
         success: false,
         error: {
@@ -72,8 +83,8 @@ export const handleError: ErrorHandler<Env> = (err, c) => {
             code: getErrorCode(status),
             ...(isDevelopment && {
                 details: {
-                    stack: err.stack,
                     name: err.name,
+                    stack: err.stack,
                 },
             }),
             timestamp,

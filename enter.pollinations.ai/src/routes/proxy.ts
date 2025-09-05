@@ -10,18 +10,34 @@ import type { Env } from "../env.ts";
 import { z } from "zod";
 import type { AuthEnv } from "../middleware/authenticate.ts";
 import type { PolarEnv } from "../middleware/polar.ts";
+import { REGISTRY, ServiceId } from "../registry.ts";
+
+const chatCompletionSchema = z.object({
+    model: z.string(),
+    messages: z.array(
+        z.object({
+            role: z.enum(["system", "user", "assistant", "tool"]),
+            content: z.string().optional(),
+            name: z.string().optional(),
+            tool_calls: z.array(z.any()).optional(),
+            tool_call_id: z.string().optional(),
+        }),
+    ),
+    max_tokens: z.number().int().positive().optional(),
+    temperature: z.number().min(0).max(2).optional(),
+    top_p: z.number().min(0).max(1).optional(),
+    stream: z.boolean().optional(),
+});
 
 type ProxyEnv = Env & AuthEnv & PolarEnv;
-
-const freeImageModels = ["flux"];
-const freeTextModels = ["openai"];
 
 export const proxyRoutes = new Hono<ProxyEnv>()
     .use(authenticate)
     .use(polar)
     .get("/image/:prompt", async (c) => {
+        const prompt = c.req.param("prompt");
         const model = c.req.query("model") || "flux";
-        const isFree = freeImageModels.includes(model);
+        const isFree = REGISTRY.isFreeService(model as ServiceId);
         const user = c.get("user");
         if (!isFree && !user) {
             throw new HTTPException(401, {
@@ -76,7 +92,7 @@ export const proxyRoutes = new Hono<ProxyEnv>()
         const model = body.model || "openai";
 
         // only simulates free models for now
-        const isFree = freeTextModels.includes(model);
+        const isFree = REGISTRY.isFreeService(model as ServiceId);
         if (!isFree && !c.var.user) {
             throw new HTTPException(401, {
                 message: "You must be signed in to use this model.",

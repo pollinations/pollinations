@@ -1,7 +1,7 @@
 name = "pollinations-auth"
 main = "src/index.ts"
 compatibility_date = "2025-08-01"
-compatibility_flags = [ "nodejs_compat" ]
+compatibility_flags = [ "nodejs_compat", "nodejs_als" ]
 
 [dev]
 port = 3000

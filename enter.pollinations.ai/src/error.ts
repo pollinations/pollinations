@@ -1,6 +1,7 @@
 import type { ErrorHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
 import z, { ZodError } from "zod";
+import { Env } from "./env.ts";
 
 interface ErrorResponse {
     success: false;
@@ -22,10 +23,7 @@ interface ErrorDetails {
     fieldErrors?: { [key: string]: string[] };
 }
 
-export const handleError: ErrorHandler<{ Bindings: CloudflareBindings }> = (
-    err,
-    c,
-) => {
+export const handleError: ErrorHandler<Env> = (err, c) => {
     const timestamp = new Date().toISOString();
     const isDevelopment = c.env.ENVIRONMENT === "development";
 

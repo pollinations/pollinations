@@ -2,7 +2,7 @@ import type { Session, User } from "better-auth";
 import { createMiddleware } from "hono/factory";
 import { createAuth } from "../auth.ts";
 
-type Env = {
+export type AuthEnv = {
     Bindings: CloudflareBindings;
     Variables: {
         auth: ReturnType<typeof createAuth>;
@@ -11,7 +11,7 @@ type Env = {
     };
 };
 
-export const authenticate = createMiddleware<Env>(async (c, next) => {
+export const authenticate = createMiddleware<AuthEnv>(async (c, next) => {
     const auth = createAuth(c.env);
     c.set("auth", auth);
 

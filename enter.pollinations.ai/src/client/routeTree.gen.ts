@@ -10,23 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignInRouteImport } from './routes/sign-in'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as ImprintRouteImport } from './routes/imprint'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ImprintRoute = ImprintRouteImport.update({
-  id: '/imprint',
-  path: '/imprint',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -37,35 +25,27 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/imprint': typeof ImprintRoute
-  '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/imprint': typeof ImprintRoute
-  '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/imprint': typeof ImprintRoute
-  '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/imprint' | '/privacy' | '/sign-in'
+  fullPaths: '/' | '/sign-in'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/imprint' | '/privacy' | '/sign-in'
-  id: '__root__' | '/' | '/imprint' | '/privacy' | '/sign-in'
+  to: '/' | '/sign-in'
+  id: '__root__' | '/' | '/sign-in'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ImprintRoute: typeof ImprintRoute
-  PrivacyRoute: typeof PrivacyRoute
   SignInRoute: typeof SignInRoute
 }
 
@@ -76,20 +56,6 @@ declare module '@tanstack/react-router' {
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof SignInRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/imprint': {
-      id: '/imprint'
-      path: '/imprint'
-      fullPath: '/imprint'
-      preLoaderRoute: typeof ImprintRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -104,8 +70,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ImprintRoute: ImprintRoute,
-  PrivacyRoute: PrivacyRoute,
   SignInRoute: SignInRoute,
 }
 export const routeTree = rootRouteImport

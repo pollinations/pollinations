@@ -4,7 +4,6 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     flake-utils.url = "github:numtide/flake-utils";
-    pipelight.url = "github:pipelight/pipelight";
   };
 
   outputs =
@@ -12,7 +11,6 @@
       self,
       nixpkgs,
       flake-utils,
-      pipelight,
     }:
     flake-utils.lib.eachSystem flake-utils.lib.defaultSystems (
       system:
@@ -45,43 +43,43 @@
         devShells.default = pkgs.mkShell {
           name = "pollinations";
 
-          buildInputs = [
-            pipelight.packages.${system}.default
-          ]
-          ++ (with pkgs; [
-            zsh
-            zsh-syntax-highlighting
-            zsh-autosuggestions
-            zsh-completions
-            starship
-            figlet
-            git
-            sops
-            age
-            uv
-            nodejs_24
+          buildInputs = (
+            with pkgs;
+            [
+              zsh
+              zsh-syntax-highlighting
+              zsh-autosuggestions
+              zsh-completions
+              starship
+              figlet
+              git
+              sops
+              age
+              uv
+              nodejs_24
 
-            # Image processing dependencies for image.pollinations.ai
-            vips
-            pkg-config
-            glib
+              # Image processing dependencies for image.pollinations.ai
+              vips
+              pkg-config
+              glib
 
-            # ExifTool dependencies
-            exiftool
-            perl
+              # ExifTool dependencies
+              exiftool
+              perl
 
-            # Build tools for native Node.js modules
-            gcc
-            gnumake
-            python3
+              # Build tools for native Node.js modules
+              gcc
+              gnumake
+              python3
 
-            # Additional image processing libraries
-            imagemagick
-            libjpeg
-            libpng
-            libtiff
-            libwebp
-          ]);
+              # Additional image processing libraries
+              imagemagick
+              libjpeg
+              libpng
+              libtiff
+              libwebp
+            ]
+          );
 
           shellHook = ''
             # runs each time the shell is entered

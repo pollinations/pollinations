@@ -6,17 +6,14 @@ import { processPolarEvents } from "./polar.ts";
 import { polarRoutes } from "./routes/polar.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { requestId } from "hono/request-id";
-
-type Env = {
-    Bindings: Cloudflare.Env;
-};
+import type { Env } from "./env.ts";
 
 const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", (c) => {
     return createAuth(c.env).handler(c.req.raw);
 });
 
 const app = new Hono<Env>()
-    .use(requestId())
+    .use("*", requestId())
     .basePath("/api")
     .route("/auth", authRoutes)
     .route("/polar", polarRoutes)

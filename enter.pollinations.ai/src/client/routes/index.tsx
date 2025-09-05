@@ -8,7 +8,6 @@ import {
     type CreateApiKeyResponse,
 } from "../components/api-key.tsx";
 import { Button } from "../components/button.tsx";
-import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -98,7 +97,6 @@ function RouteComponent() {
                 <div className="flex justify-between gap-3">
                     <h2 className="font-bold flex-1">Pollen</h2>
                     <span className="text-3xl font-heading">Buy</span>
-                    <Link to="/imprint" />
                     <Button
                         as={"a"}
                         variant="pink"

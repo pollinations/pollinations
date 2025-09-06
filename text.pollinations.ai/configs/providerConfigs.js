@@ -23,7 +23,7 @@ export function createAzureModelConfig(
 ) {
 	const deploymentId = extractDeploymentName(endpoint) || modelName;
 	return {
-		provider: "azure-openai",
+		provider: "azure",
 		retry: "3",
 		"azure-api-key": apiKey,
 		"azure-resource-name": resourceName || extractResourceName(endpoint),
@@ -42,7 +42,7 @@ export function createAzureModelConfig(
  */
 export function createApiNavyModelConfig(additionalConfig = {}) {
 	return {
-		provider: "openai",
+		provider: "apinavy",
 		authKey: process.env.APINAVY_API_KEY,
 		"custom-host": process.env.API_NAVY_ENDPOINT,
 		...additionalConfig,
@@ -57,7 +57,7 @@ export function createApiNavyModelConfig(additionalConfig = {}) {
  */
 export function createDeepSeekModelConfig(additionalConfig = {}) {
 	return {
-		provider: "openai",
+		provider: "azure",
 		"custom-host": process.env.AZURE_DEEPSEEK_V3_ENDPOINT,
 		authKey: process.env.AZURE_DEEPSEEK_V3_API_KEY,
 		"auth-header-name": "Authorization",
@@ -74,7 +74,7 @@ export function createDeepSeekModelConfig(additionalConfig = {}) {
  */
 export function createDeepSeekReasoningConfig(additionalConfig = {}) {
 	return {
-		provider: "openai",
+		provider: "azure",
 		"custom-host": process.env.AZURE_DEEPSEEK_REASONING_ENDPOINT,
 		authKey: process.env.AZURE_DEEPSEEK_REASONING_API_KEY,
 		"auth-header-name": "Authorization",
@@ -91,7 +91,7 @@ export function createDeepSeekReasoningConfig(additionalConfig = {}) {
  */
 export function createCloudflareModelConfig(additionalConfig = {}) {
 	return {
-		provider: "openai",
+		provider: "cloudflare",
 		"custom-host": `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
 		authKey: process.env.CLOUDFLARE_AUTH_TOKEN,
 		"max-tokens": 8192,
@@ -106,7 +106,7 @@ export function createCloudflareModelConfig(additionalConfig = {}) {
  */
 export function createScalewayModelConfig(additionalConfig = {}) {
 	return {
-		provider: "openai",
+		provider: "scaleway",
 		"custom-host": `${process.env.SCALEWAY_BASE_URL || "https://api.scaleway.com/ai-apis/v1"}`,
 		authKey: process.env.SCALEWAY_API_KEY,
 		"max-tokens": 8192,
@@ -121,7 +121,7 @@ export function createScalewayModelConfig(additionalConfig = {}) {
  */
 export function createMistralModelConfig(additionalConfig = {}) {
 	return {
-		provider: "openai",
+		provider: "scaleway",
 		"custom-host": process.env.SCALEWAY_MISTRAL_BASE_URL,
 		authKey: process.env.SCALEWAY_MISTRAL_API_KEY,
 		"max-tokens": 8192,
@@ -137,7 +137,7 @@ export function createMistralModelConfig(additionalConfig = {}) {
  */
 export function createNebiusModelConfig(additionalConfig = {}) {
 	return {
-		provider: "openai",
+		provider: "nebius",
 		"custom-host": "https://api.studio.nebius.com/v1",
 		authKey: process.env.NEBIUS_API_KEY,
 		"max-tokens": 8192,
@@ -152,7 +152,7 @@ export function createNebiusModelConfig(additionalConfig = {}) {
  */
 export function createModalModelConfig(additionalConfig = {}) {
 	return {
-		provider: "openai",
+		provider: "modal",
 		"custom-host": "https://pollinations--hormoz-serve.modal.run/v1",
 		authKey: process.env.HORMOZ_MODAL_KEY,
 		"max-tokens": 4096,
@@ -167,7 +167,7 @@ export function createModalModelConfig(additionalConfig = {}) {
  */
 export function createOpenRouterModelConfig(additionalConfig = {}) {
 	return {
-		provider: "openai",
+		provider: "openrouter",
 		"custom-host": "https://openrouter.ai/api/v1",
 		authKey: process.env.OPENROUTER_API_KEY,
 		"max-tokens": 4096,
@@ -182,7 +182,7 @@ export function createOpenRouterModelConfig(additionalConfig = {}) {
  */
 export function createElixpoSearchModelConfig(additionalConfig = {}) {
 	return {
-		provider: "openai",
+		provider: "scaleway",
 		"custom-host": process.env.ELIXPOSEARCH_ENDPOINT,
 		"max-tokens": 4096,
 		...additionalConfig,
@@ -196,7 +196,7 @@ export function createElixpoSearchModelConfig(additionalConfig = {}) {
  */
 export function createIntelligenceModelConfig(additionalConfig = {}) {
 	return {
-		provider: "openai",
+		provider: "intelligence-io",
 		"custom-host": "https://api.intelligence.io.solutions/api/v1",
 		authKey: process.env.IOINTELLIGENCE_API_KEY,
 		"max-tokens": 8192,
@@ -212,7 +212,7 @@ export function createIntelligenceModelConfig(additionalConfig = {}) {
  */
 export function createBedrockLambdaModelConfig(additionalConfig = {}) {
 	return {
-		provider: "openai",
+		provider: "bedrock",
 		"custom-host": "https://s4gu3klsuhlqkol3x3qq6bv6em0cwqnu.lambda-url.us-east-1.on.aws/api/v1",
 		authKey: process.env.AWS_BEARER_TOKEN_BEDROCK,
 		...additionalConfig,

@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.pipelight/
+.wrangler/
+.dev.vars
+.dev.vars.prod
+.env
+*.log
+backups/

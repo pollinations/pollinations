@@ -32,18 +32,18 @@ function sanitizeMessagesWithPlaceholder(messages, modelConfig, virtualModelName
 /**
  * Transform that sanitizes messages and applies provider-specific fixes
  * @param {Array} messages - Array of message objects
- * @param {Object} options - Request options with _modelDef and _virtualModelName
+ * @param {Object} options - Request options with modelDef and virtualModelName
  * @returns {Object} Object with messages and options
  */
 export function sanitizeMessages(messages, options) {
-    if (!Array.isArray(messages) || !options._modelDef || !options._virtualModelName) {
+    if (!Array.isArray(messages) || !options.modelDef || !options.virtualModelName) {
         return { messages, options };
     }
 
     const { messages: sanitized, replacedCount } = sanitizeMessagesWithPlaceholder(
         messages,
-        options._modelDef,
-        options._virtualModelName
+        options.modelDef,
+        options.virtualModelName
     );
 
     if (replacedCount > 0) {

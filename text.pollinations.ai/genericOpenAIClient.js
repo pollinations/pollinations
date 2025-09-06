@@ -146,9 +146,9 @@ export async function genericOpenAIClient(messages, options = {}, config) {
                 ...additionalHeaders,
             };
 
-            // Remove the _additionalHeaders property from the request body as it's not part of the API
-            if (finalRequestBody._additionalHeaders) {
-                delete finalRequestBody._additionalHeaders;
+            // Remove the additionalHeaders property from the request body as it's not part of the API
+            if (finalRequestBody.additionalHeaders) {
+                delete finalRequestBody.additionalHeaders;
             }
 
             log(`[${requestId}] Request headers:`, headers);

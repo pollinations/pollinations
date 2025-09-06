@@ -1,10 +1,14 @@
+/**
+ * Model configuration resolution utilities
+ */
 import debug from "debug";
+import { portkeyConfig } from "../configs/modelConfigs.js";
 import { findModelByName } from "../availableModels.js";
 
-const log = debug("pollinations:transforms:config");
+const log = debug("pollinations:model-resolver");
 
 /**
- * Transform that resolves model configuration and sets up internal properties
+ * Transform function that resolves model configuration and sets up internal properties
  * @param {Array} messages - Array of message objects
  * @param {Object} options - Request options with model name
  * @returns {Object} Object with messages and resolved options
@@ -41,14 +45,32 @@ export function resolveModelConfig(messages, options) {
         options: {
             ...options,
             model: actualModelName,
-            _modelConfig: config,
-            _modelDef: modelDef,
-            _virtualModelName: virtualModelName
+            modelConfig: config,
+            modelDef: modelDef,
+            virtualModelName: virtualModelName
         }
     };
     
-    log("resolveModelConfig output - _modelDef exists:", !!result.options._modelDef);
-    log("resolveModelConfig output - _modelConfig exists:", !!result.options._modelConfig);
+    log("resolveModelConfig output - modelDef exists:", !!result.options.modelDef);
+    log("resolveModelConfig output - modelConfig exists:", !!result.options.modelConfig);
     
     return result;
 }
+
+/**
+ * Resolves complete model information for system message support check
+ * @param {Array} availableModels - Array of available model definitions (unused, kept for compatibility)
+ * @param {string} modelName - Model name to resolve
+ * @returns {Object|null} Complete model information or null
+ */
+export const resolveCompleteModelInfo = (availableModels, modelName) => {
+    const modelDef = findModelByName(modelName);
+    if (!modelDef) return null;
+    
+    return {
+        definition: modelDef,
+        capabilities: {
+            supportsSystemMessages: modelDef?.supportsSystemMessages !== false
+        }
+    };
+};

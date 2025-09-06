@@ -6,17 +6,17 @@ const log = debug("pollinations:transforms:parameters");
 /**
  * Transform that processes sampling parameters and parameter filtering
  * @param {Array} messages - Array of message objects
- * @param {Object} options - Request options with _modelConfig and _modelDef
+ * @param {Object} options - Request options with modelConfig and modelDef
  * @returns {Object} Object with messages and processed options
  */
 export function processParameters(messages, options) {
-    if (!options._modelConfig || !options._modelDef) {
+    if (!options.modelConfig || !options.modelDef) {
         return { messages, options };
     }
 
-    const config = options._modelConfig;
-    const modelConfig = options._modelDef;
-    const virtualModelName = options._virtualModelName;
+    const config = options.modelConfig;
+    const modelConfig = options.modelDef;
+    const virtualModelName = options.virtualModelName;
     const updatedOptions = { ...options };
 
     // Apply model-specific sampling parameter defaults
@@ -43,17 +43,17 @@ export function processParameters(messages, options) {
         }
 
         // Preserve internal properties
-        if (updatedOptions._additionalHeaders) {
-            filteredOptions._additionalHeaders = updatedOptions._additionalHeaders;
+        if (updatedOptions.additionalHeaders) {
+            filteredOptions.additionalHeaders = updatedOptions.additionalHeaders;
         }
-        if (updatedOptions._modelConfig) {
-            filteredOptions._modelConfig = updatedOptions._modelConfig;
+        if (updatedOptions.modelConfig) {
+            filteredOptions.modelConfig = updatedOptions.modelConfig;
         }
-        if (updatedOptions._modelDef) {
-            filteredOptions._modelDef = updatedOptions._modelDef;
+        if (updatedOptions.modelDef) {
+            filteredOptions.modelDef = updatedOptions.modelDef;
         }
-        if (updatedOptions._virtualModelName) {
-            filteredOptions._virtualModelName = updatedOptions._virtualModelName;
+        if (updatedOptions.virtualModelName) {
+            filteredOptions.virtualModelName = updatedOptions.virtualModelName;
         }
 
         return { messages, options: filteredOptions };

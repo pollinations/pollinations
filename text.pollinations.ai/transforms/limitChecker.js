@@ -5,16 +5,16 @@ const log = debug("pollinations:transforms:limits");
 /**
  * Transform that checks character and token limits and sets max_tokens
  * @param {Array} messages - Array of message objects
- * @param {Object} options - Request options with _modelDef and _modelConfig
+ * @param {Object} options - Request options with modelDef and modelConfig
  * @returns {Object} Object with messages and modified options
  */
 export function checkLimits(messages, options) {
-    if (!options._modelDef) {
+    if (!options.modelDef) {
         return { messages, options };
     }
 
-    const modelConfig = options._modelDef;
-    const config = options._modelConfig;
+    const modelConfig = options.modelDef;
+    const config = options.modelConfig;
     const updatedOptions = { ...options };
 
     // Check character limit

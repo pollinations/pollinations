@@ -1,13 +1,12 @@
 import dotenv from "dotenv";
 import { genericOpenAIClient } from "./genericOpenAIClient.js";
 import debug from "debug";
-import { resolveModelConfig } from "./transforms/ModelConfigResolver.js";
+import { resolveModelConfig, resolveCompleteModelInfo } from "./utils/modelResolver.js";
 import { generateHeaders } from "./transforms/HeaderGenerator.js";
 import { sanitizeMessages } from "./transforms/MessageSanitizer.js";
 import { checkLimits } from "./transforms/limitChecker.js";
 import { processParameters } from "./transforms/parameterProcessor.js";
 import { findModelByName } from "./availableModels.js";
-import { resolveCompleteModelInfo } from "./utils/configResolver.js";
 
 dotenv.config();
 
@@ -92,19 +91,19 @@ export async function generateTextPortkey(messages, options = {}) {
 			let result = resolveModelConfig(processedMessages, processedOptions);
 			processedMessages = result.messages;
 			processedOptions = result.options;
-			log("After resolveModelConfig:", !!processedOptions._modelDef, !!processedOptions._modelConfig);
+			log("After resolveModelConfig:", !!processedOptions.modelDef, !!processedOptions.modelConfig);
 
 			// 2. Generate headers (async)
 			result = await generateHeaders(processedMessages, processedOptions);
 			processedMessages = result.messages;
 			processedOptions = result.options;
-			log("After generateHeaders:", !!processedOptions._modelDef, !!processedOptions._modelConfig);
+			log("After generateHeaders:", !!processedOptions.modelDef, !!processedOptions.modelConfig);
 
 			// 3. Sanitize messages
 			result = sanitizeMessages(processedMessages, processedOptions);
 			processedMessages = result.messages;
 			processedOptions = result.options;
-			log("After sanitizeMessages:", !!processedOptions._modelDef, !!processedOptions._modelConfig);
+			log("After sanitizeMessages:", !!processedOptions.modelDef, !!processedOptions.modelConfig);
 
 			// 4. Check limits
 			result = checkLimits(processedMessages, processedOptions);
@@ -125,12 +124,12 @@ export async function generateTextPortkey(messages, options = {}) {
 	// Create a fresh config with clean headers for this request
 	const requestConfig = {
 		...clientConfig,
-		additionalHeaders: processedOptions._additionalHeaders || {}
+		additionalHeaders: processedOptions.additionalHeaders || {}
 	};
 	
 	// Remove from options since it's now in config
-	if (processedOptions._additionalHeaders) {
-		delete processedOptions._additionalHeaders;
+	if (processedOptions.additionalHeaders) {
+		delete processedOptions.additionalHeaders;
 	}
 	
 	return await genericOpenAIClient(processedMessages, processedOptions, requestConfig);

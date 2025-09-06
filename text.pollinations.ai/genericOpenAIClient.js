@@ -28,7 +28,6 @@ const errorLog = debug(`pollinations:error`);
  * @param {Object} config.defaultOptions - Default options for the client
  * @param {Function} config.formatResponse - Optional function to format the response
  * @param {Object} config.additionalHeaders - Optional additional headers to include in requests
- * @param {boolean|Function} config.supportsSystemMessages - Whether the API supports system messages (default: true)
  * @returns {Object} - API response object
  */
 export async function genericOpenAIClient(messages, options = {}, config) {
@@ -39,7 +38,6 @@ export async function genericOpenAIClient(messages, options = {}, config) {
         defaultOptions = {},
         formatResponse = null,
         additionalHeaders = {},
-        supportsSystemMessages = true,
     } = config;
         const startTime = Date.now();
         const requestId = generateRequestId();
@@ -69,47 +67,14 @@ export async function genericOpenAIClient(messages, options = {}, config) {
             // Validate and normalize messages
             const validatedMessages = validateAndNormalizeMessages(messages);
 
-            // Determine if the model supports system messages
-            let supportsSystem = supportsSystemMessages;
-            if (typeof supportsSystemMessages === "function") {
-                supportsSystem = supportsSystemMessages(normalizedOptions);
-            }
+            // System message handling is now done via transforms before reaching this client
+            const processedMessages = validatedMessages;
 
-            // Process messages based on system message support
-            // Note: System prompts are now handled via transforms before reaching this client
-            let processedMessages;
-            if (supportsSystem) {
-                // Use validated messages directly since transforms handle system prompts
-                processedMessages = validatedMessages;
-            } else {
-                // For models that don't support system messages, convert them to user messages
-                log(
-                    `[${requestId}] Model ${modelName} doesn't support system messages, converting to user messages`,
-                );
-                processedMessages = convertSystemToUserMessages(validatedMessages);
-            }
-
-            // Build request body
+            // Build request body using spread - normalization already handled upstream
             const requestBody = {
                 model: modelName,
                 messages: processedMessages,
-                temperature: normalizedOptions.temperature,
-                top_p: normalizedOptions.top_p,
-                presence_penalty: normalizedOptions.presence_penalty,
-                frequency_penalty: normalizedOptions.frequency_penalty,
-                stream: normalizedOptions.stream,
-                seed: normalizedOptions.seed,
-                max_tokens: normalizedOptions.maxTokens,
-                // Use the original response_format if provided, otherwise fallback to simple json_object type if jsonMode is true
-                response_format:
-                    normalizedOptions.response_format ||
-                    (normalizedOptions.jsonMode
-                        ? { type: "json_object" }
-                        : undefined),
-                tools: normalizedOptions.tools,
-                tool_choice: normalizedOptions.tool_choice,
-                modalities: normalizedOptions.modalities,
-                audio: normalizedOptions.audio,
+                ...normalizedOptions,
             };
 
             // Clean undefined and null values

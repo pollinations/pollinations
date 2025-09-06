@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import { genericOpenAIClient } from "./genericOpenAIClient.js";
 import debug from "debug";
-import { resolveModelConfig, resolveCompleteModelInfo } from "./utils/modelResolver.js";
+import { resolveModelConfig } from "./utils/modelResolver.js";
 import { generateHeaders } from "./transforms/HeaderGenerator.js";
 import { sanitizeMessages } from "./transforms/MessageSanitizer.js";
 import { checkLimits } from "./transforms/limitChecker.js";
@@ -47,12 +47,6 @@ const clientConfig = {
 	// Additional headers will be dynamically set in transformRequest
 	additionalHeaders: {},
 
-	// Models that don't support system messages will have system messages converted to user messages
-	// This decision is now made based on the model definition in availableModels.js
-	supportsSystemMessages: (options) => {
-		const modelInfo = resolveCompleteModelInfo([], options.model);
-		return modelInfo?.capabilities.supportsSystemMessages !== false;
-	},
 
 
 	// Default options

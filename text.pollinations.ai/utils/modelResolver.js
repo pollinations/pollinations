@@ -57,20 +57,3 @@ export function resolveModelConfig(messages, options) {
     return result;
 }
 
-/**
- * Resolves complete model information for system message support check
- * @param {Array} availableModels - Array of available model definitions (unused, kept for compatibility)
- * @param {string} modelName - Model name to resolve
- * @returns {Object|null} Complete model information or null
- */
-export const resolveCompleteModelInfo = (availableModels, modelName) => {
-    const modelDef = findModelByName(modelName);
-    if (!modelDef) return null;
-    
-    return {
-        definition: modelDef,
-        capabilities: {
-            supportsSystemMessages: modelDef?.supportsSystemMessages !== false
-        }
-    };
-};

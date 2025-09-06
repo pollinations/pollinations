@@ -205,6 +205,20 @@ export function normalizeOptions(options = {}, defaults = {}) {
         normalized.seed = Math.floor(normalized.seed);
     }
 
+    // Handle maxTokens -> max_tokens mapping
+    if (normalized.maxTokens !== undefined) {
+        normalized.max_tokens = normalized.maxTokens;
+        delete normalized.maxTokens;
+    }
+
+    // Handle jsonMode -> response_format conversion
+    if (normalized.jsonMode) {
+        if (!normalized.response_format) {
+            normalized.response_format = { type: "json_object" };
+        }
+        delete normalized.jsonMode;
+    }
+
     return normalized;
 }
 

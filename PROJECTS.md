@@ -235,4 +235,5 @@ Pollinations.AI is used in various projects, including:
 | 🇧🇷 [Tutorial](https://guiadehospedagem.com.br/pollinations-ai/) | An in-depth Portuguese tutorial on using Pollinations AI. | Janderson de Sales |
 | [Podcast #1500](https://open.spotify.com/show/1wu4ngb1dclyTwoNN4cZzK) | Podcast project powered by pollinations, featuring dialogues among LLMs. First... | @brain.diver |
 | [Proyecto Descartes](https://proyectodescartes.org/revista/Numeros/Revista_8_2024/index.html) | Educational initiative integrating Pollinations AI into STEM. | Juan Gmo. Rivera |
+| [SearchGPT](https://huggingface.co/spaces/umint/searchgpt) ([⭐ 0](https://huggingface.co/spaces/umint/searchgpt/tree/main)) | ChatGPT with real-time web search & URL reading capability. Part of the UltimaX Intelligence project. | @hadadarjt |
 

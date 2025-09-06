@@ -135,4 +135,13 @@ export const learnProjects = [
         language: "si", // Sinhala
         order: 2,
     },
+    {
+        name: "SearchGPT",
+        url: "https://huggingface.co/spaces/umint/searchgpt",
+        description:
+            "ChatGPT with real-time web search & URL reading capability. Part of the UltimaX Intelligence project.",
+        author: "@hadadarjt",
+        submissionDate: "2025-09-05",
+        order: 1
+    }
 ];

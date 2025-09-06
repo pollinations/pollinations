@@ -5,6 +5,14 @@
 
 export const creativeProjects = [
   {
+    name: "Ai image generator 🎨",
+    url: "https://ris-imago.vercel.app/",
+    description: "A React-based AI image generator that transforms user prompts into high-quality images. It features custom controls for style, quality, and resolution, and offers user history.",
+    author: "rishabhmishra.81e@gmail.com",
+    submissionDate: "2025-09-06",
+    order: 1
+  },
+  {
     name: "🇨🇳 AI Image Generator",
     url: "https://ai-pic.site/",
     description: "Create Amazing Images with AI. Generate stunning images from text descriptions with AI optimized prompt word functions, unlimited generated images, real-time display of image generation progress. Supporting Chinese and English languages. (使用AI从文本描述生成令人惊叹的图像)",

@@ -102,38 +102,6 @@ const MODEL_COST = {
 		prompt_text: 0.5,
 		prompt_cache: 0.125,
 		completion_text: 2.0
-	},
-
-	// Community models (using model names as keys)
-	"unity": {
-		prompt_text: 1.0,
-		prompt_cache: 0.25,
-		completion_text: 4.0
-	},
-	"mirexa": {
-		prompt_text: 1.0,
-		prompt_cache: 0.25,
-		completion_text: 4.0
-	},
-	"midijourney": {
-		prompt_text: 1.0,
-		prompt_cache: 0.25,
-		completion_text: 4.0
-	},
-	"rtist": {
-		prompt_text: 1.0,
-		prompt_cache: 0.25,
-		completion_text: 4.0
-	},
-	"evil": {
-		prompt_text: 1.0,
-		prompt_cache: 0.25,
-		completion_text: 4.0
-	},
-	"bidara": {
-		prompt_text: 1.0,
-		prompt_cache: 0.25,
-		completion_text: 4.0
 	}
 };
 

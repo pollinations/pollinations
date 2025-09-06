@@ -5,6 +5,15 @@
 
 export const creativeProjects = [
   {
+    name: "🇹🇷 CVRON AI - Free İmage Generator",
+    url: "https://cvronai.rf.gd",
+    description: "Resim Oluşturma İşlemleri İçin Pollinations API yi kullanmakta (Uses Pollinations API for image generation operations)",
+    author: "@cr7",
+    submissionDate: "2025-09-06",
+    language: "tr-TR",
+    order: 1
+  },
+  {
     name: "Ai image generator 🎨",
     url: "https://ris-imago.vercel.app/",
     description: "A React-based AI image generator that transforms user prompts into high-quality images. It features custom controls for style, quality, and resolution, and offers user history.",

@@ -5,6 +5,15 @@
 
 export const creativeProjects = [
   {
+    name: "🇹🇷 CVRON AI - Free İmage Generator",
+    url: "https://cvronai.rf.gd",
+    description: "Resim Oluşturma İşlemleri İçin Pollinations API yi kullanmakta (Uses Pollinations API for image generation operations)",
+    author: "@cr7",
+    submissionDate: "2025-09-06",
+    language: "tr-TR",
+    order: 1
+  },
+  {
     name: "🇨🇳 AI Image Generator",
     url: "https://ai-pic.site/",
     description: "Create Amazing Images with AI. Generate stunning images from text descriptions with AI optimized prompt word functions, unlimited generated images, real-time display of image generation progress. Supporting Chinese and English languages. (使用AI从文本描述生成令人惊叹的图像)",

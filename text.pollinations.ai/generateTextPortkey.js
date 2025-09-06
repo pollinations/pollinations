@@ -7,6 +7,7 @@ import { sanitizeMessages } from "./transforms/MessageSanitizer.js";
 import { checkLimits } from "./transforms/limitChecker.js";
 import { processParameters } from "./transforms/parameterProcessor.js";
 import { findModelByName } from "./availableModels.js";
+import { resolveCompleteModelInfo } from "./utils/configResolver.js";
 
 dotenv.config();
 
@@ -50,9 +51,8 @@ const clientConfig = {
 	// Models that don't support system messages will have system messages converted to user messages
 	// This decision is now made based on the model definition in availableModels.js
 	supportsSystemMessages: (options) => {
-		const modelDef = findModelByName(options.model);
-		// Default to true if not specified, only return false if explicitly set
-		return modelDef?.supportsSystemMessages !== false;
+		const modelInfo = resolveCompleteModelInfo([], options.model);
+		return modelInfo?.capabilities.supportsSystemMessages !== false;
 	},
 
 

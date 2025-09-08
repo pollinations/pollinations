@@ -1,0 +1,37 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "lib": ["esnext", "dom", "dom.iterable"],
+        "types": ["@cloudflare/vitest-pool-workers", "vite/client"],
+        "jsx": "react-jsx",
+        "jsxImportSource": "react",
+
+        "forceConsistentCasingInFileNames": true,
+        "isolatedModules": true,
+
+        "strict": true,
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "allowImportingTsExtensions": true,
+        "allowJs": true,
+        "checkJs": false,
+
+        "noEmit": true,
+        "resolveJsonModule": true,
+        "sourceMap": true,
+        "skipLibCheck": true,
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["src/*"]
+        }
+    },
+    "include": ["worker-configuration.d.ts", "src/**/*.ts", "src/**/*.tsx"],
+    "exclude": ["node_modules", "dist"]
+}

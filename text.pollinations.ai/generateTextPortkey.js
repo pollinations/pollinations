@@ -79,47 +79,38 @@ export async function generateTextPortkey(messages, options = {}) {
 	}
 	
 	// Apply transformations sequentially
-	// Transform order is important:
-	// 1. resolveModelConfig - sets up model configuration
-	// 2. generateHeaders - creates provider-specific headers
-	// 3. sanitizeMessages - cleans message content  
-	// 4. checkLimits - validates against model limits
-	// 5. processParameters - filters and validates final parameters
 	if (processedOptions.model) {
-		const transforms = [
-			{ name: 'resolveModelConfig', fn: resolveModelConfig, async: false },
-			{ name: 'generateHeaders', fn: generateHeaders, async: true },
-			{ name: 'sanitizeMessages', fn: sanitizeMessages, async: false },
-			{ name: 'checkLimits', fn: checkLimits, async: false },
-			{ name: 'processParameters', fn: processParameters, async: false }
-		];
-
 		try {
-			for (const transform of transforms) {
-				try {
-					let result;
-					if (transform.async) {
-						result = await transform.fn(processedMessages, processedOptions);
-					} else {
-						result = transform.fn(processedMessages, processedOptions);
-					}
-					processedMessages = result.messages;
-					processedOptions = result.options;
-					log(`After ${transform.name}:`, !!processedOptions.modelDef, !!processedOptions.modelConfig);
-				} catch (transformError) {
-					const error = new Error(`Transform '${transform.name}' failed: ${transformError.message}`);
-					error.cause = transformError;
-					error.transform = transform.name;
-					throw error;
-				}
-			}
+			// 1. Resolve model configuration
+			let result = resolveModelConfig(processedMessages, processedOptions);
+			processedMessages = result.messages;
+			processedOptions = result.options;
+			log("After resolveModelConfig:", !!processedOptions.modelDef, !!processedOptions.modelConfig);
+
+			// 2. Generate headers (async)
+			result = await generateHeaders(processedMessages, processedOptions);
+			processedMessages = result.messages;
+			processedOptions = result.options;
+			log("After generateHeaders:", !!processedOptions.modelDef, !!processedOptions.modelConfig);
+
+			// 3. Sanitize messages
+			result = sanitizeMessages(processedMessages, processedOptions);
+			processedMessages = result.messages;
+			processedOptions = result.options;
+			log("After sanitizeMessages:", !!processedOptions.modelDef, !!processedOptions.modelConfig);
+
+			// 4. Check limits
+			result = checkLimits(processedMessages, processedOptions);
+			processedMessages = result.messages;
+			processedOptions = result.options;
+
+			// 5. Process parameters
+			result = processParameters(processedMessages, processedOptions);
+			processedMessages = result.messages;
+			processedOptions = result.options;
+
 		} catch (error) {
-			errorLog("Error in request transformation pipeline:", {
-				transform: error.transform,
-				message: error.message,
-				cause: error.cause?.message,
-				stack: error.stack
-			});
+			errorLog("Error in request transformation:", error);
 			throw error;
 		}
 	}

@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import debug from "debug";
 import { calculateTotalCost, resolveCost } from "./costCalculator.js";
-import { findModelByName } from "../availableModels.js";
+import { getProvider } from "../modelCost.js";
 import { generatePollinationsId, getOrGenerateId } from "./idGenerator.js";
 
 // Load environment variables
@@ -85,10 +85,9 @@ export async function sendTinybirdEvent(eventData) {
         // Calculate total cost based on token usage and cost data
         const totalCost = calculateTotalCost(tokenData) ?? 0;
 
-        // Extract model and provider info
-        const modelName = eventData.model;
-        const model = findModelByName(modelName);
-        const provider = model?.provider ?? 'unknown';
+        // Extract model and provider info - use actual API response model name
+        const modelName = eventData.modelUsed || eventData.model;
+        const provider = getProvider(modelName) ?? 'unknown';
         log(`Provider for model ${modelName}: ${provider}`);
 
         // Extract moderation data from choices if present (Azure OpenAI)

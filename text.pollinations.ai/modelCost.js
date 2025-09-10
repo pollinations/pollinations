@@ -44,22 +44,22 @@ const MODEL_COST = {
 	  prompt_audio: 10.0,
 	  completion_audio: 20.0
 	},
-	"o4-mini-2025-04-16": {
-	  provider: "azure-openai",
-	  region: "us-central",
-	  prompt_text: 1.10,
-	  prompt_cache: 0.28,
-	  completion_text: 4.40
-	},
-  
-	// ===== Google (Gemini) ===== Pricing: https://cloud.google.com/vertex-ai/generative-ai/pricing
+
+	// ===== Navy API (Gemini) ===== Pricing: https://cloud.google.com/vertex-ai/generative-ai/pricing
 	"gemini-2.5-flash-lite": {
-	  provider: "google-vertex",
+	  provider: "api.navy",
 	  region: "us-central",
-	  prompt_text: 0.10,
-	  prompt_audio: 0.30,
-	  completion_text: 0.40
+	  prompt_text: 0.0,
+	  prompt_audio: 0.0,
+	  completion_text: 0.0
 	},
+	"o4-mini-2025-04-16": {
+		provider: "api.navy",
+		region: "us-central",
+		prompt_text: 0.0,
+		prompt_cache: 0.0,
+		completion_text: 0.0
+	  },
   
 	// ===== Scaleway ===== Pricing: https://www.scaleway.com/en/pricing/model-as-a-service/
 	"qwen2.5-coder-32b-instruct": {

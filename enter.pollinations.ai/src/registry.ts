@@ -35,54 +35,60 @@ const USAGE_TYPES = {
     },
 } as const;
 
-type UsageType = keyof typeof USAGE_TYPES;
+export type UsageType = keyof typeof USAGE_TYPES;
 
-type TokenUsage = {
+export type TokenUsage = {
     unit: "TOKENS";
 } & { [K in UsageType]?: number };
 
-type DollarConvertedUsage = {
+export type DollarConvertedUsage = {
     unit: "USD";
 } & { [K in UsageType]?: number };
 
-type UsageCost = DollarConvertedUsage & {
+export type UsageCost = DollarConvertedUsage & {
     totalCost: number;
 };
 
-type UsagePrice = DollarConvertedUsage & {
+export type UsagePrice = DollarConvertedUsage & {
     totalPrice: number;
 };
 
-type UsageConversionRate = {
+export type UsageConversionRate = {
     unit: Unit;
     rate: number;
 };
 
-type UsageConversionDefinition = {
+export type UsageConversionDefinition = {
     date: number;
 } & { [K in UsageType]?: UsageConversionRate };
 
-type PriceDefinition = UsageConversionDefinition;
-type CostDefinition = UsageConversionDefinition;
+export type PriceDefinition = UsageConversionDefinition;
+export type CostDefinition = UsageConversionDefinition;
 
-type ModelProviderDefinition = {
+export type ModelProviderDefinition = {
     displayName: string;
     cost: CostDefinition[];
 };
 
-type ModelProviderRegistry = {
+export type ModelProviderRegistry = {
     [Key in string]: ModelProviderDefinition;
 };
 
-type ServiceDefinition<T extends ModelProviderRegistry> = {
+export type ServiceDefinition<T extends ModelProviderRegistry> = {
     displayName: string;
     aliases: string[];
     modelProviders: (keyof T)[];
     price: PriceDefinition[];
 };
 
-type ServiceRegistry<T extends ModelProviderRegistry> = {
+export type ServiceRegistry<T extends ModelProviderRegistry> = {
     [Key in string]: ServiceDefinition<T>;
+};
+
+export type ServiceMargins = {
+    [Key in string]: {
+        [Key in UsageType]?: number;
+    };
 };
 
 /** Sorts the cost and price definitions by date, in descending order */
@@ -931,6 +937,57 @@ function isFreeService<
     );
 }
 
+function calculateMargins<
+    TP extends ModelProviderRegistry,
+    TS extends ServiceRegistry<TP>,
+>(providers: TP, services: TS, service: keyof TS): ServiceMargins {
+    const serviceDefinition = services[service];
+    const servicePriceDefinition = getActivePriceDefinition<TP, TS>(
+        services,
+        service,
+    );
+    if (!servicePriceDefinition)
+        throw new Error(
+            `Failed to find price definition for service: ${service.toString()}`,
+        );
+    return Object.fromEntries(
+        serviceDefinition.modelProviders.map((provider) => {
+            const costDefinition = getActiveCostDefinition(providers, provider);
+            if (!costDefinition)
+                throw new Error(
+                    `Failed to find cost definition for provider: ${provider.toString()}`,
+                );
+            return [
+                provider,
+                Object.fromEntries(
+                    Object.keys(omit(costDefinition, "date")).map(
+                        (usageType) => {
+                            const usageCost =
+                                costDefinition[usageType as UsageType];
+                            const usagePrice =
+                                servicePriceDefinition[usageType as UsageType];
+                            if (!usageCost || !usagePrice) {
+                                throw new Error(
+                                    `Failed to find usage cost or price for provider: ${provider.toString()}`,
+                                );
+                            }
+                            if (usageCost.unit !== usagePrice.unit) {
+                                throw new Error(
+                                    `Usage cost and price units do not match for provider: ${provider.toString()}`,
+                                );
+                            }
+                            return [
+                                usageType,
+                                usagePrice.rate - usageCost.rate,
+                            ];
+                        },
+                    ),
+                ),
+            ];
+        }),
+    );
+}
+
 export function createRegistry<
     TP extends ModelProviderRegistry,
     TS extends ServiceRegistry<TP>,
@@ -966,6 +1023,12 @@ export function createRegistry<
             calculateCost<TP>(providerRegistry, provider, usage),
         calculatePrice: (service: keyof typeof services, usage: TokenUsage) =>
             calculatePrice<TP, TS>(serviceRegistry, service, usage),
+        calculateMargins: (service: keyof typeof services) =>
+            calculateMargins<TP, TS>(
+                providerRegistry,
+                serviceRegistry,
+                service,
+            ),
     };
 }
 

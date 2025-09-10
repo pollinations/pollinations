@@ -6,7 +6,7 @@ import {
 import { randomBytes } from "node:crypto";
 import { beforeAll, beforeEach, expect, test } from "vitest";
 import type { InsertPolarEvent } from "../src/db/schema/event";
-import worker from "../src/index.tsx";
+import worker from "../src/index.ts";
 import { storePolarEvents } from "../src/polar";
 import { setupFetchMock } from "./mocks/fetch.ts";
 import { createMockPolar } from "./mocks/polar.ts";

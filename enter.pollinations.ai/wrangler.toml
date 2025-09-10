@@ -7,6 +7,7 @@ compatibility_flags = [ "nodejs_compat", "nodejs_als" ]
 port = 3000
 
 [assets]
+directory = "dist/client"
 not_found_handling = "single-page-application"
 run_worker_first = [ "/api/*" ]
 
@@ -61,12 +62,13 @@ POLAR_SUCCESS_URL = "https://beta.pollinations.ai"
 binding = "DB"
 database_name = "pollinations-auth"
 database_id = "cc225cad-b9a2-4595-8323-6602e7680511"
+migrations_dir = "drizzle"
 
 [env.test.vars]
 ENVIRONMENT = "test"
-BASE_URL = "http://localhost:3000"
-AUTH_BASE_PATH = "/api/auth"
+PUBLIC_BASE_URL = "http://localhost:3000"
+PUBLIC_AUTH_PATH = "/api/auth"
 GITHUB_CLIENT_ID = "test_github_client_id"
 GITHUB_CLIENT_SECRET = "test_github_client_secret"
 POLAR_ACCESS_TOKEN = "test_polar_token"
-POLAR_SUCCESS_URL = "http://localhost:3000/success"
+POLAR_SUCCESS_URL = "http://localhost:3000"

@@ -27,14 +27,16 @@ export function checkLimits(messages, options) {
         }
     }
 
-    // Set max_tokens if not provided
-    if (!updatedOptions.max_tokens) {
-        if (modelConfig.maxTokens) {
-            log(`Setting max_tokens to model-specific value: ${modelConfig.maxTokens}`);
-            updatedOptions.max_tokens = modelConfig.maxTokens;
-        } else if (config["max-tokens"]) {
-            log(`Setting max_tokens to default value: ${config["max-tokens"]}`);
-            updatedOptions.max_tokens = config["max-tokens"];
+    // Enforce max_tokens limits - model config takes precedence over user requests
+    const configuredMaxTokens = modelConfig.maxTokens || config["max-tokens"];
+    
+    if (configuredMaxTokens) {
+        if (updatedOptions.max_tokens && updatedOptions.max_tokens > configuredMaxTokens) {
+            log(`User requested ${updatedOptions.max_tokens} tokens, but model limit is ${configuredMaxTokens}. Capping to limit.`);
+            updatedOptions.max_tokens = configuredMaxTokens;
+        } else if (!updatedOptions.max_tokens) {
+            log(`Setting max_tokens to configured limit: ${configuredMaxTokens}`);
+            updatedOptions.max_tokens = configuredMaxTokens;
         }
     }
 

@@ -63,16 +63,16 @@ const MODEL_COST = {
   
 	// ===== Scaleway ===== Pricing: https://www.scaleway.com/en/pricing/model-as-a-service/
 	"qwen2.5-coder-32b-instruct": {
-	  provider: "scaleway-ai",
-	  region: "fr-par-1",
-	  prompt_text: 0.9,
-	  completion_text: 0.9
+		provider: "scaleway-ai",
+		region: "fr-par-1",
+		prompt_text: 1.05,
+		completion_text: 1.05
 	},
 	"mistral-small-3.1-24b-instruct-2503": {
-	  provider: "scaleway-ai",
-	  region: "fr-par-1",
-	  prompt_text: 0.15,
-	  completion_text: 0.35
+		provider: "scaleway-ai",
+		region: "fr-par-1",
+		prompt_text: 0.18,
+		completion_text: 0.41
 	},
   
 	// ===== AWS Bedrock ===== Pricing: https://aws.amazon.com/bedrock/pricing/

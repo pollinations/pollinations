@@ -90,9 +90,9 @@ const models = [
 		config: portkeyConfig["mistral.mistral-small-2402-v1:0"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		provider: "bedrock",
-		tier: "nectar",
-		hidden: true,
-		aliases: ["mistral-nemo-instruct-2407-romance","mistral-roblox"],
+		tier: "flower",
+		// hidden: true,
+		aliases: ["mistral-nemo-instruct-2407-romance"],
 		input_modalities: ["text"],
 		output_modalities: ["text"],
 		tools: true

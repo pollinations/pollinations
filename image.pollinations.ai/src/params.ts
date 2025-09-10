@@ -40,11 +40,11 @@ function adjustImageSizeForModel(
     var sanitizedWidth =
         width !== undefined && Number.isInteger(width)
             ? width
-            : Math.min(1024, sideLength);
+            : sideLength;
     var sanitizedHeight =
         height !== undefined && Number.isInteger(height)
             ? height
-            : Math.min(1024, sideLength);
+            : sideLength;
 
     // Adjust dimensions to maintain aspect ratio if exceeding maxPixels
     if (sanitizedWidth * sanitizedHeight > maxPixels) {

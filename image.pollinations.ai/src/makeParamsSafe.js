@@ -48,10 +48,10 @@ export const makeParamsSafe = ({
     // Ensure width and height are integers or default to sideLength
     width = Number.isInteger(parseInt(width))
         ? parseInt(width)
-        : Math.min(1024, sideLength);
+        : sideLength;
     height = Number.isInteger(parseInt(height))
         ? parseInt(height)
-        : Math.min(1024, sideLength);
+        : sideLength;
 
     // Ensure seed is a valid integer within the allowed range
     const maxSeedValue = 1844674407370955;

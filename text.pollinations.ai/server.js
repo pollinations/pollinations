@@ -420,12 +420,24 @@ export async function sendErrorResponse(
 			}
 		: "no request data";
 
+	// Extract username from auth result if available
+	const authResult = req.authResult || {};
+	const userContext = authResult.username 
+		? `${authResult.username} (${authResult.userId})` 
+		: "anonymous";
+
 	// Log comprehensive error information (for internal use only)
 	errorLog("Error occurred:", {
 		error: {
 			message: error.message,
 			status: responseStatus,
 			details: error.details,
+		},
+		user: {
+			username: authResult.username || null,
+			userId: authResult.userId || null,
+			tier: authResult.tier || "anonymous",
+			context: userContext,
 		},
 		model: error.model || requestData?.model || "unknown",
 		provider: error.provider || "Pollinations",
@@ -434,6 +446,26 @@ export async function sendErrorResponse(
 		requestData: sanitizedRequestData,
 		stack: error.stack,
 	});
+
+	// Special logging for rate limit errors with clear username identification
+	if (responseStatus === 429) {
+		if (authResult.username) {
+			errorLog(
+				"🚫 RATE LIMIT ERROR: User %s (%s) exceeded limits - IP: %s, tier: %s, model: %s",
+				authResult.username,
+				authResult.userId,
+				clientInfo.ip,
+				authResult.tier,
+				requestData?.model || "unknown"
+			);
+		} else {
+			errorLog(
+				"🚫 RATE LIMIT ERROR: Anonymous user exceeded limits - IP: %s, model: %s",
+				clientInfo.ip,
+				requestData?.model || "unknown"
+			);
+		}
+	}
 
 	try {
 		res.status(responseStatus).json(errorResponse);

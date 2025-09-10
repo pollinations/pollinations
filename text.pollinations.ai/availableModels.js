@@ -197,7 +197,8 @@ const models = [
 		community: false,
 		aliases: ["o4-mini"],
 		reasoning: true,
-		input_modalities: ["text"],
+		supportsSystemMessages: false,
+		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true
 	},
@@ -210,7 +211,7 @@ const models = [
 		tier: "anonymous",
 		community: false,
 		aliases: ["gemini-2.5-flash-lite"],
-		input_modalities: ["text"],
+		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true
 	},

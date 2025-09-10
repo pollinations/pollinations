@@ -38,6 +38,7 @@ const models = [
 		description: "OpenAI GPT-4.1 Nano",
 		config: portkeyConfig["gpt-4.1-nano"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+		provider: "azure",
 		tier: "anonymous",
 		community: false,
 		input_modalities: ["text", "image"],

@@ -1,6 +1,7 @@
 // Import transform functions
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
-import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
+import { createSystemPromptTransform, removeSystemMessages } from "./transforms/createSystemPromptTransform.js";
+import { pipe } from "./transforms/pipe.js";
 
 // Import persona prompts
 import surSystemPrompt from "./personas/sur.js";
@@ -102,9 +103,11 @@ const models = [
 		description: "DeepSeek R1 0528 (Bedrock)",
 		maxInputChars: 5000,
 		config: portkeyConfig["us.deepseek.r1-v1:0"],
-		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+		transform: pipe(
+			createSystemPromptTransform(BASE_PROMPTS.conversational),
+			removeSystemMessages
+		),
 		reasoning: true,
-		supportsSystemMessages: false,
 		provider: "bedrock",
 		tier: "seed",
 		community: false,
@@ -185,14 +188,17 @@ const models = [
 		name: "openai-reasoning",
 		description: "OpenAI o4-mini (api.navy)",
 		config: portkeyConfig["o4-mini"],
-		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+		transform: pipe(
+			createSystemPromptTransform(BASE_PROMPTS.conversational),
+			removeSystemMessages
+		),
 		provider: "api.navy",
 		tier: "seed",
 		community: false,
 		aliases: ["o4-mini"],
 		reasoning: true,
 		supportsSystemMessages: false,
-		input_modalities: ["text"],
+		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true
 	},
@@ -205,7 +211,7 @@ const models = [
 		tier: "anonymous",
 		community: false,
 		aliases: ["gemini-2.5-flash-lite"],
-		input_modalities: ["text"],
+		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true
 	},

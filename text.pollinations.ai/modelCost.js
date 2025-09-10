@@ -14,97 +14,103 @@ const log = debug('text.pollinations.ai:modelCost');
  * Prices are per million tokens unless otherwise specified
  */
 const MODEL_COST = {
-	// Azure OpenAI models
+	// ===== Azure OpenAI ===== Pricing: https://azure.microsoft.com/en-us/pricing/details/cognitive-services/openai-service/
 	"gpt-4.1-nano-2025-04-14": {
-		provider: "azure-openai",
-		prompt_text: 0.15,
-		prompt_cache: 0.075,
-		completion_text: 0.6
+	  provider: "azure-openai",
+	  region: "eastus",
+	  prompt_text: 0.11,
+	  prompt_cache: 0.03,
+	  completion_text: 0.44
 	},
 	"gpt-5-nano-2025-08-07": {
-		provider: "azure-openai",
-		prompt_text: 0.25,
-		prompt_cache: 0.125,
-		completion_text: 1.0
+	  provider: "azure-openai",
+	  region: "eastus",
+	  prompt_text: 0.06,
+	  prompt_cache: 0.01,
+	  completion_text: 0.44
 	},
 	"gpt-4.1-2025-04-14": {
-		provider: "azure-openai",
-		prompt_text: 2.5,
-		prompt_cache: 1.25,
-		completion_text: 10.0
+	  provider: "azure-openai",
+	  region: "eastus",
+	  prompt_text: 2.20,
+	  prompt_cache: 0.55,
+	  completion_text: 8.80
 	},
 	"gpt-4o-mini-audio-preview-2024-12-17": {
-		provider: "azure-openai",
-		prompt_text: 0.15,
-		prompt_cache: 0.075,
-		completion_text: 0.6,
-		prompt_audio: 10.0,
-		completion_audio: 20.0
+	  provider: "azure-openai",
+	  region: "eastus",
+	  prompt_text: 0.165,
+	  completion_text: 0.66,
+	  prompt_audio: 11,
+	  completion_audio: 22
 	},
-	// via API Navy
 	"o4-mini-2025-04-16": {
-		provider: "api-navy",
-		prompt_text: 0.15,
-		prompt_cache: 0.075,
-		completion_text: 0.6
+	  provider: "openai",
+	  region: "us-central",
+	  prompt_text: 1.21,
+	  prompt_cache: 0.31,
+	  completion_text: 4.84
 	},
+  
+	// ===== Google (Gemini) ===== Pricing: https://cloud.google.com/vertex-ai/generative-ai/pricing
 	"gemini-2.5-flash-lite": {
-		provider: "api-navy",
-		prompt_text: 0.075,
-		prompt_cache: 0.0375,
-		completion_text: 0.3
+	  provider: "google",
+	  region: "us-central",
+	  prompt_text: 0.10,
+	  prompt_audio: 0.30,
+	  completion_text: 0.40
 	},
-	// Qwen Models (Scaleway)
+  
+	// ===== Scaleway ===== Pricing: https://www.scaleway.com/en/pricing/model-as-a-service/
 	"qwen2.5-coder-32b-instruct": {
-		prompt_text: 0.4,
-		prompt_cache: 0.1,
-		completion_text: 1.6,
-		provider: "scaleway"
+	  provider: "scaleway",
+	  region: "fr-par-1",
+	  prompt_text: 0.9,
+	  completion_text: 0.9
 	},
-	// Mistral Models (Scaleway)
 	"mistral-small-3.1-24b-instruct-2503": {
-		prompt_text: 0.2,
-		prompt_cache: 0.05,
-		completion_text: 0.8,
-		provider: "scaleway"
+	  provider: "scaleway",
+	  region: "fr-par-1",
+	  prompt_text: 0.15,
+	  completion_text: 0.35
 	},
-	// Mistral Models (Bedrock)
+  
+	// ===== AWS Bedrock ===== Pricing: https://aws.amazon.com/bedrock/pricing/
 	"mistral.mistral-small-2402-v1:0": {
-		prompt_text: 0.2,
-		prompt_cache: 0.05,
-		completion_text: 0.8,
-		provider: "bedrock"
+	  provider: "bedrock",
+	  region: "us-east-1",
+	  prompt_text: 1.00,
+	  prompt_cache: 0.50,
+	  completion_text: 3.00
 	},
-	// DeepSeek Models (Bedrock)
 	"us.deepseek.r1-v1:0": {
-		prompt_text: 1.35,
-		prompt_cache: 0.675,
-		completion_text: 5.4,
-		provider: "bedrock"
+	  provider: "bedrock",
+	  region: "us-east-1",
+	  prompt_text: 1.35,
+	  completion_text: 5.40
 	},
-
-	// Amazon Nova Models (Bedrock)
 	"amazon.nova-micro-v1:0": {
-		prompt_text: 0.035,
-		prompt_cache: 0.0175,
-		completion_text: 0.14,
-		provider: "bedrock"
+	  provider: "bedrock",
+	  region: "us-east-1",
+	  prompt_text: 0.035,
+	  prompt_cache: 0.00875,
+	  completion_text: 0.14
 	},
-	// Meta Llama Models (Bedrock)
+	"us.anthropic.claude-3.5-haiku-20241022-v1:0": {
+	  provider: "bedrock",
+	  region: "us-east-1",
+	  prompt_text: 0.80,
+	  prompt_cache: 0.08,
+	  prompt_cache_write: 1.0,
+	  completion_text: 4.00
+	},
 	"us.meta.llama3-1-8b-instruct-v1:0": {
-		prompt_text: 0.15,
-		prompt_cache: 0.0375,
-		completion_text: 0.60,
-		provider: "bedrock"
-	},
-	// Anthropic Claude Models (Bedrock)
-	"us.anthropic.claude-3-5-haiku-20241022-v1:0": {
-		prompt_text: 0.8,
-		prompt_cache: 0.2,
-		completion_text: 4.0,
-		provider: "bedrock"
-	},
-};
+	  provider: "bedrock",
+	  region: "us-east-1",
+	  prompt_text: 0.20,
+	  completion_text: 0.20
+	}
+  };
 
 /**
  * Resolve cost for a model by its original name

@@ -1,3 +1,5 @@
+import { convertSystemToUserMessages } from "../textGenerationUtils.js";
+
 /**
  * Creates a system prompt transform function that adds a default system prompt
  * only if no system message already exists in the conversation
@@ -42,5 +44,18 @@ export function createSystemPromptTransform(defaultSystemPrompt) {
             messages: messagesWithSystemPrompt,
             options
         };
+    };
+}
+
+/**
+ * Transform that removes system messages by converting them to user messages
+ * @param {Array} messages - Array of message objects
+ * @param {Object} options - Request options
+ * @returns {Object} Object with converted messages and options
+ */
+export function removeSystemMessages(messages, options) {
+    return {
+        messages: convertSystemToUserMessages(messages),
+        options
     };
 }

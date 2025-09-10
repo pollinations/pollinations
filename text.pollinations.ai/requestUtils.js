@@ -2,6 +2,8 @@ import debug from "debug";
 import dotenv from "dotenv";
 // Import shared utilities for authentication and environment handling
 import { extractReferrer } from "../shared/extractFromRequest.js";
+// Import parameter validators
+import { validateTextGenerationParams, validateJsonMode } from "./utils/parameterValidators.js";
 
 // Load environment variables including .env.local overrides
 // Load .env.local first (higher priority), then .env as fallback
@@ -21,38 +23,16 @@ export function getRequestData(req) {
     const body = req.body || {};
     const data = { ...query, ...body };
 
-    const jsonMode =
-        data.jsonMode ||
-        (typeof data.json === "string" && data.json.toLowerCase() === "true") ||
-        (typeof data.json === "boolean" && data.json === true) ||
-        data.response_format?.type === "json_object";
-
-    const seed = data.seed ? parseInt(data.seed, 10) : null;
-    let model = data.model || "openai-fast";
+    // Use validators to eliminate duplication
+    const validated = validateTextGenerationParams(data);
+    
     const systemPrompt = data.system ? data.system : null;
-    const temperature = data.temperature
-        ? parseFloat(data.temperature)
-        : undefined;
-    const top_p = data.top_p ? parseFloat(data.top_p) : undefined;
-    const presence_penalty = data.presence_penalty
-        ? parseFloat(data.presence_penalty)
-        : undefined;
-    const frequency_penalty = data.frequency_penalty
-        ? parseFloat(data.frequency_penalty)
-        : undefined;
     const isPrivate = req.path?.startsWith("/openai")
         ? true
-        : data.private === true ||
-          (typeof data.private === "string" &&
-              data.private.toLowerCase() === "true");
+        : validated.private === true;
 
     // Use shared referrer extraction utility
     const referrer = extractReferrer(req);
-
-    const stream = data.stream || false;
-
-    // Extract voice parameter for audio models
-    const voice = data.voice || "alloy";
 
     // Extract audio parameters
     const modalities = data.modalities;
@@ -61,9 +41,6 @@ export function getRequestData(req) {
     // Extract tools and tool_choice for function calling
     const tools = data.tools || undefined;
     const tool_choice = data.tool_choice || undefined;
-
-    // Extract reasoning_effort parameter for o4-mini model
-    const reasoning_effort = data.reasoning_effort || undefined;
 
     // Preserve the original response_format object if it exists
     const response_format = data.response_format || undefined;
@@ -77,22 +54,22 @@ export function getRequestData(req) {
 
     return {
         messages,
-        jsonMode,
-        seed,
-        model,
-        temperature,
-        top_p,
-        presence_penalty,
-        frequency_penalty,
+        jsonMode: validated.jsonMode,
+        seed: validated.seed,
+        model: validated.model,
+        temperature: validated.temperature,
+        top_p: validated.top_p,
+        presence_penalty: validated.presence_penalty,
+        frequency_penalty: validated.frequency_penalty,
         referrer,
-        stream,
+        stream: validated.stream,
         isPrivate,
-        voice,
+        voice: validated.voice,
         tools,
         tool_choice,
         modalities,
         audio,
-        reasoning_effort,
+        reasoning_effort: validated.reasoning_effort,
         response_format,
     };
 }

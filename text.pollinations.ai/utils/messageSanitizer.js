@@ -1,4 +1,5 @@
 import debug from "debug";
+import { getProvider } from "../modelCost.js";
 
 const log = debug("pollinations:portkey");
 
@@ -72,7 +73,11 @@ export function sanitizeMessagesWithPlaceholder(messages, modelConfig, originalM
   }
 
   // Step 2: Bedrock-specific conversation rules
-  if (modelConfig && modelConfig.provider === "bedrock") {
+  // Get provider from cost data using the actual model name
+  const actualModelName = modelConfig?.model || modelConfig?.["azure-model-name"] || modelConfig?.["azure-deployment-id"] || originalModelName;
+  const provider = getProvider(actualModelName);
+  
+  if (provider === "bedrock") {
     // Filter out user messages with empty string content
     result = result.filter((msg) => {
       if (

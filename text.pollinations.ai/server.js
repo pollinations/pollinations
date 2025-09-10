@@ -7,6 +7,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import dotenv from "dotenv";
 import { availableModels } from "./availableModels.js";
+import { getProvider } from "./modelCost.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
 import { processRequestForAds } from "./ads/initRequestFilter.js";
@@ -649,12 +650,19 @@ app.post("/", async (req, res) => {
 app.get("/openai/models", (req, res) => {
 	const models = availableModels
 		.filter((model) => !model.hidden)
-		.map((model) => ({
-			id: model.name,
-			object: "model",
-			created: Date.now(),
-			owned_by: model.provider,
-		}));
+		.map((model) => {
+			// Get provider from cost data using the model's config
+			const config = typeof model.config === 'function' ? model.config() : model.config;
+			const actualModelName = config?.model || config?.["azure-model-name"] || config?.["azure-deployment-id"] || model.name;
+			const provider = getProvider(actualModelName) || "unknown";
+			
+			return {
+				id: model.name,
+				object: "model",
+				created: Date.now(),
+				owned_by: provider,
+			};
+		});
 	res.json({
 		object: "list",
 		data: models,

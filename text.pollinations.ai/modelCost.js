@@ -14,96 +14,102 @@ const log = debug('text.pollinations.ai:modelCost');
  * Prices are per million tokens unless otherwise specified
  */
 const MODEL_COST = {
-	// OpenAI Models
+	// ===== Azure OpenAI ===== Pricing: https://azure.microsoft.com/en-us/pricing/details/cognitive-services/openai-service/
+	"gpt-4.1-nano-2025-04-14": {
+	  provider: "azure-openai",
+	  region: "eastus",
+	  prompt_text: 0.10,
+	  prompt_cache: 0.03,
+	  completion_text: 0.40
+	},
 	"gpt-5-nano-2025-08-07": {
-		prompt_text: 0.055,
-		prompt_cache: 0.0055,
-		completion_text: 0.44
+	  provider: "azure-openai",
+	  region: "eastus",
+	  prompt_text: 0.0,
+	  prompt_cache: 0.01,
+	  completion_text: 0.40
 	},
 	"gpt-4.1-2025-04-14": {
-		prompt_text: 1.91,
-		prompt_cache: 0.48,
-		completion_text: 7.64
-	},
-	"gpt-4.1-nano-2025-04-14": {
-		prompt_text: 0.055,
-		prompt_cache: 0.0055,
-		completion_text: 0.44
+	  provider: "azure-openai",
+	  region: "eastus",
+	  prompt_text: 2.0,
+	  prompt_cache: 0.50,
+	  completion_text: 8.0
 	},
 	"gpt-4o-mini-audio-preview-2024-12-17": {
-		prompt_text: 0.1432,
-		prompt_cache: 0.075,
-		completion_text: 0.572793,
-		prompt_audio: 9.5466,
-		completion_audio: 19.093079
+	  provider: "azure-openai",
+	  region: "eastus",
+	  prompt_text: 0.15,
+	  completion_text: 0.60,
+	  prompt_audio: 10.0,
+	  completion_audio: 20.0
 	},
 
-	// Qwen Models
+	// ===== Navy API (Gemini) ===== Pricing: https://cloud.google.com/vertex-ai/generative-ai/pricing
+	"gemini-2.5-flash-lite": {
+	  provider: "api.navy",
+	  region: "us-central",
+	  prompt_text: 0.0,
+	  prompt_audio: 0.0,
+	  completion_text: 0.0
+	},
+	"o4-mini-2025-04-16": {
+		provider: "api.navy",
+		region: "us-central",
+		prompt_text: 0.0,
+		prompt_cache: 0.0,
+		completion_text: 0.0
+	  },
+  
+	// ===== Scaleway ===== Pricing: https://www.scaleway.com/en/pricing/model-as-a-service/
 	"qwen2.5-coder-32b-instruct": {
-		prompt_text: 0.4,
-		prompt_cache: 0.1,
-		completion_text: 1.6
+		provider: "scaleway-ai",
+		region: "fr-par-1",
+		prompt_text: 1.05,
+		completion_text: 1.05
 	},
-
-	// Mistral Models
 	"mistral-small-3.1-24b-instruct-2503": {
-		prompt_text: 0.2,
-		prompt_cache: 0.05,
-		completion_text: 0.8
+		provider: "scaleway-ai",
+		region: "fr-par-1",
+		prompt_text: 0.18,
+		completion_text: 0.41
 	},
+  
+	// ===== AWS Bedrock ===== Pricing: https://aws.amazon.com/bedrock/pricing/
 	"mistral.mistral-small-2402-v1:0": {
-		prompt_text: 0.2,
-		prompt_cache: 0.05,
-		completion_text: 0.8
+	  provider: "aws-bedrock",
+	  region: "us-east-1",
+	  prompt_text: 1.00,
+	  completion_text: 3.00
 	},
-
-	// DeepSeek Models
 	"us.deepseek.r1-v1:0": {
-		prompt_text: 1.35,
-		prompt_cache: 0.3375,
-		completion_text: 5.4
+	  provider: "aws-bedrock",
+	  region: "us-east-1",
+	  prompt_text: 1.35,
+	  completion_text: 5.40
 	},
-
-	// Amazon Nova Models
 	"amazon.nova-micro-v1:0": {
-		prompt_text: 0.035,
-		prompt_cache: 0.009,
-		completion_text: 0.14
+	  provider: "aws-bedrock",
+	  region: "us-east-1",
+	  prompt_text: 0.035,
+	  prompt_cache: 0.00875,
+	  completion_text: 0.14
 	},
-
-	// Meta Llama Models
+	"us.anthropic.claude-3.5-haiku-20241022-v1:0": {
+	  provider: "aws-bedrock",
+	  region: "us-east-1",
+	  prompt_text: 0.80,
+	  prompt_cache: 0.08,
+	  prompt_cache_write: 1.0,
+	  completion_text: 4.0
+	},
 	"us.meta.llama3-1-8b-instruct-v1:0": {
-		prompt_text: 0.15,
-		prompt_cache: 0.0375,
-		completion_text: 0.60
-	},
-
-	// Anthropic Claude Models
-	"us.anthropic.claude-3-5-haiku-20241022-v1:0": {
-		prompt_text: 0.8,
-		prompt_cache: 0.2,
-		completion_text: 4.0
-	},
-
-	// API.navy Models (Free)
-	"openai/o4-mini": {
-		prompt_text: 0.0,
-		prompt_cache: 0.0,
-		completion_text: 0.0
-	},
-	"google/gemini-2.5-flash-lite": {
-		prompt_text: 0.0,
-		prompt_cache: 0.0,
-		completion_text: 0.0
-	},
-	
-	// Commented-out models (for reference)
-	"gemini-2.5-flash-lite-search": {
-		prompt_text: 0.5,
-		prompt_cache: 0.125,
-		completion_text: 2.0
+	  provider: "aws-bedrock",
+	  region: "us-east-1",
+	  prompt_text: 0.22,
+	  completion_text: 0.22
 	}
-};
+  };
 
 /**
  * Resolve cost for a model by its original name
@@ -155,6 +161,17 @@ export function getCost(originalName) {
  */
 export function hasCost(originalName, fallbackName = null) {
 	return !!(MODEL_COST[originalName] || (fallbackName && MODEL_COST[fallbackName]));
+}
+
+/**
+ * Get provider for a model by its original name
+ * 
+ * @param {string} originalName - The original model name
+ * @returns {string|null} - Provider name or null if not found
+ */
+export function getProvider(originalName) {
+	const costData = MODEL_COST[originalName];
+	return costData?.provider || null;
 }
 
 /**

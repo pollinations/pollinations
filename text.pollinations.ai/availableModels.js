@@ -28,7 +28,7 @@ const models = [
 		provider: "azure",
 		tier: "anonymous",
 		community: false,
-		aliases: ["gpt-5-nano"],
+		aliases: ["gpt-5-nano", "openai-large"],
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true

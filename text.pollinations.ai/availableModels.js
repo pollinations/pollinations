@@ -80,7 +80,7 @@ const models = [
 	},
 	{
 		name: "mistral-romance",
-		description: "Mistral Small 2402 (Bedrock) - Romance Companion",
+		description: "Mistral Small 2402 - Romance Companion",
 		config: portkeyConfig["mistral.mistral-small-2402-v1:0"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "nectar",
@@ -92,7 +92,7 @@ const models = [
 	},
 	{
 		name: "deepseek-reasoning",
-		description: "DeepSeek R1 0528 (Bedrock)",
+		description: "DeepSeek R1 0528",
 		maxInputChars: 5000,
 		config: portkeyConfig["us.deepseek.r1-v1:0"],
 		transform: pipe(
@@ -136,7 +136,7 @@ const models = [
 	},
 	{
 		name: "nova-fast",
-		description: "Amazon Nova Micro (Bedrock)",
+		description: "Amazon Nova Micro",
 		config: portkeyConfig["amazon.nova-micro-v1:0"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		community: false,
@@ -148,7 +148,7 @@ const models = [
 	},
 	{
 		name: "roblox-rp",
-		description: "Llama 3.1 8B Instruct (Cross-Region Bedrock)",
+		description: "Llama 3.1 8B Instruct (Cross-Region)",
 		config: portkeyConfig["us.meta.llama3-1-8b-instruct-v1:0"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "seed",
@@ -160,7 +160,7 @@ const models = [
 	},
 	{
 		name: "claudyclaude",
-		description: "Claude 3.5 Haiku (Bedrock)",
+		description: "Claude 3.5 Haiku",
 		config: portkeyConfig["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "nectar",
@@ -200,32 +200,11 @@ const models = [
 		output_modalities: ["text"],
 		tools: true
 	},
-	// {
-	// 	name: "geminisearch",
-	//
-		// 	description: "Gemini 2.5 Flash Lite Search",
-	// 	handler: generateTextPortkey,
-	// 	provider: "api.navy",
-	// 	tier: "anonymous",
-	// 	community: false,
-	// 	aliases: "searchgpt",
-	// 	input_modalities: ["text"],
-	// 	output_modalities: ["text"],
-	// 	tools: true,
-	//
-		// },
-	// community models - use upstream endpoints
-	// {
-	// 	name: "elixposearch",
-	// 	description: "Elixpo Search",
-	// 	handler: generateTextPortkey,
-	// 	provider: "azure",
-	// 	tier: "anonymous",
-	// 	community: true,
-	// 	input_modalities: ["text"],
-	// 	output_modalities: ["text"],
-	// 	tools: false,
-	// },
+
+	// ======================================
+	// Persona Models (use upstream endpoints)
+	// ======================================
+
 	{
 		name: "unity",
 		description: "Unity Unrestricted Agent",
@@ -283,17 +262,6 @@ const models = [
 		output_modalities: ["text"],
 		tools: true
 	},
-	// {
-	// 	name: "sur",
-	// 	description: "Sur AI Assistant",
-	// 	handler: surMistral,
-	// 	provider: "scaleway",
-	// 	tier: "seed",
-	// 	community: true,
-	// 	input_modalities: ["text", "image"],
-	// 	output_modalities: ["text"],
-	// 	tools: true
-	// },
 	{
 		name: "bidara",
 		description: "BIDARA (Biomimetic Designer and Research Assistant by NASA)",

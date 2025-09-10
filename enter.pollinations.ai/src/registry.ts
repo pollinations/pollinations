@@ -1,10 +1,12 @@
-import { omit } from "./util.ts";
+import { omit, safeRound } from "./util.ts";
+
+const PRECISION = 8;
 
 const UNITS = {
     DPMT: {
         description: "dollars per million tokens",
         convert: (tokens: number, rate: number): number => {
-            return (tokens / 1_000_000) * rate;
+            return safeRound((tokens / 1_000_000) * rate, PRECISION);
         },
     },
 } as const;
@@ -18,7 +20,7 @@ const USAGE_TYPES = {
     promptCachedTokens: {
         description: "number of cached tokens in the input prompt",
     },
-    promptAudioTokes: {
+    promptAudioTokens: {
         description: "number of audio tokens in the input prompt",
     },
     promptImageTokens: {
@@ -26,6 +28,9 @@ const USAGE_TYPES = {
     },
     completionTextTokens: {
         description: "number of text tokens in the generated completion",
+    },
+    completionReasoningTokens: {
+        description: "number of reasoning tokens in the generated completion",
     },
     completionAudioTokens: {
         description: "number of audio tokens in the generated completion",
@@ -176,7 +181,7 @@ const MODELS = {
                     unit: "DPMT",
                     rate: 0.572793,
                 },
-                promptAudioTokes: {
+                promptAudioTokens: {
                     unit: "DPMT",
                     rate: 9.5466,
                 },
@@ -389,6 +394,12 @@ const MODELS = {
     },
 } as const satisfies ModelProviderRegistry;
 
+function passOnCost(
+    modelProvider: keyof typeof MODELS,
+): UsageConversionDefinition[] {
+    return MODELS[modelProvider].cost;
+}
+
 const SERVICES = {
     "openai": {
         displayName: "OpenAI GPT-5 Nano",
@@ -438,384 +449,104 @@ const SERVICES = {
         displayName: "OpenAI GPT-4.1",
         aliases: ["gpt-4.1"],
         modelProviders: ["gpt-4.1-2025-04-14"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        price: passOnCost("gpt-4.1-2025-04-14"),
     },
     "qwen-coder": {
         displayName: "Qwen 2.5 Coder 32B",
         aliases: ["qwen2.5-coder-32b-instruct"],
         modelProviders: ["qwen2.5-coder-32b-instruct"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        price: passOnCost("qwen2.5-coder-32b-instruct"),
     },
     "mistral": {
         displayName: "Mistral Small 3.1 24B",
         aliases: ["mistral-small-3.1-24b-instruct"],
         modelProviders: ["mistral-small-3.1-24b-instruct-2503"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        price: passOnCost("mistral-small-3.1-24b-instruct-2503"),
     },
     "mistral-romance": {
         displayName: "Mistral Small 2402 (Bedrock) - Romance Companion",
         aliases: ["mistral-nemo-instruct-2407-romance", "mistral-roblox"],
         modelProviders: ["mistral.mistral-small-2402-v1:0"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        price: passOnCost("mistral.mistral-small-2402-v1:0"),
     },
     "deepseek-reasoning": {
         displayName: "DeepSeek R1 0528 (Bedrock)",
         aliases: ["deepseek-r1-0528"],
         modelProviders: ["us.deepseek.r1-v1:0"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        price: passOnCost("us.deepseek.r1-v1:0"),
     },
     "openai-audio": {
         displayName: "OpenAI GPT-4o Mini Audio Preview",
         aliases: ["gpt-4o-mini-audio-preview"],
         modelProviders: ["gpt-4o-mini-audio-preview-2024-12-17"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptAudioTokes: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionAudioTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        price: passOnCost("gpt-4o-mini-audio-preview-2024-12-17"),
     },
     "nova-fast": {
         displayName: "Amazon Nova Micro (Bedrock)",
         aliases: ["nova-micro-v1"],
         modelProviders: ["amazon.nova-micro-v1:0"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        price: passOnCost("amazon.nova-micro-v1:0"),
     },
     "roblox-rp": {
         displayName: "Llama 3.1 8B Instruct (Cross-Region Bedrock)",
         aliases: ["llama-roblox", "llama-fast-roblox"],
         modelProviders: ["us.meta.llama3-1-8b-instruct-v1:0"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        price: passOnCost("us.meta.llama3-1-8b-instruct-v1:0"),
     },
     "claudyclaude": {
         displayName: "Claude 3.5 Haiku (Bedrock)",
         aliases: ["claude-3-5-haiku"],
         modelProviders: ["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        price: passOnCost("us.anthropic.claude-3-5-haiku-20241022-v1:0"),
     },
     "openai-reasoning": {
         displayName: "OpenAI o4-mini (api.navy)",
         aliases: ["o4-mini"],
         modelProviders: ["openai/o4-mini"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        price: passOnCost("openai/o4-mini"),
     },
     "gemini": {
         displayName: "Gemini 2.5 Flash Lite (api.navy)",
         aliases: ["gemini-2.5-flash-lite"],
         modelProviders: ["google/gemini-2.5-flash-lite"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        price: passOnCost("google/gemini-2.5-flash-lite"),
     },
     "unity": {
         displayName: "Unity Unrestricted Agent",
         aliases: [],
         modelProviders: ["mistral-small-3.1-24b-instruct-2503"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        price: passOnCost("mistral-small-3.1-24b-instruct-2503"),
     },
     "mixera": {
         displayName: "Mixera AI Companion",
         aliases: [],
         modelProviders: ["gpt-4.1-2025-04-14"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        price: passOnCost("gpt-4.1-2025-04-14"),
     },
     "midijourney": {
         displayName: "MIDIjourney",
         aliases: [],
         modelProviders: ["gpt-4.1-2025-04-14"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        price: passOnCost("gpt-4.1-2025-04-14"),
     },
     "rtist": {
         displayName: "Rtist",
         aliases: [],
         modelProviders: ["gpt-4.1-2025-04-14"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        price: passOnCost("gpt-4.1-2025-04-14"),
     },
     "evil": {
         displayName: "Evil",
         aliases: [],
         modelProviders: ["mistral-small-3.1-24b-instruct-2503"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        price: passOnCost("mistral-small-3.1-24b-instruct-2503"),
     },
     "bidara": {
         displayName:
             "BIDARA (Biomimetic Designer and Research Assistant by NASA)",
         aliases: [],
         modelProviders: ["gpt-4.1-nano-2025-04-14"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        price: passOnCost("gpt-4.1-2025-04-14"),
     },
 } as const satisfies ServiceRegistry<typeof MODELS>;
 
@@ -855,7 +586,13 @@ function convertUsage(
     const amounts = omit(usage, "unit");
     const convertedUsage = Object.fromEntries(
         Object.entries(amounts).map(([usageType, amount]) => {
-            const conversionRate = conversionDefinition[usageType as UsageType];
+            if (amount === 0) return [usageType, 0];
+            const usageTypeWithFallback =
+                usageType === "completionReasoningTokens"
+                    ? "completionTextTokens"
+                    : usageType;
+            const conversionRate =
+                conversionDefinition[usageTypeWithFallback as UsageType];
             if (!conversionRate) {
                 throw new Error(
                     `Failed to get conversion rate for usage type: ${usageType}`,
@@ -889,8 +626,11 @@ function calculateCost<TP extends ModelProviderRegistry>(
             `Failed to get current cost for provider: ${provider.toString()}`,
         );
     const usageCost = convertUsage(usage, currentCost);
-    const totalCost = Object.values(omit(usageCost, "unit")).reduce(
-        (total, cost) => total + cost,
+    const totalCost = safeRound(
+        Object.values(omit(usageCost, "unit")).reduce(
+            (total, cost) => total + cost,
+        ),
+        PRECISION,
     );
     return {
         ...usageCost,
@@ -911,8 +651,11 @@ function calculatePrice<
             `Failed to get current price for service: ${service.toString()}`,
         );
     const usagePrice = convertUsage(usage, currentPrice);
-    const totalPrice = Object.values(omit(usagePrice, "unit")).reduce(
-        (total, price) => total + price,
+    const totalPrice = safeRound(
+        Object.values(omit(usagePrice, "unit")).reduce(
+            (total, price) => total + price,
+        ),
+        PRECISION,
     );
     return {
         ...usagePrice,
@@ -1013,8 +756,16 @@ export function createRegistry<
     ) as TS;
 
     return {
+        isValidModelProvider: (
+            model: keyof typeof providers,
+        ): model is keyof typeof providers => !!providerRegistry[model],
+        isValidService: (
+            service: keyof typeof services,
+        ): service is keyof typeof services => !!serviceRegistry[service],
         isFreeService: (service: keyof typeof services) =>
             isFreeService<TP, TS>(serviceRegistry, service),
+        getServices: () => Object.keys(serviceRegistry),
+        getModelProviders: () => Object.keys(providerRegistry),
         getActiveCostDefinition: (provider: keyof typeof providers) =>
             getActiveCostDefinition<TP>(providerRegistry, provider),
         getActivePriceDefinition: (service: keyof typeof services) =>

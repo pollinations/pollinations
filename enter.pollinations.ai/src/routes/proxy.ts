@@ -11,6 +11,7 @@ import { z } from "zod";
 import type { AuthEnv } from "../middleware/authenticate.ts";
 import type { PolarEnv } from "../middleware/polar.ts";
 import { REGISTRY, ServiceId } from "../registry.ts";
+import { calculateCostAndPrice } from "@/usage.ts";
 
 const chatCompletionSchema = z.object({
     model: z.string(),
@@ -105,6 +106,37 @@ export const proxyRoutes = new Hono<ProxyEnv>()
             headers: proxyHeaders(c),
             body: JSON.stringify(body),
         });
+
+        const openaiResponse = await response.clone().json();
+        const [usageCost, usagePrice] = calculateCostAndPrice(
+            model,
+            openaiResponse,
+        );
+
+        if (response.ok && !isFree) {
+            if (!c.var.user)
+                throw new Error("Missing user, this should never happen.");
+            const events: InsertPolarEvent[] = [
+                {
+                    id: generateRandomId(),
+                    name: "text_generation",
+                    userId: c.var.user.id,
+                    requestId: c.get("requestId"),
+                    metadata: {
+                        model,
+                        totalPrice: usagePrice.totalPrice,
+                    },
+                },
+            ];
+            c.executionCtx.waitUntil(
+                (async () => {
+                    await storePolarEvents(events, c.env);
+                    // send to polar directly in development
+                    if (c.env.ENVIRONMENT === "development")
+                        await processPolarEvents(c.env);
+                })(),
+            );
+        }
         return response;
     });
 

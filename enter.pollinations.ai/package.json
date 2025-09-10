@@ -9,7 +9,7 @@
         "build": "vite build",
         "test": "npx vitest run",
         "gen:auth-schema": "npx @better-auth/cli@latest generate --config betterAuth.config.ts --output src/db/schema/better-auth.ts",
-        "gen:cf-types": "sops exec-file --no-fifo .encrypted.dev.env 'wrangler types --env-file {} --env-interface CloudflareBindings'"
+        "gen:cf-types": "sops -d .encrypted.dev.env > .dev.vars && wrangler types --env-interface CloudflareBindings"
     },
     "dependencies": {
         "@ark-ui/react": "^5.23.0",

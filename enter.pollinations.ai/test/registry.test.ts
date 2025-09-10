@@ -115,7 +115,7 @@ test("calculatePrice should return the correct price", async () => {
     expect(paidPrice.totalPrice).toBe(0.2);
 });
 
-test("Usage types with unefined cost or price should throw an error", async () => {
+test("Usage types with undefined cost or price should throw an error", async () => {
     const usage = {
         unit: "TOKENS",
         promptImageTokens: 1_000_000,

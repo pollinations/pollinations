@@ -73,3 +73,15 @@ export function applyColor(color: AnsiColor, str: string): string {
 export function applyStyle(style: AnsiStyle, str: string): string {
     return `${ansiStyles[style]}${str}${resetColor}`;
 }
+
+export function safeRound(amount: number, precision: number = 6): number {
+    if (!isFinite(amount) || isNaN(amount)) {
+        return 0;
+    }
+    // Handle very small amounts (avoid floating point issues)
+    if (Math.abs(amount) < Math.pow(10, -(precision + 2))) {
+        return 0;
+    }
+    const factor = Math.pow(10, precision);
+    return Math.round(amount * factor) / factor;
+}

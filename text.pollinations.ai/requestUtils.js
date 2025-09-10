@@ -62,7 +62,7 @@ export function getRequestData(req) {
     const tools = data.tools || undefined;
     const tool_choice = data.tool_choice || undefined;
 
-    // Extract reasoning_effort parameter for o3-mini model
+    // Extract reasoning_effort parameter for o4-mini model
     const reasoning_effort = data.reasoning_effort || undefined;
 
     // Preserve the original response_format object if it exists
@@ -98,14 +98,15 @@ export function getRequestData(req) {
 }
 
 /**
- * Prepares model data for output by removing pricing information and applying sorting.
+ * Prepares model data for output by applying sorting and filtering.
  * Always sorts with community models (community: false first, then community: true).
+ * Filters out hidden models from public listings.
  * @param {Array} models - Array of model objects
- * @returns {Array} - Sanitized model array without pricing, properly sorted
+ * @returns {Array} - Sanitized model array properly sorted, excluding hidden models
  */
 export function prepareModelsForOutput(models) {
-    // Remove pricing information from all models
-    const prepared = models.map(({ pricing, ...rest }) => rest);
+    // Filter out hidden models (no need to remove pricing since it's no longer in model objects)
+    const prepared = models.filter((m) => !m.hidden);
 
     // Sort models with non-community first, then community models
     return [

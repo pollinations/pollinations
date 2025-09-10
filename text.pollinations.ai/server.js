@@ -7,7 +7,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import dotenv from "dotenv";
 import { availableModels } from "./availableModels.js";
-import { getHandler } from "./availableModels.js";
+import { generateTextPortkey } from "./generateTextPortkey.js";
 import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
 import { processRequestForAds } from "./ads/initRequestFilter.js";
 import { createStreamingAdWrapper } from "./ads/streamingAdWrapper.js";
@@ -98,7 +98,7 @@ app.use(bodyParser.json({ limit: "20mb" }));
 app.use(cors());
 // New route handler for root path
 app.get("/", (req, res) => {
-	res.redirect("https://sur.pollinations.ai");
+	res.redirect("https://github.com/pollinations/pollinations/blob/master/APIDOCS.md");
 });
 
 // Serve crossdomain.xml for Flash connections
@@ -647,12 +647,14 @@ app.post("/", async (req, res) => {
 });
 
 app.get("/openai/models", (req, res) => {
-	const models = availableModels.map((model) => ({
-		id: model.name,
-		object: "model",
-		created: Date.now(),
-		owned_by: model.provider,
-	}));
+	const models = availableModels
+		.filter((model) => !model.hidden)
+		.map((model) => ({
+			id: model.name,
+			object: "model",
+			created: Date.now(),
+			owned_by: model.provider,
+		}));
 	res.json({
 		object: "list",
 		data: models,
@@ -844,15 +846,8 @@ async function generateTextBasedOnModel(messages, options) {
 			),
 		);
 
-		// Get the handler function for the specified model
-		const handler = getHandler(model);
-
-		if (!handler) {
-			throw new Error(`No handler found for model: ${model}`);
-		}
-
-		// Call the handler with the processed messages and options
-		const response = await handler(processedMessages, options);
+		// Call generateTextPortkey with the processed messages and options
+		const response = await generateTextPortkey(processedMessages, options);
 
 		// Log streaming response details
 		if (options.stream && response) {

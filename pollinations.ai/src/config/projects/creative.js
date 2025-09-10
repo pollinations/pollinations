@@ -5,6 +5,42 @@
 
 export const creativeProjects = [
   {
+    name: "🇧🇷 CapyUniverse - CapyIMG",
+    url: "https://capyuniverse.pages.dev/capyimg.html",
+    description: "Ferramenta simples para criar imagens com IA diretamente no navegador. O usuário escreve uma descrição (briefing), pode indicar elementos a evitar, escolher quantidade de imagens (1–4), formato (1:1, 16:9, 9:16, 4:3, 3:4) e tamanho. (Simple tool to create AI images directly in the browser. Users write a description, can specify elements to avoid, choose number of images (1–4), format ratios, and size.)",
+    author: "@faelscarpato",
+    repo: "https://github.com/faelscarpato/capyuniverse",
+    submissionDate: "2025-09-10",
+    language: "pt-BR",
+    order: 1
+  },
+  {
+    name: "🇹🇷 CVRON AI - Free İmage Generator",
+    url: "https://cvronai.rf.gd",
+    description: "Resim Oluşturma İşlemleri İçin Pollinations API yi kullanmakta (Uses Pollinations API for image generation operations)",
+    author: "@cr7",
+    submissionDate: "2025-09-06",
+    language: "tr-TR",
+    order: 1
+  },
+  {
+    name: "Ai image generator 🎨",
+    url: "https://ris-imago.vercel.app/",
+    description: "A React-based AI image generator that transforms user prompts into high-quality images. It features custom controls for style, quality, and resolution, and offers user history.",
+    author: "rishabhmishra.81e@gmail.com",
+    submissionDate: "2025-09-06",
+    order: 1
+  },
+  {
+    name: "🇨🇳 AI Image Generator",
+    url: "https://ai-pic.site/",
+    description: "Create Amazing Images with AI. Generate stunning images from text descriptions with AI optimized prompt word functions, unlimited generated images, real-time display of image generation progress. Supporting Chinese and English languages. (使用AI从文本描述生成令人惊叹的图像)",
+    author: "cf12436",
+    submissionDate: "2025-08-30",
+    language: "zh-CN",
+    order: 1
+  },
+  {
     name: "aitoolbox.software 🛠️",
     url: "https://aitoolbox.software/",
     description: "An open-source collection of AI-powered tools to boost your productivity and creativity.",

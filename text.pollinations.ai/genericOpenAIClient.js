@@ -3,7 +3,6 @@ import debug from "debug";
 import {
     validateAndNormalizeMessages,
     cleanNullAndUndefined,
-    ensureSystemMessage,
     generateRequestId,
     cleanUndefined,
     normalizeOptions,
@@ -19,37 +18,29 @@ const log = debug(`pollinations:genericopenai`);
 const errorLog = debug(`pollinations:error`);
 
 /**
- * Creates a client function for OpenAI-compatible APIs
+ * Generic OpenAI-compatible API client function
+ * @param {Array} messages - Array of messages for the conversation
+ * @param {Object} options - Options for the request (default: {})
  * @param {Object} config - Configuration for the client
  * @param {string|Function} config.endpoint - API endpoint URL or function that returns the URL
  * @param {string} config.authHeaderName - Name of the auth header (default: 'Authorization')
  * @param {Function} config.authHeaderValue - Function that returns the auth header value
- * @param {Object} config.modelMapping - Mapping of internal model names to API model names
- * @param {Object} config.systemPrompts - Default system prompts for different models
  * @param {Object} config.defaultOptions - Default options for the client
  * @param {Function} config.formatResponse - Optional function to format the response
  * @param {Object} config.additionalHeaders - Optional additional headers to include in requests
  * @param {boolean|Function} config.supportsSystemMessages - Whether the API supports system messages (default: true)
- *                                                          Can be a function that receives options and returns boolean
- * @returns {Function} - Client function that handles API requests
+ * @returns {Object} - API response object
  */
-export function createOpenAICompatibleClient(config) {
+export async function genericOpenAIClient(messages, options = {}, config) {
     const {
         endpoint,
         authHeaderName = "Authorization",
         authHeaderValue,
-        modelMapping = {},
-        systemPrompts = {},
         defaultOptions = {},
         formatResponse = null,
         additionalHeaders = {},
-        transformRequest = null,
         supportsSystemMessages = true,
     } = config;
-
-
-    // Return the client function
-    return async function (messages, options = {}) {
         const startTime = Date.now();
         const requestId = generateRequestId();
 
@@ -72,11 +63,8 @@ export function createOpenAICompatibleClient(config) {
             // Normalize options with defaults
             normalizedOptions = normalizeOptions(options, defaultOptions);
 
-            // Determine which model to use
-            const modelKey = normalizedOptions.model;
-            modelName =
-                modelMapping[modelKey] ||
-                modelMapping[Object.keys(modelMapping)[0]];
+            // Use the model name directly (mapping is now handled upstream)
+            modelName = normalizedOptions.model;
 
             // Validate and normalize messages
             const validatedMessages = validateAndNormalizeMessages(messages);
@@ -88,28 +76,17 @@ export function createOpenAICompatibleClient(config) {
             }
 
             // Process messages based on system message support
+            // Note: System prompts are now handled via transforms before reaching this client
             let processedMessages;
             if (supportsSystem) {
-                // Ensure system message is present if the model supports it
-                const defaultSystemPrompt = systemPrompts[modelKey] || null;
-                processedMessages = ensureSystemMessage(
-                    validatedMessages,
-                    normalizedOptions,
-                    defaultSystemPrompt,
-                );
+                // Use validated messages directly since transforms handle system prompts
+                processedMessages = validatedMessages;
             } else {
                 // For models that don't support system messages, convert them to user messages
                 log(
                     `[${requestId}] Model ${modelName} doesn't support system messages, converting to user messages`,
                 );
-                const defaultSystemPrompt = systemPrompts[modelKey] || null;
-                const messagesWithSystem = ensureSystemMessage(
-                    validatedMessages,
-                    normalizedOptions,
-                    defaultSystemPrompt,
-                );
-                processedMessages =
-                    convertSystemToUserMessages(messagesWithSystem);
+                processedMessages = convertSystemToUserMessages(validatedMessages);
             }
 
             // Build request body
@@ -142,10 +119,7 @@ export function createOpenAICompatibleClient(config) {
                 JSON.stringify(cleanedRequestBody, null, 2),
             );
 
-            // Apply custom request transformation if provided
-            const finalRequestBody = transformRequest
-                ? await transformRequest(cleanedRequestBody, modelKey)
-                : cleanedRequestBody;
+            const finalRequestBody = cleanedRequestBody;
 
             log(`[${requestId}] Sending request to Generic OpenAI API`, {
                 timestamp: new Date().toISOString(),
@@ -170,7 +144,6 @@ export function createOpenAICompatibleClient(config) {
                 [authHeaderName]: authHeaderValue(),
                 "Content-Type": "application/json",
                 ...additionalHeaders,
-                ...(finalRequestBody._additionalHeaders || {}),
             };
 
             // Remove the _additionalHeaders property from the request body as it's not part of the API
@@ -439,5 +412,4 @@ export function createOpenAICompatibleClient(config) {
             // Simply throw the error
             throw error;
         }
-    };
 }

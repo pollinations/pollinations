@@ -23,7 +23,6 @@ export function sanitizeMessagesWithPlaceholder(messages, modelConfig, originalM
     return { messages, replacedCount, bedrockAdjusted };
   }
 
-  // Step 1: Ensure user messages have non-empty content to prevent provider errors
   let result = messages.map((msg) => {
     if (!msg || msg.role !== "user") return msg;
     const m = { ...msg };
@@ -72,19 +71,18 @@ export function sanitizeMessagesWithPlaceholder(messages, modelConfig, originalM
     log(`Replaced ${replacedCount} empty user message content with placeholder`);
   }
 
-  // Step 2: Bedrock-specific conversation rules
-  // Get provider from cost data using the actual model name
-  const actualModelName = modelConfig?.model || modelConfig?.["azure-model-name"] || modelConfig?.["azure-deployment-id"] || originalModelName;
+  // Bedrock-specific conversation rules
+  const actualModelName =
+    modelConfig?.model ||
+    modelConfig?.["azure-model-name"] ||
+    modelConfig?.["azure-deployment-id"] ||
+    originalModelName;
   const provider = getProvider(actualModelName);
-  
+
   if (provider === "bedrock") {
-    // Filter out user messages with empty string content
+    // Filter out empty string user messages
     result = result.filter((msg) => {
-      if (
-        msg &&
-        typeof msg.content === "string" &&
-        msg.content.trim() === ""
-      ) {
+      if (msg && typeof msg.content === "string" && msg.content.trim() === "") {
         return false;
       }
       return true;

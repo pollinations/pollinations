@@ -9,7 +9,7 @@ export const MODELS = {
     flux: {
         type: "pollinations",
         enhance: true,
-        maxSideLength: 1280,
+        maxSideLength: 768,
     },
 
     // BPAIGen with Kontext fallback - general purpose model

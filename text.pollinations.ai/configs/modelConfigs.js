@@ -149,8 +149,8 @@ export const portkeyConfig = {
 			process.env.AZURE_OPENAI_41_ENDPOINT,
 			"gpt-4.1",
 		),
-		"max-tokens": 1024,
-		"max-completion-tokens": 1024,
+		"max-tokens": 512,
+		"max-completion-tokens": 512,
 	}),
 	"azure-gpt-4.1-xlarge": () =>
 		createAzureModelConfig(

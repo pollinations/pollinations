@@ -1,4 +1,4 @@
-import { REGISTRY } from "@/registry";
+import { REGISTRY, ServiceId } from "@/registry";
 import { SELF } from "cloudflare:test";
 import { batches } from "@/util";
 import { test } from "./fixtures.ts";
@@ -18,7 +18,42 @@ const mockHandlers = {
 beforeEach(() => setupFetchMock(mockHandlers));
 afterEach(() => teardownFetchMock());
 
-test("Send a request for each available service", async ({ apiKey }) => {
+test("Only free services should be available without an API key", async () => {
+    const requests = REGISTRY.getServices().map((service) => {
+        return {
+            service,
+            request: SELF.fetch(`http://localhost:3000/api/generate/openai`, {
+                method: "POST",
+                body: JSON.stringify({
+                    model: service,
+                    messages: [
+                        {
+                            role: "user",
+                            content: "Hello, whats going on today?",
+                        },
+                    ],
+                }),
+            }),
+        };
+    });
+    for (const batch of batches(requests, 4)) {
+        const responses = await Promise.all(
+            batch.map(async ({ service, request }) => ({
+                service,
+                response: await request,
+            })),
+        );
+        for (const { service, response } of responses) {
+            if (REGISTRY.isFreeService(service as ServiceId)) {
+                expect(response.status).toBe(200);
+            } else {
+                expect(response.status).toBe(401);
+            }
+        }
+    }
+}, 30000);
+
+test("All services should be availabe with an API key", async ({ apiKey }) => {
     const requests = REGISTRY.getServices().map((service) => {
         return SELF.fetch(`http://localhost:3000/api/generate/openai`, {
             method: "POST",
@@ -34,7 +69,6 @@ test("Send a request for each available service", async ({ apiKey }) => {
             }),
         });
     });
-
     for (const batch of batches(requests, 4)) {
         const responses = await Promise.all(batch);
         for (const response of responses) {

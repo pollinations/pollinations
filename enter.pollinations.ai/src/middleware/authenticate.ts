@@ -1,10 +1,11 @@
 import type { Session, User } from "better-auth";
 import { createMiddleware } from "hono/factory";
 import { createAuth } from "../auth.ts";
+import { LoggerVariables } from "./logger.ts";
 
 export type AuthEnv = {
     Bindings: CloudflareBindings;
-    Variables: {
+    Variables: LoggerVariables & {
         auth: ReturnType<typeof createAuth>;
         session?: Session;
         user?: User;

@@ -16,12 +16,19 @@ function sanitizeMessagesWithPlaceholder(messages, modelConfig, virtualModelName
 
     let replacedCount = 0;
     const sanitized = messages.map(message => {
-        if (message.role === 'user' && (!message.content || message.content.trim() === '')) {
-            replacedCount++;
-            return {
-                ...message,
-                content: 'Please provide a response.'
-            };
+        if (message.role === 'user') {
+            // Check if content is empty, considering different types
+            const isEmpty = !message.content || 
+                           (typeof message.content === 'string' && message.content.trim() === '') ||
+                           (Array.isArray(message.content) && message.content.length === 0);
+            
+            if (isEmpty) {
+                replacedCount++;
+                return {
+                    ...message,
+                    content: 'Please provide a response.'
+                };
+            }
         }
         return message;
     });

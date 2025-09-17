@@ -5,6 +5,15 @@
 
 export const creativeProjects = [
   {
+    name: "StoryWeaver AI 📚",
+    url: "https://storyweaver-ai-umber.vercel.app/",
+    description: "A real-time, collaborative storyboarding application that empowers users to create visual narratives together. In shared 'story rooms,' participants write text prompts that are instantly transformed into comic book-style panels using dual Pollinations API integration - first generating AI summaries of preceding panels via text.pollinations.ai, then combining them with user prompts for contextually connected image generation via image.pollinations.ai.",
+    author: "@Karannn3011",
+    repo: "https://github.com/Karannn3011/storyweaver-ai",
+    submissionDate: "2025-09-17",
+    order: 1
+  },
+  {
     name: "Mixbash.com 🛠️",
     url: "https://mixbash.com",
     description: "Mixbash is a better UI layer to use SOTA AI models hosted on Pollinations, Fal, Replicate, Runpod and Gemini. Simply bring your own API keys to get started and pay 10x less for Gen AI models.",

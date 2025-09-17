@@ -143,5 +143,15 @@ export const learnProjects = [
         author: "@hadadarjt",
         submissionDate: "2025-09-05",
         order: 1
+    },
+    {
+        name: "EduGen AI 🇧🇷",
+        url: "https://ensinoedugenai.online",
+        description:
+            "E uma ia voltada para professores e queria a IA pollinations.ai para criar imagens para slides (An AI focused on teachers that uses Pollinations AI to create images for slides)",
+        author: "mlspfc360@gmail.com",
+        submissionDate: "2025-09-17",
+        language: "pt-BR",
+        order: 1
     }
 ];

@@ -5,6 +5,15 @@
 
 export const hackAndBuildProjects = [
   {
+    name: "unpkg.ai",
+    url: "https://unpkg.ai",
+    description: "AI-powered ESM module generation service that creates JavaScript modules on-demand using LLMs.",
+    author: "@vgrichina",
+    repo: "https://github.com/Strawberry-Computer/unpkg.ai",
+    submissionDate: "2025-09-17",
+    order: 1
+  },
+  {
     name: "Pollinations OpenAI Proxy",
     url: "https://pollinationsopenaiproxy.vercel.app/",
     description: "A thin FastAPI layer that exposes OpenAI-compatible endpoints and proxies to Pollinations services for text, image, and audio (TTS). Works with existing OpenAI SDKs/clients.",

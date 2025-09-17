@@ -13,15 +13,15 @@ export const chatProjects = [
     language: "ja-JP",
     order: 1
   },
-{
-  name: "EasyGen",
-  url: "https://easygenme.netlify.app/",
-  description: "AI-powered tool that generates Mermaid diagrams and flowcharts from plain-language prompts. Offers instant preview, editable source, and supports multiple diagram types for developers, designers, and educators.",
-  author: "@Ellweb3",
-  submissionDate: "2025-08-11",
-  language: "en",
-  order: 1
-},
+  {
+    name: "EasyGen",
+    url: "https://easygenme.netlify.app/",
+    description: "AI-powered tool that generates Mermaid diagrams and flowcharts from plain-language prompts. Offers instant preview, editable source, and supports multiple diagram types for developers, designers, and educators.",
+    author: "@Ellweb3",
+    submissionDate: "2025-08-11",
+    language: "en",
+    order: 1
+  },
   {
     name: "Botzy AI 🇵🇰",
     url: "https://botzy.hexabiz.com.pk",
@@ -103,7 +103,7 @@ export const chatProjects = [
     description: "The official gpt4free repository - various collection of powerful language models.",
     author: "xtekky",
     repo: "https://github.com/xtekky/gpt4free",
-    stars: 64802,
+    stars: 65121,
     order: 1
   },
   {

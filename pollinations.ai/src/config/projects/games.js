@@ -61,7 +61,7 @@ export const gamesProjects = [
     repo: "https://github.com/JayJayBinks/infinite-tales-rpg",
     author: "@infinite_tales",
     submissionDate: "2025-01-20",
-    stars: 28
+    stars: 29
   },
   {
     name: "Minecraft AI (Node.js)",

@@ -613,5 +613,14 @@ export const creativeProjects = [
     author: "info@promptgenerator.art",
     submissionDate: "2025-07-14",
     order: 1
+  },
+  {
+    name: "☬SHΞNΞRATOR 🎨",
+    url: "https://Shervinuri.github.io",
+    description: "AI image and text generator with dual functionality. Features both image generation (https://Shervinuri.github.io) and text generation (https://minishen.netlify.app) capabilities powered by AI.",
+    author: "https://T.me/shervinuri",
+    repo: "https://github.com/Shervinuri/Shervinuri.github.io",
+    submissionDate: "2025-09-17",
+    order: 1
   }
 ];

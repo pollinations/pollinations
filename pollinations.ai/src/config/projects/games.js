@@ -64,16 +64,6 @@ export const gamesProjects = [
     stars: 29
   },
   {
-    name: "Minecraft AI (Node.js)",
-    url: "https://github.com/pollinations/minecraft-ai-node",
-    description: "A Node.js implementation that uses Pollinations AI to control a Minecraft character through natural language commands.",
-    author: "@minecraft_ai_dev",
-    repo: "https://github.com/pollinations/minecraft-ai-node",
-    stars: 124,
-    submissionDate: "2025-04-05",
-    order: 1
-  },
-  {
     name: "Minecraft AI (Python)",
     url: "https://github.com/Amagash/minecraft-ai-python",
     description: "A Python implementation that uses Pollinations AI to control a Minecraft character through natural language commands and automated gameplay.",

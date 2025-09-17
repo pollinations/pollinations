@@ -191,15 +191,6 @@ export const hackAndBuildProjects = [
     order: 1
   },
   {
-    name: "Pollinations MCP Server",
-    url: "https://github.com/pinkpixel-dev/MCPollinations",
-    description: "A Model Context Protocol server that enables AI-assisted development through natural language interaction with Pollinations' multimodal services. Mult1m0dal",
-    author: "@pinkpixel-dev",
-    repo: "https://github.com/pinkpixel-dev/MCPollinations",
-    stars: 32,
-    submissionDate: "2025-04-10"
-  },
-  {
     name: "🛠️ AI Content Describer",
     url: "https://github.com/cartertemm/AI-content-describer/",
     description: "An extension for NVDA, the free and open-source screen reader for Microsoft Windows. Uses multimodal generative AI to help those with blindness and visual impairments understand pictures, UI controls, complex diagrams/graphics, and more through intelligent descriptions that go far beyond simple alt-text.",

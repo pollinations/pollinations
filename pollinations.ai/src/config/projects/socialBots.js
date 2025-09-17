@@ -54,7 +54,8 @@ export const socialBotsProjects = [
     author: "@zingy",
     repo: "https://github.com/Zingzy/pollinations.ai-bot",
     submissionDate: "2025-03-20",
-    order: 1
+    order: 1,
+    stars: 17
   },
   {
     name: "Pollinations Telegram Assistant",

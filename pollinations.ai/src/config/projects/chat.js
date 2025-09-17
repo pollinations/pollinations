@@ -4,6 +4,15 @@
  */
 
 export const chatProjects = [
+  {
+    name: "チャットGPT 日本語 🇯🇵",
+    url: "https://chatgpt-jp.org/",
+    description: "チャットGPT 日本語無料版 (Free Japanese version of ChatGPT)",
+    author: "https://x.com/zhugezifang",
+    submissionDate: "2025-09-17",
+    language: "ja-JP",
+    order: 1
+  },
 {
   name: "EasyGen",
   url: "https://easygenme.netlify.app/",

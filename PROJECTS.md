@@ -40,6 +40,13 @@ Pollinations.AI is used in various projects, including:
 | [Imagen](https://altkriz.github.io/imagen/) ([⭐ 3](https://github.com/altkriz/imagen)) | A beautiful web interface for generating images using Pollinations.ai API with... | @altkriz |
 | [CatGPT Meme Generator 🐱](https://pollinations.github.io/catgpt/) ([⭐ 2](https://github.com/pollinations/catgpt)) | Transform your questions into sassy cat wisdom! An AI-powered meme generator... | @voodoohop |
 | [Dreamscape AI](https://dreamscape.pinkpixel.dev) ([⭐ 2](https://github.com/pinkpixel-dev/dreamscape-ai)) | Dreamscape AI is a creative studio for generating, enhancing, and transforming... | @sizzlebop |
+| 🆕 [StoryWeaver AI 📚](https://storyweaver-ai-umber.vercel.app/) ([⭐ 0](https://github.com/Karannn3011/storyweaver-ai)) | A real-time, collaborative storyboarding application that empowers users to... | @Karannn3011 |
+| 🆕 [Mixbash.com 🛠️](https://mixbash.com) | Mixbash is a better UI layer to use SOTA AI models hosted on Pollinations, Fal,... | @jiajasper |
+| 🆕 [Pollinations AI Demo](https://pollinationsaidemo.netlify.app/) ([⭐ 0](https://github.com/Wormix48/Pollinations-AI-Demo)) | Images generator | @Wormix48 |
+| 🆕 🇧🇷 [🇧🇷 CapyUniverse - CapyIMG](https://capyuniverse.pages.dev/capyimg.html) ([⭐ 0](https://github.com/faelscarpato/capyuniverse)) | Ferramenta simples para criar imagens com IA diretamente no navegador. O... | @faelscarpato |
+| 🆕 [🇹🇷 CVRON AI - Free İmage Generator](https://cvronai.rf.gd) | Resim Oluşturma İşlemleri İçin Pollinations API yi kullanmakta (Uses... | @cr7 |
+| 🆕 [Ai image generator 🎨](https://ris-imago.vercel.app/) | A React-based AI image generator that transforms user prompts into high-quality... | [rishabhmishr...](mailto:rishabhmishra.81e@gmail.com) |
+| 🇨🇳 [🇨🇳 AI Image Generator](https://ai-pic.site/) | Create Amazing Images with AI. Generate stunning images from text descriptions... | cf12436 |
 | [aitoolbox.software 🛠️](https://aitoolbox.software/) ([⭐ 0](https://github.com/huamanraj/aitoolbox.software)) | An open-source collection of AI-powered tools to boost your productivity and... | @huamanraj |
 | [Evolve AI 🤖](https://evolve-ai-gamma.vercel.app/) ([⭐ 0](https://github.com/chandankumarm55/Evolve-ai)) | Evolve AI is an intelligent assistant platform that brings together a variety... | @chandankumarm55 |
 | [What is this? ❔](https://whatisthis.pinkpixel.dev/) ([⭐ 0](https://github.com/pinkpixel-dev/what-is-this)) | A fun AI-powered object identification tool that helps you identify mysterious... | @sizzlebop |
@@ -80,6 +87,7 @@ Pollinations.AI is used in various projects, including:
 | [Anime Character Generator](https://perchance.org/ai-character-generator) | A dedicated AI tool for generating high-quality, unique anime-style characters.... | @AnimeArtDevs |
 | [AI PPT Maker](https://slidesgpt.com) | An AI-powered presentation generator that creates PowerPoint slides from text... | @ppt_monster |
 | [Promptgenerator.art](https://promptgenerator.art) | FREE Art Prompt Generator that helps you turn simple ideas into structured... | [info@promptg...](mailto:info@promptgenerator.art) |
+| 🆕 🤖 [☬SHΞNΞRATOR 🎨](https://Shervinuri.github.io) ([⭐ 0](https://github.com/Shervinuri/Shervinuri.github.io)) | AI image and text generator with dual functionality. Features both image... | [Link](https://T.me/shervinuri) |
 | [Pollinator Android App](https://github.com/g-aggarwal/Pollinator) | An open-source Android app for text-to-image generation. | @gaurav_87680 |
 | StorySight ([⭐ 14](https://github.com/tangg555/story-generation-demo)) | An AI tool that generates illustrations for stories and articles using... | @story_viz |
 | 🇮🇩 [Generator Text AI 🇮🇩](https://app.ariftirtana.my.id/) ([⭐ 1](https://github.com/ayick13/app)) | Text-to-image generator using Pollinations, supporting Indonesian and English... | @ayick13 |
@@ -134,14 +142,16 @@ Pollinations.AI is used in various projects, including:
 | Pollinations.AI Enhancer ([⭐ 3](https://github.com/fisventurous/pollinationsai-enhancer)) | A frontend-based AI interface designed to deliver a smooth, multimodal, and... | @fisven |
 | [🌱 Strain Navigator](https://www.strainnavigator.com/) ([⭐ 1](https://github.com/Tolerable/strainnavigator)) | A collection of tools to help Growers, Breeders & Seed Bankers. Free & Open... | @Tolerable |
 | YankoviC ([⭐ 1](https://github.com/Sweaterdog/YankoviC)) | A programming language interpreter written in JavaScript that emulates C/C++... | @Sweaterdog |
-| 🆕 [Sequa MCP Server](https://mcp.sequa.ai/v1/pollinations/contribute) | A Model Context Protocol server from Sequa.ai that provides deep knowledge of... | @sequa_ai |
+| 🆕 [Pollinations OpenAI Proxy](https://pollinationsopenaiproxy.vercel.app/) ([⭐ 0](https://github.com/percival-de-galles/pollinations_openai_proxy)) | A thin FastAPI layer that exposes OpenAI-compatible endpoints and proxies to... | @percival-de-galles |
+| [Sequa MCP Server](https://mcp.sequa.ai/v1/pollinations/contribute) | A Model Context Protocol server from Sequa.ai that provides deep knowledge of... | @sequa_ai |
 | [FoodAnaly](https://foodanaly.vercel.app/) | An AI application for food analysis that uses advanced artificial intelligence... | [liukang0120@...](mailto:liukang0120@163.com) |
 | [Herramientas IA](https://herramientas.ia) | Tools designed with Pollinations.AI and the DescartesJS editor, including tools... | @herramientas |
 | [Pollinations AI Free API](https://pollinations-ai-free-api.vercel.app/) | This project provides a free API interface supporting various text and image... | @freeapi |
 | [DominiSigns](https://www.template.net/ai-sign-generator) ([⭐ 0](https://github.com/dominicva/dominisigns)) | A WordPress block plugin that lets users create AI-generated images through the... | @dominicva |
 | 🤖 [DynaSpark API](https://th3-ai.github.io/DynaSpark) ([⭐ 0](https://github.com/Th3-AI/DynaSpark)) | The DynaSpark API provides simple yet powerful AI capabilities for text... | @Th3-C0der |
 | [Querynator5000](https://querynator5000.onrender.com/) ([⭐ 0](https://github.com/SuperShivam5000/querynator5000)) | Modern AI-first SQL interface for exploring and manipulating databases with... | @SuperShivam5000 |
-| 🆕 [UltimaX Intelligence CLI](https://huggingface.co/spaces/umint/cli) | Extension of the UltimaX Intelligence project based on Pollinations Python SDK. | @hadadarjt |
+| [UltimaX Intelligence CLI](https://huggingface.co/spaces/umint/cli) | Extension of the UltimaX Intelligence project based on Pollinations Python SDK. | @hadadarjt |
+| [AI Agent Portal](https://agent.makululinux.com/) ([⭐ 0](https://github.com/raymerjacque/Makulu-Agent-Portal)) | A next-generation development environment that leverages a sophisticated... | @raymerjacque |
 | [pollinations.ai Python SDK](https://github.com/pollinations-ai/pollinations.ai) | Official Python SDK for working with Pollinations' models. | @pollinations-ai |
 | [MCPollinations](https://github.com/pinkpixel-dev/MCPollinations) | A Model Context Protocol (MCP) server that enables AI assistants to generate... | Pink Pixel |
 | Pollinations MCP Server ([⭐ 27](https://github.com/pinkpixel-dev/MCPollinations)) | A Model Context Protocol server that enables AI-assisted development through... | @pinkpixel-dev |
@@ -169,7 +179,8 @@ Pollinations.AI is used in various projects, including:
 | [EvilChat 🔥🤖](https://altkriz.github.io/evilchat/) ([⭐ 2](https://github.com/altkriz/evilchat)) | An uncensored AI chat interface with dark, sleek design, smooth animations,... | @altkriz |
 | 🤖 🇮🇩 [Rizqi O Chatbot 🇮🇩](https://chatbot.rizqioliveira.my.id) ([⭐ 1](https://github.com/ray23-bit/Projectenam)) | Rizqi O Chatbot adalah proyek berbasis Pollinations yang menggabungkan tiga... | @ray23-bit |
 | [ Comeback AI](https://comeback-ai.pinkpixel.dev) ([⭐ 1](https://github.com/pinkpixel-dev/comeback-ai)) | AI-powered clapback machine that transforms mean comments into witty comebacks... | @sizzlebop |
-| 🆕 [EasyGen](https://easygenme.netlify.app/) | AI-powered tool that generates Mermaid diagrams and flowcharts from... | @Ellweb3 |
+| 🆕 [チャットGPT 日本語 🇯🇵](https://chatgpt-jp.org/) | チャットGPT 日本語無料版 (Free Japanese version of ChatGPT) | [Link](https://x.com/zhugezifang) |
+| [EasyGen](https://easygenme.netlify.app/) | AI-powered tool that generates Mermaid diagrams and flowcharts from... | @Ellweb3 |
 | 🤖 [Botzy AI 🇵🇰](https://botzy.hexabiz.com.pk) | A free, unlimited, multilingual AI chatbot designed for Pakistani users.... | @zakrya6665 |
 | [Island](https://islandai.app) ([⭐ 0](https://github.com/techcow2/Island)) | Island AI is a free, modern ChatGPT alternative featuring smart multimodal... | @techcow2 |
 | [UltimaX Intelligence](https://umint-ai.hf.space) ([⭐ 0](https://huggingface.co/spaces/umint/ai/tree/main)) | UltimaX Intelligence is a free AI platform that unifies multiple premium AI... | @hadadarjt |
@@ -204,7 +215,7 @@ Pollinations.AI is used in various projects, including:
 |---------|-------------|--------|
 | 🤖 [Raftar.xyz](https://discord.com/discovery/applications/1285597879020556308) ([⭐ 42](https://github.com/raftarxyz/raftar-bot)) | Raftar.xyz is an innovative social bot platform that uses Pollinations AI to... | @raftar_official |
 | 🤖 [🎮 Gacha](https://discord.com/oauth2/authorize?client_id=1377330983740903586) | Your Sassy All-in-One AI Discord Bot. A powerful, sassy, and slightly... | `_dr_misterio_` |
-| 🆕 [Pollix AI](http://t.me/pollixrobot) | Pollix AI is your multilingual AI assistant for fast replies, image... | @bladedev |
+| [Pollix AI](http://t.me/pollixrobot) | Pollix AI is your multilingual AI assistant for fast replies, image... | @bladedev |
 | 🤖 Aura Chat Bot | A chat bot integrating Pollinations API for text and image generation. | @Py-Phoenix-PJS |
 | 🤖 [🤖 ImageEditer](https://t.me/ImageEditer_bot) | AI Art Studio - A feature-rich Telegram bot that creates art from text prompts,... | @_dr_misterio_ |
 | 🤖 Pollinations Discord Bot ([⭐ 0](https://github.com/Zingzy/pollinations.ai-bot)) | AI Image Generation Discord Bot using Pollinations.ai. Written in Python with... | @zingy |
@@ -227,6 +238,7 @@ Pollinations.AI is used in various projects, including:
 | [Riffle](https://riffle.ink) | A powerful tool designed to make reading English books more enjoyable and... | [gsx123@gmail...](mailto:gsx123@gmail.com) |
 | [OkeyAI](https://chat.okeymeta.com.ng) ([⭐ 0](https://github.com/okeymeta)) | An LLM created by Africans to understand and have cultural awareness of African... | @okeymeta |
 | [Whizzy AI](https://whizzyai.vercel.app) | An educational AI platform for students featuring AI-powered study assistance,... | @vaibhavcoding69 |
+| 🆕 [SearchGPT](https://huggingface.co/spaces/umint/searchgpt) | ChatGPT with real-time web search & URL reading capability. Part of the UltimaX... | @hadadarjt |
 | [AI儿童故事 🇨🇳](https://kidss.netlify.app/) | 基于此项目 构建有趣的孩子故事书应用演示 (Based on this project, build an interesting children's... | MZ |
 | [Pollinations.AI AI/Teens talk](https://www.youtube.com/live/5Rvdfr2qYGA?si=i5NLOKI49fGxNAEK&t=1034) | Session 2: ai/teens worldwide conference exploring the forces shaping AI today,... | @thomash_pollinat... |
 | [TeekGenAI](https://www.youtube.com/@teekgenai) | A platform providing free access to AI tools like image generation,... | @teekgenai |
@@ -235,5 +247,4 @@ Pollinations.AI is used in various projects, including:
 | 🇧🇷 [Tutorial](https://guiadehospedagem.com.br/pollinations-ai/) | An in-depth Portuguese tutorial on using Pollinations AI. | Janderson de Sales |
 | [Podcast #1500](https://open.spotify.com/show/1wu4ngb1dclyTwoNN4cZzK) | Podcast project powered by pollinations, featuring dialogues among LLMs. First... | @brain.diver |
 | [Proyecto Descartes](https://proyectodescartes.org/revista/Numeros/Revista_8_2024/index.html) | Educational initiative integrating Pollinations AI into STEM. | Juan Gmo. Rivera |
-| [SearchGPT](https://huggingface.co/spaces/umint/searchgpt) ([⭐ 0](https://huggingface.co/spaces/umint/searchgpt/tree/main)) | ChatGPT with real-time web search & URL reading capability. Part of the UltimaX Intelligence project. | @hadadarjt |
 

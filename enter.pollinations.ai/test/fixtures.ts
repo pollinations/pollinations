@@ -3,6 +3,7 @@ import { createAuthClient } from "better-auth/client";
 import { apiKeyClient } from "better-auth/client/plugins";
 import { adminClient } from "better-auth/client/plugins";
 import { SELF } from "cloudflare:test";
+import z from "zod";
 
 const createAuth = () =>
     createAuthClient({
@@ -18,6 +19,7 @@ type Fixtures = {
     auth: ReturnType<typeof createAuth>;
     sessionToken: string;
     apiKey: string;
+    tinybirdUserToken: string;
 };
 
 export const test = base.extend<Fixtures>({
@@ -76,5 +78,17 @@ export const test = base.extend<Fixtures>({
             throw new Error("Failed to create API key");
         const apiKey = createApiKeyResponse.data.key;
         use(apiKey);
+    },
+    tinybirdUserToken: async ({}, use) => {
+        const tokensResponseSchema = z.object({
+            user_token: z.string(),
+            admin_token: z.string(),
+        });
+        const response = await fetch("http://localhost:7181/tokens");
+        const parsedResponse = tokensResponseSchema.parse(
+            await response.json(),
+        );
+        console.log(parsedResponse);
+        use(parsedResponse.admin_token);
     },
 });

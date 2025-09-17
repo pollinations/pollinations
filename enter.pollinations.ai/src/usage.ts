@@ -1,14 +1,8 @@
 import { z } from "zod";
-import {
-    ProviderId,
-    REGISTRY,
-    ServiceId,
-    TokenUsage,
-    UsageCost,
-    UsagePrice,
-} from "./registry";
+import { ProviderId, TokenUsage } from "./registry";
+import { InsertGenerationEvent } from "./db/schema/event";
 
-const usageSchema = z.object({
+const oaiUsageSchema = z.object({
     completion_tokens: z.number().int().nonnegative(),
     completion_tokens_details: z
         .object({
@@ -28,12 +22,12 @@ const usageSchema = z.object({
     total_tokens: z.number().int().nonnegative(),
 });
 
-type OpenAIUsage = z.infer<typeof usageSchema>;
+type OpenAIUsage = z.infer<typeof oaiUsageSchema>;
 
-const openAIResponseSchema = z.object({
+const oaiResponseSchema = z.object({
     id: z.string().optional(),
     model: z.string().optional(),
-    usage: usageSchema,
+    usage: oaiUsageSchema,
     created: z.number(),
 });
 
@@ -59,16 +53,16 @@ function transformOpenAIUsage(usage: OpenAIUsage): TokenUsage {
     };
 }
 
-export function calculateCostAndPrice(
-    serviceId: ServiceId,
-    response: unknown,
-): [UsageCost, UsagePrice] {
-    const parsedResponde = openAIResponseSchema.parse(response);
-    const usage = transformOpenAIUsage(parsedResponde.usage);
-    const usageCost = REGISTRY.calculateCost(
-        parsedResponde.model as ProviderId,
-        usage,
-    );
-    const usagePrice = REGISTRY.calculatePrice(serviceId, usage);
-    return [usageCost, usagePrice];
+export type ModelUsage = {
+    model: ProviderId;
+    usage: TokenUsage;
+};
+
+export function extractUsage(response: unknown): ModelUsage {
+    // TODO: handle image responses
+    const parsedResponse = oaiResponseSchema.parse(response);
+    return {
+        model: parsedResponse.model as ProviderId,
+        usage: transformOpenAIUsage(parsedResponse.usage),
+    };
 }

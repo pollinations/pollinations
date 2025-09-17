@@ -1,3 +1,4 @@
+import { InsertGenerationEvent } from "./db/schema/event.ts";
 import { omit, safeRound } from "./util.ts";
 
 const PRECISION = 8;
@@ -765,7 +766,10 @@ export function createRegistry<
         isFreeService: (service: keyof typeof services) =>
             isFreeService<TP, TS>(serviceRegistry, service),
         getServices: () => Object.keys(serviceRegistry),
+        getService: (serviceId: ServiceId) => serviceRegistry[serviceId],
         getModelProviders: () => Object.keys(providerRegistry),
+        getModelProvider: (providerId: ProviderId) =>
+            providerRegistry[providerId],
         getActiveCostDefinition: (provider: keyof typeof providers) =>
             getActiveCostDefinition<TP>(providerRegistry, provider),
         getActivePriceDefinition: (service: keyof typeof services) =>

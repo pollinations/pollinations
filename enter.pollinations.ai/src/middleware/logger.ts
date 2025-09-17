@@ -4,13 +4,11 @@ import {
     getLogger,
     Logger,
     withContext,
-    ansiColorFormatter,
     getAnsiColorFormatter,
     FormattedValues,
 } from "@logtape/logtape";
 import { createMiddleware } from "hono/factory";
 import { AsyncLocalStorage } from "node:async_hooks";
-import { getPrettyFormatter } from "@logtape/pretty";
 import { inspect } from "node:util";
 import { applyColor } from "@/util";
 

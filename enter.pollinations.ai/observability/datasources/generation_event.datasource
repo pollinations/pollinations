@@ -17,7 +17,7 @@ SCHEMA >
 `model_requested`      LowCardinality(String) `json:$.modelRequested` DEFAULT 'unknown',
 `model_used`           LowCardinality(String) `json:$.modelUsed` DEFAULT 'unknown',
 `model_response_time`  LowCardinality(String) `json:$.modelResponseTime` DEFAULT 'unknown',
-`is_billed_usage`      Boolean                `json:$.isBilledUsage`,
+`is_billed_usage`      Bool                   `json:$.isBilledUsage`,
 
 -- Pricing
 `token_price_prompt_text`       Float64  `json:$.tokenPricePromptText` DEFAULT 0,
@@ -53,21 +53,6 @@ SCHEMA >
 `cache_key`                  String                  `json:$.cacheKey` DEFAULT '',
 
 ENGINE "MergeTree" 
-ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
-ENGINE_SORTING_KEY "timestamp, environment, user, tier"
-ENGINE_PRIMARY_KEY "timestamp, environment, user"
-
-FORWARD_QUERY >
-SELECT 
-  request_id, start_time, end_time, response_time, response_status, environment, 
-  user_id, user_tier, referrer, 
-  provider, model_requested, model_used, model_response_time, is_billed_usage,
-  token_price_prompt_text, token_price_prompt_audio, token_price_prompt_cached, token_price_prompt_image,
-  token_price_completion_text, token_price_completion_audio, token_price_completion_image,
-  token_count_prompt_text, token_count_prompt_audio, token_count_prompt_cached, token_count_prompt_image,
-  token_count_completion_text, token_count_completion_audio, token_count_completion_image,
-  moderation_hate_severity, moderation_self_harm_severity, moderation_sexual_severity, moderation_violence_severity, 
-  moderation_protected_material_code_detected, moderation_protected_material_text_detected,  
-  cache_hit, cache_type, cache_key,
-  defaultValueOfTypeName('Nullable(Float32)') AS cache_semantic_similarity, 
-  defaultValueOfTypeName('Nullable(Float32)') AS cache_semantic_threshold, 
+ENGINE_PARTITION_KEY "toYYYYMM(start_time)"
+ENGINE_SORTING_KEY "start_time, environment, user_id, user_tier"
+ENGINE_PRIMARY_KEY "start_time, environment, user_id"

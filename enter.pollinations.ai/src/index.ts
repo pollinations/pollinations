@@ -2,12 +2,14 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { createAuth } from "./auth.ts";
 import { handleError } from "./error.ts";
-import { processPolarEvents } from "./polar.ts";
+import { processEvents } from "./polar.ts";
 import { polarRoutes } from "./routes/polar.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { requestId } from "hono/request-id";
 import { logger } from "./middleware/logger.ts";
+import { getLogger } from "@logtape/logtape";
 import type { Env } from "./env.ts";
+import { drizzle } from "drizzle-orm/d1";
 
 const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", (c) => {
     return createAuth(c.env).handler(c.req.raw);
@@ -22,7 +24,7 @@ const app = new Hono<Env>()
     .route("/generate", proxyRoutes);
 
 app.notFound((c) => {
-    return handleError(new HTTPException(404, { message: "Not Found" }), c);
+    return handleError(new HTTPException(404), c);
 });
 
 app.onError(handleError);
@@ -31,5 +33,13 @@ export type AppRoutes = typeof app;
 
 export default {
     fetch: app.fetch,
-    scheduled: (_controller, env, _ctx) => processPolarEvents(env),
-} satisfies ExportedHandler<Cloudflare.Env>;
+    scheduled: async (_controller, env, _ctx) => {
+        const db = drizzle(env.DB);
+        const log = getLogger(["hono"]);
+        await processEvents(db, log, {
+            polarAccessToken: env.POLAR_ACCESS_TOKEN,
+            tinybirdIngestUrl: env.TINYBIRD_INGEST_URL,
+            tinybirdUserToken: env.TINYBIRD_USER_TOKEN,
+        });
+    },
+} satisfies ExportedHandler<CloudflareBindings>;

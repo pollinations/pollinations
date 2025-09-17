@@ -142,6 +142,7 @@ Pollinations.AI is used in various projects, including:
 | [🌱 Strain Navigator](https://www.strainnavigator.com/) ([⭐ 1](https://github.com/Tolerable/strainnavigator)) | A collection of tools to help Growers, Breeders & Seed Bankers. Free & Open... | @Tolerable |
 | YankoviC ([⭐ 1](https://github.com/Sweaterdog/YankoviC)) | A programming language interpreter written in JavaScript that emulates C/C++... | @Sweaterdog |
 | 🆕 [Pollinations OpenAI Proxy](https://pollinationsopenaiproxy.vercel.app/) ([⭐ 0](https://github.com/percival-de-galles/pollinations_openai_proxy)) | A thin FastAPI layer that exposes OpenAI-compatible endpoints and proxies to... | @percival-de-galles |
+| 🖥️ [Pollinations MCP Server (Official)](https://www.npmjs.com/package/@pollinations/model-context-protocol) ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/model-context-protocol)) | Official Model Context Protocol server for Pollinations AI services. Generate... | @pollinations |
 | [Sequa MCP Server](https://mcp.sequa.ai/v1/pollinations/contribute) | A Model Context Protocol server from Sequa.ai that provides deep knowledge of... | @sequa_ai |
 | [FoodAnaly](https://foodanaly.vercel.app/) | An AI application for food analysis that uses advanced artificial intelligence... | [liukang0120@...](mailto:liukang0120@163.com) |
 | [Herramientas IA](https://herramientas.ia) | Tools designed with Pollinations.AI and the DescartesJS editor, including tools... | @herramientas |
@@ -152,7 +153,7 @@ Pollinations.AI is used in various projects, including:
 | [UltimaX Intelligence CLI](https://huggingface.co/spaces/umint/cli) | Extension of the UltimaX Intelligence project based on Pollinations Python SDK. | @hadadarjt |
 | [AI Agent Portal](https://agent.makululinux.com/) ([⭐ 0](https://github.com/raymerjacque/Makulu-Agent-Portal)) | A next-generation development environment that leverages a sophisticated... | @raymerjacque |
 | [pollinations.ai Python SDK](https://github.com/pollinations-ai/pollinations.ai) | Official Python SDK for working with Pollinations' models. | @pollinations-ai |
-| [MCPollinations](https://github.com/pinkpixel-dev/MCPollinations) | A Model Context Protocol (MCP) server that enables AI assistants to generate... | Pink Pixel |
+| MCPollinations (Community) ([⭐ 32](https://github.com/pinkpixel-dev/MCPollinations)) | Community-maintained Model Context Protocol server with advanced features like... | @pinkpixel-dev |
 | Herramientas IA ([⭐ 26](https://github.com/cusanotech/90-herramientas-de-inteligencia-artificial)) | Tools designed with Pollinations.AI and the DescartesJS editor, including tools... | @juanrivera126 |
 | [pollinations_ai](https://pub.dev/packages/pollinations_ai) | Dart/Flutter package for Pollinations API. | @Meenapintu |
 | pollinations NPM Module | JavaScript/Node.js SDK for Pollinations API. | - |

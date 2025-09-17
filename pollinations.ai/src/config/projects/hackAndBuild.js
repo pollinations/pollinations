@@ -14,10 +14,21 @@ export const hackAndBuildProjects = [
     order: 1
   },
   {
-    name: "MCPollinations",
+    name: "Pollinations MCP Server (Official)",
+    url: "https://www.npmjs.com/package/@pollinations/model-context-protocol",
+    description: "Official Model Context Protocol server for Pollinations AI services. Generate images, text, and audio through MCP with STDIO transport. Easy Claude Desktop integration with npx installation.",
+    author: "@pollinations",
+    repo: "https://github.com/pollinations/pollinations/tree/main/model-context-protocol",
+    category: "sdkLibraries",
+    submissionDate: "2024-11-01",
+    order: 1
+  },
+  {
+    name: "MCPollinations (Community)",
     url: "https://github.com/pinkpixel-dev/MCPollinations",
-    description: "A Model Context Protocol (MCP) server that enables AI assistants to generate images, text, and audio through the Pollinations APIs. Supports customizable parameters, image saving, and multiple model options.",
-    author: "Pink Pixel",
+    description: "Community-maintained Model Context Protocol server with advanced features like customizable parameters, image saving, and multiple model options for Pollinations APIs.",
+    author: "@pinkpixel-dev",
+    repo: "https://github.com/pinkpixel-dev/MCPollinations",
     category: "sdkLibraries",
     stars: 32
   },

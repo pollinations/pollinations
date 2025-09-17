@@ -11,6 +11,7 @@ export const hackAndBuildProjects = [
     author: "@vgrichina",
     repo: "https://github.com/Strawberry-Computer/unpkg.ai",
     submissionDate: "2025-09-17",
+    stars: 5,
     order: 1
   },
   {

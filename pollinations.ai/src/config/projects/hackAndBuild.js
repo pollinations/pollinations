@@ -5,6 +5,15 @@
 
 export const hackAndBuildProjects = [
   {
+    name: "Pollinations OpenAI Proxy",
+    url: "https://pollinationsopenaiproxy.vercel.app/",
+    description: "A thin FastAPI layer that exposes OpenAI-compatible endpoints and proxies to Pollinations services for text, image, and audio (TTS). Works with existing OpenAI SDKs/clients.",
+    author: "@percival-de-galles",
+    repo: "https://github.com/percival-de-galles/pollinations_openai_proxy",
+    submissionDate: "2025-09-17",
+    order: 1
+  },
+  {
     name: "MCPollinations",
     url: "https://github.com/pinkpixel-dev/MCPollinations",
     description: "A Model Context Protocol (MCP) server that enables AI assistants to generate images, text, and audio through the Pollinations APIs. Supports customizable parameters, image saving, and multiple model options.",

@@ -18,6 +18,7 @@ import {
 	getUserMappedModel,
 } from "./requestUtils.js";
 import { logUserRequest } from "./userLogger.js";
+import { logConversation } from "./simpleLogger.js";
 import { checkAndLogMonitoredStrings, extractTextFromMessages } from "./utils/stringMonitor.js";
 
 // Import shared utilities
@@ -239,6 +240,13 @@ async function handleRequest(req, res, requestData) {
 				totalProcessingTime,
 			);
 		}
+
+		// Simple conversation logging (5% sample)
+		logConversation(
+			finalRequestData.messages,
+			finalRequestData.model,
+			authResult.username
+		);
 
 		// Check if completion contains an error
 		if (completion.error) {

@@ -5,6 +5,14 @@
 
 export const creativeProjects = [
   {
+    name: "Mixbash.com 🛠️",
+    url: "https://mixbash.com",
+    description: "Mixbash is a better UI layer to use SOTA AI models hosted on Pollinations, Fal, Replicate, Runpod and Gemini. Simply bring your own API keys to get started and pay 10x less for Gen AI models.",
+    author: "@jiajasper",
+    submissionDate: "2025-09-17",
+    order: 1
+  },
+  {
     name: "Pollinations AI Demo",
     url: "https://pollinationsaidemo.netlify.app/",
     description: "Images generator",

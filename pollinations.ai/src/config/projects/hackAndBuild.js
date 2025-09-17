@@ -14,12 +14,23 @@ export const hackAndBuildProjects = [
     order: 1
   },
   {
-    name: "MCPollinations",
-    url: "https://github.com/pinkpixel-dev/MCPollinations",
-    description: "A Model Context Protocol (MCP) server that enables AI assistants to generate images, text, and audio through the Pollinations APIs. Supports customizable parameters, image saving, and multiple model options.",
-    author: "Pink Pixel",
+    name: "Pollinations MCP Server (Official)",
+    url: "https://www.npmjs.com/package/@pollinations/model-context-protocol",
+    description: "Official Model Context Protocol server for Pollinations AI services. Generate images, text, and audio through MCP with STDIO transport. Easy Claude Desktop integration with npx installation.",
+    author: "@pollinations",
+    repo: "https://github.com/pollinations/pollinations/tree/main/model-context-protocol",
     category: "sdkLibraries",
-    stars: 27
+    submissionDate: "2024-11-01",
+    order: 1
+  },
+  {
+    name: "MCPollinations (Community)",
+    url: "https://github.com/pinkpixel-dev/MCPollinations",
+    description: "Community-maintained Model Context Protocol server with advanced features like customizable parameters, image saving, and multiple model options for Pollinations APIs.",
+    author: "@pinkpixel-dev",
+    repo: "https://github.com/pinkpixel-dev/MCPollinations",
+    category: "sdkLibraries",
+    stars: 32
   },
   {
     name: "Sequa MCP Server",
@@ -67,7 +78,7 @@ export const hackAndBuildProjects = [
     description: "Official Python SDK for working with Pollinations' models.",
     author: "@pollinations-ai",
     category: "sdkLibraries",
-    stars: 40
+    stars: 43
   },
   {
     name: "Herramientas IA",
@@ -112,7 +123,7 @@ export const hackAndBuildProjects = [
     description: "A free, open-source browser extension that brings the power of ChatGPT and browser automation directly to your fingertips. Instantly access AI assistance, manage tabs, and organize bookmarks using natural language all securely within your browser.",
     author: "@mkantwala",
     repo: "https://github.com/mkantwala/CoNavic/",
-    stars: 6,
+    stars: 8,
     submissionDate: "2025-05-01",
     order: 1
   },
@@ -176,7 +187,7 @@ export const hackAndBuildProjects = [
     description: "A frontend-based AI interface designed to deliver a smooth, multimodal, and visually engaging user experience with conversational AI, image generation, and more.",
     author: "@fisven",
     repo: "https://github.com/fisventurous/pollinationsai-enhancer",
-    stars: 3,
+    stars: 6,
     submissionDate: "2025-04-27",
     order: 1
   },
@@ -186,18 +197,9 @@ export const hackAndBuildProjects = [
     description: "Windows Walker – What Copilot for Windows should have been. AI-powered Windows assistant that translates voice/text commands into real system actions using PowerShell. Powered by ChatGPT + PowerShell in an Electron UI.",
     author: "@supershivam",
     repo: "https://github.com/SuperShivam5000/windows-walker",
-    stars: 10,
+    stars: 14,
     submissionDate: "2025-05-22",
     order: 1
-  },
-  {
-    name: "Pollinations MCP Server",
-    url: "https://github.com/pinkpixel-dev/MCPollinations",
-    description: "A Model Context Protocol server that enables AI-assisted development through natural language interaction with Pollinations' multimodal services. Mult1m0dal",
-    author: "@pinkpixel-dev",
-    repo: "https://github.com/pinkpixel-dev/MCPollinations",
-    stars: 27,
-    submissionDate: "2025-04-10"
   },
   {
     name: "🛠️ AI Content Describer",
@@ -205,7 +207,7 @@ export const hackAndBuildProjects = [
     description: "An extension for NVDA, the free and open-source screen reader for Microsoft Windows. Uses multimodal generative AI to help those with blindness and visual impairments understand pictures, UI controls, complex diagrams/graphics, and more through intelligent descriptions that go far beyond simple alt-text.",
     author: "@cartertemm",
     repo: "https://github.com/cartertemm/AI-content-describer/",
-    stars: 61,
+    stars: 59,
     submissionDate: "2025-05-28",
     order: 1
   },
@@ -215,7 +217,7 @@ export const hackAndBuildProjects = [
     description: "ChatGPT in terminal without requiring API keys. Uses Pollinations API endpoints to provide a free AI experience through the command line.",
     author: "@aandrew-me",
     repo: "https://github.com/aandrew-me/tgpt",
-    stars: 2739,
+    stars: 2854,
     submissionDate: "2025-05-15",
     order: 1
   },

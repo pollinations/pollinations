@@ -55,7 +55,7 @@ export const vibeCodingProjects = [
     author: "@LousyBook94",
     repo: "https://github.com/LousyBook94/pollinations-task-master",
     submissionDate: "2025-05-12",
-    stars: 13,
+    stars: 20,
     order: 1
   },
   {
@@ -63,7 +63,7 @@ export const vibeCodingProjects = [
     url: "https://github.com/QwenLM/Qwen-Agent",
     description: "A framework for developing agentic LLM applications.",
     repo: "https://github.com/QwenLM/Qwen-Agent",
-    stars: 10648,
+    stars: 11523,
     order: 1
   },
   {

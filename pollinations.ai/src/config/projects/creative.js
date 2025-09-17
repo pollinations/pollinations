@@ -5,6 +5,15 @@
 
 export const creativeProjects = [
   {
+    name: "Pollinations AI Demo",
+    url: "https://pollinationsaidemo.netlify.app/",
+    description: "Images generator",
+    author: "@Wormix48",
+    repo: "https://github.com/Wormix48/Pollinations-AI-Demo",
+    submissionDate: "2025-09-17",
+    order: 1
+  },
+  {
     name: "🇧🇷 CapyUniverse - CapyIMG",
     url: "https://capyuniverse.pages.dev/capyimg.html",
     description: "Ferramenta simples para criar imagens com IA diretamente no navegador. O usuário escreve uma descrição (briefing), pode indicar elementos a evitar, escolher quantidade de imagens (1–4), formato (1:1, 16:9, 9:16, 4:3, 3:4) e tamanho. (Simple tool to create AI images directly in the browser. Users write a description, can specify elements to avoid, choose number of images (1–4), format ratios, and size.)",

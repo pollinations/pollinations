@@ -5,6 +5,14 @@
 
 export const creativeProjects = [
   {
+    name: "Prompt2Image 🎨",
+    url: "https://marketplace.visualstudio.com/items?itemName=MaazSaboowala.prompt2image-ai-generator",
+    description: "Prompt2Image is a Visual Studio Code extension that brings AI-powered image generation directly into the developer workflow. Instead of searching for stock photos or managing downloads, developers can simply open the VS Code Command Palette, enter a descriptive text prompt, and instantly receive a high-quality, project-ready image. The extension integrates seamlessly with Pollinations.ai, which processes the prompt through its AI generation API to create tailored, web-optimized visuals.",
+    author: "@MaazS07",
+    submissionDate: "2025-09-18",
+    order: 1
+  },
+  {
     name: "StoryWeaver AI 📚",
     url: "https://storyweaver-ai-umber.vercel.app/",
     description: "A real-time, collaborative storyboarding application that empowers users to create visual narratives together. In shared 'story rooms,' participants write text prompts that are instantly transformed into comic book-style panels using dual Pollinations API integration - first generating AI summaries of preceding panels via text.pollinations.ai, then combining them with user prompts for contextually connected image generation via image.pollinations.ai.",

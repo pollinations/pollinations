@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { createAuth } from "./auth.ts";
 import { handleError } from "./error.ts";
-import { processEvents } from "./polar.ts";
+import { processEvents } from "./events.ts";
 import { polarRoutes } from "./routes/polar.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { requestId } from "hono/request-id";

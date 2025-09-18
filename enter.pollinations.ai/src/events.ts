@@ -1,7 +1,6 @@
 import { Polar } from "@polar-sh/sdk";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, getTableColumns } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { drizzle } from "drizzle-orm/d1";
 import { event } from "./db/schema/event.ts";
 import { batches, generateRandomId, removeUnset } from "./util.ts";
 import {
@@ -12,19 +11,20 @@ import { omit } from "./util.ts";
 import { z } from "zod";
 import { Logger } from "@logtape/logtape";
 
+const BUFFER_BATCH_SIZE = 1;
+const INGEST_BATCH_SIZE = 1000;
+
 const tbIngestResponseSchema = z.object({
     successful_rows: z.number(),
     quarantined_rows: z.number(),
 });
-
-const BUFFER_BATCH_SIZE = 10;
-const INGEST_BATCH_SIZE = 1000;
 
 export async function storeEvents(
     db: DrizzleD1Database,
     log: Logger,
     events: InsertGenerationEvent[],
 ) {
+    log.trace("Storing events: {count}", { count: events.length });
     for (const batch of batches(events, BUFFER_BATCH_SIZE)) {
         try {
             await db.insert(event).values(batch).onConflictDoNothing();
@@ -57,8 +57,10 @@ export async function processEvents(
         log,
     );
     if (polarDelivery === "succeeded" && tinybirdDelivery === "succeeded") {
+        log.trace("Event processing complete.");
         await confirmProcessingEvents(processingId, db);
     } else {
+        log.trace("Event processing failed, rolling back.");
         await rollbackProcessingEvents(processingId, db, {
             polarDelivery,
             tinybirdDelivery,

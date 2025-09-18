@@ -3,11 +3,10 @@ import {
     createScheduledController,
     env,
 } from "cloudflare:test";
-import { randomBytes } from "node:crypto";
 import { beforeAll, beforeEach, expect } from "vitest";
 import { test } from "./fixtures.ts";
 import worker from "../src/index.ts";
-import { storeEvents } from "../src/polar";
+import { storeEvents } from "../src/events.ts";
 import { setupFetchMock } from "./mocks/fetch.ts";
 import { createMockPolar } from "./mocks/polar.ts";
 import { getLogger } from "@logtape/logtape";
@@ -90,7 +89,7 @@ function createTextGenerationEvent(
 
 test("Scheduled handler sends events to Polar.sh", async () => {
     const db = drizzle(env.DB);
-    const log = getLogger(["test"]);
+    const log = getLogger(["hono"]);
     const events = Array.from({ length: 2000 }).map(() => {
         return createTextGenerationEvent("openai-large");
     });

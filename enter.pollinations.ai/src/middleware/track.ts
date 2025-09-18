@@ -1,4 +1,4 @@
-import { processEvents, storeEvents } from "@/polar";
+import { processEvents, storeEvents } from "@/events.ts";
 import { ProviderId, REGISTRY, ServiceId } from "@/registry/registry.ts";
 import {
     ModelUsage,

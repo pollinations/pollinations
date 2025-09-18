@@ -1,10 +1,10 @@
-import { createRegistry, REGISTRY } from "@/registry";
+import { createRegistry, REGISTRY } from "@/registry/registry";
 import { expect, test } from "vitest";
 import type {
     ServiceRegistry,
     ModelProviderRegistry,
     TokenUsage,
-} from "@/registry";
+} from "@/registry/registry";
 
 const MOCK_MODEL_PROVIDERS = {
     "mock-model": {

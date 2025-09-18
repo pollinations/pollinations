@@ -1,4 +1,4 @@
-import { REGISTRY, ServiceId } from "@/registry";
+import { REGISTRY, ServiceId } from "@/registry/registry.ts";
 import { SELF } from "cloudflare:test";
 import { batches } from "@/util";
 import { test } from "./fixtures.ts";
@@ -7,6 +7,7 @@ import { setupFetchMock, teardownFetchMock } from "./mocks/fetch";
 import { createGithubMockHandlers } from "./mocks/github";
 import { createMockPolar } from "./mocks/polar";
 import { env } from "cloudflare:workers";
+import { TEXT_SERVICES } from "@/registry/text.ts";
 
 const mockPolar = createMockPolar();
 
@@ -19,21 +20,24 @@ beforeEach(() => setupFetchMock(mockHandlers));
 afterEach(() => teardownFetchMock());
 
 test("Only free services should be available without an API key", async () => {
-    const requests = REGISTRY.getServices().map((service) => {
+    const requests = Object.keys(TEXT_SERVICES).map((service) => {
         return {
             service,
-            request: SELF.fetch(`http://localhost:3000/api/generate/openai`, {
-                method: "POST",
-                body: JSON.stringify({
-                    model: service,
-                    messages: [
-                        {
-                            role: "user",
-                            content: "Hello, whats going on today?",
-                        },
-                    ],
-                }),
-            }),
+            request: SELF.fetch(
+                `http://localhost:3000/api/generate/openai/chat/completions`,
+                {
+                    method: "POST",
+                    body: JSON.stringify({
+                        model: service,
+                        messages: [
+                            {
+                                role: "user",
+                                content: "Hello, whats going on today?",
+                            },
+                        ],
+                    }),
+                },
+            ),
         };
     });
     for (const batch of batches(requests, 4)) {
@@ -54,20 +58,26 @@ test("Only free services should be available without an API key", async () => {
 }, 30000);
 
 test("All services should be availabe with an API key", async ({ apiKey }) => {
-    const requests = REGISTRY.getServices().map((service) => {
-        return SELF.fetch(`http://localhost:3000/api/generate/openai`, {
-            method: "POST",
-            headers: {
-                "x-api-key": apiKey,
-                "referer": env.TESTING_REFERRER,
+    const requests = Object.keys(TEXT_SERVICES).map((service) => {
+        return SELF.fetch(
+            `http://localhost:3000/api/generate/openai/chat/completions`,
+            {
+                method: "POST",
+                headers: {
+                    "x-api-key": apiKey,
+                    "referer": env.TESTING_REFERRER,
+                },
+                body: JSON.stringify({
+                    model: service,
+                    messages: [
+                        {
+                            role: "user",
+                            content: "Hello, whats going on today?",
+                        },
+                    ],
+                }),
             },
-            body: JSON.stringify({
-                model: service,
-                messages: [
-                    { role: "user", content: "Hello, whats going on today?" },
-                ],
-            }),
-        });
+        );
     });
     for (const batch of batches(requests, 4)) {
         const responses = await Promise.all(batch);

@@ -5,6 +5,7 @@
     "description": "Next generation auth service for Pollinations",
     "main": "src/index.ts",
     "scripts": {
+        "typecheck": "tsc --noEmit",
         "dev": "sops -d .encrypted.dev.env > .dev.vars && vite dev",
         "build": "vite build",
         "test": "npx vitest run",

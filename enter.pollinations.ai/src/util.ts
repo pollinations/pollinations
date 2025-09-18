@@ -28,6 +28,24 @@ export function omit<T, K extends keyof T>(obj: T, ...keys: K[]): Omit<T, K> {
     return result;
 }
 
+type NonNullable<T> = T extends null | undefined ? never : T;
+
+type RemoveUnset<T> = {
+    [K in keyof T as T[K] extends null | undefined ? never : K]: NonNullable<
+        T[K]
+    >;
+};
+
+export function removeUnset<T extends Record<string, any>>(
+    obj: T,
+): RemoveUnset<T> {
+    return Object.fromEntries(
+        Object.entries(obj).filter(
+            ([_, value]) => value !== null && value !== undefined,
+        ),
+    ) as RemoveUnset<T>;
+}
+
 const resetColor = "\x1b[0m";
 
 export type AnsiColor =

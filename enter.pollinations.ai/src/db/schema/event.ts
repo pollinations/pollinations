@@ -1,25 +1,25 @@
-import { PriceDefinition, TokenUsage } from "@/registry";
+import { PriceDefinition, TokenUsage } from "@/registry/registry";
 import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
-const eventNameValues = ["generate.text", "generate.image"] as const;
-type EventName = (typeof eventNameValues)[number];
+const eventTypeValues = ["generate.text", "generate.image"] as const;
+export type EventType = (typeof eventTypeValues)[number];
 
 const eventStatusValues = ["pending", "processing", "sent", "error"] as const;
-type EventStatus = (typeof eventStatusValues)[number];
+export type EventStatus = (typeof eventStatusValues)[number];
 
 export const event = sqliteTable("event", {
     id: text("id").primaryKey(),
 
     // Request identification and timing
     requestId: text("request_id").notNull(),
-    startTime: integer("start_time", { mode: "timestamp" }).notNull(),
-    endTime: integer("end_time", { mode: "timestamp" }).notNull(),
+    startTime: integer("start_time", { mode: "timestamp_ms" }).notNull(),
+    endTime: integer("end_time", { mode: "timestamp_ms" }).notNull(),
     responseTime: real("response_time"),
     responseStatus: integer("response_status"),
     environment: text("environment"),
 
     // Event processing
-    eventType: text("event_type").$type<EventName>().notNull(),
+    eventType: text("event_type").$type<EventType>().notNull(),
     eventProcessingId: text("event_processing_id"),
     eventStatus: text("event_status", { enum: eventStatusValues })
         .$type<EventStatus>()
@@ -45,14 +45,13 @@ export const event = sqliteTable("event", {
         .notNull(),
 
     // User information
-    userId: text("user_id").notNull(),
+    userId: text("user_id"),
     userTier: text("user_tier"),
     referrerDomain: text("referrer_domain"),
     referrerUrl: text("referrer_url"),
 
     // Model information
-    modelProvider: text("model_provider").notNull(),
-    modelRequested: text("model_requested").notNull(),
+    modelRequested: text("model_requested"),
     modelUsed: text("model_used").notNull(),
     isBilledUsage: integer("is_billed_usage", { mode: "boolean" }).notNull(),
 

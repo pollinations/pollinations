@@ -28,11 +28,13 @@ function formatValue(v: unknown): string {
 
 function formatLogline(vs: FormattedValues): string {
     const requestId = vs.record.properties["requestId"];
-    const shortReqId =
+    const shortRequestId =
         typeof requestId === "string"
             ? applyColor("cyan", `[${requestId.slice(0, 8)}]`)
-            : "[]";
-    return `${vs.timestamp} ${vs.level} ${shortReqId} ${vs.message}`;
+            : undefined;
+    return [vs.timestamp, vs.level, shortRequestId, vs.message]
+        .filter((v) => !!v)
+        .join(" ");
 }
 
 await configure({
@@ -58,6 +60,11 @@ await configure({
         },
         {
             category: ["hono", "auth"],
+            sinks: ["console"],
+            lowestLevel: "trace",
+        },
+        {
+            category: ["test", "mock"],
             sinks: ["console"],
             lowestLevel: "trace",
         },

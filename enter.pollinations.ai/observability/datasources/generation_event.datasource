@@ -1,3 +1,5 @@
+TOKEN generation_event_append APPEND
+
 DESCRIPTION >
 Generative AI events with usage, pricing, metadata, moderation, and cache info
 
@@ -6,48 +8,54 @@ SCHEMA >
 `start_time`      DateTime               `json:$.startTime`,
 `end_time`        DateTime               `json:$.endTime`,
 `response_time`   Float32                `json:$.responseTime` DEFAULT 0,
-`response_status` LowCardinality(String) `json:$.responseStatus` DEFAULT 'unknown',
-`environment`     LowCardinality(String) `json:$.environment` DEFAULT 'unknown',
+`response_status` UInt32                 `json:$.responseStatus` DEFAULT 0,
+`environment`     LowCardinality(String) `json:$.environment` DEFAULT 'undefined',
 
-`user_id`         LowCardinality(String) `json:$.userId` DEFAULT 'unknown',
-`user_tier`       LowCardinality(String) `json:$.userTier` DEFAULT 'unknown',
-`referrer`        LowCardinality(String) `json:$.referrer` DEFAULT 'unknown',
+`event_type`      LowCardinality(String) `json:$.eventType`,
+`user_id`         LowCardinality(String) `json:$.userId` DEFAULT 'undefined',
+`user_tier`       LowCardinality(String) `json:$.userTier` DEFAULT 'undefined',
+`referrer_url`    String                 `json:$.referrerUrl` DEFAULT 'undefined',
+`referrer_domain` LowCardinality(String) `json:$.referrerDomain` DEFAULT 'undefined',
 
-`provider`             LowCardinality(String) `json:$.provider` DEFAULT 'unknown',
-`model_requested`      LowCardinality(String) `json:$.modelRequested` DEFAULT 'unknown',
-`model_used`           LowCardinality(String) `json:$.modelUsed` DEFAULT 'unknown',
-`model_response_time`  LowCardinality(String) `json:$.modelResponseTime` DEFAULT 'unknown',
+`model_provider`       LowCardinality(String) `json:$.modelProvider` DEFAULT 'undefined',
+`model_requested`      LowCardinality(String) `json:$.modelRequested` DEFAULT 'undefined',
+`model_used`           LowCardinality(String) `json:$.modelUsed` DEFAULT 'undefined',
 `is_billed_usage`      Bool                   `json:$.isBilledUsage`,
 
 -- Pricing
-`token_price_prompt_text`       Float64  `json:$.tokenPricePromptText` DEFAULT 0,
-`token_price_prompt_cached`     Float64  `json:$.tokenPricePromptCached` DEFAULT 0,
-`token_price_prompt_audio`      Float64  `json:$.tokenPricePromptAudio` DEFAULT 0,
-`token_price_prompt_image`      Float64  `json:$.tokenPricePromptImage` DEFAULT 0,
-`token_price_completion_text`   Float64  `json:$.tokenPriceCompletionText` DEFAULT 0,
-`token_price_completion_audio`  Float64  `json:$.tokenPriceCompletionAudio` DEFAULT 0,
-`token_price_completion_image`  Float64  `json:$.tokenPriceCompletionImage` DEFAULT 0,
+`token_price_prompt_text`          Float64  `json:$.tokenPricePromptText` DEFAULT 0,
+`token_price_prompt_cached`        Float64  `json:$.tokenPricePromptCached` DEFAULT 0,
+`token_price_prompt_audio`         Float64  `json:$.tokenPricePromptAudio` DEFAULT 0,
+`token_price_prompt_image`         Float64  `json:$.tokenPricePromptImage` DEFAULT 0,
+`token_price_completion_text`      Float64  `json:$.tokenPriceCompletionText` DEFAULT 0,
+`token_price_completion_reasoning` Float64  `json:$.tokenPriceCompletionReasoning` DEFAULT 0,
+`token_price_completion_audio`     Float64  `json:$.tokenPriceCompletionAudio` DEFAULT 0,
+`token_price_completion_image`     Float64  `json:$.tokenPriceCompletionImage` DEFAULT 0,
 
 -- Usage
-`token_count_prompt_text`       UInt32   `json:$.tokenCountPromptText` DEFAULT 0,
-`token_count_prompt_audio`      UInt32   `json:$.tokenCountPromptAudio` DEFAULT 0,
-`token_count_prompt_cached`     UInt32   `json:$.tokenCountPromptCached` DEFAULT 0,
-`token_count_prompt_image`      UInt32   `json:$.tokenCountPromptImage` DEFAULT 0,
-`token_count_completion_text`   UInt32   `json:$.tokenCountCompletionText` DEFAULT 0,
-`token_count_completion_audio`  UInt32   `json:$.tokenCountCompletionAudio` DEFAULT 0,
-`token_count_completion_image`  UInt32   `json:$.tokenCountCompletionImage` DEFAULT 0,
+`token_count_prompt_text`          UInt32   `json:$.tokenCountPromptText` DEFAULT 0,
+`token_count_prompt_audio`         UInt32   `json:$.tokenCountPromptAudio` DEFAULT 0,
+`token_count_prompt_cached`        UInt32   `json:$.tokenCountPromptCached` DEFAULT 0,
+`token_count_prompt_image`         UInt32   `json:$.tokenCountPromptImage` DEFAULT 0,
+`token_count_completion_text`      UInt32   `json:$.tokenCountCompletionText` DEFAULT 0,
+`token_count_completion_reasoning` UInt32   `json:$.tokenCountCompletionReasoning` DEFAULT 0,
+`token_count_completion_audio`     UInt32   `json:$.tokenCountCompletionAudio` DEFAULT 0,
+`token_count_completion_image`     UInt32   `json:$.tokenCountCompletionImage` DEFAULT 0,
+
+`total_cost`    Float64 `json:$.totalCost` DEFAULT 0,
+`total_price`   Float64 `json:$.totalPrice` DEFAULT 0,
 
 -- Moderation
-`moderation_hate_severity`       LowCardinality(String) `json:$.moderationHateSeverity` DEFAULT 'unknown',
-`moderation_self_harm_severity`  LowCardinality(String) `json:$.moderationSelfHarmSeverity` DEFAULT 'unknown',
-`moderation_sexual_severity`     LowCardinality(String) `json:$.moderationSexualSeverity` DEFAULT 'unknown',
-`moderation_violence_severity`   LowCardinality(String) `json:$.moderationViolenceSeverity` DEFAULT 'unknown',
+`moderation_hate_severity`       LowCardinality(String) `json:$.moderationHateSeverity` DEFAULT 'undefined',
+`moderation_self_harm_severity`  LowCardinality(String) `json:$.moderationSelfHarmSeverity` DEFAULT 'undefined',
+`moderation_sexual_severity`     LowCardinality(String) `json:$.moderationSexualSeverity` DEFAULT 'undefined',
+`moderation_violence_severity`   LowCardinality(String) `json:$.moderationViolenceSeverity` DEFAULT 'undefined',
 `moderation_protected_material_code_detected`  Bool `json:$.moderationProtectedMaterialCodeDetected` DEFAULT false,
 `moderation_protected_material_text_detected`  Bool `json:$.moderationProtectedMaterialTextDetected` DEFAULT false,
 
 -- Cache
 `cache_hit`                  Bool                    `json:$.cacheHit` DEFAULT false,
-`cache_type`                 LowCardinality(String)  `json:$.cacheType` DEFAULT 'unknown',
+`cache_type`                 LowCardinality(String)  `json:$.cacheType` DEFAULT 'undefined',
 `cache_semantic_similarity`  Nullable(Float32)       `json:$.cacheSemanticSimilarity`,
 `cache_semantic_threshold`   Nullable(Float32)       `json:$.cacheSemanticThreshold`,
 `cache_key`                  String                  `json:$.cacheKey` DEFAULT '',
@@ -56,3 +64,6 @@ ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(start_time)"
 ENGINE_SORTING_KEY "start_time, environment, user_id, user_tier"
 ENGINE_PRIMARY_KEY "start_time, environment, user_id"
+
+FORWARD_QUERY >
+  SELECT request_id, start_time, end_time, response_time, CAST(response_status, 'UInt32') AS response_status, environment, event_type, user_id, user_tier, referrer_url, referrer_domain, model_provider, model_requested, model_used, is_billed_usage, token_price_prompt_text, token_price_prompt_cached, token_price_prompt_audio, token_price_prompt_image, token_price_completion_text, token_price_completion_reasoning, token_price_completion_audio, token_price_completion_image, token_count_prompt_text, token_count_prompt_audio, token_count_prompt_cached, token_count_prompt_image, token_count_completion_text, token_count_completion_reasoning, token_count_completion_audio, token_count_completion_image, total_cost, total_price, moderation_hate_severity, moderation_self_harm_severity, moderation_sexual_severity, moderation_violence_severity, moderation_protected_material_code_detected, moderation_protected_material_text_detected, cache_hit, cache_type, cache_semantic_similarity, cache_semantic_threshold, cache_key

@@ -58,7 +58,6 @@ PUBLIC_BASE_URL = "https://enter.pollinations.ai"
 PUBLIC_AUTH_PATH = "/api/auth"
 POLAR_SUCCESS_URL = "https://enter.pollinations.ai"
 TINYBIRD_INGEST_URL = "https://api.tinybird.co/v0/events?name=generation_event"
-TINYBIRD_USER_TOKEN = "[placeholder]"
 
 [env.test]
 

@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { ProviderId, TokenUsage } from "./registry";
-import { InsertGenerationEvent } from "./db/schema/event";
+import { ProviderId, TokenUsage } from "./registry/registry";
+import { EventType } from "./db/schema/event.ts";
 
 const oaiUsageSchema = z.object({
     completion_tokens: z.number().int().nonnegative(),
@@ -24,14 +24,14 @@ const oaiUsageSchema = z.object({
 
 type OpenAIUsage = z.infer<typeof oaiUsageSchema>;
 
-const oaiResponseSchema = z.object({
+export const oaiResponseSchema = z.object({
     id: z.string().optional(),
     model: z.string().optional(),
     usage: oaiUsageSchema,
     created: z.number(),
 });
 
-function transformOpenAIUsage(usage: OpenAIUsage): TokenUsage {
+export function transformOpenAIUsage(usage: OpenAIUsage): TokenUsage {
     const promptDetailTokens =
         (usage.prompt_tokens_details?.cached_tokens || 0) +
         (usage.prompt_tokens_details?.audio_tokens || 0);
@@ -57,12 +57,3 @@ export type ModelUsage = {
     model: ProviderId;
     usage: TokenUsage;
 };
-
-export function extractUsage(response: unknown): ModelUsage {
-    // TODO: handle image responses
-    const parsedResponse = oaiResponseSchema.parse(response);
-    return {
-        model: parsedResponse.model as ProviderId,
-        usage: transformOpenAIUsage(parsedResponse.usage),
-    };
-}

@@ -1,13 +1,3 @@
-CREATE TABLE `app` (
-	`id` text PRIMARY KEY NOT NULL,
-	`name` text NOT NULL,
-	`user_id` text NOT NULL,
-	`description` text NOT NULL,
-	`created_at` integer NOT NULL,
-	`updated_at` integer NOT NULL,
-	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE cascade ON DELETE cascade
-);
---> statement-breakpoint
 CREATE TABLE `account` (
 	`id` text PRIMARY KEY NOT NULL,
 	`account_id` text NOT NULL,
@@ -105,12 +95,11 @@ CREATE TABLE `event` (
 	`tinybird_delivered_at` integer,
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL,
-	`user_id` text NOT NULL,
+	`user_id` text,
 	`user_tier` text,
 	`referrer_domain` text,
 	`referrer_url` text,
-	`model_provider` text NOT NULL,
-	`model_requested` text NOT NULL,
+	`model_requested` text,
 	`model_used` text NOT NULL,
 	`is_billed_usage` integer NOT NULL,
 	`token_price_prompt_text` real NOT NULL,

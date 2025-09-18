@@ -15,5 +15,5 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
     });
     c.set("polar", polar);
 
-    return next();
+    await next();
 });

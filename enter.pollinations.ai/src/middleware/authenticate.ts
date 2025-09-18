@@ -3,13 +3,15 @@ import { createMiddleware } from "hono/factory";
 import { createAuth } from "../auth.ts";
 import { LoggerVariables } from "./logger.ts";
 
+export type AuthVariables = {
+    auth: ReturnType<typeof createAuth>;
+    session?: Session;
+    user?: User;
+};
+
 export type AuthEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & {
-        auth: ReturnType<typeof createAuth>;
-        session?: Session;
-        user?: User;
-    };
+    Variables: LoggerVariables & AuthVariables;
 };
 
 export const authenticate = createMiddleware<AuthEnv>(async (c, next) => {
@@ -26,5 +28,5 @@ export const authenticate = createMiddleware<AuthEnv>(async (c, next) => {
     c.set("session", session);
     c.set("user", user);
 
-    return next();
+    await next();
 });

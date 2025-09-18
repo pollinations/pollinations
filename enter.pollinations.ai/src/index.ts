@@ -39,7 +39,7 @@ export default {
         await processEvents(db, log, {
             polarAccessToken: env.POLAR_ACCESS_TOKEN,
             tinybirdIngestUrl: env.TINYBIRD_INGEST_URL,
-            tinybirdUserToken: env.TINYBIRD_USER_TOKEN,
+            tinybirdAccessToken: env.TINYBIRD_ACCESS_TOKEN,
         });
     },
 } satisfies ExportedHandler<CloudflareBindings>;

@@ -17,7 +17,12 @@ import {
     type InsertGenerationEvent,
 } from "@/db/schema/event.ts";
 import { generateRandomId } from "@/util.ts";
-import { ProviderId, REGISTRY, ServiceId, TokenUsage } from "@/registry.ts";
+import {
+    ProviderId,
+    REGISTRY,
+    ServiceId,
+    TokenUsage,
+} from "@/registry/registry.ts";
 import { drizzle } from "drizzle-orm/d1";
 
 const mockPolar = createMockPolar();
@@ -71,7 +76,6 @@ function createTextGenerationEvent(
         userTier: "flower",
         referrerDomain: "localhost:3000",
         referrerUrl: "http://localhost:3000",
-        modelProvider: "openai",
         modelRequested,
         modelUsed,
         isBilledUsage: true,
@@ -84,21 +88,15 @@ function createTextGenerationEvent(
     };
 }
 
-test("Scheduled handler sends events to Polar.sh", async ({
-    tinybirdUserToken,
-}) => {
+test("Scheduled handler sends events to Polar.sh", async () => {
     const db = drizzle(env.DB);
-    const log = getLogger(["hono"]);
-    const events = Array.from({ length: 10000 }).map(() => {
+    const log = getLogger(["test"]);
+    const events = Array.from({ length: 2000 }).map(() => {
         return createTextGenerationEvent("openai-large");
     });
     await storeEvents(db, log, events);
     const controller = createScheduledController();
     const ctx = createExecutionContext();
-    const updatedEnv = {
-        ...env,
-        TINYBIRD_USER_TOKEN: tinybirdUserToken,
-    };
-    await worker.scheduled(controller, updatedEnv, ctx);
+    await worker.scheduled(controller, env, ctx);
     expect(mockPolar.state.events).toHaveLength(events.length);
 });

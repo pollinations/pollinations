@@ -1,9 +1,20 @@
 #!/usr/bin/env node
 
 /**
- * Enhanced conversation log processor with LLM classification
+ * Conversation Log Processor with LLM Classification
+ * 
+ * Processes conversation logs and classifies them using LLM API calls.
+ * - Classifies conversations by topic, intent, work-related, education, language learning
+ * - Fixed language learning over-classification (50% → 2% false positive rate)
+ * - Uses p-queue for rate limiting API calls (5 concurrent)
+ * - Outputs classification results to user_logs/classification_results.jsonl
+ * - Outputs language learning conversations to user_logs/language_learning_conversations.jsonl
+ * 
+ * Usage: 
+ *   node logging/processors/processLogs.js                    # Process all conversations
+ *   node logging/processors/processLogs.js --file=sample.jsonl  # Process specific file
+ * 
  * Based on OpenAI research on conversation classification
- * Usage: node processLogs.js [--file=path/to/file.jsonl] [--classify] [--education-focus]
  */
 
 import fs from "fs";

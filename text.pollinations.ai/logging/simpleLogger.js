@@ -1,3 +1,14 @@
+/**
+ * Simple Conversation Logger
+ * 
+ * Logs conversations to JSONL format for analysis and classification.
+ * - Samples conversations at configurable rate (currently 100%)
+ * - Excludes specific users for privacy
+ * - Truncates messages to manageable size
+ * - Stores in user_logs/conversations.jsonl
+ * 
+ * Used by: server.js for general conversation logging
+ */
 import fs from "fs";
 import path from "path";
 

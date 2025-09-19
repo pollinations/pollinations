@@ -20,6 +20,10 @@
 import fs from "fs";
 import path from "path";
 import PQueue from "p-queue";
+import dotenv from "dotenv";
+
+// Load environment variables from .env file
+dotenv.config();
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -123,11 +127,17 @@ async function callPollinationsAPI(prompt, conversation) {
             { role: "user", content: formatConversationForClassification(conversation) }
         ];
 
+        // Get API token from environment variable
+        const apiToken = process.env.POLLINATIONS_API_KEY;
+        if (!apiToken) {
+            throw new Error('POLLINATIONS_API_KEY environment variable is required');
+        }
+
         const response = await fetch('http://localhost:16385/openai', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer XWvYJ8hWIWjgIMG3'
+                'Authorization': `Bearer ${apiToken}`
             },
             body: JSON.stringify({
                 model: 'openai-fast',

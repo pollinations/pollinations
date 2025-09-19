@@ -1,11 +1,20 @@
+/**
+ * User-Specific Request/Response Logger
+ * 
+ * Logs detailed request/response data for specific users for debugging.
+ * - Environment variable DEBUG_USERS controls which users to log
+ * - Supports comma-separated usernames or "all" for all users
+ * - Creates separate log file per user: user_logs/[username].log
+ * - Includes request data, response, errors, queue info, processing time
+ * 
+ * Usage: Set DEBUG_USERS="username1,username2" or DEBUG_USERS="all"
+ * Used by: server.js for debugging specific user issues
+ */
 import fs from "fs";
 import path from "path";
 import debug from "debug";
 
 const log = debug("pollinations:userlogger");
-
-// Simple user logging - just specify usernames in environment variable
-// Read DEBUG_USERS dynamically each time
 const LOG_DIR = path.join(process.cwd(), "user_logs");
 
 /**

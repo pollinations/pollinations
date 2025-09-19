@@ -32,6 +32,6 @@ export const MODELS = {
     //     type: "azure",
     //     enhance: false,
     //     maxSideLength: 1024,
-    //     tier: "flower",
+    //     tier: "nectar",
     // },
 } as const;

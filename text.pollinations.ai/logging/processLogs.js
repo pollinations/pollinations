@@ -11,8 +11,8 @@
  * - Outputs language learning conversations to user_logs/language_learning_conversations.jsonl
  * 
  * Usage: 
- *   node logging/processors/processLogs.js                    # Process all conversations
- *   node logging/processors/processLogs.js --file=sample.jsonl  # Process specific file
+ *   node logging/processLogs.js                    # Process all conversations
+ *   node logging/processLogs.js --file=sample.jsonl  # Process specific file
  * 
  * Based on OpenAI research on conversation classification
  */

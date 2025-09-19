@@ -2,4 +2,4 @@
 observability/fixtures/*.ndjson
 user_logs/
 .kiro
-analysis/
+logging/analysis/

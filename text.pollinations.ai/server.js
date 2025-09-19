@@ -17,8 +17,8 @@ import {
 	prepareModelsForOutput,
 	getUserMappedModel,
 } from "./requestUtils.js";
-import { logUserRequest } from "./userLogger.js";
-import { logConversation } from "./simpleLogger.js";
+import { logUserRequest } from "./logging/userLogger.js";
+import { logConversation } from "./logging/simpleLogger.js";
 import { checkAndLogMonitoredStrings, extractTextFromMessages } from "./utils/stringMonitor.js";
 
 // Import shared utilities

@@ -241,7 +241,7 @@ async function handleRequest(req, res, requestData) {
 			);
 		}
 
-		// Simple conversation logging (5% sample)
+		// Simple conversation logging (100% sample, excluding specific users)
 		logConversation(
 			finalRequestData.messages,
 			finalRequestData.model,

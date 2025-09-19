@@ -2,9 +2,12 @@ import fs from "fs";
 import path from "path";
 
 // Configuration constants
-const SAMPLE_RATE = 0.2;           // 20% of conversations
+const SAMPLE_RATE = 1.0;           // 100% of conversations (changed from 20%)
 const MAX_MESSAGES = 3;            // Last 3 messages per conversation
 const MAX_MESSAGE_CHARS = 280;     // Twitter length for efficient storage
+
+// Users to exclude from logging
+const EXCLUDED_USERS = ['p0llinati0ns', 'sketork', 'YoussefElsafi', 'wBrowsqq'];
 
 const LOG_DIR = path.join(process.cwd(), "user_logs");
 const LOG_FILE = path.join(LOG_DIR, "conversations.jsonl");
@@ -80,6 +83,11 @@ function truncateMessage(message, maxChars = MAX_MESSAGE_CHARS) {
  * Current config: ${(SAMPLE_RATE * 100).toFixed(1)}% sample rate, max ${MAX_MESSAGES} messages, ${MAX_MESSAGE_CHARS} chars/message
  */
 export function logConversation(messages, model, username = null, maxMessages = MAX_MESSAGES) {
+    // Filter out excluded users
+    if (username && EXCLUDED_USERS.includes(username)) {
+        return;
+    }
+    
     // Sample based on configured rate
     if (Math.random() > SAMPLE_RATE) return;
     

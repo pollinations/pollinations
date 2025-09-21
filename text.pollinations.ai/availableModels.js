@@ -109,6 +109,18 @@ const models = [
 		tools: false
 	},
 	{
+		name: "deepseek",
+		description: "DeepSeek V3.1 (Google Vertex AI)",
+		config: portkeyConfig["deepseek-ai/deepseek-v3.1-maas"],
+		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+		tier: "seed",
+		community: false,
+		aliases: ["deepseek-v3", "deepseek-v3.1", "deepseek-ai/deepseek-v3.1-maas"],
+		input_modalities: ["text"],
+		output_modalities: ["text"],
+		tools: true
+	},
+	{
 		name: "openai-audio",
 		description: "OpenAI GPT-4o Mini Audio Preview",
 		maxInputChars: 2000,

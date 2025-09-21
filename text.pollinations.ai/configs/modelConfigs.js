@@ -308,6 +308,13 @@ export const portkeyConfig = {
 		"custom-host": `https://us-central1-aiplatform.googleapis.com/v1/projects/${process.env.GCLOUD_PROJECT_ID}/locations/us-central1/endpoints/openapi`,
 		"strict-openai-compliance": "false",
 	}),
+	"deepseek-ai/deepseek-v3.1-maas": () => ({
+		provider: "openai",
+		authKey: googleCloudAuth.getAccessToken,
+		"custom-host": `https://us-west2-aiplatform.googleapis.com/v1/projects/${process.env.GCLOUD_PROJECT_ID}/locations/us-west2/endpoints/openapi`,
+		"strict-openai-compliance": "false",
+		model: "deepseek-ai/deepseek-v3.1-maas",
+	}),
 	"DeepSeek-V3-0324": () => createDeepSeekModelConfig(),
 	"MAI-DS-R1": () => createDeepSeekReasoningConfig(),
 	// Custom endpoints

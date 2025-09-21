@@ -67,6 +67,14 @@ const MODEL_COST = {
 		prompt_cache: 0.0,
 		completion_text: 0.0
 	  },
+
+	// ===== Google Vertex AI ===== Pricing: https://cloud.google.com/vertex-ai/generative-ai/pricing
+	"deepseek-ai/deepseek-v3.1-maas": {
+		provider: "vertex-ai",
+		region: "us-west2",
+		prompt_text: 0.60,
+		completion_text: 1.70
+	},
   
 	// ===== Scaleway ===== Pricing: https://www.scaleway.com/en/pricing/model-as-a-service/
 	"qwen2.5-coder-32b-instruct": {

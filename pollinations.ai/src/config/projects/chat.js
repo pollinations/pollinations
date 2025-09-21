@@ -5,6 +5,14 @@
 
 export const chatProjects = [
   {
+    name: "Chad GPT",
+    url: "https://chadgpt0.vercel.app/",
+    description: "AI Text, Image, and Audio Generator powered by Pollinations AI API. A comprehensive AI platform that combines text generation, image creation, and audio synthesis capabilities in a single interface.",
+    author: "https://sawwqib.vercel.app",
+    submissionDate: "2025-09-21",
+    order: 1
+  },
+  {
     name: "チャットGPT 日本語 🇯🇵",
     url: "https://chatgpt-jp.org/",
     description: "チャットGPT 日本語無料版 (Free Japanese version of ChatGPT)",

@@ -5,6 +5,15 @@
 
 export const chatProjects = [
   {
+    name: "Strapick Chat",
+    url: "https://strapick-chat.vercel.app/",
+    description: "A minimalistic chat UI for pollinations AI.",
+    author: "@mmojocoder",
+    repo: "https://github.com/MMojoCoder/Strapick-Chat",
+    submissionDate: "2025-09-21",
+    order: 1
+  },
+  {
     name: "Chad GPT",
     url: "https://chadgpt0.vercel.app/",
     description: "AI Text, Image, and Audio Generator powered by Pollinations AI API. A comprehensive AI platform that combines text generation, image creation, and audio synthesis capabilities in a single interface.",

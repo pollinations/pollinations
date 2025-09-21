@@ -10,6 +10,7 @@ import rtistPrompt from "./personas/rtist.js";
 import evilPrompt from "./personas/evil.js";
 import mirexaSystemPrompt from "./personas/mirexa.js";
 import { bidaraSystemPrompt } from "./personas/bidara.js";
+import chickyTutorPrompt from "./personas/chickytutor.js";
 
 // Import system prompts
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
@@ -192,13 +193,26 @@ const models = [
 		description: "Gemini 2.5 Flash Lite (api.navy)",
 		config: portkeyConfig["gemini-2.5-flash-lite"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-		tier: "anonymous",
+		tier: "seed",
 		community: false,
 		aliases: ["gemini-2.5-flash-lite"],
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true
 	},
+	// {
+	// 	name: "gemini-vertex",
+	// 	description: "Gemini 2.5 Flash Lite (Vertex AI)",
+	// 	config: portkeyConfig["gemini-2.5-flash-lite-vertex"],
+	// 	transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+	// 	tier: "anonymous",
+	// 	community: false,
+	// 	hidden: true,
+	// 	aliases: ["gemini-2.5-flash-lite-vertex"],
+	// 	input_modalities: ["text", "image"],
+	// 	output_modalities: ["text"],
+	// 	tools: true
+	// },
 
 	// ======================================
 	// Persona Models (use upstream endpoints)
@@ -216,17 +230,17 @@ const models = [
 		output_modalities: ["text"],
 		tools: true
 	},
-	{
-		name: "mirexa",
-		description: "Mirexa AI Companion",
-		config: portkeyConfig["azure-gpt-4.1"],
-		transform: createMessageTransform(mirexaSystemPrompt),
-		tier: "seed",
-		community: true,
-		input_modalities: ["text", "image"],
-		output_modalities: ["text"],
-		tools: true
-	},
+	// {
+	// 	name: "mirexa",
+	// 	description: "Mirexa AI Companion",
+	// 	config: portkeyConfig["azure-gpt-4.1"],
+	// 	transform: createMessageTransform(mirexaSystemPrompt),
+	// 	tier: "seed",
+	// 	community: true,
+	// 	input_modalities: ["text", "image"],
+	// 	output_modalities: ["text"],
+	// 	tools: true
+	// },
 	{
 		name: "midijourney",
 		description: "MIDIjourney",
@@ -269,6 +283,17 @@ const models = [
 		tier: "anonymous",
 		community: true,
 		input_modalities: ["text", "image"],
+		output_modalities: ["text"],
+		tools: true
+	},
+	{
+		name: "chickytutor",
+		description: "ChickyTutor AI Language Tutor - (chickytutor.com)",
+		config: portkeyConfig["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
+		transform: createMessageTransform(chickyTutorPrompt),
+		tier: "anonymous",
+		community: true,
+		input_modalities: ["text"],
 		output_modalities: ["text"],
 		tools: true
 	},

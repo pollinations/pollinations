@@ -214,18 +214,18 @@ const models = [
 	// 	output_modalities: ["text"],
 	// 	tools: true
 	// },
-	{
-		name: "gemini-vertex",
-		description: "Gemini 2.5 Flash (Google Vertex AI)",
-		config: portkeyConfig["gemini-2.5-flash-vertex"],
-		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-		tier: "seed",
-		community: false,
-		aliases: ["gemini-2.5-flash-vertex", "gemini-vertex-ai"],
-		input_modalities: ["text", "image"],
-		output_modalities: ["text"],
-		tools: true
-	},
+	// {
+	// 	name: "gemini-vertex",
+	// 	description: "Gemini 2.5 Flash (Google Vertex AI)",
+	// 	config: portkeyConfig["gemini-2.5-flash-vertex"],
+	// 	transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+	// 	tier: "seed",
+	// 	community: false,
+	// 	aliases: ["gemini-2.5-flash-vertex", "gemini-vertex-ai"],
+	// 	input_modalities: ["text", "image"],
+	// 	output_modalities: ["text"],
+	// 	tools: true
+	// },
 	{
 		name: "gemini-search",
 		description: "Gemini 2.5 Flash with Google Search (Google Vertex AI)",

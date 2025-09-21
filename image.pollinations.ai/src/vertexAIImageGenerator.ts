@@ -7,7 +7,7 @@ import debug from "debug";
 import { generateImageWithVertexAI } from "./vertexAIClient.ts";
 import { writeExifMetadata } from "./writeExifMetadata.js";
 import type { ImageParams } from "./params.js";
-import type { ImageGenerationResult } from "./createAndReturnImages.js";
+import type { ImageGenerationResult, AuthResult } from "./createAndReturnImages.js";
 
 const log = debug("pollinations:vertex-ai-generator");
 const errorLog = debug("pollinations:vertex-ai-generator:error");
@@ -18,7 +18,7 @@ const errorLog = debug("pollinations:vertex-ai-generator:error");
 export async function callVertexAIGemini(
     prompt: string,
     safeParams: ImageParams,
-    userInfo: any
+    userInfo: AuthResult
 ): Promise<ImageGenerationResult> {
     try {
         log("Starting Vertex AI Gemini image generation");

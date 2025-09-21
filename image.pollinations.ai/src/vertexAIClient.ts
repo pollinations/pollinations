@@ -5,19 +5,19 @@
 
 import fetch from "node-fetch";
 import debug from "debug";
-import googleCloudAuth from "../auth/googleCloudAuth.js";
+import googleCloudAuth from "../auth/googleCloudAuth.ts";
 
 const log = debug("pollinations:vertex-ai");
 const errorLog = debug("pollinations:vertex-ai:error");
 
-interface VertexAIImageRequest {
+export interface VertexAIImageRequest {
     prompt: string;
     width?: number;
     height?: number;
     referenceImages?: string[];
 }
 
-interface VertexAIPart {
+export interface VertexAIPart {
     text?: string;
     inlineData?: {
         mimeType: string;
@@ -25,7 +25,7 @@ interface VertexAIPart {
     };
 }
 
-interface VertexAIResponse {
+export interface VertexAIResponse {
     candidates: Array<{
         content: {
             parts: Array<VertexAIPart>;
@@ -170,7 +170,16 @@ export async function generateImageWithVertexAI(
 
         const data = await response.json() as VertexAIResponse;
         log("Received response from Vertex AI");
-        log("Full response data:", JSON.stringify(data, null, 2));
+        // Log response metadata without sensitive image data
+        const sanitizedData = {
+            candidates: data.candidates?.map(candidate => ({
+                finishReason: candidate.finishReason,
+                contentPartsCount: candidate.content?.parts?.length || 0,
+                hasImageData: candidate.content?.parts?.some(part => part.inlineData) || false
+            })),
+            usageMetadata: data.usageMetadata
+        };
+        log("Response metadata:", JSON.stringify(sanitizedData, null, 2));
 
         // Extract image data and text response
         let imageData: string | null = null;

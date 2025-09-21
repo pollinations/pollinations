@@ -284,14 +284,14 @@ export const portkeyConfig = {
 		"vertex-model-id": "gemini-2.0-flash-thinking",
 		"strict-openai-compliance": "false",
 	}),
-	// "gemini-2.5-flash-lite": () => ({
-	// 	provider: "vertex-ai",
-	// 	authKey: googleCloudAuth.getAccessToken,
-	// 	"vertex-project-id": process.env.GCLOUD_PROJECT_ID,
-	// 	"vertex-region": "us-central1",
-	// 	"vertex-model-id": "gemini-2.5-flash-lite",
-	// 	"strict-openai-compliance": "false",
-	// }),
+	"gemini-2.5-flash-lite-vertex": () => ({
+		provider: "vertex-ai",
+		authKey: googleCloudAuth.getAccessToken,
+		"vertex-project-id": process.env.GCLOUD_PROJECT_ID,
+		"vertex-region": "us-central1",
+		"vertex-model-id": "gemini-2.5-flash-lite",
+		"strict-openai-compliance": "false",
+	}),
 	"gemini-2.5-flash-lite": () => createApiNavyModelConfig({
 		model: "gemini-2.5-flash-lite"
 	}),

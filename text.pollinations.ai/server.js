@@ -208,8 +208,10 @@ async function handleRequest(req, res, requestData) {
 		}
 
 		// Add user info to request data - using authResult directly as a thin proxy
+		// Exclude messages from options to prevent overwriting transformed messages
+		const { messages: _, ...requestDataWithoutMessages } = finalRequestData;
 		const requestWithUserInfo = {
-			...finalRequestData,
+			...requestDataWithoutMessages,
 			userInfo: {
 				...authResult,
 				referrer: requestData.referrer || "unknown",
@@ -912,8 +914,8 @@ async function generateTextBasedOnModel(messages, options) {
 				provider: error.provider || "unknown",
 				requestParams: {
 					...options,
-					messages: options.messages
-						? options.messages.map((m) => ({
+					messages: messages
+						? messages.map((m) => ({
 								role: m.role,
 								content:
 									typeof m.content === "string"

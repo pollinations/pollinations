@@ -29,7 +29,7 @@ export function resolveModelConfig(messages, options) {
     const config = typeof modelDef.config === 'function' ? modelDef.config() : modelDef.config;
 
     // Extract the actual model name
-    const actualModelName = config.model || config["azure-model-name"] || config["azure-deployment-id"] || modelDef.name || virtualModelName;
+    const actualModelName = config.model || config["azure-model-name"] || config["azure-deployment-id"] || config["vertex-model-id"] || modelDef.name || virtualModelName;
     
     log(
         "Processing request for model:",

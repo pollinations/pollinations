@@ -2,6 +2,7 @@
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createSystemPromptTransform, removeSystemMessages } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
+import { createGoogleSearchTransform } from "./transforms/createGoogleSearchTransform.js";
 
 // Import persona prompts
 import unityPrompt from "./personas/unity.js";
@@ -213,6 +214,33 @@ const models = [
 	// 	output_modalities: ["text"],
 	// 	tools: true
 	// },
+	{
+		name: "gemini-vertex",
+		description: "Gemini 2.5 Flash (Google Vertex AI)",
+		config: portkeyConfig["gemini-2.5-flash-vertex"],
+		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+		tier: "seed",
+		community: false,
+		aliases: ["gemini-2.5-flash-vertex", "gemini-vertex-ai"],
+		input_modalities: ["text", "image"],
+		output_modalities: ["text"],
+		tools: true
+	},
+	{
+		name: "gemini-search",
+		description: "Gemini 2.5 Flash with Google Search (Google Vertex AI)",
+		config: portkeyConfig["gemini-2.5-flash-vertex"],
+		transform: pipe(
+			createSystemPromptTransform(BASE_PROMPTS.conversational),
+			createGoogleSearchTransform()
+		),
+		tier: "seed",
+		community: false,
+		aliases: ["searchgpt"],
+		input_modalities: ["text", "image"],
+		output_modalities: ["text"],
+		tools: true
+	},
 
 	// ======================================
 	// Persona Models (use upstream endpoints)

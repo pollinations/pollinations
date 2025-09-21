@@ -260,12 +260,12 @@ export const portkeyConfig = {
 			"x-title": "Pollinations.AI",
 		}),
 	// Google Vertex AI model configurations
-	"gemini-2.5-flash-preview-04-17": () => ({
+	"gemini-2.5-flash-vertex": () => ({
 		provider: "vertex-ai",
 		authKey: googleCloudAuth.getAccessToken, // Fix: use getAccessToken instead of getToken
 		"vertex-project-id": process.env.GCLOUD_PROJECT_ID,
 		"vertex-region": "us-central1",
-		"vertex-model-id": "gemini-2.5-flash-preview-04-17",
+		"vertex-model-id": "gemini-2.5-flash",
 		"strict-openai-compliance": "false",
 	}),
 	"gemini-2.5-pro-exp-03-25": () => ({

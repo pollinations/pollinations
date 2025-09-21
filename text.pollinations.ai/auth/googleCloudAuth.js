@@ -306,5 +306,30 @@ function initGoogleCloudAuth() {
     }
 }
 
-// Export a default initialized instance
-export default initGoogleCloudAuth();
+// Global instance variable for lazy initialization
+let authInstance = null;
+
+/**
+ * Get the Google Cloud auth instance, initializing it lazily if needed
+ * @returns {Object} The auth instance with getAccessToken method
+ */
+function getAuthInstance() {
+    if (!authInstance) {
+        authInstance = initGoogleCloudAuth();
+    }
+    return authInstance;
+}
+
+// Export the lazy getter instead of an immediately initialized instance
+export default {
+    getAccessToken: async () => {
+        const instance = getAuthInstance();
+        return await instance.getAccessToken();
+    },
+    cleanup: () => {
+        const instance = getAuthInstance();
+        if (instance.cleanup) {
+            instance.cleanup();
+        }
+    }
+};

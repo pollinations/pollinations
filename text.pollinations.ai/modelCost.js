@@ -53,6 +53,13 @@ const MODEL_COST = {
 	  prompt_audio: 0.0,
 	  completion_text: 0.0
 	},
+	"gemini-2.5-flash": {
+	  provider: "vertex-ai",
+	  region: "us-central1",
+	  prompt_text: 0.075,
+	  prompt_cache: 0.01875,
+	  completion_text: 0.30
+	},
 	"o4-mini-2025-04-16": {
 		provider: "api.navy",
 		region: "us-central",

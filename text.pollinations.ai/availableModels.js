@@ -206,7 +206,6 @@ const models = [
 		description: "Gemini 2.5 Flash with Google Search (Google Vertex AI)",
 		config: portkeyConfig["gemini-2.5-flash-vertex"],
 		transform: pipe(
-			createSystemPromptTransform(BASE_PROMPTS.conversational),
 			createGoogleSearchTransform()
 		),
 		tier: "seed",

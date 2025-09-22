@@ -62,6 +62,7 @@ export async function generateTextPortkey(messages, options = {}) {
 	
 	// Apply model transform if it exists
 	let processedMessages = messages;
+	
 	if (processedOptions.model) {
 		const modelDef = findModelByName(processedOptions.model);
 		if (modelDef?.transform) {
@@ -69,11 +70,12 @@ export async function generateTextPortkey(messages, options = {}) {
 				const transformed = modelDef.transform(messages, processedOptions);
 				const { messages: transformedMessages, options: transformedOptions } = transformed;
 				processedMessages = transformedMessages;
-				// Merge transformed options without reassigning the const
-				Object.assign(processedOptions, transformedOptions);
+				
+				// Merge transformed options
+				processedOptions = { ...processedOptions, ...transformedOptions };
 			} catch (error) {
-				console.error('Transform execution failed:', error);
-				// Continue with original messages and options if transform fails
+				errorLog("Error applying transform:", error);
+				throw error;
 			}
 		}
 	}
@@ -87,7 +89,7 @@ export async function generateTextPortkey(messages, options = {}) {
 			processedOptions = result.options;
 			log("After resolveModelConfig:", !!processedOptions.modelDef, !!processedOptions.modelConfig);
 
-			// 2. Generate headers (async)
+			// 2. Generate headers
 			result = await generateHeaders(processedMessages, processedOptions);
 			processedMessages = result.messages;
 			processedOptions = result.options;

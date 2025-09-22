@@ -260,12 +260,12 @@ export const portkeyConfig = {
 			"x-title": "Pollinations.AI",
 		}),
 	// Google Vertex AI model configurations
-	"gemini-2.5-flash-preview-04-17": () => ({
+	"gemini-2.5-flash-vertex": () => ({
 		provider: "vertex-ai",
 		authKey: googleCloudAuth.getAccessToken, // Fix: use getAccessToken instead of getToken
 		"vertex-project-id": process.env.GCLOUD_PROJECT_ID,
 		"vertex-region": "us-central1",
-		"vertex-model-id": "gemini-2.5-flash-preview-04-17",
+		"vertex-model-id": "gemini-2.5-flash",
 		"strict-openai-compliance": "false",
 	}),
 	"gemini-2.5-pro-exp-03-25": () => ({
@@ -284,14 +284,14 @@ export const portkeyConfig = {
 		"vertex-model-id": "gemini-2.0-flash-thinking",
 		"strict-openai-compliance": "false",
 	}),
-	// "gemini-2.5-flash-lite": () => ({
-	// 	provider: "vertex-ai",
-	// 	authKey: googleCloudAuth.getAccessToken,
-	// 	"vertex-project-id": process.env.GCLOUD_PROJECT_ID,
-	// 	"vertex-region": "us-central1",
-	// 	"vertex-model-id": "gemini-2.5-flash-lite",
-	// 	"strict-openai-compliance": "false",
-	// }),
+	"gemini-2.5-flash-lite-vertex": () => ({
+		provider: "vertex-ai",
+		authKey: googleCloudAuth.getAccessToken,
+		"vertex-project-id": process.env.GCLOUD_PROJECT_ID,
+		"vertex-region": "us-central1",
+		"vertex-model-id": "gemini-2.5-flash-lite",
+		"strict-openai-compliance": "false",
+	}),
 	"gemini-2.5-flash-lite": () => createApiNavyModelConfig({
 		model: "gemini-2.5-flash-lite"
 	}),
@@ -307,6 +307,13 @@ export const portkeyConfig = {
 		authKey: googleCloudAuth.getAccessToken,
 		"custom-host": `https://us-central1-aiplatform.googleapis.com/v1/projects/${process.env.GCLOUD_PROJECT_ID}/locations/us-central1/endpoints/openapi`,
 		"strict-openai-compliance": "false",
+	}),
+	"deepseek-ai/deepseek-v3.1-maas": () => ({
+		provider: "openai",
+		authKey: googleCloudAuth.getAccessToken,
+		"custom-host": `https://us-west2-aiplatform.googleapis.com/v1/projects/${process.env.GCLOUD_PROJECT_ID}/locations/us-west2/endpoints/openapi`,
+		"strict-openai-compliance": "false",
+		model: "deepseek-ai/deepseek-v3.1-maas",
 	}),
 	"DeepSeek-V3-0324": () => createDeepSeekModelConfig(),
 	"MAI-DS-R1": () => createDeepSeekReasoningConfig(),

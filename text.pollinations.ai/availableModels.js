@@ -2,6 +2,7 @@
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createSystemPromptTransform, removeSystemMessages } from "./transforms/createSystemPromptTransform.js";
 import { pipe } from "./transforms/pipe.js";
+import { createGoogleSearchTransform } from "./transforms/createGoogleSearchTransform.js";
 
 // Import persona prompts
 import unityPrompt from "./personas/unity.js";
@@ -10,6 +11,7 @@ import rtistPrompt from "./personas/rtist.js";
 import evilPrompt from "./personas/evil.js";
 import mirexaSystemPrompt from "./personas/mirexa.js";
 import { bidaraSystemPrompt } from "./personas/bidara.js";
+import chickyTutorPrompt from "./personas/chickytutor.js";
 
 // Import system prompts
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
@@ -107,6 +109,18 @@ const models = [
 		tools: false
 	},
 	{
+		name: "deepseek",
+		description: "DeepSeek V3.1 (Google Vertex AI)",
+		config: portkeyConfig["deepseek-ai/deepseek-v3.1-maas"],
+		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+		tier: "seed",
+		community: false,
+		aliases: ["deepseek-v3", "deepseek-v3.1", "deepseek-ai/deepseek-v3.1-maas"],
+		input_modalities: ["text"],
+		output_modalities: ["text"],
+		tools: true
+	},
+	{
 		name: "openai-audio",
 		description: "OpenAI GPT-4o Mini Audio Preview",
 		maxInputChars: 2000,
@@ -192,9 +206,23 @@ const models = [
 		description: "Gemini 2.5 Flash Lite (api.navy)",
 		config: portkeyConfig["gemini-2.5-flash-lite"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-		tier: "anonymous",
+		tier: "seed",
 		community: false,
 		aliases: ["gemini-2.5-flash-lite"],
+		input_modalities: ["text", "image"],
+		output_modalities: ["text"],
+		tools: true
+	},
+	{
+		name: "gemini-search",
+		description: "Gemini 2.5 Flash with Google Search (Google Vertex AI)",
+		config: portkeyConfig["gemini-2.5-flash-vertex"],
+		transform: pipe(
+			createGoogleSearchTransform()
+		),
+		tier: "seed",
+		community: false,
+		aliases: ["searchgpt"],
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true
@@ -216,17 +244,17 @@ const models = [
 		output_modalities: ["text"],
 		tools: true
 	},
-	{
-		name: "mirexa",
-		description: "Mirexa AI Companion",
-		config: portkeyConfig["azure-gpt-4.1"],
-		transform: createMessageTransform(mirexaSystemPrompt),
-		tier: "seed",
-		community: true,
-		input_modalities: ["text", "image"],
-		output_modalities: ["text"],
-		tools: true
-	},
+	// {
+	// 	name: "mirexa",
+	// 	description: "Mirexa AI Companion",
+	// 	config: portkeyConfig["azure-gpt-4.1"],
+	// 	transform: createMessageTransform(mirexaSystemPrompt),
+	// 	tier: "seed",
+	// 	community: true,
+	// 	input_modalities: ["text", "image"],
+	// 	output_modalities: ["text"],
+	// 	tools: true
+	// },
 	{
 		name: "midijourney",
 		description: "MIDIjourney",
@@ -269,6 +297,17 @@ const models = [
 		tier: "anonymous",
 		community: true,
 		input_modalities: ["text", "image"],
+		output_modalities: ["text"],
+		tools: true
+	},
+	{
+		name: "chickytutor",
+		description: "ChickyTutor AI Language Tutor - (chickytutor.com)",
+		config: portkeyConfig["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
+		transform: createMessageTransform(chickyTutorPrompt),
+		tier: "anonymous",
+		community: true,
+		input_modalities: ["text"],
 		output_modalities: ["text"],
 		tools: true
 	},

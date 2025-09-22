@@ -217,6 +217,8 @@ async function handleRequest(req, res, requestData) {
 				referrer: requestData.referrer || "unknown",
 				cf_ray: req.headers["cf-ray"] || "",
 			},
+			// Preserve the originally requested model for telemetry and logging
+			originalRequestedModel: requestData.model,
 		};
 
 		const completion = await generateTextBasedOnModel(

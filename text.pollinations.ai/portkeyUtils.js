@@ -79,21 +79,20 @@ async function generatePortkeyHeaders(config) {
         headers[`x-portkey-${key}`] = value;
     }
 
-    // Add Authorization header if needed
+    // Add provider Authorization for Portkey as a custom header to avoid overwriting the Gateway API key
     if (config.authKey) {
         try {
             // Check if authKey is a function (for dynamic tokens)
             if (typeof config.authKey === "function") {
-                // Check if the function returns a Promise (async function)
                 const token = config.authKey();
                 if (token instanceof Promise) {
-                    headers["Authorization"] = `Bearer ${await token}`;
+                    headers["x-portkey-authorization"] = `Bearer ${await token}`;
                 } else {
-                    headers["Authorization"] = `Bearer ${token}`;
+                    headers["x-portkey-authorization"] = `Bearer ${token}`;
                 }
             } else {
                 // Regular string token
-                headers["Authorization"] = `Bearer ${config.authKey}`;
+                headers["x-portkey-authorization"] = `Bearer ${config.authKey}`;
             }
         } catch (error) {
             errorLog("Error getting auth token:", error);

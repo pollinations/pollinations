@@ -85,10 +85,14 @@ export async function sendTinybirdEvent(eventData) {
         // Calculate total cost based on token usage and cost data
         const totalCost = calculateTotalCost(tokenData) ?? 0;
 
-        // Extract model and provider info - use actual API response model name
-        const modelName = eventData.modelUsed || eventData.model;
-        const provider = getProvider(modelName) ?? 'unknown';
-        log(`Provider for model ${modelName}: ${provider}`);
+        // Extract model and provider info
+        // - model_requested should reflect the requested model from the client (eventData.model)
+        // - model_used should reflect the provider's returned model (eventData.modelUsed)
+        const modelRequested = eventData.model || null;
+        const modelUsedName = eventData.modelUsed || null;
+        // Resolve provider based on the actual used model when available, otherwise fall back to requested
+        const provider = getProvider(modelUsedName || modelRequested) ?? 'unknown';
+        log(`Provider for model (used=${modelUsedName || 'n/a'}, requested=${modelRequested || 'n/a'}): ${provider}`);
 
         // Extract moderation data from choices if present (Azure OpenAI)
         const cfr = eventData.choices?.[0]?.content_filter_results || 
@@ -101,7 +105,7 @@ export async function sendTinybirdEvent(eventData) {
             end_time: eventData.endTime?.toISOString(),
 
             // Model and provider info
-            model_requested: modelName,
+            model_requested: modelRequested,
             model_used: modelUsed,
             provider,
 
@@ -150,9 +154,9 @@ export async function sendTinybirdEvent(eventData) {
 
         // Log summary for telemetry tracking
         log(
-            `📤 Sending telemetry: ${
+            `📤 Sending telemetry: requested=${
                 tinybirdEvent.model_requested
-            } | $$${totalCost.toFixed(6)} | ${
+            } used=${tinybirdEvent.model_used || 'unknown'} | $$${totalCost.toFixed(6)} | ${
                 tinybirdEvent.token_count_completion_text +
                 tinybirdEvent.token_count_prompt_text
             } tokens`
@@ -201,7 +205,7 @@ export async function sendTinybirdEvent(eventData) {
             );
 
             if (success) {
-                log(`✅ Telemetry sent: ${modelName}`);
+                log(`✅ Telemetry sent: requested=${modelRequested} used=${modelUsedName || 'unknown'}`);
             }
 
         } catch (fetchError) {

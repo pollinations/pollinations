@@ -9,6 +9,7 @@ import { writeExifMetadata } from "./writeExifMetadata.js";
 import type { ImageParams } from "./params.js";
 import type { ImageGenerationResult, AuthResult } from "./createAndReturnImages.js";
 import { logNanoBananaError, logNanoBananaErrorsOnly, logNanoBananaPrompt } from "./utils/nanoBananaLogger.ts";
+import { userStatsTracker } from "./utils/userStatsTracker.ts";
 
 const log = debug("pollinations:vertex-ai-generator");
 const errorLog = debug("pollinations:vertex-ai-generator:error");
@@ -67,6 +68,9 @@ export async function callVertexAIGemini(
     try {
         log("Starting Vertex AI Gemini image generation");
         
+        // Track user request
+        userStatsTracker.recordRequest(userInfo?.username);
+        
         // Log the original prompt to simple text file (before prefix)
         await logNanoBananaPrompt(prompt, safeParams, userInfo);
         
@@ -116,7 +120,8 @@ export async function callVertexAIGemini(
         );
 
         if (hasContentViolation) {
-            // Log as content policy violation even though request "succeeded"
+            // Track violation and log as content policy violation even though request "succeeded"
+            userStatsTracker.recordViolation(userInfo?.username);
             const violationError = new Error("Content policy violation detected in response");
             await logNanoBananaError(prompt, safeParams, userInfo, violationError, result.fullResponse);
             throw violationError;
@@ -126,6 +131,8 @@ export async function callVertexAIGemini(
         
         if (!result.imageData) {
             errorLog("ERROR: No imageData in result from generateImageWithVertexAI - likely content policy violation");
+            // Track violation for "No image data" cases (likely content policy violations)
+            userStatsTracker.recordViolation(userInfo?.username);
             // Use the specialized error-only logger for "No image data" cases
             await logNanoBananaErrorsOnly(prompt, safeParams, userInfo, result.fullResponse);
             const noDataError = new Error("No image data returned from Vertex AI");

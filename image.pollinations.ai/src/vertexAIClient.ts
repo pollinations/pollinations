@@ -48,7 +48,7 @@ export interface VertexAIResponse {
  */
 export async function generateImageWithVertexAI(
     request: VertexAIImageRequest
-): Promise<{ imageData: string; mimeType: string; textResponse?: string; usage: any }> {
+): Promise<{ imageData: string; mimeType: string; textResponse?: string; usage: any; fullResponse?: any }> {
     try {
         log("Starting Vertex AI image generation for prompt:", request.prompt.substring(0, 100));
 
@@ -165,11 +165,28 @@ export async function generateImageWithVertexAI(
         if (!response.ok) {
             const errorText = await response.text();
             errorLog("Vertex AI API error:", response.status, response.statusText, errorText);
-            throw new Error(`Vertex AI API error: ${response.status} ${response.statusText} - ${errorText}`);
+            
+            // Try to parse error response for content policy violations
+            let errorData = null;
+            try {
+                errorData = JSON.parse(errorText);
+            } catch (parseError) {
+                // Ignore parse errors, use raw text
+            }
+            
+            const error = new Error(`Vertex AI API error: ${response.status} ${response.statusText} - ${errorText}`);
+            // Attach error response data for logging
+            (error as any).responseData = errorData;
+            (error as any).statusCode = response.status;
+            throw error;
         }
 
         const data = await response.json() as VertexAIResponse;
         log("Received response from Vertex AI");
+        
+        // Log complete response structure for debugging
+        log("Full response structure:", JSON.stringify(data, null, 2));
+        
         // Log response metadata without sensitive image data
         const sanitizedData = {
             candidates: data.candidates?.map(candidate => ({
@@ -226,7 +243,9 @@ export async function generateImageWithVertexAI(
             imageData,
             mimeType,
             textResponse: textResponse || undefined,
-            usage: data.usageMetadata
+            usage: data.usageMetadata,
+            // Include full response for logging purposes
+            fullResponse: data
         };
 
     } catch (error) {

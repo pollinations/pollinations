@@ -2,6 +2,8 @@ import type { ErrorHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
 import z, { ZodError } from "zod";
 import { Env } from "./env.ts";
+import { APIError } from "better-auth";
+import { ContentfulStatusCode } from "hono/utils/http-status";
 
 interface ErrorResponse {
     success: false;
@@ -42,6 +44,20 @@ export const handleError: ErrorHandler<Env> = (err, c) => {
         return c.json(response, status);
     }
 
+    if (err instanceof APIError) {
+        const status = err.statusCode;
+        const response: ErrorResponse = {
+            success: false,
+            error: {
+                message: err.message || getDefaultErrorMessage(status),
+                code: getErrorCode(status),
+                timestamp,
+            },
+            status,
+        };
+        return c.json(response, status as ContentfulStatusCode);
+    }
+
     if (err instanceof ZodError) {
         const flatErrors = z.flattenError(err);
         const status = 400;
@@ -63,6 +79,17 @@ export const handleError: ErrorHandler<Env> = (err, c) => {
     }
 
     const status = 500;
+    c.var.log.error({
+        error: {
+            message: err.message || getDefaultErrorMessage(status),
+            code: getErrorCode(status),
+            details: {
+                name: err.name,
+                stack: err.stack,
+            },
+            cause: err.cause,
+        },
+    });
     const response: ErrorResponse = {
         success: false,
         error: {
@@ -72,8 +99,8 @@ export const handleError: ErrorHandler<Env> = (err, c) => {
             code: getErrorCode(status),
             ...(isDevelopment && {
                 details: {
-                    stack: err.stack,
                     name: err.name,
+                    stack: err.stack,
                 },
             }),
             timestamp,

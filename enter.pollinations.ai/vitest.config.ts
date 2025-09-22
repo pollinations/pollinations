@@ -4,12 +4,14 @@ import {
     readD1Migrations,
     // @ts-ignore
 } from "@cloudflare/vitest-pool-workers/config";
+import viteConfig from "./vite.config";
 
 export default defineWorkersConfig(async () => {
     const migrationsPath = path.join(__dirname, "drizzle");
     const migrations = await readD1Migrations(migrationsPath);
 
     return {
+        ...viteConfig,
         test: {
             setupFiles: ["./test/apply-migrations.ts"],
             poolOptions: {
@@ -31,8 +33,9 @@ export default defineWorkersConfig(async () => {
                         enabled: true,
                         include: [
                             "@polar-sh/sdk",
-                            "@polar-sh/better-auth",
                             "better-auth",
+                            "kysely",
+                            "drizzle-orm",
                         ],
                     },
                 },

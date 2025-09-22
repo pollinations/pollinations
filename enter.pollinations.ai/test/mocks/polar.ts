@@ -2,10 +2,10 @@ import { Hono } from "hono";
 import { appendTrailingSlash } from "hono/trailing-slash";
 import type { MockHandlerMap } from "./fetch";
 import { createHonoMockHandler } from "./fetch";
-import { PolarEvent } from "@/db/schema/event";
+import { SelectPolarEvent } from "@/db/schema/event";
 
 export type MockPolarState = {
-    events: PolarEvent[];
+    events: SelectPolarEvent[];
 };
 
 export type MockAPI<TState> = {
@@ -50,7 +50,7 @@ export function createMockPolar(): MockAPI<MockPolarState> {
         return c.json(mockCustomer, 201);
     });
     polarAPI.post("/v1/events/ingest", async (c) => {
-        const body: { events: PolarEvent[] } = await c.req.json();
+        const body: { events: SelectPolarEvent[] } = await c.req.json();
         state.events.push(...body.events);
         return c.json({ inserted: body.events.length });
     });

@@ -1,5 +1,6 @@
 import type { Hono } from "hono";
 import { vi } from "vitest";
+import { getLogger } from "@logtape/logtape";
 
 const originalFetch = globalThis.fetch;
 
@@ -27,6 +28,7 @@ export function setupFetchMock(
     handlers: MockHandlerMap,
     options?: FetchMockOptions,
 ) {
+    const log = getLogger(["test", "mock"]);
     const opts = options ?? {};
 
     const mockHandler = (request: Request) => {
@@ -51,7 +53,7 @@ export function setupFetchMock(
                     request = new Request(url, init);
                 }
                 if (opts.logRequests) {
-                    console.log(`[FETCH] ${request.method} ${request.url}`);
+                    log.debug(`[FETCH] ${request.method} ${request.url}`);
                 }
                 return mockHandler(request);
             },

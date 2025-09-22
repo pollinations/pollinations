@@ -4,7 +4,7 @@
         "module": "esnext",
         "moduleResolution": "bundler",
         "lib": ["esnext", "dom", "dom.iterable"],
-        "types": ["@cloudflare/vitest-pool-workers", "vite/client"],
+        "types": ["@cloudflare/vitest-pool-workers", "node", "vite/client"],
         "jsx": "react-jsx",
         "jsxImportSource": "react",
 

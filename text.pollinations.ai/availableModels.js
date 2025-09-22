@@ -27,7 +27,7 @@ const models = [
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "anonymous",
 		community: false,
-		aliases: ["gpt-5-nano", "openai-large"],
+		aliases: ["gpt-5-nano"],
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true
@@ -43,19 +43,19 @@ const models = [
 		output_modalities: ["text"],
 		tools: true
 	},
-	// {
-	// 	name: "openai-large",
-	// 	description: "OpenAI GPT-4.1",
-	// 	maxInputChars: 5000,
-	// 	config: portkeyConfig["azure-gpt-4.1"],
-	// 	transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-	// 	tier: "seed",
-	// 	community: false,
-	// 	aliases: ["gpt-4.1"],
-	// 	input_modalities: ["text", "image"],
-	// 	output_modalities: ["text"],
-	// 	tools: true
-	// },
+	{
+		name: "openai-large",
+		description: "OpenAI GPT-5 Chat",
+		maxInputChars: 20000,
+		config: portkeyConfig["gpt-5-chat"],
+		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+		tier: "seed",
+		community: false,
+		aliases: ["gpt-5-chat"],
+		input_modalities: ["text", "image"],
+		output_modalities: ["text"],
+		tools: true
+	},
 	{
 		name: "qwen-coder",
 		description: "Qwen 2.5 Coder 32B",

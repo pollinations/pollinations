@@ -158,6 +158,12 @@ export const portkeyConfig = {
 			process.env.AZURE_OPENAI_XLARGE_ENDPOINT,
 			"gpt-4.1",
 		),
+	"gpt-5-chat": () =>
+		createAzureModelConfig(
+			process.env.AZURE_MYCELI_GPT5CHAT_API_KEY,
+			process.env.AZURE_MYCELI_GPT5CHAT_ENDPOINT,
+			"gpt-5-chat",
+		),
 	"Cohere-command-r-plus-08-2024-jt": () => ({
 		provider: "openai",
 		"custom-host": process.env.AZURE_COMMAND_R_ENDPOINT,

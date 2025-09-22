@@ -53,13 +53,6 @@ const MODEL_COST = {
 	  prompt_audio: 0.0,
 	  completion_text: 0.0
 	},
-	"gemini-2.5-flash": {
-	  provider: "vertex-ai",
-	  region: "us-central1",
-	  prompt_text: 0.075,
-	  prompt_cache: 0.01875,
-	  completion_text: 0.30
-	},
 	"o4-mini-2025-04-16": {
 		provider: "api.navy",
 		region: "us-central",
@@ -67,7 +60,6 @@ const MODEL_COST = {
 		prompt_cache: 0.0,
 		completion_text: 0.0
 	  },
-
 	// ===== Google Vertex AI ===== Pricing: https://cloud.google.com/vertex-ai/generative-ai/pricing
 	"deepseek-ai/deepseek-v3.1-maas": {
 		provider: "vertex-ai",
@@ -75,7 +67,13 @@ const MODEL_COST = {
 		prompt_text: 0.60,
 		completion_text: 1.70
 	},
-  
+	"gemini-2.5-flash-vertex": {
+		provider: "vertex-ai",
+		region: "us-central1",
+		prompt_text: 0.075,
+		prompt_cache: 0.01875,
+		completion_text: 0.30
+	  },
 	// ===== Scaleway ===== Pricing: https://www.scaleway.com/en/pricing/model-as-a-service/
 	"qwen2.5-coder-32b-instruct": {
 		provider: "scaleway-ai",

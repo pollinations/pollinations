@@ -152,8 +152,15 @@ export async function generateImageWithVertexAI(
 
         log("Making request to Vertex AI API...");
 
-        // Make the API request
-        const response = await fetch(endpoint, {
+        // Create a timeout promise
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => {
+                reject(new Error("Vertex AI request timed out after 25 seconds"));
+            }, 25000); // 25 seconds timeout
+        });
+
+        // Make the API request with timeout
+        const fetchPromise = fetch(endpoint, {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${accessToken}`,
@@ -161,6 +168,8 @@ export async function generateImageWithVertexAI(
             },
             body: JSON.stringify(requestBody)
         });
+
+        const response = await Promise.race([fetchPromise, timeoutPromise]);
 
         if (!response.ok) {
             const errorText = await response.text();

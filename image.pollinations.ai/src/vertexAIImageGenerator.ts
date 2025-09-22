@@ -54,7 +54,7 @@ async function throwBlockingError(
  */
 function addNanoBananaPrefix(userPrompt: string): string {
     // Simple prefix to help Nano Banana interpret prompts as image generation requests
-    return `Create a detailed image: ${userPrompt}`;
+    return `Generate an image but only if the prompt and input images are safe. Else return an error: ${userPrompt}`;
 }
 
 /**

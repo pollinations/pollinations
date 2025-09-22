@@ -9,7 +9,6 @@ import unityPrompt from "./personas/unity.js";
 import midijourneyPrompt from "./personas/midijourney.js";
 import rtistPrompt from "./personas/rtist.js";
 import evilPrompt from "./personas/evil.js";
-import mirexaSystemPrompt from "./personas/mirexa.js";
 import { bidaraSystemPrompt } from "./personas/bidara.js";
 import chickyTutorPrompt from "./personas/chickytutor.js";
 
@@ -244,17 +243,6 @@ const models = [
 		output_modalities: ["text"],
 		tools: true
 	},
-	// {
-	// 	name: "mirexa",
-	// 	description: "Mirexa AI Companion",
-	// 	config: portkeyConfig["azure-gpt-4.1"],
-	// 	transform: createMessageTransform(mirexaSystemPrompt),
-	// 	tier: "seed",
-	// 	community: true,
-	// 	input_modalities: ["text", "image"],
-	// 	output_modalities: ["text"],
-	// 	tools: true
-	// },
 	{
 		name: "midijourney",
 		description: "MIDIjourney",

@@ -46,6 +46,20 @@ export function removeUnset<T extends Record<string, any>>(
     ) as RemoveUnset<T>;
 }
 
+export function checkMissingFields<T extends Record<string, any>>(
+    obj: T,
+    ...required: string[]
+): string[] {
+    return required.filter((field) => !!obj[field]);
+}
+
+export function joinOptionalStrings(
+    separator: string,
+    ...strings: (string | null | undefined)[]
+): string {
+    return removeUnset(strings).join(separator);
+}
+
 const resetColor = "\x1b[0m";
 
 export type AnsiColor =

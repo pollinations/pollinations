@@ -1,12 +1,12 @@
 import { Context, Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
 import { proxy } from "hono/proxy";
 import { authenticate } from "@/middleware/authenticate";
 import { polar } from "@/middleware/polar.ts";
 import type { Env } from "../env.ts";
 import { z } from "zod";
-import { REGISTRY, ServiceId } from "../registry/registry.ts";
-import { track } from "@/middleware/track.ts";
+import { track, type TrackVariables } from "@/middleware/track.ts";
+import type { AuthVariables } from "@/middleware/authenticate.ts";
+import type { PolarVariables } from "@/middleware/polar.ts";
 
 const chatCompletionSchema = z.object({
     model: z.string(),
@@ -28,7 +28,6 @@ const chatCompletionSchema = z.object({
 export const proxyRoutes = new Hono<Env>()
     .get("/openai/models", async (c) => {
         const targetUrl = proxyUrl(c, "https://text.pollinations.ai");
-        console.log(targetUrl);
         return await proxy(targetUrl, {
             ...c.req,
             headers: proxyHeaders(c),
@@ -36,30 +35,25 @@ export const proxyRoutes = new Hono<Env>()
     })
     .use(authenticate)
     .use(polar)
-    .post("/openai/chat/completions", track("generate.text"), async (c) => {
-        const isFree = c.get("isFreeUsage");
-        if (!isFree && !c.var.user) {
-            throw new HTTPException(401, {
-                message: "You must be signed in to use this model.",
+    .on(
+        "POST",
+        ["/openai/chat/completions", "/openai"],
+        track("generate.text"),
+        async (c) => {
+            await authorizeRequest(c.var);
+
+            const targetUrl = proxyUrl(c, "https://text.pollinations.ai");
+            const response = await proxy(targetUrl, {
+                method: c.req.method,
+                headers: proxyHeaders(c),
+                body: JSON.stringify(await c.req.json()),
             });
-        }
 
-        const targetUrl = proxyUrl(c, "https://text.pollinations.ai");
-        const response = await proxy(targetUrl, {
-            method: c.req.method,
-            headers: proxyHeaders(c),
-            body: JSON.stringify(await c.req.json()),
-        });
-
-        return response;
-    })
+            return response;
+        },
+    )
     .get("/image/:prompt", track("generate.image"), async (c) => {
-        const isFree = c.get("isFreeUsage");
-        if (!isFree && !c.var.user) {
-            throw new HTTPException(401, {
-                message: "You must be signed in to use this model.",
-            });
-        }
+        await authorizeRequest(c.var);
 
         const targetUrl = proxyUrl(c, "https://image.pollinations.ai/prompt");
         const targetHeaders = proxyHeaders(c);
@@ -71,6 +65,17 @@ export const proxyRoutes = new Hono<Env>()
 
         return response;
     });
+
+async function authorizeRequest({
+    auth,
+    polar,
+    track,
+}: AuthVariables & PolarVariables & TrackVariables) {
+    if (!track.isFreeUsage) {
+        const { user } = auth.requireActiveSession();
+        await polar.requirePositiveBalance(user.id);
+    }
+}
 
 function proxyHeaders(c: Context): Record<string, string> {
     const clientIP = c.req.header("cf-connecting-ip") || "";

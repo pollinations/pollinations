@@ -52,7 +52,7 @@ export const event = sqliteTable("event", {
 
     // Model information
     modelRequested: text("model_requested"),
-    modelUsed: text("model_used").notNull(),
+    modelUsed: text("model_used"),
     isBilledUsage: integer("is_billed_usage", { mode: "boolean" }).notNull(),
 
     // Token pricing
@@ -135,35 +135,35 @@ export type GenerationEventUsageParams = {
 };
 
 export function priceToEventParams(
-    priceDefinition: PriceDefinition,
+    priceDefinition?: PriceDefinition,
 ): GenerationEventPriceParams {
     return {
-        tokenPricePromptText: priceDefinition.promptTextTokens?.rate || 0,
-        tokenPricePromptCached: priceDefinition.promptCachedTokens?.rate || 0,
-        tokenPricePromptAudio: priceDefinition.promptAudioTokens?.rate || 0,
-        tokenPricePromptImage: priceDefinition.promptImageTokens?.rate || 0,
+        tokenPricePromptText: priceDefinition?.promptTextTokens?.rate || 0,
+        tokenPricePromptCached: priceDefinition?.promptCachedTokens?.rate || 0,
+        tokenPricePromptAudio: priceDefinition?.promptAudioTokens?.rate || 0,
+        tokenPricePromptImage: priceDefinition?.promptImageTokens?.rate || 0,
         tokenPriceCompletionText:
-            priceDefinition.completionTextTokens?.rate || 0,
+            priceDefinition?.completionTextTokens?.rate || 0,
         tokenPriceCompletionReasoning:
-            priceDefinition.completionReasoningTokens?.rate || 0,
+            priceDefinition?.completionReasoningTokens?.rate || 0,
         tokenPriceCompletionAudio:
-            priceDefinition.completionAudioTokens?.rate || 0,
+            priceDefinition?.completionAudioTokens?.rate || 0,
         tokenPriceCompletionImage:
-            priceDefinition.completionImageTokens?.rate || 0,
+            priceDefinition?.completionImageTokens?.rate || 0,
     };
 }
 
 export function usageToEventParams(
-    usage: TokenUsage,
+    usage?: TokenUsage,
 ): GenerationEventUsageParams {
     return {
-        tokenCountPromptText: usage.promptTextTokens || 0,
-        tokenCountPromptCached: usage.promptCachedTokens || 0,
-        tokenCountPromptAudio: usage.promptAudioTokens || 0,
-        tokenCountPromptImage: usage.promptImageTokens || 0,
-        tokenCountCompletionText: usage.completionTextTokens || 0,
-        tokenCountCompletionReasoning: usage.completionReasoningTokens || 0,
-        tokenCountCompletionAudio: usage.completionAudioTokens || 0,
-        tokenCountCompletionImage: usage.completionImageTokens || 0,
+        tokenCountPromptText: usage?.promptTextTokens || 0,
+        tokenCountPromptCached: usage?.promptCachedTokens || 0,
+        tokenCountPromptAudio: usage?.promptAudioTokens || 0,
+        tokenCountPromptImage: usage?.promptImageTokens || 0,
+        tokenCountCompletionText: usage?.completionTextTokens || 0,
+        tokenCountCompletionReasoning: usage?.completionReasoningTokens || 0,
+        tokenCountCompletionAudio: usage?.completionAudioTokens || 0,
+        tokenCountCompletionImage: usage?.completionImageTokens || 0,
     };
 }

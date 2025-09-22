@@ -15,7 +15,7 @@ import * as betterAuthSchema from "./db/schema/better-auth.ts";
 export function createAuth(env: Cloudflare.Env) {
     const polar = new Polar({
         accessToken: env.POLAR_ACCESS_TOKEN,
-        server: "sandbox",
+        server: env.POLAR_SERVER,
     });
 
     const db = drizzle(env.DB);
@@ -26,6 +26,11 @@ export function createAuth(env: Cloudflare.Env) {
             defaultPermissions: {
                 "tier": ["flower"],
             },
+        },
+        rateLimit: {
+            enabled: true,
+            timeWindow: 1000, // 1 second
+            maxRequests: 5, // 5 requests
         },
     });
 
@@ -59,7 +64,8 @@ function polarPlugin(polar: Polar): BetterAuthPlugin {
                 databaseHooks: {
                     user: {
                         create: {
-                            after: onUserCreate(polar),
+                            before: onBeforeUserCreate(polar),
+                            after: onAfterUserCreate(polar),
                         },
                         update: {
                             after: onUserUpdate(polar),
@@ -71,7 +77,31 @@ function polarPlugin(polar: Polar): BetterAuthPlugin {
     } satisfies BetterAuthPlugin;
 }
 
-function onUserCreate(polar: Polar) {
+function onBeforeUserCreate(polar: Polar) {
+    return async (user: Partial<User>, ctx?: GenericEndpointContext) => {
+        if (!ctx) return;
+        try {
+            if (!user.email) {
+                throw new APIError("BAD_REQUEST", {
+                    message:
+                        "Polar customer creation failed: missing email address",
+                });
+            }
+
+            await polar.customers.create({
+                email: user.email,
+                name: user.name,
+            });
+        } catch (e: unknown) {
+            const messageOrError = e instanceof Error ? e.message : e;
+            throw new APIError("INTERNAL_SERVER_ERROR", {
+                message: `Polar customer creation failed. Error: ${messageOrError}`,
+            });
+        }
+    };
+}
+
+function onAfterUserCreate(polar: Polar) {
     return async (user: User, ctx?: GenericEndpointContext) => {
         if (!ctx) return;
 
@@ -88,17 +118,11 @@ function onUserCreate(polar: Polar) {
                         externalId: user.id,
                     },
                 });
-            } else {
-                const _customer = await polar.customers.create({
-                    email: user.email,
-                    name: user.name,
-                    externalId: user.id,
-                });
             }
         } catch (e: unknown) {
             const messageOrError = e instanceof Error ? e.message : e;
             throw new APIError("INTERNAL_SERVER_ERROR", {
-                message: `Polar customer creation failed. Error: ${messageOrError}`,
+                message: `Polar customer update failed. Error: ${messageOrError}`,
             });
         }
     };

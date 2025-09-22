@@ -38,6 +38,7 @@ export default {
         const log = getLogger(["hono"]);
         await processEvents(db, log, {
             polarAccessToken: env.POLAR_ACCESS_TOKEN,
+            polarServer: env.POLAR_SERVER,
             tinybirdIngestUrl: env.TINYBIRD_INGEST_URL,
             tinybirdAccessToken: env.TINYBIRD_ACCESS_TOKEN,
         });

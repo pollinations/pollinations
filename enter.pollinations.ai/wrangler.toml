@@ -1,12 +1,13 @@
 name = "pollinations-auth"
 main = "src/index.ts"
 compatibility_date = "2025-08-01"
-compatibility_flags = [ "nodejs_compat" ]
+compatibility_flags = [ "nodejs_compat", "nodejs_als" ]
 
 [dev]
 port = 3000
 
 [assets]
+directory = "dist/client"
 not_found_handling = "single-page-application"
 run_worker_first = [ "/api/*" ]
 
@@ -21,6 +22,7 @@ ENVIRONMENT = "development"
 PUBLIC_BASE_URL = "http://localhost:3000"
 PUBLIC_AUTH_PATH = "/api/auth"
 POLAR_SUCCESS_URL = "http://localhost:3000"
+TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
 
 [env.staging]
 route = { pattern = "staging.pollinations.ai/*", zone_name = "pollinations.ai" }
@@ -33,9 +35,10 @@ migrations_dir = "drizzle"
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
-PUBLIC_BASE_URL = "https://staging.pollinations.ai"
+PUBLIC_BASE_URL = "https://enter.pollinations.ai"
 PUBLIC_AUTH_PATH = "/api/auth"
-POLAR_SUCCESS_URL = "https://staging.pollinations.ai"
+POLAR_SUCCESS_URL = "https://enter.pollinations.ai"
+TINYBIRD_INGEST_URL = "https://api.tinybird.co/v0/events?name=generation_event"
 
 [triggers]
 crons = [ "* * * * *" ] # Trigger every minute
@@ -51,9 +54,10 @@ migrations_dir = "drizzle"
 
 [env.production.vars]
 ENVIRONMENT = "production"
-PUBLIC_BASE_URL = "https://beta.pollinations.ai"
+PUBLIC_BASE_URL = "https://enter.pollinations.ai"
 PUBLIC_AUTH_PATH = "/api/auth"
-POLAR_SUCCESS_URL = "https://beta.pollinations.ai"
+POLAR_SUCCESS_URL = "https://enter.pollinations.ai"
+TINYBIRD_INGEST_URL = "https://api.tinybird.co/v0/events?name=generation_event"
 
 [env.test]
 
@@ -61,12 +65,14 @@ POLAR_SUCCESS_URL = "https://beta.pollinations.ai"
 binding = "DB"
 database_name = "pollinations-auth"
 database_id = "cc225cad-b9a2-4595-8323-6602e7680511"
+migrations_dir = "drizzle"
 
 [env.test.vars]
 ENVIRONMENT = "test"
-BASE_URL = "http://localhost:3000"
-AUTH_BASE_PATH = "/api/auth"
+PUBLIC_BASE_URL = "http://localhost:3000"
+PUBLIC_AUTH_PATH = "/api/auth"
 GITHUB_CLIENT_ID = "test_github_client_id"
 GITHUB_CLIENT_SECRET = "test_github_client_secret"
 POLAR_ACCESS_TOKEN = "test_polar_token"
-POLAR_SUCCESS_URL = "http://localhost:3000/success"
+POLAR_SUCCESS_URL = "http://localhost:3000"
+TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"

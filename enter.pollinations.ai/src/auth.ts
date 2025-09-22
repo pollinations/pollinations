@@ -34,7 +34,7 @@ export function createAuth(env: Cloudflare.Env) {
     });
 
     return betterAuth({
-        baseURL: env.BASE_URL,
+        baseURL: env.PUBLIC_BASE_URL,
         basePath: "/api/auth",
         database: drizzleAdapter(db, {
             schema: betterAuthSchema,

@@ -38,48 +38,79 @@
           mkdir -p $out/config
           cp ${zsh-config} $out/config/.zshrc
         '';
+
+        tinybird-cli = pkgs.stdenv.mkDerivation {
+          pname = "tinybird-cli";
+          version = "latest";
+
+          nativeBuildInputs = [
+            pkgs.uv
+            pkgs.python311
+          ];
+
+          unpackPhase = "true"; # no source to unpack
+
+          buildPhase = ''
+            export HOME=$TMPDIR
+            export UV_TOOL_DIR=$out
+            export UV_TOOL_BIN_DIR=$out/bin
+            export UV_CACHE_DIR=$out/cache
+            mkdir -p $out/bin
+            uv tool install tinybird --python 3.11 --force
+          '';
+
+          postFixup = ''
+            # Fix shebangs to point to the correct python interpreter
+            patchShebangs $out/bin
+          '';
+
+          meta = with pkgs.lib; {
+            description = "Tinybird CLI";
+            platforms = platforms.unix;
+          };
+        };
       in
       {
         devShells.default = pkgs.mkShell {
           name = "pollinations";
 
-          buildInputs = (
-            with pkgs;
-            [
-              zsh
-              zsh-syntax-highlighting
-              zsh-autosuggestions
-              zsh-completions
-              starship
-              figlet
-              git
-              sops
-              age
-              uv
-              nodejs_24
+          buildInputs = [
+            tinybird-cli
+          ]
+          ++ (with pkgs; [
+            zsh
+            zsh-syntax-highlighting
+            zsh-autosuggestions
+            zsh-completions
+            starship
+            figlet
+            git
+            sops
+            age
+            uv
+            nodejs_24
 
-              # Image processing dependencies for image.pollinations.ai
-              vips
-              pkg-config
-              glib
+            # Image processing dependencies for image.pollinations.ai
+            vips
+            pkg-config
+            glib
 
-              # ExifTool dependencies
-              exiftool
-              perl
+            # ExifTool dependencies
+            exiftool
+            perl
 
-              # Build tools for native Node.js modules
-              gcc
-              gnumake
-              python3
+            # Build tools for native Node.js modules
+            gcc
+            gnumake
+            python3
 
-              # Additional image processing libraries
-              imagemagick
-              libjpeg
-              libpng
-              libtiff
-              libwebp
-            ]
-          );
+            # Additional image processing libraries
+            imagemagick
+            libjpeg
+            libpng
+            libtiff
+            libwebp
+          ]);
 
           shellHook = ''
             # runs each time the shell is entered

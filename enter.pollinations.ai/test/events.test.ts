@@ -3,13 +3,26 @@ import {
     createScheduledController,
     env,
 } from "cloudflare:test";
-import { randomBytes } from "node:crypto";
-import { beforeAll, beforeEach, expect, test } from "vitest";
-import type { InsertPolarEvent } from "../src/db/schema/event";
-import worker from "../src/index.tsx";
-import { storePolarEvents } from "../src/polar";
+import { beforeAll, beforeEach, expect } from "vitest";
+import { test } from "./fixtures.ts";
+import worker from "../src/index.ts";
+import { storeEvents } from "../src/events.ts";
 import { setupFetchMock } from "./mocks/fetch.ts";
 import { createMockPolar } from "./mocks/polar.ts";
+import { getLogger } from "@logtape/logtape";
+import {
+    priceToEventParams,
+    usageToEventParams,
+    type InsertGenerationEvent,
+} from "@/db/schema/event.ts";
+import { generateRandomId } from "@/util.ts";
+import {
+    ProviderId,
+    REGISTRY,
+    ServiceId,
+    TokenUsage,
+} from "@/registry/registry.ts";
+import { drizzle } from "drizzle-orm/d1";
 
 const mockPolar = createMockPolar();
 
@@ -20,49 +33,67 @@ beforeAll(() => {
 beforeEach(() => mockPolar.reset());
 
 function createTextGenerationEvent(
-    overrides: Partial<InsertPolarEvent> = {},
-): InsertPolarEvent {
-    return {
-        id: `text-${randomBytes(16).toString("hex")}`,
-        name: "text_generation",
-        userId: "user-0000000000000000",
-        requestId: "request-0000000000000000",
-        metadata: {
-            model: "agi-1",
-            usageInputTokens: 100,
-            usageOutputTokens: 200,
-            usageReasoningTokens: 50,
-            pricePerMillionInputTokens: 10,
-            pricePerMillionOutputTokens: 20,
-            pricePerMillionReasoningTokens: 15,
-            totalPrice: 0.005,
-        },
-        ...overrides,
+    modelRequested: ServiceId,
+): InsertGenerationEvent {
+    const userId = generateRandomId();
+    const modelUsed = REGISTRY.getService(modelRequested as ServiceId)
+        .modelProviders[0];
+    const priceDefinition = REGISTRY.getActivePriceDefinition(
+        modelRequested as ServiceId,
+    );
+    if (!priceDefinition) {
+        throw new Error(
+            `Failed to get price definition for model: ${modelRequested}`,
+        );
+    }
+    const usage: TokenUsage = {
+        unit: "TOKENS",
+        promptTextTokens: 1_000_000,
+        completionTextTokens: 1_000_000,
     };
-}
+    const cost = REGISTRY.calculateCost(modelUsed as ProviderId, usage);
+    const price = REGISTRY.calculatePrice(modelRequested as ServiceId, usage);
 
-function createImageGenerationEvent(
-    overrides: Partial<InsertPolarEvent> = {},
-): InsertPolarEvent {
     return {
-        id: `${randomBytes(16).toString("hex")}`,
-        name: "image_generation",
-        userId: "user-0000000000000000",
-        requestId: "request-0000000000000000",
-        metadata: {
-            model: "agi-1",
-            totalPrice: 0.05,
-        },
-        ...overrides,
+        id: generateRandomId(),
+        requestId: generateRandomId(),
+        startTime: new Date(),
+        endTime: new Date(),
+        responseTime: 0,
+        responseStatus: 200,
+        environment: "testing",
+        eventType: "generate.text",
+        eventProcessingId: undefined,
+        eventStatus: undefined,
+        polarDeliveryAttempts: undefined,
+        polarDeliveredAt: undefined,
+        tinybirdDeliveryAttempts: undefined,
+        tinybirdDeliveredAt: undefined,
+        createdAt: undefined,
+        updatedAt: undefined,
+        userId,
+        userTier: "flower",
+        referrerDomain: "localhost:3000",
+        referrerUrl: "http://localhost:3000",
+        modelRequested,
+        modelUsed,
+        isBilledUsage: true,
+
+        ...priceToEventParams(priceDefinition),
+        ...usageToEventParams(usage),
+
+        totalPrice: price.totalPrice,
+        totalCost: cost.totalCost,
     };
 }
 
 test("Scheduled handler sends events to Polar.sh", async () => {
-    const events = Array.from({ length: 10000 }).map((_, i) => {
-        if (i % 2 === 0) return createImageGenerationEvent();
-        else return createTextGenerationEvent();
+    const db = drizzle(env.DB);
+    const log = getLogger(["hono"]);
+    const events = Array.from({ length: 2000 }).map(() => {
+        return createTextGenerationEvent("openai-large");
     });
-    await storePolarEvents(events, env);
+    await storeEvents(db, log, events);
     const controller = createScheduledController();
     const ctx = createExecutionContext();
     await worker.scheduled(controller, env, ctx);

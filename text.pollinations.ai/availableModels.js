@@ -20,18 +20,18 @@ import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
 import { portkeyConfig } from "./configs/modelConfigs.js";
 
 const models = [
-	{
-		name: "openai",
-		description: "OpenAI GPT-5 Nano",
-		config: portkeyConfig["gpt-5-nano"],
-		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-		tier: "anonymous",
-		community: false,
-		aliases: ["gpt-5-nano"],
-		input_modalities: ["text", "image"],
-		output_modalities: ["text"],
-		tools: true
-	},
+	// {
+	// 	name: "openai",
+	// 	description: "OpenAI GPT-4.1 Mini",
+	// 	config: portkeyConfig["gpt-4.1-mini"],
+	// 	transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+	// 	tier: "anonymous",
+	// 	community: false,
+	// 	aliases: ["gpt-4.1-mini"],
+	// 	input_modalities: ["text", "image"],
+	// 	output_modalities: ["text"],
+	// 	tools: true
+	// },
 	{
 		name: "openai-fast",
 		description: "OpenAI GPT-4.1 Nano",
@@ -39,6 +39,7 @@ const models = [
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "anonymous",
 		community: false,
+		aliases: ["openai"],
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true
@@ -123,7 +124,7 @@ const models = [
 	{
 		name: "openai-audio",
 		description: "OpenAI GPT-4o Mini Audio Preview",
-		maxInputChars: 2000,
+		maxInputChars: 5000,
 		voices: [
 			"alloy",
 			"echo",

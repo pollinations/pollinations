@@ -1,4 +1,5 @@
 import { getResolutionBucket } from "./embedding-service.ts";
+import type { ImageParams } from "./middleware/parse-image-params.ts";
 
 export type VectorStoreMatch<TMetadata> = {
     id: string;
@@ -92,13 +93,8 @@ export function createVectorizeStore<
     };
 }
 
-export function buildMetadata(cacheKey: string, url: URL): VectorMetadata {
-    const width = parseInt(url.searchParams.get("width") || "") || 1024;
-    const height = parseInt(url.searchParams.get("height") || "") || 1024;
-    const seed = parseInt(url.searchParams.get("seed") || "") || undefined;
-    const model = url.searchParams.get("model") || "flux";
-    const nologo = url.searchParams.get("nologo") === "true";
-    const image = url.searchParams.get("image");
+export function buildMetadata(cacheKey: string, imageParams: ImageParams): VectorMetadata {
+    const { width, height, seed, model, nologo, image } = imageParams;
     const bucket = getResolutionBucket(width, height, seed, nologo, image);
 
     return {

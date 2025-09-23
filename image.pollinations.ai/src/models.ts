@@ -35,7 +35,15 @@ export const MODELS = {
         tier: "seed",
     },
 
-    // // Azure GPT Image model (commented out but kept for type compatibility)
+    // Seedream - ByteDance ARK API for high-quality image generation
+    seedream: {
+        type: "seedream",
+        enhance: false,
+        maxSideLength: 2048, // Seedream supports up to 4K resolution
+        tier: "seed",
+    },
+
+    // Azure GPT Image model (temporarily disabled - uncomment to reactivate)
     // gptimage: {
     //     type: "azure",
     //     enhance: false,

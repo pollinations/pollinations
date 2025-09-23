@@ -1,6 +1,7 @@
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { createSimpleHash, extractPromptFromUrl } from "../util.ts";
+import type { ImageParams } from "./parse-image-params.ts";
 
 const MAX_STRING_LENGTH = 150;
 
@@ -21,7 +22,13 @@ type AnalyticsParams = {
     width: number;
     height: number;
     seed: number;
-} & Record<string, string | number>;
+    negativePrompt: string;
+    enhance: boolean;
+    nologo: boolean;
+    quality: string;
+    safe: boolean;
+    nofeed: boolean;
+} & Record<string, string | number | boolean>;
 
 type ImageEventName =
     | "imageRequested"
@@ -37,11 +44,14 @@ export type ImageCacheEvent = {
 
 type AnalyticsEvent = {
     name: ImageEventName;
-    params: Record<string, string | number>;
+    params: Record<string, string | number | boolean>;
 };
 
 type Env = {
     Bindings: Cloudflare.Env;
+    Variables: {
+        imageParams: ImageParams;
+    };
 };
 
 export const googleAnalytics = createMiddleware<Env>(async (c, next) => {
@@ -141,15 +151,9 @@ function buildAnalyticsParams(
     c: Context,
     event: ImageCacheEvent,
 ): AnalyticsParams {
-    const defaultParams = {
-        model: "flux",
-        width: 1024,
-        height: 1024,
-        seed: 42,
-        negativePrompt: "worst quality, blurry",
-        cacheStatus: "unknown",
-    };
-
+    // Get parsed image parameters from context
+    const imageParams = c.get("imageParams");
+    
     const trackedHeaders = {
         referrer: c.req.header("referer") || c.req.header("referrer") || "",
         userAgent: c.req.header("user-agent") || "",
@@ -159,7 +163,7 @@ function buildAnalyticsParams(
     const originalPrompt = extractPromptFromUrl(new URL(c.req.url)) || "[null]";
 
     return {
-        ...defaultParams,
+        ...imageParams,  // Use parsed parameters from context
         ...trackedHeaders,
         cacheStatus: deriveCacheStatus(event),
         originalPrompt,
@@ -168,9 +172,9 @@ function buildAnalyticsParams(
 }
 
 function limitStringLength(
-    params: Record<string, string | number>,
+    params: Record<string, string | number | boolean>,
     maxLength: number,
-): Record<string, string | number> {
+): Record<string, string | number | boolean> {
     return Object.fromEntries(
         Object.entries(params).map(([key, value]) => {
             if (typeof value === "string") {

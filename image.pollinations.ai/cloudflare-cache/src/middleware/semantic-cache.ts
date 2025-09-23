@@ -52,7 +52,8 @@ export const semanticCache = createMiddleware<Env>(async (c, next) => {
         return next();
     }
 
-    const metadata = buildMetadata(cacheKey, new URL(c.req.url));
+    const imageParams = c.get("imageParams");
+    const metadata = buildMetadata(cacheKey, imageParams);
 
     try {
         const nearest = await vectorStore.findNearest(

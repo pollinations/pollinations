@@ -58,7 +58,10 @@ export async function processEvents(
         config.tinybirdAccessToken,
         log,
     );
-    if (polarDelivery === "succeeded" && tinybirdDelivery === "succeeded") {
+    if (
+        ["succeeded", "skipped"].includes(polarDelivery) &&
+        ["succeeded", "skipped"].includes(tinybirdDelivery)
+    ) {
         log.trace("Event processing complete.");
         await confirmProcessingEvents(processingId, db);
     } else {

@@ -59,20 +59,29 @@ export const track = (eventType: EventType) =>
             );
         }
         let modelUsage, cost, price;
-        if (c.res.ok && !cacheInfo.cacheHit) {
-            modelUsage = await extractUsage(c, eventType);
-            cost = REGISTRY.calculateCost(
-                modelUsage.model as ProviderId,
-                modelUsage.usage,
-            );
-            price = REGISTRY.calculatePrice(
-                serviceOrDefault as ServiceId,
-                modelUsage.usage,
-            );
+        if (c.res.ok) {
+            if (!cacheInfo.cacheHit) {
+                modelUsage = await extractUsage(c, eventType);
+                cost = REGISTRY.calculateCost(
+                    modelUsage.model as ProviderId,
+                    modelUsage.usage,
+                );
+                price = REGISTRY.calculatePrice(
+                    serviceOrDefault as ServiceId,
+                    modelUsage.usage,
+                );
+            } else {
+                log.info(
+                    "Response was served from {cacheType} cache, skipping cost/price calculation",
+                    { ...cacheInfo, cacheType: cacheInfo.cacheType || "exact" },
+                );
+            }
         } else {
+            // TODO: track error events
             log.info("Response was not ok ({status}), skipping tracking", {
                 status: c.res.status,
             });
+            return;
         }
         const endTime = new Date();
 

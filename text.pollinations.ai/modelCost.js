@@ -44,6 +44,13 @@ const MODEL_COST = {
 	  prompt_audio: 10.0,
 	  completion_audio: 20.0
 	},
+	"gpt-5-chat": {
+	  provider: "azure-openai",
+	  region: "eastus2",
+	  prompt_text: 2.5,
+	  prompt_cache: 0.625,
+	  completion_text: 10.0
+	},
 
 	// ===== Navy API (Gemini) ===== Pricing: https://cloud.google.com/vertex-ai/generative-ai/pricing
 	"gemini-2.5-flash-lite": {

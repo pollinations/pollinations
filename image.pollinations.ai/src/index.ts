@@ -403,11 +403,16 @@ const checkCacheAndGenerate = async (
                 // Note: ipQueue.js now handles tier-based cap logic automatically for token auth
                 let queueConfig = null;
                 if (hasValidToken) {
+                    
                     // Token authentication - ipQueue will automatically apply tier-based caps
-                    queueConfig = { interval: 0 }; // cap will be set by ipQueue based on tier
-                    logAuth(
-                        "Token authenticated - ipQueue will apply tier-based concurrency",
-                    );
+                    if (safeParams.model === "nanobanana") {
+                        queueConfig = { interval: 30000, cap: 1, forceCap: true }; // Force cap=1 regardless of tier
+                        logAuth("Nanobanana model - using forced cap=1 with 30s interval");
+                    } else {
+                        queueConfig = { interval: 0 }; // cap will be set by ipQueue based on tier
+                        logAuth("Token authenticated - ipQueue will apply tier-based concurrency");
+                    }
+                    
                     progress.updateBar(
                         requestId,
                         20,
@@ -416,6 +421,7 @@ const checkCacheAndGenerate = async (
                     );
                 } else {
                     // Use default queue config with interval
+                    // Note: nanobanana requires seed tier, so non-authenticated users will be blocked later
                     queueConfig = QUEUE_CONFIG;
                     logAuth("Standard queue with delay (no token)");
                 }

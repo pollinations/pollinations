@@ -630,5 +630,14 @@ export const creativeProjects = [
     repo: "https://github.com/Shervinuri/Shervinuri.github.io",
     submissionDate: "2025-09-17",
     order: 1
+  },
+  {
+    name: "Image Generation Playground",
+    url: "https://umint-image.hf.space",
+    description: "Transform your ideas into a visual masterpiece. Part of the UltimaX Intelligence ecosystem",
+    author: "@hadadarjt",
+    repo: "https://huggingface.co/spaces/umint/image/tree/main",
+    submissionDate: "2025-09-23",
+    order: 1
   }
 ];

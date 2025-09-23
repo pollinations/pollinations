@@ -39,7 +39,7 @@ export const MODELS = {
     seedream: {
         type: "seedream",
         enhance: false,
-        maxSideLength: 4096, // Seedream supports up to 4K resolution
+        maxSideLength: 2048, // Default 2048x2048, supports up to 4K resolution
         tier: "seed",
     },
 

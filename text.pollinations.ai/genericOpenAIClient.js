@@ -269,7 +269,9 @@ export async function genericOpenAIClient(messages, options = {}, config) {
             sendTinybirdEvent({
                 startTime: new Date(startTime),
                 endTime,
-                model: normalizedOptions.model,
+                // model_requested should be the original (virtual) model when available
+                model: normalizedOptions.virtualModelName || normalizedOptions.model,
+                // model_used should be the provider-returned model identifier
                 modelUsed: data.model,
                 duration: completionTime,
                 status: "success",
@@ -349,7 +351,8 @@ export async function genericOpenAIClient(messages, options = {}, config) {
                 startTime: new Date(startTime),
                 endTime,
                 requestId,
-                model: normalizedOptions?.model || options?.model || "unknown", // Safely access model name
+                // Prefer the original requested (virtual) model name when available
+                model: normalizedOptions?.virtualModelName || normalizedOptions?.model || options?.model || "unknown",
                 duration: completionTime,
                 status: "error",
                 error,

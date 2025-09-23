@@ -66,7 +66,10 @@ function logUserRequest(
 		username,
 		processingTimeMs,
 		request: {
+			// The final model after any overrides/mapping
 			model: requestData.model,
+			// The originally requested model if provided by the server
+			requested_model: requestData.requested_model || null,
 			messages: requestData.messages || [],
 			temperature: requestData.temperature,
 			stream: requestData.stream,

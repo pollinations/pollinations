@@ -61,17 +61,7 @@ export const gamesProjects = [
     repo: "https://github.com/JayJayBinks/infinite-tales-rpg",
     author: "@infinite_tales",
     submissionDate: "2025-01-20",
-    stars: 28
-  },
-  {
-    name: "Minecraft AI (Node.js)",
-    url: "https://github.com/pollinations/minecraft-ai-node",
-    description: "A Node.js implementation that uses Pollinations AI to control a Minecraft character through natural language commands.",
-    author: "@minecraft_ai_dev",
-    repo: "https://github.com/pollinations/minecraft-ai-node",
-    stars: 124,
-    submissionDate: "2025-04-05",
-    order: 1
+    stars: 29
   },
   {
     name: "Minecraft AI (Python)",

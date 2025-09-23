@@ -157,8 +157,13 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1 } = {}) {
 
 	// Check if adding to queue would exceed maxQueueSize
 	if (maxQueueSize && totalInQueue >= maxQueueSize) {
+		// Enhanced error message with username context
+		const userContext = authResult.username 
+			? `user: ${authResult.username} (${authResult.userId})` 
+			: `IP: ${ip}`;
+		
 		const error = new Error(
-			`Queue full for IP ${ip}: ${totalInQueue} requests already queued (max: ${maxQueueSize})`,
+			`Queue full for ${userContext}: ${totalInQueue} requests already queued (max: ${maxQueueSize})`,
 		);
 		error.status = 429; // Too Many Requests
 		error.queueInfo = {
@@ -167,14 +172,34 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1 } = {}) {
 			pending: currentPending,
 			total: totalInQueue,
 			maxAllowed: maxQueueSize,
+			// Include user context in queue info
+			username: authResult.username || null,
+			userId: authResult.userId || null,
+			tier: authResult.tier || "anonymous",
 		};
-		log(
-			"Queue full for IP %s: size=%d, pending=%d, max=%d",
-			ip,
-			currentQueueSize,
-			currentPending,
-			maxQueueSize,
-		);
+		
+		// Enhanced logging with username context
+		if (authResult.username) {
+			errorLog(
+				"🚫 RATE LIMIT: Queue full for user %s (%s) - IP: %s, tier: %s, size=%d, pending=%d, max=%d",
+				authResult.username,
+				authResult.userId,
+				ip,
+				authResult.tier,
+				currentQueueSize,
+				currentPending,
+				maxQueueSize,
+			);
+		} else {
+			log(
+				"Queue full for IP %s (anonymous): size=%d, pending=%d, max=%d",
+				ip,
+				currentQueueSize,
+				currentPending,
+				maxQueueSize,
+			);
+		}
+		
 		// if (authResult.userId) {
 		//   incrementUserMetric(authResult.userId, 'ip_queue_full_count');
 		// }

@@ -5,6 +5,40 @@
 
 export const creativeProjects = [
   {
+    name: "Prompt2Image 🎨",
+    url: "https://marketplace.visualstudio.com/items?itemName=MaazSaboowala.prompt2image-ai-generator",
+    description: "Prompt2Image is a Visual Studio Code extension that brings AI-powered image generation directly into the developer workflow. Instead of searching for stock photos or managing downloads, developers can simply open the VS Code Command Palette, enter a descriptive text prompt, and instantly receive a high-quality, project-ready image. The extension integrates seamlessly with Pollinations.ai, which processes the prompt through its AI generation API to create tailored, web-optimized visuals.",
+    author: "@MaazS07",
+    submissionDate: "2025-09-18",
+    order: 1
+  },
+  {
+    name: "StoryWeaver AI 📚",
+    url: "https://storyweaver-ai-umber.vercel.app/",
+    description: "A real-time, collaborative storyboarding application that empowers users to create visual narratives together. In shared 'story rooms,' participants write text prompts that are instantly transformed into comic book-style panels using dual Pollinations API integration - first generating AI summaries of preceding panels via text.pollinations.ai, then combining them with user prompts for contextually connected image generation via image.pollinations.ai.",
+    author: "@Karannn3011",
+    repo: "https://github.com/Karannn3011/storyweaver-ai",
+    submissionDate: "2025-09-17",
+    order: 1
+  },
+  {
+    name: "Mixbash.com 🛠️",
+    url: "https://mixbash.com",
+    description: "Mixbash is a better UI layer to use SOTA AI models hosted on Pollinations, Fal, Replicate, Runpod and Gemini. Simply bring your own API keys to get started and pay 10x less for Gen AI models.",
+    author: "@jiajasper",
+    submissionDate: "2025-09-17",
+    order: 1
+  },
+  {
+    name: "Pollinations AI Demo",
+    url: "https://pollinationsaidemo.netlify.app/",
+    description: "Images generator",
+    author: "@Wormix48",
+    repo: "https://github.com/Wormix48/Pollinations-AI-Demo",
+    submissionDate: "2025-09-17",
+    order: 1
+  },
+  {
     name: "🇧🇷 CapyUniverse - CapyIMG",
     url: "https://capyuniverse.pages.dev/capyimg.html",
     description: "Ferramenta simples para criar imagens com IA diretamente no navegador. O usuário escreve uma descrição (briefing), pode indicar elementos a evitar, escolher quantidade de imagens (1–4), formato (1:1, 16:9, 9:16, 4:3, 3:4) e tamanho. (Simple tool to create AI images directly in the browser. Users write a description, can specify elements to avoid, choose number of images (1–4), format ratios, and size.)",
@@ -235,7 +269,7 @@ export const creativeProjects = [
     description: "A Flutter application that listens for image generation prompts, requests images from Pollinations.AI, and displays them on the Frame wearable device. Users can use voice commands to generate images and save/share them using the device's sharing mechanism.",
     author: "CitizenOneX",
     repo: "https://github.com/CitizenOneX/frame_pollinations",
-    stars: 6,
+    stars: 7,
     submissionDate: "2025-04-13",
     order: 1
   },
@@ -246,7 +280,7 @@ export const creativeProjects = [
     author: "@intolerant0ne",
     order: 1,
     category: "creativeApps",
-    stars: 9
+    stars: 8
   },
   {
     name: "Generator Text AI 🇮🇩",
@@ -351,7 +385,7 @@ export const creativeProjects = [
     author: "@gaurav_87680",
     submissionDate: "2025-02-16",
     order: 2,
-    stars: 28
+    stars: 29
   },
   {
     name: "Pollinations.ai Model Comparison",
@@ -404,7 +438,7 @@ export const creativeProjects = [
     description: "Simply provide a topic or keyword for a video, and it will automatically generate the video copy, video materials, video subtitles, and video background music before synthesizing a high-definition short video. Integrates Pollinations' text generation service to create engaging and relevant video scripts.",
     author: "@harry0703",
     repo: "https://github.com/harry0703/MoneyPrinterTurbo",
-    stars: 38710,
+    stars: 39944,
     submissionDate: "2025-05-13",
     order: 1
   },
@@ -416,7 +450,7 @@ export const creativeProjects = [
     repo: "https://github.com/lrdcxdes/text-match-cut",
     submissionDate: "2025-05-19",
     order: 1,
-    stars: 16
+    stars: 17
   },
   {
     name: "The Promised Pen",
@@ -479,7 +513,7 @@ export const creativeProjects = [
     description: "Multi-Agent AI That Cooks Up Recipes Just for You ~ From fridge to feast, MASALA plans it all.",
     author: "@Naman009",
     repo: "https://github.com/Naman009/MASala",
-    stars: 4,
+    stars: 3,
     submissionDate: "2025-05-20",
     order: 1
   },
@@ -586,6 +620,15 @@ export const creativeProjects = [
     description: "FREE Art Prompt Generator that helps you turn simple ideas into structured prompts for tools like Midjourney, DALL·E, and ChatGPT. One of its standout features is Test Visualization, which lets you instantly preview how your prompt might look — helping you fine-tune ideas before using any AI tool. This powerful visual preview is made possible through integration with Pollinations AI, enhancing your creative workflow like never before.",
     author: "info@promptgenerator.art",
     submissionDate: "2025-07-14",
+    order: 1
+  },
+  {
+    name: "☬SHΞNΞRATOR 🎨",
+    url: "https://Shervinuri.github.io",
+    description: "AI image and text generator with dual functionality. Features both image generation (https://Shervinuri.github.io) and text generation (https://minishen.netlify.app) capabilities powered by AI.",
+    author: "https://T.me/shervinuri",
+    repo: "https://github.com/Shervinuri/Shervinuri.github.io",
+    submissionDate: "2025-09-17",
     order: 1
   }
 ];

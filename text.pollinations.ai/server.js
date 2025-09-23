@@ -7,6 +7,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import dotenv from "dotenv";
 import { availableModels } from "./availableModels.js";
+import { getProvider } from "./modelCost.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
 import { processRequestForAds } from "./ads/initRequestFilter.js";
@@ -16,7 +17,8 @@ import {
 	prepareModelsForOutput,
 	getUserMappedModel,
 } from "./requestUtils.js";
-import { logUserRequest } from "./userLogger.js";
+import { logUserRequest } from "./logging/userLogger.js";
+import { logConversation } from "./logging/simpleLogger.js";
 import { checkAndLogMonitoredStrings, extractTextFromMessages } from "./utils/stringMonitor.js";
 
 // Import shared utilities
@@ -206,8 +208,10 @@ async function handleRequest(req, res, requestData) {
 		}
 
 		// Add user info to request data - using authResult directly as a thin proxy
+		// Exclude messages from options to prevent overwriting transformed messages
+		const { messages: _, ...requestDataWithoutMessages } = finalRequestData;
 		const requestWithUserInfo = {
-			...finalRequestData,
+			...requestDataWithoutMessages,
 			userInfo: {
 				...authResult,
 				referrer: requestData.referrer || "unknown",
@@ -238,6 +242,13 @@ async function handleRequest(req, res, requestData) {
 				totalProcessingTime,
 			);
 		}
+
+		// Simple conversation logging (100% sample, excluding specific users)
+		logConversation(
+			finalRequestData.messages,
+			finalRequestData.model,
+			authResult.username
+		);
 
 		// Check if completion contains an error
 		if (completion.error) {
@@ -420,12 +431,24 @@ export async function sendErrorResponse(
 			}
 		: "no request data";
 
+	// Extract username from auth result if available
+	const authResult = req.authResult || {};
+	const userContext = authResult.username 
+		? `${authResult.username} (${authResult.userId})` 
+		: "anonymous";
+
 	// Log comprehensive error information (for internal use only)
 	errorLog("Error occurred:", {
 		error: {
 			message: error.message,
 			status: responseStatus,
 			details: error.details,
+		},
+		user: {
+			username: authResult.username || null,
+			userId: authResult.userId || null,
+			tier: authResult.tier || "anonymous",
+			context: userContext,
 		},
 		model: error.model || requestData?.model || "unknown",
 		provider: error.provider || "Pollinations",
@@ -434,6 +457,26 @@ export async function sendErrorResponse(
 		requestData: sanitizedRequestData,
 		stack: error.stack,
 	});
+
+	// Special logging for rate limit errors with clear username identification
+	if (responseStatus === 429) {
+		if (authResult.username) {
+			errorLog(
+				"🚫 RATE LIMIT ERROR: User %s (%s) exceeded limits - IP: %s, tier: %s, model: %s",
+				authResult.username,
+				authResult.userId,
+				clientInfo.ip,
+				authResult.tier,
+				requestData?.model || "unknown"
+			);
+		} else {
+			errorLog(
+				"🚫 RATE LIMIT ERROR: Anonymous user exceeded limits - IP: %s, model: %s",
+				clientInfo.ip,
+				requestData?.model || "unknown"
+			);
+		}
+	}
 
 	try {
 		res.status(responseStatus).json(errorResponse);
@@ -649,12 +692,19 @@ app.post("/", async (req, res) => {
 app.get("/openai/models", (req, res) => {
 	const models = availableModels
 		.filter((model) => !model.hidden)
-		.map((model) => ({
-			id: model.name,
-			object: "model",
-			created: Date.now(),
-			owned_by: model.provider,
-		}));
+		.map((model) => {
+			// Get provider from cost data using the model's config
+			const config = typeof model.config === 'function' ? model.config() : model.config;
+			const actualModelName = config?.model || config?.["azure-model-name"] || config?.["azure-deployment-id"] || model.name;
+			const provider = getProvider(actualModelName) || "unknown";
+			
+			return {
+				id: model.name,
+				object: "model",
+				created: Date.now(),
+				owned_by: provider,
+			};
+		});
 	res.json({
 		object: "list",
 		data: models,
@@ -864,8 +914,8 @@ async function generateTextBasedOnModel(messages, options) {
 				provider: error.provider || "unknown",
 				requestParams: {
 					...options,
-					messages: options.messages
-						? options.messages.map((m) => ({
+					messages: messages
+						? messages.map((m) => ({
 								role: m.role,
 								content:
 									typeof m.content === "string"

@@ -5,12 +5,13 @@ import { logAdInteraction } from "./adLogger.js";
 import { affiliatesData } from "../../affiliate/affiliates.js";
 import { shouldShowAds } from "./shouldShowAds.js";
 import { shouldProceedWithAd, sendAdSkippedAnalytics } from "./adUtils.js";
-import { fetchNexAd, createNexAdRequest } from "./nexAdClient.js";
-import {
-    formatNexAd,
-    extractTrackingData,
-    trackImpression,
-} from "./nexAdFormatter.js";
+// NEXAD DISABLED: Removed nexad imports
+// import { fetchNexAd, createNexAdRequest } from "./nexAdClient.js";
+// import {
+//     formatNexAd,
+//     extractTrackingData,
+//     trackImpression,
+// } from "./nexAdFormatter.js";
 import { handleAuthentication } from "../../shared/auth-utils.js";
 import { incrementUserMetric } from "../../shared/userMetrics.js";
 
@@ -73,111 +74,8 @@ export async function generateAdForContent(
 
         log("Generating ad for content...");
 
-        // Try nex.ad first - pass authenticated user ID
-        const { visitorData, conversationContext } = createNexAdRequest(
-            req,
-            messages,
-            content,
-            authenticatedUserId,
-        );
-        const nexAdResult = await fetchNexAd(visitorData, conversationContext);
-
-        if (nexAdResult && nexAdResult.adData) {
-            const { adData, userIdForTracking } = nexAdResult;
-            // Only use authenticated user ID for tracking, not hashed IP fallback
-            const userIdForRedirect = authenticatedUserId; // null if not authenticated
-            // Format nex.ad response, only passing real user ID (not hashed IP)
-            const adString = formatNexAd(adData, userIdForRedirect);
-
-            if (adString) {
-                // Extract tracking data from adData
-                const trackingData = extractTrackingData(adData);
-
-                // Conditional impression tracking based on authentication for privacy
-                if (authenticatedUserId) {
-                    // For authenticated users: Don't fire nex.ad impression URLs for privacy protection
-                    log(
-                        `Privacy: Authenticated user ${authenticatedUserId} - Skipping nex.ad impression tracking for privacy`,
-                    );
-                } else {
-                    // For unauthenticated users: Fire nex.ad impression URLs as normal
-                    await trackImpression(trackingData);
-                    log(
-                        `Privacy: Unauthenticated user - Fired nex.ad impression tracking`,
-                    );
-                }
-
-                // Log the ad interaction
-                if (req) {
-                    logAdInteraction({
-                        timestamp: new Date().toISOString(),
-                        ip:
-                            req.ip ||
-                            req.headers["x-forwarded-for"] ||
-                            "unknown",
-                        campaign_id: trackingData.campaign_id,
-                        ad_id: trackingData.ad_id,
-                        tid: trackingData.tid,
-                        ad_source: "nexad",
-                        streaming: isStreaming,
-                        referrer:
-                            req.headers.referer ||
-                            req.headers.referrer ||
-                            req.headers.origin ||
-                            "unknown",
-                        user_agent: req.headers["user-agent"] || "unknown",
-                    });
-
-                    // Send analytics for the ad impression
-                    sendToAnalytics(req, "ad_impression", {
-                        campaign_id: trackingData.campaign_id,
-                        ad_id: trackingData.ad_id,
-                        tid: trackingData.tid,
-                        ad_type: trackingData.ad_type,
-                        ad_source: "nexad",
-                        streaming: isStreaming,
-                        forced: shouldForceAd,
-                        user_id: authenticatedUserId || null,
-                        username: authResult?.username || null,
-                        authenticated: !!authenticatedUserId,
-                        ip_sent_to_nexad: !authenticatedUserId,
-                        impression_sent_to_nexad: !authenticatedUserId,
-                        privacy_protected: !!authenticatedUserId,
-                        session_id: req.sessionID || null,
-                    });
-
-                    // Track per-user ad impression metrics
-                    if (authenticatedUserId) {
-                        // DISABLED: Metrics updates causing DB contention (GitHub Issue #3258)
-                        // incrementUserMetric(
-                        //     authenticatedUserId,
-                        //     "ad_impressions",
-                        // );
-
-                        // DISABLED: Privacy-specific metrics
-                        // incrementUserMetric(
-                        //     authenticatedUserId,
-                        //     "privacy_protected_impressions",
-                        // );
-                        // incrementUserMetric(
-                        //     authenticatedUserId,
-                        //     "nexad_impressions_without_ip",
-                        // );
-
-                        // DISABLED: Ad source specific metrics
-                        // incrementUserMetric(
-                        //     authenticatedUserId,
-                        //     "nexad_impressions",
-                        // );
-                    }
-                }
-
-                return adString;
-            }
-        }
-
-        // Fallback to Ko-fi if nex.ad doesn't return ads
-        log("nex.ad did not return ads, using Ko-fi as fallback.");
+        // NEXAD DISABLED: Skip nex.ad and use Ko-fi directly
+        log("nexad disabled, using Ko-fi for ads");
 
         // Find the Ko-fi affiliate in our data
         const kofiAffiliate = affiliatesData.find((a) => a.id === "kofi");
@@ -202,7 +100,7 @@ export async function generateAdForContent(
                             "unknown",
                         affiliate_id: "kofi",
                         affiliate_name: kofiAffiliate.name,
-                        ad_source: "kofi_fallback",
+                        ad_source: "kofi",
                         streaming: isStreaming,
                         referrer:
                             req.headers.referer ||
@@ -216,7 +114,7 @@ export async function generateAdForContent(
                     sendToAnalytics(req, "ad_impression", {
                         affiliate_id: "kofi",
                         affiliate_name: kofiAffiliate.name,
-                        ad_source: "kofi_fallback",
+                        ad_source: "kofi",
                         streaming: isStreaming,
                         forced: shouldForceAd,
                         user_id: authenticatedUserId || null,
@@ -225,7 +123,7 @@ export async function generateAdForContent(
                         session_id: req.sessionID || null,
                     });
 
-                    // Track per-user ad impression metrics for Ko-fi fallback
+                    // Track per-user ad impression metrics for Ko-fi
                     if (authenticatedUserId) {
                         // DISABLED: Metrics updates causing DB contention (GitHub Issue #3258)
                         // incrementUserMetric(
@@ -236,7 +134,7 @@ export async function generateAdForContent(
                         // DISABLED: Ad source specific metric
                         // incrementUserMetric(
                         //     authenticatedUserId,
-                        //     "kofi_fallback_impressions",
+                        //     "kofi_impressions",
                         // );
                     }
                 }

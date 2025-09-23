@@ -4,15 +4,51 @@
  */
 
 export const chatProjects = [
-{
-  name: "EasyGen",
-  url: "https://easygenme.netlify.app/",
-  description: "AI-powered tool that generates Mermaid diagrams and flowcharts from plain-language prompts. Offers instant preview, editable source, and supports multiple diagram types for developers, designers, and educators.",
-  author: "@Ellweb3",
-  submissionDate: "2025-08-11",
-  language: "en",
-  order: 1
-},
+  {
+    name: "LLMS",
+    url: "https://yassineabou.github.io/LLMs-Wasm/",
+    description: "LLMS is a Kotlin Multiplatform application that brings the power of AI to Android, iOS, Desktop, and WebAssembly platforms. Users can choose from the latest open-source text and image models to boost their creativity - generate unique texts through chat interfaces or create stunning images. The app features local storage for chat history and generated images, with cross-device synchronization capabilities through Google Authentication. Built with Compose Multiplatform for adaptive UIs and Ktor for backend services, LLMS provides a seamless AI experience across all your devices while keeping your creations safe and synchronized.",
+    author: "@yassineAbou",
+    repo: "https://github.com/yassineAbou/LLMS",
+    stars: 88,
+    submissionDate: "2025-09-19",
+    order: 1
+  },
+  {
+    name: "Strapick Chat",
+    url: "https://strapick-chat.vercel.app/",
+    description: "A minimalistic chat UI for pollinations AI.",
+    author: "@mmojocoder",
+    repo: "https://github.com/MMojoCoder/Strapick-Chat",
+    submissionDate: "2025-09-21",
+    order: 1
+  },
+  {
+    name: "Chad GPT",
+    url: "https://chadgpt0.vercel.app/",
+    description: "AI Text, Image, and Audio Generator powered by Pollinations AI API. A comprehensive AI platform that combines text generation, image creation, and audio synthesis capabilities in a single interface.",
+    author: "https://sawwqib.vercel.app",
+    submissionDate: "2025-09-21",
+    order: 1
+  },
+  {
+    name: "チャットGPT 日本語 🇯🇵",
+    url: "https://chatgpt-jp.org/",
+    description: "チャットGPT 日本語無料版 (Free Japanese version of ChatGPT)",
+    author: "https://x.com/zhugezifang",
+    submissionDate: "2025-09-17",
+    language: "ja-JP",
+    order: 1
+  },
+  {
+    name: "EasyGen",
+    url: "https://easygenme.netlify.app/",
+    description: "AI-powered tool that generates Mermaid diagrams and flowcharts from plain-language prompts. Offers instant preview, editable source, and supports multiple diagram types for developers, designers, and educators.",
+    author: "@Ellweb3",
+    submissionDate: "2025-08-11",
+    language: "en",
+    order: 1
+  },
   {
     name: "Botzy AI 🇵🇰",
     url: "https://botzy.hexabiz.com.pk",
@@ -94,7 +130,7 @@ export const chatProjects = [
     description: "The official gpt4free repository - various collection of powerful language models.",
     author: "xtekky",
     repo: "https://github.com/xtekky/gpt4free",
-    stars: 64802,
+    stars: 65121,
     order: 1
   },
   {

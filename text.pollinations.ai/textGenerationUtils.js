@@ -1,4 +1,6 @@
 import debug from "debug";
+// Import the new cleaning utilities
+import { cleanUndefined as newCleanUndefined, cleanNullAndUndefined as newCleanNullAndUndefined } from "./utils/objectCleaners.js";
 
 const log = debug("pollinations:utils");
 const errorLog = debug("pollinations:utils:error");
@@ -203,6 +205,20 @@ export function normalizeOptions(options = {}, defaults = {}) {
         normalized.seed = Math.floor(normalized.seed);
     }
 
+    // Handle maxTokens -> max_tokens mapping
+    if (normalized.maxTokens !== undefined) {
+        normalized.max_tokens = normalized.maxTokens;
+        delete normalized.maxTokens;
+    }
+
+    // Handle jsonMode -> response_format conversion
+    if (normalized.jsonMode) {
+        if (!normalized.response_format) {
+            normalized.response_format = { type: "json_object" };
+        }
+        delete normalized.jsonMode;
+    }
+
     return normalized;
 }
 
@@ -275,11 +291,7 @@ export function generateRequestId() {
  * @returns {Object} - Object without undefined values
  */
 export function cleanUndefined(obj) {
-    const cleaned = { ...obj };
-    Object.keys(cleaned).forEach(
-        (key) => cleaned[key] === undefined && delete cleaned[key],
-    );
-    return cleaned;
+    return newCleanUndefined(obj);
 }
 
 /**
@@ -288,70 +300,7 @@ export function cleanUndefined(obj) {
  * @returns {Object} - Object without undefined or null values
  */
 export function cleanNullAndUndefined(obj) {
-    log(
-        `Cleaning null and undefined values from object keys: ${Object.keys(obj).join(", ")}`,
-    );
-
-    // Handle non-objects and null/undefined
-    if (obj === null || obj === undefined) {
-        log("Input is null or undefined, returning as is");
-        return obj;
-    }
-
-    if (typeof obj !== "object" || Array.isArray(obj)) {
-        log(
-            `Input is not an object (type: ${typeof obj}, isArray: ${Array.isArray(obj)}), returning as is`,
-        );
-        return obj;
-    }
-
-    const cleaned = { ...obj };
-
-    // Track removed properties for logging
-    const removedProps = [];
-
-    Object.keys(cleaned).forEach((key) => {
-        // Never clean modalities or audio properties
-        if (key === "modalities" || key === "audio") {
-            return;
-        }
-
-        if (cleaned[key] === undefined || cleaned[key] === null) {
-            removedProps.push(
-                `${key}: ${cleaned[key] === null ? "null" : "undefined"}`,
-            );
-            log(
-                `Removing property ${key} with ${cleaned[key] === null ? "null" : "undefined"} value`,
-            );
-            delete cleaned[key];
-        } else if (
-            typeof cleaned[key] === "object" &&
-            cleaned[key] !== null &&
-            !Array.isArray(cleaned[key])
-        ) {
-            // Recursively clean nested objects
-            log(`Recursively cleaning nested object at key: ${key}`);
-            const cleanedNestedObj = cleanNullAndUndefined(cleaned[key]);
-
-            // If the cleaned nested object has no properties, remove it entirely
-            if (
-                cleanedNestedObj &&
-                Object.keys(cleanedNestedObj).length === 0
-            ) {
-                removedProps.push(`${key}: (empty object after cleaning)`);
-                log(`Removing empty object at key: ${key} after cleaning`);
-                delete cleaned[key];
-            } else {
-                cleaned[key] = cleanedNestedObj;
-            }
-        }
-    });
-
-    log(
-        `Removed properties: ${removedProps.length > 0 ? removedProps.join(", ") : "none"}`,
-    );
-    log(`Cleaned object now has keys: ${Object.keys(cleaned).join(", ")}`);
-    return cleaned;
+    return newCleanNullAndUndefined(obj);
 }
 
 /**

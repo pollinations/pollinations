@@ -9,7 +9,7 @@ export const MODELS = {
     flux: {
         type: "pollinations",
         enhance: true,
-        maxSideLength: 1280,
+        maxSideLength: 768,
     },
 
     // BPAIGen with Kontext fallback - general purpose model
@@ -27,11 +27,19 @@ export const MODELS = {
         maxSideLength: 768,
     },
 
-    // // Azure GPT Image model
+    // Nano Banana - Gemini 2.5 Flash Image Preview via Vertex AI
+    nanobanana: {
+        type: "vertex-ai",
+        enhance: false,
+        maxSideLength: 1024,
+        tier: "seed",
+    },
+
+    // // Azure GPT Image model (commented out but kept for type compatibility)
     // gptimage: {
     //     type: "azure",
     //     enhance: false,
     //     maxSideLength: 1024,
-    //     tier: "flower",
+    //     tier: "nectar",
     // },
 } as const;

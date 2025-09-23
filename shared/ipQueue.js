@@ -36,9 +36,10 @@ const tierCaps = {
  * @param {Object} options - Queue options
  * @param {number} [options.interval=6000] - Time between requests in ms
  * @param {number} [options.cap=1] - Number of requests allowed per interval
+ * @param {boolean} [options.forceCap=false] - If true, use provided cap instead of tier-based cap
  * @returns {Promise<any>} Result of the function execution
  */
-export async function enqueue(req, fn, { interval = 6000, cap = 1 } = {}) {
+export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = false } = {}) {
     // Extract useful request info for logging
     const url = req.url || "no-url";
     const method = req.method || "no-method";
@@ -114,7 +115,13 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1 } = {}) {
 	// For all other users, always use the queue but adjust the interval and cap based on authentication type
 	// This ensures all requests are subject to rate limiting and queue size constraints
 
-	cap = tierCaps[authResult.tier] || 1;
+	// Only apply tier-based cap if forceCap is not set
+	if (!forceCap) {
+		cap = tierCaps[authResult.tier] || 1;
+		log('Using tier-based cap: %d for tier: %s', cap, authResult.tier);
+	} else {
+		log('Using forced cap: %d (tier-based cap override)', cap);
+	}
 
 	const maxQueueSize = cap * 5;
 	// Apply tier-based concurrency limits for token-authenticated requests

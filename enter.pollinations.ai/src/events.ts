@@ -39,6 +39,7 @@ export async function processEvents(
     log: Logger,
     config: {
         polarAccessToken: string;
+        polarServer: "sandbox" | "production";
         tinybirdIngestUrl: string;
         tinybirdAccessToken: string;
     },
@@ -48,6 +49,7 @@ export async function processEvents(
     const polarDelivery = await sendPolarEvents(
         events,
         config.polarAccessToken,
+        config.polarServer,
         log,
     );
     const tinybirdDelivery = await sendTinybirdEvents(
@@ -56,7 +58,10 @@ export async function processEvents(
         config.tinybirdAccessToken,
         log,
     );
-    if (polarDelivery === "succeeded" && tinybirdDelivery === "succeeded") {
+    if (
+        ["succeeded", "skipped"].includes(polarDelivery) &&
+        ["succeeded", "skipped"].includes(tinybirdDelivery)
+    ) {
         log.trace("Event processing complete.");
         await confirmProcessingEvents(processingId, db);
     } else {
@@ -128,11 +133,12 @@ type DeliveryStatus = "skipped" | "failed" | "succeeded";
 async function sendPolarEvents(
     events: SelectGenerationEvent[],
     polarAccessToken: string,
+    polarServer: "sandbox" | "production",
     log: Logger,
 ): Promise<DeliveryStatus> {
     const polar = new Polar({
         accessToken: polarAccessToken,
-        server: "sandbox",
+        server: polarServer,
     });
     const polarEvents = events
         .filter(
@@ -142,7 +148,17 @@ async function sendPolarEvents(
             if (!event.userId) {
                 throw new Error("Failed to create Polar event: missing userId");
             }
-            const metadata = {
+            if (!event.modelUsed) {
+                throw new Error(
+                    "Failed to create Polar event: missing modelUsed",
+                );
+            }
+            if (!event.totalPrice) {
+                throw new Error(
+                    "Failed to create Polar event: missing totalPrice",
+                );
+            }
+            const metadata = removeUnset({
                 model: event.modelUsed,
                 // token counts
                 tokenCountPromptText: event.tokenCountPromptText,
@@ -164,7 +180,7 @@ async function sendPolarEvents(
                 tokenPriceCompletionImage: event.tokenPriceCompletionImage,
                 // calculated price
                 totalPrice: event.totalPrice,
-            };
+            });
             return {
                 name: event.eventType,
                 externalCustomerId: event.userId,

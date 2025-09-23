@@ -78,7 +78,7 @@ export const callSeedreamAPI = async (
             response_format: "url",
             size: sizeParam,
             stream: false,
-            watermark: true,
+            watermark: false,
         };
 
         // Add image-to-image support if reference images are provided

@@ -118,6 +118,7 @@ CREATE TABLE `event` (
 	`token_count_completion_reasoning` integer NOT NULL,
 	`token_count_completion_audio` integer NOT NULL,
 	`token_count_completion_image` integer NOT NULL,
+	`cost_type` text,
 	`total_cost` real NOT NULL,
 	`total_price` real NOT NULL,
 	`moderation_hate_severity` text,

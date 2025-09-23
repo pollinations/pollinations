@@ -4,6 +4,7 @@ import { proxy } from "hono/proxy";
 import type { Env } from "./env";
 import { googleAnalytics } from "./middleware/analytics.ts";
 import { exactCache } from "./middleware/exact-cache";
+import { parseImageParams } from "./middleware/parse-image-params.ts";
 import { semanticCache } from "./middleware/semantic-cache.ts";
 import { setConnectingIp } from "./middleware/set-connecting-ip.ts";
 
@@ -22,6 +23,7 @@ app.all(
     "/prompt/:prompt",
     googleAnalytics,
     setConnectingIp,
+    parseImageParams,
     exactCache,
     semanticCache,
     async (c) => {

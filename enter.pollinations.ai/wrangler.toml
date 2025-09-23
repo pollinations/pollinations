@@ -17,11 +17,16 @@ database_name = "pollinations-auth"
 database_id = "cc225cad-b9a2-4595-8323-6602e7680511"
 migrations_dir = "drizzle"
 
+[[kv_namespaces]]
+binding = "KV"
+id = "0d4a093f99474344b6fc72492c1ffba9"
+
 [vars]
 ENVIRONMENT = "development"
 PUBLIC_BASE_URL = "http://localhost:3000"
 PUBLIC_AUTH_PATH = "/api/auth"
 POLAR_SUCCESS_URL = "http://localhost:3000"
+POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
 
 [env.staging]
@@ -33,11 +38,16 @@ database_name = "pollinations-auth-staging"
 database_id = "dbd3274b-92ac-45d3-a07a-b070eb212654"
 migrations_dir = "drizzle"
 
+[[env.staging.kv_namespaces]]
+binding = "KV"
+id = "0d4a093f99474344b6fc72492c1ffba9"
+
 [env.staging.vars]
 ENVIRONMENT = "staging"
 PUBLIC_BASE_URL = "https://enter.pollinations.ai"
 PUBLIC_AUTH_PATH = "/api/auth"
 POLAR_SUCCESS_URL = "https://enter.pollinations.ai"
+POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "https://api.tinybird.co/v0/events?name=generation_event"
 
 [triggers]
@@ -52,11 +62,16 @@ database_name = "pollinations-auth"
 database_id = "cc225cad-b9a2-4595-8323-6602e7680511"
 migrations_dir = "drizzle"
 
+[[env.production.kv_namespaces]]
+binding = "KV"
+id = "0d4a093f99474344b6fc72492c1ffba9"
+
 [env.production.vars]
 ENVIRONMENT = "production"
 PUBLIC_BASE_URL = "https://enter.pollinations.ai"
 PUBLIC_AUTH_PATH = "/api/auth"
 POLAR_SUCCESS_URL = "https://enter.pollinations.ai"
+POLAR_SERVER = "production"
 TINYBIRD_INGEST_URL = "https://api.tinybird.co/v0/events?name=generation_event"
 
 [env.test]
@@ -75,4 +90,5 @@ GITHUB_CLIENT_ID = "test_github_client_id"
 GITHUB_CLIENT_SECRET = "test_github_client_secret"
 POLAR_ACCESS_TOKEN = "test_polar_token"
 POLAR_SUCCESS_URL = "http://localhost:3000"
+POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"

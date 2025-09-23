@@ -1,9 +1,10 @@
 import type { ErrorHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
-import z, { ZodError } from "zod";
+import { z } from "zod/v4";
 import { Env } from "./env.ts";
 import { APIError } from "better-auth";
 import { ContentfulStatusCode } from "hono/utils/http-status";
+import { ValidationError } from "@/middleware/validator";
 
 interface ErrorResponse {
     success: false;
@@ -15,7 +16,7 @@ interface ErrorResponse {
         requestId?: string;
         cause?: unknown;
     };
-    status: number;
+    status: ContentfulStatusCode;
 }
 
 interface ErrorDetails {
@@ -31,50 +32,34 @@ export const handleError: ErrorHandler<Env> = (err, c) => {
 
     if (err instanceof HTTPException) {
         const status = err.status;
-        const response: ErrorResponse = {
-            success: false,
-            error: {
-                message: err.message || getDefaultErrorMessage(status),
-                code: getErrorCode(status),
-                timestamp,
-                ...(isDevelopment && !!err.cause && { cause: err.cause }),
-            },
+        const response = createBaseErrorResponse(
+            err,
             status,
-        };
+            timestamp,
+            isDevelopment,
+        );
         return c.json(response, status);
     }
 
     if (err instanceof APIError) {
-        const status = err.statusCode;
-        const response: ErrorResponse = {
-            success: false,
-            error: {
-                message: err.message || getDefaultErrorMessage(status),
-                code: getErrorCode(status),
-                timestamp,
-            },
+        const status = err.statusCode as ContentfulStatusCode;
+        const response = createBaseErrorResponse(
+            err,
             status,
-        };
-        return c.json(response, status as ContentfulStatusCode);
+            timestamp,
+            isDevelopment,
+        );
+        return c.json(response, status);
     }
 
-    if (err instanceof ZodError) {
-        const flatErrors = z.flattenError(err);
+    if (err instanceof ValidationError) {
         const status = 400;
-        const response: ErrorResponse = {
-            success: false,
-            error: {
-                message: getDefaultErrorMessage(status),
-                code: getErrorCode(status),
-                details: {
-                    name: err.name,
-                    ...flatErrors,
-                },
-                timestamp: new Date().toISOString(),
-                ...(isDevelopment && !!err.cause && { cause: err.cause }),
-            },
+        const response = createValidationErrorResponse(
+            err,
             status,
-        };
+            timestamp,
+            isDevelopment,
+        );
         return c.json(response, status);
     }
 
@@ -90,26 +75,81 @@ export const handleError: ErrorHandler<Env> = (err, c) => {
             cause: err.cause,
         },
     });
-    const response: ErrorResponse = {
+    const response = createInternalErrorResponse(
+        err,
+        status,
+        timestamp,
+        isDevelopment,
+    );
+    return c.json(response, status);
+};
+
+function createBaseErrorResponse(
+    error: Error,
+    status: ContentfulStatusCode,
+    timestamp: string,
+    includeDebugInfo: boolean,
+): ErrorResponse {
+    return {
         success: false,
         error: {
-            message: isDevelopment
-                ? err.message || getDefaultErrorMessage(status)
-                : getDefaultErrorMessage(status),
+            message: error.message || getDefaultErrorMessage(status),
             code: getErrorCode(status),
-            ...(isDevelopment && {
-                details: {
-                    name: err.name,
-                    stack: err.stack,
-                },
-            }),
             timestamp,
-            ...(isDevelopment && !!err.cause && { cause: err.cause }),
+            ...(includeDebugInfo && !!error.cause && { cause: error.cause }),
         },
         status,
     };
-    return c.json(response, status);
-};
+}
+
+function createValidationErrorResponse(
+    error: ValidationError,
+    status: ContentfulStatusCode,
+    timestamp: string,
+    includeDebugInfo: boolean,
+): ErrorResponse {
+    const flatErrors = z.flattenError(error.zodError);
+    return {
+        success: false,
+        error: {
+            message: error.message || getDefaultErrorMessage(status),
+            code: getErrorCode(status),
+            details: {
+                name: error.name,
+                ...flatErrors,
+            },
+            timestamp,
+            ...(includeDebugInfo && !!error.cause && { cause: error.cause }),
+        },
+        status,
+    };
+}
+
+function createInternalErrorResponse(
+    error: Error,
+    status: ContentfulStatusCode,
+    timestamp: string,
+    includeDebugInfo: boolean,
+): ErrorResponse {
+    return {
+        success: false,
+        error: {
+            message: includeDebugInfo
+                ? error.message || getDefaultErrorMessage(status)
+                : getDefaultErrorMessage(status),
+            code: getErrorCode(status),
+            ...(includeDebugInfo && {
+                details: {
+                    name: error.name,
+                    stack: error.stack,
+                },
+            }),
+            timestamp,
+            ...(includeDebugInfo && !!error.cause && { cause: error.cause }),
+        },
+        status,
+    };
+}
 
 function getErrorCode(status: number): string {
     const codes: Record<number, string> = {

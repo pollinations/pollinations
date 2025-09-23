@@ -333,7 +333,13 @@ export function createRegistry<
     ) as TS;
 
     return {
-        defaultService: (eventType: EventType) => {
+        withFallbackService: (
+            serviceId: string | null,
+            eventType: EventType,
+        ): ServiceId => {
+            if (serviceId && !!serviceRegistry[serviceId]) {
+                return serviceId as ServiceId;
+            }
             if (eventType === "generate.text") {
                 return "openai";
             } else {

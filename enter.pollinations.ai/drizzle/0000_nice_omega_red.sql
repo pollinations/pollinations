@@ -100,7 +100,7 @@ CREATE TABLE `event` (
 	`referrer_domain` text,
 	`referrer_url` text,
 	`model_requested` text,
-	`model_used` text NOT NULL,
+	`model_used` text,
 	`is_billed_usage` integer NOT NULL,
 	`token_price_prompt_text` real NOT NULL,
 	`token_price_prompt_cached` real NOT NULL,

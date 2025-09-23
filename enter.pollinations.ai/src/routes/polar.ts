@@ -3,7 +3,7 @@ import { HTTPException } from "hono/http-exception";
 import z from "zod";
 import { authenticate } from "../middleware/authenticate.ts";
 import { polar } from "../middleware/polar.ts";
-import { validator } from "../validator.ts";
+import { validator } from "../middleware/validator.ts";
 import type { Env } from "../env.ts";
 
 const productSlugSchema = z.literal([
@@ -12,6 +12,14 @@ const productSlugSchema = z.literal([
     "pollen-bundle-large",
 ]);
 type ProductSlug = z.infer<typeof productSlugSchema>;
+
+const checkoutParamsSchema = z.object({
+    slug: productSlugSchema,
+});
+
+const redirectQuerySchema = z.object({
+    redirect: z.boolean().default(true),
+});
 
 type ProductMap = { [key in ProductSlug]: string };
 const products: ProductMap = {
@@ -24,18 +32,16 @@ export const polarRoutes = new Hono<Env>()
     .use("*", authenticate)
     .use("*", polar)
     .get("/customer/state", async (c) => {
-        const user = c.get("user");
-        if (!user) throw new HTTPException(401);
-        const polar = c.get("polar");
+        const { user } = c.var.auth.requireActiveSession();
+        const polar = c.var.polar.client;
         const result = await polar.customers.getStateExternal({
             externalId: user.id,
         });
         return c.json(result);
     })
     .get("/customer/events", async (c) => {
-        const user = c.get("user");
-        if (!user) throw new HTTPException(401);
-        const polar = c.get("polar");
+        const { user } = c.var.auth.requireActiveSession();
+        const polar = c.var.polar.client;
         const result = await polar.events.list({
             externalCustomerId: user.id,
         });
@@ -43,13 +49,12 @@ export const polarRoutes = new Hono<Env>()
     })
     .get(
         "/customer/portal",
-        validator("query", z.object({ redirect: z.boolean().default(true) })),
+        validator("query", redirectQuerySchema),
         async (c) => {
-            const user = c.get("user");
-            if (!user) throw new HTTPException(401);
-            const polar = c.get("polar");
+            const { user } = c.var.auth.requireActiveSession();
             const { redirect } = c.req.valid("query");
             try {
+                const polar = c.var.polar.client;
                 const result = await polar.customerSessions.create({
                     externalCustomerId: user.id,
                 });
@@ -65,15 +70,14 @@ export const polarRoutes = new Hono<Env>()
     )
     .get(
         "/checkout/:slug",
-        validator("param", z.object({ slug: productSlugSchema })),
-        validator("query", z.object({ redirect: z.boolean().default(true) })),
+        validator("param", checkoutParamsSchema),
+        validator("query", redirectQuerySchema),
         async (c) => {
-            const user = c.get("user");
-            if (!user) throw new HTTPException(401);
-            const polar = c.get("polar");
+            const { user } = c.var.auth.requireActiveSession();
             const { slug } = c.req.valid("param");
             const { redirect } = c.req.valid("query");
             try {
+                const polar = c.var.polar.client;
                 const response = await polar.checkouts.create({
                     externalCustomerId: user.id,
                     products: [products[slug]],

@@ -277,7 +277,7 @@ export const portkeyConfig = {
 		authKey: googleCloudAuth.getAccessToken, // Fix: use getAccessToken instead of getToken
 		"vertex-project-id": process.env.GCLOUD_PROJECT_ID,
 		"vertex-region": "us-central1",
-		"vertex-model-id": "gemini-2.5-flash-vertex",
+		"vertex-model-id": "gemini-2.5-flash",
 		"strict-openai-compliance": "false",
 	}),
 	"gemini-2.5-pro-exp-03-25": () => ({

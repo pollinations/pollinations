@@ -222,7 +222,7 @@ const models = [
 		),
 		tier: "seed",
 		community: false,
-		aliases: ["searchgpt"],
+		aliases: ["searchgpt","geminisearch"],
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true

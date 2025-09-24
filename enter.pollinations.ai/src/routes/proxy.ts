@@ -72,7 +72,9 @@ async function authorizeRequest({
     track,
 }: AuthVariables & PolarVariables & TrackVariables) {
     if (!track.isFreeUsage) {
-        const { user } = auth.requireActiveSession();
+        const { user } = auth.requireActiveSession(
+            "You need to be signed-in to use this model.",
+        );
         await polar.requirePositiveBalance(user.id);
     }
 }

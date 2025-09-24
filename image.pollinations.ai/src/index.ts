@@ -399,34 +399,33 @@ const checkCacheAndGenerate = async (
                     return result;
                 };
 
-                // Determine queue configuration based on token
-                // Note: ipQueue.js now handles tier-based cap logic automatically for token auth
+                // Determine queue configuration based on model first, then authentication
                 let queueConfig = null;
+                
+                // Model-specific queue configs (apply to ALL users regardless of auth method)
+                if (safeParams.model === "nanobanana") {
+                    queueConfig = { interval: 30000, cap: 1, forceCap: true }; // Force cap=1 regardless of tier
+                    logAuth("Nanobanana model - using forced cap=1 with 30s interval for all users");
+                } else if (safeParams.model === "seedream") {
+                    queueConfig = { interval: 45000, cap: 1, forceCap: true }; // Force cap=1 regardless of tier
+                    logAuth("Seedream model - using forced cap=1 with 45s interval for all users");
+                } else if (hasValidToken) {
+                    // Token authentication for other models - ipQueue will apply tier-based caps
+                    queueConfig = { interval: 0 }; // cap will be set by ipQueue based on tier
+                    logAuth("Token authenticated - ipQueue will apply tier-based concurrency");
+                } else {
+                    // Use default queue config for other models with no token
+                    queueConfig = QUEUE_CONFIG;
+                    logAuth("Standard queue with delay (no token)");
+                }
+                
                 if (hasValidToken) {
-                    
-                    // Token authentication - ipQueue will automatically apply tier-based caps
-                    if (safeParams.model === "nanobanana") {
-                        queueConfig = { interval: 30000, cap: 1, forceCap: true }; // Force cap=1 regardless of tier
-                        logAuth("Nanobanana model - using forced cap=1 with 30s interval");
-                    } else if (safeParams.model === "seedream") {
-                        queueConfig = { interval: 30000, cap: 1, forceCap: true }; // Force cap=1 regardless of tier
-                        logAuth("Seedream model - using forced cap=1 with 30s interval");
-                    } else {
-                        queueConfig = { interval: 0 }; // cap will be set by ipQueue based on tier
-                        logAuth("Token authenticated - ipQueue will apply tier-based concurrency");
-                    }
-                    
                     progress.updateBar(
                         requestId,
                         20,
                         "Authenticated",
                         "Token verified",
                     );
-                } else {
-                    // Use default queue config with interval
-                    // Note: nanobanana and seedream require seed tier, so non-authenticated users will be blocked later
-                    queueConfig = QUEUE_CONFIG;
-                    logAuth("Standard queue with delay (no token)");
                 }
 
                 // Use the shared queue utility - everyone goes through queue

@@ -21,6 +21,21 @@ export function getImageURL(newImage) {
     if (newImage.nologo) queryParams.push(`nologo=${newImage.nologo}`);
     if (newImage.model) queryParams.push(`model=${newImage.model}`);
 
+    const imageList = Array.isArray(newImage.image)
+        ? newImage.image
+        : typeof newImage.image === "string"
+          ? [newImage.image]
+          : [];
+
+    const sanitizedImages = imageList
+        .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
+        .filter((entry) => entry && !entry.startsWith("data:"));
+
+    if (sanitizedImages.length > 0) {
+        const encoded = sanitizedImages.map((entry) => encodeURIComponent(entry));
+        queryParams.push(`image=${encoded.join(",")}`);
+    }
+
     if (queryParams.length > 0) {
         imageURL += "?" + queryParams.join("&");
     }

@@ -20,6 +20,23 @@ import { keyframes } from "@emotion/react";
 import { LLMTextManipulator } from "../LLMTextManipulator";
 import { getImageURL } from "../../utils/getImageURL";
 import { trackEvent } from "../../config/analytics";
+import { ReferenceImageInput } from "./ReferenceImageInput";
+
+const IMAGE_INPUT_MODELS = ["kontext", "nanobanana", "seedream"];
+
+const supportsImageInput = (modelId) =>
+    !!modelId && IMAGE_INPUT_MODELS.includes(modelId.toLowerCase());
+
+const normalizeImageArray = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+        return value.filter((item) => typeof item === "string" && item.trim());
+    }
+    if (typeof value === "string" && value.trim()) {
+        return [value.trim()];
+    }
+    return [];
+};
 
 // ─── PARAMETER STYLING CONSTANTS ────────────────────────────────────────────────
 // These can be adjusted to control the appearance of all parameter inputs
@@ -60,6 +77,7 @@ export const ImageEditor = memo(function ImageEditor({
         enhance: false,
         nologo: false,
         model: "flux",
+        image: [],
     });
     const imageParamsRef = useRef(imageParams); // Reference to current state for use in callbacks
     const initializedRef = useRef(false); // Track if we've initialized from props
@@ -77,6 +95,7 @@ export const ImageEditor = memo(function ImageEditor({
             setImageParams((prevParams) => ({
                 ...prevParams,
                 ...(image || {}),
+                image: normalizeImageArray(image?.image ?? prevParams.image),
             }));
             initializedRef.current = true;
         } else if (image && image.prompt !== imageParamsRef.current.prompt) {
@@ -102,7 +121,24 @@ export const ImageEditor = memo(function ImageEditor({
         enhance = false,
         nologo = false,
         model,
+        image: referenceImages = [],
     } = imageParams;
+
+    const handleReferenceImagesChange = useCallback(
+        (newImages) => {
+            setIsInputChanged(true);
+            if (!isStopped) {
+                stop(true);
+            }
+            setImageParams((prev) => ({
+                ...prev,
+                image: Array.isArray(newImages)
+                    ? newImages.filter((url) => typeof url === "string" && url.trim())
+                    : [],
+            }));
+        },
+        [isStopped, stop, setIsInputChanged],
+    );
 
     // ─── HANDLERS: INPUT ────────────────────────────────────────────────────────
     /**
@@ -215,6 +251,9 @@ export const ImageEditor = memo(function ImageEditor({
         const finalParams = {
             ...currentImageParams,
             prompt: image?.prompt || currentImageParams.prompt || "",
+            image: Array.isArray(currentImageParams.image)
+                ? currentImageParams.image
+                : [],
         };
 
         const imageURL = getImageURL(finalParams);
@@ -349,6 +388,16 @@ export const ImageEditor = memo(function ImageEditor({
                                 styles={PARAM_STYLES}
                             />
                         </Grid>
+
+                        {supportsImageInput(model) && (
+                            <Grid size={{ xs: 12 }}>
+                                <ReferenceImageInput
+                                    images={referenceImages}
+                                    onChange={handleReferenceImagesChange}
+                                    disabled={isLoading}
+                                />
+                            </Grid>
+                        )}
 
                         {/* Submit Button */}
                         <Grid

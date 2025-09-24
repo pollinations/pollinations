@@ -74,9 +74,11 @@ export const makeParamsSafe = ({
         quality = "medium";
     }
 
-    // Process image parameter - support for multiple comma-separated image URLs
+    // Process image parameter - support for multiple image URLs separated by pipe (|) or comma (,)
     // Always convert to array for consistency (empty array if null/undefined)
-    const imageArray = image ? image.split?.(",") : [];
+    const imageArray = image 
+        ? (image.includes?.("|") ? image.split?.("|") : image.split?.(",")) 
+        : [];
 
     return {
         width,

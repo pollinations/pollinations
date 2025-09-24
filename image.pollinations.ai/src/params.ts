@@ -72,7 +72,10 @@ export const ImageParamsSchema = z
         image: z
             .union([z.string(), z.null(), z.undefined()])
             .transform((value?: string | null) => {
-                return value ? value.split(",") : [];
+                if (!value) return [];
+                // Support both pipe (|) and comma (,) separators
+                // Prefer pipe separator if present, otherwise use comma
+                return value.includes("|") ? value.split("|") : value.split(",");
             })
             .catch([]),
         transparent: sanitizedBoolean.catch(false),

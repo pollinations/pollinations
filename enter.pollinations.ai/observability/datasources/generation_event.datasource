@@ -46,11 +46,11 @@ SCHEMA >
 `total_price`   Float64 `json:$.totalPrice` DEFAULT 0,
 
 -- Prompt Moderation
-`moderation_completion_hate_severity`       LowCardinality(String) `json:$.moderationCompletionHateSeverity` DEFAULT 'undefined',
-`moderation_completion_self_harm_severity`  LowCardinality(String) `json:$.moderationCompletionSelfHarmSeverity` DEFAULT 'undefined',
-`moderation_completion_sexual_severity`     LowCardinality(String) `json:$.moderationCompletionSexualSeverity` DEFAULT 'undefined',
-`moderation_completion_violence_severity`   LowCardinality(String) `json:$.moderationCompletionViolenceSeverity` DEFAULT 'undefined',
-`moderation_completion_jailbreak_detected`  Bool `json:$.moderationCompletionJailbreakDetected` DEFAULT false,
+`moderation_prompt_hate_severity`       LowCardinality(String) `json:$.moderationPromptHateSeverity` DEFAULT 'undefined',
+`moderation_prompt_self_harm_severity`  LowCardinality(String) `json:$.moderationPromptSelfHarmSeverity` DEFAULT 'undefined',
+`moderation_prompt_sexual_severity`     LowCardinality(String) `json:$.moderationPromptSexualSeverity` DEFAULT 'undefined',
+`moderation_prompt_violence_severity`   LowCardinality(String) `json:$.moderationPromptViolenceSeverity` DEFAULT 'undefined',
+`moderation_prompt_jailbreak_detected`  Bool `json:$.moderationPromptJailbreakDetected` DEFAULT false,
 
 -- Completion Moderation
 `moderation_completion_hate_severity`       LowCardinality(String) `json:$.moderationCompletionHateSeverity` DEFAULT 'undefined',

@@ -404,8 +404,8 @@ const checkCacheAndGenerate = async (
                 
                 // Model-specific queue configs (apply to ALL users regardless of auth method)
                 if (safeParams.model === "nanobanana") {
-                    queueConfig = { interval: 30000, cap: 1, forceCap: true }; // Force cap=1 regardless of tier
-                    logAuth("Nanobanana model - using forced cap=1 with 30s interval for all users");
+                    queueConfig = { interval: 45000, cap: 1, forceCap: true }; // Force cap=1 regardless of tier
+                    logAuth("Nanobanana model - using forced cap=1 with 45s interval for all users");
                 } else if (safeParams.model === "seedream") {
                     queueConfig = { interval: 45000, cap: 1, forceCap: true }; // Force cap=1 regardless of tier
                     logAuth("Seedream model - using forced cap=1 with 45s interval for all users");

@@ -18,12 +18,6 @@ const log = debug("pollinations:vertex-ai-generator");
 const errorLog = debug("pollinations:vertex-ai-generator:error");
 
 
-// Network and resource limits
-const NETWORK_CONFIG = {
-    TIMEOUT_MS: 10000, // 10 seconds
-    MAX_IMAGE_SIZE_MB: 50, // 50MB max per image
-    MAX_IMAGE_SIZE_BYTES: 50 * 1024 * 1024
-};
 
 /**
  * Check if user is blocked from using nano-banana model
@@ -68,24 +62,6 @@ function addNanoBananaPrefix(userPrompt: string): string {
     return `Generate an image but only if the prompt and input images are safe. Else return an error: ${userPrompt}`;
 }
 
-/**
- * Convert a number to its ordinal word representation
- * @param {number} num - The number to convert
- * @returns {string} - The ordinal word (e.g., 1 -> "first", 2 -> "second")
- */
-function getOrdinalWord(num: number): string {
-    const ordinals = [
-        "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth",
-        "eleventh", "twelfth", "thirteenth", "fourteenth", "fifteenth", "sixteenth", "seventeenth", "eighteenth", "nineteenth", "twentieth"
-    ];
-    
-    if (num >= 1 && num <= 20) {
-        return ordinals[num - 1];
-    }
-    
-    // For numbers > 20, use a simple fallback
-    return `${num}th`;
-}
 
 /**
  * Process nanobanana requests with special logic for height/width parameters
@@ -118,19 +94,8 @@ async function processNanobananaRequest(
         const transparentImage = await generateTransparentImage(safeParams.width, safeParams.height);
         log(`Generated transparent image: ${transparentImage.base64.length} base64 chars`);
 
-        // Add post-prompt after user prompt with ordinal positioning
-        let postPrompt = "";
-        try {
-            const userImageCount = safeParams.image?.length || 0;
-            const ordinalPosition = userImageCount + 1; // Transparent image is added as last image
-            const ordinalWord = getOrdinalWord(ordinalPosition);
-
-            postPrompt = ` Redraw the content from image's onto ${ordinalWord} image , and adjust image's by adding content so that its aspect ratio matches ${ordinalWord} image. At the same time completely remove the content of ${ordinalWord} image, keeping only its aspect ratio. Make sure no blank areas are left`;
-        } catch (ordinalError) {
-            errorLog("Error generating ordinal word for post-prompt:", ordinalError);
-            // Use fallback post-prompt without ordinal positioning
-            postPrompt = " Redraw the content from image's onto last image , and adjust image's by adding content so that its aspect ratio matches last image. At the same time completely remove the content of last image, keeping only its aspect ratio. Make sure no blank areas are left";
-        }
+        // Add post-prompt after user prompt
+        const postPrompt = " The last image defines the aspect ratio. Generate the content to match that aspect ratio, completely replacing the last image while keeping its dimensions. Make sure no blank areas are left";
 
         const processedPrompt = `${prompt}${postPrompt}`;
 
@@ -192,37 +157,16 @@ export async function callVertexAIGemini(
                 try {
                     log(`Fetching reference image ${i + 1}/${processedParams.image.length}: ${imageUrl}`);
                     
-                    // Create abort controller for timeout
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), NETWORK_CONFIG.TIMEOUT_MS);
-                    
                     const imageResponse = await fetch(imageUrl, {
-                        signal: controller.signal,
                         headers: { 'User-Agent': 'Pollinations/1.0' }
                     });
-                    
-                    clearTimeout(timeoutId);
                     
                     if (!imageResponse.ok) {
                         errorLog(`Failed to fetch reference image ${i + 1}: ${imageResponse.status} ${imageResponse.statusText}`);
                         continue; // Skip this image but continue with others
                     }
                     
-                    // Check content length if available
-                    const contentLength = imageResponse.headers.get('content-length');
-                    if (contentLength && parseInt(contentLength) > NETWORK_CONFIG.MAX_IMAGE_SIZE_BYTES) {
-                        errorLog(`Reference image ${i + 1} too large: ${contentLength} bytes (max ${NETWORK_CONFIG.MAX_IMAGE_SIZE_MB}MB)`);
-                        continue;
-                    }
-                    
                     const imageBuffer = await imageResponse.arrayBuffer();
-                    
-                    // Check actual size after download
-                    if (imageBuffer.byteLength > NETWORK_CONFIG.MAX_IMAGE_SIZE_BYTES) {
-                        errorLog(`Reference image ${i + 1} too large after download: ${imageBuffer.byteLength} bytes (max ${NETWORK_CONFIG.MAX_IMAGE_SIZE_MB}MB)`);
-                        continue;
-                    }
-                    
                     const base64Data = Buffer.from(imageBuffer).toString('base64');
                     
                     // Determine MIME type from response headers or URL

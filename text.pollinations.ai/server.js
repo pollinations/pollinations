@@ -180,7 +180,7 @@ async function handleRequest(req, res, requestData) {
 		}
 
 		// Capture the originally requested model before any mapping/overrides
-		const originalRequestedModel = requestData.model;
+		const requestedModel = requestData.model;
 
 		// Apply user-specific model mapping if user is authenticated
 		let finalRequestData = requestData;
@@ -239,7 +239,7 @@ async function handleRequest(req, res, requestData) {
 			// Create a non-mutating copy for logging to include the originally requested model
 			const requestForLogging = {
 				...finalRequestData,
-				requested_model: originalRequestedModel,
+				requested_model: requestedModel,
 			};
 			logUserRequest(
 				authResult.username,

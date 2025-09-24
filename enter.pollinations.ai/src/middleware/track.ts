@@ -106,7 +106,6 @@ export const track = (eventType: EventType) =>
             eventType,
             openaiResponse,
         );
-        console.log(contentFilterResults);
 
         const event = {
             id: generateRandomId(),

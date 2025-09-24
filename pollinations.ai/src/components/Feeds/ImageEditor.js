@@ -45,6 +45,31 @@ const PARAM_STYLES = {
     checkboxColorOff: Colors.offblack,
 };
 
+// TextField styling for reference image input
+const TEXT_FIELD_STYLES = {
+    flex: 1,
+    minWidth: "200px",
+    "& .MuiOutlinedInput-root": {
+        backgroundColor: Colors.offblack,
+        color: Colors.offwhite,
+        fontFamily: Fonts.parameter,
+        fontSize: "0.9em",
+        "& fieldset": {
+            borderColor: `${Colors.gray2}66`,
+        },
+        "&:hover fieldset": {
+            borderColor: Colors.lime,
+        },
+        "&.Mui-focused fieldset": {
+            borderColor: Colors.lime,
+        },
+    },
+    "& .MuiOutlinedInput-input::placeholder": {
+        color: `${Colors.offwhite}80`,
+        opacity: 1,
+    },
+};
+
 const normalizeImageList = (value) => {
     if (!value) return [];
     if (Array.isArray(value)) {
@@ -123,7 +148,6 @@ export const ImageEditor = memo(function ImageEditor({
             initializedRef.current = true;
         } else if (image && image.prompt !== imageParamsRef.current.prompt) {
             // Always update the prompt value when it changes in the parent
-            console.log("Updating prompt from parent:", image.prompt);
             setImageParams((prevParams) => ({
                 ...prevParams,
                 prompt: image.prompt,
@@ -570,29 +594,7 @@ export const ImageEditor = memo(function ImageEditor({
                                             placeholder="Paste image URL"
                                             size="small"
                                             disabled={remainingImageSlots <= 0}
-                                            sx={{
-                                                flex: 1,
-                                                minWidth: "200px",
-                                                "& .MuiOutlinedInput-root": {
-                                                    backgroundColor: Colors.offblack,
-                                                    color: Colors.offwhite,
-                                                    fontFamily: Fonts.parameter,
-                                                    fontSize: "0.9em",
-                                                    "& fieldset": {
-                                                        borderColor: `${Colors.gray2}66`,
-                                                    },
-                                                    "&:hover fieldset": {
-                                                        borderColor: Colors.lime,
-                                                    },
-                                                    "&.Mui-focused fieldset": {
-                                                        borderColor: Colors.lime,
-                                                    },
-                                                },
-                                                "& .MuiOutlinedInput-input::placeholder": {
-                                                    color: `${Colors.offwhite}80`,
-                                                    opacity: 1,
-                                                },
-                                            }}
+                                            sx={TEXT_FIELD_STYLES}
                                         />
                                         <Button
                                             variant="outlined"

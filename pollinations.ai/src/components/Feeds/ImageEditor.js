@@ -77,8 +77,11 @@ const normalizeImageList = (value) => {
     }
 
     if (typeof value === "string") {
+        // Support both pipe (|) and comma (,) separators
+        // Prefer pipe separator if present, otherwise use comma
+        const separator = value.includes("|") ? "|" : ",";
         return value
-            .split(",")
+            .split(separator)
             .map((item) => item.trim())
             .filter(Boolean)
             .slice(0, MAX_REFERENCE_IMAGES);

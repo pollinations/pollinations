@@ -1,5 +1,12 @@
-import React, { useState, useEffect, memo, useRef, useCallback } from "react";
-import { Box } from "@mui/material";
+import React, {
+    useState,
+    useEffect,
+    memo,
+    useRef,
+    useCallback,
+    useMemo,
+} from "react";
+import { Box, Typography, TextField, Button, IconButton } from "@mui/material";
 import { Colors, Fonts } from "../../config/global";
 import { GeneralButton } from "../GeneralButton";
 import Grid from "@mui/material/Grid2";
@@ -20,6 +27,11 @@ import { keyframes } from "@emotion/react";
 import { LLMTextManipulator } from "../LLMTextManipulator";
 import { getImageURL } from "../../utils/getImageURL";
 import { trackEvent } from "../../config/analytics";
+import CloseIcon from "@mui/icons-material/Close";
+import {
+    modelSupportsImageInput,
+    MAX_REFERENCE_IMAGES,
+} from "../../config/imageModels";
 
 // ─── PARAMETER STYLING CONSTANTS ────────────────────────────────────────────────
 // These can be adjusted to control the appearance of all parameter inputs
@@ -31,6 +43,23 @@ const PARAM_STYLES = {
     labelColor: `${Colors.offwhite}99`,
     checkboxColorOn: Colors.offblack,
     checkboxColorOff: Colors.offblack,
+};
+
+const normalizeImageList = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+        return value.filter(Boolean).slice(0, MAX_REFERENCE_IMAGES);
+    }
+
+    if (typeof value === "string") {
+        return value
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean)
+            .slice(0, MAX_REFERENCE_IMAGES);
+    }
+
+    return [];
 };
 
 /**
@@ -60,6 +89,7 @@ export const ImageEditor = memo(function ImageEditor({
         enhance: false,
         nologo: false,
         model: "flux",
+        image: [],
     });
     const imageParamsRef = useRef(imageParams); // Reference to current state for use in callbacks
     const initializedRef = useRef(false); // Track if we've initialized from props
@@ -74,10 +104,22 @@ export const ImageEditor = memo(function ImageEditor({
             !initializedRef.current ||
             (image && image.imageURL !== imageParamsRef.current.imageURL)
         ) {
-            setImageParams((prevParams) => ({
-                ...prevParams,
-                ...(image || {}),
-            }));
+            setImageParams((prevParams) => {
+                const nextParams = {
+                    ...prevParams,
+                    ...(image || {}),
+                };
+
+                if ("image" in (image || {})) {
+                    nextParams.image = normalizeImageList(image.image);
+                }
+
+                if (!nextParams.image) {
+                    nextParams.image = prevParams.image || [];
+                }
+
+                return nextParams;
+            });
             initializedRef.current = true;
         } else if (image && image.prompt !== imageParamsRef.current.prompt) {
             // Always update the prompt value when it changes in the parent
@@ -102,7 +144,26 @@ export const ImageEditor = memo(function ImageEditor({
         enhance = false,
         nologo = false,
         model,
+        image: referenceImages = [],
     } = imageParams;
+
+    const supportsImageInput = useMemo(() => {
+        if (!model) return false;
+        return modelSupportsImageInput(model);
+    }, [model]);
+
+    const [imageUrlInput, setImageUrlInput] = useState("");
+
+    const remainingImageSlots = Math.max(
+        0,
+        MAX_REFERENCE_IMAGES - (referenceImages?.length || 0),
+    );
+
+    useEffect(() => {
+        if (!supportsImageInput) {
+            setImageUrlInput("");
+        }
+    }, [supportsImageInput]);
 
     // ─── HANDLERS: INPUT ────────────────────────────────────────────────────────
     /**
@@ -200,6 +261,46 @@ export const ImageEditor = memo(function ImageEditor({
             }));
         },
         [isStopped, stop, setIsInputChanged],
+    );
+
+    const handleImageUrlAdd = useCallback(() => {
+        const trimmedValue = imageUrlInput.trim();
+        if (!trimmedValue || remainingImageSlots <= 0) {
+            return;
+        }
+
+        const updatedImages = [...(referenceImages || []), trimmedValue];
+        handleParamChange("image", updatedImages);
+        setImageUrlInput("");
+
+        if (typeof trackEvent === "function") {
+            trackEvent({
+                category: "feed",
+                action: "add_reference_image",
+            });
+        }
+    }, [
+        imageUrlInput,
+        remainingImageSlots,
+        referenceImages,
+        handleParamChange,
+    ]);
+
+    const handleReferenceImageRemove = useCallback(
+        (index) => {
+            const updatedImages = (referenceImages || []).filter(
+                (_, idx) => idx !== index,
+            );
+            handleParamChange("image", updatedImages);
+
+            if (typeof trackEvent === "function") {
+                trackEvent({
+                    category: "feed",
+                    action: "remove_reference_image",
+                });
+            }
+        },
+        [referenceImages, handleParamChange],
     );
 
     /**
@@ -349,6 +450,187 @@ export const ImageEditor = memo(function ImageEditor({
                                 styles={PARAM_STYLES}
                             />
                         </Grid>
+
+                        {supportsImageInput && (
+                            <Grid size={{ xs: 12 }}>
+                                <Box
+                                    sx={{
+                                        backgroundColor: Colors.offblack2,
+                                        border: `1px solid ${Colors.gray2}33`,
+                                        borderRadius: "10px",
+                                        padding: "16px",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: "12px",
+                                    }}
+                                >
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            alignItems: "center",
+                                            flexWrap: "wrap",
+                                            gap: "8px",
+                                        }}
+                                    >
+                                        <Typography
+                                            sx={{
+                                                color: Colors.offwhite,
+                                                fontFamily: Fonts.parameter,
+                                                fontSize: "0.95em",
+                                                letterSpacing: "0.02em",
+                                            }}
+                                        >
+                                            Reference images
+                                        </Typography>
+                                        <Typography
+                                            sx={{
+                                                color: `${Colors.offwhite}80`,
+                                                fontFamily: Fonts.parameter,
+                                                fontSize: "0.8em",
+                                            }}
+                                        >
+                                            {`${referenceImages.length}/${MAX_REFERENCE_IMAGES} images`}
+                                        </Typography>
+                                    </Box>
+
+                                    {referenceImages.length > 0 && (
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                flexWrap: "wrap",
+                                                gap: "12px",
+                                            }}
+                                        >
+                                            {referenceImages.map((img, index) => (
+                                                <Box
+                                                    key={`${img}-${index}`}
+                                                    sx={{
+                                                        position: "relative",
+                                                        width: "72px",
+                                                        height: "72px",
+                                                        borderRadius: "8px",
+                                                        overflow: "hidden",
+                                                        border: `1px solid ${Colors.gray2}66`,
+                                                        backgroundColor: Colors.offblack,
+                                                    }}
+                                                >
+                                                    <Box
+                                                        component="img"
+                                                        src={img}
+                                                        alt={`reference-${index + 1}`}
+                                                        sx={{
+                                                            width: "100%",
+                                                            height: "100%",
+                                                            objectFit: "cover",
+                                                        }}
+                                                    />
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() =>
+                                                            handleReferenceImageRemove(index)
+                                                        }
+                                                        sx={{
+                                                            position: "absolute",
+                                                            top: 4,
+                                                            right: 4,
+                                                            backgroundColor: `${Colors.offblack}CC`,
+                                                            color: Colors.offwhite,
+                                                            "&:hover": {
+                                                                backgroundColor: `${Colors.offblack}F2`,
+                                                            },
+                                                        }}
+                                                    >
+                                                        <CloseIcon sx={{ fontSize: "16px" }} />
+                                                    </IconButton>
+                                                </Box>
+                                            ))}
+                                        </Box>
+                                    )}
+
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            gap: "12px",
+                                            flexWrap: "wrap",
+                                            alignItems: "center",
+                                        }}
+                                    >
+                                        <TextField
+                                            value={imageUrlInput}
+                                            onChange={(event) =>
+                                                setImageUrlInput(event.target.value)
+                                            }
+                                            onKeyDown={(event) => {
+                                                if (event.key === "Enter") {
+                                                    event.preventDefault();
+                                                    handleImageUrlAdd();
+                                                }
+                                            }}
+                                            placeholder="Paste image URL"
+                                            size="small"
+                                            disabled={remainingImageSlots <= 0}
+                                            sx={{
+                                                flex: 1,
+                                                minWidth: "200px",
+                                                "& .MuiOutlinedInput-root": {
+                                                    backgroundColor: Colors.offblack,
+                                                    color: Colors.offwhite,
+                                                    fontFamily: Fonts.parameter,
+                                                    fontSize: "0.9em",
+                                                    "& fieldset": {
+                                                        borderColor: `${Colors.gray2}66`,
+                                                    },
+                                                    "&:hover fieldset": {
+                                                        borderColor: Colors.lime,
+                                                    },
+                                                    "&.Mui-focused fieldset": {
+                                                        borderColor: Colors.lime,
+                                                    },
+                                                },
+                                                "& .MuiOutlinedInput-input::placeholder": {
+                                                    color: `${Colors.offwhite}80`,
+                                                    opacity: 1,
+                                                },
+                                            }}
+                                        />
+                                        <Button
+                                            variant="outlined"
+                                            onClick={handleImageUrlAdd}
+                                            disabled={
+                                                remainingImageSlots <= 0 ||
+                                                imageUrlInput.trim() === ""
+                                            }
+                                            sx={{
+                                                borderColor: Colors.lime,
+                                                color: Colors.lime,
+                                                fontFamily: Fonts.parameter,
+                                                textTransform: "none",
+                                                "&:hover": {
+                                                    borderColor: Colors.lime,
+                                                    backgroundColor: `${Colors.lime}26`,
+                                                },
+                                            }}
+                                        >
+                                            Add image
+                                        </Button>
+                                    </Box>
+
+                                    <Typography
+                                        sx={{
+                                            color: `${Colors.offwhite}66`,
+                                            fontFamily: Fonts.parameter,
+                                            fontSize: "0.75em",
+                                            lineHeight: 1.6,
+                                        }}
+                                    >
+                                        Works best with models like nanobanana, seedream,
+                                        or kontext. Paste direct image links to guide the
+                                        generation.
+                                    </Typography>
+                                </Box>
+                            </Grid>
+                        )}
 
                         {/* Submit Button */}
                         <Grid

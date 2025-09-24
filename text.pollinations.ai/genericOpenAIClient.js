@@ -352,7 +352,7 @@ export async function genericOpenAIClient(messages, options = {}, config) {
                 endTime,
                 requestId,
                 // Use requestedModel for the originally requested model
-                model: normalizedOptions?.requestedModel,
+                model: normalizedOptions.requestedModel,
                 duration: completionTime,
                 status: "error",
                 error,

@@ -283,7 +283,7 @@ async function handleRequest(req, res, requestData) {
 				const totalProcessingTime = Date.now() - startTime;
 				const requestForLogging = {
 					...finalRequestData,
-					requested_model: originalRequestedModel,
+					requested_model: requestedModel,
 				};
 				logUserRequest(
 					authResult.username,

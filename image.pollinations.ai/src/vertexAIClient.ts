@@ -10,11 +10,16 @@ import googleCloudAuth from "../auth/googleCloudAuth.ts";
 const log = debug("pollinations:vertex-ai");
 const errorLog = debug("pollinations:vertex-ai:error");
 
+export interface VertexAIImageData {
+    base64: string;
+    mimeType: string;
+}
+
 export interface VertexAIImageRequest {
     prompt: string;
     width?: number;
     height?: number;
-    referenceImages?: string[];
+    referenceImages?: VertexAIImageData[];
 }
 
 export interface VertexAIPart {
@@ -99,43 +104,22 @@ export async function generateImageWithVertexAI(
             }
         };
 
-        // Add reference images if provided
+        // Add reference images if provided (all images are already processed as base64 data)
         if (request.referenceImages && request.referenceImages.length > 0) {
             log("Adding reference images:", request.referenceImages.length);
             
             try {
-                // Fetch and encode reference images
+                // Process all reference images (already converted to base64 by vertexAIImageGenerator)
                 for (let i = 0; i < request.referenceImages.length; i++) {
-                    const imageUrl = request.referenceImages[i];
-                    log(`Fetching reference image ${i + 1}/${request.referenceImages.length}: ${imageUrl}`);
+                    const imageData = request.referenceImages[i];
                     
-                    const imageResponse = await fetch(imageUrl);
-                    if (!imageResponse.ok) {
-                        errorLog(`Failed to fetch reference image ${i + 1}: ${imageResponse.status} ${imageResponse.statusText}`);
-                        continue; // Skip this image but continue with others
-                    }
-                    
-                    const imageBuffer = await imageResponse.arrayBuffer();
-                    const base64Data = Buffer.from(imageBuffer).toString('base64');
-                    
-                    // Determine MIME type from response headers or URL
-                    let mimeType = imageResponse.headers.get('content-type') || 'image/jpeg';
-                    if (!mimeType.startsWith('image/')) {
-                        // Fallback based on URL extension
-                        const urlLower = imageUrl.toLowerCase();
-                        if (urlLower.includes('.png')) mimeType = 'image/png';
-                        else if (urlLower.includes('.webp')) mimeType = 'image/webp';
-                        else if (urlLower.includes('.gif')) mimeType = 'image/gif';
-                        else mimeType = 'image/jpeg'; // Default fallback
-                    }
-                    
-                    log(`Successfully encoded reference image ${i + 1}: ${mimeType}, ${base64Data.length} chars`);
+                    log(`Adding processed image ${i + 1}/${request.referenceImages.length}: ${imageData.mimeType}, ${imageData.base64.length} chars`);
                     
                     // Add the image as inlineData to the request
                     requestBody.contents[0].parts.push({
                         inlineData: {
-                            mimeType: mimeType,
-                            data: base64Data
+                            mimeType: imageData.mimeType,
+                            data: imageData.base64
                         }
                     });
                 }
@@ -145,7 +129,7 @@ export async function generateImageWithVertexAI(
                 errorLog("Error processing reference images:", error);
                 // Add a text fallback if image processing fails
                 requestBody.contents[0].parts.unshift({
-                    text: `Reference images were provided but could not be processed: ${request.referenceImages.join(", ")}. Please use these URLs as inspiration for the generated image.`
+                    text: `Reference images were provided but could not be processed. Please generate the image without reference images.`
                 });
             }
         }

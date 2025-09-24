@@ -16,7 +16,10 @@ import {
 } from "@/db/schema/event.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { Context } from "hono";
-import type { EventType } from "@/db/schema/event.ts";
+import type {
+    EventType,
+    GenerationEventContentFilterParams,
+} from "@/db/schema/event.ts";
 import type { AuthVariables } from "@/middleware/authenticate.ts";
 import { PolarVariables } from "./polar.ts";
 import { z } from "zod";
@@ -65,12 +68,12 @@ export const track = (eventType: EventType) =>
         }
         let openaiResponse, modelUsage, cost, price;
         if (c.res.ok) {
+            const body = await c.res.clone().json();
+            openaiResponse =
+                eventType === "generate.text"
+                    ? openaiResponseSchema.parse(body)
+                    : undefined;
             if (!cacheInfo.cacheHit) {
-                const body = await c.res.clone().json();
-                openaiResponse =
-                    eventType === "generate.text"
-                        ? openaiResponseSchema.parse(body)
-                        : undefined;
                 modelUsage = extractUsage(
                     eventType,
                     modelRequested,
@@ -116,7 +119,7 @@ export const track = (eventType: EventType) =>
             eventType,
 
             userId: c.var.auth.user?.id,
-            userTier: "flower",
+            userTier: extractUserTier(eventType, openaiResponse),
             ...referrerInfo,
 
             modelRequested,
@@ -185,20 +188,31 @@ function extractUsage(
             usage: transformOpenAIUsage(response.usage),
         };
     }
-    throw new Error("Text generation event was missing valid response object");
+    throw new Error(
+        "Failed to extract usage: generate.text event without valid response object",
+    );
+}
+
+function extractUserTier(
+    eventType: EventType,
+    response?: OpenAIResponse,
+): string | undefined {
+    if (eventType === "generate.text") {
+        return response?.user_tier;
+    }
+    // TODO: use x-user-tier header for image generations once implemented
+    return undefined;
 }
 
 function extractContentFilterResults(
     eventType: EventType,
     response?: OpenAIResponse,
-) {
-    if (eventType === "generate.image") {
-        return {};
-    }
-    if (response) {
+): GenerationEventContentFilterParams {
+    if (eventType === "generate.text" && response) {
         return contentFilterResultsToEventParams(response);
     }
-    throw new Error("Text generation event was missing valid response object");
+    // TODO: use x-moderation headers for image generations once implemented
+    return {};
 }
 
 type CacheInfo = {

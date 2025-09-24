@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { ProviderId, TokenUsage } from "./registry/registry";
-import { EventType } from "./db/schema/event.ts";
 
-const oaiUsageSchema = z.object({
+const usageSchema = z.object({
     completion_tokens: z.number().int().nonnegative(),
     completion_tokens_details: z
         .object({
@@ -22,14 +21,68 @@ const oaiUsageSchema = z.object({
     total_tokens: z.number().int().nonnegative(),
 });
 
-type OpenAIUsage = z.infer<typeof oaiUsageSchema>;
+type OpenAIUsage = z.infer<typeof usageSchema>;
 
-export const oaiResponseSchema = z.object({
+const contentFilterResultSchema = z
+    .object({
+        hate: z.object({
+            filtered: z.boolean(),
+            severity: z.enum(["safe", "low", "medium", "high"]),
+        }),
+        self_harm: z.object({
+            filtered: z.boolean(),
+            severity: z.enum(["safe", "low", "medium", "high"]),
+        }),
+        sexual: z.object({
+            filtered: z.boolean(),
+            severity: z.enum(["safe", "low", "medium", "high"]),
+        }),
+        violence: z.object({
+            filtered: z.boolean(),
+            severity: z.enum(["safe", "low", "medium", "high"]),
+        }),
+        jailbreak: z.object({
+            filtered: z.boolean(),
+            detected: z.boolean(),
+        }),
+        protected_material_text: z.object({
+            filtered: z.boolean(),
+            detected: z.boolean(),
+        }),
+        protected_material_code: z.object({
+            filtered: z.boolean(),
+            detected: z.boolean(),
+        }),
+    })
+    .partial();
+
+export type ContentFilterResult = z.infer<typeof contentFilterResultSchema>;
+
+const userTierSchema = z.literal(["anonymous", "seed", "flower", "nectar"]);
+
+const choiceSchema = z.object({
+    index: z.number().int(),
+    content_filter_results: contentFilterResultSchema,
+    // omitting other fields as they are not needed yet
+    // (message, logprobs, finish_reason)
+});
+
+export const openaiResponseSchema = z.object({
     id: z.string().optional(),
     model: z.string().optional(),
-    usage: oaiUsageSchema,
+    usage: usageSchema,
     created: z.number(),
+    choices: z.array(choiceSchema),
+    prompt_filter_results: z.array(
+        z.object({
+            prompt_index: z.number(),
+            content_filter_results: contentFilterResultSchema,
+        }),
+    ),
+    user_tier: userTierSchema.optional(),
 });
+
+export type OpenAIResponse = z.infer<typeof openaiResponseSchema>;
 
 export function transformOpenAIUsage(usage: OpenAIUsage): TokenUsage {
     const promptDetailTokens =

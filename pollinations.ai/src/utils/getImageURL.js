@@ -3,6 +3,8 @@
  * @param {Object} newImage - The image parameters.
  * @returns {string} - The constructed image URL.
  */
+import { modelSupportsImageInput } from "../config/imageModels";
+
 export function getImageURL(newImage) {
     let imageURL = `https://pollinations.ai/p/${encodeURIComponent(newImage.prompt)}`;
     const queryParams = [];
@@ -20,6 +22,24 @@ export function getImageURL(newImage) {
     if (newImage.enhance) queryParams.push(`enhance=${newImage.enhance}`);
     if (newImage.nologo) queryParams.push(`nologo=${newImage.nologo}`);
     if (newImage.model) queryParams.push(`model=${newImage.model}`);
+
+    if (newImage.image) {
+        const imagesArray = Array.isArray(newImage.image)
+            ? newImage.image
+            : typeof newImage.image === "string"
+              ? newImage.image.split(",").map((item) => item.trim())
+              : [];
+
+        if (imagesArray.length > 0 && modelSupportsImageInput(newImage.model)) {
+            const encodedImages = imagesArray
+                .filter(Boolean)
+                .map((img) => encodeURIComponent(img))
+                .join(",");
+            if (encodedImages) {
+                queryParams.push(`image=${encodedImages}`);
+            }
+        }
+    }
 
     if (queryParams.length > 0) {
         imageURL += "?" + queryParams.join("&");

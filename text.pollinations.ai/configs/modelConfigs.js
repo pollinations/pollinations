@@ -40,9 +40,15 @@ export const portkeyConfig = {
 		),
 	"gpt-5-nano": () =>
 		createAzureModelConfig(
-			process.env.AZURE_OPENAI_NANO_5_API_KEY,
-			process.env.AZURE_OPENAI_NANO_5_ENDPOINT,
+			process.env.AZURE_MYCELI_GPT5NANO_API_KEY,
+			process.env.AZURE_MYCELI_GPT5NANO_ENDPOINT,
 			"gpt-5-nano",
+		),
+	"gpt-5-mini": () =>
+		createAzureModelConfig(
+			process.env.AZURE_MYCELI_GPT5MINI_API_KEY,
+			process.env.AZURE_MYCELI_GPT5MINI_ENDPOINT,
+			"gpt-5-mini",
 		),
 	"gpt-4.1-mini": () =>
 		createAzureModelConfig(

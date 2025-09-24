@@ -24,7 +24,7 @@ const tierCaps = {
     anonymous: 1,
     seed: 3,
     flower: 7,
-    nectar: 50,
+    nectar: 100,
 };
 
 /**

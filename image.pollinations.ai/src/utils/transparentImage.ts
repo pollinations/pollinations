@@ -1,7 +1,20 @@
 import sharp from "sharp";
 
+// Configuration constants
+const TRANSPARENT_IMAGE_CONFIG = {
+    QUALITY: 10,
+    EFFORT: 0,
+    FORMAT: 'webp' as const,
+    CHANNELS: 4, // RGBA
+    BACKGROUND: { r: 0, g: 0, b: 0, alpha: 0 } // Fully transparent
+};
+
+// Simple in-memory cache for generated transparent images
+const transparentImageCache = new Map<string, {base64: string, mimeType: string}>();
+
 /**
  * Generates a transparent WebP image buffer for the exact requested dimensions.
+ * Uses memoization to cache results for repeated requests.
  * 
  * Returns base64 data that can be used directly with Vertex AI's inlineData format.
  * Much more efficient than creating data URLs or external uploads.
@@ -29,28 +42,46 @@ export async function generateTransparentImage(
         throw new Error(`Invalid height: ${height}. Height must be a positive integer.`);
     }
 
+    // Create cache key for memoization
+    const cacheKey = `${width}x${height}`;
+    
+    // Check if we already have this image cached
+    const cached = transparentImageCache.get(cacheKey);
+    if (cached) {
+        console.log(`Using cached transparent WebP: ${cacheKey} → ${cached.base64.length} chars`);
+        return cached;
+    }
+
     try {
         // Create a transparent WebP at the exact requested dimensions
         const transparentBuffer = await sharp({
             create: {
                 width: width,
                 height: height,
-                channels: 4, // RGBA
-                background: { r: 0, g: 0, b: 0, alpha: 0 }, // Fully transparent
+                channels: TRANSPARENT_IMAGE_CONFIG.CHANNELS,
+                background: TRANSPARENT_IMAGE_CONFIG.BACKGROUND,
             },
+        } as any)
+        .webp({ 
+            quality: TRANSPARENT_IMAGE_CONFIG.QUALITY, 
+            effort: TRANSPARENT_IMAGE_CONFIG.EFFORT 
         })
-        .webp({ quality: 10, effort: 0 }) // Low quality, fast compression for transparent image
         .toBuffer();
 
         // Convert to base64 for Vertex AI inlineData
         const base64 = transparentBuffer.toString('base64');
         
-        console.log(`Generated transparent WebP: ${width}x${height} → ${base64.length} chars (${transparentBuffer.length}B)`);
-        
-        return {
+        const result = {
             base64: base64,
-            mimeType: 'image/webp'
+            mimeType: `image/${TRANSPARENT_IMAGE_CONFIG.FORMAT}`
         };
+        
+        // Cache the result for future requests
+        transparentImageCache.set(cacheKey, result);
+        
+        console.log(`Generated transparent WebP: ${cacheKey} → ${base64.length} chars (${transparentBuffer.length}B) [cached]`);
+        
+        return result;
     } catch (error) {
         throw new Error(
             `Failed to generate transparent image for ${width}x${height}: ${

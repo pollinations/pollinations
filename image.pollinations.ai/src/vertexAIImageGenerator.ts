@@ -12,9 +12,18 @@ import type { ImageGenerationResult, AuthResult } from "./createAndReturnImages.
 import { logNanoBananaError, logNanoBananaErrorsOnly, logNanoBananaPrompt } from "./utils/nanoBananaLogger.ts";
 import { userStatsTracker } from "./utils/userStatsTracker.ts";
 import { generateTransparentImage } from "./utils/transparentImage.ts";
+import type { VertexAIImageData } from "./vertexAIClient.ts";
 
 const log = debug("pollinations:vertex-ai-generator");
 const errorLog = debug("pollinations:vertex-ai-generator:error");
+
+
+// Network and resource limits
+const NETWORK_CONFIG = {
+    TIMEOUT_MS: 10000, // 10 seconds
+    MAX_IMAGE_SIZE_MB: 50, // 50MB max per image
+    MAX_IMAGE_SIZE_BYTES: 50 * 1024 * 1024
+};
 
 /**
  * Check if user is blocked from using nano-banana model
@@ -82,20 +91,27 @@ function getOrdinalWord(num: number): string {
  * Process nanobanana requests with special logic for height/width parameters
  * @param {string} prompt - Original user prompt
  * @param {ImageParams} safeParams - Parameters for image generation
- * @returns {Promise<{processedPrompt: string, processedParams: ImageParams}>} - Processed prompt and parameters
+ * @returns {Promise<{processedPrompt: string, processedParams: ImageParams, transparentImage?: VertexAIImageData}>} - Processed prompt, parameters, and optional transparent image
  */
 async function processNanobananaRequest(
     prompt: string,
     safeParams: ImageParams
-): Promise<{ processedPrompt: string, processedParams: ImageParams }> {
+): Promise<{ processedPrompt: string, processedParams: ImageParams, transparentImage?: VertexAIImageData }> {
     // Check if this is a nanobanana request with height/width parameters
     if (safeParams.model !== "nanobanana" || !safeParams.width || !safeParams.height) {
         // Return original values for non-nanobanana models or when dimensions are missing
         return { processedPrompt: prompt, processedParams: safeParams };
     }
 
+    // Skip transparent image generation for 1:1 aspect ratio (default behavior works fine)
+    const aspectRatio = safeParams.width / safeParams.height;
+    if (Math.abs(aspectRatio - 1.0) < 0.001) { // Use small epsilon for floating point comparison
+        log(`Skipping transparent image generation for 1:1 aspect ratio (${safeParams.width}x${safeParams.height})`);
+        return { processedPrompt: prompt, processedParams: safeParams };
+    }
+
     log("Processing nanobanana request with height/width parameters");
-    log(`Dimensions: ${safeParams.width}x${safeParams.height}`);
+    log(`Dimensions: ${safeParams.width}x${safeParams.height}, aspect ratio: ${aspectRatio.toFixed(3)}`);
 
     try {
         // Generate transparent image for the specified dimensions
@@ -118,13 +134,7 @@ async function processNanobananaRequest(
 
         const processedPrompt = `${prompt}${postPrompt}`;
 
-        // Return processed values with transparent image data attached
-        const processedParams = {
-            ...safeParams,
-            _transparentImage: transparentImage // Add as internal property
-        };
-
-        return { processedPrompt, processedParams };
+        return { processedPrompt, processedParams: safeParams, transparentImage };
 
     } catch (error) {
         errorLog("Error processing nanobanana request:", error);
@@ -156,7 +166,7 @@ export async function callVertexAIGemini(
         }
 
         // Process nanobanana request with special logic if needed
-        const { processedPrompt, processedParams } = await processNanobananaRequest(prompt, safeParams);
+        const { processedPrompt, processedParams, transparentImage: generatedTransparentImage } = await processNanobananaRequest(prompt, safeParams);
 
         // Add Nano Banana optimized prefix to the processed prompt
         const enhancedPrompt = addNanoBananaPrefix(processedPrompt);
@@ -182,13 +192,37 @@ export async function callVertexAIGemini(
                 try {
                     log(`Fetching reference image ${i + 1}/${processedParams.image.length}: ${imageUrl}`);
                     
-                    const imageResponse = await fetch(imageUrl);
+                    // Create abort controller for timeout
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), NETWORK_CONFIG.TIMEOUT_MS);
+                    
+                    const imageResponse = await fetch(imageUrl, {
+                        signal: controller.signal,
+                        headers: { 'User-Agent': 'Pollinations/1.0' }
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
                     if (!imageResponse.ok) {
                         errorLog(`Failed to fetch reference image ${i + 1}: ${imageResponse.status} ${imageResponse.statusText}`);
                         continue; // Skip this image but continue with others
                     }
                     
+                    // Check content length if available
+                    const contentLength = imageResponse.headers.get('content-length');
+                    if (contentLength && parseInt(contentLength) > NETWORK_CONFIG.MAX_IMAGE_SIZE_BYTES) {
+                        errorLog(`Reference image ${i + 1} too large: ${contentLength} bytes (max ${NETWORK_CONFIG.MAX_IMAGE_SIZE_MB}MB)`);
+                        continue;
+                    }
+                    
                     const imageBuffer = await imageResponse.arrayBuffer();
+                    
+                    // Check actual size after download
+                    if (imageBuffer.byteLength > NETWORK_CONFIG.MAX_IMAGE_SIZE_BYTES) {
+                        errorLog(`Reference image ${i + 1} too large after download: ${imageBuffer.byteLength} bytes (max ${NETWORK_CONFIG.MAX_IMAGE_SIZE_MB}MB)`);
+                        continue;
+                    }
+                    
                     const base64Data = Buffer.from(imageBuffer).toString('base64');
                     
                     // Determine MIME type from response headers or URL
@@ -216,11 +250,10 @@ export async function callVertexAIGemini(
         }
         
         // Add transparent image if it was generated for nanobanana
-        if ((processedParams as any)._transparentImage) {
-            const transparentImage = (processedParams as any)._transparentImage;
+        if (generatedTransparentImage) {
             processedImages.push({
-                base64: transparentImage.base64,
-                mimeType: transparentImage.mimeType
+                base64: generatedTransparentImage.base64,
+                mimeType: generatedTransparentImage.mimeType
             });
             log(`Added transparent image to processed images. Total images: ${processedImages.length}`);
         }

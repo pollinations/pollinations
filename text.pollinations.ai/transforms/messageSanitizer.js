@@ -6,10 +6,10 @@ const log = debug("pollinations:transforms:sanitizer");
  * Sanitizes messages by replacing empty user content with placeholder text
  * @param {Array} messages - Array of message objects
  * @param {Object} modelConfig - Model configuration object
- * @param {string} virtualModelName - Virtual model name for logging
+ * @param {string} requestedModel - Requested model name for logging
  * @returns {Object} Object with sanitized messages and replacement count
  */
-function sanitizeMessagesWithPlaceholder(messages, modelConfig, virtualModelName) {
+function sanitizeMessagesWithPlaceholder(messages, modelConfig, requestedModel) {
     if (!Array.isArray(messages)) {
         return { messages, replacedCount: 0 };
     }
@@ -39,18 +39,18 @@ function sanitizeMessagesWithPlaceholder(messages, modelConfig, virtualModelName
 /**
  * Transform that sanitizes messages and applies provider-specific fixes
  * @param {Array} messages - Array of message objects
- * @param {Object} options - Request options with modelDef and virtualModelName
+ * @param {Object} options - Request options with modelDef and requestedModel
  * @returns {Object} Object with messages and options
  */
 export function sanitizeMessages(messages, options) {
-    if (!Array.isArray(messages) || !options.modelDef || !options.virtualModelName) {
+    if (!Array.isArray(messages) || !options.modelDef || !options.requestedModel) {
         return { messages, options };
     }
 
     const { messages: sanitized, replacedCount } = sanitizeMessagesWithPlaceholder(
         messages,
         options.modelDef,
-        options.virtualModelName
+        options.requestedModel
     );
 
     if (replacedCount > 0) {

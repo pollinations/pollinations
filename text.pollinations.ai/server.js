@@ -179,6 +179,9 @@ async function handleRequest(req, res, requestData) {
 			return;
 		}
 
+		// Capture the originally requested model before any mapping/overrides
+		const requestedModel = requestData.model;
+
 		// Apply user-specific model mapping if user is authenticated
 		let finalRequestData = requestData;
 		if (authResult.username) {
@@ -233,9 +236,14 @@ async function handleRequest(req, res, requestData) {
 		// Log user request/response if enabled
 		if (authResult.username) {
 			const totalProcessingTime = Date.now() - startTime;
+			// Create a non-mutating copy for logging to include the originally requested model
+			const requestForLogging = {
+				...finalRequestData,
+				requested_model: requestedModel,
+			};
 			logUserRequest(
 				authResult.username,
-				finalRequestData,
+				requestForLogging,
 				completion,
 				null,
 				req.queueInfo,
@@ -273,9 +281,13 @@ async function handleRequest(req, res, requestData) {
 			// Log error for debugging if user is being tracked
 			if (authResult.username) {
 				const totalProcessingTime = Date.now() - startTime;
+				const requestForLogging = {
+					...finalRequestData,
+					requested_model: requestedModel,
+				};
 				logUserRequest(
 					authResult.username,
-					finalRequestData,
+					requestForLogging,
 					null,
 					error,
 					req.queueInfo,

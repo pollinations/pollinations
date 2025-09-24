@@ -4,12 +4,14 @@
  */
 
 import debug from "debug";
+import fetch from "node-fetch";
 import { generateImageWithVertexAI } from "./vertexAIClient.ts";
 import { writeExifMetadata } from "./writeExifMetadata.js";
 import type { ImageParams } from "./params.js";
 import type { ImageGenerationResult, AuthResult } from "./createAndReturnImages.js";
 import { logNanoBananaError, logNanoBananaErrorsOnly, logNanoBananaPrompt } from "./utils/nanoBananaLogger.ts";
 import { userStatsTracker } from "./utils/userStatsTracker.ts";
+import { generateTransparentImage } from "./utils/transparentImage.ts";
 
 const log = debug("pollinations:vertex-ai-generator");
 const errorLog = debug("pollinations:vertex-ai-generator:error");
@@ -58,6 +60,80 @@ function addNanoBananaPrefix(userPrompt: string): string {
 }
 
 /**
+ * Convert a number to its ordinal word representation
+ * @param {number} num - The number to convert
+ * @returns {string} - The ordinal word (e.g., 1 -> "first", 2 -> "second")
+ */
+function getOrdinalWord(num: number): string {
+    const ordinals = [
+        "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth",
+        "eleventh", "twelfth", "thirteenth", "fourteenth", "fifteenth", "sixteenth", "seventeenth", "eighteenth", "nineteenth", "twentieth"
+    ];
+    
+    if (num >= 1 && num <= 20) {
+        return ordinals[num - 1];
+    }
+    
+    // For numbers > 20, use a simple fallback
+    return `${num}th`;
+}
+
+/**
+ * Process nanobanana requests with special logic for height/width parameters
+ * @param {string} prompt - Original user prompt
+ * @param {ImageParams} safeParams - Parameters for image generation
+ * @returns {Promise<{processedPrompt: string, processedParams: ImageParams}>} - Processed prompt and parameters
+ */
+async function processNanobananaRequest(
+    prompt: string,
+    safeParams: ImageParams
+): Promise<{ processedPrompt: string, processedParams: ImageParams }> {
+    // Check if this is a nanobanana request with height/width parameters
+    if (safeParams.model !== "nanobanana" || !safeParams.width || !safeParams.height) {
+        // Return original values for non-nanobanana models or when dimensions are missing
+        return { processedPrompt: prompt, processedParams: safeParams };
+    }
+
+    log("Processing nanobanana request with height/width parameters");
+    log(`Dimensions: ${safeParams.width}x${safeParams.height}`);
+
+    try {
+        // Generate transparent image for the specified dimensions
+        const transparentImage = await generateTransparentImage(safeParams.width, safeParams.height);
+        log(`Generated transparent image: ${transparentImage.base64.length} base64 chars`);
+
+        // Add post-prompt after user prompt with ordinal positioning
+        let postPrompt = "";
+        try {
+            const userImageCount = safeParams.image?.length || 0;
+            const ordinalPosition = userImageCount + 1; // Transparent image is added as last image
+            const ordinalWord = getOrdinalWord(ordinalPosition);
+
+            postPrompt = ` Redraw the content from image's onto ${ordinalWord} image , and adjust image's by adding content so that its aspect ratio matches ${ordinalWord} image. At the same time completely remove the content of ${ordinalWord} image, keeping only its aspect ratio. Make sure no blank areas are left`;
+        } catch (ordinalError) {
+            errorLog("Error generating ordinal word for post-prompt:", ordinalError);
+            // Use fallback post-prompt without ordinal positioning
+            postPrompt = " Redraw the content from image's onto last image , and adjust image's by adding content so that its aspect ratio matches last image. At the same time completely remove the content of last image, keeping only its aspect ratio. Make sure no blank areas are left";
+        }
+
+        const processedPrompt = `${prompt}${postPrompt}`;
+
+        // Return processed values with transparent image data attached
+        const processedParams = {
+            ...safeParams,
+            _transparentImage: transparentImage // Add as internal property
+        };
+
+        return { processedPrompt, processedParams };
+
+    } catch (error) {
+        errorLog("Error processing nanobanana request:", error);
+        // Return original values on error to maintain backward compatibility
+        return { processedPrompt: prompt, processedParams: safeParams };
+    }
+}
+
+/**
  * Generate image using Vertex AI Gemini and return formatted response
  */
 export async function callVertexAIGemini(
@@ -78,25 +154,82 @@ export async function callVertexAIGemini(
         if (isUserBlockedFromGemini(userInfo)) {
             await throwBlockingError(userInfo.username, prompt, safeParams, userInfo);
         }
-        
-        // Add Nano Banana optimized prefix to the prompt
-        const enhancedPrompt = addNanoBananaPrefix(prompt);
+
+        // Process nanobanana request with special logic if needed
+        const { processedPrompt, processedParams } = await processNanobananaRequest(prompt, safeParams);
+
+        // Add Nano Banana optimized prefix to the processed prompt
+        const enhancedPrompt = addNanoBananaPrefix(processedPrompt);
         
         log("Original prompt:", prompt.substring(0, 100));
         log("Enhanced prompt:", enhancedPrompt.substring(0, 100));
         log("Parameters:", {
-            width: safeParams.width,
-            height: safeParams.height,
-            model: safeParams.model,
-            hasReferenceImages: !!(safeParams.image && safeParams.image.length > 0)
+            width: processedParams.width,
+            height: processedParams.height,
+            model: processedParams.model,
+            hasReferenceImages: !!(processedParams.image && processedParams.image.length > 0)
         });
 
-        // Prepare the request with enhanced prompt
+        // Process all reference images (URLs + transparent image) into base64 format
+        const processedImages: any[] = [];
+        
+        // Process URL-based reference images
+        if (processedParams.image && processedParams.image.length > 0) {
+            log(`Processing ${processedParams.image.length} reference image URLs`);
+            
+            for (let i = 0; i < processedParams.image.length; i++) {
+                const imageUrl = processedParams.image[i];
+                try {
+                    log(`Fetching reference image ${i + 1}/${processedParams.image.length}: ${imageUrl}`);
+                    
+                    const imageResponse = await fetch(imageUrl);
+                    if (!imageResponse.ok) {
+                        errorLog(`Failed to fetch reference image ${i + 1}: ${imageResponse.status} ${imageResponse.statusText}`);
+                        continue; // Skip this image but continue with others
+                    }
+                    
+                    const imageBuffer = await imageResponse.arrayBuffer();
+                    const base64Data = Buffer.from(imageBuffer).toString('base64');
+                    
+                    // Determine MIME type from response headers or URL
+                    let mimeType = imageResponse.headers.get('content-type') || 'image/jpeg';
+                    if (!mimeType.startsWith('image/')) {
+                        // Fallback based on URL extension
+                        const urlLower = imageUrl.toLowerCase();
+                        if (urlLower.includes('.png')) mimeType = 'image/png';
+                        else if (urlLower.includes('.webp')) mimeType = 'image/webp';
+                        else if (urlLower.includes('.gif')) mimeType = 'image/gif';
+                        else mimeType = 'image/jpeg'; // Default fallback
+                    }
+                    
+                    processedImages.push({
+                        base64: base64Data,
+                        mimeType: mimeType
+                    });
+                    
+                    log(`Successfully processed reference image ${i + 1}: ${mimeType}, ${base64Data.length} chars`);
+                } catch (error) {
+                    errorLog(`Error processing reference image ${i + 1}:`, error);
+                    // Continue with other images
+                }
+            }
+        }
+        
+        // Add transparent image if it was generated for nanobanana
+        if ((processedParams as any)._transparentImage) {
+            const transparentImage = (processedParams as any)._transparentImage;
+            processedImages.push({
+                base64: transparentImage.base64,
+                mimeType: transparentImage.mimeType
+            });
+            log(`Added transparent image to processed images. Total images: ${processedImages.length}`);
+        }
+        
         const vertexRequest = {
             prompt: enhancedPrompt,
-            width: safeParams.width,
-            height: safeParams.height,
-            referenceImages: safeParams.image || []
+            width: processedParams.width,
+            height: processedParams.height,
+            referenceImages: processedImages
         };
 
         // Generate image using Vertex AI

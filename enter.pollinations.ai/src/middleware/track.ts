@@ -102,11 +102,6 @@ export const track = (eventType: EventType) =>
         }
         const endTime = new Date();
 
-        const contentFilterResults = extractContentFilterResults(
-            eventType,
-            openaiResponse,
-        );
-
         const event = {
             id: generateRandomId(),
             requestId: c.get("requestId"),

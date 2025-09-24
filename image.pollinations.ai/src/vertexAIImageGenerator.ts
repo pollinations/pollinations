@@ -10,6 +10,7 @@ import type { ImageParams } from "./params.js";
 import type { ImageGenerationResult, AuthResult } from "./createAndReturnImages.js";
 import { logNanoBananaError, logNanoBananaErrorsOnly, logNanoBananaPrompt } from "./utils/nanoBananaLogger.ts";
 import { userStatsTracker } from "./utils/userStatsTracker.ts";
+import { getOrCreateResolutionUrl } from "./utils/resolutionCache.ts";
 
 const log = debug("pollinations:vertex-ai-generator");
 const errorLog = debug("pollinations:vertex-ai-generator:error");
@@ -48,6 +49,54 @@ async function throwBlockingError(
 }
 
 /**
+ * Convert number to ordinal word (1st, 2nd, 3rd, etc.)
+ * @param {number} position - Position number to convert
+ * @returns {string} - Ordinal word representation
+ */
+function getOrdinalWord(position: number): string {
+    if (position < 1) {
+        throw new Error(`Invalid ordinal position: ${position}. Must be 1 or greater.`);
+    }
+
+    const ordinalRules: Record<number, string> = {
+        1: "first",
+        2: "second",
+        3: "third",
+        4: "fourth",
+        5: "fifth",
+        6: "sixth",
+        7: "seventh",
+        8: "eighth",
+        9: "ninth",
+        10: "tenth",
+        11: "eleventh"
+    };
+
+    if (position <= 11) {
+        return ordinalRules[position];
+    }
+
+    // Handle numbers 11-19 (teens) - always end with "th"
+    if (position >= 11 && position <= 19) {
+        return `${position}th`;
+    }
+
+    // For positions > 19, determine suffix based on last digit
+    const lastDigit = position % 10;
+
+    switch (lastDigit) {
+        case 1:
+            return `${position}st`;
+        case 2:
+            return `${position}nd`;
+        case 3:
+            return `${position}rd`;
+        default:
+            return `${position}th`;
+    }
+}
+
+/**
  * Add simple prefix to help Nano Banana understand the prompt better
  * @param {string} userPrompt - Original user prompt
  * @returns {string} - Enhanced prompt with prefix
@@ -55,6 +104,64 @@ async function throwBlockingError(
 function addNanoBananaPrefix(userPrompt: string): string {
     // Simple prefix to help Nano Banana interpret prompts as image generation requests
     return `Generate an image but only if the prompt and input images are safe. Else return an error: ${userPrompt}`;
+}
+/**
+ * Process nanobanana requests with special logic for height/width parameters
+ * @param {string} prompt - Original user prompt
+ * @param {ImageParams} safeParams - Parameters for image generation
+ * @returns {Promise<{processedPrompt: string, processedParams: ImageParams}>} - Processed prompt and parameters
+ */
+async function processNanobananaRequest(
+    prompt: string,
+    safeParams: ImageParams
+): Promise<{ processedPrompt: string, processedParams: ImageParams }> {
+    // Check if this is a nanobanana request with height/width parameters
+    if (safeParams.model !== "nanobanana" || !safeParams.width || !safeParams.height) {
+        // Return original values for non-nanobanana models or when dimensions are missing
+        return { processedPrompt: prompt, processedParams: safeParams };
+    }
+
+    log("Processing nanobanana request with height/width parameters");
+    log(`Dimensions: ${safeParams.width}x${safeParams.height}`);
+
+    try {
+        // Get or create resolution URL for the specified dimensions
+        const resolutionUrl = await getOrCreateResolutionUrl(safeParams.width, safeParams.height);
+        log(`Obtained resolution URL: ${resolutionUrl}`);
+
+        // Append resolution URL to image parameter array
+        const updatedImageArray = [...(safeParams.image || []), resolutionUrl];
+        log(`Updated image array: ${updatedImageArray.length} images`);
+
+        // Add post-prompt after user prompt with ordinal positioning
+        let postPrompt = "";
+        try {
+            const userImageCount = safeParams.image?.length || 0;
+            const ordinalPosition = userImageCount + 1; // Resolution URL is added as last image
+            const ordinalWord = getOrdinalWord(ordinalPosition);
+
+            postPrompt = ` Redraw the content from image's onto ${ordinalWord} image , and adjust image's by adding content so that its aspect ratio matches ${ordinalWord} image. At the same time completely remove the content of ${ordinalWord} image, keeping only its aspect ratio. Make sure no blank areas are left`;
+        } catch (ordinalError) {
+            errorLog("Error generating ordinal word for post-prompt:", ordinalError);
+            // Use fallback post-prompt without ordinal positioning
+            postPrompt = " Redraw the content from image's onto last image , and adjust image's by adding content so that its aspect ratio matches last image. At the same time completely remove the content of last image, keeping only its aspect ratio. Make sure no blank areas are left";
+        }
+
+        const processedPrompt = `${prompt}${postPrompt}`;
+
+        // Return processed values
+        const processedParams = {
+            ...safeParams,
+            image: updatedImageArray
+        };
+
+        return { processedPrompt, processedParams };
+
+    } catch (error) {
+        errorLog("Error processing nanobanana request:", error);
+        // Return original values on error to maintain backward compatibility
+        return { processedPrompt: prompt, processedParams: safeParams };
+    }
 }
 
 /**
@@ -78,25 +185,28 @@ export async function callVertexAIGemini(
         if (isUserBlockedFromGemini(userInfo)) {
             await throwBlockingError(userInfo.username, prompt, safeParams, userInfo);
         }
-        
-        // Add Nano Banana optimized prefix to the prompt
-        const enhancedPrompt = addNanoBananaPrefix(prompt);
+
+        // Process nanobanana request with special logic if needed
+        const { processedPrompt, processedParams } = await processNanobananaRequest(prompt, safeParams);
+
+        // Add Nano Banana optimized prefix to the processed prompt
+        const enhancedPrompt = addNanoBananaPrefix(processedPrompt);
         
         log("Original prompt:", prompt.substring(0, 100));
         log("Enhanced prompt:", enhancedPrompt.substring(0, 100));
         log("Parameters:", {
-            width: safeParams.width,
-            height: safeParams.height,
-            model: safeParams.model,
-            hasReferenceImages: !!(safeParams.image && safeParams.image.length > 0)
+            width: processedParams.width,
+            height: processedParams.height,
+            model: processedParams.model,
+            hasReferenceImages: !!(processedParams.image && processedParams.image.length > 0)
         });
 
         // Prepare the request with enhanced prompt
         const vertexRequest = {
             prompt: enhancedPrompt,
-            width: safeParams.width,
-            height: safeParams.height,
-            referenceImages: safeParams.image || []
+            width: processedParams.width,
+            height: processedParams.height,
+            referenceImages: processedParams.image || []
         };
 
         // Generate image using Vertex AI
@@ -148,12 +258,12 @@ export async function callVertexAIGemini(
         let finalImageBuffer: Buffer;
         try {
             finalImageBuffer = await writeExifMetadata(
-                imageBuffer, 
+                imageBuffer,
                 {
                     prompt, // Original user prompt, not enhanced
-                    model: safeParams.model,
-                    width: safeParams.width,
-                    height: safeParams.height,
+                    model: processedParams.model,
+                    width: processedParams.width,
+                    height: processedParams.height,
                 },
                 {
                     generator: "Vertex AI Gemini 2.5 Flash Image Preview",
@@ -181,7 +291,7 @@ export async function callVertexAIGemini(
         const errorResponseData = (error as any).responseData || null;
         
         // Log error for analysis (especially content policy violations) - use original prompt
-        await logNanoBananaError(prompt, safeParams, userInfo, error, errorResponseData);
+        await logNanoBananaError(prompt, processedParams, userInfo, error, errorResponseData);
         
         throw new Error(`Vertex AI Gemini image generation failed: ${error.message}`);
     }

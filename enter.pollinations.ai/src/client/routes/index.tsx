@@ -61,7 +61,6 @@ function RouteComponent() {
             // TODO: handle it
             console.error(result.error);
         }
-        console.log(result.data);
         router.invalidate();
         return result.data as CreateApiKeyResponse;
     };

@@ -66,7 +66,7 @@ export const track = (eventType: EventType) =>
                 `Failed to get price definition for model: ${serviceOrDefault}`,
             );
         }
-        let openaiResponse, modelUsage, cost, price;
+        let openaiResponse, modelUsage, costType, cost, price;
         if (c.res.ok) {
             const body = await c.res.clone().json();
             openaiResponse =
@@ -79,6 +79,7 @@ export const track = (eventType: EventType) =>
                     modelRequested,
                     openaiResponse,
                 );
+                costType = REGISTRY.getCostType(modelUsage.model as ProviderId);
                 cost = REGISTRY.calculateCost(
                     modelUsage.model as ProviderId,
                     modelUsage.usage,
@@ -124,6 +125,7 @@ export const track = (eventType: EventType) =>
             ...usageToEventParams(modelUsage?.usage),
             ...extractContentFilterResults(eventType, openaiResponse),
 
+            costType,
             totalCost: cost?.totalCost || 0,
             totalPrice: price?.totalPrice || 0,
 

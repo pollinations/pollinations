@@ -49,16 +49,21 @@ type AnalyticsEvent = {
 
 type Env = {
     Bindings: Cloudflare.Env;
-    Variables: {
-        imageParams: ImageParams;
     };
-};
 
 export const googleAnalytics = createMiddleware<Env>(async (c, next) => {
-    const events: ImageCacheEvent[] = [{ name: "imageRequested" }];
+    // Track the start time
+    const startTime = Date.now();
 
-    // run middeware stack and proxy first
+    // Continue with the request
     await next();
+    
+    // Calculate total request duration
+    const totalDuration = Date.now() - startTime;
+    c.set("requestDuration", totalDuration);
+
+    // collect events to send
+    const events: ImageCacheEvent[] = [];
 
     // add analytics based on response
     if (!c.res.ok) {
@@ -237,8 +242,8 @@ async function sendToTinybird(
                 // Cache status - the key field!
                 cache_hit: true,
                 
-                // Performance
-                duration: 5,
+                // Performance - actual request duration (cache lookup time)
+                duration: c.get("requestDuration") || 5, // Fallback to 5ms if not available
                 
                 // User info (if available)
                 referrer: c.req.header("referer"),

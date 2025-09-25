@@ -24,10 +24,17 @@ const MODEL_COST = {
 	},
 	"gpt-5-nano-2025-08-07": {
 	  provider: "azure-openai",
-	  region: "eastus",
-	  prompt_text: 0.0,
+	  region: "eastus2",
+	  prompt_text: 0.05,
 	  prompt_cache: 0.01,
-	  completion_text: 0.40
+	  completion_text: 0.35
+	},
+	"gpt-5-mini-2025-08-07": {
+	  provider: "azure-openai",
+	  region: "eastus",
+	  prompt_text: 0.22,
+	  prompt_cache: 0.03,
+	  completion_text: 1.73
 	},
 	"gpt-4.1-2025-04-14": {
 	  provider: "azure-openai",

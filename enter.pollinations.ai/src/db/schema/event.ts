@@ -106,13 +106,13 @@ export const event = sqliteTable("event", {
     moderationCompletionHateSeverity: text(
         "moderation_completion_hate_severity",
     ),
-    moderationCompletionHateSelfHarmSeverity: text(
+    moderationCompletionSelfHarmSeverity: text(
         "moderation_completion_self_harm_severity",
     ),
-    moderationCompletionHateSexualSeverity: text(
+    moderationCompletionSexualSeverity: text(
         "moderation_completion_sexual_severity",
     ),
-    moderationCompletionHateViolenceSeverity: text(
+    moderationCompletionViolenceSeverity: text(
         "moderation_completion_violence_severity",
     ),
     moderationCompletionProtectedMaterialCodeDetected: integer(
@@ -212,13 +212,14 @@ export type GenerationEventContentFilterParams = {
     moderationCompletionProtectedMaterialCodeDetected?: boolean;
 };
 
+// biome-ignore format: custom formatting
 export function contentFilterResultsToEventParams(
     response: OpenAIResponse,
 ): GenerationEventContentFilterParams {
     const promptFilterResults =
         response.prompt_filter_results[0]?.content_filter_results;
-    const completionFilterResults = response.choices[0]?.content_filter_results;
-    // biome-ignore format: custom formatting
+    const completionFilterResults = 
+        response.choices[0]?.content_filter_results;
     return {
         // prompt filter results
         moderationPromptHateSeverity: 

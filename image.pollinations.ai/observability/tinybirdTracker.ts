@@ -71,7 +71,7 @@ interface TinybirdEvent {
  * @param modelName - The name of the model
  * @returns The provider name or 'Unknown' if not found
  */
-function getProviderNameFromModel(modelName: string): string {
+export function getProviderNameFromModel(modelName: string): string {
     if (!modelName) return "Unknown";
     
     const lowerModel = modelName.toLowerCase();

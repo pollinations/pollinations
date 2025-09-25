@@ -242,8 +242,10 @@ async function sendToTinybird(
                 // Cache status - the key field!
                 cache_hit: true,
                 
-                // Performance - actual request duration (cache lookup time)
-                duration: c.get("requestDuration") || 5, // Fallback to 5ms if not available
+                // Performance - populate all duration fields consistently with existing image events
+                duration: c.get("requestDuration") || 5,
+                llm_api_duration_ms: c.get("requestDuration") || 5,
+                standard_logging_object_response_time: c.get("requestDuration") || 5,
                 
                 // User info (if available)
                 referrer: c.req.header("referer"),

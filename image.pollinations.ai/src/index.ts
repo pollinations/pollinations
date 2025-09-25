@@ -10,6 +10,7 @@ import {
 } from "../../shared/auth-utils.js";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
 import { sendImageTelemetry } from "./utils/telemetry.js";
+import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 
 // Import shared utilities
 import { enqueue } from "../../shared/ipQueue.js";
@@ -471,6 +472,16 @@ const checkCacheAndGenerate = async (
 
         // Add authentication debug headers using shared utility
         addAuthDebugHeaders(headers, authResult.debugInfo);
+
+        // Add tracking headers for enter service (GitHub issue #4170)
+        const trackingHeaders = buildTrackingHeaders(
+            safeParams.model,
+            authResult.tier,
+            authResult.userId,
+            authResult.username,
+            bufferAndMaturity.trackingData
+        );
+        Object.assign(headers, trackingHeaders);
 
         res.writeHead(200, headers);
         res.write(bufferAndMaturity.buffer);

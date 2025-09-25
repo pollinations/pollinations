@@ -33,7 +33,7 @@ import { sleep } from "./util.ts";
 
 // Queue configuration for image service
 const QUEUE_CONFIG = {
-    interval: 10000, // 10 seconds between requests per IP
+    interval: 15000, // 15 seconds between requests per IP (no auth)
     cap: 1, // Max 1 concurrent request per IP
 };
 
@@ -410,9 +410,9 @@ const checkCacheAndGenerate = async (
                     queueConfig = { interval: 45000, cap: 1, forceCap: true }; // Force cap=1 regardless of tier
                     logAuth("Seedream model - using forced cap=1 with 45s interval for all users");
                 } else if (hasValidToken) {
-                    // Token authentication for other models - ipQueue will apply tier-based caps
-                    queueConfig = { interval: 0 }; // cap will be set by ipQueue based on tier
-                    logAuth("Token authenticated - ipQueue will apply tier-based concurrency");
+                    // Token authentication for other models - 7s minimum interval with tier-based caps
+                    queueConfig = { interval: 7000 }; // cap will be set by ipQueue based on tier
+                    logAuth("Token authenticated - using 7s minimum interval with tier-based concurrency");
                 } else {
                     // Use default queue config for other models with no token
                     queueConfig = QUEUE_CONFIG;

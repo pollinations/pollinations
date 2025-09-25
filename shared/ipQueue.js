@@ -234,8 +234,8 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 		if (interval > 0) {
 			// When interval is specified, use intervalCap to enforce timing
 			queueOptions.interval = interval;
-			queueOptions.intervalCap = 1; // Allow 1 request per interval
-			log("Queue configured with interval: %dms, intervalCap: 1", interval);
+			queueOptions.intervalCap = cap; // Allow cap requests per interval
+			log("Queue configured with interval: %dms, intervalCap: %d", interval, cap);
 		}
 		queues.set(ip, new PQueue(queueOptions));
 	}

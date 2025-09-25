@@ -109,6 +109,13 @@ export const googleAnalytics = createMiddleware<Env>(async (c, next) => {
             sendAnalytics(config, userId, augmentedEvents),
         );
     }
+
+    // Send to Tinybird
+    if (c.env.TINYBIRD_API_KEY && events.length > 0) {
+        c.executionCtx.waitUntil(
+            sendToTinybird(events, c, c.env.TINYBIRD_API_KEY),
+        );
+    }
 });
 
 async function sendAnalytics(
@@ -199,4 +206,81 @@ function deriveCacheStatus(event: ImageCacheEvent): CacheStatus {
         "imageGenerationFailed": "miss",
     } as const;
     return statusMap[event.name];
+}
+
+async function sendToTinybird(
+    events: ImageCacheEvent[],
+    c: Context,
+    apiKey: string,
+): Promise<void> {
+    try {
+        // Only send cache hit events - let Node.js handle generations to avoid duplicates
+        const cacheHitEvents = events.filter(event => 
+            event.name === "imageServedFromExactCache" || 
+            event.name === "imageServedFromSemanticCache"
+        );
+        
+        for (const event of cacheHitEvents) {
+            const imageParams = c.get("imageParams");
+            
+            // Build minimal Tinybird event - let defaults handle the rest
+            const tinybirdEvent = {
+                // Required/important fields only
+                start_time: new Date().toISOString(),
+                message_id: `cf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                
+                // Image-specific fields
+                model: imageParams?.model,
+                provider: getProviderFromModel(imageParams?.model || "unknown"),
+                call_type: "image_generation",
+                
+                // Cache status - the key field!
+                cache_hit: true,
+                
+                // Performance
+                duration: 5,
+                
+                // User info (if available)
+                referrer: c.req.header("referer"),
+                
+                // Metadata
+                proxy_metadata: {
+                    project: "image.pollinations.ai",
+                    environment: "production",
+                },
+            };
+
+            // Send to Tinybird
+            const response = await fetch(
+                `https://api.europe-west2.gcp.tinybird.co/v0/events?name=llm_events`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify(tinybirdEvent),
+                }
+            );
+
+            if (!response.ok) {
+                console.error(`[TINYBIRD] Failed to send event: ${response.status}`);
+            } else {
+                console.debug(`[TINYBIRD] Sent ${event.name} event`);
+            }
+        }
+    } catch (error) {
+        console.error("[TINYBIRD] Error sending events:", error);
+    }
+}
+
+function getProviderFromModel(model: string): string {
+    const lowerModel = model.toLowerCase();
+    if (lowerModel.includes("flux")) return "io.net";
+    if (lowerModel.includes("kontext")) return "io.net";
+    if (lowerModel.includes("nanobanana")) return "google";
+    if (lowerModel.includes("seedream")) return "byteplus";
+    if (lowerModel.includes("turbo")) return "io.net";
+    if (lowerModel.includes("gptimage")) return "azure";
+    return "unknown";
 }

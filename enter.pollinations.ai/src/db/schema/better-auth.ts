@@ -5,27 +5,34 @@ export const user = sqliteTable("user", {
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   emailVerified: integer("email_verified", { mode: "boolean" })
-    .$defaultFn(() => false)
+    .default(false)
     .notNull(),
   image: text("image"),
   createdAt: integer("created_at", { mode: "timestamp" })
-    .$defaultFn(() => /* @__PURE__ */ new Date())
+    .defaultNow()
     .notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" })
-    .$defaultFn(() => /* @__PURE__ */ new Date())
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
   role: text("role"),
-  banned: integer("banned", { mode: "boolean" }),
+  banned: integer("banned", { mode: "boolean" }).default(false),
   banReason: text("ban_reason"),
   banExpires: integer("ban_expires", { mode: "timestamp" }),
+  githubId: integer("github_id"),
+  githubUsername: text("github_username"),
 });
 
 export const session = sqliteTable("session", {
   id: text("id").primaryKey(),
   expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
   token: text("token").notNull().unique(),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
   userId: text("user_id")
@@ -52,8 +59,12 @@ export const account = sqliteTable("account", {
   }),
   scope: text("scope"),
   password: text("password"),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
 });
 
 export const verification = sqliteTable("verification", {
@@ -61,12 +72,13 @@ export const verification = sqliteTable("verification", {
   identifier: text("identifier").notNull(),
   value: text("value").notNull(),
   expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(
-    () => /* @__PURE__ */ new Date(),
-  ),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(
-    () => /* @__PURE__ */ new Date(),
-  ),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
 });
 
 export const apikey = sqliteTable("apikey", {
@@ -85,9 +97,9 @@ export const apikey = sqliteTable("apikey", {
   rateLimitEnabled: integer("rate_limit_enabled", { mode: "boolean" }).default(
     true,
   ),
-  rateLimitTimeWindow: integer("rate_limit_time_window").default(86400000),
-  rateLimitMax: integer("rate_limit_max").default(10),
-  requestCount: integer("request_count"),
+  rateLimitTimeWindow: integer("rate_limit_time_window").default(1000),
+  rateLimitMax: integer("rate_limit_max").default(5),
+  requestCount: integer("request_count").default(0),
   remaining: integer("remaining"),
   lastRequest: integer("last_request", { mode: "timestamp" }),
   expiresAt: integer("expires_at", { mode: "timestamp" }),

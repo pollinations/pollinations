@@ -65,6 +65,7 @@ interface TinybirdEvent {
     traceback?: string;
 }
 
+
 /**
  * Get the provider name for an image model
  * For image models, we can infer provider from model name patterns
@@ -77,11 +78,11 @@ function getProviderNameFromModel(modelName: string): string {
     const lowerModel = modelName.toLowerCase();
     
     // Common image model providers
-    if (lowerModel.includes("flux")) return "Black Forest Labs";
-    if (lowerModel.includes("dalle") || lowerModel.includes("dall-e")) return "OpenAI";
-    if (lowerModel.includes("midjourney")) return "Midjourney";
-    if (lowerModel.includes("stable") || lowerModel.includes("sd")) return "Stability AI";
-    if (lowerModel.includes("playground")) return "Playground AI";
+    if (lowerModel.includes("flux")) return "io.net";
+    if (lowerModel.includes("kontext")) return "io.net";
+    if (lowerModel.includes("nanobanana")) return "google-vertex";
+    if (lowerModel.includes("seedream")) return "byteplus";
+    if (lowerModel.includes("turbo")) return "io.net";
     
     return "Unknown";
 }
@@ -90,7 +91,7 @@ function getProviderNameFromModel(modelName: string): string {
  * Send image generation telemetry to Tinybird
  * @param eventData - The event data to send to Tinybird
  * @returns Promise that resolves when the event is sent
- */
+ */ 
 export async function sendTinybirdEvent(eventData: EventData): Promise<void> {
     // Skip if Tinybird API key is not set - this is optional functionality
     if (!TINYBIRD_API_KEY) {

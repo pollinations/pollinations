@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { createSimpleHash, extractPromptFromUrl } from "../util.ts";
 import type { ImageParams } from "./parse-image-params.ts";
+import { getProviderNameFromModel } from "../../../observability/modelProvider.ts";
 
 const MAX_STRING_LENGTH = 150;
 
@@ -51,14 +52,22 @@ type Env = {
     Bindings: Cloudflare.Env;
     Variables: {
         imageParams: ImageParams;
+        responseTime: number;
     };
 };
 
 export const googleAnalytics = createMiddleware<Env>(async (c, next) => {
     const events: ImageCacheEvent[] = [{ name: "imageRequested" }];
+    
+    // Track start time for response time calculation
+    const startTime = Date.now();
 
     // run middeware stack and proxy first
     await next();
+    
+    // Calculate response time in milliseconds
+    const responseTime = Date.now() - startTime;
+    c.set("responseTime", responseTime);
 
     // add analytics based on response
     if (!c.res.ok) {
@@ -107,6 +116,13 @@ export const googleAnalytics = createMiddleware<Env>(async (c, next) => {
         }));
         c.executionCtx.waitUntil(
             sendAnalytics(config, userId, augmentedEvents),
+        );
+    }
+
+    // Send to Tinybird
+    if (c.env.TINYBIRD_API_KEY && events.length > 0) {
+        c.executionCtx.waitUntil(
+            sendToTinybird(events, c, c.env.TINYBIRD_API_KEY),
         );
     }
 });
@@ -190,6 +206,7 @@ async function buildUserId(c: Context): Promise<string> {
     return await createSimpleHash(`${ip?.substring(0, 11) || ""}${userAgent}`);
 }
 
+
 function deriveCacheStatus(event: ImageCacheEvent): CacheStatus {
     const statusMap = {
         "imageRequested": "pending",
@@ -200,3 +217,85 @@ function deriveCacheStatus(event: ImageCacheEvent): CacheStatus {
     } as const;
     return statusMap[event.name];
 }
+
+async function sendToTinybird(
+    events: ImageCacheEvent[],
+    c: Context,
+    apiKey: string,
+): Promise<void> {
+    try {
+        // Only send cache hit events - let Node.js handle generations to avoid duplicates
+        const cacheHitEvents = events.filter(event => 
+            event.name === "imageServedFromExactCache" || 
+            event.name === "imageServedFromSemanticCache"
+        );
+        
+        for (const event of cacheHitEvents) {
+            const imageParams = c.get("imageParams");
+            const responseTime = c.get("responseTime");
+
+            // Generate a stable message id we can also reuse as response.id
+            const messageId = `cf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+            // Timestamps derived from measured response time
+            const now = Date.now();
+            const startIso = new Date(now - (Number(responseTime) || 0)).toISOString();
+            const endIso = new Date(now).toISOString();
+
+            // Build Tinybird event to match llm_events datasource schema without modifying it
+            const tinybirdEvent = {
+                // Core identifiers and timestamps
+                start_time: startIso,
+                end_time: endIso,
+                message_id: messageId,
+                id: messageId,
+
+                // Model and provider
+                model: imageParams?.model,
+                provider: getProviderNameFromModel(imageParams?.model),
+
+                // Performance metrics
+                duration: responseTime,
+                llm_api_duration_ms: responseTime,
+                standard_logging_object_response_time: responseTime,
+
+                // Costs and status semantics (cache hits are free, considered success)
+                cost: 0,
+                standard_logging_object_status: "success",
+                log_event_type: "image_generation",
+                call_type: "image_generation",
+                cache_hit: true,
+
+                // Minimal response object to satisfy response_id/response_object extraction
+                response: {
+                    id: messageId,
+                    object: "image.generation",
+                },
+
+                // Use the same identity header forwarded by the gateway as non-cache events
+                user: c.req.header("x-github-id") || "anonymous",
+                referrer: c.req.header("referer"),
+                proxy_metadata: {
+                    project: "image.pollinations.ai",
+                    environment: "production",
+                },
+            } as const;
+
+            // Send to Tinybird
+            await fetch(
+                `https://api.europe-west2.gcp.tinybird.co/v0/events?name=llm_events`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify(tinybirdEvent),
+                }
+            );
+        }
+    } catch (error) {
+        console.error("[TINYBIRD] Error sending events:", error);
+    }
+}
+

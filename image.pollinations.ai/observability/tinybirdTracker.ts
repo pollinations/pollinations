@@ -1,5 +1,7 @@
 import dotenv from "dotenv";
 import debug from "debug";
+import { getProviderNameFromModel } from "./modelProvider.js";
+export { getProviderNameFromModel } from "./modelProvider.js";
 
 // Load environment variables
 dotenv.config();
@@ -65,26 +67,6 @@ interface TinybirdEvent {
     traceback?: string;
 }
 
-/**
- * Get the provider name for an image model
- * For image models, we can infer provider from model name patterns
- * @param modelName - The name of the model
- * @returns The provider name or 'Unknown' if not found
- */
-export function getProviderNameFromModel(modelName: string): string {
-    if (!modelName) return "Unknown";
-    
-    const lowerModel = modelName.toLowerCase();
-    
-    // Common image model providers
-    if (lowerModel.includes("flux")) return "Black Forest Labs";
-    if (lowerModel.includes("dalle") || lowerModel.includes("dall-e")) return "OpenAI";
-    if (lowerModel.includes("midjourney")) return "Midjourney";
-    if (lowerModel.includes("stable") || lowerModel.includes("sd")) return "Stability AI";
-    if (lowerModel.includes("playground")) return "Playground AI";
-    
-    return "Unknown";
-}
 
 /**
  * Send image generation telemetry to Tinybird

@@ -38,18 +38,24 @@ export const portkeyConfig = {
 			process.env.AZURE_OPENAI_NANO_ENDPOINT,
 			"gpt-4.1-nano",
 		),
-	"gpt-5-nano": () =>
-		createAzureModelConfig(
+	"gpt-5-nano": () => ({
+		...createAzureModelConfig(
 			process.env.AZURE_MYCELI_GPT5NANO_API_KEY,
 			process.env.AZURE_MYCELI_GPT5NANO_ENDPOINT,
 			"gpt-5-nano",
 		),
-	"gpt-5-mini": () =>
-		createAzureModelConfig(
+		// "max-tokens": 512,
+		"max-completion-tokens": 512,
+	}),
+	"gpt-5-mini": () => ({
+		...createAzureModelConfig(
 			process.env.AZURE_MYCELI_GPT5MINI_API_KEY,
 			process.env.AZURE_MYCELI_GPT5MINI_ENDPOINT,
 			"gpt-5-mini",
 		),
+		"max-tokens": 1024,
+		"max-completion-tokens": 1024,
+	}),
 	"gpt-4.1-mini": () =>
 		createAzureModelConfig(
 			process.env.AZURE_MYCELI_GPT41MINI_API_KEY,
@@ -146,7 +152,7 @@ export const portkeyConfig = {
 			process.env.AZURE_OPENAI_AUDIO_ENDPOINT,
 			"gpt-4o-mini-audio-preview",
 		),
-		"max-tokens": 3192,
+		// "max-tokens": 3192,
 		"max-completion-tokens": 3192,
 	}),
 	"gpt-4o-audio-preview": () =>
@@ -170,12 +176,15 @@ export const portkeyConfig = {
 			process.env.AZURE_OPENAI_XLARGE_ENDPOINT,
 			"gpt-4.1",
 		),
-	"gpt-5-chat": () =>
-		createAzureModelConfig(
+	"gpt-5-chat": () => ({
+		...createAzureModelConfig(
 			process.env.AZURE_MYCELI_GPT5CHAT_API_KEY,
 			process.env.AZURE_MYCELI_GPT5CHAT_ENDPOINT,
-			"gpt-5-chat",
+			"gpt-5-chat"
 		),
+		// "max-tokens": 1024,
+		"max-completion-tokens": 1024,
+	}),
 	"Cohere-command-r-plus-08-2024-jt": () => ({
 		provider: "openai",
 		"custom-host": process.env.AZURE_COMMAND_R_ENDPOINT,

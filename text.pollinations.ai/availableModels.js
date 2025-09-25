@@ -29,7 +29,8 @@ const models = [
 		aliases: ["gpt-5-mini"],
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
-		tools: true
+		tools: true,
+		maxInputChars: 7000,
 	},
 	{
 		name: "openai-fast",
@@ -41,7 +42,8 @@ const models = [
 		aliases: ["gpt-5-nano"],
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
-		tools: true
+		tools: true,
+		maxInputChars: 5000,
 	},
 	{
 		name: "openai-large",
@@ -54,7 +56,8 @@ const models = [
 		aliases: ["gpt-5-chat"],
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
-		tools: true
+		tools: true,
+		maxInputChars: 10000,
 	},
 	{
 		name: "qwen-coder",

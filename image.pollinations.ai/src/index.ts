@@ -477,8 +477,6 @@ const checkCacheAndGenerate = async (
         const trackingHeaders = buildTrackingHeaders(
             safeParams.model,
             authResult.tier,
-            authResult.userId,
-            authResult.username,
             bufferAndMaturity.trackingData
         );
         Object.assign(headers, trackingHeaders);

@@ -35,21 +35,17 @@ export interface TrackingData {
  * Build tracking headers for the enter service
  * @param model - The requested model name
  * @param userTier - The user's authentication tier
- * @param userId - The GitHub user ID (if available)
- * @param username - The GitHub username (if available)
  * @param trackingData - Usage and moderation data from generation
  * @returns Headers object for HTTP response
  */
 export function buildTrackingHeaders(
     model: string,
     userTier: string,
-    userId?: string | null,
-    username?: string | null,
     trackingData?: TrackingData
 ): Record<string, string> {
     const headers: Record<string, string> = {};
 
-    // Required headers from issue #4170
+    // Core tracking headers
     headers['x-model-used'] = trackingData?.actualModel || model;
     headers['x-user-tier'] = userTier || 'anonymous';
     
@@ -65,33 +61,6 @@ export function buildTrackingHeaders(
     }
     
     headers['x-completion-image-tokens'] = String(completionTokens);
-
-    // GitHub user identification (bonus headers)
-    if (userId) {
-        headers['x-github-user-id'] = userId;
-    }
-    if (username) {
-        headers['x-github-user-name'] = username;
-    }
-
-    // Moderation headers (OpenAI-compatible format)
-    if (trackingData?.promptModeration) {
-        if (trackingData.promptModeration.categories?.length) {
-            headers['x-moderation-prompt-categories'] = trackingData.promptModeration.categories.join(',');
-        }
-        if (trackingData.promptModeration.severity) {
-            headers['x-moderation-prompt-severity'] = trackingData.promptModeration.severity;
-        }
-    }
-
-    if (trackingData?.imageModeration) {
-        if (trackingData.imageModeration.categories?.length) {
-            headers['x-moderation-completion-categories'] = trackingData.imageModeration.categories.join(',');
-        }
-        if (trackingData.imageModeration.severity) {
-            headers['x-moderation-completion-severity'] = trackingData.imageModeration.severity;
-        }
-    }
 
     log('Built tracking headers:', Object.keys(headers));
     return headers;

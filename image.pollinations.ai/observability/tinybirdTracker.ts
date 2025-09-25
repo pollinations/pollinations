@@ -80,9 +80,10 @@ function getProviderNameFromModel(modelName: string): string {
     // Common image model providers
     if (lowerModel.includes("flux")) return "io.net";
     if (lowerModel.includes("kontext")) return "io.net";
-    if (lowerModel.includes("nanobanana")) return "google-vertex";
+    if (lowerModel.includes("nanobanana")) return "google";
     if (lowerModel.includes("seedream")) return "byteplus";
     if (lowerModel.includes("turbo")) return "io.net";
+    if (lowerModel.includes("gptimage")) return "azure";
     
     return "Unknown";
 }

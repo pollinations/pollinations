@@ -92,8 +92,6 @@ export const googleAnalytics = createMiddleware<Env>(async (c, next) => {
         events.push({
             name: "imageGenerated",
         });
-    } else {
-        console.debug("[ANALYTICS] Ambiguous response, needs investigation");
     }
 
     // send it
@@ -213,7 +211,7 @@ function deriveCacheStatus(event: ImageCacheEvent): CacheStatus {
     return statusMap[event.name];
 }
 
-async function sendToTinybird(
+export async function sendToTinybird(
     events: ImageCacheEvent[],
     c: Context,
     apiKey: string,
@@ -227,30 +225,20 @@ async function sendToTinybird(
         
         for (const event of cacheHitEvents) {
             const imageParams = c.get("imageParams");
+            const requestDuration = c.get("requestDuration") || 5;
             
-            // Build minimal Tinybird event - let defaults handle the rest
+            // Build minimal Tinybird event using existing schema
             const tinybirdEvent = {
-                // Required/important fields only
                 start_time: new Date().toISOString(),
                 message_id: `cf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                
-                // Image-specific fields
                 model: imageParams?.model,
                 provider: getProviderFromModel(imageParams?.model || "unknown"),
                 call_type: "image_generation",
-                
-                // Cache status - the key field!
                 cache_hit: true,
-                
-                // Performance - populate all duration fields consistently with existing image events
-                duration: c.get("requestDuration") || 5,
-                llm_api_duration_ms: c.get("requestDuration") || 5,
-                standard_logging_object_response_time: c.get("requestDuration") || 5,
-                
-                // User info (if available)
+                duration: requestDuration,
+                llm_api_duration_ms: requestDuration,
+                standard_logging_object_response_time: requestDuration,
                 referrer: c.req.header("referer"),
-                
-                // Metadata
                 proxy_metadata: {
                     project: "image.pollinations.ai",
                     environment: "production",
@@ -258,7 +246,7 @@ async function sendToTinybird(
             };
 
             // Send to Tinybird
-            const response = await fetch(
+            await fetch(
                 `https://api.europe-west2.gcp.tinybird.co/v0/events?name=llm_events`,
                 {
                     method: "POST",
@@ -269,12 +257,6 @@ async function sendToTinybird(
                     body: JSON.stringify(tinybirdEvent),
                 }
             );
-
-            if (!response.ok) {
-                console.error(`[TINYBIRD] Failed to send event: ${response.status}`);
-            } else {
-                console.debug(`[TINYBIRD] Sent ${event.name} event`);
-            }
         }
     } catch (error) {
         console.error("[TINYBIRD] Error sending events:", error);

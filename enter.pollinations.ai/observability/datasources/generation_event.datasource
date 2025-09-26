@@ -45,13 +45,20 @@ SCHEMA >
 `total_cost`    Float64 `json:$.totalCost` DEFAULT 0,
 `total_price`   Float64 `json:$.totalPrice` DEFAULT 0,
 
--- Moderation
-`moderation_hate_severity`       LowCardinality(String) `json:$.moderationHateSeverity` DEFAULT 'undefined',
-`moderation_self_harm_severity`  LowCardinality(String) `json:$.moderationSelfHarmSeverity` DEFAULT 'undefined',
-`moderation_sexual_severity`     LowCardinality(String) `json:$.moderationSexualSeverity` DEFAULT 'undefined',
-`moderation_violence_severity`   LowCardinality(String) `json:$.moderationViolenceSeverity` DEFAULT 'undefined',
-`moderation_protected_material_code_detected`  Bool `json:$.moderationProtectedMaterialCodeDetected` DEFAULT false,
-`moderation_protected_material_text_detected`  Bool `json:$.moderationProtectedMaterialTextDetected` DEFAULT false,
+-- Prompt Moderation
+`moderation_prompt_hate_severity`       LowCardinality(String) `json:$.moderationPromptHateSeverity` DEFAULT 'undefined',
+`moderation_prompt_self_harm_severity`  LowCardinality(String) `json:$.moderationPromptSelfHarmSeverity` DEFAULT 'undefined',
+`moderation_prompt_sexual_severity`     LowCardinality(String) `json:$.moderationPromptSexualSeverity` DEFAULT 'undefined',
+`moderation_prompt_violence_severity`   LowCardinality(String) `json:$.moderationPromptViolenceSeverity` DEFAULT 'undefined',
+`moderation_prompt_jailbreak_detected`  Bool `json:$.moderationPromptJailbreakDetected` DEFAULT false,
+
+-- Completion Moderation
+`moderation_completion_hate_severity`       LowCardinality(String) `json:$.moderationCompletionHateSeverity` DEFAULT 'undefined',
+`moderation_completion_self_harm_severity`  LowCardinality(String) `json:$.moderationCompletionSelfHarmSeverity` DEFAULT 'undefined',
+`moderation_completion_sexual_severity`     LowCardinality(String) `json:$.moderationCompletionSexualSeverity` DEFAULT 'undefined',
+`moderation_completion_violence_severity`   LowCardinality(String) `json:$.moderationCompletionViolenceSeverity` DEFAULT 'undefined',
+`moderation_completion_protected_material_code_detected`  Bool `json:$.moderationCompletionProtectedMaterialCodeDetected` DEFAULT false,
+`moderation_completion_protected_material_text_detected`  Bool `json:$.moderationCompletionProtectedMaterialTextDetected` DEFAULT false,
 
 -- Cache
 `cache_hit`                  Bool                    `json:$.cacheHit` DEFAULT false,

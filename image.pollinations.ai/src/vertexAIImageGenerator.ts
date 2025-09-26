@@ -281,7 +281,12 @@ export async function callVertexAIGemini(
         return {
             buffer: finalImageBuffer,
             isMature: false, // Gemini has built-in safety, assume safe
-            isChild: false   // Gemini has built-in safety, assume not child content
+            isChild: false,  // Gemini has built-in safety, assume not child content
+            // Include tracking data for enter service headers
+            trackingData: {
+                actualModel: 'nanobanana',
+                usage: result.usage // Vertex AI usage metadata
+            }
         };
 
     } catch (error) {

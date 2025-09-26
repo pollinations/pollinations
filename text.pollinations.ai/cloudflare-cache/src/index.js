@@ -241,6 +241,15 @@ export default {
             // Log request information
             log("request", `${request.method} ${url.pathname}`);
 
+            // Let origin handle root requests (e.g. redirects) without caching
+            if (url.pathname === "/" || url.pathname === "") {
+                log(
+                    "request",
+                    "Proxying root request directly to origin without caching",
+                );
+                return await proxyRequest(request, env);
+            }
+
             // Common analytics parameters
             const analyticsParams = {
                 method: request.method,

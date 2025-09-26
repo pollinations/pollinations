@@ -100,7 +100,7 @@ app.use(bodyParser.json({ limit: "20mb" }));
 app.use(cors());
 // New route handler for root path
 app.get("/", (req, res) => {
-	res.redirect("https://github.com/pollinations/pollinations/blob/master/APIDOCS.md");
+        res.redirect(301, "https://github.com/pollinations/pollinations/blob/master/APIDOCS.md");
 });
 
 // Serve crossdomain.xml for Flash connections

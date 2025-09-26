@@ -7,36 +7,39 @@ import type {
 export const IMAGE_MODELS = {
     "flux": {
         displayName: "Flux",
+        costType: "fixed_operational_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 completionImageTokens: {
-                    unit: "DPMT",
-                    rate: 1,
+                    unit: "DPT",
+                    rate: 0, // fixed weekly cost
                 },
             },
         ],
     },
     "kontext": {
         displayName: "Flux Kontext",
+        costType: "fixed_operational_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 completionImageTokens: {
-                    unit: "DPMT",
-                    rate: 1,
+                    unit: "DPT",
+                    rate: 0, // fixed weekly cost
                 },
             },
         ],
     },
     "turbo": {
         displayName: "Turbo",
+        costType: "fixed_operational_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 completionImageTokens: {
-                    unit: "DPMT",
-                    rate: 1,
+                    unit: "DPT",
+                    rate: 0, // fixed weekly cost
                 },
             },
         ],
@@ -52,7 +55,7 @@ export const IMAGE_SERVICES = {
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 completionImageTokens: {
-                    unit: "DPMT",
+                    unit: "DPT",
                     rate: 0.0,
                 },
             },
@@ -62,13 +65,29 @@ export const IMAGE_SERVICES = {
         displayName: "Flux Kontext",
         aliases: [],
         modelProviders: ["kontext"],
-        price: costAsPrice("kontext"),
+        price: [
+            {
+                date: new Date("2025-08-01 00:00:00").getTime(),
+                completionImageTokens: {
+                    unit: "DPT",
+                    rate: 0.015,
+                },
+            },
+        ],
     },
     "turbo": {
         displayName: "Turbo",
         aliases: [],
         modelProviders: ["turbo"],
-        price: costAsPrice("turbo"),
+        price: [
+            {
+                date: new Date("2025-08-01 00:00:00").getTime(),
+                completionImageTokens: {
+                    unit: "DPT",
+                    rate: 0.015,
+                },
+            },
+        ],
     },
 } as const satisfies ServiceRegistry<typeof IMAGE_MODELS>;
 

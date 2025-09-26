@@ -1,4 +1,4 @@
-import { PriceDefinition, TokenUsage } from "@/registry/registry";
+import { PriceDefinition, TokenUsage, CostType } from "@/registry/registry";
 import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import type { ContentFilterResult, OpenAIResponse } from "@/usage.ts";
 
@@ -84,8 +84,11 @@ export const event = sqliteTable("event", {
         "token_count_completion_image",
     ).notNull(),
 
-    // Cost and Price
+    // Cost
+    costType: text("cost_type").$type<CostType>(),
     totalCost: real("total_cost").notNull(),
+
+    // Price
     totalPrice: real("total_price").notNull(),
 
     // Prompt moderation results

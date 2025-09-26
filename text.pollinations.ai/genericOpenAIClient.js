@@ -269,7 +269,9 @@ export async function genericOpenAIClient(messages, options = {}, config) {
             sendTinybirdEvent({
                 startTime: new Date(startTime),
                 endTime,
-                model: normalizedOptions.model,
+                // Use requestedModel for the originally requested model
+                model: normalizedOptions.requestedModel,
+                // model_used should be the provider-returned model identifier
                 modelUsed: data.model,
                 duration: completionTime,
                 status: "success",
@@ -336,6 +338,7 @@ export async function genericOpenAIClient(messages, options = {}, config) {
             errorLog(`[${requestId}] Error in text generation`, {
                 timestamp: new Date().toISOString(),
                 error: error.message,
+                status: error.status,
                 model: modelName,
                 provider: config.provider,
                 requestId,
@@ -349,7 +352,8 @@ export async function genericOpenAIClient(messages, options = {}, config) {
                 startTime: new Date(startTime),
                 endTime,
                 requestId,
-                model: normalizedOptions?.model || options?.model || "unknown", // Safely access model name
+                // Use requestedModel for the originally requested model
+                model: normalizedOptions.requestedModel,
                 duration: completionTime,
                 status: "error",
                 error,

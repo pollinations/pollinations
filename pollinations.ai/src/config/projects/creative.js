@@ -5,6 +5,15 @@
 
 export const creativeProjects = [
   {
+    name: "DirPixel 🎨",
+    url: "https://github.com/techcow2/dir-pixel",
+    description: "Sometimes creators need to replace multiple images in a directory with new ones. This tool makes it easy by scanning all images in a specified directory, then allowing you to replace them with new AI-generated images by setting either a custom prompt for individual images or a global prompt for the entire directory. Features PyQt6 GUI, maintains original filenames, supports PNG/JPG formats with automatic conversion, and provides real-time progress tracking.",
+    author: "@techcow2",
+    repo: "https://github.com/techcow2/dir-pixel",
+    submissionDate: "2025-09-26",
+    order: 1
+  },
+  {
     name: "Prompt2Image 🎨",
     url: "https://marketplace.visualstudio.com/items?itemName=MaazSaboowala.prompt2image-ai-generator",
     description: "Prompt2Image is a Visual Studio Code extension that brings AI-powered image generation directly into the developer workflow. Instead of searching for stock photos or managing downloads, developers can simply open the VS Code Command Palette, enter a descriptive text prompt, and instantly receive a high-quality, project-ready image. The extension integrates seamlessly with Pollinations.ai, which processes the prompt through its AI generation API to create tailored, web-optimized visuals.",

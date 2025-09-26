@@ -7,6 +7,7 @@ import type {
 export const TEXT_MODELS = {
     "gpt-5-nano-2025-08-07": {
         displayName: "OpenAI GPT-5 Nano (Azure)",
+        costType: "per_generation_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
@@ -27,6 +28,7 @@ export const TEXT_MODELS = {
     },
     "gpt-4.1-2025-04-14": {
         displayName: "OpenAI GPT-4.1 (Azure)",
+        costType: "per_generation_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
@@ -47,6 +49,7 @@ export const TEXT_MODELS = {
     },
     "gpt-4.1-nano-2025-04-14": {
         displayName: "OpenAI GPT-4.1 Nano (Azure)",
+        costType: "per_generation_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
@@ -67,6 +70,7 @@ export const TEXT_MODELS = {
     },
     "gpt-4o-mini-audio-preview-2024-12-17": {
         displayName: "OpenAI GPT-4o Mini Audio Preview (Azure)",
+        costType: "per_generation_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
@@ -95,6 +99,7 @@ export const TEXT_MODELS = {
     },
     "qwen2.5-coder-32b-instruct": {
         displayName: "Qwen 2.5 Coder 32B (Scaleway)",
+        costType: "per_generation_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
@@ -115,6 +120,7 @@ export const TEXT_MODELS = {
     },
     "mistral-small-3.1-24b-instruct-2503": {
         displayName: "Mistral Small 3.1 24B (Scaleway)",
+        costType: "per_generation_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
@@ -135,6 +141,7 @@ export const TEXT_MODELS = {
     },
     "mistral.mistral-small-2402-v1:0": {
         displayName: "Mistral Small",
+        costType: "per_generation_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
@@ -155,6 +162,7 @@ export const TEXT_MODELS = {
     },
     "us.deepseek.r1-v1:0": {
         displayName: "DeepSeek R1",
+        costType: "per_generation_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
@@ -175,6 +183,7 @@ export const TEXT_MODELS = {
     },
     "amazon.nova-micro-v1:0": {
         displayName: "Amazon Nova Micro (Bedrock)",
+        costType: "per_generation_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
@@ -195,6 +204,7 @@ export const TEXT_MODELS = {
     },
     "us.meta.llama3-1-8b-instruct-v1:0": {
         displayName: "Meta Llama 3.1 8B Instruct (Bedrock)",
+        costType: "per_generation_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
@@ -215,6 +225,7 @@ export const TEXT_MODELS = {
     },
     "us.anthropic.claude-3-5-haiku-20241022-v1:0": {
         displayName: "Claude 3.5 Haiku (Bedrock)",
+        costType: "per_generation_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
@@ -235,6 +246,7 @@ export const TEXT_MODELS = {
     },
     "openai/o4-mini": {
         displayName: "OpenAI o4 Mini (API Navy)",
+        costType: "per_generation_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
@@ -255,6 +267,7 @@ export const TEXT_MODELS = {
     },
     "google/gemini-2.5-flash-lite": {
         displayName: "Google Gemini 2.5 Flash Lite (API Navy)",
+        costType: "per_generation_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
@@ -275,6 +288,7 @@ export const TEXT_MODELS = {
     },
     "gemini-2.5-flash-lite-search": {
         displayName: "Google Gemini 2.5 Flash Lite Search",
+        costType: "per_generation_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),

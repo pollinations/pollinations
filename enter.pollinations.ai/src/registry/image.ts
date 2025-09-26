@@ -46,13 +46,13 @@ export const IMAGE_MODELS = {
     },
     "nanobanana": {
         displayName: "Nanobanana",
-        costType: "fixed_operational_cost",
+        costType: "per_generation_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 completionImageTokens: {
-                    unit: "DPT",
-                    rate: 0, // fixed weekly cost
+                    unit: "DPMT",
+                    rate: 30,
                 },
             },
         ],
@@ -123,8 +123,8 @@ export const IMAGE_SERVICES = {
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 completionImageTokens: {
-                    unit: "DPT",
-                    rate: 0.015,
+                    unit: "DPMT",
+                    rate: 30.0,
                 },
             },
         ],

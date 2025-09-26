@@ -241,6 +241,18 @@ export default {
             // Log request information
             log("request", `${request.method} ${url.pathname}`);
 
+            // Handle root requests directly with a permanent redirect to API docs
+            if (url.pathname === "/" || url.pathname === "") {
+                log(
+                    "request",
+                    "Redirecting root request to GitHub APIDOCS.md",
+                );
+                return Response.redirect(
+                    "https://github.com/pollinations/pollinations/blob/master/APIDOCS.md",
+                    301,
+                );
+            }
+
             // Common analytics parameters
             const analyticsParams = {
                 method: request.method,

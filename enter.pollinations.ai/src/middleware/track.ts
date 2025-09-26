@@ -58,10 +58,11 @@ export const track = (eventType: EventType) =>
                 `Failed to get price definition for model: ${serviceOrDefault}`,
             );
         }
-        let modelUsage, cost, price;
+        let modelUsage, costType, cost, price;
         if (c.res.ok) {
             if (!cacheInfo.cacheHit) {
                 modelUsage = await extractUsage(c, eventType);
+                costType = REGISTRY.getCostType(modelUsage.model as ProviderId);
                 cost = REGISTRY.calculateCost(
                     modelUsage.model as ProviderId,
                     modelUsage.usage,
@@ -106,6 +107,7 @@ export const track = (eventType: EventType) =>
             ...priceToEventParams(tokenPrice),
             ...usageToEventParams(modelUsage?.usage),
 
+            costType,
             totalCost: cost?.totalCost || 0,
             totalPrice: price?.totalPrice || 0,
 

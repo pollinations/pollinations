@@ -29,13 +29,16 @@ id = "aa0d0aceb6bd45de93032270c7adf4ab"
 ENVIRONMENT = "development"
 PUBLIC_BASE_URL = "http://localhost:3000"
 PUBLIC_AUTH_PATH = "/api/auth"
+PUBLIC_POLLEN_METER_ID = "d78e4114-8423-4006-9dda-a4f86d70c663"
 POLAR_SUCCESS_URL = "http://localhost:3000"
 POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
 
 
-[env.staging]
-route = { pattern = "enter.pollinations.ai/*", zone_name = "pollinations.ai" }
+[[env.staging.routes]]
+pattern = "enter.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
 
 [[env.staging.d1_databases]]
 binding = "DB"
@@ -52,9 +55,10 @@ id = "eb4ea5149a5a413db53902bf2b8c1d95"
 ENVIRONMENT = "staging"
 PUBLIC_BASE_URL = "https://enter.pollinations.ai"
 PUBLIC_AUTH_PATH = "/api/auth"
+PUBLIC_POLLEN_METER_ID = "d78e4114-8423-4006-9dda-a4f86d70c663"
 POLAR_SUCCESS_URL = "https://enter.pollinations.ai"
 POLAR_SERVER = "sandbox"
-TINYBIRD_INGEST_URL = "https://api.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 
 
 [env.production]
@@ -75,9 +79,10 @@ id = "80bcce9c87914d9f814cc6522e935f41"
 ENVIRONMENT = "production"
 PUBLIC_BASE_URL = "https://enter.pollinations.ai"
 PUBLIC_AUTH_PATH = "/api/auth"
+PUBLIC_POLLEN_METER_ID = "d78e4114-8423-4006-9dda-a4f86d70c663"
 POLAR_SUCCESS_URL = "https://enter.pollinations.ai"
 POLAR_SERVER = "production"
-TINYBIRD_INGEST_URL = "https://api.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
 
 
 [env.test]
@@ -97,6 +102,7 @@ id = "aa0d0aceb6bd45de93032270c7adf4ab"
 ENVIRONMENT = "test"
 PUBLIC_BASE_URL = "http://localhost:3000"
 PUBLIC_AUTH_PATH = "/api/auth"
+PUBLIC_POLLEN_METER_ID = "d78e4114-8423-4006-9dda-a4f86d70c663"
 GITHUB_CLIENT_ID = "test_github_client_id"
 GITHUB_CLIENT_SECRET = "test_github_client_secret"
 POLAR_ACCESS_TOKEN = "test_polar_token"

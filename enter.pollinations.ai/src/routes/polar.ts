@@ -37,7 +37,6 @@ export const polarRoutes = new Hono<Env>()
         const result = await polar.customers.getStateExternal({
             externalId: user.id,
         });
-        console.log(result);
         return c.json(result);
     })
     .get("/customer/events", async (c) => {

@@ -68,11 +68,13 @@ export const track = (eventType: EventType) =>
         }
         let openaiResponse, modelUsage, costType, cost, price;
         if (c.res.ok) {
-            const body = await c.res.clone().json();
-            openaiResponse =
-                eventType === "generate.text"
-                    ? openaiResponseSchema.parse(body)
-                    : undefined;
+            if (eventType === "generate.text") {
+                const body = await c.res.clone().json();
+                openaiResponse =
+                    eventType === "generate.text"
+                        ? openaiResponseSchema.parse(body)
+                        : undefined;
+            }
             if (!cacheInfo.cacheHit) {
                 modelUsage = extractUsage(
                     eventType,

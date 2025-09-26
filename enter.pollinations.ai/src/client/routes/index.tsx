@@ -28,7 +28,7 @@ function RouteComponent() {
     const router = useRouter();
     const { auth, user, customer, apiKeys } = Route.useLoaderData();
     const meter = customer?.activeMeters.filter(
-        (meter) => meter.meterId === "776f38e7-d0a1-434f-90ef-6f31d66639d9",
+        (meter) => meter.meterId === import.meta.env.POLLEN_METER_ID,
     )[0];
     const balance = meter?.balance || 0;
 

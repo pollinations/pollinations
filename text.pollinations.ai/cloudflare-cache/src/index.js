@@ -241,16 +241,13 @@ export default {
             // Log request information
             log("request", `${request.method} ${url.pathname}`);
 
-            // Handle root requests directly with a permanent redirect to API docs
+            // Let origin handle root requests (e.g. redirects) without caching
             if (url.pathname === "/" || url.pathname === "") {
                 log(
                     "request",
-                    "Redirecting root request to GitHub APIDOCS.md",
+                    "Proxying root request directly to origin without caching",
                 );
-                return Response.redirect(
-                    "https://github.com/pollinations/pollinations/blob/master/APIDOCS.md",
-                    301,
-                );
+                return await proxyRequest(request, env);
             }
 
             // Common analytics parameters

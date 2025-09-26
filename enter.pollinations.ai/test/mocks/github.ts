@@ -5,7 +5,6 @@ import { createHonoMockHandler, type MockHandlerMap } from "./fetch";
 export function createGithubMockHandlers(): MockHandlerMap {
     const githubAPI = new Hono();
 
-    // Custom auth middleware
     const githubAuth = createMiddleware(async (c, next) => {
         const authHeader = c.req.header("Authorization");
         if (!authHeader?.includes("mock_github_auth_token")) {
@@ -14,11 +13,9 @@ export function createGithubMockHandlers(): MockHandlerMap {
         return next();
     });
 
-    // Apply auth middleware to protected routes
     githubAPI.use("/user/*", githubAuth);
     githubAPI.use("/user", githubAuth);
 
-    // Routes
     githubAPI.get("/user/emails", (c) => {
         return c.json([
             {

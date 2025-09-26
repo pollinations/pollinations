@@ -248,6 +248,12 @@ async function sendTinybirdEvents(
                 },
                 body: batch.map((obj) => JSON.stringify(obj)).join("\n"),
             });
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(
+                    `Tinybird API error: ${response.status} - ${errorText}`,
+                );
+            }
             const body = await response.json();
             const result = tbIngestResponseSchema.parse(body);
             ingested += result.successful_rows;

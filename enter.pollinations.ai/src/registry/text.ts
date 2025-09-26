@@ -26,23 +26,23 @@ export const TEXT_MODELS = {
             },
         ],
     },
-    "gpt-4.1-2025-04-14": {
-        displayName: "OpenAI GPT-4.1 (Azure)",
+    "gpt-5-chat-latest": {
+        displayName: "OpenAI GPT-5 Chat",
         costType: "per_generation_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 promptTextTokens: {
                     unit: "DPMT",
-                    rate: 1.91,
+                    rate: 2.5,
                 },
                 promptCachedTokens: {
                     unit: "DPMT",
-                    rate: 0.48,
+                    rate: 0.625,
                 },
                 completionTextTokens: {
                     unit: "DPMT",
-                    rate: 7.64,
+                    rate: 10.0,
                 },
             },
         ],
@@ -64,6 +64,27 @@ export const TEXT_MODELS = {
                 completionTextTokens: {
                     unit: "DPMT",
                     rate: 0.44,
+                },
+            },
+        ],
+    },
+    "gpt-4.1-2025-04-14": {
+        displayName: "OpenAI GPT-4.1 (Azure)",
+        costType: "per_generation_cost",
+        cost: [
+            {
+                date: new Date("2025-08-01 00:00:00").getTime(),
+                promptTextTokens: {
+                    unit: "DPMT",
+                    rate: 1.91,
+                },
+                promptCachedTokens: {
+                    unit: "DPMT",
+                    rate: 0.48,
+                },
+                completionTextTokens: {
+                    unit: "DPMT",
+                    rate: 7.64,
                 },
             },
         ],

@@ -8,6 +8,7 @@ import {
     type CreateApiKeyResponse,
 } from "../components/api-key.tsx";
 import { Button } from "../components/button.tsx";
+import { config } from "../config.ts";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -28,7 +29,7 @@ function RouteComponent() {
     const router = useRouter();
     const { auth, user, customer, apiKeys } = Route.useLoaderData();
     const meter = customer?.activeMeters.filter(
-        (meter) => meter.meterId === "776f38e7-d0a1-434f-90ef-6f31d66639d9",
+        (meter) => meter.meterId === config.pollenMeterId,
     )[0];
     const balance = meter?.balance || 0;
 
@@ -61,7 +62,6 @@ function RouteComponent() {
             // TODO: handle it
             console.error(result.error);
         }
-        console.log(result.data);
         router.invalidate();
         return result.data as CreateApiKeyResponse;
     };

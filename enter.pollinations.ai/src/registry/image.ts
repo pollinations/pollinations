@@ -44,6 +44,32 @@ export const IMAGE_MODELS = {
             },
         ],
     },
+    "nanobanana": {
+        displayName: "Nanobanana",
+        costType: "fixed_operational_cost",
+        cost: [
+            {
+                date: new Date("2025-08-01 00:00:00").getTime(),
+                completionImageTokens: {
+                    unit: "DPT",
+                    rate: 0, // fixed weekly cost
+                },
+            },
+        ],
+    },
+    "seedream": {
+        displayName: "Seedream",
+        costType: "fixed_operational_cost",
+        cost: [
+            {
+                date: new Date("2025-08-01 00:00:00").getTime(),
+                completionImageTokens: {
+                    unit: "DPT",
+                    rate: 0, // fixed weekly cost
+                },
+            },
+        ],
+    },
 } as const satisfies ModelProviderRegistry;
 
 export const IMAGE_SERVICES = {
@@ -79,6 +105,34 @@ export const IMAGE_SERVICES = {
         displayName: "Turbo",
         aliases: [],
         modelProviders: ["turbo"],
+        price: [
+            {
+                date: new Date("2025-08-01 00:00:00").getTime(),
+                completionImageTokens: {
+                    unit: "DPT",
+                    rate: 0.015,
+                },
+            },
+        ],
+    },
+    "nanobanana": {
+        displayName: "Nanobanana",
+        aliases: [],
+        modelProviders: ["nanobanana"],
+        price: [
+            {
+                date: new Date("2025-08-01 00:00:00").getTime(),
+                completionImageTokens: {
+                    unit: "DPT",
+                    rate: 0.015,
+                },
+            },
+        ],
+    },
+    "seedream": {
+        displayName: "Seedream",
+        aliases: [],
+        modelProviders: ["seedream"],
         price: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),

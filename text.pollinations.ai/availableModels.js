@@ -206,8 +206,8 @@ const models = [
 	},
 	{
 		name: "gemini",
-		description: "Gemini 2.5 Flash Lite (api.navy)",
-		config: portkeyConfig["gemini-2.5-flash-lite"],
+		description: "Gemini 2.5 Flash Lite (Vertex AI)",
+		config: portkeyConfig["gemini-2.5-flash-lite-vertex"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "seed",
 		community: false,

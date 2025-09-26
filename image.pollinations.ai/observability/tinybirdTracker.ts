@@ -68,11 +68,12 @@ interface TinybirdEvent {
 }
 
 
+
 /**
  * Send image generation telemetry to Tinybird
  * @param eventData - The event data to send to Tinybird
  * @returns Promise that resolves when the event is sent
- */
+ */ 
 export async function sendTinybirdEvent(eventData: EventData): Promise<void> {
     // Skip if Tinybird API key is not set - this is optional functionality
     if (!TINYBIRD_API_KEY) {

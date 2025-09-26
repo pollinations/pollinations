@@ -12,7 +12,7 @@
         "gen:auth-schema": "npx @better-auth/cli@latest generate --config betterAuth.config.ts --output src/db/schema/better-auth.ts",
         "gen:cf-types": "sops -d .encrypted.dev.env > .dev.vars && wrangler types --env-interface CloudflareBindings",
         "migrate:staging": "wrangler d1 migrations apply staging-pollinations-enter-db --remote --env staging",
-        "build:staging": "CLOUDFLARE_ENV=staging vite build --mode=development",
+        "build:staging": "CLOUDFLARE_ENV=staging vite build --mode=staging",
         "build:production": "CLOUDFLARE_ENV=production vite build",
         "deploy:staging": "npm run build:staging && wrangler deploy",
         "deploy:production": "npm run build:production && wrangler deploy",

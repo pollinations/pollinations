@@ -8,6 +8,7 @@ import {
     type CreateApiKeyResponse,
 } from "../components/api-key.tsx";
 import { Button } from "../components/button.tsx";
+import { config } from "../config.ts";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -28,7 +29,7 @@ function RouteComponent() {
     const router = useRouter();
     const { auth, user, customer, apiKeys } = Route.useLoaderData();
     const meter = customer?.activeMeters.filter(
-        (meter) => meter.meterId === import.meta.env.POLLEN_METER_ID,
+        (meter) => meter.meterId === config.pollenMeterId,
     )[0];
     const balance = meter?.balance || 0;
 

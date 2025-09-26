@@ -81,6 +81,7 @@ export const polarRoutes = new Hono<Env>()
                 const response = await polar.checkouts.create({
                     externalCustomerId: user.id,
                     products: [products[slug]],
+                    successUrl: c.env.POLAR_SUCCESS_URL,
                 });
                 if (redirect) return c.redirect(response.url);
                 return c.json({

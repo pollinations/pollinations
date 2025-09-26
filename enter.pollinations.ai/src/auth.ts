@@ -107,10 +107,28 @@ function onBeforeUserCreate(polar: Polar) {
                 });
             }
 
+            // if the customer already exists, link the new account
+            const { result } = await polar.customers.list({
+                email: user.email,
+            });
+            const existingCustomer = result.items[0];
+            if (existingCustomer?.externalId) {
+                return {
+                    data: {
+                        ...user,
+                        id: existingCustomer.externalId,
+                    },
+                };
+            }
+
             await polar.customers.create({
                 email: user.email,
                 name: user.name,
             });
+
+            return {
+                data: user,
+            };
         } catch (e: unknown) {
             const messageOrError = e instanceof Error ? e.message : e;
             throw new APIError("INTERNAL_SERVER_ERROR", {

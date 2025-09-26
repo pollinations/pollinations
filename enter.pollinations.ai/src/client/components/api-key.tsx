@@ -2,8 +2,8 @@ import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
 import { Steps } from "@ark-ui/react/steps";
 import { formatDistanceToNow } from "date-fns";
-import type { FC, PropsWithChildren } from "react";
-import { useState } from "react";
+import type { FC } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/util.ts";
 import { Button } from "../components/button.tsx";
 import { Fragment } from "react";
@@ -82,7 +82,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
 
 export type CreateApiKey = {
     name: string;
-    domains: string[];
     description?: string;
 };
 
@@ -122,27 +121,6 @@ const CreateKeyForm: FC<{
                     )}
                     placeholder="Enter API key name"
                     required
-                    disabled={isSubmitting}
-                />
-            </Field.Root>
-            <Field.Root>
-                <Field.Label className="block text-sm font-medium mb-1">
-                    Allowed Domains (*)
-                </Field.Label>
-                <Field.Textarea
-                    value={formData.domains.join("\n") || ""}
-                    onChange={(e) =>
-                        onInputChange(
-                            "domains",
-                            e.target.value.split("\n").map((str) => str.trim()),
-                        )
-                    }
-                    className={cn(
-                        "w-full px-3 py-2 border border-gray-300 rounded",
-                        "focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none",
-                    )}
-                    placeholder={"https://example.com\nhttp:localhost:3000"}
-                    rows={2}
                     disabled={isSubmitting}
                 />
             </Field.Root>
@@ -215,15 +193,9 @@ const ShowKeyResult: FC<{
                         Please copy it now and store it securely.
                     </li>
                     <li>
-                        Store your API key in a secure location, like a password
-                        manager or environment variables.
+                        Treat API keys like passwords, never share them
+                        publicly.
                     </li>
-                    <li>
-                        Never share your API key in public repositories or
-                        communications.
-                    </li>
-                    <li>Rotate your API keys regularly.</li>
-                    <li>Delete unused API keys as soon as possible.</li>
                 </ul>
             </div>
 
@@ -273,7 +245,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const [formData, setFormData] = useState<CreateApiKey>({
         name: "",
         description: "",
-        domains: [],
     });
     const [currentStep, setCurrentStep] = useState(0);
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
@@ -306,19 +277,20 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     };
 
     const handleComplete = () => {
-        setIsOpen(false);
-        setCurrentStep(0);
-        setCreatedKey(null);
-        setFormData({ name: "", description: "", domains: [] });
         onComplete();
+        setIsOpen(false);
+        resetForm();
     };
 
-    const handleCancel = () => {
-        setIsOpen(false);
+    const resetForm = () => {
         setCurrentStep(0);
         setCreatedKey(null);
-        setFormData({ name: "", description: "", domains: [] });
+        setFormData({ name: "", description: "" });
     };
+
+    useEffect(() => {
+        if (!isOpen) resetForm();
+    }, [isOpen]);
 
     const steps = [
         { title: "Create Key", description: "Enter key details" },
@@ -379,7 +351,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     formData={formData}
                                     onInputChange={handleInputChange}
                                     onSubmit={handleSubmit}
-                                    onCancel={handleCancel}
+                                    onCancel={resetForm}
                                     isSubmitting={isSubmitting}
                                 />
                             </Steps.Content>

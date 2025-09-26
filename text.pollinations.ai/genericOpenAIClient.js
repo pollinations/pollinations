@@ -338,6 +338,7 @@ export async function genericOpenAIClient(messages, options = {}, config) {
             errorLog(`[${requestId}] Error in text generation`, {
                 timestamp: new Date().toISOString(),
                 error: error.message,
+                status: error.status,
                 model: modelName,
                 provider: config.provider,
                 requestId,

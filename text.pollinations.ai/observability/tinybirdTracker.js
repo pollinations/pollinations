@@ -33,7 +33,20 @@ export async function sendTinybirdEvent(eventData) {
     try {
         // Extract model and cost information
         const modelUsed = eventData.modelUsed ?? null;
-        const cost = resolveCost(modelUsed);
+        const isErrorEvent = eventData.status === "error";
+        
+        // Skip cost resolution for error events - no token usage data available
+        let cost = null;
+        if (!isErrorEvent) {
+            try {
+                if (modelUsed) {
+                    cost = resolveCost(modelUsed);
+                }
+            } catch (e) {
+                errorLog(`Cost resolution failed for modelUsed='${modelUsed || ''}': ${e.message}`);
+                // proceed without cost; token prices will default to 0
+            }
+        }
 
         // Extract token counts from usage data
         const extractTokenCounts = (usage) => {

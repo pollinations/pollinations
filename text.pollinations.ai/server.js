@@ -100,7 +100,7 @@ app.use(bodyParser.json({ limit: "20mb" }));
 app.use(cors());
 // New route handler for root path
 app.get("/", (req, res) => {
-	res.redirect("https://github.com/pollinations/pollinations/blob/master/APIDOCS.md");
+        res.redirect(301, "https://github.com/pollinations/pollinations/blob/master/APIDOCS.md");
 });
 
 // Serve crossdomain.xml for Flash connections
@@ -117,7 +117,7 @@ app.set("trust proxy", true);
 
 // Queue configuration for text service
 const QUEUE_CONFIG = {
-	interval: 6000, // 6 seconds between requests per IP
+	interval: 18000, // 18 seconds between requests per IP (no auth)
 };
 
 // Using getIp from shared auth-utils.js
@@ -179,6 +179,9 @@ async function handleRequest(req, res, requestData) {
 			return;
 		}
 
+		// Capture the originally requested model before any mapping/overrides
+		const requestedModel = requestData.model;
+
 		// Apply user-specific model mapping if user is authenticated
 		let finalRequestData = requestData;
 		if (authResult.username) {
@@ -233,9 +236,14 @@ async function handleRequest(req, res, requestData) {
 		// Log user request/response if enabled
 		if (authResult.username) {
 			const totalProcessingTime = Date.now() - startTime;
+			// Create a non-mutating copy for logging to include the originally requested model
+			const requestForLogging = {
+				...finalRequestData,
+				requested_model: requestedModel,
+			};
 			logUserRequest(
 				authResult.username,
-				finalRequestData,
+				requestForLogging,
 				completion,
 				null,
 				req.queueInfo,
@@ -273,9 +281,13 @@ async function handleRequest(req, res, requestData) {
 			// Log error for debugging if user is being tracked
 			if (authResult.username) {
 				const totalProcessingTime = Date.now() - startTime;
+				const requestForLogging = {
+					...finalRequestData,
+					requested_model: requestedModel,
+				};
 				logUserRequest(
 					authResult.username,
-					finalRequestData,
+					requestForLogging,
 					null,
 					error,
 					req.queueInfo,
@@ -602,11 +614,11 @@ async function processRequest(req, res, requestData) {
 	let queueConfig;
 	if (isTokenAuthenticated) {
 		// Token authentication - ipQueue will automatically apply tier-based caps
-		queueConfig = { interval: 1000 }; // cap will be set by ipQueue based on tier
+		queueConfig = { interval: 3000 }; // cap will be set by ipQueue based on tier
 		authLog("Token authenticated - ipQueue will apply tier-based concurrency");
 	} else if (hasReferrer) {
 		// Referrer authentication uses base configuration
-		queueConfig = { interval: 3000 };
+		queueConfig = { interval: 9000 };
 		authLog("Referrer authenticated - using base configuration");
 	} else {
 		// Use default queue config with interval

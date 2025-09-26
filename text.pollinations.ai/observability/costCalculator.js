@@ -1,5 +1,5 @@
 import debug from "debug";
-import { resolveCost as getCost } from '../modelCost.js';
+import { resolveCost as resolveCostFromModel } from '../modelCost.js';
 
 const log = debug('text.pollinations.ai:costCalculator');
 
@@ -9,20 +9,18 @@ const TOKENS_PER_MILLION = 1000000;
 /**
  * Resolve cost for a model based on the response model name
  * @param {string} responseModel - The model name from the LLM response
- * @returns {Object|null} - Cost object from modelCost.js or null if not found
+ * @returns {Object} - Cost object from modelCost.js
+ * @throws {Error} - Throws error if no cost data is found
  */
 export function resolveCost(responseModel) {
     // Use the new cost module to resolve cost by original name
-    if (responseModel) {
-        const cost = getCost(responseModel);
-        if (cost) {
-            log(`Resolved cost for response model: ${responseModel}`);
-            return cost;
-        }
+    if (!responseModel) {
+        throw new Error('No model name provided for cost resolution');
     }
 
-    log(`No cost found for response model: ${responseModel}`);
-    return null;
+    const cost = resolveCostFromModel(responseModel);
+    log(`Resolved cost for response model: ${responseModel}`);
+    return cost;
 }
 
 

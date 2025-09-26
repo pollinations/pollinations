@@ -70,10 +70,7 @@ export const track = (eventType: EventType) =>
         if (c.res.ok) {
             if (eventType === "generate.text") {
                 const body = await c.res.clone().json();
-                openaiResponse =
-                    eventType === "generate.text"
-                        ? openaiResponseSchema.parse(body)
-                        : undefined;
+                openaiResponse = openaiResponseSchema.parse(body);
             }
             if (!cacheInfo.cacheHit) {
                 modelUsage = extractUsage(

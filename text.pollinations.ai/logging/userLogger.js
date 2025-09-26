@@ -65,24 +65,8 @@ function logUserRequest(
 		timestamp,
 		username,
 		processingTimeMs,
-		request: {
-			model: requestData.model,
-			messages: requestData.messages || [],
-			temperature: requestData.temperature,
-			stream: requestData.stream,
-		},
-		queueInfo: queueInfo
-			? {
-					ip: queueInfo.ip,
-					queueSize: queueInfo.queueSize,
-					pending: queueInfo.pending,
-					total: queueInfo.total,
-					position: queueInfo.position,
-					enqueuedAt: queueInfo.enqueuedAt,
-					tier: queueInfo.tier,
-					authenticated: queueInfo.authenticated,
-				}
-			: null,
+		request: requestData,
+		queueInfo,
 		response: response
 			? {
 					content: response.choices?.[0]?.message?.content,

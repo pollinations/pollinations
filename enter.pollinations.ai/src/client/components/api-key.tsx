@@ -1,7 +1,7 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
 import { Steps } from "@ark-ui/react/steps";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, formatRelative } from "date-fns";
 import type { FC } from "react";
 import { useState, useEffect } from "react";
 import { cn } from "@/util.ts";
@@ -46,36 +46,36 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     onComplete={() => console.log("Dialog completed")}
                 />
             </div>
-            <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_60px] gap-2">
-                <span className="font-bold">Name</span>
-                <span className="font-bold">Description</span>
-                <span className="font-bold">Tier</span>
-                <span className="font-bold">Start</span>
-                <span className="font-bold">Created</span>
-                <span className="font-bold">Actions</span>
-                {apiKeys.map((apiKey) => (
-                    <Fragment key={apiKey.id}>
-                        <Cell>{apiKey.name}</Cell>
-                        <Cell>{apiKey.metadata?.["description"] || "—"}</Cell>
-                        <Cell>{apiKey.permissions?.["tier"]?.[0] || "—"}</Cell>
-                        <Cell>{apiKey.start}</Cell>
-                        <Cell>
-                            {formatDistanceToNow(apiKey.createdAt, {
-                                addSuffix: true,
-                            })}
-                        </Cell>
-                        <Button
-                            type="button"
-                            size="small"
-                            variant="outline"
-                            className="justify-self-end"
-                            onClick={() => onDelete(apiKey.id)}
-                        >
-                            Delete
-                        </Button>
-                    </Fragment>
-                ))}
-            </div>
+            {apiKeys.length ? (
+                <div className="grid grid-cols-[1fr_1fr_1fr_1fr_60px] gap-2">
+                    <span className="font-bold">Name</span>
+                    <span className="font-bold">Description</span>
+                    <span className="font-bold">Start</span>
+                    <span className="font-bold">Created</span>
+                    <span className="font-bold">Actions</span>
+                    {apiKeys.map((apiKey) => (
+                        <Fragment key={apiKey.id}>
+                            <Cell>{apiKey.name}</Cell>
+                            <Cell>
+                                {apiKey.metadata?.["description"] || "—"}
+                            </Cell>
+                            <Cell>{apiKey.start}</Cell>
+                            <Cell>
+                                {formatRelative(apiKey.createdAt, new Date())}
+                            </Cell>
+                            <Button
+                                type="button"
+                                size="small"
+                                variant="outline"
+                                className="justify-self-end"
+                                onClick={() => onDelete(apiKey.id)}
+                            >
+                                Delete
+                            </Button>
+                        </Fragment>
+                    ))}
+                </div>
+            ) : null}
         </>
     );
 };

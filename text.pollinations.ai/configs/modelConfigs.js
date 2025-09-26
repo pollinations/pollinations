@@ -53,7 +53,7 @@ export const portkeyConfig = {
 			process.env.AZURE_MYCELI_GPT5MINI_ENDPOINT,
 			"gpt-5-mini",
 		),
-		"max-tokens": 1024,
+		// "max-tokens": 1024,
 		"max-completion-tokens": 1024,
 	}),
 	"gpt-4.1-mini": () =>
@@ -319,9 +319,9 @@ export const portkeyConfig = {
 		"vertex-model-id": "gemini-2.5-flash-lite",
 		"strict-openai-compliance": "false",
 	}),
-	"gemini-2.5-flash-lite": () => createApiNavyModelConfig({
-		model: "gemini-2.5-flash-lite"
-	}),
+	// "gemini-2.5-flash-lite": () => createApiNavyModelConfig({
+	//	model: "gemini-2.5-flash-lite"
+	// }), // Commented out - now using Vertex AI version
 	"gemini-2.5-flash-lite-search": () => ({
 		provider: "vertex-ai",
 		"vertex-project-id": process.env.GCLOUD_PROJECT_ID,

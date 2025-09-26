@@ -2,16 +2,24 @@ import { processEvents, storeEvents } from "@/events.ts";
 import { ProviderId, REGISTRY, ServiceId } from "@/registry/registry.ts";
 import {
     ModelUsage,
-    oaiResponseSchema,
+    OpenAIResponse,
+    openaiResponseSchema,
     transformOpenAIUsage,
 } from "@/usage.ts";
 import { generateRandomId } from "@/util.ts";
 import { createMiddleware } from "hono/factory";
 import type { LoggerVariables } from "./logger.ts";
-import { priceToEventParams, usageToEventParams } from "@/db/schema/event.ts";
+import {
+    contentFilterResultsToEventParams,
+    priceToEventParams,
+    usageToEventParams,
+} from "@/db/schema/event.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { Context } from "hono";
-import type { EventType } from "@/db/schema/event.ts";
+import type {
+    EventType,
+    GenerationEventContentFilterParams,
+} from "@/db/schema/event.ts";
 import type { AuthVariables } from "@/middleware/authenticate.ts";
 import { PolarVariables } from "./polar.ts";
 import { z } from "zod";
@@ -58,11 +66,20 @@ export const track = (eventType: EventType) =>
                 `Failed to get price definition for model: ${serviceOrDefault}`,
             );
         }
-        let modelUsage, costType, cost, price;
+      
+        let openaiResponse, modelUsage, cost, price;
         if (c.res.ok) {
+            const body = await c.res.clone().json();
+            openaiResponse =
+                eventType === "generate.text"
+                    ? openaiResponseSchema.parse(body)
+                    : undefined;
             if (!cacheInfo.cacheHit) {
-                modelUsage = await extractUsage(c, eventType);
-                costType = REGISTRY.getCostType(modelUsage.model as ProviderId);
+                modelUsage = extractUsage(
+                    eventType,
+                    modelRequested,
+                    openaiResponse,
+                );
                 cost = REGISTRY.calculateCost(
                     modelUsage.model as ProviderId,
                     modelUsage.usage,
@@ -97,7 +114,7 @@ export const track = (eventType: EventType) =>
             eventType,
 
             userId: c.var.auth.user?.id,
-            userTier: "flower",
+            userTier: extractUserTier(eventType, openaiResponse),
             ...referrerInfo,
 
             modelRequested,
@@ -106,6 +123,7 @@ export const track = (eventType: EventType) =>
 
             ...priceToEventParams(tokenPrice),
             ...usageToEventParams(modelUsage?.usage),
+            ...extractContentFilterResults(eventType, openaiResponse),
 
             costType,
             totalCost: cost?.totalCost || 0,
@@ -145,27 +163,52 @@ async function extractModelRequested(
     return null;
 }
 
-async function extractUsage(
-    c: Context<TrackEnv>,
+function extractUsage(
     eventType: EventType,
-): Promise<ModelUsage> {
+    modelRequested: string | null,
+    response?: OpenAIResponse,
+): ModelUsage {
     if (eventType === "generate.image") {
         return {
-            model: (c.var.track.modelRequested || "flux") as ProviderId,
+            // TODO: use x-model-used header once implemented in image service
+            model: (modelRequested || "flux") as ProviderId,
             usage: {
                 unit: "TOKENS",
                 completionImageTokens: 1,
             },
         };
-    } else {
-        const parsedResponse = oaiResponseSchema.parse(
-            await c.res.clone().json(),
-        );
+    }
+    if (response) {
         return {
-            model: parsedResponse.model as ProviderId,
-            usage: transformOpenAIUsage(parsedResponse.usage),
+            model: response?.model as ProviderId,
+            usage: transformOpenAIUsage(response.usage),
         };
     }
+    throw new Error(
+        "Failed to extract usage: generate.text event without valid response object",
+    );
+}
+
+function extractUserTier(
+    eventType: EventType,
+    response?: OpenAIResponse,
+): string | undefined {
+    if (eventType === "generate.text") {
+        return response?.user_tier;
+    }
+    // TODO: use x-user-tier header for image generations once implemented
+    return undefined;
+}
+
+function extractContentFilterResults(
+    eventType: EventType,
+    response?: OpenAIResponse,
+): GenerationEventContentFilterParams {
+    if (eventType === "generate.text" && response) {
+        return contentFilterResultsToEventParams(response);
+    }
+    // TODO: use x-moderation headers for image generations once implemented
+    return {};
 }
 
 type CacheInfo = {

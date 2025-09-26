@@ -319,9 +319,9 @@ export const portkeyConfig = {
 		"vertex-model-id": "gemini-2.5-flash-lite",
 		"strict-openai-compliance": "false",
 	}),
-	"gemini-2.5-flash-lite": () => createApiNavyModelConfig({
-		model: "gemini-2.5-flash-lite"
-	}),
+	// "gemini-2.5-flash-lite": () => createApiNavyModelConfig({
+	//	model: "gemini-2.5-flash-lite"
+	// }), // Commented out - now using Vertex AI version
 	"gemini-2.5-flash-lite-search": () => ({
 		provider: "vertex-ai",
 		"vertex-project-id": process.env.GCLOUD_PROJECT_ID,

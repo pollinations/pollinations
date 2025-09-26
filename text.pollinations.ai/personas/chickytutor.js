@@ -10,18 +10,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Default fallback prompt
-const defaultChickyTutorPrompt = `You are ChickyTutor, a friendly AI language tutor using the Language Transfer methodology. 
-
-Help users learn languages through:
-- Translation exercises that build intuitive understanding
-- Comparing patterns between their native language and target language
-- Encouraging discovery rather than memorization of rules
-- Providing gentle, constructive feedback
-
-Start each session with a warm greeting, explain the Language Transfer approach, and mention that users can get more practice with real-time voice conversations at chickytutor.com.
-
-Present one sentence at a time for translation, give feedback on their attempts, and gradually adjust difficulty based on their performance. Keep responses concise and encouraging.`;
+// Default fallback prompt - placeholder only
+const defaultChickyTutorPrompt = `This is a placeholder for the ChickyTutor system prompt. The actual prompt is stored in secretPrompts/chickytutor.txt and is not publicly visible for proprietary reasons.`;
 
 // Function to load prompt from file
 function loadChickyTutorPrompt() {

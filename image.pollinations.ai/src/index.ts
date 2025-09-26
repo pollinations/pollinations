@@ -402,13 +402,12 @@ const checkCacheAndGenerate = async (
                 // Determine queue configuration based on model first, then authentication
                 let queueConfig = null;
                 
-                // Model-specific queue configs (apply to ALL users regardless of auth method)
-                if (safeParams.model === "nanobanana") {
-                    queueConfig = { interval: 45000, cap: 1, forceCap: true }; // Force cap=1 regardless of tier
-                    logAuth("Nanobanana model - using forced cap=1 with 45s interval for all users");
-                } else if (safeParams.model === "seedream") {
-                    queueConfig = { interval: 45000, cap: 1, forceCap: true }; // Force cap=1 regardless of tier
-                    logAuth("Seedream model - using forced cap=1 with 45s interval for all users");
+                // Model-specific queue configs with tier-based concurrency multipliers
+                if (safeParams.model === "nanobanana" || safeParams.model === "seedream") {
+                    // Use tier-based concurrency with custom multipliers for these models
+                    // Seed: 1x (base), Flower: 3x, Nectar: 6x
+                    queueConfig = { interval: 30000 }; // 30s interval, cap set by ipQueue based on tier
+                    logAuth(`${safeParams.model} model - using tier-based concurrency with 30s interval (seed:1x, flower:3x, nectar:6x)`)
                 } else if (hasValidToken) {
                     // Token authentication for other models - 7s minimum interval with tier-based caps
                     queueConfig = { interval: 7000 }; // cap will be set by ipQueue based on tier
@@ -436,7 +435,7 @@ const checkCacheAndGenerate = async (
                         progress.setProcessing(requestId);
                         return generateImage();
                     },
-                    { ...queueConfig, forceQueue: true, maxQueueSize: 5 },
+                    { ...queueConfig, forceQueue: true, maxQueueSize: 5, model: safeParams.model },
                 );
 
                 return result;

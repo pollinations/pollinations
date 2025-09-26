@@ -88,6 +88,13 @@ const MODEL_COST = {
 		prompt_cache: 0.01875,
 		completion_text: 0.30
 	  },
+	"gemini-2.5-flash-lite": {
+		provider: "vertex-ai",
+		region: "us-central1",
+		prompt_text: 0.10,
+		prompt_cache: 0.025,
+		completion_text: 0.40
+	  },
 	// ===== Scaleway ===== Pricing: https://www.scaleway.com/en/pricing/model-as-a-service/
 	"qwen2.5-coder-32b-instruct": {
 		provider: "scaleway-ai",

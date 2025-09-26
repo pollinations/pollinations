@@ -5,6 +5,16 @@ export const SUPPORTER_LIST = [
         description: "GPU Cloud Credits",
     },
     {
+        name: "io.net",
+        url: "https://io.net/",
+        description: "Decentralized GPU network for AI compute",
+    },
+    {
+        name: "BytePlus",
+        url: "https://www.byteplus.com/",
+        description: "Official ByteDance cloud services and AI solutions",
+    },
+    {
         name: "Google Cloud for Startups",
         url: "https://cloud.google.com/",
         description: "GPU Cloud Credits",

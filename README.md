@@ -540,6 +540,8 @@ Pollinations.AI is proud to be supported by:
 [![Supported Companies](https://pollinations.ai/p/Logos_of_AWS_Activate,_Google_Cloud_for_Startups,_NVIDIA_Inception,_Azure,_Cloudflare,_Scaleway,_and_Modal_arranged_in_a_2_rows_and_4_columns_grid?width=400&height=200&nologo=true&seed=-1)](https://pollinations.ai/p/Logos_of_AWS_Activate,_Google_Cloud_for_Startups,_NVIDIA_Inception,_Azure,_Cloudflare,_Scaleway,_and_Modal_arranged_in_a_2_rows_and_4_columns_grid?width=400&height=200&nologo=true&seed=-1)
 
 - [Portkey AI Gateway](https://github.com/Portkey-AI/gateway): AI Gateway for LLM routing and fallbacks
+- [io.net](https://io.net/): Decentralized GPU network for AI compute
+- [BytePlus](https://www.byteplus.com/): Official ByteDance cloud services and AI solutions
 - [AWS Activate](https://aws.amazon.com/): GPU Cloud Credits
 - [Google Cloud for Startups](https://cloud.google.com/): GPU Cloud Credits
 - [NVIDIA Inception](https://www.nvidia.com/en-us/deep-learning-ai/startups/): AI startup support

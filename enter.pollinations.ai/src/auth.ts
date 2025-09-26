@@ -45,16 +45,35 @@ export function createAuth(env: Cloudflare.Env) {
             schema: betterAuthSchema,
             provider: "sqlite",
         }),
+        user: {
+            additionalFields: {
+                githubId: {
+                    type: "number",
+                    input: false,
+                },
+                githubUsername: {
+                    type: "string",
+                    input: false,
+                },
+            },
+        },
         socialProviders: {
             github: {
                 clientId: env.GITHUB_CLIENT_ID,
                 clientSecret: env.GITHUB_CLIENT_SECRET,
+                mapProfileToUser: (profile) => ({
+                    githubId: profile.id,
+                    githubUsername: profile.login,
+                }),
             },
         },
         plugins: [adminPlugin, apiKeyPlugin, polarPlugin(polar), openAPI()],
         telemetry: { enabled: false },
     });
 }
+
+export type Auth = ReturnType<typeof createAuth>;
+export type Session = Auth["$Infer"]["Session"];
 
 function polarPlugin(polar: Polar): BetterAuthPlugin {
     return {
@@ -104,7 +123,6 @@ function onBeforeUserCreate(polar: Polar) {
 function onAfterUserCreate(polar: Polar) {
     return async (user: User, ctx?: GenericEndpointContext) => {
         if (!ctx) return;
-
         try {
             const { result } = await polar.customers.list({
                 email: user.email,
@@ -131,7 +149,6 @@ function onAfterUserCreate(polar: Polar) {
 function onUserUpdate(polar: Polar) {
     return async (user: User, ctx?: GenericEndpointContext) => {
         if (!ctx) return;
-
         try {
             await polar.customers.updateExternal({
                 externalId: user.id,

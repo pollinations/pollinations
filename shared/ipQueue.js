@@ -27,6 +27,15 @@ const tierCaps = {
     nectar: 50,
 };
 
+// Special tier caps for nanobanana and seedream models
+// Seed: 1x (base), Flower: 3x, Nectar: 6x
+const specialModelTierCaps = {
+    anonymous: 1,
+    seed: 1,      // Base level
+    flower: 3,    // 3x seed tier
+    nectar: 6,    // 6x seed tier
+};
+
 /**
  * Enqueue a function to be executed based on IP address
  * Requests with valid tokens or from allowlisted domains bypass the queue
@@ -37,9 +46,10 @@ const tierCaps = {
  * @param {number} [options.interval=6000] - Time between requests in ms
  * @param {number} [options.cap=1] - Number of requests allowed per interval
  * @param {boolean} [options.forceCap=false] - If true, use provided cap instead of tier-based cap
+ * @param {string} [options.model] - Model name for special tier handling
  * @returns {Promise<any>} Result of the function execution
  */
-export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = false } = {}) {
+export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = false, model = null } = {}) {
     // Extract useful request info for logging
     const url = req.url || "no-url";
     const method = req.method || "no-method";
@@ -117,8 +127,14 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 
 	// Only apply tier-based cap if forceCap is not set
 	if (!forceCap) {
-		cap = tierCaps[authResult.tier] || 1;
-		log('Using tier-based cap: %d for tier: %s', cap, authResult.tier);
+		// Check if this is a special model that uses different tier multipliers
+		if (model === 'nanobanana' || model === 'seedream') {
+			cap = specialModelTierCaps[authResult.tier] || 1;
+			log('Using special model tier-based cap: %d for tier: %s (model: %s)', cap, authResult.tier, model);
+		} else {
+			cap = tierCaps[authResult.tier] || 1;
+			log('Using tier-based cap: %d for tier: %s', cap, authResult.tier);
+		}
 	} else {
 		log('Using forced cap: %d (tier-based cap override)', cap);
 	}
@@ -234,8 +250,8 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 		if (interval > 0) {
 			// When interval is specified, use intervalCap to enforce timing
 			queueOptions.interval = interval;
-			queueOptions.intervalCap = 1; // Allow 1 request per interval
-			log("Queue configured with interval: %dms, intervalCap: 1", interval);
+			queueOptions.intervalCap = cap; // Allow cap requests per interval
+			log("Queue configured with interval: %dms, intervalCap: %d", interval, cap);
 		}
 		queues.set(ip, new PQueue(queueOptions));
 	}

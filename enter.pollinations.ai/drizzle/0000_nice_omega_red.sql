@@ -10,7 +10,7 @@ CREATE TABLE `account` (
 	`refresh_token_expires_at` integer,
 	`scope` text,
 	`password` text,
-	`created_at` integer NOT NULL,
+	`created_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,
 	`updated_at` integer NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
 );
@@ -27,9 +27,9 @@ CREATE TABLE `apikey` (
 	`last_refill_at` integer,
 	`enabled` integer DEFAULT true,
 	`rate_limit_enabled` integer DEFAULT true,
-	`rate_limit_time_window` integer DEFAULT 86400000,
-	`rate_limit_max` integer DEFAULT 10,
-	`request_count` integer,
+	`rate_limit_time_window` integer DEFAULT 1000,
+	`rate_limit_max` integer DEFAULT 5,
+	`request_count` integer DEFAULT 0,
 	`remaining` integer,
 	`last_request` integer,
 	`expires_at` integer,
@@ -44,7 +44,7 @@ CREATE TABLE `session` (
 	`id` text PRIMARY KEY NOT NULL,
 	`expires_at` integer NOT NULL,
 	`token` text NOT NULL,
-	`created_at` integer NOT NULL,
+	`created_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,
 	`updated_at` integer NOT NULL,
 	`ip_address` text,
 	`user_agent` text,
@@ -58,14 +58,16 @@ CREATE TABLE `user` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`email` text NOT NULL,
-	`email_verified` integer NOT NULL,
+	`email_verified` integer DEFAULT false NOT NULL,
 	`image` text,
-	`created_at` integer NOT NULL,
-	`updated_at` integer NOT NULL,
+	`created_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,
+	`updated_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,
 	`role` text,
-	`banned` integer,
+	`banned` integer DEFAULT false,
 	`ban_reason` text,
-	`ban_expires` integer
+	`ban_expires` integer,
+	`github_id` integer,
+	`github_username` text
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `user_email_unique` ON `user` (`email`);--> statement-breakpoint
@@ -74,8 +76,8 @@ CREATE TABLE `verification` (
 	`identifier` text NOT NULL,
 	`value` text NOT NULL,
 	`expires_at` integer NOT NULL,
-	`created_at` integer,
-	`updated_at` integer
+	`created_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,
+	`updated_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE `event` (
@@ -118,6 +120,7 @@ CREATE TABLE `event` (
 	`token_count_completion_reasoning` integer NOT NULL,
 	`token_count_completion_audio` integer NOT NULL,
 	`token_count_completion_image` integer NOT NULL,
+	`cost_type` text,
 	`total_cost` real NOT NULL,
 	`total_price` real NOT NULL,
 	`moderation_prompt_hate_severity` text,

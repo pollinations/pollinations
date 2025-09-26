@@ -19,29 +19,31 @@ import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
 import { portkeyConfig } from "./configs/modelConfigs.js";
 
 const models = [
-	// {
-	// 	name: "openai",
-	// 	description: "OpenAI GPT-4.1 Mini",
-	// 	config: portkeyConfig["gpt-4.1-mini"],
-	// 	transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-	// 	tier: "anonymous",
-	// 	community: false,
-	// 	aliases: ["gpt-4.1-mini"],
-	// 	input_modalities: ["text", "image"],
-	// 	output_modalities: ["text"],
-	// 	tools: true
-	// },
 	{
-		name: "openai-fast",
-		description: "OpenAI GPT-4.1 Nano",
-		config: portkeyConfig["gpt-4.1-nano"],
+		name: "openai",
+		description: "OpenAI GPT-5 Mini",
+		config: portkeyConfig["gpt-5-mini"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "anonymous",
 		community: false,
-		aliases: ["openai"],
+		aliases: ["gpt-5-mini"],
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
-		tools: true
+		tools: true,
+		maxInputChars: 7000,
+	},
+	{
+		name: "openai-fast",
+		description: "OpenAI GPT-5 Nano",
+		config: portkeyConfig["gpt-5-nano"],
+		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+		tier: "anonymous",
+		community: false,
+		aliases: ["gpt-5-nano"],
+		input_modalities: ["text", "image"],
+		output_modalities: ["text"],
+		tools: true,
+		maxInputChars: 5000,
 	},
 	{
 		name: "openai-large",
@@ -54,7 +56,8 @@ const models = [
 		aliases: ["gpt-5-chat"],
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
-		tools: true
+		tools: true,
+		maxInputChars: 10000,
 	},
 	{
 		name: "qwen-coder",
@@ -203,8 +206,8 @@ const models = [
 	},
 	{
 		name: "gemini",
-		description: "Gemini 2.5 Flash Lite (api.navy)",
-		config: portkeyConfig["gemini-2.5-flash-lite"],
+		description: "Gemini 2.5 Flash Lite (Vertex AI)",
+		config: portkeyConfig["gemini-2.5-flash-lite-vertex"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "seed",
 		community: false,
@@ -222,7 +225,7 @@ const models = [
 		),
 		tier: "seed",
 		community: false,
-		aliases: ["searchgpt"],
+		aliases: ["searchgpt","geminisearch"],
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true

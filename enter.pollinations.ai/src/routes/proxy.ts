@@ -7,6 +7,8 @@ import { z } from "zod";
 import { track, type TrackVariables } from "@/middleware/track.ts";
 import type { AuthVariables } from "@/middleware/authenticate.ts";
 import type { PolarVariables } from "@/middleware/polar.ts";
+import { removeUnset } from "@/util.ts";
+import type { Session } from "@/auth.ts";
 
 const chatCompletionSchema = z.object({
     model: z.string(),
@@ -41,28 +43,28 @@ export const proxyRoutes = new Hono<Env>()
         track("generate.text"),
         async (c) => {
             await authorizeRequest(c.var);
-
             const targetUrl = proxyUrl(c, "https://text.pollinations.ai");
             const response = await proxy(targetUrl, {
                 method: c.req.method,
-                headers: proxyHeaders(c),
+                headers: {
+                    ...proxyHeaders(c),
+                    ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
+                },
                 body: JSON.stringify(await c.req.json()),
             });
-
             return response;
         },
     )
     .get("/image/:prompt", track("generate.image"), async (c) => {
         await authorizeRequest(c.var);
-
         const targetUrl = proxyUrl(c, "https://image.pollinations.ai/prompt");
-        const targetHeaders = proxyHeaders(c);
-
         const response = await proxy(targetUrl, {
             ...c.req,
-            headers: targetHeaders,
+            headers: {
+                ...proxyHeaders(c),
+                ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
+            },
         });
-
         return response;
     });
 
@@ -77,6 +79,16 @@ async function authorizeRequest({
         );
         await polar.requirePositiveBalance(user.id);
     }
+}
+
+function generationHeaders(
+    enterToken: string,
+    user?: Session["user"],
+): Record<string, string> {
+    return removeUnset({
+        "x-enter-token": enterToken,
+        "x-github-id": user?.githubId.toFixed(0),
+    });
 }
 
 function proxyHeaders(c: Context): Record<string, string> {

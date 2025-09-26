@@ -19,6 +19,7 @@ import {
     analyzeTextSafety,
     type ContentSafetyFlags,
 } from "./utils/azureContentSafety.ts";
+import type { TrackingData } from "./utils/trackingHeaders.ts";
 
 // Import GPT Image logging utilities
 import { logGptImageError, logGptImagePrompt } from "./utils/gptImageLogger.ts";
@@ -58,6 +59,8 @@ export type ImageGenerationResult = {
     buffer: Buffer;
     isMature: boolean;
     isChild: boolean;
+    // Tracking data for enter service headers
+    trackingData?: TrackingData;
 };
 
 export type AuthResult = {
@@ -216,7 +219,17 @@ export const callComfyUI = async (
                 })
                 .jpeg()
                 .toBuffer();
-            return { buffer: resizedBuffer, ...rest };
+            return { 
+                buffer: resizedBuffer, 
+                ...rest,
+                trackingData: {
+                    actualModel: 'comfyui',
+                    usage: {
+                        candidatesTokenCount: 1,
+                        totalTokenCount: 1
+                    }
+                }
+            };
         }
 
         // Convert to JPEG even if no resize was needed
@@ -227,7 +240,17 @@ export const callComfyUI = async (
             })
             .toBuffer();
 
-        return { buffer: jpegBuffer, ...rest };
+        return { 
+            buffer: jpegBuffer, 
+            ...rest,
+            trackingData: {
+                actualModel: 'comfyui',
+                usage: {
+                    candidatesTokenCount: 1,
+                    totalTokenCount: 1
+                }
+            }
+        };
     } catch (e) {
         logError("Error in callComfyUI:", e);
         throw e;
@@ -338,7 +361,18 @@ async function callCloudflareModel(
         imageBuffer = Buffer.from(data.result.image, "base64");
     }
 
-    return { buffer: imageBuffer, isMature: false, isChild: false };
+    return { 
+        buffer: imageBuffer, 
+        isMature: false, 
+        isChild: false,
+        trackingData: {
+            actualModel: modelPath,
+            usage: {
+                candidatesTokenCount: 1,
+                totalTokenCount: 1
+            }
+        }
+    };
 }
 
 /**
@@ -1219,7 +1253,12 @@ export async function createAndReturnImageCached(
             requestId,
         );
 
-        return { buffer: processedBuffer, isChild, isMature };
+        return { 
+            buffer: processedBuffer, 
+            isChild, 
+            isMature,
+            trackingData: result.trackingData
+        };
     } catch (error) {
         logError("Error in createAndReturnImageCached:", error);
         throw error;

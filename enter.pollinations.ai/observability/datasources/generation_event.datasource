@@ -17,7 +17,6 @@ SCHEMA >
 `referrer_url`    String                 `json:$.referrerUrl` DEFAULT 'undefined',
 `referrer_domain` LowCardinality(String) `json:$.referrerDomain` DEFAULT 'undefined',
 
-`model_provider`       LowCardinality(String) `json:$.modelProvider` DEFAULT 'undefined',
 `model_requested`      LowCardinality(String) `json:$.modelRequested` DEFAULT 'undefined',
 `model_used`           LowCardinality(String) `json:$.modelUsed` DEFAULT 'undefined',
 `is_billed_usage`      Bool                   `json:$.isBilledUsage`,
@@ -42,6 +41,7 @@ SCHEMA >
 `token_count_completion_audio`     UInt32   `json:$.tokenCountCompletionAudio` DEFAULT 0,
 `token_count_completion_image`     UInt32   `json:$.tokenCountCompletionImage` DEFAULT 0,
 
+`cost_type`     LowCardinality(String) `json:$.costType` DEFAULT 'undefined',
 `total_cost`    Float64 `json:$.totalCost` DEFAULT 0,
 `total_price`   Float64 `json:$.totalPrice` DEFAULT 0,
 

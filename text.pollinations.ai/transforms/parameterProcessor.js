@@ -16,7 +16,7 @@ export function processParameters(messages, options) {
 
     const config = options.modelConfig;
     const modelConfig = options.modelDef;
-    const virtualModelName = options.virtualModelName;
+    const requestedModel = options.requestedModel;
     const updatedOptions = { ...options };
 
     // Apply model-specific sampling parameter defaults
@@ -31,7 +31,7 @@ export function processParameters(messages, options) {
     // Apply parameter filtering if defined
     if (modelConfig.allowedParameters) {
         const allowedParams = modelConfig.allowedParameters;
-        log(`Applying parameter filter for model ${virtualModelName}, allowing only: ${allowedParams.join(", ")}`);
+        log(`Applying parameter filter for model ${requestedModel}, allowing only: ${allowedParams.join(", ")}`);
 
         const filteredOptions = {};
         
@@ -52,8 +52,8 @@ export function processParameters(messages, options) {
         if (updatedOptions.modelDef) {
             filteredOptions.modelDef = updatedOptions.modelDef;
         }
-        if (updatedOptions.virtualModelName) {
-            filteredOptions.virtualModelName = updatedOptions.virtualModelName;
+        if (updatedOptions.requestedModel) {
+            filteredOptions.requestedModel = updatedOptions.requestedModel;
         }
 
         return { messages, options: filteredOptions };

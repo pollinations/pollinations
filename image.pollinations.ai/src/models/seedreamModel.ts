@@ -157,6 +157,15 @@ export const callSeedreamAPI = async (
             buffer: imageBuffer,
             isMature: false, // Seedream has built-in content filtering
             isChild: false,
+            // Include tracking data for enter service headers
+            trackingData: {
+                actualModel: 'seedream',
+                // Seedream uses unit-based pricing (1 token per image)
+                usage: {
+                    candidatesTokenCount: 1,
+                    totalTokenCount: 1
+                }
+            }
         };
 
     } catch (error) {

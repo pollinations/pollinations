@@ -14,28 +14,24 @@ const log = debug("pollinations:model-resolver");
  * @returns {Object} Object with messages and resolved options
  */
 export function resolveModelConfig(messages, options) {
-    if (!options.model) {
-        return { messages, options };
-    }
-
-    const virtualModelName = options.model;
-    const modelDef = findModelByName(virtualModelName);
+    const requestedModel = options.model;
+    const modelDef = findModelByName(requestedModel);
     
     if (!modelDef?.config) {
-        throw new Error(`Model configuration not found for: ${virtualModelName}`);
+        throw new Error(`Model configuration not found for: ${requestedModel}`);
     }
 
     // Get the model configuration object
     const config = typeof modelDef.config === 'function' ? modelDef.config() : modelDef.config;
 
-    // Extract the actual model name
-    const actualModelName = config.model || config["azure-model-name"] || config["azure-deployment-id"] || config["vertex-model-id"] || modelDef.name || virtualModelName;
+    // Extract the actual model name used by the provider
+    const usedModel = config.model || config["azure-model-name"] || config["azure-deployment-id"] || config["vertex-model-id"];
     
     log(
         "Processing request for model:",
-        virtualModelName,
+        requestedModel,
         "→",
-        actualModelName,
+        usedModel,
         "with provider:",
         config.provider,
     );
@@ -44,10 +40,10 @@ export function resolveModelConfig(messages, options) {
         messages,
         options: {
             ...options,
-            model: actualModelName,
+            model: usedModel,
             modelConfig: config,
-            modelDef: modelDef,
-            virtualModelName: virtualModelName
+            modelDef,
+            requestedModel
         }
     };
     
@@ -56,4 +52,3 @@ export function resolveModelConfig(messages, options) {
     
     return result;
 }
-

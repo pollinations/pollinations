@@ -5,11 +5,20 @@ import { EventType } from "@/db/schema/event.ts";
 
 const PRECISION = 8;
 
+const COST_TYPES = ["fixed_operational_cost", "per_generation_cost"] as const;
+export type CostType = (typeof COST_TYPES)[number];
+
 const UNITS = {
     DPMT: {
         description: "dollars per million tokens",
         convert: (tokens: number, rate: number): number => {
             return safeRound((tokens / 1_000_000) * rate, PRECISION);
+        },
+    },
+    DPT: {
+        description: "dollars per token",
+        convert: (tokens: number, rate: number): number => {
+            return safeRound(tokens * rate, PRECISION);
         },
     },
 } as const;
@@ -75,6 +84,7 @@ export type CostDefinition = UsageConversionDefinition;
 
 export type ModelProviderDefinition = {
     displayName: string;
+    costType: CostType;
     cost: CostDefinition[];
 };
 
@@ -372,6 +382,9 @@ export function createRegistry<
             providerId: ProviderId<TP>,
         ): ModelProviderDefinition => {
             return providerRegistry[providerId];
+        },
+        getCostType: (providerId: ProviderId<TP>): CostType => {
+            return providerRegistry[providerId].costType;
         },
         getActiveCostDefinition: (
             providerId: ProviderId<TP>,

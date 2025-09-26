@@ -10,6 +10,7 @@ import { storeEvents } from "../src/events.ts";
 import { setupFetchMock } from "./mocks/fetch.ts";
 import { createMockPolar } from "./mocks/polar.ts";
 import { getLogger } from "@logtape/logtape";
+import { createMockTinybird } from "./mocks/tinybird.ts";
 import {
     priceToEventParams,
     usageToEventParams,
@@ -25,12 +26,21 @@ import {
 import { drizzle } from "drizzle-orm/d1";
 
 const mockPolar = createMockPolar();
+const mockTinybird = createMockTinybird();
+
+const mockHandlers = {
+    ...mockPolar.handlerMap,
+    ...mockTinybird.handlerMap,
+};
 
 beforeAll(() => {
-    setupFetchMock(mockPolar.handlerMap, { logRequests: true });
+    setupFetchMock(mockHandlers, { logRequests: true });
 });
 
-beforeEach(() => mockPolar.reset());
+beforeEach(() => {
+    mockPolar.reset();
+    mockTinybird.reset();
+});
 
 function createTextGenerationEvent(
     modelRequested: ServiceId,
@@ -87,7 +97,7 @@ function createTextGenerationEvent(
     };
 }
 
-test("Scheduled handler sends events to Polar.sh", async () => {
+test("Scheduled handler sends events to Polar.sh and Tinybird", async () => {
     const db = drizzle(env.DB);
     const log = getLogger(["hono"]);
     const events = Array.from({ length: 2000 }).map(() => {
@@ -98,4 +108,5 @@ test("Scheduled handler sends events to Polar.sh", async () => {
     const ctx = createExecutionContext();
     await worker.scheduled(controller, env, ctx);
     expect(mockPolar.state.events).toHaveLength(events.length);
+    expect(mockTinybird.state.events).toHaveLength(events.length);
 });

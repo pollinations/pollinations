@@ -16,7 +16,7 @@ const mockHandlers = {
     ...mockPolar.handlerMap,
 };
 
-beforeEach(() => setupFetchMock(mockHandlers));
+beforeEach(() => setupFetchMock(mockHandlers, { logRequests: true }));
 afterEach(() => teardownFetchMock());
 
 test("Only free services should be available without an API key", async () => {

@@ -66,20 +66,19 @@ export const track = (eventType: EventType) =>
                 `Failed to get price definition for model: ${serviceOrDefault}`,
             );
         }
-      
-        let openaiResponse, modelUsage, cost, price;
+        let openaiResponse, modelUsage, costType, cost, price;
         if (c.res.ok) {
-            const body = await c.res.clone().json();
-            openaiResponse =
-                eventType === "generate.text"
-                    ? openaiResponseSchema.parse(body)
-                    : undefined;
+            if (eventType === "generate.text") {
+                const body = await c.res.clone().json();
+                openaiResponse = openaiResponseSchema.parse(body);
+            }
             if (!cacheInfo.cacheHit) {
                 modelUsage = extractUsage(
                     eventType,
                     modelRequested,
                     openaiResponse,
                 );
+                costType = REGISTRY.getCostType(modelUsage.model as ProviderId);
                 cost = REGISTRY.calculateCost(
                     modelUsage.model as ProviderId,
                     modelUsage.usage,

@@ -13,6 +13,7 @@ import {
 import ReactDOM from "react-dom/client";
 import type { AppRoutes } from "../index.ts";
 import { routeTree } from "./routeTree.gen";
+import { config } from "./config.ts";
 
 // Register the router instance for type safety
 declare module "@tanstack/react-router" {
@@ -22,8 +23,8 @@ declare module "@tanstack/react-router" {
 }
 
 const authClient = createAuthClient({
-    baseURL: import.meta.env.PUBLIC_BASE_URL,
-    basePath: import.meta.env.PUBLIC_AUTH_PATH,
+    baseURL: config.baseUrl,
+    basePath: config.authPath,
     plugins: [apiKeyClient()],
 });
 export type AuthClient = typeof authClient;

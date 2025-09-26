@@ -384,7 +384,7 @@ export function createRegistry<
             return providerRegistry[providerId];
         },
         getCostType: (providerId: ProviderId<TP>): CostType => {
-            return providerRegistry[providerId].costType;
+            return providerRegistry[providerId]?.costType;
         },
         getActiveCostDefinition: (
             providerId: ProviderId<TP>,

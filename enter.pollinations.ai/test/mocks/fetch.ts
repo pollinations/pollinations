@@ -10,7 +10,11 @@ export type MockHandlerMap = { [hostname: string]: MockHandler };
 export function createHonoMockHandler(handler: Hono): MockHandler {
     return (request: Request) => {
         const url = new URL(request.url);
-        const mockUrl = new URL(url.pathname + url.search, "http://localhost");
+        // trim trailing slashes
+        const pathname = url.pathname.endsWith("/")
+            ? url.pathname.slice(0, -1)
+            : url.pathname;
+        const mockUrl = new URL(pathname + url.search, "http://localhost");
         const mockRequest = new Request(mockUrl, {
             method: request.method,
             headers: request.headers,
@@ -31,11 +35,11 @@ export function setupFetchMock(
     const log = getLogger(["test", "mock"]);
     const opts = options ?? {};
 
-    const mockHandler = (request: Request) => {
+    const mockHandler = async (request: Request) => {
         const url = new URL(request.url);
-        const handler = handlers[url.hostname];
+        const handler = handlers[url.host];
         if (!handler) return originalFetch(request);
-        return handler(request);
+        return await handler(request);
     };
 
     globalThis.fetch = vi
@@ -55,7 +59,7 @@ export function setupFetchMock(
                 if (opts.logRequests) {
                     log.debug(`[FETCH] ${request.method} ${request.url}`);
                 }
-                return mockHandler(request);
+                return await mockHandler(request);
             },
         );
 }

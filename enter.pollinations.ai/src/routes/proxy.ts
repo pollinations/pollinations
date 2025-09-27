@@ -9,6 +9,8 @@ import type { AuthVariables } from "@/middleware/authenticate.ts";
 import type { PolarVariables } from "@/middleware/polar.ts";
 import { removeUnset } from "@/util.ts";
 import type { Session } from "@/auth.ts";
+import { describeRoute } from "hono-openapi";
+import { alias } from "@/middleware/alias.ts";
 
 const chatCompletionSchema = z.object({
     model: z.string(),
@@ -28,22 +30,35 @@ const chatCompletionSchema = z.object({
 });
 
 export const proxyRoutes = new Hono<Env>()
-    .get("/openai/models", async (c) => {
-        const targetUrl = proxyUrl(c, "https://text.pollinations.ai");
-        return await proxy(targetUrl, {
-            ...c.req,
-            headers: proxyHeaders(c),
-        });
-    })
+    .get(
+        "/openai/models",
+        describeRoute({ description: "Get available text models." }),
+        async (c) => {
+            const targetUrl = proxyUrl(c, "https://text.pollinations.ai");
+            return await proxy(targetUrl, {
+                ...c.req,
+                headers: proxyHeaders(c),
+            });
+        },
+    )
     .use(authenticate)
     .use(polar)
-    .on(
-        "POST",
-        ["/openai/chat/completions", "/openai"],
+    .use(alias({ "/openai/chat/completions": "/openai" }))
+    .post(
+        "/openai",
+        describeRoute({
+            description: [
+                "OpenAI compatible endpoint for text generation.",
+                "Also available under `/openai/chat/completions`.",
+            ].join(" "),
+        }),
         track("generate.text"),
         async (c) => {
             await authorizeRequest(c.var);
-            const targetUrl = proxyUrl(c, "https://text.pollinations.ai");
+            const targetUrl = proxyUrl(
+                c,
+                "https://text.pollinations.ai/openai",
+            );
             const response = await proxy(targetUrl, {
                 method: c.req.method,
                 headers: {
@@ -55,18 +70,65 @@ export const proxyRoutes = new Hono<Env>()
             return response;
         },
     )
-    .get("/image/:prompt", track("generate.image"), async (c) => {
-        await authorizeRequest(c.var);
-        const targetUrl = proxyUrl(c, "https://image.pollinations.ai/prompt");
-        const response = await proxy(targetUrl, {
-            ...c.req,
-            headers: {
-                ...proxyHeaders(c),
-                ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
-            },
-        });
-        return response;
-    });
+    // TODO: fix usage tracking for /generate/text
+    // .get(
+    //     "/text/:prompt",
+    //     describeRoute({
+    //         description: "Generates text from text prompts.",
+    //     }),
+    //     track("generate.text"),
+    //     async (c) => {
+    //         await authorizeRequest(c.var);
+    //         const targetUrl =
+    //             "https://text.pollinations.ai/openai/chat/completions";
+    //         const requestBody = {
+    //             model: c.req.query("model") || "openai",
+    //             messages: [{ role: "user", content: c.req.param("prompt") }],
+    //         };
+    //         const response = await fetch(targetUrl, {
+    //             method: "POST",
+    //             headers: {
+    //                 ...proxyHeaders(c),
+    //                 ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
+    //             },
+    //             body: JSON.stringify(requestBody),
+    //         });
+    //         console.log(response);
+    //         const parsedResponse = openaiResponseSchema.parse(
+    //             await response.json(),
+    //         );
+    //         return c.text(
+    //             parsedResponse.choices[0].message?.content || "",
+    //             200,
+    //         );
+    //     },
+    // )
+    .get(
+        "/image/:prompt",
+        describeRoute({
+            description: "Generates images from text prompts.",
+        }),
+        track("generate.image"),
+        async (c) => {
+            await authorizeRequest(c.var);
+            const targetUrl = proxyUrl(
+                c,
+                "https://image.pollinations.ai/prompt",
+            );
+            targetUrl.pathname = joinPaths(
+                targetUrl.pathname,
+                c.req.param("prompt"),
+            );
+            const response = await proxy(targetUrl, {
+                ...c.req,
+                headers: {
+                    ...proxyHeaders(c),
+                    ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
+                },
+            });
+            return response;
+        },
+    );
 
 async function authorizeRequest({
     auth,
@@ -87,7 +149,7 @@ function generationHeaders(
 ): Record<string, string> {
     return removeUnset({
         "x-enter-token": enterToken,
-        "x-github-id": user?.githubId.toFixed(0),
+        "x-github-id": `${user?.githubId}`,
     });
 }
 
@@ -107,14 +169,9 @@ function proxyUrl(
     c: Context,
     targetBaseUrl: string,
     targetPort: string = "",
-    incomingPathPrefix: string = "/api/generate",
 ): URL {
     const incomingUrl = new URL(c.req.url);
     const targetUrl = new URL(targetBaseUrl);
-    const incomingPathname = incomingUrl.pathname.startsWith(incomingPathPrefix)
-        ? incomingUrl.pathname.slice(incomingPathPrefix.length)
-        : incomingUrl.pathname;
-    targetUrl.pathname = joinPaths(targetUrl.pathname, incomingPathname);
     targetUrl.port = targetPort;
     targetUrl.search = incomingUrl.search;
     return targetUrl;

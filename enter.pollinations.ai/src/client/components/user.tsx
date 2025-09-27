@@ -38,7 +38,7 @@ export const User: FC<UserProps> = ({
                 </button>
             </Menu.Trigger>
             <Menu.Positioner>
-                <Menu.Content className="bg-amber-200 rounded-lg min-w-[150px] z-50 focus:outline-none focus:ring-2 focus:ring-amber-300">
+                <Menu.Content className="bg-amber-200 rounded-lg min-w-0 w-[var(--reference-width)] z-50 focus:outline-none focus:ring-2 focus:ring-amber-300">
                     <Menu.Item
                         value="user-portal"
                         className="px-4 py-2 text-sm text-amber-900 hover:bg-amber-300 cursor-pointer flex items-center border-b-1 border-amber-300"

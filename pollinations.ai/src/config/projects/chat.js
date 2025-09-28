@@ -5,6 +5,15 @@
 
 export const chatProjects = [
   {
+    name: "VOHU AI 🇮🇷",
+    url: "https://www.vohuapp.ir",
+    description: "VOHU AI is an Iranian AI that, in collaboration with Pollinations.AI, offers free and unlimited access to the world's best language models for everyone. The project is completely free with unlimited access, and you can easily use it without even signing up.",
+    author: "info@vohuapp.ir",
+    submissionDate: "2025-09-28",
+    language: "fa-IR",
+    order: 1
+  },
+  {
     name: "LLMS",
     url: "https://yassineabou.github.io/LLMs-Wasm/",
     description: "LLMS is a Kotlin Multiplatform application that brings the power of AI to Android, iOS, Desktop, and WebAssembly platforms. Users can choose from the latest open-source text and image models to boost their creativity - generate unique texts through chat interfaces or create stunning images. The app features local storage for chat history and generated images, with cross-device synchronization capabilities through Google Authentication. Built with Compose Multiplatform for adaptive UIs and Ktor for backend services, LLMS provides a seamless AI experience across all your devices while keeping your creations safe and synchronized.",

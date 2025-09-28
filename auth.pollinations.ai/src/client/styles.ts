@@ -29,12 +29,11 @@ body {
 }
 
 .container { 
-    background: white;
-    padding: 30px; 
-    border-radius: 16px;
+    background: transparent;
+    padding: 20px; 
+    border-radius: 0;
     position: relative;
-    border: 3px solid var(--color-primary);
-    animation: border-shift 10s infinite linear;
+    border: none;
 }
 
 @keyframes border-shift {
@@ -80,6 +79,38 @@ h2 {
     font-size: 1.8rem;
     margin-top: 2rem;
     display: inline-block;
+}
+
+/* Section headers with consistent styling */
+.section-header {
+    font-size: 1.8rem;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    display: inline-block;
+    position: relative;
+    z-index: 1;
+    font-weight: 700;
+}
+
+.section-header::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 0.4em;
+    bottom: 0.1em;
+    left: 0;
+    z-index: -1;
+    background-color: var(--color-secondary);
+    transform: skew(-12deg);
+    animation: section-highlight-shift 8s infinite linear;
+    opacity: 0.7;
+}
+
+@keyframes section-highlight-shift {
+    0% { background-color: var(--color-secondary); }
+    33% { background-color: var(--color-accent); }
+    66% { background-color: var(--color-primary); }
+    100% { background-color: var(--color-secondary); }
 }
 
 h3 {
@@ -197,9 +228,15 @@ input {
     font-size: 1rem;
     border: 2px solid #ddd;
     border-radius: 30px;
+    font-family: 'Space Grotesk', sans-serif;
     margin-right: 10px;
     width: 200px;
-    font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Override for inputs inside input-group */
+.input-group input {
+    margin-right: 0;
+    width: auto;
 }
 
 input:focus {
@@ -218,14 +255,61 @@ input:focus {
 /* Updated layout: stack input above button */
 .input-group {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
     margin-top: 10px;
+    flex-wrap: nowrap;
 }
 
-.input-group button {
-    margin-right: 0; /* remove inline gap now that layout is vertical */
+.input-group input,
+.input-group .status {
+    flex: 1;
+    min-width: 0;
+}
+
+.input-group button,
+.input-group .action-button {
+    flex-shrink: 0;
+    margin: 0;
+}
+
+/* Action button styling for consistent appearance */
+.action-button {
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 2px solid var(--color-primary);
+    border-radius: 20px;
+    background: white;
+    color: var(--color-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.action-button:hover {
+    background: var(--color-primary);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Token value styling */
+.token-value {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: var(--color-primary);
+    background: rgba(108, 44, 255, 0.1);
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(108, 44, 255, 0.2);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.token-value:hover {
+    background: rgba(108, 44, 255, 0.15);
+    transform: scale(1.02);
 }
 
 .domain-item { 
@@ -441,21 +525,20 @@ code::after {
     font-size: 0.9rem;
 }
 
-/* Tier display styling */
-.tier-container {
-    margin-top: 15px;
+/* Section boxes styling with colorful borders */
+.section-group {
+    margin-top: 20px;
     background: linear-gradient(135deg, #e8fff6 0%, #f0fff4 100%);
     border-radius: 18px;
-    padding: 15px 20px;
+    padding: 20px 25px;
     border: 2px solid var(--color-secondary);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     transition: all 0.3s ease;
     position: relative;
 }
 
-.tier-container:hover {
+.section-group:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    border-color: var(--color-primary);
 }
 
 .tier-badge {
@@ -464,20 +547,20 @@ code::after {
     border-radius: 30px;
 }
 
-/* Preferences styling */
-.preferences-container {
-    margin-top: 15px;
-    background: linear-gradient(135deg, #fdf0ff 0%, #f0f7ff 100%);
-    border-radius: 18px;
-    padding: 15px 20px;
-    border: 2px solid #e9c6ff;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+/* Section content boxes with colorful borders */
+.section-content {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, rgba(5, 255, 161, 0.08) 0%, rgba(255, 97, 216, 0.08) 100%);
+    border-radius: 16px;
+    padding: 20px;
+    border: 2px solid var(--color-accent);
     transition: all 0.3s ease;
 }
 
-.preferences-container:hover {
+.section-content:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    border-color: var(--color-primary);
 }
 
 .preferences-header h3 {
@@ -700,33 +783,36 @@ input:checked + .toggle-slider:before {
     flex-shrink: 0;
 }
 
-/* 💬 Inline Help Blocks */
+/* 💬 Inline Help Block styling - borderless */
 .help-block {
-    background: linear-gradient(135deg, rgba(255, 97, 216, 0.05), rgba(5, 255, 161, 0.05));
-    border: 2px dashed var(--color-primary);
-    border-radius: 14px;
-    margin: 15px 0;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+    overflow: hidden;
     transition: all 0.3s ease;
 }
 
-.help-block[open] {
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-    transform: translateY(-2px);
-}
-
 .help-block summary {
+    padding: 8px 0;
+    cursor: pointer;
+    font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 14px 18px;
-    cursor: pointer;
+    gap: 8px;
+    font-size: 0.95rem;
+    background: transparent;
+    color: #666;
     user-select: none;
     list-style: none;
-    font-weight: 700;
-    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-    color: #fff;
-    border-radius: 12px;
-    position: relative;
+    transition: all 0.25s ease;
+    border-radius: 0;
+}
+
+.help-block summary:hover {
+    color: var(--color-primary);
 }
 
 /* Hide default disclosure arrow */
@@ -785,28 +871,20 @@ input:checked + .toggle-slider:before {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
-/* 💼 Access Card styling */
-.access-card {
-    margin-top: 15px;
-    background: linear-gradient(135deg, rgba(5, 255, 161, 0.08) 0%, rgba(255, 97, 216, 0.08) 100%);
-    border-radius: 18px;
-    padding: 20px 24px;
-    border: 2px solid var(--color-accent);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
-}
-
-.access-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-}
-
-.access-card .section-info {
+/* Section content headers and elements */
+.section-content h2 {
     margin-top: 0;
+    margin-bottom: 15px;
+    color: var(--color-text);
 }
 
-.access-card button {
+.section-content .section-info {
     margin-top: 10px;
+    margin-bottom: 15px;
+}
+
+.section-content button {
+    margin-top: 15px;
 }
 
 /* Profile badge styling */

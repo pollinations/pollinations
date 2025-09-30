@@ -236,11 +236,12 @@ export default {
             // Log request information
             log("request", `🚀 ${request.method} ${url.pathname}`);
 
-            // Let origin handle root requests (e.g. redirects) without caching
-            if (url.pathname === "/" || url.pathname === "") {
+            // Let origin handle GET root requests (e.g. redirects) without caching
+            // But allow POST requests to root to be cached
+            if ((url.pathname === "/" || url.pathname === "") && request.method === "GET") {
                 log(
                     "request",
-                    "Proxying root request directly to origin without caching",
+                    "Proxying GET root request directly to origin without caching",
                 );
                 return await proxyRequest(request, env);
             }

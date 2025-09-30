@@ -9,6 +9,7 @@ import type {
 const MOCK_MODEL_PROVIDERS = {
     "mock-model": {
         displayName: "Mock Model",
+        costType: "per_generation_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
@@ -32,7 +33,7 @@ const MOCK_MODEL_PROVIDERS = {
 const MOCK_SERVICES = {
     "free-service": {
         displayName: "Free Service",
-        aliases: ["free-service-alias"],
+        aliases: ["free-service-alias-a", "free-service-alias-b"],
         modelProviders: ["mock-model"],
         price: [
             {
@@ -123,4 +124,31 @@ test("Usage types with undefined cost or price should throw an error", async () 
     expect(() => MOCK_REGISTRY.calculateCost("mock-model", usage)).toThrow();
     expect(() => MOCK_REGISTRY.calculatePrice("free-service", usage)).toThrow();
     expect(() => MOCK_REGISTRY.calculatePrice("paid-service", usage)).toThrow();
+});
+
+test("Aliases should be resolved by the registry", async () => {
+    expect(
+        MOCK_REGISTRY.withFallbackService("free-service", "generate.text"),
+    ).toBe("free-service");
+    expect(
+        MOCK_REGISTRY.withFallbackService(
+            "free-service-alias-a",
+            "generate.text",
+        ),
+    ).toBe("free-service");
+    expect(
+        MOCK_REGISTRY.withFallbackService(
+            "free-service-alias-b",
+            "generate.text",
+        ),
+    ).toBe("free-service");
+    expect(
+        MOCK_REGISTRY.withFallbackService("paid-service", "generate.text"),
+    ).toBe("paid-service");
+    expect(
+        MOCK_REGISTRY.withFallbackService(
+            "paid-service-alias",
+            "generate.text",
+        ),
+    ).toBe("paid-service");
 });

@@ -75,7 +75,7 @@ function RouteComponent() {
     return (
         <div className="flex flex-col gap-20">
             <div className="flex justify-between gap-4">
-                <h1 className="flex-1">Pollinations</h1>
+                <h1 className="flex-1">Pollinations.AI</h1>
                 <User
                     githubUsername={user.githubUsername}
                     githubAvatarUrl={user.image || ""}
@@ -91,7 +91,8 @@ function RouteComponent() {
                     <span className="text-3xl font-subheading">Add</span>
                     <Button
                         as={"a"}
-                        variant="pink"
+                        color="pink"
+                        weight="light"
                         href="/api/polar/checkout/pollen-bundle-small"
                         target="_blank"
                     >
@@ -99,7 +100,8 @@ function RouteComponent() {
                     </Button>
                     <Button
                         as="a"
-                        variant="blue"
+                        color="blue"
+                        weight="light"
                         href="/api/polar/checkout/pollen-bundle-medium"
                         target="_blank"
                     >
@@ -107,7 +109,8 @@ function RouteComponent() {
                     </Button>
                     <Button
                         as="a"
-                        variant="red"
+                        color="red"
+                        weight="light"
                         href="/api/polar/checkout/pollen-bundle-large"
                         target="_blank"
                     >

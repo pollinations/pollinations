@@ -275,3 +275,4 @@ Okay, here are all the unique project names from the provided JSON data:
 285. 🆕 Neurix 🇷🇺 - added to chat.js
 286. 🆕 Snapgen.io - added to creative.js
 287. 🆕 urSapere AI - added to hackAndBuild.js
+288. 🆕 J.A.R.V.I.S. - added to chat.js

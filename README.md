@@ -2,6 +2,13 @@
   <img src="assets/pollinations_ai_logo_text_black.png" alt="Pollinations.AI Logo" width="100%"/>
 </div>
 
+## 📢 Hacktoberfest News
+
+- **Hacktoberfest 2025 is here!**  
+  If you're participating, please check out our [Code of Conduct](./CODE_OF_CONDUCT.md) and [Contributing Guidelines](./CONTRIBUTING.md) before submitting your PRs.
+- For event PRs, look for issues tagged with `hacktoberfest` in our [issue tracker](https://github.com/pollinations/pollinations/issues) and join the community effort!
+
+
 ## 🆕 Latest News
 
 - **🧠 Sequa AI Integration** - [Sequa.AI](https://sequa.ai) contextual knowledge engine now available! Provides AI assistants with deep, real-time understanding of codebases and documentation. Configure MCP for Pollinations: `https://mcp.sequa.ai/v1/pollinations/contribute` | [Learn more](https://sequa.ai).

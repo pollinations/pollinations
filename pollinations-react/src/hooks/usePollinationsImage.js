@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo } from "react";
 
 /**
  * Custom hook to generate a Pollinations image URL based on the given prompt and options.
- * 
+ *
  * @param {string} prompt - The prompt to generate the image.
  * @param {Object} [options] - Optional parameters for image generation.
  * @param {number} [options.width=1024] - The width of the generated image.
@@ -14,10 +14,24 @@ import React, { useMemo } from 'react';
  * @returns {string} - The URL of the generated image.
  */
 const usePollinationsImage = (prompt, options = {}) => {
-    const { width = 1024, height = 1024, model = 'flux', seed = 42, nologo = true, enhance = false } = options;
+    const {
+        width = 1024,
+        height = 1024,
+        model = "flux",
+        seed = 42,
+        nologo = true,
+        enhance = false,
+    } = options;
 
     const imageUrl = useMemo(() => {
-        const params = new URLSearchParams({ width, height, model, seed, nologo, enhance });
+        const params = new URLSearchParams({
+            width,
+            height,
+            model,
+            seed,
+            nologo,
+            enhance,
+        });
         return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?${params.toString()}`;
     }, [prompt, width, height, model, seed, nologo, enhance]);
 

@@ -5,12 +5,10 @@
             "type": "pwa-node",
             "request": "launch",
             "name": "DEV",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
+            "skipFiles": ["<node_internals>/**"],
             "runtimeExecutable": "npm",
             "cwd": "${workspaceFolder}",
-            "runtimeArgs": ["dev"],
-        },
+            "runtimeArgs": ["dev"]
+        }
     ]
 }

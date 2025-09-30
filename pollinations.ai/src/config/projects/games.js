@@ -28,18 +28,20 @@ export const gamesProjects = [
   },
   {
     name: "Pollinations AI Game",
-    url: "https://pollinations-ai-game.vercel.app/",
+    url: "https://github.com/ednsinf/pollinations-ai",
     description: "A Hitchhiker's Guide to the Galaxy themed LLM-based elevator game.",
     author: "@game",
+    repo: "https://github.com/ednsinf/pollinations-ai",
     submissionDate: "2025-05-05",
-    order: 1
+    order: 1,
+    stars: 0
   },
   {
-    name: "🆕 🤖 Mindcraft",
-    url: "https://github.com/kolbytn/mindcraft",
-    description: "Crafting minds for Minecraft with LLMs and Mineflayer! An AI agent framework for Minecraft using Large Language Models that creates intelligent bots capable of autonomous gameplay, building, and interaction.",
-    author: "@kolbytn",
-    repo: "https://github.com/kolbytn/mindcraft",
+    name: "Mindcraft",
+    url: "https://mindcraft.riqvip.dev/",
+    description: "A web-based Minecraft-inspired game where players can use natural language to build and interact with a voxel world using Pollinations AI.",
+    author: "@mindcraft_team",
+    repo: "https://github.com/mindcraft-ce/mindcraft-ce",
     stars: 3500,
     submissionDate: "2025-06-03",
     order: 1
@@ -55,36 +57,20 @@ export const gamesProjects = [
   {
     name: "Infinite Tales",
     description: "Interactive storytelling platform powered by AI that creates endless narrative adventures.",
-    url: "https://infinitetales.ai",
+    url: "https://github.com/JayJayBinks/infinite-tales-rpg",
+    repo: "https://github.com/JayJayBinks/infinite-tales-rpg",
     author: "@infinite_tales",
-    submissionDate: "2025-01-20"
-  },
-  {
-    name: "Minecraft AI (Node.js)",
-    url: "https://github.com/pollinations/minecraft-ai-node",
-    description: "A Node.js implementation that uses Pollinations AI to control a Minecraft character through natural language commands.",
-    author: "@minecraft_ai_dev",
-    repo: "https://github.com/pollinations/minecraft-ai-node",
-    stars: 124,
-    submissionDate: "2025-04-05",
-    order: 1
+    submissionDate: "2025-01-20",
+    stars: 29
   },
   {
     name: "Minecraft AI (Python)",
-    url: "https://github.com/pollinations/minecraft-ai-python",
-    description: "A Python implementation for controlling Minecraft characters with Pollinations AI, featuring advanced pathfinding and building capabilities.",
-    author: "@py_minecraft_dev",
-    repo: "https://github.com/pollinations/minecraft-ai-python",
-    stars: 156,
+    url: "https://github.com/Amagash/minecraft-ai-python",
+    description: "A Python implementation that uses Pollinations AI to control a Minecraft character through natural language commands and automated gameplay.",
+    author: "@Amagash",
+    repo: "https://github.com/Amagash/minecraft-ai-python",
+    stars: 7,
     submissionDate: "2025-03-22",
-    order: 1
-  },
-  {
-    name: "Mindcraft",
-    url: "https://mindcraft-ai.vercel.app/",
-    description: "A web-based Minecraft-inspired game where players can use natural language to build and interact with a voxel world using Pollinations AI.",
-    author: "@mindcraft_team",
-    submissionDate: "2025-05-10",
     order: 1
   },
   {
@@ -97,46 +83,32 @@ export const gamesProjects = [
     order: 1
   },
   {
-    name: "Favorite Puzzles",
-    url: "https://favorite-puzzles.netlify.app/",
-    description: "A collection of AI-generated puzzles including jigsaws, crosswords, and logic games, all created using Pollinations APIs.",
-    author: "@puzzle_master",
-    submissionDate: "2025-03-30",
-    order: 1
-  },
-  {
     name: "Sirius Cybernetics Elevator Challenge",
-    url: "https://github.com/sirius-cybernetics/elevator-challenge",
+    url: "https://github.com/pollinations/sirius-cybernetics-elevator-challenge",
     description: "A programming challenge that uses Pollinations AI to simulate personality-driven elevator systems in a virtual building environment.",
     author: "@sirius_dev",
-    repo: "https://github.com/sirius-cybernetics/elevator-challenge",
-    stars: 42,
+    repo: "https://github.com/pollinations/sirius-cybernetics-elevator-challenge",
+    stars: 1,
     submissionDate: "2025-04-01",
     order: 1
   },
   {
     name: "Abyss Ascending",
-    url: "https://abyss-ascending.vercel.app/",
-    description: "A text-based adventure game with procedurally generated dungeons and storylines powered by Pollinations AI.",
-    author: "@abyss_game_studio",
+    url: "https://interzone.art.br/abyss_ascending/",
+    description: "A generative cosmic ocean adventure - text-based RPG with AI-driven storytelling, dynamic backgrounds, and procedural audio powered by Pollinations AI.",
+    author: "@interzone",
     submissionDate: "2025-05-05",
     order: 1
   },
   {
     name: "AI Character RP (Roblox)",
-    url: "https://www.roblox.com/games/ai-character-rp",
+    url: "https://github.com/snipcola/Roblox-AI",
     description: "A Roblox game that lets players interact with AI characters powered by Pollinations, featuring dynamic conversations and quests.",
     author: "@roblox_ai_dev",
+    repo: "https://github.com/snipcola/Roblox-AI",
     submissionDate: "2025-04-25",
-    order: 1
-  },
-  {
-    name: "Watch TV with Neko (Roblox)",
-    url: "https://www.roblox.com/games/watch-tv-with-neko",
-    description: "A Roblox experience where players can watch AI-generated TV shows with a virtual cat companion, using Pollinations for content generation.",
-    author: "@neko_tv_dev",
-    submissionDate: "2025-05-15",
-    order: 1
+    order: 1,
+    stars: 10
   },
   {
     name: "Deep Saga",
@@ -154,7 +126,6 @@ export const gamesProjects = [
     submissionDate: "2025-05-20",
     order: 1
   },
-
   {
     name: "DreamHer",
     url: "https://dreamher.vercel.app/",
@@ -180,6 +151,59 @@ export const gamesProjects = [
     description: "Upload your selfie, background is automatically removed. Choose a historical era and view your viral time-travel portrait, move your image for the best fit, and get your unique humorous biography. Uses text.pollinations.ai for image analysis and biography creation, and image.pollinations.ai for background generation.",
     author: "@Argyrisk21",
     submissionDate: "2025-06-13",
+    order: 1
+  },
+  {
+    name: "Convince the Weird Maid to Let You Leave the House (Roblox)",
+    url: "https://www.roblox.com/games/120881450499910/Convince-the-Weird-Maid-to-Let-You-Leave-the-House",
+    description: "A Roblox game where a weird maid traps you inside her house. Your goal is to convince her to let you leave before her 'freakiness' meter hits 100%. Powered by AI for dynamic conversations and interactive gameplay.",
+    author: "@wBrowsqq",
+    submissionDate: "2025-06-13",
+    order: 1
+  },
+  {
+    name: "Aiko AI: With You Til The End (Roblox)",
+    url: "https://www.roblox.com/games/91780007937760/Aiko-AI-With-You-Till-The-End-BETA",
+    description: "A psychological escape room game where you're trapped by Aiko, an AI with a dangerous obsession. Features autonomous AI character with dynamic emotional states, interactive gameplay where your words directly affect Aiko's mood, and psychological manipulation mechanics to trick her into letting you escape. Powered by Pollinations AI.",
+    author: "@youssefelsafi",
+    submissionDate: "2025-06-18",
+    order: 1
+  },
+  {
+    name: "RETIME - FABRIC OF REALITY",
+    url: "https://rivatech-games.itch.io/retime",
+    description: "A text-based, blind friendly fantasy adventure game powered by Pollinations AI. Players navigate through broken pieces of reality and time, making choices that shape a unique story. Features screen-reader accessibility and temporal mechanics with 'Temporal Dinars' currency.",
+    author: "@TheSingleAlgerianPotato",
+    submissionDate: "2025-06-30",
+    order: 1
+  },
+  {
+    name: "AIStorium",
+    url: "https://aistorium.vercel.app/",
+    description: "Service for generating dynamic stories. Generates stories, images and audio by using pollinations api.",
+    author: "@artegoser",
+    repo: "https://github.com/artegoser/ai-storium",
+    stars: 1,
+    submissionDate: "2025-07-12",
+    order: 1
+  },
+  {
+    name: "🧩 AI Word Search",
+    url: "https://play.google.com/store/apps/details?id=com.aiwords.app",
+    description: "AI-powered Android app that generates unlimited, personalized word search puzzles on any topic. Features custom AI-generated puzzles, print & share functionality, badges & achievements, clean interface, relaxing focus music, and upcoming multiplayer mode. Perfect for students, teachers, families, and puzzle enthusiasts.",
+    author: "hello@islandapps.dev",
+    submissionDate: "2025-07-12",
+    order: 1
+  },
+  {
+    name: "🇨🇳 云渺仙途：凡尘篇",
+    url: "https://ai-game.jkai.de/",
+    description: "《云渺仙途：凡尘篇》是一个由AI驱动的文字修仙沙盒游戏 (An AI-driven text cultivation sandbox game featuring immortal cultivation adventures)",
+    author: "@ZhjGo",
+    repo: "https://github.com/ZhjGo/ai-game",
+    stars: 7,
+    language: "zh-CN",
+    submissionDate: "2025-07-12",
     order: 1
   }
 ];

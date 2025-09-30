@@ -1,0 +1,73 @@
+TOKEN generation_event_append APPEND
+
+DESCRIPTION >
+Generative AI events with usage, pricing, metadata, moderation, and cache info
+
+SCHEMA >
+`request_id`      String                 `json:$.requestId`,
+`start_time`      DateTime               `json:$.startTime`,
+`end_time`        DateTime               `json:$.endTime`,
+`response_time`   Float32                `json:$.responseTime` DEFAULT 0,
+`response_status` UInt32                 `json:$.responseStatus` DEFAULT 0,
+`environment`     LowCardinality(String) `json:$.environment` DEFAULT 'undefined',
+
+`event_type`      LowCardinality(String) `json:$.eventType`,
+`user_id`         LowCardinality(String) `json:$.userId` DEFAULT 'undefined',
+`user_tier`       LowCardinality(String) `json:$.userTier` DEFAULT 'undefined',
+`referrer_url`    String                 `json:$.referrerUrl` DEFAULT 'undefined',
+`referrer_domain` LowCardinality(String) `json:$.referrerDomain` DEFAULT 'undefined',
+
+`model_requested`      LowCardinality(String) `json:$.modelRequested` DEFAULT 'undefined',
+`model_used`           LowCardinality(String) `json:$.modelUsed` DEFAULT 'undefined',
+`is_billed_usage`      Bool                   `json:$.isBilledUsage`,
+
+-- Pricing
+`token_price_prompt_text`          Float64  `json:$.tokenPricePromptText` DEFAULT 0,
+`token_price_prompt_cached`        Float64  `json:$.tokenPricePromptCached` DEFAULT 0,
+`token_price_prompt_audio`         Float64  `json:$.tokenPricePromptAudio` DEFAULT 0,
+`token_price_prompt_image`         Float64  `json:$.tokenPricePromptImage` DEFAULT 0,
+`token_price_completion_text`      Float64  `json:$.tokenPriceCompletionText` DEFAULT 0,
+`token_price_completion_reasoning` Float64  `json:$.tokenPriceCompletionReasoning` DEFAULT 0,
+`token_price_completion_audio`     Float64  `json:$.tokenPriceCompletionAudio` DEFAULT 0,
+`token_price_completion_image`     Float64  `json:$.tokenPriceCompletionImage` DEFAULT 0,
+
+-- Usage
+`token_count_prompt_text`          UInt32   `json:$.tokenCountPromptText` DEFAULT 0,
+`token_count_prompt_audio`         UInt32   `json:$.tokenCountPromptAudio` DEFAULT 0,
+`token_count_prompt_cached`        UInt32   `json:$.tokenCountPromptCached` DEFAULT 0,
+`token_count_prompt_image`         UInt32   `json:$.tokenCountPromptImage` DEFAULT 0,
+`token_count_completion_text`      UInt32   `json:$.tokenCountCompletionText` DEFAULT 0,
+`token_count_completion_reasoning` UInt32   `json:$.tokenCountCompletionReasoning` DEFAULT 0,
+`token_count_completion_audio`     UInt32   `json:$.tokenCountCompletionAudio` DEFAULT 0,
+`token_count_completion_image`     UInt32   `json:$.tokenCountCompletionImage` DEFAULT 0,
+
+`cost_type`     LowCardinality(String) `json:$.costType` DEFAULT 'undefined',
+`total_cost`    Float64 `json:$.totalCost` DEFAULT 0,
+`total_price`   Float64 `json:$.totalPrice` DEFAULT 0,
+
+-- Prompt Moderation
+`moderation_prompt_hate_severity`       LowCardinality(String) `json:$.moderationPromptHateSeverity` DEFAULT 'undefined',
+`moderation_prompt_self_harm_severity`  LowCardinality(String) `json:$.moderationPromptSelfHarmSeverity` DEFAULT 'undefined',
+`moderation_prompt_sexual_severity`     LowCardinality(String) `json:$.moderationPromptSexualSeverity` DEFAULT 'undefined',
+`moderation_prompt_violence_severity`   LowCardinality(String) `json:$.moderationPromptViolenceSeverity` DEFAULT 'undefined',
+`moderation_prompt_jailbreak_detected`  Bool `json:$.moderationPromptJailbreakDetected` DEFAULT false,
+
+-- Completion Moderation
+`moderation_completion_hate_severity`       LowCardinality(String) `json:$.moderationCompletionHateSeverity` DEFAULT 'undefined',
+`moderation_completion_self_harm_severity`  LowCardinality(String) `json:$.moderationCompletionSelfHarmSeverity` DEFAULT 'undefined',
+`moderation_completion_sexual_severity`     LowCardinality(String) `json:$.moderationCompletionSexualSeverity` DEFAULT 'undefined',
+`moderation_completion_violence_severity`   LowCardinality(String) `json:$.moderationCompletionViolenceSeverity` DEFAULT 'undefined',
+`moderation_completion_protected_material_code_detected`  Bool `json:$.moderationCompletionProtectedMaterialCodeDetected` DEFAULT false,
+`moderation_completion_protected_material_text_detected`  Bool `json:$.moderationCompletionProtectedMaterialTextDetected` DEFAULT false,
+
+-- Cache
+`cache_hit`                  Bool                    `json:$.cacheHit` DEFAULT false,
+`cache_type`                 LowCardinality(String)  `json:$.cacheType` DEFAULT 'undefined',
+`cache_semantic_similarity`  Nullable(Float32)       `json:$.cacheSemanticSimilarity`,
+`cache_semantic_threshold`   Nullable(Float32)       `json:$.cacheSemanticThreshold`,
+`cache_key`                  String                  `json:$.cacheKey` DEFAULT '',
+
+ENGINE "MergeTree" 
+ENGINE_PARTITION_KEY "toYYYYMM(start_time)"
+ENGINE_SORTING_KEY "start_time, environment, user_id, user_tier"
+ENGINE_PRIMARY_KEY "start_time, environment, user_id"

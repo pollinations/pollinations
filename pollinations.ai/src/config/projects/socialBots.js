@@ -15,7 +15,15 @@ export const socialBotsProjects = [
     originalPath: "pollinations.ai/src/config/projectList.js",
     discoveredCommit: "15ec92f2",
     discoveredDate: "2025-06-04T09:29:31.740Z"
-  }, 
+  },
+  {
+    name: "Pollix AI",
+    url: "http://t.me/pollixrobot",
+    description: "Pollix AI is your multilingual AI assistant for fast replies, image understanding, and clean answers.",
+    author: "@bladedev",
+    submissionDate: "2025-08-14",
+    order: 1
+  },
   {
     name: "Anyai",
     url: "https://discord.gg/anyai",
@@ -40,39 +48,14 @@ export const socialBotsProjects = [
     order: 1
   },
   {
-    name: "PolliBot",
-    url: "https://t.me/pollinations_bot",
-    description: "Telegram bot that generates images, text, and audio using Pollinations APIs.",
-    author: "@pollibot_dev",
-    submissionDate: "2025-02-10"
-  },
-  {
-    name: "One Word",
-    url: "https://oneword.pollinations.ai",
-    description: "A Discord bot that generates images from single-word prompts, designed for simplicity and quick creative inspiration.",
-    author: "@oneword_team",
-    submissionDate: "2025-04-05",
-    order: 1
-  },
-  {
-    name: "Titan-GPT",
-    url: "https://titan-gpt.vercel.app",
-    description: "A Discord bot that combines text and image generation capabilities from Pollinations to create rich, interactive experiences for server members.",
-    author: "@titan_dev",
-    repo: "https://github.com/titan-dev/titan-gpt",
-    stars: 87,
-    submissionDate: "2025-04-12",
-    order: 1
-  },
-  {
     name: "Pollinations Discord Bot",
-    url: "https://github.com/pollinations/discord-bot",
-    description: "Official Discord bot for Pollinations.ai that allows server members to generate images, text, and audio directly within Discord channels.",
-    author: "@pollinations",
-    repo: "https://github.com/pollinations/discord-bot",
-    stars: 156,
+    url: "https://github.com/Zingzy/pollinations.ai-bot",
+    description: "AI Image Generation Discord Bot using Pollinations.ai. Written in Python with discord.py, used in 500+ servers. Features /pollinate command for AI images with prompt enhancement, width/height options, /multi-pollinate for 4 variations, and /random for random AI images.",
+    author: "@zingy",
+    repo: "https://github.com/Zingzy/pollinations.ai-bot",
     submissionDate: "2025-03-20",
-    order: 1
+    order: 1,
+    stars: 17
   },
   {
     name: "Pollinations Telegram Assistant",
@@ -91,16 +74,6 @@ export const socialBotsProjects = [
     order: 2
   },
   {
-    name: "OpenHive",
-    url: "https://openhive.network",
-    description: "A decentralized platform for AI bots powered by Pollinations that can be deployed across multiple social media platforms simultaneously.",
-    author: "@openhive_network",
-    repo: "https://github.com/openhive/network",
-    stars: 124,
-    submissionDate: "2025-04-15",
-    order: 1
-  },
-  {
     name: "pollinations-tg-bot 🇨🇳",
     url: "https://t.me/pollinations_cn_bot",
     description: "Chinese language Telegram bot for Pollinations AI with specialized prompts for Eastern art styles and cultural references.",
@@ -110,20 +83,11 @@ export const socialBotsProjects = [
     order: 2
   },
   {
-    name: "AlphaLLM - AI Discord Bot",
-    url: "https://alphallm.ai/discord",
-    description: "A feature-rich Discord bot that combines multiple AI models from Pollinations to provide text generation, image creation, and voice synthesis.",
-    author: "@alphallm_team",
-    repo: "https://github.com/alphallm/discord-bot",
-    stars: 213,
-    submissionDate: "2025-05-05",
-    order: 1
-  },
-  {
     name: "Quick AI & Jolbak",
     url: "https://quickai.jolbak.com",
     description: "A multi-platform bot suite that integrates with Discord, Slack, and Microsoft Teams to provide Pollinations AI services in professional environments.",
     author: "@jolbak_dev",
+    repo: "https://github.com/jacob-ai-bot/jacob",
     submissionDate: "2025-05-18",
     order: 2
   },
@@ -132,6 +96,7 @@ export const socialBotsProjects = [
     url: "https://www.roblox.com/games/ai-image-generator",
     description: "A Roblox experience that allows players to generate images using Pollinations AI directly within the game environment.",
     author: "@roblox_ai_studio",
+    repo: "https://github.com/snipcola/Roblox-AI",
     submissionDate: "2025-05-22",
     order: 2
   },
@@ -145,22 +110,12 @@ export const socialBotsProjects = [
   },
   {
     name: "Raftar.xyz",
-    url: "https://raftar.xyz/app",
+    url: "https://discord.com/discovery/applications/1285597879020556308",
     description: "Raftar.xyz is an innovative social bot platform that uses Pollinations AI to create engaging and interactive experiences on Discord and Twitter, focusing on community building and automated content curation.",
     author: "@raftar_official",
     repo: "https://github.com/raftarxyz/raftar-bot",
     stars: 42,
     submissionDate: "2025-05-20",
-    order: 1
-  },
-  {
-    name: "PolliBot",
-    url: "https://pollibot.example.com",
-    description: "A versatile Telegram bot integrated with Pollinations. Offers image generation, text summarization, and quick answers directly within Telegram chats. Supports multiple languages.",
-    author: "BotBuilders Inc.",
-    repo: "https://github.com/botbuilders/pollibot-telegram",
-    stars: 75,
-    submissionDate: "2025-03-20",
     order: 1
   },
   {

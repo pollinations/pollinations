@@ -5,6 +5,97 @@
 
 export const chatProjects = [
   {
+    name: "VOHU AI 🇮🇷",
+    url: "https://www.vohuapp.ir",
+    description: "VOHU AI is an Iranian AI that, in collaboration with Pollinations.AI, offers free and unlimited access to the world's best language models for everyone. The project is completely free with unlimited access, and you can easily use it without even signing up.",
+    author: "info@vohuapp.ir",
+    submissionDate: "2025-09-28",
+    language: "fa-IR",
+    order: 1
+  },
+  {
+    name: "LLMS",
+    url: "https://yassineabou.github.io/LLMs-Wasm/",
+    description: "LLMS is a Kotlin Multiplatform application that brings the power of AI to Android, iOS, Desktop, and WebAssembly platforms. Users can choose from the latest open-source text and image models to boost their creativity - generate unique texts through chat interfaces or create stunning images. The app features local storage for chat history and generated images, with cross-device synchronization capabilities through Google Authentication. Built with Compose Multiplatform for adaptive UIs and Ktor for backend services, LLMS provides a seamless AI experience across all your devices while keeping your creations safe and synchronized.",
+    author: "@yassineAbou",
+    repo: "https://github.com/yassineAbou/LLMS",
+    stars: 88,
+    submissionDate: "2025-09-19",
+    order: 1
+  },
+  {
+    name: "Strapick Chat",
+    url: "https://strapick-chat.vercel.app/",
+    description: "A minimalistic chat UI for pollinations AI.",
+    author: "@mmojocoder",
+    repo: "https://github.com/MMojoCoder/Strapick-Chat",
+    submissionDate: "2025-09-21",
+    order: 1
+  },
+  {
+    name: "Chad GPT",
+    url: "https://chadgpt0.vercel.app/",
+    description: "AI Text, Image, and Audio Generator powered by Pollinations AI API. A comprehensive AI platform that combines text generation, image creation, and audio synthesis capabilities in a single interface.",
+    author: "https://sawwqib.vercel.app",
+    submissionDate: "2025-09-21",
+    order: 1
+  },
+  {
+    name: "チャットGPT 日本語 🇯🇵",
+    url: "https://chatgpt-jp.org/",
+    description: "チャットGPT 日本語無料版 (Free Japanese version of ChatGPT)",
+    author: "https://x.com/zhugezifang",
+    submissionDate: "2025-09-17",
+    language: "ja-JP",
+    order: 1
+  },
+  {
+    name: "EasyGen",
+    url: "https://easygenme.netlify.app/",
+    description: "AI-powered tool that generates Mermaid diagrams and flowcharts from plain-language prompts. Offers instant preview, editable source, and supports multiple diagram types for developers, designers, and educators.",
+    author: "@Ellweb3",
+    submissionDate: "2025-08-11",
+    language: "en",
+    order: 1
+  },
+  {
+    name: "Botzy AI 🇵🇰",
+    url: "https://botzy.hexabiz.com.pk",
+    description: "A free, unlimited, multilingual AI chatbot designed for Pakistani users. Supports Urdu, English, and Roman Urdu with multiple intelligent engines: L1T3-Ωᴹ² (multimodal), L1T3-Σᴹ² (ultra-fast), and 𝚂cεηεBαsε (witty personality inspired by Karachi's culture). Features context-aware responses and community engagement.",
+    author: "@zakrya6665",
+    submissionDate: "2025-08-05",
+    language: "ur-PK",
+    order: 1
+  },
+  {
+    name: "Island",
+    url: "https://islandai.app",
+    description: "Island AI is a free, modern ChatGPT alternative featuring smart multimodal chat, integrated web search, a polished interface, and a unique Questioning Mode that asks clarifying questions before delivering precise, real-time responses.",
+    author: "@techcow2",
+    repo: "https://github.com/techcow2/Island",
+    submissionDate: "2025-08-05",
+    order: 1
+  },
+  {
+    name: "UltimaX Intelligence",
+    url: "https://umint-ai.hf.space",
+    description: "UltimaX Intelligence is a free AI platform that unifies multiple premium AI models into one seamless experience. Powered by the Pollinations open-source AI community and integrated with Open-WebUI, it provides an intuitive interface similar to ChatGPT but with more advanced features. Users can access a variety of powerful tools without any cost, registration, or login. All conversations are temporary and are not saved, ensuring privacy and simplicity.",
+    author: "@hadadarjt",
+    repo: "https://huggingface.co/spaces/umint/ai/tree/main",
+    submissionDate: "2025-07-13",
+    order: 1
+  },
+  {
+    name: "VOID.AI",
+    url: "https://thevoidai.vercel.app/",
+    description: "A humanlike AI mentor, productivity partner, and emotionally intelligent assistant that adapts its tone and energy based on user behavior. Features conversational AI that feels more like a charismatic friend than a chatbot, providing code walkthroughs, life advice, writing help, and motivation with realistic speech output and context memory.",
+    author: "@Ajay-Dhakad",
+    repo: "https://github.com/Ajay-Dhakad/VOID.AI",
+    stars: 0,
+    submissionDate: "2025-07-06",
+    order: 1
+  },
+  {
     name: "J.A.R.V.I.S.",
     url: "https://huggingface.co/spaces/hadadrjt/ai",
     description: "Just a Rather Very Intelligent System - an advanced AI language model inspired by Iron Man's iconic assistant. Features an interactive interface for real-time engagement with context-aware, high-fidelity natural language processing, integrated with Pollinations AI for image and audio generation.",
@@ -46,7 +137,7 @@ export const chatProjects = [
   },
   {
     name: "Unity AI Lab",
-    url: "https://blog.unityailab.com/unity.html",
+    url: "https://unity.unityailab.com/",
     description: "A specialized uncensored LLM model built on Mistral Large, focused on unrestricted conversations.",
     order: 1
   },
@@ -56,18 +147,8 @@ export const chatProjects = [
     description: "The official gpt4free repository - various collection of powerful language models.",
     author: "xtekky",
     repo: "https://github.com/xtekky/gpt4free",
-    stars: 64100,
+    stars: 65121,
     order: 1
-  },
-
-  {
-    name: "PrivatePollenAI",
-    url: "https://mmojocoder.github.io/PrivatePollenAI/chat.html",
-    description: "A privacy-focused chat assistant app that securely stores data locally, integrates with PollinationAI for text and image generation, features a minimalistic UI, and allows users to choose models and write their own system instructions.",
-    author: "https://github.com/MMojoCoder",
-    repo: "https://github.com/MMojoCoder/PrivatePollenAI",
-    submissionDate: "2025-02-23",
-    order: 4
   },
   {
     name: "FreeAI 🇨🇳",
@@ -113,27 +194,11 @@ export const chatProjects = [
     order: 1
   },
   {
-    name: "🤖 DesmondBot",
-    url: "https://swedish-innocent-teeth-majority.trycloudflare.com",
-    description: "A snarky bot based on Llama that is 100% free, powered by the Pollinations text API and OpenWebUI. Other models are available as well.",
-    author: "@mcgdj",
-    submissionDate: "2025-04-18",
-    order: 2
-  },
-  {
     name: "Pal Chat",
     url: "https://apps.apple.com/us/app/pal-chat-ai-chat-client/id6447545085?platform=iphone",
     description: "An iOS app that integrates with all LLMs including Pollinations AI models in one unified simple interface.",
     author: "https://x.com/pallavmac",
     submissionDate: "2025-02-16",
-    order: 1
-  },
-  {
-    name: "Pollinations AI Chatbot",
-    url: "https://pollinations-ai-chatbot.vercel.app/",
-    description: "A chat bot integrating Pollinations API for text and image generation.",
-    author: "@chatbot",
-    submissionDate: "2025-05-05",
     order: 1
   },
   {
@@ -145,27 +210,21 @@ export const chatProjects = [
     order: 1
   },
   {
-    name: "Snarky Bot",
-    url: "https://snarkybot.vercel.app/",
-    description: "A snarky bot based on Llama that is 100% free, powered by the Pollinations text API and OpenWebUI. Other models are available as well.",
-    author: "@snarkybot",
-    submissionDate: "2025-05-05",
-    order: 1
-  },
-  {
     name: "OkeyMeta",
-    url: "https://okeymeta.com",
-    description: "An LLM created by Africans to understand and have cultural awareness of African contexts and languages, OkeyAI outperforms many LLM models based on size and intelligence, OkeyMeta uses pollination image generating API to train it's LLM (OkeyAI) on images in real time.",
+    url: "https://playground.okeymeta.com.ng/",
+    description: "OkeyMeta is an AI Playground that allows you to chat with different AI models, generate images, and more. It is powered by Pollinations.ai.",
     author: "@okeymeta",
-    submissionDate: "2025-05-05",
+    repo: "https://github.com/okeymeta/okeymeta",
+    stars: 10,
+    submissionDate: "2025-02-15",
     order: 1
   },
   {
-    name: "Pollinations Chatbot",
-    url: "https://pollinations-chatbot.vercel.app/",
-    description: "A chat bot integrating Pollinations API for text and image generation.",
-    author: "@Aashir__Shaikh",
-    submissionDate: "2025-05-05",
+    name: "Image Gen - Uncensored Edition",
+    url: "https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2",
+    description: "An uncensored image generation tool that allows for creative freedom without content restrictions.",
+    author: "@flowgpt",
+    submissionDate: "2025-04-25",
     order: 1
   },
   {
@@ -190,16 +249,6 @@ export const chatProjects = [
     author: "@pollinations",
     submissionDate: "2025-05-05",
     language: "zh-CN",
-    order: 1
-  },
-  {
-    name: "LobeChat",
-    url: "https://github.com/lobehub/lobe-chat",
-    description: "An open-source, modern-design ChatGPT/LLMs UI/Framework with speech-synthesis, multi-modal, and extensible plugin system.",
-    author: "@arvinxx",
-    repo: "https://github.com/lobehub/lobe-chat",
-    stars: 12000,
-    submissionDate: "2025-05-05",
     order: 1
   },
   {
@@ -240,7 +289,7 @@ export const chatProjects = [
     order: 1
   },
   {
-    name: "🎤 Comeback AI",
+    name: " Comeback AI",
     url: "https://comeback-ai.pinkpixel.dev",
     description: "AI-powered clapback machine that transforms mean comments into witty comebacks with 10 unique personas, uses Pollinations openai-audio for voice synthesis, and Whisper for speech-to-text transcription. Turn trolls into comedy gold!",
     author: "@sizzlebop",
@@ -248,16 +297,6 @@ export const chatProjects = [
     stars: 1,
     submissionDate: "2025-05-31",
     order: 1
-  },
-  {
-    name: "KoboldAI Lite",
-    url: "https://koboldai.net",
-    description: "A lightweight AI framework for text generation and chat.",
-    author: "@lostruins",
-    repo: "https://github.com/LostRuins/lite.koboldai.net",
-    stars: 3700,
-    submissionDate: "2025-05-09",
-    order: 0
   },
   {
     name: "AI Chat",
@@ -269,16 +308,8 @@ export const chatProjects = [
     order: 1
   },
   {
-    name: "Irina",
-    url: "https://irina-2--trivonca.on.websim.ai/",
-    description: "Lightweight and simple online chat interface powered by pollinations",
-    author: "@thatalgp",
-    submissionDate: "2025-05-11",
-    order: 1
-  },
-  {
     name: "LobeChat",
-    url: "https://chat-lobe.com",
+    url: "https://lobechat.com",
     description: "An open-source, extensible chat UI framework supporting multiple models and features like message citing and image creation.",
     author: "@lobehub",
     repo: "https://github.com/lobehub/lobe-chat",
@@ -288,33 +319,20 @@ export const chatProjects = [
   },
   {
     name: "toai.chat",
-    url: "https://toai.chat/",
-    description: "A personalized, multimodal AI chat assistant that leverages Pollinations APIs to converse with models like Claude, provide image generation, and answer questions about various topics.",
-    author: "@arjunbazinga",
-    repo: "https://github.com/arjunb023/chatbot",
-    stars: 11,
-    submissionDate: "2025-05-20",
+    description: "An AI-client-free project dedicated to enabling AI interaction using only curl, supporting multimodal and MCP capabilities, to provide users with the simplest way to use AI.",
+    author: "@Veallym0n",
+    repo: "https://github.com/Veallym0n/toai.chat",
+    stars: 2,
+    submissionDate: "2025-03-27",
     order: 1
   },
   {
     name: "Free AI Chatbot & Image Generator",
-    url: "https://free-ai-chatbot-image-generator.vercel.app/",
+    url: "https://vercel.com/templates/ai/ai-sdk-image-generator",
     description: "A web application offering both conversation with AI and image generation capabilities, utilizing Pollinations API for creating visuals based on text prompts.",
     author: "@aidevs",
+    repo: "https://github.com/vercel/ai/tree/main/examples/ai-image-generator",
     submissionDate: "2025-04-22",
-    order: 1
-  },
-  // Duplicate entry consolidated with the other Irina entry
-  {  
-    name: "Irina",
-    url: "https://irina-2--trivonca.on.websim.ai/",
-    // Original URL is no longer accessible
-    // alternateUrl: "https://irina.visuallink.io/",
-    description: "An intelligent conversational assistant that combines Pollinations' text and image generation capabilities to create rich, multimedia responses to user queries.",
-    author: "@visuallink",
-    repo: "https://github.com/visuallinkio/irina",
-    stars: 27,
-    submissionDate: "2025-04-20",
     order: 1
   },
   {
@@ -327,7 +345,7 @@ export const chatProjects = [
   },
   {
     name: "KoboldAI Lite",
-    url: "https://koboldai-lite.vercel.app/",
+    url: "https://lite.koboldai.net/",
     description: "A lightweight version of KoboldAI that uses Pollinations for text generation, offering a streamlined experience for creative writing and storytelling.",
     author: "@kobold_dev",
     submissionDate: "2025-03-15",
@@ -350,14 +368,29 @@ export const chatProjects = [
     order: 3
   },
   {
-    name: "AdvanceChatGptBot",
-    url: "https://adv-chatgpt.example.com",
-    description: "An advanced chatbot leveraging multiple GPT models via Pollinations for sophisticated dialogue management, context retention, and multimodal interactions. Includes features like personality selection and knowledge base integration.",
-    author: "ChatBotMasters",
-    repo: "https://github.com/chatbotmasters/adv-chatgpt",
-    stars: 200,
-    submissionDate: "2025-02-01",
+    name: "EvilChat 🔥🤖",
+    url: "https://altkriz.github.io/evilchat/",
+    description: "An uncensored AI chat interface with dark, sleek design, smooth animations, auto-scrolling chat window, fully responsive. Connects to the Pollinations.ai API to deliver unfiltered AI responses.",
+    author: "@altkriz",
+    repo: "https://github.com/altkriz/evilchat",
+    stars: 2,
+    submissionDate: "2025-07-14",
     order: 1
   },
-  // Duplicate removed - AI drafterplus already exists at the top of the file
+  {
+    name: "DeepSeek Prompt",
+    url: "https://www.deepseekprompt.top/",
+    description: "DeepSeek Prompt is a front-end application for managing and optimizing AI prompt assets with professional creation templates. Built with React and Vue, it offers prompt creation, editing, drag-and-drop sorting, template application, and data import/export. It integrates Pollinations APIs for intelligent prompt optimization via an 'AI Optimize' button that analyzes and enhances prompts.",
+    author: "lipengliang2012@163.com",
+    submissionDate: "2025-07-15",
+    order: 1
+  },
+  {
+    name: "AI Dream Girl Studio",
+    url: "https://www.tiktok.com/@herinyourhead",
+    description: "AI Dream Girl Studio is a content creation pipeline built around hyper-realistic AI-generated female characters. We use Pollinations to generate high-fidelity visuals of emotional, seductive, and stylized women in cinematic settings. These characters are brought to life through AI video animation, voiceovers, and storytelling to create viral social content for entertainment and monetization. Pollinations is the core engine behind our character design and visual style.",
+    author: "https://www.tiktok.com/@herinyourhead",
+    submissionDate: "2025-07-17",
+    order: 1
+  }
 ];

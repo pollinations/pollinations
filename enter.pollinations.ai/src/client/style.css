@@ -1,0 +1,80 @@
+/** biome-ignore-all lint/suspicious/noUnknownAtRules: tailwind handles it */
+@import "tailwindcss";
+
+@font-face {
+    font-family: "LCT Mogi";
+    src: url("./fonts/lct-mogi-a.woff2") format("woff2"),
+         url("./fonts/lct-mogi-a.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Fraunces";
+    src: url("./fonts/fraunces-soft-bold.woff2") format("woff2"),
+         url("./fonts/fraunces-soft-bold.woff") format("woff");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Uncut Sans";
+    src: url("./fonts/uncut-sans-variable.woff2") format("woff2-variations");
+    font-weight: 300 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+*,
+::before,
+::after {
+    box-sizing: border-box;
+}
+
+@theme {
+    --font-heading: "LCT Mogi", ui-sans-serif, sans-serif;
+    --font-subheading: "Fraunces", ui-serif, serif;
+    --font-body: "Uncut Sans", ui-sans-serif, sans-serif;
+    --text-base: 16px;
+}
+
+@layer base {
+    html {
+        color-scheme: light;
+    }
+
+    * {
+        @apply border-gray-800;
+    }
+
+    html,
+    body {
+        @apply text-green-950 bg-emerald-100 font-body text-base;
+        @apply py-8 min-h-screen font-medium;
+    }
+
+    body {
+        max-width: 800px;
+        @apply mx-auto;
+    }
+
+    h1 {
+        @apply font-heading text-5xl;
+    }
+
+    h2 {
+        @apply font-subheading text-3xl tracking-tight;
+    }
+
+    h3 {
+        @apply font-subheading text-2xl tracking-tight;
+    }
+
+    h4,
+    h5,
+    h6 {
+        @apply text-xl;
+    }
+}

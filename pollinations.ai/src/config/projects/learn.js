@@ -5,6 +5,14 @@
 
 export const learnProjects = [
   {
+    name: "Prompt Explorer",
+    url: "https://play.google.com/store/apps/details?id=com.ismafly.promptexploratorapp",
+    description: "A mobile app that combines AI prompt discovery with image generation using Pollinations API. Users can explore existing AI art from Lexica/Civitai, learn from prompts and metadata, then generate their own images directly in the app. Features include generation history, favorites, and a complete learning workflow from discovery to creation.",
+    author: "ismail.azdad@gmail.com",
+    submissionDate: "2025-07-12",
+    order: 1
+  },
+  {
     name: "AI儿童故事 🇨🇳",
     url: "https://kidss.netlify.app/",
     description: "基于此项目 构建有趣的孩子故事书应用演示 (Based on this project, build an interesting children's storybook application demo)",
@@ -43,20 +51,14 @@ export const learnProjects = [
     order: 1
   },
   {
-    name: "Apple Shortcuts Guide",
-    url: "https://www.youtube.com/watch?v=5NR5h7DTtEI",
-    description: "Video guide on creating AI images using Apple Shortcuts.",
-    author: "@tolerantone",
-    submissionDate: "2025-05-05",
-    order: 1
-  },
-  {
     name: "Connect Pollinations with Open Web UI tutorial",
-    url: "https://github.com/pollinations/connect-with-open-webui",
+    url: "https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI",
     description: "Step-by-step guide on integrating Pollinations APIs with Open Web UI for enhanced image generation.",
-    author: "@pollinations",
+    author: "@cloph-dsp",
+    repo: "https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI",
+    stars: 11,
     submissionDate: "2025-03-15",
-    order: 1 // Existing project order
+    order: 1
   },
   {
     name: "Pollinations.AI AI/Teens talk",
@@ -65,15 +67,6 @@ export const learnProjects = [
     author: "@thomash_pollinations",
     submissionDate: "2025-04-15",
     order: 2
-  },
-  {
-    name: "Chinese DeepSeek Tutorial",
-    url: "https://linux.do/t/topic/447840/235",
-    description: "A tutorial showing how to make DeepSeek AI support image generation by leveraging Pollinations.ai's API.",
-    author: "https://linux.do/u/isinry",
-    submissionDate: "2025-03-04",
-    language: "zh-CN",
-    order: 3
   },
   {
     name: "Artistic Styles Book",
@@ -108,8 +101,6 @@ export const learnProjects = [
     submissionDate: "2025-04-15",
     order: 7
   },
-  // Additional projects will be migrated from recovered data
-
   {
     name: "Whizzy AI",
     url: "https://whizzyai.vercel.app",
@@ -122,9 +113,27 @@ export const learnProjects = [
     name: "TeekGenAI",
     url: "https://www.youtube.com/@teekgenai",
     description: "A platform providing free access to AI tools like image generation, text-to-speech, and chat, with tutorials. Content often available in Sinhala.",
-    author: "@teekgenai", // From TikTok/YouTube
-    submissionDate: "2025-06-04", // Placeholder date
-    language: "si", // Sinhala
+    author: "@teekgenai",
+    submissionDate: "2025-06-04",
+    language: "si",
     order: 2
-  } ,
+  },
+  {
+    name: "SearchGPT",
+    url: "https://huggingface.co/spaces/umint/searchgpt",
+    description: "ChatGPT with real-time web search & URL reading capability. Part of the UltimaX Intelligence project.",
+    author: "@hadadarjt",
+    submissionDate: "2025-09-05",
+    order: 1
+  },
+  {
+        name: "EduGen AI 🇧🇷",
+        url: "https://ensinoedugenai.online",
+        description:
+            "E uma ia voltada para professores e queria a IA pollinations.ai para criar imagens para slides (An AI focused on teachers that uses Pollinations AI to create images for slides)",
+        author: "mlspfc360@gmail.com",
+        submissionDate: "2025-09-17",
+        language: "pt-BR",
+        order: 1
+    }
 ];

@@ -1,3 +1,7 @@
+
+# Crush
+.crush/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -289,3 +293,34 @@ text.pollinations.ai/v2/
 .netlify
 .dev.vars
 image.pollinations.ai/temp_logs/
+.wrangler/
+# Crush Dev Agent
+.crush/
+
+# Tinybird CLI configuration (contains sensitive tokens)
+.tinyb
+
+# Google Cloud credentials and service account keys
+**/credentials/
+credentials/
+*.json
+!package*.json
+!tsconfig*.json
+!**/package*.json
+!**/tsconfig*.json
+google_*.json
+service-account-*.json
+*-key.json
+*_key.json
+
+# API keys and secrets
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Gateway directory (embedded git repository)
+gateway/
+
+# Kiro AI agent files
+.kiro/

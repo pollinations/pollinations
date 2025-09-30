@@ -5,6 +5,34 @@
 
 export const vibeCodingProjects = [
   {
+    name: "Visiora - Image Generation using AI 🎨",
+    url: "https://visiora-img.netlify.app/",
+    description: "A modern web application that transforms text prompts into stunning AI-generated images. Built with React and powered by Pollinations AI, it features multiple AI models (Flux, Turbo, Kontext), flexible image dimensions, seed control for reproducible results, and a responsive design that works seamlessly across all devices.",
+    author: "@Kandariarjun07",
+    repo: "https://github.com/Kandariarjun07/Visiora",
+    stars: 0,
+    submissionDate: "2025-08-05",
+    order: 1
+  },
+  {
+    name: "PairFusion",
+    url: "https://pair-fusion.vercel.app/",
+    description: "A real-time AI powered, scalable and feature-rich collaborative IDE built for modern development teams. Experience seamless pair programming, instant feedback, and a professional-grade toolset designed for maximum productivity.",
+    author: "@auraticabhi",
+    repo: "https://github.com/auraticabhi/PairFusion",
+    stars: 0,
+    submissionDate: "2025-07-03",
+    order: 1
+  },
+  {
+    name: "CraftUI",
+    url: "https://craftui.studio/",
+    description: "An AI-powered tool that simplifies UI design by turning text prompts or images into clean, production-ready components. It supports real-time customization with theme switching, framework selection (like Tailwind or Bootstrap), and intuitive editing. Whether you're a developer or designer, CraftUI helps you design faster, smarter, and with ease. Explore, remix, and share your creations in a growing creative community.",
+    author: "@imhardikdesai",
+    submissionDate: "2025-06-19",
+    order: 1
+  },
+  {
     name: "AI Code Generator",
     url: "https://codegen.on.websim.com/",
     description: "A websim project that generates code from description, selected programming language and other options. Integrates Pollinations because it allows for more models to choose from for potentially better results. It has modes like: Code Generator, Code Explainer, Reviewer, etc.",
@@ -20,8 +48,6 @@ export const vibeCodingProjects = [
     submissionDate: "2025-03-25",
     order: 1
   },
-  // Duplicate removed - Pollinations MCP Server already exists in hackAndBuild.js
-
   {
     name: "Pollinations Task Master",
     url: "https://github.com/LousyBook94/pollinations-task-master",
@@ -29,7 +55,7 @@ export const vibeCodingProjects = [
     author: "@LousyBook94",
     repo: "https://github.com/LousyBook94/pollinations-task-master",
     submissionDate: "2025-05-12",
-    stars: 3,
+    stars: 20,
     order: 1
   },
   {
@@ -37,7 +63,7 @@ export const vibeCodingProjects = [
     url: "https://github.com/QwenLM/Qwen-Agent",
     description: "A framework for developing agentic LLM applications.",
     repo: "https://github.com/QwenLM/Qwen-Agent",
-    stars: 6600,
+    stars: 11523,
     order: 1
   },
   {
@@ -45,23 +71,6 @@ export const vibeCodingProjects = [
     url: "https://jcode-ai-website-bulder.netlify.app/",
     description: "A website generator using Pollinations text API.",
     author: "@rtxpower",
-    order: 1
-  },
-  {
-    name: "Define",
-    url: "https://define-i05a.onrender.com/api/docs/",
-    description: "An AI-powered REST API designed to generate definitions for words or phrases, constrained to a specified target word count. It allows customization of tone, context, and language, delivering precise, context-aware definitions programmatically—ideal for developers and content creators.",
-    author: "@hasanraiyan",
-    repo: "https://github.com/hasanraiyan",
-    submissionDate: "2025-05-06",
-    order: 1
-  },
-  {
-    name: "WebGeniusAI",
-    url: "https://webgeniusai.netlify.app/",
-    description: "AI tool that generates HTML websites with visuals from Pollinations.",
-    author: "@Aashir__Shaikh",
-    submissionDate: "2025-04-15",
     order: 1
   },
   {
@@ -96,16 +105,6 @@ export const vibeCodingProjects = [
     order: 1
   },
   {
-    name: "Open Prompt",
-    url: "https://openprompt.co",
-    description: "A community-driven platform for creating, sharing, and discovering AI prompts for various applications. Integrated with Pollinations API for enhanced creative capabilities.",
-    author: "@markojohnas",
-    repo: "https://github.com/markojohnas/openprompt",
-    stars: 87,
-    submissionDate: "2025-05-11",
-    order: 1
-  },
-  {
     name: "JustBuildThings",
     url: "https://justbuildthings.com",
     description: "A natural language programming interface that lets users create web applications by simply describing what they want to build, using Pollinations AI to generate code and assets.",
@@ -113,5 +112,33 @@ export const vibeCodingProjects = [
     submissionDate: "2025-05-02",
     order: 1
   },
-  // Additional projects will be migrated from recovered data
+  {
+    name: "SocialScribe",
+    url: "https://socialscribe.pages.dev/",
+    description: "An AI-powered Chrome extension that fixes grammar, rewrites text, and enhances your writing across websites like Twitter, LinkedIn, and Gmail, with customizable tone, length, and platform-specific formatting, plus support for emojis, hashtags, and keyword suggestions.",
+    author: "@sh20raj",
+    repo: "https://github.com/sh20raj/socialscribe",
+    stars: 1,
+    submissionDate: "2025-07-13",
+    order: 1
+  },
+  {
+    name: "Berrry Computer",
+    url: "https://berrry.app",
+    description: "Make tiny self-contained web apps with AI. Find a tweet with an interesting app idea, mention @BerrryComputer in a reply, and get back an app on a unique subdomain. Uses pollinations.ai to create dynamic AI experiences in generated apps.",
+    author: "@vgrichina",
+    authorUrl: "https://github.com/vgrichina",
+    repo: "https://github.com/Strawberry-Computer",
+    submissionDate: "2025-07-16",
+    order: 0
+  },
+  {
+    name: "websim-pollinations-ai",
+    url: "https://websim.pollinations.ai",
+    description: "A lightweight websim for creating web simulations with AI. Usage: https://websim.pollinations.ai/[prompt] - Simply append your prompt to the URL to generate interactive web experiences.",
+    author: "@thomash",
+    repo: "https://github.com/pollinations/pollinations/tree/master/websim.pollinations.ai",
+    submissionDate: "2025-08-03",
+    order: 0.5
+  }
 ];

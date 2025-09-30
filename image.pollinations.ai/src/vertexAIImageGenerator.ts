@@ -243,11 +243,17 @@ export async function callVertexAIGemini(
             errorLog("ERROR: No imageData in result from generateImageWithVertexAI - likely content policy violation");
             // Track violation for "No image data" cases (likely content policy violations)
             userStatsTracker.recordViolation(userInfo?.username);
-            // Use the specialized error-only logger for "No image data" cases
-            await logNanoBananaErrorsOnly(prompt, safeParams, userInfo, result.fullResponse);
             
-            // Use Gemini's text explanation if available
+            // Extract refusal reason details for logging
             const geminiExplanation = result.textResponse;
+            const finishReason = result.fullResponse?.candidates?.[0]?.finishReason;
+            
+            // Use the specialized error-only logger for "No image data" cases with refusal reasons
+            await logNanoBananaErrorsOnly(prompt, safeParams, userInfo, result.fullResponse, {
+                refusalReason: geminiExplanation || finishReason || 'No specific reason provided',
+                textResponse: geminiExplanation,
+                finishReason: finishReason
+            });
             
             if (geminiExplanation) {
                 // Return Gemini's actual explanation to the user
@@ -255,7 +261,6 @@ export async function callVertexAIGemini(
                 throw explanationError;
             } else {
                 // Fallback for cases without text response
-                const finishReason = result.fullResponse?.candidates?.[0]?.finishReason;
                 if (finishReason) {
                     const reasonError = new Error(`Content blocked: ${finishReason}`);
                     throw reasonError;
@@ -312,8 +317,21 @@ export async function callVertexAIGemini(
         // Extract response data from error if available
         const errorResponseData = (error as any).responseData || null;
         
+        // Extract refusal reason from error response if available
+        const refusalDetails = errorResponseData ? {
+            refusalReason: errorResponseData.textResponse || 
+                          errorResponseData.candidates?.[0]?.finishReason || 
+                          error.message,
+            textResponse: errorResponseData.textResponse,
+            finishReason: errorResponseData.candidates?.[0]?.finishReason
+        } : {
+            refusalReason: error.message,
+            textResponse: null,
+            finishReason: null
+        };
+        
         // Log error for analysis (especially content policy violations) - use original prompt
-        await logNanoBananaError(prompt, safeParams, userInfo, error, errorResponseData);
+        await logNanoBananaError(prompt, safeParams, userInfo, error, errorResponseData, refusalDetails);
         
         throw new Error(`Vertex AI Gemini image generation failed: ${error.message}`);
     }

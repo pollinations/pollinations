@@ -1,5 +1,4 @@
 import { createRouter, RouterProvider } from "@tanstack/react-router";
-import type { Session, User } from "better-auth";
 import { apiKeyClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import { hc } from "hono/client";
@@ -14,6 +13,8 @@ import ReactDOM from "react-dom/client";
 import type { AppRoutes } from "../index.ts";
 import { routeTree } from "./routeTree.gen";
 import { config } from "./config.ts";
+import { createAuth } from "@/auth.ts";
+import { inferAdditionalFields } from "better-auth/client/plugins";
 
 // Register the router instance for type safety
 declare module "@tanstack/react-router" {
@@ -25,9 +26,15 @@ declare module "@tanstack/react-router" {
 const authClient = createAuthClient({
     baseURL: config.baseUrl,
     basePath: config.authPath,
-    plugins: [apiKeyClient()],
+    plugins: [
+        apiKeyClient(),
+        inferAdditionalFields<ReturnType<typeof createAuth>>(),
+    ],
 });
 export type AuthClient = typeof authClient;
+export type ClientSession = AuthClient["$Infer"]["Session"];
+export type Session = ClientSession["session"];
+export type User = ClientSession["user"];
 
 const apiClient = hc<AppRoutes>("/api");
 export type ApiClient = (typeof apiClient)["api"];

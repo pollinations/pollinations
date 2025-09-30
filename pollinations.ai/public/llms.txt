@@ -47,8 +47,20 @@ Model: hypnosis-tracy - Hypnosis Tracy 7B (supports text and audio inputs/output
 Model: deepseek - DeepSeek-V3
 Model: sur - Sur AI Assistant (Mistral-based, supports text and image inputs)
 Model: openai-audio - OpenAI GPT-4o-audio-preview (supports text, image, and audio inputs/outputs)
+Model: kontext - BPAIGen + Kontext hybrid image model (seed tier required, supports reference images)
+Model: nanobanana - Google Vertex AI Gemini 2.5 Flash Image Preview (seed tier required, supports reference images and custom sizes)
+Model: seedream - ByteDance Seedream 4.0 250828 (seed tier required, supports high-resolution and reference images)
 Model: flux - Latest stable diffusion model
 Model: turbo - Fast image generation model
+
+# Reference Image Support
+Reference-Model: nanobanana - Accepts up to 4 reference image URLs via the `image` parameter (comma-separated). Ideal for preserving composition or style when paired with width/height overrides. Requires authenticated seed-tier access.
+Reference-Model: seedream - Accepts up to 4 reference images from the public API (UI limit), with backend support for up to 10 sources. Designed for photorealistic or cinematic renders and requires seed-tier access.
+Reference-Model: kontext - Shares the same reference-image pipeline as nanobanana and seedream for image-to-image workflows. Requires seed-tier access.
+
+# Parameters
+Parameter: image - Optional comma-separated list of reference image URLs for models that support image inputs (nanobanana, seedream, kontext). Maximum of 4 references per request.
+
 
 # MCP Server
 MCP-Server: https://github.com/pollinations/pollinations/tree/master/model-context-protocol # Model Context Protocol server for AI assistants
@@ -98,4 +110,4 @@ Rate-Limit: Image API: 1 concurrent request / 5 sec interval per IP
 Rate-Limit: Text API: 1 concurrent request / 3 sec interval per IP
 
 # Last Updated
-Last-Updated: 2025-04-20
+Last-Updated: 2025-09-28

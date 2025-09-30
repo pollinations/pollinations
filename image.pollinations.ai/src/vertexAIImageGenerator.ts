@@ -245,8 +245,25 @@ export async function callVertexAIGemini(
             userStatsTracker.recordViolation(userInfo?.username);
             // Use the specialized error-only logger for "No image data" cases
             await logNanoBananaErrorsOnly(prompt, safeParams, userInfo, result.fullResponse);
-            const noDataError = new Error("No image data returned from Vertex AI");
-            throw noDataError;
+            
+            // Use Gemini's text explanation if available
+            const geminiExplanation = result.textResponse;
+            
+            if (geminiExplanation) {
+                // Return Gemini's actual explanation to the user
+                const explanationError = new Error(`Gemini: ${geminiExplanation}`);
+                throw explanationError;
+            } else {
+                // Fallback for cases without text response
+                const finishReason = result.fullResponse?.candidates?.[0]?.finishReason;
+                if (finishReason) {
+                    const reasonError = new Error(`Content blocked: ${finishReason}`);
+                    throw reasonError;
+                } else {
+                    const noDataError = new Error("No image data returned from Vertex AI");
+                    throw noDataError;
+                }
+            }
         }
 
         // Convert base64 to buffer

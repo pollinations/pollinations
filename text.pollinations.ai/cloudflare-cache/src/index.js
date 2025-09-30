@@ -81,9 +81,8 @@ function prepareMetadata(
         // Request body reference
         hasRequestBody: hasRequestBody.toString(),
 
-        // Store only essential response headers (not all headers as JSON)
-        response_server: response.headers.get("server") || "",
-        response_date: response.headers.get("date") || "",
+        // Original headers as JSON for future reconstruction
+        headers: JSON.stringify(Object.fromEntries(response.headers)),
     };
 
     // Track metadata sizes for debugging
@@ -97,49 +96,54 @@ function prepareMetadata(
         totalSize += size;
     }
 
-    // Add only truly essential request headers to metadata
+    // Add only essential request headers to metadata (exclude cookie and redundant headers)
     const essentialHeaders = [
-        'user-agent',      // For analytics 
+        'user-agent',      // For analytics and debugging
         'referer',         // For analytics
+        'accept',          // For content negotiation
+        'accept-language', // For localization
+        'accept-encoding', // For compression handling
+        'cache-control',   // For cache behavior
+        'host',           // For routing
         'cf-connecting-ip' // For IP tracking
     ];
     
     const requestHeaderSizes = {};
     for (const [key, value] of request.headers.entries()) {
-        // Skip cookie header (biggest space consumer)
+        // Skip cookie header (biggest space consumer) and other redundant headers
         if (key.toLowerCase() === 'cookie') {
             log("cache", `  ⏭️ Skipping cookie header (${new TextEncoder().encode(key + value).length} bytes)`);
             continue;
         }
         
-        // Only include truly essential headers with size limits
-        if (essentialHeaders.includes(key.toLowerCase())) {
-            // Truncate very long header values to prevent metadata bloat
-            const maxHeaderLength = 200; // Reasonable limit for headers
-            const truncatedValue = value.length > maxHeaderLength ? 
-                value.substring(0, maxHeaderLength) + '...' : value;
-            
-            metadata[key] = truncatedValue;
-            const size = new TextEncoder().encode(key + truncatedValue).length;
-            requestHeaderSizes[key] = size;
-            metadataSizes[`header_${key}`] = size;
-            totalSize += size;
+        // Skip redundant sec-* headers
+        if (key.toLowerCase().startsWith('sec-ch-') || 
+            key.toLowerCase().startsWith('sec-fetch-') ||
+            key.toLowerCase() === 'upgrade-insecure-requests' ||
+            key.toLowerCase() === 'if-none-match') {
+            continue;
         }
+        
+        // Only include essential headers or keep all others for now (can be refined further)
+        metadata[key] = value;
+        const size = new TextEncoder().encode(key + value).length;
+        requestHeaderSizes[key] = size;
+        metadataSizes[`header_${key}`] = size;
+        totalSize += size;
     }
 
-    // Add only essential Cloudflare data (not all 30 properties)
+    // Add all Cloudflare-specific data from the cf object if available
     const cfSizes = {};
     if (request.cf && typeof request.cf === "object") {
-        // Only store essential CF properties for analytics
-        const essentialCfProps = ['country', 'colo', 'httpProtocol', 'asn', 'continent'];
-        
-        for (const prop of essentialCfProps) {
-            if (request.cf[prop] !== null && request.cf[prop] !== undefined) {
-                const stringValue = String(request.cf[prop]);
-                metadata[prop] = stringValue;
-                const size = new TextEncoder().encode(prop + stringValue).length;
-                cfSizes[prop] = size;
-                metadataSizes[`cf_${prop}`] = size;
+        // Add all properties from request.cf without transformation
+        for (const [key, value] of Object.entries(request.cf)) {
+            // Convert any non-string values to strings
+            if (value !== null && value !== undefined) {
+                const stringValue = typeof value === "string" ? value : String(value);
+                metadata[key] = stringValue;
+                const size = new TextEncoder().encode(key + stringValue).length;
+                cfSizes[key] = size;
+                metadataSizes[`cf_${key}`] = size;
                 totalSize += size;
             }
         }
@@ -231,11 +235,11 @@ async function storeRequestBody(env, request, key) {
 export default {
     async fetch(request, env, ctx) {
         try {
-            const requestStartTime = Date.now();
+            // Parse request URL
             const url = new URL(request.url);
 
             // Log request information
-            log("request", `🚀 ${request.method} ${url.pathname} started at ${requestStartTime}`);
+            log("request", `${request.method} ${url.pathname}`);
 
             // Let origin handle root requests (e.g. redirects) without caching
             if (url.pathname === "/" || url.pathname === "") {
@@ -264,8 +268,8 @@ export default {
                 ctx,
             );
 
-            // Check if the path should be excluded from caching (exact match only)
-            if (NON_CACHE_PATHS.includes(url.pathname)) {
+            // Check if the path should be excluded from caching
+            if (NON_CACHE_PATHS.some((path) => url.pathname.startsWith(path))) {
                 log(
                     "request",
                     `Path ${url.pathname} excluded from caching, proxying directly`,
@@ -278,19 +282,11 @@ export default {
             log("cache", `Key: ${key}`);
 
             // Try to get the cached response
-            const cacheStartTime = Date.now();
-            log("cache", `🔍 Cache lookup starting at ${cacheStartTime}`);
-            
             const cachedResponse = await getCachedResponse(env, key);
-            const cacheEndTime = Date.now();
-            log("cache", `🔍 Cache lookup completed in ${cacheEndTime - cacheStartTime}ms`);
-            
             if (cachedResponse) {
                 log("cache", "✅ Cache hit!");
                 
-                // Send analytics for cache hit (non-blocking)
-                const analyticsStartTime = Date.now();
-                log("cache", `📊 Starting analytics at ${analyticsStartTime}`);
+                // Send analytics for cache hit
                 sendTextAnalytics(
                     request,
                     EVENTS.SERVED_FROM_CACHE,
@@ -299,25 +295,7 @@ export default {
                     env,
                     ctx,
                 );
-                const analyticsEndTime = Date.now();
-                log("cache", `📊 Analytics call initiated in ${analyticsEndTime - analyticsStartTime}ms`);
                 
-                // For HEAD requests, return headers only (no body)
-                if (request.method === "HEAD") {
-                    const responseStartTime = Date.now();
-                    log("cache", `🎯 Creating HEAD response at ${responseStartTime}`);
-                    const response = new Response(null, {
-                        status: cachedResponse.status,
-                        statusText: cachedResponse.statusText,
-                        headers: cachedResponse.headers,
-                    });
-                    const responseEndTime = Date.now();
-                    log("cache", `🎯 HEAD response created in ${responseEndTime - responseStartTime}ms`);
-                    return response;
-                }
-                
-                const responseStartTime = Date.now();
-                log("cache", `🎯 Returning cached response at ${responseStartTime}`);
                 return cachedResponse;
             }
 
@@ -522,45 +500,7 @@ export default {
                 },
             });
 
-            // Handle HEAD requests (no body) vs other requests
-            if (request.method === "HEAD" || !originResp.body) {
-                // HEAD requests have no body, but we should still cache the headers
-                log("cache", "📝 Caching HEAD request response (headers only)");
-                
-                // Cache the response metadata without body
-                try {
-                    const metadata = prepareMetadata(
-                        request,
-                        url,
-                        originResp,
-                        0, // No content size for HEAD
-                        false, // Not streaming
-                        hasRequestBody,
-                    );
-                    
-                    // Store empty body with metadata for HEAD requests
-                    ctx.waitUntil(
-                        env.TEXT_BUCKET.put(key, new ArrayBuffer(0), {
-                            customMetadata: metadata,
-                        })
-                    );
-                    
-                    log("cache", "✅ HEAD response cached successfully");
-                } catch (err) {
-                    log("error", `❌ HEAD caching failed: ${err.message}`);
-                }
-                
-                return new Response(null, {
-                    status: originResp.status,
-                    statusText: originResp.statusText,
-                    headers: prepareResponseHeaders(originResp.headers, {
-                        cacheStatus: "MISS",
-                        cacheKey: key,
-                    }),
-                });
-            }
-
-            // Pipe the response through our capture stream for requests with body
+            // Pipe the response through our capture stream
             const transformedStream =
                 originResp.body.pipeThrough(captureStream);
 
@@ -640,12 +580,8 @@ async function generateCacheKey(request) {
         }
     }
 
-    // Normalize HEAD requests to GET for cache key generation
-    // since HEAD should return the same headers as GET
-    const normalizedMethod = request.method === "HEAD" ? "GET" : request.method;
-    
     const parts = [
-        normalizedMethod,
+        request.method,
         url.pathname,
         filteredParams.toString(), // Only include non-auth query params
     ];
@@ -760,11 +696,7 @@ function prepareForwardedHeaders(requestHeaders, url) {
 async function getCachedResponse(env, key) {
     try {
         // Get the cached object from R2
-        const r2StartTime = Date.now();
-        log("cache", `🗄️ R2 lookup starting for key: ${key.substring(0, 16)}...`);
         const cachedObject = await env.TEXT_BUCKET.get(key);
-        const r2EndTime = Date.now();
-        log("cache", `🗄️ R2 lookup completed in ${r2EndTime - r2StartTime}ms`);
 
         if (!cachedObject) {
             return null;
@@ -811,30 +743,22 @@ async function getCachedResponse(env, key) {
         }
 
         // If content-type is in metadata, ensure it's used
-        if (metadata.response_content_type && !originalHeaders["content-type"]) {
-            originalHeaders["content-type"] = metadata.response_content_type;
+        if (metadata.contentType && !originalHeaders["content-type"]) {
+            originalHeaders["content-type"] = metadata.contentType;
         }
 
         // Prepare the response headers
-        const headersStartTime = Date.now();
         const responseHeaders = prepareResponseHeaders(
             new Headers(originalHeaders),
             cacheHeaders,
         );
-        const headersEndTime = Date.now();
-        log("cache", `🏷️ Headers prepared in ${headersEndTime - headersStartTime}ms`);
 
         // Create response from cached object
-        const responseCreateStartTime = Date.now();
-        const response = new Response(cachedObject.body, {
+        return new Response(cachedObject.body, {
             status: parseInt(metadata.status || "200", 10),
             statusText: metadata.statusText || "OK",
             headers: responseHeaders,
         });
-        const responseCreateEndTime = Date.now();
-        log("cache", `📦 Response created in ${responseCreateEndTime - responseCreateStartTime}ms`);
-        
-        return response;
     } catch (err) {
         log("error", `Error getting cached response: ${err.message}`);
         if (err.stack) log("error", `Stack: ${err.stack}`);

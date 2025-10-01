@@ -586,9 +586,23 @@ const server = http.createServer((req, res) => {
             Pragma: "no-cache",
             Expires: "0",
         });
+        
+        res.end(JSON.stringify(Object.keys(MODELS)));
+        return;
+    }
+
+    if (pathname === "/about") {
+        res.writeHead(200, {
+            "Content-Type": "application/json",
+            "Cache-Control":
+                "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+        });
         const modelDetails = Object.entries(MODELS).map(([name, config]) => ({
             name,
             tier: (config as any).tier || "seed", 
+            enhance : config.enhance || false,
             maxSideLength: config.maxSideLength,
         }));
         res.end(JSON.stringify(modelDetails));

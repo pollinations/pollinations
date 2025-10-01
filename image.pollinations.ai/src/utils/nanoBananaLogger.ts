@@ -22,6 +22,7 @@ const logError = debug("pollinations:error");
  * @param {any} vertexResponse - Complete response from Vertex AI
  * @param {Error} error - Error if request failed (optional)
  * @param {boolean} isContentPolicyViolation - Whether this was blocked for content policy
+ * @param {object} refusalDetails - Details about the refusal reason (optional)
  */
 export async function logNanoBananaResponse(
     prompt: string,
@@ -30,6 +31,11 @@ export async function logNanoBananaResponse(
     vertexResponse: any = null,
     error: Error = null,
     isContentPolicyViolation: boolean = false,
+    refusalDetails?: {
+        refusalReason: string;
+        textResponse: string | null;
+        finishReason: string | null;
+    },
 ): Promise<void> {
     try {
         // Create logs directory if it doesn't exist
@@ -80,6 +86,8 @@ export async function logNanoBananaResponse(
                 timestamp,
                 // Mark violations for easy filtering
                 isContentPolicyViolation: isViolation,
+                // REFUSAL REASON DETAILS - Making this prominent for easy analysis
+                refusal: refusalDetails || null,
                 // User identification for moderation
                 userInfo: {
                     username: userInfo?.username || 'anonymous',
@@ -124,6 +132,14 @@ export async function logNanoBananaResponse(
             const violationLogFile = path.join(logDir, "nanobanana_violations.log");
             await fsPromises.appendFile(violationLogFile, `${logEntry}\n`);
             
+            // Log refusal reasons to a simple text file for easy analysis
+            if (refusalDetails?.refusalReason) {
+                const refusalLogFile = path.join(logDir, "nanobanana_refusal_reasons.txt");
+                const username = userInfo?.username || 'anonymous';
+                const refusalLine = `${timestamp} | ${username} | ${refusalDetails.refusalReason}\n`;
+                await fsPromises.appendFile(refusalLogFile, refusalLine);
+            }
+            
             // Track violation in user stats (only for actual violations, not admin blocks)
             userStatsTracker.recordViolation(userInfo?.username);
             
@@ -145,12 +161,18 @@ export async function logNanoBananaResponse(
  * @param {ImageParams} safeParams - Parameters for image generation
  * @param {AuthResult} userInfo - User authentication information
  * @param {any} vertexResponse - Complete response from Vertex AI
+ * @param {object} refusalDetails - Details about the refusal reason (optional)
  */
 export async function logNanoBananaErrorsOnly(
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
     vertexResponse: any,
+    refusalDetails?: {
+        refusalReason: string;
+        textResponse: string | null;
+        finishReason: string | null;
+    },
 ): Promise<void> {
     try {
         // Create logs directory if it doesn't exist
@@ -190,6 +212,8 @@ export async function logNanoBananaErrorsOnly(
                 timestamp,
                 // Mark as likely content policy violation
                 isContentPolicyViolation,
+                // REFUSAL REASON DETAILS - Making this prominent for easy analysis
+                refusal: refusalDetails || null,
                 // User identification for moderation
                 userInfo: {
                     username: userInfo?.username || 'anonymous',
@@ -224,6 +248,15 @@ export async function logNanoBananaErrorsOnly(
         const violationLogFile = path.join(logDir, "nanobanana_violations.log");
         await fsPromises.appendFile(violationLogFile, `${logEntry}\n`);
         
+        // Log refusal reasons to a simple text file for easy analysis
+        if (refusalDetails?.refusalReason) {
+            const refusalLogFile = path.join(logDir, "nanobanana_refusal_reasons.txt");
+            const timestamp = new Date().toISOString();
+            const username = userInfo?.username || 'anonymous';
+            const refusalLine = `${timestamp} | ${username} | ${refusalDetails.refusalReason}\n`;
+            await fsPromises.appendFile(refusalLogFile, refusalLine);
+        }
+        
         // Track violation in user stats for "No image data" cases
         userStatsTracker.recordViolation(userInfo?.username);
         
@@ -242,6 +275,7 @@ export async function logNanoBananaErrorsOnly(
  * @param {AuthResult} userInfo - User authentication information
  * @param {Error} error - The error that occurred
  * @param {any} vertexResponse - Partial response from Vertex AI if available
+ * @param {object} refusalDetails - Details about the refusal reason (optional)
  */
 export async function logNanoBananaError(
     prompt: string,
@@ -249,6 +283,11 @@ export async function logNanoBananaError(
     userInfo: AuthResult,
     error: Error,
     vertexResponse: any = null,
+    refusalDetails?: {
+        refusalReason: string;
+        textResponse: string | null;
+        finishReason: string | null;
+    },
 ): Promise<void> {
     // Determine if this is a content policy violation
     const isContentPolicyViolation = 
@@ -262,7 +301,7 @@ export async function logNanoBananaError(
             c.finishReason === 'SPII'
         );
 
-    await logNanoBananaResponse(prompt, safeParams, userInfo, vertexResponse, error, isContentPolicyViolation);
+    await logNanoBananaResponse(prompt, safeParams, userInfo, vertexResponse, error, isContentPolicyViolation, refusalDetails);
 }
 
 /**

@@ -8,6 +8,9 @@
   If you're participating, please check out our [Code of Conduct](./CODE_OF_CONDUCT.md) and [Contributing Guidelines](./CONTRIBUTING.md) before submitting your PRs.
 - For event PRs, look for issues tagged with `hacktoberfest` in our [issue tracker](https://github.com/pollinations/pollinations/issues) and join the community effort!
 
+- **Pollinations Hive**  
+  We're excited to announce our integration with [Pollinations Hive](https://github.com/pollinations/hive), a curated collection of the top community-created projects within the Pollinations ecosystem. This project is also a part of Hacktoberfest 2025 and is accepting collaborative PRs, make sure to check it out too!
+
 
 ## 🆕 Latest News
 

@@ -586,7 +586,12 @@ const server = http.createServer((req, res) => {
             Pragma: "no-cache",
             Expires: "0",
         });
-        res.end(JSON.stringify(Object.keys(MODELS)));
+        const modelDetails = Object.entries(MODELS).map(([name, config]) => ({
+            name,
+            tier: (config as any).tier || "seed", 
+            maxSideLength: config.maxSideLength,
+        }));
+        res.end(JSON.stringify(modelDetails));
         return;
     }
 

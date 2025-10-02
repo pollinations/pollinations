@@ -5,6 +5,32 @@
 
 export const creativeProjects = [
   {
+    name: "Imagen - AI Image Generator 🎨",
+    url: "https://altkriz.github.io/imagen/",
+    description: "A beautiful, open-source web interface for generating AI images using the Pollinations.ai API. Features modern glass-morphism UI, local history storage, flux and turbo models, adjustable dimensions, seed control, and optional prompt enhancement. MIT licensed.",
+    author: "@altkriz",
+    repo: "https://github.com/altkriz/imagen",
+    submissionDate: "2025-09-14",
+    order: 1
+  },
+  {
+    name: "mayaAI 🇪🇸",
+    url: "https://mayaia.pages.dev/",
+    description: "Maya ia es una inteligencia artificial para generar imagenes usando pollinations api (Spanish AI image generator using Pollinations API)",
+    author: "@moimoyyyy-sys",
+    submissionDate: "2025-09-24",
+    language: "es",
+    order: 1
+  },
+  {
+    name: "GenImage 🎨",
+    url: "https://genimage.runasp.net/",
+    description: "Text to image generation tool",
+    author: "@artydev",
+    submissionDate: "2025-09-23",
+    order: 1
+  },
+  {
     name: "Anime Comic Movie 🎬",
     url: "https://petersebring.com/showcase.php",
     description: "An ambitious anime comic movie project using Pollinations' Kontext and Flux models for image-to-image generation. Combines detailed character and location images using ImageMagick, then uses Kontext to create visually appealing scenes with characters in locations. Features a complete server-side framework for automation, with plans for TTS dialogues and music soundtrack integration. 200+ hours of development invested in this no-budget creative project.",

@@ -45,7 +45,7 @@ import {
   Star as StarIcon,
   OpenInNew as OpenIcon,
   GitHub as GitHubIcon,
-  New as NewIcon,
+  NewReleases as NewIcon,
   Verified as VerifiedIcon,
   Clear as ClearIcon,
   ViewModule as GridViewIcon,

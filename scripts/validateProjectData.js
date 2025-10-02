@@ -1,1 +1,1 @@
-﻿console.log("Validation completed");
+console.log("Validation completed");

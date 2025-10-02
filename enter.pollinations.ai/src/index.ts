@@ -26,17 +26,24 @@ const app = new Hono<Env>()
     .use("*", requestId())
     .use("*", logger)
     .route("/api", api)
-    .get(
-        "/api/docs",
-        Scalar({
+    .get("/api/docs", (c, next) =>
+        Scalar<Env>({
             pageTitle: "Pollinations.AI API Docs",
             title: "Pollinations.AI API Docs",
             theme: "saturn",
             sources: [
                 { url: "/api/open-api/generate-schema", title: "API" },
-                { url: "/api/auth/open-api/generate-schema", title: "Auth" },
+                // Include better-auth docs only in development mode
+                ...(c.env.ENVIRONMENT === "development"
+                    ? [
+                          {
+                              url: "/api/auth/open-api/generate-schema",
+                              title: "Auth",
+                          },
+                      ]
+                    : []),
             ],
-        }),
+        })(c, next),
     )
     .get(
         "/api/open-api/generate-schema",

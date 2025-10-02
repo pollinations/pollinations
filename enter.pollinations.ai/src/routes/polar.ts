@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import z from "zod";
 import { authenticate } from "../middleware/authenticate.ts";
@@ -39,6 +39,7 @@ export const polarRoutes = new Hono<Env>()
         "/customer/state",
         describeRoute({
             description: "Get the polar customer state for the current user.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         async (c) => {
             const { user } = c.var.auth.requireActiveSession();
@@ -53,6 +54,7 @@ export const polarRoutes = new Hono<Env>()
         "/customer/events",
         describeRoute({
             description: "Get usage events associated with the current user.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         async (c) => {
             const { user } = c.var.auth.requireActiveSession();
@@ -70,6 +72,7 @@ export const polarRoutes = new Hono<Env>()
                 "Redirects to the current users customer portal by default.",
                 "If `redirect` is set to `false`, returns JSON with the redirect url.",
             ].join(" "),
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         validator("query", redirectQuerySchema),
         async (c) => {
@@ -95,6 +98,7 @@ export const polarRoutes = new Hono<Env>()
         describeRoute({
             description:
                 "Opens the polar checkout matching the product `slug`.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         validator("param", checkoutParamsSchema),
         validator("query", redirectQuerySchema),

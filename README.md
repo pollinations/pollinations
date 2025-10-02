@@ -272,6 +272,8 @@ Pollinations.AI is used in various projects, including:
 | [Imagen](https://altkriz.github.io/imagen/) ([⭐ 3](https://github.com/altkriz/imagen)) | A beautiful web interface for generating images using Pollinations.ai API with... | @altkriz |
 | [CatGPT Meme Generator 🐱](https://pollinations.github.io/catgpt/) ([⭐ 2](https://github.com/pollinations/catgpt)) | Transform your questions into sassy cat wisdom! An AI-powered meme generator... | @voodoohop |
 | [Dreamscape AI](https://dreamscape.pinkpixel.dev) ([⭐ 2](https://github.com/pinkpixel-dev/dreamscape-ai)) | Dreamscape AI is a creative studio for generating, enhancing, and transforming... | @sizzlebop |
+| [Gainzr AI 🎨](https://gainzr.my) | Web-based AI image generator for creating high-quality images from text prompts... | @bwava |
+| [Dreamator-AI 💫](https://dreamator-ai.vercel.app/) | Transform your imagination into reality using Pollinations API. Clean and... | @its3li |
 | [YooAI 🎨](https://yooai.co/) | All-in-one AI creation platform integrating AI-Writer, AI-Video, and free image... | [yoo_ai@outlo...](mailto:yoo_ai@outlook.com) |
 | 🖥️ Image Generator by Quilix 🖼️ ([⭐ 0](https://github.com/quil1x/ImageBYquilix)) | A beautiful desktop application for generating AI images using Pollinations.AI... | @quil1x |
 | [Imagen - AI Image Generator 🎨](https://altkriz.github.io/imagen/) ([⭐ 0](https://github.com/altkriz/imagen)) | A beautiful, open-source web interface for generating AI images using the... | @altkriz |
@@ -423,6 +425,8 @@ Pollinations.AI is used in various projects, including:
 | [EvilChat 🔥🤖](https://altkriz.github.io/evilchat/) ([⭐ 2](https://github.com/altkriz/evilchat)) | An uncensored AI chat interface with dark, sleek design, smooth animations,... | @altkriz |
 | 🤖 🇮🇩 [Rizqi O Chatbot 🇮🇩](https://chatbot.rizqioliveira.my.id) ([⭐ 1](https://github.com/ray23-bit/Projectenam)) | Rizqi O Chatbot adalah proyek berbasis Pollinations yang menggabungkan tiga... | @ray23-bit |
 | [ Comeback AI](https://comeback-ai.pinkpixel.dev) ([⭐ 1](https://github.com/pinkpixel-dev/comeback-ai)) | AI-powered clapback machine that transforms mean comments into witty comebacks... | @sizzlebop |
+| [iTouch 💭](https://jordanpeteroliver.github.io/itouch/) ([⭐ 0](https://github.com/jordanpeteroliver/itouch)) | Chat where images and texts integrate. A poetic journey to where inspiration... | @jordanpeteroliver |
+| [Hythme AI 🇸🇦](https://hythme.com) | Arabic AI platform specialized in coding, social engineering, information... | @hythme |
 | [Petfuse Image Generator 🐾](https://petfuse.xyz/) | Chat and generate images with custom seed control. Features a public gallery... | @yasmeenanti08-cr... |
 | 🖥️ [PrisimAI 💬](https://prisimai.github.io/PrisimAI) ([⭐ 0](https://github.com/PrisimAI/PrisimAI)) | A lightweight, browser-based AI chat application designed to run seamlessly as... | @CloudCompile |
 | 🆕 [VOHU AI 🇮🇷](https://www.vohuapp.ir) | VOHU AI is an Iranian AI that, in collaboration with Pollinations.AI, offers... | [info@vohuapp.ir](mailto:info@vohuapp.ir) |

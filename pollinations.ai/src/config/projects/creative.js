@@ -5,6 +5,22 @@
 
 export const creativeProjects = [
   {
+    name: "Gainzr AI 🎨",
+    url: "https://gainzr.my",
+    description: "Web-based AI image generator for creating high-quality images from text prompts in real-time. Simple, fast, and mobile-friendly interface optimized for design, marketing, and social media content creation.",
+    author: "@bwava",
+    submissionDate: "2025-07-05",
+    order: 1
+  },
+  {
+    name: "Dreamator-AI 💫",
+    url: "https://dreamator-ai.vercel.app/",
+    description: "Transform your imagination into reality using Pollinations API. Clean and intuitive interface for generating AI images from text prompts with real-time generation.",
+    author: "@its3li",
+    submissionDate: "2025-06-26",
+    order: 1
+  },
+  {
     name: "YooAI 🎨",
     url: "https://yooai.co/",
     description: "All-in-one AI creation platform integrating AI-Writer, AI-Video, and free image generation powered by Pollinations. No registration or subscription required — simply enter a prompt to generate high-quality visuals instantly.",

@@ -1,6 +1,7 @@
 import type { UsageConversionDefinition } from "@/registry/registry";
 
 export const ZERO_PRICE_START_DATE = new Date("2020-01-01 00:00:00").getTime();
+export const PRICING_START_DATE = new Date("2025-08-01 00:00:00").getTime();
 
 // Convert dollars per million tokens to dollars per token
 export function fromDPMT(dpmt: number): number {

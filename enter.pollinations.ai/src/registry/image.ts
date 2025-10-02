@@ -3,7 +3,7 @@ import type {
     ServiceRegistry,
     UsageConversionDefinition,
 } from "@/registry/registry";
-import { ZERO_PRICE, fromDPMT, costAsPrice } from "@/registry/price-helpers";
+import { ZERO_PRICE, PRICING_START_DATE, fromDPMT, costAsPrice } from "@/registry/price-helpers";
 
 export const IMAGE_MODELS = {
     "flux": {
@@ -26,8 +26,8 @@ export const IMAGE_MODELS = {
         costType: "per_generation_cost",
         cost: [
             {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                completionImageTokens: fromDPMT(30), // $30 per 1M tokens = $0.00003 per token
+                date: PRICING_START_DATE,
+                completionImageTokens: fromDPMT(30),
             },
         ],
     },
@@ -51,8 +51,8 @@ export const IMAGE_SERVICES = {
         modelProviders: ["kontext"],
         price: [
             {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                completionImageTokens: 0.015, // $0.015 per image (1 token = 1 image)
+                date: PRICING_START_DATE,
+                completionImageTokens: 0.015,
             },
         ],
     },
@@ -62,8 +62,8 @@ export const IMAGE_SERVICES = {
         modelProviders: ["turbo"],
         price: [
             {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                completionImageTokens: 0.015, // $0.015 per image (1 token = 1 image)
+                date: PRICING_START_DATE,
+                completionImageTokens: 0.015,
             },
         ],
     },
@@ -79,8 +79,8 @@ export const IMAGE_SERVICES = {
         modelProviders: ["seedream"],
         price: [
             {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                completionImageTokens: 0.015, // $0.015 per image (1 token = 1 image)
+                date: PRICING_START_DATE,
+                completionImageTokens: 0.015,
             },
         ],
     },

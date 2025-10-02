@@ -11,34 +11,15 @@ export type CostType = (typeof COST_TYPES)[number];
 // All rates are now in DPT (Dollars Per Token)
 // Conversion: tokens * rate = cost in USD
 
-const USAGE_TYPES = {
-    promptTextTokens: {
-        description: "number of text tokens in the input prompt",
-    },
-    promptCachedTokens: {
-        description: "number of cached tokens in the input prompt",
-    },
-    promptAudioTokens: {
-        description: "number of audio tokens in the input prompt",
-    },
-    promptImageTokens: {
-        description: "number of image tokens in the input prompt",
-    },
-    completionTextTokens: {
-        description: "number of text tokens in the generated completion",
-    },
-    completionReasoningTokens: {
-        description: "number of reasoning tokens in the generated completion",
-    },
-    completionAudioTokens: {
-        description: "number of audio tokens in the generated completion",
-    },
-    completionImageTokens: {
-        description: "number of image tokens in the generated completion",
-    },
-} as const;
-
-export type UsageType = keyof typeof USAGE_TYPES;
+export type UsageType =
+    | "promptTextTokens"
+    | "promptCachedTokens"
+    | "promptAudioTokens"
+    | "promptImageTokens"
+    | "completionTextTokens"
+    | "completionReasoningTokens"
+    | "completionAudioTokens"
+    | "completionImageTokens";
 
 export type TokenUsage = {
     unit: "TOKENS";
@@ -56,15 +37,12 @@ export type UsagePrice = DollarConvertedUsage & {
     totalPrice: number;
 };
 
-// Simplified: rate is just a number in DPT (Dollars Per Token)
-export type UsageConversionRate = number;
-
 export type UsageConversionDefinition = {
     date: number;
-} & { [K in UsageType]?: UsageConversionRate };
+} & { [K in UsageType]?: number };
 
-export type PriceDefinition = UsageConversionDefinition;
 export type CostDefinition = UsageConversionDefinition;
+export type PriceDefinition = UsageConversionDefinition;
 
 export type ModelProviderDefinition = {
     displayName: string;

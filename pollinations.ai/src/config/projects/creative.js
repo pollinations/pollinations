@@ -5,6 +5,23 @@
 
 export const creativeProjects = [
   {
+    name: "YooAI 🎨",
+    url: "https://yooai.co/",
+    description: "All-in-one AI creation platform integrating AI-Writer, AI-Video, and free image generation powered by Pollinations. No registration or subscription required — simply enter a prompt to generate high-quality visuals instantly.",
+    author: "yoo_ai@outlook.com",
+    submissionDate: "2025-08-19",
+    order: 1
+  },
+  {
+    name: "Image Generator by Quilix 🖼️",
+    url: "https://github.com/quil1x/ImageBYquilix",
+    description: "A beautiful desktop application for generating AI images using Pollinations.AI API. Built with Electron, features modern dark theme with glassmorphism effects, supports multiple AI models (Flux, Turbo, Midjourney), cross-platform support (Windows, macOS, Linux), and generates 1024x1024 images without watermarks.",
+    author: "@quil1x",
+    repo: "https://github.com/quil1x/ImageBYquilix",
+    submissionDate: "2025-09-06",
+    order: 1
+  },
+  {
     name: "Imagen - AI Image Generator 🎨",
     url: "https://altkriz.github.io/imagen/",
     description: "A beautiful, open-source web interface for generating AI images using the Pollinations.ai API. Features modern glass-morphism UI, local history storage, flux and turbo models, adjustable dimensions, seed control, and optional prompt enhancement. MIT licensed.",

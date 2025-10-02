@@ -12,16 +12,21 @@ When handling project submission issues:
    ```javascript
    {
      name: "Project Name",
-     url: "https://project-url.com",
+     url: "https://project-url.com", // REQUIRED - working project URL
      description: "Brief description of the project.",
      author: "@discord_username", // if available or alternatively a URL to a social media profile
-     repo: "https://github.com/repo-url", // if available
+     repo: "https://github.com/repo-url", // OPTIONAL - GitHub repo if available
      submissionDate: "YYYY-MM-DD", // automatically added for new submissions
      language: "zh-CN", // for non-English projects, include the language code
      hidden: true, // optional, set to true for broken projects that shouldn't appear in README.md
      order: 1 // ordering priority based on status (1=highest, 5=lowest)
    }
    ```
+
+   **Requirements:**
+   - ✅ **Project URL is REQUIRED** - Must have a working live demo or website
+   - ✅ **GitHub repo is OPTIONAL** - Nice to have but not required
+   - ❌ **Invalid submissions** - No URL, broken URL, or just image generation requests
 
 3. Project Ordering Rules:
    - In the README.md file, projects should be ordered within their categories:

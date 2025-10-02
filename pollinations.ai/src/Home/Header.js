@@ -104,6 +104,13 @@ const Header = () => {
         );
     };
 
+    const handleProjectsClick = () => {
+        trackEvent({
+            action: "click_projects",
+            category: "header",
+        });
+    };
+
     const open = Boolean(anchorEl);
 
     return (
@@ -156,6 +163,12 @@ const Header = () => {
                         alignItems: "center",
                     }}
                 >
+                    <ProjectsNavLink 
+                        to="/projects" 
+                        onClick={handleProjectsClick}
+                    >
+                        🌟 Projects
+                    </ProjectsNavLink>
                     <AboutUsButton
                         handleClick={handleAboutUsClick}
                         isLoading={false}

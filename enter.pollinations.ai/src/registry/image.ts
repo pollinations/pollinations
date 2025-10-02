@@ -3,7 +3,7 @@ import type {
     ServiceRegistry,
     UsageConversionDefinition,
 } from "@/registry/registry";
-import { ZERO_PRICE, PRICING_START_DATE, fromDPMT, costAsPrice } from "@/registry/price-helpers";
+import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "@/registry/price-helpers";
 
 export const IMAGE_MODELS = {
     "flux": {
@@ -71,7 +71,7 @@ export const IMAGE_SERVICES = {
         displayName: "Nanobanana",
         aliases: [],
         modelProviders: ["nanobanana"],
-        price: costAsPrice(IMAGE_MODELS["nanobanana"]),
+        price: IMAGE_MODELS["nanobanana"].cost,
     },
     "seedream": {
         displayName: "Seedream",

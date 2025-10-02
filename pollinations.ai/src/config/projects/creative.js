@@ -5,6 +5,14 @@
 
 export const creativeProjects = [
   {
+    name: "Anime Comic Movie 🎬",
+    url: "https://petersebring.com/showcase.php",
+    description: "An ambitious anime comic movie project using Pollinations' Kontext and Flux models for image-to-image generation. Combines detailed character and location images using ImageMagick, then uses Kontext to create visually appealing scenes with characters in locations. Features a complete server-side framework for automation, with plans for TTS dialogues and music soundtrack integration. 200+ hours of development invested in this no-budget creative project.",
+    author: "@sebastianpw",
+    submissionDate: "2025-10-02",
+    order: 1
+  },
+  {
     name: "Imagine Draw AI 🎨",
     url: "https://imaginedrawai.vercel.app/",
     description: "A powerful and 100% free text-to-image generator. Just type your prompt and get stunning AI-generated images in seconds. No login, no subscriptions, and no limits—create as many images as you want! Ideal for designers, developers, marketers, content creators, and anyone exploring creative AI. Supports various styles, resolutions, and customization options to bring your ideas to life.",

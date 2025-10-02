@@ -5,6 +5,15 @@
 
 export const hackAndBuildProjects = [
   {
+    name: "MultiAgent 🤖",
+    url: "https://github.com/LKosoj/multiagent",
+    description: "Advanced multi-agent system for solving complex tasks using specialized AI agents. Implements modern architectural patterns with agent factory, manager coordination, and flexible pipelines for Text-to-SQL, research, and content creation. Features next-gen RAG memory with SQLite + ChromaDB, database plugin pattern for multiple DBMS, multi-layer security with LLM-Guard, and extensible tool system with MCP integration. Emphasizes modularity, security, and extensibility.",
+    author: "@LKosoj",
+    repo: "https://github.com/LKosoj/multiagent",
+    submissionDate: "2025-10-02",
+    order: 1
+  },
+  {
     name: "unpkg.ai",
     url: "https://unpkg.ai",
     description: "AI-powered ESM module generation service that creates JavaScript modules on-demand using LLMs.",

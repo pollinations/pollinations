@@ -28,10 +28,7 @@ export const IMAGE_MODELS = {
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                completionImageTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(30), // $30 per 1M tokens = $0.00003 per token
-                },
+                completionImageTokens: fromDPMT(30), // $30 per 1M tokens = $0.00003 per token
             },
         ],
     },
@@ -56,10 +53,7 @@ export const IMAGE_SERVICES = {
         price: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                completionImageTokens: {
-                    unit: "DPT",
-                    rate: 0.015, // $0.015 per image (1 token = 1 image)
-                },
+                completionImageTokens: 0.015, // $0.015 per image (1 token = 1 image)
             },
         ],
     },
@@ -70,10 +64,7 @@ export const IMAGE_SERVICES = {
         price: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                completionImageTokens: {
-                    unit: "DPT",
-                    rate: 0.015, // $0.015 per image (1 token = 1 image)
-                },
+                completionImageTokens: 0.015, // $0.015 per image (1 token = 1 image)
             },
         ],
     },
@@ -84,10 +75,7 @@ export const IMAGE_SERVICES = {
         price: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                completionImageTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(30), // $30 per 1M tokens = $0.00003 per token
-                },
+                completionImageTokens: fromDPMT(30), // $30 per 1M tokens = $0.00003 per token
             },
         ],
     },
@@ -98,10 +86,7 @@ export const IMAGE_SERVICES = {
         price: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                completionImageTokens: {
-                    unit: "DPT",
-                    rate: 0.015, // $0.015 per image (1 token = 1 image)
-                },
+                completionImageTokens: 0.015, // $0.015 per image (1 token = 1 image)
             },
         ],
     },

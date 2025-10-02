@@ -8,22 +8,8 @@ const PRECISION = 8;
 const COST_TYPES = ["fixed_operational_cost", "per_generation_cost"] as const;
 export type CostType = (typeof COST_TYPES)[number];
 
-const UNITS = {
-    DPMT: {
-        description: "dollars per million tokens",
-        convert: (tokens: number, rate: number): number => {
-            return safeRound((tokens / 1_000_000) * rate, PRECISION);
-        },
-    },
-    DPT: {
-        description: "dollars per token",
-        convert: (tokens: number, rate: number): number => {
-            return safeRound(tokens * rate, PRECISION);
-        },
-    },
-} as const;
-
-type Unit = keyof typeof UNITS;
+// All rates are now in DPT (Dollars Per Token)
+// Conversion: tokens * rate = cost in USD
 
 const USAGE_TYPES = {
     promptTextTokens: {
@@ -70,10 +56,8 @@ export type UsagePrice = DollarConvertedUsage & {
     totalPrice: number;
 };
 
-export type UsageConversionRate = {
-    unit: Unit;
-    rate: number;
-};
+// Simplified: rate is just a number in DPT (Dollars Per Token)
+export type UsageConversionRate = number;
 
 export type UsageConversionDefinition = {
     date: number;
@@ -177,19 +161,13 @@ function convertUsage(
                     : usageType;
             const conversionRate =
                 conversionDefinition[usageTypeWithFallback as UsageType];
-            if (!conversionRate) {
+            if (conversionRate === undefined) {
                 throw new Error(
                     `Failed to get conversion rate for usage type: ${usageType}`,
                 );
             }
-            const unit = UNITS[conversionRate.unit];
-            if (!unit) {
-                throw new Error(
-                    `Failed to get conversion unit: ${conversionRate.unit}`,
-                );
-            }
-            const rate = conversionRate.rate;
-            const usageTypeCost = unit.convert(amount, rate);
+            // Direct DPT conversion: tokens * rate = cost in USD
+            const usageTypeCost = safeRound(amount * conversionRate, PRECISION);
             return [usageType, usageTypeCost];
         }),
     );
@@ -263,7 +241,7 @@ function isFreeService<
             `Failed to get current price for servce: ${serviceId.toString()}`,
         );
     return Object.values(omit(servicPriceDefinition, "date")).every(
-        (definition) => definition.rate === 0,
+        (rate) => rate === 0,
     );
 }
 
@@ -301,14 +279,10 @@ function calculateMargins<
                                     `Failed to find usage cost or price for provider: ${provider.toString()}`,
                                 );
                             }
-                            if (usageCost.unit !== usagePrice.unit) {
-                                throw new Error(
-                                    `Usage cost and price units do not match for provider: ${provider.toString()}`,
-                                );
-                            }
+                            // Units are always USD now, no need to check
                             return [
                                 usageType,
-                                usagePrice.rate - usageCost.rate,
+                                usagePrice - usageCost,
                             ];
                         },
                     ),

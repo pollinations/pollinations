@@ -34,26 +34,11 @@ export function fromDPMT(dpmt: number): number {
  */
 export const ZERO_PRICE_TEXT: UsageConversionDefinition = {
     date: ZERO_PRICE_START_DATE,
-    promptTextTokens: {
-        unit: "DPT",
-        rate: 0.0,
-    },
-    promptCachedTokens: {
-        unit: "DPT",
-        rate: 0.0,
-    },
-    completionTextTokens: {
-        unit: "DPT",
-        rate: 0.0,
-    },
-    promptAudioTokens: {
-        unit: "DPT",
-        rate: 0.0,
-    },
-    completionAudioTokens: {
-        unit: "DPT",
-        rate: 0.0,
-    },
+    promptTextTokens: 0.0,
+    promptCachedTokens: 0.0,
+    completionTextTokens: 0.0,
+    promptAudioTokens: 0.0,
+    completionAudioTokens: 0.0,
 };
 
 /**
@@ -61,10 +46,7 @@ export const ZERO_PRICE_TEXT: UsageConversionDefinition = {
  */
 export const ZERO_PRICE_IMAGE: UsageConversionDefinition = {
     date: ZERO_PRICE_START_DATE,
-    completionImageTokens: {
-        unit: "DPT",
-        rate: 0.0,
-    },
+    completionImageTokens: 0.0,
 };
 
 /**
@@ -73,28 +55,10 @@ export const ZERO_PRICE_IMAGE: UsageConversionDefinition = {
  */
 export const ZERO_PRICE_ALL: UsageConversionDefinition = {
     date: ZERO_PRICE_START_DATE,
-    promptTextTokens: {
-        unit: "DPT",
-        rate: 0.0,
-    },
-    promptCachedTokens: {
-        unit: "DPT",
-        rate: 0.0,
-    },
-    completionTextTokens: {
-        unit: "DPT",
-        rate: 0.0,
-    },
-    promptAudioTokens: {
-        unit: "DPT",
-        rate: 0.0,
-    },
-    completionAudioTokens: {
-        unit: "DPT",
-        rate: 0.0,
-    },
-    completionImageTokens: {
-        unit: "DPT",
-        rate: 0.0,
-    },
+    promptTextTokens: 0.0,
+    promptCachedTokens: 0.0,
+    completionTextTokens: 0.0,
+    promptAudioTokens: 0.0,
+    completionAudioTokens: 0.0,
+    completionImageTokens: 0.0,
 };

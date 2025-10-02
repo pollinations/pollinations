@@ -12,18 +12,9 @@ export const TEXT_MODELS = {
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.055), // $0.055 per 1M tokens
-                },
-                promptCachedTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.0055), // $0.0055 per 1M tokens
-                },
-                completionTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.44), // $0.44 per 1M tokens
-                },
+                promptTextTokens: fromDPMT(0.055), // $0.055 per 1M tokens
+                promptCachedTokens: fromDPMT(0.0055), // $0.0055 per 1M tokens
+                completionTextTokens: fromDPMT(0.44), // $0.44 per 1M tokens
             },
         ],
     },
@@ -33,18 +24,9 @@ export const TEXT_MODELS = {
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(2.5), // $2.5 per 1M tokens
-                },
-                promptCachedTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.625), // $0.625 per 1M tokens
-                },
-                completionTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(10.0), // $10 per 1M tokens
-                },
+                promptTextTokens: fromDPMT(2.5), // $2.5 per 1M tokens
+                promptCachedTokens: fromDPMT(0.625), // $0.625 per 1M tokens
+                completionTextTokens: fromDPMT(10.0), // $10 per 1M tokens
             },
         ],
     },
@@ -54,18 +36,9 @@ export const TEXT_MODELS = {
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.055), // $0.055 per 1M tokens
-                },
-                promptCachedTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.0055), // $0.0055 per 1M tokens
-                },
-                completionTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.44), // $0.44 per 1M tokens
-                },
+                promptTextTokens: fromDPMT(0.055), // $0.055 per 1M tokens
+                promptCachedTokens: fromDPMT(0.0055), // $0.0055 per 1M tokens
+                completionTextTokens: fromDPMT(0.44), // $0.44 per 1M tokens
             },
         ],
     },
@@ -75,18 +48,9 @@ export const TEXT_MODELS = {
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(1.91), // $1.91 per 1M tokens
-                },
-                promptCachedTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.48), // $0.48 per 1M tokens
-                },
-                completionTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(7.64), // $7.64 per 1M tokens
-                },
+                promptTextTokens: fromDPMT(1.91), // $1.91 per 1M tokens
+                promptCachedTokens: fromDPMT(0.48), // $0.48 per 1M tokens
+                completionTextTokens: fromDPMT(7.64), // $7.64 per 1M tokens
             },
         ],
     },
@@ -96,26 +60,11 @@ export const TEXT_MODELS = {
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.1432), // $0.1432 per 1M tokens
-                },
-                promptCachedTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.075), // $0.075 per 1M tokens
-                },
-                completionTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.572793), // $0.572793 per 1M tokens
-                },
-                promptAudioTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(9.5466), // $9.5466 per 1M tokens
-                },
-                completionAudioTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(19.093079), // $19.093079 per 1M tokens
-                },
+                promptTextTokens: fromDPMT(0.1432), // $0.1432 per 1M tokens
+                promptCachedTokens: fromDPMT(0.075), // $0.075 per 1M tokens
+                completionTextTokens: fromDPMT(0.572793), // $0.572793 per 1M tokens
+                promptAudioTokens: fromDPMT(9.5466), // $9.5466 per 1M tokens
+                completionAudioTokens: fromDPMT(19.093079), // $19.093079 per 1M tokens
             },
         ],
     },
@@ -125,18 +74,9 @@ export const TEXT_MODELS = {
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.4), // $0.4 per 1M tokens
-                },
-                promptCachedTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.1), // $0.1 per 1M tokens
-                },
-                completionTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(1.6), // $1.6 per 1M tokens
-                },
+                promptTextTokens: fromDPMT(0.4), // $0.4 per 1M tokens
+                promptCachedTokens: fromDPMT(0.1), // $0.1 per 1M tokens
+                completionTextTokens: fromDPMT(1.6), // $1.6 per 1M tokens
             },
         ],
     },
@@ -146,18 +86,9 @@ export const TEXT_MODELS = {
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.2), // $0.2 per 1M tokens
-                },
-                promptCachedTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.05), // $0.05 per 1M tokens
-                },
-                completionTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.8), // $0.8 per 1M tokens
-                },
+                promptTextTokens: fromDPMT(0.2), // $0.2 per 1M tokens
+                promptCachedTokens: fromDPMT(0.05), // $0.05 per 1M tokens
+                completionTextTokens: fromDPMT(0.8), // $0.8 per 1M tokens
             },
         ],
     },
@@ -167,18 +98,9 @@ export const TEXT_MODELS = {
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.2), // $0.2 per 1M tokens
-                },
-                promptCachedTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.05), // $0.05 per 1M tokens
-                },
-                completionTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.8), // $0.8 per 1M tokens
-                },
+                promptTextTokens: fromDPMT(0.2), // $0.2 per 1M tokens
+                promptCachedTokens: fromDPMT(0.05), // $0.05 per 1M tokens
+                completionTextTokens: fromDPMT(0.8), // $0.8 per 1M tokens
             },
         ],
     },
@@ -188,18 +110,9 @@ export const TEXT_MODELS = {
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(1.35), // $1.35 per 1M tokens
-                },
-                promptCachedTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.3375), // $0.3375 per 1M tokens
-                },
-                completionTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(5.4), // $5.4 per 1M tokens
-                },
+                promptTextTokens: fromDPMT(1.35), // $1.35 per 1M tokens
+                promptCachedTokens: fromDPMT(0.3375), // $0.3375 per 1M tokens
+                completionTextTokens: fromDPMT(5.4), // $5.4 per 1M tokens
             },
         ],
     },
@@ -209,18 +122,9 @@ export const TEXT_MODELS = {
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.035), // $0.035 per 1M tokens
-                },
-                promptCachedTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.009), // $0.009 per 1M tokens
-                },
-                completionTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.14), // $0.14 per 1M tokens
-                },
+                promptTextTokens: fromDPMT(0.035), // $0.035 per 1M tokens
+                promptCachedTokens: fromDPMT(0.009), // $0.009 per 1M tokens
+                completionTextTokens: fromDPMT(0.14), // $0.14 per 1M tokens
             },
         ],
     },
@@ -230,18 +134,9 @@ export const TEXT_MODELS = {
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.15), // $0.15 per 1M tokens
-                },
-                promptCachedTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.0375), // $0.0375 per 1M tokens
-                },
-                completionTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.6), // $0.6 per 1M tokens
-                },
+                promptTextTokens: fromDPMT(0.15), // $0.15 per 1M tokens
+                promptCachedTokens: fromDPMT(0.0375), // $0.0375 per 1M tokens
+                completionTextTokens: fromDPMT(0.6), // $0.6 per 1M tokens
             },
         ],
     },
@@ -251,18 +146,9 @@ export const TEXT_MODELS = {
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.8), // $0.8 per 1M tokens
-                },
-                promptCachedTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.2), // $0.2 per 1M tokens
-                },
-                completionTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(4.0), // $4 per 1M tokens
-                },
+                promptTextTokens: fromDPMT(0.8), // $0.8 per 1M tokens
+                promptCachedTokens: fromDPMT(0.2), // $0.2 per 1M tokens
+                completionTextTokens: fromDPMT(4.0), // $4 per 1M tokens
             },
         ],
     },
@@ -282,18 +168,9 @@ export const TEXT_MODELS = {
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.5), // $0.5 per 1M tokens
-                },
-                promptCachedTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(0.125), // $0.125 per 1M tokens
-                },
-                completionTextTokens: {
-                    unit: "DPT",
-                    rate: fromDPMT(2.0), // $2 per 1M tokens
-                },
+                promptTextTokens: fromDPMT(0.5), // $0.5 per 1M tokens
+                promptCachedTokens: fromDPMT(0.125), // $0.125 per 1M tokens
+                completionTextTokens: fromDPMT(2.0), // $2 per 1M tokens
             },
         ],
     },

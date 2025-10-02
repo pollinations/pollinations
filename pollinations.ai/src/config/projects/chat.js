@@ -5,6 +5,41 @@
 
 export const chatProjects = [
   {
+    name: "iTouch 💭",
+    url: "https://jordanpeteroliver.github.io/itouch/",
+    description: "Chat where images and texts integrate. A poetic journey to where inspiration lives, where words are born, and souls exist before bodies. Creative AI-powered conversation with visual generation.",
+    author: "@jordanpeteroliver",
+    repo: "https://github.com/jordanpeteroliver/itouch",
+    submissionDate: "2025-08-21",
+    order: 1
+  },
+  {
+    name: "Hythme AI 🇸🇦",
+    url: "https://hythme.com",
+    description: "Arabic AI platform specialized in coding, social engineering, information technology, and cybersecurity education. Designed to help technical students increase their awareness and skills in IT fields.",
+    author: "@hythme",
+    submissionDate: "2025-06-26",
+    language: "ar",
+    order: 1
+  },
+  {
+    name: "Petfuse Image Generator 🐾",
+    url: "https://petfuse.xyz/",
+    description: "Chat and generate images with custom seed control. Features a public gallery indexed by Google where all generated images are displayed. Simple interface for creating AI art with conversation.",
+    author: "@yasmeenanti08-creator",
+    submissionDate: "2025-08-18",
+    order: 1
+  },
+  {
+    name: "PrisimAI 💬",
+    url: "https://prisimai.github.io/PrisimAI",
+    description: "A lightweight, browser-based AI chat application designed to run seamlessly as a Progressive Web App (PWA). Features offline support via service worker, multiple model selection, ChatGPT-inspired interface, and cross-platform installability on desktop & mobile.",
+    author: "@CloudCompile",
+    repo: "https://github.com/PrisimAI/PrisimAI",
+    submissionDate: "2025-09-10",
+    order: 1
+  },
+  {
     name: "VOHU AI 🇮🇷",
     url: "https://www.vohuapp.ir",
     description: "VOHU AI is an Iranian AI that, in collaboration with Pollinations.AI, offers free and unlimited access to the world's best language models for everyone. The project is completely free with unlimited access, and you can easily use it without even signing up.",

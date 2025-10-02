@@ -2,6 +2,7 @@
   "name": "pollinations-project-management",
   "version": "1.0.0",
   "description": "Automated project management scripts for Pollinations.AI ecosystem",
+  "type": "module",
   "scripts": {
     "migrate": "node scripts/migrateProjects.js",
     "generate-readme": "node scripts/generateReadme.js",

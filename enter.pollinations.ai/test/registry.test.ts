@@ -9,21 +9,13 @@ import type {
 const MOCK_MODEL_PROVIDERS = {
     "mock-model": {
         displayName: "Mock Model",
+        costType: "per_generation_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.05,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.05,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.1,
-                },
+                promptTextTokens: 0.05,
+                promptCachedTokens: 0.05,
+                completionTextTokens: 0.1,
             },
         ],
     },
@@ -37,18 +29,9 @@ const MOCK_SERVICES = {
         price: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
+                promptTextTokens: 0.0,
+                promptCachedTokens: 0.0,
+                completionTextTokens: 0.0,
             },
         ],
     },
@@ -59,18 +42,9 @@ const MOCK_SERVICES = {
         price: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.05,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.05,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.1,
-                },
+                promptTextTokens: 0.05,
+                promptCachedTokens: 0.05,
+                completionTextTokens: 0.1,
             },
         ],
     },
@@ -91,9 +65,9 @@ test("calculateCost should return the correct costs", async () => {
         completionTextTokens: 1_000_000,
     } satisfies TokenUsage;
     const cost = MOCK_REGISTRY.calculateCost("mock-model", usage);
-    expect(cost.promptTextTokens).toBe(0.05);
-    expect(cost.promptCachedTokens).toBe(0.05);
-    expect(cost.completionTextTokens).toBe(0.1);
+    expect(cost.promptTextTokens).toBe(50_000);
+    expect(cost.promptCachedTokens).toBe(50_000);
+    expect(cost.completionTextTokens).toBe(100_000);
 });
 
 test("calculatePrice should return the correct price", async () => {
@@ -109,10 +83,10 @@ test("calculatePrice should return the correct price", async () => {
     expect(freePrice.completionTextTokens).toBe(0.0);
     expect(freePrice.totalPrice).toBe(0.0);
     const paidPrice = MOCK_REGISTRY.calculatePrice("paid-service", usage);
-    expect(paidPrice.promptTextTokens).toBe(0.05);
-    expect(paidPrice.promptCachedTokens).toBe(0.05);
-    expect(paidPrice.completionTextTokens).toBe(0.1);
-    expect(paidPrice.totalPrice).toBe(0.2);
+    expect(paidPrice.promptTextTokens).toBe(50_000);
+    expect(paidPrice.promptCachedTokens).toBe(50_000);
+    expect(paidPrice.completionTextTokens).toBe(100_000);
+    expect(paidPrice.totalPrice).toBe(200_000);
 });
 
 test("Usage types with undefined cost or price should throw an error", async () => {

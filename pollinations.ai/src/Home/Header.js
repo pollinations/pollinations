@@ -53,6 +53,33 @@ const AboutUsButton = styled(GeneralButton)(() => ({
     },
 }));
 
+// Projects navigation link styled component
+const ProjectsNavLink = styled(NavLink)(() => ({
+    fontSize: "1em",
+    fontFamily: Fonts.title,
+    fontWeight: 600,
+    marginRight: "1em",
+    borderRadius: "3em",
+    height: "40px",
+    minHeight: "40px",
+    display: "flex",
+    alignItems: "center",
+    padding: "0 20px",
+    minWidth: "120px",
+    border: `2px solid ${Colors.primary}`,
+    color: Colors.primary,
+    textDecoration: "none",
+    transition: "color 0.3s, background-color 0.3s",
+    "&:hover": {
+        color: "white",
+        backgroundColor: Colors.primary,
+    },
+    "&.active": {
+        color: "white",
+        backgroundColor: Colors.primary,
+    },
+}));
+
 const Header = () => {
     const theme = useTheme(); // Use the useTheme hook to access the theme
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));

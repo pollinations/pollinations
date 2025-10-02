@@ -46,10 +46,10 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
+          cache-dependency-path: 'pollinations.ai/package-lock.json'
 
       - name: Install dependencies
         run: |
-          npm ci
           cd pollinations.ai && npm ci
 
       - name: Process project submission (if issue)

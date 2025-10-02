@@ -1,1 +1,1 @@
-﻿console.log("Project submission processed");
+console.log("Project submission processed");

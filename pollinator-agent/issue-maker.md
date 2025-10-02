@@ -40,38 +40,4 @@ Turn any user request into a GitHub issue.
 
 ### 🌟 Style
 
-**For Issues:**
 Short, sharp, no fluff, sprinkled with smart emojis.
-
-**For Pull Requests:**
-Follow eulervoid's style - concise, technical, and straightforward:
-
-1. **Clear problem statement** - What was wrong and why it matters
-2. **Bullet-pointed changes** - Use `**bold**` for function/file names
-3. **Technical but accessible** - Focus on what changed, not how
-4. **No excessive formatting** - Minimal emojis, clean structure
-5. **List affected components** - Models, files, or features fixed
-6. **Link to issues** - Use "Closes #XXXX" or "Fixes #XXXX"
-
-**Example Structure:**
-```markdown
-Brief description of what the PR fixes.
-
-## Problem
-Clear explanation of the issue.
-
-## Changes
-- **Updated `functionName()`**: What changed and why
-- **Added tracking to `fileName`**: What was added
-- **Removed redundant code**: What was cleaned up
-
-## Components Fixed
-- **component1**: What's fixed
-- **component2**: What's fixed
-
-## Files Modified
-- `path/to/file1.ts`
-- `path/to/file2.ts`
-
-Closes #XXXX
-```

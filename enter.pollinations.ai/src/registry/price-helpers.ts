@@ -48,13 +48,11 @@ export const ZERO_PRICE: UsageConversionDefinition = {
  * Helper to use a model provider's cost as the service price
  * Used when a service charges exactly what the underlying provider costs
  * 
- * @param modelProviders - Registry of model providers with cost definitions
- * @param providerId - ID of the provider to use
- * @returns The provider's cost definition as a price array
+ * @param model - The model provider object with a cost property
+ * @returns The model's cost array to use as price
  */
-export function costAsPrice<T extends Record<string, { cost: UsageConversionDefinition[] }>>(
-    modelProviders: T,
-    providerId: keyof T,
+export function costAsPrice(
+    model: { cost: UsageConversionDefinition[] },
 ): UsageConversionDefinition[] {
-    return modelProviders[providerId].cost;
+    return model.cost;
 }

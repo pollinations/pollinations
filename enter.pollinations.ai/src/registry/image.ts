@@ -9,7 +9,7 @@ export const IMAGE_MODELS = {
     "flux": {
         displayName: "Flux",
         costType: "fixed_operational_cost",
-        cost: costAsPrice(IMAGE_MODELS, "flux"),
+        cost: [ZERO_PRICE],
     },
     "kontext": {
         displayName: "Flux Kontext",

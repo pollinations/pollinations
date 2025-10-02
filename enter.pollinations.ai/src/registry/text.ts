@@ -26,6 +26,27 @@ export const TEXT_MODELS = {
             },
         ],
     },
+    "gpt-5-mini-2025-08-07": {
+        displayName: "OpenAI GPT-5 Nano (Azure)",
+        costType: "per_generation_cost",
+        cost: [
+            {
+                date: new Date("2025-08-01 00:00:00").getTime(),
+                promptTextTokens: {
+                    unit: "DPMT",
+                    rate: 0.22,
+                },
+                promptCachedTokens: {
+                    unit: "DPMT",
+                    rate: 0.03,
+                },
+                completionTextTokens: {
+                    unit: "DPMT",
+                    rate: 1.73,
+                },
+            },
+        ],
+    },
     "gpt-5-chat-latest": {
         displayName: "OpenAI GPT-5 Chat",
         costType: "per_generation_cost",

@@ -71,12 +71,7 @@ export const IMAGE_SERVICES = {
         displayName: "Nanobanana",
         aliases: [],
         modelProviders: ["nanobanana"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                completionImageTokens: fromDPMT(30), // $30 per 1M tokens = $0.00003 per token
-            },
-        ],
+        price: costAsPrice(IMAGE_MODELS["nanobanana"]),
     },
     "seedream": {
         displayName: "Seedream",

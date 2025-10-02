@@ -5,6 +5,15 @@
 
 export const creativeProjects = [
   {
+    name: "Imagine Draw AI 🎨",
+    url: "https://imaginedrawai.vercel.app/",
+    description: "A powerful and 100% free text-to-image generator. Just type your prompt and get stunning AI-generated images in seconds. No login, no subscriptions, and no limits—create as many images as you want! Ideal for designers, developers, marketers, content creators, and anyone exploring creative AI. Supports various styles, resolutions, and customization options to bring your ideas to life.",
+    author: "@techwithai-telugu",
+    repo: "https://github.com/TechWithAiTelugu",
+    submissionDate: "2025-10-02",
+    order: 1
+  },
+  {
     name: "DirPixel 🎨",
     url: "https://github.com/techcow2/dir-pixel",
     description: "Sometimes creators need to replace multiple images in a directory with new ones. This tool makes it easy by scanning all images in a specified directory, then allowing you to replace them with new AI-generated images by setting either a custom prompt for individual images or a global prompt for the entire directory. Features PyQt6 GUI, maintains original filenames, supports PNG/JPG formats with automatic conversion, and provides real-time progress tracking.",

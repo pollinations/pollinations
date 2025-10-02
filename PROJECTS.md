@@ -40,6 +40,7 @@ Pollinations.AI is used in various projects, including:
 | [Imagen](https://altkriz.github.io/imagen/) ([⭐ 3](https://github.com/altkriz/imagen)) | A beautiful web interface for generating images using Pollinations.ai API with... | @altkriz |
 | [CatGPT Meme Generator 🐱](https://pollinations.github.io/catgpt/) ([⭐ 2](https://github.com/pollinations/catgpt)) | Transform your questions into sassy cat wisdom! An AI-powered meme generator... | @voodoohop |
 | [Dreamscape AI](https://dreamscape.pinkpixel.dev) ([⭐ 2](https://github.com/pinkpixel-dev/dreamscape-ai)) | Dreamscape AI is a creative studio for generating, enhancing, and transforming... | @sizzlebop |
+| 🆕 [Anime Comic Movie 🎬](https://petersebring.com/showcase.php) | An ambitious anime comic movie project using Pollinations' Kontext and Flux... | @sebastianpw |
 | 🆕 [Imagine Draw AI 🎨](https://imaginedrawai.vercel.app/) ([⭐ 0](https://github.com/TechWithAiTelugu)) | A powerful and 100% free text-to-image generator. Just type your prompt and get... | @techwithai-telugu |
 | 🆕 DirPixel 🎨 ([⭐ 0](https://github.com/techcow2/dir-pixel)) | Sometimes creators need to replace multiple images in a directory with new... | @techcow2 |
 | 🆕 [Prompt2Image 🎨](https://marketplace.visualstudio.com/items?itemName=MaazSaboowala.prompt2image-ai-generator) | Prompt2Image is a Visual Studio Code extension that brings AI-powered image... | @MaazS07 |
@@ -146,6 +147,7 @@ Pollinations.AI is used in various projects, including:
 | DominiSigns ([⭐ 4](https://github.com/cmunozdev/DominiSigns)) | Avatar Translator for Dominican Sign Language that uses artificial intelligence... | @cmunozdev |
 | [🌱 Strain Navigator](https://www.strainnavigator.com/) ([⭐ 1](https://github.com/Tolerable/strainnavigator)) | A collection of tools to help Growers, Breeders & Seed Bankers. Free & Open... | @Tolerable |
 | YankoviC ([⭐ 1](https://github.com/Sweaterdog/YankoviC)) | A programming language interpreter written in JavaScript that emulates C/C++... | @Sweaterdog |
+| 🆕 MultiAgent 🤖 ([⭐ 0](https://github.com/LKosoj/multiagent)) | Advanced multi-agent system for solving complex tasks using specialized AI... | @LKosoj |
 | [Pollinations OpenAI Proxy](https://pollinationsopenaiproxy.vercel.app/) ([⭐ 0](https://github.com/percival-de-galles/pollinations_openai_proxy)) | A thin FastAPI layer that exposes OpenAI-compatible endpoints and proxies to... | @percival-de-galles |
 | 🖥️ [Pollinations MCP Server (Official)](https://www.npmjs.com/package/@pollinations/model-context-protocol) ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/model-context-protocol)) | Official Model Context Protocol server for Pollinations AI services. Generate... | @pollinations |
 | [Sequa MCP Server](https://mcp.sequa.ai/v1/pollinations/contribute) | A Model Context Protocol server from Sequa.ai that provides deep knowledge of... | @sequa_ai |

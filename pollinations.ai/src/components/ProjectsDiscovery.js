@@ -56,8 +56,8 @@ import {
 import { styled, alpha } from '@mui/material/styles';
 
 // Import project data and utilities
-import { projectsData } from '../../../shared/data/projectsData.js';
-import { FilterSchema } from '../../../shared/schemas/projectSchema.js';
+import { projectsData } from '../data/projectsData.js';
+import { FilterSchema } from '../config/schemas/projectSchema.js';
 
 const StyledContainer = styled(Container)(({ theme }) => ({
   paddingTop: theme.spacing(4),

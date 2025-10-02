@@ -8,9 +8,6 @@ const PRECISION = 8;
 const COST_TYPES = ["fixed_operational_cost", "per_generation_cost"] as const;
 export type CostType = (typeof COST_TYPES)[number];
 
-// All rates are now in DPT (Dollars Per Token)
-// Conversion: tokens * rate = cost in USD
-
 export type UsageType =
     | "promptTextTokens"
     | "promptCachedTokens"
@@ -144,7 +141,6 @@ function convertUsage(
                     `Failed to get conversion rate for usage type: ${usageType}`,
                 );
             }
-            // Direct DPT conversion: tokens * rate = cost in USD
             const usageTypeCost = safeRound(amount * conversionRate, PRECISION);
             return [usageType, usageTypeCost];
         }),

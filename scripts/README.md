@@ -11,3 +11,7 @@ This directory contains automation scripts for the Pollinations project.
 - `generateReadme.js` - Generates documentation
 
 All scripts are configured to work with ES modules and have proper UTF-8 encoding.
+
+## Encoding Fix
+
+Scripts have been updated to use clean UTF-8 encoding without BOM to resolve GitHub Actions execution issues.

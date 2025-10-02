@@ -4,45 +4,23 @@ import type {
     UsageConversionDefinition,
 } from "@/registry/registry";
 
+import { ZERO_PRICE_IMAGE, fromDPMT } from "@/registry/zero-price";
+
 export const IMAGE_MODELS = {
     "flux": {
         displayName: "Flux",
         costType: "fixed_operational_cost",
-        cost: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                completionImageTokens: {
-                    unit: "DPT",
-                    rate: 0, // fixed weekly cost
-                },
-            },
-        ],
+        cost: [ZERO_PRICE_IMAGE],
     },
     "kontext": {
         displayName: "Flux Kontext",
         costType: "fixed_operational_cost",
-        cost: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                completionImageTokens: {
-                    unit: "DPT",
-                    rate: 0, // fixed weekly cost
-                },
-            },
-        ],
+        cost: [ZERO_PRICE_IMAGE],
     },
     "turbo": {
         displayName: "Turbo",
         costType: "fixed_operational_cost",
-        cost: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                completionImageTokens: {
-                    unit: "DPT",
-                    rate: 0, // fixed weekly cost
-                },
-            },
-        ],
+        cost: [ZERO_PRICE_IMAGE],
     },
     "nanobanana": {
         displayName: "Nanobanana",
@@ -51,8 +29,8 @@ export const IMAGE_MODELS = {
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 completionImageTokens: {
-                    unit: "DPMT",
-                    rate: 30,
+                    unit: "DPT",
+                    rate: fromDPMT(30), // $30 per 1M tokens = $0.00003 per token
                 },
             },
         ],
@@ -60,15 +38,7 @@ export const IMAGE_MODELS = {
     "seedream": {
         displayName: "Seedream",
         costType: "fixed_operational_cost",
-        cost: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                completionImageTokens: {
-                    unit: "DPT",
-                    rate: 0, // fixed weekly cost
-                },
-            },
-        ],
+        cost: [ZERO_PRICE_IMAGE],
     },
 } as const satisfies ModelProviderRegistry;
 
@@ -77,15 +47,7 @@ export const IMAGE_SERVICES = {
         displayName: "Flux",
         aliases: [],
         modelProviders: ["flux"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                completionImageTokens: {
-                    unit: "DPT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        price: [ZERO_PRICE_IMAGE],
     },
     "kontext": {
         displayName: "Flux Kontext",
@@ -96,7 +58,7 @@ export const IMAGE_SERVICES = {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 completionImageTokens: {
                     unit: "DPT",
-                    rate: 0.015,
+                    rate: 0.015, // $0.015 per image (1 token = 1 image)
                 },
             },
         ],
@@ -110,7 +72,7 @@ export const IMAGE_SERVICES = {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 completionImageTokens: {
                     unit: "DPT",
-                    rate: 0.015,
+                    rate: 0.015, // $0.015 per image (1 token = 1 image)
                 },
             },
         ],
@@ -123,8 +85,8 @@ export const IMAGE_SERVICES = {
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 completionImageTokens: {
-                    unit: "DPMT",
-                    rate: 30.0,
+                    unit: "DPT",
+                    rate: fromDPMT(30), // $30 per 1M tokens = $0.00003 per token
                 },
             },
         ],
@@ -138,7 +100,7 @@ export const IMAGE_SERVICES = {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 completionImageTokens: {
                     unit: "DPT",
-                    rate: 0.015,
+                    rate: 0.015, // $0.015 per image (1 token = 1 image)
                 },
             },
         ],

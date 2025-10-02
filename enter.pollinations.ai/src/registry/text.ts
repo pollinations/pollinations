@@ -3,6 +3,7 @@ import type {
     ServiceRegistry,
     UsageConversionDefinition,
 } from "@/registry/registry";
+import { ZERO_PRICE_TEXT, fromDPMT } from "@/registry/zero-price";
 
 export const TEXT_MODELS = {
     "gpt-5-nano-2025-08-07": {
@@ -12,16 +13,16 @@ export const TEXT_MODELS = {
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.055,
+                    unit: "DPT",
+                    rate: fromDPMT(0.055), // $0.055 per 1M tokens
                 },
                 promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0055,
+                    unit: "DPT",
+                    rate: fromDPMT(0.0055), // $0.0055 per 1M tokens
                 },
                 completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.44,
+                    unit: "DPT",
+                    rate: fromDPMT(0.44), // $0.44 per 1M tokens
                 },
             },
         ],
@@ -33,16 +34,16 @@ export const TEXT_MODELS = {
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 2.5,
+                    unit: "DPT",
+                    rate: fromDPMT(2.5), // $2.5 per 1M tokens
                 },
                 promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.625,
+                    unit: "DPT",
+                    rate: fromDPMT(0.625), // $0.625 per 1M tokens
                 },
                 completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 10.0,
+                    unit: "DPT",
+                    rate: fromDPMT(10.0), // $10 per 1M tokens
                 },
             },
         ],
@@ -54,16 +55,16 @@ export const TEXT_MODELS = {
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.055,
+                    unit: "DPT",
+                    rate: fromDPMT(0.055), // $0.055 per 1M tokens
                 },
                 promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0055,
+                    unit: "DPT",
+                    rate: fromDPMT(0.0055), // $0.0055 per 1M tokens
                 },
                 completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.44,
+                    unit: "DPT",
+                    rate: fromDPMT(0.44), // $0.44 per 1M tokens
                 },
             },
         ],
@@ -75,16 +76,16 @@ export const TEXT_MODELS = {
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 1.91,
+                    unit: "DPT",
+                    rate: fromDPMT(1.91), // $1.91 per 1M tokens
                 },
                 promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.48,
+                    unit: "DPT",
+                    rate: fromDPMT(0.48), // $0.48 per 1M tokens
                 },
                 completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 7.64,
+                    unit: "DPT",
+                    rate: fromDPMT(7.64), // $7.64 per 1M tokens
                 },
             },
         ],
@@ -96,24 +97,24 @@ export const TEXT_MODELS = {
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.1432,
+                    unit: "DPT",
+                    rate: fromDPMT(0.1432), // $0.1432 per 1M tokens
                 },
                 promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.075,
+                    unit: "DPT",
+                    rate: fromDPMT(0.075), // $0.075 per 1M tokens
                 },
                 completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.572793,
+                    unit: "DPT",
+                    rate: fromDPMT(0.572793), // $0.572793 per 1M tokens
                 },
                 promptAudioTokens: {
-                    unit: "DPMT",
-                    rate: 9.5466,
+                    unit: "DPT",
+                    rate: fromDPMT(9.5466), // $9.5466 per 1M tokens
                 },
                 completionAudioTokens: {
-                    unit: "DPMT",
-                    rate: 19.093079,
+                    unit: "DPT",
+                    rate: fromDPMT(19.093079), // $19.093079 per 1M tokens
                 },
             },
         ],
@@ -125,16 +126,16 @@ export const TEXT_MODELS = {
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.4,
+                    unit: "DPT",
+                    rate: fromDPMT(0.4), // $0.4 per 1M tokens
                 },
                 promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.1,
+                    unit: "DPT",
+                    rate: fromDPMT(0.1), // $0.1 per 1M tokens
                 },
                 completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 1.6,
+                    unit: "DPT",
+                    rate: fromDPMT(1.6), // $1.6 per 1M tokens
                 },
             },
         ],
@@ -146,16 +147,16 @@ export const TEXT_MODELS = {
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.2,
+                    unit: "DPT",
+                    rate: fromDPMT(0.2), // $0.2 per 1M tokens
                 },
                 promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.05,
+                    unit: "DPT",
+                    rate: fromDPMT(0.05), // $0.05 per 1M tokens
                 },
                 completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.8,
+                    unit: "DPT",
+                    rate: fromDPMT(0.8), // $0.8 per 1M tokens
                 },
             },
         ],
@@ -167,16 +168,16 @@ export const TEXT_MODELS = {
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.2,
+                    unit: "DPT",
+                    rate: fromDPMT(0.2), // $0.2 per 1M tokens
                 },
                 promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.05,
+                    unit: "DPT",
+                    rate: fromDPMT(0.05), // $0.05 per 1M tokens
                 },
                 completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.8,
+                    unit: "DPT",
+                    rate: fromDPMT(0.8), // $0.8 per 1M tokens
                 },
             },
         ],
@@ -188,16 +189,16 @@ export const TEXT_MODELS = {
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 1.35,
+                    unit: "DPT",
+                    rate: fromDPMT(1.35), // $1.35 per 1M tokens
                 },
                 promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.3375,
+                    unit: "DPT",
+                    rate: fromDPMT(0.3375), // $0.3375 per 1M tokens
                 },
                 completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 5.4,
+                    unit: "DPT",
+                    rate: fromDPMT(5.4), // $5.4 per 1M tokens
                 },
             },
         ],
@@ -209,16 +210,16 @@ export const TEXT_MODELS = {
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.035,
+                    unit: "DPT",
+                    rate: fromDPMT(0.035), // $0.035 per 1M tokens
                 },
                 promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.009,
+                    unit: "DPT",
+                    rate: fromDPMT(0.009), // $0.009 per 1M tokens
                 },
                 completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.14,
+                    unit: "DPT",
+                    rate: fromDPMT(0.14), // $0.14 per 1M tokens
                 },
             },
         ],
@@ -230,16 +231,16 @@ export const TEXT_MODELS = {
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.15,
+                    unit: "DPT",
+                    rate: fromDPMT(0.15), // $0.15 per 1M tokens
                 },
                 promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0375,
+                    unit: "DPT",
+                    rate: fromDPMT(0.0375), // $0.0375 per 1M tokens
                 },
                 completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.6,
+                    unit: "DPT",
+                    rate: fromDPMT(0.6), // $0.6 per 1M tokens
                 },
             },
         ],
@@ -251,16 +252,16 @@ export const TEXT_MODELS = {
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.8,
+                    unit: "DPT",
+                    rate: fromDPMT(0.8), // $0.8 per 1M tokens
                 },
                 promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.2,
+                    unit: "DPT",
+                    rate: fromDPMT(0.2), // $0.2 per 1M tokens
                 },
                 completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 4.0,
+                    unit: "DPT",
+                    rate: fromDPMT(4.0), // $4 per 1M tokens
                 },
             },
         ],
@@ -268,44 +269,12 @@ export const TEXT_MODELS = {
     "openai/o4-mini": {
         displayName: "OpenAI o4 Mini (API Navy)",
         costType: "per_generation_cost",
-        cost: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        cost: [ZERO_PRICE_TEXT],
     },
     "google/gemini-2.5-flash-lite": {
         displayName: "Google Gemini 2.5 Flash Lite (API Navy)",
         costType: "per_generation_cost",
-        cost: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        cost: [ZERO_PRICE_TEXT],
     },
     "gemini-2.5-flash-lite-search": {
         displayName: "Google Gemini 2.5 Flash Lite Search",
@@ -314,16 +283,16 @@ export const TEXT_MODELS = {
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
                 promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.5,
+                    unit: "DPT",
+                    rate: fromDPMT(0.5), // $0.5 per 1M tokens
                 },
                 promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.125,
+                    unit: "DPT",
+                    rate: fromDPMT(0.125), // $0.125 per 1M tokens
                 },
                 completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 2.0,
+                    unit: "DPT",
+                    rate: fromDPMT(2.0), // $2 per 1M tokens
                 },
             },
         ],
@@ -335,45 +304,13 @@ export const TEXT_SERVICES = {
         displayName: "OpenAI GPT-5 Nano",
         aliases: ["gpt-5-nano"],
         modelProviders: ["gpt-5-nano-2025-08-07"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        price: [ZERO_COST_TEXT],
     },
     "openai-fast": {
         displayName: "OpenAI GPT-4.1 Nano",
         aliases: ["gpt-4.1-nano"],
         modelProviders: ["gpt-4.1-nano-2025-04-14"],
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.0,
-                },
-            },
-        ],
+        price: [ZERO_COST_TEXT],
     },
     "openai-large": {
         displayName: "OpenAI GPT-4.1",

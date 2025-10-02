@@ -5,6 +5,15 @@
 
 export const creativeProjects = [
   {
+    name: "Imagine Draw AI 🎨",
+    url: "https://imaginedrawai.vercel.app/",
+    description: "Free AI image generator for creating unlimited images with text prompts. No login, no limits, 100% free. Fast real-time generation, browser-based, mobile-friendly. Perfect for students, designers, content creators - landscapes, characters, logos, backgrounds, and more.",
+    author: "@techwithai-telugu",
+    repo: "https://github.com/TechWithAiTelugu",
+    submissionDate: "2025-08-02",
+    order: 1
+  },
+  {
     name: "Ai Studio 🎨",
     url: "https://ai-studio-pollinations.netlify.app/",
     description: "React application for AI image generation with model selection, image dimensions control, and download/share features. Built with Vite and JavaScript, allows users to generate AI images from text prompts via the Pollinations AI REST API with state-based routing.",

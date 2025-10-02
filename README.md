@@ -273,6 +273,7 @@ Pollinations.AI is used in various projects, including:
 | [Imagen](https://altkriz.github.io/imagen/) ([⭐ 3](https://github.com/altkriz/imagen)) | A beautiful web interface for generating images using Pollinations.ai API with... | @altkriz |
 | [CatGPT Meme Generator 🐱](https://pollinations.github.io/catgpt/) ([⭐ 2](https://github.com/pollinations/catgpt)) | Transform your questions into sassy cat wisdom! An AI-powered meme generator... | @voodoohop |
 | [Dreamscape AI](https://dreamscape.pinkpixel.dev) ([⭐ 2](https://github.com/pinkpixel-dev/dreamscape-ai)) | Dreamscape AI is a creative studio for generating, enhancing, and transforming... | @sizzlebop |
+| [Imagine Draw AI 🎨](https://imaginedrawai.vercel.app/) ([⭐ 0](https://github.com/TechWithAiTelugu)) | Free AI image generator for creating unlimited images with text prompts. No... | @techwithai-telugu |
 | [Ai Studio 🎨](https://ai-studio-pollinations.netlify.app/) ([⭐ 0](https://github.com/sabbirhossainc/ai-studio-pollinations.git)) | React application for AI image generation with model selection, image... | @sabbirhossainc |
 | [Gainzr AI 🎨](https://gainzr.my) | Web-based AI image generator for creating high-quality images from text prompts... | @bwava |
 | [Dreamator-AI 💫](https://dreamator-ai.vercel.app/) | Transform your imagination into reality using Pollinations API. Clean and... | @its3li |
@@ -428,6 +429,7 @@ Pollinations.AI is used in various projects, including:
 | [EvilChat 🔥🤖](https://altkriz.github.io/evilchat/) ([⭐ 2](https://github.com/altkriz/evilchat)) | An uncensored AI chat interface with dark, sleek design, smooth animations,... | @altkriz |
 | 🤖 🇮🇩 [Rizqi O Chatbot 🇮🇩](https://chatbot.rizqioliveira.my.id) ([⭐ 1](https://github.com/ray23-bit/Projectenam)) | Rizqi O Chatbot adalah proyek berbasis Pollinations yang menggabungkan tiga... | @ray23-bit |
 | [ Comeback AI](https://comeback-ai.pinkpixel.dev) ([⭐ 1](https://github.com/pinkpixel-dev/comeback-ai)) | AI-powered clapback machine that transforms mean comments into witty comebacks... | @sizzlebop |
+| [WorksparkAI [BETA] 💼](https://worksparkai-983563815856.europe-west1.run.app) | Modern ChatGPT alternative with document processing, PDF reading, image... | @obezbolen67 |
 | [iTouch 💭](https://jordanpeteroliver.github.io/itouch/) ([⭐ 0](https://github.com/jordanpeteroliver/itouch)) | Chat where images and texts integrate. A poetic journey to where inspiration... | @jordanpeteroliver |
 | [Hythme AI 🇸🇦](https://hythme.com) | Arabic AI platform specialized in coding, social engineering, information... | @hythme |
 | [Petfuse Image Generator 🐾](https://petfuse.xyz/) | Chat and generate images with custom seed control. Features a public gallery... | @yasmeenanti08-cr... |
@@ -491,6 +493,8 @@ Pollinations.AI is used in various projects, including:
 | Project | Description | Creator |
 |---------|-------------|--------|
 | Connect Pollinations with Open Web UI tutorial ([⭐ 11](https://github.com/cloph-dsp/Pollinations-AI-in-OpenWebUI)) | Step-by-step guide on integrating Pollinations APIs with Open Web UI for... | @cloph-dsp |
+| [Interactive GeoMap 🗺️](https://interactive-geomap.vercel.app) | AI-powered geography insights using text.pollinations.ai API. Click anywhere on... | @argyrisAEK |
+| [PromptsHub 📝](https://promptshub.net/) | Dynamic platform for organizing, curating, and sharing effective AI prompts.... | @pickplugins |
 | [Prompt Explorer](https://play.google.com/store/apps/details?id=com.ismafly.promptexploratorapp) | A mobile app that combines AI prompt discovery with image generation using... | [ismail.azdad...](mailto:ismail.azdad@gmail.com) |
 | StoryMagic: Interactive Kids Stories | Interactive and educational tool for generating kids' stories. | - |
 | [Riffle](https://riffle.ink) | A powerful tool designed to make reading English books more enjoyable and... | [gsx123@gmail...](mailto:gsx123@gmail.com) |

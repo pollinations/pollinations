@@ -5,6 +5,14 @@
 
 export const vibeCodingProjects = [
   {
+    name: "EasyGen - AI Diagram Generator ✨",
+    url: "https://easygenme.netlify.app/",
+    description: "Modern open-source web application that transforms text descriptions into professional diagrams using AI. Built with React, TypeScript, and Mermaid.js. Features real-time preview, multiple export formats (SVG, PNG, PDF), shareable links, intuitive split-panel editor, and support for various diagram types including flowcharts, sequence diagrams, class diagrams, state diagrams, ER diagrams, timelines, and Gantt charts.",
+    author: "@ellweb3",
+    submissionDate: "2025-08-11",
+    order: 1
+  },
+  {
     name: "Visiora - Image Generation using AI 🎨",
     url: "https://visiora-img.netlify.app/",
     description: "A modern web application that transforms text prompts into stunning AI-generated images. Built with React and powered by Pollinations AI, it features multiple AI models (Flux, Turbo, Kontext), flexible image dimensions, seed control for reproducible results, and a responsive design that works seamlessly across all devices.",

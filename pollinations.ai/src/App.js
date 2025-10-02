@@ -43,6 +43,12 @@ const AppRoutes = [
     },
     {
         exact: true,
+        path: "/projects",
+        element: <ProjectsDiscovery />,
+        key: "projects",
+    },
+    {
+        exact: true,
         path: "/terms",
         element: <Terms />,
         key: "terms",

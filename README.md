@@ -272,6 +272,9 @@ Pollinations.AI is used in various projects, including:
 | [Imagen](https://altkriz.github.io/imagen/) ([⭐ 3](https://github.com/altkriz/imagen)) | A beautiful web interface for generating images using Pollinations.ai API with... | @altkriz |
 | [CatGPT Meme Generator 🐱](https://pollinations.github.io/catgpt/) ([⭐ 2](https://github.com/pollinations/catgpt)) | Transform your questions into sassy cat wisdom! An AI-powered meme generator... | @voodoohop |
 | [Dreamscape AI](https://dreamscape.pinkpixel.dev) ([⭐ 2](https://github.com/pinkpixel-dev/dreamscape-ai)) | Dreamscape AI is a creative studio for generating, enhancing, and transforming... | @sizzlebop |
+| [Imagen - AI Image Generator 🎨](https://altkriz.github.io/imagen/) ([⭐ 0](https://github.com/altkriz/imagen)) | A beautiful, open-source web interface for generating AI images using the... | @altkriz |
+| 🆕 [mayaAI 🇪🇸](https://mayaia.pages.dev/) | Maya ia es una inteligencia artificial para generar imagenes usando... | @moimoyyyy-sys |
+| 🆕 [GenImage 🎨](https://genimage.runasp.net/) | Text to image generation tool | @artydev |
 | 🆕 [Anime Comic Movie 🎬](https://petersebring.com/showcase.php) | An ambitious anime comic movie project using Pollinations' Kontext and Flux... | @sebastianpw |
 | 🆕 [Imagine Draw AI 🎨](https://imaginedrawai.vercel.app/) ([⭐ 0](https://github.com/TechWithAiTelugu)) | A powerful and 100% free text-to-image generator. Just type your prompt and get... | @techwithai-telugu |
 | 🆕 DirPixel 🎨 ([⭐ 0](https://github.com/techcow2/dir-pixel)) | Sometimes creators need to replace multiple images in a directory with new... | @techcow2 |

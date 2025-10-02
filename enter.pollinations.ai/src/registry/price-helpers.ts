@@ -1,8 +1,10 @@
 /**
- * Reusable zero-price definitions for free-tier models and services
+ * Helper utilities for price definitions in the registry
  * 
- * Use these constants to avoid boilerplate when defining zero-price models.
- * The symbolic start date represents "beginning of time" for pricing history.
+ * Provides:
+ * - Unit conversion helpers (DPMT → DPT)
+ * - Zero-price constants for free-tier models
+ * - Cost-as-price helper for services that use provider costs directly
  */
 
 import type { UsageConversionDefinition } from "@/registry/registry";
@@ -29,31 +31,10 @@ export function fromDPMT(dpmt: number): number {
 }
 
 /**
- * Zero-price definition for text models (all token types)
- * Includes: prompt text, cached prompt, completion text, prompt audio, completion audio
+ * Single zero-price definition for all free-tier models
+ * Works for both text and image models - only includes fields that are actually used
  */
-export const ZERO_PRICE_TEXT: UsageConversionDefinition = {
-    date: ZERO_PRICE_START_DATE,
-    promptTextTokens: 0.0,
-    promptCachedTokens: 0.0,
-    completionTextTokens: 0.0,
-    promptAudioTokens: 0.0,
-    completionAudioTokens: 0.0,
-};
-
-/**
- * Zero-price definition for image models
- */
-export const ZERO_PRICE_IMAGE: UsageConversionDefinition = {
-    date: ZERO_PRICE_START_DATE,
-    completionImageTokens: 0.0,
-};
-
-/**
- * Zero-price definition combining all token types (text + image + audio)
- * Use this for services that might handle multiple modalities
- */
-export const ZERO_PRICE_ALL: UsageConversionDefinition = {
+export const ZERO_PRICE: UsageConversionDefinition = {
     date: ZERO_PRICE_START_DATE,
     promptTextTokens: 0.0,
     promptCachedTokens: 0.0,
@@ -62,3 +43,18 @@ export const ZERO_PRICE_ALL: UsageConversionDefinition = {
     completionAudioTokens: 0.0,
     completionImageTokens: 0.0,
 };
+
+/**
+ * Helper to use a model provider's cost as the service price
+ * Used when a service charges exactly what the underlying provider costs
+ * 
+ * @param modelProviders - Registry of model providers with cost definitions
+ * @param providerId - ID of the provider to use
+ * @returns The provider's cost definition as a price array
+ */
+export function costAsPrice<T extends Record<string, { cost: UsageConversionDefinition[] }>>(
+    modelProviders: T,
+    providerId: keyof T,
+): UsageConversionDefinition[] {
+    return modelProviders[providerId].cost;
+}

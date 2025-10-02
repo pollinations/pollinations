@@ -3,7 +3,7 @@ import type {
     ServiceRegistry,
     UsageConversionDefinition,
 } from "@/registry/registry";
-import { ZERO_PRICE_TEXT, fromDPMT } from "@/registry/zero-price";
+import { ZERO_PRICE, fromDPMT, costAsPrice } from "@/registry/price-helpers";
 
 export const TEXT_MODELS = {
     "gpt-5-nano-2025-08-07": {
@@ -155,12 +155,12 @@ export const TEXT_MODELS = {
     "openai/o4-mini": {
         displayName: "OpenAI o4 Mini (API Navy)",
         costType: "per_generation_cost",
-        cost: [ZERO_PRICE_TEXT],
+        cost: [ZERO_PRICE],
     },
     "google/gemini-2.5-flash-lite": {
         displayName: "Google Gemini 2.5 Flash Lite (API Navy)",
         costType: "per_generation_cost",
-        cost: [ZERO_PRICE_TEXT],
+        cost: [ZERO_PRICE],
     },
     "gemini-2.5-flash-lite-search": {
         displayName: "Google Gemini 2.5 Flash Lite Search",
@@ -193,109 +193,104 @@ export const TEXT_SERVICES = {
         displayName: "OpenAI GPT-4.1",
         aliases: ["gpt-4.1"],
         modelProviders: ["gpt-4.1-2025-04-14"],
-        price: costAsPrice("gpt-4.1-2025-04-14"),
+        price: costAsPrice(TEXT_MODELS, "gpt-4.1-2025-04-14"),
     },
     "qwen-coder": {
         displayName: "Qwen 2.5 Coder 32B",
         aliases: ["qwen2.5-coder-32b-instruct"],
         modelProviders: ["qwen2.5-coder-32b-instruct"],
-        price: costAsPrice("qwen2.5-coder-32b-instruct"),
+        price: costAsPrice(TEXT_MODELS, "qwen2.5-coder-32b-instruct"),
     },
     "mistral": {
         displayName: "Mistral Small 3.1 24B",
         aliases: ["mistral-small-3.1-24b-instruct"],
         modelProviders: ["mistral-small-3.1-24b-instruct-2503"],
-        price: costAsPrice("mistral-small-3.1-24b-instruct-2503"),
+        price: costAsPrice(TEXT_MODELS, "mistral-small-3.1-24b-instruct-2503"),
     },
     "mistral-romance": {
         displayName: "Mistral Small 2402 (Bedrock) - Romance Companion",
         aliases: ["mistral-nemo-instruct-2407-romance", "mistral-roblox"],
         modelProviders: ["mistral.mistral-small-2402-v1:0"],
-        price: costAsPrice("mistral.mistral-small-2402-v1:0"),
+        price: costAsPrice(TEXT_MODELS, "mistral.mistral-small-2402-v1:0"),
     },
     "deepseek-reasoning": {
         displayName: "DeepSeek R1 0528 (Bedrock)",
         aliases: ["deepseek-r1-0528"],
         modelProviders: ["us.deepseek.r1-v1:0"],
-        price: costAsPrice("us.deepseek.r1-v1:0"),
+        price: costAsPrice(TEXT_MODELS, "us.deepseek.r1-v1:0"),
     },
     "openai-audio": {
         displayName: "OpenAI GPT-4o Mini Audio Preview",
         aliases: ["gpt-4o-mini-audio-preview"],
         modelProviders: ["gpt-4o-mini-audio-preview-2024-12-17"],
-        price: costAsPrice("gpt-4o-mini-audio-preview-2024-12-17"),
+        price: costAsPrice(TEXT_MODELS, "gpt-4o-mini-audio-preview-2024-12-17"),
     },
     "nova-fast": {
         displayName: "Amazon Nova Micro (Bedrock)",
         aliases: ["nova-micro-v1"],
         modelProviders: ["amazon.nova-micro-v1:0"],
-        price: costAsPrice("amazon.nova-micro-v1:0"),
+        price: costAsPrice(TEXT_MODELS, "amazon.nova-micro-v1:0"),
     },
     "roblox-rp": {
         displayName: "Llama 3.1 8B Instruct (Cross-Region Bedrock)",
         aliases: ["llama-roblox", "llama-fast-roblox"],
         modelProviders: ["us.meta.llama3-1-8b-instruct-v1:0"],
-        price: costAsPrice("us.meta.llama3-1-8b-instruct-v1:0"),
+        price: costAsPrice(TEXT_MODELS, "us.meta.llama3-1-8b-instruct-v1:0"),
     },
     "claudyclaude": {
         displayName: "Claude 3.5 Haiku (Bedrock)",
         aliases: ["claude-3-5-haiku"],
         modelProviders: ["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
-        price: costAsPrice("us.anthropic.claude-3-5-haiku-20241022-v1:0"),
+        price: costAsPrice(TEXT_MODELS, "us.anthropic.claude-3-5-haiku-20241022-v1:0"),
     },
     "openai-reasoning": {
         displayName: "OpenAI o4-mini (api.navy)",
         aliases: ["o4-mini"],
         modelProviders: ["openai/o4-mini"],
-        price: costAsPrice("openai/o4-mini"),
+        price: costAsPrice(TEXT_MODELS, "openai/o4-mini"),
     },
     "gemini": {
         displayName: "Gemini 2.5 Flash Lite (api.navy)",
         aliases: ["gemini-2.5-flash-lite"],
         modelProviders: ["google/gemini-2.5-flash-lite"],
-        price: costAsPrice("google/gemini-2.5-flash-lite"),
+        price: costAsPrice(TEXT_MODELS, "google/gemini-2.5-flash-lite"),
     },
     "unity": {
         displayName: "Unity Unrestricted Agent",
         aliases: [],
         modelProviders: ["mistral-small-3.1-24b-instruct-2503"],
-        price: costAsPrice("mistral-small-3.1-24b-instruct-2503"),
+        price: costAsPrice(TEXT_MODELS, "mistral-small-3.1-24b-instruct-2503"),
     },
     "mixera": {
         displayName: "Mixera AI Companion",
         aliases: [],
         modelProviders: ["gpt-4.1-2025-04-14"],
-        price: costAsPrice("gpt-4.1-2025-04-14"),
+        price: costAsPrice(TEXT_MODELS, "gpt-4.1-2025-04-14"),
     },
     "midijourney": {
         displayName: "MIDIjourney",
         aliases: [],
         modelProviders: ["gpt-4.1-2025-04-14"],
-        price: costAsPrice("gpt-4.1-2025-04-14"),
+        price: costAsPrice(TEXT_MODELS, "gpt-4.1-2025-04-14"),
     },
     "rtist": {
         displayName: "Rtist",
         aliases: [],
         modelProviders: ["gpt-4.1-2025-04-14"],
-        price: costAsPrice("gpt-4.1-2025-04-14"),
+        price: costAsPrice(TEXT_MODELS, "gpt-4.1-2025-04-14"),
     },
     "evil": {
         displayName: "Evil",
         aliases: [],
         modelProviders: ["mistral-small-3.1-24b-instruct-2503"],
-        price: costAsPrice("mistral-small-3.1-24b-instruct-2503"),
+        price: costAsPrice(TEXT_MODELS, "mistral-small-3.1-24b-instruct-2503"),
     },
     "bidara": {
         displayName:
             "BIDARA (Biomimetic Designer and Research Assistant by NASA)",
         aliases: [],
         modelProviders: ["gpt-4.1-nano-2025-04-14"],
-        price: costAsPrice("gpt-4.1-2025-04-14"),
+        price: costAsPrice(TEXT_MODELS, "gpt-4.1-2025-04-14"),
     },
 } as const satisfies ServiceRegistry<typeof TEXT_MODELS>;
 
-function costAsPrice(
-    modelProvider: keyof typeof TEXT_MODELS,
-): UsageConversionDefinition[] {
-    return TEXT_MODELS[modelProvider].cost;
-}

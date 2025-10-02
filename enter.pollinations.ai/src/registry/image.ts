@@ -3,24 +3,23 @@ import type {
     ServiceRegistry,
     UsageConversionDefinition,
 } from "@/registry/registry";
-
-import { ZERO_PRICE_IMAGE, fromDPMT } from "@/registry/zero-price";
+import { ZERO_PRICE, fromDPMT, costAsPrice } from "@/registry/price-helpers";
 
 export const IMAGE_MODELS = {
     "flux": {
         displayName: "Flux",
         costType: "fixed_operational_cost",
-        cost: [ZERO_PRICE_IMAGE],
+        cost: costAsPrice(IMAGE_MODELS, "flux"),
     },
     "kontext": {
         displayName: "Flux Kontext",
         costType: "fixed_operational_cost",
-        cost: [ZERO_PRICE_IMAGE],
+        cost: [ZERO_PRICE],
     },
     "turbo": {
         displayName: "Turbo",
         costType: "fixed_operational_cost",
-        cost: [ZERO_PRICE_IMAGE],
+        cost: [ZERO_PRICE],
     },
     "nanobanana": {
         displayName: "Nanobanana",
@@ -35,7 +34,7 @@ export const IMAGE_MODELS = {
     "seedream": {
         displayName: "Seedream",
         costType: "fixed_operational_cost",
-        cost: [ZERO_PRICE_IMAGE],
+        cost: [ZERO_PRICE],
     },
 } as const satisfies ModelProviderRegistry;
 
@@ -44,7 +43,7 @@ export const IMAGE_SERVICES = {
         displayName: "Flux",
         aliases: [],
         modelProviders: ["flux"],
-        price: [ZERO_PRICE_IMAGE],
+        price: [ZERO_PRICE],
     },
     "kontext": {
         displayName: "Flux Kontext",
@@ -92,8 +91,4 @@ export const IMAGE_SERVICES = {
     },
 } as const satisfies ServiceRegistry<typeof IMAGE_MODELS>;
 
-function costAsPrice(
-    modelProvider: keyof typeof IMAGE_MODELS,
-): UsageConversionDefinition[] {
-    return IMAGE_MODELS[modelProvider].cost;
-}
+

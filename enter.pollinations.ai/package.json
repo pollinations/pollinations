@@ -22,7 +22,6 @@
     "dependencies": {
         "@ark-ui/react": "^5.25.0",
         "@hono/standard-validator": "^0.1.5",
-        "@hono/zod-validator": "^0.7.3",
         "@logtape/logtape": "^1.1.1",
         "@polar-sh/sdk": "^0.34.17",
         "@scalar/hono-api-reference": "^0.9.19",

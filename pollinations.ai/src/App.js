@@ -4,6 +4,7 @@ import Header from "./Home/Header";
 import Footer from "./Home/Footer";
 import Home from "./Home";
 import Terms from "./Home/Terms";
+import ProjectsDiscovery from "./components/ProjectsDiscovery";
 import { trackEvent } from "./config/analytics";
 import { ThemeProvider } from "@mui/material/styles";
 import { theme } from "./styles/theme";

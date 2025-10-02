@@ -57,8 +57,8 @@ async function migrateProjects() {
   }
 }
 
-// Run the migration if this script is executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Run the migration if this script is executed directly  
+if (import.meta.url === `file://${process.argv[1]}` || process.argv[1].endsWith('migrateProjects.js')) {
   migrateProjects().catch(error => {
     console.error('Fatal error:', error);
     process.exit(1);

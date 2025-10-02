@@ -46,11 +46,14 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: 'pollinations.ai/package-lock.json'
+          cache-dependency-path: |
+            scripts/package-lock.json
+            pollinations.ai/package-lock.json
 
       - name: Install dependencies
         run: |
-          cd pollinations.ai && npm ci
+          cd scripts && npm ci
+          cd ../pollinations.ai && npm ci
 
       - name: Process project submission (if issue)
         if: github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'project-submission')

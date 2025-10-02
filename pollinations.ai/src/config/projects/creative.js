@@ -5,6 +5,15 @@
 
 export const creativeProjects = [
   {
+    name: "Ai Studio 🎨",
+    url: "https://ai-studio-pollinations.netlify.app/",
+    description: "React application for AI image generation with model selection, image dimensions control, and download/share features. Built with Vite and JavaScript, allows users to generate AI images from text prompts via the Pollinations AI REST API with state-based routing.",
+    author: "@sabbirhossainc",
+    repo: "https://github.com/sabbirhossainc/ai-studio-pollinations.git",
+    submissionDate: "2025-07-05",
+    order: 1
+  },
+  {
     name: "Gainzr AI 🎨",
     url: "https://gainzr.my",
     description: "Web-based AI image generator for creating high-quality images from text prompts in real-time. Simple, fast, and mobile-friendly interface optimized for design, marketing, and social media content creation.",

@@ -5,6 +5,14 @@
 
 export const gamesProjects = [
   {
+    name: "Chaos Canvas 🎲",
+    url: "https://chaoscanvas.app/",
+    description: "Crowdsourced creativity experiment where each player adds just one or two words to a shared prompt without knowing what others have entered. Once the game fills up, everyone's inputs are mashed together and transformed into a single, surreal AI-generated image. Unpredictable, weirdly collaborative, and endlessly entertaining — like Mad Libs for your eyes.",
+    author: "@eat-sleep-code",
+    submissionDate: "2025-08-12",
+    order: 1
+  },
+  {
     name: "RoastMaster AI",
     description: "No detailed description available, but likely a creative/entertainment tool (AI roast generator).",
     submissionDate: "2025-03-14",

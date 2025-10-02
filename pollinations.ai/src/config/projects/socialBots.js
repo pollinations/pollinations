@@ -5,6 +5,14 @@
 
 export const socialBotsProjects = [
   {
+    name: "ExodusAI 🤖",
+    url: "https://api.whatsapp.com/send/?phone=6285150984232&text=Hi&type=phone_number&app_absent=0",
+    description: "AI-powered chatbot and image generator platform on WhatsApp. Integrated with Pollinations API for AI image generation from text prompts. Features document editing, document creation, and visual analysis. Built using Baileys for WhatsApp integration and Node.js. Currently serves over 500 users.",
+    author: "@FIkriBotDev",
+    submissionDate: "2025-08-08",
+    order: 1
+  },
+  {
     name: "🎮 Gacha",
     url: "https://discord.com/oauth2/authorize?client_id=1377330983740903586",
     description: "Your Sassy All-in-One AI Discord Bot. A powerful, sassy, and slightly mischievous AI bot designed to level up your Discord server with intelligent conversations, creative tools, and smart automation — all wrapped in a playful personality. Features AI-powered chat with STM and LTM, image generation & editing, image fusion & GIF handling, real-time web search, voice replies, media intelligence, slash commands, and dynamic intent detection.",

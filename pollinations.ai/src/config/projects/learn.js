@@ -5,6 +5,22 @@
 
 export const learnProjects = [
   {
+    name: "Interactive GeoMap 🗺️",
+    url: "https://interactive-geomap.vercel.app",
+    description: "AI-powered geography insights using text.pollinations.ai API. Click anywhere on the map to discover cultural insights, historical facts, and local knowledge. Features smart route planning with flight and car routes, AI-assisted travel planning, and interactive exploration of locations worldwide.",
+    author: "@argyrisAEK",
+    submissionDate: "2025-07-05",
+    order: 1
+  },
+  {
+    name: "PromptsHub 📝",
+    url: "https://promptshub.net/",
+    description: "Dynamic platform for organizing, curating, and sharing effective AI prompts. Massive library of ready-to-use prompts for text, image, video, and code generation. Uses Pollinations.ai for generating prompts and thumbnails. Community-driven with search, filter tools, and daily updates.",
+    author: "@pickplugins",
+    submissionDate: "2025-07-06",
+    order: 1
+  },
+  {
     name: "Prompt Explorer",
     url: "https://play.google.com/store/apps/details?id=com.ismafly.promptexploratorapp",
     description: "A mobile app that combines AI prompt discovery with image generation using Pollinations API. Users can explore existing AI art from Lexica/Civitai, learn from prompts and metadata, then generate their own images directly in the app. Features include generation history, favorites, and a complete learning workflow from discovery to creation.",

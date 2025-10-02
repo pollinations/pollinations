@@ -5,6 +5,14 @@
 
 export const chatProjects = [
   {
+    name: "WorksparkAI [BETA] 💼",
+    url: "https://worksparkai-983563815856.europe-west1.run.app",
+    description: "Modern ChatGPT alternative with document processing, PDF reading, image understanding, and web searching. Chat with any LLM using custom API keys. Uses Pollinations AI as default free model. Built with Vite + React, can summarize documents and draw plots.",
+    author: "@obezbolen67",
+    submissionDate: "2025-08-05",
+    order: 1
+  },
+  {
     name: "iTouch 💭",
     url: "https://jordanpeteroliver.github.io/itouch/",
     description: "Chat where images and texts integrate. A poetic journey to where inspiration lives, where words are born, and souls exist before bodies. Creative AI-powered conversation with visual generation.",

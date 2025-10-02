@@ -114,7 +114,7 @@ export const track = (eventType: EventType) =>
             eventType,
 
             userId: c.var.auth.user?.id,
-            userTier: extractUserTier(eventType, c, openaiResponse),
+            userTier: extractUserTier(c, openaiResponse),
             ...referrerInfo,
 
             modelRequested,
@@ -200,18 +200,17 @@ function extractUsage(
 }
 
 function extractUserTier(
-    eventType: EventType,
     c: Context<TrackEnv>,
     response?: OpenAIResponse,
 ): string | undefined {
-    if (eventType === "generate.text") {
-        return response?.user_tier;
+    // Try header first (works for both image and text generations)
+    const headerTier = c.res.headers.get("x-user-tier");
+    if (headerTier) {
+        return headerTier;
     }
-    if (eventType === "generate.image") {
-        // Read user tier from x-user-tier header for image generations
-        return c.res.headers.get("x-user-tier") || undefined;
-    }
-    return undefined;
+    
+    // Fall back to response object for text generations
+    return response?.user_tier;
 }
 
 function extractContentFilterResults(

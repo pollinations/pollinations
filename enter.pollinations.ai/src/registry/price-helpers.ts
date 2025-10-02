@@ -17,3 +17,10 @@ export const ZERO_PRICE: UsageConversionDefinition = {
     completionAudioTokens: 0.0,
     completionImageTokens: 0.0,
 };
+
+// Use a model provider's cost as the service price
+export function costAsPrice(
+    model: { cost: UsageConversionDefinition[] },
+): UsageConversionDefinition[] {
+    return model.cost;
+}

@@ -76,6 +76,7 @@ export const track = (eventType: EventType) =>
                 modelUsage = extractUsage(
                     eventType,
                     modelRequested,
+                    c,
                     openaiResponse,
                 );
                 costType = REGISTRY.getCostType(modelUsage.model as ProviderId);
@@ -113,7 +114,7 @@ export const track = (eventType: EventType) =>
             eventType,
 
             userId: c.var.auth.user?.id,
-            userTier: extractUserTier(eventType, openaiResponse),
+            userTier: extractUserTier(eventType, c, openaiResponse),
             ...referrerInfo,
 
             modelRequested,
@@ -165,15 +166,25 @@ async function extractModelRequested(
 function extractUsage(
     eventType: EventType,
     modelRequested: string | null,
+    c: Context<TrackEnv>,
     response?: OpenAIResponse,
 ): ModelUsage {
     if (eventType === "generate.image") {
+        // Read actual token count from x-completion-image-tokens header
+        const tokenCountHeader = c.res.headers.get("x-completion-image-tokens");
+        const completionImageTokens = tokenCountHeader 
+            ? parseInt(tokenCountHeader, 10) 
+            : 1;
+        
+        // Read actual model used from x-model-used header
+        const modelUsedHeader = c.res.headers.get("x-model-used");
+        const model = (modelUsedHeader || modelRequested || "flux") as ProviderId;
+        
         return {
-            // TODO: use x-model-used header once implemented in image service
-            model: (modelRequested || "flux") as ProviderId,
+            model,
             usage: {
                 unit: "TOKENS",
-                completionImageTokens: 1,
+                completionImageTokens,
             },
         };
     }
@@ -190,12 +201,16 @@ function extractUsage(
 
 function extractUserTier(
     eventType: EventType,
+    c: Context<TrackEnv>,
     response?: OpenAIResponse,
 ): string | undefined {
     if (eventType === "generate.text") {
         return response?.user_tier;
     }
-    // TODO: use x-user-tier header for image generations once implemented
+    if (eventType === "generate.image") {
+        // Read user tier from x-user-tier header for image generations
+        return c.res.headers.get("x-user-tier") || undefined;
+    }
     return undefined;
 }
 

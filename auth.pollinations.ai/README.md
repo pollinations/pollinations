@@ -23,6 +23,45 @@ npm install
 npm run dev
 ```
 
+### Run locally (recommended)
+
+If you're working on this project locally we recommend using `nix` to get reproducible developer tooling.
+
+1. Install Nix (https://nixos.org/download.html) if you don't have it.
+2. Make sure any required decryption key or environment secrets are available (copy `.dev.vars.example` to `.dev.vars` and edit).
+3. Enter the development shell:
+
+```bash
+nix develop
+```
+
+4. Install Node dependencies (if not using the dev shell that already provides them):
+
+```bash
+npm install
+```
+
+5. Run database migrations for development. This project provides a helper script and a Wrangler/D1 example. The migration runner is idempotent: it queries the local D1 migration status and skips any already-applied SQL files.
+  This means it's safe to re-run `npm run migrate:development` multiple times.
+
+```bash
+# Try the npm helper script (added to package.json)
+npm run migrate:development
+
+# Or run wrangler d1 migrations directly (example):
+npx wrangler d1 migrations apply github_auth --local --file ./migrations/001_init.sql
+```
+
+6. Start the dev server:
+
+```bash
+npm run dev
+```
+
+Notes:
+- If you need to run migrations against a remote D1 instance, update the `--env` or use the `deploy-with-migrations` scripts.
+- The `migrate:development` npm script is a lightweight helper that will call local migration helpers; adjust it to your preferred migration tooling.
+
 ## API Endpoints 📡
 
 ### Public

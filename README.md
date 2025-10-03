@@ -27,7 +27,49 @@
 
 [Pollinations.AI](https://pollinations.ai) is an open-source gen AI startup based in Berlin, providing the most easy-to-use, free text and image generation API available. No signups or API keys required. We prioritize your privacy with zero data storage and completely anonymous usage.
 
-## 🚀 Key Features
+## �️ Development Setup
+
+Quick summary to get a service running locally:
+
+1. Install Nix (recommended) — https://nixos.org/download.html
+2. Copy the environment template and edit secrets:
+
+```bash
+cp auth.pollinations.ai/.dev.vars.example auth.pollinations.ai/.dev.vars
+# edit auth.pollinations.ai/.dev.vars and set GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, JWT_SECRET, ADMIN_API_KEY, etc.
+```
+
+3. Enter the development shell:
+
+```bash
+nix develop
+```
+
+4. Install dependencies (if not provided by the dev shell):
+
+```bash
+npm install
+```
+
+5. Run development migrations and apply indexes (idempotent):
+
+```bash
+npm run migrate:development
+```
+
+6. Start the dev server for the service you're working on (example):
+
+```bash
+cd auth.pollinations.ai
+npm run dev
+```
+
+Notes:
+- `npm run migrate:development` is idempotent — it queries the local D1 migration status and skips already-applied SQL files, then applies local indexes.
+- For full, per-service development instructions see `DEVELOP.md` and the service-level README (for example `auth.pollinations.ai/README.md`).
+
+
+## �🚀 Key Features
 
 - 🔓 **100% Open Source**
 - 🆓 **_Free to use_**

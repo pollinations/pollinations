@@ -131,7 +131,8 @@ jobs:
       - name: Validate generated data
         run: |
           if [ -f scripts/validateProjectData.js ]; then
-            node scripts/validateProjectData.js || echo "Validation completed with warnings"
+            echo "Validating project data from repository root..."
+            GITHUB_ACTIONS=true node scripts/validateProjectData.js || echo "Validation completed with warnings"
           else
             echo "Validation script not found, skipping..."
           fi

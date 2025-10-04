@@ -164,23 +164,24 @@ export function priceToEventParams(
     priceDefinition?: PriceDefinition,
 ): GenerationEventPriceParams {
     // biome-ignore format: custom formatting
+    // Rates are now just numbers (DPT), not objects with .rate property
     return {
         tokenPricePromptText: 
-            priceDefinition?.promptTextTokens?.rate || 0,
+            priceDefinition?.promptTextTokens || 0,
         tokenPricePromptCached: 
-            priceDefinition?.promptCachedTokens?.rate || 0,
+            priceDefinition?.promptCachedTokens || 0,
         tokenPricePromptAudio: 
-            priceDefinition?.promptAudioTokens?.rate || 0,
+            priceDefinition?.promptAudioTokens || 0,
         tokenPricePromptImage: 
-            priceDefinition?.promptImageTokens?.rate || 0,
+            priceDefinition?.promptImageTokens || 0,
         tokenPriceCompletionText:
-            priceDefinition?.completionTextTokens?.rate || 0,
+            priceDefinition?.completionTextTokens || 0,
         tokenPriceCompletionReasoning:
-            priceDefinition?.completionReasoningTokens?.rate || 0,
+            priceDefinition?.completionReasoningTokens || 0,
         tokenPriceCompletionAudio:
-            priceDefinition?.completionAudioTokens?.rate || 0,
+            priceDefinition?.completionAudioTokens || 0,
         tokenPriceCompletionImage:
-            priceDefinition?.completionImageTokens?.rate || 0,
+            priceDefinition?.completionImageTokens || 0,
     };
 }
 

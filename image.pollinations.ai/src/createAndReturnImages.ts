@@ -1002,16 +1002,16 @@ const generateImage = async (
     }
 
     if (safeParams.model === "seedream") {
-        // Seedream model requires seed tier or higher
-        if (!hasSufficientTier(userInfo.tier, "seed")) {
+        // Seedream model requires flower tier or higher
+        if (!hasSufficientTier(userInfo.tier, "flower")) {
             const errorText =
-                "Access to seedream model is limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.";
+                "Access to seedream model is limited to users in the flower tier or higher. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.";
             logError(errorText);
             progress.updateBar(
                 requestId,
                 35,
                 "Auth",
-                "Seedream model requires seed tier",
+                "Seedream model requires flower tier",
             );
             throw new Error(errorText);
         }

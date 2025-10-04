@@ -43,7 +43,7 @@ async function throwBlockingError(
     safeParams: ImageParams,
     userInfo: AuthResult
 ): Promise<never> {
-    const blockError = new Error(`Sorry, you are blocked from using the nano-banana model due to content violations`);
+    const blockError = new Error(`Sorry, you are blocked from using the nano-banana model due to content violations. Please implement a safety checker and reach out if you want to lift the block. Seedream model should be available again soon.`);
     errorLog(`Blocked user ${username} attempted to use nano-banana model`);
     
     // Don't log administrative blocks to the violations file - only log to console/debug

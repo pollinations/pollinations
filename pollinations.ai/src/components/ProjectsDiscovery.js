@@ -86,7 +86,15 @@ const ProjectsDiscovery = () => {
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <CardContent sx={{ flexGrow: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <Typography variant="h6" component="h3" sx={{ flexGrow: 1, fontSize: '1.1rem' }}>
+          <Typography 
+            variant="h6" 
+            component="h3" 
+            sx={{ 
+              flexGrow: 1, 
+              fontSize: '1.1rem',
+              color: 'text.primary'
+            }}
+          >
             {project.name}
           </Typography>
           {project.isNew && (
@@ -100,10 +108,20 @@ const ProjectsDiscovery = () => {
           label={project.categoryTitle}
           size="small"
           variant="outlined"
-          sx={{ mb: 1 }}
+          sx={{ 
+            mb: 1,
+            borderColor: 'primary.main',
+            color: 'primary.main'
+          }}
         />
         
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        <Typography 
+          variant="body2" 
+          sx={{ 
+            mb: 2,
+            color: 'text.secondary'
+          }}
+        >
           {project.description}
         </Typography>
         
@@ -114,6 +132,10 @@ const ProjectsDiscovery = () => {
               size="small"
               variant="outlined"
               avatar={<Avatar sx={{ width: 20, height: 20 }}>{project.author.charAt(0)}</Avatar>}
+              sx={{
+                borderColor: 'text.secondary',
+                color: 'text.secondary'
+              }}
             />
           )}
           {project.stars && (
@@ -122,6 +144,10 @@ const ProjectsDiscovery = () => {
               label={project.stars}
               size="small"
               variant="outlined"
+              sx={{
+                borderColor: 'primary.main',
+                color: 'primary.main'
+              }}
             />
           )}
         </Box>

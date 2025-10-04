@@ -11,7 +11,7 @@ on:
       force_update:
         description: 'Force update README even if no changes detected'
         required: false
-        default: 'false'
+        default: false
         type: boolean
   
   # Trigger on pushes to project files

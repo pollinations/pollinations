@@ -109,7 +109,7 @@ async function updateStarCounts() {
   console.log('🌟 Starting star count update...');
   
   console.log(`🔍 Environment: ${process.env.GITHUB_ACTIONS ? 'CI' : 'Local'}`);
-  console.log(`📁 PROJECT_FILES_DIR: ${PROJECT_FILES_DIR}`);
+  console.log(`📁 PROJECT_FILES_DIR: ${PROJECT_FILES_DIR}`); 
   
   const projectsDir = path.resolve(PROJECT_FILES_DIR);
   console.log(`📂 Resolved path: ${projectsDir}`);

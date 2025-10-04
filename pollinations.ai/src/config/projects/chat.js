@@ -58,6 +58,7 @@ export const chatProjects = [
   },
   {
     name: "LLMS",
+    stars: 60,
     url: "https://yassineabou.github.io/LLMs-Wasm/",
     description: "LLMS is a Kotlin Multiplatform application that brings the power of AI to Android, iOS, Desktop, and WebAssembly platforms. Users can choose from the latest open-source text and image models to boost their creativity - generate unique texts through chat interfaces or create stunning images. The app features local storage for chat history and generated images, with cross-device synchronization capabilities through Google Authentication. Built with Compose Multiplatform for adaptive UIs and Ktor for backend services, LLMS provides a seamless AI experience across all your devices while keeping your creations safe and synchronized.",
     author: "@yassineAbou",
@@ -130,6 +131,7 @@ export const chatProjects = [
   },
   {
     name: "VOID.AI",
+    stars: 1,
     url: "https://thevoidai.vercel.app/",
     description: "A humanlike AI mentor, productivity partner, and emotionally intelligent assistant that adapts its tone and energy based on user behavior. Features conversational AI that feels more like a charismatic friend than a chatbot, providing code walkthroughs, life advice, writing help, and motivation with realistic speech output and context memory.",
     author: "@Ajay-Dhakad",
@@ -186,6 +188,7 @@ export const chatProjects = [
   },
   {
     name: "gpt4free",
+    stars: 65178,
     url: "https://github.com/xtekky/gpt4free",
     description: "The official gpt4free repository - various collection of powerful language models.",
     author: "xtekky",
@@ -195,6 +198,7 @@ export const chatProjects = [
   },
   {
     name: "FreeAI 🇨🇳",
+    stars: 102,
     url: "https://freeai.aihub.ren/",
     description: "An AI application platform based on Pollinations.AI API, providing free and unlimited AI chat assistant, image generation, and voice synthesis services.",
     author: "@Azad-sl",
@@ -296,6 +300,7 @@ export const chatProjects = [
   },
   {
     name: "Rizqi O Chatbot 🇮🇩",
+    stars: 2,
     url: "https://chatbot.rizqioliveira.my.id",
     description: "Rizqi O Chatbot adalah proyek berbasis Pollinations yang menggabungkan tiga fitur utama: chatbot AI, generator gambar AI, dan generator audio AI. Pengguna dapat berinteraksi dalam bentuk teks, menghasilkan gambar dengan berbagai gaya seni dan efek visual, serta membuat audio secara otomatis dari teks. (An AI chatbot, image generator, and audio generator project with support for custom aspect ratios, over 200 art styles & visual effects, and automatic translation from Indonesian to English.)",
     author: "@ray23-bit",
@@ -307,6 +312,7 @@ export const chatProjects = [
   },
   {
     name: "LLM7.io",
+    stars: 91,
     url: "https://llm7.io",
     description: "A free and open AI platform providing advanced multimodal capabilities, including large language model access and experimental search tools. Integrates Pollinations text generation as a backend service with transparent credit on the website and repository.",
     author: "@chigwell",
@@ -317,6 +323,7 @@ export const chatProjects = [
   },
   {
     name: "SillyTavern",
+    stars: 18908,
     url: "https://docs.sillytavern.app/",
     description: "An LLM frontend for power users. Pollinations permits it to generate text and images.",
     repo: "https://github.com/SillyTavern/SillyTavern",
@@ -333,6 +340,7 @@ export const chatProjects = [
   },
   {
     name: " Comeback AI",
+    stars: 1,
     url: "https://comeback-ai.pinkpixel.dev",
     description: "AI-powered clapback machine that transforms mean comments into witty comebacks with 10 unique personas, uses Pollinations openai-audio for voice synthesis, and Whisper for speech-to-text transcription. Turn trolls into comedy gold!",
     author: "@sizzlebop",
@@ -352,6 +360,7 @@ export const chatProjects = [
   },
   {
     name: "LobeChat",
+    stars: 66431,
     url: "https://lobechat.com",
     description: "An open-source, extensible chat UI framework supporting multiple models and features like message citing and image creation.",
     author: "@lobehub",
@@ -362,6 +371,7 @@ export const chatProjects = [
   },
   {
     name: "toai.chat",
+    stars: 2,
     description: "An AI-client-free project dedicated to enabling AI interaction using only curl, supporting multimodal and MCP capabilities, to provide users with the simplest way to use AI.",
     author: "@Veallym0n",
     repo: "https://github.com/Veallym0n/toai.chat",
@@ -371,6 +381,7 @@ export const chatProjects = [
   },
   {
     name: "Free AI Chatbot & Image Generator",
+    stars: 18183,
     url: "https://vercel.com/templates/ai/ai-sdk-image-generator",
     description: "A web application offering both conversation with AI and image generation capabilities, utilizing Pollinations API for creating visuals based on text prompts.",
     author: "@aidevs",
@@ -412,6 +423,7 @@ export const chatProjects = [
   },
   {
     name: "EvilChat 🔥🤖",
+    stars: 3,
     url: "https://altkriz.github.io/evilchat/",
     description: "An uncensored AI chat interface with dark, sleek design, smooth animations, auto-scrolling chat window, fully responsive. Connects to the Pollinations.ai API to deliver unfiltered AI responses.",
     author: "@altkriz",

@@ -160,12 +160,14 @@ jobs:
         run: |
           if [ -f scripts/migrateProjects.js ]; then
             echo "Running migration script..."
-            node scripts/migrateProjects.js
+            GITHUB_ACTIONS=true node scripts/migrateProjects.js
             
-            # Ensure shared/data directory is properly tracked
-            if [ -d shared/data ]; then
-              echo "shared/data directory created successfully"
-              ls -la shared/data/
+            # Verify files were created in the correct location
+            if [ -f pollinations.ai/src/config/projectsData.json ]; then
+              echo "✅ projectsData.json created successfully"
+            fi
+            if [ -f pollinations.ai/src/config/projectAnalytics.json ]; then
+              echo "✅ projectAnalytics.json created successfully"
             fi
           else
             echo "Migration script not found, skipping..."

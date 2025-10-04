@@ -88,9 +88,7 @@ export type ModelProviderDefinition = {
     cost: CostDefinition[];
 };
 
-export type ModelProviderRegistry = {
-    [Key in string]: ModelProviderDefinition;
-};
+export type ModelProviderRegistry = Record<string, ModelProviderDefinition>;
 
 export type ServiceDefinition<T extends ModelProviderRegistry> = {
     displayName: string;
@@ -99,9 +97,10 @@ export type ServiceDefinition<T extends ModelProviderRegistry> = {
     price: PriceDefinition[];
 };
 
-export type ServiceRegistry<T extends ModelProviderRegistry> = {
-    [Key in string]: ServiceDefinition<T>;
-};
+export type ServiceRegistry<T extends ModelProviderRegistry> = Record<
+    string,
+    ServiceDefinition<T>
+>;
 
 export type ServiceMargins = {
     [Key in string]: {
@@ -318,6 +317,24 @@ function calculateMargins<
     );
 }
 
+function createAliasResolver<
+    TP extends ModelProviderRegistry,
+    TS extends ServiceRegistry<TP>,
+>(services: TS): (serviceIdOrAlias: string) => ServiceId<TP, TS> | undefined {
+    const aliases = Object.fromEntries(
+        Object.entries(services).flatMap(([serviceId, service]) => {
+            return service.aliases.map((alias) => [alias, serviceId]);
+        }),
+    );
+    return (serviceIdOrAlias: string) => {
+        if (services[serviceIdOrAlias]) {
+            return serviceIdOrAlias as ServiceId<TP, TS>;
+        } else {
+            return aliases[serviceIdOrAlias];
+        }
+    };
+}
+
 export function createRegistry<
     TP extends ModelProviderRegistry,
     TS extends ServiceRegistry<TP>,
@@ -342,13 +359,16 @@ export function createRegistry<
         ]),
     ) as TS;
 
+    const resolveServiceId = createAliasResolver<TP, TS>(services);
+
     return {
-        withFallbackService: (
-            serviceId: string | null,
+        resolveServiceId: (
+            serviceId: string | null | undefined,
             eventType: EventType,
-        ): ServiceId => {
-            if (serviceId && !!serviceRegistry[serviceId]) {
-                return serviceId as ServiceId;
+        ): ServiceId<TP, TS> => {
+            const resolvedServiceId = resolveServiceId(String(serviceId));
+            if (resolvedServiceId && !!serviceRegistry[resolvedServiceId]) {
+                return resolvedServiceId as ServiceId<TP, TS>;
             }
             if (eventType === "generate.text") {
                 return "openai";
@@ -362,7 +382,7 @@ export function createRegistry<
             return !!providerRegistry[providerId];
         },
         isValidService: (
-            serviceId: ServiceId<TP, TS>,
+            serviceId: ServiceId<TP, TS> | string,
         ): serviceId is ServiceId<TP, TS> => {
             return !!serviceRegistry[serviceId];
         },
@@ -372,13 +392,15 @@ export function createRegistry<
         getServices: (): ServiceId<TP, TS>[] => {
             return Object.keys(serviceRegistry);
         },
-        getService: (serviceId: ServiceId<TP, TS>): ServiceDefinition<TP> => {
+        getServiceDefinition: (
+            serviceId: ServiceId<TP, TS>,
+        ): ServiceDefinition<TP> => {
             return serviceRegistry[serviceId];
         },
         getModelProviders: (): ProviderId<TP>[] => {
             return Object.keys(providerRegistry);
         },
-        getModelProvider: (
+        getModelProviderDefinition: (
             providerId: ProviderId<TP>,
         ): ModelProviderDefinition => {
             return providerRegistry[providerId];

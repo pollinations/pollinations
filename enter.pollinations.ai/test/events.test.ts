@@ -46,10 +46,15 @@ function createTextGenerationEvent(
     modelRequested: ServiceId,
 ): InsertGenerationEvent {
     const userId = generateRandomId();
-    const modelUsed = REGISTRY.getService(modelRequested as ServiceId)
+    const resolvedModelRequested = REGISTRY.withFallbackService(
+        modelRequested,
+        "generate.text",
+    );
+
+    const modelUsed = REGISTRY.getServiceDefinition(resolvedModelRequested)
         .modelProviders[0];
     const priceDefinition = REGISTRY.getActivePriceDefinition(
-        modelRequested as ServiceId,
+        resolvedModelRequested,
     );
     if (!priceDefinition) {
         throw new Error(
@@ -62,7 +67,7 @@ function createTextGenerationEvent(
         completionTextTokens: 1_000_000,
     };
     const cost = REGISTRY.calculateCost(modelUsed as ProviderId, usage);
-    const price = REGISTRY.calculatePrice(modelRequested as ServiceId, usage);
+    const price = REGISTRY.calculatePrice(resolvedModelRequested, usage);
 
     return {
         id: generateRandomId(),

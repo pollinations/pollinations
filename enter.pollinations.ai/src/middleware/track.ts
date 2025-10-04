@@ -45,11 +45,11 @@ export const track = (eventType: EventType) =>
         const startTime = new Date();
 
         const modelRequested = await extractModelRequested(c);
-        const serviceOrDefault = REGISTRY.withFallbackService(
+        const resolvedModelRequested = REGISTRY.resolveServiceId(
             modelRequested,
             eventType,
         );
-        const isFreeUsage = REGISTRY.isFreeService(serviceOrDefault);
+        const isFreeUsage = REGISTRY.isFreeService(resolvedModelRequested);
 
         c.set("track", {
             modelRequested,
@@ -60,10 +60,12 @@ export const track = (eventType: EventType) =>
 
         const referrerInfo = extractReferrerInfo(c);
         const cacheInfo = extractCacheInfo(c);
-        const tokenPrice = REGISTRY.getActivePriceDefinition(serviceOrDefault);
+        const tokenPrice = REGISTRY.getActivePriceDefinition(
+            resolvedModelRequested,
+        );
         if (!tokenPrice) {
             throw new Error(
-                `Failed to get price definition for model: ${serviceOrDefault}`,
+                `Failed to get price definition for model: ${resolvedModelRequested}`,
             );
         }
         let openaiResponse, modelUsage, costType, cost, price;
@@ -74,8 +76,9 @@ export const track = (eventType: EventType) =>
             }
             if (!cacheInfo.cacheHit) {
                 modelUsage = extractUsage(
+                    c,
                     eventType,
-                    modelRequested,
+                    resolvedModelRequested,
                     openaiResponse,
                 );
                 costType = REGISTRY.getCostType(modelUsage.model as ProviderId);
@@ -84,7 +87,7 @@ export const track = (eventType: EventType) =>
                     modelUsage.usage,
                 );
                 price = REGISTRY.calculatePrice(
-                    serviceOrDefault as ServiceId,
+                    resolvedModelRequested as ServiceId,
                     modelUsage.usage,
                 );
             } else {
@@ -113,7 +116,7 @@ export const track = (eventType: EventType) =>
             eventType,
 
             userId: c.var.auth.user?.id,
-            userTier: extractUserTier(eventType, openaiResponse),
+            userTier: extractUserTier(c, eventType, openaiResponse),
             ...referrerInfo,
 
             modelRequested,
@@ -163,17 +166,25 @@ async function extractModelRequested(
 }
 
 function extractUsage(
+    c: Context<TrackEnv>,
     eventType: EventType,
-    modelRequested: string | null,
+    resolvedImageModel: string,
     response?: OpenAIResponse,
 ): ModelUsage {
     if (eventType === "generate.image") {
         return {
             // TODO: use x-model-used header once implemented in image service
-            model: (modelRequested || "flux") as ProviderId,
+            // model: (c.res.headers.get("x-model-used") as ProviderId) || null,
+            model: resolvedImageModel as ProviderId,
             usage: {
                 unit: "TOKENS",
-                completionImageTokens: 1,
+                completionImageTokens:
+                    z
+                        .number()
+                        .int()
+                        .safeParse(
+                            c.res.headers.get("x-completion-image-tokens"),
+                        ).data || 0,
             },
         };
     }
@@ -189,14 +200,17 @@ function extractUsage(
 }
 
 function extractUserTier(
+    c: Context<TrackEnv>,
     eventType: EventType,
     response?: OpenAIResponse,
-): string | undefined {
+): string | null {
     if (eventType === "generate.text") {
-        return response?.user_tier;
+        return response?.user_tier || null;
     }
-    // TODO: use x-user-tier header for image generations once implemented
-    return undefined;
+    if (eventType === "generate.image") {
+        return c.res.headers.get("x-user-tier");
+    }
+    return null;
 }
 
 function extractContentFilterResults(

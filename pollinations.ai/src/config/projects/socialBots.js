@@ -57,6 +57,7 @@ export const socialBotsProjects = [
   },
   {
     name: "Pollinations Discord Bot",
+    stars: 17,
     url: "https://github.com/Zingzy/pollinations.ai-bot",
     description: "AI Image Generation Discord Bot using Pollinations.ai. Written in Python with discord.py, used in 500+ servers. Features /pollinate command for AI images with prompt enhancement, width/height options, /multi-pollinate for 4 variations, and /random for random AI images.",
     author: "@zingy",
@@ -101,6 +102,7 @@ export const socialBotsProjects = [
   },
   {
     name: "AI Image Generator [ROBLOX]",
+    stars: 10,
     url: "https://www.roblox.com/games/ai-image-generator",
     description: "A Roblox experience that allows players to generate images using Pollinations AI directly within the game environment.",
     author: "@roblox_ai_studio",

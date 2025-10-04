@@ -14,6 +14,7 @@ export const vibeCodingProjects = [
   },
   {
     name: "Visiora - Image Generation using AI 🎨",
+    stars: 2,
     url: "https://visiora-img.netlify.app/",
     description: "A modern web application that transforms text prompts into stunning AI-generated images. Built with React and powered by Pollinations AI, it features multiple AI models (Flux, Turbo, Kontext), flexible image dimensions, seed control for reproducible results, and a responsive design that works seamlessly across all devices.",
     author: "@Kandariarjun07",
@@ -24,6 +25,7 @@ export const vibeCodingProjects = [
   },
   {
     name: "PairFusion",
+    stars: 5,
     url: "https://pair-fusion.vercel.app/",
     description: "A real-time AI powered, scalable and feature-rich collaborative IDE built for modern development teams. Experience seamless pair programming, instant feedback, and a professional-grade toolset designed for maximum productivity.",
     author: "@auraticabhi",
@@ -58,6 +60,7 @@ export const vibeCodingProjects = [
   },
   {
     name: "Pollinations Task Master",
+    stars: 20,
     url: "https://github.com/LousyBook94/pollinations-task-master",
     description: "A task management system that uses AI to help break down and organize development tasks through natural language interaction.",
     author: "@LousyBook94",
@@ -68,6 +71,7 @@ export const vibeCodingProjects = [
   },
   {
     name: "Qwen-Agent",
+    stars: 11803,
     url: "https://github.com/QwenLM/Qwen-Agent",
     description: "A framework for developing agentic LLM applications.",
     repo: "https://github.com/QwenLM/Qwen-Agent",
@@ -122,6 +126,7 @@ export const vibeCodingProjects = [
   },
   {
     name: "SocialScribe",
+    stars: 5,
     url: "https://socialscribe.pages.dev/",
     description: "An AI-powered Chrome extension that fixes grammar, rewrites text, and enhances your writing across websites like Twitter, LinkedIn, and Gmail, with customizable tone, length, and platform-specific formatting, plus support for emojis, hashtags, and keyword suggestions.",
     author: "@sh20raj",
@@ -142,6 +147,7 @@ export const vibeCodingProjects = [
   },
   {
     name: "websim-pollinations-ai",
+    stars: 2956,
     url: "https://websim.pollinations.ai",
     description: "A lightweight websim for creating web simulations with AI. Usage: https://websim.pollinations.ai/[prompt] - Simply append your prompt to the URL to generate interactive web experiences.",
     author: "@thomash",

@@ -6,7 +6,10 @@ import path from 'path';
  * Checks for required fields, duplicate entries, invalid URLs, etc.
  */
 
-const PROJECT_FILES_DIR = '../pollinations.ai/src/config/projects';
+// Use path resolution that works both locally and in CI
+const PROJECT_FILES_DIR = process.env.GITHUB_ACTIONS 
+  ? 'pollinations.ai/src/config/projects'  // CI environment
+  : '../pollinations.ai/src/config/projects'; // Local development
 const REQUIRED_FIELDS = ['name', 'url', 'description', 'author'];
 const OPTIONAL_FIELDS = ['repo', 'submissionDate', 'order', 'stars', 'hidden'];
 

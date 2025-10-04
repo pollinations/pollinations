@@ -65,6 +65,18 @@ jobs:
             npm install node-fetch@^3.3.2 || npm install node-fetch@^2.7.0
           fi
 
+      - name: Verify project directory structure
+        run: |
+          echo "Checking project directory structure..."
+          if [ -d "pollinations.ai/src/config/projects" ]; then
+            echo "✅ Projects directory found"
+            ls -la pollinations.ai/src/config/projects/
+          else
+            echo "❌ Projects directory not found. Creating directory structure..."
+            mkdir -p pollinations.ai/src/config/projects
+            echo "Directory created."
+          fi
+
       - name: Process project submission (if issue)
         if: github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'project-submission')
         id: process-submission

@@ -6,7 +6,10 @@ import path from 'path';
  * Parses issue body, validates project data, and adds to appropriate category file
  */
 
-const PROJECT_FILES_DIR = '../pollinations.ai/src/config/projects';
+// Use path resolution that works both locally and in CI
+const PROJECT_FILES_DIR = process.env.GITHUB_ACTIONS 
+  ? 'pollinations.ai/src/config/projects'  // CI environment
+  : '../pollinations.ai/src/config/projects'; // Local development
 
 // Command line argument parsing
 function parseArgs() {

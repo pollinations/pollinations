@@ -6,8 +6,11 @@ import path from 'path';
  * Creates beautiful, maintainable project listings from existing category files
  */
 
-const PROJECT_FILES_DIR = '../pollinations.ai/src/config/projects';
-const README_PATH = '../README.md';
+// Use path resolution that works both locally and in CI
+const PROJECT_FILES_DIR = process.env.GITHUB_ACTIONS 
+  ? 'pollinations.ai/src/config/projects'  // CI environment
+  : '../pollinations.ai/src/config/projects'; // Local development
+const README_PATH = process.env.GITHUB_ACTIONS ? 'README.md' : '../README.md';
 
 // Helper function to read project files and extract data
 function readProjectsFromFiles() {

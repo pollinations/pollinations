@@ -182,10 +182,18 @@ const ProjectsDiscovery = () => {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Header */}
       <Box sx={{ textAlign: 'center', mb: 4 }}>
-        <Typography variant="h3" component="h1" gutterBottom>
+        <Typography 
+          variant="h3" 
+          component="h1" 
+          gutterBottom
+          sx={{ color: 'text.primary' }}
+        >
           Pollinations.AI Projects
         </Typography>
-        <Typography variant="h6" color="text.secondary">
+        <Typography 
+          variant="h6" 
+          sx={{ color: 'text.secondary' }}
+        >
           Discover amazing AI-powered projects from our community
         </Typography>
       </Box>

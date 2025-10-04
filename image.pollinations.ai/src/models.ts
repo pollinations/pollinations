@@ -10,6 +10,7 @@ export const MODELS = {
         type: "pollinations",
         enhance: true,
         maxSideLength: 768,
+        tier : "seed",
     },
 
     // // BPAIGen with Kontext fallback - general purpose model
@@ -25,6 +26,7 @@ export const MODELS = {
         type: "pollinations",
         enhance: true,
         maxSideLength: 768,
+        tier: "seed",
     },
 
     // Nano Banana - Gemini 2.5 Flash Image Preview via Vertex AI

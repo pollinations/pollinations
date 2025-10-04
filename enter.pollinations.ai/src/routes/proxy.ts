@@ -47,8 +47,6 @@ function errorResponses(...codes: ErrorStatusCode[]) {
     );
 }
 
-console.log(errorResponses(400, 401, 500));
-
 export const proxyRoutes = new Hono<Env>()
     .get(
         "/openai/models",

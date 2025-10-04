@@ -36,6 +36,15 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     onCreate,
     onDelete,
 }) => {
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+
+    const handleDelete = async () => {
+        if (deleteId) {
+            await onDelete(deleteId);
+            setDeleteId(null);
+        }
+    };
+
     return (
         <>
             <div className="flex gap-2 justify-between">
@@ -66,9 +75,10 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             <Button
                                 type="button"
                                 size="small"
-                                variant="outline"
+                                color="red"
+                                weight="light"
                                 className="justify-self-end"
-                                onClick={() => onDelete(apiKey.id)}
+                                onClick={() => setDeleteId(apiKey.id)}
                             >
                                 Delete
                             </Button>
@@ -76,6 +86,36 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     ))}
                 </div>
             ) : null}
+            <Dialog.Root open={!!deleteId} onOpenChange={({ open }) => !open && setDeleteId(null)}>
+                <Dialog.Backdrop className="fixed inset-0 bg-green-950/50" />
+                <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4">
+                    <Dialog.Content className="bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-md w-full p-6">
+                        <Dialog.Title className="text-lg font-semibold mb-4">
+                            Delete API Key
+                        </Dialog.Title>
+                        <p className="mb-6">
+                            Are you sure you want to delete this API key? This action cannot be undone.
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <Button
+                                type="button"
+                                weight="outline"
+                                onClick={() => setDeleteId(null)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="button"
+                                color="red"
+                                weight="strong"
+                                onClick={handleDelete}
+                            >
+                                Delete
+                            </Button>
+                        </div>
+                    </Dialog.Content>
+                </Dialog.Positioner>
+            </Dialog.Root>
         </>
     );
 };
@@ -145,7 +185,7 @@ const CreateKeyForm: FC<{
             <div className="flex gap-2 justify-end pt-4">
                 <Button
                     type="button"
-                    variant="outline"
+                    weight="outline"
                     onClick={onCancel}
                     className="disabled:opacity-50"
                     disabled={isSubmitting}
@@ -154,7 +194,6 @@ const CreateKeyForm: FC<{
                 </Button>
                 <Button
                     type="submit"
-                    variant="default"
                     className="disabled:opacity-50"
                     disabled={!formData.name.trim() || isSubmitting}
                 >
@@ -219,7 +258,8 @@ const ShowKeyResult: FC<{
                     />
                     <Button
                         type="button"
-                        variant="pink"
+                        color="pink"
+                        weight="light"
                         shape="rounded"
                         onClick={handleCopy}
                     >
@@ -351,7 +391,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     formData={formData}
                                     onInputChange={handleInputChange}
                                     onSubmit={handleSubmit}
-                                    onCancel={resetForm}
+                                    onCancel={() => setIsOpen(false)}
                                     isSubmitting={isSubmitting}
                                 />
                             </Steps.Content>

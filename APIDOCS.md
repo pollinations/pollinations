@@ -379,6 +379,38 @@ curl https://text.pollinations.ai/openai \
   }'
 ```
 
+---
+
+**Reasoning Controls (Optional)**
+
+OpenAI does not allow displaying the internal reasoning process for any models, including the o-series and GPT-5 family. Instead, clients are allowed to control how long the model thinks internally by setting the `reasoning_effort` parameter.
+
+| Value | Description | Usage |
+| :--- | :--- | :--- |
+| minimal | Minimal internal reasoning, fastest response with the fewest reasoning tokens | Suitable for extraction tasks, simple reformatting, or deterministic tasks |
+| low | Slightly more reasoning than minimal, still prioritizes speed but with modest depth | Useful for slightly complex tasks that benefit from a bit of reasoning |
+| medium | Balanced approach between accuracy, reasoning depth, and latency | Recommended for general-purpose tasks requiring moderate reasoning |
+| high | Deep and layered reasoning, consumes more reasoning tokens and may be slower | Recommended for multi-step processes, complex planning, or tasks involving multiple tools |
+
+The `minimal` value is only applicable to the GPT-5 family, except for **gpt-5-chat-latest**, because these are not reasoning models.
+
+Example usage:
+
+```sh
+curl https://text.pollinations.ai/openai \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "model": "openai",
+    "reasoning_effort": "minimal",
+    "messages": [
+      {"role": "user", "content": "Tell me about yourself."}
+    ]
+  }'
+```
+
+---
+
 **Python (`requests`):**
 
 ```python
@@ -1249,6 +1281,8 @@ For **frontend web applications** that call our APIs directly from the browser, 
 https://image.pollinations.ai/prompt/a%20beautiful%20landscape?referrer=mywebapp.com
 ```
 
+---
+
 #### Token
 
 For **backend services, scripts, and server applications**, tokens provide the highest priority access and are the **recommended method for non-browser environments**. Tokens can be provided using any of these methods:
@@ -1274,6 +1308,8 @@ curl https://text.pollinations.ai/openai \
     ]
   }'  
 ```
+
+---
 
 ### Tiers & Rate Limits
 

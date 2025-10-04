@@ -96,7 +96,8 @@ jobs:
         id: update-stars
         run: |
           if [ -f scripts/updateStarCounts.js ]; then
-            node scripts/updateStarCounts.js || echo "Star count update completed with warnings"
+            echo "Running star count update from repository root..."
+            GITHUB_ACTIONS=true node scripts/updateStarCounts.js || echo "Star count update completed with warnings"
           else
             echo "Star count script not found, skipping..."
           fi

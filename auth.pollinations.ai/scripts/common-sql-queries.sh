@@ -25,7 +25,8 @@ show_usage() {
     echo "  user-domains <id>     - Get all registered domains for user ID"
     echo "  user-profile <id>     - Get complete user profile (info, tier, domains, metrics)"
     echo "  add-domain <user_id> <domain> - Add domain to user's allowlist"
-    echo "  remove-domain <id>    - Remove domain by domain ID"
+    echo "  remove-domain <id>    - Preview domain removal by domain ID
+  remove-domain-confirm <id> - Actually remove domain by domain ID"
     echo "  all-domains          - List all registered domains with users"
     echo "  user-count           - Total user count"
     echo "  recent-users         - Users created in last 7 days"
@@ -41,6 +42,7 @@ show_usage() {
     echo "  $0 user-profile 5099901"
     echo "  $0 add-domain 5099901 example.com"
     echo "  $0 remove-domain 123
+  $0 remove-domain-confirm 123
   $0 top-ip-queue-full"
 }
 
@@ -112,10 +114,32 @@ case "$1" in
             echo "Usage: $0 remove-domain <domain_id>"
             exit 1
         fi
-        echo "🗑️ Removing domain with ID $2"
-        execute_query "SELECT d.id, d.user_id, d.domain FROM domains d WHERE d.id = '$2'"
+        echo "🗑️ Previewing domain removal for ID $2"
+        execute_query "SELECT d.id, d.user_id, u.username, d.domain FROM domains d JOIN users u ON d.user_id = u.github_user_id WHERE d.id = '$2'"
         echo ""
         echo "❓ Are you sure you want to remove this domain? (This is just a preview, domain not removed yet)"
+        echo "💡 To actually remove it, use: $0 remove-domain-confirm $2"
+        ;;
+    
+    "remove-domain-confirm")
+        if [ -z "$2" ]; then
+            echo " Please provide domain ID"
+            echo "Usage: $0 remove-domain-confirm <domain_id>"
+            exit 1
+        fi
+        echo "🗑️ Getting domain info before removal..."
+        execute_query "SELECT d.id, d.user_id, u.username, d.domain FROM domains d JOIN users u ON d.user_id = u.github_user_id WHERE d.id = '$2'"
+        echo ""
+        # Get the user_id before deletion
+        USER_ID=$(wrangler d1 execute --remote --command "SELECT d.user_id FROM domains d WHERE d.id = '$2'" $DB_NAME 2>/dev/null | tail -n +6 | head -n 1 | awk '{print $1}' | tr -d '│ ')
+        echo "⚠️  PERMANENTLY REMOVING DOMAIN..."
+        execute_query "DELETE FROM domains WHERE id = '$2'"
+        echo "✅ Domain removed successfully!"
+        echo ""
+        if [ ! -z "$USER_ID" ]; then
+            echo "📋 Remaining domains for user $USER_ID:"
+            execute_query "SELECT d.id, d.domain, d.created_at FROM domains d WHERE d.user_id = '$USER_ID' ORDER BY d.created_at DESC"
+        fi
         ;;
     
     "all-domains")

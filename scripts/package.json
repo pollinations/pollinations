@@ -1,0 +1,41 @@
+{
+  "name": "pollinations-project-management",
+  "version": "1.0.0",
+  "description": "Automated project management scripts for Pollinations.AI ecosystem",
+  "type": "module",
+  "scripts": {
+    "migrate": "node scripts/migrateProjects.js",
+    "generate-readme": "node scripts/generateReadme.js",
+    "update-stars": "node scripts/updateStarCounts.js",
+    "validate": "node scripts/validateProjectData.js",
+    "process-submission": "node scripts/processProjectSubmission.js",
+    "build": "npm run migrate && npm run generate-readme",
+    "dev": "npm run validate && npm run build",
+    "test": "npm run validate",
+    "update-all": "npm run update-stars && npm run migrate && npm run generate-readme && npm run validate",
+    "submit-project": "echo 'Please use the GitHub issue template at: https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml'",
+    "help": "echo 'Available commands:\n  npm run migrate      - Convert legacy data to structured format\n  npm run generate-readme - Update README with latest projects\n  npm run update-stars - Update GitHub star counts\n  npm run validate     - Validate project data integrity\n  npm run build        - Full build process\n  npm run update-all   - Complete update cycle'"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pollinations/pollinations.git"
+  },
+  "keywords": [
+    "pollinations",
+    "ai",
+    "projects",
+    "automation",
+    "ecosystem"
+  ],
+  "author": "Pollinations.AI Team",
+  "license": "MIT"
+}

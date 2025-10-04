@@ -205,6 +205,9 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
+          # Configure git to ignore the gitignore warning for shared/data
+          git config advice.addIgnoredFile false
+          
           # Add changes (only add files that exist)
           git add README.md || echo "README.md not found"
           if [ -f shared/data/projects.json ]; then

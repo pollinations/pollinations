@@ -10,18 +10,57 @@ import { logger } from "./middleware/logger.ts";
 import { getLogger } from "@logtape/logtape";
 import type { Env } from "./env.ts";
 import { drizzle } from "drizzle-orm/d1";
+import { Scalar } from "@scalar/hono-api-reference";
+import { openAPIRouteHandler } from "hono-openapi";
 
 const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", (c) => {
     return createAuth(c.env).handler(c.req.raw);
 });
 
-const app = new Hono<Env>()
-    .use("*", requestId())
-    .use("*", logger)
-    .basePath("/api")
+const api = new Hono<Env>()
     .route("/auth", authRoutes)
     .route("/polar", polarRoutes)
     .route("/generate", proxyRoutes);
+
+const app = new Hono<Env>()
+    .use("*", requestId())
+    .use("*", logger)
+    .route("/api", api)
+    .get("/api/docs", (c, next) =>
+        Scalar<Env>({
+            pageTitle: "Pollinations.AI API Docs",
+            title: "Pollinations.AI API Docs",
+            theme: "saturn",
+            sources: [
+                { url: "/api/open-api/generate-schema", title: "API" },
+                // Include better-auth docs only in development mode
+                ...(c.env.ENVIRONMENT === "development"
+                    ? [
+                          {
+                              url: "/api/auth/open-api/generate-schema",
+                              title: "Auth",
+                          },
+                      ]
+                    : []),
+            ],
+        })(c, next),
+    )
+    .get(
+        "/api/open-api/generate-schema",
+        openAPIRouteHandler(api, {
+            documentation: {
+                servers: [{ url: "/api" }],
+                info: {
+                    title: "Pollinations.AI API",
+                    version: "0.3.0",
+                    description: [
+                        "Documentation for `enter.pollinations.ai`.",
+                        "More detailed docs for requests and responses coming soon.",
+                    ].join(" "),
+                },
+            },
+        }),
+    );
 
 app.notFound((c) => {
     return handleError(new HTTPException(404), c);

@@ -22,15 +22,6 @@ export const chatProjects = [
     order: 1
   },
   {
-    name: "Hythme AI 🇸🇦",
-    url: "https://hythme.com",
-    description: "Arabic AI platform specialized in coding, social engineering, information technology, and cybersecurity education. Designed to help technical students increase their awareness and skills in IT fields.",
-    author: "@hythme",
-    submissionDate: "2025-06-26",
-    language: "ar",
-    order: 1
-  },
-  {
     name: "Petfuse Image Generator 🐾",
     url: "https://petfuse.xyz/",
     description: "Chat and generate images with custom seed control. Features a public gallery indexed by Google where all generated images are displayed. Simple interface for creating AI art with conversation.",

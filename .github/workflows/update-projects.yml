@@ -120,7 +120,8 @@ jobs:
         id: generate-readme
         run: |
           if [ -f scripts/generateReadme.js ]; then
-            node scripts/generateReadme.js
+            echo "Generating README from repository root..."
+            GITHUB_ACTIONS=true node scripts/generateReadme.js
             echo "readme-updated=true" >> $GITHUB_OUTPUT
           else
             echo "README generation script not found, skipping..."

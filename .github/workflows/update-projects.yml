@@ -212,16 +212,13 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # Configure git to ignore the gitignore warning for shared/data
-          git config advice.addIgnoredFile false
-          
           # Add changes (only add files that exist)
           git add README.md || echo "README.md not found"
-          if [ -f shared/data/projects.json ]; then
-            git add -f shared/data/projects.json || echo "Could not add projects.json"
+          if [ -f pollinations.ai/src/config/projectsData.json ]; then
+            git add pollinations.ai/src/config/projectsData.json
           fi
-          if [ -f shared/data/projectAnalytics.json ]; then
-            git add -f shared/data/projectAnalytics.json || echo "Could not add projectAnalytics.json"
+          if [ -f pollinations.ai/src/config/projectAnalytics.json ]; then
+            git add pollinations.ai/src/config/projectAnalytics.json
           fi
           if [ -f .github/ISSUE_TEMPLATE/project-submission.yml ]; then
             git add .github/ISSUE_TEMPLATE/project-submission.yml

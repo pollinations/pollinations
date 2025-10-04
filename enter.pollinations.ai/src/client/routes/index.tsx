@@ -76,6 +76,9 @@ function RouteComponent() {
         <div className="flex flex-col gap-20">
             <div className="flex justify-between gap-4">
                 <h1 className="flex-1">Pollinations.AI</h1>
+                <Button as="a" href="/api/docs">
+                    API Reference
+                </Button>
                 <User
                     githubUsername={user.githubUsername}
                     githubAvatarUrl={user.image || ""}

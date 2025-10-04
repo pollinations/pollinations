@@ -1,30 +1,66 @@
 import type { ErrorHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { z } from "zod/v4";
+import { z } from "zod";
 import { Env } from "./env.ts";
 import { APIError } from "better-auth";
 import { ContentfulStatusCode } from "hono/utils/http-status";
 import { ValidationError } from "@/middleware/validator";
 
-interface ErrorResponse {
-    success: false;
-    error: {
-        message: string;
-        code: string;
-        details?: ErrorDetails;
-        timestamp: string;
-        requestId?: string;
-        cause?: unknown;
-    };
-    status: ContentfulStatusCode;
+const GenericErrorDetailsSchema = z.object({
+    name: z.string(),
+    stack: z.string().optional(),
+});
+
+const ValidationErrorDetailsSchema = z.object({
+    name: z.string(),
+    stack: z.string().optional(),
+    formErrors: z.array(z.string()),
+    fieldErrors: z.record(z.string(), z.array(z.string())),
+});
+
+export function createErrorResponseSchema(
+    status: ContentfulStatusCode,
+): z.ZodObject {
+    let errorDetailsSchema =
+        status === 400
+            ? ValidationErrorDetailsSchema
+            : GenericErrorDetailsSchema;
+    return z.object({
+        status: z.literal(status),
+        success: z.literal(false),
+        error: z.object({
+            code: z.literal(getErrorCode(status)),
+            message: z.union([
+                z.literal(getDefaultErrorMessage(status)),
+                z.string(),
+            ]),
+            timestamp: z.string(),
+            details: errorDetailsSchema,
+            requestId: z.string().optional(),
+            cause: z.unknown().optional(),
+        }),
+    });
 }
 
-interface ErrorDetails {
-    name: string;
-    stack?: string;
-    formErrors?: string[];
-    fieldErrors?: { [key: string]: string[] };
-}
+export const GenericErrorResponseSchema = z.object({
+    status: z.number().int().min(100).max(599),
+    success: z.boolean(),
+    error: z.object({
+        code: z.string(),
+        message: z.string(),
+        timestamp: z.string(),
+        details: GenericErrorDetailsSchema.optional(),
+        requestId: z.string().optional(),
+        cause: z.unknown().optional(),
+    }),
+});
+
+const ErrorResponseSchema = z.discriminatedUnion("status", [
+    createErrorResponseSchema(400),
+    GenericErrorResponseSchema,
+]);
+
+type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 
 export const handleError: ErrorHandler<Env> = (err, c) => {
     const timestamp = new Date().toISOString();
@@ -168,7 +204,13 @@ function getErrorCode(status: number): string {
     return codes[status] || "UNKNOWN_ERROR";
 }
 
-function getDefaultErrorMessage(status: number): string {
+export const KNOWN_ERROR_STATUS_CODES = [
+    400, 401, 403, 405, 409, 422, 429, 500, 502, 503,
+] as const;
+
+export type ErrorStatusCode = (typeof KNOWN_ERROR_STATUS_CODES)[number];
+
+export function getDefaultErrorMessage(status: number): string {
     const messages: Record<number, string> = {
         400: "Something was wrong with the input data.",
         401: "Please sign in first and provide session cookie or x-api-key header.",

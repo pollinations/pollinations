@@ -435,5 +435,13 @@ export const chatProjects = [
     author: "https://www.tiktok.com/@herinyourhead",
     submissionDate: "2025-07-17",
     order: 1
+  },
+  {
+    name: "NeonSpark AI ✨",
+    url: "https://neonspark-ai.web.app/",
+    description: "NeonSpark AI is a web app that offers AI-powered chat and image generation features. It provides users with an interface to interact via conversational AI (chat) as well as create images based on prompts.",
+    author: "developer.asaad@gmail.com",
+    submissionDate: "2025-10-04",
+    order: 1
   }
 ];

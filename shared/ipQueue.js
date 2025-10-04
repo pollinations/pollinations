@@ -45,21 +45,13 @@ const tierCaps = {
     nectar: 50,
 };
 
-// Special tier caps for nanobanana model - STRICTER LIMITS
-// Seed: 1x (base), Flower: 1x (same as seed), Nectar: 2x (reduced from 6x)
-const nanobananaTierCaps = {
+// Special tier caps for nanobanana and seedream models
+// Seed: 1x (base), Flower: 3x, Nectar: 6x
+const specialModelTierCaps = {
     anonymous: 1,
     seed: 1,      // Base level
-    flower: 1,    // Same as seed tier (reduced from 3x)
-    nectar: 2,    // Reduced from 6x to 2x
-};
-
-// Seedream model uses lowest limit (1) for most tiers, nectar gets 2
-const seedreamTierCaps = {
-    anonymous: 1,
-    seed: 1,      // Lowest limit
-    flower: 1,    // Lowest limit (same as seed)
-    nectar: 2,    // Enhanced limit for nectar tier (same as nanobanana)
+    flower: 3,    // 3x seed tier
+    nectar: 6,    // 6x seed tier
 };
 
 /**
@@ -154,12 +146,9 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 	// Only apply tier-based cap if forceCap is not set
 	if (!forceCap) {
 		// Check if this is a special model that uses different tier multipliers
-		if (model === 'nanobanana') {
-			cap = nanobananaTierCaps[authResult.tier] || 1;
-			log('Using nanobanana tier-based cap: %d for tier: %s', cap, authResult.tier);
-		} else if (model === 'seedream') {
-			cap = seedreamTierCaps[authResult.tier] || 1;
-			log('Using seedream tier-based cap: %d for tier: %s (lowest limit for all tiers)', cap, authResult.tier);
+		if (model === 'nanobanana' || model === 'seedream') {
+			cap = specialModelTierCaps[authResult.tier] || 1;
+			log('Using special model tier-based cap: %d for tier: %s (model: %s)', cap, authResult.tier, model);
 		} else {
 			cap = tierCaps[authResult.tier] || 1;
 			log('Using tier-based cap: %d for tier: %s', cap, authResult.tier);
@@ -170,18 +159,18 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 
 	const maxQueueSize = cap * 5;
 	// Apply tier-based concurrency limits for token-authenticated requests
-	// if (authResult.tokenAuth) {
-	// 	// // // Token authentication gets zero interval (no delay between requests)
-	// 	// if (interval > 0) {0
-	// 	//   log('Token authenticated request - using zero interval in queue');
-	// 	//   interval = 0;		
-	// 	// }
-	// 	authLog(
-	// 		"Authenticated via token. using userId instead of ip address for queueing: " +
-	// 			authResult.userId,
-	// 	);
-	// 	ip = authResult.userId;
-	// }
+	if (authResult.tokenAuth) {
+		// // // Token authentication gets zero interval (no delay between requests)
+		// if (interval > 0) {
+		//   log('Token authenticated request - using zero interval in queue');
+		//   interval = 0;
+		// }
+		authLog(
+			"Authenticated via token. using userId instead of ip address for queueing: " +
+				authResult.userId,
+		);
+		ip = authResult.userId;
+	}
 
 	// Check if queue exists for this IP and get its current size
 	const currentQueueSize = queues.get(ip)?.size || 0;

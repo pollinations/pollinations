@@ -38,11 +38,8 @@ export function createAuth(env: Cloudflare.Env) {
         adminUserIds: ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"],
     });
 
-    const openAPIPlugin = openAPI({
-        disableDefaultReference: true,
-    });
-
     return betterAuth({
+        baseURL: env.PUBLIC_BASE_URL,
         basePath: "/api/auth",
         database: drizzleAdapter(db, {
             schema: betterAuthSchema,
@@ -70,7 +67,7 @@ export function createAuth(env: Cloudflare.Env) {
                 }),
             },
         },
-        plugins: [adminPlugin, apiKeyPlugin, polarPlugin(polar), openAPIPlugin],
+        plugins: [adminPlugin, apiKeyPlugin, polarPlugin(polar), openAPI()],
         telemetry: { enabled: false },
     });
 }

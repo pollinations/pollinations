@@ -76,7 +76,6 @@ export const track = (eventType: EventType) =>
                 modelUsage = extractUsage(
                     eventType,
                     modelRequested,
-                    c,
                     openaiResponse,
                 );
                 costType = REGISTRY.getCostType(modelUsage.model as ProviderId);
@@ -114,7 +113,7 @@ export const track = (eventType: EventType) =>
             eventType,
 
             userId: c.var.auth.user?.id,
-            userTier: extractUserTier(c, openaiResponse),
+            userTier: extractUserTier(eventType, openaiResponse),
             ...referrerInfo,
 
             modelRequested,
@@ -166,25 +165,15 @@ async function extractModelRequested(
 function extractUsage(
     eventType: EventType,
     modelRequested: string | null,
-    c: Context<TrackEnv>,
     response?: OpenAIResponse,
 ): ModelUsage {
     if (eventType === "generate.image") {
-        // Read actual token count from x-completion-image-tokens header
-        const tokenCountHeader = c.res.headers.get("x-completion-image-tokens");
-        const completionImageTokens = tokenCountHeader 
-            ? parseInt(tokenCountHeader, 10) 
-            : 1;
-        
-        // Read actual model used from x-model-used header
-        const modelUsedHeader = c.res.headers.get("x-model-used");
-        const model = (modelUsedHeader || modelRequested || "flux") as ProviderId;
-        
         return {
-            model,
+            // TODO: use x-model-used header once implemented in image service
+            model: (modelRequested || "flux") as ProviderId,
             usage: {
                 unit: "TOKENS",
-                completionImageTokens,
+                completionImageTokens: 1,
             },
         };
     }
@@ -200,17 +189,14 @@ function extractUsage(
 }
 
 function extractUserTier(
-    c: Context<TrackEnv>,
+    eventType: EventType,
     response?: OpenAIResponse,
 ): string | undefined {
-    // Try header first (works for both image and text generations)
-    const headerTier = c.res.headers.get("x-user-tier");
-    if (headerTier) {
-        return headerTier;
+    if (eventType === "generate.text") {
+        return response?.user_tier;
     }
-    
-    // Fall back to response object for text generations
-    return response?.user_tier;
+    // TODO: use x-user-tier header for image generations once implemented
+    return undefined;
 }
 
 function extractContentFilterResults(

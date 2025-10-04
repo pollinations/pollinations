@@ -404,15 +404,11 @@ const checkCacheAndGenerate = async (
                 let queueConfig = null;
                 
                 // Model-specific queue configs with tier-based concurrency multipliers
-                if (safeParams.model === "nanobanana") {
-                    // Use tier-based concurrency with STRICTER limits for nanobanana
-                    // Seed: 1x (base), Flower: 1x (same as seed), Nectar: 2x (reduced from 6x)
-                    queueConfig = { interval: 120000 }; // 120s interval (2 minutes), cap set by ipQueue based on tier
-                    logAuth(`${safeParams.model} model - using STRICTER tier-based concurrency with 120s interval (seed:1x, flower:1x, nectar:2x)`)
-                } else if (safeParams.model === "seedream") {
-                    // Seedream uses 120s interval with tier-based concurrency
-                    queueConfig = { interval: 120000 }; // 120s interval (2 minutes), cap set by ipQueue based on tier
-                    logAuth(`${safeParams.model} model - using 120s interval with tier-based concurrency (seed:1x, flower:1x, nectar:2x)`)
+                if (safeParams.model === "nanobanana" || safeParams.model === "seedream") {
+                    // Use tier-based concurrency with custom multipliers for these models
+                    // Seed: 1x (base), Flower: 3x, Nectar: 6x
+                    queueConfig = { interval: 30000 }; // 30s interval, cap set by ipQueue based on tier
+                    logAuth(`${safeParams.model} model - using tier-based concurrency with 30s interval (seed:1x, flower:3x, nectar:6x)`)
                 } else if (hasValidToken) {
                     // Token authentication for other models - 7s minimum interval with tier-based caps
                     queueConfig = { interval: 7000 }; // cap will be set by ipQueue based on tier

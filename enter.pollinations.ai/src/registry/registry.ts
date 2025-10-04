@@ -8,15 +8,51 @@ const PRECISION = 8;
 const COST_TYPES = ["fixed_operational_cost", "per_generation_cost"] as const;
 export type CostType = (typeof COST_TYPES)[number];
 
-export type UsageType =
-    | "promptTextTokens"
-    | "promptCachedTokens"
-    | "promptAudioTokens"
-    | "promptImageTokens"
-    | "completionTextTokens"
-    | "completionReasoningTokens"
-    | "completionAudioTokens"
-    | "completionImageTokens";
+const UNITS = {
+    DPMT: {
+        description: "dollars per million tokens",
+        convert: (tokens: number, rate: number): number => {
+            return safeRound((tokens / 1_000_000) * rate, PRECISION);
+        },
+    },
+    DPT: {
+        description: "dollars per token",
+        convert: (tokens: number, rate: number): number => {
+            return safeRound(tokens * rate, PRECISION);
+        },
+    },
+} as const;
+
+type Unit = keyof typeof UNITS;
+
+const USAGE_TYPES = {
+    promptTextTokens: {
+        description: "number of text tokens in the input prompt",
+    },
+    promptCachedTokens: {
+        description: "number of cached tokens in the input prompt",
+    },
+    promptAudioTokens: {
+        description: "number of audio tokens in the input prompt",
+    },
+    promptImageTokens: {
+        description: "number of image tokens in the input prompt",
+    },
+    completionTextTokens: {
+        description: "number of text tokens in the generated completion",
+    },
+    completionReasoningTokens: {
+        description: "number of reasoning tokens in the generated completion",
+    },
+    completionAudioTokens: {
+        description: "number of audio tokens in the generated completion",
+    },
+    completionImageTokens: {
+        description: "number of image tokens in the generated completion",
+    },
+} as const;
+
+export type UsageType = keyof typeof USAGE_TYPES;
 
 export type TokenUsage = {
     unit: "TOKENS";
@@ -34,12 +70,17 @@ export type UsagePrice = DollarConvertedUsage & {
     totalPrice: number;
 };
 
+export type UsageConversionRate = {
+    unit: Unit;
+    rate: number;
+};
+
 export type UsageConversionDefinition = {
     date: number;
-} & { [K in UsageType]?: number };
+} & { [K in UsageType]?: UsageConversionRate };
 
-export type CostDefinition = UsageConversionDefinition;
 export type PriceDefinition = UsageConversionDefinition;
+export type CostDefinition = UsageConversionDefinition;
 
 export type ModelProviderDefinition = {
     displayName: string;
@@ -136,12 +177,19 @@ function convertUsage(
                     : usageType;
             const conversionRate =
                 conversionDefinition[usageTypeWithFallback as UsageType];
-            if (conversionRate === undefined) {
+            if (!conversionRate) {
                 throw new Error(
                     `Failed to get conversion rate for usage type: ${usageType}`,
                 );
             }
-            const usageTypeCost = safeRound(amount * conversionRate, PRECISION);
+            const unit = UNITS[conversionRate.unit];
+            if (!unit) {
+                throw new Error(
+                    `Failed to get conversion unit: ${conversionRate.unit}`,
+                );
+            }
+            const rate = conversionRate.rate;
+            const usageTypeCost = unit.convert(amount, rate);
             return [usageType, usageTypeCost];
         }),
     );
@@ -215,7 +263,7 @@ function isFreeService<
             `Failed to get current price for servce: ${serviceId.toString()}`,
         );
     return Object.values(omit(servicPriceDefinition, "date")).every(
-        (rate) => rate === 0,
+        (definition) => definition.rate === 0,
     );
 }
 
@@ -253,10 +301,14 @@ function calculateMargins<
                                     `Failed to find usage cost or price for provider: ${provider.toString()}`,
                                 );
                             }
-                            // Units are always USD now, no need to check
+                            if (usageCost.unit !== usagePrice.unit) {
+                                throw new Error(
+                                    `Usage cost and price units do not match for provider: ${provider.toString()}`,
+                                );
+                            }
                             return [
                                 usageType,
-                                usagePrice - usageCost,
+                                usagePrice.rate - usageCost.rate,
                             ];
                         },
                     ),

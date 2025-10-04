@@ -85,6 +85,13 @@ export const callKontextAPI = async (
             buffer,
             isMature: false,
             isChild: false,
+            trackingData: {
+                actualModel: 'kontext',
+                usage: {
+                    candidatesTokenCount: 1,
+                    totalTokenCount: 1
+                }
+            }
         };
     } catch (error) {
         logError("Error calling Kontext API:", error);

@@ -9,6 +9,7 @@ import type {
 const MOCK_MODEL_PROVIDERS = {
     "mock-model": {
         displayName: "Mock Model",
+        costType: "per_generation_cost",
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),

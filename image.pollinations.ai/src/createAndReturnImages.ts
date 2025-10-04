@@ -244,7 +244,7 @@ export const callComfyUI = async (
             buffer: jpegBuffer, 
             ...rest,
             trackingData: {
-                actualModel: 'comfyui',
+                actualModel: safeParams.model,
                 usage: {
                     candidatesTokenCount: 1,
                     totalTokenCount: 1
@@ -271,6 +271,8 @@ async function callCloudflareModel(
     modelPath: string,
     additionalParams: object = {},
 ): Promise<ImageGenerationResult> {
+    // Use the registry model name from safeParams, not the internal Cloudflare model path
+    const registryModelName = safeParams.model;
     const { accountId, apiToken } = getCloudflareCredentials();
 
     if (!accountId || !apiToken) {
@@ -366,7 +368,7 @@ async function callCloudflareModel(
         isMature: false, 
         isChild: false,
         trackingData: {
-            actualModel: modelPath,
+            actualModel: registryModelName,
             usage: {
                 candidatesTokenCount: 1,
                 totalTokenCount: 1
@@ -732,6 +734,13 @@ const callAzureGPTImageWithEndpoint = async (
         buffer: imageBuffer,
         isMature: false, // Default assumption
         isChild: false, // Default assumption
+        trackingData: {
+            actualModel: safeParams.model,
+            usage: {
+                candidatesTokenCount: 1,
+                totalTokenCount: 1
+            }
+        }
     };
 };
 

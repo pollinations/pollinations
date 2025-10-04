@@ -82,7 +82,8 @@ jobs:
         id: process-submission
         run: |
           if [ -f scripts/processProjectSubmission.js ]; then
-            node scripts/processProjectSubmission.js \
+            echo "Processing project submission from repository root..."
+            GITHUB_ACTIONS=true node scripts/processProjectSubmission.js \
               --issue-number="${{ github.event.issue.number }}" \
               --dry-run=false || echo "Project submission processing completed with warnings"
           else

@@ -50,13 +50,10 @@ async function migrateProjects() {
       path.join(configDataDir, 'projectAnalytics.json'), 
       JSON.stringify(analyticsData, null, 2)
     );
-      path.join(sharedDataDir, 'projectAnalytics.json'), 
-      JSON.stringify(analyticsData, null, 2)
-    );
     
     console.log('✅ Migration completed successfully!');
-    console.log(`� Created: shared/data/projects.json`);
-    console.log(`📁 Created: shared/data/projectAnalytics.json`);
+    console.log(`📊 Created: pollinations.ai/src/config/projectsData.json`);
+    console.log(`� Created: pollinations.ai/src/config/projectAnalytics.json`);
     
   } catch (error) {
     console.error('❌ Migration failed:', error.message);

@@ -44,5 +44,6 @@ export const authenticate = createMiddleware<AuthEnv>(async (c, next) => {
         user,
         requireActiveSession,
     });
+
     await next();
 });

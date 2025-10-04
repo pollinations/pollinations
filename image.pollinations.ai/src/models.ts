@@ -12,13 +12,13 @@ export const MODELS = {
         maxSideLength: 768,
     },
 
-    // BPAIGen with Kontext fallback - general purpose model
-    kontext: {
-        type: "bpaigen-kontext",
-        enhance: true,
-        maxSideLength: 1216, // BPAIGen's higher resolution capability
-        tier: "seed",
-    },
+    // // BPAIGen with Kontext fallback - general purpose model
+    // kontext: {
+    //     type: "bpaigen-kontext",
+    //     enhance: true,
+    //     maxSideLength: 1216, // BPAIGen's higher resolution capability
+    //     tier: "seed",
+    // },
 
     // Assuming 'turbo' is of type 'sd'
     turbo: {
@@ -40,7 +40,7 @@ export const MODELS = {
         type: "seedream",
         enhance: false,
         maxSideLength: 2048, // Default 2048x2048, supports up to 4K resolution
-        tier: "seed",
+        tier: "flower",
     },
 
     // Azure GPT Image model (temporarily disabled - uncomment to reactivate)

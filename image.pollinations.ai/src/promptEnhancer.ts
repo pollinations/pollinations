@@ -17,6 +17,7 @@ const logPerf = debug("pollinations:perf");
  * @returns {Promise<string>} The chat completion response.
  */
 async function pimpPromptRaw(prompt: string, seed: number): Promise<string> {
+    return prompt;
     try {
         prompt = urldecode(prompt);
     } catch (error) {

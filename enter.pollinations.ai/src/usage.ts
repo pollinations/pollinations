@@ -64,6 +64,14 @@ export type UserTier = z.infer<typeof userTierSchema>;
 const choiceSchema = z.object({
     index: z.number().int(),
     content_filter_results: contentFilterResultSchema,
+    message: z
+        .object({
+            role: z.string(),
+            content: z.string(),
+            // WARNING: Update this to match the actual openai schema
+        })
+        .optional()
+        .catch(undefined),
     // omitting other fields as they are not needed yet
     // (message, logprobs, finish_reason)
 });

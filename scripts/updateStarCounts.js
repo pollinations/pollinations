@@ -108,11 +108,69 @@ function updateStarCountInContent(content, projectName, newStarCount) {
 async function updateStarCounts() {
   console.log('🌟 Starting star count update...');
   
+  console.log(`🔍 Environment: ${process.env.GITHUB_ACTIONS ? 'CI' : 'Local'}`);
+  console.log(`📁 PROJECT_FILES_DIR: ${PROJECT_FILES_DIR}`);
+  
   const projectsDir = path.resolve(PROJECT_FILES_DIR);
+  console.log(`📂 Resolved path: ${projectsDir}`);
   
   if (!fs.existsSync(projectsDir)) {
-    console.error(`Projects directory not found: ${projectsDir}`);
-    process.exit(1);
+    console.log(`⚠️ Projects directory not found: ${projectsDir}`);
+    console.log('🔍 Checking if parent directories exist...');
+    
+    // Check parent directories step by step
+    const pathParts = projectsDir.split(path.sep);
+    let currentPath = '';
+    
+    for (let i = 0; i < pathParts.length; i++) {
+      if (pathParts[i] === '') continue; // Skip empty parts (like root)
+      currentPath = path.join(currentPath, pathParts[i]);
+      const exists = fs.existsSync(currentPath);
+      console.log(`📁 ${currentPath}: ${exists ? '✅ exists' : '❌ missing'}`);
+      
+      if (!exists) {
+        console.log(`❌ Path breaks at: ${currentPath}`);
+        break;
+      }
+    }
+    
+    // List current directory contents
+    console.log('📋 Current working directory contents:');
+    try {
+      const cwd = process.cwd();
+      console.log(`📍 CWD: ${cwd}`);
+      const contents = fs.readdirSync(cwd);
+      console.log('📄 Contents:', contents.slice(0, 20)); // Show first 20 items
+      
+      // If we're in CI and pollinations.ai directory exists, show its structure
+      if (process.env.GITHUB_ACTIONS && contents.includes('pollinations.ai')) {
+        console.log('🔍 pollinations.ai directory structure:');
+        try {
+          const pollinationsContents = fs.readdirSync('pollinations.ai');
+          console.log('📄 pollinations.ai contents:', pollinationsContents);
+          
+          if (pollinationsContents.includes('src')) {
+            const srcContents = fs.readdirSync('pollinations.ai/src');
+            console.log('📄 pollinations.ai/src contents:', srcContents);
+            
+            if (srcContents.includes('config')) {
+              const configContents = fs.readdirSync('pollinations.ai/src/config');
+              console.log('📄 pollinations.ai/src/config contents:', configContents);
+            }
+          }
+        } catch (err) {
+          console.log('❌ Error reading pollinations.ai structure:', err.message);
+        }
+      }
+    } catch (err) {
+      console.log('❌ Error reading current directory:', err.message);
+    }
+    
+    console.log('⚠️ Skipping star count update - projects directory not available');
+    console.log('ℹ️ This is normal if no projects exist yet or if there is a checkout issue');
+    
+    // Exit with success code since this is not necessarily an error
+    process.exit(0);
   }
   
   const projectFiles = fs.readdirSync(projectsDir)

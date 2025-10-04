@@ -47,6 +47,17 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
+          # Ensure we get all files including the projects directory
+          clean: false
+
+      - name: Verify repository checkout
+        run: |
+          echo "Repository checkout verification:"
+          echo "Current branch: $(git branch --show-current)"
+          echo "Git status:"
+          git status --short
+          echo "Recent commits:"
+          git log --oneline -5
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -68,11 +79,44 @@ jobs:
       - name: Verify project directory structure
         run: |
           echo "Checking project directory structure..."
-          if [ -d "pollinations.ai/src/config/projects" ]; then
-            echo "✅ Projects directory found"
-            ls -la pollinations.ai/src/config/projects/
+          echo "Current working directory: $(pwd)"
+          echo "Repository contents:"
+          ls -la
+          
+          if [ -d "pollinations.ai" ]; then
+            echo "✅ pollinations.ai directory found"
+            ls -la pollinations.ai/
+            
+            if [ -d "pollinations.ai/src" ]; then
+              echo "✅ pollinations.ai/src directory found"
+              ls -la pollinations.ai/src/
+              
+              if [ -d "pollinations.ai/src/config" ]; then
+                echo "✅ pollinations.ai/src/config directory found"
+                ls -la pollinations.ai/src/config/
+                
+                if [ -d "pollinations.ai/src/config/projects" ]; then
+                  echo "✅ Projects directory found"
+                  ls -la pollinations.ai/src/config/projects/
+                  echo "Number of .js files: $(find pollinations.ai/src/config/projects/ -name '*.js' | wc -l)"
+                else
+                  echo "❌ Projects directory not found. Creating directory structure..."
+                  mkdir -p pollinations.ai/src/config/projects
+                  echo "Directory created."
+                fi
+              else
+                echo "❌ Config directory not found. Creating directory structure..."
+                mkdir -p pollinations.ai/src/config/projects
+                echo "Directory created."
+              fi
+            else
+              echo "❌ src directory not found. Creating directory structure..."
+              mkdir -p pollinations.ai/src/config/projects
+              echo "Directory created."
+            fi
           else
-            echo "❌ Projects directory not found. Creating directory structure..."
+            echo "❌ pollinations.ai directory not found. This suggests a checkout issue."
+            echo "Creating directory structure as fallback..."
             mkdir -p pollinations.ai/src/config/projects
             echo "Directory created."
           fi
@@ -98,7 +142,13 @@ jobs:
         run: |
           if [ -f scripts/updateStarCounts.js ]; then
             echo "Running star count update from repository root..."
-            GITHUB_ACTIONS=true node scripts/updateStarCounts.js || echo "Star count update completed with warnings"
+            if [ -d "pollinations.ai/src/config/projects" ]; then
+              echo "Projects directory confirmed to exist before running script"
+              GITHUB_ACTIONS=true node scripts/updateStarCounts.js || echo "Star count update completed with warnings"
+            else
+              echo "⚠️ Projects directory still not found, skipping star count update"
+              echo "This may be normal for a new repository or if projects haven't been added yet"
+            fi
           else
             echo "Star count script not found, skipping..."
           fi

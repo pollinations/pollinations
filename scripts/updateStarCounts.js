@@ -9,8 +9,8 @@ import path from 'path';
 const GITHUB_API_BASE = 'https://api.github.com/repos';
 // Use path resolution that works both locally and in CI
 const PROJECT_FILES_DIR = process.env.GITHUB_ACTIONS 
-  ? 'pollinations.ai/src/config/projects'  // CI environment
-  : '../pollinations.ai/src/config/projects'; // Local development
+  ? 'pollinations.ai/src/config/projects'  // CI environment (running from repo root)
+  : '../pollinations.ai/src/config/projects'; // Local development (running from scripts dir)
 const RATE_LIMIT_DELAY = 1000; // 1 second between requests
 
 // Helper function to extract owner/repo from GitHub URL

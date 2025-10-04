@@ -11,16 +11,6 @@ const GITHUB_API_BASE = 'https://api.github.com/repos';
 const PROJECT_FILES_DIR = process.env.GITHUB_ACTIONS 
   ? 'pollinations.ai/src/config/projects'  // CI environment
   : '../pollinations.ai/src/config/projects'; // Local development
-const RATE_LIMIT_DELAY = 1000; // 1 second between requestsrom 'fs';
-import path from 'path';
-
-/**
- * Updates GitHub star counts for all projects
- * Fetches star counts from GitHub API and updates project files
- */
-
-const GITHUB_API_BASE = 'https://api.github.com/repos';
-const PROJECT_FILES_DIR = '../pollinations.ai/src/config/projects';
 const RATE_LIMIT_DELAY = 1000; // 1 second between requests
 
 // Helper function to extract owner/repo from GitHub URL

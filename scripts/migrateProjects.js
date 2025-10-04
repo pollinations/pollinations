@@ -16,10 +16,14 @@ async function migrateProjects() {
   console.log('🚀 Starting project data migration...');
   
   try {
-    // Ensure shared/data directory exists
-    const sharedDataDir = path.join(__dirname, '../shared/data');
-    if (!fs.existsSync(sharedDataDir)) {
-      fs.mkdirSync(sharedDataDir, { recursive: true });
+    // Use the proper config directory (same as other config files)
+    const configDataDir = process.env.GITHUB_ACTIONS 
+      ? path.join(process.cwd(), 'pollinations.ai/src/config')
+      : path.join(__dirname, '../pollinations.ai/src/config');
+    
+    if (!fs.existsSync(configDataDir)) {
+      console.error('❌ Config directory not found:', configDataDir);
+      process.exit(1);
     }
     
     // Create minimal projects data structure
@@ -36,13 +40,16 @@ async function migrateProjects() {
       generatedAt: new Date().toISOString()
     };
     
-    // Write files
+    // Write files to config directory (same as other config files)
     fs.writeFileSync(
-      path.join(sharedDataDir, 'projects.json'), 
+      path.join(configDataDir, 'projectsData.json'), 
       JSON.stringify(projectsData, null, 2)
     );
     
     fs.writeFileSync(
+      path.join(configDataDir, 'projectAnalytics.json'), 
+      JSON.stringify(analyticsData, null, 2)
+    );
       path.join(sharedDataDir, 'projectAnalytics.json'), 
       JSON.stringify(analyticsData, null, 2)
     );

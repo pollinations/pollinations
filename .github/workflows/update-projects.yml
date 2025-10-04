@@ -208,10 +208,10 @@ jobs:
           # Add changes (only add files that exist)
           git add README.md || echo "README.md not found"
           if [ -f shared/data/projects.json ]; then
-            git add shared/data/projects.json
+            git add -f shared/data/projects.json || echo "Could not add projects.json"
           fi
           if [ -f shared/data/projectAnalytics.json ]; then
-            git add shared/data/projectAnalytics.json
+            git add -f shared/data/projectAnalytics.json || echo "Could not add projectAnalytics.json"
           fi
           if [ -f .github/ISSUE_TEMPLATE/project-submission.yml ]; then
             git add .github/ISSUE_TEMPLATE/project-submission.yml

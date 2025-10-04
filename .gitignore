@@ -288,6 +288,8 @@ venv/
 cursor-party/
 .aider*
 data/
+# Allow shared/data directory for project analytics
+!shared/data/
 text.pollinations.ai/v2/
 # Local Netlify folder
 .netlify

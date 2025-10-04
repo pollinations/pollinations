@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * Project Data Migration Script - Minimal Version
+ * Project Data Migration Script - Mini    console.log('✅ Migration completed successfully!');
+    console.log(`📊 Created: pollinations.ai/src/config/projectsData.js`);
+    console.log(`📈 Created: pollinations.ai/src/config/projectAnalytics.js`); Version
  * Simple script to create the JSON files needed by GitHub Actions
  */
 
@@ -40,15 +42,29 @@ async function migrateProjects() {
       generatedAt: new Date().toISOString()
     };
     
-    // Write files to config directory (same as other config files)
+    // Write files to config directory as .js modules (same pattern as other config files)
+    const projectsFileContent = `/**
+ * Auto-generated project data
+ * Last updated: ${new Date().toISOString()}
+ */
+export const projectsData = ${JSON.stringify(projectsData, null, 2)};
+`;
+
+    const analyticsFileContent = `/**
+ * Auto-generated project analytics
+ * Generated at: ${new Date().toISOString()}
+ */
+export const projectAnalytics = ${JSON.stringify(analyticsData, null, 2)};
+`;
+
     fs.writeFileSync(
-      path.join(configDataDir, 'projectsData.json'), 
-      JSON.stringify(projectsData, null, 2)
+      path.join(configDataDir, 'projectsData.js'), 
+      projectsFileContent
     );
     
     fs.writeFileSync(
-      path.join(configDataDir, 'projectAnalytics.json'), 
-      JSON.stringify(analyticsData, null, 2)
+      path.join(configDataDir, 'projectAnalytics.js'), 
+      analyticsFileContent
     );
     
     console.log('✅ Migration completed successfully!');

@@ -163,11 +163,11 @@ jobs:
             GITHUB_ACTIONS=true node scripts/migrateProjects.js
             
             # Verify files were created in the correct location
-            if [ -f pollinations.ai/src/config/projectsData.json ]; then
-              echo "✅ projectsData.json created successfully"
+            if [ -f pollinations.ai/src/config/projectsData.js ]; then
+              echo "✅ projectsData.js created successfully"
             fi
-            if [ -f pollinations.ai/src/config/projectAnalytics.json ]; then
-              echo "✅ projectAnalytics.json created successfully"
+            if [ -f pollinations.ai/src/config/projectAnalytics.js ]; then
+              echo "✅ projectAnalytics.js created successfully"
             fi
           else
             echo "Migration script not found, skipping..."
@@ -216,11 +216,11 @@ jobs:
           
           # Add changes (only add files that exist)
           git add README.md || echo "README.md not found"
-          if [ -f pollinations.ai/src/config/projectsData.json ]; then
-            git add pollinations.ai/src/config/projectsData.json
+          if [ -f pollinations.ai/src/config/projectsData.js ]; then
+            git add pollinations.ai/src/config/projectsData.js
           fi
-          if [ -f pollinations.ai/src/config/projectAnalytics.json ]; then
-            git add pollinations.ai/src/config/projectAnalytics.json
+          if [ -f pollinations.ai/src/config/projectAnalytics.js ]; then
+            git add pollinations.ai/src/config/projectAnalytics.js
           fi
           if [ -f .github/ISSUE_TEMPLATE/project-submission.yml ]; then
             git add .github/ISSUE_TEMPLATE/project-submission.yml

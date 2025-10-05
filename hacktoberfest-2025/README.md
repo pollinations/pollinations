@@ -67,8 +67,9 @@ hacktoberfest-2025/
 - **[TEMPLATE-HTML](./TEMPLATE-HTML/)** - Single-file HTML app (easiest)
 - **[TEMPLATE-REACT](./TEMPLATE-REACT/)** - React + Vite app (for complex UIs)
 
-**Example App:**
-- **[CatGPT](./example-catgpt/)** - Pure HTML meme generator 🐱 (GitHub Pages ready)
+**Example Apps:**
+- **[CatGPT](./example-catgpt/)** - Pure HTML meme generator 🐱
+- **[Elevator Challenge](./example-elevator-challenge/)** - React + Vite game 🚀
 
 ## App Ideas
 

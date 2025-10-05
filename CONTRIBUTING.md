@@ -81,9 +81,12 @@ Once your pull request is merged, you will automatically be issued the badge!
 
 ## Guidelines
 
--   **Follow Coding Style:** Adhere to the existing coding style and conventions used within the project you are contributing to. Consistency is key!
--   **Clear Commit Messages:** Write clear, concise, and descriptive commit messages that explain the purpose of your changes.
--   **Well-Documented Changes:** Ensure your code is well-commented where necessary, and if you're making documentation contributions, strive for clarity and accuracy.
--   **Test Your Changes:** If applicable, write and run tests to ensure your changes work as expected and don't introduce new bugs.
+Follow the Coding Style: Write your code using the same style and rules that the project already uses. This helps keep the code consistent and easy to read for everyone.
 
-Thank you for your valuable contributions during Hacktoberfest 2025! Together, we can make the `Pollinations` project a powerful and valuable resource for the community. Happy Hacking!
+Write Clear Commit Messages: When saving your changes (committing), write messages that clearly and simply explain what you did and why.
+
+Document Your Changes Well: Add comments to your code where needed to explain how it works. If you are updating or adding documentation, make sure it is clear and accurate.
+
+Test Your Work: If you can, write and run tests to check that your changes work correctly and do not break anything else.
+
+Thank You! Thank you for contributing during Hacktoberfest 2025! Your help makes the Pollinations project stronger and more useful for the community. Happy coding!

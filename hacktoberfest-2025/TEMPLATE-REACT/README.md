@@ -2,6 +2,8 @@
 
 > One sentence about what this does
 
+**💡 Tip:** Before building, [propose your app idea](https://github.com/pollinations/pollinations/issues/new) with `[Hacktoberfest App]` in the title to get early feedback!
+
 ## What It Does
 
 Brief explanation (2-3 sentences). What problem does it solve?

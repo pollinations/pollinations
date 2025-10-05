@@ -34,13 +34,19 @@ We are in profound need of members who can help enhance our documentation. If yo
 
 Want to build something cool for Hacktoberfest? Check out our **[hacktoberfest-2025 folder](./hacktoberfest-2025/README.md)**! 
 
+**How it works:**
+1. **Propose your app idea** by creating a GitHub issue with `[Hacktoberfest App]` in the title
+2. Describe what you want to build and which Pollinations APIs you'll use
+3. Get feedback from maintainers
+4. Build your app and submit a PR
+
 Create apps using Pollinations APIs and get them featured. Each app lives in its own folder with clear docs. Perfect for:
 - Creative tools (meme generators, art tools)
 - Productivity apps (thumbnail creators, content generators)
 - Fun projects (games, quizzes)
 - Developer tools (API playgrounds, dashboards)
 
-See the [hacktoberfest-2025 README](./hacktoberfest-2025/README.md) for guidelines and the TEMPLATE folder for a starter.
+See the [hacktoberfest-2025 README](./hacktoberfest-2025/README.md) for detailed guidelines and templates.
 
 ### 5. Code Contributions
 

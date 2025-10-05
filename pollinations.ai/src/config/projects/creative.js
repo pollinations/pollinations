@@ -237,6 +237,14 @@ export const creativeProjects = [
     order: 1
   },
   {
+    name: "Dreamator-AI 🎨",
+    url: "https://dreamator-ai.vercel.app/",
+    description: "Transform your imagination into reality using Pollinations API. A creative image generation platform with a personal gallery of generated masterpieces.",
+    author: "@its3li",
+    submissionDate: "2025-06-27",
+    order: 1
+  },
+  {
     name: "Celebrity AI Image Generator",
     url: "https://www.aicelebrity.design/",
     description: "An AI-powered celebrity image generator that uses Pollinations.ai and a1.art APIs. Users can directly input celebrity text to generate celebrities doing anything. Features celebrity photo shooting capabilities where users can upload their pictures and take selfies with celebrities like Labubu, Taylor Swift, and more.",

@@ -91,15 +91,6 @@ export const socialBotsProjects = [
     order: 2
   },
   {
-    name: "Quick AI & Jolbak",
-    url: "https://quickai.jolbak.com",
-    description: "A multi-platform bot suite that integrates with Discord, Slack, and Microsoft Teams to provide Pollinations AI services in professional environments.",
-    author: "@jolbak_dev",
-    repo: "https://github.com/jacob-ai-bot/jacob",
-    submissionDate: "2025-05-18",
-    order: 2
-  },
-  {
     name: "AI Image Generator [ROBLOX]",
     url: "https://www.roblox.com/games/ai-image-generator",
     description: "A Roblox experience that allows players to generate images using Pollinations AI directly within the game environment.",

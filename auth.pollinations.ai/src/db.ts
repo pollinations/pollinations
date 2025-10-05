@@ -334,7 +334,7 @@ export async function getAllUserTiers(
 }
 
 /**
- * Find user by domain
+ * Find user by domain - supports both exact matching and wildcard patterns (*.example.com)
  * @param db D1 Database instance
  * @param domain Domain to check
  * @returns User ID, username and tier if the domain is registered by any user, null otherwise
@@ -344,8 +344,8 @@ export async function findUserByDomain(
     domain: string,
 ): Promise<{ user_id: string; username: string; tier: UserTier } | null> {
     try {
-        // Find any user that has registered this domain
-        const result = await db
+        // Step 1: Try exact match first (fastest path, most common case)
+        let result = await db
             .prepare(`
       SELECT u.github_user_id as user_id, u.username, COALESCE(t.tier, 'seed') as tier
       FROM domains d
@@ -357,16 +357,44 @@ export async function findUserByDomain(
             .bind(domain)
             .first();
 
-        if (!result) {
-            return null;
+        if (result) {
+            return {
+                user_id: result.user_id as string,
+                username: result.username as string,
+                tier: result.tier as UserTier,
+            };
         }
 
-        return {
-            user_id: result.user_id as string,
-            username: result.username as string,
-            tier: result.tier as UserTier,
-        };
+        // Step 2: Only if no exact match, try wildcard patterns
+        // Look for domains starting with "*." that match as proper subdomains
+        // *.example.com should match app.example.com but NOT maliciousexample.com
+        result = await db
+            .prepare(`
+      SELECT u.github_user_id as user_id, u.username, COALESCE(t.tier, 'seed') as tier
+      FROM domains d
+      JOIN users u ON d.user_id = u.github_user_id
+      LEFT JOIN user_tiers t ON u.github_user_id = t.user_id
+      WHERE d.domain LIKE '*.%' 
+        AND LENGTH(d.domain) > 2
+        AND ? LIKE '%' || SUBSTR(d.domain, 2)
+        AND ? != SUBSTR(d.domain, 3)
+      ORDER BY LENGTH(d.domain) DESC
+      LIMIT 1
+    `)
+            .bind(domain, domain)
+            .first();
+
+        if (result) {
+            return {
+                user_id: result.user_id as string,
+                username: result.username as string,
+                tier: result.tier as UserTier,
+            };
+        }
+
+        return null;
     } catch (error) {
+        console.error("Error in findUserByDomain:", error);
         return null;
     }
 }

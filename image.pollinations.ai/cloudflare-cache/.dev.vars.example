@@ -4,3 +4,5 @@
 # Google Analytics Configuration
 GA_MEASUREMENT_ID=G-XXXXXXXXXX
 GA_API_SECRET=your-ga-api-secret-here 
+# Turnstile Configuration
+TURNSTILE_SECRET_KEY=0x4AAAAAAB4-j2AXIfO59sW54lOP5jAj1Yc

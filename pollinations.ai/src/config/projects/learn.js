@@ -93,23 +93,6 @@ export const learnProjects = [
     order: 4
   },
   {
-    name: "Tutorial",
-    url: "https://guiadehospedagem.com.br/pollinations-ai/",
-    description: "An in-depth Portuguese tutorial on using Pollinations AI.",
-    author: "Janderson de Sales",
-    submissionDate: "2025-04-15",
-    language: "pt-BR",
-    order: 5
-  },
-  {
-    name: "Podcast #1500",
-    url: "https://open.spotify.com/show/1wu4ngb1dclyTwoNN4cZzK",
-    description: "Podcast project powered by pollinations, featuring dialogues among LLMs. First episode features 3o-mini and DeepSeek R1 70B talking about Vibe Coding.",
-    author: "@brain.diver",
-    submissionDate: "2025-03-31",
-    order: 6
-  },
-  {
     name: "Proyecto Descartes",
     url: "https://proyectodescartes.org/revista/Numeros/Revista_8_2024/index.html",
     description: "Educational initiative integrating Pollinations AI into STEM.",
@@ -124,15 +107,6 @@ export const learnProjects = [
     author: "@vaibhavcoding69",
     submissionDate: "2025-06-03",
     order: 1
-  },
-  {
-    name: "TeekGenAI",
-    url: "https://www.youtube.com/@teekgenai",
-    description: "A platform providing free access to AI tools like image generation, text-to-speech, and chat, with tutorials. Content often available in Sinhala.",
-    author: "@teekgenai",
-    submissionDate: "2025-06-04",
-    language: "si",
-    order: 2
   },
   {
     name: "SearchGPT",

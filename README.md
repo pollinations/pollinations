@@ -6,6 +6,8 @@
 
 - **Hacktoberfest 2025 is here!**  
   If you're participating, please check out our [Code of Conduct](./CODE_OF_CONDUCT.md) and [Contributing Guidelines](./CONTRIBUTING.md) before submitting your PRs.
+- **Build Apps with Pollinations!** 🔥  
+  Create frontend apps using our APIs and get them featured. [Propose your app idea](https://github.com/pollinations/pollinations/issues/new) with `[Hacktoberfest App]` in the title, then build it! See the [hacktoberfest-2025 folder](./hacktoberfest-2025/README.md) for templates and guidelines.
 - For event PRs, look for issues tagged with `hacktoberfest` in our [issue tracker](https://github.com/pollinations/pollinations/issues) and join the community effort!
 
 - **Pollinations Hive**  

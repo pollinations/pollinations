@@ -198,33 +198,33 @@ export const TEXT_MODELS = {
 } as const satisfies ModelProviderRegistry;
 
 export const TEXT_SERVICES = {
-    "gpt-5-nano": {
+    "openai": {
         displayName: "OpenAI GPT-5 Nano",
-        aliases: ["openai"],
+        aliases: ["gpt-5-nano"],
         modelProviders: ["gpt-5-nano-2025-08-07"],
         price: [ZERO_PRICE],
     },
-    "gpt-4.1-nano": {
+    "openai-fast": {
         displayName: "OpenAI GPT-4.1 Nano",
-        aliases: ["openai-fast"],
+        aliases: ["gpt-4.1-nano"],
         modelProviders: ["gpt-4.1-nano-2025-04-14"],
         price: [ZERO_PRICE],
     },
-    "gpt-4.1": {
+    "openai-large": {
         displayName: "OpenAI GPT-4.1",
-        aliases: ["openai-large"],
+        aliases: ["gpt-4.1"],
         modelProviders: ["gpt-4.1-2025-04-14"],
         price: TEXT_MODELS["gpt-4.1-2025-04-14"].cost,
     },
-    "qwen2.5-coder-32b-instruct": {
+    "qwen-coder": {
         displayName: "Qwen 2.5 Coder 32B",
-        aliases: ["qwen-coder"],
+        aliases: ["qwen2.5-coder-32b-instruct"],
         modelProviders: ["qwen2.5-coder-32b-instruct"],
         price: TEXT_MODELS["qwen2.5-coder-32b-instruct"].cost,
     },
-    "mistral-small-3.1-24b-instruct": {
+    "mistral": {
         displayName: "Mistral Small 3.1 24B",
-        aliases: ["mistral"],
+        aliases: ["mistral-small-3.1-24b-instruct"],
         modelProviders: ["mistral-small-3.1-24b-instruct-2503"],
         price: TEXT_MODELS["mistral-small-3.1-24b-instruct-2503"].cost,
     },
@@ -234,9 +234,9 @@ export const TEXT_SERVICES = {
         modelProviders: ["mistral.mistral-small-2402-v1:0"],
         price: TEXT_MODELS["mistral.mistral-small-2402-v1:0"].cost,
     },
-    "deepseek-r1-0528": {
+    "deepseek-reasoning": {
         displayName: "DeepSeek R1 0528 (Bedrock)",
-        aliases: ["deepseek-reasoning"],
+        aliases: ["deepseek-r1-0528"],
         modelProviders: ["us.deepseek.r1-v1:0"],
         price: TEXT_MODELS["us.deepseek.r1-v1:0"].cost,
     },

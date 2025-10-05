@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from "react"
-import { usePollinationsText } from "@pollinations/react"
-import ReactMarkdown from "react-markdown"
-import styled from "@emotion/styled"
-import { useTheme, useMediaQuery } from "@mui/material"
-import { Colors } from "../config/global"
-import { context } from "../config/copywrite"
-import { translate } from "../config/llmTransforms"
-
+import React, { useState, useEffect } from "react";
+import { usePollinationsText } from "@pollinations/react";
+import ReactMarkdown from "react-markdown";
+import styled from "@emotion/styled";
+import { useTheme, useMediaQuery } from "@mui/material";
+import { Colors } from "../config/global";
+import { context } from "../config/copywrite";
+import { translate } from "../config/llmTransforms";
 
 // function AnimatedDots() {
 //   const [dotCount, setDotCount] = useState(1)
-  
+
 //   useEffect(() => {
 //     const interval = setInterval(() => {
 //       setDotCount((count) => (count % 3) + 1)
@@ -21,7 +20,6 @@ import { translate } from "../config/llmTransforms"
 //   return <span>{".".repeat(dotCount)}</span>
 // }
 
-
 // 2) combine helper
 const combine = (text, transformations, props) => `
 # Context
@@ -31,38 +29,37 @@ ${context}
 Apply the following transformations to the text in order:
 
 ${transformations
-  .map((t) => t(props))
-  .filter(Boolean)
-  .map(s => `- ${s}`)
-  .join("\n")}
+    .map((t) => t(props))
+    .filter(Boolean)
+    .map((s) => `- ${s}`)
+    .join("\n")}
 
 Only output the final text, nothing else. Links should be in markdown format.
 
 # Input Text:
 ${text}
-`
+`;
 
 export function LLMTextManipulator({ text, transforms = [] }) {
-  const theme = useTheme();
-  const isXs = useMediaQuery(theme.breakpoints.only("xs"));
-  const userLanguage = navigator.language || navigator.userLanguage;
+    const theme = useTheme();
+    const isXs = useMediaQuery(theme.breakpoints.only("xs"));
+    const userLanguage = navigator.language || navigator.userLanguage;
 
-  const prompt = combine(text, [translate, ...transforms], { isXs, userLanguage })
-  const transformedText = usePollinationsText(prompt);
+    const prompt = combine(text, [translate, ...transforms], {
+        isXs,
+        userLanguage,
+    });
+    const transformedText = usePollinationsText(prompt);
 
-  if (!transformedText) {
+    if (!transformedText) {
+        return <span>Generating...</span>;
+    }
+
     return (
-      <span>
-        Generating...
-      </span>
-    )
-  }
-
-  return (
-    <MarkDownStyle>
-      <ReactMarkdown>{transformedText}</ReactMarkdown>
-    </MarkDownStyle>
-  )
+        <MarkDownStyle>
+            <ReactMarkdown>{transformedText}</ReactMarkdown>
+        </MarkDownStyle>
+    );
 }
 
 const MarkDownStyle = styled.div`
@@ -76,4 +73,4 @@ const MarkDownStyle = styled.div`
   p {
     margin: 0;
   }
-`
+`;

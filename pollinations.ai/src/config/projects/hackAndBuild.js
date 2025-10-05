@@ -5,24 +5,48 @@
 
 export const hackAndBuildProjects = [
   {
-    name: "MCPollinations",
+    name: "MultiAgent 🤖",
+    url: "https://github.com/LKosoj/multiagent",
+    description: "Advanced multi-agent system for solving complex tasks using specialized AI agents. Implements modern architectural patterns with agent factory, manager coordination, and flexible pipelines for Text-to-SQL, research, and content creation. Features next-gen RAG memory with SQLite + ChromaDB, database plugin pattern for multiple DBMS, multi-layer security with LLM-Guard, and extensible tool system with MCP integration. Emphasizes modularity, security, and extensibility.",
+    author: "@LKosoj",
+    repo: "https://github.com/LKosoj/multiagent",
+    submissionDate: "2025-10-02",
+    order: 1
+  },
+  {
+    name: "unpkg.ai",
+    url: "https://unpkg.ai",
+    description: "AI-powered ESM module generation service that creates JavaScript modules on-demand using LLMs.",
+    author: "@vgrichina",
+    repo: "https://github.com/Strawberry-Computer/unpkg.ai",
+    submissionDate: "2025-09-17",
+    stars: 5,
+    order: 1
+  },
+  {
+    name: "Pollinations MCP Server (Official)",
+    url: "https://www.npmjs.com/package/@pollinations/model-context-protocol",
+    description: "Official Model Context Protocol server for Pollinations AI services. Generate images, text, and audio through MCP with STDIO transport. Easy Claude Desktop integration with npx installation.",
+    author: "@pollinations",
+    repo: "https://github.com/pollinations/pollinations/tree/main/model-context-protocol",
+    category: "sdkLibraries",
+    submissionDate: "2024-11-01",
+    order: 1
+  },
+  {
+    name: "MCPollinations (Community)",
     url: "https://github.com/pinkpixel-dev/MCPollinations",
-    description: "A Model Context Protocol (MCP) server that enables AI assistants to generate images, text, and audio through the Pollinations APIs. Supports customizable parameters, image saving, and multiple model options.",
-    author: "Pink Pixel",
-    category: "sdkLibraries"
+    description: "Community-maintained Model Context Protocol server with advanced features like customizable parameters, image saving, and multiple model options for Pollinations APIs.",
+    author: "@pinkpixel-dev",
+    repo: "https://github.com/pinkpixel-dev/MCPollinations",
+    category: "sdkLibraries",
+    stars: 32
   },
   {
     name: "pollinations_ai",
     url: "https://pub.dev/packages/pollinations_ai",
     description: "Dart/Flutter package for Pollinations API.",
     author: "@Meenapintu",
-    category: "sdkLibraries"
-  },
-  {
-    name: "Smpldev",
-    url: "https://smpldev.ftp.sh/",
-    description: "Create, deploy, and scale full-stack web and mobile applications in minutes.",
-    author: "@kennet678",
     category: "sdkLibraries"
   },
   {
@@ -54,15 +78,18 @@ export const hackAndBuildProjects = [
     url: "https://github.com/pollinations-ai/pollinations.ai",
     description: "Official Python SDK for working with Pollinations' models.",
     author: "@pollinations-ai",
-    category: "sdkLibraries"
+    category: "sdkLibraries",
+    stars: 43
   },
   {
     name: "Herramientas IA",
-    url: "https://proyectodescartes.org/descartescms/herramientas-ia",
+    url: "https://github.com/cusanotech/90-herramientas-de-inteligencia-artificial",
     description: "Tools designed with Pollinations.AI and the DescartesJS editor, including tools from other Pollinations.AI community members.",
     author: "@juanrivera126",
+    repo: "https://github.com/cusanotech/90-herramientas-de-inteligencia-artificial",
     submissionDate: "2025-03-10",
-    order: 3
+    order: 3,
+    stars: 26
   },
   {
     name: "🌱 Strain Navigator",
@@ -97,7 +124,7 @@ export const hackAndBuildProjects = [
     description: "A free, open-source browser extension that brings the power of ChatGPT and browser automation directly to your fingertips. Instantly access AI assistance, manage tabs, and organize bookmarks using natural language all securely within your browser.",
     author: "@mkantwala",
     repo: "https://github.com/mkantwala/CoNavic/",
-    stars: 1,
+    stars: 8,
     submissionDate: "2025-05-01",
     order: 1
   },
@@ -116,7 +143,7 @@ export const hackAndBuildProjects = [
     description: "Avatar Translator for Dominican Sign Language that uses artificial intelligence to translate text and audio into Dominican sign language (LSRD), creating a communication bridge for approximately 100,000 deaf people in the Dominican Republic.",
     author: "@cmunozdev",
     repo: "https://github.com/cmunozdev/DominiSigns",
-    stars: 3,
+    stars: 4,
     submissionDate: "2025-04-06",
     order: 1
   },
@@ -124,7 +151,9 @@ export const hackAndBuildProjects = [
     name: "Mimir AIP",
     url: "https://mimir-aip.github.io/",
     description: "An AI integration platform for developers.",
-    author: "@pipeline",
+    author: "@CiaranMcAleer",
+    repo: "https://github.com/Mimir-AIP/Mimir-AIP",
+    stars: 11,
     submissionDate: "2025-05-05",
     order: 1
   },
@@ -159,7 +188,7 @@ export const hackAndBuildProjects = [
     description: "A frontend-based AI interface designed to deliver a smooth, multimodal, and visually engaging user experience with conversational AI, image generation, and more.",
     author: "@fisven",
     repo: "https://github.com/fisventurous/pollinationsai-enhancer",
-    stars: 2,
+    stars: 6,
     submissionDate: "2025-04-27",
     order: 1
   },
@@ -169,18 +198,9 @@ export const hackAndBuildProjects = [
     description: "Windows Walker – What Copilot for Windows should have been. AI-powered Windows assistant that translates voice/text commands into real system actions using PowerShell. Powered by ChatGPT + PowerShell in an Electron UI.",
     author: "@supershivam",
     repo: "https://github.com/SuperShivam5000/windows-walker",
-    stars: 3,
+    stars: 14,
     submissionDate: "2025-05-22",
     order: 1
-  },
-  {
-    name: "Pollinations MCP Server",
-    url: "https://github.com/pollinations/model-context-protocol",
-    description: "A Model Context Protocol server that enables AI-assisted development through natural language interaction with Pollinations' multimodal services.",
-    author: "@thomash",
-    repo: "https://github.com/pollinations/model-context-protocol",
-    stars: 42,
-    submissionDate: "2025-04-10"
   },
   {
     name: "🛠️ AI Content Describer",
@@ -188,7 +208,7 @@ export const hackAndBuildProjects = [
     description: "An extension for NVDA, the free and open-source screen reader for Microsoft Windows. Uses multimodal generative AI to help those with blindness and visual impairments understand pictures, UI controls, complex diagrams/graphics, and more through intelligent descriptions that go far beyond simple alt-text.",
     author: "@cartertemm",
     repo: "https://github.com/cartertemm/AI-content-describer/",
-    stars: 54,
+    stars: 59,
     submissionDate: "2025-05-28",
     order: 1
   },
@@ -198,13 +218,13 @@ export const hackAndBuildProjects = [
     description: "ChatGPT in terminal without requiring API keys. Uses Pollinations API endpoints to provide a free AI experience through the command line.",
     author: "@aandrew-me",
     repo: "https://github.com/aandrew-me/tgpt",
-    stars: 2500,
+    stars: 2854,
     submissionDate: "2025-05-15",
     order: 1
   },
   {
     name: "DominiSigns",
-    url: "https://github.com/dominicva/dominisigns",
+    url: "https://www.template.net/ai-sign-generator",
     description: "A WordPress block plugin that lets users create AI-generated images through the block editor. Integrates with Pollinations API to generate images from text prompts directly within WordPress.",
     author: "@dominicva",
     repo: "https://github.com/dominicva/dominisigns",
@@ -213,32 +233,12 @@ export const hackAndBuildProjects = [
   },
   {
     name: "Server Status Dashboards",
-    url: "https://server-status-dashboards.netlify.app/",
+    url: "https://github.com/hverr/status-dashboard",
     description: "A monitoring tool for tracking and visualizing server performance metrics, using Pollinations API for natural language interpretation of technical data.",
     author: "@devopper",
-    repo: "https://github.com/devopper/server-status-dashboards",
-    stars: 31,
+    repo: "https://github.com/hverr/status-dashboard",
+    stars: 6,
     submissionDate: "2025-05-01",
-    order: 1
-  },
-  {
-    name: "MVKProject Nexus API",
-    url: "https://nexus-api.mvkproject.dev/",
-    description: "An API gateway that provides simplified access to multiple AI services including Pollinations, offering standardized endpoints and request formats for developers.",
-    author: "@mvk",
-    repo: "https://github.com/mvkproject/nexus-api",
-    stars: 44,
-    submissionDate: "2025-04-18",
-    order: 1
-  },
-  {
-    name: "urSapere AI",
-    url: "https://ursapere.ai",
-    description: "An AI-powered research tool that helps users explore and understand complex topics by leveraging Pollinations for advanced data analysis and summarization.",
-    author: "@ursapere_devs",
-    repo: "https://github.com/ursapere/ursapere-ai",
-    stars: 25,
-    submissionDate: "2025-05-15",
     order: 1
   },
   {
@@ -250,4 +250,40 @@ export const hackAndBuildProjects = [
     submissionDate: "2025-06-12",
     order: 1
   },
+  {
+    name: "YankoviC",
+    url: "https://github.com/Sweaterdog/YankoviC",
+    description: "A programming language interpreter written in JavaScript that emulates C/C++ writing style with Weird Al themed elements. Comes with 'The Accordion' IDE that uses Pollinations for tab autocomplete and chat assistant to help people learn YankoviC.",
+    author: "@Sweaterdog",
+    repo: "https://github.com/Sweaterdog/YankoviC",
+    stars: 1,
+    submissionDate: "2025-06-27",
+    order: 1
+  },
+  {
+    name: "Querynator5000",
+    url: "https://querynator5000.onrender.com/",
+    description: "Modern AI-first SQL interface for exploring and manipulating databases with natural language, running entirely in the browser with local persistence.",
+    author: "@SuperShivam5000",
+    repo: "https://github.com/SuperShivam5000/querynator5000",
+    submissionDate: "2025-07-13",
+    order: 1
+  },
+  {
+    name: "UltimaX Intelligence CLI",
+    url: "https://huggingface.co/spaces/umint/cli",
+    description: "Extension of the UltimaX Intelligence project based on Pollinations Python SDK.",
+    author: "@hadadarjt",
+    submissionDate: "2025-08-21",
+    order: 1
+  },
+  {
+    name: "AI Agent Portal",
+    url: "https://agent.makululinux.com/",
+    description: "A next-generation development environment that leverages a sophisticated multi-agent system where specialized AIs (Architect, Coder, QA Engineer) collaborate to build complex projects from a single prompt. Features multiple modes including Coder Mode for full-stack applications, Content Mode for writing, Canvas Mode for interactive editing, and advanced workflows like Test-Driven Development and automated Docker orchestration.",
+    author: "@raymerjacque",
+    repo: "https://github.com/raymerjacque/Makulu-Agent-Portal",
+    submissionDate: "2025-08-31",
+    order: 1
+  }
 ];

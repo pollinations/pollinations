@@ -2,8 +2,8 @@ import styled from "@emotion/styled";
 import { Colors, Fonts } from "../config/global";
 import { Link } from "react-router-dom";
 
-const StyledLink = styled(({ isExternal, ...props }) => 
-  isExternal ? <a {...props} /> : <Link {...props} />
+const StyledLink = styled(({ isExternal, ...props }) =>
+    isExternal ? <a {...props} /> : <Link {...props} />,
 )`
   font-family: ${Fonts.title};
   font-style: normal;

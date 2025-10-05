@@ -44,6 +44,7 @@
 - Added "ai/teens worldwide" to `learn.js`
 - Added "Echo AI" and "Neurix 🇷🇺" to `chat.js`
 - Added "Snapgen.io" to `creative.js`
+- Added "Promptgenerator.art" to `creative.js`
 
 ## Categorization Instructions
 
@@ -158,7 +159,6 @@ Okay, here are all the unique project names from the provided JSON data:
 99. Anyai - added to socialBots.js
 100. Mimir AIP - added to hackAndBuild.js
 101. ai/teens worldwide - already in learn.js
-102. Apple Shortcuts Guide - already in learn.js
 103. Mirexa AI - already in creative.js
 104. MiReXa AI - already in creative.js
 105. Gacha - already in games.js
@@ -275,3 +275,4 @@ Okay, here are all the unique project names from the provided JSON data:
 285. 🆕 Neurix 🇷🇺 - added to chat.js
 286. 🆕 Snapgen.io - added to creative.js
 287. 🆕 urSapere AI - added to hackAndBuild.js
+288. 🆕 J.A.R.V.I.S. - added to chat.js

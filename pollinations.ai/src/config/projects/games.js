@@ -48,6 +48,7 @@ export const gamesProjects = [
     name: "Mindcraft",
     stars: 58,
     stars: 58,
+    stars: 58,
     url: "https://mindcraft.riqvip.dev/",
     description: "A web-based Minecraft-inspired game where players can use natural language to build and interact with a voxel world using Pollinations AI.",
     author: "@mindcraft_team",
@@ -68,6 +69,7 @@ export const gamesProjects = [
     name: "Infinite Tales",
     stars: 30,
     stars: 30,
+    stars: 30,
     description: "Interactive storytelling platform powered by AI that creates endless narrative adventures.",
     url: "https://github.com/JayJayBinks/infinite-tales-rpg",
     repo: "https://github.com/JayJayBinks/infinite-tales-rpg",
@@ -77,6 +79,7 @@ export const gamesProjects = [
   },
   {
     name: "Minecraft AI (Python)",
+    stars: 7,
     stars: 7,
     stars: 7,
     url: "https://github.com/Amagash/minecraft-ai-python",
@@ -100,6 +103,7 @@ export const gamesProjects = [
     name: "Sirius Cybernetics Elevator Challenge",
     stars: 1,
     stars: 1,
+    stars: 1,
     url: "https://github.com/pollinations/sirius-cybernetics-elevator-challenge",
     description: "A programming challenge that uses Pollinations AI to simulate personality-driven elevator systems in a virtual building environment.",
     author: "@sirius_dev",
@@ -118,6 +122,7 @@ export const gamesProjects = [
   },
   {
     name: "AI Character RP (Roblox)",
+    stars: 10,
     stars: 10,
     stars: 10,
     url: "https://github.com/snipcola/Roblox-AI",
@@ -146,6 +151,7 @@ export const gamesProjects = [
   },
   {
     name: "DreamHer",
+    stars: 10,
     stars: 10,
     stars: 10,
     url: "https://dreamher.vercel.app/",
@@ -201,6 +207,7 @@ export const gamesProjects = [
     name: "AIStorium",
     stars: 2,
     stars: 2,
+    stars: 2,
     url: "https://aistorium.vercel.app/",
     description: "Service for generating dynamic stories. Generates stories, images and audio by using pollinations api.",
     author: "@artegoser",
@@ -219,6 +226,7 @@ export const gamesProjects = [
   },
   {
     name: "🇨🇳 云渺仙途：凡尘篇",
+    stars: 10,
     stars: 10,
     stars: 10,
     url: "https://ai-game.jkai.de/",

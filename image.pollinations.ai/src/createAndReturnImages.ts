@@ -244,7 +244,7 @@ export const callComfyUI = async (
             buffer: jpegBuffer, 
             ...rest,
             trackingData: {
-                actualModel: 'comfyui',
+                actualModel: safeParams.model,
                 usage: {
                     candidatesTokenCount: 1,
                     totalTokenCount: 1
@@ -271,6 +271,8 @@ async function callCloudflareModel(
     modelPath: string,
     additionalParams: object = {},
 ): Promise<ImageGenerationResult> {
+    // Use the registry model name from safeParams, not the internal Cloudflare model path
+    const registryModelName = safeParams.model;
     const { accountId, apiToken } = getCloudflareCredentials();
 
     if (!accountId || !apiToken) {
@@ -366,7 +368,7 @@ async function callCloudflareModel(
         isMature: false, 
         isChild: false,
         trackingData: {
-            actualModel: modelPath,
+            actualModel: registryModelName,
             usage: {
                 candidatesTokenCount: 1,
                 totalTokenCount: 1
@@ -732,6 +734,13 @@ const callAzureGPTImageWithEndpoint = async (
         buffer: imageBuffer,
         isMature: false, // Default assumption
         isChild: false, // Default assumption
+        trackingData: {
+            actualModel: safeParams.model,
+            usage: {
+                candidatesTokenCount: 1,
+                totalTokenCount: 1
+            }
+        }
     };
 };
 
@@ -1002,16 +1011,16 @@ const generateImage = async (
     }
 
     if (safeParams.model === "seedream") {
-        // Seedream model requires seed tier or higher
-        if (!hasSufficientTier(userInfo.tier, "seed")) {
+        // Seedream model requires flower tier or higher
+        if (!hasSufficientTier(userInfo.tier, "flower")) {
             const errorText =
-                "Access to seedream model is limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.";
+                "Access to seedream model is limited to users in the flower tier or higher. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.";
             logError(errorText);
             progress.updateBar(
                 requestId,
                 35,
                 "Auth",
-                "Seedream model requires seed tier",
+                "Seedream model requires flower tier",
             );
             throw new Error(errorText);
         }

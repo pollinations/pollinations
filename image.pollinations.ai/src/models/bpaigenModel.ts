@@ -215,6 +215,13 @@ const pollBPAIGenJob = async (
                     buffer,
                     isMature: false,
                     isChild: false,
+                    trackingData: {
+                        actualModel: 'kontext',
+                        usage: {
+                            candidatesTokenCount: 1,
+                            totalTokenCount: 1
+                        }
+                    }
                 };
             } else if (statusData.status === "failed") {
                 throw new Error(`BPAIGen job failed: ${statusData.error || 'Unknown error'}`);

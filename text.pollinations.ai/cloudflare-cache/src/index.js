@@ -231,17 +231,17 @@ async function storeRequestBody(env, request, key) {
 export default {
     async fetch(request, env, ctx) {
         try {
-            const requestStartTime = Date.now();
             const url = new URL(request.url);
 
             // Log request information
-            log("request", `🚀 ${request.method} ${url.pathname} started at ${requestStartTime}`);
+            log("request", `🚀 ${request.method} ${url.pathname}`);
 
-            // Let origin handle root requests (e.g. redirects) without caching
-            if (url.pathname === "/" || url.pathname === "") {
+            // Let origin handle GET root requests (e.g. redirects) without caching
+            // But allow POST requests to root to be cached
+            if ((url.pathname === "/" || url.pathname === "") && request.method === "GET") {
                 log(
                     "request",
-                    "Proxying root request directly to origin without caching",
+                    "Proxying GET root request directly to origin without caching",
                 );
                 return await proxyRequest(request, env);
             }
@@ -278,51 +278,40 @@ export default {
             log("cache", `Key: ${key}`);
 
             // Try to get the cached response
-            const cacheStartTime = Date.now();
-            log("cache", `🔍 Cache lookup starting at ${cacheStartTime}`);
-            
             const cachedResponse = await getCachedResponse(env, key);
-            const cacheEndTime = Date.now();
-            log("cache", `🔍 Cache lookup completed in ${cacheEndTime - cacheStartTime}ms`);
             
             if (cachedResponse) {
                 log("cache", "✅ Cache hit!");
                 
                 // Send analytics for cache hit (non-blocking)
-                const analyticsStartTime = Date.now();
-                log("cache", `📊 Starting analytics at ${analyticsStartTime}`);
                 sendTextAnalytics(
                     request,
                     EVENTS.SERVED_FROM_CACHE,
                     CACHE_STATUS.HIT,
-                    analyticsParams,
+                    {
+                        method: request.method,
+                        pathname: new URL(request.url).pathname,
+                        userAgent: request.headers.get("user-agent") || "",
+                        referer: request.headers.get("referer") || ""
+                    },
                     env,
                     ctx,
                 );
-                const analyticsEndTime = Date.now();
-                log("cache", `📊 Analytics call initiated in ${analyticsEndTime - analyticsStartTime}ms`);
                 
                 // For HEAD requests, return headers only (no body)
                 if (request.method === "HEAD") {
-                    const responseStartTime = Date.now();
-                    log("cache", `🎯 Creating HEAD response at ${responseStartTime}`);
                     const response = new Response(null, {
                         status: cachedResponse.status,
                         statusText: cachedResponse.statusText,
                         headers: cachedResponse.headers,
                     });
-                    const responseEndTime = Date.now();
-                    log("cache", `🎯 HEAD response created in ${responseEndTime - responseStartTime}ms`);
                     return response;
                 }
                 
-                const responseStartTime = Date.now();
-                log("cache", `🎯 Returning cached response at ${responseStartTime}`);
                 return cachedResponse;
             }
 
             log("cache", "Cache miss, proxying to origin...");
-
             // Store the request body if present (for POST/PUT requests)
             const hasRequestBody = await storeRequestBody(env, request, key);
 
@@ -760,11 +749,7 @@ function prepareForwardedHeaders(requestHeaders, url) {
 async function getCachedResponse(env, key) {
     try {
         // Get the cached object from R2
-        const r2StartTime = Date.now();
-        log("cache", `🗄️ R2 lookup starting for key: ${key.substring(0, 16)}...`);
         const cachedObject = await env.TEXT_BUCKET.get(key);
-        const r2EndTime = Date.now();
-        log("cache", `🗄️ R2 lookup completed in ${r2EndTime - r2StartTime}ms`);
 
         if (!cachedObject) {
             return null;
@@ -810,29 +795,26 @@ async function getCachedResponse(env, key) {
             }
         }
 
-        // If content-type is in metadata, ensure it's used
+        // If content-type is in metadata, ensure it's used (with backward compatibility)
         if (metadata.response_content_type && !originalHeaders["content-type"]) {
             originalHeaders["content-type"] = metadata.response_content_type;
+        } else if (metadata.contentType && !originalHeaders["content-type"]) {
+            // Fallback for old cache entries
+            originalHeaders["content-type"] = metadata.contentType;
         }
 
         // Prepare the response headers
-        const headersStartTime = Date.now();
         const responseHeaders = prepareResponseHeaders(
             new Headers(originalHeaders),
             cacheHeaders,
         );
-        const headersEndTime = Date.now();
-        log("cache", `🏷️ Headers prepared in ${headersEndTime - headersStartTime}ms`);
 
         // Create response from cached object
-        const responseCreateStartTime = Date.now();
         const response = new Response(cachedObject.body, {
             status: parseInt(metadata.status || "200", 10),
             statusText: metadata.statusText || "OK",
             headers: responseHeaders,
         });
-        const responseCreateEndTime = Date.now();
-        log("cache", `📦 Response created in ${responseCreateEndTime - responseCreateStartTime}ms`);
         
         return response;
     } catch (err) {

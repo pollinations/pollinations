@@ -5,6 +5,14 @@
 
 export const gamesProjects = [
   {
+    name: "Chaos Canvas 🎲",
+    url: "https://chaoscanvas.app/",
+    description: "Crowdsourced creativity experiment where each player adds just one or two words to a shared prompt without knowing what others have entered. Once the game fills up, everyone's inputs are mashed together and transformed into a single, surreal AI-generated image. Unpredictable, weirdly collaborative, and endlessly entertaining — like Mad Libs for your eyes.",
+    author: "@eat-sleep-code",
+    submissionDate: "2025-08-12",
+    order: 1
+  },
+  {
     name: "RoastMaster AI",
     description: "No detailed description available, but likely a creative/entertainment tool (AI roast generator).",
     submissionDate: "2025-03-14",
@@ -37,16 +45,6 @@ export const gamesProjects = [
     stars: 0
   },
   {
-    name: "Mindcraft",
-    url: "https://mindcraft.riqvip.dev/",
-    description: "A web-based Minecraft-inspired game where players can use natural language to build and interact with a voxel world using Pollinations AI.",
-    author: "@mindcraft_team",
-    repo: "https://github.com/mindcraft-ce/mindcraft-ce",
-    stars: 3500,
-    submissionDate: "2025-06-03",
-    order: 1
-  },
-  {
     name: "Favorite Puzzles",
     url: "https://radbrothers.com/games/favorite-puzzles/",
     description: "A jigsaw puzzles game for Android, iOS, and web that uses Pollinations feed as one of the sources of images for puzzles. Features puzzle generation using neural networks, customizable difficulty levels from 6 to 1200 pieces, multiple game modes, and the ability to create puzzles from your own images.",
@@ -71,15 +69,6 @@ export const gamesProjects = [
     repo: "https://github.com/Amagash/minecraft-ai-python",
     stars: 7,
     submissionDate: "2025-03-22",
-    order: 1
-  },
-  {
-    name: "Juego de Memorizar con Pollinations",
-    url: "https://memorizar-pollinations.vercel.app/",
-    description: "A memory game that uses Pollinations AI to generate unique image pairs for matching, with difficulty levels and educational themes.",
-    author: "@edudev_es",
-    language: "es",
-    submissionDate: "2025-04-18",
     order: 1
   },
   {

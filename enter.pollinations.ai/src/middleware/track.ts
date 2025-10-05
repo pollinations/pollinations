@@ -78,7 +78,7 @@ export const track = (eventType: EventType) =>
                 modelUsage = extractUsage(
                     c,
                     eventType,
-                    resolvedModelRequested,
+                    modelRequested,
                     openaiResponse,
                 );
                 costType = REGISTRY.getCostType(modelUsage.model as ProviderId);
@@ -116,7 +116,7 @@ export const track = (eventType: EventType) =>
             eventType,
 
             userId: c.var.auth.user?.id,
-            userTier: extractUserTier(c, eventType, openaiResponse),
+            userTier: extractUserTier(c, openaiResponse),
             ...referrerInfo,
 
             modelRequested,
@@ -168,23 +168,25 @@ async function extractModelRequested(
 function extractUsage(
     c: Context<TrackEnv>,
     eventType: EventType,
-    resolvedImageModel: string,
+    modelRequested: string | null,
     response?: OpenAIResponse,
 ): ModelUsage {
     if (eventType === "generate.image") {
+        // Read actual token count from x-completion-image-tokens header
+        const tokenCountHeader = c.res.headers.get("x-completion-image-tokens");
+        const completionImageTokens = tokenCountHeader 
+            ? parseInt(tokenCountHeader, 10) 
+            : 1;
+        
+        // Read actual model used from x-model-used header
+        const modelUsedHeader = c.res.headers.get("x-model-used");
+        const model = (modelUsedHeader || modelRequested || "flux") as ProviderId;
+        
         return {
-            // TODO: use x-model-used header once implemented in image service
-            // model: (c.res.headers.get("x-model-used") as ProviderId) || null,
-            model: resolvedImageModel as ProviderId,
+            model,
             usage: {
                 unit: "TOKENS",
-                completionImageTokens:
-                    z
-                        .number()
-                        .int()
-                        .safeParse(
-                            c.res.headers.get("x-completion-image-tokens"),
-                        ).data || 0,
+                completionImageTokens,
             },
         };
     }
@@ -201,16 +203,16 @@ function extractUsage(
 
 function extractUserTier(
     c: Context<TrackEnv>,
-    eventType: EventType,
     response?: OpenAIResponse,
-): string | null {
-    if (eventType === "generate.text") {
-        return response?.user_tier || null;
+): string | undefined {
+    // Try header first (works for both image and text generations)
+    const headerTier = c.res.headers.get("x-user-tier");
+    if (headerTier) {
+        return headerTier;
     }
-    if (eventType === "generate.image") {
-        return c.res.headers.get("x-user-tier");
-    }
-    return null;
+    
+    // Fall back to response object for text generations
+    return response?.user_tier;
 }
 
 function extractContentFilterResults(

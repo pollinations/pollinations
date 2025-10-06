@@ -14,6 +14,9 @@ export const words = [
     "asshole",
     "assholes",
     "asswhole",
+    "ahegao",
+    "adult",
+    "aphrodisiac",
 
     // B
     "b!tch",
@@ -32,6 +35,7 @@ export const words = [
     "bestiality",
     "bi+ch",
     "biatch",
+    "bimbo",
     "bitch",
     "bitcher",
     "bitchers",
@@ -64,10 +68,13 @@ export const words = [
     "butthole",
     "buttmuch",
     "buttplug",
+    "bukake",
+    "bukkake",
 
     // C
     "c0ck",
     "c0cksucker",
+    "camgirl",
     "carpet muncher",
     "cawk",
     "child",
@@ -98,6 +105,7 @@ export const words = [
     "coon",
     "cox",
     "crap",
+    "creampie",
     "cum",
     "cummer",
     "cumming",
@@ -119,10 +127,12 @@ export const words = [
     "cyberfuckers",
     "cyberfucking",
     "cuckold",
+    "climax",
 
     // D
     "d1ck",
     "daughter",
+    "deepthroat",
     "dick",
     "dickhead",
     "dildo",
@@ -138,6 +148,9 @@ export const words = [
     "doosh",
     "duche",
     "dyke",
+    "dominatrix",
+    "dominate",
+    "deep-throat",
 
     // E
     "ejaculate",
@@ -149,6 +162,7 @@ export const words = [
     "ejakulate",
     "erotic",
     "explicit",
+    "escort",
 
     // F
     "f u c k",
@@ -219,6 +233,10 @@ export const words = [
     "fux",
     "fux0r",
     "f_u_c_k",
+    "facial",
+    "femdom",
+    "fornicate",
+    "footjob",
 
     // G
     "gangbang",
@@ -234,6 +252,8 @@ export const words = [
     "goddamn",
     "goddamned",
     "goatse",
+    "grope",
+    "gstring",
 
     // H
     "hardcoresex",
@@ -248,9 +268,13 @@ export const words = [
     "hotsex",
     "hustler",
     "hentai",
+    "handjob",
+    "hump",
 
     // I
     "intercourse",
+    "incest",
+    "impregnate",
 
     // J
     "jack-off",
@@ -262,6 +286,7 @@ export const words = [
     "jizm",
     "jizz",
     "juggs",
+    "jerking",
 
     // K
     "kawk",
@@ -280,6 +305,7 @@ export const words = [
     "kumming",
     "kums",
     "kunilingus",
+    "kamasutra",
 
     // L
     "l3i+ch",
@@ -290,6 +316,8 @@ export const words = [
     "lmfao",
     "lust",
     "lusting",
+    "lapdance",
+    "latex",
 
     // M
     "m0f0",
@@ -338,6 +366,7 @@ export const words = [
     "muthafuckker",
     "muther",
     "mutherfucker",
+    "moaning",
 
     // N
     "n1gga",
@@ -361,12 +390,15 @@ export const words = [
     "nude",
     "numbnuts",
     "nutsack",
+    "nympho",
 
     // O
     "orgasim",
     "orgasims",
     "orgasm",
     "orgasms",
+    "orgy",
+    "onlyfans",
 
     // P
     // "pawn",
@@ -411,8 +443,12 @@ export const words = [
     "pussies",
     "pussy",
     "pussys",
+    "playboy",
+    "pegging",
+    "prostitute",
 
     // Q
+    "quickie",
 
     // R
     "rape",
@@ -421,6 +457,7 @@ export const words = [
     "retard",
     "rimjaw",
     "rimming",
+    "roughsex",
 
     // S
     "s hit",
@@ -473,6 +510,13 @@ export const words = [
     "spanking",
     "spunk",
     "sister",
+    "strip",
+    "stripper",
+    "sensual",
+    "suck",
+    "sucking",
+    "suckoff",
+    "suckjob",
 
     // T
     // "tit",
@@ -503,8 +547,12 @@ export const words = [
     "twatty",
     "twunt",
     "twunter",
+    "threesome",
+    "throatfuck",
 
     // U
+    "upskirt",
+    "uncensored",
 
     // V
     "v14gra",
@@ -512,6 +560,7 @@ export const words = [
     "vagina",
     "viagra",
     "vulva",
+    "voyeur",
 
     // W
     "w00se",
@@ -525,15 +574,19 @@ export const words = [
     "willies",
     "willy",
     "woman",
-    
+    "wetdream",
+    "wetpussy",
+
     // X
     "xrated",
     "xxx",
-    
+
     // Y
     "years",
     "year",
     "young",
-    
+    "yiff",
+
     // Z
+    "zoophilia",
 ];

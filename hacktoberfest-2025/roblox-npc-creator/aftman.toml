@@ -1,0 +1,5 @@
+# Aftman configuration for Roblox NPC Creator
+# This file specifies which tools and versions to use
+
+[tools]
+rojo = "rojo-rbx/rojo@7.4.4"

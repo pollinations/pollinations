@@ -1,6 +1,8 @@
 import debug from "debug";
 // Import the new cleaning utilities
 import { cleanUndefined as newCleanUndefined, cleanNullAndUndefined as newCleanNullAndUndefined } from "./utils/objectCleaners.js";
+// Import citation processing utilities
+import { processResponseCitations } from "./utils/citationExtractor.js";
 
 const log = debug("pollinations:utils");
 const errorLog = debug("pollinations:utils:error");
@@ -239,6 +241,9 @@ export function formatToOpenAIResponse(response, modelName) {
         return response;
     }
 
+    // Process citations for gemini-search model
+    const citationData = processResponseCitations(response, modelName);
+
     // Create a message object based on the response
     let message = {
         role: "assistant",
@@ -254,6 +259,18 @@ export function formatToOpenAIResponse(response, modelName) {
     } else {
         // For other object responses, stringify them
         message.content = JSON.stringify(response);
+    }
+
+    // Add citations to the message if available
+    if (citationData.citations && citationData.citations.length > 0) {
+        message.citations = citationData.citations;
+        
+        // Add annotations if available
+        if (citationData.annotations && citationData.annotations.length > 0) {
+            // For OpenAI format, we'll add annotations as a separate field
+            // This maintains compatibility while providing citation information
+            message.annotations = citationData.annotations;
+        }
     }
 
     // Create a basic OpenAI-compatible response structure

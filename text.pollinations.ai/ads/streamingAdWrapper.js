@@ -2,6 +2,7 @@ import { Transform } from "stream";
 import debug from "debug";
 import { sendToAnalytics } from "../sendToAnalytics.js";
 import { logAdInteraction } from "./adLogger.js";
+import { processStreamingChunk, createFinalCitationSummary } from "../utils/streamingCitationProcessor.js";
 
 const log = debug("pollinations:adfilter");
 const errorLog = debug("pollinations:adfilter:error");
@@ -40,7 +41,11 @@ export async function createStreamingAdWrapper(
     // Create a transform stream that will:
     // 1. Pass through all chunks unchanged
     // 2. Collect content for analysis
-    // 3. Add an ad after the [DONE] message
+    // 3. Process citations for gemini-search model
+    // 4. Add an ad after the [DONE] message
+    let accumulatedCitations = { citations: [], annotations: [] };
+    const modelName = req?.body?.model || req?.requestData?.model || '';
+    
     const streamTransformer = new Transform({
         objectMode: true,
         transform(chunk, _encoding, callback) {
@@ -94,13 +99,18 @@ export async function createStreamingAdWrapper(
                                         // Try to parse as JSON first
                                         const data = JSON.parse(dataContent);
 
+                                        // Process citations for gemini-search model
+                                        const citationResult = processStreamingChunk(data, modelName, accumulatedCitations);
+                                        accumulatedCitations = citationResult.citations;
+                                        const processedData = citationResult.processedChunk;
+
                                         // Handle different response formats
                                         if (
-                                            data.choices &&
-                                            data.choices.length > 0
+                                            processedData.choices &&
+                                            processedData.choices.length > 0
                                         ) {
                                             // Standard OpenAI format
-                                            const choice = data.choices[0];
+                                            const choice = processedData.choices[0];
 
                                             if (
                                                 choice.delta &&
@@ -120,12 +130,12 @@ export async function createStreamingAdWrapper(
                                                 // Older API format
                                                 collectedContent += choice.text;
                                             }
-                                        } else if (data.content) {
+                                        } else if (processedData.content) {
                                             // Simple content field
-                                            collectedContent += data.content;
-                                        } else if (typeof data === "string") {
+                                            collectedContent += processedData.content;
+                                        } else if (typeof processedData === "string") {
                                             // Direct string response
-                                            collectedContent += data;
+                                            collectedContent += processedData;
                                         }
                                     } catch (e) {
                                         // If not valid JSON, treat as plain text

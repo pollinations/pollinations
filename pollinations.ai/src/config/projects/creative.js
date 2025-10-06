@@ -60,6 +60,7 @@ export const creativeProjects = [
     stars: 9,
     stars: 9,
     stars: 9,
+    stars: 9,
     url: "https://altkriz.github.io/imagen/",
     description: "A beautiful, open-source web interface for generating AI images using the Pollinations.ai API. Features modern glass-morphism UI, local history storage, flux and turbo models, adjustable dimensions, seed control, and optional prompt enhancement. MIT licensed.",
     author: "@altkriz",
@@ -103,6 +104,7 @@ export const creativeProjects = [
   },
   {
     name: "DirPixel 🎨",
+    stars: 1,
     stars: 1,
     stars: 1,
     stars: 1,
@@ -188,6 +190,7 @@ export const creativeProjects = [
     stars: 45,
     stars: 45,
     stars: 45,
+    stars: 45,
     url: "https://aitoolbox.software/",
     description: "An open-source collection of AI-powered tools to boost your productivity and creativity.",
     author: "@huamanraj",
@@ -200,6 +203,7 @@ export const creativeProjects = [
     stars: 4,
     stars: 4,
     stars: 4,
+    stars: 4,
     url: "https://evolve-ai-gamma.vercel.app/",
     description: "Evolve AI is an intelligent assistant platform that brings together a variety of cutting-edge AI tools to simplify and automate user tasks. It integrates multiple APIs from Pollinations to enable features such as advanced text-to-speech, code generation, code editing, AI-based image generation, and more. The platform is designed to evolve with user needs, combining creativity and productivity into one cohesive experience.",
     author: "@chandankumarm55",
@@ -209,6 +213,7 @@ export const creativeProjects = [
   },
   {
     name: "What is this? ❔",
+    stars: 2,
     stars: 2,
     stars: 2,
     stars: 2,
@@ -315,6 +320,7 @@ export const creativeProjects = [
     stars: 3,
     stars: 3,
     stars: 3,
+    stars: 3,
     url: "https://pollinations.github.io/catgpt/",
     description: "Transform your questions into sassy cat wisdom! An AI-powered meme generator that creates personalized cat comics in response to your questions. A collaboration between Pollinations.AI and Tanika Godbole, the original creator of the CatGPT comic.",
     author: "@voodoohop",
@@ -362,6 +368,7 @@ export const creativeProjects = [
     stars: 35,
     stars: 35,
     stars: 35,
+    stars: 35,
     url: "https://elixpoart.vercel.app",
     description: "A Web interface to create thematic images from prompts, with multiple aspect ratios and also image reference inputs.",
     author: "Ayushman Bhattacharya",
@@ -389,6 +396,7 @@ export const creativeProjects = [
   },
   {
     name: "Pollinations.ai Image Generation (for Frame)",
+    stars: 7,
     stars: 7,
     stars: 7,
     stars: 7,
@@ -448,6 +456,7 @@ export const creativeProjects = [
   },
   {
     name: "Dreamscape AI",
+    stars: 5,
     stars: 5,
     stars: 5,
     stars: 5,
@@ -531,6 +540,7 @@ export const creativeProjects = [
     stars: 35,
     stars: 35,
     stars: 35,
+    stars: 35,
     url: "https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh",
     description: "It uses the pollinations image endpoint to generate an image with `boltning` as the model in 4 types of aspect ratios and themes with prompt engineering thus transforming selected texts into art smoothly with a disposable GUI in web.",
     author: "Ayushman Bhatacharya",
@@ -541,6 +551,8 @@ export const creativeProjects = [
   },
   {
     name: "Imagen",
+    stars: 9,
+    stars: 9,
     stars: 9,
     stars: 9,
     stars: 9,
@@ -573,6 +585,7 @@ export const creativeProjects = [
   },
   {
     name: "MoneyPrinterTurbo",
+    stars: 45713,
     stars: 45642,
     stars: 45611,
     stars: 45609,
@@ -586,6 +599,7 @@ export const creativeProjects = [
   },
   {
     name: "Match-cut video ai",
+    stars: 17,
     stars: 17,
     stars: 17,
     stars: 17,
@@ -607,6 +621,7 @@ export const creativeProjects = [
   },
   {
     name: "Text2Image_audio 🇨🇳",
+    stars: 185,
     stars: 185,
     stars: 185,
     stars: 185,
@@ -641,6 +656,7 @@ export const creativeProjects = [
     stars: 268,
     stars: 268,
     stars: 268,
+    stars: 268,
     url: "https://fs.wen.bar",
     description: "Use Natural Language to \"Converse\" with Your Codebase, Folda-Scan Smart Project Q&A, powered by advanced vectorization technology, allows you to easily understand complex code, pinpoint information, and offers unprecedented convenience for AI collaboration.",
     author: "@0010skn",
@@ -660,6 +676,7 @@ export const creativeProjects = [
   },
   {
     name: "MASala",
+    stars: 3,
     stars: 3,
     stars: 3,
     stars: 3,
@@ -722,6 +739,8 @@ export const creativeProjects = [
     stars: 9,
     stars: 9,
     stars: 9,
+    stars: 9,
+    stars: 9,
     url: "https://altkriz.github.io/imagen/",
     description: "A beautiful web interface for generating images using Pollinations.ai API with only the \"flux\" and \"turbo\" models.",
     author: "@altkriz",
@@ -750,6 +769,7 @@ export const creativeProjects = [
   },
   {
     name: "StorySight",
+    stars: 14,
     stars: 14,
     stars: 14,
     stars: 14,
@@ -787,6 +807,7 @@ export const creativeProjects = [
   },
   {
     name: "☬SHΞNΞRATOR 🎨",
+    stars: 3,
     stars: 3,
     stars: 3,
     stars: 3,

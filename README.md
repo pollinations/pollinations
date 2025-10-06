@@ -3,7 +3,7 @@
 > Discover amazing AI-powered projects from our vibrant community
 
 [![Projects](https://img.shields.io/badge/Projects-230-blue.svg)](https://pollinations.ai/projects)
-[![GitHub Stars](https://img.shields.io/badge/Stars-236,528-yellow.svg)](https://github.com/pollinations)
+[![GitHub Stars](https://img.shields.io/badge/Stars-236,814-yellow.svg)](https://github.com/pollinations)
 [![Community](https://img.shields.io/badge/Community-Active-green.svg)](https://discord.gg/k9F7SyTgqn)
 [![Web Interface](https://img.shields.io/badge/Explore-pollinations.ai/projects-purple.svg)](https://pollinations.ai/projects)
 
@@ -44,7 +44,7 @@
 
 | Project | Description | Author | Stars |
 |---------|-------------|--------|-------|
-| [MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo) ([repo](https://github.com/harry0703/MoneyPrinterTurbo)) | Simply provide a topic or keyword for a video, and it will automatically generate the video copy,... | @harry0703 | ⭐ 45642 |
+| [MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo) ([repo](https://github.com/harry0703/MoneyPrinterTurbo)) | Simply provide a topic or keyword for a video, and it will automatically generate the video copy,... | @harry0703 | ⭐ 45713 |
 | [FoldaScan](https://fs.wen.bar) ([repo](https://github.com/0010skn/WebFS-Toolkit-Local-Folder-Scan-Monitor-Versioning-AI-Prep)) | Use Natural Language to \ | @0010skn | ⭐ 268 |
 | [Text2Image_audio 🇨🇳](nihilistic.dpdns.org) ([repo](https://github.com/wtliao/text2image)) | 文生图与文生语音网站 - 一个初学者的AI编程项目，支持文本转图像和音频生成功能。(Text to Image and Text to Audio website - A beginner | @peyoba | ⭐ 185 |
 | [aitoolbox.software 🛠️](https://aitoolbox.software/) ([repo](https://github.com/huamanraj/aitoolbox.software)) | An open-source collection of AI-powered tools to boost your productivity and creativity. | @huamanraj | ⭐ 45 |
@@ -201,12 +201,12 @@
 
 | Project | Description | Author | Stars |
 |---------|-------------|--------|-------|
-| [LobeChat](https://lobechat.com) ([repo](https://github.com/lobehub/lobe-chat)) | An open-source, extensible chat UI framework supporting multiple models and features like message... | @lobehub | ⭐ 66449 |
-| [gpt4free](https://github.com/xtekky/gpt4free) ([repo](https://github.com/xtekky/gpt4free)) | The official gpt4free repository - various collection of powerful language models. | xtekky | ⭐ 65192 |
-| [SillyTavern](https://docs.sillytavern.app/) ([repo](https://github.com/SillyTavern/SillyTavern)) | An LLM frontend for power users. Pollinations permits it to generate text and images. |  | ⭐ 18925 |
-| [Free AI Chatbot & Image Generator](https://vercel.com/templates/ai/ai-sdk-image-generator) ([repo](https://github.com/vercel/ai/tree/main/examples/ai-image-generator)) | A web application offering both conversation with AI and image generation capabilities, utilizing... | @aidevs | ⭐ 18191 |
+| [LobeChat](https://lobechat.com) ([repo](https://github.com/lobehub/lobe-chat)) | An open-source, extensible chat UI framework supporting multiple models and features like message... | @lobehub | ⭐ 66460 |
+| [gpt4free](https://github.com/xtekky/gpt4free) ([repo](https://github.com/xtekky/gpt4free)) | The official gpt4free repository - various collection of powerful language models. | xtekky | ⭐ 65360 |
+| [SillyTavern](https://docs.sillytavern.app/) ([repo](https://github.com/SillyTavern/SillyTavern)) | An LLM frontend for power users. Pollinations permits it to generate text and images. |  | ⭐ 18947 |
+| [Free AI Chatbot & Image Generator](https://vercel.com/templates/ai/ai-sdk-image-generator) ([repo](https://github.com/vercel/ai/tree/main/examples/ai-image-generator)) | A web application offering both conversation with AI and image generation capabilities, utilizing... | @aidevs | ⭐ 18204 |
 | [FreeAI 🇨🇳](https://freeai.aihub.ren/) ([repo](https://github.com/Azad-sl/FreeAI)) | An AI application platform based on Pollinations.AI API, providing free and unlimited AI chat ass... | @Azad-sl | ⭐ 102 |
-| [LLM7.io](https://llm7.io) ([repo](https://github.com/chigwell/llm7.io)) | A free and open AI platform providing advanced multimodal capabilities, including large language ... | @chigwell | ⭐ 91 |
+| [LLM7.io](https://llm7.io) ([repo](https://github.com/chigwell/llm7.io)) | A free and open AI platform providing advanced multimodal capabilities, including large language ... | @chigwell | ⭐ 92 |
 | [LLMS](https://yassineabou.github.io/LLMs-Wasm/) ([repo](https://github.com/yassineAbou/LLMS)) | LLMS is a Kotlin Multiplatform application that brings the power of AI to Android, iOS, Desktop, ... | @yassineAbou | ⭐ 60 |
 | [DynaSpark AI](https://dynaspark.onrender.com) ([repo](https://github.com/Th3-C0der)) | A versatile AI assistant with advanced image and text generation capabilities. | Th3-C0der | ⭐ 20 |
 | [OkeyMeta](https://playground.okeymeta.com.ng/) ([repo](https://github.com/okeymeta/okeymeta)) | OkeyMeta is an AI Playground that allows you to chat with different AI models, generate images, a... | @okeymeta | ⭐ 10 |
@@ -300,16 +300,16 @@
 ## 📊 Ecosystem Stats
 
 - **Total Projects**: 230
-- **GitHub Stars**: 236,528
+- **GitHub Stars**: 236,814
 - **Categories**: 7
 - **Active Contributors**: 203
 
 ### 🌟 Top Starred Projects
-🥇 [LobeChat](https://lobechat.com) - ⭐ 66449 stars
-🥈 [gpt4free](https://github.com/xtekky/gpt4free) - ⭐ 65192 stars
-🥉 [MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo) - ⭐ 45642 stars
-🏅 [SillyTavern](https://docs.sillytavern.app/) - ⭐ 18925 stars
-🏅 [Free AI Chatbot & Image Generator](https://vercel.com/templates/ai/ai-sdk-image-generator) - ⭐ 18191 stars
+🥇 [LobeChat](https://lobechat.com) - ⭐ 66460 stars
+🥈 [gpt4free](https://github.com/xtekky/gpt4free) - ⭐ 65360 stars
+🥉 [MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo) - ⭐ 45713 stars
+🏅 [SillyTavern](https://docs.sillytavern.app/) - ⭐ 18947 stars
+🏅 [Free AI Chatbot & Image Generator](https://vercel.com/templates/ai/ai-sdk-image-generator) - ⭐ 18204 stars
 
 
 ## 🤝 Contributing

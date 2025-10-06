@@ -17,6 +17,7 @@ export const hackAndBuildProjects = [
     name: "unpkg.ai",
     stars: 5,
     stars: 5,
+    stars: 5,
     url: "https://unpkg.ai",
     description: "AI-powered ESM module generation service that creates JavaScript modules on-demand using LLMs.",
     author: "@vgrichina",
@@ -27,6 +28,7 @@ export const hackAndBuildProjects = [
   },
   {
     name: "Pollinations OpenAI Proxy",
+    stars: 1,
     stars: 1,
     stars: 1,
     url: "https://pollinationsopenaiproxy.vercel.app/",

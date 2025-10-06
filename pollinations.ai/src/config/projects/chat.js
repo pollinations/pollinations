@@ -61,6 +61,7 @@ export const chatProjects = [
     stars: 60,
     stars: 60,
     stars: 60,
+    stars: 60,
     url: "https://yassineabou.github.io/LLMs-Wasm/",
     description: "LLMS is a Kotlin Multiplatform application that brings the power of AI to Android, iOS, Desktop, and WebAssembly platforms. Users can choose from the latest open-source text and image models to boost their creativity - generate unique texts through chat interfaces or create stunning images. The app features local storage for chat history and generated images, with cross-device synchronization capabilities through Google Authentication. Built with Compose Multiplatform for adaptive UIs and Ktor for backend services, LLMS provides a seamless AI experience across all your devices while keeping your creations safe and synchronized.",
     author: "@yassineAbou",
@@ -136,6 +137,7 @@ export const chatProjects = [
     stars: 1,
     stars: 1,
     stars: 1,
+    stars: 1,
     url: "https://thevoidai.vercel.app/",
     description: "A humanlike AI mentor, productivity partner, and emotionally intelligent assistant that adapts its tone and energy based on user behavior. Features conversational AI that feels more like a charismatic friend than a chatbot, providing code walkthroughs, life advice, writing help, and motivation with realistic speech output and context memory.",
     author: "@Ajay-Dhakad",
@@ -192,6 +194,7 @@ export const chatProjects = [
   },
   {
     name: "gpt4free",
+    stars: 65360,
     stars: 65192,
     stars: 65175,
     stars: 65178,
@@ -204,6 +207,7 @@ export const chatProjects = [
   },
   {
     name: "FreeAI 🇨🇳",
+    stars: 102,
     stars: 102,
     stars: 102,
     stars: 102,
@@ -311,6 +315,7 @@ export const chatProjects = [
     stars: 2,
     stars: 2,
     stars: 2,
+    stars: 2,
     url: "https://chatbot.rizqioliveira.my.id",
     description: "Rizqi O Chatbot adalah proyek berbasis Pollinations yang menggabungkan tiga fitur utama: chatbot AI, generator gambar AI, dan generator audio AI. Pengguna dapat berinteraksi dalam bentuk teks, menghasilkan gambar dengan berbagai gaya seni dan efek visual, serta membuat audio secara otomatis dari teks. (An AI chatbot, image generator, and audio generator project with support for custom aspect ratios, over 200 art styles & visual effects, and automatic translation from Indonesian to English.)",
     author: "@ray23-bit",
@@ -322,6 +327,7 @@ export const chatProjects = [
   },
   {
     name: "LLM7.io",
+    stars: 92,
     stars: 91,
     stars: 91,
     stars: 91,
@@ -335,6 +341,7 @@ export const chatProjects = [
   },
   {
     name: "SillyTavern",
+    stars: 18947,
     stars: 18925,
     stars: 18908,
     stars: 18908,
@@ -357,6 +364,7 @@ export const chatProjects = [
     stars: 1,
     stars: 1,
     stars: 1,
+    stars: 1,
     url: "https://comeback-ai.pinkpixel.dev",
     description: "AI-powered clapback machine that transforms mean comments into witty comebacks with 10 unique personas, uses Pollinations openai-audio for voice synthesis, and Whisper for speech-to-text transcription. Turn trolls into comedy gold!",
     author: "@sizzlebop",
@@ -376,6 +384,7 @@ export const chatProjects = [
   },
   {
     name: "LobeChat",
+    stars: 66460,
     stars: 66449,
     stars: 66433,
     stars: 66431,
@@ -392,6 +401,7 @@ export const chatProjects = [
     stars: 2,
     stars: 2,
     stars: 2,
+    stars: 2,
     description: "An AI-client-free project dedicated to enabling AI interaction using only curl, supporting multimodal and MCP capabilities, to provide users with the simplest way to use AI.",
     author: "@Veallym0n",
     repo: "https://github.com/Veallym0n/toai.chat",
@@ -401,6 +411,7 @@ export const chatProjects = [
   },
   {
     name: "Free AI Chatbot & Image Generator",
+    stars: 18204,
     stars: 18191,
     stars: 18184,
     stars: 18183,
@@ -445,6 +456,7 @@ export const chatProjects = [
   },
   {
     name: "EvilChat 🔥🤖",
+    stars: 3,
     stars: 3,
     stars: 3,
     stars: 3,

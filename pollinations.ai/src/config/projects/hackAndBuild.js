@@ -18,6 +18,7 @@ export const hackAndBuildProjects = [
     stars: 5,
     stars: 5,
     stars: 5,
+    stars: 5,
     url: "https://unpkg.ai",
     description: "AI-powered ESM module generation service that creates JavaScript modules on-demand using LLMs.",
     author: "@vgrichina",
@@ -31,6 +32,7 @@ export const hackAndBuildProjects = [
     stars: 1,
     stars: 1,
     stars: 1,
+    stars: 1,
     url: "https://pollinationsopenaiproxy.vercel.app/",
     description: "A thin FastAPI layer that exposes OpenAI-compatible endpoints and proxies to Pollinations services for text, image, and audio (TTS). Works with existing OpenAI SDKs/clients.",
     author: "@percival-de-galles",
@@ -40,6 +42,7 @@ export const hackAndBuildProjects = [
   },
   {
     name: "Pollinations MCP Server (Official)",
+    stars: 2985,
     stars: 2968,
     stars: 2956,
     url: "https://www.npmjs.com/package/@pollinations/model-context-protocol",
@@ -52,6 +55,7 @@ export const hackAndBuildProjects = [
   },
   {
     name: "MCPollinations (Community)",
+    stars: 34,
     stars: 34,
     stars: 34,
     url: "https://github.com/pinkpixel-dev/MCPollinations",
@@ -113,6 +117,7 @@ export const hackAndBuildProjects = [
     name: "Herramientas IA",
     stars: 26,
     stars: 26,
+    stars: 26,
     url: "https://github.com/cusanotech/90-herramientas-de-inteligencia-artificial",
     description: "Tools designed with Pollinations.AI and the DescartesJS editor, including tools from other Pollinations.AI community members.",
     author: "@juanrivera126",
@@ -151,6 +156,7 @@ export const hackAndBuildProjects = [
   {
     name: "CoNavic",
     stars: 8,
+    stars: 8,
     url: "https://github.com/mkantwala/CoNavic/",
     description: "A free, open-source browser extension that brings the power of ChatGPT and browser automation directly to your fingertips. Instantly access AI assistance, manage tabs, and organize bookmarks using natural language all securely within your browser.",
     author: "@mkantwala",
@@ -161,6 +167,7 @@ export const hackAndBuildProjects = [
   },
   {
     name: "WordPress AI Vision Block",
+    stars: 6,
     stars: 6,
     url: "https://wordpress.org/plugins/ai-vision-block/",
     description: "A custom WordPress Gutenberg block that allows you to generate images using the Pollinations API. Simply enter a prompt, and the AI will generate an image for you. Once the post is saved, the image is automatically stored in the WordPress Media Library.",
@@ -174,6 +181,7 @@ export const hackAndBuildProjects = [
     name: "DominiSigns",
     stars: 4,
     stars: 4,
+    stars: 4,
     description: "Avatar Translator for Dominican Sign Language that uses artificial intelligence to translate text and audio into Dominican sign language (LSRD), creating a communication bridge for approximately 100,000 deaf people in the Dominican Republic.",
     author: "@cmunozdev",
     repo: "https://github.com/cmunozdev/DominiSigns",
@@ -183,6 +191,7 @@ export const hackAndBuildProjects = [
   },
   {
     name: "Mimir AIP",
+    stars: 13,
     stars: 13,
     stars: 13,
     url: "https://mimir-aip.github.io/",
@@ -195,6 +204,7 @@ export const hackAndBuildProjects = [
   },
   {
     name: "Herramientas IA",
+    stars: 26,
     stars: 26,
     stars: 26,
     url: "https://herramientas.ia",
@@ -224,6 +234,7 @@ export const hackAndBuildProjects = [
     name: "Pollinations.AI Enhancer",
     stars: 6,
     stars: 6,
+    stars: 6,
     url: "https://github.com/fisventurous/pollinationsai-enhancer",
     description: "A frontend-based AI interface designed to deliver a smooth, multimodal, and visually engaging user experience with conversational AI, image generation, and more.",
     author: "@fisven",
@@ -234,6 +245,7 @@ export const hackAndBuildProjects = [
   },
   {
     name: "💻️ Windows Walker",
+    stars: 14,
     stars: 14,
     stars: 14,
     url: "https://github.com/SuperShivam5000/windows-walker",
@@ -248,6 +260,7 @@ export const hackAndBuildProjects = [
     name: "🛠️ AI Content Describer",
     stars: 59,
     stars: 59,
+    stars: 59,
     url: "https://github.com/cartertemm/AI-content-describer/",
     description: "An extension for NVDA, the free and open-source screen reader for Microsoft Windows. Uses multimodal generative AI to help those with blindness and visual impairments understand pictures, UI controls, complex diagrams/graphics, and more through intelligent descriptions that go far beyond simple alt-text.",
     author: "@cartertemm",
@@ -258,6 +271,7 @@ export const hackAndBuildProjects = [
   },
   {
     name: "tgpt",
+    stars: 2893,
     stars: 2888,
     stars: 2887,
     url: "https://github.com/aandrew-me/tgpt",
@@ -272,6 +286,7 @@ export const hackAndBuildProjects = [
     name: "DominiSigns",
     stars: 4,
     stars: 4,
+    stars: 4,
     url: "https://www.template.net/ai-sign-generator",
     description: "A WordPress block plugin that lets users create AI-generated images through the block editor. Integrates with Pollinations API to generate images from text prompts directly within WordPress.",
     author: "@dominicva",
@@ -281,6 +296,7 @@ export const hackAndBuildProjects = [
   },
   {
     name: "Server Status Dashboards",
+    stars: 6,
     stars: 6,
     stars: 6,
     url: "https://github.com/hverr/status-dashboard",
@@ -295,6 +311,7 @@ export const hackAndBuildProjects = [
     name: "DynaSpark API",
     stars: 3,
     stars: 3,
+    stars: 3,
     url: "https://th3-ai.github.io/DynaSpark",
     description: "The DynaSpark API provides simple yet powerful AI capabilities for text generation, image creation, and audio synthesis. Built on the Pollinations AI API, it includes its own Python package and detailed documentation. Lightweight, developer-friendly, and easy to integrate with fast API calls and seamless operation in both web and desktop environments.",
     author: "@Th3-C0der",
@@ -304,6 +321,7 @@ export const hackAndBuildProjects = [
   },
   {
     name: "YankoviC",
+    stars: 1,
     stars: 1,
     stars: 1,
     url: "https://github.com/Sweaterdog/YankoviC",
@@ -316,6 +334,7 @@ export const hackAndBuildProjects = [
   },
   {
     name: "Querynator5000",
+    stars: 3,
     stars: 3,
     stars: 3,
     url: "https://querynator5000.onrender.com/",

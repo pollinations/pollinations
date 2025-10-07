@@ -33,14 +33,14 @@ function RouteComponent() {
                 <Button as="a" href="/api/docs">
                     API Reference
                 </Button>
-                <button 
-                    type="button" 
+                <Button 
+                    as="button" 
                     onClick={handleSignIn} 
                     disabled={loading}
-                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+                    weight="light"
                 >
                     {loading ? "Signing in..." : "Sign in with Github"}
-                </button>
+                </Button>
             </div>
             <FAQ />
         </div>

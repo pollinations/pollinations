@@ -9,55 +9,55 @@ type FAQItem = {
 const faqData: FAQItem[] = [
     {
         question: "What is Pollen?",
-        answer: "Pollen is the prepaid credit that powers the Pollinations backend. $1 = 1 Pollen (beta). Every API call is metered in Pollen; free models meter at 0 for unified telemetry.",
+        answer: "Pollen is our credit system. $1 = 1 Pollen. You spend it on API calls. Free models cost 0 Pollen (we just track usage for stats).",
     },
     {
-        question: "How do I get Pollen (as a developer)?",
-        answer: "Two ways:\n• Purchase packs — added to your wallet; do not expire\n• Sponsorship coupons — grant temporary Pollen; spent first; expire 24h after redemption",
+        question: "How do I get Pollen?",
+        answer: "Two ways:\n• Buy packs with your credit card — goes straight to your wallet, never expires\n• Redeem sponsorship coupons — temporary Pollen that gets used first, expires 24h after you claim it",
     },
     {
         question: "What payment methods do you accept?",
-        answer: "Credit cards only for now. We'll be expanding payment options later.",
+        answer: "Credit cards for now. We're looking into crypto and other options for people in countries with payment restrictions.",
     },
     {
-        question: "Is there a monthly subscription option?",
-        answer: "Not yet but we are thinking about this for future iterations. Join our newsletter for updates on availability.",
+        question: "Is there a monthly subscription?",
+        answer: "Not yet, but we're considering it based on community feedback. Join our Discord for updates.",
     },
     {
-        question: "Can I try the API without an account or buying Pollen?",
-        answer: "Yes. Use zero-registration trial endpoints and a limited set of free models. These calls do not consume Pollen. For more flexibily consider redeeming sponsorship coupons."
+        question: "Can I try it without signing up or paying?",
+        answer: "Yep! Just hit the API — no signup needed. Free models work instantly, no Pollen required."
     },
     {
-        question: "What changes when a user registers?",
-        answer: "They keep access to the free models (rate‑limited) and unlock the paid model catalog (runs on Pollen, no platform rate limits). They also become eligible for daily grants.",
+        question: "What changes when I register?",
+        answer: "You keep the free models (with rate limits) and unlock paid models (no rate limits, just costs Pollen). Plus you get daily free Pollen grants.",
     },
     {
         question: "How do daily grants work?",
-        answer: "Registered users receive sponsored Pollen every day at 00:00. Grants are spent before any purchased balance.\n\n• Seed (default): 1 Pollen/day\n• Flower (request in dashboard): 5 Pollen/day\n• Nectar (requires Flower; request in dashboard): 10 Pollen/day",
+        answer: "Every day at 00:00 UTC, you get free Pollen. It's spent before your purchased balance.\n\n• Seed (default): 1 Pollen/day\n• Flower (request upgrade): 5 Pollen/day\n• Nectar (request upgrade): 10 Pollen/day",
     },
     {
         question: "How is pricing set?",
-        answer: "Platform‑defined. Pollinations publishes Pollen pricing per model/operation (Unified Price Surface).",
+        answer: "We set prices based on what models actually cost us to run. Check the pricing page to see each model's rate.",
     },
     {
-        question: "How much does each model cost in Pollen?",
-        answer: "View real-time pricing in your dashboard or at our pricing page. Costs vary by model complexity.",
+        question: "How much does each model cost?",
+        answer: "It varies by model. Check your dashboard or the pricing page for current rates. Free models are always 0 Pollen.",
     },
     {
         question: "Do free models consume Pollen?",
-        answer: "No. They are sponsored and controlled via rate limits.",
+        answer: "Nope! They're sponsored and just have rate limits instead.",
     },
     {
-        question: "Will free models always stay free?",
-        answer: "Yes! Free models remain free forever for all users. Paid options only apply to premium models that offer additional capabilities.",
+        question: "Will free models always be free?",
+        answer: "Yes! We're committed to keeping basic models free and accessible. Only premium models cost Pollen.",
     },
     {
-        question: "How does the developer wallet work?",
-        answer: "One wallet funds all your apps. Manage balance and top up at any time.",
+        question: "How does my wallet work?",
+        answer: "One wallet for all your apps. Top up anytime, use it anywhere.",
     },
     {
-        question: "What's next? (non‑binding)",
-        answer: "• End‑user in‑app purchases (early 2026): integrate the Login & Top‑up Widget so end-users can buy Pollen inside your app. Each purchase granting bonus Pollen to the app owner.\n• More models: video and real‑time audio; expansion of the model catalog.\n• Ads plugin (2026): earn Pollen based on ad performance.",
+        question: "What's coming next?",
+        answer: "• In-app purchases (early 2026) — let your users buy Pollen in your app, you get a bonus\n• More models — video, real-time audio, expanding the catalog\n• Ads plugin (2026) — earn Pollen when users see ads\n• Quests — earn Pollen by starring projects, building cool stuff, etc.\n\n(Plans may change based on what the community needs)",
     },
 ];
 

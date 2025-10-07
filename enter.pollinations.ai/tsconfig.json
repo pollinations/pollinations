@@ -30,7 +30,8 @@
         "skipLibCheck": true,
         "baseUrl": ".",
         "paths": {
-            "@/*": ["src/*"]
+            "@/*": ["src/*"],
+            "@shared/*": ["../shared/*"]
         }
     },
     "include": ["worker-configuration.d.ts", "src/**/*.ts", "src/**/*.tsx", "../shared/**/*.ts"],

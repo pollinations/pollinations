@@ -4,13 +4,15 @@ A community-curated list of app ideas for Hacktoberfest. **Add your ideas via PR
 
 > 💡 **Have an idea?** Submit a PR to add it here! See [Issue #4393](https://github.com/pollinations/pollinations/issues/4393) for details.
 
-## 💡 How to Submit Your Project Idea
+## 💡 How to Submit Your Project Ideas
 
-**Your idea will become a Hacktoberfest issue that others can build!**
+**Your ideas will become Hacktoberfest issues that others can build!**
+
+### ✨ You can submit multiple ideas in one PR!
 
 1. **Fork this repo**
-2. **Add your idea** to the appropriate category below
-3. **Include these details:**
+2. **Add your ideas** to the appropriate categories below (add as many as you want!)
+3. **For each idea, include these details:**
    ```markdown
    ### [Your App Name]
    **What it does:** Clear description of the app's purpose
@@ -33,6 +35,12 @@ A community-curated list of app ideas for Hacktoberfest. **Add your ideas via PR
 ✅ **User-focused** - Who will use it and why?  
 ✅ **Achievable scope** - Can be built in a weekend  
 ✅ **Uses Pollinations** - Meaningfully integrates our APIs
+
+## 💡 Need Inspiration?
+
+Check out these awesome collections:
+- **[Awesome Nano Banana Applications](https://github.com/JimmyLv/awesome-nano-banana)** 🍌 - Curated collection of creative AI image apps (Chinese + [English](https://github.com/JimmyLv/awesome-nano-banana/blob/main/README_en.md))
+- **[Awesome Nano Banana Images](https://github.com/PicoTrex/Awesome-Nano-Banana-images)** - Fun examples and creative use cases ([English version](https://github.com/PicoTrex/Awesome-Nano-Banana-images/blob/main/README_en.md))
 
 ## 🎨 Creative Apps
 

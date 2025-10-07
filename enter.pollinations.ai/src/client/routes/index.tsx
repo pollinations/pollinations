@@ -11,6 +11,7 @@ import { Button } from "../components/button.tsx";
 import { config } from "../config.ts";
 import { User } from "../components/user.tsx";
 import { PollenBalance } from "../components/pollen-balance.tsx";
+import { FAQ } from "../components/faq.tsx";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -126,6 +127,7 @@ function RouteComponent() {
                 onCreate={handleCreateApiKey}
                 onDelete={handleDeleteApiKey}
             />
+            <FAQ />
         </div>
     );
 }

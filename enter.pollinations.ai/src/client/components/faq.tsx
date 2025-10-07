@@ -17,11 +17,11 @@ const faqData: FAQItem[] = [
     },
     {
         question: "What payment methods do you accept?",
-        answer: "Credit cards, cryptocurrency, and Robux (for Roblox developers). We're expanding payment options for international users.",
+        answer: "Credit cards only for now. We'll be expanding payment options later.",
     },
     {
         question: "Is there a monthly subscription option?",
-        answer: "We're developing unlimited monthly plans alongside pay-as-you-go. Join our newsletter for updates on availability.",
+        answer: "Not yet but we are thinking about this for future iterations. Join our newsletter for updates on availability.",
     },
     {
         question: "Can I try the API without an account or buying Pollen?",
@@ -36,16 +36,12 @@ const faqData: FAQItem[] = [
         answer: "Registered users receive sponsored Pollen every day at 00:00. Grants are spent before any purchased balance.\n\n• Seed (default): 1 Pollen/day\n• Flower (request in dashboard): 5 Pollen/day\n• Nectar (requires Flower; request in dashboard): 10 Pollen/day",
     },
     {
-        question: "Why can't I upgrade my tier immediately by paying?",
-        answer: "We're transitioning to instant paid upgrades. The current request system helps us understand community needs and prevent abuse. Direct payment coming soon!",
-    },
-    {
         question: "How is pricing set?",
         answer: "Platform‑defined. Pollinations publishes Pollen pricing per model/operation (Unified Price Surface).",
     },
     {
         question: "How much does each model cost in Pollen?",
-        answer: "View real-time pricing in your dashboard or at our pricing page. Costs vary by model complexity - free models cost 0 Pollen, premium models typically range from 0.1-2 Pollen per request.",
+        answer: "View real-time pricing in your dashboard or at our pricing page. Costs vary by model complexity.",
     },
     {
         question: "Do free models consume Pollen?",

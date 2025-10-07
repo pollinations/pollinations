@@ -24,10 +24,17 @@ const MODEL_COST = {
 	},
 	"gpt-5-nano-2025-08-07": {
 	  provider: "azure-openai",
-	  region: "eastus",
-	  prompt_text: 0.0,
+	  region: "eastus2",
+	  prompt_text: 0.05,
 	  prompt_cache: 0.01,
-	  completion_text: 0.40
+	  completion_text: 0.35
+	},
+	"gpt-5-mini-2025-08-07": {
+	  provider: "azure-openai",
+	  region: "eastus",
+	  prompt_text: 0.22,
+	  prompt_cache: 0.03,
+	  completion_text: 1.73
 	},
 	"gpt-4.1-2025-04-14": {
 	  provider: "azure-openai",
@@ -80,6 +87,13 @@ const MODEL_COST = {
 		prompt_text: 0.075,
 		prompt_cache: 0.01875,
 		completion_text: 0.30
+	  },
+	"gemini-2.5-flash-lite": {
+		provider: "vertex-ai",
+		region: "us-central1",
+		prompt_text: 0.10,
+		prompt_cache: 0.025,
+		completion_text: 0.40
 	  },
 	// ===== Scaleway ===== Pricing: https://www.scaleway.com/en/pricing/model-as-a-service/
 	"qwen2.5-coder-32b-instruct": {

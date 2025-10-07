@@ -38,23 +38,45 @@ export function createAuth(env: Cloudflare.Env) {
         adminUserIds: ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"],
     });
 
+    const openAPIPlugin = openAPI({
+        disableDefaultReference: true,
+    });
+
     return betterAuth({
-        baseURL: env.PUBLIC_BASE_URL,
         basePath: "/api/auth",
         database: drizzleAdapter(db, {
             schema: betterAuthSchema,
             provider: "sqlite",
         }),
+        user: {
+            additionalFields: {
+                githubId: {
+                    type: "number",
+                    input: false,
+                },
+                githubUsername: {
+                    type: "string",
+                    input: false,
+                },
+            },
+        },
         socialProviders: {
             github: {
                 clientId: env.GITHUB_CLIENT_ID,
                 clientSecret: env.GITHUB_CLIENT_SECRET,
+                mapProfileToUser: (profile) => ({
+                    githubId: profile.id,
+                    githubUsername: profile.login,
+                }),
             },
         },
-        plugins: [adminPlugin, apiKeyPlugin, polarPlugin(polar), openAPI()],
+        plugins: [adminPlugin, apiKeyPlugin, polarPlugin(polar), openAPIPlugin],
         telemetry: { enabled: false },
     });
 }
+
+export type Auth = ReturnType<typeof createAuth>;
+export type Session = Auth["$Infer"]["Session"];
 
 function polarPlugin(polar: Polar): BetterAuthPlugin {
     return {
@@ -88,10 +110,28 @@ function onBeforeUserCreate(polar: Polar) {
                 });
             }
 
+            // if the customer already exists, link the new account
+            const { result } = await polar.customers.list({
+                email: user.email,
+            });
+            const existingCustomer = result.items[0];
+            if (existingCustomer?.externalId) {
+                return {
+                    data: {
+                        ...user,
+                        id: existingCustomer.externalId,
+                    },
+                };
+            }
+
             await polar.customers.create({
                 email: user.email,
                 name: user.name,
             });
+
+            return {
+                data: user,
+            };
         } catch (e: unknown) {
             const messageOrError = e instanceof Error ? e.message : e;
             throw new APIError("INTERNAL_SERVER_ERROR", {
@@ -104,7 +144,6 @@ function onBeforeUserCreate(polar: Polar) {
 function onAfterUserCreate(polar: Polar) {
     return async (user: User, ctx?: GenericEndpointContext) => {
         if (!ctx) return;
-
         try {
             const { result } = await polar.customers.list({
                 email: user.email,
@@ -131,7 +170,6 @@ function onAfterUserCreate(polar: Polar) {
 function onUserUpdate(polar: Polar) {
     return async (user: User, ctx?: GenericEndpointContext) => {
         if (!ctx) return;
-
         try {
             await polar.customers.updateExternal({
                 externalId: user.id,

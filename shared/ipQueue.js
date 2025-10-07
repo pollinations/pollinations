@@ -12,6 +12,24 @@ import { incrementUserMetric } from "./userMetrics.js";
 import debug from "debug";
 import { shouldBypassQueue } from "./auth-utils.js";
 
+// Import rate limit logger for detailed 429 error logging
+let logRateLimitError = null;
+
+// Async function to load rate limit logger
+async function loadRateLimitLogger() {
+	try {
+		// Dynamic import to avoid breaking services that don't have the text service logging
+		const rateLimitLogger = await import("../text.pollinations.ai/logging/rateLimitLogger.js");
+		logRateLimitError = rateLimitLogger.logRateLimitError;
+	} catch (error) {
+		// Silently fail if rate limit logger not available (e.g., in image service)
+		debug("pollinations:queue")("Rate limit logger not available:", error.message);
+	}
+}
+
+// Load the logger asynchronously
+loadRateLimitLogger();
+
 // Set up debug loggers with namespaces
 const log = debug("pollinations:queue");
 const errorLog = debug("pollinations:error");
@@ -27,6 +45,43 @@ const tierCaps = {
     nectar: 50,
 };
 
+// Special tier caps for nanobanana model - STRICTER LIMITS
+// Seed: 1x (base), Flower: 1x (same as seed), Nectar: 2x (reduced from 6x)
+const nanobananaTierCaps = {
+    anonymous: 1,
+    seed: 1,      // Base level
+    flower: 1,    // Same as seed tier (reduced from 3x)
+    nectar: 2,    // Reduced from 6x to 2x
+};
+
+// Seedream model uses lowest limit (1) for most tiers, nectar gets 2
+const seedreamTierCaps = {
+    anonymous: 1,
+    seed: 1,      // Lowest limit
+    flower: 1,    // Lowest limit (same as seed)
+    nectar: 2,    // Enhanced limit for nectar tier (same as nanobanana)
+};
+
+// Parse priority users from environment variable for special models (nanobanana and seedream)
+const parsePriorityUsers = () => {
+    const envVar = process.env.PRIORITY_MODEL_USERS;
+    if (!envVar) return new Map();
+    
+    const priorityUsers = new Map();
+    envVar.split(',').forEach(entry => {
+        const [username, limit] = entry.split(':');
+        priorityUsers.set(username.trim(), parseInt(limit) || 5); // Default to 5 concurrent if no limit specified
+    });
+    return priorityUsers;
+};
+
+const specialModelPriorityUsers = parsePriorityUsers();
+
+// Log priority users on startup for debugging
+if (specialModelPriorityUsers.size > 0) {
+    log('Special model priority users loaded (nanobanana & seedream): %o', Array.from(specialModelPriorityUsers.entries()));
+}
+
 /**
  * Enqueue a function to be executed based on IP address
  * Requests with valid tokens or from allowlisted domains bypass the queue
@@ -37,9 +92,10 @@ const tierCaps = {
  * @param {number} [options.interval=6000] - Time between requests in ms
  * @param {number} [options.cap=1] - Number of requests allowed per interval
  * @param {boolean} [options.forceCap=false] - If true, use provided cap instead of tier-based cap
+ * @param {string} [options.model] - Model name for special tier handling
  * @returns {Promise<any>} Result of the function execution
  */
-export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = false } = {}) {
+export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = false, model = null } = {}) {
     // Extract useful request info for logging
     const url = req.url || "no-url";
     const method = req.method || "no-method";
@@ -117,26 +173,47 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 
 	// Only apply tier-based cap if forceCap is not set
 	if (!forceCap) {
-		cap = tierCaps[authResult.tier] || 1;
-		log('Using tier-based cap: %d for tier: %s', cap, authResult.tier);
+		// Check if this is a special model that uses different tier multipliers
+		if (model === 'nanobanana') {
+			// Check if user is in priority list first
+			if (authResult.userId && specialModelPriorityUsers.has(authResult.userId)) {
+				cap = specialModelPriorityUsers.get(authResult.userId);
+				log('Using nanobanana priority user cap: %d for user: %s', cap, authResult.userId);
+			} else {
+				cap = nanobananaTierCaps[authResult.tier] || 1;
+				log('Using nanobanana tier-based cap: %d for tier: %s', cap, authResult.tier);
+			}
+		} else if (model === 'seedream') {
+			// Check if user is in priority list first
+			if (authResult.userId && specialModelPriorityUsers.has(authResult.userId)) {
+				cap = specialModelPriorityUsers.get(authResult.userId);
+				log('Using seedream priority user cap: %d for user: %s', cap, authResult.userId);
+			} else {
+				cap = seedreamTierCaps[authResult.tier] || 1;
+				log('Using seedream tier-based cap: %d for tier: %s (lowest limit for all tiers)', cap, authResult.tier);
+			}
+		} else {
+			cap = tierCaps[authResult.tier] || 1;
+			log('Using tier-based cap: %d for tier: %s', cap, authResult.tier);
+		}
 	} else {
 		log('Using forced cap: %d (tier-based cap override)', cap);
 	}
 
 	const maxQueueSize = cap * 5;
 	// Apply tier-based concurrency limits for token-authenticated requests
-	if (authResult.tokenAuth) {
-		// // // Token authentication gets zero interval (no delay between requests)
-		// if (interval > 0) {
-		//   log('Token authenticated request - using zero interval in queue');
-		//   interval = 0;
-		// }
-		authLog(
-			"Authenticated via token. using userId instead of ip address for queueing: " +
-				authResult.userId,
-		);
-		ip = authResult.userId;
-	}
+	// if (authResult.tokenAuth) {
+	// 	// // // Token authentication gets zero interval (no delay between requests)
+	// 	// if (interval > 0) {0
+	// 	//   log('Token authenticated request - using zero interval in queue');
+	// 	//   interval = 0;		
+	// 	// }
+	// 	authLog(
+	// 		"Authenticated via token. using userId instead of ip address for queueing: " +
+	// 			authResult.userId,
+	// 	);
+	// 	ip = authResult.userId;
+	// }
 
 	// Check if queue exists for this IP and get its current size
 	const currentQueueSize = queues.get(ip)?.size || 0;
@@ -210,6 +287,17 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 		// if (authResult.userId) {
 		//   incrementUserMetric(authResult.userId, 'ip_queue_full_count');
 		// }
+		
+		// Log detailed rate limit error for debugging (if logger available)
+		if (logRateLimitError) {
+			try {
+				logRateLimitError(error, authResult, req, { interval, cap, forceCap });
+			} catch (logError) {
+				// Don't let logging errors break the main flow
+				errorLog("Failed to log rate limit error:", logError.message);
+			}
+		}
+		
 		throw error;
 	}
 
@@ -234,8 +322,8 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 		if (interval > 0) {
 			// When interval is specified, use intervalCap to enforce timing
 			queueOptions.interval = interval;
-			queueOptions.intervalCap = 1; // Allow 1 request per interval
-			log("Queue configured with interval: %dms, intervalCap: 1", interval);
+			queueOptions.intervalCap = cap; // Allow cap requests per interval
+			log("Queue configured with interval: %dms, intervalCap: %d", interval, cap);
 		}
 		queues.set(ip, new PQueue(queueOptions));
 	}

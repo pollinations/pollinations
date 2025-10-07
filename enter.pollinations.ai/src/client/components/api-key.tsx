@@ -1,9 +1,9 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
 import { Steps } from "@ark-ui/react/steps";
-import { formatDistanceToNow } from "date-fns";
-import type { FC, PropsWithChildren } from "react";
-import { useState } from "react";
+import { formatDistanceToNow, formatRelative } from "date-fns";
+import type { FC } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/util.ts";
 import { Button } from "../components/button.tsx";
 import { Fragment } from "react";
@@ -36,53 +36,96 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     onCreate,
     onDelete,
 }) => {
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+
+    const handleDelete = async () => {
+        if (deleteId) {
+            await onDelete(deleteId);
+            setDeleteId(null);
+        }
+    };
+
     return (
         <>
-            <div className="flex gap-2 justify-between">
-                <h2>Api Keys</h2>
-                <ApiKeyDialog
-                    onSubmit={onCreate}
-                    onUpdate={(state) => console.log(state)}
-                    onComplete={() => console.log("Dialog completed")}
-                />
+            <div className="flex flex-col gap-2">
+                <div className="flex gap-2 justify-between">
+                    <h2>API Keys</h2>
+                    <ApiKeyDialog
+                        onSubmit={onCreate}
+                        onUpdate={(state) => console.log(state)}
+                        onComplete={() => console.log("Dialog completed")}
+                    />
+                </div>
+                {apiKeys.length ? (
+                    <div className="bg-emerald-100 rounded-2xl p-8 border border-pink-300">
+                        <div className="grid grid-cols-[1fr_1fr_1fr_1fr_60px] gap-2">
+                            <span className="font-bold">Name</span>
+                            <span className="font-bold">Description</span>
+                            <span className="font-bold">Start</span>
+                            <span className="font-bold">Created</span>
+                            <span className="font-bold">Actions</span>
+                            {apiKeys.map((apiKey) => (
+                                <Fragment key={apiKey.id}>
+                                    <Cell>{apiKey.name}</Cell>
+                                    <Cell>
+                                        {apiKey.metadata?.["description"] || "—"}
+                                    </Cell>
+                                    <Cell>{apiKey.start}</Cell>
+                                    <Cell>
+                                        {formatRelative(apiKey.createdAt, new Date())}
+                                    </Cell>
+                                    <Button
+                                        type="button"
+                                        size="small"
+                                        color="red"
+                                        weight="light"
+                                        className="justify-self-end"
+                                        onClick={() => setDeleteId(apiKey.id)}
+                                    >
+                                        Delete
+                                    </Button>
+                                </Fragment>
+                            ))}
+                        </div>
+                    </div>
+                ) : null}
             </div>
-            <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_60px] gap-2">
-                <span className="font-bold">Name</span>
-                <span className="font-bold">Description</span>
-                <span className="font-bold">Tier</span>
-                <span className="font-bold">Start</span>
-                <span className="font-bold">Created</span>
-                <span className="font-bold">Actions</span>
-                {apiKeys.map((apiKey) => (
-                    <Fragment key={apiKey.id}>
-                        <Cell>{apiKey.name}</Cell>
-                        <Cell>{apiKey.metadata?.["description"] || "—"}</Cell>
-                        <Cell>{apiKey.permissions?.["tier"]?.[0] || "—"}</Cell>
-                        <Cell>{apiKey.start}</Cell>
-                        <Cell>
-                            {formatDistanceToNow(apiKey.createdAt, {
-                                addSuffix: true,
-                            })}
-                        </Cell>
-                        <Button
-                            type="button"
-                            size="small"
-                            variant="outline"
-                            className="justify-self-end"
-                            onClick={() => onDelete(apiKey.id)}
-                        >
-                            Delete
-                        </Button>
-                    </Fragment>
-                ))}
-            </div>
+            <Dialog.Root open={!!deleteId} onOpenChange={({ open }) => !open && setDeleteId(null)}>
+                <Dialog.Backdrop className="fixed inset-0 bg-green-950/50" />
+                <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4">
+                    <Dialog.Content className="bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-md w-full p-6">
+                        <Dialog.Title className="text-lg font-semibold mb-4">
+                            Delete API Key
+                        </Dialog.Title>
+                        <p className="mb-6">
+                            Are you sure you want to delete this API key? This action cannot be undone.
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <Button
+                                type="button"
+                                weight="outline"
+                                onClick={() => setDeleteId(null)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="button"
+                                color="red"
+                                weight="strong"
+                                onClick={handleDelete}
+                            >
+                                Delete
+                            </Button>
+                        </div>
+                    </Dialog.Content>
+                </Dialog.Positioner>
+            </Dialog.Root>
         </>
     );
 };
 
 export type CreateApiKey = {
     name: string;
-    domains: string[];
     description?: string;
 };
 
@@ -127,27 +170,6 @@ const CreateKeyForm: FC<{
             </Field.Root>
             <Field.Root>
                 <Field.Label className="block text-sm font-medium mb-1">
-                    Allowed Domains (*)
-                </Field.Label>
-                <Field.Textarea
-                    value={formData.domains.join("\n") || ""}
-                    onChange={(e) =>
-                        onInputChange(
-                            "domains",
-                            e.target.value.split("\n").map((str) => str.trim()),
-                        )
-                    }
-                    className={cn(
-                        "w-full px-3 py-2 border border-gray-300 rounded",
-                        "focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none",
-                    )}
-                    placeholder={"https://example.com\nhttp:localhost:3000"}
-                    rows={2}
-                    disabled={isSubmitting}
-                />
-            </Field.Root>
-            <Field.Root>
-                <Field.Label className="block text-sm font-medium mb-1">
                     Description
                 </Field.Label>
                 <Field.Textarea
@@ -167,7 +189,7 @@ const CreateKeyForm: FC<{
             <div className="flex gap-2 justify-end pt-4">
                 <Button
                     type="button"
-                    variant="outline"
+                    weight="outline"
                     onClick={onCancel}
                     className="disabled:opacity-50"
                     disabled={isSubmitting}
@@ -176,7 +198,6 @@ const CreateKeyForm: FC<{
                 </Button>
                 <Button
                     type="submit"
-                    variant="default"
                     className="disabled:opacity-50"
                     disabled={!formData.name.trim() || isSubmitting}
                 >
@@ -215,15 +236,9 @@ const ShowKeyResult: FC<{
                         Please copy it now and store it securely.
                     </li>
                     <li>
-                        Store your API key in a secure location, like a password
-                        manager or environment variables.
+                        Treat API keys like passwords, never share them
+                        publicly.
                     </li>
-                    <li>
-                        Never share your API key in public repositories or
-                        communications.
-                    </li>
-                    <li>Rotate your API keys regularly.</li>
-                    <li>Delete unused API keys as soon as possible.</li>
                 </ul>
             </div>
 
@@ -247,7 +262,8 @@ const ShowKeyResult: FC<{
                     />
                     <Button
                         type="button"
-                        variant="pink"
+                        color="pink"
+                        weight="light"
                         shape="rounded"
                         onClick={handleCopy}
                     >
@@ -273,7 +289,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const [formData, setFormData] = useState<CreateApiKey>({
         name: "",
         description: "",
-        domains: [],
     });
     const [currentStep, setCurrentStep] = useState(0);
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
@@ -306,19 +321,20 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     };
 
     const handleComplete = () => {
-        setIsOpen(false);
-        setCurrentStep(0);
-        setCreatedKey(null);
-        setFormData({ name: "", description: "", domains: [] });
         onComplete();
+        setIsOpen(false);
+        resetForm();
     };
 
-    const handleCancel = () => {
-        setIsOpen(false);
+    const resetForm = () => {
         setCurrentStep(0);
         setCreatedKey(null);
-        setFormData({ name: "", description: "", domains: [] });
+        setFormData({ name: "", description: "" });
     };
+
+    useEffect(() => {
+        if (!isOpen) resetForm();
+    }, [isOpen]);
 
     const steps = [
         { title: "Create Key", description: "Enter key details" },
@@ -328,7 +344,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     return (
         <Dialog.Root open={isOpen} onOpenChange={({ open }) => setIsOpen(open)}>
             <Dialog.Trigger>
-                <Button as="div">Create API Key</Button>
+                <Button as="div" color="blue" weight="light">Create API Key</Button>
             </Dialog.Trigger>
             <Dialog.Backdrop className="fixed inset-0 bg-green-950/50" />
             <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4">
@@ -379,7 +395,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     formData={formData}
                                     onInputChange={handleInputChange}
                                     onSubmit={handleSubmit}
-                                    onCancel={handleCancel}
+                                    onCancel={() => setIsOpen(false)}
                                     isSubmitting={isSubmitting}
                                 />
                             </Steps.Content>

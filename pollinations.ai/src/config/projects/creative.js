@@ -5,6 +5,109 @@
 
 export const creativeProjects = [
   {
+    name: "PrisimIG 🎨",
+    url: "https://prisimai.github.io/PrisimIG",
+    description: "Seamless AI-generated imagery with Pollinations.AI. An intuitive web application for generating high-quality images from text prompts in various styles (realistic, anime, cartoon, fantasy). Features multiple image sizes (256x256, 512x512, 1024x1024), batch generation of up to 5 images, and a clean user-friendly interface without requiring sign-ups or API keys.",
+    author: "@CloudCompile",
+    repo: "https://github.com/PrisimAI/PrisimIG",
+    submissionDate: "2025-10-07",
+    order: 1
+  },
+  {
+    name: "Imagine Draw AI 🎨",
+    url: "https://imaginedrawai.vercel.app/",
+    description: "Free AI image generator for creating unlimited images with text prompts. No login, no limits, 100% free. Fast real-time generation, browser-based, mobile-friendly. Perfect for students, designers, content creators - landscapes, characters, logos, backgrounds, and more.",
+    author: "@techwithai-telugu",
+    repo: "https://github.com/TechWithAiTelugu",
+    submissionDate: "2025-08-02",
+    order: 1
+  },
+  {
+    name: "Ai Studio 🎨",
+    url: "https://ai-studio-pollinations.netlify.app/",
+    description: "React application for AI image generation with model selection, image dimensions control, and download/share features. Built with Vite and JavaScript, allows users to generate AI images from text prompts via the Pollinations AI REST API with state-based routing.",
+    author: "@sabbirhossainc",
+    repo: "https://github.com/sabbirhossainc/ai-studio-pollinations.git",
+    submissionDate: "2025-07-05",
+    order: 1
+  },
+  {
+    name: "Gainzr AI 🎨",
+    url: "https://gainzr.my",
+    description: "Web-based AI image generator for creating high-quality images from text prompts in real-time. Simple, fast, and mobile-friendly interface optimized for design, marketing, and social media content creation.",
+    author: "@bwava",
+    submissionDate: "2025-07-05",
+    order: 1
+  },
+  {
+    name: "Dreamator-AI 💫",
+    url: "https://dreamator-ai.vercel.app/",
+    description: "Transform your imagination into reality using Pollinations API. Clean and intuitive interface for generating AI images from text prompts with real-time generation.",
+    author: "@its3li",
+    submissionDate: "2025-06-26",
+    order: 1
+  },
+  {
+    name: "YooAI 🎨",
+    url: "https://yooai.co/",
+    description: "All-in-one AI creation platform integrating AI-Writer, AI-Video, and free image generation powered by Pollinations. No registration or subscription required — simply enter a prompt to generate high-quality visuals instantly.",
+    author: "yoo_ai@outlook.com",
+    submissionDate: "2025-08-19",
+    order: 1
+  },
+  {
+    name: "Image Generator by Quilix 🖼️",
+    url: "https://github.com/quil1x/ImageBYquilix",
+    description: "A beautiful desktop application for generating AI images using Pollinations.AI API. Built with Electron, features modern dark theme with glassmorphism effects, supports multiple AI models (Flux, Turbo, Midjourney), cross-platform support (Windows, macOS, Linux), and generates 1024x1024 images without watermarks.",
+    author: "@quil1x",
+    repo: "https://github.com/quil1x/ImageBYquilix",
+    submissionDate: "2025-09-06",
+    order: 1
+  },
+  {
+    name: "Imagen - AI Image Generator 🎨",
+    url: "https://altkriz.github.io/imagen/",
+    description: "A beautiful, open-source web interface for generating AI images using the Pollinations.ai API. Features modern glass-morphism UI, local history storage, flux and turbo models, adjustable dimensions, seed control, and optional prompt enhancement. MIT licensed.",
+    author: "@altkriz",
+    repo: "https://github.com/altkriz/imagen",
+    submissionDate: "2025-09-14",
+    order: 1
+  },
+  {
+    name: "mayaAI 🇪🇸",
+    url: "https://mayaia.pages.dev/",
+    description: "Maya ia es una inteligencia artificial para generar imagenes usando pollinations api (Spanish AI image generator using Pollinations API)",
+    author: "@moimoyyyy-sys",
+    submissionDate: "2025-09-24",
+    language: "es",
+    order: 1
+  },
+  {
+    name: "GenImage 🎨",
+    url: "https://genimage.runasp.net/",
+    description: "Text to image generation tool",
+    author: "@artydev",
+    submissionDate: "2025-09-23",
+    order: 1
+  },
+  {
+    name: "Anime Comic Movie 🎬",
+    url: "https://petersebring.com/showcase.php",
+    description: "An ambitious anime comic movie project using Pollinations' Kontext and Flux models for image-to-image generation. Combines detailed character and location images using ImageMagick, then uses Kontext to create visually appealing scenes with characters in locations. Features a complete server-side framework for automation, with plans for TTS dialogues and music soundtrack integration. 200+ hours of development invested in this no-budget creative project.",
+    author: "@sebastianpw",
+    submissionDate: "2025-10-02",
+    order: 1
+  },
+  {
+    name: "DirPixel 🎨",
+    url: "https://github.com/techcow2/dir-pixel",
+    description: "Sometimes creators need to replace multiple images in a directory with new ones. This tool makes it easy by scanning all images in a specified directory, then allowing you to replace them with new AI-generated images by setting either a custom prompt for individual images or a global prompt for the entire directory. Features PyQt6 GUI, maintains original filenames, supports PNG/JPG formats with automatic conversion, and provides real-time progress tracking.",
+    author: "@techcow2",
+    repo: "https://github.com/techcow2/dir-pixel",
+    submissionDate: "2025-09-26",
+    order: 1
+  },
+  {
     name: "Prompt2Image 🎨",
     url: "https://marketplace.visualstudio.com/items?itemName=MaazSaboowala.prompt2image-ai-generator",
     description: "Prompt2Image is a Visual Studio Code extension that brings AI-powered image generation directly into the developer workflow. Instead of searching for stock photos or managing downloads, developers can simply open the VS Code Command Palette, enter a descriptive text prompt, and instantly receive a high-quality, project-ready image. The extension integrates seamlessly with Pollinations.ai, which processes the prompt through its AI generation API to create tailored, web-optimized visuals.",
@@ -30,15 +133,6 @@ export const creativeProjects = [
     order: 1
   },
   {
-    name: "Pollinations AI Demo",
-    url: "https://pollinationsaidemo.netlify.app/",
-    description: "Images generator",
-    author: "@Wormix48",
-    repo: "https://github.com/Wormix48/Pollinations-AI-Demo",
-    submissionDate: "2025-09-17",
-    order: 1
-  },
-  {
     name: "🇧🇷 CapyUniverse - CapyIMG",
     url: "https://capyuniverse.pages.dev/capyimg.html",
     description: "Ferramenta simples para criar imagens com IA diretamente no navegador. O usuário escreve uma descrição (briefing), pode indicar elementos a evitar, escolher quantidade de imagens (1–4), formato (1:1, 16:9, 9:16, 4:3, 3:4) e tamanho. (Simple tool to create AI images directly in the browser. Users write a description, can specify elements to avoid, choose number of images (1–4), format ratios, and size.)",
@@ -55,14 +149,6 @@ export const creativeProjects = [
     author: "@cr7",
     submissionDate: "2025-09-06",
     language: "tr-TR",
-    order: 1
-  },
-  {
-    name: "Ai image generator 🎨",
-    url: "https://ris-imago.vercel.app/",
-    description: "A React-based AI image generator that transforms user prompts into high-quality images. It features custom controls for style, quality, and resolution, and offers user history.",
-    author: "rishabhmishra.81e@gmail.com",
-    submissionDate: "2025-09-06",
     order: 1
   },
   {
@@ -119,15 +205,6 @@ export const creativeProjects = [
     order: 1
   },
   {
-    name: "Imagine Draw AI 🎨",
-    url: "https://imaginedrawai.vercel.app/",
-    description: "This AI image was created for free using ImagineDraw AI a powerful tool to generate unlimited AI images with just a text prompt. No login, no limits, 100% free!",
-    author: "TechWithAiTelugu",
-    repo: "https://github.com/TechWithAiTelugu",
-    submissionDate: "2025-08-03",
-    order: 1
-  },
-  {
     name: "EzPromptla",
     url: "https://ezpromptla.netlify.app",
     description: "EzPromptla is an advanced visual prompt builder and creative partner designed to simplify high-quality AI image generation. It abstracts the complexity of prompt engineering by providing a category-driven interface (for automotive, portraits, products, etc.) and uses Google's Gemini model as a core reasoning engine to build, analyze, and refine user ideas into master-level prompts for Google Imagen.",
@@ -149,6 +226,14 @@ export const creativeProjects = [
     description: "Easily generate new images inspired by the Pexels website with embedded IPTC (title, description, keywords) on download. Find beautiful image inspiration from Pexels, create prompts from images, and generate new images with metadata embedded for immediate use in stock photography or upscaling.",
     author: "kengkreingkrai@gmail.com",
     submissionDate: "2025-06-23",
+    order: 1
+  },
+  {
+    name: "Dreamator-AI 🎨",
+    url: "https://dreamator-ai.vercel.app/",
+    description: "Transform your imagination into reality using Pollinations API. A creative image generation platform with a personal gallery of generated masterpieces.",
+    author: "@its3li",
+    submissionDate: "2025-06-27",
     order: 1
   },
   {
@@ -174,14 +259,6 @@ export const creativeProjects = [
     description: "A Deno Deploy API wrapper for Pollinations that provides JSON-formatted responses. Designed for applications that require JSON API integration with Pollinations services.",
     author: "@apersonwhomakesstuff",
     submissionDate: "2025-06-13",
-    order: 1
-  },
-  {
-    name: "MrEgonAI",
-    url: "https://mr-egon-ai.vercel.app/",
-    description: "An image generator powered by pollinations.ai and its image generation models. Features text-to-image generation with various AI models.",
-    author: "@mregon",
-    submissionDate: "2025-06-07",
     order: 1
   },
   {
@@ -221,38 +298,12 @@ export const creativeProjects = [
     order: 1
   },
   {
-    name: "Musify - AI Enhanced Music Streaming",
-    url: "https://musify-sd.vercel.app/",
-    description: "Musify is your AI-powered music buddy, making your jam sessions smarter and more fun. Powered by pollinations API, it offers AI Music Assistant, Voice Commands, AI Playlist Creator, and Responsive Design.",
-    author: "@Sugamdeol",
-    submissionDate: "2025-02-27",
-    order: 2
-  },
-  {
     name: "CalcuBite AI",
     url: "https://calcubite.vercel.app/",
     description: "CalcuBite AI is a smart tool that analyzes food from images to provide calorie and nutrient details. Just take a photo, and it quickly gives you an estimate of your meal's nutritional value. It uses AI for accurate analysis, and if you run out of free scans, you can watch an ad to get more!",
     author: "@sugamdeol",
     submissionDate: "2025-03-15",
     order: 1
-  },
-  {
-    name: "Elixpo Art",
-    url: "https://elixpoart.vercel.app",
-    description: "A Web interface to create thematic images from prompts, with multiple aspect ratios and also image reference inputs.",
-    author: "Ayushman Bhattacharya",
-    repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter",
-    stars: 8,
-    submissionDate: "2025-03-31",
-    order: 1
-  },
-  {
-    name: "Case Me 🇧🇷",
-    description: "A vending machine that creates customized phone cases with photos or other images and colors chosen by the end customer.",
-    author: "anaboxmania@gmail.com",
-    submissionDate: "2025-03-19",
-    language: "pt-BR",
-    order: 2
   },
   {
     name: "Generator AI Image 🇮🇩",
@@ -281,17 +332,6 @@ export const creativeProjects = [
     order: 1,
     category: "creativeApps",
     stars: 8
-  },
-  {
-    name: "Generator Text AI 🇮🇩",
-    url: "https://app.ariftirtana.my.id/",
-    description: "Text-to-image generator using Pollinations, supporting Indonesian and English prompts.",
-    author: "@ayick13",
-    repo: "https://github.com/ayick13/app",
-    stars: 1,
-    submissionDate: "2025-04-16",
-    language: "id-ID",
-    order: 2
   },
   {
     name: "NailsGen",
@@ -361,14 +401,6 @@ export const creativeProjects = [
     submissionDate: "2025-03-27",
     language: "zh-CN",
     order: 5
-  },
-  {
-    name: "Image Gen - Uncensored Edition",
-    url: "https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2",
-    description: "A powerful image generation assistant on HuggingChat.",
-    author: "@DeFactOfficial",
-    submissionDate: "2025-02-16",
-    order: 1
   },
   {
     name: "Own-AI",
@@ -458,17 +490,6 @@ export const creativeProjects = [
     description: "A free, feature-rich novel writing application that helps writers organize stories, characters, and worlds. Uses Pollinations AI for generating chapter summaries, rewriting text based on context, and generating new content based on previous chapters and character information.",
     author: "@soryn.san",
     submissionDate: "2025-05-19",
-    order: 1
-  },
-  {
-    name: "Text2Image_audio 🇨🇳",
-    url: "nihilistic.dpdns.org",
-    description: "文生图与文生语音网站 - 一个初学者的AI编程项目，支持文本转图像和音频生成功能。(Text to Image and Text to Audio website - A beginner's AI programming project supporting text-to-image and audio generation features.)",
-    author: "@peyoba",
-    repo: "https://github.com/wtliao/text2image",
-    stars: 0,
-    submissionDate: "2025-06-05",
-    language: "zh-CN",
     order: 1
   },
   {

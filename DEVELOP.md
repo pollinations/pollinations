@@ -38,9 +38,13 @@ The variables are kept encrypted in `**/.encrypted.env` files, and only decrypte
 ###### Common SOPS commands:
 | Command | Description |
 | :--- | :--- |
-| `sops decrypt .encrypted.env  > .env` | dump decrypted content |
-| `sops encrypt .env > .encrypted.env` | encrypt new file |
-| `sops edit .encrypted.env` | exit file via temp file (hint: set `EDITOR=/editor/executable`) |
+| `sops -d .encrypted.env` | View decrypted content |
+| `sops edit .encrypted.env` | Edit encrypted file directly (set `EDITOR` env var) |
+| `sops -e .env > .encrypted.env` | Encrypt .env → .encrypted.env |
+
+**Workflow:** 
+- **With nix:** Variables auto-load via `nix develop` - edit with `sops edit .encrypted.env`
+- **Without nix:** Edit `.env` → Run `sops -e .env > .encrypted.env` → Commit `.encrypted.env`
 
 ##### Debugging
 For verbose logging and debugging across all services, you can use:

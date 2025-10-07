@@ -1,5 +1,6 @@
-import { PriceDefinition, TokenUsage } from "@/registry/registry";
+import { PriceDefinition, TokenUsage, CostType } from "@shared/registry/registry.ts";
 import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import type { ContentFilterResult, OpenAIResponse } from "@/usage.ts";
 
 const eventTypeValues = ["generate.text", "generate.image"] as const;
 export type EventType = (typeof eventTypeValues)[number];
@@ -83,21 +84,46 @@ export const event = sqliteTable("event", {
         "token_count_completion_image",
     ).notNull(),
 
-    // Cost and Price
+    // Cost
+    costType: text("cost_type").$type<CostType>(),
     totalCost: real("total_cost").notNull(),
+
+    // Price
     totalPrice: real("total_price").notNull(),
 
-    // Moderation results
-    moderationHateSeverity: text("moderation_hate_severity"),
-    moderationSelfHarmSeverity: text("moderation_self_harm_severity"),
-    moderationSexualSeverity: text("moderation_sexual_severity"),
-    moderationViolenceSeverity: text("moderation_violence_severity"),
-    moderationProtectedMaterialCodeDetected: integer(
-        "moderation_protected_material_code_detected",
+    // Prompt moderation results
+    moderationPromptHateSeverity: text("moderation_prompt_hate_severity"),
+    moderationPromptSelfHarmSeverity: text(
+        "moderation_prompt_self_harm_severity",
+    ),
+    moderationPromptSexualSeverity: text("moderation_prompt_sexual_severity"),
+    moderationPromptViolenceSeverity: text(
+        "moderation_prompt_violence_severity",
+    ),
+    moderationPromptJailbreakDetected: integer(
+        "moderation_prompt_jailbreak_detected",
         { mode: "boolean" },
     ),
-    moderationProtectedMaterialTextDetected: integer(
-        "moderation_protected_material_text_detected",
+
+    // Completion moderation results
+    moderationCompletionHateSeverity: text(
+        "moderation_completion_hate_severity",
+    ),
+    moderationCompletionSelfHarmSeverity: text(
+        "moderation_completion_self_harm_severity",
+    ),
+    moderationCompletionSexualSeverity: text(
+        "moderation_completion_sexual_severity",
+    ),
+    moderationCompletionViolenceSeverity: text(
+        "moderation_completion_violence_severity",
+    ),
+    moderationCompletionProtectedMaterialCodeDetected: integer(
+        "moderation_completion_protected_material_code_detected",
+        { mode: "boolean" },
+    ),
+    moderationCompletionProtectedMaterialTextDetected: integer(
+        "moderation_completion_protected_material_text_detected",
         { mode: "boolean" },
     ),
 
@@ -137,19 +163,25 @@ export type GenerationEventUsageParams = {
 export function priceToEventParams(
     priceDefinition?: PriceDefinition,
 ): GenerationEventPriceParams {
+    // biome-ignore format: custom formatting
+    // Rates are now just numbers (DPT), not objects with .rate property
     return {
-        tokenPricePromptText: priceDefinition?.promptTextTokens?.rate || 0,
-        tokenPricePromptCached: priceDefinition?.promptCachedTokens?.rate || 0,
-        tokenPricePromptAudio: priceDefinition?.promptAudioTokens?.rate || 0,
-        tokenPricePromptImage: priceDefinition?.promptImageTokens?.rate || 0,
+        tokenPricePromptText: 
+            priceDefinition?.promptTextTokens || 0,
+        tokenPricePromptCached: 
+            priceDefinition?.promptCachedTokens || 0,
+        tokenPricePromptAudio: 
+            priceDefinition?.promptAudioTokens || 0,
+        tokenPricePromptImage: 
+            priceDefinition?.promptImageTokens || 0,
         tokenPriceCompletionText:
-            priceDefinition?.completionTextTokens?.rate || 0,
+            priceDefinition?.completionTextTokens || 0,
         tokenPriceCompletionReasoning:
-            priceDefinition?.completionReasoningTokens?.rate || 0,
+            priceDefinition?.completionReasoningTokens || 0,
         tokenPriceCompletionAudio:
-            priceDefinition?.completionAudioTokens?.rate || 0,
+            priceDefinition?.completionAudioTokens || 0,
         tokenPriceCompletionImage:
-            priceDefinition?.completionImageTokens?.rate || 0,
+            priceDefinition?.completionImageTokens || 0,
     };
 }
 
@@ -165,5 +197,57 @@ export function usageToEventParams(
         tokenCountCompletionReasoning: usage?.completionReasoningTokens || 0,
         tokenCountCompletionAudio: usage?.completionAudioTokens || 0,
         tokenCountCompletionImage: usage?.completionImageTokens || 0,
+    };
+}
+
+export type GenerationEventContentFilterParams = {
+    // prompt filter results
+    moderationPromptHateSeverity?: string;
+    moderationPromptSelfHarmSeverity?: string;
+    moderationPromptSexualSeverity?: string;
+    moderationPromptViolenceSeverity?: string;
+    moderationPromptJailbreakDetected?: boolean;
+    // completion filter results
+    moderationCompletionHateSeverity?: string;
+    moderationCompletionSelfHarmSeverity?: string;
+    moderationCompletionSexualSeverity?: string;
+    moderationCompletionViolenceSeverity?: string;
+    moderationCompletionProtectedMaterialTextDetected?: boolean;
+    moderationCompletionProtectedMaterialCodeDetected?: boolean;
+};
+
+// biome-ignore format: custom formatting
+export function contentFilterResultsToEventParams(
+    response: OpenAIResponse,
+): GenerationEventContentFilterParams {
+    const promptFilterResults =
+        response.prompt_filter_results[0]?.content_filter_results;
+    const completionFilterResults = 
+        response.choices[0]?.content_filter_results;
+    return {
+        // prompt filter results
+        moderationPromptHateSeverity: 
+            promptFilterResults?.hate?.severity,
+        moderationPromptSelfHarmSeverity:
+            promptFilterResults?.self_harm?.severity,
+        moderationPromptSexualSeverity: 
+            promptFilterResults?.sexual?.severity,
+        moderationPromptViolenceSeverity:
+            promptFilterResults?.violence?.severity,
+        moderationPromptJailbreakDetected:
+            promptFilterResults?.jailbreak?.detected,
+        // completion filter results
+        moderationCompletionHateSeverity:
+            completionFilterResults?.hate?.severity,
+        moderationCompletionSelfHarmSeverity:
+            completionFilterResults?.self_harm?.severity,
+        moderationCompletionSexualSeverity:
+            completionFilterResults?.sexual?.severity,
+        moderationCompletionViolenceSeverity:
+            completionFilterResults?.violence?.severity,
+        moderationCompletionProtectedMaterialTextDetected:
+            completionFilterResults?.protected_material_text?.detected,
+        moderationCompletionProtectedMaterialCodeDetected:
+            completionFilterResults?.protected_material_code?.detected,
     };
 }

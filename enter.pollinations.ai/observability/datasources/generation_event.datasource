@@ -17,7 +17,6 @@ SCHEMA >
 `referrer_url`    String                 `json:$.referrerUrl` DEFAULT 'undefined',
 `referrer_domain` LowCardinality(String) `json:$.referrerDomain` DEFAULT 'undefined',
 
-`model_provider`       LowCardinality(String) `json:$.modelProvider` DEFAULT 'undefined',
 `model_requested`      LowCardinality(String) `json:$.modelRequested` DEFAULT 'undefined',
 `model_used`           LowCardinality(String) `json:$.modelUsed` DEFAULT 'undefined',
 `is_billed_usage`      Bool                   `json:$.isBilledUsage`,
@@ -42,16 +41,24 @@ SCHEMA >
 `token_count_completion_audio`     UInt32   `json:$.tokenCountCompletionAudio` DEFAULT 0,
 `token_count_completion_image`     UInt32   `json:$.tokenCountCompletionImage` DEFAULT 0,
 
+`cost_type`     LowCardinality(String) `json:$.costType` DEFAULT 'undefined',
 `total_cost`    Float64 `json:$.totalCost` DEFAULT 0,
 `total_price`   Float64 `json:$.totalPrice` DEFAULT 0,
 
--- Moderation
-`moderation_hate_severity`       LowCardinality(String) `json:$.moderationHateSeverity` DEFAULT 'undefined',
-`moderation_self_harm_severity`  LowCardinality(String) `json:$.moderationSelfHarmSeverity` DEFAULT 'undefined',
-`moderation_sexual_severity`     LowCardinality(String) `json:$.moderationSexualSeverity` DEFAULT 'undefined',
-`moderation_violence_severity`   LowCardinality(String) `json:$.moderationViolenceSeverity` DEFAULT 'undefined',
-`moderation_protected_material_code_detected`  Bool `json:$.moderationProtectedMaterialCodeDetected` DEFAULT false,
-`moderation_protected_material_text_detected`  Bool `json:$.moderationProtectedMaterialTextDetected` DEFAULT false,
+-- Prompt Moderation
+`moderation_prompt_hate_severity`       LowCardinality(String) `json:$.moderationPromptHateSeverity` DEFAULT 'undefined',
+`moderation_prompt_self_harm_severity`  LowCardinality(String) `json:$.moderationPromptSelfHarmSeverity` DEFAULT 'undefined',
+`moderation_prompt_sexual_severity`     LowCardinality(String) `json:$.moderationPromptSexualSeverity` DEFAULT 'undefined',
+`moderation_prompt_violence_severity`   LowCardinality(String) `json:$.moderationPromptViolenceSeverity` DEFAULT 'undefined',
+`moderation_prompt_jailbreak_detected`  Bool `json:$.moderationPromptJailbreakDetected` DEFAULT false,
+
+-- Completion Moderation
+`moderation_completion_hate_severity`       LowCardinality(String) `json:$.moderationCompletionHateSeverity` DEFAULT 'undefined',
+`moderation_completion_self_harm_severity`  LowCardinality(String) `json:$.moderationCompletionSelfHarmSeverity` DEFAULT 'undefined',
+`moderation_completion_sexual_severity`     LowCardinality(String) `json:$.moderationCompletionSexualSeverity` DEFAULT 'undefined',
+`moderation_completion_violence_severity`   LowCardinality(String) `json:$.moderationCompletionViolenceSeverity` DEFAULT 'undefined',
+`moderation_completion_protected_material_code_detected`  Bool `json:$.moderationCompletionProtectedMaterialCodeDetected` DEFAULT false,
+`moderation_completion_protected_material_text_detected`  Bool `json:$.moderationCompletionProtectedMaterialTextDetected` DEFAULT false,
 
 -- Cache
 `cache_hit`                  Bool                    `json:$.cacheHit` DEFAULT false,
@@ -64,6 +71,3 @@ ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(start_time)"
 ENGINE_SORTING_KEY "start_time, environment, user_id, user_tier"
 ENGINE_PRIMARY_KEY "start_time, environment, user_id"
-
-FORWARD_QUERY >
-  SELECT request_id, start_time, end_time, response_time, CAST(response_status, 'UInt32') AS response_status, environment, event_type, user_id, user_tier, referrer_url, referrer_domain, model_provider, model_requested, model_used, is_billed_usage, token_price_prompt_text, token_price_prompt_cached, token_price_prompt_audio, token_price_prompt_image, token_price_completion_text, token_price_completion_reasoning, token_price_completion_audio, token_price_completion_image, token_count_prompt_text, token_count_prompt_audio, token_count_prompt_cached, token_count_prompt_image, token_count_completion_text, token_count_completion_reasoning, token_count_completion_audio, token_count_completion_image, total_cost, total_price, moderation_hate_severity, moderation_self_harm_severity, moderation_sexual_severity, moderation_violence_severity, moderation_protected_material_code_detected, moderation_protected_material_text_detected, cache_hit, cache_type, cache_semantic_similarity, cache_semantic_threshold, cache_key

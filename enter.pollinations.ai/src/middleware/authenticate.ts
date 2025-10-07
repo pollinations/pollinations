@@ -1,20 +1,15 @@
-import type { Session, User } from "better-auth";
 import { createMiddleware } from "hono/factory";
 import { createAuth } from "../auth.ts";
 import { LoggerVariables } from "./logger.ts";
 import { HTTPException } from "hono/http-exception";
-
-export type UserSession = {
-    user: User;
-    session: Session;
-};
+import type { Session } from "@/auth.ts";
 
 export type AuthVariables = {
     auth: {
         client: ReturnType<typeof createAuth>;
-        session?: Session;
-        user?: User;
-        requireActiveSession: (message?: string) => UserSession;
+        session?: Session["session"];
+        user?: Session["user"];
+        requireActiveSession: (message?: string) => Session;
     };
 };
 
@@ -33,7 +28,7 @@ export const authenticate = createMiddleware<AuthEnv>(async (c, next) => {
     const session = result?.session;
     const user = result?.user;
 
-    const requireActiveSession = (message?: string): UserSession => {
+    const requireActiveSession = (message?: string): Session => {
         if (!user || !session) {
             throw new HTTPException(401, {
                 message:
@@ -49,5 +44,6 @@ export const authenticate = createMiddleware<AuthEnv>(async (c, next) => {
         user,
         requireActiveSession,
     });
+
     await next();
 });

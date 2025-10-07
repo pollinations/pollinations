@@ -19,6 +19,7 @@ import {
     analyzeTextSafety,
     type ContentSafetyFlags,
 } from "./utils/azureContentSafety.ts";
+import type { TrackingData } from "./utils/trackingHeaders.ts";
 
 // Import GPT Image logging utilities
 import { logGptImageError, logGptImagePrompt } from "./utils/gptImageLogger.ts";
@@ -58,6 +59,8 @@ export type ImageGenerationResult = {
     buffer: Buffer;
     isMature: boolean;
     isChild: boolean;
+    // Tracking data for enter service headers
+    trackingData?: TrackingData;
 };
 
 export type AuthResult = {
@@ -216,7 +219,17 @@ export const callComfyUI = async (
                 })
                 .jpeg()
                 .toBuffer();
-            return { buffer: resizedBuffer, ...rest };
+            return { 
+                buffer: resizedBuffer, 
+                ...rest,
+                trackingData: {
+                    actualModel: 'comfyui',
+                    usage: {
+                        candidatesTokenCount: 1,
+                        totalTokenCount: 1
+                    }
+                }
+            };
         }
 
         // Convert to JPEG even if no resize was needed
@@ -227,7 +240,17 @@ export const callComfyUI = async (
             })
             .toBuffer();
 
-        return { buffer: jpegBuffer, ...rest };
+        return { 
+            buffer: jpegBuffer, 
+            ...rest,
+            trackingData: {
+                actualModel: safeParams.model,
+                usage: {
+                    candidatesTokenCount: 1,
+                    totalTokenCount: 1
+                }
+            }
+        };
     } catch (e) {
         logError("Error in callComfyUI:", e);
         throw e;
@@ -248,6 +271,8 @@ async function callCloudflareModel(
     modelPath: string,
     additionalParams: object = {},
 ): Promise<ImageGenerationResult> {
+    // Use the registry model name from safeParams, not the internal Cloudflare model path
+    const registryModelName = safeParams.model;
     const { accountId, apiToken } = getCloudflareCredentials();
 
     if (!accountId || !apiToken) {
@@ -338,7 +363,18 @@ async function callCloudflareModel(
         imageBuffer = Buffer.from(data.result.image, "base64");
     }
 
-    return { buffer: imageBuffer, isMature: false, isChild: false };
+    return { 
+        buffer: imageBuffer, 
+        isMature: false, 
+        isChild: false,
+        trackingData: {
+            actualModel: registryModelName,
+            usage: {
+                candidatesTokenCount: 1,
+                totalTokenCount: 1
+            }
+        }
+    };
 }
 
 /**
@@ -698,6 +734,13 @@ const callAzureGPTImageWithEndpoint = async (
         buffer: imageBuffer,
         isMature: false, // Default assumption
         isChild: false, // Default assumption
+        trackingData: {
+            actualModel: safeParams.model,
+            usage: {
+                candidatesTokenCount: 1,
+                totalTokenCount: 1
+            }
+        }
     };
 };
 
@@ -968,16 +1011,16 @@ const generateImage = async (
     }
 
     if (safeParams.model === "seedream") {
-        // Seedream model requires seed tier or higher
-        if (!hasSufficientTier(userInfo.tier, "seed")) {
+        // Seedream model requires nectar tier or higher (temporarily due to limited credits)
+        if (!hasSufficientTier(userInfo.tier, "nectar")) {
             const errorText =
-                "Access to seedream model is limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.";
+                "Access to seedream model is currently limited to users in the nectar tier or higher due to limited credits. Seedream will be available again to seed tier users in the next few days. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.";
             logError(errorText);
             progress.updateBar(
                 requestId,
                 35,
                 "Auth",
-                "Seedream model requires seed tier",
+                "Seedream temporarily requires nectar tier",
             );
             throw new Error(errorText);
         }
@@ -1219,7 +1262,12 @@ export async function createAndReturnImageCached(
             requestId,
         );
 
-        return { buffer: processedBuffer, isChild, isMature };
+        return { 
+            buffer: processedBuffer, 
+            isChild, 
+            isMature,
+            trackingData: result.trackingData
+        };
     } catch (error) {
         logError("Error in createAndReturnImageCached:", error);
         throw error;

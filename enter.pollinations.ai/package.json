@@ -2,7 +2,7 @@
     "name": "pollinations-enter",
     "type": "module",
     "version": "1.0.0",
-    "description": "Next generation auth service for Pollinations",
+    "description": "Next generation auth service for pollinations.ai",
     "main": "src/index.ts",
     "scripts": {
         "typecheck": "tsc --noEmit",

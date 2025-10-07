@@ -5,6 +5,15 @@
 
 export const creativeProjects = [
   {
+    name: "PrisimIG 🎨",
+    url: "https://prisimai.github.io/PrisimIG",
+    description: "Seamless AI-generated imagery with Pollinations.AI. An intuitive web application for generating high-quality images from text prompts in various styles (realistic, anime, cartoon, fantasy). Features multiple image sizes (256x256, 512x512, 1024x1024), batch generation of up to 5 images, and a clean user-friendly interface without requiring sign-ups or API keys.",
+    author: "@CloudCompile",
+    repo: "https://github.com/PrisimAI/PrisimIG",
+    submissionDate: "2025-10-07",
+    order: 1
+  },
+  {
     name: "Imagine Draw AI 🎨",
     url: "https://imaginedrawai.vercel.app/",
     description: "Free AI image generator for creating unlimited images with text prompts. No login, no limits, 100% free. Fast real-time generation, browser-based, mobile-friendly. Perfect for students, designers, content creators - landscapes, characters, logos, backgrounds, and more.",

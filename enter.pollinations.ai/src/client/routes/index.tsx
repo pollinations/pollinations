@@ -74,8 +74,8 @@ function RouteComponent() {
 
     return (
         <div className="flex flex-col gap-20">
-            <div className="flex justify-between gap-4">
-                <h1 className="flex-1">Pollinations.AI</h1>
+            <div className="flex justify-between gap-4 items-center">
+                <img src="/logo_text_black.svg" alt="Pollinations.AI" className="h-12 flex-1 object-contain object-left" />
                 <Button as="a" href="/api/docs">
                     API Reference
                 </Button>

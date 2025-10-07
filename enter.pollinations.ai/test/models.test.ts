@@ -1,4 +1,4 @@
-import { REGISTRY, ServiceId } from "@/registry/registry.ts";
+import { REGISTRY, ServiceId } from "@shared/registry/registry.ts";
 import { SELF } from "cloudflare:test";
 import { batches } from "@/util";
 import { test } from "./fixtures.ts";
@@ -7,7 +7,7 @@ import { setupFetchMock, teardownFetchMock } from "./mocks/fetch";
 import { createGithubMockHandlers } from "./mocks/github";
 import { createMockPolar } from "./mocks/polar";
 import { env } from "cloudflare:workers";
-import { TEXT_SERVICES } from "@/registry/text.ts";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
 
 const mockPolar = createMockPolar();
 

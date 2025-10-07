@@ -1,11 +1,11 @@
-import { createRegistry, REGISTRY } from "@/registry/registry";
-import { fromDPMT, ZERO_PRICE, ZERO_PRICE_START_DATE, PRICING_START_DATE } from "@/registry/price-helpers";
+import { createRegistry, REGISTRY } from "../registry/registry.ts";
+import { fromDPMT, ZERO_PRICE, ZERO_PRICE_START_DATE, PRICING_START_DATE } from "../registry/price-helpers.ts";
 import { expect, test } from "vitest";
 import type {
     ServiceRegistry,
     ModelProviderRegistry,
     TokenUsage,
-} from "@/registry/registry";
+} from "../registry/registry.ts";
 
 const MOCK_MODEL_PROVIDERS = {
     "mock-model": {

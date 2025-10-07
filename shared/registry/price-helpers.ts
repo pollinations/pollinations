@@ -1,4 +1,4 @@
-import type { UsageConversionDefinition } from "@/registry/registry";
+import type { UsageConversionDefinition } from "./registry.ts";
 
 /**
  * The start date for zero pricing (legacy period).

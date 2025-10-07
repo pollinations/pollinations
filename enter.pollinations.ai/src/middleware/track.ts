@@ -205,20 +205,14 @@ function extractUserTier(
     c: Context<TrackEnv>,
     response?: OpenAIResponse,
 ): string | undefined {
-    // Try header first (works for both image and text generations)
-    const headerTier = c.res.headers.get("x-user-tier");
-    if (headerTier) {
-        return headerTier;
-    }
-    
-    // Try response object for text generations
-    if (response?.user_tier) {
-        return response.user_tier;
-    }
-    
-    // Try user tier from auth context (new field we just added)
+    // Primary source: user tier from auth context (stored in database)
     if (c.var.auth.user?.tier) {
         return c.var.auth.user.tier;
+    }
+    
+    // Fallback: response object for text generations (legacy)
+    if (response?.user_tier) {
+        return response.user_tier;
     }
     
     return undefined;

@@ -479,7 +479,6 @@ const checkCacheAndGenerate = async (
         // Add tracking headers for enter service (GitHub issue #4170)
         const trackingHeaders = buildTrackingHeaders(
             safeParams.model,
-            authResult.tier,
             bufferAndMaturity.trackingData
         );
         Object.assign(headers, trackingHeaders);

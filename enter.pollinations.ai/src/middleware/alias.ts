@@ -22,6 +22,5 @@ export const alias = (config: Record<string, string>) =>
                 return await fetch(new Request(updatedUrl, c.req.raw));
             }
         }
-        await next();
-        return;
+        return await next();
     });

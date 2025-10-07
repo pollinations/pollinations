@@ -5,7 +5,7 @@ function Footer() {
   return (
     <footer className="footer">
       <p>
-        Made for Hacktoberfest 2025 🎃 | Powered by{' '}
+        Made for Hacktoberfest 2025  | Powered by{' '}
         <a 
           href="https://pollinations.ai" 
           target="_blank" 

@@ -568,6 +568,8 @@ Our codebase is organized into several key folders, each serving a specific purp
 
 This structure encompasses the frontend website, backend services for image and text generation, and integrations like the Discord bot and MCP server, providing a comprehensive framework for the Pollinations.AI platform.
 
+For development setup and environment management, see [DEVELOP.md](./DEVELOP.md).
+
 ## 🏢 Supported By
 
 Pollinations.AI is proud to be supported by:

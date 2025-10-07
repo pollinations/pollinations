@@ -16,7 +16,7 @@ Credit cards for now. We're looking into crypto and other options for people in 
 
 ## Is there a monthly subscription?
 
-Not yet, but we're considering it based on community feedback. Join our [Discord](https://discord.gg/pollinations) for updates.
+Not yet, but we're considering it based on community feedback. Check out the [voting issue](https://github.com/pollinations/pollinations/issues/2202) to share your thoughts or join our [Discord](https://discord.gg/pollinations) for updates.
 
 ## Can I try it without signing up or paying?
 
@@ -28,11 +28,9 @@ You keep the free models (with rate limits) and unlock paid models (no rate limi
 
 ## How do daily grants work?
 
-Every day at 00:00 UTC, you get free Pollen. It's spent before your purchased balance.
+Every day at 00:00 UTC, registered users get free Pollen. It's spent before your purchased balance.
 
-- **Seed** (default): 1 Pollen/day
-- **Flower** (request upgrade): 5 Pollen/day
-- **Nectar** (request upgrade): 10 Pollen/day
+We have three tiers: **Seed** (default), **Flower**, and **Nectar**. Higher tiers get more daily Pollen. You can request an upgrade in your dashboard.
 
 ## How is pricing set?
 

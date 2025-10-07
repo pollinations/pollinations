@@ -116,7 +116,7 @@ export const track = (eventType: EventType) =>
             eventType,
 
             userId: c.var.auth.user?.id,
-            userTier: extractUserTier(c, openaiResponse),
+            userTier: extractUserTier(c),
             ...referrerInfo,
 
             modelRequested,
@@ -201,21 +201,8 @@ function extractUsage(
     );
 }
 
-function extractUserTier(
-    c: Context<TrackEnv>,
-    response?: OpenAIResponse,
-): string | undefined {
-    // Primary source: user tier from auth context (stored in database)
-    if (c.var.auth.user?.tier) {
-        return c.var.auth.user.tier;
-    }
-    
-    // Fallback: response object for text generations (legacy)
-    if (response?.user_tier) {
-        return response.user_tier;
-    }
-    
-    return undefined;
+function extractUserTier(c: Context<TrackEnv>): string | undefined {
+    return c.var.auth.user?.tier;
 }
 
 function extractContentFilterResults(

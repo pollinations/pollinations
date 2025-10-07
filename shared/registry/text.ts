@@ -2,8 +2,8 @@ import type {
     ModelProviderRegistry,
     ServiceRegistry,
     UsageConversionDefinition,
-} from "@/registry/registry";
-import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "@/registry/price-helpers";
+} from "./registry.ts";
+import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "./price-helpers.ts";
 
 export const TEXT_MODELS = {
     "gpt-5-nano-2025-08-07": {
@@ -24,18 +24,9 @@ export const TEXT_MODELS = {
         cost: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: {
-                    unit: "DPMT",
-                    rate: 0.22,
-                },
-                promptCachedTokens: {
-                    unit: "DPMT",
-                    rate: 0.03,
-                },
-                completionTextTokens: {
-                    unit: "DPMT",
-                    rate: 1.73,
-                },
+                promptTextTokens: fromDPMT(0.22),
+                promptCachedTokens: fromDPMT(0.03),
+                completionTextTokens: fromDPMT(1.73),
             },
         ],
     },

@@ -1,7 +1,7 @@
-import { omit, safeRound } from "../util.ts";
+import { omit, safeRound } from "../utils.ts";
 import { TEXT_MODELS, TEXT_SERVICES } from "./text.ts";
 import { IMAGE_MODELS, IMAGE_SERVICES } from "./image.ts";
-import { EventType } from "@/db/schema/event.ts";
+import { EventType } from "./types.ts";
 
 const PRECISION = 8;
 

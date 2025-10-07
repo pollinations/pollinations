@@ -47,9 +47,7 @@ export type ModelProviderDefinition = {
     cost: CostDefinition[];
 };
 
-export type ModelProviderRegistry = {
-    [Key in string]: ModelProviderDefinition;
-};
+export type ModelProviderRegistry = Record<string, ModelProviderDefinition>;
 
 export type ServiceDefinition<T extends ModelProviderRegistry> = {
     displayName: string;
@@ -58,9 +56,10 @@ export type ServiceDefinition<T extends ModelProviderRegistry> = {
     price: PriceDefinition[];
 };
 
-export type ServiceRegistry<T extends ModelProviderRegistry> = {
-    [Key in string]: ServiceDefinition<T>;
-};
+export type ServiceRegistry<T extends ModelProviderRegistry> = Record<
+    string,
+    ServiceDefinition<T>
+>;
 
 export type ServiceMargins = {
     [Key in string]: {
@@ -290,19 +289,28 @@ export function createRegistry<
         ]),
     ) as TS;
 
+    // Build alias lookup map: alias -> serviceId
+    const aliasMap = Object.fromEntries(
+        Object.entries(services).flatMap(([serviceId, service]) =>
+            service.aliases.map((alias) => [alias, serviceId]),
+        ),
+    );
+
     return {
-        withFallbackService: (
-            serviceId: string | null,
+        resolveServiceId: (
+            serviceId: string | null | undefined,
             eventType: EventType,
-        ): ServiceId => {
-            if (serviceId && !!serviceRegistry[serviceId]) {
-                return serviceId as ServiceId;
+        ): ServiceId<TP, TS> => {
+            if (!serviceId) {
+                return eventType === "generate.text" ? "openai" : "flux";
             }
-            if (eventType === "generate.text") {
-                return "openai";
-            } else {
-                return "flux";
+            // Check if it's a direct service ID or an alias
+            const resolved = serviceRegistry[serviceId] ? serviceId : aliasMap[serviceId];
+            if (resolved) {
+                return resolved as ServiceId<TP, TS>;
             }
+            // Fallback to default
+            return eventType === "generate.text" ? "openai" : "flux";
         },
         isValidModelProvider: (
             providerId: ProviderId<TP>,
@@ -310,7 +318,7 @@ export function createRegistry<
             return !!providerRegistry[providerId];
         },
         isValidService: (
-            serviceId: ServiceId<TP, TS>,
+            serviceId: ServiceId<TP, TS> | string,
         ): serviceId is ServiceId<TP, TS> => {
             return !!serviceRegistry[serviceId];
         },
@@ -320,13 +328,15 @@ export function createRegistry<
         getServices: (): ServiceId<TP, TS>[] => {
             return Object.keys(serviceRegistry);
         },
-        getService: (serviceId: ServiceId<TP, TS>): ServiceDefinition<TP> => {
+        getServiceDefinition: (
+            serviceId: ServiceId<TP, TS>,
+        ): ServiceDefinition<TP> => {
             return serviceRegistry[serviceId];
         },
         getModelProviders: (): ProviderId<TP>[] => {
             return Object.keys(providerRegistry);
         },
-        getModelProvider: (
+        getModelProviderDefinition: (
             providerId: ProviderId<TP>,
         ): ModelProviderDefinition => {
             return providerRegistry[providerId];

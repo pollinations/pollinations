@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ProviderId, TokenUsage } from "./registry/registry";
+import { ProviderId, TokenUsage } from "@shared/registry/registry.ts";
 
 const usageSchema = z.object({
     completion_tokens: z.number().int().nonnegative(),

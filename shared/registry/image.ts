@@ -2,8 +2,8 @@ import type {
     ModelProviderRegistry,
     ServiceRegistry,
     UsageConversionDefinition,
-} from "@/registry/registry";
-import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "@/registry/price-helpers";
+} from "./registry.ts";
+import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "./price-helpers.ts";
 
 export const IMAGE_MODELS = {
     "flux": {

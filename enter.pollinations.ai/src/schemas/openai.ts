@@ -1,7 +1,7 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
-import { REGISTRY } from "@/registry/registry";
+import { REGISTRY } from "@shared/registry/registry.ts";
 
 const FunctionParametersSchema = z.record(z.string(), z.any());
 

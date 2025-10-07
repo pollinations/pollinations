@@ -1,4 +1,4 @@
-import { PriceDefinition, TokenUsage, CostType } from "@/registry/registry";
+import { PriceDefinition, TokenUsage, CostType } from "@shared/registry/registry.ts";
 import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import type { ContentFilterResult, OpenAIResponse } from "@/usage.ts";
 

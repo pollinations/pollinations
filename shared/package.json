@@ -10,5 +10,8 @@
         "memoizee": "^0.4.17",
         "node-fetch": "^3.3.2",
         "p-queue": "^7.4.1"
+    },
+    "devDependencies": {
+        "typescript": "^5.9.3"
     }
 }

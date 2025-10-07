@@ -22,7 +22,7 @@ import {
     REGISTRY,
     ServiceId,
     TokenUsage,
-} from "@/registry/registry.ts";
+} from "@shared/registry/registry.ts";
 import { drizzle } from "drizzle-orm/d1";
 
 const mockPolar = createMockPolar();

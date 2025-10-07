@@ -1,5 +1,5 @@
 import { processEvents, storeEvents } from "@/events.ts";
-import { ProviderId, REGISTRY, ServiceId } from "@/registry/registry.ts";
+import { ProviderId, REGISTRY, ServiceId } from "@shared/registry/registry.ts";
 import {
     ModelUsage,
     OpenAIResponse,

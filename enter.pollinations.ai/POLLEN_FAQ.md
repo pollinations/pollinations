@@ -2,7 +2,7 @@
 
 ## What is Pollen?
 
-Pollen is our credit system. $1 = 1 Pollen. You spend it on API calls. Free models cost 0 Pollen (we just track usage for stats).
+Pollen is our prepaid credit system. $1 = 1 Pollen (beta). You spend it on API calls. Free models cost 0 Pollen — we just track usage for stats.
 
 ## How do I get Pollen?
 
@@ -38,7 +38,7 @@ Each model uses different amounts of Pollen based on what it costs us to run. We
 
 ## Will free models always be free?
 
-Yes! We're committed to keeping basic models free and accessible. Only premium models cost Pollen.
+Yes! Free models remain free forever for all users. We're committed to keeping AI accessible. Paid options only apply to premium models that offer additional capabilities.
 
 ## How does my wallet work?
 
@@ -46,9 +46,9 @@ One wallet for all your apps. Top up anytime, use it anywhere.
 
 ## What's coming next?
 
-- **In-app purchases** (early 2026) — let your users buy Pollen in your app, you get a bonus
+- **End-user in-app purchases** (early 2026) — integrate the Login & Top-up Widget so your users can buy Pollen inside your app. You get bonus Pollen from each purchase
 - **More models** — video, real-time audio, expanding the catalog
-- **Ads plugin** (2026) — earn Pollen when users see ads
+- **Ads plugin** (2026) — earn Pollen based on ad performance
 - **Quests** — earn Pollen by starring projects, building cool stuff, etc.
 
-(Plans may change based on what the community needs)
+(Plans are non-binding and may change based on community needs)

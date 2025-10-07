@@ -16,6 +16,14 @@ const faqData: FAQItem[] = [
         answer: "Two ways:\n• Purchase packs — added to your wallet; do not expire\n• Sponsorship coupons — grant temporary Pollen; spent first; expire 24h after redemption",
     },
     {
+        question: "What payment methods do you accept?",
+        answer: "Credit cards, cryptocurrency, and Robux (for Roblox developers). We're expanding payment options for international users.",
+    },
+    {
+        question: "Is there a monthly subscription option?",
+        answer: "We're developing unlimited monthly plans alongside pay-as-you-go. Join our newsletter for updates on availability.",
+    },
+    {
         question: "Can I try the API without an account or buying Pollen?",
         answer: "Yes. Use zero-registration trial endpoints and a limited set of free models. These calls do not consume Pollen. For more flexibily consider redeeming sponsorship coupons."
     },
@@ -28,12 +36,24 @@ const faqData: FAQItem[] = [
         answer: "Registered users receive sponsored Pollen every day at 00:00. Grants are spent before any purchased balance.\n\n• Seed (default): 1 Pollen/day\n• Flower (request in dashboard): 5 Pollen/day\n• Nectar (requires Flower; request in dashboard): 10 Pollen/day",
     },
     {
+        question: "Why can't I upgrade my tier immediately by paying?",
+        answer: "We're transitioning to instant paid upgrades. The current request system helps us understand community needs and prevent abuse. Direct payment coming soon!",
+    },
+    {
         question: "How is pricing set?",
         answer: "Platform‑defined. Pollinations publishes Pollen pricing per model/operation (Unified Price Surface).",
     },
     {
+        question: "How much does each model cost in Pollen?",
+        answer: "View real-time pricing in your dashboard or at our pricing page. Costs vary by model complexity - free models cost 0 Pollen, premium models typically range from 0.1-2 Pollen per request.",
+    },
+    {
         question: "Do free models consume Pollen?",
         answer: "No. They are sponsored and controlled via rate limits.",
+    },
+    {
+        question: "Will free models always stay free?",
+        answer: "Yes! Free models remain free forever for all users. Paid options only apply to premium models that offer additional capabilities.",
     },
     {
         question: "How does the developer wallet work?",

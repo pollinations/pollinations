@@ -24,7 +24,10 @@
         "declarationMap": true,
         
         // Base path for imports
-        "baseUrl": "."
+        "baseUrl": ".",
+        
+        // Include vitest types
+        "types": ["vitest/globals"]
     },
     "include": ["**/*.js", "**/*.ts"],
     "exclude": ["node_modules", "dist"]

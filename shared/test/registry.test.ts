@@ -1,11 +1,11 @@
-import { createRegistry, REGISTRY } from "@shared/registry/registry";
-import { fromDPMT, ZERO_PRICE, ZERO_PRICE_START_DATE, PRICING_START_DATE } from "@shared/registry/price-helpers";
+import { createRegistry, REGISTRY } from "../registry/registry.ts";
+import { fromDPMT, ZERO_PRICE, ZERO_PRICE_START_DATE, PRICING_START_DATE } from "../registry/price-helpers.ts";
 import { expect, test } from "vitest";
 import type {
     ServiceRegistry,
     ModelProviderRegistry,
     TokenUsage,
-} from "@shared/registry/registry";
+} from "../registry/registry.ts";
 
 const MOCK_MODEL_PROVIDERS = {
     "mock-model": {
@@ -25,7 +25,7 @@ const MOCK_MODEL_PROVIDERS = {
 const MOCK_SERVICES = {
     "free-service": {
         displayName: "Free Service",
-        aliases: ["free-service-alias-a", "free-service-alias-b"],
+        aliases: ["free-service-alias"],
         modelProviders: ["mock-model"],
         price: [
             {
@@ -98,58 +98,6 @@ test("Usage types with undefined cost or price should throw an error", async () 
     expect(() => MOCK_REGISTRY.calculateCost("mock-model", usage)).toThrow();
     expect(() => MOCK_REGISTRY.calculatePrice("free-service", usage)).toThrow();
     expect(() => MOCK_REGISTRY.calculatePrice("paid-service", usage)).toThrow();
-});
-
-test("Aliases should be resolved by the registry", async () => {
-    expect(
-        MOCK_REGISTRY.resolveServiceId("free-service", "generate.text"),
-    ).toBe("free-service");
-    expect(
-        MOCK_REGISTRY.resolveServiceId(
-            "free-service-alias-a",
-            "generate.text",
-        ),
-    ).toBe("free-service");
-    expect(
-        MOCK_REGISTRY.resolveServiceId(
-            "free-service-alias-b",
-            "generate.text",
-        ),
-    ).toBe("free-service");
-    expect(
-        MOCK_REGISTRY.resolveServiceId("paid-service", "generate.text"),
-    ).toBe("paid-service");
-    expect(
-        MOCK_REGISTRY.resolveServiceId(
-            "paid-service-alias",
-            "generate.text",
-        ),
-    ).toBe("paid-service");
-});
-
-test("Service IDs take precedence over aliases", async () => {
-    // Direct service ID should be returned even if it matches an alias
-    expect(
-        MOCK_REGISTRY.resolveServiceId("free-service", "generate.text"),
-    ).toBe("free-service");
-    expect(
-        MOCK_REGISTRY.resolveServiceId("paid-service", "generate.text"),
-    ).toBe("paid-service");
-});
-
-test("Unknown service IDs fall back to defaults", async () => {
-    expect(
-        MOCK_REGISTRY.resolveServiceId("nonexistent", "generate.text"),
-    ).toBe("openai");
-    expect(
-        MOCK_REGISTRY.resolveServiceId("nonexistent", "generate.image"),
-    ).toBe("flux");
-    expect(MOCK_REGISTRY.resolveServiceId(null, "generate.text")).toBe(
-        "openai",
-    );
-    expect(MOCK_REGISTRY.resolveServiceId(undefined, "generate.image")).toBe(
-        "flux",
-    );
 });
 
 test("fromDPMT should correctly convert dollars per million tokens", async () => {

@@ -4,6 +4,11 @@
     "description": "Shared utilities for Pollinations services",
     "type": "module",
     "main": "index.js",
+    "scripts": {
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:coverage": "vitest run --coverage"
+    },
     "dependencies": {
         "debug": "^4.4.1",
         "dotenv": "^16.5.0",
@@ -12,6 +17,7 @@
         "p-queue": "^7.4.1"
     },
     "devDependencies": {
-        "typescript": "^5.9.3"
+        "typescript": "^5.9.3",
+        "vitest": "^3.2.4"
     }
 }

@@ -265,24 +265,6 @@ function calculateMargins<
     );
 }
 
-function createAliasResolver<
-    TP extends ModelProviderRegistry,
-    TS extends ServiceRegistry<TP>,
->(services: TS): (serviceIdOrAlias: string) => ServiceId<TP, TS> | undefined {
-    const aliases = Object.fromEntries(
-        Object.entries(services).flatMap(([serviceId, service]) => {
-            return service.aliases.map((alias) => [alias, serviceId]);
-        }),
-    );
-    return (serviceIdOrAlias: string) => {
-        if (services[serviceIdOrAlias]) {
-            return serviceIdOrAlias as ServiceId<TP, TS>;
-        } else {
-            return aliases[serviceIdOrAlias];
-        }
-    };
-}
-
 export function createRegistry<
     TP extends ModelProviderRegistry,
     TS extends ServiceRegistry<TP>,
@@ -307,22 +289,28 @@ export function createRegistry<
         ]),
     ) as TS;
 
-    const resolveServiceId = createAliasResolver<TP, TS>(services);
+    // Build alias lookup map: alias -> serviceId
+    const aliasMap = Object.fromEntries(
+        Object.entries(services).flatMap(([serviceId, service]) =>
+            service.aliases.map((alias) => [alias, serviceId]),
+        ),
+    );
 
     return {
         resolveServiceId: (
             serviceId: string | null | undefined,
             eventType: EventType,
         ): ServiceId<TP, TS> => {
-            const resolvedServiceId = resolveServiceId(String(serviceId));
-            if (resolvedServiceId && !!serviceRegistry[resolvedServiceId]) {
-                return resolvedServiceId as ServiceId<TP, TS>;
+            if (!serviceId) {
+                return eventType === "generate.text" ? "openai" : "flux";
             }
-            if (eventType === "generate.text") {
-                return "openai";
-            } else {
-                return "flux";
+            // Check if it's a direct service ID or an alias
+            const resolved = serviceRegistry[serviceId] ? serviceId : aliasMap[serviceId];
+            if (resolved) {
+                return resolved as ServiceId<TP, TS>;
             }
+            // Fallback to default
+            return eventType === "generate.text" ? "openai" : "flux";
         },
         isValidModelProvider: (
             providerId: ProviderId<TP>,

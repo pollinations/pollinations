@@ -102,25 +102,25 @@ test("Usage types with undefined cost or price should throw an error", async () 
 
 test("Aliases should be resolved by the registry", async () => {
     expect(
-        MOCK_REGISTRY.withFallbackService("free-service", "generate.text"),
+        MOCK_REGISTRY.resolveServiceId("free-service", "generate.text"),
     ).toBe("free-service");
     expect(
-        MOCK_REGISTRY.withFallbackService(
+        MOCK_REGISTRY.resolveServiceId(
             "free-service-alias-a",
             "generate.text",
         ),
     ).toBe("free-service");
     expect(
-        MOCK_REGISTRY.withFallbackService(
+        MOCK_REGISTRY.resolveServiceId(
             "free-service-alias-b",
             "generate.text",
         ),
     ).toBe("free-service");
     expect(
-        MOCK_REGISTRY.withFallbackService("paid-service", "generate.text"),
+        MOCK_REGISTRY.resolveServiceId("paid-service", "generate.text"),
     ).toBe("paid-service");
     expect(
-        MOCK_REGISTRY.withFallbackService(
+        MOCK_REGISTRY.resolveServiceId(
             "paid-service-alias",
             "generate.text",
         ),

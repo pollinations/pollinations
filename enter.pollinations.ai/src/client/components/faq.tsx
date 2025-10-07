@@ -29,7 +29,7 @@ const faqData: FAQItem[] = [
     },
     {
         question: "How is pricing set?",
-        answer: "Platform‑defined. Pollinations publishes Pollen pricing per model/operation (Unified Price Surface). Apps map features to these priced operations.",
+        answer: "Platform‑defined. Pollinations publishes Pollen pricing per model/operation (Unified Price Surface).",
     },
     {
         question: "Do free models consume Pollen?",
@@ -37,11 +37,11 @@ const faqData: FAQItem[] = [
     },
     {
         question: "How does the developer wallet work?",
-        answer: "One wallet funds all your apps. Manage balances and top up at any time.",
+        answer: "One wallet funds all your apps. Manage balance and top up at any time.",
     },
     {
         question: "What's next? (non‑binding)",
-        answer: "• End‑user in‑app purchases (early 2026): integrate the Login & Top‑up Widget so users can buy Pollen inside your app. Each end‑user purchase will grant bonus Pollen to the app owner\n• Ads plugin (2026): optional; earn Pollen based on ad performance\n• More models: video and real‑time audio; expansion of the model catalog\n• Managed backend & SDKs: login, balance, webhooks, and developer tooling improvements\n\nThis roadmap is indicative and may change.",
+        answer: "• End‑user in‑app purchases (early 2026): integrate the Login & Top‑up Widget so end-users can buy Pollen inside your app. Each purchase granting bonus Pollen to the app owner.\n• More models: video and real‑time audio; expansion of the model catalog.\n• Ads plugin (2026): earn Pollen based on ad performance.",
     },
 ];
 

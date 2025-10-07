@@ -211,8 +211,17 @@ function extractUserTier(
         return headerTier;
     }
     
-    // Fall back to response object for text generations
-    return response?.user_tier;
+    // Try response object for text generations
+    if (response?.user_tier) {
+        return response.user_tier;
+    }
+    
+    // Try user tier from auth context (new field we just added)
+    if (c.var.auth.user?.tier) {
+        return c.var.auth.user.tier;
+    }
+    
+    return undefined;
 }
 
 function extractContentFilterResults(

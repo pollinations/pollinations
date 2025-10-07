@@ -58,7 +58,7 @@ const contentFilterResultSchema = z
 
 export type ContentFilterResult = z.infer<typeof contentFilterResultSchema>;
 
-const userTierSchema = z.enum(["anonymous", "seed", "flower", "nectar"]);
+const userTierSchema = z.literal(["anonymous", "seed", "flower", "nectar"]);
 export type UserTier = z.infer<typeof userTierSchema>;
 
 const choiceSchema = z.object({

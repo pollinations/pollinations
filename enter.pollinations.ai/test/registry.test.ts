@@ -127,6 +127,31 @@ test("Aliases should be resolved by the registry", async () => {
     ).toBe("paid-service");
 });
 
+test("Service IDs take precedence over aliases", async () => {
+    // Direct service ID should be returned even if it matches an alias
+    expect(
+        MOCK_REGISTRY.resolveServiceId("free-service", "generate.text"),
+    ).toBe("free-service");
+    expect(
+        MOCK_REGISTRY.resolveServiceId("paid-service", "generate.text"),
+    ).toBe("paid-service");
+});
+
+test("Unknown service IDs fall back to defaults", async () => {
+    expect(
+        MOCK_REGISTRY.resolveServiceId("nonexistent", "generate.text"),
+    ).toBe("openai");
+    expect(
+        MOCK_REGISTRY.resolveServiceId("nonexistent", "generate.image"),
+    ).toBe("flux");
+    expect(MOCK_REGISTRY.resolveServiceId(null, "generate.text")).toBe(
+        "openai",
+    );
+    expect(MOCK_REGISTRY.resolveServiceId(undefined, "generate.image")).toBe(
+        "flux",
+    );
+});
+
 test("fromDPMT should correctly convert dollars per million tokens", async () => {
     // Test basic conversion
     expect(fromDPMT(1_000_000)).toBe(1.0);

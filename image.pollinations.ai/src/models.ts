@@ -42,7 +42,7 @@ export const MODELS = {
         type: "seedream",
         enhance: false,
         maxSideLength: 2048, // Default 2048x2048, supports up to 4K resolution
-        tier: "flower",
+        tier: "nectar",
     },
 
     // Azure GPT Image model (temporarily disabled - uncomment to reactivate)

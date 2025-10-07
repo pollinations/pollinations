@@ -32,17 +32,9 @@ Every day at 00:00 UTC, registered users get free Pollen. It's spent before your
 
 We have three tiers: **Seed** (default), **Flower**, and **Nectar**. Higher tiers get more daily Pollen. You can request an upgrade in your dashboard.
 
-## How is pricing set?
+## How much Pollen do models use?
 
-We set prices based on what models actually cost us to run. Check the pricing page to see each model's rate.
-
-## How much does each model cost?
-
-It varies by model. Check your dashboard or the pricing page for current rates. Free models are always 0 Pollen.
-
-## Do free models consume Pollen?
-
-Nope! They're sponsored and just have rate limits instead.
+Each model uses different amounts of Pollen based on what it costs us to run. We'll have a Pollen cost page launching soon where you can see what each model uses. Free models always cost 0 Pollen.
 
 ## Will free models always be free?
 

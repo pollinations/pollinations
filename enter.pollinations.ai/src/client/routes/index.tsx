@@ -90,7 +90,7 @@ function RouteComponent() {
             </div>
             <div className="flex flex-col gap-2">
                 <div className="flex justify-between gap-3">
-                    <h2 className="font-bold flex-1">Pollen ballance</h2>
+                    <h2 className="font-bold flex-1">Pollen balance</h2>
                     <Button
                         as={"a"}
                         color="pink"

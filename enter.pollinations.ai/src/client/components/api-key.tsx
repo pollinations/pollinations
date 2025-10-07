@@ -47,45 +47,49 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
 
     return (
         <>
-            <div className="flex gap-2 justify-between">
-                <h2>Api Keys</h2>
-                <ApiKeyDialog
-                    onSubmit={onCreate}
-                    onUpdate={(state) => console.log(state)}
-                    onComplete={() => console.log("Dialog completed")}
-                />
-            </div>
-            {apiKeys.length ? (
-                <div className="grid grid-cols-[1fr_1fr_1fr_1fr_60px] gap-2">
-                    <span className="font-bold">Name</span>
-                    <span className="font-bold">Description</span>
-                    <span className="font-bold">Start</span>
-                    <span className="font-bold">Created</span>
-                    <span className="font-bold">Actions</span>
-                    {apiKeys.map((apiKey) => (
-                        <Fragment key={apiKey.id}>
-                            <Cell>{apiKey.name}</Cell>
-                            <Cell>
-                                {apiKey.metadata?.["description"] || "—"}
-                            </Cell>
-                            <Cell>{apiKey.start}</Cell>
-                            <Cell>
-                                {formatRelative(apiKey.createdAt, new Date())}
-                            </Cell>
-                            <Button
-                                type="button"
-                                size="small"
-                                color="red"
-                                weight="light"
-                                className="justify-self-end"
-                                onClick={() => setDeleteId(apiKey.id)}
-                            >
-                                Delete
-                            </Button>
-                        </Fragment>
-                    ))}
+            <div className="flex flex-col gap-2">
+                <div className="flex gap-2 justify-between">
+                    <h2>API Keys</h2>
+                    <ApiKeyDialog
+                        onSubmit={onCreate}
+                        onUpdate={(state) => console.log(state)}
+                        onComplete={() => console.log("Dialog completed")}
+                    />
                 </div>
-            ) : null}
+                {apiKeys.length ? (
+                    <div className="bg-emerald-100 rounded-2xl p-8 border border-pink-300">
+                        <div className="grid grid-cols-[1fr_1fr_1fr_1fr_60px] gap-2">
+                            <span className="font-bold">Name</span>
+                            <span className="font-bold">Description</span>
+                            <span className="font-bold">Start</span>
+                            <span className="font-bold">Created</span>
+                            <span className="font-bold">Actions</span>
+                            {apiKeys.map((apiKey) => (
+                                <Fragment key={apiKey.id}>
+                                    <Cell>{apiKey.name}</Cell>
+                                    <Cell>
+                                        {apiKey.metadata?.["description"] || "—"}
+                                    </Cell>
+                                    <Cell>{apiKey.start}</Cell>
+                                    <Cell>
+                                        {formatRelative(apiKey.createdAt, new Date())}
+                                    </Cell>
+                                    <Button
+                                        type="button"
+                                        size="small"
+                                        color="red"
+                                        weight="light"
+                                        className="justify-self-end"
+                                        onClick={() => setDeleteId(apiKey.id)}
+                                    >
+                                        Delete
+                                    </Button>
+                                </Fragment>
+                            ))}
+                        </div>
+                    </div>
+                ) : null}
+            </div>
             <Dialog.Root open={!!deleteId} onOpenChange={({ open }) => !open && setDeleteId(null)}>
                 <Dialog.Backdrop className="fixed inset-0 bg-green-950/50" />
                 <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4">
@@ -340,7 +344,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     return (
         <Dialog.Root open={isOpen} onOpenChange={({ open }) => setIsOpen(open)}>
             <Dialog.Trigger>
-                <Button as="div">Create API Key</Button>
+                <Button as="div" color="blue" weight="light">Create API Key</Button>
             </Dialog.Trigger>
             <Dialog.Backdrop className="fixed inset-0 bg-green-950/50" />
             <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4">

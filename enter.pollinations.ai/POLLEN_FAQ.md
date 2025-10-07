@@ -46,9 +46,9 @@ One wallet for all your apps. Top up anytime, use it anywhere.
 
 ## What's coming next?
 
-- **End-user in-app purchases** (early 2026) — integrate the Login & Top-up Widget so your users can buy Pollen inside your app. You get bonus Pollen from each purchase
+- **In-app purchases** (early 2026) — let your users buy Pollen in your app, you get a bonus
 - **More models** — video, real-time audio, expanding the catalog
-- **Ads plugin** (2026) — earn Pollen based on ad performance
+- **Ads plugin** (2026) — earn Pollen when users see ads
 - **Quests** — earn Pollen by starring projects, building cool stuff, etc.
 
-(Plans are non-binding and may change based on community needs)
+(Plans may change based on what the community needs)

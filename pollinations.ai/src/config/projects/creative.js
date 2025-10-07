@@ -124,15 +124,6 @@ export const creativeProjects = [
     order: 1
   },
   {
-    name: "Pollinations AI Demo",
-    url: "https://pollinationsaidemo.netlify.app/",
-    description: "Images generator",
-    author: "@Wormix48",
-    repo: "https://github.com/Wormix48/Pollinations-AI-Demo",
-    submissionDate: "2025-09-17",
-    order: 1
-  },
-  {
     name: "🇧🇷 CapyUniverse - CapyIMG",
     url: "https://capyuniverse.pages.dev/capyimg.html",
     description: "Ferramenta simples para criar imagens com IA diretamente no navegador. O usuário escreve uma descrição (briefing), pode indicar elementos a evitar, escolher quantidade de imagens (1–4), formato (1:1, 16:9, 9:16, 4:3, 3:4) e tamanho. (Simple tool to create AI images directly in the browser. Users write a description, can specify elements to avoid, choose number of images (1–4), format ratios, and size.)",
@@ -149,14 +140,6 @@ export const creativeProjects = [
     author: "@cr7",
     submissionDate: "2025-09-06",
     language: "tr-TR",
-    order: 1
-  },
-  {
-    name: "Ai image generator 🎨",
-    url: "https://ris-imago.vercel.app/",
-    description: "A React-based AI image generator that transforms user prompts into high-quality images. It features custom controls for style, quality, and resolution, and offers user history.",
-    author: "rishabhmishra.81e@gmail.com",
-    submissionDate: "2025-09-06",
     order: 1
   },
   {
@@ -237,6 +220,14 @@ export const creativeProjects = [
     order: 1
   },
   {
+    name: "Dreamator-AI 🎨",
+    url: "https://dreamator-ai.vercel.app/",
+    description: "Transform your imagination into reality using Pollinations API. A creative image generation platform with a personal gallery of generated masterpieces.",
+    author: "@its3li",
+    submissionDate: "2025-06-27",
+    order: 1
+  },
+  {
     name: "Celebrity AI Image Generator",
     url: "https://www.aicelebrity.design/",
     description: "An AI-powered celebrity image generator that uses Pollinations.ai and a1.art APIs. Users can directly input celebrity text to generate celebrities doing anything. Features celebrity photo shooting capabilities where users can upload their pictures and take selfies with celebrities like Labubu, Taylor Swift, and more.",
@@ -259,14 +250,6 @@ export const creativeProjects = [
     description: "A Deno Deploy API wrapper for Pollinations that provides JSON-formatted responses. Designed for applications that require JSON API integration with Pollinations services.",
     author: "@apersonwhomakesstuff",
     submissionDate: "2025-06-13",
-    order: 1
-  },
-  {
-    name: "MrEgonAI",
-    url: "https://mr-egon-ai.vercel.app/",
-    description: "An image generator powered by pollinations.ai and its image generation models. Features text-to-image generation with various AI models.",
-    author: "@mregon",
-    submissionDate: "2025-06-07",
     order: 1
   },
   {
@@ -306,38 +289,12 @@ export const creativeProjects = [
     order: 1
   },
   {
-    name: "Musify - AI Enhanced Music Streaming",
-    url: "https://musify-sd.vercel.app/",
-    description: "Musify is your AI-powered music buddy, making your jam sessions smarter and more fun. Powered by pollinations API, it offers AI Music Assistant, Voice Commands, AI Playlist Creator, and Responsive Design.",
-    author: "@Sugamdeol",
-    submissionDate: "2025-02-27",
-    order: 2
-  },
-  {
     name: "CalcuBite AI",
     url: "https://calcubite.vercel.app/",
     description: "CalcuBite AI is a smart tool that analyzes food from images to provide calorie and nutrient details. Just take a photo, and it quickly gives you an estimate of your meal's nutritional value. It uses AI for accurate analysis, and if you run out of free scans, you can watch an ad to get more!",
     author: "@sugamdeol",
     submissionDate: "2025-03-15",
     order: 1
-  },
-  {
-    name: "Elixpo Art",
-    url: "https://elixpoart.vercel.app",
-    description: "A Web interface to create thematic images from prompts, with multiple aspect ratios and also image reference inputs.",
-    author: "Ayushman Bhattacharya",
-    repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter",
-    stars: 8,
-    submissionDate: "2025-03-31",
-    order: 1
-  },
-  {
-    name: "Case Me 🇧🇷",
-    description: "A vending machine that creates customized phone cases with photos or other images and colors chosen by the end customer.",
-    author: "anaboxmania@gmail.com",
-    submissionDate: "2025-03-19",
-    language: "pt-BR",
-    order: 2
   },
   {
     name: "Generator AI Image 🇮🇩",
@@ -366,17 +323,6 @@ export const creativeProjects = [
     order: 1,
     category: "creativeApps",
     stars: 8
-  },
-  {
-    name: "Generator Text AI 🇮🇩",
-    url: "https://app.ariftirtana.my.id/",
-    description: "Text-to-image generator using Pollinations, supporting Indonesian and English prompts.",
-    author: "@ayick13",
-    repo: "https://github.com/ayick13/app",
-    stars: 1,
-    submissionDate: "2025-04-16",
-    language: "id-ID",
-    order: 2
   },
   {
     name: "NailsGen",
@@ -446,14 +392,6 @@ export const creativeProjects = [
     submissionDate: "2025-03-27",
     language: "zh-CN",
     order: 5
-  },
-  {
-    name: "Image Gen - Uncensored Edition",
-    url: "https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2",
-    description: "A powerful image generation assistant on HuggingChat.",
-    author: "@DeFactOfficial",
-    submissionDate: "2025-02-16",
-    order: 1
   },
   {
     name: "Own-AI",
@@ -543,17 +481,6 @@ export const creativeProjects = [
     description: "A free, feature-rich novel writing application that helps writers organize stories, characters, and worlds. Uses Pollinations AI for generating chapter summaries, rewriting text based on context, and generating new content based on previous chapters and character information.",
     author: "@soryn.san",
     submissionDate: "2025-05-19",
-    order: 1
-  },
-  {
-    name: "Text2Image_audio 🇨🇳",
-    url: "nihilistic.dpdns.org",
-    description: "文生图与文生语音网站 - 一个初学者的AI编程项目，支持文本转图像和音频生成功能。(Text to Image and Text to Audio website - A beginner's AI programming project supporting text-to-image and audio generation features.)",
-    author: "@peyoba",
-    repo: "https://github.com/wtliao/text2image",
-    stars: 0,
-    submissionDate: "2025-06-05",
-    language: "zh-CN",
     order: 1
   },
   {

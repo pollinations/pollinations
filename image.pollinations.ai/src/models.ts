@@ -45,11 +45,11 @@ export const MODELS = {
         tier: "nectar",
     },
 
-    // Azure GPT Image model (temporarily disabled - uncomment to reactivate)
-    // gptimage: {
-    //     type: "azure",
-    //     enhance: false,
-    //     maxSideLength: 1024,
-    //     tier: "nectar",
-    // },
+    // Azure GPT Image model - gpt-image-1-mini
+    gptimage: {
+        type: "azure",
+        enhance: false,
+        maxSideLength: 1024,
+        tier: "seed",
+    },
 } as const;

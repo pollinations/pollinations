@@ -17,6 +17,7 @@ export const vibeCodingProjects = [
     stars: 2,
     stars: 2,
     stars: 2,
+    stars: 2,
     url: "https://visiora-img.netlify.app/",
     description: "A modern web application that transforms text prompts into stunning AI-generated images. Built with React and powered by Pollinations AI, it features multiple AI models (Flux, Turbo, Kontext), flexible image dimensions, seed control for reproducible results, and a responsive design that works seamlessly across all devices.",
     author: "@Kandariarjun07",
@@ -27,6 +28,7 @@ export const vibeCodingProjects = [
   },
   {
     name: "PairFusion",
+    stars: 5,
     stars: 5,
     stars: 5,
     stars: 5,
@@ -67,6 +69,7 @@ export const vibeCodingProjects = [
     stars: 20,
     stars: 20,
     stars: 20,
+    stars: 20,
     url: "https://github.com/LousyBook94/pollinations-task-master",
     description: "A task management system that uses AI to help break down and organize development tasks through natural language interaction.",
     author: "@LousyBook94",
@@ -77,6 +80,7 @@ export const vibeCodingProjects = [
   },
   {
     name: "Qwen-Agent",
+    stars: 11840,
     stars: 11825,
     stars: 11805,
     stars: 11803,
@@ -135,6 +139,7 @@ export const vibeCodingProjects = [
   {
     name: "SocialScribe",
     stars: 6,
+    stars: 6,
     stars: 5,
     stars: 5,
     url: "https://socialscribe.pages.dev/",
@@ -157,6 +162,7 @@ export const vibeCodingProjects = [
   },
   {
     name: "websim-pollinations-ai",
+    stars: 2995,
     stars: 2985,
     stars: 2968,
     stars: 2956,

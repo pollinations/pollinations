@@ -72,11 +72,11 @@ export const TEXT_MODELS = {
         cost: [
             {
                 date: PRICING_START_DATE,
-                promptTextTokens: fromDPMT(0.1432),
-                promptCachedTokens: fromDPMT(0.075),
-                completionTextTokens: fromDPMT(0.572793),
-                promptAudioTokens: fromDPMT(9.5466),
-                completionAudioTokens: fromDPMT(19.093079),
+                promptTextTokens: fromDPMT(2.50),
+                promptCachedTokens: fromDPMT(0.625),
+                completionTextTokens: fromDPMT(10.0),
+                promptAudioTokens: fromDPMT(40.0),
+                completionAudioTokens: fromDPMT(80.0),
             },
         ],
     },

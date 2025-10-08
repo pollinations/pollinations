@@ -54,7 +54,9 @@ function RouteComponent() {
     const handleCreateApiKey = async (formState: CreateApiKey) => {
         const createKeyDate = {
             name: formState.name,
-            description: formState.description,
+            metadata: {
+                description: formState.description,
+            },
         };
         const result = await auth.apiKey.create(createKeyDate);
         if (result.error) {

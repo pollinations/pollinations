@@ -5,6 +5,9 @@ type Env = {
 		TEXT_BUCKET: R2Bucket;
 		ORIGIN_HOST: string;
 	};
+	Variables: {
+		cacheKey?: string;
+	};
 };
 
 export const exactCache = createMiddleware<Env>(async (c, next) => {
@@ -33,6 +36,9 @@ export const exactCache = createMiddleware<Env>(async (c, next) => {
 	}
 	console.log("[EXACT] Cache key:", cacheKey);
 
+	// Store cache key in context for streaming cache to use
+	c.set("cacheKey", cacheKey);
+
 	// Try to get from cache
 	try {
 		const cached = await c.env.TEXT_BUCKET.get(cacheKey);
@@ -51,24 +57,6 @@ export const exactCache = createMiddleware<Env>(async (c, next) => {
 	// No cache hit, continue to next middleware
 	await next();
 
-	// Store response in R2 on the way out (like image cache does)
-	if (
-		c.res?.ok &&
-		// don't store it if there is already a cache hit from another middleware
-		!(c.res.headers.get("x-cache") === "HIT")
-	) {
-		console.log("[EXACT] Caching response");
-		c.executionCtx.waitUntil(
-			(async () => {
-				try {
-					const responseClone = c.res.clone();
-					const body = await responseClone.text();
-					await c.env.TEXT_BUCKET.put(cacheKey, body);
-					console.log("[EXACT] Cached successfully");
-				} catch (err) {
-					console.error("[EXACT] Error caching response:", err);
-				}
-			})(),
-		);
-	}
+	// Note: Response caching is now handled by proxy-origin middleware
+	// which supports both streaming and non-streaming responses
 });

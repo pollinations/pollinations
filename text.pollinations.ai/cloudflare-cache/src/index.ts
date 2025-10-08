@@ -13,7 +13,12 @@ interface Env {
 	ANALYTICS_URL?: string;
 }
 
-const app = new Hono<{ Bindings: Env }>();
+type Variables = {
+	connectingIp?: string;
+	cacheKey?: string;
+};
+
+const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 // Apply CORS to all routes
 app.use(

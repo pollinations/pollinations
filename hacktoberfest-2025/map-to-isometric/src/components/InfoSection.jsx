@@ -51,13 +51,9 @@ function InfoSection() {
           <li>Upload or paste a map image (reference for inspiration)</li>
           <li>Customize the prompt to describe your desired style</li>
           <li>Click "Generate" - Pollinations AI creates the isometric view</li>
-          <li>Wait 30-60 seconds for the Flux model to generate</li>
+          <li>Wait 30-60 seconds for the nanobanana model to generate</li>
           <li>Download your unique isometric artwork!</li>
         </ol>
-        <p className="api-note">
-          <strong>API:</strong> Pollinations.AI (Free, no signup required) | 
-          <strong> Model:</strong> Flux (High-quality image generation)
-        </p>
       </div>
     </section>
   );

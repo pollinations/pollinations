@@ -16,9 +16,10 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [prompt, setPrompt] = useState(
-    'isometric 3D city view with detailed buildings, streets, and urban architecture. Vibrant colors, clear architectural details, game art style.'
+    'isometric 3D city view with detailed buildings, streets, and urban architecture. Vibrant colors, clear architectural details, game style.'
   );
 
+  const IMGBB_API_KEY = import.meta.env.VITE_IMGBB_API_KEY || '';
   const handleImageUpload = (file) => {
     if (file && file.type.startsWith('image/')) {
       setSelectedFile(file);
@@ -54,30 +55,66 @@ function App() {
     setError(null);
     
     try {
-      // Combine location description with prompt for better results
-      let fullPrompt = prompt;
+
+      const reader = new FileReader();
+      const imageBase64 = await new Promise((resolve, reject) => {
+        reader.onloadend = () => {
+          const base64 = reader.result.split(',')[1]; // Get base64 part only
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(selectedFile);
+      });
+      
+      
+      // Step 2: Upload to ImgBB (supports CORS)
+      const formData = new FormData();
+      formData.append('image', imageBase64);
+      
+      const uploadResponse = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+        method: 'POST',
+        body: formData
+      });
+    
+      
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        console.error('Upload error:', errorText);
+        throw new Error('Failed to upload image to ImgBB');
+      }
+      
+      const uploadData = await uploadResponse.json();
+      
+      if (!uploadData.success || !uploadData.data.url) {
+        throw new Error('No image URL returned from ImgBB');
+      }
+      
+      const imageUrl = uploadData.data.url;
+      
+      // Step 3: Build prompt
+      let fullPrompt = `Using this location as a landmark, create it as an isometric image (buildings only) with a game-style theme park aesthetic. ${prompt}`;
       
       if (locationDescription && locationDescription.trim() !== '') {
-        fullPrompt = `${prompt} Location context: ${locationDescription}. Create an isometric view that captures the essence of this area.`;
+        fullPrompt += ` Location context: ${locationDescription}.`;
       }
       
       const encodedPrompt = encodeURIComponent(fullPrompt);
+      const encodedImageUrl = encodeURIComponent(imageUrl);
       const seed = Math.floor(Math.random() * 999999999);
       
-      const apiUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&seed=${seed}&model=flux&nologo=true&enhance=true`;
+      // Step 4: Generate with nanobanana model
+      const apiUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&seed=${seed}&model=nanobanana&image=${encodedImageUrl}&referrer=isometricmap&nologo=true&enhance=true`;
       
-      console.log('Full Prompt:', fullPrompt);
-      console.log('API URL:', apiUrl);
       
       setGeneratedImage(apiUrl);
       
       setTimeout(() => {
         setIsLoading(false);
-      }, 3000);
+      }, 6000);
       
     } catch (err) {
-      console.error('Generation error:', err);
-      setError('Failed to generate image. Please try again.');
+      console.error('Full error details:', err);
+      setError(`Failed to generate image: ${err.message}. Please try again.`);
       setIsLoading(false);
     }
   };

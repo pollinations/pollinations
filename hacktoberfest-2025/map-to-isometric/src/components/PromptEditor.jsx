@@ -27,7 +27,7 @@ function PromptEditor({ prompt, setPrompt, onGenerate, isLoading, error }) {
       {error && <p className="error-message">❌ {error}</p>}
       
       <div className="api-info">
-        <p>🔧 Powered by Pollinations AI (Flux Model)</p>
+        <p>🔧 Powered by Pollinations AI</p>
         <p>⏱️ Generation takes 30-60 seconds - please be patient!</p>
       </div>
     </section>

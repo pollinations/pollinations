@@ -8,7 +8,7 @@ function LoadingSpinner() {
       <p className="loading-text">
         🎨 Creating your isometric masterpiece...<br/>
         This may take 30-60 seconds<br/>
-        <span className="loading-subtext">Using Pollinations AI (Flux Model)</span>
+        <span className="loading-subtext">Using Pollinations AI</span>
       </p>
     </div>
   );

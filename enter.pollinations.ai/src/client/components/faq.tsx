@@ -1,77 +1,70 @@
 import type { FC } from "react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { html } from "../../../POLLEN_FAQ.md";
 
 type FAQItem = {
     question: string;
     answer: string;
 };
 
-const faqData: FAQItem[] = [
-    {
-        question: "What is Pollen?",
-        answer: "Pollen is the prepaid credit that powers the Pollinations backend. $1 = 1 Pollen (beta). Every API call is metered in Pollen; free models meter at 0 for unified telemetry.",
-    },
-    {
-        question: "How do I get Pollen (as a developer)?",
-        answer: "Two ways:\n• Purchase packs — added to your wallet; do not expire\n• Sponsorship coupons — grant temporary Pollen; spent first; expire 24h after redemption",
-    },
-    {
-        question: "What payment methods do you accept?",
-        answer: "Credit cards only for now. We'll be expanding payment options later.",
-    },
-    {
-        question: "Is there a monthly subscription option?",
-        answer: "Not yet but we are thinking about this for future iterations. Join our newsletter for updates on availability.",
-    },
-    {
-        question: "Can I try the API without an account or buying Pollen?",
-        answer: "Yes. Use zero-registration trial endpoints and a limited set of free models. These calls do not consume Pollen. For more flexibily consider redeeming sponsorship coupons."
-    },
-    {
-        question: "What changes when a user registers?",
-        answer: "They keep access to the free models (rate‑limited) and unlock the paid model catalog (runs on Pollen, no platform rate limits). They also become eligible for daily grants.",
-    },
-    {
-        question: "How do daily grants work?",
-        answer: "Registered users receive sponsored Pollen every day at 00:00. Grants are spent before any purchased balance.\n\n• Seed (default): 1 Pollen/day\n• Flower (request in dashboard): 5 Pollen/day\n• Nectar (requires Flower; request in dashboard): 10 Pollen/day",
-    },
-    {
-        question: "How is pricing set?",
-        answer: "Platform‑defined. Pollinations publishes Pollen pricing per model/operation (Unified Price Surface).",
-    },
-    {
-        question: "How much does each model cost in Pollen?",
-        answer: "View real-time pricing in your dashboard or at our pricing page. Costs vary by model complexity.",
-    },
-    {
-        question: "Do free models consume Pollen?",
-        answer: "No. They are sponsored and controlled via rate limits.",
-    },
-    {
-        question: "Will free models always stay free?",
-        answer: "Yes! Free models remain free forever for all users. Paid options only apply to premium models that offer additional capabilities.",
-    },
-    {
-        question: "How does the developer wallet work?",
-        answer: "One wallet funds all your apps. Manage balance and top up at any time.",
-    },
-    {
-        question: "What's next? (non‑binding)",
-        answer: "• End‑user in‑app purchases (early 2026): integrate the Login & Top‑up Widget so end-users can buy Pollen inside your app. Each purchase granting bonus Pollen to the app owner.\n• More models: video and real‑time audio; expansion of the model catalog.\n• Ads plugin (2026): earn Pollen based on ad performance.",
-    },
-];
+// Parse markdown HTML into FAQ items
+const parseFAQFromHTML = (htmlContent: string): FAQItem[] => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, "text/html");
+    const items: FAQItem[] = [];
+    
+    const h2Elements = doc.querySelectorAll("h2");
+    
+    h2Elements.forEach((h2) => {
+        const question = h2.textContent || "";
+        const answerParts: string[] = [];
+        
+        let nextElement = h2.nextElementSibling;
+        while (nextElement && nextElement.tagName !== "H2") {
+            answerParts.push(nextElement.outerHTML);
+            nextElement = nextElement.nextElementSibling;
+        }
+        
+        if (question) {
+            items.push({
+                question,
+                answer: answerParts.join(""),
+            });
+        }
+    });
+    
+    return items;
+};
+
+const faqData = parseFAQFromHTML(html);
 
 export const FAQ: FC = () => {
-    const [openIndex, setOpenIndex] = useState<number | null>(null);
+    const [openIndices, setOpenIndices] = useState<Set<number>>(new Set());
 
     const toggleQuestion = (index: number) => {
-        setOpenIndex(openIndex === index ? null : index);
+        setOpenIndices((prev) => {
+            const next = new Set(prev);
+            if (next.has(index)) {
+                next.delete(index);
+            } else {
+                next.add(index);
+            }
+            return next;
+        });
     };
 
     return (
         <div className="flex flex-col gap-2">
-            <div className="flex gap-2 justify-between">
-                <h2>FAQ</h2>
+            <div className="flex gap-2 justify-between items-center">
+                <h2>Pollen FAQ</h2>
+                <a 
+                    href="https://github.com/pollinations/pollinations/blob/master/enter.pollinations.ai/POLLEN_FAQ.md"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                    View on GitHub →
+                </a>
             </div>
             <div className="bg-emerald-100 rounded-2xl p-8 border border-pink-300">
                 <div className="flex flex-col gap-4">
@@ -82,12 +75,13 @@ export const FAQ: FC = () => {
                                 className="w-full text-left flex justify-between items-start gap-4 text-green-950 hover:text-green-800 transition-colors"
                             >
                                 <span className="flex-1" style={{ fontWeight: 700 }}>{item.question}</span>
-                                <span className="text-2xl flex-shrink-0 font-normal">{openIndex === index ? "−" : "+"}</span>
+                                <span className="text-2xl flex-shrink-0 font-normal">{openIndices.has(index) ? "−" : "+"}</span>
                             </button>
-                            {openIndex === index && (
-                                <div className="mt-3 text-gray-600 leading-relaxed whitespace-pre-line">
-                                    {item.answer}
-                                </div>
+                            {openIndices.has(index) && (
+                                <div 
+                                    className="mt-3 text-gray-600 leading-relaxed prose prose-sm max-w-none"
+                                    dangerouslySetInnerHTML={{ __html: item.answer }}
+                                />
                             )}
                         </div>
                     ))}

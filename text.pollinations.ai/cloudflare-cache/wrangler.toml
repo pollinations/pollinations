@@ -25,3 +25,13 @@ enabled = true      # Enable logs for local development
 
 [observability.logs]
 invocation_logs = true
+
+# Test environment
+[env.test]
+[env.test.vars]
+ORIGIN_HOST = "text-origin.pollinations.ai"
+DEBUG = "cache:*"
+
+[[env.test.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text-test"

@@ -4,7 +4,17 @@
  * Following the "thin proxy" design principle - minimal processing, direct forwarding
  */
 
-import { getClientIp } from "./ip-utils.ts";
+/**
+ * Get the client IP address from the request
+ */
+function getClientIp(req: Request): string {
+	return (
+		req.headers.get("cf-connecting-ip") ||
+		req.headers.get("x-real-ip") ||
+		req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+		"unknown"
+	);
+}
 
 // Define maximum string length for truncation
 const MAX_STRING_LENGTH = 150;

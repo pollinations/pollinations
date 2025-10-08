@@ -4,7 +4,7 @@
     "description": "Cloudflare R2 + CDN caching solution for Pollinations text service",
     "type": "module",
     "scripts": {
-        "test": "vitest",
+        "test": "vitest run",
         "deploy": "wrangler deploy",
         "logs": "wrangler tail",
         "dev": "wrangler dev --local --port 8888",
@@ -21,12 +21,15 @@
     "author": "Pollinations",
     "license": "MIT",
     "devDependencies": {
+        "@cloudflare/vitest-pool-workers": "^0.8.71",
         "@cloudflare/workers-types": "^4.20241127.0",
         "typescript": "^5.8.3",
+        "vitest": "^3.2.4",
         "wrangler": "^4.28.1"
     },
     "dependencies": {
         "fast-json-stable-stringify": "^2.1.0",
+        "hono": "^4.9.10",
         "node-fetch": "^2.7.0"
     }
 }

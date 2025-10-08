@@ -1,42 +1,59 @@
 import type { FC } from "react";
-import { useState, useMemo } from "react";
-import { html } from "../../../POLLEN_FAQ.md";
+import { useState } from "react";
 
 type FAQItem = {
     question: string;
     answer: string;
 };
 
-// Parse markdown HTML into FAQ items
-const parseFAQFromHTML = (htmlContent: string): FAQItem[] => {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlContent, "text/html");
-    const items: FAQItem[] = [];
-    
-    const h2Elements = doc.querySelectorAll("h2");
-    
-    h2Elements.forEach((h2) => {
-        const question = h2.textContent || "";
-        const answerParts: string[] = [];
-        
-        let nextElement = h2.nextElementSibling;
-        while (nextElement && nextElement.tagName !== "H2") {
-            answerParts.push(nextElement.outerHTML);
-            nextElement = nextElement.nextElementSibling;
-        }
-        
-        if (question) {
-            items.push({
-                question,
-                answer: answerParts.join(""),
-            });
-        }
-    });
-    
-    return items;
-};
-
-const faqData = parseFAQFromHTML(html);
+// Hardcoded FAQ data from POLLEN_FAQ.md
+// Source: https://github.com/pollinations/pollinations/blob/master/enter.pollinations.ai/POLLEN_FAQ.md
+const faqData: FAQItem[] = [
+    {
+        question: "What is Pollen?",
+        answer: "Pollen is our prepaid credit system. $1 = 1 Pollen (beta). You spend it on API calls. Free models cost 0 Pollen — we just track usage for stats.",
+    },
+    {
+        question: "How do I get Pollen?",
+        answer: "Two ways:<br />• <strong>Buy packs</strong> with your credit card — goes straight to your wallet, never expires<br />• <strong>Redeem sponsorship coupons</strong> — temporary Pollen that gets used first, expires 24h after you claim it",
+    },
+    {
+        question: "What payment methods do you accept?",
+        answer: "Credit cards for now. We're looking into crypto and other options for people in countries with payment restrictions.",
+    },
+    {
+        question: "Is there a monthly subscription?",
+        answer: 'Not yet, but we\'re considering it based on community feedback. Check out the <a href="https://github.com/pollinations/pollinations/issues/2202" target="_blank" rel="noopener noreferrer" class="underline">voting issue</a> to share your thoughts or join our <a href="https://discord.gg/pollinations" target="_blank" rel="noopener noreferrer" class="underline">Discord</a> for updates.',
+    },
+    {
+        question: "Can I try it without signing up or paying?",
+        answer: "Yep! Just hit the API — no signup needed. Free models work instantly, no Pollen required.",
+    },
+    {
+        question: "What changes when I register?",
+        answer: "You keep the free models (with rate limits) and unlock paid models (no rate limits, just costs Pollen). Plus you get daily free Pollen grants.",
+    },
+    {
+        question: "How do daily grants work?",
+        answer: "Every day at 00:00 UTC, registered users get free Pollen. It's spent before your purchased balance.<br /><br />We have three tiers: <strong>Seed</strong> (default), <strong>Flower</strong>, and <strong>Nectar</strong>. Higher tiers get more daily Pollen. You can request an upgrade in your dashboard.",
+    },
+    {
+        question: "How much Pollen do models use?",
+        answer: "Each model uses different amounts of Pollen based on what it costs us to run. We'll have a Pollen cost page launching soon where you can see what each model uses. Free models always cost 0 Pollen.",
+    },
+    {
+        question: "Will free models always be free?",
+        answer: "Yes! Free models remain free forever for all users. We're committed to keeping AI accessible. Paid options only apply to premium models that offer additional capabilities.",
+    },
+    {
+        question: "How does my wallet work?",
+        answer: "One wallet for all your apps. Top up anytime, use it anywhere.",
+    },
+    {
+        question: "What's coming next?",
+        answer: "• <strong>In-app purchases</strong> (early 2026) — let your users buy Pollen in your app, you get a bonus<br />• <strong>More models</strong> — video, real-time audio, expanding the catalog<br />• <strong>Ads plugin</strong> (2026) — earn Pollen when users see ads<br />• <strong>Quests</strong> — earn Pollen by starring projects, building cool stuff, etc.<br /><br />(Plans may change based on what the community needs)",
+    },
+];
 
 export const FAQ: FC = () => {
     const [openIndices, setOpenIndices] = useState<Set<number>>(new Set());

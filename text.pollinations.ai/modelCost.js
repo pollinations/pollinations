@@ -46,10 +46,10 @@ const MODEL_COST = {
 	"gpt-4o-mini-audio-preview-2024-12-17": {
 	  provider: "azure-openai",
 	  region: "eastus",
-	  prompt_text: 0.15,
-	  completion_text: 0.60,
-	  prompt_audio: 10.0,
-	  completion_audio: 20.0
+	  prompt_text: 2.50,
+	  completion_text: 10.0,
+	  prompt_audio: 40.0,
+	  completion_audio: 80.0
 	},
 	"gpt-5-chat": {
 	  provider: "azure-openai",

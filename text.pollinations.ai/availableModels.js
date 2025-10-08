@@ -126,7 +126,7 @@ const models = [
 	{
 		name: "openai-audio",
 		description: "OpenAI GPT-4o Mini Audio Preview",
-		maxInputChars: 5000,
+		maxInputChars: 10000,
 		voices: [
 			"alloy",
 			"echo",
@@ -189,8 +189,8 @@ const models = [
 	},
 	{
 		name: "openai-reasoning",
-		description: "OpenAI o4-mini (api.navy)",
-		config: portkeyConfig["o4-mini"],
+		description: "OpenAI o4-mini (Azure Myceli)",
+		config: portkeyConfig["o4-mini-azure"],
 		transform: pipe(
 			createSystemPromptTransform(BASE_PROMPTS.conversational),
 			removeSystemMessages

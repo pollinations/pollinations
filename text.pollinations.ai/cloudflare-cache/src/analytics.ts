@@ -4,20 +4,54 @@
  * Following the "thin proxy" design principle - minimal processing, direct forwarding
  */
 
-import { getClientIp } from "./ip-utils.js";
+import { getClientIp } from "./ip-utils.ts";
 
 // Define maximum string length for truncation
 const MAX_STRING_LENGTH = 150;
 
+interface AnalyticsParams {
+    [key: string]: any;
+    prompt?: string;
+    content?: string;
+    model?: string;
+    messages?: number;
+    stream?: boolean;
+    cacheStatus?: string;
+    referrer?: string;
+    originalPrompt?: string;
+    userAgent?: string;
+    language?: string;
+    ip?: string;
+    safeParams?: Record<string, any>;
+}
+
+interface GoogleAnalyticsPayload {
+    client_id: string;
+    events: Array<{
+        name: string;
+        params: Record<string, any>;
+    }>;
+}
+
+interface Env {
+    GA_MEASUREMENT_ID?: string;
+    GA_API_SECRET?: string;
+}
+
 /**
  * Sends analytics event to Google Analytics
- * @param {Request} request - The original request
- * @param {string} name - Event name
- * @param {Object} params - Additional parameters
- * @param {Object} env - Environment variables
- * @returns {Promise<Response|undefined>} Response from Google Analytics
+ * @param request - The original request
+ * @param name - Event name
+ * @param params - Additional parameters
+ * @param env - Environment variables
+ * @returns Response from Google Analytics
  */
-export async function sendToAnalytics(request, name, params = {}, env) {
+export async function sendToAnalytics(
+    request: Request,
+    name: string,
+    params: AnalyticsParams = {},
+    env: Env,
+): Promise<Response | undefined> {
     try {
         console.log("Sending analytics for event:", name);
         if (!request || !name) {
@@ -26,8 +60,8 @@ export async function sendToAnalytics(request, name, params = {}, env) {
         }
 
         // Extract measurement ID and API secret from environment
-        const measurementId = env?.GA_MEASUREMENT_ID || process.env.GA_MEASUREMENT_ID;
-        const apiSecret = env?.GA_API_SECRET || process.env.GA_API_SECRET;
+        const measurementId = env?.GA_MEASUREMENT_ID;
+        const apiSecret = env?.GA_API_SECRET;
 
         if (!measurementId || !apiSecret) {
             console.log("Missing analytics credentials. Aborting.");
@@ -49,7 +83,7 @@ export async function sendToAnalytics(request, name, params = {}, env) {
         }
 
         // Process query parameters into safeParams format
-        const safeParams = {};
+        const safeParams: Record<string, string> = {};
         for (const [key, value] of url.searchParams.entries()) {
             safeParams[key] = value;
         }
@@ -64,7 +98,7 @@ export async function sendToAnalytics(request, name, params = {}, env) {
         const clientIP = getClientIp(request) || "::1";
 
         // Combine all parameter sources with priority
-        const combinedParams = {
+        const combinedParams: AnalyticsParams = {
             referrer,
             originalPrompt,
             ...safeParams,
@@ -78,7 +112,7 @@ export async function sendToAnalytics(request, name, params = {}, env) {
         const processedParams = processParameters(combinedParams);
 
         // Build the payload
-        const payload = {
+        const payload: GoogleAnalyticsPayload = {
             client_id: clientIP,
             events: [
                 {
@@ -116,11 +150,11 @@ export async function sendToAnalytics(request, name, params = {}, env) {
 
 /**
  * Process parameters - only truncate strings, pass everything else through
- * @param {Object} params - Parameters to process
- * @returns {Object} Processed parameters
+ * @param params - Parameters to process
+ * @returns Processed parameters
  */
-function processParameters(params) {
-    const result = {};
+function processParameters(params: AnalyticsParams): Record<string, any> {
+    const result: Record<string, any> = {};
 
     // Process all parameters
     for (const [key, value] of Object.entries(params)) {
@@ -158,10 +192,10 @@ function processParameters(params) {
 
 /**
  * Process a single value - only truncate strings, pass everything else through
- * @param {any} value - Parameter value
- * @returns {any} Processed value
+ * @param value - Parameter value
+ * @returns Processed value
  */
-function processValue(value) {
+function processValue(value: any): any {
     // Only truncate strings, pass everything else through as-is
     if (typeof value === "string") {
         return value.substring(0, MAX_STRING_LENGTH);

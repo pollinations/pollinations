@@ -1,40 +1,83 @@
 // No imports needed for Web Crypto API
-import { sendToAnalytics } from "./analytics.js";
+import { sendToAnalytics } from "./analytics.ts";
 
 // Worker version to track which deployment is running
-const WORKER_VERSION = "2.0.0-simplified";
+const WORKER_VERSION = "2.0.0-typescript";
 
 // Analytics event constants - harmonized with image endpoint for GA4 consistency
 const EVENTS = {
     REQUEST: "textRequested",
     SERVED_FROM_CACHE: "textServedFromCache",
     GENERATED: "textGenerated",
-    FAILED: "textGenerationFailed"
-};
+    FAILED: "textGenerationFailed",
+} as const;
 
 // Cache status constants
 const CACHE_STATUS = {
     HIT: "hit",
     MISS: "miss",
-    PENDING: "pending"
-};
+    PENDING: "pending",
+} as const;
+
+interface Env {
+    TEXT_BUCKET: R2Bucket;
+    ORIGIN_HOST: string;
+    GA_MEASUREMENT_ID?: string;
+    GA_API_SECRET?: string;
+}
+
+interface CacheMetadata {
+    originalUrl: string;
+    cachedAt: string;
+    isStreaming: string;
+    responseSize: string;
+    response_content_type: string;
+    response_cache_control: string;
+    method: string;
+    status: string;
+    statusText: string;
+    hasRequestBody: string;
+    response_server: string;
+    response_date: string;
+    [key: string]: string;
+}
+
+interface CacheInfo {
+    cacheStatus?: string;
+    cacheKey?: string;
+    cacheDate?: string;
+}
+
+interface AnalyticsParams {
+    method?: string;
+    pathname?: string;
+    userAgent?: string;
+    referer?: string;
+    error?: string;
+    statusCode?: number;
+    responseSize?: number;
+    isStreaming?: boolean;
+    contentType?: string;
+    [key: string]: any;
+}
 
 // Unified logging function with category support
-function log(category, message, ...args) {
+function log(category: string, message: string, ...args: any[]): void {
     const prefix = category ? `[${category}]` : "";
     console.log(`[${WORKER_VERSION}]${prefix} ${message}`, ...args);
 }
 
 /**
  * Helper function to send analytics with cleaner syntax, matching image endpoint pattern
- * @param {Request} request - The original request
- * @param {string} eventName - The event name from EVENTS constants
- * @param {string} cacheStatus - The cache status from CACHE_STATUS constants
- * @param {Object} params - Additional analytics parameters
- * @param {Object} env - Environment variables
- * @param {ExecutionContext} ctx - The execution context
  */
-function sendTextAnalytics(request, eventName, cacheStatus, params, env, ctx) {
+function sendTextAnalytics(
+    request: Request,
+    eventName: string,
+    cacheStatus: string,
+    params: AnalyticsParams,
+    env: Env,
+    ctx: ExecutionContext,
+): void {
     // Simple logging
     console.log(
         `[ANALYTICS] Sending event ${eventName} with cacheStatus=${cacheStatus}`,
@@ -56,15 +99,15 @@ const NON_CACHE_PATHS = ["/models", "/feed", "/openai/models"];
  * Prepare metadata for caching
  */
 function prepareMetadata(
-    request,
-    url,
-    response,
-    contentSize,
-    isStreaming,
+    request: Request,
+    url: URL,
+    response: Response,
+    contentSize: number,
+    isStreaming: boolean,
     hasRequestBody = false,
-) {
+): CacheMetadata {
     // Create metadata object with core response properties
-    const metadata = {
+    const metadata: CacheMetadata = {
         // Original URL information
         originalUrl: url.toString(),
         cachedAt: new Date().toISOString(),
@@ -87,7 +130,7 @@ function prepareMetadata(
     };
 
     // Track metadata sizes for debugging
-    const metadataSizes = {};
+    const metadataSizes: Record<string, number> = {};
     let totalSize = 0;
 
     // Calculate sizes for core metadata
@@ -99,26 +142,31 @@ function prepareMetadata(
 
     // Add only truly essential request headers to metadata
     const essentialHeaders = [
-        'user-agent',      // For analytics 
-        'referer',         // For analytics
-        'cf-connecting-ip' // For IP tracking
+        "user-agent", // For analytics
+        "referer", // For analytics
+        "cf-connecting-ip", // For IP tracking
     ];
-    
-    const requestHeaderSizes = {};
+
+    const requestHeaderSizes: Record<string, number> = {};
     for (const [key, value] of request.headers.entries()) {
         // Skip cookie header (biggest space consumer)
-        if (key.toLowerCase() === 'cookie') {
-            log("cache", `  ⏭️ Skipping cookie header (${new TextEncoder().encode(key + value).length} bytes)`);
+        if (key.toLowerCase() === "cookie") {
+            log(
+                "cache",
+                `  ⏭️ Skipping cookie header (${new TextEncoder().encode(key + value).length} bytes)`,
+            );
             continue;
         }
-        
+
         // Only include truly essential headers with size limits
         if (essentialHeaders.includes(key.toLowerCase())) {
             // Truncate very long header values to prevent metadata bloat
             const maxHeaderLength = 200; // Reasonable limit for headers
-            const truncatedValue = value.length > maxHeaderLength ? 
-                value.substring(0, maxHeaderLength) + '...' : value;
-            
+            const truncatedValue =
+                value.length > maxHeaderLength
+                    ? value.substring(0, maxHeaderLength) + "..."
+                    : value;
+
             metadata[key] = truncatedValue;
             const size = new TextEncoder().encode(key + truncatedValue).length;
             requestHeaderSizes[key] = size;
@@ -128,16 +176,24 @@ function prepareMetadata(
     }
 
     // Add only essential Cloudflare data (not all 30 properties)
-    const cfSizes = {};
-    if (request.cf && typeof request.cf === "object") {
+    const cfSizes: Record<string, number> = {};
+    const cfData = (request as any).cf;
+    if (cfData && typeof cfData === "object") {
         // Only store essential CF properties for analytics
-        const essentialCfProps = ['country', 'colo', 'httpProtocol', 'asn', 'continent'];
-        
+        const essentialCfProps = [
+            "country",
+            "colo",
+            "httpProtocol",
+            "asn",
+            "continent",
+        ];
+
         for (const prop of essentialCfProps) {
-            if (request.cf[prop] !== null && request.cf[prop] !== undefined) {
-                const stringValue = String(request.cf[prop]);
+            if (cfData[prop] !== null && cfData[prop] !== undefined) {
+                const stringValue = String(cfData[prop]);
                 metadata[prop] = stringValue;
-                const size = new TextEncoder().encode(prop + stringValue).length;
+                const size = new TextEncoder().encode(prop + stringValue)
+                    .length;
                 cfSizes[prop] = size;
                 metadataSizes[`cf_${prop}`] = size;
                 totalSize += size;
@@ -147,30 +203,44 @@ function prepareMetadata(
 
     // Log detailed size information
     log("cache", `📊 Metadata size analysis (total: ${totalSize} bytes):`);
-    
+
     // Log core metadata sizes
     const coreSize = Object.entries(metadataSizes)
-        .filter(([key]) => !key.startsWith('header_') && !key.startsWith('cf_'))
+        .filter(
+            ([key]) => !key.startsWith("header_") && !key.startsWith("cf_"),
+        )
         .reduce((sum, [, size]) => sum + size, 0);
     log("cache", `  Core metadata: ${coreSize} bytes`);
-    
+
     // Log request headers sizes (top 10 largest)
     const headerEntries = Object.entries(requestHeaderSizes)
-        .sort(([,a], [,b]) => b - a)
+        .sort(([, a], [, b]) => b - a)
         .slice(0, 10);
-    const headerTotalSize = Object.values(requestHeaderSizes).reduce((sum, size) => sum + size, 0);
-    log("cache", `  Request headers: ${headerTotalSize} bytes (${Object.keys(requestHeaderSizes).length} headers)`);
+    const headerTotalSize = Object.values(requestHeaderSizes).reduce(
+        (sum, size) => sum + size,
+        0,
+    );
+    log(
+        "cache",
+        `  Request headers: ${headerTotalSize} bytes (${Object.keys(requestHeaderSizes).length} headers)`,
+    );
     headerEntries.forEach(([key, size]) => {
         log("cache", `    ${key}: ${size} bytes`);
     });
-    
+
     // Log Cloudflare data sizes (top 10 largest)
     if (Object.keys(cfSizes).length > 0) {
         const cfEntries = Object.entries(cfSizes)
-            .sort(([,a], [,b]) => b - a)
+            .sort(([, a], [, b]) => b - a)
             .slice(0, 10);
-        const cfTotalSize = Object.values(cfSizes).reduce((sum, size) => sum + size, 0);
-        log("cache", `  Cloudflare data: ${cfTotalSize} bytes (${Object.keys(cfSizes).length} properties)`);
+        const cfTotalSize = Object.values(cfSizes).reduce(
+            (sum, size) => sum + size,
+            0,
+        );
+        log(
+            "cache",
+            `  Cloudflare data: ${cfTotalSize} bytes (${Object.keys(cfSizes).length} properties)`,
+        );
         cfEntries.forEach(([key, size]) => {
             log("cache", `    ${key}: ${size} bytes`);
         });
@@ -178,10 +248,16 @@ function prepareMetadata(
 
     // Log warning if approaching or exceeding typical limits
     if (totalSize > 8000) {
-        log("cache", `⚠️  Metadata size (${totalSize} bytes) is approaching Cloudflare's limit!`);
+        log(
+            "cache",
+            `⚠️  Metadata size (${totalSize} bytes) is approaching Cloudflare's limit!`,
+        );
     }
     if (totalSize > 10000) {
-        log("cache", `🚨 Metadata size (${totalSize} bytes) likely exceeds Cloudflare's limit!`);
+        log(
+            "cache",
+            `🚨 Metadata size (${totalSize} bytes) likely exceeds Cloudflare's limit!`,
+        );
     }
 
     return metadata;
@@ -191,7 +267,11 @@ function prepareMetadata(
  * Store request body separately if it exists
  * This follows the thin proxy design principle by keeping the implementation simple
  */
-async function storeRequestBody(env, request, key) {
+async function storeRequestBody(
+    env: Env,
+    request: Request,
+    key: string,
+): Promise<boolean> {
     // Only process POST/PUT requests that might have a body
     if (
         (request.method !== "POST" && request.method !== "PUT") ||
@@ -219,7 +299,7 @@ async function storeRequestBody(env, request, key) {
             `Stored request body separately (${bodyText.length} bytes) with key: ${requestKey}`,
         );
         return true;
-    } catch (err) {
+    } catch (err: any) {
         log("error", `Failed to cache request body: ${err.message}`);
         return false;
     }
@@ -229,7 +309,11 @@ async function storeRequestBody(env, request, key) {
  * Main worker entry point
  */
 export default {
-    async fetch(request, env, ctx) {
+    async fetch(
+        request: Request,
+        env: Env,
+        ctx: ExecutionContext,
+    ): Promise<Response> {
         try {
             const url = new URL(request.url);
 
@@ -238,7 +322,10 @@ export default {
 
             // Let origin handle GET root requests (e.g. redirects) without caching
             // But allow POST requests to root to be cached
-            if ((url.pathname === "/" || url.pathname === "") && request.method === "GET") {
+            if (
+                (url.pathname === "/" || url.pathname === "") &&
+                request.method === "GET"
+            ) {
                 log(
                     "request",
                     "Proxying GET root request directly to origin without caching",
@@ -247,11 +334,11 @@ export default {
             }
 
             // Common analytics parameters
-            const analyticsParams = {
+            const analyticsParams: AnalyticsParams = {
                 method: request.method,
                 pathname: url.pathname,
                 userAgent: request.headers.get("user-agent") || "",
-                referer: request.headers.get("referer") || ""
+                referer: request.headers.get("referer") || "",
             };
 
             // Send text requested analytics event
@@ -279,10 +366,10 @@ export default {
 
             // Try to get the cached response
             const cachedResponse = await getCachedResponse(env, key);
-            
+
             if (cachedResponse) {
                 log("cache", "✅ Cache hit!");
-                
+
                 // Send analytics for cache hit (non-blocking)
                 sendTextAnalytics(
                     request,
@@ -292,12 +379,12 @@ export default {
                         method: request.method,
                         pathname: new URL(request.url).pathname,
                         userAgent: request.headers.get("user-agent") || "",
-                        referer: request.headers.get("referer") || ""
+                        referer: request.headers.get("referer") || "",
                     },
                     env,
                     ctx,
                 );
-                
+
                 // For HEAD requests, return headers only (no body)
                 if (request.method === "HEAD") {
                     const response = new Response(null, {
@@ -307,7 +394,7 @@ export default {
                     });
                     return response;
                 }
-                
+
                 return cachedResponse;
             }
 
@@ -324,7 +411,7 @@ export default {
                     "cache",
                     `Not caching error response with status ${originResp.status}`,
                 );
-                
+
                 // Send analytics for failed request
                 sendTextAnalytics(
                     request,
@@ -333,12 +420,12 @@ export default {
                     {
                         ...analyticsParams,
                         error: `HTTP ${originResp.status}: ${originResp.statusText}`,
-                        statusCode: originResp.status
+                        statusCode: originResp.status,
                     },
                     env,
                     ctx,
                 );
-                
+
                 return originResp;
             }
 
@@ -387,7 +474,8 @@ export default {
                             ...analyticsParams,
                             responseSize: content.byteLength,
                             isStreaming: false,
-                            contentType: originResp.headers.get("content-type") || ""
+                            contentType:
+                                originResp.headers.get("content-type") || "",
                         },
                         env,
                         ctx,
@@ -395,7 +483,7 @@ export default {
 
                     // Return the original response
                     return originResp;
-                } catch (err) {
+                } catch (err: any) {
                     log(
                         "error",
                         `Error caching regular response: ${err.message}`,
@@ -411,12 +499,12 @@ export default {
             // 2. Cache the data after the stream is completely processed
 
             // Collect chunks as they pass through to the client
-            let chunks = [];
+            let chunks: Uint8Array[] = [];
             let totalSize = 0;
 
             // Create a transform stream that captures chunks as they flow through
             const captureStream = new TransformStream({
-                transform(chunk, controller) {
+                transform(chunk: Uint8Array, controller) {
                     // Save a copy of the chunk for caching later
                     chunks.push(chunk.slice());
                     totalSize += chunk.byteLength;
@@ -490,15 +578,18 @@ export default {
                                         ...analyticsParams,
                                         responseSize: totalSize,
                                         isStreaming: true,
-                                        contentType: originResp.headers.get("content-type") || ""
+                                        contentType:
+                                            originResp.headers.get(
+                                                "content-type",
+                                            ) || "",
                                     },
                                     env,
                                     ctx,
                                 );
 
                                 // Free memory
-                                chunks = null;
-                            } catch (err) {
+                                chunks = [];
+                            } catch (err: any) {
                                 log(
                                     "error",
                                     `❌ Caching failed: ${err.message}`,
@@ -515,7 +606,7 @@ export default {
             if (request.method === "HEAD" || !originResp.body) {
                 // HEAD requests have no body, but we should still cache the headers
                 log("cache", "📝 Caching HEAD request response (headers only)");
-                
+
                 // Cache the response metadata without body
                 try {
                     const metadata = prepareMetadata(
@@ -526,19 +617,19 @@ export default {
                         false, // Not streaming
                         hasRequestBody,
                     );
-                    
+
                     // Store empty body with metadata for HEAD requests
                     ctx.waitUntil(
                         env.TEXT_BUCKET.put(key, new ArrayBuffer(0), {
                             customMetadata: metadata,
-                        })
+                        }),
                     );
-                    
+
                     log("cache", "✅ HEAD response cached successfully");
-                } catch (err) {
+                } catch (err: any) {
                     log("error", `❌ HEAD caching failed: ${err.message}`);
                 }
-                
+
                 return new Response(null, {
                     status: originResp.status,
                     statusText: originResp.statusText,
@@ -562,7 +653,7 @@ export default {
                     cacheKey: key,
                 }),
             });
-        } catch (err) {
+        } catch (err: any) {
             log("error", `❌ Worker error: ${err.message}`);
             if (err.stack) log("error", `Stack: ${err.stack}`);
 
@@ -580,7 +671,7 @@ export default {
 /**
  * Proxy the request to the origin server
  */
-async function proxyRequest(request, env) {
+async function proxyRequest(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
     // Construct origin URL
@@ -615,7 +706,7 @@ async function proxyRequest(request, env) {
 /**
  * Generate a cache key for the request
  */
-async function generateCacheKey(request) {
+async function generateCacheKey(request: Request): Promise<string> {
     // Authentication parameters to exclude from cache key
     const AUTH_PARAMS = ["token", "referrer", "referer", "nofeed", "no-cache"];
 
@@ -632,7 +723,7 @@ async function generateCacheKey(request) {
     // Normalize HEAD requests to GET for cache key generation
     // since HEAD should return the same headers as GET
     const normalizedMethod = request.method === "HEAD" ? "GET" : request.method;
-    
+
     const parts = [
         normalizedMethod,
         url.pathname,
@@ -667,7 +758,7 @@ async function generateCacheKey(request) {
                     parts.push(bodyText);
                 }
             }
-        } catch (err) {
+        } catch (err: any) {
             log("error", `Error processing body for cache key: ${err.message}`);
         }
     }
@@ -687,7 +778,10 @@ async function generateCacheKey(request) {
 /**
  * Prepare response headers by cleaning problematic ones and adding cache info
  */
-function prepareResponseHeaders(originalHeaders, cacheInfo = {}) {
+function prepareResponseHeaders(
+    originalHeaders: Headers,
+    cacheInfo: CacheInfo = {},
+): Headers {
     const headers = new Headers(originalHeaders);
 
     // Remove problematic headers
@@ -725,7 +819,7 @@ function prepareResponseHeaders(originalHeaders, cacheInfo = {}) {
 /**
  * Prepare forwarded headers for proxying the request
  */
-function prepareForwardedHeaders(requestHeaders, url) {
+function prepareForwardedHeaders(requestHeaders: Headers, url: URL): Headers {
     const headers = new Headers(requestHeaders);
 
     // Add standard forwarded headers (but NOT X-Forwarded-Host to avoid referrer confusion)
@@ -746,7 +840,10 @@ function prepareForwardedHeaders(requestHeaders, url) {
 /**
  * Get a cached response from R2
  */
-async function getCachedResponse(env, key) {
+async function getCachedResponse(
+    env: Env,
+    key: string,
+): Promise<Response | null> {
     try {
         // Get the cached object from R2
         const cachedObject = await env.TEXT_BUCKET.get(key);
@@ -775,7 +872,7 @@ async function getCachedResponse(env, key) {
         }
 
         // Prepare headers based on metadata
-        const cacheHeaders = {
+        const cacheHeaders: CacheInfo = {
             cacheStatus: "HIT",
             cacheKey: key,
             cacheDate:
@@ -783,11 +880,11 @@ async function getCachedResponse(env, key) {
         };
 
         // Create response headers with original headers and cache info
-        let originalHeaders = {};
+        let originalHeaders: Record<string, string> = {};
         if (metadata.headers) {
             try {
                 originalHeaders = JSON.parse(metadata.headers);
-            } catch (err) {
+            } catch (err: any) {
                 log(
                     "error",
                     `Error parsing headers from cache: ${err.message}`,
@@ -815,9 +912,9 @@ async function getCachedResponse(env, key) {
             statusText: metadata.statusText || "OK",
             headers: responseHeaders,
         });
-        
+
         return response;
-    } catch (err) {
+    } catch (err: any) {
         log("error", `Error getting cached response: ${err.message}`);
         if (err.stack) log("error", `Stack: ${err.stack}`);
         return null;
@@ -827,7 +924,10 @@ async function getCachedResponse(env, key) {
 /**
  * Get a cached request body from R2
  */
-async function getCachedRequest(env, key) {
+async function getCachedRequest(
+    env: Env,
+    key: string,
+): Promise<{ body: string; uploaded: Date; size: number } | null> {
     try {
         const requestKey = `${key}-request`;
         const cachedRequest = await env.TEXT_BUCKET.get(requestKey);
@@ -848,7 +948,7 @@ async function getCachedRequest(env, key) {
             uploaded: cachedRequest.uploaded,
             size: cachedRequest.size,
         };
-    } catch (err) {
+    } catch (err: any) {
         log("error", `Error getting cached request: ${err.message}`);
         return null;
     }
@@ -857,7 +957,7 @@ async function getCachedRequest(env, key) {
 /**
  * Get both cached request and response as a pair
  */
-async function getCachedRequestResponsePair(env, key) {
+async function getCachedRequestResponsePair(env: Env, key: string) {
     try {
         // Get both in parallel for efficiency
         const [response, request] = await Promise.all([
@@ -870,7 +970,7 @@ async function getCachedRequestResponsePair(env, key) {
             response,
             key,
         };
-    } catch (err) {
+    } catch (err: any) {
         log("error", `Error getting cached pair: ${err.message}`);
         return null;
     }
@@ -880,7 +980,7 @@ async function getCachedRequestResponsePair(env, key) {
  * List all cached request-response pairs (for debugging/analytics)
  * Note: This is a simple implementation - for production, consider pagination
  */
-async function listCachedPairs(env, limit = 100) {
+async function listCachedPairs(env: Env, limit = 100) {
     try {
         const list = await env.TEXT_BUCKET.list({ limit });
 
@@ -915,7 +1015,7 @@ async function listCachedPairs(env, limit = 100) {
             key: baseKey,
             ...pair,
         }));
-    } catch (err) {
+    } catch (err: any) {
         log("error", `Error listing cached pairs: ${err.message}`);
         return [];
     }

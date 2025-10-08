@@ -1,5 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
+import { FAQ } from "../components/faq.tsx";
+import { Button } from "../components/button.tsx";
 
 export const Route = createFileRoute("/sign-in")({
     component: RouteComponent,
@@ -25,8 +27,22 @@ function RouteComponent() {
     };
 
     return (
-        <button type="button" onClick={handleSignIn} disabled={loading}>
-            {loading ? "Sign-in in progress..." : "Sign-in with Github"}
-        </button>
+        <div className="flex flex-col gap-20">
+            <div className="flex justify-between gap-4 items-center">
+                <img src="/logo_text_black.svg" alt="pollinations.ai" className="h-12 flex-1 object-contain object-left" />
+                <Button as="a" href="/api/docs">
+                    API Reference
+                </Button>
+                <Button 
+                    as="button" 
+                    onClick={handleSignIn} 
+                    disabled={loading}
+                    weight="light"
+                >
+                    {loading ? "Signing in..." : "Sign in with Github"}
+                </Button>
+            </div>
+            <FAQ />
+        </div>
     );
 }

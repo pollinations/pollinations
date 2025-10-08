@@ -31,6 +31,9 @@ invocation_logs = true
 [env.test.vars]
 ORIGIN_HOST = "text-origin.pollinations.ai"
 DEBUG = "cache:*"
+# Google Analytics credentials for test environment
+GA_MEASUREMENT_ID = "G-LPZ9GEJVHR"
+GA_API_SECRET = "CnnW1VxTTtKv0tef3xx69g"
 
 [[env.test.r2_buckets]]
 binding = "TEXT_BUCKET"

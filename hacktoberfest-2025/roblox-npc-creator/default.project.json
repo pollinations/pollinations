@@ -1,0 +1,56 @@
+{
+  "name": "RobloxNPCCreator",
+  "tree": {
+    "$className": "DataModel",
+    
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "ChatServer": {
+        "$path": "src/ServerScriptService/ChatServer.lua"
+      },
+      "ConfigModule": {
+        "$path": "src/ServerScriptService/ConfigModule.lua"
+      }
+    },
+    
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "ChatClient": {
+          "$path": "src/StarterPlayer/StarterPlayerScripts/ChatClient.lua"
+        }
+      }
+    },
+    
+    "StarterGui": {
+      "$className": "StarterGui",
+      "ChatUI": {
+        "$path": "src/StarterGui/ChatUI.rbxmx"
+      }
+    },
+    
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "ChatEvents": {
+        "$className": "Folder",
+        "SendMessage": {
+          "$className": "RemoteEvent"
+        },
+        "ReceiveMessage": {
+          "$className": "RemoteEvent"
+        },
+        "OpenChatUI": {
+          "$className": "RemoteEvent"
+        }
+      }
+    },
+    
+    "Workspace": {
+      "$className": "Workspace",
+      "ChatNPC": {
+        "$path": "models/NPC.rbxmx"
+      }
+    }
+  }
+}

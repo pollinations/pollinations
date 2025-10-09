@@ -9,7 +9,14 @@ export const IMAGE_MODELS = {
     "flux": {
         displayName: "Flux",
         costType: "fixed_operational_cost",
-        cost: [ZERO_PRICE],
+        // TODO: Verify operational cost estimate
+        // Currently estimated at 0.3 cents per image ($0.003)
+        cost: [
+            {
+                date: PRICING_START_DATE,
+                completionImageTokens: fromDPMT(3000), // $3000 per 1M tokens = $0.003 per token/image
+            },
+        ],
     },
     "kontext": {
         displayName: "Flux Kontext",

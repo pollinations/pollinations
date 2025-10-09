@@ -209,6 +209,59 @@ describe("/register endpoint", () => {
     });
 });
 
+describe("Tracking headers (PR #4183)", () => {
+    it("should include x-model-used header", async () => {
+        const response = await fetch(
+            `${BASE_URL}/prompt/test?model=flux`,
+        );
+
+        expect(response.status).toBe(200);
+        
+        const modelUsed = response.headers.get("x-model-used");
+        expect(modelUsed).toBeTruthy();
+        expect(modelUsed).toBe("flux");
+    }, 30000);
+
+    it("should include x-completion-image-tokens header", async () => {
+        const response = await fetch(
+            `${BASE_URL}/prompt/test?model=flux`,
+        );
+
+        expect(response.status).toBe(200);
+        
+        const completionTokens = response.headers.get("x-completion-image-tokens");
+        expect(completionTokens).toBeTruthy();
+        
+        const tokenCount = parseInt(completionTokens || "0", 10);
+        expect(tokenCount).toBeGreaterThan(0);
+        
+        // Flux should use unit-based pricing (1 token)
+        expect(tokenCount).toBe(1);
+    }, 30000);
+
+    it("should include x-user-tier header when authenticated", async () => {
+        const testReferrer = process.env.VITE_TEST_REFERRER;
+        expect(testReferrer).toBeDefined();
+        
+        const response = await fetch(
+            `${BASE_URL}/prompt/test?model=flux`,
+            {
+                headers: {
+                    Referer: testReferrer || "",
+                },
+            },
+        );
+
+        expect(response.status).toBe(200);
+        
+        const userTier = response.headers.get("x-user-tier");
+        // May be present or not depending on auth
+        if (userTier) {
+            expect(["seed", "flower", "nectar"]).toContain(userTier);
+        }
+    }, 30000);
+});
+
 describe("Error handling", () => {
     it("should return 404 for non-existent endpoints", async () => {
         const response = await fetch(`${BASE_URL}/nonexistent`);

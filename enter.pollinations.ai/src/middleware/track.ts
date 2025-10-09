@@ -76,7 +76,6 @@ export const track = (eventType: EventType) =>
             }
             if (!cacheInfo.cacheHit) {
                 modelUsage = extractUsage(
-                    c,
                     eventType,
                     modelRequested,
                     c,
@@ -167,7 +166,6 @@ async function extractModelRequested(
 }
 
 function extractUsage(
-    c: Context<TrackEnv>,
     eventType: EventType,
     modelRequested: string | null,
     c: Context<TrackEnv>,

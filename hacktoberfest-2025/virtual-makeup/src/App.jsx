@@ -10,6 +10,10 @@ import {
   Wand2,
 } from "lucide-react";
 
+const CLOUDINARY_CLOUD_NAME = "pollinations";
+const CLOUDINARY_UPLOAD_PRESET = "pollinations-image";
+const CLOUDINARY_API_KEY = "939386723511927";
+
 const MAKEUP_STYLES = [
   {
     id: "natural",
@@ -54,11 +58,13 @@ function App() {
   const [sliderValue, setSliderValue] = useState(50);
   const [useCustom, setUseCustom] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState(null);
   const fileInputRef = useRef(null);
 
   const handleImageUpload = (event) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith("image/")) {
+      setUploadedFile(file);
       const reader = new FileReader();
       reader.onload = (e) => {
         setUploadedImage(e.target?.result);
@@ -70,22 +76,23 @@ function App() {
     }
   };
 
-  const convertBase64ToObjectURL = (base64String) => {
-    const byteString = atob(base64String.split(",")[1]);
-    const mimeString = base64String.split(",")[0].split(":")[1].split(";")[0];
-    const arrayBuffer = new ArrayBuffer(byteString.length);
-    const uint8Array = new Uint8Array(arrayBuffer);
+  const uploadToCloudinary = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    formData.append("api_key", CLOUDINARY_API_KEY);
 
-    for (let i = 0; i < byteString.length; i++) {
-      uint8Array[i] = byteString.charCodeAt(i);
-    }
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+      { method: "POST", body: formData }
+    );
 
-    const blob = new Blob([arrayBuffer], { type: mimeString });
-    return URL.createObjectURL(blob);
+    const data = await response.json();
+    return data.secure_url;
   };
 
   const applyMakeup = async () => {
-    if (!uploadedImage) return;
+    if (!uploadedImage || !uploadedFile) return;
 
     setIsLoading(true);
     setImageLoaded(false);
@@ -96,32 +103,22 @@ function App() {
 
       const encodedPrompt = encodeURIComponent(prompt);
 
-      let imageUrl;
-      if (uploadedImage.startsWith("data:")) {
-        imageUrl = convertBase64ToObjectURL(uploadedImage);
-      } else {
-        imageUrl = uploadedImage;
-      }
+      const cloudinaryUrl = await uploadToCloudinary(uploadedFile);
 
-      const encodedImageURL = encodeURIComponent(imageUrl);
+      const encodedImageURL = encodeURIComponent(cloudinaryUrl);
 
-      const apiUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?model=nanobanana&image=${encodedImageURL}&referrer=virtualmakeuptryon&width=1024&height=1024&nologo=true&enhance=true&seed=123&strength=0.7`;
+      const randomSeed = Math.floor(Math.random() * 1000000);
+
+      const apiUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?model=nanobanana&image=${encodedImageURL}&referrer=virtualmakeuptryon&width=1024&height=1024&nologo=true&enhance=true&seed=${randomSeed}`;
+
       const img = new Image();
       img.onload = () => {
         setMakeupImage(apiUrl);
         setImageLoaded(true);
         setIsLoading(false);
-
-        if (imageUrl !== uploadedImage) {
-          URL.revokeObjectURL(imageUrl);
-        }
       };
       img.onerror = () => {
         setIsLoading(false);
-
-        if (imageUrl !== uploadedImage) {
-          URL.revokeObjectURL(imageUrl);
-        }
       };
       img.src = apiUrl;
     } catch (error) {
@@ -157,6 +154,7 @@ function App() {
     setUseCustom(false);
     setSliderValue(50);
     setImageLoaded(false);
+    setUploadedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -273,7 +271,7 @@ function App() {
                 },
                 {
                   icon: Download,
-                  title: "Save & Share",
+                  title: "Save Results",
                   desc: "Download your transformed photos",
                 },
               ].map((feature, idx) => (

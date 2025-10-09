@@ -76,9 +76,9 @@ export const track = (eventType: EventType) =>
             }
             if (!cacheInfo.cacheHit) {
                 modelUsage = extractUsage(
-                    c,
                     eventType,
                     modelRequested,
+                    c,
                     openaiResponse,
                 );
                 costType = REGISTRY.getCostType(modelUsage.model as ProviderId);
@@ -166,9 +166,9 @@ async function extractModelRequested(
 }
 
 function extractUsage(
-    c: Context<TrackEnv>,
     eventType: EventType,
     modelRequested: string | null,
+    c: Context<TrackEnv>,
     response?: OpenAIResponse,
 ): ModelUsage {
     if (eventType === "generate.image") {

@@ -59,11 +59,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 {apiKeys.length ? (
                     <div className="bg-emerald-100 rounded-2xl p-8 border border-pink-300">
                         <div className="grid grid-cols-[1fr_1fr_1fr_1fr_60px] gap-2">
-                            <span className="font-bold">Name</span>
-                            <span className="font-bold">Description</span>
-                            <span className="font-bold">Start</span>
-                            <span className="font-bold">Created</span>
-                            <span className="font-bold">Actions</span>
+                            <span className="font-bold text-pink-400 mb-2">Name</span>
+                            <span className="font-bold text-pink-400 mb-2">Description</span>
+                            <span className="font-bold text-pink-400 mb-2">Start</span>
+                            <span className="font-bold text-pink-400 mb-2">Created</span>
+                            <span className="mb-2"></span>
                             {apiKeys.map((apiKey) => (
                                 <Fragment key={apiKey.id}>
                                     <Cell>{apiKey.name}</Cell>
@@ -77,9 +77,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                     <Button
                                         type="button"
                                         size="small"
-                                        color="red"
                                         weight="light"
-                                        className="justify-self-end"
+                                        className="justify-self-center bg-red-50 text-red-700 hover:bg-red-100"
                                         onClick={() => setDeleteId(apiKey.id)}
                                     >
                                         Delete
@@ -344,7 +343,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     return (
         <Dialog.Root open={isOpen} onOpenChange={({ open }) => setIsOpen(open)}>
             <Dialog.Trigger>
-                <Button as="div" color="blue" weight="light">Create API Key</Button>
+                <Button as="div" color="blue" weight="light">Create new key</Button>
             </Dialog.Trigger>
             <Dialog.Backdrop className="fixed inset-0 bg-green-950/50" />
             <Dialog.Positioner className="fixed inset-0 flex items-center justify-center p-4">

@@ -20,7 +20,12 @@ export async function sendToTinybird(
             event.name === "imageServedFromSemanticCache"
         );
         
-        for (const event of cacheHitEvents) {
+        if (cacheHitEvents.length === 0) {
+            return;
+        }
+        
+        // Batch all requests with Promise.all for better performance
+        const fetchPromises = cacheHitEvents.map(async (event) => {
             const imageParams = c.get("imageParams");
             const responseTime = c.get("responseTime") || 0;
 
@@ -71,19 +76,41 @@ export async function sendToTinybird(
                 },
             } as const;
 
-            // Send to Tinybird
-            await fetch(
-                `https://api.europe-west2.gcp.tinybird.co/v0/events?name=llm_events`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${apiKey}`,
-                    },
-                    body: JSON.stringify(tinybirdEvent),
+            // Create abort controller for timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+
+            try {
+                // Send to Tinybird with timeout
+                const response = await fetch(
+                    `https://api.europe-west2.gcp.tinybird.co/v0/events?name=llm_events`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${apiKey}`,
+                        },
+                        body: JSON.stringify(tinybirdEvent),
+                        signal: controller.signal,
+                    }
+                );
+
+                if (!response.ok) {
+                    console.error(`[TINYBIRD] Failed to send event: ${response.status} ${response.statusText}`);
                 }
-            );
-        }
+            } catch (fetchError: any) {
+                if (fetchError.name === "AbortError") {
+                    console.error("[TINYBIRD] Request timed out after 3 seconds");
+                } else {
+                    console.error("[TINYBIRD] Fetch error:", fetchError.message);
+                }
+            } finally {
+                clearTimeout(timeoutId);
+            }
+        });
+
+        // Wait for all requests to complete
+        await Promise.all(fetchPromises);
     } catch (error) {
         console.error("[TINYBIRD] Error sending events:", error);
     }

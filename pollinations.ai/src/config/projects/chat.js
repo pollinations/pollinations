@@ -5,6 +5,40 @@
 
 export const chatProjects = [
   {
+    name: "WorksparkAI [BETA] 💼",
+    url: "https://worksparkai-983563815856.europe-west1.run.app",
+    description: "Modern ChatGPT alternative with document processing, PDF reading, image understanding, and web searching. Chat with any LLM using custom API keys. Uses Pollinations AI as default free model. Built with Vite + React, can summarize documents and draw plots.",
+    author: "@obezbolen67",
+    submissionDate: "2025-08-05",
+    order: 1
+  },
+  {
+    name: "iTouch 💭",
+    url: "https://jordanpeteroliver.github.io/itouch/",
+    description: "Chat where images and texts integrate. A poetic journey to where inspiration lives, where words are born, and souls exist before bodies. Creative AI-powered conversation with visual generation.",
+    author: "@jordanpeteroliver",
+    repo: "https://github.com/jordanpeteroliver/itouch",
+    submissionDate: "2025-08-21",
+    order: 1
+  },
+  {
+    name: "Petfuse Image Generator 🐾",
+    url: "https://petfuse.xyz/",
+    description: "Chat and generate images with custom seed control. Features a public gallery indexed by Google where all generated images are displayed. Simple interface for creating AI art with conversation.",
+    author: "@yasmeenanti08-creator",
+    submissionDate: "2025-08-18",
+    order: 1
+  },
+  {
+    name: "PrisimAI 💬",
+    url: "https://prisimai.github.io/PrisimAI",
+    description: "A lightweight, browser-based AI chat application designed to run seamlessly as a Progressive Web App (PWA). Features offline support via service worker, multiple model selection, ChatGPT-inspired interface, and cross-platform installability on desktop & mobile.",
+    author: "@CloudCompile",
+    repo: "https://github.com/PrisimAI/PrisimAI",
+    submissionDate: "2025-09-10",
+    order: 1
+  },
+  {
     name: "VOHU AI 🇮🇷",
     url: "https://www.vohuapp.ir",
     description: "VOHU AI is an Iranian AI that, in collaboration with Pollinations.AI, offers free and unlimited access to the world's best language models for everyone. The project is completely free with unlimited access, and you can easily use it without even signing up.",
@@ -391,6 +425,14 @@ export const chatProjects = [
     description: "AI Dream Girl Studio is a content creation pipeline built around hyper-realistic AI-generated female characters. We use Pollinations to generate high-fidelity visuals of emotional, seductive, and stylized women in cinematic settings. These characters are brought to life through AI video animation, voiceovers, and storytelling to create viral social content for entertainment and monetization. Pollinations is the core engine behind our character design and visual style.",
     author: "https://www.tiktok.com/@herinyourhead",
     submissionDate: "2025-07-17",
+    order: 1
+  },
+  {
+    name: "NeonSpark AI ✨",
+    url: "https://neonspark-ai.web.app/",
+    description: "NeonSpark AI is a web app that offers AI-powered chat and image generation features. It provides users with an interface to interact via conversational AI (chat) as well as create images based on prompts.",
+    author: "developer.asaad@gmail.com",
+    submissionDate: "2025-10-04",
     order: 1
   }
 ];

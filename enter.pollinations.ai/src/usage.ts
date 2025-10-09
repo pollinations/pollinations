@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ProviderId, TokenUsage } from "./registry/registry";
+import { ProviderId, TokenUsage } from "@shared/registry/registry.ts";
 
 const usageSchema = z.object({
     completion_tokens: z.number().int().nonnegative(),
@@ -58,12 +58,20 @@ const contentFilterResultSchema = z
 
 export type ContentFilterResult = z.infer<typeof contentFilterResultSchema>;
 
-const userTierSchema = z.literal(["anonymous", "seed", "flower", "nectar"]);
+const userTierSchema = z.enum(["anonymous", "seed", "flower", "nectar"]);
 export type UserTier = z.infer<typeof userTierSchema>;
 
 const choiceSchema = z.object({
     index: z.number().int(),
     content_filter_results: contentFilterResultSchema,
+    message: z
+        .object({
+            role: z.string(),
+            content: z.string(),
+            // WARNING: Update this to match the actual openai schema
+        })
+        .optional()
+        .catch(undefined),
     // omitting other fields as they are not needed yet
     // (message, logprobs, finish_reason)
 });

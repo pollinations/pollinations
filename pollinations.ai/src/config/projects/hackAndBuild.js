@@ -5,6 +5,15 @@
 
 export const hackAndBuildProjects = [
   {
+    name: "MultiAgent 🤖",
+    url: "https://github.com/LKosoj/multiagent",
+    description: "Advanced multi-agent system for solving complex tasks using specialized AI agents. Implements modern architectural patterns with agent factory, manager coordination, and flexible pipelines for Text-to-SQL, research, and content creation. Features next-gen RAG memory with SQLite + ChromaDB, database plugin pattern for multiple DBMS, multi-layer security with LLM-Guard, and extensible tool system with MCP integration. Emphasizes modularity, security, and extensibility.",
+    author: "@LKosoj",
+    repo: "https://github.com/LKosoj/multiagent",
+    submissionDate: "2025-10-02",
+    order: 1
+  },
+  {
     name: "unpkg.ai",
     url: "https://unpkg.ai",
     description: "AI-powered ESM module generation service that creates JavaScript modules on-demand using LLMs.",
@@ -12,15 +21,6 @@ export const hackAndBuildProjects = [
     repo: "https://github.com/Strawberry-Computer/unpkg.ai",
     submissionDate: "2025-09-17",
     stars: 5,
-    order: 1
-  },
-  {
-    name: "Pollinations OpenAI Proxy",
-    url: "https://pollinationsopenaiproxy.vercel.app/",
-    description: "A thin FastAPI layer that exposes OpenAI-compatible endpoints and proxies to Pollinations services for text, image, and audio (TTS). Works with existing OpenAI SDKs/clients.",
-    author: "@percival-de-galles",
-    repo: "https://github.com/percival-de-galles/pollinations_openai_proxy",
-    submissionDate: "2025-09-17",
     order: 1
   },
   {
@@ -41,15 +41,6 @@ export const hackAndBuildProjects = [
     repo: "https://github.com/pinkpixel-dev/MCPollinations",
     category: "sdkLibraries",
     stars: 32
-  },
-  {
-    name: "Sequa MCP Server",
-    url: "https://mcp.sequa.ai/v1/pollinations/contribute",
-    description: "A Model Context Protocol server from Sequa.ai that provides deep knowledge of the Pollinations codebase. Offers documentation, context, and guidance to coding agents working on Pollinations projects. Configure MCP: https://mcp.sequa.ai/v1/pollinations/contribute",
-    author: "@sequa_ai",
-    category: "sdkLibraries",
-    submissionDate: "2025-08-24",
-    order: 1
   },
   {
     name: "pollinations_ai",

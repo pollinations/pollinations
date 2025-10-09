@@ -45,14 +45,42 @@ const tierCaps = {
     nectar: 50,
 };
 
-// Special tier caps for nanobanana and seedream models
-// Seed: 1x (base), Flower: 3x, Nectar: 6x
-const specialModelTierCaps = {
+// Special tier caps for nanobanana model - STRICTER LIMITS
+// Seed: 1x (base), Flower: 1x (same as seed), Nectar: 2x (reduced from 6x)
+const nanobananaTierCaps = {
     anonymous: 1,
     seed: 1,      // Base level
-    flower: 3,    // 3x seed tier
-    nectar: 6,    // 6x seed tier
+    flower: 1,    // Same as seed tier (reduced from 3x)
+    nectar: 2,    // Reduced from 6x to 2x
 };
+
+// Seedream model uses lowest limit (1) for most tiers, nectar gets 2
+const seedreamTierCaps = {
+    anonymous: 1,
+    seed: 1,      // Lowest limit
+    flower: 1,    // Lowest limit (same as seed)
+    nectar: 2,    // Enhanced limit for nectar tier (same as nanobanana)
+};
+
+// Parse priority users from environment variable for special models (nanobanana and seedream)
+const parsePriorityUsers = () => {
+    const envVar = process.env.PRIORITY_MODEL_USERS;
+    if (!envVar) return new Map();
+    
+    const priorityUsers = new Map();
+    envVar.split(',').forEach(entry => {
+        const [username, limit] = entry.split(':');
+        priorityUsers.set(username.trim(), parseInt(limit) || 5); // Default to 5 concurrent if no limit specified
+    });
+    return priorityUsers;
+};
+
+const specialModelPriorityUsers = parsePriorityUsers();
+
+// Log priority users on startup for debugging
+if (specialModelPriorityUsers.size > 0) {
+    log('Special model priority users loaded (nanobanana & seedream): %o', Array.from(specialModelPriorityUsers.entries()));
+}
 
 /**
  * Enqueue a function to be executed based on IP address
@@ -146,9 +174,24 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 	// Only apply tier-based cap if forceCap is not set
 	if (!forceCap) {
 		// Check if this is a special model that uses different tier multipliers
-		if (model === 'nanobanana' || model === 'seedream') {
-			cap = specialModelTierCaps[authResult.tier] || 1;
-			log('Using special model tier-based cap: %d for tier: %s (model: %s)', cap, authResult.tier, model);
+		if (model === 'nanobanana') {
+			// Check if user is in priority list first
+			if (authResult.userId && specialModelPriorityUsers.has(authResult.userId)) {
+				cap = specialModelPriorityUsers.get(authResult.userId);
+				log('Using nanobanana priority user cap: %d for user: %s', cap, authResult.userId);
+			} else {
+				cap = nanobananaTierCaps[authResult.tier] || 1;
+				log('Using nanobanana tier-based cap: %d for tier: %s', cap, authResult.tier);
+			}
+		} else if (model === 'seedream') {
+			// Check if user is in priority list first
+			if (authResult.userId && specialModelPriorityUsers.has(authResult.userId)) {
+				cap = specialModelPriorityUsers.get(authResult.userId);
+				log('Using seedream priority user cap: %d for user: %s', cap, authResult.userId);
+			} else {
+				cap = seedreamTierCaps[authResult.tier] || 1;
+				log('Using seedream tier-based cap: %d for tier: %s (lowest limit for all tiers)', cap, authResult.tier);
+			}
 		} else {
 			cap = tierCaps[authResult.tier] || 1;
 			log('Using tier-based cap: %d for tier: %s', cap, authResult.tier);
@@ -159,18 +202,18 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 
 	const maxQueueSize = cap * 5;
 	// Apply tier-based concurrency limits for token-authenticated requests
-	if (authResult.tokenAuth) {
-		// // // Token authentication gets zero interval (no delay between requests)
-		// if (interval > 0) {
-		//   log('Token authenticated request - using zero interval in queue');
-		//   interval = 0;
-		// }
-		authLog(
-			"Authenticated via token. using userId instead of ip address for queueing: " +
-				authResult.userId,
-		);
-		ip = authResult.userId;
-	}
+	// if (authResult.tokenAuth) {
+	// 	// // // Token authentication gets zero interval (no delay between requests)
+	// 	// if (interval > 0) {0
+	// 	//   log('Token authenticated request - using zero interval in queue');
+	// 	//   interval = 0;		
+	// 	// }
+	// 	authLog(
+	// 		"Authenticated via token. using userId instead of ip address for queueing: " +
+	// 			authResult.userId,
+	// 	);
+	// 	ip = authResult.userId;
+	// }
 
 	// Check if queue exists for this IP and get its current size
 	const currentQueueSize = queues.get(ip)?.size || 0;

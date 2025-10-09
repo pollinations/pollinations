@@ -10,21 +10,23 @@ export const MODELS = {
         type: "pollinations",
         enhance: true,
         maxSideLength: 768,
+        tier : "seed",
     },
 
-    // BPAIGen with Kontext fallback - general purpose model
-    kontext: {
-        type: "bpaigen-kontext",
-        enhance: true,
-        maxSideLength: 1216, // BPAIGen's higher resolution capability
-        tier: "seed",
-    },
+    // // BPAIGen with Kontext fallback - general purpose model
+    // kontext: {
+    //     type: "bpaigen-kontext",
+    //     enhance: true,
+    //     maxSideLength: 1216, // BPAIGen's higher resolution capability
+    //     tier: "seed",
+    // },
 
     // Assuming 'turbo' is of type 'sd'
     turbo: {
         type: "pollinations",
         enhance: true,
         maxSideLength: 768,
+        tier: "seed",
     },
 
     // Nano Banana - Gemini 2.5 Flash Image Preview via Vertex AI
@@ -40,14 +42,14 @@ export const MODELS = {
         type: "seedream",
         enhance: false,
         maxSideLength: 2048, // Default 2048x2048, supports up to 4K resolution
-        tier: "seed",
+        tier: "nectar",
     },
 
-    // Azure GPT Image model (temporarily disabled - uncomment to reactivate)
-    // gptimage: {
-    //     type: "azure",
-    //     enhance: false,
-    //     maxSideLength: 1024,
-    //     tier: "nectar",
-    // },
+    // Azure GPT Image model - gpt-image-1-mini
+    gptimage: {
+        type: "azure",
+        enhance: false,
+        maxSideLength: 1024,
+        tier: "seed",
+    },
 } as const;

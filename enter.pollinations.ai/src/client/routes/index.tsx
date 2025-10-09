@@ -11,6 +11,7 @@ import { Button } from "../components/button.tsx";
 import { config } from "../config.ts";
 import { User } from "../components/user.tsx";
 import { PollenBalance } from "../components/pollen-balance.tsx";
+import { FAQ } from "../components/faq.tsx";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -53,7 +54,9 @@ function RouteComponent() {
     const handleCreateApiKey = async (formState: CreateApiKey) => {
         const createKeyDate = {
             name: formState.name,
-            description: formState.description,
+            metadata: {
+                description: formState.description,
+            },
         };
         const result = await auth.apiKey.create(createKeyDate);
         if (result.error) {
@@ -74,8 +77,11 @@ function RouteComponent() {
 
     return (
         <div className="flex flex-col gap-20">
-            <div className="flex justify-between gap-4">
-                <h1 className="flex-1">Pollinations.AI</h1>
+            <div className="flex justify-between gap-4 items-center">
+                <img src="/logo_text_black.svg" alt="pollinations.ai" className="h-12 flex-1 object-contain object-left" />
+                <Button as="a" href="/api/docs">
+                    API Reference
+                </Button>
                 <User
                     githubUsername={user.githubUsername}
                     githubAvatarUrl={user.image || ""}
@@ -87,8 +93,7 @@ function RouteComponent() {
             </div>
             <div className="flex flex-col gap-2">
                 <div className="flex justify-between gap-3">
-                    <h2 className="font-bold flex-1">Pollen</h2>
-                    <span className="text-3xl font-subheading">Add</span>
+                    <h2 className="font-bold flex-1">Pollen balance</h2>
                     <Button
                         as={"a"}
                         color="pink"
@@ -96,7 +101,7 @@ function RouteComponent() {
                         href="/api/polar/checkout/pollen-bundle-small"
                         target="_blank"
                     >
-                        10 $
+                        + $10
                     </Button>
                     <Button
                         as="a"
@@ -105,7 +110,7 @@ function RouteComponent() {
                         href="/api/polar/checkout/pollen-bundle-medium"
                         target="_blank"
                     >
-                        25 $
+                        + $25
                     </Button>
                     <Button
                         as="a"
@@ -114,7 +119,7 @@ function RouteComponent() {
                         href="/api/polar/checkout/pollen-bundle-large"
                         target="_blank"
                     >
-                        50 $
+                        + $50    
                     </Button>
                 </div>
                 <PollenBalance balance={balance} />
@@ -124,6 +129,7 @@ function RouteComponent() {
                 onCreate={handleCreateApiKey}
                 onDelete={handleDeleteApiKey}
             />
+            <FAQ />
         </div>
     );
 }

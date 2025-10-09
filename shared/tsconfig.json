@@ -1,0 +1,34 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        
+        // Allow JavaScript files without type checking
+        "allowJs": true,
+        "checkJs": false,
+        "allowImportingTsExtensions": true,
+        "noEmit": true,
+        
+        // Loose mode - no strict checking
+        "strict": false,
+        "noImplicitAny": false,
+        
+        // Standard settings
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "resolveJsonModule": true,
+        
+        // For IDE support and go-to-definition
+        "declaration": true,
+        "declarationMap": true,
+        
+        // Base path for imports
+        "baseUrl": ".",
+        
+        // Include vitest types
+        "types": ["vitest/globals"]
+    },
+    "include": ["**/*.js", "**/*.ts"],
+    "exclude": ["node_modules", "dist"]
+}

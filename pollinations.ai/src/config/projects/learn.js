@@ -5,6 +5,22 @@
 
 export const learnProjects = [
   {
+    name: "Interactive GeoMap 🗺️",
+    url: "https://interactive-geomap.vercel.app",
+    description: "AI-powered geography insights using text.pollinations.ai API. Click anywhere on the map to discover cultural insights, historical facts, and local knowledge. Features smart route planning with flight and car routes, AI-assisted travel planning, and interactive exploration of locations worldwide.",
+    author: "@argyrisAEK",
+    submissionDate: "2025-07-05",
+    order: 1
+  },
+  {
+    name: "PromptsHub 📝",
+    url: "https://promptshub.net/",
+    description: "Dynamic platform for organizing, curating, and sharing effective AI prompts. Massive library of ready-to-use prompts for text, image, video, and code generation. Uses Pollinations.ai for generating prompts and thumbnails. Community-driven with search, filter tools, and daily updates.",
+    author: "@pickplugins",
+    submissionDate: "2025-07-06",
+    order: 1
+  },
+  {
     name: "Prompt Explorer",
     url: "https://play.google.com/store/apps/details?id=com.ismafly.promptexploratorapp",
     description: "A mobile app that combines AI prompt discovery with image generation using Pollinations API. Users can explore existing AI art from Lexica/Civitai, learn from prompts and metadata, then generate their own images directly in the app. Features include generation history, favorites, and a complete learning workflow from discovery to creation.",
@@ -77,23 +93,6 @@ export const learnProjects = [
     order: 4
   },
   {
-    name: "Tutorial",
-    url: "https://guiadehospedagem.com.br/pollinations-ai/",
-    description: "An in-depth Portuguese tutorial on using Pollinations AI.",
-    author: "Janderson de Sales",
-    submissionDate: "2025-04-15",
-    language: "pt-BR",
-    order: 5
-  },
-  {
-    name: "Podcast #1500",
-    url: "https://open.spotify.com/show/1wu4ngb1dclyTwoNN4cZzK",
-    description: "Podcast project powered by pollinations, featuring dialogues among LLMs. First episode features 3o-mini and DeepSeek R1 70B talking about Vibe Coding.",
-    author: "@brain.diver",
-    submissionDate: "2025-03-31",
-    order: 6
-  },
-  {
     name: "Proyecto Descartes",
     url: "https://proyectodescartes.org/revista/Numeros/Revista_8_2024/index.html",
     description: "Educational initiative integrating Pollinations AI into STEM.",
@@ -108,15 +107,6 @@ export const learnProjects = [
     author: "@vaibhavcoding69",
     submissionDate: "2025-06-03",
     order: 1
-  },
-  {
-    name: "TeekGenAI",
-    url: "https://www.youtube.com/@teekgenai",
-    description: "A platform providing free access to AI tools like image generation, text-to-speech, and chat, with tutorials. Content often available in Sinhala.",
-    author: "@teekgenai",
-    submissionDate: "2025-06-04",
-    language: "si",
-    order: 2
   },
   {
     name: "SearchGPT",

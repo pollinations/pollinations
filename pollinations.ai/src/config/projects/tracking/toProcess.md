@@ -39,7 +39,7 @@
 - Completed updating all placeholder entries in all category files
 - Added "Gacha" to `games.js`
 - Added "GPT_Project", "AdvanceChatGptBot", "PolliBot", and "Jackey" to their respective category files
-- Updated placeholder entries for "urSapere AI", "Raftar.xyz", and "Anime Character Generator"
+- Updated placeholder entries for "urSapere AI", and "Anime Character Generator"
 - Processed "Aura Chat Bot", "Quick AI & Jolbak", "AI Image Generator [ROBLOX]", "SingodiyaTech bot", and "Raftar.xyz"
 - Added "ai/teens worldwide" to `learn.js`
 - Added "Echo AI" and "Neurix 🇷🇺" to `chat.js`
@@ -126,7 +126,7 @@ Okay, here are all the unique project names from the provided JSON data:
 66. Pollinations Chatbot - added to chat.js
 67. OkeyMeta - added to chat.js
 68. Snarky Bot - added to chat.js
-69. Pollinations AI Playground - added to chat.js
+
 70. Pollinations AI Free API - added to hackAndBuild.js
 71. Pollinations AI Chatbot - added to chat.js
 72. Pollinations AI Image Generator - added to creative.js
@@ -153,10 +153,10 @@ Okay, here are all the unique project names from the provided JSON data:
 93. One Word - added to socialBots.js
 94. Titan-GPT - added to socialBots.js
 95. Discord Bot - added to socialBots.js as "Pollinations Discord Bot"
-96. Telegram Bot - added to socialBots.js as "Pollinations Telegram Assistant"
+
 97. WhatsApp Group - added to socialBots.js as "Pollinations WhatsApp Group"
 98. OpenHive - added to socialBots.js
-99. Anyai - added to socialBots.js
+
 100. Mimir AIP - added to hackAndBuild.js
 101. ai/teens worldwide - already in learn.js
 103. Mirexa AI - already in creative.js
@@ -176,7 +176,7 @@ Okay, here are all the unique project names from the provided JSON data:
 117. Pal Chat - added to chat.js
 118. Pollinator Android App - added to creative.js
 119. Own-AI - added to creative.js
-120. Image Gen - Uncensored Edition - added to creative.js
+
 121. CoNavic - added to hackAndBuild.js
 122. imggen.top - added to hackAndBuild.js
 123. Aura Chat bot - already in socialBots.js (removed duplicate from chat.js)
@@ -202,7 +202,7 @@ Okay, here are all the unique project names from the provided JSON data:
 143. ImageGen AI Image - added to creative.js
 144. RuangRiung AI Image - added to creative.js 
 145. BlackWave - added to creative.js
-146. Generator Text AI - added to creative.js 
+
 147. Strain Navigator - added to hackAndBuild.js
 148. MalaysiaPrompt - added to learn.js
 149. Generator AI Image - added to creative.js
@@ -215,7 +215,7 @@ Okay, here are all the unique project names from the provided JSON data:
 156. Case Me - added to creative.js
 157. PixPax - added to chat.js
 158. Watch TV with neko (Roblox) - added to games.js
-159. Jenny AI - added to chat.js
+
 160. CalcuBite AI - added to creative.js
 161. RoastMaster AI - added to games.js
 162. roastmyselfie.app - added to games.js
@@ -229,7 +229,7 @@ Okay, here are all the unique project names from the provided JSON data:
 170. AI Image Generator
 171. PolliSonic Generator
 173. Abyss Ascending - added to games.js
-174. Deep Saga - added to games.js
+
 175. [AI] Character RP (Roblox) - added to games.js
 176. MIDIjourney - added to creative.js
 177. TurboReel - added to creative.js
@@ -240,7 +240,7 @@ Okay, here are all the unique project names from the provided JSON data:
 182. Sirius Cybernetics Elevator Challenge - added to games.js
 183. Raftar.xyz - added to socialBots.js
 184. AlphaLLM - AI Discord Bot - added to socialBots.js
-185. pollinations-tg-bot - added to socialBots.js
+
 186. ComfyUI-Pollinations
 187. Node.js Client Library
 188. MCPollinations - added to hackAndBuild.js
@@ -257,22 +257,20 @@ Okay, here are all the unique project names from the provided JSON data:
 199. Artistic Styles Book - updated in learn.js with accurate metadata
 200. Proyecto Descartes - updated in learn.js with accurate metadata
 201. Tutorial - updated in learn.js with accurate metadata
-202. TeekGenAI - added to creative.js
 203. Anime Character Generator - added to creative.js
-204. LiteAI - added to chat.js
+
 205. ai/teens worldwide - added to learn.js
 206. Echo AI - added to chat.js
 207. urSapere AI - added to hackAndBuild.js
 208. Generative AI Images Gallery - added to creative.js
-209. Infinite World: AI game - added to games.js as "Infinite World – AI Game"
+
 210. Aura Chat Bot - added to chat.js
 211. Quick AI & Jolbak - added to socialBots.js
-212. AI Image Generator [ROBLOX] - added to socialBots.js
-213. SingodiyaTech bot - added to socialBots.js
+
 214. IRINA by visuallink - added to creative.js
 283. 🆕 Children's Picture Books Plugin - duplicate, remove
 284. 🆕 Free AI Chatbot & Image Generator - duplicate, remove
 285. 🆕 Neurix 🇷🇺 - added to chat.js
 286. 🆕 Snapgen.io - added to creative.js
 287. 🆕 urSapere AI - added to hackAndBuild.js
-288. 🆕 J.A.R.V.I.S. - added to chat.js
+

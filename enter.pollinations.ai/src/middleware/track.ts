@@ -1,5 +1,5 @@
 import { processEvents, storeEvents } from "@/events.ts";
-import { ProviderId, REGISTRY, ServiceId } from "@/registry/registry.ts";
+import { ProviderId, REGISTRY, ServiceId } from "@shared/registry/registry.ts";
 import {
     ModelUsage,
     OpenAIResponse,
@@ -45,11 +45,11 @@ export const track = (eventType: EventType) =>
         const startTime = new Date();
 
         const modelRequested = await extractModelRequested(c);
-        const serviceOrDefault = REGISTRY.withFallbackService(
+        const resolvedModelRequested = REGISTRY.resolveServiceId(
             modelRequested,
             eventType,
         );
-        const isFreeUsage = REGISTRY.isFreeService(serviceOrDefault);
+        const isFreeUsage = REGISTRY.isFreeService(resolvedModelRequested);
 
         c.set("track", {
             modelRequested,
@@ -60,10 +60,12 @@ export const track = (eventType: EventType) =>
 
         const referrerInfo = extractReferrerInfo(c);
         const cacheInfo = extractCacheInfo(c);
-        const tokenPrice = REGISTRY.getActivePriceDefinition(serviceOrDefault);
+        const tokenPrice = REGISTRY.getActivePriceDefinition(
+            resolvedModelRequested,
+        );
         if (!tokenPrice) {
             throw new Error(
-                `Failed to get price definition for model: ${serviceOrDefault}`,
+                `Failed to get price definition for model: ${resolvedModelRequested}`,
             );
         }
         let openaiResponse, modelUsage, costType, cost, price;
@@ -74,6 +76,7 @@ export const track = (eventType: EventType) =>
             }
             if (!cacheInfo.cacheHit) {
                 modelUsage = extractUsage(
+                    c,
                     eventType,
                     modelRequested,
                     c,
@@ -85,7 +88,7 @@ export const track = (eventType: EventType) =>
                     modelUsage.usage,
                 );
                 price = REGISTRY.calculatePrice(
-                    serviceOrDefault as ServiceId,
+                    resolvedModelRequested as ServiceId,
                     modelUsage.usage,
                 );
             } else {
@@ -164,6 +167,7 @@ async function extractModelRequested(
 }
 
 function extractUsage(
+    c: Context<TrackEnv>,
     eventType: EventType,
     modelRequested: string | null,
     c: Context<TrackEnv>,

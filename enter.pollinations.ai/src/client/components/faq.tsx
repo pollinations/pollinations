@@ -61,7 +61,7 @@ export const FAQ: FC = () => {
                     href="https://github.com/pollinations/pollinations/blob/master/enter.pollinations.ai/POLLEN_FAQ.md"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded-full px-[14px] pt-[4px] pb-[6px] border-2 border-green-950 text-green-950 font-medium hover:bg-green-950 hover:text-green-100 transition-colors cursor-pointer"
+                    className="rounded-full px-[14px] pt-[4px] pb-[6px] border border-green-950 text-green-950 font-medium hover:bg-green-950 hover:text-green-100 transition-colors cursor-pointer"
                 >
                     View on GitHub →
                 </a>

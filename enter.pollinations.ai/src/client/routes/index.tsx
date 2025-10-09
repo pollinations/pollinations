@@ -79,8 +79,8 @@ function RouteComponent() {
         <div className="flex flex-col gap-20">
             <div className="flex justify-between gap-4 items-center">
                 <img src="/logo_text_black.svg" alt="pollinations.ai" className="h-12 flex-1 object-contain object-left" />
-                <Button as="a" href="/api/docs">
-                    API Reference
+                <Button as="a" href="/api/docs" weight="outline">
+                    API Docs →
                 </Button>
                 <User
                     githubUsername={user.githubUsername}
@@ -93,7 +93,7 @@ function RouteComponent() {
             </div>
             <div className="flex flex-col gap-2">
                 <div className="flex justify-between gap-3">
-                    <h2 className="font-bold flex-1">Pollen balance</h2>
+                    <h2 className="font-bold flex-1">Balance</h2>
                     <Button
                         as={"a"}
                         color="pink"

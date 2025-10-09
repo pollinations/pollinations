@@ -56,12 +56,12 @@ export const FAQ: FC = () => {
     return (
         <div className="flex flex-col gap-2">
             <div className="flex gap-2 justify-between items-center">
-                <h2>Pollen FAQ</h2>
+                <h2>FAQ</h2>
                 <a 
                     href="https://github.com/pollinations/pollinations/blob/master/enter.pollinations.ai/POLLEN_FAQ.md"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                    className="rounded-full px-[14px] pt-[4px] pb-[6px] border-2 border-green-950 text-green-950 font-medium hover:bg-green-950 hover:text-green-100 transition-colors cursor-pointer"
                 >
                     View on GitHub →
                 </a>
@@ -69,12 +69,12 @@ export const FAQ: FC = () => {
             <div className="bg-emerald-100 rounded-2xl p-8 border border-pink-300">
                 <div className="flex flex-col gap-4">
                     {faqData.map((item, index) => (
-                        <div key={index} className="border-b border-emerald-200 last:border-b-0 pb-4 last:pb-0">
+                        <div key={index} className="pb-4 last:pb-0">
                             <button
                                 onClick={() => toggleQuestion(index)}
                                 className="w-full text-left flex justify-between items-start gap-4 text-green-950 hover:text-green-800 transition-colors"
                             >
-                                <span className="flex-1" style={{ fontWeight: 700 }}>{item.question}</span>
+                                <span className="flex-1 text-pink-500" style={{ fontWeight: 700 }}>{item.question}</span>
                                 <span className="text-2xl flex-shrink-0 font-normal">{openIndices.has(index) ? "−" : "+"}</span>
                             </button>
                             {openIndices.has(index) && (

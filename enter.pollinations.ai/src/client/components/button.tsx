@@ -6,7 +6,7 @@ const colors = {
     green: {
         light: "bg-green-200 text-green-900",
         strong: "bg-green-950 text-green-100",
-        outline: "border-2 border-green-950 text-green-950",
+        outline: "border-2 border-green-950 text-green-950 hover:bg-green-950 hover:text-green-100 transition-colors",
     },
     pink: {
         light: "bg-fuchsia-200 text-fuchsia-900",

@@ -76,12 +76,12 @@
     html,
     body {
         @apply text-green-950 bg-emerald-100 font-body text-base;
-        @apply py-8 min-h-screen font-medium;
+        @apply pb-8 min-h-screen font-medium;
     }
 
     body {
         max-width: 800px;
-        @apply mx-auto;
+        @apply mx-auto px-4 sm:px-6 md:px-8 pt-4;
     }
 
     h1 {
@@ -100,5 +100,15 @@
     h5,
     h6 {
         @apply text-xl;
+    }
+
+    /* Hide scrollbars while keeping functionality */
+    .scrollbar-hide {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;  /* Chrome, Safari and Opera */
     }
 }

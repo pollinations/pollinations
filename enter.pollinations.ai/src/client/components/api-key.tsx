@@ -57,8 +57,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     />
                 </div>
                 {apiKeys.length ? (
-                    <div className="bg-emerald-100 rounded-2xl p-8 border border-pink-300">
-                        <div className="grid grid-cols-[1fr_1fr_1fr_1fr_60px] gap-2">
+                    <div className="bg-emerald-100 rounded-2xl p-8 border border-pink-300 overflow-x-auto scrollbar-hide">
+                        <div className="grid grid-cols-[1fr_1fr_1fr_1fr_60px] gap-2 min-w-[600px]">
                             <span className="font-bold text-pink-400 mb-2">Name</span>
                             <span className="font-bold text-pink-400 mb-2">Description</span>
                             <span className="font-bold text-pink-400 mb-2">Start</span>

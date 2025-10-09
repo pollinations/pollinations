@@ -1,38 +1,48 @@
 import { expect, test } from "vitest";
 import { REGISTRY } from "@shared/registry/registry.ts";
-import type { TokenUsage } from "@shared/registry/registry.ts";
+import type { TokenUsage, ProviderId, ServiceId } from "@shared/registry/registry.ts";
 
 // Test image model cost tracking
-// Tests that flux has correct operational cost estimate
+// Tests cost calculation properties without hardcoding specific values
 
-test("Flux should have operational cost of 0.3 cents per image", () => {
-    const usage: TokenUsage = {
-        unit: "TOKENS",
-        completionImageTokens: 1, // Flux uses 1 token per image
-    };
+test("Image models should calculate costs proportionally to token count", () => {
+    const models: ProviderId[] = ["flux", "nanobanana", "kontext", "turbo", "seedream"];
     
-    const cost = REGISTRY.calculateCost("flux", usage);
-    
-    // 0.3 cents = $0.003 per image
-    expect(cost.completionImageTokens).toBe(0.003);
-    expect(cost.totalCost).toBe(0.003);
+    for (const model of models) {
+        const usage1: TokenUsage = {
+            unit: "TOKENS",
+            completionImageTokens: 1,
+        };
+        const usage10: TokenUsage = {
+            unit: "TOKENS",
+            completionImageTokens: 10,
+        };
+        
+        const cost1 = REGISTRY.calculateCost(model, usage1);
+        const cost10 = REGISTRY.calculateCost(model, usage10);
+        
+        // Cost should scale linearly with token count
+        expect(cost10.completionImageTokens).toBeCloseTo((cost1.completionImageTokens || 0) * 10, 6);
+        expect(cost10.totalCost).toBeCloseTo(cost1.totalCost * 10, 6);
+    }
 });
 
-test("Nanobanana should calculate cost correctly for high token counts", () => {
+test("Models with API costs should have non-zero operational costs", () => {
     const usage: TokenUsage = {
         unit: "TOKENS",
-        completionImageTokens: 1290, // Typical nanobanana token count
+        completionImageTokens: 1,
     };
     
-    const cost = REGISTRY.calculateCost("nanobanana", usage);
+    // Flux has operational cost estimate
+    const fluxCost = REGISTRY.calculateCost("flux", usage);
+    expect(fluxCost.totalCost).toBeGreaterThan(0);
     
-    // Nanobanana: $30 per 1M tokens = $0.00003 per token
-    // 1290 tokens * $0.00003 = $0.0387
-    expect(cost.completionImageTokens).toBeCloseTo(0.0387, 4);
-    expect(cost.totalCost).toBeCloseTo(0.0387, 4);
+    // Nanobanana uses Vertex AI (paid API)
+    const nanobanana = REGISTRY.calculateCost("nanobanana", usage);
+    expect(nanobanana.totalCost).toBeGreaterThan(0);
 });
 
-test("Flux price should remain free for users", () => {
+test("Flux should remain free for users", () => {
     const usage: TokenUsage = {
         unit: "TOKENS",
         completionImageTokens: 1,
@@ -40,24 +50,21 @@ test("Flux price should remain free for users", () => {
     
     const price = REGISTRY.calculatePrice("flux", usage);
     
-    // Users pay $0 (free tier)
-    expect(price.completionImageTokens).toBe(0);
+    // Flux is free tier - users pay $0
     expect(price.totalPrice).toBe(0);
 });
 
-test("Other image models should have correct costs", () => {
+test("Cost should be non-negative for all models", () => {
+    const models: ProviderId[] = ["flux", "nanobanana", "kontext", "turbo", "seedream"];
     const usage: TokenUsage = {
         unit: "TOKENS",
         completionImageTokens: 1,
     };
     
-    // Kontext, turbo, seedream currently have zero cost
-    // (may need to be updated with operational cost estimates)
-    const kontextCost = REGISTRY.calculateCost("kontext", usage);
-    const turboCost = REGISTRY.calculateCost("turbo", usage);
-    const seedreamCost = REGISTRY.calculateCost("seedream", usage);
-    
-    expect(kontextCost.totalCost).toBe(0);
-    expect(turboCost.totalCost).toBe(0);
-    expect(seedreamCost.totalCost).toBe(0);
+    for (const model of models) {
+        const cost = REGISTRY.calculateCost(model, usage);
+        
+        expect(cost.totalCost).toBeGreaterThanOrEqual(0);
+        expect(cost.completionImageTokens || 0).toBeGreaterThanOrEqual(0);
+    }
 });

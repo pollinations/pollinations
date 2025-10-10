@@ -2,8 +2,8 @@ import type {
     ModelRegistry,
     ServiceRegistry,
     UsageConversionDefinition,
-} from "./registry.ts";
-import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "./price-helpers.ts";
+} from "./registry";
+import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "./price-helpers";
 
 export const IMAGE_COSTS = {
     "flux": [
@@ -40,6 +40,13 @@ export const IMAGE_COSTS = {
             completionImageTokens: fromDPMT(5000),
         },
     ],
+    "gptimage": [
+        // Azure GPT Image model
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: fromDPMT(2500),
+        },
+    ],
 } as const satisfies ModelRegistry;
 
 export const IMAGE_SERVICES = {
@@ -67,6 +74,11 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "seedream",
         price: IMAGE_COSTS["seedream"],
+    },
+    "gptimage": {
+        aliases: ["gpt-image", "gpt-image-1-mini"],
+        modelId: "gptimage",
+        price: IMAGE_COSTS["gptimage"],
     },
 } as const satisfies ServiceRegistry<typeof IMAGE_COSTS>;
 

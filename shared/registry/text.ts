@@ -2,8 +2,8 @@ import type {
     ModelRegistry,
     ServiceRegistry,
     UsageConversionDefinition,
-} from "./registry.ts";
-import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "./price-helpers.ts";
+} from "./registry";
+import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "./price-helpers";
 
 export const TEXT_COSTS = {
     "gpt-5-nano-2025-08-07": [

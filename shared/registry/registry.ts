@@ -1,10 +1,10 @@
-import { omit, safeRound } from "../utils.ts";
+import { omit, safeRound } from "../utils";
 import {
     TEXT_COSTS,
     TEXT_SERVICES,
-} from "./text.ts";
-import { IMAGE_COSTS, IMAGE_SERVICES } from "./image.ts";
-import { EventType } from "./types.ts";
+} from "./text";
+import { IMAGE_COSTS, IMAGE_SERVICES } from "./image";
+import { EventType } from "./types";
 
 const PRECISION = 8;
 

@@ -261,7 +261,7 @@ export const TEXT_SERVICES = {
     "bidara": {
         aliases: [],
         modelId: "gpt-4.1-nano-2025-04-14",
-        price: TEXT_COSTS["gpt-4.1-2025-04-14"],
+        price: TEXT_COSTS["gpt-4.1-nano-2025-04-14"],
         provider: "azure-openai",
     },
 } as const satisfies ServiceRegistry<typeof TEXT_COSTS>;

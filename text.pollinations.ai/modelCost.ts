@@ -7,7 +7,7 @@
 
 import debug from 'debug';
 import { TEXT_COSTS } from '../shared/registry/text';
-import { getProviderByModelId } from '../shared/registry/registry';
+import { getProviderByModelId, type UsageConversionDefinition } from '../shared/registry/registry';
 
 const log = debug('text.pollinations.ai:modelCost');
 
@@ -33,7 +33,7 @@ function convertToLegacyFormat(modelId: string): LegacyCost | null {
 	}
 	
 	// Get the latest cost definition (last in array after sorting by date)
-	const latestCost = costs[costs.length - 1] as any;
+	const latestCost = costs[costs.length - 1] as UsageConversionDefinition;
 	
 	const legacyCost: LegacyCost = {
 		provider: getProviderByModelId(modelId) || 'unknown',

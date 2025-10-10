@@ -3,30 +3,25 @@ import { fromDPMT, ZERO_PRICE, ZERO_PRICE_START_DATE, PRICING_START_DATE } from 
 import { expect, test } from "vitest";
 import type {
     ServiceRegistry,
-    ModelProviderRegistry,
+    ModelRegistry,
     TokenUsage,
 } from "../registry/registry.ts";
 
 const MOCK_MODEL_PROVIDERS = {
-    "mock-model": {
-        displayName: "Mock Model",
-        costType: "per_generation_cost",
-        cost: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: 0.05,
-                promptCachedTokens: 0.05,
-                completionTextTokens: 0.1,
-            },
-        ],
-    },
-} as const satisfies ModelProviderRegistry;
+    "mock-model": [
+        {
+            date: new Date("2025-08-01 00:00:00").getTime(),
+            promptTextTokens: 0.05,
+            promptCachedTokens: 0.05,
+            completionTextTokens: 0.1,
+        },
+    ],
+} as const satisfies ModelRegistry;
 
 const MOCK_SERVICES = {
     "free-service": {
-        displayName: "Free Service",
         aliases: ["free-service-alias"],
-        modelProviders: ["mock-model"],
+        modelId: "mock-model",
         price: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
@@ -37,9 +32,8 @@ const MOCK_SERVICES = {
         ],
     },
     "paid-service": {
-        displayName: "Paid Service",
         aliases: ["paid-service-alias"],
-        modelProviders: ["mock-model"],
+        modelId: "mock-model",
         price: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
@@ -142,4 +136,25 @@ test("Date constants should be properly defined", async () => {
     expect(ZERO_PRICE_START_DATE).toBe(new Date("2020-01-01 00:00:00").getTime());
     expect(PRICING_START_DATE).toBe(new Date("2025-08-01 00:00:00").getTime());
     expect(PRICING_START_DATE).toBeGreaterThan(ZERO_PRICE_START_DATE);
+});
+
+test("resolveServiceId should throw on invalid service", async () => {
+    expect(() => MOCK_REGISTRY.resolveServiceId("invalid-service", "generate.text"))
+        .toThrow();
+});
+
+test("resolveServiceId should return default service for null/undefined", async () => {
+    // Uses real registry defaults (openai for text, flux for image)
+    const result = REGISTRY.resolveServiceId(null, "generate.text");
+    expect(result).toBe("openai");
+});
+
+test("resolveServiceId should resolve aliases", async () => {
+    expect(MOCK_REGISTRY.resolveServiceId("free-service-alias", "generate.text")).toBe("free-service");
+    expect(MOCK_REGISTRY.resolveServiceId("paid-service-alias", "generate.text")).toBe("paid-service");
+});
+
+test("getModelDefinition returns undefined for invalid model", async () => {
+    // getModelDefinition returns undefined for missing models
+    expect(REGISTRY.getModelDefinition("invalid-model" as any)).toBeUndefined();
 });

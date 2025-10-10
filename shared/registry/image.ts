@@ -1,96 +1,73 @@
 import type {
-    ModelProviderRegistry,
+    ModelRegistry,
     ServiceRegistry,
     UsageConversionDefinition,
 } from "./registry.ts";
 import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "./price-helpers.ts";
 
-export const IMAGE_MODELS = {
-    "flux": {
-        displayName: "Flux",
-        costType: "fixed_operational_cost",
-        // TODO: Verify operational cost estimate
-        // Currently estimated at 0.3 cents per image ($0.003)
-        cost: [
-            {
-                date: PRICING_START_DATE,
-                completionImageTokens: fromDPMT(3000), // $3000 per 1M tokens = $0.003 per token/image
-            },
-        ],
-    },
-    "kontext": {
-        displayName: "Flux Kontext",
-        costType: "fixed_operational_cost",
-        cost: [ZERO_PRICE],
-    },
-    "turbo": {
-        displayName: "Turbo",
-        costType: "fixed_operational_cost",
-        cost: [ZERO_PRICE],
-    },
-    "nanobanana": {
-        displayName: "Nanobanana",
-        costType: "per_generation_cost",
-        cost: [
-            {
-                date: PRICING_START_DATE,
-                completionImageTokens: fromDPMT(30),
-            },
-        ],
-    },
-    "seedream": {
-        displayName: "Seedream",
-        costType: "fixed_operational_cost",
-        cost: [ZERO_PRICE],
-    },
-} as const satisfies ModelProviderRegistry;
+export const IMAGE_COSTS = {
+    "flux": [
+        // Estimated
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: fromDPMT(3000),
+        },
+    ],
+    "kontext": [
+        // Estimated
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: fromDPMT(4000),
+        },
+    ],
+    "turbo": [
+        // Estimated
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: fromDPMT(2000),
+        },
+    ],
+    "nanobanana": [
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: fromDPMT(30),
+        },
+    ],
+    "seedream": [
+        // Estimated
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: fromDPMT(5000),
+        },
+    ],
+} as const satisfies ModelRegistry;
 
 export const IMAGE_SERVICES = {
     "flux": {
-        displayName: "Flux",
         aliases: [],
-        modelProviders: ["flux"],
+        modelId: "flux",
         price: [ZERO_PRICE],
     },
     "kontext": {
-        displayName: "Flux Kontext",
         aliases: [],
-        modelProviders: ["kontext"],
-        price: [
-            {
-                date: PRICING_START_DATE,
-                completionImageTokens: 0.015,
-            },
-        ],
+        modelId: "kontext",
+        price: IMAGE_COSTS["kontext"],
     },
     "turbo": {
-        displayName: "Turbo",
         aliases: [],
-        modelProviders: ["turbo"],
-        price: [
-            {
-                date: PRICING_START_DATE,
-                completionImageTokens: 0.015,
-            },
-        ],
+        modelId: "turbo",
+        price: IMAGE_COSTS["turbo"],
     },
     "nanobanana": {
-        displayName: "Nanobanana",
         aliases: [],
-        modelProviders: ["nanobanana"],
-        price: IMAGE_MODELS["nanobanana"].cost,
+        modelId: "nanobanana",
+        price: IMAGE_COSTS["nanobanana"],
     },
     "seedream": {
-        displayName: "Seedream",
         aliases: [],
-        modelProviders: ["seedream"],
-        price: [
-            {
-                date: PRICING_START_DATE,
-                completionImageTokens: 0.015,
-            },
-        ],
+        modelId: "seedream",
+        price: IMAGE_COSTS["seedream"],
     },
-} as const satisfies ServiceRegistry<typeof IMAGE_MODELS>;
+} as const satisfies ServiceRegistry<typeof IMAGE_COSTS>;
 
 

@@ -18,7 +18,7 @@ import {
 } from "@/db/schema/event.ts";
 import { generateRandomId } from "@/util.ts";
 import {
-    ProviderId,
+    ModelId,
     REGISTRY,
     ServiceId,
     TokenUsage,
@@ -52,7 +52,7 @@ function createTextGenerationEvent(
     );
 
     const modelUsed = REGISTRY.getServiceDefinition(resolvedModelRequested)
-        .modelProviders[0];
+        .modelId;
     const priceDefinition = REGISTRY.getActivePriceDefinition(
         resolvedModelRequested,
     );
@@ -66,7 +66,7 @@ function createTextGenerationEvent(
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     };
-    const cost = REGISTRY.calculateCost(modelUsed as ProviderId, usage);
+    const cost = REGISTRY.calculateCost(modelUsed as ModelId, usage);
     const price = REGISTRY.calculatePrice(resolvedModelRequested, usage);
 
     return {

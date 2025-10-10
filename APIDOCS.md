@@ -539,6 +539,8 @@ except Exception as e:
 
 Generates speech audio from text using a simple GET request. This method is best suited for **short text snippets** due to URL length limitations and direct audio file return.
 
+> 💡 **Tip:** For verbatim text-to-speech, prefix your prompt with "Say verbatim:" or "Read exactly:" to get literal recitation instead of conversational responses.
+
 **Parameters:**
 
 | Parameter | Required | Description                                                                              | Options                                                   | Default        |

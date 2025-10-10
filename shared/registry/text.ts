@@ -122,6 +122,14 @@ export const TEXT_COSTS = {
             completionTextTokens: fromDPMT(2.0),
         },
     ],
+    "deepseek-ai/deepseek-v3.1-maas": [
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: fromDPMT(0.6),
+            promptCachedTokens: fromDPMT(0.15),
+            completionTextTokens: fromDPMT(1.7),
+        },
+    ],
 } as const satisfies ModelRegistry;
 
 export const TEXT_SERVICES = {
@@ -189,6 +197,21 @@ export const TEXT_SERVICES = {
         aliases: ["gemini-2.5-flash-lite"],
         modelId: "google/gemini-2.5-flash-lite",
         price: TEXT_COSTS["google/gemini-2.5-flash-lite"],
+    },
+    "deepseek": {
+        aliases: ["deepseek-v3", "deepseek-v3.1", "deepseek-ai/deepseek-v3.1-maas"],
+        modelId: "deepseek-ai/deepseek-v3.1-maas",
+        price: TEXT_COSTS["deepseek-ai/deepseek-v3.1-maas"],
+    },
+    "gemini-search": {
+        aliases: ["searchgpt", "geminisearch"],
+        modelId: "gemini-2.5-flash-lite-search",
+        price: TEXT_COSTS["gemini-2.5-flash-lite-search"],
+    },
+    "chickytutor": {
+        aliases: [],
+        modelId: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+        price: TEXT_COSTS["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
     },
     "unity": {
         aliases: [],

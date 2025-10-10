@@ -18,7 +18,32 @@ import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
 // Import model configs
 import { portkeyConfig } from "./configs/modelConfigs.js";
 
-const models = [
+// Import registry types for validation
+import type { TEXT_SERVICES } from "../shared/registry/text.ts";
+
+// Type constraint: model names must exist in registry
+type ValidServiceName = keyof typeof TEXT_SERVICES;
+
+interface ModelDefinition {
+	name: ValidServiceName;
+	description: string;
+	config: any;
+	transform?: any;
+	tier: "anonymous" | "seed" | "flower" | "nectar";
+	community?: boolean;
+	aliases?: string[];
+	input_modalities?: string[];
+	output_modalities?: string[];
+	tools?: boolean;
+	maxInputChars?: number;
+	reasoning?: boolean;
+	uncensored?: boolean;
+	hidden?: boolean;
+	voices?: string[];
+	supportsSystemMessages?: boolean;
+}
+
+const models: ModelDefinition[] = [
 	{
 		name: "openai",
 		description: "OpenAI GPT-5 Mini",
@@ -48,7 +73,6 @@ const models = [
 	{
 		name: "openai-large",
 		description: "OpenAI GPT-5 Chat",
-		maxInputChars: 20000,
 		config: portkeyConfig["gpt-5-chat"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "seed",

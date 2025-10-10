@@ -7,22 +7,39 @@ import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "./price-helpers.ts";
 
 export const IMAGE_COSTS = {
     "flux": [
-        // TODO: Verify operational cost estimate
-        // Currently estimated at 0.3 cents per image ($0.003)
+        // Estimated
         {
             date: PRICING_START_DATE,
-            completionImageTokens: fromDPMT(3000), // $3000 per 1M tokens = $0.003 per token/image
+            completionImageTokens: fromDPMT(3000),
         },
     ],
-    "kontext": [ZERO_PRICE],
-    "turbo": [ZERO_PRICE],
+    "kontext": [
+        // Estimated
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: fromDPMT(4000),
+        },
+    ],
+    "turbo": [
+        // Estimated
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: fromDPMT(2000),
+        },
+    ],
     "nanobanana": [
         {
             date: PRICING_START_DATE,
             completionImageTokens: fromDPMT(30),
         },
     ],
-    "seedream": [ZERO_PRICE],
+    "seedream": [
+        // Estimated
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: fromDPMT(5000),
+        },
+    ],
 } as const satisfies ModelRegistry;
 
 export const IMAGE_SERVICES = {
@@ -34,22 +51,12 @@ export const IMAGE_SERVICES = {
     "kontext": {
         aliases: [],
         modelIds: ["kontext"],
-        price: [
-            {
-                date: PRICING_START_DATE,
-                completionImageTokens: 0.015,
-            },
-        ],
+        price: IMAGE_COSTS["kontext"],
     },
     "turbo": {
         aliases: [],
         modelIds: ["turbo"],
-        price: [
-            {
-                date: PRICING_START_DATE,
-                completionImageTokens: 0.015,
-            },
-        ],
+        price: IMAGE_COSTS["turbo"],
     },
     "nanobanana": {
         aliases: [],
@@ -59,12 +66,7 @@ export const IMAGE_SERVICES = {
     "seedream": {
         aliases: [],
         modelIds: ["seedream"],
-        price: [
-            {
-                date: PRICING_START_DATE,
-                completionImageTokens: 0.015,
-            },
-        ],
+        price: IMAGE_COSTS["seedream"],
     },
 } as const satisfies ServiceRegistry<typeof IMAGE_COSTS>;
 

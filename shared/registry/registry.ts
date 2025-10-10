@@ -298,8 +298,10 @@ export function createRegistry<
             if (resolved) {
                 return resolved as ServiceId<TP, TS>;
             }
-            // Fallback to default
-            return eventType === "generate.text" ? "openai" : "flux";
+            // Throw error for invalid service/alias
+            throw new Error(
+                `Invalid service or alias: "${serviceId}". Must be a valid service name or alias.`
+            );
         },
         isValidModel: (
             modelId: ModelId<TP>,

@@ -78,23 +78,13 @@ export function resolveCost(originalName: string): LegacyCost {
 }
 
 /**
- * Get cost data for a model
+ * Get cost data for a model (internal helper)
  * 
  * @param originalName - The original model name
  * @returns Cost object or null if not found
  */
-export function getCost(originalName: string): LegacyCost | null {
+function getCost(originalName: string): LegacyCost | null {
 	return convertToLegacyFormat(originalName);
-}
-
-/**
- * Check if cost exists for a model
- * 
- * @param originalName - The original model name
- * @returns True if cost exists
- */
-export function hasCost(originalName: string): boolean {
-	return originalName in TEXT_COSTS;
 }
 
 /**
@@ -106,24 +96,6 @@ export function hasCost(originalName: string): boolean {
 export function getProvider(originalName: string): string | null {
 	const costData = getCost(originalName);
 	return costData?.provider || null;
-}
-
-/**
- * Get all cost data (for admin/debugging purposes)
- * 
- * @returns All cost data in legacy format
- */
-export function getAllCost(): Record<string, LegacyCost> {
-	const allCosts: Record<string, LegacyCost> = {};
-	
-	for (const modelId in TEXT_COSTS) {
-		const legacyCost = convertToLegacyFormat(modelId);
-		if (legacyCost) {
-			allCosts[modelId] = legacyCost;
-		}
-	}
-	
-	return allCosts;
 }
 
 

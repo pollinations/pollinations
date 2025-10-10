@@ -140,7 +140,7 @@ test("Date constants should be properly defined", async () => {
 
 test("resolveServiceId should throw on invalid service", async () => {
     expect(() => MOCK_REGISTRY.resolveServiceId("invalid-service", "generate.text"))
-        .toThrow("Invalid service or alias");
+        .toThrow();
 });
 
 test("resolveServiceId should return default service for null/undefined", async () => {

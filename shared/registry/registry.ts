@@ -346,139 +346,6 @@ export function calculateMargins(serviceId: ServiceId): ServiceMargins {
     };
 }
 
-/**
- * Create a registry object with methods (for testing or custom registries)
- * @deprecated Use direct function exports instead
- */
-export function createRegistry<
-    TP extends ModelRegistry,
-    TS extends ServiceRegistry<TP>,
->(models: TP, services: TS) {
-    const modelRegistry = Object.fromEntries(
-        Object.entries(models).map(([name, model]) => [
-            name,
-            sortDefinitions(model as UsageConversionDefinition[]),
-        ]),
-    ) as TP;
-    
-    const serviceRegistry = Object.fromEntries(
-        Object.entries(services).map(([name, service]) => [
-            name,
-            {
-                ...service,
-                price: sortDefinitions(service.price as UsageConversionDefinition[]),
-            },
-        ]),
-    ) as TS;
-    
-    const aliasMap = Object.fromEntries(
-        Object.entries(services).flatMap(([serviceId, service]) =>
-            service.aliases.map((alias) => [alias, serviceId]),
-        ),
-    );
-    
-    // Helper to get active cost definition
-    const getActiveCost = (modelId: keyof TP, date = new Date()) => {
-        const modelDef = modelRegistry[modelId];
-        if (!modelDef) return null;
-        for (const def of modelDef) {
-            if (def.date < date.getTime()) return def;
-        }
-        return null;
-    };
-    
-    // Helper to get active price definition
-    const getActivePrice = (serviceId: keyof TS, date = new Date()) => {
-        const serviceDef = serviceRegistry[serviceId];
-        if (!serviceDef) return null;
-        for (const def of serviceDef.price) {
-            if (def.date < date.getTime()) return def;
-        }
-        return null;
-    };
-    
-    return {
-        resolveServiceId: (serviceId: string | null | undefined, eventType: EventType) => {
-            if (!serviceId) {
-                return eventType === "generate.text" ? "openai" : "flux";
-            }
-            const resolved = serviceRegistry[serviceId] ? serviceId : aliasMap[serviceId];
-            if (resolved) return resolved;
-            throw new Error(`Invalid service or alias: "${serviceId}"`);
-        },
-        isValidModel: (modelId: keyof TP) => !!modelRegistry[modelId],
-        isValidService: (serviceId: keyof TS | string) => !!serviceRegistry[serviceId],
-        isFreeService: (serviceId: keyof TS) => {
-            const priceDef = getActivePrice(serviceId);
-            if (!priceDef) throw new Error(`Failed to get price for service: ${serviceId.toString()}`);
-            return Object.values(omit(priceDef, "date")).every((rate) => rate === 0);
-        },
-        getServices: () => Object.keys(serviceRegistry),
-        getServiceDefinition: (serviceId: keyof TS) => serviceRegistry[serviceId],
-        getModels: () => Object.keys(modelRegistry),
-        getModelDefinition: (modelId: keyof TP) => modelRegistry[modelId],
-        getActiveCostDefinition: (modelId: keyof TP) => getActiveCost(modelId),
-        getActivePriceDefinition: (serviceId: keyof TS) => getActivePrice(serviceId),
-        calculateCost: (modelId: keyof TP, usage: TokenUsage) => {
-            const costDef = getActiveCost(modelId);
-            if (!costDef) throw new Error(`Failed to get cost for model: ${modelId.toString()}`);
-            const usageCost = convertUsage(usage, costDef);
-            const totalCost = safeRound(
-                Object.values(omit(usageCost, "unit")).reduce((total, cost) => total + cost),
-                PRECISION,
-            );
-            return { ...usageCost, totalCost };
-        },
-        calculatePrice: (serviceId: keyof TS, usage: TokenUsage) => {
-            const priceDef = getActivePrice(serviceId);
-            if (!priceDef) throw new Error(`Failed to get price for service: ${serviceId.toString()}`);
-            const usagePrice = convertUsage(usage, priceDef);
-            const totalPrice = safeRound(
-                Object.values(omit(usagePrice, "unit")).reduce((total, price) => total + price),
-                PRECISION,
-            );
-            return { ...usagePrice, totalPrice };
-        },
-        calculateMargins: (serviceId: keyof TS) => {
-            const serviceDef = serviceRegistry[serviceId];
-            const priceDef = getActivePrice(serviceId);
-            if (!priceDef) throw new Error(`Failed to find price for service: ${serviceId.toString()}`);
-            const modelId = serviceDef.modelId;
-            const costDef = getActiveCost(modelId);
-            if (!costDef) throw new Error(`Failed to find cost for model: ${modelId.toString()}`);
-            return {
-                [modelId]: Object.fromEntries(
-                    Object.keys(omit(costDef, "date")).map((usageType) => {
-                        const usageCost = costDef[usageType as UsageType];
-                        const usagePrice = priceDef[usageType as UsageType];
-                        if (!usageCost || !usagePrice) {
-                            throw new Error(`Failed to find usage cost or price for model: ${modelId.toString()}`);
-                        }
-                        return [usageType, usagePrice - usageCost];
-                    }),
-                ),
-            };
-        },
-    };
-}
-
-// Legacy REGISTRY object for backward compatibility
-// TODO: Migrate all consumers to use direct function imports
-export const REGISTRY = {
-    resolveServiceId,
-    isValidModel,
-    isValidService,
-    isFreeService,
-    getServices,
-    getServiceDefinition,
-    getModels,
-    getModelDefinition,
-    getActiveCostDefinition,
-    getActivePriceDefinition,
-    calculateCost,
-    calculatePrice,
-    calculateMargins,
-};
 
 /**
  * Get provider for a model ID by looking it up in the combined services registry
@@ -494,4 +361,149 @@ export function getProviderByModelId(modelId: string): string | null {
         }
     }
     return null;
+}
+
+/**
+ * Create a test registry with custom models and services
+ * Only for testing - use the exported functions for production code
+ */
+export function createTestRegistry<
+    TP extends ModelRegistry,
+    TS extends ServiceRegistry<TP>,
+>(models: TP, services: TS) {
+    const sortedModels = Object.fromEntries(
+        Object.entries(models).map(([name, model]) => [
+            name,
+            sortDefinitions(model as UsageConversionDefinition[]),
+        ]),
+    ) as TP;
+    
+    const sortedServices = Object.fromEntries(
+        Object.entries(services).map(([name, service]) => [
+            name,
+            {
+                ...service,
+                price: sortDefinitions(service.price as UsageConversionDefinition[]),
+            },
+        ]),
+    ) as TS;
+    
+    const aliasMap = Object.fromEntries(
+        Object.entries(services).flatMap(([serviceId, service]) =>
+            service.aliases.map((alias) => [alias, serviceId]),
+        ),
+    );
+    
+    return {
+        resolveServiceId: (serviceId: string | null | undefined, eventType: EventType) => {
+            if (!serviceId) {
+                return eventType === "generate.text" ? "openai" : "flux";
+            }
+            const resolved = sortedServices[serviceId] ? serviceId : aliasMap[serviceId];
+            if (resolved) return resolved;
+            throw new Error(`Invalid service or alias: "${serviceId}"`);
+        },
+        isValidModel: (modelId: keyof TP) => !!sortedModels[modelId],
+        isValidService: (serviceId: keyof TS | string) => !!sortedServices[serviceId],
+        isFreeService: (serviceId: keyof TS) => {
+            const serviceDef = sortedServices[serviceId];
+            if (!serviceDef) throw new Error(`Service not found: ${serviceId.toString()}`);
+            for (const priceDef of serviceDef.price) {
+                if (priceDef.date < new Date().getTime()) {
+                    return Object.values(omit(priceDef, "date")).every((rate) => rate === 0);
+                }
+            }
+            throw new Error(`No active price for service: ${serviceId.toString()}`);
+        },
+        getServices: () => Object.keys(sortedServices),
+        getServiceDefinition: (serviceId: keyof TS) => sortedServices[serviceId],
+        getModels: () => Object.keys(sortedModels),
+        getModelDefinition: (modelId: keyof TP) => sortedModels[modelId],
+        getActiveCostDefinition: (modelId: keyof TP) => {
+            const modelDef = sortedModels[modelId];
+            if (!modelDef) return null;
+            for (const def of modelDef) {
+                if (def.date < new Date().getTime()) return def;
+            }
+            return null;
+        },
+        getActivePriceDefinition: (serviceId: keyof TS) => {
+            const serviceDef = sortedServices[serviceId];
+            if (!serviceDef) return null;
+            for (const def of serviceDef.price) {
+                if (def.date < new Date().getTime()) return def;
+            }
+            return null;
+        },
+        calculateCost: (modelId: keyof TP, usage: TokenUsage) => {
+            const modelDef = sortedModels[modelId];
+            if (!modelDef) throw new Error(`Model not found: ${modelId.toString()}`);
+            let costDef = null;
+            for (const def of modelDef) {
+                if (def.date < new Date().getTime()) {
+                    costDef = def;
+                    break;
+                }
+            }
+            if (!costDef) throw new Error(`No active cost for model: ${modelId.toString()}`);
+            const usageCost = convertUsage(usage, costDef);
+            const totalCost = safeRound(
+                Object.values(omit(usageCost, "unit")).reduce((total, cost) => total + cost),
+                PRECISION,
+            );
+            return { ...usageCost, totalCost };
+        },
+        calculatePrice: (serviceId: keyof TS, usage: TokenUsage) => {
+            const serviceDef = sortedServices[serviceId];
+            if (!serviceDef) throw new Error(`Service not found: ${serviceId.toString()}`);
+            let priceDef = null;
+            for (const def of serviceDef.price) {
+                if (def.date < new Date().getTime()) {
+                    priceDef = def;
+                    break;
+                }
+            }
+            if (!priceDef) throw new Error(`No active price for service: ${serviceId.toString()}`);
+            const usagePrice = convertUsage(usage, priceDef);
+            const totalPrice = safeRound(
+                Object.values(omit(usagePrice, "unit")).reduce((total, price) => total + price),
+                PRECISION,
+            );
+            return { ...usagePrice, totalPrice };
+        },
+        calculateMargins: (serviceId: keyof TS) => {
+            const serviceDef = sortedServices[serviceId];
+            let priceDef = null;
+            for (const def of serviceDef.price) {
+                if (def.date < new Date().getTime()) {
+                    priceDef = def;
+                    break;
+                }
+            }
+            if (!priceDef) throw new Error(`No active price for service: ${serviceId.toString()}`);
+            const modelId = serviceDef.modelId;
+            const modelDef = sortedModels[modelId];
+            if (!modelDef) throw new Error(`Model not found: ${modelId.toString()}`);
+            let costDef = null;
+            for (const def of modelDef) {
+                if (def.date < new Date().getTime()) {
+                    costDef = def;
+                    break;
+                }
+            }
+            if (!costDef) throw new Error(`No active cost for model: ${modelId.toString()}`);
+            return {
+                [modelId]: Object.fromEntries(
+                    Object.keys(omit(costDef, "date")).map((usageType) => {
+                        const usageCost = costDef[usageType as UsageType];
+                        const usagePrice = priceDef[usageType as UsageType];
+                        if (!usageCost || !usagePrice) {
+                            throw new Error(`Missing cost or price for: ${usageType}`);
+                        }
+                        return [usageType, usagePrice - usageCost];
+                    }),
+                ),
+            };
+        },
+    };
 }

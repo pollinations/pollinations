@@ -1,4 +1,11 @@
-import { createRegistry, REGISTRY } from "../registry/registry.ts";
+import { 
+    resolveServiceId, 
+    getModelDefinition, 
+    createTestRegistry,
+    calculateCost,
+    calculatePrice,
+    isFreeService
+} from "../registry/registry.ts";
 import { fromDPMT, ZERO_PRICE, ZERO_PRICE_START_DATE, PRICING_START_DATE } from "../registry/price-helpers.ts";
 import { expect, test } from "vitest";
 import type {
@@ -45,7 +52,7 @@ const MOCK_SERVICES = {
     },
 } as const satisfies ServiceRegistry<typeof MOCK_MODEL_PROVIDERS>;
 
-const MOCK_REGISTRY = createRegistry(MOCK_MODEL_PROVIDERS, MOCK_SERVICES);
+const MOCK_REGISTRY = createTestRegistry(MOCK_MODEL_PROVIDERS, MOCK_SERVICES);
 
 test("isFreeService should return the correct values", async () => {
     expect(MOCK_REGISTRY.isFreeService("free-service")).toBe(true);
@@ -145,7 +152,7 @@ test("resolveServiceId should throw on invalid service", async () => {
 
 test("resolveServiceId should return default service for null/undefined", async () => {
     // Uses real registry defaults (openai for text, flux for image)
-    const result = REGISTRY.resolveServiceId(null, "generate.text");
+    const result = resolveServiceId(null, "generate.text");
     expect(result).toBe("openai");
 });
 
@@ -156,5 +163,5 @@ test("resolveServiceId should resolve aliases", async () => {
 
 test("getModelDefinition returns undefined for invalid model", async () => {
     // getModelDefinition returns undefined for missing models
-    expect(REGISTRY.getModelDefinition("invalid-model" as any)).toBeUndefined();
+    expect(getModelDefinition("invalid-model" as any)).toBeUndefined();
 });

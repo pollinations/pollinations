@@ -20,7 +20,7 @@ import { portkeyConfig, type ValidModelId } from "./configs/modelConfigs.js";
 
 // Import registry for validation and aliases
 import { TEXT_SERVICES } from "../shared/registry/text.js";
-import { REGISTRY } from "../shared/registry/registry.js";
+import { resolveServiceId } from "../shared/registry/registry.js";
 
 // Type constraint: model names must exist in registry
 type ValidServiceName = keyof typeof TEXT_SERVICES;
@@ -347,7 +347,7 @@ export function findModelByName(modelName: string) {
 	
 	// Try resolving via registry (handles aliases)
 	try {
-		const resolvedServiceId = REGISTRY.resolveServiceId(modelName, "generate.text");
+		const resolvedServiceId = resolveServiceId(modelName, "generate.text");
 		return availableModels.find((model) => model.name === resolvedServiceId) || null;
 	} catch {
 		return null;

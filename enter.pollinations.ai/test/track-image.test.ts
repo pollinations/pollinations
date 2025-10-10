@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { REGISTRY } from "@shared/registry/registry.ts";
+import { calculateCost, calculatePrice } from "@shared/registry/registry.ts";
 import type { TokenUsage, ModelId, ServiceId } from "@shared/registry/registry.ts";
 
 // Test image model cost tracking
@@ -18,8 +18,8 @@ test("Image models should calculate costs proportionally to token count", () => 
             completionImageTokens: 10,
         };
         
-        const cost1 = REGISTRY.calculateCost(model, usage1);
-        const cost10 = REGISTRY.calculateCost(model, usage10);
+        const cost1 = calculateCost(model, usage1);
+        const cost10 = calculateCost(model, usage10);
         
         // Cost should scale linearly with token count
         expect(cost10.completionImageTokens).toBeCloseTo((cost1.completionImageTokens || 0) * 10, 6);
@@ -34,11 +34,11 @@ test("Models with API costs should have non-zero operational costs", () => {
     };
     
     // Flux has operational cost estimate
-    const fluxCost = REGISTRY.calculateCost("flux", usage);
+    const fluxCost = calculateCost("flux", usage);
     expect(fluxCost.totalCost).toBeGreaterThan(0);
     
     // Nanobanana uses Vertex AI (paid API)
-    const nanobanana = REGISTRY.calculateCost("nanobanana", usage);
+    const nanobanana = calculateCost("nanobanana", usage);
     expect(nanobanana.totalCost).toBeGreaterThan(0);
 });
 
@@ -48,7 +48,7 @@ test("Flux should remain free for users", () => {
         completionImageTokens: 1,
     };
     
-    const price = REGISTRY.calculatePrice("flux", usage);
+    const price = calculatePrice("flux", usage);
     
     // Flux is free tier - users pay $0
     expect(price.totalPrice).toBe(0);
@@ -62,7 +62,7 @@ test("Cost should be non-negative for all models", () => {
     };
     
     for (const model of models) {
-        const cost = REGISTRY.calculateCost(model, usage);
+        const cost = calculateCost(model, usage);
         
         expect(cost.totalCost).toBeGreaterThanOrEqual(0);
         expect(cost.completionImageTokens || 0).toBeGreaterThanOrEqual(0);

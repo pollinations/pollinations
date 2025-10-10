@@ -45,27 +45,27 @@ export const IMAGE_COSTS = {
 export const IMAGE_SERVICES = {
     "flux": {
         aliases: [],
-        modelIds: ["flux"],
+        modelId: "flux",
         price: [ZERO_PRICE],
     },
     "kontext": {
         aliases: [],
-        modelIds: ["kontext"],
+        modelId: "kontext",
         price: IMAGE_COSTS["kontext"],
     },
     "turbo": {
         aliases: [],
-        modelIds: ["turbo"],
+        modelId: "turbo",
         price: IMAGE_COSTS["turbo"],
     },
     "nanobanana": {
         aliases: [],
-        modelIds: ["nanobanana"],
+        modelId: "nanobanana",
         price: IMAGE_COSTS["nanobanana"],
     },
     "seedream": {
         aliases: [],
-        modelIds: ["seedream"],
+        modelId: "seedream",
         price: IMAGE_COSTS["seedream"],
     },
 } as const satisfies ServiceRegistry<typeof IMAGE_COSTS>;

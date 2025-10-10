@@ -47,7 +47,7 @@ export type ModelRegistry = Record<string, ModelDefinition>;
 
 export type ServiceDefinition<T extends ModelRegistry> = {
     aliases: string[];
-    modelIds: (keyof T)[];
+    modelId: keyof T;
     price: PriceDefinition[];
 };
 
@@ -226,38 +226,34 @@ function calculateMargins<
         throw new Error(
             `Failed to find price definition for service: ${serviceId.toString()}`,
         );
-    return Object.fromEntries(
-        serviceDefinition.modelIds.map((modelId) => {
-            const costDefinition = getActiveCostDefinition(models, modelId);
-            if (!costDefinition)
-                throw new Error(
-                    `Failed to find cost definition for model: ${modelId.toString()}`,
-                );
-            return [
-                modelId,
-                Object.fromEntries(
-                    Object.keys(omit(costDefinition, "date")).map(
-                        (usageType) => {
-                            const usageCost =
-                                costDefinition[usageType as UsageType];
-                            const usagePrice =
-                                servicePriceDefinition[usageType as UsageType];
-                            if (!usageCost || !usagePrice) {
-                                throw new Error(
-                                    `Failed to find usage cost or price for model: ${modelId.toString()}`,
-                                );
-                            }
-                            // Units are always USD now, no need to check
-                            return [
-                                usageType,
-                                usagePrice - usageCost,
-                            ];
-                        },
-                    ),
-                ),
-            ];
-        }),
-    );
+    const modelId = serviceDefinition.modelId;
+    const costDefinition = getActiveCostDefinition(models, modelId);
+    if (!costDefinition)
+        throw new Error(
+            `Failed to find cost definition for model: ${modelId.toString()}`,
+        );
+    return {
+        [modelId]: Object.fromEntries(
+            Object.keys(omit(costDefinition, "date")).map(
+                (usageType) => {
+                    const usageCost =
+                        costDefinition[usageType as UsageType];
+                    const usagePrice =
+                        servicePriceDefinition[usageType as UsageType];
+                    if (!usageCost || !usagePrice) {
+                        throw new Error(
+                            `Failed to find usage cost or price for model: ${modelId.toString()}`,
+                        );
+                    }
+                    // Units are always USD now, no need to check
+                    return [
+                        usageType,
+                        usagePrice - usageCost,
+                    ];
+                },
+            ),
+        ),
+    };
 }
 
 export function createRegistry<

@@ -52,7 +52,7 @@ function createTextGenerationEvent(
     );
 
     const modelUsed = REGISTRY.getServiceDefinition(resolvedModelRequested)
-        .modelIds[0];
+        .modelId;
     const priceDefinition = REGISTRY.getActivePriceDefinition(
         resolvedModelRequested,
     );

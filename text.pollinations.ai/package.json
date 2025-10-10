@@ -1,17 +1,12 @@
 {
-    "name": "text.pollinations.ai",
+    "name": "text pollinations.ai",
     "version": "1.0.0",
-    "description": "",
-    "main": "server.js",
     "scripts": {
-        "test": "NODE_ENV=test ava --verbose test/**/*.test.js",
-        "test:unit": "NODE_ENV=test ava --verbose test/*.test.js",
-        "test:file": "NODE_ENV=test ava",
-        "test:file:verbose": "DEBUG=pollinations:* NODE_ENV=test ava --verbose",
-        "test:pattern": "DEBUG=pollinations:* NODE_ENV=test ava --verbose",
-        "coverage": "NODE_ENV=test c8 --reporter=text --reporter=html ava --verbose test/server.test.js test/generateText.test.js",
-        "start": "tsx startServer.js",
-        "dev": "tsx watch startServer.js",
+        "start": "node server.js",
+        "start:ts": "tsx src/index.ts",
+        "type-check": "tsc --noEmit",
+        "validate-configs": "tsx configs/validateConfigKeys.ts",
+        "test": "echo \"Error: no test specified\" && exit 1",
         "debug": "clear && DEBUG=* tsx startServer.js"
     },
     "keywords": [],

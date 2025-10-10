@@ -2,8 +2,8 @@ import type {
     ModelRegistry,
     ServiceRegistry,
     UsageConversionDefinition,
-} from "./registry.ts";
-import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "./price-helpers.ts";
+} from "./registry";
+import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "./price-helpers";
 
 export const IMAGE_COSTS = {
     "flux": [
@@ -40,6 +40,13 @@ export const IMAGE_COSTS = {
             completionImageTokens: fromDPMT(5000),
         },
     ],
+    "gptimage": [
+        // Azure GPT Image model
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: fromDPMT(2500),
+        },
+    ],
 } as const satisfies ModelRegistry;
 
 export const IMAGE_SERVICES = {
@@ -47,26 +54,37 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "flux",
         price: [ZERO_PRICE],
+        provider: "pollinations",
     },
     "kontext": {
         aliases: [],
         modelId: "kontext",
         price: IMAGE_COSTS["kontext"],
+        provider: "bpaigen",
     },
     "turbo": {
         aliases: [],
         modelId: "turbo",
         price: IMAGE_COSTS["turbo"],
+        provider: "pollinations",
     },
     "nanobanana": {
         aliases: [],
         modelId: "nanobanana",
         price: IMAGE_COSTS["nanobanana"],
+        provider: "vertex-ai",
     },
     "seedream": {
         aliases: [],
         modelId: "seedream",
         price: IMAGE_COSTS["seedream"],
+        provider: "bytedance-ark",
+    },
+    "gptimage": {
+        aliases: ["gpt-image", "gpt-image-1-mini"],
+        modelId: "gptimage",
+        price: IMAGE_COSTS["gptimage"],
+        provider: "azure-openai",
     },
 } as const satisfies ServiceRegistry<typeof IMAGE_COSTS>;
 

@@ -16,13 +16,38 @@ import chickyTutorPrompt from "./personas/chickytutor.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
 
 // Import model configs
-import { portkeyConfig } from "./configs/modelConfigs.js";
+import { portkeyConfig, type ValidModelId } from "./configs/modelConfigs.js";
 
-const models = [
+// Import registry types for validation
+import type { TEXT_SERVICES } from "../shared/registry/text.ts";
+
+// Type constraint: model names must exist in registry
+type ValidServiceName = keyof typeof TEXT_SERVICES;
+
+interface ModelDefinition {
+	name: ValidServiceName;
+	description: string;
+	config: (typeof portkeyConfig)[ValidModelId];  // ✅ Type-safe: must be a valid model ID from TEXT_COSTS
+	transform?: any;
+	tier: "anonymous" | "seed" | "flower" | "nectar";
+	community?: boolean;
+	aliases?: string[];
+	input_modalities?: string[];
+	output_modalities?: string[];
+	tools?: boolean;
+	maxInputChars?: number;
+	reasoning?: boolean;
+	uncensored?: boolean;
+	hidden?: boolean;
+	voices?: string[];
+	supportsSystemMessages?: boolean;
+}
+
+const models: ModelDefinition[] = [
 	{
 		name: "openai",
-		description: "OpenAI GPT-5 Mini",
-		config: portkeyConfig["gpt-5-mini"],
+		description: "OpenAI GPT-5 Nano",
+		config: portkeyConfig["gpt-5-nano-2025-08-07"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "anonymous",
 		community: false,
@@ -34,8 +59,8 @@ const models = [
 	},
 	{
 		name: "openai-fast",
-		description: "OpenAI GPT-5 Nano",
-		config: portkeyConfig["gpt-5-nano"],
+		description: "OpenAI GPT-4.1 Nano",
+		config: portkeyConfig["gpt-4.1-nano-2025-04-14"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "anonymous",
 		community: false,
@@ -48,8 +73,7 @@ const models = [
 	{
 		name: "openai-large",
 		description: "OpenAI GPT-5 Chat",
-		maxInputChars: 20000,
-		config: portkeyConfig["gpt-5-chat"],
+		config: portkeyConfig["gpt-5-chat-latest"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "seed",
 		community: false,
@@ -142,7 +166,7 @@ const models = [
 			"amuch",
 			"dan",
 		],
-		config: portkeyConfig["gpt-4o-mini-audio-preview"],
+		config: portkeyConfig["gpt-4o-mini-audio-preview-2024-12-17"],
 		tier: "seed",
 		community: false,
 		aliases: ["gpt-4o-mini-audio-preview"],
@@ -189,8 +213,8 @@ const models = [
 	},
 	{
 		name: "openai-reasoning",
-		description: "OpenAI o4-mini (Azure Myceli)",
-		config: portkeyConfig["o4-mini-azure"],
+		description: "OpenAI o4-mini",
+		config: portkeyConfig["openai/o4-mini"],
 		transform: pipe(
 			createSystemPromptTransform(BASE_PROMPTS.conversational),
 			removeSystemMessages
@@ -207,7 +231,7 @@ const models = [
 	{
 		name: "gemini",
 		description: "Gemini 2.5 Flash Lite (Vertex AI)",
-		config: portkeyConfig["gemini-2.5-flash-lite-vertex"],
+		config: portkeyConfig["gemini-2.5-flash-lite"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "seed",
 		community: false,
@@ -218,8 +242,8 @@ const models = [
 	},
 	{
 		name: "gemini-search",
-		description: "Gemini 2.5 Flash with Google Search (Google Vertex AI)",
-		config: portkeyConfig["gemini-2.5-flash-vertex"],
+		description: "Gemini 2.5 Flash Lite with Google Search (Vertex AI)",
+		config: portkeyConfig["gemini-2.5-flash-lite"],
 		transform: pipe(
 			createGoogleSearchTransform()
 		),
@@ -250,7 +274,7 @@ const models = [
 	{
 		name: "midijourney",
 		description: "MIDIjourney",
-		config: portkeyConfig["azure-gpt-4.1"],
+		config: portkeyConfig["gpt-4.1-2025-04-14"],
 		transform: createMessageTransform(midijourneyPrompt),
 		tier: "anonymous",
 		community: true,
@@ -261,7 +285,7 @@ const models = [
 	{
 		name: "rtist",
 		description: "Rtist",
-		config: portkeyConfig["azure-gpt-4.1"],
+		config: portkeyConfig["gpt-4.1-2025-04-14"],
 		transform: createMessageTransform(rtistPrompt),
 		tier: "seed",
 		community: true,
@@ -284,7 +308,7 @@ const models = [
 	{
 		name: "bidara",
 		description: "BIDARA (Biomimetic Designer and Research Assistant by NASA)",
-		config: portkeyConfig["gpt-4.1-nano"],
+		config: portkeyConfig["gpt-4.1-nano-2025-04-14"],
 		transform: createMessageTransform(bidaraSystemPrompt),
 		tier: "anonymous",
 		community: true,

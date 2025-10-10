@@ -49,6 +49,7 @@ export type ServiceDefinition<T extends ModelRegistry> = {
     aliases: string[];
     modelId: keyof T;
     price: PriceDefinition[];
+    provider?: string; // Optional provider identifier (e.g., "azure-openai", "aws-bedrock")
 };
 
 export type ServiceRegistry<T extends ModelRegistry> = Record<
@@ -364,3 +365,19 @@ export function createRegistry<
 }
 
 export const REGISTRY = createRegistry(MODELS, SERVICES);
+
+/**
+ * Get provider for a model ID by looking it up in the combined services registry
+ * Works for both text and image models
+ * @param modelId - The provider model ID (e.g., "gpt-5-nano-2025-08-07", "flux")
+ * @returns Provider name or null if not found
+ */
+export function getProviderByModelId(modelId: string): string | null {
+    // Search through all services to find one that uses this modelId
+    for (const service of Object.values(SERVICES)) {
+        if (service.modelId === modelId) {
+            return service.provider || null;
+        }
+    }
+    return null;
+}

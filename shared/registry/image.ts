@@ -54,31 +54,37 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "flux",
         price: [ZERO_PRICE],
+        provider: "pollinations",
     },
     "kontext": {
         aliases: [],
         modelId: "kontext",
         price: IMAGE_COSTS["kontext"],
+        provider: "bpaigen",
     },
     "turbo": {
         aliases: [],
         modelId: "turbo",
         price: IMAGE_COSTS["turbo"],
+        provider: "pollinations",
     },
     "nanobanana": {
         aliases: [],
         modelId: "nanobanana",
         price: IMAGE_COSTS["nanobanana"],
+        provider: "vertex-ai",
     },
     "seedream": {
         aliases: [],
         modelId: "seedream",
         price: IMAGE_COSTS["seedream"],
+        provider: "bytedance-ark",
     },
     "gptimage": {
         aliases: ["gpt-image", "gpt-image-1-mini"],
         modelId: "gptimage",
         price: IMAGE_COSTS["gptimage"],
+        provider: "azure-openai",
     },
 } as const satisfies ServiceRegistry<typeof IMAGE_COSTS>;
 

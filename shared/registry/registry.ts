@@ -41,22 +41,22 @@ export type UsageConversionDefinition = {
 export type CostDefinition = UsageConversionDefinition;
 export type PriceDefinition = UsageConversionDefinition;
 
-export type ModelProviderDefinition = {
+export type ModelDefinition = {
     displayName: string;
     costType: CostType;
     cost: CostDefinition[];
 };
 
-export type ModelProviderRegistry = Record<string, ModelProviderDefinition>;
+export type ModelRegistry = Record<string, ModelDefinition>;
 
-export type ServiceDefinition<T extends ModelProviderRegistry> = {
+export type ServiceDefinition<T extends ModelRegistry> = {
     displayName: string;
     aliases: string[];
-    modelProviders: (keyof T)[];
+    modelIds: (keyof T)[];
     price: PriceDefinition[];
 };
 
-export type ServiceRegistry<T extends ModelProviderRegistry> = Record<
+export type ServiceRegistry<T extends ModelRegistry> = Record<
     string,
     ServiceDefinition<T>
 >;
@@ -70,18 +70,18 @@ export type ServiceMargins = {
 const MODELS = {
     ...TEXT_MODELS,
     ...IMAGE_MODELS,
-} as const satisfies ModelProviderRegistry;
+} as const satisfies ModelRegistry;
 
 const SERVICES = {
     ...TEXT_SERVICES,
     ...IMAGE_SERVICES,
 } as const satisfies ServiceRegistry<typeof MODELS>;
 
-export type ProviderId<TP extends ModelProviderRegistry = typeof MODELS> =
+export type ModelId<TP extends ModelRegistry = typeof MODELS> =
     keyof TP;
 
 export type ServiceId<
-    TP extends ModelProviderRegistry = typeof MODELS,
+    TP extends ModelRegistry = typeof MODELS,
     TS extends ServiceRegistry<TP> = typeof SERVICES,
 > = keyof TS;
 
@@ -92,21 +92,21 @@ function sortDefinitions<T extends UsageConversionDefinition>(
     return definitions.sort((a, b) => b.date - a.date);
 }
 
-function getActiveCostDefinition<TP extends ModelProviderRegistry>(
-    providerRegistry: TP,
-    providerId: keyof TP,
+function getActiveCostDefinition<TP extends ModelRegistry>(
+    modelRegistry: TP,
+    modelId: keyof TP,
     date: Date = new Date(),
 ): CostDefinition | null {
-    const providerDefinition = providerRegistry[providerId];
-    if (!providerDefinition) return null;
-    for (const definition of providerDefinition.cost) {
+    const modelDefinition = modelRegistry[modelId];
+    if (!modelDefinition) return null;
+    for (const definition of modelDefinition.cost) {
         if (definition.date < date.getTime()) return definition;
     }
     return null;
 }
 
 function getActivePriceDefinition<
-    TP extends ModelProviderRegistry,
+    TP extends ModelRegistry,
     TS extends ServiceRegistry<TP>,
 >(
     serviceRegistry: TS,
@@ -150,18 +150,18 @@ function convertUsage(
     };
 }
 
-function calculateCost<TP extends ModelProviderRegistry>(
-    providerRegistry: TP,
-    providerId: keyof TP,
+function calculateCost<TP extends ModelRegistry>(
+    modelRegistry: TP,
+    modelId: keyof TP,
     usage: TokenUsage,
 ): UsageCost {
     const currentCost = getActiveCostDefinition<TP>(
-        providerRegistry,
-        providerId,
+        modelRegistry,
+        modelId,
     );
     if (!currentCost)
         throw new Error(
-            `Failed to get current cost for provider: ${providerId.toString()}`,
+            `Failed to get current cost for model: ${modelId.toString()}`,
         );
     const usageCost = convertUsage(usage, currentCost);
     const totalCost = safeRound(
@@ -177,7 +177,7 @@ function calculateCost<TP extends ModelProviderRegistry>(
 }
 
 function calculatePrice<
-    TP extends ModelProviderRegistry,
+    TP extends ModelRegistry,
     TS extends ServiceRegistry<TP>,
 >(serviceRegistry: TS, serviceId: keyof TS, usage: TokenUsage): UsagePrice {
     const currentPrice = getActivePriceDefinition<TP, TS>(
@@ -202,7 +202,7 @@ function calculatePrice<
 }
 
 function isFreeService<
-    TP extends ModelProviderRegistry,
+    TP extends ModelRegistry,
     TS extends ServiceRegistry<TP>,
 >(serviceRegistry: TS, serviceId: keyof TS): boolean {
     const servicPriceDefinition = getActivePriceDefinition<TP, TS>(
@@ -211,7 +211,7 @@ function isFreeService<
     );
     if (!servicPriceDefinition)
         throw new Error(
-            `Failed to get current price for servce: ${serviceId.toString()}`,
+            `Failed to get current price for service: ${serviceId.toString()}`,
         );
     return Object.values(omit(servicPriceDefinition, "date")).every(
         (rate) => rate === 0,
@@ -219,9 +219,9 @@ function isFreeService<
 }
 
 function calculateMargins<
-    TP extends ModelProviderRegistry,
+    TP extends ModelRegistry,
     TS extends ServiceRegistry<TP>,
->(providers: TP, services: TS, serviceId: keyof TS): ServiceMargins {
+>(models: TP, services: TS, serviceId: keyof TS): ServiceMargins {
     const serviceDefinition = services[serviceId];
     const servicePriceDefinition = getActivePriceDefinition<TP, TS>(
         services,
@@ -232,14 +232,14 @@ function calculateMargins<
             `Failed to find price definition for service: ${serviceId.toString()}`,
         );
     return Object.fromEntries(
-        serviceDefinition.modelProviders.map((provider) => {
-            const costDefinition = getActiveCostDefinition(providers, provider);
+        serviceDefinition.modelIds.map((modelId) => {
+            const costDefinition = getActiveCostDefinition(models, modelId);
             if (!costDefinition)
                 throw new Error(
-                    `Failed to find cost definition for provider: ${provider.toString()}`,
+                    `Failed to find cost definition for model: ${modelId.toString()}`,
                 );
             return [
-                provider,
+                modelId,
                 Object.fromEntries(
                     Object.keys(omit(costDefinition, "date")).map(
                         (usageType) => {
@@ -249,7 +249,7 @@ function calculateMargins<
                                 servicePriceDefinition[usageType as UsageType];
                             if (!usageCost || !usagePrice) {
                                 throw new Error(
-                                    `Failed to find usage cost or price for provider: ${provider.toString()}`,
+                                    `Failed to find usage cost or price for model: ${modelId.toString()}`,
                                 );
                             }
                             // Units are always USD now, no need to check
@@ -266,15 +266,15 @@ function calculateMargins<
 }
 
 export function createRegistry<
-    TP extends ModelProviderRegistry,
+    TP extends ModelRegistry,
     TS extends ServiceRegistry<TP>,
->(providers: TP, services: TS) {
-    const providerRegistry = Object.fromEntries(
-        Object.entries(providers).map(([name, provider]) => [
+>(models: TP, services: TS) {
+    const modelRegistry = Object.fromEntries(
+        Object.entries(models).map(([name, model]) => [
             name,
             {
-                ...provider,
-                cost: sortDefinitions(provider.cost),
+                ...model,
+                cost: sortDefinitions(model.cost),
             },
         ]),
     ) as TP;
@@ -312,10 +312,10 @@ export function createRegistry<
             // Fallback to default
             return eventType === "generate.text" ? "openai" : "flux";
         },
-        isValidModelProvider: (
-            providerId: ProviderId<TP>,
-        ): providerId is ProviderId<TP> => {
-            return !!providerRegistry[providerId];
+        isValidModel: (
+            modelId: ModelId<TP>,
+        ): modelId is ModelId<TP> => {
+            return !!modelRegistry[modelId];
         },
         isValidService: (
             serviceId: ServiceId<TP, TS> | string,
@@ -333,21 +333,21 @@ export function createRegistry<
         ): ServiceDefinition<TP> => {
             return serviceRegistry[serviceId];
         },
-        getModelProviders: (): ProviderId<TP>[] => {
-            return Object.keys(providerRegistry);
+        getModels: (): ModelId<TP>[] => {
+            return Object.keys(modelRegistry);
         },
-        getModelProviderDefinition: (
-            providerId: ProviderId<TP>,
-        ): ModelProviderDefinition => {
-            return providerRegistry[providerId];
+        getModelDefinition: (
+            modelId: ModelId<TP>,
+        ): ModelDefinition => {
+            return modelRegistry[modelId];
         },
-        getCostType: (providerId: ProviderId<TP>): CostType => {
-            return providerRegistry[providerId]?.costType;
+        getCostType: (modelId: ModelId<TP>): CostType => {
+            return modelRegistry[modelId]?.costType;
         },
         getActiveCostDefinition: (
-            providerId: ProviderId<TP>,
+            modelId: ModelId<TP>,
         ): CostDefinition | null => {
-            return getActiveCostDefinition<TP>(providerRegistry, providerId);
+            return getActiveCostDefinition<TP>(modelRegistry, modelId);
         },
         getActivePriceDefinition: (
             serviceId: ServiceId<TP, TS>,
@@ -355,10 +355,10 @@ export function createRegistry<
             return getActivePriceDefinition<TP, TS>(serviceRegistry, serviceId);
         },
         calculateCost: (
-            providerId: ProviderId<TP>,
+            modelId: ModelId<TP>,
             usage: TokenUsage,
         ): UsageCost => {
-            return calculateCost<TP>(providerRegistry, providerId, usage);
+            return calculateCost<TP>(modelRegistry, modelId, usage);
         },
         calculatePrice: (
             serviceId: ServiceId<TP, TS>,
@@ -368,7 +368,7 @@ export function createRegistry<
         },
         calculateMargins: (serviceId: ServiceId<TP, TS>): ServiceMargins => {
             return calculateMargins<TP, TS>(
-                providerRegistry,
+                modelRegistry,
                 serviceRegistry,
                 serviceId,
             );

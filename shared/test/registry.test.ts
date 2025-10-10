@@ -3,7 +3,7 @@ import { fromDPMT, ZERO_PRICE, ZERO_PRICE_START_DATE, PRICING_START_DATE } from 
 import { expect, test } from "vitest";
 import type {
     ServiceRegistry,
-    ModelProviderRegistry,
+    ModelRegistry,
     TokenUsage,
 } from "../registry/registry.ts";
 
@@ -20,13 +20,13 @@ const MOCK_MODEL_PROVIDERS = {
             },
         ],
     },
-} as const satisfies ModelProviderRegistry;
+} as const satisfies ModelRegistry;
 
 const MOCK_SERVICES = {
     "free-service": {
         displayName: "Free Service",
         aliases: ["free-service-alias"],
-        modelProviders: ["mock-model"],
+        modelIds: ["mock-model"],
         price: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
@@ -39,7 +39,7 @@ const MOCK_SERVICES = {
     "paid-service": {
         displayName: "Paid Service",
         aliases: ["paid-service-alias"],
-        modelProviders: ["mock-model"],
+        modelIds: ["mock-model"],
         price: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),

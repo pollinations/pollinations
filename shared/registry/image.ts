@@ -1,5 +1,5 @@
 import type {
-    ModelProviderRegistry,
+    ModelRegistry,
     ServiceRegistry,
     UsageConversionDefinition,
 } from "./registry.ts";
@@ -43,19 +43,19 @@ export const IMAGE_MODELS = {
         costType: "fixed_operational_cost",
         cost: [ZERO_PRICE],
     },
-} as const satisfies ModelProviderRegistry;
+} as const satisfies ModelRegistry;
 
 export const IMAGE_SERVICES = {
     "flux": {
         displayName: "Flux",
         aliases: [],
-        modelProviders: ["flux"],
+        modelIds: ["flux"],
         price: [ZERO_PRICE],
     },
     "kontext": {
         displayName: "Flux Kontext",
         aliases: [],
-        modelProviders: ["kontext"],
+        modelIds: ["kontext"],
         price: [
             {
                 date: PRICING_START_DATE,
@@ -66,7 +66,7 @@ export const IMAGE_SERVICES = {
     "turbo": {
         displayName: "Turbo",
         aliases: [],
-        modelProviders: ["turbo"],
+        modelIds: ["turbo"],
         price: [
             {
                 date: PRICING_START_DATE,
@@ -77,13 +77,13 @@ export const IMAGE_SERVICES = {
     "nanobanana": {
         displayName: "Nanobanana",
         aliases: [],
-        modelProviders: ["nanobanana"],
+        modelIds: ["nanobanana"],
         price: IMAGE_MODELS["nanobanana"].cost,
     },
     "seedream": {
         displayName: "Seedream",
         aliases: [],
-        modelProviders: ["seedream"],
+        modelIds: ["seedream"],
         price: [
             {
                 date: PRICING_START_DATE,

@@ -20,6 +20,7 @@ import { portkeyConfig, type ValidModelId } from "./configs/modelConfigs.js";
 
 // Import registry for validation and aliases
 import { TEXT_SERVICES } from "../shared/registry/text.js";
+import { REGISTRY } from "../shared/registry/registry.js";
 
 // Type constraint: model names must exist in registry
 type ValidServiceName = keyof typeof TEXT_SERVICES;
@@ -333,28 +334,22 @@ export const availableModels = models.map((model) => {
 	};
 });
 
-// Default pricing is now automatically applied to all models in the modelsWithPricing array
-
 /**
- * Find a model by name
- * @param {string} modelName - The name of the model to find
- * @returns {Object|null} - The model object or null if not found
+ * Find a model definition by name or alias
+ * Uses registry to resolve aliases to service names
+ * @param modelName - The name or alias of the model to find
+ * @returns The model definition or null if not found
  */
 export function findModelByName(modelName: string) {
-	return availableModels.find((model) => 
-		model.name === modelName || 
-		(model.aliases as readonly string[]).includes(modelName)
-	) || null;
-}
-
-
-/**
- * Get all model names with their aliases
- * @returns {Object} - Object mapping primary model names to their aliases
- */
-export function getAllModelAliases() {
-	return availableModels.reduce((aliasMap, model) => {
-		aliasMap[model.name] = model.aliases || [];
-		return aliasMap;
-	}, {});
+	// First try direct lookup
+	const directMatch = availableModels.find((model) => model.name === modelName);
+	if (directMatch) return directMatch;
+	
+	// Try resolving via registry (handles aliases)
+	try {
+		const resolvedServiceId = REGISTRY.resolveServiceId(modelName, "generate.text");
+		return availableModels.find((model) => model.name === resolvedServiceId) || null;
+	} catch {
+		return null;
+	}
 }

@@ -1,27 +1,24 @@
 // Demo script to show model alias functionality
-import {
-    findModelByName,
-    getAllModelAliases,
-    isValidModelName,
-} from "./availableModels.js";
+import { findModelByName } from "./availableModels.js";
+import { REGISTRY } from "../shared/registry/registry.js";
+import { TEXT_SERVICES } from "../shared/registry/text.js";
 
 // Example 1: Finding a model using its primary name
 const openaiModel = findModelByName("openai");
 console.log("Finding by primary name:", openaiModel.name); // Should print 'openai'
 
 // Example 2: Finding a model using an alias
-const modelByAlias = findModelByName("gpt4");
-console.log("Finding by alias:", modelByAlias.name); // Should print 'openai-large'
+const modelByAlias = findModelByName("gpt-5-mini");
+console.log("Finding by alias:", modelByAlias?.name); // Should print 'openai'
 
 // Example 3: Check if a name is valid (either primary or alias)
-console.log('Is "reasoning" valid?', isValidModelName("reasoning")); // Should print true
-console.log('Is "unknown-model" valid?', isValidModelName("unknown-model")); // Should print false
+console.log('Is "openai" valid?', REGISTRY.isValidService("openai")); // Should print true
+console.log('Is "unknown-model" valid?', REGISTRY.isValidService("unknown-model")); // Should print false
 
-// Example 4: Print all available models and their aliases
+// Example 4: Print all available models and their aliases (from registry)
 console.log("\nAll Models and Aliases:");
-const allAliases = getAllModelAliases();
-Object.entries(allAliases).forEach(([modelName, aliases]) => {
-    console.log(`- ${modelName}: ${aliases.join(", ")}`);
+Object.entries(TEXT_SERVICES).forEach(([serviceName, service]) => {
+    console.log(`- ${serviceName}: ${service.aliases.join(", ")}`);
 });
 
 // Example 5: How to use in another part of the application

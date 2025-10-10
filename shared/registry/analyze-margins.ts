@@ -1,23 +1,22 @@
-import { TEXT_MODELS, TEXT_SERVICES } from "./text.ts";
-import { IMAGE_MODELS, IMAGE_SERVICES } from "./image.ts";
+import { TEXT_COSTS, TEXT_SERVICES } from "./text.ts";
+import { IMAGE_COSTS, IMAGE_SERVICES } from "./image.ts";
 
 console.log("=== TEXT SERVICE MARGIN ANALYSIS ===\n");
 
 for (const [serviceId, service] of Object.entries(TEXT_SERVICES)) {
-  const modelId = service.modelIds[0];
-  const model = TEXT_MODELS[modelId];
+  const modelId = service.modelId;
+  const model = TEXT_COSTS[modelId];
   
   if (!model) {
     console.log(`${serviceId}: ERROR - Model ${modelId} not found`);
     continue;
   }
   
-  const cost = model.cost[0];
+  const cost = model[0];
   const price = service.price[0];
   
   console.log(`${serviceId}:`);
   console.log(`  Model: ${modelId}`);
-  console.log(`  Display: ${service.displayName}`);
   
   if (price.promptTextTokens === 0 && price.completionTextTokens === 0) {
     console.log(`  Pricing: FREE (cost exists: ${cost.promptTextTokens > 0})`);
@@ -35,15 +34,15 @@ for (const [serviceId, service] of Object.entries(TEXT_SERVICES)) {
 console.log("\n=== IMAGE SERVICE MARGIN ANALYSIS ===\n");
 
 for (const [serviceId, service] of Object.entries(IMAGE_SERVICES)) {
-  const modelId = service.modelIds[0];
-  const model = IMAGE_MODELS[modelId];
+  const modelId = service.modelId;
+  const model = IMAGE_COSTS[modelId];
   
   if (!model) {
     console.log(`${serviceId}: ERROR - Model ${modelId} not found`);
     continue;
   }
   
-  const cost = model.cost[0];
+  const cost = model[0];
   const price = service.price[0];
   
   console.log(`${serviceId}:`);

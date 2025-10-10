@@ -81,6 +81,15 @@ export const track = (eventType: EventType) =>
                     c,
                     openaiResponse,
                 );
+                
+                // Validate model ID exists in registry before calculating cost
+                if (!REGISTRY.getModelDefinition(modelUsage.model as ModelId)) {
+                    log.error("Model {model} not found in registry, skipping cost calculation", {
+                        model: modelUsage.model,
+                    });
+                    return;
+                }
+                
                 cost = REGISTRY.calculateCost(
                     modelUsage.model as ModelId,
                     modelUsage.usage,

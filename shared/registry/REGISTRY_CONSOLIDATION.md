@@ -74,22 +74,21 @@ const models = [
 
 ### **Layer 3: Billing/Analytics** (`shared/registry/`)
 ```typescript
-export const TEXT_MODELS = {
-  "gpt-5-nano-2025-08-07": {
-    costType: "per_generation_cost",
-    cost: [{ promptTextTokens: fromDPMT(0.055), ... }]
-  }
+export const TEXT_COSTS = {
+  "gpt-5-nano-2025-08-07": [
+    { date: PRICING_START_DATE, promptTextTokens: fromDPMT(0.055), ... }
+  ]
 }
 
 export const TEXT_SERVICES = {
   "openai": {
     aliases: ["gpt-5-nano"],
-    modelIds: ["gpt-5-nano-2025-08-07"],  // Links to TEXT_MODELS
+    modelIds: ["gpt-5-nano-2025-08-07"],  // Links to TEXT_COSTS
     price: [ZERO_PRICE]
   }
 }
 ```
-**Contains:** Cost/price data only (no displayNames removed)
+**Contains:** Cost/price data only (renamed from TEXT_MODELS → TEXT_COSTS)
 **Used by:** enter.pollinations.ai for billing calculations
 
 ## Naming Architecture
@@ -187,7 +186,36 @@ Updated `resolveServiceId()` to throw errors for invalid services instead of sil
 
 **Rationale:** Fail fast on typos/invalid requests rather than masking errors with defaults.
 
-### Phase 4: Add Link Fields (TODO)
+### Phase 4: Rename TEXT_MODELS/IMAGE_MODELS → TEXT_COSTS/IMAGE_COSTS ✅ COMPLETE
+**Completed: 2025-10-10**
+
+Renamed model registries to better reflect their purpose (cost data only):
+
+**Changes:**
+- `TEXT_MODELS` → `TEXT_COSTS`
+- `IMAGE_MODELS` → `IMAGE_COSTS`
+- Updated all references in registry.ts, text.ts, image.ts
+- Updated imports in enter.pollinations.ai
+
+**Rationale:** More accurate naming - these objects contain cost definitions, not full model configurations.
+
+### Phase 5: Merge with User Tier Feature ✅ COMPLETE
+**Completed: 2025-10-10**
+
+Successfully merged master (with PR #4400 tier feature) into registry branch:
+
+**Integration:**
+- User tier stored in database (`c.var.auth.user?.tier`)
+- Tier tracked in events via `extractUserTier(c)`
+- No conflicts between tier feature and registry refactoring
+- Both features work together cleanly
+
+**Merge Strategy:**
+1. PR #4400 merged to master first (tier feature)
+2. Master merged into registry branch (brought tier into our work)
+3. Clean merge with no conflicts
+
+### Phase 6: Add Link Fields (TODO)
 ```typescript
 TEXT_SERVICES = {
   "openai": {
@@ -199,7 +227,7 @@ TEXT_SERVICES = {
 }
 ```
 
-### Phase 5: Consolidate availableModels (TODO)
+### Phase 7: Consolidate availableModels (TODO)
 ```javascript
 // Generate from registry + service-specific config
 const models = Object.entries(TEXT_SERVICES).map(([name, service]) => ({

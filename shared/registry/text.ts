@@ -5,7 +5,7 @@ import type {
 } from "./registry.ts";
 import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "./price-helpers.ts";
 
-export const TEXT_MODELS = {
+export const TEXT_COSTS = {
     "gpt-5-nano-2025-08-07": [
         {
             date: PRICING_START_DATE,
@@ -138,87 +138,87 @@ export const TEXT_SERVICES = {
     "openai-large": {
         aliases: ["gpt-4.1"],
         modelIds: ["gpt-4.1-2025-04-14"],
-        price: TEXT_MODELS["gpt-4.1-2025-04-14"],
+        price: TEXT_COSTS["gpt-4.1-2025-04-14"],
     },
     "qwen-coder": {
         aliases: ["qwen2.5-coder-32b-instruct"],
         modelIds: ["qwen2.5-coder-32b-instruct"],
-        price: TEXT_MODELS["qwen2.5-coder-32b-instruct"],
+        price: TEXT_COSTS["qwen2.5-coder-32b-instruct"],
     },
     "mistral": {
         aliases: ["mistral-small-3.1-24b-instruct"],
         modelIds: ["mistral-small-3.1-24b-instruct-2503"],
-        price: TEXT_MODELS["mistral-small-3.1-24b-instruct-2503"],
+        price: TEXT_COSTS["mistral-small-3.1-24b-instruct-2503"],
     },
     "mistral-romance": {
         aliases: ["mistral-nemo-instruct-2407-romance", "mistral-roblox"],
         modelIds: ["mistral.mistral-small-2402-v1:0"],
-        price: TEXT_MODELS["mistral.mistral-small-2402-v1:0"],
+        price: TEXT_COSTS["mistral.mistral-small-2402-v1:0"],
     },
     "deepseek-reasoning": {
         aliases: ["deepseek-r1-0528"],
         modelIds: ["us.deepseek.r1-v1:0"],
-        price: TEXT_MODELS["us.deepseek.r1-v1:0"],
+        price: TEXT_COSTS["us.deepseek.r1-v1:0"],
     },
     "openai-audio": {
         aliases: ["gpt-4o-mini-audio-preview"],
         modelIds: ["gpt-4o-mini-audio-preview-2024-12-17"],
-        price: TEXT_MODELS["gpt-4o-mini-audio-preview-2024-12-17"],
+        price: TEXT_COSTS["gpt-4o-mini-audio-preview-2024-12-17"],
     },
     "nova-fast": {
         aliases: ["nova-micro-v1"],
         modelIds: ["amazon.nova-micro-v1:0"],
-        price: TEXT_MODELS["amazon.nova-micro-v1:0"],
+        price: TEXT_COSTS["amazon.nova-micro-v1:0"],
     },
     "roblox-rp": {
         aliases: ["llama-roblox", "llama-fast-roblox"],
         modelIds: ["us.meta.llama3-1-8b-instruct-v1:0"],
-        price: TEXT_MODELS["us.meta.llama3-1-8b-instruct-v1:0"],
+        price: TEXT_COSTS["us.meta.llama3-1-8b-instruct-v1:0"],
     },
     "claudyclaude": {
         aliases: ["claude-3-5-haiku"],
         modelIds: ["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
-        price: TEXT_MODELS["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
+        price: TEXT_COSTS["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
     },
     "openai-reasoning": {
         aliases: ["o4-mini"],
         modelIds: ["openai/o4-mini"],
-        price: TEXT_MODELS["openai/o4-mini"],
+        price: TEXT_COSTS["openai/o4-mini"],
     },
     "gemini": {
         aliases: ["gemini-2.5-flash-lite"],
         modelIds: ["google/gemini-2.5-flash-lite"],
-        price: TEXT_MODELS["google/gemini-2.5-flash-lite"],
+        price: TEXT_COSTS["google/gemini-2.5-flash-lite"],
     },
     "unity": {
         aliases: [],
         modelIds: ["mistral-small-3.1-24b-instruct-2503"],
-        price: TEXT_MODELS["mistral-small-3.1-24b-instruct-2503"],
+        price: TEXT_COSTS["mistral-small-3.1-24b-instruct-2503"],
     },
     "mixera": {
         aliases: [],
         modelIds: ["gpt-4.1-2025-04-14"],
-        price: TEXT_MODELS["gpt-4.1-2025-04-14"],
+        price: TEXT_COSTS["gpt-4.1-2025-04-14"],
     },
     "midijourney": {
         aliases: [],
         modelIds: ["gpt-4.1-2025-04-14"],
-        price: TEXT_MODELS["gpt-4.1-2025-04-14"],
+        price: TEXT_COSTS["gpt-4.1-2025-04-14"],
     },
     "rtist": {
         aliases: [],
         modelIds: ["gpt-4.1-2025-04-14"],
-        price: TEXT_MODELS["gpt-4.1-2025-04-14"],
+        price: TEXT_COSTS["gpt-4.1-2025-04-14"],
     },
     "evil": {
         aliases: [],
         modelIds: ["mistral-small-3.1-24b-instruct-2503"],
-        price: TEXT_MODELS["mistral-small-3.1-24b-instruct-2503"],
+        price: TEXT_COSTS["mistral-small-3.1-24b-instruct-2503"],
     },
     "bidara": {
         aliases: [],
         modelIds: ["gpt-4.1-nano-2025-04-14"],
-        price: TEXT_MODELS["gpt-4.1-2025-04-14"],
+        price: TEXT_COSTS["gpt-4.1-2025-04-14"],
     },
-} as const satisfies ServiceRegistry<typeof TEXT_MODELS>;
+} as const satisfies ServiceRegistry<typeof TEXT_COSTS>;
 

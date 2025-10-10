@@ -1,6 +1,9 @@
 import { omit, safeRound } from "../utils.ts";
-import { TEXT_MODELS, TEXT_SERVICES } from "./text.ts";
-import { IMAGE_MODELS, IMAGE_SERVICES } from "./image.ts";
+import {
+    TEXT_COSTS,
+    TEXT_SERVICES,
+} from "./text.ts";
+import { IMAGE_COSTS, IMAGE_SERVICES } from "./image.ts";
 import { EventType } from "./types.ts";
 
 const PRECISION = 8;
@@ -60,8 +63,8 @@ export type ServiceMargins = {
 };
 
 const MODELS = {
-    ...TEXT_MODELS,
-    ...IMAGE_MODELS,
+    ...TEXT_COSTS,
+    ...IMAGE_COSTS,
 } as const satisfies ModelRegistry;
 
 const SERVICES = {

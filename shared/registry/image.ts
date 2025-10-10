@@ -5,7 +5,7 @@ import type {
 } from "./registry.ts";
 import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "./price-helpers.ts";
 
-export const IMAGE_MODELS = {
+export const IMAGE_COSTS = {
     "flux": [
         // TODO: Verify operational cost estimate
         // Currently estimated at 0.3 cents per image ($0.003)
@@ -54,7 +54,7 @@ export const IMAGE_SERVICES = {
     "nanobanana": {
         aliases: [],
         modelIds: ["nanobanana"],
-        price: IMAGE_MODELS["nanobanana"],
+        price: IMAGE_COSTS["nanobanana"],
     },
     "seedream": {
         aliases: [],
@@ -66,6 +66,6 @@ export const IMAGE_SERVICES = {
             },
         ],
     },
-} as const satisfies ServiceRegistry<typeof IMAGE_MODELS>;
+} as const satisfies ServiceRegistry<typeof IMAGE_COSTS>;
 
 

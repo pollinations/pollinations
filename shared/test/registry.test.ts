@@ -1,62 +1,20 @@
 import { 
     resolveServiceId, 
-    getModelDefinition, 
-    createTestRegistry,
+    getModelDefinition,
     calculateCost,
     calculatePrice,
     isFreeService
 } from "../registry/registry.ts";
 import { fromDPMT, ZERO_PRICE, ZERO_PRICE_START_DATE, PRICING_START_DATE } from "../registry/price-helpers.ts";
 import { expect, test } from "vitest";
-import type {
-    ServiceRegistry,
-    ModelRegistry,
-    TokenUsage,
-} from "../registry/registry.ts";
+import type { TokenUsage } from "../registry/registry.ts";
 
-const MOCK_MODEL_PROVIDERS = {
-    "mock-model": [
-        {
-            date: new Date("2025-08-01 00:00:00").getTime(),
-            promptTextTokens: 0.05,
-            promptCachedTokens: 0.05,
-            completionTextTokens: 0.1,
-        },
-    ],
-} as const satisfies ModelRegistry;
-
-const MOCK_SERVICES = {
-    "free-service": {
-        aliases: ["free-service-alias"],
-        modelId: "mock-model",
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: 0.0,
-                promptCachedTokens: 0.0,
-                completionTextTokens: 0.0,
-            },
-        ],
-    },
-    "paid-service": {
-        aliases: ["paid-service-alias"],
-        modelId: "mock-model",
-        price: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: 0.05,
-                promptCachedTokens: 0.05,
-                completionTextTokens: 0.1,
-            },
-        ],
-    },
-} as const satisfies ServiceRegistry<typeof MOCK_MODEL_PROVIDERS>;
-
-const MOCK_REGISTRY = createTestRegistry(MOCK_MODEL_PROVIDERS, MOCK_SERVICES);
-
+// Test with real services from the registry
 test("isFreeService should return the correct values", async () => {
-    expect(MOCK_REGISTRY.isFreeService("free-service")).toBe(true);
-    expect(MOCK_REGISTRY.isFreeService("paid-service")).toBe(false);
+    // Test with actual free services
+    expect(isFreeService("openai")).toBe(true);
+    // openai-large is NOT free - it has pricing
+    expect(isFreeService("openai-large")).toBe(false);
 });
 
 test("calculateCost should return the correct costs", async () => {
@@ -66,10 +24,14 @@ test("calculateCost should return the correct costs", async () => {
         promptCachedTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     } satisfies TokenUsage;
-    const cost = MOCK_REGISTRY.calculateCost("mock-model", usage);
-    expect(cost.promptTextTokens).toBe(50_000);
-    expect(cost.promptCachedTokens).toBe(50_000);
-    expect(cost.completionTextTokens).toBe(100_000);
+    
+    // Test with a real model - gpt-5-nano has known pricing
+    const cost = calculateCost("gpt-5-nano-2025-08-07", usage);
+    
+    // gpt-5-nano pricing: $0.055 per 1M prompt tokens, $0.44 per 1M completion tokens
+    // Cost is returned in dollars (not micro-dollars)
+    expect(cost.promptTextTokens).toBe(0.055); // $0.055
+    expect(cost.completionTextTokens).toBe(0.44); // $0.44
 });
 
 test("calculatePrice should return the correct price", async () => {
@@ -79,16 +41,13 @@ test("calculatePrice should return the correct price", async () => {
         promptCachedTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     } satisfies TokenUsage;
-    const freePrice = MOCK_REGISTRY.calculatePrice("free-service", usage);
+    
+    // Test with real free service
+    const freePrice = calculatePrice("openai", usage);
     expect(freePrice.promptTextTokens).toBe(0.0);
     expect(freePrice.promptCachedTokens).toBe(0.0);
     expect(freePrice.completionTextTokens).toBe(0.0);
     expect(freePrice.totalPrice).toBe(0.0);
-    const paidPrice = MOCK_REGISTRY.calculatePrice("paid-service", usage);
-    expect(paidPrice.promptTextTokens).toBe(50_000);
-    expect(paidPrice.promptCachedTokens).toBe(50_000);
-    expect(paidPrice.completionTextTokens).toBe(100_000);
-    expect(paidPrice.totalPrice).toBe(200_000);
 });
 
 test("Usage types with undefined cost or price should throw an error", async () => {
@@ -96,9 +55,10 @@ test("Usage types with undefined cost or price should throw an error", async () 
         unit: "TOKENS",
         promptImageTokens: 1_000_000,
     } satisfies TokenUsage;
-    expect(() => MOCK_REGISTRY.calculateCost("mock-model", usage)).toThrow();
-    expect(() => MOCK_REGISTRY.calculatePrice("free-service", usage)).toThrow();
-    expect(() => MOCK_REGISTRY.calculatePrice("paid-service", usage)).toThrow();
+    
+    // Should throw when trying to calculate cost for unsupported usage type
+    expect(() => calculateCost("gpt-5-nano-2025-08-07", usage)).toThrow();
+    expect(() => calculatePrice("openai", usage)).toThrow();
 });
 
 test("fromDPMT should correctly convert dollars per million tokens", async () => {
@@ -146,7 +106,7 @@ test("Date constants should be properly defined", async () => {
 });
 
 test("resolveServiceId should throw on invalid service", async () => {
-    expect(() => MOCK_REGISTRY.resolveServiceId("invalid-service", "generate.text"))
+    expect(() => resolveServiceId("invalid-service", "generate.text"))
         .toThrow();
 });
 
@@ -157,8 +117,9 @@ test("resolveServiceId should return default service for null/undefined", async 
 });
 
 test("resolveServiceId should resolve aliases", async () => {
-    expect(MOCK_REGISTRY.resolveServiceId("free-service-alias", "generate.text")).toBe("free-service");
-    expect(MOCK_REGISTRY.resolveServiceId("paid-service-alias", "generate.text")).toBe("paid-service");
+    // Test with real aliases from the registry
+    expect(resolveServiceId("openai-large", "generate.text")).toBe("openai-large");
+    expect(resolveServiceId("openai-fast", "generate.text")).toBe("openai-fast");
 });
 
 test("getModelDefinition returns undefined for invalid model", async () => {

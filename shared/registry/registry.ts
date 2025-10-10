@@ -88,7 +88,7 @@ function sortDefinitions<T extends UsageConversionDefinition>(
     return definitions.sort((a, b) => b.date - a.date);
 }
 
-function getActiveCostDefinition<TP extends ModelRegistry>(
+function getActiveCostDefinitionInternal<TP extends ModelRegistry>(
     modelRegistry: TP,
     modelId: keyof TP,
     date: Date = new Date(),
@@ -101,7 +101,7 @@ function getActiveCostDefinition<TP extends ModelRegistry>(
     return null;
 }
 
-function getActivePriceDefinition<
+function getActivePriceDefinitionInternal<
     TP extends ModelRegistry,
     TS extends ServiceRegistry<TP>,
 >(
@@ -146,12 +146,12 @@ function convertUsage(
     };
 }
 
-function calculateCost<TP extends ModelRegistry>(
+function calculateCostInternal<TP extends ModelRegistry>(
     modelRegistry: TP,
     modelId: keyof TP,
     usage: TokenUsage,
 ): UsageCost {
-    const currentCost = getActiveCostDefinition<TP>(
+    const currentCost = getActiveCostDefinitionInternal<TP>(
         modelRegistry,
         modelId,
     );
@@ -172,11 +172,11 @@ function calculateCost<TP extends ModelRegistry>(
     };
 }
 
-function calculatePrice<
+function calculatePriceInternal<
     TP extends ModelRegistry,
     TS extends ServiceRegistry<TP>,
 >(serviceRegistry: TS, serviceId: keyof TS, usage: TokenUsage): UsagePrice {
-    const currentPrice = getActivePriceDefinition<TP, TS>(
+    const currentPrice = getActivePriceDefinitionInternal<TP, TS>(
         serviceRegistry,
         serviceId,
     );
@@ -197,11 +197,11 @@ function calculatePrice<
     };
 }
 
-function isFreeService<
+function isFreeServiceInternal<
     TP extends ModelRegistry,
     TS extends ServiceRegistry<TP>,
 >(serviceRegistry: TS, serviceId: keyof TS): boolean {
-    const servicPriceDefinition = getActivePriceDefinition<TP, TS>(
+    const servicPriceDefinition = getActivePriceDefinitionInternal<TP, TS>(
         serviceRegistry,
         serviceId,
     );
@@ -214,12 +214,12 @@ function isFreeService<
     );
 }
 
-function calculateMargins<
+function calculateMarginsInternal<
     TP extends ModelRegistry,
     TS extends ServiceRegistry<TP>,
 >(models: TP, services: TS, serviceId: keyof TS): ServiceMargins {
     const serviceDefinition = services[serviceId];
-    const servicePriceDefinition = getActivePriceDefinition<TP, TS>(
+    const servicePriceDefinition = getActivePriceDefinitionInternal<TP, TS>(
         services,
         serviceId,
     );
@@ -228,7 +228,7 @@ function calculateMargins<
             `Failed to find price definition for service: ${serviceId.toString()}`,
         );
     const modelId = serviceDefinition.modelId;
-    const costDefinition = getActiveCostDefinition(models, modelId);
+    const costDefinition = getActiveCostDefinitionInternal(models, modelId);
     if (!costDefinition)
         throw new Error(
             `Failed to find cost definition for model: ${modelId.toString()}`,
@@ -257,6 +257,178 @@ function calculateMargins<
     };
 }
 
+// Pre-process registries: sort definitions by date
+export const MODEL_REGISTRY = Object.fromEntries(
+    Object.entries(MODELS).map(([name, model]) => [
+        name,
+        sortDefinitions(model as UsageConversionDefinition[]),
+    ]),
+);
+
+export const SERVICE_REGISTRY = Object.fromEntries(
+    Object.entries(SERVICES).map(([name, service]) => [
+        name,
+        {
+            ...service,
+            price: sortDefinitions(service.price as UsageConversionDefinition[]),
+        },
+    ]),
+);
+
+// Build alias lookup map: alias -> serviceId
+export const ALIAS_MAP = Object.fromEntries(
+    Object.entries(SERVICES).flatMap(([serviceId, service]) =>
+        service.aliases.map((alias) => [alias, serviceId]),
+    ),
+) as Record<string, ServiceId>;
+
+/**
+ * Resolve a service ID from a name or alias
+ * @param serviceId - Service name, alias, or null/undefined for default
+ * @param eventType - Event type to determine default service
+ * @returns Resolved service ID
+ */
+export function resolveServiceId(
+    serviceId: string | null | undefined,
+    eventType: EventType,
+): ServiceId {
+    if (!serviceId) {
+        return eventType === "generate.text" ? "openai" : "flux";
+    }
+    // Check if it's a direct service ID or an alias
+    const resolved = SERVICE_REGISTRY[serviceId] ? serviceId : ALIAS_MAP[serviceId];
+    if (resolved) {
+        return resolved as ServiceId;
+    }
+    // Throw error for invalid service/alias
+    throw new Error(
+        `Invalid service or alias: "${serviceId}". Must be a valid service name or alias.`
+    );
+}
+
+/**
+ * Check if a model ID exists in the registry
+ */
+export function isValidModel(modelId: ModelId): modelId is ModelId {
+    return !!MODEL_REGISTRY[modelId];
+}
+
+/**
+ * Check if a service ID exists in the registry
+ */
+export function isValidService(
+    serviceId: ServiceId | string,
+): serviceId is ServiceId {
+    return !!SERVICE_REGISTRY[serviceId];
+}
+
+/**
+ * Check if a service is free (all pricing rates are 0)
+ */
+export function isFreeService(serviceId: ServiceId): boolean {
+    const servicePriceDefinition = getActivePriceDefinitionInternal(
+        SERVICE_REGISTRY,
+        serviceId,
+    );
+    if (!servicePriceDefinition)
+        throw new Error(
+            `Failed to get current price for service: ${serviceId.toString()}`,
+        );
+    return Object.values(omit(servicePriceDefinition, "date")).every(
+        (rate) => rate === 0,
+    );
+}
+
+/**
+ * Get all service IDs
+ */
+export function getServices(): ServiceId[] {
+    return Object.keys(SERVICE_REGISTRY) as ServiceId[];
+}
+
+/**
+ * Get service definition by ID
+ */
+export function getServiceDefinition(
+    serviceId: ServiceId,
+): ServiceDefinition<typeof MODELS> {
+    return SERVICE_REGISTRY[serviceId];
+}
+
+/**
+ * Get all model IDs
+ */
+export function getModels(): ModelId[] {
+    return Object.keys(MODEL_REGISTRY) as ModelId[];
+}
+
+/**
+ * Get model definition by ID
+ */
+export function getModelDefinition(modelId: ModelId): ModelDefinition {
+    return MODEL_REGISTRY[modelId];
+}
+
+/**
+ * Get active cost definition for a model
+ */
+export function getActiveCostDefinition(
+    modelId: ModelId,
+): CostDefinition | null {
+    return getActiveCostDefinitionInternal(MODEL_REGISTRY, modelId);
+}
+
+/**
+ * Get active price definition for a service
+ */
+export function getActivePriceDefinition(
+    serviceId: ServiceId,
+): PriceDefinition | null {
+    return getActivePriceDefinitionInternal(
+        SERVICE_REGISTRY,
+        serviceId,
+    );
+}
+
+/**
+ * Calculate cost for a model based on token usage
+ */
+export function calculateCost(
+    modelId: ModelId,
+    usage: TokenUsage,
+): UsageCost {
+    return calculateCostInternal(MODEL_REGISTRY, modelId, usage);
+}
+
+/**
+ * Calculate price for a service based on token usage
+ */
+export function calculatePrice(
+    serviceId: ServiceId,
+    usage: TokenUsage,
+): UsagePrice {
+    return calculatePriceInternal(
+        SERVICE_REGISTRY,
+        serviceId,
+        usage,
+    );
+}
+
+/**
+ * Calculate profit margins for a service
+ */
+export function calculateMargins(serviceId: ServiceId): ServiceMargins {
+    return calculateMarginsInternal(
+        MODEL_REGISTRY,
+        SERVICE_REGISTRY,
+        serviceId,
+    );
+}
+
+/**
+ * Create a registry object with methods (for testing or custom registries)
+ * @deprecated Use direct function exports instead
+ */
 export function createRegistry<
     TP extends ModelRegistry,
     TS extends ServiceRegistry<TP>,
@@ -264,107 +436,67 @@ export function createRegistry<
     const modelRegistry = Object.fromEntries(
         Object.entries(models).map(([name, model]) => [
             name,
-            sortDefinitions(model),
+            sortDefinitions(model as UsageConversionDefinition[]),
         ]),
     ) as TP;
-
+    
     const serviceRegistry = Object.fromEntries(
         Object.entries(services).map(([name, service]) => [
             name,
             {
                 ...service,
-                price: sortDefinitions(service.price),
+                price: sortDefinitions(service.price as UsageConversionDefinition[]),
             },
         ]),
     ) as TS;
-
-    // Build alias lookup map: alias -> serviceId
+    
     const aliasMap = Object.fromEntries(
         Object.entries(services).flatMap(([serviceId, service]) =>
             service.aliases.map((alias) => [alias, serviceId]),
         ),
     );
-
+    
     return {
-        resolveServiceId: (
-            serviceId: string | null | undefined,
-            eventType: EventType,
-        ): ServiceId<TP, TS> => {
+        resolveServiceId: (serviceId: string | null | undefined, eventType: EventType) => {
             if (!serviceId) {
                 return eventType === "generate.text" ? "openai" : "flux";
             }
-            // Check if it's a direct service ID or an alias
             const resolved = serviceRegistry[serviceId] ? serviceId : aliasMap[serviceId];
-            if (resolved) {
-                return resolved as ServiceId<TP, TS>;
-            }
-            // Throw error for invalid service/alias
-            throw new Error(
-                `Invalid service or alias: "${serviceId}". Must be a valid service name or alias.`
-            );
+            if (resolved) return resolved;
+            throw new Error(`Invalid service or alias: "${serviceId}"`);
         },
-        isValidModel: (
-            modelId: ModelId<TP>,
-        ): modelId is ModelId<TP> => {
-            return !!modelRegistry[modelId];
-        },
-        isValidService: (
-            serviceId: ServiceId<TP, TS> | string,
-        ): serviceId is ServiceId<TP, TS> => {
-            return !!serviceRegistry[serviceId];
-        },
-        isFreeService: (serviceId: ServiceId<TP, TS>) => {
-            return isFreeService<TP, TS>(serviceRegistry, serviceId);
-        },
-        getServices: (): ServiceId<TP, TS>[] => {
-            return Object.keys(serviceRegistry);
-        },
-        getServiceDefinition: (
-            serviceId: ServiceId<TP, TS>,
-        ): ServiceDefinition<TP> => {
-            return serviceRegistry[serviceId];
-        },
-        getModels: (): ModelId<TP>[] => {
-            return Object.keys(modelRegistry);
-        },
-        getModelDefinition: (
-            modelId: ModelId<TP>,
-        ): ModelDefinition => {
-            return modelRegistry[modelId];
-        },
-        getActiveCostDefinition: (
-            modelId: ModelId<TP>,
-        ): CostDefinition | null => {
-            return getActiveCostDefinition<TP>(modelRegistry, modelId);
-        },
-        getActivePriceDefinition: (
-            serviceId: ServiceId<TP, TS>,
-        ): PriceDefinition | null => {
-            return getActivePriceDefinition<TP, TS>(serviceRegistry, serviceId);
-        },
-        calculateCost: (
-            modelId: ModelId<TP>,
-            usage: TokenUsage,
-        ): UsageCost => {
-            return calculateCost<TP>(modelRegistry, modelId, usage);
-        },
-        calculatePrice: (
-            serviceId: ServiceId<TP, TS>,
-            usage: TokenUsage,
-        ): UsagePrice => {
-            return calculatePrice<TP, TS>(serviceRegistry, serviceId, usage);
-        },
-        calculateMargins: (serviceId: ServiceId<TP, TS>): ServiceMargins => {
-            return calculateMargins<TP, TS>(
-                modelRegistry,
-                serviceRegistry,
-                serviceId,
-            );
-        },
+        isValidModel: (modelId: keyof TP) => !!modelRegistry[modelId],
+        isValidService: (serviceId: keyof TS | string) => !!serviceRegistry[serviceId],
+        isFreeService: (serviceId: keyof TS) => isFreeServiceInternal(serviceRegistry, serviceId),
+        getServices: () => Object.keys(serviceRegistry),
+        getServiceDefinition: (serviceId: keyof TS) => serviceRegistry[serviceId],
+        getModels: () => Object.keys(modelRegistry),
+        getModelDefinition: (modelId: keyof TP) => modelRegistry[modelId],
+        getActiveCostDefinition: (modelId: keyof TP) => getActiveCostDefinitionInternal(modelRegistry, modelId),
+        getActivePriceDefinition: (serviceId: keyof TS) => getActivePriceDefinitionInternal(serviceRegistry, serviceId),
+        calculateCost: (modelId: keyof TP, usage: TokenUsage) => calculateCostInternal(modelRegistry, modelId, usage),
+        calculatePrice: (serviceId: keyof TS, usage: TokenUsage) => calculatePriceInternal(serviceRegistry, serviceId, usage),
+        calculateMargins: (serviceId: keyof TS) => calculateMarginsInternal(modelRegistry, serviceRegistry, serviceId),
     };
 }
 
-export const REGISTRY = createRegistry(MODELS, SERVICES);
+// Legacy REGISTRY object for backward compatibility
+// TODO: Migrate all consumers to use direct function imports
+export const REGISTRY = {
+    resolveServiceId,
+    isValidModel,
+    isValidService,
+    isFreeService,
+    getServices,
+    getServiceDefinition,
+    getModels,
+    getModelDefinition,
+    getActiveCostDefinition,
+    getActivePriceDefinition,
+    calculateCost,
+    calculatePrice,
+    calculateMargins,
+};
 
 /**
  * Get provider for a model ID by looking it up in the combined services registry

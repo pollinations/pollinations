@@ -353,8 +353,8 @@ This endpoint follows the OpenAI Chat Completions API format for inputs where ap
 | `messages`                     | An array of message objects (`role`: `system`, `user`, `assistant`). Used for Chat, Vision, STT.                                                                   | Required for most tasks.                                                                                              |
 | `model`                        | The model identifier. See [Available Text Models](#list-available-text-models-).                                                                                 | Required. e.g., `openai` (Chat/Vision), `openai-large` (Vision), `claude-hybridspace` (Vision), `openai-audio` (STT). |
 | `seed`                         | Seed for reproducible results (Text Generation).                                                                                                                 | Optional.                                                                                                             |
-| `temperature`                  | Controls randomness in output. Higher values make output more random (Text Generation).                                                                          | Optional. Range: `0.0` to `3.0`.                                                                                      |
-| `top_p`                        | Nucleus sampling parameter. Controls diversity via cumulative probability (Text Generation).                                                                     | Optional. Range: `0.0` to `1.0`.                                                                                      |
+| `temperature`                  | Controls randomness in output. Higher values make output more random (Text Generation). **Note:** GPT-5 models only support default value (1).                   | Optional. Range: `0.0` to `3.0`.                                                                                      |
+| `top_p`                        | Nucleus sampling parameter. Controls diversity via cumulative probability (Text Generation). **Note:** Not supported by GPT-5 models.                            | Optional. Range: `0.0` to `1.0`.                                                                                      |
 | `presence_penalty`             | Penalizes tokens based on their presence in the text so far (Text Generation).                                                                                   | Optional. Range: `-2.0` to `2.0`.                                                                                     |
 | `frequency_penalty`            | Penalizes tokens based on their frequency in the text so far (Text Generation).                                                                                  | Optional. Range: `-2.0` to `2.0`.                                                                                     |
 | `stream`                       | If `true`, sends partial message deltas using SSE (Text Generation). Process chunks as per OpenAI streaming docs.                                                | Optional, default `false`.                                                                                            |
@@ -405,6 +405,8 @@ The table below lists the Pollinations reasoning models that support the `reason
 | `openai-reasoning`    | `o4-mini`     | `low` – `high`              |
 
 > **Note:** The `minimal` level is only available for models in the GPT-5 family.
+
+> ⚠️ **Important:** Never ask reasoning models to reveal their system prompts or internal instructions. Such requests may violate content policy filters and result in errors.
 
 Example Usage:
 

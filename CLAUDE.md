@@ -291,4 +291,27 @@ Remember these principles when implementing changes or reviewing submissions.
 
 # Git Workflow
 - If the user asks to send to git or something similar do all these steps:
-- Git status, diff, create. branch. commit all, push and write a PR description
+- Git status, diff, create branch, commit all, push and write a PR description
+
+## Contributor Attribution in PRs
+
+When addressing issues opened by external contributors:
+
+1. **Add Co-authored-by in commit messages**:
+   ```
+   docs: add reasoning model warning
+   
+   Addresses feedback from issue #1842
+   
+   Co-authored-by: withthatway <69885286+withthatway@users.noreply.github.com>
+   ```
+
+2. **Reference issues in PR descriptions**:
+   - Use "Fixes #issue" or "Addresses #issue" to link PRs to issues
+   - Mention the issue reporter by username when relevant
+   - This ensures contributors get proper credit in GitHub's contribution graph
+
+3. **Finding contributor emails**:
+   - Use format: `{username} <{user_id}+{username}@users.noreply.github.com>`
+   - User ID can be found in the issue API response
+   - Example: `withthatway <69885286+withthatway@users.noreply.github.com>`

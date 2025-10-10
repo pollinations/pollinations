@@ -5,9 +5,6 @@ import { EventType } from "./types.ts";
 
 const PRECISION = 8;
 
-const COST_TYPES = ["fixed_operational_cost", "per_generation_cost"] as const;
-export type CostType = (typeof COST_TYPES)[number];
-
 export type UsageType =
     | "promptTextTokens"
     | "promptCachedTokens"
@@ -41,16 +38,11 @@ export type UsageConversionDefinition = {
 export type CostDefinition = UsageConversionDefinition;
 export type PriceDefinition = UsageConversionDefinition;
 
-export type ModelDefinition = {
-    displayName: string;
-    costType: CostType;
-    cost: CostDefinition[];
-};
+export type ModelDefinition = CostDefinition[];
 
 export type ModelRegistry = Record<string, ModelDefinition>;
 
 export type ServiceDefinition<T extends ModelRegistry> = {
-    displayName: string;
     aliases: string[];
     modelIds: (keyof T)[];
     price: PriceDefinition[];
@@ -99,7 +91,7 @@ function getActiveCostDefinition<TP extends ModelRegistry>(
 ): CostDefinition | null {
     const modelDefinition = modelRegistry[modelId];
     if (!modelDefinition) return null;
-    for (const definition of modelDefinition.cost) {
+    for (const definition of modelDefinition) {
         if (definition.date < date.getTime()) return definition;
     }
     return null;
@@ -272,10 +264,7 @@ export function createRegistry<
     const modelRegistry = Object.fromEntries(
         Object.entries(models).map(([name, model]) => [
             name,
-            {
-                ...model,
-                cost: sortDefinitions(model.cost),
-            },
+            sortDefinitions(model),
         ]),
     ) as TP;
 
@@ -340,9 +329,6 @@ export function createRegistry<
             modelId: ModelId<TP>,
         ): ModelDefinition => {
             return modelRegistry[modelId];
-        },
-        getCostType: (modelId: ModelId<TP>): CostType => {
-            return modelRegistry[modelId]?.costType;
         },
         getActiveCostDefinition: (
             modelId: ModelId<TP>,

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ProviderId, TokenUsage } from "@shared/registry/registry.ts";
+import { ModelId, TokenUsage } from "@shared/registry/registry.ts";
 
 const usageSchema = z.object({
     completion_tokens: z.number().int().nonnegative(),
@@ -116,6 +116,6 @@ export function transformOpenAIUsage(usage: OpenAIUsage): TokenUsage {
 }
 
 export type ModelUsage = {
-    model: ProviderId;
+    model: ModelId;
     usage: TokenUsage;
 };

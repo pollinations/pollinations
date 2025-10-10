@@ -1,5 +1,5 @@
 import { processEvents, storeEvents } from "@/events.ts";
-import { ProviderId, REGISTRY, ServiceId } from "@shared/registry/registry.ts";
+import { REGISTRY, ServiceId, ModelId } from "@shared/registry/registry.ts";
 import {
     ModelUsage,
     OpenAIResponse,
@@ -68,7 +68,7 @@ export const track = (eventType: EventType) =>
                 `Failed to get price definition for model: ${resolvedModelRequested}`,
             );
         }
-        let openaiResponse, modelUsage, costType, cost, price;
+        let openaiResponse, modelUsage, cost, price;
         if (c.res.ok) {
             if (eventType === "generate.text") {
                 const body = await c.res.clone().json();
@@ -81,9 +81,8 @@ export const track = (eventType: EventType) =>
                     c,
                     openaiResponse,
                 );
-                costType = REGISTRY.getCostType(modelUsage.model as ProviderId);
                 cost = REGISTRY.calculateCost(
-                    modelUsage.model as ProviderId,
+                    modelUsage.model as ModelId,
                     modelUsage.usage,
                 );
                 price = REGISTRY.calculatePrice(
@@ -127,7 +126,6 @@ export const track = (eventType: EventType) =>
             ...usageToEventParams(modelUsage?.usage),
             ...extractContentFilterResults(eventType, openaiResponse),
 
-            costType,
             totalCost: cost?.totalCost || 0,
             totalPrice: price?.totalPrice || 0,
 
@@ -180,7 +178,7 @@ function extractUsage(
         
         // Read actual model used from x-model-used header
         const modelUsedHeader = c.res.headers.get("x-model-used");
-        const model = (modelUsedHeader || modelRequested || "flux") as ProviderId;
+        const model = (modelUsedHeader || modelRequested || "flux") as ModelId;
         
         return {
             model,
@@ -192,7 +190,7 @@ function extractUsage(
     }
     if (response) {
         return {
-            model: response?.model as ProviderId,
+            model: response?.model as ModelId,
             usage: transformOpenAIUsage(response.usage),
         };
     }

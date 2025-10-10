@@ -6,54 +6,32 @@ import type {
 import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "./price-helpers.ts";
 
 export const IMAGE_MODELS = {
-    "flux": {
-        displayName: "Flux",
-        costType: "fixed_operational_cost",
+    "flux": [
         // TODO: Verify operational cost estimate
         // Currently estimated at 0.3 cents per image ($0.003)
-        cost: [
-            {
-                date: PRICING_START_DATE,
-                completionImageTokens: fromDPMT(3000), // $3000 per 1M tokens = $0.003 per token/image
-            },
-        ],
-    },
-    "kontext": {
-        displayName: "Flux Kontext",
-        costType: "fixed_operational_cost",
-        cost: [ZERO_PRICE],
-    },
-    "turbo": {
-        displayName: "Turbo",
-        costType: "fixed_operational_cost",
-        cost: [ZERO_PRICE],
-    },
-    "nanobanana": {
-        displayName: "Nanobanana",
-        costType: "per_generation_cost",
-        cost: [
-            {
-                date: PRICING_START_DATE,
-                completionImageTokens: fromDPMT(30),
-            },
-        ],
-    },
-    "seedream": {
-        displayName: "Seedream",
-        costType: "fixed_operational_cost",
-        cost: [ZERO_PRICE],
-    },
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: fromDPMT(3000), // $3000 per 1M tokens = $0.003 per token/image
+        },
+    ],
+    "kontext": [ZERO_PRICE],
+    "turbo": [ZERO_PRICE],
+    "nanobanana": [
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: fromDPMT(30),
+        },
+    ],
+    "seedream": [ZERO_PRICE],
 } as const satisfies ModelRegistry;
 
 export const IMAGE_SERVICES = {
     "flux": {
-        displayName: "Flux",
         aliases: [],
         modelIds: ["flux"],
         price: [ZERO_PRICE],
     },
     "kontext": {
-        displayName: "Flux Kontext",
         aliases: [],
         modelIds: ["kontext"],
         price: [
@@ -64,7 +42,6 @@ export const IMAGE_SERVICES = {
         ],
     },
     "turbo": {
-        displayName: "Turbo",
         aliases: [],
         modelIds: ["turbo"],
         price: [
@@ -75,13 +52,11 @@ export const IMAGE_SERVICES = {
         ],
     },
     "nanobanana": {
-        displayName: "Nanobanana",
         aliases: [],
         modelIds: ["nanobanana"],
-        price: IMAGE_MODELS["nanobanana"].cost,
+        price: IMAGE_MODELS["nanobanana"],
     },
     "seedream": {
-        displayName: "Seedream",
         aliases: [],
         modelIds: ["seedream"],
         price: [

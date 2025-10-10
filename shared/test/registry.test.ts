@@ -8,23 +8,18 @@ import type {
 } from "../registry/registry.ts";
 
 const MOCK_MODEL_PROVIDERS = {
-    "mock-model": {
-        displayName: "Mock Model",
-        costType: "per_generation_cost",
-        cost: [
-            {
-                date: new Date("2025-08-01 00:00:00").getTime(),
-                promptTextTokens: 0.05,
-                promptCachedTokens: 0.05,
-                completionTextTokens: 0.1,
-            },
-        ],
-    },
+    "mock-model": [
+        {
+            date: new Date("2025-08-01 00:00:00").getTime(),
+            promptTextTokens: 0.05,
+            promptCachedTokens: 0.05,
+            completionTextTokens: 0.1,
+        },
+    ],
 } as const satisfies ModelRegistry;
 
 const MOCK_SERVICES = {
     "free-service": {
-        displayName: "Free Service",
         aliases: ["free-service-alias"],
         modelIds: ["mock-model"],
         price: [
@@ -37,7 +32,6 @@ const MOCK_SERVICES = {
         ],
     },
     "paid-service": {
-        displayName: "Paid Service",
         aliases: ["paid-service-alias"],
         modelIds: ["mock-model"],
         price: [

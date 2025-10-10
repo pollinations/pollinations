@@ -226,6 +226,8 @@ Body: messages*, model (set to "openai-audio"), voice (optional)
 2. Testing:
    - Add tests for new features in appropriate test directories
    - Follow existing test patterns in /test directories
+   - **Test with real production code, not mocks** - Tests should validate actual behavior
+   - Avoid creating mock infrastructure - use direct function imports instead
 
 3. Documentation:
    - Update API docs for new endpoints
@@ -233,14 +235,21 @@ Body: messages*, model (set to "openai-audio"), voice (optional)
    - Update README.md for user-facing changes
    - Keep this .mentat/README.md up to date with new features, functionality, or important project maintenance information
 
-4. Architecture Considerations:
+4. YAGNI Principle (You Aren't Gonna Need It):
+   - **Don't keep code for "potential futures"** - Only implement what's needed now
+   - Remove unused functions, even if they "might be useful someday"
+   - If we need something later, we'll add it when we actually need it
+   - Example: Don't create test utilities or helper functions "just in case"
+   - Keep the codebase minimal and focused on current requirements
+
+5. Architecture Considerations:
    - Frontend changes should be in pollinations.ai/
    - Image generation in image.pollinations.ai/
    - Text generation in text.pollinations.ai/
    - React components in pollinations-react/
    - AI assistant integrations in model-context-protocol/
 
-5. Security:
+6. Security:
    - Never expose API keys or secrets
    - Use environment variables for sensitive data
    - Implement proper input validation

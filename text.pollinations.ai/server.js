@@ -7,7 +7,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import dotenv from "dotenv";
 import { availableModels } from "./availableModels.js";
-import { getProvider } from "./modelCost.js";
+import { getProviderByModelId } from "../shared/registry/registry.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { setupFeedEndpoint, sendToFeedListeners } from "./feed.js";
 import { processRequestForAds } from "./ads/initRequestFilter.js";
@@ -708,7 +708,7 @@ app.get("/openai/models", (req, res) => {
 			// Get provider from cost data using the model's config
 			const config = typeof model.config === 'function' ? model.config() : model.config;
 			const actualModelName = config?.model || config?.["azure-model-name"] || config?.["azure-deployment-id"] || model.name;
-			const provider = getProvider(actualModelName) || "unknown";
+			const provider = getProviderByModelId(actualModelName) || "unknown";
 			
 			return {
 				id: model.name,

@@ -1,5 +1,5 @@
 import debug from "debug";
-import { getProvider } from "../modelCost.js";
+import { getProviderByModelId } from "../../shared/registry/registry.js";
 
 const log = debug("pollinations:portkey");
 
@@ -77,7 +77,7 @@ export function sanitizeMessagesWithPlaceholder(messages, modelConfig, originalM
     modelConfig?.["azure-model-name"] ||
     modelConfig?.["azure-deployment-id"] ||
     originalModelName;
-  const provider = getProvider(actualModelName);
+  const provider = getProviderByModelId(actualModelName);
 
   if (provider === "bedrock") {
     // Filter out empty string user messages

@@ -1,4 +1,4 @@
-import { REGISTRY, ServiceId } from "@shared/registry/registry.ts";
+import { isFreeService, ServiceId } from "@shared/registry/registry.ts";
 import { SELF } from "cloudflare:test";
 import { batches } from "@/util";
 import { test } from "./fixtures.ts";
@@ -48,7 +48,7 @@ test("Only free services should be available without an API key", async () => {
             })),
         );
         for (const { service, response } of responses) {
-            if (REGISTRY.isFreeService(service as ServiceId)) {
+            if (isFreeService(service as ServiceId)) {
                 expect(response.status).toBe(200);
             } else {
                 expect(response.status).toBe(401);

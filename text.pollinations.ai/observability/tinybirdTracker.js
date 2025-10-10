@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import debug from "debug";
-import { calculateTotalCost, resolveCost } from "./costCalculator.js";
-import { getProvider } from "../modelCost.js";
+import { calculateTotalCost, resolveCost } from "./costCalculator.ts";
+import { getProviderByModelId } from "../../shared/registry/registry.js";
 import { generatePollinationsId, getOrGenerateId } from "./idGenerator.js";
 
 // Load environment variables
@@ -104,7 +104,7 @@ export async function sendTinybirdEvent(eventData) {
         const modelRequested = eventData.model || null;
         const modelUsedName = eventData.modelUsed || null;
         // Resolve provider based on the actual used model when available, otherwise fall back to requested
-        const provider = getProvider(modelUsedName || modelRequested) ?? 'unknown';
+        const provider = getProviderByModelId(modelUsedName || modelRequested) ?? 'unknown';
         log(`Provider for model (used=${modelUsedName || 'n/a'}, requested=${modelRequested || 'n/a'}): ${provider}`);
 
         // Extract moderation data from choices if present (Azure OpenAI)

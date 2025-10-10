@@ -140,21 +140,21 @@ export const TEXT_COSTS = {
 
 export const TEXT_SERVICES = {
     "openai": {
-        aliases: ["gpt-5-nano"],
+        aliases: ["gpt-5-mini"],
         modelId: "gpt-5-nano-2025-08-07",
         price: [ZERO_PRICE],
         provider: "azure-openai",
     },
     "openai-fast": {
-        aliases: ["gpt-4.1-nano"],
+        aliases: ["gpt-5-nano"],
         modelId: "gpt-4.1-nano-2025-04-14",
         price: [ZERO_PRICE],
         provider: "azure-openai",
     },
     "openai-large": {
-        aliases: ["gpt-4.1"],
-        modelId: "gpt-4.1-2025-04-14",
-        price: TEXT_COSTS["gpt-4.1-2025-04-14"],
+        aliases: ["gpt-5-chat"],
+        modelId: "gpt-5-chat-latest",
+        price: TEXT_COSTS["gpt-5-chat-latest"],
         provider: "azure-openai",
     },
     "qwen-coder": {
@@ -164,7 +164,7 @@ export const TEXT_SERVICES = {
         provider: "scaleway",
     },
     "mistral": {
-        aliases: ["mistral-small-3.1-24b-instruct"],
+        aliases: ["mistral-small-3.1-24b-instruct", "mistral-small-3.1-24b-instruct-2503"],
         modelId: "mistral-small-3.1-24b-instruct-2503",
         price: TEXT_COSTS["mistral-small-3.1-24b-instruct-2503"],
         provider: "scaleway",
@@ -176,7 +176,7 @@ export const TEXT_SERVICES = {
         provider: "aws-bedrock",
     },
     "deepseek-reasoning": {
-        aliases: ["deepseek-r1-0528"],
+        aliases: ["deepseek-r1-0528", "us.deepseek.r1-v1:0"],
         modelId: "us.deepseek.r1-v1:0",
         price: TEXT_COSTS["us.deepseek.r1-v1:0"],
         provider: "aws-bedrock",
@@ -240,12 +240,6 @@ export const TEXT_SERVICES = {
         modelId: "mistral-small-3.1-24b-instruct-2503",
         price: TEXT_COSTS["mistral-small-3.1-24b-instruct-2503"],
         provider: "scaleway",
-    },
-    "mixera": {
-        aliases: [],
-        modelId: "gpt-4.1-2025-04-14",
-        price: TEXT_COSTS["gpt-4.1-2025-04-14"],
-        provider: "azure-openai",
     },
     "midijourney": {
         aliases: [],

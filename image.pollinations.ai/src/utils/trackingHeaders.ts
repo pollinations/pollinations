@@ -34,20 +34,18 @@ export interface TrackingData {
 /**
  * Build tracking headers for the enter service
  * @param model - The requested model name
- * @param userTier - The user's authentication tier
  * @param trackingData - Usage and moderation data from generation
  * @returns Headers object for HTTP response
  */
 export function buildTrackingHeaders(
     model: string,
-    userTier: string,
     trackingData?: TrackingData
 ): Record<string, string> {
     const headers: Record<string, string> = {};
 
     // Core tracking headers
     headers['x-model-used'] = trackingData?.actualModel || model;
-    headers['x-user-tier'] = userTier || 'anonymous';
+    // Note: x-user-tier removed - enter service now gets tier from user table
     
     // Token counting logic
     let completionTokens = 1; // Default for unit-based pricing models

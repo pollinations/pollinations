@@ -25,8 +25,15 @@ dotenv.config();
 // Type constraint: export ValidModelId so availableModels.ts can use it
 export type ValidModelId = keyof typeof TEXT_COSTS;
 
+// Type-safe config object: all keys must be valid model IDs from TEXT_COSTS
+type PortkeyConfigMap = {
+	[K in ValidModelId]: () => any;
+} & {
+	[key: string]: () => any; // Allow additional legacy configs not in TEXT_COSTS
+};
+
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
-export const portkeyConfig = {
+export const portkeyConfig: PortkeyConfigMap = {
 	// ============================================================================
 	// ACTIVE CONFIGS - Used in availableModels.ts
 	// ============================================================================

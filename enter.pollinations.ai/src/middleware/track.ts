@@ -84,10 +84,9 @@ export const track = (eventType: EventType) =>
                 
                 // Validate model ID exists in registry before calculating cost
                 if (!REGISTRY.getModelDefinition(modelUsage.model as ModelId)) {
-                    log.error("Model {model} not found in registry, skipping cost calculation", {
-                        model: modelUsage.model,
-                    });
-                    return;
+                    throw new Error(
+                        `Model '${modelUsage.model}' not found in registry. This indicates a bug - the model returned by the LLM is not configured for billing.`
+                    );
                 }
                 
                 cost = REGISTRY.calculateCost(

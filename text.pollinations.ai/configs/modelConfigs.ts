@@ -16,10 +16,14 @@ import {
 	createDeepSeekReasoningConfig,
 	createApiNavyModelConfig,
 } from "./providerConfigs.js";
+import type { TEXT_COSTS } from "../../shared/registry/text.js";
 
 const log = debug("pollinations:portkey");
 
 dotenv.config();
+
+// Type constraint: export ValidModelId so availableModels.ts can use it
+export type ValidModelId = keyof typeof TEXT_COSTS;
 
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
@@ -32,13 +36,13 @@ export const portkeyConfig = {
 			"pollinations-safety",
 		),
 	// Azure OpenAI model configurations
-	"gpt-4.1-nano": () =>
+	"gpt-4.1-nano-2025-04-14": () =>
 		createAzureModelConfig(
 			process.env.AZURE_OPENAI_NANO_API_KEY,
 			process.env.AZURE_OPENAI_NANO_ENDPOINT,
 			"gpt-4.1-nano",
 		),
-	"gpt-5-nano": () => ({
+	"gpt-5-nano-2025-08-07": () => ({
 		...createAzureModelConfig(
 			process.env.AZURE_MYCELI_GPT5NANO_API_KEY,
 			process.env.AZURE_MYCELI_GPT5NANO_ENDPOINT,
@@ -47,7 +51,7 @@ export const portkeyConfig = {
 		// "max-tokens": 512,
 		"max-completion-tokens": 512,
 	}),
-	"gpt-5-mini": () => ({
+	"gpt-5-mini-2025-08-07": () => ({
 		...createAzureModelConfig(
 			process.env.AZURE_MYCELI_GPT5MINI_API_KEY,
 			process.env.AZURE_MYCELI_GPT5MINI_ENDPOINT,
@@ -140,13 +144,13 @@ export const portkeyConfig = {
 			process.env.AZURE_O1MINI_ENDPOINT,
 			"o1-mini",
 		),
-	"o4-mini-azure": () =>
+	"openai/o4-mini": () =>
 		createAzureModelConfig(
 			process.env.AZURE_O4MINI_API_KEY,
 			process.env.AZURE_O4MINI_ENDPOINT,
 			"o4-mini",
 		),
-	"gpt-4o-mini-audio-preview": () => ({
+	"gpt-4o-mini-audio-preview-2024-12-17": () => ({
 		...createAzureModelConfig(
 			process.env.AZURE_OPENAI_AUDIO_API_KEY,
 			process.env.AZURE_OPENAI_AUDIO_ENDPOINT,
@@ -161,7 +165,7 @@ export const portkeyConfig = {
 			process.env.AZURE_OPENAI_AUDIO_LARGE_ENDPOINT,
 			"gpt-4o-audio-preview",
 		),
-	"azure-gpt-4.1": () => ({
+	"gpt-4.1-2025-04-14": () => ({
 		...createAzureModelConfig(
 			process.env.AZURE_OPENAI_41_API_KEY,
 			process.env.AZURE_OPENAI_41_ENDPOINT,
@@ -176,7 +180,7 @@ export const portkeyConfig = {
 			process.env.AZURE_OPENAI_XLARGE_ENDPOINT,
 			"gpt-4.1",
 		),
-	"gpt-5-chat": () => ({
+	"gpt-5-chat-latest": () => ({
 		...createAzureModelConfig(
 			process.env.AZURE_MYCELI_GPT5CHAT_API_KEY,
 			process.env.AZURE_MYCELI_GPT5CHAT_ENDPOINT,
@@ -311,7 +315,7 @@ export const portkeyConfig = {
 		"vertex-model-id": "gemini-2.0-flash-thinking",
 		"strict-openai-compliance": "false",
 	}),
-	"gemini-2.5-flash-lite-vertex": () => ({
+	"google/gemini-2.5-flash-lite": () => ({
 		provider: "vertex-ai",
 		authKey: googleCloudAuth.getAccessToken,
 		"vertex-project-id": process.env.GCLOUD_PROJECT_ID,
@@ -324,6 +328,7 @@ export const portkeyConfig = {
 	// }), // Commented out - now using Vertex AI version
 	"gemini-2.5-flash-lite-search": () => ({
 		provider: "vertex-ai",
+		authKey: googleCloudAuth.getAccessToken,
 		"vertex-project-id": process.env.GCLOUD_PROJECT_ID,
 		"vertex-region": "us-central1",
 		"vertex-model-id": "gemini-2.5-flash-lite",
@@ -371,16 +376,8 @@ export const portkeyConfig = {
 	"us.meta.llama3-1-8b-instruct-v1:0": () => createBedrockLambdaModelConfig({
 		model: "us.meta.llama3-1-8b-instruct-v1:0",
 	}),
-	// Navy API endpoint
-	"o4-mini": () => createApiNavyModelConfig({
-		model: "o4-mini",
-		"max-tokens": 8192,
-	}),
 	"us.deepseek.r1-v1:0": () => createBedrockLambdaModelConfig({
 		model: "us.deepseek.r1-v1:0",
 		"max-tokens": 2000,
-	}),
-	"mistral.mistral-small-2402-v1:0": () => createBedrockLambdaModelConfig({
-		model: "mistral.mistral-small-2402-v1:0",
 	}),
 };

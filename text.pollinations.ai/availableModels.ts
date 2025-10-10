@@ -16,7 +16,7 @@ import chickyTutorPrompt from "./personas/chickytutor.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
 
 // Import model configs
-import { portkeyConfig } from "./configs/modelConfigs.js";
+import { portkeyConfig, type ValidModelId } from "./configs/modelConfigs.js";
 
 // Import registry types for validation
 import type { TEXT_SERVICES } from "../shared/registry/text.ts";
@@ -27,7 +27,7 @@ type ValidServiceName = keyof typeof TEXT_SERVICES;
 interface ModelDefinition {
 	name: ValidServiceName;
 	description: string;
-	config: any;
+	config: (typeof portkeyConfig)[ValidModelId];  // ✅ Type-safe: must be a valid model ID from TEXT_COSTS
 	transform?: any;
 	tier: "anonymous" | "seed" | "flower" | "nectar";
 	community?: boolean;
@@ -46,8 +46,8 @@ interface ModelDefinition {
 const models: ModelDefinition[] = [
 	{
 		name: "openai",
-		description: "OpenAI GPT-5 Mini",
-		config: portkeyConfig["gpt-5-mini"],
+		description: "OpenAI GPT-5 Nano",
+		config: portkeyConfig["gpt-5-nano-2025-08-07"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "anonymous",
 		community: false,
@@ -59,8 +59,8 @@ const models: ModelDefinition[] = [
 	},
 	{
 		name: "openai-fast",
-		description: "OpenAI GPT-5 Nano",
-		config: portkeyConfig["gpt-5-nano"],
+		description: "OpenAI GPT-4.1 Nano",
+		config: portkeyConfig["gpt-4.1-nano-2025-04-14"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "anonymous",
 		community: false,
@@ -73,7 +73,7 @@ const models: ModelDefinition[] = [
 	{
 		name: "openai-large",
 		description: "OpenAI GPT-5 Chat",
-		config: portkeyConfig["gpt-5-chat"],
+		config: portkeyConfig["gpt-5-chat-latest"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "seed",
 		community: false,
@@ -166,7 +166,7 @@ const models: ModelDefinition[] = [
 			"amuch",
 			"dan",
 		],
-		config: portkeyConfig["gpt-4o-mini-audio-preview"],
+		config: portkeyConfig["gpt-4o-mini-audio-preview-2024-12-17"],
 		tier: "seed",
 		community: false,
 		aliases: ["gpt-4o-mini-audio-preview"],
@@ -213,8 +213,8 @@ const models: ModelDefinition[] = [
 	},
 	{
 		name: "openai-reasoning",
-		description: "OpenAI o4-mini (Azure Myceli)",
-		config: portkeyConfig["o4-mini-azure"],
+		description: "OpenAI o4-mini",
+		config: portkeyConfig["openai/o4-mini"],
 		transform: pipe(
 			createSystemPromptTransform(BASE_PROMPTS.conversational),
 			removeSystemMessages
@@ -231,7 +231,7 @@ const models: ModelDefinition[] = [
 	{
 		name: "gemini",
 		description: "Gemini 2.5 Flash Lite (Vertex AI)",
-		config: portkeyConfig["gemini-2.5-flash-lite-vertex"],
+		config: portkeyConfig["google/gemini-2.5-flash-lite"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "seed",
 		community: false,
@@ -242,8 +242,8 @@ const models: ModelDefinition[] = [
 	},
 	{
 		name: "gemini-search",
-		description: "Gemini 2.5 Flash with Google Search (Google Vertex AI)",
-		config: portkeyConfig["gemini-2.5-flash-vertex"],
+		description: "Gemini 2.5 Flash Lite with Google Search (Vertex AI)",
+		config: portkeyConfig["gemini-2.5-flash-lite-search"],
 		transform: pipe(
 			createGoogleSearchTransform()
 		),
@@ -274,7 +274,7 @@ const models: ModelDefinition[] = [
 	{
 		name: "midijourney",
 		description: "MIDIjourney",
-		config: portkeyConfig["azure-gpt-4.1"],
+		config: portkeyConfig["gpt-4.1-2025-04-14"],
 		transform: createMessageTransform(midijourneyPrompt),
 		tier: "anonymous",
 		community: true,
@@ -285,7 +285,7 @@ const models: ModelDefinition[] = [
 	{
 		name: "rtist",
 		description: "Rtist",
-		config: portkeyConfig["azure-gpt-4.1"],
+		config: portkeyConfig["gpt-4.1-2025-04-14"],
 		transform: createMessageTransform(rtistPrompt),
 		tier: "seed",
 		community: true,
@@ -308,7 +308,7 @@ const models: ModelDefinition[] = [
 	{
 		name: "bidara",
 		description: "BIDARA (Biomimetic Designer and Research Assistant by NASA)",
-		config: portkeyConfig["gpt-4.1-nano"],
+		config: portkeyConfig["gpt-4.1-nano-2025-04-14"],
 		transform: createMessageTransform(bidaraSystemPrompt),
 		tier: "anonymous",
 		community: true,

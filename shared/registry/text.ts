@@ -112,14 +112,13 @@ export const TEXT_COSTS = {
             completionTextTokens: fromDPMT(4.0),
         },
     ],
-    "openai/o4-mini": [ZERO_PRICE],
-    "google/gemini-2.5-flash-lite": [ZERO_PRICE],
-    "gemini-2.5-flash-lite-search": [
+    "openai/o4-mini": [ZERO_PRICE], // TODO: Add actual o4-mini pricing when available
+    "gemini-2.5-flash-lite": [
         {
             date: PRICING_START_DATE,
-            promptTextTokens: fromDPMT(0.5),
-            promptCachedTokens: fromDPMT(0.125),
-            completionTextTokens: fromDPMT(2.0),
+            promptTextTokens: fromDPMT(0.10),
+            promptCachedTokens: fromDPMT(0.025), // Estimated 75% discount for caching
+            completionTextTokens: fromDPMT(0.40),
         },
     ],
     "deepseek-ai/deepseek-v3.1-maas": [
@@ -207,9 +206,9 @@ export const TEXT_SERVICES = {
     },
     "gemini": {
         aliases: ["gemini-2.5-flash-lite"],
-        modelId: "google/gemini-2.5-flash-lite",
-        price: TEXT_COSTS["google/gemini-2.5-flash-lite"],
-        provider: "api-navy",
+        modelId: "gemini-2.5-flash-lite",
+        price: TEXT_COSTS["gemini-2.5-flash-lite"],
+        provider: "vertex-ai",
     },
     "deepseek": {
         aliases: ["deepseek-v3", "deepseek-v3.1", "deepseek-ai/deepseek-v3.1-maas"],
@@ -219,8 +218,8 @@ export const TEXT_SERVICES = {
     },
     "gemini-search": {
         aliases: ["searchgpt", "geminisearch"],
-        modelId: "gemini-2.5-flash-lite-search",
-        price: TEXT_COSTS["gemini-2.5-flash-lite-search"],
+        modelId: "gemini-2.5-flash-lite",
+        price: TEXT_COSTS["gemini-2.5-flash-lite"],
         provider: "vertex-ai",
     },
     "chickytutor": {

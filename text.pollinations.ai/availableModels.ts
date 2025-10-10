@@ -231,7 +231,7 @@ const models: ModelDefinition[] = [
 	{
 		name: "gemini",
 		description: "Gemini 2.5 Flash Lite (Vertex AI)",
-		config: portkeyConfig["google/gemini-2.5-flash-lite"],
+		config: portkeyConfig["gemini-2.5-flash-lite"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "seed",
 		community: false,
@@ -243,7 +243,7 @@ const models: ModelDefinition[] = [
 	{
 		name: "gemini-search",
 		description: "Gemini 2.5 Flash Lite with Google Search (Vertex AI)",
-		config: portkeyConfig["gemini-2.5-flash-lite-search"],
+		config: portkeyConfig["gemini-2.5-flash-lite"],
 		transform: pipe(
 			createGoogleSearchTransform()
 		),

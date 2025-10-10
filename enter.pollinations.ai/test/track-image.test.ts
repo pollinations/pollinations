@@ -1,12 +1,12 @@
 import { expect, test } from "vitest";
 import { REGISTRY } from "@shared/registry/registry.ts";
-import type { TokenUsage, ProviderId, ServiceId } from "@shared/registry/registry.ts";
+import type { TokenUsage, ModelId, ServiceId } from "@shared/registry/registry.ts";
 
 // Test image model cost tracking
 // Tests cost calculation properties without hardcoding specific values
 
 test("Image models should calculate costs proportionally to token count", () => {
-    const models: ProviderId[] = ["flux", "nanobanana", "kontext", "turbo", "seedream"];
+    const models: ModelId[] = ["flux", "nanobanana", "kontext", "turbo", "seedream"];
     
     for (const model of models) {
         const usage1: TokenUsage = {
@@ -55,7 +55,7 @@ test("Flux should remain free for users", () => {
 });
 
 test("Cost should be non-negative for all models", () => {
-    const models: ProviderId[] = ["flux", "nanobanana", "kontext", "turbo", "seedream"];
+    const models: ModelId[] = ["flux", "nanobanana", "kontext", "turbo", "seedream"];
     const usage: TokenUsage = {
         unit: "TOKENS",
         completionImageTokens: 1,

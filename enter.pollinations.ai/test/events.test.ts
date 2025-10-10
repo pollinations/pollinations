@@ -46,7 +46,7 @@ function createTextGenerationEvent(
     modelRequested: ServiceId,
 ): InsertGenerationEvent {
     const userId = generateRandomId();
-    const resolvedModelRequested = REGISTRY.withFallbackService(
+    const resolvedModelRequested = REGISTRY.resolveServiceId(
         modelRequested,
         "generate.text",
     );

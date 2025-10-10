@@ -21,6 +21,7 @@ export const user = sqliteTable("user", {
   banExpires: integer("ban_expires", { mode: "timestamp" }),
   githubId: integer("github_id"),
   githubUsername: text("github_username"),
+  tier: text("tier").default("seed").notNull(),
 });
 
 export const session = sqliteTable("session", {

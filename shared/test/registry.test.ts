@@ -21,7 +21,7 @@ const MOCK_MODEL_PROVIDERS = {
 const MOCK_SERVICES = {
     "free-service": {
         aliases: ["free-service-alias"],
-        modelIds: ["mock-model"],
+        modelId: "mock-model",
         price: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
@@ -33,7 +33,7 @@ const MOCK_SERVICES = {
     },
     "paid-service": {
         aliases: ["paid-service-alias"],
-        modelIds: ["mock-model"],
+        modelId: "mock-model",
         price: [
             {
                 date: new Date("2025-08-01 00:00:00").getTime(),
@@ -136,4 +136,25 @@ test("Date constants should be properly defined", async () => {
     expect(ZERO_PRICE_START_DATE).toBe(new Date("2020-01-01 00:00:00").getTime());
     expect(PRICING_START_DATE).toBe(new Date("2025-08-01 00:00:00").getTime());
     expect(PRICING_START_DATE).toBeGreaterThan(ZERO_PRICE_START_DATE);
+});
+
+test("resolveServiceId should throw on invalid service", async () => {
+    expect(() => MOCK_REGISTRY.resolveServiceId("invalid-service", "generate.text"))
+        .toThrow("Invalid service or alias");
+});
+
+test("resolveServiceId should return default service for null/undefined", async () => {
+    // Uses real registry defaults (openai for text, flux for image)
+    const result = REGISTRY.resolveServiceId(null, "generate.text");
+    expect(result).toBe("openai");
+});
+
+test("resolveServiceId should resolve aliases", async () => {
+    expect(MOCK_REGISTRY.resolveServiceId("free-service-alias", "generate.text")).toBe("free-service");
+    expect(MOCK_REGISTRY.resolveServiceId("paid-service-alias", "generate.text")).toBe("paid-service");
+});
+
+test("getModelDefinition returns undefined for invalid model", async () => {
+    // getModelDefinition returns undefined for missing models
+    expect(REGISTRY.getModelDefinition("invalid-model" as any)).toBeUndefined();
 });

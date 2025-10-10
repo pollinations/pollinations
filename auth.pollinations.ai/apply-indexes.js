@@ -6,6 +6,9 @@
 import { readFileSync } from "fs";
 import { execSync } from "child_process";
 
+const args = process.argv.slice(2);
+const isLocal = args.includes("--local");
+
 console.log("🚀 Applying performance optimization indexes...");
 
 const sqlContent = readFileSync(
@@ -14,10 +17,8 @@ const sqlContent = readFileSync(
 );
 
 try {
-    // Apply the SQL using wrangler d1 execute
-    console.log("📊 Creating indexes...");
+    console.log(`📊 Creating indexes (mode: ${isLocal ? "local" : "remote"})...`);
 
-    // Split SQL into individual statements and execute each
     const statements = sqlContent
         .split(";")
         .map((stmt) => stmt.trim())
@@ -25,19 +26,22 @@ try {
 
     for (const statement of statements) {
         if (statement.trim()) {
-            console.log(`Executing: ${statement.substring(0, 50)}...`); // Added backtick at the end of the template literal
+            console.log(`Executing: ${statement.substring(0, 50)}...`);
 
             try {
-                execSync(
-                    `wrangler d1 execute github_auth --remote --command="${statement};"`,
-                    {
-                        stdio: "inherit",
-                    },
-                );
+                if (isLocal) {
+                    execSync(
+                        `npx wrangler d1 execute github_auth --local --command="${statement};"`,
+                        { stdio: "inherit", shell: true },
+                    );
+                } else {
+                    execSync(
+                        `wrangler d1 execute github_auth --remote --command="${statement};"`,
+                        { stdio: "inherit", shell: true },
+                    );
+                }
             } catch (e) {
-                console.log(
-                    `Note: ${statement} may already exist (this is OK)`,
-                );
+                console.log(`Note: ${statement} may already exist (this is OK)`);
             }
         }
     }

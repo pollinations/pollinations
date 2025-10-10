@@ -1,4 +1,21 @@
-export const MODELS = {
+// Import registry types for validation
+import type { IMAGE_SERVICES } from "../../shared/registry/image.ts";
+
+// Type constraint: model names must exist in registry
+type ValidServiceName = keyof typeof IMAGE_SERVICES;
+
+interface ModelDefinition {
+    type: string;
+    enhance: boolean;
+    maxSideLength: number;
+    tier: "anonymous" | "seed" | "flower" | "nectar";
+}
+
+type ModelsConfig = {
+    [K in ValidServiceName]: ModelDefinition;
+};
+
+export const MODELS: ModelsConfig = {
     // "flux-realism": { type: "meoow", enhance: false, maxSideLength: 1384 },
     // "flux-cablyai": { type: "meoow-2", enhance: false, maxSideLength: 1384 },
     // "flux-anime": { type: "meoow", enhance: false, maxSideLength: 1384 },
@@ -13,13 +30,13 @@ export const MODELS = {
         tier : "seed",
     },
 
-    // // BPAIGen with Kontext fallback - general purpose model
-    // kontext: {
-    //     type: "bpaigen-kontext",
-    //     enhance: true,
-    //     maxSideLength: 1216, // BPAIGen's higher resolution capability
-    //     tier: "seed",
-    // },
+    // BPAIGen with Kontext fallback - general purpose model
+    kontext: {
+        type: "bpaigen-kontext",
+        enhance: true,
+        maxSideLength: 1216, // BPAIGen's higher resolution capability
+        tier: "seed",
+    },
 
     // Assuming 'turbo' is of type 'sd'
     turbo: {
@@ -52,4 +69,4 @@ export const MODELS = {
         maxSideLength: 1024,
         tier: "seed",
     },
-} as const;
+};

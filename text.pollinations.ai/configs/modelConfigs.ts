@@ -16,14 +16,121 @@ import {
 	createDeepSeekReasoningConfig,
 	createApiNavyModelConfig,
 } from "./providerConfigs.js";
+import type { TEXT_COSTS } from "../../shared/registry/text.js";
 
 const log = debug("pollinations:portkey");
 
 dotenv.config();
 
+// Type constraint: export ValidModelId so availableModels.ts can use it
+export type ValidModelId = keyof typeof TEXT_COSTS;
+
 // Unified flat Portkey configuration for all providers and models - using functions that return fresh configurations
 export const portkeyConfig = {
-	// Azure Grok model configuration
+	// ============================================================================
+	// ACTIVE CONFIGS - Used in availableModels.ts
+	// ============================================================================
+	
+	// Azure OpenAI model configurations
+	"gpt-5-nano-2025-08-07": () => ({
+		...createAzureModelConfig(
+			process.env.AZURE_MYCELI_GPT5NANO_API_KEY,
+			process.env.AZURE_MYCELI_GPT5NANO_ENDPOINT,
+			"gpt-5-nano",
+		),
+		"max-completion-tokens": 512,
+	}),
+	"gpt-4.1-nano-2025-04-14": () =>
+		createAzureModelConfig(
+			process.env.AZURE_OPENAI_NANO_API_KEY,
+			process.env.AZURE_OPENAI_NANO_ENDPOINT,
+			"gpt-4.1-nano",
+		),
+	"gpt-5-chat-latest": () => ({
+		...createAzureModelConfig(
+			process.env.AZURE_MYCELI_GPT5CHAT_API_KEY,
+			process.env.AZURE_MYCELI_GPT5CHAT_ENDPOINT,
+			"gpt-5-chat"
+		),
+		"max-completion-tokens": 1024,
+	}),
+	"gpt-4.1-2025-04-14": () => ({
+		...createAzureModelConfig(
+			process.env.AZURE_OPENAI_41_API_KEY,
+			process.env.AZURE_OPENAI_41_ENDPOINT,
+			"gpt-4.1",
+		),
+		"max-tokens": 512,
+		"max-completion-tokens": 512,
+	}),
+	"gpt-4o-mini-audio-preview-2024-12-17": () => ({
+		...createAzureModelConfig(
+			process.env.AZURE_OPENAI_AUDIO_API_KEY,
+			process.env.AZURE_OPENAI_AUDIO_ENDPOINT,
+			"gpt-4o-mini-audio-preview",
+		),
+		"max-completion-tokens": 6384,
+	}),
+	"openai/o4-mini": () =>
+		createAzureModelConfig(
+			process.env.AZURE_O4MINI_API_KEY,
+			process.env.AZURE_O4MINI_ENDPOINT,
+			"o4-mini",
+		),
+	
+	// Scaleway model configurations
+	"qwen2.5-coder-32b-instruct": () =>
+		createScalewayModelConfig({
+			"max-tokens": 8000,
+			model: "qwen2.5-coder-32b-instruct",
+		}),
+	"mistral-small-3.1-24b-instruct-2503": () =>
+		createScalewayModelConfig({
+			"max-tokens": 8192,
+			model: "mistral-small-3.1-24b-instruct-2503",
+		}),
+	
+	// AWS Bedrock Lambda configurations
+	"mistral.mistral-small-2402-v1:0": () => createBedrockLambdaModelConfig({
+		model: "mistral.mistral-small-2402-v1:0",
+	}),
+	"us.deepseek.r1-v1:0": () => createBedrockLambdaModelConfig({
+		model: "us.deepseek.r1-v1:0",
+		"max-tokens": 2000,
+	}),
+	"amazon.nova-micro-v1:0": () => createBedrockLambdaModelConfig({
+		model: "awsbedrock/amazon.nova-micro-v1:0",
+	}),
+	"us.meta.llama3-1-8b-instruct-v1:0": () => createBedrockLambdaModelConfig({
+		model: "us.meta.llama3-1-8b-instruct-v1:0",
+	}),
+	"us.anthropic.claude-3-5-haiku-20241022-v1:0": () => createBedrockLambdaModelConfig({
+		model: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+	}),
+	
+	// Google Vertex AI configurations
+	"gemini-2.5-flash-lite": () => ({
+		provider: "vertex-ai",
+		authKey: googleCloudAuth.getAccessToken,
+		"vertex-project-id": process.env.GCLOUD_PROJECT_ID,
+		"vertex-region": "us-central1",
+		"vertex-model-id": "gemini-2.5-flash-lite",
+		"strict-openai-compliance": "false",
+	}),
+	// Note: gemini-search service uses same config as gemini, just adds Google Search transform
+	"deepseek-ai/deepseek-v3.1-maas": () => ({
+		provider: "openai",
+		authKey: googleCloudAuth.getAccessToken,
+		"custom-host": `https://us-west2-aiplatform.googleapis.com/v1/projects/${process.env.GCLOUD_PROJECT_ID}/locations/us-west2/endpoints/openapi`,
+		"strict-openai-compliance": "false",
+		model: "deepseek-ai/deepseek-v3.1-maas",
+	}),
+	
+	// ============================================================================
+	// LEGACY/UNUSED CONFIGS - Not currently referenced in availableModels.ts
+	// ============================================================================
+	
+	// Azure model configurations
 	"azure-grok": () =>
 		createAzureModelConfig(
 			process.env.AZURE_GENERAL_API_KEY,
@@ -31,23 +138,7 @@ export const portkeyConfig = {
 			`grok-3-mini`,
 			"pollinations-safety",
 		),
-	// Azure OpenAI model configurations
-	"gpt-4.1-nano": () =>
-		createAzureModelConfig(
-			process.env.AZURE_OPENAI_NANO_API_KEY,
-			process.env.AZURE_OPENAI_NANO_ENDPOINT,
-			"gpt-4.1-nano",
-		),
-	"gpt-5-nano": () => ({
-		...createAzureModelConfig(
-			process.env.AZURE_MYCELI_GPT5NANO_API_KEY,
-			process.env.AZURE_MYCELI_GPT5NANO_ENDPOINT,
-			"gpt-5-nano",
-		),
-		// "max-tokens": 512,
-		"max-completion-tokens": 512,
-	}),
-	"gpt-5-mini": () => ({
+	"gpt-5-mini-2025-08-07": () => ({
 		...createAzureModelConfig(
 			process.env.AZURE_MYCELI_GPT5MINI_API_KEY,
 			process.env.AZURE_MYCELI_GPT5MINI_ENDPOINT,
@@ -69,7 +160,7 @@ export const portkeyConfig = {
 			"gpt-5",
 		),
 	"gpt-4.1-nano-roblox": () => {
-		// Randomly select one of the 3 roblox endpoints
+		// Randomly select one of the 4 roblox endpoints
 		const endpoints = [
 			{
 				apiKey: process.env.AZURE_OPENAI_ROBLOX_API_KEY_1,
@@ -103,7 +194,7 @@ export const portkeyConfig = {
 		);
 	},
 	"gpt-4o-mini": () => {
-		// Randomly select one of the 3 roblox endpoints
+		// Randomly select one of the 2 endpoints
 		const endpoints = [
 			{
 				apiKey: process.env.AZURE_OPENAI_MINI_API_KEY_1,
@@ -119,7 +210,7 @@ export const portkeyConfig = {
 		const selectedEndpoint = endpoints[randomIndex];
 
 		log(
-			`Selected random roblox endpoint ${randomIndex + 1}: ${selectedEndpoint.endpoint}`,
+			`Selected random endpoint ${randomIndex + 1}: ${selectedEndpoint.endpoint}`,
 		);
 
 		return createAzureModelConfig(
@@ -140,51 +231,18 @@ export const portkeyConfig = {
 			process.env.AZURE_O1MINI_ENDPOINT,
 			"o1-mini",
 		),
-	"o4-mini-azure": () =>
-		createAzureModelConfig(
-			process.env.AZURE_O4MINI_API_KEY,
-			process.env.AZURE_O4MINI_ENDPOINT,
-			"o4-mini",
-		),
-	"gpt-4o-mini-audio-preview": () => ({
-		...createAzureModelConfig(
-			process.env.AZURE_OPENAI_AUDIO_API_KEY,
-			process.env.AZURE_OPENAI_AUDIO_ENDPOINT,
-			"gpt-4o-mini-audio-preview",
-		),
-		// "max-tokens": 6384,
-		"max-completion-tokens": 6384,
-	}),
 	"gpt-4o-audio-preview": () =>
 		createAzureModelConfig(
 			process.env.AZURE_OPENAI_AUDIO_LARGE_API_KEY,
 			process.env.AZURE_OPENAI_AUDIO_LARGE_ENDPOINT,
 			"gpt-4o-audio-preview",
 		),
-	"azure-gpt-4.1": () => ({
-		...createAzureModelConfig(
-			process.env.AZURE_OPENAI_41_API_KEY,
-			process.env.AZURE_OPENAI_41_ENDPOINT,
-			"gpt-4.1",
-		),
-		"max-tokens": 512,
-		"max-completion-tokens": 512,
-	}),
 	"azure-gpt-4.1-xlarge": () =>
 		createAzureModelConfig(
 			process.env.AZURE_OPENAI_XLARGE_API_KEY,
 			process.env.AZURE_OPENAI_XLARGE_ENDPOINT,
 			"gpt-4.1",
 		),
-	"gpt-5-chat": () => ({
-		...createAzureModelConfig(
-			process.env.AZURE_MYCELI_GPT5CHAT_API_KEY,
-			process.env.AZURE_MYCELI_GPT5CHAT_ENDPOINT,
-			"gpt-5-chat"
-		),
-		// "max-tokens": 1024,
-		"max-completion-tokens": 1024,
-	}),
 	"Cohere-command-r-plus-08-2024-jt": () => ({
 		provider: "openai",
 		"custom-host": process.env.AZURE_COMMAND_R_ENDPOINT,
@@ -227,11 +285,6 @@ export const portkeyConfig = {
 	}),
 	// Scaleway model configurations
 	"qwen3-235b-a22b-instruct-2507": () => createScalewayModelConfig(),
-	"qwen2.5-coder-32b-instruct": () =>
-		createScalewayModelConfig({
-			"max-tokens": 8000, // Set specific token limit for Qwen Coder
-			model: "qwen2.5-coder-32b-instruct",
-		}),
 	"llama-3.3-70b-instruct": () => createScalewayModelConfig(),
 	"deepseek-r1-distill-llama-70b": () => createScalewayModelConfig(),
 	"evil-mistral": () => createScalewayModelConfig(),
@@ -245,11 +298,6 @@ export const portkeyConfig = {
 	"mis-unity": () =>
 		createScalewayModelConfig({
 			retry: "0",
-		}),
-	"mistral-small-3.1-24b-instruct-2503": () =>
-		createScalewayModelConfig({
-			"max-tokens": 8192,
-			model: "mistral-small-3.1-24b-instruct-2503",
 		}),
 	// Nebius model configurations
 	"mistralai/Mistral-Nemo-Instruct-2407": () => createNebiusModelConfig({model: 'mistralai/Mistral-Nemo-Instruct-2407'}),
@@ -311,36 +359,11 @@ export const portkeyConfig = {
 		"vertex-model-id": "gemini-2.0-flash-thinking",
 		"strict-openai-compliance": "false",
 	}),
-	"gemini-2.5-flash-lite-vertex": () => ({
-		provider: "vertex-ai",
-		authKey: googleCloudAuth.getAccessToken,
-		"vertex-project-id": process.env.GCLOUD_PROJECT_ID,
-		"vertex-region": "us-central1",
-		"vertex-model-id": "gemini-2.5-flash-lite",
-		"strict-openai-compliance": "false",
-	}),
-	// "gemini-2.5-flash-lite": () => createApiNavyModelConfig({
-	//	model: "gemini-2.5-flash-lite"
-	// }), // Commented out - now using Vertex AI version
-	"gemini-2.5-flash-lite-search": () => ({
-		provider: "vertex-ai",
-		"vertex-project-id": process.env.GCLOUD_PROJECT_ID,
-		"vertex-region": "us-central1",
-		"vertex-model-id": "gemini-2.5-flash-lite",
-		"strict-openai-compliance": "false",
-	}),
 	"deepseek-ai/deepseek-r1-0528-maas": () => ({
 		provider: "openai",
 		authKey: googleCloudAuth.getAccessToken,
 		"custom-host": `https://us-central1-aiplatform.googleapis.com/v1/projects/${process.env.GCLOUD_PROJECT_ID}/locations/us-central1/endpoints/openapi`,
 		"strict-openai-compliance": "false",
-	}),
-	"deepseek-ai/deepseek-v3.1-maas": () => ({
-		provider: "openai",
-		authKey: googleCloudAuth.getAccessToken,
-		"custom-host": `https://us-west2-aiplatform.googleapis.com/v1/projects/${process.env.GCLOUD_PROJECT_ID}/locations/us-west2/endpoints/openapi`,
-		"strict-openai-compliance": "false",
-		model: "deepseek-ai/deepseek-v3.1-maas",
 	}),
 	"DeepSeek-V3-0324": () => createDeepSeekModelConfig(),
 	"MAI-DS-R1": () => createDeepSeekReasoningConfig(),
@@ -350,15 +373,6 @@ export const portkeyConfig = {
 	"eu.anthropic.claude-sonnet-4-20250514-v1:0": () => createBedrockLambdaModelConfig({
 		model: "eu.anthropic.claude-sonnet-4-20250514-v1:0",
 	}),
-	"amazon.nova-micro-v1:0": () => createBedrockLambdaModelConfig({
-		model: "awsbedrock/amazon.nova-micro-v1:0",
-	}),
-	"us.anthropic.claude-3-5-haiku-20241022-v1:0": () => createBedrockLambdaModelConfig({
-		model: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-	}),
-	"mistral.mistral-small-2402-v1:0": () => createBedrockLambdaModelConfig({
-		model: "mistral.mistral-small-2402-v1:0",
-	}),
 	"meta.llama3-1-8b-instruct-v1:0": () => createBedrockLambdaModelConfig({
 		model: "meta.llama3-1-8b-instruct-v1:0",
 	}),
@@ -367,20 +381,5 @@ export const portkeyConfig = {
 	}),
 	"us.meta.llama3-2-3b-instruct-v1:0": () => createBedrockLambdaModelConfig({
 		model: "us.meta.llama3-2-3b-instruct-v1:0",
-	}),
-	"us.meta.llama3-1-8b-instruct-v1:0": () => createBedrockLambdaModelConfig({
-		model: "us.meta.llama3-1-8b-instruct-v1:0",
-	}),
-	// Navy API endpoint
-	"o4-mini": () => createApiNavyModelConfig({
-		model: "o4-mini",
-		"max-tokens": 8192,
-	}),
-	"us.deepseek.r1-v1:0": () => createBedrockLambdaModelConfig({
-		model: "us.deepseek.r1-v1:0",
-		"max-tokens": 2000,
-	}),
-	"mistral.mistral-small-2402-v1:0": () => createBedrockLambdaModelConfig({
-		model: "mistral.mistral-small-2402-v1:0",
 	}),
 };

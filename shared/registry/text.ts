@@ -112,7 +112,14 @@ export const TEXT_COSTS = {
             completionTextTokens: fromDPMT(4.0),
         },
     ],
-    "openai/o4-mini": [ZERO_PRICE], // TODO: Add actual o4-mini pricing when available
+    "openai/o4-mini": [
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: fromDPMT(0.60),
+            promptCachedTokens: fromDPMT(0.25), // 58% discount for cached tokens
+            completionTextTokens: fromDPMT(2.40),
+        },
+    ],
     "gemini-2.5-flash-lite": [
         {
             date: PRICING_START_DATE,

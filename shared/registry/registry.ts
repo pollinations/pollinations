@@ -88,35 +88,7 @@ function sortDefinitions<T extends UsageConversionDefinition>(
     return definitions.sort((a, b) => b.date - a.date);
 }
 
-function getActiveCostDefinitionInternal<TP extends ModelRegistry>(
-    modelRegistry: TP,
-    modelId: keyof TP,
-    date: Date = new Date(),
-): CostDefinition | null {
-    const modelDefinition = modelRegistry[modelId];
-    if (!modelDefinition) return null;
-    for (const definition of modelDefinition) {
-        if (definition.date < date.getTime()) return definition;
-    }
-    return null;
-}
-
-function getActivePriceDefinitionInternal<
-    TP extends ModelRegistry,
-    TS extends ServiceRegistry<TP>,
->(
-    serviceRegistry: TS,
-    serviceId: keyof TS,
-    date: Date = new Date(),
-): PriceDefinition | null {
-    const serviceDefinition = serviceRegistry[serviceId];
-    if (!serviceDefinition) return null;
-    for (const definition of serviceDefinition.price) {
-        if (definition.date < date.getTime()) return definition;
-    }
-    return null;
-}
-
+// Helper: Convert token usage to dollar amounts
 function convertUsage(
     usage: TokenUsage,
     conversionDefinition: UsageConversionDefinition,
@@ -143,117 +115,6 @@ function convertUsage(
     return {
         unit: "USD",
         ...convertedUsage,
-    };
-}
-
-function calculateCostInternal<TP extends ModelRegistry>(
-    modelRegistry: TP,
-    modelId: keyof TP,
-    usage: TokenUsage,
-): UsageCost {
-    const currentCost = getActiveCostDefinitionInternal<TP>(
-        modelRegistry,
-        modelId,
-    );
-    if (!currentCost)
-        throw new Error(
-            `Failed to get current cost for model: ${modelId.toString()}`,
-        );
-    const usageCost = convertUsage(usage, currentCost);
-    const totalCost = safeRound(
-        Object.values(omit(usageCost, "unit")).reduce(
-            (total, cost) => total + cost,
-        ),
-        PRECISION,
-    );
-    return {
-        ...usageCost,
-        totalCost,
-    };
-}
-
-function calculatePriceInternal<
-    TP extends ModelRegistry,
-    TS extends ServiceRegistry<TP>,
->(serviceRegistry: TS, serviceId: keyof TS, usage: TokenUsage): UsagePrice {
-    const currentPrice = getActivePriceDefinitionInternal<TP, TS>(
-        serviceRegistry,
-        serviceId,
-    );
-    if (!currentPrice)
-        throw new Error(
-            `Failed to get current price for service: ${serviceId.toString()}`,
-        );
-    const usagePrice = convertUsage(usage, currentPrice);
-    const totalPrice = safeRound(
-        Object.values(omit(usagePrice, "unit")).reduce(
-            (total, price) => total + price,
-        ),
-        PRECISION,
-    );
-    return {
-        ...usagePrice,
-        totalPrice,
-    };
-}
-
-function isFreeServiceInternal<
-    TP extends ModelRegistry,
-    TS extends ServiceRegistry<TP>,
->(serviceRegistry: TS, serviceId: keyof TS): boolean {
-    const servicPriceDefinition = getActivePriceDefinitionInternal<TP, TS>(
-        serviceRegistry,
-        serviceId,
-    );
-    if (!servicPriceDefinition)
-        throw new Error(
-            `Failed to get current price for service: ${serviceId.toString()}`,
-        );
-    return Object.values(omit(servicPriceDefinition, "date")).every(
-        (rate) => rate === 0,
-    );
-}
-
-function calculateMarginsInternal<
-    TP extends ModelRegistry,
-    TS extends ServiceRegistry<TP>,
->(models: TP, services: TS, serviceId: keyof TS): ServiceMargins {
-    const serviceDefinition = services[serviceId];
-    const servicePriceDefinition = getActivePriceDefinitionInternal<TP, TS>(
-        services,
-        serviceId,
-    );
-    if (!servicePriceDefinition)
-        throw new Error(
-            `Failed to find price definition for service: ${serviceId.toString()}`,
-        );
-    const modelId = serviceDefinition.modelId;
-    const costDefinition = getActiveCostDefinitionInternal(models, modelId);
-    if (!costDefinition)
-        throw new Error(
-            `Failed to find cost definition for model: ${modelId.toString()}`,
-        );
-    return {
-        [modelId]: Object.fromEntries(
-            Object.keys(omit(costDefinition, "date")).map(
-                (usageType) => {
-                    const usageCost =
-                        costDefinition[usageType as UsageType];
-                    const usagePrice =
-                        servicePriceDefinition[usageType as UsageType];
-                    if (!usageCost || !usagePrice) {
-                        throw new Error(
-                            `Failed to find usage cost or price for model: ${modelId.toString()}`,
-                        );
-                    }
-                    // Units are always USD now, no need to check
-                    return [
-                        usageType,
-                        usagePrice - usageCost,
-                    ];
-                },
-            ),
-        ),
     };
 }
 
@@ -326,15 +187,12 @@ export function isValidService(
  * Check if a service is free (all pricing rates are 0)
  */
 export function isFreeService(serviceId: ServiceId): boolean {
-    const servicePriceDefinition = getActivePriceDefinitionInternal(
-        SERVICE_REGISTRY,
-        serviceId,
-    );
-    if (!servicePriceDefinition)
+    const priceDefinition = getActivePriceDefinition(serviceId);
+    if (!priceDefinition)
         throw new Error(
             `Failed to get current price for service: ${serviceId.toString()}`,
         );
-    return Object.values(omit(servicePriceDefinition, "date")).every(
+    return Object.values(omit(priceDefinition, "date")).every(
         (rate) => rate === 0,
     );
 }
@@ -374,8 +232,14 @@ export function getModelDefinition(modelId: ModelId): ModelDefinition {
  */
 export function getActiveCostDefinition(
     modelId: ModelId,
+    date: Date = new Date(),
 ): CostDefinition | null {
-    return getActiveCostDefinitionInternal(MODEL_REGISTRY, modelId);
+    const modelDefinition = MODEL_REGISTRY[modelId];
+    if (!modelDefinition) return null;
+    for (const definition of modelDefinition) {
+        if (definition.date < date.getTime()) return definition;
+    }
+    return null;
 }
 
 /**
@@ -383,11 +247,14 @@ export function getActiveCostDefinition(
  */
 export function getActivePriceDefinition(
     serviceId: ServiceId,
+    date: Date = new Date(),
 ): PriceDefinition | null {
-    return getActivePriceDefinitionInternal(
-        SERVICE_REGISTRY,
-        serviceId,
-    );
+    const serviceDefinition = SERVICE_REGISTRY[serviceId];
+    if (!serviceDefinition) return null;
+    for (const definition of serviceDefinition.price) {
+        if (definition.date < date.getTime()) return definition;
+    }
+    return null;
 }
 
 /**
@@ -397,7 +264,22 @@ export function calculateCost(
     modelId: ModelId,
     usage: TokenUsage,
 ): UsageCost {
-    return calculateCostInternal(MODEL_REGISTRY, modelId, usage);
+    const costDefinition = getActiveCostDefinition(modelId);
+    if (!costDefinition)
+        throw new Error(
+            `Failed to get current cost for model: ${modelId.toString()}`,
+        );
+    const usageCost = convertUsage(usage, costDefinition);
+    const totalCost = safeRound(
+        Object.values(omit(usageCost, "unit")).reduce(
+            (total, cost) => total + cost,
+        ),
+        PRECISION,
+    );
+    return {
+        ...usageCost,
+        totalCost,
+    };
 }
 
 /**
@@ -407,22 +289,61 @@ export function calculatePrice(
     serviceId: ServiceId,
     usage: TokenUsage,
 ): UsagePrice {
-    return calculatePriceInternal(
-        SERVICE_REGISTRY,
-        serviceId,
-        usage,
+    const priceDefinition = getActivePriceDefinition(serviceId);
+    if (!priceDefinition)
+        throw new Error(
+            `Failed to get current price for service: ${serviceId.toString()}`,
+        );
+    const usagePrice = convertUsage(usage, priceDefinition);
+    const totalPrice = safeRound(
+        Object.values(omit(usagePrice, "unit")).reduce(
+            (total, price) => total + price,
+        ),
+        PRECISION,
     );
+    return {
+        ...usagePrice,
+        totalPrice,
+    };
 }
 
 /**
  * Calculate profit margins for a service
  */
 export function calculateMargins(serviceId: ServiceId): ServiceMargins {
-    return calculateMarginsInternal(
-        MODEL_REGISTRY,
-        SERVICE_REGISTRY,
-        serviceId,
-    );
+    const serviceDefinition = SERVICE_REGISTRY[serviceId];
+    const priceDefinition = getActivePriceDefinition(serviceId);
+    if (!priceDefinition)
+        throw new Error(
+            `Failed to find price definition for service: ${serviceId.toString()}`,
+        );
+    const modelId = serviceDefinition.modelId;
+    const costDefinition = getActiveCostDefinition(modelId);
+    if (!costDefinition)
+        throw new Error(
+            `Failed to find cost definition for model: ${modelId.toString()}`,
+        );
+    return {
+        [modelId]: Object.fromEntries(
+            Object.keys(omit(costDefinition, "date")).map(
+                (usageType) => {
+                    const usageCost =
+                        costDefinition[usageType as UsageType];
+                    const usagePrice =
+                        priceDefinition[usageType as UsageType];
+                    if (!usageCost || !usagePrice) {
+                        throw new Error(
+                            `Failed to find usage cost or price for model: ${modelId.toString()}`,
+                        );
+                    }
+                    return [
+                        usageType,
+                        usagePrice - usageCost,
+                    ];
+                },
+            ),
+        ),
+    };
 }
 
 /**
@@ -456,6 +377,26 @@ export function createRegistry<
         ),
     );
     
+    // Helper to get active cost definition
+    const getActiveCost = (modelId: keyof TP, date = new Date()) => {
+        const modelDef = modelRegistry[modelId];
+        if (!modelDef) return null;
+        for (const def of modelDef) {
+            if (def.date < date.getTime()) return def;
+        }
+        return null;
+    };
+    
+    // Helper to get active price definition
+    const getActivePrice = (serviceId: keyof TS, date = new Date()) => {
+        const serviceDef = serviceRegistry[serviceId];
+        if (!serviceDef) return null;
+        for (const def of serviceDef.price) {
+            if (def.date < date.getTime()) return def;
+        }
+        return null;
+    };
+    
     return {
         resolveServiceId: (serviceId: string | null | undefined, eventType: EventType) => {
             if (!serviceId) {
@@ -467,16 +408,57 @@ export function createRegistry<
         },
         isValidModel: (modelId: keyof TP) => !!modelRegistry[modelId],
         isValidService: (serviceId: keyof TS | string) => !!serviceRegistry[serviceId],
-        isFreeService: (serviceId: keyof TS) => isFreeServiceInternal(serviceRegistry, serviceId),
+        isFreeService: (serviceId: keyof TS) => {
+            const priceDef = getActivePrice(serviceId);
+            if (!priceDef) throw new Error(`Failed to get price for service: ${serviceId.toString()}`);
+            return Object.values(omit(priceDef, "date")).every((rate) => rate === 0);
+        },
         getServices: () => Object.keys(serviceRegistry),
         getServiceDefinition: (serviceId: keyof TS) => serviceRegistry[serviceId],
         getModels: () => Object.keys(modelRegistry),
         getModelDefinition: (modelId: keyof TP) => modelRegistry[modelId],
-        getActiveCostDefinition: (modelId: keyof TP) => getActiveCostDefinitionInternal(modelRegistry, modelId),
-        getActivePriceDefinition: (serviceId: keyof TS) => getActivePriceDefinitionInternal(serviceRegistry, serviceId),
-        calculateCost: (modelId: keyof TP, usage: TokenUsage) => calculateCostInternal(modelRegistry, modelId, usage),
-        calculatePrice: (serviceId: keyof TS, usage: TokenUsage) => calculatePriceInternal(serviceRegistry, serviceId, usage),
-        calculateMargins: (serviceId: keyof TS) => calculateMarginsInternal(modelRegistry, serviceRegistry, serviceId),
+        getActiveCostDefinition: (modelId: keyof TP) => getActiveCost(modelId),
+        getActivePriceDefinition: (serviceId: keyof TS) => getActivePrice(serviceId),
+        calculateCost: (modelId: keyof TP, usage: TokenUsage) => {
+            const costDef = getActiveCost(modelId);
+            if (!costDef) throw new Error(`Failed to get cost for model: ${modelId.toString()}`);
+            const usageCost = convertUsage(usage, costDef);
+            const totalCost = safeRound(
+                Object.values(omit(usageCost, "unit")).reduce((total, cost) => total + cost),
+                PRECISION,
+            );
+            return { ...usageCost, totalCost };
+        },
+        calculatePrice: (serviceId: keyof TS, usage: TokenUsage) => {
+            const priceDef = getActivePrice(serviceId);
+            if (!priceDef) throw new Error(`Failed to get price for service: ${serviceId.toString()}`);
+            const usagePrice = convertUsage(usage, priceDef);
+            const totalPrice = safeRound(
+                Object.values(omit(usagePrice, "unit")).reduce((total, price) => total + price),
+                PRECISION,
+            );
+            return { ...usagePrice, totalPrice };
+        },
+        calculateMargins: (serviceId: keyof TS) => {
+            const serviceDef = serviceRegistry[serviceId];
+            const priceDef = getActivePrice(serviceId);
+            if (!priceDef) throw new Error(`Failed to find price for service: ${serviceId.toString()}`);
+            const modelId = serviceDef.modelId;
+            const costDef = getActiveCost(modelId);
+            if (!costDef) throw new Error(`Failed to find cost for model: ${modelId.toString()}`);
+            return {
+                [modelId]: Object.fromEntries(
+                    Object.keys(omit(costDef, "date")).map((usageType) => {
+                        const usageCost = costDef[usageType as UsageType];
+                        const usagePrice = priceDef[usageType as UsageType];
+                        if (!usageCost || !usagePrice) {
+                            throw new Error(`Failed to find usage cost or price for model: ${modelId.toString()}`);
+                        }
+                        return [usageType, usagePrice - usageCost];
+                    }),
+                ),
+            };
+        },
     };
 }
 

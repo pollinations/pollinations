@@ -4,8 +4,12 @@
  */
 
 import debug from "debug";
+import type { IMAGE_SERVICES } from "../../../shared/registry/image";
 
 const log = debug("pollinations:tracking-headers");
+
+// Type constraint: model names must exist in registry
+type ValidServiceName = keyof typeof IMAGE_SERVICES;
 
 export interface TrackingUsageData {
     // Vertex AI / Gemini usage format
@@ -33,12 +37,12 @@ export interface TrackingData {
 
 /**
  * Build tracking headers for the enter service
- * @param model - The requested model name
+ * @param model - The requested model name (must be a valid service from registry)
  * @param trackingData - Usage and moderation data from generation
  * @returns Headers object for HTTP response
  */
 export function buildTrackingHeaders(
-    model: string,
+    model: ValidServiceName,
     trackingData?: TrackingData
 ): Record<string, string> {
     const headers: Record<string, string> = {};
@@ -66,11 +70,11 @@ export function buildTrackingHeaders(
 
 /**
  * Extract token count for billing purposes
- * @param model - The model name
+ * @param model - The model name (must be a valid service from registry)
  * @param usage - Usage data from the model
  * @returns Token count for billing
  */
-export function extractTokenCount(model: string, usage?: TrackingUsageData): number {
+export function extractTokenCount(model: ValidServiceName, usage?: TrackingUsageData): number {
     if (model === 'nanobanana' && usage?.candidatesTokenCount) {
         return usage.candidatesTokenCount;
     }

@@ -166,8 +166,8 @@ const models: ModelDefinition[] = [
 	// },
 	{
 		name: "roblox-rp",
-		description: "Llama 3.1 8B Instruct (Scaleway)",
-		config: portkeyConfig["llama-3.1-8b-instruct"],
+		description: "Llama 3.1 8B Instruct (AWS Bedrock)",
+		config: portkeyConfig["us.meta.llama3-1-8b-instruct-v1:0"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "seed",
 		community: false,

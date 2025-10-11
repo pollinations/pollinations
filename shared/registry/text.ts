@@ -221,9 +221,9 @@ export const TEXT_SERVICES = {
     },
     "roblox-rp": {
         aliases: ["llama-roblox", "llama-fast-roblox"],
-        modelId: "llama-3.1-8b-instruct",
-        price: TEXT_COSTS["llama-3.1-8b-instruct"],
-        provider: "scaleway",
+        modelId: "us.meta.llama3-1-8b-instruct-v1:0",
+        price: TEXT_COSTS["us.meta.llama3-1-8b-instruct-v1:0"],
+        provider: "aws-bedrock",
     },
     "claudyclaude": {
         aliases: ["claude-3-5-haiku"],

@@ -27,12 +27,12 @@ export const IMAGE_COSTS = {
             completionImageTokens: fromDPMT(2000),
         },
     ],
-    // "nanobanana": [
-    //     {
-    //         date: PRICING_START_DATE,
-    //         completionImageTokens: fromDPMT(30000),
-    //     },
-    // ],
+    "nanobanana": [
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: fromDPMT(30000),
+        },
+    ],
     // "seedream": [
     //     // Estimated
     //     {
@@ -68,12 +68,12 @@ export const IMAGE_SERVICES = {
         price: IMAGE_COSTS["turbo"],
         provider: "pollinations",
     },
-    // "nanobanana": {
-    //     aliases: [],
-    //     modelId: "nanobanana",
-    //     // price: IMAGE_COSTS["nanobanana"],
-    //     provider: "vertex-ai",
-    // },
+    "nanobanana": {
+        aliases: [],
+        modelId: "nanobanana",
+        price: IMAGE_COSTS["nanobanana"],
+        provider: "vertex-ai",
+    },
     // "seedream": {
     //     aliases: [],
     //     modelId: "seedream",

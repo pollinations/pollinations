@@ -39,13 +39,13 @@ export const MODELS: ModelsConfig = {
         tier: "seed",
     },
 
-    // // Nano Banana - Gemini 2.5 Flash Image Preview via Vertex AI
-    // nanobanana: {
-    //     type: "vertex-ai",
-    //     enhance: false,
-    //     maxSideLength: 1024,
-    //     tier: "flower",
-    // },
+    // Nano Banana - Gemini 2.5 Flash Image Preview via Vertex AI
+    nanobanana: {
+        type: "vertex-ai",
+        enhance: false,
+        maxSideLength: 1024,
+        tier: "nectar",
+    },
 
     // // Seedream - ByteDance ARK API for high-quality image generation
     // seedream: {

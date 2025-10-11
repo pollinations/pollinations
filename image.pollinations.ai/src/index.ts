@@ -467,6 +467,10 @@ const checkCacheAndGenerate = async (
                     // 6 minute interval, 10 images per hour max
                     queueConfig = { interval: 360000 }; // 6 minute interval
                     logAuth(`${modelName} model - 6 minute interval, ${remaining}/${HOURLY_LIMIT} images remaining this hour`);
+                } else if (modelName === "gptimage") {
+                    // GPTImage model - 150 second interval with strict concurrency (cap=1, forceCap=true)
+                    queueConfig = { interval: 150000, cap: 1, forceCap: true, model: modelName };
+                    logAuth("GPTImage model - 150 second interval, cap=1 (forced)");
                 } else if (hasValidToken) {
                     // Token authentication for other models - 7s minimum interval with tier-based caps
                     queueConfig = { interval: 7000 }; // cap will be set by ipQueue based on tier
@@ -644,7 +648,13 @@ const server = http.createServer((req, res) => {
             Expires: "0",
         });
         
-        res.end(JSON.stringify(Object.keys(MODELS)));
+        // Filter out nectar-tier models from public /models list
+        // Users don't need to authenticate to see the list, so we only show accessible models
+        const publicModels = Object.entries(MODELS)
+            .filter(([_, config]) => config.tier !== "nectar")
+            .map(([name, _]) => name);
+        
+        res.end(JSON.stringify(publicModels));
         return;
     }
 

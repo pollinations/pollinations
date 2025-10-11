@@ -506,33 +506,35 @@ export async function convertToJpeg(buffer: Buffer): Promise<Buffer> {
  * @param {string} prompt - The prompt for image generation or editing
  * @param {Object} safeParams - The parameters for image generation or editing
  * @param {Object} userInfo - User authentication info object
- * @param {number} endpointIndex - The endpoint index to use (1 or 2)
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
  */
 const callAzureGPTImageWithEndpoint = async (
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
-    endpointIndex: number,
 ): Promise<ImageGenerationResult> => {
-    const apiKey = process.env[`GPT_IMAGE_${endpointIndex}_AZURE_API_KEY`];
-    let endpoint = process.env[`GPT_IMAGE_${endpointIndex}_ENDPOINT`];
+    const apiKey = process.env[`GPT_IMAGE_1_AZURE_API_KEY`];
+    let endpoint = process.env[`GPT_IMAGE_1_ENDPOINT`];
 
     if (!apiKey || !endpoint) {
         throw new Error(
-            `Azure API key or endpoint ${endpointIndex} not found in environment variables`,
+            `Azure API key or endpoint 1 not found in environment variables`,
         );
     }
 
     // Check if we need to use the edits endpoint instead of generations
     const isEditMode = safeParams.image && safeParams.image.length > 0;
+    
+    // Use gpt-image-1 (full version) if input images are provided, otherwise use gpt-image-1-mini
     if (isEditMode) {
+        // Replace model name with full version for edit mode
+        endpoint = endpoint.replace("gpt-image-1-mini", "gpt-image-1");
         // Replace 'generations' with 'edits' in the endpoint URL
         endpoint = endpoint.replace("/images/generations", "/images/edits");
-        logCloudflare(`Using Azure endpoint ${endpointIndex} in edit mode`);
+        logCloudflare(`Using Azure gpt-image-1 (full) in edit mode`);
     } else {
         logCloudflare(
-            `Using Azure endpoint ${endpointIndex} in generation mode`,
+            `Using Azure gpt-image-1-mini in generation mode`,
         );
     }
 
@@ -758,25 +760,10 @@ export const callAzureGPTImage = async (
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> => {
     try {
-        // Extract user tier with fallback to 'seed'
-        const userTier = userInfo.tier || "seed";
-
-        // Stage-based endpoint selection instead of random
-        // seed stage → GPT_IMAGE_1_ENDPOINT (standard endpoint)
-        // flower/nectar stage → GPT_IMAGE_2_ENDPOINT (advanced endpoint)
-        // const endpointIndex = (userTier === 'seed') ? 1 : 2;
-
-        const endpointIndex = Math.random() < 0.5 ? 1 : 2;
-        logCloudflare(
-            `Using Azure GPT Image endpoint ${endpointIndex} for user tier: ${userTier}`,
-            userInfo.userId ? `(userId: ${userInfo.userId})` : "(anonymous)",
-        );
-
         return await callAzureGPTImageWithEndpoint(
             prompt,
             safeParams,
-            userInfo,
-            endpointIndex,
+            userInfo
         );
     } catch (error) {
         logError("Error calling Azure GPT Image API:", error);

@@ -85,13 +85,6 @@ export const portkeyConfig: PortkeyConfigMap = {
 			process.env.AZURE_O4MINI_ENDPOINT,
 			"o4-mini",
 		),
-	
-	// Scaleway model configurations
-	"qwen2.5-coder-32b-instruct": () =>
-		createScalewayModelConfig({
-			"max-tokens": 8000,
-			model: "qwen2.5-coder-32b-instruct",
-		}),
 	"mistral-small-3.1-24b-instruct-2503": () =>
 		createScalewayModelConfig({
 			"max-tokens": 8192,
@@ -293,9 +286,16 @@ export const portkeyConfig: PortkeyConfigMap = {
 	}),
 	// Scaleway model configurations
 	"qwen3-235b-a22b-instruct-2507": () => createScalewayModelConfig(),
+	"qwen2.5-coder-32b-instruct": () =>
+		createScalewayModelConfig({
+			"max-tokens": 8000, // Set specific token limit for Qwen Coder
+			model: "qwen2.5-coder-32b-instruct",
+		}),
+	"llama-3.1-8b-instruct": () =>
+		createScalewayModelConfig({
+			model: "llama-3.1-8b-instruct",
+		}),
 	"llama-3.3-70b-instruct": () => createScalewayModelConfig(),
-	"deepseek-r1-distill-llama-70b": () => createScalewayModelConfig(),
-	"evil-mistral": () => createScalewayModelConfig(),
 	surscaleway: () => createScalewayModelConfig(),
 	"qwen-reasoning": () => createScalewayModelConfig(),
 	"openai-reasoning": () => createApiNavyModelConfig(),

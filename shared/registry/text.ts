@@ -104,6 +104,14 @@ export const TEXT_COSTS = {
             completionTextTokens: fromDPMT(0.6),
         },
     ],
+    "llama-3.1-8b-instruct": [
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: fromDPMT(0.15),
+            promptCachedTokens: fromDPMT(0.0375),
+            completionTextTokens: fromDPMT(0.6),
+        },
+    ],
     "us.anthropic.claude-3-5-haiku-20241022-v1:0": [
         {
             date: PRICING_START_DATE,
@@ -197,9 +205,9 @@ export const TEXT_SERVICES = {
     },
     "roblox-rp": {
         aliases: ["llama-roblox", "llama-fast-roblox"],
-        modelId: "us.meta.llama3-1-8b-instruct-v1:0",
-        price: TEXT_COSTS["us.meta.llama3-1-8b-instruct-v1:0"],
-        provider: "aws-bedrock",
+        modelId: "llama-3.1-8b-instruct",
+        price: TEXT_COSTS["llama-3.1-8b-instruct"],
+        provider: "scaleway",
     },
     "claudyclaude": {
         aliases: ["claude-3-5-haiku"],

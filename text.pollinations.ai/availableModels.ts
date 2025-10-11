@@ -163,17 +163,17 @@ const models: ModelDefinition[] = [
 	// 	output_modalities: ["text"],
 	// 	tools: true
 	// },
-	// {
-	// 	name: "roblox-rp",
-	// 	description: "Llama 3.1 8B Instruct (Cross-Region)",
-	// 	config: portkeyConfig["us.meta.llama3-1-8b-instruct-v1:0"],
-	// 	transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-	// 	tier: "seed",
-	// 	community: false,
-	// 	input_modalities: ["text"],
-	// 	output_modalities: ["text"],
-	// 	tools: true
-	// },
+	{
+		name: "roblox-rp",
+		description: "Llama 3.1 8B Instruct (Scaleway)",
+		config: portkeyConfig["llama-3.1-8b-instruct"],
+		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+		tier: "seed",
+		community: false,
+		input_modalities: ["text"],
+		output_modalities: ["text"],
+		tools: true
+	},
 	// {
 	// 	name: "claudyclaude",
 	// 	description: "Claude 3.5 Haiku",

@@ -3,6 +3,7 @@ import type {
     ServiceRegistry,
     UsageConversionDefinition,
 } from "./registry";
+import type { UserTier } from "./types";
 import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "./price-helpers";
 
 export const IMAGE_COSTS = {
@@ -55,36 +56,42 @@ export const IMAGE_SERVICES = {
         modelId: "flux",
         price: [ZERO_PRICE],
         provider: "pollinations",
+        tier: "seed" as UserTier,
     },
     "kontext": {
         aliases: [],
         modelId: "kontext",
         price: IMAGE_COSTS["kontext"],
         provider: "bpaigen",
+        tier: "seed" as UserTier,
     },
     "turbo": {
         aliases: [],
         modelId: "turbo",
         price: IMAGE_COSTS["turbo"],
         provider: "pollinations",
+        tier: "seed" as UserTier,
     },
     "nanobanana": {
         aliases: [],
         modelId: "nanobanana",
         price: IMAGE_COSTS["nanobanana"],
         provider: "vertex-ai",
+        tier: "nectar" as UserTier,
     },
     // "seedream": {
     //     aliases: [],
     //     modelId: "seedream",
     //     // price: IMAGE_COSTS["seedream"],
     //     provider: "bytedance-ark",
+    //     tier: "flower" as UserTier,
     // },
     "gptimage": {
         aliases: ["gpt-image", "gpt-image-1-mini"],
         modelId: "gptimage",
         price: IMAGE_COSTS["gptimage"],
         provider: "azure-openai",
+        tier: "seed" as UserTier,
     },
 } as const satisfies ServiceRegistry<typeof IMAGE_COSTS>;
 

@@ -30,21 +30,21 @@ export const IMAGE_COSTS = {
     "nanobanana": [
         {
             date: PRICING_START_DATE,
-            completionImageTokens: fromDPMT(30),
+            completionImageTokens: fromDPMT(30000),
         },
     ],
     "seedream": [
         // Estimated
         {
             date: PRICING_START_DATE,
-            completionImageTokens: fromDPMT(5000),
+            completionImageTokens: fromDPMT(30000),
         },
     ],
     "gptimage": [
         // Azure GPT Image model
         {
             date: PRICING_START_DATE,
-            completionImageTokens: fromDPMT(2500),
+            completionImageTokens: fromDPMT(10000),
         },
     ],
 } as const satisfies ModelRegistry;

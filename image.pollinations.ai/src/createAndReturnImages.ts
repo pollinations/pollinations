@@ -4,7 +4,8 @@ import { fileTypeFromBuffer } from "file-type";
 
 // Import shared authentication utilities
 import sharp from "sharp";
-import { hasSufficientTier } from "../../shared/tier-gating.js";
+import { requireTierAccess } from "../../shared/registry/registry.js";
+import type { UserTier } from "../../shared/registry/types.js";
 import {
     fetchFromLeastBusyFluxServer,
     getNextTurboServerUrl,
@@ -72,7 +73,7 @@ export type AuthResult = {
     reason: string;
     userId: string | null;
     username: string | null;
-    tier: string;
+    tier: UserTier;
     debugInfo: object;
 };
 
@@ -798,6 +799,9 @@ const generateImage = async (
     requestId: string,
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> => {
+    // Check tier access for the requested model (applies to all tier-gated models)
+    requireTierAccess(safeParams.model, userInfo.tier);
+    
     // Model selection strategy using a more functional approach
     
     // GPT Image model - gpt-image-1-mini
@@ -810,86 +814,71 @@ const generateImage = async (
                 : "No userInfo provided",
         );
 
-        // Restrict GPT Image model to users with seed tier or higher
-        if (!hasSufficientTier(userInfo.tier, "seed")) {
-            const errorText =
-                "Access to gptimage (gpt-image-1-mini) is currently limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai for tier upgrade information.";
-            logError(errorText);
-            progress.updateBar(
-                requestId,
-                35,
-                "Auth",
-                "GPT Image requires seed tier",
-            );
-            const error: any = new Error(errorText);
-            error.status = 403;
-            throw error;
-        } else {
-            // For gptimage model, always throw errors instead of falling back
-            progress.updateBar(
-                requestId,
-                30,
-                "Processing",
-                "Checking prompt safety...",
+        // For gptimage model, always throw errors instead of falling back
+        progress.updateBar(
+            requestId,
+            30,
+            "Processing",
+            "Checking prompt safety...",
+        );
+
+        try {
+            // Check prompt safety with Azure Content Safety
+            const promptSafetyResult = await analyzeTextSafety(prompt);
+
+            // Log the prompt with safety analysis results
+            await logGptImagePrompt(
+                prompt,
+                safeParams,
+                userInfo,
+                promptSafetyResult,
             );
 
-            try {
-                // Check prompt safety with Azure Content Safety
-                const promptSafetyResult = await analyzeTextSafety(prompt);
+            if (!promptSafetyResult.safe) {
+                const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
+                logError(
+                    "Azure Content Safety rejected prompt:",
+                    errorMessage,
+                );
+                progress.updateBar(
+                    requestId,
+                    100,
+                    "Error",
+                    "Prompt contains unsafe content",
+                );
 
-                // Log the prompt with safety analysis results
-                await logGptImagePrompt(
+                // Log the error with safety analysis results
+                const error = new Error(errorMessage);
+                await logGptImageError(
                     prompt,
                     safeParams,
                     userInfo,
+                    error,
                     promptSafetyResult,
                 );
-
-                if (!promptSafetyResult.safe) {
-                    const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
-                    logError(
-                        "Azure Content Safety rejected prompt:",
-                        errorMessage,
-                    );
-                    progress.updateBar(
-                        requestId,
-                        100,
-                        "Error",
-                        "Prompt contains unsafe content",
-                    );
-
-                    // Log the error with safety analysis results
-                    const error = new Error(errorMessage);
-                    await logGptImageError(
-                        prompt,
-                        safeParams,
-                        userInfo,
-                        error,
-                        promptSafetyResult,
-                    );
-                    throw error;
-                }
-
-                progress.updateBar(
-                    requestId,
-                    35,
-                    "Processing",
-                    "Trying Azure GPT Image (gpt-image-1-mini)...",
-                );
-                return await callAzureGPTImage(prompt, safeParams, userInfo);
-            } catch (error) {
-                // Log the error but don't fall back - propagate it to the caller
-                logError(
-                    "Azure GPT Image generation or safety check failed:",
-                    error.message,
-                );
-
-                await logGptImageError(prompt, safeParams, userInfo, error);
-
-                progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }
+
+            progress.updateBar(
+                requestId,
+                35,
+                "Processing",
+                "Trying Azure GPT Image (gpt-image-1-mini)...",
+            );
+            return await callAzureGPTImage(prompt, safeParams, userInfo);
+        } catch (error) {
+            // Log the error but don't fall back - propagate it to the caller
+            logError(
+                "Azure GPT Image generation or safety check failed:",
+                error.message,
+            );
+
+            await logGptImageError(prompt, safeParams, userInfo, error);
+
+            progress.updateBar(requestId, 100, "Error", error.message);
+            throw error;
         }
+
     }
 
     // Nano Banana - Gemini Image generation using Vertex AI
@@ -902,105 +891,73 @@ const generateImage = async (
                 : "No userInfo provided",
         );
 
-        // Restrict Nano Banana model to users with valid authentication (nectar tier)
-        if (!hasSufficientTier(userInfo.tier, "nectar")) {
-            const errorText =
-                "Access to nanobanana is currently limited to users in the nectar tier or higher. Please authenticate at https://auth.pollinations.ai for tier upgrade information.";
-            logError(errorText);
-            progress.updateBar(
-                requestId,
-                35,
-                "Auth",
-                "Nano Banana requires authorization",
-            );
-            const error: any = new Error(errorText);
-            error.status = 403;
-            throw error;
-        } else {
-            // For nanobanana model, always throw errors instead of falling back
-            progress.updateBar(
-                requestId,
-                30,
-                "Processing",
-                "Checking prompt safety...",
+        progress.updateBar(
+            requestId,
+            30,
+            "Processing",
+            "Checking prompt safety...",
+        );
+
+        try {
+            // Check prompt safety with Azure Content Safety
+            const promptSafetyResult = await analyzeTextSafety(prompt);
+
+            // Log the prompt with safety analysis results
+            await logGptImagePrompt(
+                prompt,
+                safeParams,
+                userInfo,
+                promptSafetyResult,
             );
 
-            try {
-                // Check prompt safety with Azure Content Safety
-                const promptSafetyResult = await analyzeTextSafety(prompt);
+            if (!promptSafetyResult.safe) {
+                const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
+                logError(
+                    "Azure Content Safety rejected prompt:",
+                    errorMessage,
+                );
+                progress.updateBar(
+                    requestId,
+                    100,
+                    "Error",
+                    "Prompt contains unsafe content",
+                );
 
-                // Log the prompt with safety analysis results
-                await logGptImagePrompt(
+                // Log the error with safety analysis results
+                const error = new Error(errorMessage);
+                await logGptImageError(
                     prompt,
                     safeParams,
                     userInfo,
+                    error,
                     promptSafetyResult,
                 );
-
-                if (!promptSafetyResult.safe) {
-                    const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
-                    logError(
-                        "Azure Content Safety rejected prompt:",
-                        errorMessage,
-                    );
-                    progress.updateBar(
-                        requestId,
-                        100,
-                        "Error",
-                        "Prompt contains unsafe content",
-                    );
-
-                    // Log the error with safety analysis results
-                    const error = new Error(errorMessage);
-                    await logGptImageError(
-                        prompt,
-                        safeParams,
-                        userInfo,
-                        error,
-                        promptSafetyResult,
-                    );
-                    throw error;
-                }
-
-                progress.updateBar(
-                    requestId,
-                    35,
-                    "Processing",
-                    "Generating with Nano Banana...",
-                );
-                return await callVertexAIGemini(prompt, safeParams, userInfo);
-            } catch (error) {
-                // Log the error but don't fall back - propagate it to the caller
-                logError(
-                    "Vertex AI Gemini image generation or safety check failed:",
-                    error.message,
-                );
-
-                await logGptImageError(prompt, safeParams, userInfo, error);
-
-                progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }
-        }
-    }
 
-    if (safeParams.model === "kontext") {
-        // Azure Flux Kontext model requires seed tier or higher
-        if (!hasSufficientTier(userInfo.tier, "seed")) {
-            const errorText =
-                "Access to kontext model is limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.";
-            logError(errorText);
             progress.updateBar(
                 requestId,
                 35,
-                "Auth",
-                "Kontext model requires seed tier",
+                "Processing",
+                "Generating with Nano Banana...",
             );
-            const error: any = new Error(errorText);
-            error.status = 403;
+            return await callVertexAIGemini(prompt, safeParams, userInfo);
+        } catch (error) {
+            // Log the error but don't fall back - propagate it to the caller
+            logError(
+                "Vertex AI Gemini image generation or safety check failed:",
+                error.message,
+            );
+
+            await logGptImageError(prompt, safeParams, userInfo, error);
+
+            progress.updateBar(requestId, 100, "Error", error.message);
             throw error;
         }
+    
+    }
 
+    if (safeParams.model === "kontext") {
         try {
             // Check prompt safety
             progress.updateBar(
@@ -1027,22 +984,6 @@ const generateImage = async (
     }
 
     if (safeParams.model === "seedream") {
-        // Seedream model requires nectar tier or higher (temporarily due to limited credits)
-        if (!hasSufficientTier(userInfo.tier, "nectar")) {
-            const errorText =
-                "Access to seedream model is currently limited to users in the nectar tier or higher due to limited credits. Seedream will be available again to seed tier users in the next few days. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.";
-            logError(errorText);
-            progress.updateBar(
-                requestId,
-                35,
-                "Auth",
-                "Seedream temporarily requires nectar tier",
-            );
-            const error: any = new Error(errorText);
-            error.status = 403;
-            throw error;
-        }
-
         try {
             // Use ByteDance ARK Seedream API for high-quality image generation
             return await callSeedreamAPI(prompt, safeParams, progress, requestId);

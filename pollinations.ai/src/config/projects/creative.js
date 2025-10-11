@@ -6,6 +6,7 @@
 export const creativeProjects = [
   {
     name: "PrisimIG 🎨",
+    stars: 1,
     url: "https://prisimai.github.io/PrisimIG",
     description: "Seamless AI-generated imagery with Pollinations.AI. An intuitive web application for generating high-quality images from text prompts in various styles (realistic, anime, cartoon, fantasy). Features multiple image sizes (256x256, 512x512, 1024x1024), batch generation of up to 5 images, and a clean user-friendly interface without requiring sign-ups or API keys.",
     author: "@CloudCompile",
@@ -68,6 +69,7 @@ export const creativeProjects = [
     name: "Imagen - AI Image Generator 🎨",
     stars: 9,
     stars: 9,
+    stars: 9,
     url: "https://altkriz.github.io/imagen/",
     description: "A beautiful, open-source web interface for generating AI images using the Pollinations.ai API. Features modern glass-morphism UI, local history storage, flux and turbo models, adjustable dimensions, seed control, and optional prompt enhancement. MIT licensed.",
     author: "@altkriz",
@@ -102,6 +104,7 @@ export const creativeProjects = [
   },
   {
     name: "DirPixel 🎨",
+    stars: 1,
     stars: 1,
     stars: 1,
     url: "https://github.com/techcow2/dir-pixel",
@@ -168,6 +171,7 @@ export const creativeProjects = [
     name: "aitoolbox.software 🛠️",
     stars: 45,
     stars: 45,
+    stars: 45,
     url: "https://aitoolbox.software/",
     description: "An open-source collection of AI-powered tools to boost your productivity and creativity.",
     author: "@huamanraj",
@@ -179,6 +183,7 @@ export const creativeProjects = [
     name: "Evolve AI 🤖",
     stars: 4,
     stars: 4,
+    stars: 4,
     url: "https://evolve-ai-gamma.vercel.app/",
     description: "Evolve AI is an intelligent assistant platform that brings together a variety of cutting-edge AI tools to simplify and automate user tasks. It integrates multiple APIs from Pollinations to enable features such as advanced text-to-speech, code generation, code editing, AI-based image generation, and more. The platform is designed to evolve with user needs, combining creativity and productivity into one cohesive experience.",
     author: "@chandankumarm55",
@@ -188,6 +193,7 @@ export const creativeProjects = [
   },
   {
     name: "What is this? ❔",
+    stars: 2,
     stars: 2,
     stars: 2,
     url: "https://whatisthis.pinkpixel.dev/",
@@ -282,6 +288,7 @@ export const creativeProjects = [
   {
     name: "CatGPT Meme Generator 🐱",
     stars: 3,
+    stars: 3,
     stars: 2,
     url: "https://pollinations.github.io/catgpt/",
     description: "Transform your questions into sassy cat wisdom! An AI-powered meme generator that creates personalized cat comics in response to your questions. A collaboration between Pollinations.AI and Tanika Godbole, the original creator of the CatGPT comic.",
@@ -351,6 +358,7 @@ export const creativeProjects = [
     name: "Pollinations.ai Image Generation (for Frame)",
     stars: 7,
     stars: 7,
+    stars: 7,
     url: "https://github.com/CitizenOneX/frame_pollinations",
     description: "A Flutter application that listens for image generation prompts, requests images from Pollinations.AI, and displays them on the Frame wearable device. Users can use voice commands to generate images and save/share them using the device's sharing mechanism.",
     author: "CitizenOneX",
@@ -395,6 +403,7 @@ export const creativeProjects = [
   },
   {
     name: "Dreamscape AI",
+    stars: 5,
     stars: 5,
     stars: 2,
     url: "https://dreamscape.pinkpixel.dev",
@@ -466,6 +475,7 @@ export const creativeProjects = [
   {
     name: "Elixpo Art Chrome Extension",
     stars: 44,
+    stars: 44,
     stars: 35,
     url: "https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh",
     description: "It uses the pollinations image endpoint to generate an image with `boltning` as the model in 4 types of aspect ratios and themes with prompt engineering thus transforming selected texts into art smoothly with a disposable GUI in web.",
@@ -477,6 +487,8 @@ export const creativeProjects = [
   },
   {
     name: "Imagen",
+    stars: 9,
+    stars: 9,
     stars: 9,
     stars: 9,
     stars: 9,
@@ -506,6 +518,7 @@ export const creativeProjects = [
   },
   {
     name: "MoneyPrinterTurbo",
+    stars: 46083,
     stars: 46063,
     stars: 39944,
     url: "https://github.com/harry0703/MoneyPrinterTurbo",
@@ -517,6 +530,7 @@ export const creativeProjects = [
   },
   {
     name: "Match-cut video ai",
+    stars: 17,
     stars: 17,
     stars: 17,
     url: "https://github.com/lrdcxdes/text-match-cut",
@@ -569,6 +583,7 @@ export const creativeProjects = [
   {
     name: "FoldaScan",
     stars: 268,
+    stars: 268,
     stars: 178,
     url: "https://fs.wen.bar",
     description: "Use Natural Language to \"Converse\" with Your Codebase, Folda-Scan Smart Project Q&A, powered by advanced vectorization technology, allows you to easily understand complex code, pinpoint information, and offers unprecedented convenience for AI collaboration.",
@@ -588,6 +603,7 @@ export const creativeProjects = [
   },
   {
     name: "MASala",
+    stars: 3,
     stars: 3,
     stars: 3,
     url: "https://github.com/Naman009/MASala",
@@ -645,6 +661,8 @@ export const creativeProjects = [
     stars: 9,
     stars: 9,
     stars: 9,
+    stars: 9,
+    stars: 9,
     url: "https://altkriz.github.io/imagen/",
     description: "A beautiful web interface for generating images using Pollinations.ai API with only the \"flux\" and \"turbo\" models.",
     author: "@altkriz",
@@ -673,6 +691,7 @@ export const creativeProjects = [
   },
   {
     name: "StorySight",
+    stars: 14,
     stars: 14,
     stars: 14,
     url: "https://github.com/tangg555/story-generation-demo",
@@ -709,6 +728,7 @@ export const creativeProjects = [
   },
   {
     name: "☬SHΞNΞRATOR 🎨",
+    stars: 3,
     stars: 3,
     stars: 3,
     url: "https://Shervinuri.github.io",

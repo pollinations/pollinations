@@ -33,6 +33,7 @@ import type { ProgressManager } from "./progressBar.ts";
 // Import model handlers
 import { callBPAIGenWithKontextFallback } from "./models/bpaigenModel.ts";
 import { callSeedreamAPI } from "./models/seedreamModel.ts";
+import { callAzureFluxKontext } from "./models/azureFluxKontextModel.ts";
 
 dotenv.config();
 
@@ -986,7 +987,7 @@ const generateImage = async (
     }
 
     if (safeParams.model === "kontext") {
-        // BPAIGen+Kontext hybrid model requires seed tier or higher
+        // Azure Flux Kontext model requires seed tier or higher
         if (!hasSufficientTier(userInfo.tier, "seed")) {
             const errorText =
                 "Access to kontext model is limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.";
@@ -1001,10 +1002,25 @@ const generateImage = async (
         }
 
         try {
-            // Use BPAIGen with Kontext fallback for enhanced reliability and quality
-            return await callBPAIGenWithKontextFallback(prompt, safeParams, progress, requestId);
+            // Check prompt safety
+            progress.updateBar(
+                requestId,
+                30,
+                "Processing",
+                "Checking prompt safety...",
+            );
+
+            // Use Azure Flux Kontext for image generation/editing
+            progress.updateBar(
+                requestId,
+                35,
+                "Processing",
+                "Generating with Azure Flux Kontext...",
+            );
+            return await callAzureFluxKontext(prompt, safeParams, userInfo);
         } catch (error) {
-            logError("Both BPAIGen and Kontext failed:", error.message);
+            logError("Azure Flux Kontext generation failed:", error.message);
+            await logGptImageError(prompt, safeParams, userInfo, error);
             progress.updateBar(requestId, 100, "Error", error.message);
             throw error;
         }

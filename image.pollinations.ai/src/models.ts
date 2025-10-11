@@ -23,11 +23,11 @@ export const MODELS: ModelsConfig = {
         tier : "seed",
     },
 
-    // BPAIGen with Kontext fallback - general purpose model
+    // Azure Flux Kontext - general purpose model
     kontext: {
-        type: "bpaigen-kontext",
+        type: "azure-flux-kontext",
         enhance: true,
-        maxSideLength: 1216, // BPAIGen's higher resolution capability
+        maxSideLength: 1024, // Azure Flux Kontext standard resolution
         tier: "seed",
     },
 
@@ -44,7 +44,7 @@ export const MODELS: ModelsConfig = {
         type: "vertex-ai",
         enhance: false,
         maxSideLength: 1024,
-        tier: "seed",
+        tier: "flower",
     },
 
     // Seedream - ByteDance ARK API for high-quality image generation

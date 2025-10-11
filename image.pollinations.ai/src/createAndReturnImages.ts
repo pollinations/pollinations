@@ -641,10 +641,11 @@ const callAzureGPTImageWithEndpoint = async (
                         throw error;
                     }
 
-                    // Determine file extension from Content-Type header
-                    const contentType =
+                    // Determine file extension and MIME type from Content-Type header
+                    let contentType =
                         imageResponse.headers.get("content-type") || "";
                     let extension = ".png"; // Default extension
+                    let mimeType = "image/png"; // Default MIME type
 
                     // Extract extension from content type (e.g., "image/jpeg" -> "jpeg")
                     if (contentType.startsWith("image/")) {
@@ -652,15 +653,21 @@ const callAzureGPTImageWithEndpoint = async (
                             .split("/")[1]
                             .split(";")[0]; // Handle cases like "image/jpeg; charset=utf-8"
                         extension = `.${mimeExtension}`;
+                        mimeType = `image/${mimeExtension}`;
+                    } else {
+                        // If content-type is not image/*, try to detect from URL or default to PNG
+                        logCloudflare(
+                            `Content-Type not detected as image (${contentType}), defaulting to image/png`,
+                        );
                     }
 
                     // Use the image[] array notation as required by Azure OpenAI API
-                    // Create a Blob from the already-read arrayBuffer instead of calling blob() again
-                    const imageBlob = new Blob([imageArrayBuffer], { type: contentType });
+                    // Create a Blob with explicit MIME type to avoid application/octet-stream
+                    const imageBlob = new Blob([imageArrayBuffer], { type: mimeType });
                     formData.append(
                         "image[]",
                         imageBlob,
-                        extension,
+                        `image${extension}`,
                     );
                 } catch (error) {
                     // More specific error handling for image processing

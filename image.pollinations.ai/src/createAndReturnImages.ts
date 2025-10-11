@@ -821,7 +821,9 @@ const generateImage = async (
                 "Auth",
                 "GPT Image requires seed tier",
             );
-            throw new Error(errorText);
+            const error: any = new Error(errorText);
+            error.status = 403;
+            throw error;
         } else {
             // For gptimage model, always throw errors instead of falling back
             progress.updateBar(
@@ -911,7 +913,9 @@ const generateImage = async (
                 "Auth",
                 "Nano Banana requires authorization",
             );
-            throw new Error(errorText);
+            const error: any = new Error(errorText);
+            error.status = 403;
+            throw error;
         } else {
             // For nanobanana model, always throw errors instead of falling back
             progress.updateBar(
@@ -992,7 +996,9 @@ const generateImage = async (
                 "Auth",
                 "Kontext model requires seed tier",
             );
-            throw new Error(errorText);
+            const error: any = new Error(errorText);
+            error.status = 403;
+            throw error;
         }
 
         try {
@@ -1032,7 +1038,9 @@ const generateImage = async (
                 "Auth",
                 "Seedream temporarily requires nectar tier",
             );
-            throw new Error(errorText);
+            const error: any = new Error(errorText);
+            error.status = 403;
+            throw error;
         }
 
         try {

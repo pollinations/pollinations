@@ -3,6 +3,7 @@
         "target": "esnext",
         "module": "esnext",
         "moduleResolution": "bundler",
+        "rootDirs": ["src", "../shared"],
         "lib": ["esnext", "dom", "dom.iterable"],
         "types": ["@cloudflare/vitest-pool-workers", "node", "vite/client"],
         "jsx": "react-jsx",
@@ -29,9 +30,10 @@
         "skipLibCheck": true,
         "baseUrl": ".",
         "paths": {
-            "@/*": ["src/*"]
+            "@/*": ["src/*"],
+            "@shared/*": ["../shared/*"]
         }
     },
-    "include": ["worker-configuration.d.ts", "src/**/*.ts", "src/**/*.tsx"],
+    "include": ["worker-configuration.d.ts", "src/**/*.ts", "src/**/*.tsx", "../shared/**/*.ts"],
     "exclude": ["node_modules", "dist"]
 }

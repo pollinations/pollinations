@@ -11,6 +11,8 @@ import { Button } from "../components/button.tsx";
 import { config } from "../config.ts";
 import { User } from "../components/user.tsx";
 import { PollenBalance } from "../components/pollen-balance.tsx";
+import { FAQ } from "../components/faq.tsx";
+import { Header } from "../components/header.tsx";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -53,7 +55,9 @@ function RouteComponent() {
     const handleCreateApiKey = async (formState: CreateApiKey) => {
         const createKeyDate = {
             name: formState.name,
-            description: formState.description,
+            metadata: {
+                description: formState.description,
+            },
         };
         const result = await auth.apiKey.create(createKeyDate);
         if (result.error) {
@@ -74,10 +78,9 @@ function RouteComponent() {
 
     return (
         <div className="flex flex-col gap-20">
-            <div className="flex justify-between gap-4">
-                <h1 className="flex-1">Pollinations.AI</h1>
-                <Button as="a" href="/api/docs">
-                    API Reference
+            <Header>
+                <Button as="a" href="/api/docs" weight="outline">
+                    API Docs →
                 </Button>
                 <User
                     githubUsername={user.githubUsername}
@@ -87,38 +90,15 @@ function RouteComponent() {
                         window.location.href = "/api/polar/customer/portal";
                     }}
                 />
-            </div>
+            </Header>
             <div className="flex flex-col gap-2">
-                <div className="flex justify-between gap-3">
-                    <h2 className="font-bold flex-1">Pollen</h2>
-                    <span className="text-3xl font-subheading">Add</span>
-                    <Button
-                        as={"a"}
-                        color="pink"
-                        weight="light"
-                        href="/api/polar/checkout/pollen-bundle-small"
-                        target="_blank"
-                    >
-                        10 $
-                    </Button>
-                    <Button
-                        as="a"
-                        color="blue"
-                        weight="light"
-                        href="/api/polar/checkout/pollen-bundle-medium"
-                        target="_blank"
-                    >
-                        25 $
-                    </Button>
-                    <Button
-                        as="a"
-                        color="red"
-                        weight="light"
-                        href="/api/polar/checkout/pollen-bundle-large"
-                        target="_blank"
-                    >
-                        50 $
-                    </Button>
+                <div className="flex flex-col sm:flex-row justify-between gap-3">
+                    <h2 className="font-bold flex-1">Balance</h2>
+                    <div className="flex gap-3">
+                        <Button as="a" color="pink" weight="light" href="/api/polar/checkout/pollen-bundle-small" target="_blank">+ $10</Button>
+                        <Button as="a" color="blue" weight="light" href="/api/polar/checkout/pollen-bundle-medium" target="_blank">+ $25</Button>
+                        <Button as="a" color="red" weight="light" href="/api/polar/checkout/pollen-bundle-large" target="_blank">+ $50</Button>
+                    </div>
                 </div>
                 <PollenBalance balance={balance} />
             </div>
@@ -127,6 +107,7 @@ function RouteComponent() {
                 onCreate={handleCreateApiKey}
                 onDelete={handleDeleteApiKey}
             />
+            <FAQ />
         </div>
     );
 }

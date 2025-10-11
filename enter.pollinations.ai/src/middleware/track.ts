@@ -1,5 +1,14 @@
 import { processEvents, storeEvents } from "@/events.ts";
-import { ProviderId, REGISTRY, ServiceId } from "@/registry/registry.ts";
+import { 
+    resolveServiceId,
+    isFreeService,
+    getActivePriceDefinition,
+    getModelDefinition,
+    calculateCost,
+    calculatePrice,
+    ServiceId,
+    ModelId
+} from "@shared/registry/registry.ts";
 import {
     ModelUsage,
     OpenAIResponse,
@@ -45,11 +54,11 @@ export const track = (eventType: EventType) =>
         const startTime = new Date();
 
         const modelRequested = await extractModelRequested(c);
-        const serviceOrDefault = REGISTRY.withFallbackService(
+        const resolvedModelRequested = resolveServiceId(
             modelRequested,
             eventType,
         );
-        const isFreeUsage = REGISTRY.isFreeService(serviceOrDefault);
+        const isFreeUsage = isFreeService(resolvedModelRequested);
 
         c.set("track", {
             modelRequested,
@@ -60,13 +69,15 @@ export const track = (eventType: EventType) =>
 
         const referrerInfo = extractReferrerInfo(c);
         const cacheInfo = extractCacheInfo(c);
-        const tokenPrice = REGISTRY.getActivePriceDefinition(serviceOrDefault);
+        const tokenPrice = getActivePriceDefinition(
+            resolvedModelRequested,
+        );
         if (!tokenPrice) {
             throw new Error(
-                `Failed to get price definition for model: ${serviceOrDefault}`,
+                `Failed to get price definition for model: ${resolvedModelRequested}`,
             );
         }
-        let openaiResponse, modelUsage, costType, cost, price;
+        let openaiResponse, modelUsage, cost, price;
         if (c.res.ok) {
             if (eventType === "generate.text") {
                 const body = await c.res.clone().json();
@@ -79,13 +90,20 @@ export const track = (eventType: EventType) =>
                     c,
                     openaiResponse,
                 );
-                costType = REGISTRY.getCostType(modelUsage.model as ProviderId);
-                cost = REGISTRY.calculateCost(
-                    modelUsage.model as ProviderId,
+                
+                // Validate model ID exists in registry before calculating cost
+                if (!getModelDefinition(modelUsage.model as ModelId)) {
+                    throw new Error(
+                        `Model '${modelUsage.model}' not found in registry. This indicates a bug - the model returned by the LLM is not configured for billing.`
+                    );
+                }
+                
+                cost = calculateCost(
+                    modelUsage.model as ModelId,
                     modelUsage.usage,
                 );
-                price = REGISTRY.calculatePrice(
-                    serviceOrDefault as ServiceId,
+                price = calculatePrice(
+                    resolvedModelRequested as ServiceId,
                     modelUsage.usage,
                 );
             } else {
@@ -114,7 +132,7 @@ export const track = (eventType: EventType) =>
             eventType,
 
             userId: c.var.auth.user?.id,
-            userTier: extractUserTier(c, openaiResponse),
+            userTier: extractUserTier(c),
             ...referrerInfo,
 
             modelRequested,
@@ -125,7 +143,6 @@ export const track = (eventType: EventType) =>
             ...usageToEventParams(modelUsage?.usage),
             ...extractContentFilterResults(eventType, openaiResponse),
 
-            costType,
             totalCost: cost?.totalCost || 0,
             totalPrice: price?.totalPrice || 0,
 
@@ -178,7 +195,7 @@ function extractUsage(
         
         // Read actual model used from x-model-used header
         const modelUsedHeader = c.res.headers.get("x-model-used");
-        const model = (modelUsedHeader || modelRequested || "flux") as ProviderId;
+        const model = (modelUsedHeader || modelRequested || "flux") as ModelId;
         
         return {
             model,
@@ -190,7 +207,7 @@ function extractUsage(
     }
     if (response) {
         return {
-            model: response?.model as ProviderId,
+            model: response?.model as ModelId,
             usage: transformOpenAIUsage(response.usage),
         };
     }
@@ -199,18 +216,8 @@ function extractUsage(
     );
 }
 
-function extractUserTier(
-    c: Context<TrackEnv>,
-    response?: OpenAIResponse,
-): string | undefined {
-    // Try header first (works for both image and text generations)
-    const headerTier = c.res.headers.get("x-user-tier");
-    if (headerTier) {
-        return headerTier;
-    }
-    
-    // Fall back to response object for text generations
-    return response?.user_tier;
+function extractUserTier(c: Context<TrackEnv>): string | undefined {
+    return c.var.auth.user?.tier;
 }
 
 function extractContentFilterResults(

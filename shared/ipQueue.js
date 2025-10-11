@@ -62,6 +62,26 @@ const seedreamTierCaps = {
     nectar: 2,    // Enhanced limit for nectar tier (same as nanobanana)
 };
 
+// Parse priority users from environment variable for special models (nanobanana and seedream)
+const parsePriorityUsers = () => {
+    const envVar = process.env.PRIORITY_MODEL_USERS;
+    if (!envVar) return new Map();
+    
+    const priorityUsers = new Map();
+    envVar.split(',').forEach(entry => {
+        const [username, limit] = entry.split(':');
+        priorityUsers.set(username.trim(), parseInt(limit) || 5); // Default to 5 concurrent if no limit specified
+    });
+    return priorityUsers;
+};
+
+const specialModelPriorityUsers = parsePriorityUsers();
+
+// Log priority users on startup for debugging
+if (specialModelPriorityUsers.size > 0) {
+    log('Special model priority users loaded (nanobanana & seedream): %o', Array.from(specialModelPriorityUsers.entries()));
+}
+
 /**
  * Enqueue a function to be executed based on IP address
  * Requests with valid tokens or from allowlisted domains bypass the queue
@@ -155,11 +175,23 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 	if (!forceCap) {
 		// Check if this is a special model that uses different tier multipliers
 		if (model === 'nanobanana') {
-			cap = nanobananaTierCaps[authResult.tier] || 1;
-			log('Using nanobanana tier-based cap: %d for tier: %s', cap, authResult.tier);
+			// Check if user is in priority list first
+			if (authResult.userId && specialModelPriorityUsers.has(authResult.userId)) {
+				cap = specialModelPriorityUsers.get(authResult.userId);
+				log('Using nanobanana priority user cap: %d for user: %s', cap, authResult.userId);
+			} else {
+				cap = nanobananaTierCaps[authResult.tier] || 1;
+				log('Using nanobanana tier-based cap: %d for tier: %s', cap, authResult.tier);
+			}
 		} else if (model === 'seedream') {
-			cap = seedreamTierCaps[authResult.tier] || 1;
-			log('Using seedream tier-based cap: %d for tier: %s (lowest limit for all tiers)', cap, authResult.tier);
+			// Check if user is in priority list first
+			if (authResult.userId && specialModelPriorityUsers.has(authResult.userId)) {
+				cap = specialModelPriorityUsers.get(authResult.userId);
+				log('Using seedream priority user cap: %d for user: %s', cap, authResult.userId);
+			} else {
+				cap = seedreamTierCaps[authResult.tier] || 1;
+				log('Using seedream tier-based cap: %d for tier: %s (lowest limit for all tiers)', cap, authResult.tier);
+			}
 		} else {
 			cap = tierCaps[authResult.tier] || 1;
 			log('Using tier-based cap: %d for tier: %s', cap, authResult.tier);

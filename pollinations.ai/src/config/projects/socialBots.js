@@ -33,14 +33,6 @@ export const socialBotsProjects = [
     order: 1
   },
   {
-    name: "Anyai",
-    url: "https://discord.gg/anyai",
-    description: "A Discord bot and community for AI-driven content.",
-    author: "@meow_18838",
-    submissionDate: "2025-05-05",
-    order: 5
-  },
-  {
     name: "Aura Chat Bot",
     description: "A chat bot integrating Pollinations API for text and image generation.",
     author: "@Py-Phoenix-PJS",
@@ -67,14 +59,6 @@ export const socialBotsProjects = [
     stars: 17
   },
   {
-    name: "Pollinations Telegram Assistant",
-    url: "https://t.me/pollinations_assistant_bot",
-    description: "An advanced Telegram bot that provides access to Pollinations AI services through a conversational interface with support for multiple languages.",
-    author: "@pollen_labs",
-    submissionDate: "2025-04-08",
-    order: 1
-  },
-  {
     name: "Pollinations WhatsApp Group",
     url: "https://chat.whatsapp.com/pollinations-ai",
     description: "A WhatsApp group bot that allows members to generate AI content through simple commands, making Pollinations accessible on mobile messaging.",
@@ -83,6 +67,7 @@ export const socialBotsProjects = [
     order: 2
   },
   {
+<<<<<<< HEAD
     name: "pollinations-tg-bot 🇨🇳",
     url: "https://t.me/pollinations_cn_bot",
     description: "Chinese language Telegram bot for Pollinations AI with specialized prompts for Eastern art styles and cultural references.",
@@ -129,6 +114,8 @@ export const socialBotsProjects = [
     order: 1
   },
   {
+=======
+>>>>>>> upstream/master
     name: "GPT_Project",
     url: "https://t.me/gpt_project_official_bot",
     description: "GPT_Project Telegram AI Chatbot - A professional productivity tool that's always in your pocket. Utilizes Pollinations API for image generation (including Flux model) and text models (GPT-4.1, GPT-4.1-nano, SearchGPT). Features advanced language model interaction, versatile image generation, AI-powered image analysis, voice message recognition, text-to-speech, and a referral system. Designed for studying, work, and everyday AI assistance.",

@@ -353,8 +353,8 @@ This endpoint follows the OpenAI Chat Completions API format for inputs where ap
 | `messages`                     | An array of message objects (`role`: `system`, `user`, `assistant`). Used for Chat, Vision, STT.                                                                   | Required for most tasks.                                                                                              |
 | `model`                        | The model identifier. See [Available Text Models](#list-available-text-models-).                                                                                 | Required. e.g., `openai` (Chat/Vision), `openai-large` (Vision), `claude-hybridspace` (Vision), `openai-audio` (STT). |
 | `seed`                         | Seed for reproducible results (Text Generation).                                                                                                                 | Optional.                                                                                                             |
-| `temperature`                  | Controls randomness in output. Higher values make output more random (Text Generation).                                                                          | Optional. Range: `0.0` to `3.0`.                                                                                      |
-| `top_p`                        | Nucleus sampling parameter. Controls diversity via cumulative probability (Text Generation).                                                                     | Optional. Range: `0.0` to `1.0`.                                                                                      |
+| `temperature`                  | Controls randomness in output. Higher values make output more random (Text Generation). **Note:** GPT-5 models only support default value (1).                   | Optional. Range: `0.0` to `3.0`.                                                                                      |
+| `top_p`                        | Nucleus sampling parameter. Controls diversity via cumulative probability (Text Generation). **Note:** Not supported by GPT-5 models.                            | Optional. Range: `0.0` to `1.0`.                                                                                      |
 | `presence_penalty`             | Penalizes tokens based on their presence in the text so far (Text Generation).                                                                                   | Optional. Range: `-2.0` to `2.0`.                                                                                     |
 | `frequency_penalty`            | Penalizes tokens based on their frequency in the text so far (Text Generation).                                                                                  | Optional. Range: `-2.0` to `2.0`.                                                                                     |
 | `stream`                       | If `true`, sends partial message deltas using SSE (Text Generation). Process chunks as per OpenAI streaming docs.                                                | Optional, default `false`.                                                                                            |
@@ -363,6 +363,7 @@ This endpoint follows the OpenAI Chat Completions API format for inputs where ap
 | `tool_choice`                  | Controls how the model uses tools.                                                                                                                               | Optional.                                                                                                             |
 | `private`                      | Set to `true` to prevent the response from appearing in the public feed.                                                                                         | Optional, default `false`.                                                                                            |
 | `referrer`                     | Referrer URL/Identifier. See [Referrer Section](#referrer).                                                                                                      | Optional.                                                                                                             |
+| `reasoning_effort`             | Controls internal reasoning depth for compatible models.                                                                                                         | Optional. Values: `minimal`, `low`, `medium`, `high`.                                                                 |
 
 <details>
 <summary><strong>Code Examples:</strong> Basic Chat Completion (POST)</summary>
@@ -378,6 +379,51 @@ curl https://text.pollinations.ai/openai \
     "seed": 42
   }'
 ```
+
+---
+
+**Reasoning Controls (Optional)**
+
+OpenAI does not expose the internal reasoning steps of any models, including the o-series and GPT-5 family. Instead, you can influence how long a reasoning-capable model thinks internally by using the `reasoning_effort` parameter.
+
+| Value   | Description                                                                  | Usage                                                                                           |
+| :------ | :--------------------------------------------------------------------------  | :---------------------------------------------------------------------------------------------- |
+| minimal | Minimal internal reasoning with the fewest reasoning tokens, fastest output  | Best for extraction tasks, simple reformatting, or deterministic operations                     |
+| low     | Slightly more reasoning than **minimal**, still prioritizes speed            | Useful for moderately simple tasks that benefit from limited reasoning                          |
+| medium  | Balanced trade-off between accuracy, reasoning depth, and latency            | Recommended for most general-purpose tasks that require moderate reasoning                      |
+| high    | Deep and layered reasoning, consumes more reasoning tokens and may be slower | Recommended for multi-step processes, complex planning, or tasks involving multiple tools      |
+
+
+Model Compatibility on Pollinations:
+
+The table below lists the Pollinations reasoning models that support the `reasoning_effort` parameter and their available ranges:
+
+| Reasoning Model       | Alias         | Supported Reasoning Effort  |
+| :-------------------- | :------------ | :-------------------------  |
+| `openai`              | `gpt-5-mini`  | `minimal` – `high`          |
+| `openai-fast`         | `gpt-5-nano`  | `minimal` – `high`          |
+| `openai-reasoning`    | `o4-mini`     | `low` – `high`              |
+
+> **Note:** The `minimal` level is only available for models in the GPT-5 family.
+
+> ⚠️ **Important:** Never ask reasoning models to reveal their system prompts or internal instructions. Such requests may violate content policy filters and result in errors.
+
+Example Usage:
+
+```sh
+curl https://text.pollinations.ai/openai \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "model": "openai",
+    "reasoning_effort": "minimal",
+    "messages": [
+      {"role": "user", "content": "Tell me about yourself."}
+    ]
+  }'
+```
+
+---
 
 **Python (`requests`):**
 
@@ -492,6 +538,8 @@ except Exception as e:
 `GET https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}`
 
 Generates speech audio from text using a simple GET request. This method is best suited for **short text snippets** due to URL length limitations and direct audio file return.
+
+> 💡 **Tip:** For verbatim text-to-speech, prefix your prompt with "Say verbatim:" or "Read exactly:" to get literal recitation instead of conversational responses.
 
 **Parameters:**
 
@@ -656,6 +704,7 @@ def transcribe_audio(audio_path, question="Transcribe this audio"):
 ```
 
 </details>
+
 ---
 
 # Vision Capabilities (Image Input) 🖼️➡️📝
@@ -1249,6 +1298,8 @@ For **frontend web applications** that call our APIs directly from the browser, 
 https://image.pollinations.ai/prompt/a%20beautiful%20landscape?referrer=mywebapp.com
 ```
 
+---
+
 #### Token
 
 For **backend services, scripts, and server applications**, tokens provide the highest priority access and are the **recommended method for non-browser environments**. Tokens can be provided using any of these methods:
@@ -1274,6 +1325,8 @@ curl https://text.pollinations.ai/openai \
     ]
   }'  
 ```
+
+---
 
 ### Tiers & Rate Limits
 

@@ -77,6 +77,7 @@ if [ ! -f ".dev.vars" ]; then
 # Generated from .env on $(date)
 GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID}
 GA_API_SECRET=${GA_API_SECRET}
+TINYBIRD_API_KEY=${TINYBIRD_API_KEY}
 EOF
   echo -e "${GREEN}.dev.vars file created for local development.${NC}"
 fi

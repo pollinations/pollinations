@@ -25,6 +25,7 @@ export const hackAndBuildProjects = [
     order: 1
   },
   {
+<<<<<<< HEAD
     name: "Pollinations OpenAI Proxy",
     stars: 1,
     stars: 1,
@@ -36,6 +37,8 @@ export const hackAndBuildProjects = [
     order: 1
   },
   {
+=======
+>>>>>>> upstream/master
     name: "Pollinations MCP Server (Official)",
     stars: 3016,
     stars: 2956,
@@ -56,15 +59,6 @@ export const hackAndBuildProjects = [
     author: "@pinkpixel-dev",
     repo: "https://github.com/pinkpixel-dev/MCPollinations",
     category: "sdkLibraries"
-  },
-  {
-    name: "Sequa MCP Server",
-    url: "https://mcp.sequa.ai/v1/pollinations/contribute",
-    description: "A Model Context Protocol server from Sequa.ai that provides deep knowledge of the Pollinations codebase. Offers documentation, context, and guidance to coding agents working on Pollinations projects. Configure MCP: https://mcp.sequa.ai/v1/pollinations/contribute",
-    author: "@sequa_ai",
-    category: "sdkLibraries",
-    submissionDate: "2025-08-24",
-    order: 1
   },
   {
     name: "pollinations_ai",

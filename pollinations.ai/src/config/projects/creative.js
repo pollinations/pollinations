@@ -5,6 +5,15 @@
 
 export const creativeProjects = [
   {
+    name: "PrisimIG 🎨",
+    url: "https://prisimai.github.io/PrisimIG",
+    description: "Seamless AI-generated imagery with Pollinations.AI. An intuitive web application for generating high-quality images from text prompts in various styles (realistic, anime, cartoon, fantasy). Features multiple image sizes (256x256, 512x512, 1024x1024), batch generation of up to 5 images, and a clean user-friendly interface without requiring sign-ups or API keys.",
+    author: "@CloudCompile",
+    repo: "https://github.com/PrisimAI/PrisimIG",
+    submissionDate: "2025-10-07",
+    order: 1
+  },
+  {
     name: "Imagine Draw AI 🎨",
     url: "https://imaginedrawai.vercel.app/",
     description: "Free AI image generator for creating unlimited images with text prompts. No login, no limits, 100% free. Fast real-time generation, browser-based, mobile-friendly. Perfect for students, designers, content creators - landscapes, characters, logos, backgrounds, and more.",
@@ -92,15 +101,6 @@ export const creativeProjects = [
     order: 1
   },
   {
-    name: "Imagine Draw AI 🎨",
-    url: "https://imaginedrawai.vercel.app/",
-    description: "A powerful and 100% free text-to-image generator. Just type your prompt and get stunning AI-generated images in seconds. No login, no subscriptions, and no limits—create as many images as you want! Ideal for designers, developers, marketers, content creators, and anyone exploring creative AI. Supports various styles, resolutions, and customization options to bring your ideas to life.",
-    author: "@techwithai-telugu",
-    repo: "https://github.com/TechWithAiTelugu",
-    submissionDate: "2025-10-02",
-    order: 1
-  },
-  {
     name: "DirPixel 🎨",
     stars: 1,
     stars: 1,
@@ -137,15 +137,6 @@ export const creativeProjects = [
     order: 1
   },
   {
-    name: "Pollinations AI Demo",
-    url: "https://pollinationsaidemo.netlify.app/",
-    description: "Images generator",
-    author: "@Wormix48",
-    repo: "https://github.com/Wormix48/Pollinations-AI-Demo",
-    submissionDate: "2025-09-17",
-    order: 1
-  },
-  {
     name: "🇧🇷 CapyUniverse - CapyIMG",
     url: "https://capyuniverse.pages.dev/capyimg.html",
     description: "Ferramenta simples para criar imagens com IA diretamente no navegador. O usuário escreve uma descrição (briefing), pode indicar elementos a evitar, escolher quantidade de imagens (1–4), formato (1:1, 16:9, 9:16, 4:3, 3:4) e tamanho. (Simple tool to create AI images directly in the browser. Users write a description, can specify elements to avoid, choose number of images (1–4), format ratios, and size.)",
@@ -162,14 +153,6 @@ export const creativeProjects = [
     author: "@cr7",
     submissionDate: "2025-09-06",
     language: "tr-TR",
-    order: 1
-  },
-  {
-    name: "Ai image generator 🎨",
-    url: "https://ris-imago.vercel.app/",
-    description: "A React-based AI image generator that transforms user prompts into high-quality images. It features custom controls for style, quality, and resolution, and offers user history.",
-    author: "rishabhmishra.81e@gmail.com",
-    submissionDate: "2025-09-06",
     order: 1
   },
   {
@@ -232,15 +215,6 @@ export const creativeProjects = [
     order: 1
   },
   {
-    name: "Imagine Draw AI 🎨",
-    url: "https://imaginedrawai.vercel.app/",
-    description: "This AI image was created for free using ImagineDraw AI a powerful tool to generate unlimited AI images with just a text prompt. No login, no limits, 100% free!",
-    author: "TechWithAiTelugu",
-    repo: "https://github.com/TechWithAiTelugu",
-    submissionDate: "2025-08-03",
-    order: 1
-  },
-  {
     name: "EzPromptla",
     url: "https://ezpromptla.netlify.app",
     description: "EzPromptla is an advanced visual prompt builder and creative partner designed to simplify high-quality AI image generation. It abstracts the complexity of prompt engineering by providing a category-driven interface (for automotive, portraits, products, etc.) and uses Google's Gemini model as a core reasoning engine to build, analyze, and refine user ideas into master-level prompts for Google Imagen.",
@@ -262,6 +236,14 @@ export const creativeProjects = [
     description: "Easily generate new images inspired by the Pexels website with embedded IPTC (title, description, keywords) on download. Find beautiful image inspiration from Pexels, create prompts from images, and generate new images with metadata embedded for immediate use in stock photography or upscaling.",
     author: "kengkreingkrai@gmail.com",
     submissionDate: "2025-06-23",
+    order: 1
+  },
+  {
+    name: "Dreamator-AI 🎨",
+    url: "https://dreamator-ai.vercel.app/",
+    description: "Transform your imagination into reality using Pollinations API. A creative image generation platform with a personal gallery of generated masterpieces.",
+    author: "@its3li",
+    submissionDate: "2025-06-27",
     order: 1
   },
   {
@@ -287,14 +269,6 @@ export const creativeProjects = [
     description: "A Deno Deploy API wrapper for Pollinations that provides JSON-formatted responses. Designed for applications that require JSON API integration with Pollinations services.",
     author: "@apersonwhomakesstuff",
     submissionDate: "2025-06-13",
-    order: 1
-  },
-  {
-    name: "MrEgonAI",
-    url: "https://mr-egon-ai.vercel.app/",
-    description: "An image generator powered by pollinations.ai and its image generation models. Features text-to-image generation with various AI models.",
-    author: "@mregon",
-    submissionDate: "2025-06-07",
     order: 1
   },
   {
@@ -335,14 +309,6 @@ export const creativeProjects = [
     order: 1
   },
   {
-    name: "Musify - AI Enhanced Music Streaming",
-    url: "https://musify-sd.vercel.app/",
-    description: "Musify is your AI-powered music buddy, making your jam sessions smarter and more fun. Powered by pollinations API, it offers AI Music Assistant, Voice Commands, AI Playlist Creator, and Responsive Design.",
-    author: "@Sugamdeol",
-    submissionDate: "2025-02-27",
-    order: 2
-  },
-  {
     name: "CalcuBite AI",
     url: "https://calcubite.vercel.app/",
     description: "CalcuBite AI is a smart tool that analyzes food from images to provide calorie and nutrient details. Just take a photo, and it quickly gives you an estimate of your meal's nutritional value. It uses AI for accurate analysis, and if you run out of free scans, you can watch an ad to get more!",
@@ -351,6 +317,7 @@ export const creativeProjects = [
     order: 1
   },
   {
+<<<<<<< HEAD
     name: "Elixpo Art",
     stars: 44,
     stars: 35,
@@ -370,6 +337,8 @@ export const creativeProjects = [
     order: 2
   },
   {
+=======
+>>>>>>> upstream/master
     name: "Generator AI Image 🇮🇩",
     url: "https://kenthir.my.id/advanced-generator/",
     description: "Advanced AI Image Generator adalah platform inovatif yang memungkinkan Anda membuat gambar digital menakjubkan dengan kecerdasan buatan by pollinations.ai. Dengan dukungan berbagai model AI canggih seperti DALL·E 3, Stable Diffusion, dan Flux-Default. (An innovative platform that allows you to create amazing digital images with artificial intelligence powered by pollinations.ai. Supports various advanced AI models like DALL-E 3, Stable Diffusion, and Flux-Default.)",
@@ -397,17 +366,6 @@ export const creativeProjects = [
     order: 1,
     category: "creativeApps",
     stars: 8
-  },
-  {
-    name: "Generator Text AI 🇮🇩",
-    url: "https://app.ariftirtana.my.id/",
-    description: "Text-to-image generator using Pollinations, supporting Indonesian and English prompts.",
-    author: "@ayick13",
-    repo: "https://github.com/ayick13/app",
-    stars: 1,
-    submissionDate: "2025-04-16",
-    language: "id-ID",
-    order: 2
   },
   {
     name: "NailsGen",
@@ -478,14 +436,6 @@ export const creativeProjects = [
     submissionDate: "2025-03-27",
     language: "zh-CN",
     order: 5
-  },
-  {
-    name: "Image Gen - Uncensored Edition",
-    url: "https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2",
-    description: "A powerful image generation assistant on HuggingChat.",
-    author: "@DeFactOfficial",
-    submissionDate: "2025-02-16",
-    order: 1
   },
   {
     name: "Own-AI",
@@ -585,6 +535,7 @@ export const creativeProjects = [
     order: 1
   },
   {
+<<<<<<< HEAD
     name: "Text2Image_audio 🇨🇳",
     stars: 185,
     stars: 0,
@@ -597,6 +548,8 @@ export const creativeProjects = [
     order: 1
   },
   {
+=======
+>>>>>>> upstream/master
     name: "Aiphoto智能绘画 🇨🇳",
     url: "https://qiyimg.3d.tc/Aiphoto",
     description: "AI艺术工坊 - 智能绘画生成器。这是一个基于AI的绘画生成工具，可以根据用户输入的中文描述自动生成相应的图片。(An AI art workshop - intelligent painting generator. This is an AI-based painting generation tool that can automatically generate images based on Chinese descriptions input by users.)",

@@ -6,15 +6,17 @@ type PollenBalanceProps = {
 
 export const PollenBalance: FC<PollenBalanceProps> = ({ balance }) => {
     return (
-        <div className="bg-emerald-100 rounded-2xl p-8 border border-emerald-200">
+        <div className="bg-emerald-100 rounded-2xl p-8 border border-pink-300">
             <div className="flex flex-col items-center text-center pb-1">
-                <p className="text-green-950">Balance</p>
-                <div className="flex">
+                <div className="flex items-baseline gap-2">
                     <span className="text-6xl font-subheading text-green-950 tabular-nums">
                         {balance.toLocaleString("en-US", {
-                            minimumFractionDigits: 4,
-                            maximumFractionDigits: 4,
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
                         })}
+                    </span>
+                    <span className="text-2xl font-subheading text-green-950">
+                        pollen
                     </span>
                 </div>
             </div>

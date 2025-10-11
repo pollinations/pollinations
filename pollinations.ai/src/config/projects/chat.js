@@ -22,15 +22,6 @@ export const chatProjects = [
     order: 1
   },
   {
-    name: "Hythme AI 🇸🇦",
-    url: "https://hythme.com",
-    description: "Arabic AI platform specialized in coding, social engineering, information technology, and cybersecurity education. Designed to help technical students increase their awareness and skills in IT fields.",
-    author: "@hythme",
-    submissionDate: "2025-06-26",
-    language: "ar",
-    order: 1
-  },
-  {
     name: "Petfuse Image Generator 🐾",
     url: "https://petfuse.xyz/",
     description: "Chat and generate images with custom seed control. Features a public gallery indexed by Google where all generated images are displayed. Simple interface for creating AI art with conversation.",
@@ -460,6 +451,14 @@ export const chatProjects = [
     description: "AI Dream Girl Studio is a content creation pipeline built around hyper-realistic AI-generated female characters. We use Pollinations to generate high-fidelity visuals of emotional, seductive, and stylized women in cinematic settings. These characters are brought to life through AI video animation, voiceovers, and storytelling to create viral social content for entertainment and monetization. Pollinations is the core engine behind our character design and visual style.",
     author: "https://www.tiktok.com/@herinyourhead",
     submissionDate: "2025-07-17",
+    order: 1
+  },
+  {
+    name: "NeonSpark AI ✨",
+    url: "https://neonspark-ai.web.app/",
+    description: "NeonSpark AI is a web app that offers AI-powered chat and image generation features. It provides users with an interface to interact via conversational AI (chat) as well as create images based on prompts.",
+    author: "developer.asaad@gmail.com",
+    submissionDate: "2025-10-04",
     order: 1
   }
 ];

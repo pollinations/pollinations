@@ -226,21 +226,32 @@ Body: messages*, model (set to "openai-audio"), voice (optional)
 2. Testing:
    - Add tests for new features in appropriate test directories
    - Follow existing test patterns in /test directories
+   - **Test with real production code, not mocks** - Tests should validate actual behavior
+   - Avoid creating mock infrastructure - use direct function imports instead
 
 3. Documentation:
    - Update API docs for new endpoints
    - Add JSDoc comments for new functions
    - Update README.md for user-facing changes
    - Keep this .mentat/README.md up to date with new features, functionality, or important project maintenance information
+   - **Avoid creating markdown documentation files while working** unless explicitly requested
+   - If temporary files are needed for testing/debugging, create them in a `temp/` folder clearly labeled as temporary
 
-4. Architecture Considerations:
+4. YAGNI Principle (You Aren't Gonna Need It):
+   - **Don't keep code for "potential futures"** - Only implement what's needed now
+   - Remove unused functions, even if they "might be useful someday"
+   - If we need something later, we'll add it when we actually need it
+   - Example: Don't create test utilities or helper functions "just in case"
+   - Keep the codebase minimal and focused on current requirements
+
+5. Architecture Considerations:
    - Frontend changes should be in pollinations.ai/
    - Image generation in image.pollinations.ai/
    - Text generation in text.pollinations.ai/
    - React components in pollinations-react/
    - AI assistant integrations in model-context-protocol/
 
-5. Security:
+6. Security:
    - Never expose API keys or secrets
    - Use environment variables for sensitive data
    - Implement proper input validation
@@ -291,4 +302,56 @@ Remember these principles when implementing changes or reviewing submissions.
 
 # Git Workflow
 - If the user asks to send to git or something similar do all these steps:
-- Git status, diff, create. branch. commit all, push and write a PR description
+- Git status, diff, create branch, commit all, push and write a PR description
+
+## PR Description Style Guide
+
+When creating PR descriptions, follow the concise style used by @eulervoid:
+
+**Key Principles:**
+1. **Bullet points over paragraphs** - Use "- Adds X", "- Fix Y" format
+2. **Minimal but clear** - 3-5 bullet points for most PRs
+3. **No marketing fluff** - Just the facts
+4. **Simple titles** - Clear, with optional prefix like "fix:", "feat:", "Add"
+
+**Reference Examples:**
+- Search GitHub for `repo:pollinations/pollinations author:eulervoid` to see style
+- Example PR: https://github.com/pollinations/pollinations/pull/4039
+  ```
+  - **Add logging and cost/price calculation**
+  - **Add models/services to registry**
+  - **Add tests for model/service registry and cost/price calculations**
+  - **Add fixtures for signIn and creating an api key, add tests for calling all defined models**
+  - **Add test to ensure only free services are available without API key**
+  - **Add tinybird cli to flake.nix**
+  ```
+
+**When to be more detailed:**
+- Complex architectural changes
+- Breaking changes
+- New features requiring explanation
+- But still keep it concise and structured
+
+## Contributor Attribution in PRs
+
+When addressing issues opened by external contributors:
+
+1. **Add Co-authored-by in commit messages**:
+   ```
+   docs: add reasoning model warning
+   
+   Addresses feedback from issue #1842
+   
+   Co-authored-by: withthatway <69885286+withthatway@users.noreply.github.com>
+   ```
+
+2. **Reference issues in PR descriptions**:
+   - Use "Fixes #issue" or "Addresses #issue" to link PRs to issues
+   - Mention the issue reporter by username when relevant
+   - This ensures contributors get proper credit in GitHub's contribution graph
+   - Keep descriptions concise (see @eulervoid's PR style above)
+
+3. **Finding contributor emails**:
+   - Use format: `{username} <{user_id}+{username}@users.noreply.github.com>`
+   - User ID can be found in the issue API response
+   - Example: `withthatway <69885286+withthatway@users.noreply.github.com>`

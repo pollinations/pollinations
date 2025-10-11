@@ -45,6 +45,7 @@ export const gamesProjects = [
     stars: 0
   },
   {
+<<<<<<< HEAD
     name: "Mindcraft",
     stars: 59,
     stars: 3500,
@@ -56,6 +57,8 @@ export const gamesProjects = [
     order: 1
   },
   {
+=======
+>>>>>>> upstream/master
     name: "Favorite Puzzles",
     url: "https://radbrothers.com/games/favorite-puzzles/",
     description: "A jigsaw puzzles game for Android, iOS, and web that uses Pollinations feed as one of the sources of images for puzzles. Features puzzle generation using neural networks, customizable difficulty levels from 6 to 1200 pieces, multiple game modes, and the ability to create puzzles from your own images.",
@@ -82,15 +85,6 @@ export const gamesProjects = [
     author: "@Amagash",
     repo: "https://github.com/Amagash/minecraft-ai-python",
     submissionDate: "2025-03-22",
-    order: 1
-  },
-  {
-    name: "Juego de Memorizar con Pollinations",
-    url: "https://memorizar-pollinations.vercel.app/",
-    description: "A memory game that uses Pollinations AI to generate unique image pairs for matching, with difficulty levels and educational themes.",
-    author: "@edudev_es",
-    language: "es",
-    submissionDate: "2025-04-18",
     order: 1
   },
   {

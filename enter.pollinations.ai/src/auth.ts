@@ -58,6 +58,11 @@ export function createAuth(env: Cloudflare.Env) {
                     type: "string",
                     input: false,
                 },
+                tier: {
+                    type: "string",
+                    defaultValue: "seed",
+                    input: false,
+                },
             },
         },
         socialProviders: {

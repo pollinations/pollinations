@@ -30,7 +30,25 @@ We are in profound need of members who can help enhance our documentation. If yo
 - Providing practical examples of how to use different features of pollinations.
 - Creating explanations for the underlying data science and ML principles.
 
-### 4. Code Contributions
+### 4. Build Apps with Pollinations (NEW! 🔥)
+
+Want to build something cool for Hacktoberfest? Check out our **[hacktoberfest-2025 folder](./hacktoberfest-2025/README.md)**! 
+
+**How it works:**
+1. **Propose your app idea** by creating a GitHub issue with `[Hacktoberfest App]` in the title
+2. Describe what you want to build and which Pollinations APIs you'll use
+3. Get feedback from maintainers
+4. Build your app and submit a PR
+
+Create apps using Pollinations APIs and get them featured. Each app lives in its own folder with clear docs. Perfect for:
+- Creative tools (meme generators, art tools)
+- Productivity apps (thumbnail creators, content generators)
+- Fun projects (games, quizzes)
+- Developer tools (API playgrounds, dashboards)
+
+See the [hacktoberfest-2025 README](./hacktoberfest-2025/README.md) for detailed guidelines and templates.
+
+### 5. Code Contributions
 
 If you're interested in coding, we enthusiastically welcome contributions in the following areas:
 
@@ -81,9 +99,12 @@ Once your pull request is merged, you will automatically be issued the badge!
 
 ## Guidelines
 
--   **Follow Coding Style:** Adhere to the existing coding style and conventions used within the project you are contributing to. Consistency is key!
--   **Clear Commit Messages:** Write clear, concise, and descriptive commit messages that explain the purpose of your changes.
--   **Well-Documented Changes:** Ensure your code is well-commented where necessary, and if you're making documentation contributions, strive for clarity and accuracy.
--   **Test Your Changes:** If applicable, write and run tests to ensure your changes work as expected and don't introduce new bugs.
+Follow the Coding Style: Write your code using the same style and rules that the project already uses. This helps keep the code consistent and easy to read for everyone.
 
-Thank you for your valuable contributions during Hacktoberfest 2025! Together, we can make the `Pollinations` project a powerful and valuable resource for the community. Happy Hacking!
+Write Clear Commit Messages: When saving your changes (committing), write messages that clearly and simply explain what you did and why.
+
+Document Your Changes Well: Add comments to your code where needed to explain how it works. If you are updating or adding documentation, make sure it is clear and accurate.
+
+Test Your Work: If you can, write and run tests to check that your changes work correctly and do not break anything else.
+
+Thank You! Thank you for contributing during Hacktoberfest 2025! Your help makes the Pollinations project stronger and more useful for the community. Happy coding!

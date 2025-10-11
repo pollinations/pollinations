@@ -3,7 +3,10 @@ import {
     getModelDefinition,
     calculateCost,
     calculatePrice,
-    isFreeService
+    isFreeService,
+    getRequiredTier,
+    canAccessService,
+    SERVICE_REGISTRY
 } from "../registry/registry.ts";
 import { fromDPMT, ZERO_PRICE, ZERO_PRICE_START_DATE, PRICING_START_DATE } from "../registry/price-helpers.ts";
 import { expect, test } from "vitest";
@@ -125,4 +128,95 @@ test("resolveServiceId should resolve aliases", async () => {
 test("getModelDefinition returns undefined for invalid model", async () => {
     // getModelDefinition returns undefined for missing models
     expect(getModelDefinition("invalid-model" as any)).toBeUndefined();
+});
+
+// Tier System Tests
+test("getRequiredTier should return correct tier for services", async () => {
+    // Test anonymous tier (free services)
+    expect(getRequiredTier("openai")).toBe("anonymous");
+    expect(getRequiredTier("openai-fast")).toBe("anonymous");
+    expect(getRequiredTier("qwen-coder")).toBe("anonymous");
+    
+    // Test seed tier (authenticated free)
+    expect(getRequiredTier("deepseek")).toBe("seed");
+    expect(getRequiredTier("gemini")).toBe("seed");
+    expect(getRequiredTier("flux")).toBe("seed");
+    
+    // Test flower tier
+    expect(getRequiredTier("mistral-naughty")).toBe("flower");
+    
+    // Test nectar tier
+    expect(getRequiredTier("nanobanana")).toBe("nectar");
+});
+
+test("getRequiredTier should throw for invalid service", async () => {
+    expect(() => getRequiredTier("invalid-service" as any))
+        .toThrow("Service not found");
+});
+
+test("canAccessService should enforce tier hierarchy", async () => {
+    // Anonymous tier can only access anonymous services
+    expect(canAccessService("openai", "anonymous")).toBe(true);
+    expect(canAccessService("flux", "anonymous")).toBe(false);
+    expect(canAccessService("nanobanana", "anonymous")).toBe(false);
+    
+    // Seed tier can access anonymous and seed
+    expect(canAccessService("openai", "seed")).toBe(true);
+    expect(canAccessService("flux", "seed")).toBe(true);
+    expect(canAccessService("mistral-naughty", "seed")).toBe(false);
+    expect(canAccessService("nanobanana", "seed")).toBe(false);
+    
+    // Flower tier can access anonymous, seed, and flower
+    expect(canAccessService("openai", "flower")).toBe(true);
+    expect(canAccessService("flux", "flower")).toBe(true);
+    expect(canAccessService("mistral-naughty", "flower")).toBe(true);
+    expect(canAccessService("nanobanana", "flower")).toBe(false);
+    
+    // Nectar tier can access all services
+    expect(canAccessService("openai", "nectar")).toBe(true);
+    expect(canAccessService("flux", "nectar")).toBe(true);
+    expect(canAccessService("mistral-naughty", "nectar")).toBe(true);
+    expect(canAccessService("nanobanana", "nectar")).toBe(true);
+});
+
+test("canAccessService should return false for invalid tiers", async () => {
+    // Invalid user tier
+    expect(canAccessService("openai", "invalid" as any)).toBe(false);
+});
+
+test("all services should have tier information", async () => {
+    // Verify every service has a tier field
+    const services = Object.entries(SERVICE_REGISTRY);
+    expect(services.length).toBeGreaterThan(0);
+    
+    for (const [serviceId, service] of services) {
+        expect(service.tier).toBeDefined();
+        expect(["anonymous", "seed", "flower", "nectar"]).toContain(service.tier);
+    }
+});
+
+test("tier hierarchy should be consistent across services", async () => {
+    // Group services by tier
+    const servicesByTier = {
+        anonymous: [] as string[],
+        seed: [] as string[],
+        flower: [] as string[],
+        nectar: [] as string[],
+    };
+    
+    for (const [serviceId, service] of Object.entries(SERVICE_REGISTRY)) {
+        servicesByTier[service.tier].push(serviceId);
+    }
+    
+    // Verify we have services at each tier level
+    expect(servicesByTier.anonymous.length).toBeGreaterThan(0); // Free tier services
+    expect(servicesByTier.seed.length).toBeGreaterThan(0); // Authenticated services
+    
+    // Log tier distribution for visibility
+    console.log("Service distribution by tier:", {
+        anonymous: servicesByTier.anonymous.length,
+        seed: servicesByTier.seed.length,
+        flower: servicesByTier.flower.length,
+        nectar: servicesByTier.nectar.length,
+    });
 });

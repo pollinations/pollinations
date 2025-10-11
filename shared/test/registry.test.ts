@@ -184,19 +184,11 @@ test("canAccessService should return false for invalid tiers", async () => {
     expect(canAccessService("openai", "invalid" as any)).toBe(false);
 });
 
-test("all services should have tier information", async () => {
-    // Verify every service has a tier (either explicit or defaults to anonymous)
+test("all services should have valid tier information", async () => {
+    // Verify every service has a valid tier and check distribution
     const services = Object.entries(SERVICE_REGISTRY);
     expect(services.length).toBeGreaterThan(0);
     
-    for (const [serviceId, service] of services) {
-        const tier = service.tier ?? "anonymous";
-        expect(["anonymous", "seed", "flower", "nectar"]).toContain(tier);
-    }
-});
-
-test("tier hierarchy should be consistent across services", async () => {
-    // Group services by tier (undefined defaults to anonymous)
     const servicesByTier = {
         anonymous: [] as string[],
         seed: [] as string[],
@@ -204,20 +196,13 @@ test("tier hierarchy should be consistent across services", async () => {
         nectar: [] as string[],
     };
     
-    for (const [serviceId, service] of Object.entries(SERVICE_REGISTRY)) {
+    for (const [serviceId, service] of services) {
         const tier = service.tier ?? "anonymous";
+        expect(["anonymous", "seed", "flower", "nectar"]).toContain(tier);
         servicesByTier[tier].push(serviceId);
     }
     
-    // Verify we have services at each tier level
-    expect(servicesByTier.anonymous.length).toBeGreaterThan(0); // Free tier services
-    expect(servicesByTier.seed.length).toBeGreaterThan(0); // Authenticated services
-    
-    // Log tier distribution for visibility
-    console.log("Service distribution by tier:", {
-        anonymous: servicesByTier.anonymous.length,
-        seed: servicesByTier.seed.length,
-        flower: servicesByTier.flower.length,
-        nectar: servicesByTier.nectar.length,
-    });
+    // Verify we have services at key tier levels
+    expect(servicesByTier.anonymous.length).toBeGreaterThan(0);
+    expect(servicesByTier.seed.length).toBeGreaterThan(0);
 });

@@ -94,8 +94,8 @@ const models: ModelDefinition[] = [
 	},
 	{
 		name: "mistral",
-		description: "Mistral Small 3.1 24B",
-		config: portkeyConfig["mistral-small-3.1-24b-instruct-2503"],
+		description: "Mistral Small 3.2 24B (Scaleway)",
+		config: portkeyConfig["mistral-small-3.2-24b-instruct-2506"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "anonymous",
 		community: false,

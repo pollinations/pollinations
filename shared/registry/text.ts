@@ -72,6 +72,14 @@ export const TEXT_COSTS = {
             completionTextTokens: fromDPMT(0.8),
         },
     ],
+    "mistral-small-3.2-24b-instruct-2506": [
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: fromDPMT(0.2),
+            promptCachedTokens: fromDPMT(0.05),
+            completionTextTokens: fromDPMT(0.6),
+        },
+    ],
     "mistral.mistral-small-2402-v1:0": [
         {
             date: PRICING_START_DATE,
@@ -188,9 +196,9 @@ export const TEXT_SERVICES = {
         provider: "scaleway",
     },
     "mistral": {
-        aliases: ["mistral-small-3.1-24b-instruct", "mistral-small-3.1-24b-instruct-2503"],
-        modelId: "mistral-small-3.1-24b-instruct-2503",
-        price: TEXT_COSTS["mistral-small-3.1-24b-instruct-2503"],
+        aliases: ["mistral-small-3.1-24b-instruct", "mistral-small-3.1-24b-instruct-2503", "mistral-small-3.2-24b-instruct-2506"],
+        modelId: "mistral-small-3.2-24b-instruct-2506",
+        price: TEXT_COSTS["mistral-small-3.2-24b-instruct-2506"],
         provider: "scaleway",
     },
     "mistral-naughty": {

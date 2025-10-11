@@ -90,6 +90,11 @@ export const portkeyConfig: PortkeyConfigMap = {
 			"max-tokens": 8192,
 			model: "mistral-small-3.1-24b-instruct-2503",
 		}),
+	"mistral-small-3.2-24b-instruct-2506": () =>
+		createScalewayModelConfig({
+			"max-tokens": 8192,
+			model: "mistral-small-3.2-24b-instruct-2506",
+		}),
 	
 	// AWS Bedrock Lambda configurations
 	"mistral.mistral-small-2402-v1:0": () => createBedrockLambdaModelConfig({

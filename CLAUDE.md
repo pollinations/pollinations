@@ -302,6 +302,34 @@ Remember these principles when implementing changes or reviewing submissions.
 - If the user asks to send to git or something similar do all these steps:
 - Git status, diff, create branch, commit all, push and write a PR description
 
+## PR Description Style Guide
+
+When creating PR descriptions, follow the concise style used by @eulervoid:
+
+**Key Principles:**
+1. **Bullet points over paragraphs** - Use "- Adds X", "- Fix Y" format
+2. **Minimal but clear** - 3-5 bullet points for most PRs
+3. **No marketing fluff** - Just the facts
+4. **Simple titles** - Clear, with optional prefix like "fix:", "feat:", "Add"
+
+**Reference Examples:**
+- Search GitHub for `repo:pollinations/pollinations author:eulervoid` to see style
+- Example PR: https://github.com/pollinations/pollinations/pull/4039
+  ```
+  - **Add logging and cost/price calculation**
+  - **Add models/services to registry**
+  - **Add tests for model/service registry and cost/price calculations**
+  - **Add fixtures for signIn and creating an api key, add tests for calling all defined models**
+  - **Add test to ensure only free services are available without API key**
+  - **Add tinybird cli to flake.nix**
+  ```
+
+**When to be more detailed:**
+- Complex architectural changes
+- Breaking changes
+- New features requiring explanation
+- But still keep it concise and structured
+
 ## Contributor Attribution in PRs
 
 When addressing issues opened by external contributors:
@@ -319,6 +347,7 @@ When addressing issues opened by external contributors:
    - Use "Fixes #issue" or "Addresses #issue" to link PRs to issues
    - Mention the issue reporter by username when relevant
    - This ensures contributors get proper credit in GitHub's contribution graph
+   - Keep descriptions concise (see @eulervoid's PR style above)
 
 3. **Finding contributor emails**:
    - Use format: `{username} <{user_id}+{username}@users.noreply.github.com>`

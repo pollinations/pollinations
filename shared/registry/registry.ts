@@ -399,3 +399,26 @@ export function canAccessService(
     
     return userLevel >= requiredLevel;
 }
+
+/**
+ * Enforce tier access for a service, throwing a 403 error if access is denied
+ * @param serviceId - The service ID to check
+ * @param userTier - The user's tier level
+ * @param customMessage - Optional custom error message (defaults to standard message)
+ * @throws Error with status 403 if user lacks sufficient tier access
+ */
+export function requireTierAccess(
+    serviceId: ServiceId,
+    userTier: UserTier,
+    customMessage?: string,
+): void {
+    if (!canAccessService(serviceId, userTier)) {
+        const requiredTier = getRequiredTier(serviceId);
+        const message = customMessage || 
+            `Access to ${serviceId} is limited to users in the ${requiredTier} tier or higher. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.`;
+        
+        const error: any = new Error(message);
+        error.status = 403;
+        throw error;
+    }
+}

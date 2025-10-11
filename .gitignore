@@ -218,6 +218,9 @@ web_modules/
 .rts2_cache_es/
 .rts2_cache_umd/
 
+# Vite cache
+.vite/
+
 # Optional REPL history
 .node_repl_history
 

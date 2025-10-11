@@ -4,6 +4,7 @@ import Header from "./Home/Header.jsx";
 import Footer from "./Home/Footer.jsx";
 import Home from "./Home/index.jsx";
 import Terms from "./Home/Terms.jsx";
+import ProjectsDiscovery from "./components/ProjectsDiscovery";
 import { trackEvent } from "./config/analytics";
 import { ThemeProvider } from "@mui/material/styles";
 import { theme } from "./styles/theme";
@@ -39,6 +40,12 @@ const AppRoutes = [
         path: "/",
         element: <Home />,
         key: "home",
+    },
+    {
+        exact: true,
+        path: "/projects",
+        element: <ProjectsDiscovery />,
+        key: "projects",
     },
     {
         exact: true,

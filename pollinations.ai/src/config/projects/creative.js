@@ -6,6 +6,7 @@
 export const creativeProjects = [
   {
     name: "PrisimIG 🎨",
+    stars: 1,
     url: "https://prisimai.github.io/PrisimIG",
     description: "Seamless AI-generated imagery with Pollinations.AI. An intuitive web application for generating high-quality images from text prompts in various styles (realistic, anime, cartoon, fantasy). Features multiple image sizes (256x256, 512x512, 1024x1024), batch generation of up to 5 images, and a clean user-friendly interface without requiring sign-ups or API keys.",
     author: "@CloudCompile",
@@ -66,6 +67,9 @@ export const creativeProjects = [
   },
   {
     name: "Imagen - AI Image Generator 🎨",
+    stars: 9,
+    stars: 9,
+    stars: 9,
     url: "https://altkriz.github.io/imagen/",
     description: "A beautiful, open-source web interface for generating AI images using the Pollinations.ai API. Features modern glass-morphism UI, local history storage, flux and turbo models, adjustable dimensions, seed control, and optional prompt enhancement. MIT licensed.",
     author: "@altkriz",
@@ -100,6 +104,9 @@ export const creativeProjects = [
   },
   {
     name: "DirPixel 🎨",
+    stars: 1,
+    stars: 1,
+    stars: 1,
     url: "https://github.com/techcow2/dir-pixel",
     description: "Sometimes creators need to replace multiple images in a directory with new ones. This tool makes it easy by scanning all images in a specified directory, then allowing you to replace them with new AI-generated images by setting either a custom prompt for individual images or a global prompt for the entire directory. Features PyQt6 GUI, maintains original filenames, supports PNG/JPG formats with automatic conversion, and provides real-time progress tracking.",
     author: "@techcow2",
@@ -162,6 +169,9 @@ export const creativeProjects = [
   },
   {
     name: "aitoolbox.software 🛠️",
+    stars: 45,
+    stars: 45,
+    stars: 45,
     url: "https://aitoolbox.software/",
     description: "An open-source collection of AI-powered tools to boost your productivity and creativity.",
     author: "@huamanraj",
@@ -171,6 +181,9 @@ export const creativeProjects = [
   },
   {
     name: "Evolve AI 🤖",
+    stars: 4,
+    stars: 4,
+    stars: 4,
     url: "https://evolve-ai-gamma.vercel.app/",
     description: "Evolve AI is an intelligent assistant platform that brings together a variety of cutting-edge AI tools to simplify and automate user tasks. It integrates multiple APIs from Pollinations to enable features such as advanced text-to-speech, code generation, code editing, AI-based image generation, and more. The platform is designed to evolve with user needs, combining creativity and productivity into one cohesive experience.",
     author: "@chandankumarm55",
@@ -180,6 +193,9 @@ export const creativeProjects = [
   },
   {
     name: "What is this? ❔",
+    stars: 2,
+    stars: 2,
+    stars: 2,
     url: "https://whatisthis.pinkpixel.dev/",
     description: "A fun AI-powered object identification tool that helps you identify mysterious objects with just a photo upload. Uses advanced AI vision to analyze photos and tell you exactly what that mysterious object is and what it's used for, plus provides interesting facts about the object.",
     author: "@sizzlebop",
@@ -271,11 +287,13 @@ export const creativeProjects = [
   },
   {
     name: "CatGPT Meme Generator 🐱",
+    stars: 3,
+    stars: 3,
+    stars: 2,
     url: "https://pollinations.github.io/catgpt/",
     description: "Transform your questions into sassy cat wisdom! An AI-powered meme generator that creates personalized cat comics in response to your questions. A collaboration between Pollinations.AI and Tanika Godbole, the original creator of the CatGPT comic.",
     author: "@voodoohop",
     repo: "https://github.com/pollinations/catgpt",
-    stars: 2,
     submissionDate: "2025-06-05",
     order: 1
   },
@@ -306,6 +324,28 @@ export const creativeProjects = [
     order: 1
   },
   {
+<<<<<<< HEAD
+    name: "Elixpo Art",
+    stars: 44,
+    stars: 35,
+    url: "https://elixpoart.vercel.app",
+    description: "A Web interface to create thematic images from prompts, with multiple aspect ratios and also image reference inputs.",
+    author: "Ayushman Bhattacharya",
+    repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter",
+    submissionDate: "2025-03-31",
+    order: 1
+  },
+  {
+    name: "Case Me 🇧🇷",
+    description: "A vending machine that creates customized phone cases with photos or other images and colors chosen by the end customer.",
+    author: "anaboxmania@gmail.com",
+    submissionDate: "2025-03-19",
+    language: "pt-BR",
+    order: 2
+  },
+  {
+=======
+>>>>>>> upstream/master
     name: "Generator AI Image 🇮🇩",
     url: "https://kenthir.my.id/advanced-generator/",
     description: "Advanced AI Image Generator adalah platform inovatif yang memungkinkan Anda membuat gambar digital menakjubkan dengan kecerdasan buatan by pollinations.ai. Dengan dukungan berbagai model AI canggih seperti DALL·E 3, Stable Diffusion, dan Flux-Default. (An innovative platform that allows you to create amazing digital images with artificial intelligence powered by pollinations.ai. Supports various advanced AI models like DALL-E 3, Stable Diffusion, and Flux-Default.)",
@@ -316,11 +356,13 @@ export const creativeProjects = [
   },
   {
     name: "Pollinations.ai Image Generation (for Frame)",
+    stars: 7,
+    stars: 7,
+    stars: 7,
     url: "https://github.com/CitizenOneX/frame_pollinations",
     description: "A Flutter application that listens for image generation prompts, requests images from Pollinations.AI, and displays them on the Frame wearable device. Users can use voice commands to generate images and save/share them using the device's sharing mechanism.",
     author: "CitizenOneX",
     repo: "https://github.com/CitizenOneX/frame_pollinations",
-    stars: 7,
     submissionDate: "2025-04-13",
     order: 1
   },
@@ -361,11 +403,13 @@ export const creativeProjects = [
   },
   {
     name: "Dreamscape AI",
+    stars: 5,
+    stars: 5,
+    stars: 2,
     url: "https://dreamscape.pinkpixel.dev",
     description: "Dreamscape AI is a creative studio for generating, enhancing, and transforming images, plus conversational AI capabilities with text and voice interfaces, and a deep research tool. The entire site is almost all powered by Pollinations API aside from the image enhancement tools. It generates images, optimizes prompts and creates image titles with the text API, features lots of image styling prompts, also has chat and voice chat with chat memory, and a research tool.",
     author: "@sizzlebop",
     repo: "https://github.com/pinkpixel-dev/dreamscape-ai",
-    stars: 2,
     submissionDate: "2025-05-02",
     order: 1
   },
@@ -430,6 +474,9 @@ export const creativeProjects = [
   },
   {
     name: "Elixpo Art Chrome Extension",
+    stars: 44,
+    stars: 44,
+    stars: 35,
     url: "https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh",
     description: "It uses the pollinations image endpoint to generate an image with `boltning` as the model in 4 types of aspect ratios and themes with prompt engineering thus transforming selected texts into art smoothly with a disposable GUI in web.",
     author: "Ayushman Bhatacharya",
@@ -440,6 +487,11 @@ export const creativeProjects = [
   },
   {
     name: "Imagen",
+    stars: 9,
+    stars: 9,
+    stars: 9,
+    stars: 9,
+    stars: 9,
     url: "https://altkriz.github.io/imagen/",
     description: "A beautiful web interface for generating images using Pollinations.ai API with only the \"flux\" and \"turbo\" models.",
     author: "@altkriz",
@@ -466,23 +518,27 @@ export const creativeProjects = [
   },
   {
     name: "MoneyPrinterTurbo",
+    stars: 46083,
+    stars: 46063,
+    stars: 39944,
     url: "https://github.com/harry0703/MoneyPrinterTurbo",
     description: "Simply provide a topic or keyword for a video, and it will automatically generate the video copy, video materials, video subtitles, and video background music before synthesizing a high-definition short video. Integrates Pollinations' text generation service to create engaging and relevant video scripts.",
     author: "@harry0703",
     repo: "https://github.com/harry0703/MoneyPrinterTurbo",
-    stars: 39944,
     submissionDate: "2025-05-13",
     order: 1
   },
   {
     name: "Match-cut video ai",
+    stars: 17,
+    stars: 17,
+    stars: 17,
     url: "https://github.com/lrdcxdes/text-match-cut",
     description: "This AI generates video from text in match-cut text style, uses pollinations llm to generate nearby text, and supports API integration.",
     author: "@r3ap3redit",
     repo: "https://github.com/lrdcxdes/text-match-cut",
     submissionDate: "2025-05-19",
-    order: 1,
-    stars: 17
+    order: 1
   },
   {
     name: "The Promised Pen",
@@ -493,6 +549,21 @@ export const creativeProjects = [
     order: 1
   },
   {
+<<<<<<< HEAD
+    name: "Text2Image_audio 🇨🇳",
+    stars: 185,
+    stars: 0,
+    url: "nihilistic.dpdns.org",
+    description: "文生图与文生语音网站 - 一个初学者的AI编程项目，支持文本转图像和音频生成功能。(Text to Image and Text to Audio website - A beginner's AI programming project supporting text-to-image and audio generation features.)",
+    author: "@peyoba",
+    repo: "https://github.com/wtliao/text2image",
+    submissionDate: "2025-06-05",
+    language: "zh-CN",
+    order: 1
+  },
+  {
+=======
+>>>>>>> upstream/master
     name: "Aiphoto智能绘画 🇨🇳",
     url: "https://qiyimg.3d.tc/Aiphoto",
     description: "AI艺术工坊 - 智能绘画生成器。这是一个基于AI的绘画生成工具，可以根据用户输入的中文描述自动生成相应的图片。(An AI art workshop - intelligent painting generator. This is an AI-based painting generation tool that can automatically generate images based on Chinese descriptions input by users.)",
@@ -511,11 +582,13 @@ export const creativeProjects = [
   },
   {
     name: "FoldaScan",
+    stars: 268,
+    stars: 268,
+    stars: 178,
     url: "https://fs.wen.bar",
     description: "Use Natural Language to \"Converse\" with Your Codebase, Folda-Scan Smart Project Q&A, powered by advanced vectorization technology, allows you to easily understand complex code, pinpoint information, and offers unprecedented convenience for AI collaboration.",
     author: "@0010skn",
     repo: "https://github.com/0010skn/WebFS-Toolkit-Local-Folder-Scan-Monitor-Versioning-AI-Prep",
-    stars: 178,
     submissionDate: "2025-05-19",
     order: 1
   },
@@ -530,11 +603,13 @@ export const creativeProjects = [
   },
   {
     name: "MASala",
+    stars: 3,
+    stars: 3,
+    stars: 3,
     url: "https://github.com/Naman009/MASala",
     description: "Multi-Agent AI That Cooks Up Recipes Just for You ~ From fridge to feast, MASALA plans it all.",
     author: "@Naman009",
     repo: "https://github.com/Naman009/MASala",
-    stars: 3,
     submissionDate: "2025-05-20",
     order: 1
   },
@@ -583,6 +658,11 @@ export const creativeProjects = [
   },
   {
     name: "Imagen",
+    stars: 9,
+    stars: 9,
+    stars: 9,
+    stars: 9,
+    stars: 9,
     url: "https://altkriz.github.io/imagen/",
     description: "A beautiful web interface for generating images using Pollinations.ai API with only the \"flux\" and \"turbo\" models.",
     author: "@altkriz",
@@ -611,6 +691,9 @@ export const creativeProjects = [
   },
   {
     name: "StorySight",
+    stars: 14,
+    stars: 14,
+    stars: 14,
     url: "https://github.com/tangg555/story-generation-demo",
     description: "An AI tool that generates illustrations for stories and articles using Pollinations, helping writers visualize their narratives.",
     author: "@story_viz",
@@ -645,6 +728,9 @@ export const creativeProjects = [
   },
   {
     name: "☬SHΞNΞRATOR 🎨",
+    stars: 3,
+    stars: 3,
+    stars: 3,
     url: "https://Shervinuri.github.io",
     description: "AI image and text generator with dual functionality. Features both image generation (https://Shervinuri.github.io) and text generation (https://minishen.netlify.app) capabilities powered by AI.",
     author: "https://T.me/shervinuri",

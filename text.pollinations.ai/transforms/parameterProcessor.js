@@ -19,6 +19,19 @@ export function processParameters(messages, options) {
     const requestedModel = options.requestedModel;
     const updatedOptions = { ...options };
 
+    // Define models that do not support temperature and top_p
+    const unsupportedModels = ["gpt-5-mini", "gpt-5-nano", "gpt-5-chat", "openai", "openai-fast", "openai-large"];
+
+    // If the model is one of the unsupported models, remove temperature, top_p, reasoning_effort, verbosity, frequency_penalty and presence_penalty
+    if (unsupportedModels.includes(requestedModel)) {
+        delete updatedOptions.temperature;
+        delete updatedOptions.top_p;
+        delete updatedOptions.reasoning_effort;
+        delete updatedOptions.verbosity;
+        delete updatedOptions.frequency_penalty;
+        delete updatedOptions.presence_penalty;
+    }
+
     // Apply model-specific sampling parameter defaults
     const samplingParams = ["temperature", "top_p", "presence_penalty", "frequency_penalty"];
     samplingParams.forEach((param) => {

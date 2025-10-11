@@ -4,7 +4,7 @@ import {
     TEXT_SERVICES,
 } from "./text";
 import { IMAGE_COSTS, IMAGE_SERVICES } from "./image";
-import { EventType } from "./types";
+import { EventType, UserTier } from "./types";
 
 const PRECISION = 8;
 
@@ -50,6 +50,7 @@ export type ServiceDefinition<T extends ModelRegistry> = {
     modelId: keyof T;
     price: PriceDefinition[];
     provider?: string; // Optional provider identifier (e.g., "azure-openai", "aws-bedrock")
+    tier?: UserTier; // Optional tier level (defaults to "anonymous")
 };
 
 export type ServiceRegistry<T extends ModelRegistry> = Record<
@@ -361,4 +362,40 @@ export function getProviderByModelId(modelId: string): string | null {
         }
     }
     return null;
+}
+
+/**
+ * Get the required tier for a service
+ * @param serviceId - The service ID
+ * @returns Required tier level
+ */
+export function getRequiredTier(serviceId: ServiceId): UserTier {
+    const service = getServiceDefinition(serviceId);
+    if (!service) {
+        throw new Error(`Service not found: ${serviceId.toString()}`);
+    }
+    return service.tier ?? "anonymous";
+}
+
+/**
+ * Check if a user tier can access a service
+ * Tiers are hierarchical: anonymous < seed < flower < nectar
+ * @param serviceId - The service ID to check
+ * @param userTier - The user's tier level
+ * @returns True if user has sufficient access
+ */
+export function canAccessService(
+    serviceId: ServiceId,
+    userTier: UserTier,
+): boolean {
+    const requiredTier = getRequiredTier(serviceId);
+    const tierOrder: UserTier[] = ["anonymous", "seed", "flower", "nectar"];
+    const userLevel = tierOrder.indexOf(userTier);
+    const requiredLevel = tierOrder.indexOf(requiredTier);
+    
+    if (userLevel === -1 || requiredLevel === -1) {
+        return false;
+    }
+    
+    return userLevel >= requiredLevel;
 }

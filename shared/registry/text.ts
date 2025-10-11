@@ -3,8 +3,8 @@ import type {
     ServiceRegistry,
     UsageConversionDefinition,
 } from "./registry";
+import type { UserTier } from "./types";
 import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "./price-helpers";
-
 export const TEXT_COSTS = {
     "gpt-5-nano-2025-08-07": [
         {
@@ -169,7 +169,6 @@ export const TEXT_COSTS = {
         },
     ],
 } as const satisfies ModelRegistry;
-
 export const TEXT_SERVICES = {
     "openai": {
         aliases: ["gpt-5-mini"],
@@ -188,6 +187,7 @@ export const TEXT_SERVICES = {
         modelId: "gpt-5-chat-latest",
         price: TEXT_COSTS["gpt-5-chat-latest"],
         provider: "azure-openai",
+        tier: "seed",
     },
     "qwen-coder": {
         aliases: ["qwen2.5-coder-32b-instruct"],
@@ -206,12 +206,14 @@ export const TEXT_SERVICES = {
         modelId: "mistral-nemo-instruct-2407",
         price: TEXT_COSTS["mistral-nemo-instruct-2407"],
         provider: "scaleway",
+        tier: "flower",
     },
     "openai-audio": {
         aliases: ["gpt-4o-mini-audio-preview"],
         modelId: "gpt-4o-mini-audio-preview-2024-12-17",
         price: TEXT_COSTS["gpt-4o-mini-audio-preview-2024-12-17"],
         provider: "azure-openai",
+        tier: "seed",
     },
     "nova-fast": {
         aliases: ["nova-micro-v1"],
@@ -224,36 +226,42 @@ export const TEXT_SERVICES = {
         modelId: "us.meta.llama3-1-8b-instruct-v1:0",
         price: TEXT_COSTS["us.meta.llama3-1-8b-instruct-v1:0"],
         provider: "aws-bedrock",
+        tier: "seed",
     },
     "claudyclaude": {
         aliases: ["claude-3-5-haiku"],
         modelId: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
         price: TEXT_COSTS["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
         provider: "aws-bedrock",
+        tier: "nectar",
     },
     "openai-reasoning": {
         aliases: ["o4-mini"],
         modelId: "openai/o4-mini",
         price: TEXT_COSTS["openai/o4-mini"],
         provider: "api-navy",
+        tier: "seed",
     },
     "gemini": {
         aliases: ["gemini-2.5-flash-lite"],
         modelId: "gemini-2.5-flash-lite",
         price: TEXT_COSTS["gemini-2.5-flash-lite"],
         provider: "vertex-ai",
+        tier: "seed",
     },
     "deepseek": {
         aliases: ["deepseek-v3", "deepseek-v3.1", "deepseek-reasoning", "deepseek-r1-0528"],
         modelId: "myceli-deepseek-v3.1",
         price: TEXT_COSTS["myceli-deepseek-v3.1"],
         provider: "azure",
+        tier: "seed",
     },
     "gemini-search": {
         aliases: ["searchgpt", "geminisearch"],
         modelId: "gemini-2.5-flash-lite",
         price: TEXT_COSTS["gemini-2.5-flash-lite"],
         provider: "vertex-ai",
+        tier: "seed",
     },
     "chickytutor": {
         aliases: [],
@@ -266,6 +274,7 @@ export const TEXT_SERVICES = {
         modelId: "mistral-small-3.1-24b-instruct-2503",
         price: TEXT_COSTS["mistral-small-3.1-24b-instruct-2503"],
         provider: "scaleway",
+        tier: "seed",
     },
     "midijourney": {
         aliases: [],
@@ -278,12 +287,14 @@ export const TEXT_SERVICES = {
         modelId: "gpt-4.1-2025-04-14",
         price: TEXT_COSTS["gpt-4.1-2025-04-14"],
         provider: "azure-openai",
+        tier: "seed",
     },
     "evil": {
         aliases: [],
         modelId: "mistral-small-3.1-24b-instruct-2503",
         price: TEXT_COSTS["mistral-small-3.1-24b-instruct-2503"],
         provider: "scaleway",
+        tier: "seed",
     },
     "bidara": {
         aliases: [],

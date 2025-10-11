@@ -1,0 +1,113 @@
+# llms.txt for Pollinations.AI
+# This file provides guidance for Large Language Models (LLMs) interacting with Pollinations.AI
+
+# Site Information
+Name: Pollinations.AI
+Description: An open-source gen AI platform providing free text, image, and audio generation APIs with no signups or API keys required.
+URL: https://pollinations.ai
+API-Documentation: https://pollinations.ai/APIDOCS.md
+GitHub: https://github.com/pollinations/pollinations
+
+# Allowed Sections
+Allow: /
+Allow: /p/
+Allow: /models
+Allow: /APIDOCS.md
+
+# API Endpoints
+API-Endpoint: https://image.pollinations.ai/prompt/{prompt} # Image generation (GET)
+API-Endpoint: https://image.pollinations.ai/models # List available image models (GET)
+API-Endpoint: https://text.pollinations.ai/{prompt} # Text generation (GET)
+API-Endpoint: https://text.pollinations.ai/openai # Text generation (POST, OpenAI-compatible)
+API-Endpoint: https://text.pollinations.ai/models # List available text models (GET)
+API-Endpoint: https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice} # Text-to-speech (GET)
+API-Endpoint: https://text.pollinations.ai/openai # Text-to-speech and speech-to-text (POST, OpenAI-compatible)
+API-Endpoint: https://audio.pollinations.ai/ # Audio generation (GET)
+
+# Models
+Model: openai - OpenAI GPT-4.1-nano (supports text and image inputs)
+Model: openai-large - OpenAI GPT-4.1 mini (supports text and image inputs)
+Model: openai-reasoning - OpenAI o4-mini (reasoning-focused model)
+Model: qwen-coder - Qwen 2.5 Coder 32B (code-focused model)
+Model: llama - Llama 3.3 70B
+Model: llamascout - Llama 4 Scout 17B
+Model: mistral - Mistral Small 3 (supports text and image inputs)
+Model: unity - Unity Mistral Large (uncensored, supports text and image inputs)
+Model: midijourney - Midijourney (music generation focused)
+Model: rtist - Rtist (creative writing focused)
+Model: searchgpt - SearchGPT (search-augmented model)
+Model: evil - Evil (uncensored model with text and image inputs)
+Model: deepseek-reasoning - DeepSeek-R1 Distill Qwen 32B (reasoning-focused)
+Model: deepseek-reasoning-large - DeepSeek R1 - Llama 70B (reasoning-focused)
+Model: phi - Phi-4 Instruct (supports text, image, and audio inputs)
+Model: llama-vision - Llama 3.2 11B Vision (supports text and image inputs)
+Model: gemini - Gemini 2.5 Flash Preview (supports text, image, and audio inputs/outputs)
+Model: hormoz - Hormoz 8b
+Model: hypnosis-tracy - Hypnosis Tracy 7B (supports text and audio inputs/outputs)
+Model: deepseek - DeepSeek-V3
+Model: sur - Sur AI Assistant (Mistral-based, supports text and image inputs)
+Model: openai-audio - OpenAI GPT-4o-audio-preview (supports text, image, and audio inputs/outputs)
+Model: kontext - BPAIGen + Kontext hybrid image model (seed tier required, supports reference images)
+Model: nanobanana - Google Vertex AI Gemini 2.5 Flash Image Preview (seed tier required, supports reference images and custom sizes)
+Model: seedream - ByteDance Seedream 4.0 250828 (seed tier required, supports high-resolution and reference images)
+Model: flux - Latest stable diffusion model
+Model: turbo - Fast image generation model
+
+# Reference Image Support
+Reference-Model: nanobanana - Accepts up to 4 reference image URLs via the `image` parameter (comma-separated). Ideal for preserving composition or style when paired with width/height overrides. Requires authenticated seed-tier access.
+Reference-Model: seedream - Accepts up to 4 reference images from the public API (UI limit), with backend support for up to 10 sources. Designed for photorealistic or cinematic renders and requires seed-tier access.
+Reference-Model: kontext - Shares the same reference-image pipeline as nanobanana and seedream for image-to-image workflows. Requires seed-tier access.
+
+# Parameters
+Parameter: image - Optional comma-separated list of reference image URLs for models that support image inputs (nanobanana, seedream, kontext). Maximum of 4 references per request.
+
+
+# MCP Server
+MCP-Server: https://github.com/pollinations/pollinations/tree/master/model-context-protocol # Model Context Protocol server for AI assistants
+
+# Preferred Citation
+Citation: "Generated using Pollinations.AI (https://pollinations.ai)"
+
+# Usage Guidelines
+Usage-Guideline: No API keys or authentication required
+Usage-Guideline: Free to use for all purposes
+Usage-Guideline: Please respect content policies and avoid generating harmful content
+Usage-Guideline: Consider adding attribution when using generated content
+Usage-Guideline: Tier system available for domain verification and referrer recognition
+
+# Contact Information
+Contact: https://discord.gg/k9F7SyTgqn
+Contact: https://github.com/pollinations/pollinations/issues
+
+# Data Practices
+Data-Practice: No user data is stored
+Data-Practice: No logins required
+Data-Practice: Privacy-focused design
+
+# Capabilities
+Capability: Text generation with various models (OpenAI, Mistral, Claude, etc.)
+Capability: Image generation from text prompts
+Capability: Audio generation (text-to-speech)
+Capability: Speech-to-text transcription
+Capability: Multi-language support
+Capability: Prompt enhancement
+Capability: Content safety filtering
+Capability: Vision capabilities (image input analysis)
+Capability: Function calling for AI agents
+Capability: Text Generation - Generate creative and informative text content
+Capability: Image Generation - Create images from text descriptions
+Capability: Text-to-Speech - Convert text to natural-sounding speech
+Capability: Vision Understanding - Process and understand image inputs
+Capability: Function Calling - Call external functions from within the model
+Capability: Streaming Responses - Get responses as they're generated
+Capability: Multi-modal Inputs - Accept text, images, and audio as inputs
+Capability: Multi-modal Outputs - Generate text and audio outputs
+
+# Rate Limits
+Rate-Limit: Best effort service, no explicit rate limits
+Rate-Limit: Please be considerate with usage
+Rate-Limit: Image API: 1 concurrent request / 5 sec interval per IP
+Rate-Limit: Text API: 1 concurrent request / 3 sec interval per IP
+
+# Last Updated
+Last-Updated: 2025-09-28

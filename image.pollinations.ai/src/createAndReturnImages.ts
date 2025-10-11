@@ -541,8 +541,8 @@ const callAzureGPTImageWithEndpoint = async (
     // Map safeParams to Azure API parameters
     const size = `${safeParams.width}x${safeParams.height}`;
 
-    // Determine quality based on safeParams or use medium as default
-    const quality = safeParams.quality || "medium";
+    // Force medium quality for gptimage to reduce costs
+    const quality = "medium";
 
     // Set output format to png if model is gptimage, otherwise jpeg
     const outputFormat = "png";

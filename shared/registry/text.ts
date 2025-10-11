@@ -72,12 +72,28 @@ export const TEXT_COSTS = {
             completionTextTokens: fromDPMT(0.8),
         },
     ],
+    "mistral-small-3.2-24b-instruct-2506": [
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: fromDPMT(0.2),
+            promptCachedTokens: fromDPMT(0.05),
+            completionTextTokens: fromDPMT(0.6),
+        },
+    ],
     "mistral.mistral-small-2402-v1:0": [
         {
             date: PRICING_START_DATE,
             promptTextTokens: fromDPMT(0.2),
             promptCachedTokens: fromDPMT(0.05),
             completionTextTokens: fromDPMT(0.8),
+        },
+    ],
+    "mistral-nemo-instruct-2407": [
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: fromDPMT(0.15),
+            promptCachedTokens: fromDPMT(0.0375),
+            completionTextTokens: fromDPMT(0.15),
         },
     ],
     "us.deepseek.r1-v1:0": [
@@ -97,6 +113,14 @@ export const TEXT_COSTS = {
         },
     ],
     "us.meta.llama3-1-8b-instruct-v1:0": [
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: fromDPMT(0.15),
+            promptCachedTokens: fromDPMT(0.0375),
+            completionTextTokens: fromDPMT(0.6),
+        },
+    ],
+    "llama-3.1-8b-instruct": [
         {
             date: PRICING_START_DATE,
             promptTextTokens: fromDPMT(0.15),
@@ -133,7 +157,15 @@ export const TEXT_COSTS = {
             date: PRICING_START_DATE,
             promptTextTokens: fromDPMT(0.6),
             promptCachedTokens: fromDPMT(0.15),
-            completionTextTokens: fromDPMT(1.7),
+            completionTextTokens: fromDPMT(2.4),
+        },
+    ],
+    "myceli-deepseek-v3.1": [
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: fromDPMT(0.6),
+            promptCachedTokens: fromDPMT(0.15),
+            completionTextTokens: fromDPMT(2.4),
         },
     ],
 } as const satisfies ModelRegistry;
@@ -164,22 +196,16 @@ export const TEXT_SERVICES = {
         provider: "scaleway",
     },
     "mistral": {
-        aliases: ["mistral-small-3.1-24b-instruct", "mistral-small-3.1-24b-instruct-2503"],
-        modelId: "mistral-small-3.1-24b-instruct-2503",
-        price: TEXT_COSTS["mistral-small-3.1-24b-instruct-2503"],
+        aliases: ["mistral-small-3.1-24b-instruct", "mistral-small-3.1-24b-instruct-2503", "mistral-small-3.2-24b-instruct-2506"],
+        modelId: "mistral-small-3.2-24b-instruct-2506",
+        price: TEXT_COSTS["mistral-small-3.2-24b-instruct-2506"],
         provider: "scaleway",
     },
-    "mistral-romance": {
-        aliases: ["mistral-nemo-instruct-2407-romance", "mistral-roblox"],
-        modelId: "mistral.mistral-small-2402-v1:0",
-        price: TEXT_COSTS["mistral.mistral-small-2402-v1:0"],
-        provider: "aws-bedrock",
-    },
-    "deepseek-reasoning": {
-        aliases: ["deepseek-r1-0528", "us.deepseek.r1-v1:0"],
-        modelId: "us.deepseek.r1-v1:0",
-        price: TEXT_COSTS["us.deepseek.r1-v1:0"],
-        provider: "aws-bedrock",
+    "mistral-naughty": {
+        aliases: ["mistral-romance", "mistral-nemo-instruct-2407-romance", "mistral-roblox"],
+        modelId: "mistral-nemo-instruct-2407",
+        price: TEXT_COSTS["mistral-nemo-instruct-2407"],
+        provider: "scaleway",
     },
     "openai-audio": {
         aliases: ["gpt-4o-mini-audio-preview"],
@@ -218,10 +244,10 @@ export const TEXT_SERVICES = {
         provider: "vertex-ai",
     },
     "deepseek": {
-        aliases: ["deepseek-v3", "deepseek-v3.1", "deepseek-ai/deepseek-v3.1-maas"],
-        modelId: "deepseek-ai/deepseek-v3.1-maas",
-        price: TEXT_COSTS["deepseek-ai/deepseek-v3.1-maas"],
-        provider: "vertex-ai",
+        aliases: ["deepseek-v3", "deepseek-v3.1", "deepseek-reasoning", "deepseek-r1-0528"],
+        modelId: "myceli-deepseek-v3.1",
+        price: TEXT_COSTS["myceli-deepseek-v3.1"],
+        provider: "azure",
     },
     "gemini-search": {
         aliases: ["searchgpt", "geminisearch"],

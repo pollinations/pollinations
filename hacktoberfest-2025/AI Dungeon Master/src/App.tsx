@@ -197,7 +197,6 @@ export default function App() {
     try {
       const systemPrompt = 'You are a creative dungeon master for a fantasy RPG. Write a short, immersive scene description in 2-3 sentences. Focus only on the immediate environment and atmosphere.';
 
-      console.log('Sending prompt:', prompt); // Debug log
 
       // Use POST request with correct message format for Pollinations API
       const response = await fetch(API_URL.story, {
@@ -221,13 +220,9 @@ export default function App() {
       const data = await response.json();
       let text = data.choices?.[0]?.message?.content || '';
 
-      console.log('Raw AI response:', text); // Debug log
 
       // Clean up the response text
       text = cleanApiResponse(text);
-
-      console.log('Cleaned AI response:', text); // Debug log
-
       return text || "You find yourself in a mysterious place. The path ahead is unclear, but adventure awaits...";
     } catch (error) {
       console.error('Error fetching story:', error);
@@ -283,14 +278,11 @@ export default function App() {
       const imagePrompt = `fantasy rpg scene, ${cleanDescription}, digital art, detailed, atmospheric, high quality`;
       const imageUrl = `${API_URL.image}${encodeURIComponent(imagePrompt)}?width=1024&height=768&model=flux&seed=${Date.now()}`;
 
-      console.log('Generating image for:', cleanDescription);
-      console.log('Image URL:', imageUrl);
 
       // Test if the image URL is accessible (basic validation)
       return imageUrl;
     } catch (error) {
       console.error('Error fetching image:', error);
-      console.log('Falling back to default image generation');
       return generateFallbackImage(description);
     }
   };

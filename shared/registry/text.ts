@@ -80,6 +80,14 @@ export const TEXT_COSTS = {
             completionTextTokens: fromDPMT(0.8),
         },
     ],
+    "mistral-nemo-instruct-2407": [
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: fromDPMT(0.15),
+            promptCachedTokens: fromDPMT(0.0375),
+            completionTextTokens: fromDPMT(0.15),
+        },
+    ],
     "us.deepseek.r1-v1:0": [
         {
             date: PRICING_START_DATE,
@@ -185,11 +193,11 @@ export const TEXT_SERVICES = {
         price: TEXT_COSTS["mistral-small-3.1-24b-instruct-2503"],
         provider: "scaleway",
     },
-    "mistral-romance": {
-        aliases: ["mistral-nemo-instruct-2407-romance", "mistral-roblox"],
-        modelId: "mistral.mistral-small-2402-v1:0",
-        price: TEXT_COSTS["mistral.mistral-small-2402-v1:0"],
-        provider: "aws-bedrock",
+    "mistral-naughty": {
+        aliases: ["mistral-romance", "mistral-nemo-instruct-2407-romance", "mistral-roblox"],
+        modelId: "mistral-nemo-instruct-2407",
+        price: TEXT_COSTS["mistral-nemo-instruct-2407"],
+        provider: "scaleway",
     },
     "openai-audio": {
         aliases: ["gpt-4o-mini-audio-preview"],

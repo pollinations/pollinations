@@ -295,6 +295,10 @@ export const portkeyConfig: PortkeyConfigMap = {
 		createScalewayModelConfig({
 			model: "llama-3.1-8b-instruct",
 		}),
+	"mistral-nemo-instruct-2407": () =>
+		createScalewayModelConfig({
+			model: "mistral-nemo-instruct-2407",
+		}),
 	"llama-3.3-70b-instruct": () => createScalewayModelConfig(),
 	surscaleway: () => createScalewayModelConfig(),
 	"qwen-reasoning": () => createScalewayModelConfig(),

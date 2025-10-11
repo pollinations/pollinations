@@ -19,7 +19,7 @@ import { ImageContext } from "../utils/ImageContext";
 import { GeneralButton } from "../components/GeneralButton";
 import { ICONS } from "../assets/icons/icons";
 import { ReactSVG } from "react-svg";
-import { trackEvent } from "../config/analytics";
+import { trackEvent } from "../config/analytics.js";
 
 export const Integration = () => {
     const { image } = useContext(ImageContext);

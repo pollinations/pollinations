@@ -8,17 +8,17 @@ import {
     TEXT_FEED_MODE2,
 } from "../../config/copywrite"; // Adjusted path
 import { emojify, rephrase, noLink } from "../../config/llmTransforms.js"; // Adjusted path
-import { LLMTextManipulator } from "../LLMTextManipulator.js"; // Adjusted path
+import { LLMTextManipulator } from "../LLMTextManipulator.jsx"; // Adjusted path
 import { trackEvent } from "../../config/analytics"; // Adjusted path
 import { useTextSlideshow } from "../../utils/useTextSSEFeed"; // Adjusted path
 import { useTextEditor } from "../../utils/useTextEditor"; // Adjusted path
 import { useTextFeedLoader } from "../../utils/useTextFeedLoader"; // Adjusted path
-import { ServerLoadInfo } from "./ServerLoadInfo.js"; // Adjusted path
-import { TextEditor } from "./TextEditor.js"; // Adjusted path
-import { TextDisplay } from "./TextResponse.js"; // Adjusted path
-import { FeedEditSwitch } from "./FeedEditSwitch.js"; // Adjusted path
-import { ModelInfo } from "./ModelInfo.js"; // Adjusted path
-import { PromptDisplay } from "./PromptDisplay.js"; // Adjusted path
+import { ServerLoadInfo } from "./ServerLoadInfo.jsx"; // Adjusted path
+import { TextEditor } from "./TextEditor.jsx"; // Adjusted path
+import { TextDisplay } from "./TextResponse.jsx"; // Adjusted path
+import { FeedEditSwitch } from "./FeedEditSwitch.jsx"; // Adjusted path
+import { ModelInfo } from "./ModelInfo.jsx"; // Adjusted path
+import { PromptDisplay } from "./PromptDisplay.jsx"; // Adjusted path
 
 /**
  * Extract prompt from messages array

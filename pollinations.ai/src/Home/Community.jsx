@@ -6,7 +6,7 @@
 */
 
 import { Colors, Fonts } from "../config/global.js";
-import AsciiArtGenerator from "../components/AsciiArtGenerator.js";
+import AsciiArtGenerator from "../components/AsciiArtGenerator.jsx";
 import {
     SectionContainer,
     SectionSubContainer,
@@ -28,12 +28,12 @@ import {
     noLink,
 } from "../config/llmTransforms.js";
 import Grid from "@mui/material/Grid2"; // v5 Grid2
-import SectionTitle from "../components/SectionTitle.js";
+import SectionTitle from "../components/SectionTitle.jsx";
 import { SectionHeadlineStyle } from "../components/SectionContainer.js";
 import { Box } from "@mui/material";
-import { GeneralButton } from "../components/GeneralButton.js";
-import { CustomTooltip } from "../components/CustomTooltip.js";
-import { LLMTextManipulator } from "../components/LLMTextManipulator.js";
+import { GeneralButton } from "../components/GeneralButton.jsx";
+import { CustomTooltip } from "../components/CustomTooltip.jsx";
+import { LLMTextManipulator } from "../components/LLMTextManipulator.jsx";
 import { ICONS } from "../assets/icons/icons.js"; // Import ICONS
 import { useTheme, useMediaQuery } from "@mui/material";
 import { SectionBG } from "../config/global";

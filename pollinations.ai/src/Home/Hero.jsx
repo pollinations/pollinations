@@ -18,7 +18,7 @@ import Grid from "@mui/material/Grid2";
 import { ICONS } from "../assets/icons/icons";
 import { useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { trackEvent } from "../config/analytics";
+import { trackEvent } from "../config/analytics.js";
 import { ReactSVG } from "react-svg";
 
 const handleDiscordButtonClick = (e) => {

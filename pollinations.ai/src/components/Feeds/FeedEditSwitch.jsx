@@ -3,7 +3,7 @@ import { GeneralButton } from "../GeneralButton";
 import { Colors, Fonts } from "../../config/global";
 import { doNotRephrase, noLink, translate } from "../../config/llmTransforms";
 import { Box } from "@mui/material";
-import { LLMTextManipulator } from "../LLMTextManipulator";
+import { LLMTextManipulator } from "../LLMTextManipulator.jsx";
 
 export function FeedEditSwitch({
     toggleValue,

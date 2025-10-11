@@ -5,13 +5,13 @@ import {
     useImageEditor,
     useImageSlideshow,
 } from "../../utils/useImageSlideshow"; // Adjusted path
-import { ServerLoadInfo } from "./ServerLoadInfo.js"; // Adjusted path (assuming it's in the same dir now)
+import { ServerLoadInfo } from "./ServerLoadInfo.jsx"; // Adjusted path (assuming it's in the same dir now)
 import { Colors } from "../../config/global"; // Adjusted path
-import { ModelInfo } from "./ModelInfo.js"; // Adjusted path
-import { ImageEditor } from "./ImageEditor.js"; // Adjusted path
-import { FeedEditSwitch } from "./FeedEditSwitch.js"; // Adjusted path
-import { ImageDisplay } from "./ImageDisplay.js"; // Adjusted path
-import { PromptDisplay } from "./PromptDisplay.js"; // Adjusted path
+import { ModelInfo } from "./ModelInfo.jsx"; // Adjusted path
+import { ImageEditor } from "./ImageEditor.jsx"; // Adjusted path
+import { FeedEditSwitch } from "./FeedEditSwitch.jsx"; // Adjusted path
+import { ImageDisplay } from "./ImageDisplay.jsx"; // Adjusted path
+import { PromptDisplay } from "./PromptDisplay.jsx"; // Adjusted path
 import {
     SectionSubContainer, // Keep SubContainer
     SectionHeadlineStyle,
@@ -25,8 +25,8 @@ import {
     IMAGE_FEED_TOOLTIP_PROMPT,
 } from "../../config/copywrite"; // Adjusted path
 import { emojify, rephrase, noLink } from "../../config/llmTransforms.js"; // Adjusted path
-import { LLMTextManipulator } from "../LLMTextManipulator.js"; // Adjusted path
-import { trackEvent } from "../../config/analytics"; // Adjusted path
+import { LLMTextManipulator } from "../LLMTextManipulator.jsx"; // Adjusted path
+import { trackEvent } from "../../config/analytics.js"; // Adjusted path
 
 /**
  * ImageFeed (Refactored):

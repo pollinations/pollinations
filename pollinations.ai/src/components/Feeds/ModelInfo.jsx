@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Link } from "@mui/material";
 import { Colors, Fonts } from "../../config/global";
-import { useModels } from "../../utils/useModels";
+import { useModels } from "../../utils/useModels.js";
 
 /**
  * Shared ModelInfo component for both image and text feeds

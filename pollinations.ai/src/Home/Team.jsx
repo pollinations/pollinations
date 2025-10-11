@@ -6,7 +6,7 @@ import {
 } from "../components/SectionContainer.js";
 import { TEAM_MEMBERS, TEAM_TITLE } from "../config/copywrite.js";
 import Grid from "@mui/material/Grid2";
-import SectionTitle from "../components/SectionTitle.js";
+import SectionTitle from "../components/SectionTitle.jsx";
 import { Box } from "@mui/material";
 
 const Team = () => {

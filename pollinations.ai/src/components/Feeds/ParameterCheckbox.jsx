@@ -6,7 +6,7 @@ import { LLMTextManipulator } from "../LLMTextManipulator";
 import { emojify, rephrase, noLink } from "../../config/llmTransforms";
 import CheckIcon from "@mui/icons-material/Check";
 import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
-import { trackEvent } from "../../config/analytics";
+import { trackEvent } from "../../config/analytics.js";
 
 /**
  * Reusable component for checkbox parameter inputs with consistent styling

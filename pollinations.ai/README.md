@@ -1,44 +1,16 @@
-# Pollinations.ai
+# React + Vite
 
-This repository contains the source code for the Pollinations.ai web application, a dynamic platform for exploring and interacting with AI-generated content.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## How It Works
+Currently, two official plugins are available:
 
-Pollinations.ai is a React-based web application built with Vite that serves as a rich client for AI content generation. The application provides a seamless experience for users to both view and create AI-generated images and text.
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-### Core Features
+## React Compiler
 
--   **Dual Content Feeds**: The heart of the application is its two primary feeds: one for AI-generated images and another for text. These feeds showcase a continuous stream of creations, providing a live look into the capabilities of the AI models.
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
--   **Interactive "Feed" and "Edit" Modes**:
-    -   **Feed Mode**: By default, users are in "Feed" mode, where they can passively watch a slideshow of content as it's generated. Each piece of content is displayed with its corresponding prompt and model information.
-    -   **Edit Mode**: Users can select any item from the feed and switch to "Edit" mode. This provides an interactive playground for AI generation:
-        -   **For Images**: Modify the original text prompt, adjust parameters such as image dimensions and seed, and generate a new, customized image.
-        -   **For Text**: Refine or completely change the input prompt, choose from available AI models, and generate a new text-based response.
+## Expanding the ESLint configuration
 
-### Technical Stack
-
--   **Frontend**: The application is built using [React](https://react.dev/) and [Vite](https://vitejs.dev/), providing a fast and modern development experience.
--   **UI Components**: The user interface is constructed with [Material-UI (MUI)](https://mui.com/), ensuring a consistent and responsive design.
--   **State Management**: The application's logic is managed through a series of custom React hooks (e.g., `useImageEditor`, `useTextEditor`, `useImageSlideshow`) that handle state, user inputs, and communication with the backend AI services.
-
-## Development
-
-To get started with development, follow these steps:
-
-1.  **Install Dependencies**:
-    ```bash
-    npm install
-    ```
-
-2.  **Run the Development Server**:
-    ```bash
-    npm run dev
-    ```
-    This will start the Vite development server, and you can view the application at `http://localhost:5173`.
-
-3.  **Build for Production**:
-    ```bash
-    npm run build
-    ```
-    This command bundles the application for production deployment into the `dist` directory.
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.

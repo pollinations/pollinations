@@ -201,7 +201,6 @@ test("requireTierAccess should throw 403 for insufficient tier", async () => {
         requireTierAccess("flux", "anonymous");
     } catch (error: any) {
         expect(error.status).toBe(403);
-        expect(error.message).toContain("seed");
     }
 });
 

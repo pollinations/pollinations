@@ -18,7 +18,7 @@ import { SUPPORTER_LIST } from "../config/supporterList";
 import StyledLink from "../components/StyledLink";
 import { useTheme, useMediaQuery, Link } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { trackEvent } from "../config/analytics";
+import { trackEvent } from "../config/analytics.js";
 
 const Supporter = () => {
     const theme = useTheme();

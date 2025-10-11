@@ -5,12 +5,12 @@ import { SectionBG, Colors, Fonts } from "../config/global";
 import { SectionContainer } from "../components/SectionContainer";
 import { NavLink } from "react-router-dom";
 import { SocialLinks } from "../components/SocialLinks";
-import { ReactComponent as PollinationsLogo } from "../assets/logo/logo-text.svg";
-import { ReactComponent as LogoIconBlack } from "../assets/logo/logo-icon-black.svg";
+import PollinationsLogo from "../assets/logo/logo-text.svg?react";
+import LogoIconBlack from "../assets/logo/logo-icon-black.svg?react";
 import { useMediaQuery } from "@mui/material";
 import { trackEvent } from "../config/analytics";
 import { GeneralButton } from "../components/GeneralButton";
-import { ICONS } from "../assets/icons/icons"; // Import the ICONS map
+import { ICONS } from "../assets/icons/icons.js"; // Import the ICONS map
 import InfoIcon from "@mui/icons-material/Info";
 import { ReactSVG } from "react-svg";
 

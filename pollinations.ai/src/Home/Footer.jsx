@@ -14,7 +14,7 @@ import { LLMTextManipulator } from "../components/LLMTextManipulator";
 import { trackEvent } from "../config/analytics";
 import { useTheme } from "@mui/material/styles";
 import { useMediaQuery } from "@mui/material";
-import { copyToClipboard } from "../utils/clipboard";
+import { copyToClipboard } from "../utils/clipboard.js";
 import { useState } from "react";
 
 const Footer = () => {

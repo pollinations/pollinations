@@ -1,9 +1,9 @@
 import { useState } from "react";
 import styled from "@emotion/styled";
-import Hero from "./Hero";
+import Hero from "./Hero.jsx";
 // import { FeedImage } from "./FeedImage"
 // import { FeedText } from "./FeedText"
-import { Feeds } from "./Feeds.js";
+import { Feeds } from "./Feeds.jsx";
 import Projects from "./Projects";
 import { Integration } from "./Integration";
 import { ImageContext } from "../utils/ImageContext";

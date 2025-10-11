@@ -41,15 +41,10 @@
       href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400..900&display=swap"
       rel="stylesheet"
     />
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Mako&display=swap"
       rel="stylesheet"
     />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Duru+Sans&display=swap"
       rel="stylesheet"
@@ -60,28 +55,31 @@
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-LPZ9GEJVHR"></script>
     <script>
-      window.dataLayer = window.dataLayer || []
+      window.dataLayer = window.dataLayer || [];
       function gtag() {
-        dataLayer.push(arguments)
+        dataLayer.push(arguments);
       }
-      gtag("js", new Date())
-      gtag("config", "G-LPZ9GEJVHR")
+      gtag("js", new Date());
+      gtag("config", "G-LPZ9GEJVHR");
     </script>
 
     <!-- Plausible Analytics (commented out) -->
     <!-- <script defer data-domain="pollinations.ai" src="https://plausable.zencraft.studio/js/pl.js"></script> -->
 
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "url": "https://pollinations.ai",
-      "logo": "https://pollinations.ai/logo.webp"
-    }
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "url": "https://pollinations.ai",
+        "logo": "https://pollinations.ai/logo.webp"
+      }
     </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root" class="scale-container"></div>
+
+    <!-- Vite requires this script to bootstrap the app -->
+    <script type="module" src="./src/main.jsx"></script>
   </body>
 </html>

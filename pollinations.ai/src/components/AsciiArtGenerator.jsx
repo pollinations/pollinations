@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import styled from "@emotion/styled";
 import { usePollinationsText } from "@pollinations/react";
-import { ASCII_ART_PROMPT } from "../config/copywrite";
+import { ASCII_ART_PROMPT } from "../config/copywrite.js";
 
 const AsciiContainer = styled.pre`
   font-family: monospace;

@@ -94,8 +94,8 @@ const models: ModelDefinition[] = [
 	},
 	{
 		name: "mistral",
-		description: "Mistral Small 3.1 24B",
-		config: portkeyConfig["mistral-small-3.1-24b-instruct-2503"],
+		description: "Mistral Small 3.2 24B (Scaleway)",
+		config: portkeyConfig["mistral-small-3.2-24b-instruct-2506"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "anonymous",
 		community: false,
@@ -104,36 +104,23 @@ const models: ModelDefinition[] = [
 		tools: true
 	},
 	{
-		name: "mistral-romance",
-		description: "Mistral Small 2402 - Romance Companion",
-		config: portkeyConfig["mistral.mistral-small-2402-v1:0"],
+		name: "mistral-naughty",
+		description: "Mistral Nemo Instruct 2407 (Scaleway)",
+		config: portkeyConfig["mistral-nemo-instruct-2407"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "flower",
+		community: false,
 		input_modalities: ["text"],
 		output_modalities: ["text"],
 		tools: true
 	},
 	{
-		name: "deepseek-reasoning",
-		description: "DeepSeek R1 0528",
-		maxInputChars: 5000,
-		config: portkeyConfig["us.deepseek.r1-v1:0"],
-		transform: pipe(
-			createSystemPromptTransform(BASE_PROMPTS.conversational),
-			removeSystemMessages
-		),
-		reasoning: true,
-		tier: "seed",
-		community: false,
-		input_modalities: ["text"],
-		output_modalities: ["text"],
-		tools: false
-	},
-	{
 		name: "deepseek",
-		description: "DeepSeek V3.1 (Google Vertex AI)",
-		config: portkeyConfig["deepseek-ai/deepseek-v3.1-maas"],
+		description: "DeepSeek V3.1 (Azure Myceli) - Hybrid reasoning model",
+		maxInputChars: 10000,
+		config: portkeyConfig["myceli-deepseek-v3.1"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+		reasoning: true,
 		tier: "seed",
 		community: false,
 		input_modalities: ["text"],
@@ -166,20 +153,20 @@ const models: ModelDefinition[] = [
 		output_modalities: ["audio", "text"],
 		tools: true
 	},
-	{
-		name: "nova-fast",
-		description: "Amazon Nova Micro",
-		config: portkeyConfig["amazon.nova-micro-v1:0"],
-		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-		community: false,
-		tier: "anonymous",
-		input_modalities: ["text"],
-		output_modalities: ["text"],
-		tools: true
-	},
+	// {
+	// 	name: "nova-fast",
+	// 	description: "Amazon Nova Micro",
+	// 	config: portkeyConfig["amazon.nova-micro-v1:0"],
+	// 	transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+	// 	community: false,
+	// 	tier: "anonymous",
+	// 	input_modalities: ["text"],
+	// 	output_modalities: ["text"],
+	// 	tools: true
+	// },
 	{
 		name: "roblox-rp",
-		description: "Llama 3.1 8B Instruct (Cross-Region)",
+		description: "Llama 3.1 8B Instruct (AWS Bedrock)",
 		config: portkeyConfig["us.meta.llama3-1-8b-instruct-v1:0"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "seed",
@@ -188,18 +175,18 @@ const models: ModelDefinition[] = [
 		output_modalities: ["text"],
 		tools: true
 	},
-	{
-		name: "claudyclaude",
-		description: "Claude 3.5 Haiku",
-		config: portkeyConfig["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
-		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-		tier: "nectar",
-		hidden: true,
-		// community: false,
-		input_modalities: ["text"],
-		output_modalities: ["text"],
-		tools: true
-	},
+	// {
+	// 	name: "claudyclaude",
+	// 	description: "Claude 3.5 Haiku",
+	// 	config: portkeyConfig["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
+	// 	transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+	// 	tier: "nectar",
+	// 	hidden: true,
+	// 	// community: false,
+	// 	input_modalities: ["text"],
+	// 	output_modalities: ["text"],
+	// 	tools: true
+	// },
 	{
 		name: "openai-reasoning",
 		description: "OpenAI o4-mini",

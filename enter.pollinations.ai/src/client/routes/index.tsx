@@ -12,6 +12,7 @@ import { config } from "../config.ts";
 import { User } from "../components/user.tsx";
 import { PollenBalance } from "../components/pollen-balance.tsx";
 import { FAQ } from "../components/faq.tsx";
+import { Header } from "../components/header.tsx";
 
 export const Route = createFileRoute("/")({
     component: RouteComponent,
@@ -77,8 +78,7 @@ function RouteComponent() {
 
     return (
         <div className="flex flex-col gap-20">
-            <div className="flex justify-between gap-4 items-center">
-                <img src="/logo_text_black.svg" alt="pollinations.ai" className="h-12 flex-1 object-contain object-left" />
+            <Header>
                 <Button as="a" href="/api/docs" weight="outline">
                     API Docs →
                 </Button>
@@ -90,37 +90,15 @@ function RouteComponent() {
                         window.location.href = "/api/polar/customer/portal";
                     }}
                 />
-            </div>
+            </Header>
             <div className="flex flex-col gap-2">
-                <div className="flex justify-between gap-3">
+                <div className="flex flex-col sm:flex-row justify-between gap-3">
                     <h2 className="font-bold flex-1">Balance</h2>
-                    <Button
-                        as={"a"}
-                        color="pink"
-                        weight="light"
-                        href="/api/polar/checkout/pollen-bundle-small"
-                        target="_blank"
-                    >
-                        + $10
-                    </Button>
-                    <Button
-                        as="a"
-                        color="blue"
-                        weight="light"
-                        href="/api/polar/checkout/pollen-bundle-medium"
-                        target="_blank"
-                    >
-                        + $25
-                    </Button>
-                    <Button
-                        as="a"
-                        color="red"
-                        weight="light"
-                        href="/api/polar/checkout/pollen-bundle-large"
-                        target="_blank"
-                    >
-                        + $50    
-                    </Button>
+                    <div className="flex gap-3">
+                        <Button as="a" color="pink" weight="light" href="/api/polar/checkout/pollen-bundle-small" target="_blank">+ $10</Button>
+                        <Button as="a" color="blue" weight="light" href="/api/polar/checkout/pollen-bundle-medium" target="_blank">+ $25</Button>
+                        <Button as="a" color="red" weight="light" href="/api/polar/checkout/pollen-bundle-large" target="_blank">+ $50</Button>
+                    </div>
                 </div>
                 <PollenBalance balance={balance} />
             </div>

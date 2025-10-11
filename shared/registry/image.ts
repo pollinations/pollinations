@@ -30,21 +30,21 @@ export const IMAGE_COSTS = {
     "nanobanana": [
         {
             date: PRICING_START_DATE,
-            completionImageTokens: fromDPMT(30),
+            completionImageTokens: fromDPMT(30000),
         },
     ],
-    "seedream": [
-        // Estimated
-        {
-            date: PRICING_START_DATE,
-            completionImageTokens: fromDPMT(5000),
-        },
-    ],
+    // "seedream": [
+    //     // Estimated
+    //     {
+    //         date: PRICING_START_DATE,
+    //         completionImageTokens: fromDPMT(30000),
+    //     },
+    // ],
     "gptimage": [
         // Azure GPT Image model
         {
             date: PRICING_START_DATE,
-            completionImageTokens: fromDPMT(2500),
+            completionImageTokens: fromDPMT(10000),
         },
     ],
 } as const satisfies ModelRegistry;
@@ -74,12 +74,12 @@ export const IMAGE_SERVICES = {
         price: IMAGE_COSTS["nanobanana"],
         provider: "vertex-ai",
     },
-    "seedream": {
-        aliases: [],
-        modelId: "seedream",
-        price: IMAGE_COSTS["seedream"],
-        provider: "bytedance-ark",
-    },
+    // "seedream": {
+    //     aliases: [],
+    //     modelId: "seedream",
+    //     // price: IMAGE_COSTS["seedream"],
+    //     provider: "bytedance-ark",
+    // },
     "gptimage": {
         aliases: ["gpt-image", "gpt-image-1-mini"],
         modelId: "gptimage",

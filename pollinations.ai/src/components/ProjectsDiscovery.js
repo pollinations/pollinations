@@ -92,7 +92,8 @@ const ProjectsDiscovery = () => {
             sx={{ 
               flexGrow: 1, 
               fontSize: '1.1rem',
-              color: 'text.primary'
+              color: 'text.primary',
+              fontWeight: 'medium'
             }}
           >
             {project.name}
@@ -109,9 +110,10 @@ const ProjectsDiscovery = () => {
           size="small"
           variant="outlined"
           sx={{ 
-            mb: 1,
+            mb: 1.5,
             borderColor: 'primary.main',
-            color: 'primary.main'
+            color: 'primary.main',
+            fontWeight: 'medium'
           }}
         />
         
@@ -119,13 +121,18 @@ const ProjectsDiscovery = () => {
           variant="body2" 
           sx={{ 
             mb: 2,
-            color: 'text.secondary'
+            color: 'text.secondary',
+            lineHeight: 1.5,
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden'
           }}
         >
           {project.description}
         </Typography>
         
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
           {project.author && (
             <Chip
               label={project.author}
@@ -145,21 +152,22 @@ const ProjectsDiscovery = () => {
               size="small"
               variant="outlined"
               sx={{
-                borderColor: 'primary.main',
-                color: 'primary.main'
+                borderColor: 'warning.main',
+                color: 'warning.main'
               }}
             />
           )}
         </Box>
       </CardContent>
       
-      <CardActions>
+      <CardActions sx={{ justifyContent: 'space-between', pt: 0 }}>
         <Button
           size="small"
           startIcon={<LaunchIcon />}
           href={project.url}
           target="_blank"
           rel="noopener noreferrer"
+          aria-label={`Visit ${project.name}`}
         >
           Visit
         </Button>
@@ -170,6 +178,7 @@ const ProjectsDiscovery = () => {
             href={project.repo}
             target="_blank"
             rel="noopener noreferrer"
+            aria-label={`View ${project.name} source code`}
           >
             Code
           </Button>
@@ -181,18 +190,27 @@ const ProjectsDiscovery = () => {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Header */}
-      <Box sx={{ textAlign: 'center', mb: 4 }}>
+      <Box sx={{ textAlign: 'center', mb: 6 }}>
         <Typography 
           variant="h3" 
           component="h1" 
           gutterBottom
-          sx={{ color: 'text.primary' }}
+          sx={{ 
+            color: 'text.primary',
+            fontWeight: 'bold',
+            mb: 2
+          }}
         >
           Pollinations.AI Projects
         </Typography>
         <Typography 
           variant="h6" 
-          sx={{ color: 'text.secondary' }}
+          sx={{ 
+            color: 'text.secondary',
+            maxWidth: '600px',
+            margin: '0 auto',
+            lineHeight: 1.6
+          }}
         >
           Discover amazing AI-powered projects from our community
         </Typography>
@@ -208,10 +226,20 @@ const ProjectsDiscovery = () => {
               placeholder="Search projects..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search projects"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: 'background.paper'
+                }
+              }}
               InputProps={{
                 startAdornment: <SearchIcon sx={{ mr: 1, color: 'action.active' }} />,
                 endAdornment: searchTerm && (
-                  <IconButton size="small" onClick={() => setSearchTerm('')}>
+                  <IconButton 
+                    size="small" 
+                    onClick={() => setSearchTerm('')}
+                    aria-label="Clear search"
+                  >
                     <ClearIcon />
                   </IconButton>
                 )
@@ -221,11 +249,16 @@ const ProjectsDiscovery = () => {
           
           <Grid item xs={12} sm={4} md={3}>
             <FormControl fullWidth>
-              <InputLabel>Category</InputLabel>
+              <InputLabel id="category-select-label">Category</InputLabel>
               <Select
+                labelId="category-select-label"
                 value={selectedCategory}
                 label="Category"
                 onChange={(e) => setSelectedCategory(e.target.value)}
+                aria-label="Filter by category"
+                sx={{
+                  backgroundColor: 'background.paper'
+                }}
               >
                 <MenuItem value="">All Categories</MenuItem>
                 {categories.map((category) => (
@@ -242,13 +275,22 @@ const ProjectsDiscovery = () => {
               variant="outlined" 
               onClick={handleClearFilters}
               disabled={!searchTerm && !selectedCategory}
+              aria-label="Clear all filters"
+              fullWidth
             >
               Clear All
             </Button>
           </Grid>
 
           <Grid item xs={12} md={3}>
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: { xs: 'left', md: 'right' } }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary" 
+              sx={{ 
+                textAlign: { xs: 'left', md: 'right' },
+                fontWeight: 'medium'
+              }}
+            >
               {filteredProjects.length} project{filteredProjects.length !== 1 ? 's' : ''} found
             </Typography>
           </Grid>
@@ -267,15 +309,19 @@ const ProjectsDiscovery = () => {
       {/* No results */}
       {filteredProjects.length === 0 && (
         <Box sx={{ textAlign: 'center', py: 8 }}>
-          <Typography variant="h6" color="text.secondary">
+          <Typography variant="h6" color="text.secondary" gutterBottom>
             No projects found matching your criteria
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+            Try adjusting your search terms or category filters
           </Typography>
           <Button 
             variant="outlined" 
             onClick={handleClearFilters}
-            sx={{ mt: 2 }}
+            sx={{ mt: 1 }}
+            aria-label="Clear all filters to show all projects"
           >
-            Clear Filters
+            Clear All Filters
           </Button>
         </Box>
       )}

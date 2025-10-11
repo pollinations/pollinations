@@ -506,41 +506,43 @@ export async function convertToJpeg(buffer: Buffer): Promise<Buffer> {
  * @param {string} prompt - The prompt for image generation or editing
  * @param {Object} safeParams - The parameters for image generation or editing
  * @param {Object} userInfo - User authentication info object
- * @param {number} endpointIndex - The endpoint index to use (1 or 2)
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
  */
 const callAzureGPTImageWithEndpoint = async (
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
-    endpointIndex: number,
 ): Promise<ImageGenerationResult> => {
-    const apiKey = process.env[`GPT_IMAGE_${endpointIndex}_AZURE_API_KEY`];
-    let endpoint = process.env[`GPT_IMAGE_${endpointIndex}_ENDPOINT`];
+    const apiKey = process.env[`GPT_IMAGE_1_AZURE_API_KEY`];
+    let endpoint = process.env[`GPT_IMAGE_1_ENDPOINT`];
 
     if (!apiKey || !endpoint) {
         throw new Error(
-            `Azure API key or endpoint ${endpointIndex} not found in environment variables`,
+            `Azure API key or endpoint 1 not found in environment variables`,
         );
     }
 
     // Check if we need to use the edits endpoint instead of generations
     const isEditMode = safeParams.image && safeParams.image.length > 0;
+    
+    // Use gpt-image-1 (full version) if input images are provided, otherwise use gpt-image-1-mini
     if (isEditMode) {
+        // Replace model name with full version for edit mode
+        endpoint = endpoint.replace("gpt-image-1-mini", "gpt-image-1");
         // Replace 'generations' with 'edits' in the endpoint URL
         endpoint = endpoint.replace("/images/generations", "/images/edits");
-        logCloudflare(`Using Azure endpoint ${endpointIndex} in edit mode`);
+        logCloudflare(`Using Azure gpt-image-1 (full) in edit mode`);
     } else {
         logCloudflare(
-            `Using Azure endpoint ${endpointIndex} in generation mode`,
+            `Using Azure gpt-image-1-mini in generation mode`,
         );
     }
 
     // Map safeParams to Azure API parameters
     const size = `${safeParams.width}x${safeParams.height}`;
 
-    // Determine quality based on safeParams or use medium as default
-    const quality = safeParams.quality || "medium";
+    // Force medium quality for gptimage to reduce costs
+    const quality = "medium";
 
     // Set output format to png if model is gptimage, otherwise jpeg
     const outputFormat = "png";
@@ -639,10 +641,11 @@ const callAzureGPTImageWithEndpoint = async (
                         throw error;
                     }
 
-                    // Determine file extension from Content-Type header
-                    const contentType =
+                    // Determine file extension and MIME type from Content-Type header
+                    let contentType =
                         imageResponse.headers.get("content-type") || "";
                     let extension = ".png"; // Default extension
+                    let mimeType = "image/png"; // Default MIME type
 
                     // Extract extension from content type (e.g., "image/jpeg" -> "jpeg")
                     if (contentType.startsWith("image/")) {
@@ -650,15 +653,21 @@ const callAzureGPTImageWithEndpoint = async (
                             .split("/")[1]
                             .split(";")[0]; // Handle cases like "image/jpeg; charset=utf-8"
                         extension = `.${mimeExtension}`;
+                        mimeType = `image/${mimeExtension}`;
+                    } else {
+                        // If content-type is not image/*, try to detect from URL or default to PNG
+                        logCloudflare(
+                            `Content-Type not detected as image (${contentType}), defaulting to image/png`,
+                        );
                     }
 
                     // Use the image[] array notation as required by Azure OpenAI API
-                    // Create a Blob from the already-read arrayBuffer instead of calling blob() again
-                    const imageBlob = new Blob([imageArrayBuffer], { type: contentType });
+                    // Create a Blob with explicit MIME type to avoid application/octet-stream
+                    const imageBlob = new Blob([imageArrayBuffer], { type: mimeType });
                     formData.append(
                         "image[]",
                         imageBlob,
-                        extension,
+                        `image${extension}`,
                     );
                 } catch (error) {
                     // More specific error handling for image processing
@@ -758,25 +767,10 @@ export const callAzureGPTImage = async (
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> => {
     try {
-        // Extract user tier with fallback to 'seed'
-        const userTier = userInfo.tier || "seed";
-
-        // Stage-based endpoint selection instead of random
-        // seed stage → GPT_IMAGE_1_ENDPOINT (standard endpoint)
-        // flower/nectar stage → GPT_IMAGE_2_ENDPOINT (advanced endpoint)
-        // const endpointIndex = (userTier === 'seed') ? 1 : 2;
-
-        const endpointIndex = Math.random() < 0.5 ? 1 : 2;
-        logCloudflare(
-            `Using Azure GPT Image endpoint ${endpointIndex} for user tier: ${userTier}`,
-            userInfo.userId ? `(userId: ${userInfo.userId})` : "(anonymous)",
-        );
-
         return await callAzureGPTImageWithEndpoint(
             prompt,
             safeParams,
-            userInfo,
-            endpointIndex,
+            userInfo
         );
     } catch (error) {
         logError("Error calling Azure GPT Image API:", error);
@@ -906,10 +900,10 @@ const generateImage = async (
                 : "No userInfo provided",
         );
 
-        // Restrict Nano Banana model to users with valid authentication (seed tier)
-        if (!hasSufficientTier(userInfo.tier, "seed")) {
+        // Restrict Nano Banana model to users with valid authentication (nectar tier)
+        if (!hasSufficientTier(userInfo.tier, "nectar")) {
             const errorText =
-                "Access to nanobanana is currently limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai for tier upgrade information.";
+                "Access to nanobanana is currently limited to users in the nectar tier or higher. Please authenticate at https://auth.pollinations.ai for tier upgrade information.";
             logError(errorText);
             progress.updateBar(
                 requestId,

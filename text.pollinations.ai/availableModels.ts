@@ -114,26 +114,12 @@ const models: ModelDefinition[] = [
 	// 	tools: true
 	// },
 	{
-		name: "deepseek-reasoning",
-		description: "DeepSeek R1 0528 (Azure Myceli)",
-		maxInputChars: 5000,
-		config: portkeyConfig["myceli-deepseek-r1"],
-		transform: pipe(
-			createSystemPromptTransform(BASE_PROMPTS.conversational),
-			removeSystemMessages
-		),
-		reasoning: true,
-		tier: "seed",
-		community: false,
-		input_modalities: ["text"],
-		output_modalities: ["text"],
-		tools: false
-	},
-	{
 		name: "deepseek",
-		description: "DeepSeek V3.1 (Google Vertex AI)",
-		config: portkeyConfig["deepseek-ai/deepseek-v3.1-maas"],
+		description: "DeepSeek V3.1 (Azure Myceli) - Hybrid reasoning model",
+		maxInputChars: 10000,
+		config: portkeyConfig["myceli-deepseek-v3.1"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+		reasoning: true,
 		tier: "seed",
 		community: false,
 		input_modalities: ["text"],

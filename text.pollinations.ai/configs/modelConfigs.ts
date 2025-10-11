@@ -14,7 +14,7 @@ import {
 	createBedrockLambdaModelConfig,
 	createDeepSeekModelConfig,
 	createDeepSeekReasoningConfig,
-	createMyceliDeepSeekR1Config,
+	createMyceliDeepSeekV31Config,
 	createApiNavyModelConfig,
 } from "./providerConfigs.js";
 import type { TEXT_COSTS } from "../../shared/registry/text.js";
@@ -375,7 +375,7 @@ export const portkeyConfig: PortkeyConfigMap = {
 	}),
 	"DeepSeek-V3-0324": () => createDeepSeekModelConfig(),
 	"MAI-DS-R1": () => createDeepSeekReasoningConfig(),
-	"myceli-deepseek-r1": () => createMyceliDeepSeekR1Config(),
+	"myceli-deepseek-v3.1": () => createMyceliDeepSeekV31Config(),
 	// Custom endpoints
 	"elixposearch-endpoint": () => createElixpoSearchModelConfig(),
 	// AWS Bedrock Lambda endpoint

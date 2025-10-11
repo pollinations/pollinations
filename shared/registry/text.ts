@@ -133,7 +133,15 @@ export const TEXT_COSTS = {
             date: PRICING_START_DATE,
             promptTextTokens: fromDPMT(0.6),
             promptCachedTokens: fromDPMT(0.15),
-            completionTextTokens: fromDPMT(1.7),
+            completionTextTokens: fromDPMT(2.4),
+        },
+    ],
+    "myceli-deepseek-v3.1": [
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: fromDPMT(0.6),
+            promptCachedTokens: fromDPMT(0.15),
+            completionTextTokens: fromDPMT(2.4),
         },
     ],
 } as const satisfies ModelRegistry;
@@ -175,12 +183,6 @@ export const TEXT_SERVICES = {
         price: TEXT_COSTS["mistral.mistral-small-2402-v1:0"],
         provider: "aws-bedrock",
     },
-    "deepseek-reasoning": {
-        aliases: ["deepseek-r1-0528", "us.deepseek.r1-v1:0"],
-        modelId: "us.deepseek.r1-v1:0",
-        price: TEXT_COSTS["us.deepseek.r1-v1:0"],
-        provider: "aws-bedrock",
-    },
     "openai-audio": {
         aliases: ["gpt-4o-mini-audio-preview"],
         modelId: "gpt-4o-mini-audio-preview-2024-12-17",
@@ -218,10 +220,10 @@ export const TEXT_SERVICES = {
         provider: "vertex-ai",
     },
     "deepseek": {
-        aliases: ["deepseek-v3", "deepseek-v3.1", "deepseek-ai/deepseek-v3.1-maas"],
-        modelId: "deepseek-ai/deepseek-v3.1-maas",
-        price: TEXT_COSTS["deepseek-ai/deepseek-v3.1-maas"],
-        provider: "vertex-ai",
+        aliases: ["deepseek-v3", "deepseek-v3.1", "deepseek-reasoning", "deepseek-r1-0528"],
+        modelId: "myceli-deepseek-v3.1",
+        price: TEXT_COSTS["myceli-deepseek-v3.1"],
+        provider: "azure",
     },
     "gemini-search": {
         aliases: ["searchgpt", "geminisearch"],

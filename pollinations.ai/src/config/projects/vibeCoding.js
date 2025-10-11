@@ -126,6 +126,7 @@ export const vibeCodingProjects = [
   },
   {
     name: "SocialScribe",
+    stars: 6,
     stars: 5,
     url: "https://socialscribe.pages.dev/",
     description: "An AI-powered Chrome extension that fixes grammar, rewrites text, and enhances your writing across websites like Twitter, LinkedIn, and Gmail, with customizable tone, length, and platform-specific formatting, plus support for emojis, hashtags, and keyword suggestions.",
@@ -147,6 +148,7 @@ export const vibeCodingProjects = [
   },
   {
     name: "websim-pollinations-ai",
+    stars: 3016,
     stars: 2956,
     url: "https://websim.pollinations.ai",
     description: "A lightweight websim for creating web simulations with AI. Usage: https://websim.pollinations.ai/[prompt] - Simply append your prompt to the URL to generate interactive web experiences.",

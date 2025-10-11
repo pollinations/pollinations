@@ -234,6 +234,8 @@ Body: messages*, model (set to "openai-audio"), voice (optional)
    - Add JSDoc comments for new functions
    - Update README.md for user-facing changes
    - Keep this .mentat/README.md up to date with new features, functionality, or important project maintenance information
+   - **Avoid creating markdown documentation files while working** unless explicitly requested
+   - If temporary files are needed for testing/debugging, create them in a `temp/` folder clearly labeled as temporary
 
 4. YAGNI Principle (You Aren't Gonna Need It):
    - **Don't keep code for "potential futures"** - Only implement what's needed now

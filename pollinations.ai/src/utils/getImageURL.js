@@ -41,6 +41,9 @@ export function getImageURL(newImage) {
         }
     }
 
+    // Always add the referrer parameter
+    queryParams.push("referrer=p0ll1");
+
     if (queryParams.length > 0) {
         imageURL += "?" + queryParams.join("&");
     }

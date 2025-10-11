@@ -103,32 +103,32 @@ const models: ModelDefinition[] = [
 		output_modalities: ["text"],
 		tools: true
 	},
-	{
-		name: "mistral-romance",
-		description: "Mistral Small 2402 - Romance Companion",
-		config: portkeyConfig["mistral.mistral-small-2402-v1:0"],
-		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-		tier: "flower",
-		input_modalities: ["text"],
-		output_modalities: ["text"],
-		tools: true
-	},
-	{
-		name: "deepseek-reasoning",
-		description: "DeepSeek R1 0528",
-		maxInputChars: 5000,
-		config: portkeyConfig["us.deepseek.r1-v1:0"],
-		transform: pipe(
-			createSystemPromptTransform(BASE_PROMPTS.conversational),
-			removeSystemMessages
-		),
-		reasoning: true,
-		tier: "seed",
-		community: false,
-		input_modalities: ["text"],
-		output_modalities: ["text"],
-		tools: false
-	},
+	// {
+	// 	name: "mistral-romance",
+	// 	description: "Mistral Small 2402 - Romance Companion",
+	// 	config: portkeyConfig["mistral.mistral-small-2402-v1:0"],
+	// 	transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+	// 	tier: "flower",
+	// 	input_modalities: ["text"],
+	// 	output_modalities: ["text"],
+	// 	tools: true
+	// },
+	// {
+	// 	name: "deepseek-reasoning",
+	// 	description: "DeepSeek R1 0528",
+	// 	maxInputChars: 5000,
+	// 	config: portkeyConfig["us.deepseek.r1-v1:0"],
+	// 	transform: pipe(
+	// 		createSystemPromptTransform(BASE_PROMPTS.conversational),
+	// 		removeSystemMessages
+	// 	),
+	// 	reasoning: true,
+	// 	tier: "seed",
+	// 	community: false,
+	// 	input_modalities: ["text"],
+	// 	output_modalities: ["text"],
+	// 	tools: false
+	// },
 	{
 		name: "deepseek",
 		description: "DeepSeek V3.1 (Google Vertex AI)",
@@ -166,40 +166,40 @@ const models: ModelDefinition[] = [
 		output_modalities: ["audio", "text"],
 		tools: true
 	},
-	{
-		name: "nova-fast",
-		description: "Amazon Nova Micro",
-		config: portkeyConfig["amazon.nova-micro-v1:0"],
-		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-		community: false,
-		tier: "anonymous",
-		input_modalities: ["text"],
-		output_modalities: ["text"],
-		tools: true
-	},
-	{
-		name: "roblox-rp",
-		description: "Llama 3.1 8B Instruct (Cross-Region)",
-		config: portkeyConfig["us.meta.llama3-1-8b-instruct-v1:0"],
-		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-		tier: "seed",
-		community: false,
-		input_modalities: ["text"],
-		output_modalities: ["text"],
-		tools: true
-	},
-	{
-		name: "claudyclaude",
-		description: "Claude 3.5 Haiku",
-		config: portkeyConfig["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
-		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-		tier: "nectar",
-		hidden: true,
-		// community: false,
-		input_modalities: ["text"],
-		output_modalities: ["text"],
-		tools: true
-	},
+	// {
+	// 	name: "nova-fast",
+	// 	description: "Amazon Nova Micro",
+	// 	config: portkeyConfig["amazon.nova-micro-v1:0"],
+	// 	transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+	// 	community: false,
+	// 	tier: "anonymous",
+	// 	input_modalities: ["text"],
+	// 	output_modalities: ["text"],
+	// 	tools: true
+	// },
+	// {
+	// 	name: "roblox-rp",
+	// 	description: "Llama 3.1 8B Instruct (Cross-Region)",
+	// 	config: portkeyConfig["us.meta.llama3-1-8b-instruct-v1:0"],
+	// 	transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+	// 	tier: "seed",
+	// 	community: false,
+	// 	input_modalities: ["text"],
+	// 	output_modalities: ["text"],
+	// 	tools: true
+	// },
+	// {
+	// 	name: "claudyclaude",
+	// 	description: "Claude 3.5 Haiku",
+	// 	config: portkeyConfig["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
+	// 	transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+	// 	tier: "nectar",
+	// 	hidden: true,
+	// 	// community: false,
+	// 	input_modalities: ["text"],
+	// 	output_modalities: ["text"],
+	// 	tools: true
+	// },
 	{
 		name: "openai-reasoning",
 		description: "OpenAI o4-mini",

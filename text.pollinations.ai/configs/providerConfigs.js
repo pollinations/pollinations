@@ -85,6 +85,24 @@ export function createDeepSeekReasoningConfig(additionalConfig = {}) {
 }
 
 /**
+ * Creates a Myceli DeepSeek V3.1 model configuration (hybrid reasoning/non-reasoning)
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - Myceli DeepSeek V3.1 model configuration
+ */
+export function createMyceliDeepSeekV31Config(additionalConfig = {}) {
+	return {
+		provider: "openai",
+		"custom-host": process.env.AZURE_MYCELI_DEEPSEEK_R1_ENDPOINT,
+		authKey: process.env.AZURE_MYCELI_DEEPSEEK_R1_API_KEY,
+		"auth-header-name": "Authorization",
+		"auth-header-value-prefix": "",
+		model: "DeepSeek-V3.1",
+		"max-tokens": 8192,
+		...additionalConfig,
+	};
+}
+
+/**
  * Creates a Cloudflare model configuration
  * @param {Object} additionalConfig - Additional configuration to merge with base config
  * @returns {Object} - Cloudflare model configuration

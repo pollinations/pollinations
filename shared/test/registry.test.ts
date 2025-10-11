@@ -185,18 +185,18 @@ test("canAccessService should return false for invalid tiers", async () => {
 });
 
 test("all services should have tier information", async () => {
-    // Verify every service has a tier field
+    // Verify every service has a tier (either explicit or defaults to anonymous)
     const services = Object.entries(SERVICE_REGISTRY);
     expect(services.length).toBeGreaterThan(0);
     
     for (const [serviceId, service] of services) {
-        expect(service.tier).toBeDefined();
-        expect(["anonymous", "seed", "flower", "nectar"]).toContain(service.tier);
+        const tier = service.tier ?? "anonymous";
+        expect(["anonymous", "seed", "flower", "nectar"]).toContain(tier);
     }
 });
 
 test("tier hierarchy should be consistent across services", async () => {
-    // Group services by tier
+    // Group services by tier (undefined defaults to anonymous)
     const servicesByTier = {
         anonymous: [] as string[],
         seed: [] as string[],
@@ -205,7 +205,8 @@ test("tier hierarchy should be consistent across services", async () => {
     };
     
     for (const [serviceId, service] of Object.entries(SERVICE_REGISTRY)) {
-        servicesByTier[service.tier].push(serviceId);
+        const tier = service.tier ?? "anonymous";
+        servicesByTier[tier].push(serviceId);
     }
     
     // Verify we have services at each tier level

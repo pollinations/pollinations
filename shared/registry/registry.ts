@@ -50,7 +50,7 @@ export type ServiceDefinition<T extends ModelRegistry> = {
     modelId: keyof T;
     price: PriceDefinition[];
     provider?: string; // Optional provider identifier (e.g., "azure-openai", "aws-bedrock")
-    tier: UserTier; // Required tier level to access this service
+    tier?: UserTier; // Optional tier level (defaults to "anonymous")
 };
 
 export type ServiceRegistry<T extends ModelRegistry> = Record<
@@ -374,7 +374,7 @@ export function getRequiredTier(serviceId: ServiceId): UserTier {
     if (!service) {
         throw new Error(`Service not found: ${serviceId.toString()}`);
     }
-    return service.tier;
+    return service.tier ?? "anonymous";
 }
 
 /**

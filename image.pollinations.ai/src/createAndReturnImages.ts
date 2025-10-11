@@ -4,7 +4,8 @@ import { fileTypeFromBuffer } from "file-type";
 
 // Import shared authentication utilities
 import sharp from "sharp";
-import { hasSufficientTier } from "../../shared/tier-gating.js";
+import { canAccessService, getRequiredTier } from "../../shared/registry/registry.js";
+import type { UserTier } from "../../shared/registry/types.js";
 import {
     fetchFromLeastBusyFluxServer,
     getNextTurboServerUrl,
@@ -72,7 +73,7 @@ export type AuthResult = {
     reason: string;
     userId: string | null;
     username: string | null;
-    tier: string;
+    tier: UserTier;
     debugInfo: object;
 };
 
@@ -810,16 +811,17 @@ const generateImage = async (
                 : "No userInfo provided",
         );
 
-        // Restrict GPT Image model to users with seed tier or higher
-        if (!hasSufficientTier(userInfo.tier, "seed")) {
+        // Check tier access via registry
+        if (!canAccessService("gptimage", userInfo.tier)) {
+            const requiredTier = getRequiredTier("gptimage");
             const errorText =
-                "Access to gptimage (gpt-image-1-mini) is currently limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai for tier upgrade information.";
+                `Access to gptimage (gpt-image-1-mini) is currently limited to users in the ${requiredTier} tier or higher. Please authenticate at https://auth.pollinations.ai for tier upgrade information.`;
             logError(errorText);
             progress.updateBar(
                 requestId,
                 35,
                 "Auth",
-                "GPT Image requires seed tier",
+                `GPT Image requires ${requiredTier} tier`,
             );
             const error: any = new Error(errorText);
             error.status = 403;
@@ -902,16 +904,17 @@ const generateImage = async (
                 : "No userInfo provided",
         );
 
-        // Restrict Nano Banana model to users with valid authentication (nectar tier)
-        if (!hasSufficientTier(userInfo.tier, "nectar")) {
+        // Check tier access via registry
+        if (!canAccessService("nanobanana", userInfo.tier)) {
+            const requiredTier = getRequiredTier("nanobanana");
             const errorText =
-                "Access to nanobanana is currently limited to users in the nectar tier or higher. Please authenticate at https://auth.pollinations.ai for tier upgrade information.";
+                `Access to nanobanana is currently limited to users in the ${requiredTier} tier or higher. Please authenticate at https://auth.pollinations.ai for tier upgrade information.`;
             logError(errorText);
             progress.updateBar(
                 requestId,
                 35,
                 "Auth",
-                "Nano Banana requires authorization",
+                `Nano Banana requires ${requiredTier} tier`,
             );
             const error: any = new Error(errorText);
             error.status = 403;
@@ -985,16 +988,17 @@ const generateImage = async (
     }
 
     if (safeParams.model === "kontext") {
-        // Azure Flux Kontext model requires seed tier or higher
-        if (!hasSufficientTier(userInfo.tier, "seed")) {
+        // Check tier access via registry
+        if (!canAccessService("kontext", userInfo.tier)) {
+            const requiredTier = getRequiredTier("kontext");
             const errorText =
-                "Access to kontext model is limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.";
+                `Access to kontext model is limited to users in the ${requiredTier} tier or higher. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.`;
             logError(errorText);
             progress.updateBar(
                 requestId,
                 35,
                 "Auth",
-                "Kontext model requires seed tier",
+                `Kontext requires ${requiredTier} tier`,
             );
             const error: any = new Error(errorText);
             error.status = 403;
@@ -1027,16 +1031,17 @@ const generateImage = async (
     }
 
     if (safeParams.model === "seedream") {
-        // Seedream model requires nectar tier or higher (temporarily due to limited credits)
-        if (!hasSufficientTier(userInfo.tier, "nectar")) {
+        // Check tier access via registry
+        if (!canAccessService("seedream", userInfo.tier)) {
+            const requiredTier = getRequiredTier("seedream");
             const errorText =
-                "Access to seedream model is currently limited to users in the nectar tier or higher due to limited credits. Seedream will be available again to seed tier users in the next few days. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.";
+                `Access to seedream model is currently limited to users in the ${requiredTier} tier or higher due to limited credits. Seedream will be available again to seed tier users in the next few days. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.`;
             logError(errorText);
             progress.updateBar(
                 requestId,
                 35,
                 "Auth",
-                "Seedream temporarily requires nectar tier",
+                `Seedream requires ${requiredTier} tier`,
             );
             const error: any = new Error(errorText);
             error.status = 403;

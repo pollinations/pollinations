@@ -70,6 +70,7 @@ export const gamesProjects = [
     name: "Infinite Tales",
     stars: 31,
     stars: 31,
+    stars: 31,
     stars: 29,
     description: "Interactive storytelling platform powered by AI that creates endless narrative adventures.",
     url: "https://github.com/JayJayBinks/infinite-tales-rpg",
@@ -82,6 +83,7 @@ export const gamesProjects = [
     stars: 7,
     stars: 7,
     stars: 7,
+    stars: 7,
     url: "https://github.com/Amagash/minecraft-ai-python",
     description: "A Python implementation that uses Pollinations AI to control a Minecraft character through natural language commands and automated gameplay.",
     author: "@Amagash",
@@ -91,6 +93,7 @@ export const gamesProjects = [
   },
   {
     name: "Sirius Cybernetics Elevator Challenge",
+    stars: 1,
     stars: 1,
     stars: 1,
     stars: 1,
@@ -111,6 +114,7 @@ export const gamesProjects = [
   },
   {
     name: "AI Character RP (Roblox)",
+    stars: 10,
     stars: 10,
     stars: 10,
     stars: 10,
@@ -139,6 +143,7 @@ export const gamesProjects = [
   },
   {
     name: "DreamHer",
+    stars: 11,
     stars: 11,
     stars: 11,
     stars: 10,
@@ -196,6 +201,7 @@ export const gamesProjects = [
     stars: 2,
     stars: 2,
     stars: 2,
+    stars: 2,
     url: "https://aistorium.vercel.app/",
     description: "Service for generating dynamic stories. Generates stories, images and audio by using pollinations api.",
     author: "@artegoser",
@@ -214,6 +220,7 @@ export const gamesProjects = [
   },
   {
     name: "🇨🇳 云渺仙途：凡尘篇",
+    stars: 11,
     stars: 11,
     stars: 11,
     stars: 10,

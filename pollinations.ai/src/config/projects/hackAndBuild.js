@@ -18,6 +18,7 @@ export const hackAndBuildProjects = [
     stars: 5,
     stars: 5,
     stars: 5,
+    stars: 5,
     url: "https://unpkg.ai",
     description: "AI-powered ESM module generation service that creates JavaScript modules on-demand using LLMs.",
     author: "@vgrichina",
@@ -53,6 +54,7 @@ export const hackAndBuildProjects = [
   },
   {
     name: "MCPollinations (Community)",
+    stars: 34,
     stars: 34,
     stars: 34,
     stars: 32,
@@ -106,6 +108,7 @@ export const hackAndBuildProjects = [
     stars: 26,
     stars: 26,
     stars: 26,
+    stars: 26,
     url: "https://github.com/cusanotech/90-herramientas-de-inteligencia-artificial",
     description: "Tools designed with Pollinations.AI and the DescartesJS editor, including tools from other Pollinations.AI community members.",
     author: "@juanrivera126",
@@ -146,6 +149,7 @@ export const hackAndBuildProjects = [
     stars: 8,
     stars: 8,
     stars: 8,
+    stars: 8,
     url: "https://github.com/mkantwala/CoNavic/",
     description: "A free, open-source browser extension that brings the power of ChatGPT and browser automation directly to your fingertips. Instantly access AI assistance, manage tabs, and organize bookmarks using natural language all securely within your browser.",
     author: "@mkantwala",
@@ -159,6 +163,7 @@ export const hackAndBuildProjects = [
     stars: 6,
     stars: 6,
     stars: 6,
+    stars: 6,
     url: "https://wordpress.org/plugins/ai-vision-block/",
     description: "A custom WordPress Gutenberg block that allows you to generate images using the Pollinations API. Simply enter a prompt, and the AI will generate an image for you. Once the post is saved, the image is automatically stored in the WordPress Media Library.",
     author: "mahmood-asadi",
@@ -169,6 +174,7 @@ export const hackAndBuildProjects = [
   },
   {
     name: "DominiSigns",
+    stars: 4,
     stars: 4,
     stars: 4,
     stars: 4,
@@ -194,6 +200,7 @@ export const hackAndBuildProjects = [
   },
   {
     name: "Herramientas IA",
+    stars: 26,
     stars: 26,
     stars: 26,
     stars: 26,
@@ -273,6 +280,7 @@ export const hackAndBuildProjects = [
   },
   {
     name: "DominiSigns",
+    stars: 4,
     stars: 4,
     stars: 4,
     stars: 4,

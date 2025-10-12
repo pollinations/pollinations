@@ -11,7 +11,7 @@ import {
     SectionHeadlineStyle,
 } from "../components/SectionContainer";
 import { LLMTextManipulator } from "../components/LLMTextManipulator";
-import { trackEvent } from "../config/analytics";
+import { trackEvent } from "../config/analytics.js";
 
 export default function News() {
     const handleAccordionChange = (event, isExpanded) => {

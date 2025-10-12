@@ -194,5 +194,13 @@ export const gamesProjects = [
     language: "zh-CN",
     submissionDate: "2025-07-12",
     order: 1
+  },
+  {
+    name: "Devil Summoner WIP",
+    url: "https://gamedemo-a65.pages.dev/",
+    description: "Procedural driven text prompts develop characters as you explore the city. Down demons in combat to try and negotiate recruitment. Theory in practice is trying to have a solid base of mechanics for combat and item generation while using the LLM to generate the story and dialogue.",
+    author: "@lenankamp",
+    submissionDate: "2025-10-11",
+    order: 1
   }
 ];

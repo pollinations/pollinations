@@ -9,7 +9,7 @@ import {
 import { SectionBG, Colors, Fonts } from "../config/global";
 import { ImageFeed } from "../components/Feeds/ImageFeed";
 import { TextFeed } from "../components/Feeds/TextFeed";
-import { GeneralButton } from "../components/GeneralButton";
+import { GeneralButton } from "../components/GeneralButton.jsx";
 
 /**
  * Feeds Component:

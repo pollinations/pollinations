@@ -28,10 +28,7 @@ import { LLMTextManipulator } from "../LLMTextManipulator";
 import { getImageURL } from "../../utils/getImageURL";
 import { trackEvent } from "../../config/analytics";
 import CloseIcon from "@mui/icons-material/Close";
-import {
-    modelSupportsImageInput,
-    MAX_REFERENCE_IMAGES,
-} from "../../config/imageModels";
+import { modelSupportsImageInput, MAX_REFERENCE_IMAGES, } from "../../config/imageModels.js";
 
 // ─── PARAMETER STYLING CONSTANTS ────────────────────────────────────────────────
 // These can be adjusted to control the appearance of all parameter inputs

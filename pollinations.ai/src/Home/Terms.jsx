@@ -11,7 +11,7 @@ import {
     friendlyMarkdownStyle,
     rephrase,
 } from "../config/llmTransforms";
-import { LLMTextManipulator } from "../components/LLMTextManipulator";
+import { LLMTextManipulator } from "../components/LLMTextManipulator.jsx";
 import CloseIcon from "@mui/icons-material/Close";
 import { Box } from "@mui/material";
 const Terms = () => {

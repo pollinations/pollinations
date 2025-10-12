@@ -2,7 +2,7 @@ import React, { memo } from "react";
 import { Typography, Link, useMediaQuery, useTheme } from "@mui/material";
 import PromptTooltip from "../PromptTooltip";
 import styled from "@emotion/styled";
-import { trackEvent } from "../../config/analytics";
+import { trackEvent } from "../../config/analytics.js";
 
 /**
  * ImageDisplay

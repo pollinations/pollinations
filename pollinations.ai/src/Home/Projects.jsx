@@ -11,9 +11,9 @@ import {
     PROJECT_TITLE,
     PROJECT_SUBTITLE,
     PROJECT_CTO_1,
-    PROJECT_CTO_2,
+    // PROJECT_CTO_2,
     PROJECT_BUTTON,
-} from "../config/copywrite";
+} from "../config/copywrite.js";
 import { emojify, rephrase, noLink } from "../config/llmTransforms";
 
 import SectionTitle from "../components/SectionTitle";
@@ -28,7 +28,7 @@ import { GeneralButton } from "../components/GeneralButton";
 import { LLMTextManipulator } from "../components/LLMTextManipulator";
 import { trackEvent } from "../config/analytics";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import TabSelector from "../components/TabSelector";
+import TabSelector from "../components/TabSelector.jsx";
 
 const useStyles = makeStyles(() => ({
     gridContainer: {

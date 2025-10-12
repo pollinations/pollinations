@@ -1,9 +1,9 @@
 import { Navigate, Route, Routes, useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
-import Header from "./Home/Header";
-import Footer from "./Home/Footer";
-import Home from "./Home";
-import Terms from "./Home/Terms";
+import Header from "./Home/Header.jsx";
+import Footer from "./Home/Footer.jsx";
+import Home from "./Home/index.jsx";
+import Terms from "./Home/Terms.jsx";
 import { trackEvent } from "./config/analytics";
 import { ThemeProvider } from "@mui/material/styles";
 import { theme } from "./styles/theme";

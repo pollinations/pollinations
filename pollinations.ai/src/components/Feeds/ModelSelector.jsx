@@ -15,7 +15,7 @@ import { Colors, Fonts } from "../../config/global";
 import { CustomTooltip } from "../CustomTooltip";
 import { LLMTextManipulator } from "../LLMTextManipulator";
 import { emojify, rephrase, noLink } from "../../config/llmTransforms";
-import { useModels } from "../../utils/useModels";
+import { useModels } from "../../utils/useModels.js";
 
 /**
  * Shared ModelSelector component for both image and text feeds

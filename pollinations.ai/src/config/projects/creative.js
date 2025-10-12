@@ -5,6 +5,15 @@
 
 export const creativeProjects = [
   {
+    name: "AISTONE 🎨",
+    url: "https://aistone.org/",
+    description: "Based on advanced Pollinations.AI technology, supports FLUX, Turbo, Kontext for images, and OpenAI Audio TTS for voice. No registration required, permanently free, supports Chinese and English input, optimized for creators.",
+    author: "@peyoba",
+    repo: "https://github.com/peyoba/Text2Image_audio",
+    submissionDate: "2025-10-11",
+    order: 1
+  },
+  {
     name: "PrisimIG 🎨",
     url: "https://prisimai.github.io/PrisimIG",
     description: "Seamless AI-generated imagery with Pollinations.AI. An intuitive web application for generating high-quality images from text prompts in various styles (realistic, anime, cartoon, fantasy). Features multiple image sizes (256x256, 512x512, 1024x1024), batch generation of up to 5 images, and a clean user-friendly interface without requiring sign-ups or API keys.",

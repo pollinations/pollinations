@@ -1,5 +1,14 @@
 import { processEvents, storeEvents } from "@/events.ts";
-import { REGISTRY, ServiceId, ModelId } from "@shared/registry/registry.ts";
+import { 
+    resolveServiceId,
+    isFreeService,
+    getActivePriceDefinition,
+    getModelDefinition,
+    calculateCost,
+    calculatePrice,
+    ServiceId,
+    ModelId
+} from "@shared/registry/registry.ts";
 import {
     ModelUsage,
     OpenAIResponse,
@@ -45,11 +54,11 @@ export const track = (eventType: EventType) =>
         const startTime = new Date();
 
         const modelRequested = await extractModelRequested(c);
-        const resolvedModelRequested = REGISTRY.resolveServiceId(
+        const resolvedModelRequested = resolveServiceId(
             modelRequested,
             eventType,
         );
-        const isFreeUsage = REGISTRY.isFreeService(resolvedModelRequested);
+        const isFreeUsage = isFreeService(resolvedModelRequested);
 
         c.set("track", {
             modelRequested,
@@ -60,7 +69,7 @@ export const track = (eventType: EventType) =>
 
         const referrerInfo = extractReferrerInfo(c);
         const cacheInfo = extractCacheInfo(c);
-        const tokenPrice = REGISTRY.getActivePriceDefinition(
+        const tokenPrice = getActivePriceDefinition(
             resolvedModelRequested,
         );
         if (!tokenPrice) {
@@ -83,17 +92,17 @@ export const track = (eventType: EventType) =>
                 );
                 
                 // Validate model ID exists in registry before calculating cost
-                if (!REGISTRY.getModelDefinition(modelUsage.model as ModelId)) {
+                if (!getModelDefinition(modelUsage.model as ModelId)) {
                     throw new Error(
                         `Model '${modelUsage.model}' not found in registry. This indicates a bug - the model returned by the LLM is not configured for billing.`
                     );
                 }
                 
-                cost = REGISTRY.calculateCost(
+                cost = calculateCost(
                     modelUsage.model as ModelId,
                     modelUsage.usage,
                 );
-                price = REGISTRY.calculatePrice(
+                price = calculatePrice(
                     resolvedModelRequested as ServiceId,
                     modelUsage.usage,
                 );

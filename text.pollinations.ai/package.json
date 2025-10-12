@@ -1,9 +1,8 @@
 {
-    "name": "text pollinations.ai",
+    "name": "text.pollinations.ai",
     "version": "1.0.0",
     "scripts": {
-        "start": "node server.js",
-        "start:ts": "tsx src/index.ts",
+        "start": "tsx startServer.js",
         "type-check": "tsc --noEmit",
         "validate-configs": "tsx configs/validateConfigKeys.ts",
         "test": "echo \"Error: no test specified\" && exit 1",

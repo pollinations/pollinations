@@ -1,6 +1,6 @@
 # Micro.pollinations.ai
 
-A modern microservice for mailer utilities built with Next.js, designed to be easily integrated into other applications.
+A microservice for mailer utilities built with Next.js, designed to be easily integrated into other applications.
 
 ## Features
 
@@ -416,14 +416,3 @@ export default async function handler(req, res) {
 - **npm**: 8.0.0 or higher
 - **Docker**: 20.0.0 or higher (optional)
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file for details.

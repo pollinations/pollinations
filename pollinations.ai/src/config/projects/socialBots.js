@@ -49,6 +49,7 @@ export const socialBotsProjects = [
   },
   {
     name: "Pollinations Discord Bot",
+    stars: 18,
     stars: 17,
     stars: 17,
     url: "https://github.com/Zingzy/pollinations.ai-bot",
@@ -88,6 +89,7 @@ export const socialBotsProjects = [
   },
   {
     name: "AI Image Generator [ROBLOX]",
+    stars: 10,
     stars: 10,
     stars: 10,
     url: "https://www.roblox.com/games/ai-image-generator",

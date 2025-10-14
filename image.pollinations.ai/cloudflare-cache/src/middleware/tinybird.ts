@@ -1,6 +1,7 @@
 import type { Context } from "hono";
 import type { ImageCacheEvent } from "./analytics.ts";
 import { getProviderNameFromModel } from "../../../observability/modelProvider.ts";
+import { validateModelName } from "../validate-model.ts";
 
 /**
  * Send cache hit events to Tinybird
@@ -37,7 +38,11 @@ export async function sendToTinybird(
             const startIso = new Date(now - Number(responseTime)).toISOString();
             const endIso = new Date(now).toISOString();
 
-            // Build Tinybird event to match llm_events datasource schema without modifying it
+            // Validate model name to prevent garbage in telemetry
+            // Backend defaults invalid models to "flux" (params.ts line 64)
+            // Cache hits bypass backend validation, so we mirror that logic here
+            const actualModel = validateModelName(imageParams?.model);
+            
             const tinybirdEvent = {
                 // Core identifiers and timestamps
                 start_time: startIso,
@@ -45,9 +50,9 @@ export async function sendToTinybird(
                 message_id: messageId,
                 id: messageId,
 
-                // Model and provider
-                model: imageParams?.model,
-                provider: getProviderNameFromModel(imageParams?.model),
+                // Model and provider - use actual model from response headers
+                model: actualModel,
+                provider: getProviderNameFromModel(actualModel),
 
                 // Performance metrics
                 duration: responseTime,

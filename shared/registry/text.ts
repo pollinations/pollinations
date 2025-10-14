@@ -145,13 +145,13 @@ export const TEXT_SERVICES = {
         price: TEXT_COSTS["mistral-small-3.2-24b-instruct-2506"],
         provider: "scaleway",
     },
-    "mistral-naughty": {
-        aliases: ["mistral-romance", "mistral-nemo-instruct-2407-romance", "mistral-roblox"],
-        modelId: "mistral-nemo-instruct-2407",
-        price: TEXT_COSTS["mistral-nemo-instruct-2407"],
-        provider: "scaleway",
-        tier: "flower",
-    },
+    // "mistral-naughty": {
+    //     aliases: ["mistral-romance", "mistral-nemo-instruct-2407-romance", "mistral-roblox"],
+    //     modelId: "mistral-nemo-instruct-2407",
+    //     price: TEXT_COSTS["mistral-nemo-instruct-2407"],
+    //     provider: "scaleway",
+    //     tier: "flower",
+    // },
     "openai-audio": {
         aliases: ["gpt-4o-mini-audio-preview"],
         modelId: "gpt-4o-mini-audio-preview-2024-12-17",

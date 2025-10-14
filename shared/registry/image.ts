@@ -22,12 +22,14 @@ export const IMAGE_COSTS = {
         },
     ],
     "turbo": [
+        // Estimated
         {
             date: PRICING_START_DATE,
             completionImageTokens: fromDPMT(2000),
         },
     ],
     "gptimage": [
+        // Estimated
         {
             date: PRICING_START_DATE,
             completionImageTokens: fromDPMT(10000),

@@ -4,7 +4,7 @@
  */
 
 import debug from "debug";
-import type { IMAGE_SERVICES } from "../../../shared/registry/image";
+import type { IMAGE_SERVICES } from "../../../shared/registry/image.ts";
 
 const log = debug("pollinations:tracking-headers");
 
@@ -51,16 +51,9 @@ export function buildTrackingHeaders(
     headers['x-model-used'] = trackingData?.actualModel || model;
     // Note: x-user-tier removed - enter service now gets tier from user table
     
-    // Token counting logic
-    let completionTokens = 1; // Default for unit-based pricing models
-    
-    if (model === 'nanobanana' && trackingData?.usage?.candidatesTokenCount) {
-        // For nanobanana, use total candidates tokens (image + text)
-        completionTokens = trackingData.usage.candidatesTokenCount;
-        log(`Nanobanana token count: ${completionTokens} (from candidatesTokenCount)`);
-    } else {
-        log(`Using default token count: ${completionTokens} for model: ${model}`);
-    }
+    // Token counting logic - default to 1 for all models
+    const completionTokens = 1;
+    log(`Using default token count: ${completionTokens} for model: ${model}`);
     
     headers['x-completion-image-tokens'] = String(completionTokens);
 
@@ -75,10 +68,7 @@ export function buildTrackingHeaders(
  * @returns Token count for billing
  */
 export function extractTokenCount(model: ValidServiceName, usage?: TrackingUsageData): number {
-    if (model === 'nanobanana' && usage?.candidatesTokenCount) {
-        return usage.candidatesTokenCount;
-    }
-    return 1; // Default for unit-based pricing
+    return 1; // Default for unit-based pricing (all current models)
 }
 
 /**

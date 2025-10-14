@@ -96,7 +96,7 @@ export function createMyceliDeepSeekV31Config(additionalConfig = {}) {
 		authKey: process.env.AZURE_MYCELI_DEEPSEEK_R1_API_KEY,
 		"auth-header-name": "Authorization",
 		"auth-header-value-prefix": "",
-		model: "DeepSeek-V3.1",
+		model: "myceli-deepseek-v3.1",
 		"max-tokens": 8192,
 		...additionalConfig,
 	};

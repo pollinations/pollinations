@@ -1,4 +1,4 @@
-import { PriceDefinition, TokenUsage, CostType } from "@shared/registry/registry.ts";
+import { PriceDefinition, TokenUsage } from "@shared/registry/registry.ts";
 import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import type { ContentFilterResult, OpenAIResponse } from "@/usage.ts";
 
@@ -85,7 +85,6 @@ export const event = sqliteTable("event", {
     ).notNull(),
 
     // Cost
-    costType: text("cost_type").$type<CostType>(),
     totalCost: real("total_cost").notNull(),
 
     // Price

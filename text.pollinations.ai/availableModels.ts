@@ -94,7 +94,7 @@ const models: ModelDefinition[] = [
 	},
 	{
 		name: "mistral",
-		description: "Mistral Small 3.2 24B (Scaleway)",
+		description: "Mistral Small 3.2 24B",
 		config: portkeyConfig["mistral-small-3.2-24b-instruct-2506"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "anonymous",
@@ -105,7 +105,7 @@ const models: ModelDefinition[] = [
 	},
 	{
 		name: "mistral-naughty",
-		description: "Mistral Nemo Instruct 2407 (Scaleway)",
+		description: "Mistral Nemo Instruct 2407",
 		config: portkeyConfig["mistral-nemo-instruct-2407"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "flower",
@@ -116,7 +116,7 @@ const models: ModelDefinition[] = [
 	},
 	{
 		name: "deepseek",
-		description: "DeepSeek V3.1 (Azure Myceli) - Hybrid reasoning model",
+		description: "DeepSeek V3.1",
 		maxInputChars: 10000,
 		config: portkeyConfig["myceli-deepseek-v3.1"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
@@ -166,7 +166,7 @@ const models: ModelDefinition[] = [
 	// },
 	{
 		name: "roblox-rp",
-		description: "Llama 3.1 8B Instruct (AWS Bedrock)",
+		description: "Llama 3.1 8B Instruct",
 		config: portkeyConfig["us.meta.llama3-1-8b-instruct-v1:0"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "seed",
@@ -189,7 +189,7 @@ const models: ModelDefinition[] = [
 	// },
 	{
 		name: "openai-reasoning",
-		description: "OpenAI o4-mini",
+		description: "OpenAI o4 Mini",
 		config: portkeyConfig["openai/o4-mini"],
 		transform: pipe(
 			createSystemPromptTransform(BASE_PROMPTS.conversational),
@@ -205,7 +205,7 @@ const models: ModelDefinition[] = [
 	},
 	{
 		name: "gemini",
-		description: "Gemini 2.5 Flash Lite (Vertex AI)",
+		description: "Gemini 2.5 Flash Lite",
 		config: portkeyConfig["gemini-2.5-flash-lite"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "seed",
@@ -216,7 +216,7 @@ const models: ModelDefinition[] = [
 	},
 	{
 		name: "gemini-search",
-		description: "Gemini 2.5 Flash Lite with Google Search (Vertex AI)",
+		description: "Gemini 2.5 Flash Lite with Google Search",
 		config: portkeyConfig["gemini-2.5-flash-lite"],
 		transform: pipe(
 			createGoogleSearchTransform()

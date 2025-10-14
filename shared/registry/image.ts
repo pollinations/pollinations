@@ -22,27 +22,18 @@ export const IMAGE_COSTS = {
         },
     ],
     "turbo": [
-        // Estimated
         {
             date: PRICING_START_DATE,
             completionImageTokens: fromDPMT(2000),
         },
     ],
-    "nanobanana": [
-        {
-            date: PRICING_START_DATE,
-            completionImageTokens: fromDPMT(30000),
-        },
-    ],
-    // "seedream": [
-    //     // Estimated
+    // nanobanana: [
     //     {
     //         date: PRICING_START_DATE,
     //         completionImageTokens: fromDPMT(30000),
     //     },
     // ],
     "gptimage": [
-        // Azure GPT Image model
         {
             date: PRICING_START_DATE,
             completionImageTokens: fromDPMT(10000),

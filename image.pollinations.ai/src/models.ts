@@ -41,11 +41,11 @@ export const IMAGE_CONFIG: ImageModelsConfig = {
     },
 
     // Nano Banana - Gemini 2.5 Flash Image Preview via Vertex AI
-    nanobanana: {
-        type: "vertex-ai",
-        enhance: false,
-        maxSideLength: 1024,
-    },
+    // nanobanana: {
+    //     type: "vertex-ai",
+    //     enhance: false,
+    //     maxSideLength: 1024,
+    // },
 
     // // Seedream - ByteDance ARK API for high-quality image generation
     // seedream: {

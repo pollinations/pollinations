@@ -28,6 +28,20 @@ export const IMAGE_COSTS = {
             completionImageTokens: fromDPMT(2000),
         },
     ],
+    "nanobanana": [
+        // Estimated - Gemini via Vertex AI (currently disabled)
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: fromDPMT(30000),
+        },
+    ],
+    "seedream": [
+        // Estimated - ByteDance ARK (currently disabled)
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: fromDPMT(30000),
+        },
+    ],
     "gptimage": [
         // Estimated
         {
@@ -59,6 +73,20 @@ export const IMAGE_SERVICES = {
         provider: "io.net",
         tier: "seed",
     },
+    // nanobanana: {
+    //     aliases: [],
+    //     modelId: "nanobanana",
+    //     price: IMAGE_COSTS["nanobanana"],
+    //     provider: "vertex-ai",
+    //     tier: "nectar",
+    // },
+    // seedream: {
+    //     aliases: [],
+    //     modelId: "seedream",
+    //     price: IMAGE_COSTS["seedream"],
+    //     provider: "bytedance-ark",
+    //     tier: "flower",
+    // },
     "gptimage": {
         aliases: ["gpt-image", "gpt-image-1-mini"],
         modelId: "gptimage",

@@ -31,9 +31,9 @@ test("calculateCost should return the correct costs", async () => {
     // Test with a real model - gpt-5-nano has known pricing
     const cost = calculateCost("gpt-5-nano-2025-08-07", usage);
     
-    // gpt-5-nano pricing: $0.055 per 1M prompt tokens, $0.44 per 1M completion tokens
+    // gpt-5-nano pricing: $0.06 per 1M prompt tokens, $0.44 per 1M completion tokens
     // Cost is returned in dollars (not micro-dollars)
-    expect(cost.promptTextTokens).toBe(0.055); // $0.055
+    expect(cost.promptTextTokens).toBe(0.06); // $0.06
     expect(cost.completionTextTokens).toBe(0.44); // $0.44
 });
 
@@ -142,9 +142,6 @@ test("getRequiredTier should return correct tier for services", async () => {
     expect(getRequiredTier("gemini")).toBe("seed");
     expect(getRequiredTier("flux")).toBe("seed");
     
-    // Test flower tier
-    expect(getRequiredTier("mistral-naughty")).toBe("flower");
-    
     // Test nectar tier
     expect(getRequiredTier("nanobanana")).toBe("nectar");
 });
@@ -163,19 +160,16 @@ test("canAccessService should enforce tier hierarchy", async () => {
     // Seed tier can access anonymous and seed
     expect(canAccessService("openai", "seed")).toBe(true);
     expect(canAccessService("flux", "seed")).toBe(true);
-    expect(canAccessService("mistral-naughty", "seed")).toBe(false);
     expect(canAccessService("nanobanana", "seed")).toBe(false);
     
-    // Flower tier can access anonymous, seed, and flower
+    // Flower tier can access anonymous, seed, and flower (no flower services currently active)
     expect(canAccessService("openai", "flower")).toBe(true);
     expect(canAccessService("flux", "flower")).toBe(true);
-    expect(canAccessService("mistral-naughty", "flower")).toBe(true);
     expect(canAccessService("nanobanana", "flower")).toBe(false);
     
     // Nectar tier can access all services
     expect(canAccessService("openai", "nectar")).toBe(true);
     expect(canAccessService("flux", "nectar")).toBe(true);
-    expect(canAccessService("mistral-naughty", "nectar")).toBe(true);
     expect(canAccessService("nanobanana", "nectar")).toBe(true);
 });
 

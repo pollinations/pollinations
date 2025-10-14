@@ -103,17 +103,17 @@ const models: ModelDefinition[] = [
 		output_modalities: ["text"],
 		tools: true
 	},
-	{
-		name: "mistral-naughty",
-		description: "Mistral Nemo Instruct 2407",
-		config: portkeyConfig["mistral-nemo-instruct-2407"],
-		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-		tier: "flower",
-		community: false,
-		input_modalities: ["text"],
-		output_modalities: ["text"],
-		tools: true
-	},
+	// {
+	// 	name: "mistral-naughty",
+	// 	description: "Mistral Nemo Instruct 2407",
+	// 	config: portkeyConfig["mistral-nemo-instruct-2407"],
+	// 	transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+	// 	tier: "flower",
+	// 	community: false,
+	// 	input_modalities: ["text"],
+	// 	output_modalities: ["text"],
+	// 	tools: true
+	// },
 	{
 		name: "deepseek",
 		description: "DeepSeek V3.1",

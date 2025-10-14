@@ -65,8 +65,7 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         async (c) => {
-            const targetUrl = proxyUrl(c, "https://text.pollinations.ai");
-            return await proxy(targetUrl, {
+            return await proxy("https://text.pollinations.ai/openai/models", {
                 ...c.req,
                 headers: proxyHeaders(c),
             });

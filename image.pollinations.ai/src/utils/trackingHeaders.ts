@@ -11,6 +11,10 @@ const log = debug("pollinations:tracking-headers");
 // Type constraint: model names must exist in registry
 type ValidServiceName = keyof typeof IMAGE_SERVICES;
 
+// Allow disabled models for future reactivation (nanobanana, seedream)
+type DisabledModelName = "nanobanana" | "seedream";
+type ModelName = ValidServiceName | DisabledModelName;
+
 export interface TrackingUsageData {
     // Vertex AI / Gemini usage format
     candidatesTokenCount?: number;
@@ -37,12 +41,12 @@ export interface TrackingData {
 
 /**
  * Build tracking headers for the enter service
- * @param model - The requested model name (must be a valid service from registry)
+ * @param model - The requested model name (includes active and disabled models)
  * @param trackingData - Usage and moderation data from generation
  * @returns Headers object for HTTP response
  */
 export function buildTrackingHeaders(
-    model: ValidServiceName,
+    model: ModelName,
     trackingData?: TrackingData
 ): Record<string, string> {
     const headers: Record<string, string> = {};
@@ -51,9 +55,16 @@ export function buildTrackingHeaders(
     headers['x-model-used'] = trackingData?.actualModel || model;
     // Note: x-user-tier removed - enter service now gets tier from user table
     
-    // Token counting logic - default to 1 for all models
-    const completionTokens = 1;
-    log(`Using default token count: ${completionTokens} for model: ${model}`);
+    // Token counting logic
+    let completionTokens = 1; // Default for unit-based pricing models
+    
+    if (model === 'nanobanana' && trackingData?.usage?.candidatesTokenCount) {
+        // For nanobanana, use total candidates tokens (image + text)
+        completionTokens = trackingData.usage.candidatesTokenCount;
+        log(`Nanobanana token count: ${completionTokens} (from candidatesTokenCount)`);
+    } else {
+        log(`Using default token count: ${completionTokens} for model: ${model}`);
+    }
     
     headers['x-completion-image-tokens'] = String(completionTokens);
 
@@ -63,12 +74,15 @@ export function buildTrackingHeaders(
 
 /**
  * Extract token count for billing purposes
- * @param model - The model name (must be a valid service from registry)
+ * @param model - The model name (includes active and disabled models)
  * @param usage - Usage data from the model
  * @returns Token count for billing
  */
-export function extractTokenCount(model: ValidServiceName, usage?: TrackingUsageData): number {
-    return 1; // Default for unit-based pricing (all current models)
+export function extractTokenCount(model: ModelName, usage?: TrackingUsageData): number {
+    if (model === 'nanobanana' && usage?.candidatesTokenCount) {
+        return usage.candidatesTokenCount;
+    }
+    return 1; // Default for unit-based pricing
 }
 
 /**

@@ -301,9 +301,11 @@ const imageGen = async ({
         // Send telemetry to Tinybird
         const endTime = new Date();
         const duration = endTime.getTime() - startTime;
+        // Use actual model from tracking data, fallback to requested model
+        const actualModel = maturity.trackingData?.actualModel || safeParams.model || "unknown";
         sendImageTelemetry({
             requestId,
-            model: safeParams.model || "unknown",
+            model: actualModel,
             duration,
             status: "success",
             authResult,

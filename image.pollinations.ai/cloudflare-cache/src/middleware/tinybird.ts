@@ -38,6 +38,9 @@ export async function sendToTinybird(
             const endIso = new Date(now).toISOString();
 
             // Build Tinybird event to match llm_events datasource schema without modifying it
+            // Use x-model-used header (actual model) instead of requested model parameter
+            const actualModel = c.res?.headers.get("x-model-used") || imageParams?.model || "unknown";
+            
             const tinybirdEvent = {
                 // Core identifiers and timestamps
                 start_time: startIso,
@@ -45,9 +48,9 @@ export async function sendToTinybird(
                 message_id: messageId,
                 id: messageId,
 
-                // Model and provider
-                model: imageParams?.model,
-                provider: getProviderNameFromModel(imageParams?.model),
+                // Model and provider - use actual model from response headers
+                model: actualModel,
+                provider: getProviderNameFromModel(actualModel),
 
                 // Performance metrics
                 duration: responseTime,

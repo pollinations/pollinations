@@ -15,15 +15,15 @@ export const exactCache = createMiddleware<Env>(async (c, next) => {
     if (c.req.header("no-cache")) return next();
 
     const cacheKey = generateCacheKey(new URL(c.req.url));
-    console.debug("[EXACT] Cache key:", cacheKey);
-
+    // Removed verbose cache key logging - only log cache status at debug level
+    
     // store in context for reuse in semantic cache
     c.set("cacheKey", cacheKey);
 
     try {
         const cachedImage = await c.env.IMAGE_BUCKET.get(cacheKey);
         if (cachedImage) {
-            console.log("[EXACT] Cache hit");
+            console.debug("[EXACT] Cache hit");
             setHttpMetadataHeaders(c, cachedImage.httpMetadata);
             c.header("Cache-Control", "public, max-age=31536000, immutable");
             c.header("X-Cache", "HIT");
@@ -32,7 +32,7 @@ export const exactCache = createMiddleware<Env>(async (c, next) => {
             return c.body(cachedImage.body);
         } else {
             c.header("X-Cache", "MISS");
-            console.log("[EXACT] Cache miss");
+            console.debug("[EXACT] Cache miss");
         }
     } catch (error) {
         console.error("[EXACT] Error retrieving cached image:", error);

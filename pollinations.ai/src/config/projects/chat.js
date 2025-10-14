@@ -36,6 +36,7 @@ export const chatProjects = [
     stars: 1,
     stars: 1,
     stars: 1,
+    stars: 1,
     url: "https://prisimai.github.io/PrisimAI",
     description: "A lightweight, browser-based AI chat application designed to run seamlessly as a Progressive Web App (PWA). Features offline support via service worker, multiple model selection, ChatGPT-inspired interface, and cross-platform installability on desktop & mobile.",
     author: "@CloudCompile",
@@ -54,6 +55,7 @@ export const chatProjects = [
   },
   {
     name: "LLMS",
+    stars: 62,
     stars: 62,
     stars: 61,
     stars: 61,
@@ -136,6 +138,7 @@ export const chatProjects = [
     stars: 1,
     stars: 1,
     stars: 1,
+    stars: 1,
     url: "https://thevoidai.vercel.app/",
     description: "A humanlike AI mentor, productivity partner, and emotionally intelligent assistant that adapts its tone and energy based on user behavior. Features conversational AI that feels more like a charismatic friend than a chatbot, providing code walkthroughs, life advice, writing help, and motivation with realistic speech output and context memory.",
     author: "@Ajay-Dhakad",
@@ -192,6 +195,7 @@ export const chatProjects = [
   },
   {
     name: "gpt4free",
+    stars: 65397,
     stars: 65396,
     stars: 65393,
     stars: 65388,
@@ -206,6 +210,7 @@ export const chatProjects = [
   },
   {
     name: "FreeAI 🇨🇳",
+    stars: 104,
     stars: 104,
     stars: 103,
     stars: 103,
@@ -317,6 +322,7 @@ export const chatProjects = [
     stars: 2,
     stars: 2,
     stars: 2,
+    stars: 2,
     url: "https://chatbot.rizqioliveira.my.id",
     description: "Rizqi O Chatbot adalah proyek berbasis Pollinations yang menggabungkan tiga fitur utama: chatbot AI, generator gambar AI, dan generator audio AI. Pengguna dapat berinteraksi dalam bentuk teks, menghasilkan gambar dengan berbagai gaya seni dan efek visual, serta membuat audio secara otomatis dari teks. (An AI chatbot, image generator, and audio generator project with support for custom aspect ratios, over 200 art styles & visual effects, and automatic translation from Indonesian to English.)",
     author: "@ray23-bit",
@@ -332,6 +338,7 @@ export const chatProjects = [
     stars: 94,
     stars: 94,
     stars: 94,
+    stars: 94,
     stars: 91,
     url: "https://llm7.io",
     description: "A free and open AI platform providing advanced multimodal capabilities, including large language model access and experimental search tools. Integrates Pollinations text generation as a backend service with transparent credit on the website and repository.",
@@ -343,6 +350,7 @@ export const chatProjects = [
   },
   {
     name: "SillyTavern",
+    stars: 19114,
     stars: 19087,
     stars: 19060,
     stars: 19031,
@@ -364,6 +372,7 @@ export const chatProjects = [
   },
   {
     name: " Comeback AI",
+    stars: 2,
     stars: 2,
     stars: 1,
     stars: 1,
@@ -388,6 +397,7 @@ export const chatProjects = [
   },
   {
     name: "LobeChat",
+    stars: 66842,
     stars: 66810,
     stars: 66607,
     stars: 66577,
@@ -408,6 +418,7 @@ export const chatProjects = [
     stars: 2,
     stars: 2,
     stars: 2,
+    stars: 2,
     description: "An AI-client-free project dedicated to enabling AI interaction using only curl, supporting multimodal and MCP capabilities, to provide users with the simplest way to use AI.",
     author: "@Veallym0n",
     repo: "https://github.com/Veallym0n/toai.chat",
@@ -417,6 +428,7 @@ export const chatProjects = [
   },
   {
     name: "Free AI Chatbot & Image Generator",
+    stars: 18451,
     stars: 18430,
     stars: 18401,
     stars: 18378,
@@ -463,6 +475,7 @@ export const chatProjects = [
   },
   {
     name: "EvilChat 🔥🤖",
+    stars: 4,
     stars: 4,
     stars: 3,
     stars: 3,

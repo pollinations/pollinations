@@ -40,20 +40,6 @@ export const IMAGE_CONFIG: ImageModelsConfig = {
         maxSideLength: 768,
     },
 
-    // Nano Banana - Gemini 2.5 Flash Image Preview via Vertex AI
-    // nanobanana: {
-    //     type: "vertex-ai",
-    //     enhance: false,
-    //     maxSideLength: 1024,
-    // },
-
-    // // Seedream - ByteDance ARK API for high-quality image generation
-    // seedream: {
-    //     type: "seedream",
-    //     enhance: false,
-    //     maxSideLength: 2048, // Default 2048x2048, supports up to 4K resolution
-    // },
-
     // Azure GPT Image model - gpt-image-1-mini
     gptimage: {
         type: "azure",

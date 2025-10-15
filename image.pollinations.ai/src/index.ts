@@ -491,8 +491,6 @@ const checkCacheAndGenerate = async (
                 }
 
                 // Use the shared queue utility - everyone goes through queue
-                // Prioritize registered users: anonymous gets 1 queue slot, registered get 5
-                const maxQueueByTier = authResult.tier === 'anonymous' ? 1 : 5;
                 const result = await enqueue(
                     req,
                     async () => {
@@ -500,7 +498,7 @@ const checkCacheAndGenerate = async (
                         progress.setProcessing(requestId);
                         return generateImage();
                     },
-                    { ...queueConfig, forceQueue: true, maxQueueSize: maxQueueByTier, model: safeParams.model },
+                    { ...queueConfig, forceQueue: true, maxQueueSize: 5, model: safeParams.model },
                 );
 
                 return result;

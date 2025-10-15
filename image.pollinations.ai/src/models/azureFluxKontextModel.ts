@@ -42,9 +42,17 @@ export async function callAzureFluxKontext(
         logCloudflare("Using Azure Flux Kontext in generation mode");
     }
 
-    // Check prompt safety with Azure Content Safety
+    // Check prompt safety with Azure Content Safety (with 20s timeout)
     logCloudflare("Checking prompt safety...");
-    const promptSafetyResult = await analyzeTextSafety(prompt);
+    const SAFETY_CHECK_TIMEOUT_MS = 20000; // 20 seconds
+    const safetyCheckPromise = analyzeTextSafety(prompt);
+    const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+            reject(new Error(`Azure Content Safety check timeout after ${SAFETY_CHECK_TIMEOUT_MS / 1000}s`));
+        }, SAFETY_CHECK_TIMEOUT_MS);
+    });
+    
+    const promptSafetyResult = await Promise.race([safetyCheckPromise, timeoutPromise]);
 
     // Log the prompt with safety analysis results
     await logGptImagePrompt(

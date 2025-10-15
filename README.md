@@ -3,7 +3,7 @@
 > Discover amazing AI-powered projects from our vibrant community
 
 [![Projects](https://img.shields.io/badge/Projects-207-blue.svg)](https://pollinations.ai/projects)
-[![GitHub Stars](https://img.shields.io/badge/Stars-235,305-yellow.svg)](https://github.com/pollinations)
+[![GitHub Stars](https://img.shields.io/badge/Stars-235,514-yellow.svg)](https://github.com/pollinations)
 [![Community](https://img.shields.io/badge/Community-Active-green.svg)](https://discord.gg/k9F7SyTgqn)
 [![Web Interface](https://img.shields.io/badge/Explore-pollinations.ai/projects-purple.svg)](https://pollinations.ai/projects)
 
@@ -44,9 +44,9 @@
 
 | Project | Description | Author | Stars |
 |---------|-------------|--------|-------|
-| [MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo) ([repo](https://github.com/harry0703/MoneyPrinterTurbo)) | Simply provide a topic or keyword for a video, and it will automatically generate the video copy,... | @harry0703 | ⭐ 46327 |
+| [MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo) ([repo](https://github.com/harry0703/MoneyPrinterTurbo)) | Simply provide a topic or keyword for a video, and it will automatically generate the video copy,... | @harry0703 | ⭐ 46410 |
 | [FoldaScan](https://fs.wen.bar) ([repo](https://github.com/0010skn/WebFS-Toolkit-Local-Folder-Scan-Monitor-Versioning-AI-Prep)) | Use Natural Language to \ | @0010skn | ⭐ 268 |
-| [Elixpo Art Chrome Extension](https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh) ([repo](https://github.com/Circuit-Overtime/elixpo_ai_chapter/tree/main/Elixpo%20Chrome%20%20Extension)) | It uses the pollinations image endpoint to generate an image with `boltning` as the model in 4 ty... | Ayushman Bhatacharya | ⭐ 68 |
+| [Elixpo Art Chrome Extension](https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh) ([repo](https://github.com/Circuit-Overtime/elixpo_ai_chapter/tree/main/Elixpo%20Chrome%20%20Extension)) | It uses the pollinations image endpoint to generate an image with `boltning` as the model in 4 ty... | Ayushman Bhatacharya | ⭐ 71 |
 | [aitoolbox.software 🛠️](https://aitoolbox.software/) ([repo](https://github.com/huamanraj/aitoolbox.software)) | An open-source collection of AI-powered tools to boost your productivity and creativity. | @huamanraj | ⭐ 46 |
 | [Elixpo-Art](https://elixpo-art.com) ([repo](https://github.com/elixpo/art-platform)) | A digital art platform that combines AI image generation with traditional digital art tools, offe... | @elixpo | ⭐ 18 |
 | [Match-cut video ai](https://github.com/lrdcxdes/text-match-cut) ([repo](https://github.com/lrdcxdes/text-match-cut)) | This AI generates video from text in match-cut text style, uses pollinations llm to generate near... | @r3ap3redit | ⭐ 17 |
@@ -125,7 +125,7 @@
 |---------|-------------|--------|-------|
 | [DreamHer](https://dreamher.vercel.app/) ([repo](https://github.com/creation22/DreamGirl)) | Interactive web app that transforms your imagination of a  | @_Creation22 | ⭐ 12 |
 | [🇨🇳 云渺仙途：凡尘篇](https://ai-game.jkai.de/) ([repo](https://github.com/ZhjGo/ai-game)) | 《云渺仙途：凡尘篇》是一个由AI驱动的文字修仙沙盒游戏 (An AI-driven text cultivation sandbox game featuring immortal cultiv... | @ZhjGo | ⭐ 11 |
-| [AI Character RP (Roblox)](https://github.com/snipcola/Roblox-AI) ([repo](https://github.com/snipcola/Roblox-AI)) | A Roblox game that lets players interact with AI characters powered by Pollinations, featuring dy... | @roblox_ai_dev | ⭐ 10 |
+| [AI Character RP (Roblox)](https://github.com/snipcola/Roblox-AI) ([repo](https://github.com/snipcola/Roblox-AI)) | A Roblox game that lets players interact with AI characters powered by Pollinations, featuring dy... | @roblox_ai_dev | ⭐ 11 |
 | [Minecraft AI (Python)](https://github.com/Amagash/minecraft-ai-python) ([repo](https://github.com/Amagash/minecraft-ai-python)) | A Python implementation that uses Pollinations AI to control a Minecraft character through natura... | @Amagash | ⭐ 7 |
 | [AIStorium](https://aistorium.vercel.app/) ([repo](https://github.com/artegoser/ai-storium)) | Service for generating dynamic stories. Generates stories, images and audio by using pollinations... | @artegoser | ⭐ 2 |
 | [Sirius Cybernetics Elevator Challenge](https://github.com/pollinations/sirius-cybernetics-elevator-challenge) ([repo](https://github.com/pollinations/sirius-cybernetics-elevator-challenge)) | A programming challenge that uses Pollinations AI to simulate personality-driven elevator systems... | @sirius_dev | ⭐ 1 |
@@ -159,7 +159,7 @@
 | [Server Status Dashboards](https://github.com/hverr/status-dashboard) ([repo](https://github.com/hverr/status-dashboard)) | A monitoring tool for tracking and visualizing server performance metrics, using Pollinations API... | @devopper | ⭐ 7 |
 | [WordPress AI Vision Block](https://wordpress.org/plugins/ai-vision-block/) ([repo](https://github.com/mahmood-asadi/ai-vision-block)) | A custom WordPress Gutenberg block that allows you to generate images using the Pollinations API.... | mahmood-asadi | ⭐ 7 |
 | [Pollinations.AI Enhancer](https://github.com/fisventurous/pollinationsai-enhancer) ([repo](https://github.com/fisventurous/pollinationsai-enhancer)) | A frontend-based AI interface designed to deliver a smooth, multimodal, and visually engaging use... | @fisven | ⭐ 6 |
-| [unpkg.ai](https://unpkg.ai) ([repo](https://github.com/Strawberry-Computer/unpkg.ai)) | AI-powered ESM module generation service that creates JavaScript modules on-demand using LLMs. | @vgrichina | ⭐ 5 |
+| [unpkg.ai](https://unpkg.ai) ([repo](https://github.com/Strawberry-Computer/unpkg.ai)) | AI-powered ESM module generation service that creates JavaScript modules on-demand using LLMs. | @vgrichina | ⭐ 6 |
 | [DominiSigns](https://www.template.net/ai-sign-generator) ([repo](https://github.com/dominicva/dominisigns)) | A WordPress block plugin that lets users create AI-generated images through the block editor. Int... | @dominicva | ⭐ 4 |
 | [DynaSpark API](https://th3-ai.github.io/DynaSpark) ([repo](https://github.com/Th3-AI/DynaSpark)) | The DynaSpark API provides simple yet powerful AI capabilities for text generation, image creatio... | @Th3-C0der | ⭐ 3 |
 | [Querynator5000](https://querynator5000.onrender.com/) ([repo](https://github.com/SuperShivam5000/querynator5000)) | Modern AI-first SQL interface for exploring and manipulating databases with natural language, run... | @SuperShivam5000 | ⭐ 3 |
@@ -185,16 +185,16 @@
 
 | Project | Description | Author | Stars |
 |---------|-------------|--------|-------|
-| [LobeChat](https://lobechat.com) ([repo](https://github.com/lobehub/lobe-chat)) | An open-source, extensible chat UI framework supporting multiple models and features like message... | @lobehub | ⭐ 66842 |
-| [gpt4free](https://github.com/xtekky/gpt4free) ([repo](https://github.com/xtekky/gpt4free)) | The official gpt4free repository - various collection of powerful language models. | xtekky | ⭐ 65397 |
-| [SillyTavern](https://docs.sillytavern.app/) ([repo](https://github.com/SillyTavern/SillyTavern)) | An LLM frontend for power users. Pollinations permits it to generate text and images. |  | ⭐ 19114 |
-| [Free AI Chatbot & Image Generator](https://vercel.com/templates/ai/ai-sdk-image-generator) ([repo](https://github.com/vercel/ai/tree/main/examples/ai-image-generator)) | A web application offering both conversation with AI and image generation capabilities, utilizing... | @aidevs | ⭐ 18451 |
-| [FreeAI 🇨🇳](https://freeai.aihub.ren/) ([repo](https://github.com/Azad-sl/FreeAI)) | An AI application platform based on Pollinations.AI API, providing free and unlimited AI chat ass... | @Azad-sl | ⭐ 104 |
-| [LLM7.io](https://llm7.io) ([repo](https://github.com/chigwell/llm7.io)) | A free and open AI platform providing advanced multimodal capabilities, including large language ... | @chigwell | ⭐ 94 |
+| [LobeChat](https://lobechat.com) ([repo](https://github.com/lobehub/lobe-chat)) | An open-source, extensible chat UI framework supporting multiple models and features like message... | @lobehub | ⭐ 66885 |
+| [gpt4free](https://github.com/xtekky/gpt4free) ([repo](https://github.com/xtekky/gpt4free)) | The official gpt4free repository - various collection of powerful language models. | xtekky | ⭐ 65404 |
+| [SillyTavern](https://docs.sillytavern.app/) ([repo](https://github.com/SillyTavern/SillyTavern)) | An LLM frontend for power users. Pollinations permits it to generate text and images. |  | ⭐ 19141 |
+| [Free AI Chatbot & Image Generator](https://vercel.com/templates/ai/ai-sdk-image-generator) ([repo](https://github.com/vercel/ai/tree/main/examples/ai-image-generator)) | A web application offering both conversation with AI and image generation capabilities, utilizing... | @aidevs | ⭐ 18490 |
+| [FreeAI 🇨🇳](https://freeai.aihub.ren/) ([repo](https://github.com/Azad-sl/FreeAI)) | An AI application platform based on Pollinations.AI API, providing free and unlimited AI chat ass... | @Azad-sl | ⭐ 105 |
+| [LLM7.io](https://llm7.io) ([repo](https://github.com/chigwell/llm7.io)) | A free and open AI platform providing advanced multimodal capabilities, including large language ... | @chigwell | ⭐ 97 |
 | [LLMS](https://yassineabou.github.io/LLMs-Wasm/) ([repo](https://github.com/yassineAbou/LLMS)) | LLMS is a Kotlin Multiplatform application that brings the power of AI to Android, iOS, Desktop, ... | @yassineAbou | ⭐ 62 |
 | [DynaSpark AI](https://dynaspark.onrender.com) ([repo](https://github.com/Th3-C0der)) | A versatile AI assistant with advanced image and text generation capabilities. | Th3-C0der | ⭐ 20 |
 | [OkeyMeta](https://playground.okeymeta.com.ng/) ([repo](https://github.com/okeymeta/okeymeta)) | OkeyMeta is an AI Playground that allows you to chat with different AI models, generate images, a... | @okeymeta | ⭐ 10 |
-| [EvilChat 🔥🤖](https://altkriz.github.io/evilchat/) ([repo](https://github.com/altkriz/evilchat)) | An uncensored AI chat interface with dark, sleek design, smooth animations, auto-scrolling chat w... | @altkriz | ⭐ 4 |
+| [EvilChat 🔥🤖](https://altkriz.github.io/evilchat/) ([repo](https://github.com/altkriz/evilchat)) | An uncensored AI chat interface with dark, sleek design, smooth animations, auto-scrolling chat w... | @altkriz | ⭐ 5 |
 | [ Comeback AI](https://comeback-ai.pinkpixel.dev) ([repo](https://github.com/pinkpixel-dev/comeback-ai)) | AI-powered clapback machine that transforms mean comments into witty comebacks with 10 unique per... | @sizzlebop | ⭐ 2 |
 | [Rizqi O Chatbot 🇮🇩](https://chatbot.rizqioliveira.my.id) ([repo](https://github.com/ray23-bit/Projectenam)) | Rizqi O Chatbot adalah proyek berbasis Pollinations yang menggabungkan tiga fitur utama: chatbot ... | @ray23-bit | ⭐ 2 |
 | [PrisimAI 💬](https://prisimai.github.io/PrisimAI) ([repo](https://github.com/PrisimAI/PrisimAI)) | A lightweight, browser-based AI chat application designed to run seamlessly as a Progressive Web ... | @CloudCompile | ⭐ 1 |
@@ -277,16 +277,16 @@
 ## 📊 Ecosystem Stats
 
 - **Total Projects**: 207
-- **GitHub Stars**: 235,305
+- **GitHub Stars**: 235,514
 - **Categories**: 7
 - **Active Contributors**: 180
 
 ### 🌟 Top Starred Projects
-🥇 [LobeChat](https://lobechat.com) - ⭐ 66842 stars
-🥈 [gpt4free](https://github.com/xtekky/gpt4free) - ⭐ 65397 stars
-🥉 [MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo) - ⭐ 46327 stars
-🏅 [SillyTavern](https://docs.sillytavern.app/) - ⭐ 19114 stars
-🏅 [Free AI Chatbot & Image Generator](https://vercel.com/templates/ai/ai-sdk-image-generator) - ⭐ 18451 stars
+🥇 [LobeChat](https://lobechat.com) - ⭐ 66885 stars
+🥈 [gpt4free](https://github.com/xtekky/gpt4free) - ⭐ 65404 stars
+🥉 [MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo) - ⭐ 46410 stars
+🏅 [SillyTavern](https://docs.sillytavern.app/) - ⭐ 19141 stars
+🏅 [Free AI Chatbot & Image Generator](https://vercel.com/templates/ai/ai-sdk-image-generator) - ⭐ 18490 stars
 
 
 ## 🤝 Contributing

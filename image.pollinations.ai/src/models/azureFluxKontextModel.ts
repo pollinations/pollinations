@@ -42,9 +42,9 @@ export async function callAzureFluxKontext(
         logCloudflare("Using Azure Flux Kontext in generation mode");
     }
 
-    // Check prompt safety with Azure Content Safety (with 20s timeout)
+    // Check prompt safety with Azure Content Safety (with 30s timeout)
     logCloudflare("Checking prompt safety...");
-    const SAFETY_CHECK_TIMEOUT_MS = 20000; // 20 seconds
+    const SAFETY_CHECK_TIMEOUT_MS = 30000; // 30 seconds
     const safetyCheckPromise = analyzeTextSafety(prompt);
     const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
@@ -127,9 +127,17 @@ export async function callAzureFluxKontext(
             const imageArrayBuffer = await imageResponse.arrayBuffer();
             const buffer = Buffer.from(imageArrayBuffer);
 
-            // Check safety of input image
+            // Check safety of input image (with 30s timeout)
             logCloudflare("Checking safety of input image");
-            const imageSafetyResult = await analyzeImageSafety(buffer);
+            const IMAGE_SAFETY_TIMEOUT_MS = 30000; // 30 seconds
+            const imageSafetyCheckPromise = analyzeImageSafety(buffer);
+            const imageTimeoutPromise = new Promise<never>((_, reject) => {
+                setTimeout(() => {
+                    reject(new Error(`Azure Image Safety check timeout after ${IMAGE_SAFETY_TIMEOUT_MS / 1000}s`));
+                }, IMAGE_SAFETY_TIMEOUT_MS);
+            });
+            
+            const imageSafetyResult = await Promise.race([imageSafetyCheckPromise, imageTimeoutPromise]);
 
             if (!imageSafetyResult.safe) {
                 const errorMessage = `Input image contains unsafe content: ${imageSafetyResult.formattedViolations}`;

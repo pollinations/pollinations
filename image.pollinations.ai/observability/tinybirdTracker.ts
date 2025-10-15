@@ -1,7 +1,6 @@
 import dotenv from "dotenv";
 import debug from "debug";
-import { getProviderNameFromModel } from "./modelProvider.js";
-export { getProviderNameFromModel } from "./modelProvider.js";
+import { getProviderByModelId } from "../../shared/registry/registry.ts";
 
 // Load environment variables
 dotenv.config();
@@ -87,9 +86,9 @@ export async function sendTinybirdEvent(eventData: EventData): Promise<void> {
     );
 
     try {
-        // Get the provider for the model
+        // Get the provider for the model from registry
         const modelName = eventData.model || "unknown";
-        const provider = getProviderNameFromModel(modelName);
+        const provider = getProviderByModelId(modelName) || "unknown";
         log(`Provider for model ${modelName}: ${provider}`);
 
         // Construct the event object to match the exact structure from working text endpoint

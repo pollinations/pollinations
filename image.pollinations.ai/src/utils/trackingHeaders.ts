@@ -4,7 +4,7 @@
  */
 
 import debug from "debug";
-import type { IMAGE_SERVICES } from "../../../shared/registry/image";
+import type { IMAGE_SERVICES } from "../../../shared/registry/image.ts";
 
 const log = debug("pollinations:tracking-headers");
 

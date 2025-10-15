@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import debug from "debug";
-import { getProviderByModelId } from "../../shared/registry/registry.ts";
-import { IMAGE_COSTS } from "../../shared/registry/image.ts";
+import { getProviderByModelId, calculateCost } from "../../shared/registry/registry.ts";
+import type { ModelId, TokenUsage } from "../../shared/registry/registry.ts";
 
 // Load environment variables
 dotenv.config();
@@ -46,8 +46,6 @@ interface TinybirdEvent {
     llm_api_duration_ms?: number;
     standard_logging_object_response_time?: number;
     cost: number;
-    token_price_completion_image?: number;
-    token_count_completion_image?: number;
     user: string;
     username?: string;
     standard_logging_object_status: string;
@@ -94,19 +92,18 @@ export async function sendTinybirdEvent(eventData: EventData): Promise<void> {
         const provider = getProviderByModelId(modelName) || "unknown";
         log(`Provider for model ${modelName}: ${provider}`);
 
-        // Get pricing from registry for Grafana calculation
-        let tokenPrice = 0;
-        let tokenCount = 1; // Default 1 image per request
-
+        // Calculate cost using registry
+        let cost = 0;
         try {
-            const costs = IMAGE_COSTS[modelName as keyof typeof IMAGE_COSTS];
-            if (costs && costs.length > 0) {
-                const latestCost = costs[costs.length - 1];
-                tokenPrice = latestCost.completionImageTokens ?? 0;
-                log(`Token price: $${tokenPrice}/token for ${tokenCount} token(s)`);
-            }
+            const usage: TokenUsage = {
+                unit: "TOKENS",
+                completionImageTokens: 1, // 1 image per request
+            };
+            const costResult = calculateCost(modelName as ModelId, usage);
+            cost = costResult.totalCost;
+            log(`Cost calculated: $${cost.toFixed(6)} for model ${modelName}`);
         } catch (error) {
-            log(`Warning: Could not get pricing for model ${modelName}:`, error);
+            log(`Warning: Could not calculate cost for model ${modelName}:`, error);
         }
 
         // Construct the event object to match the exact structure from working text endpoint
@@ -126,10 +123,8 @@ export async function sendTinybirdEvent(eventData: EventData): Promise<void> {
             llm_api_duration_ms: eventData.duration,
             standard_logging_object_response_time: eventData.duration,
 
-            // Cost information - calculated in Grafana (token_count × token_price)
-            cost: 0,  // Not pre-calculated, Grafana computes from token fields
-            token_price_completion_image: tokenPrice,
-            token_count_completion_image: tokenCount,
+            // Cost information
+            cost,
 
             // User info
             user: eventData.username || eventData.user || "anonymous",

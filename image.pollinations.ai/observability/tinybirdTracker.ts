@@ -94,21 +94,19 @@ export async function sendTinybirdEvent(eventData: EventData): Promise<void> {
         const provider = getProviderByModelId(modelName) || "unknown";
         log(`Provider for model ${modelName}: ${provider}`);
 
-        // Calculate cost from registry pricing
+        // Get pricing from registry for Grafana calculation
         let tokenPrice = 0;
         let tokenCount = 1; // Default 1 image per request
-        let cost = 0;
 
         try {
             const costs = IMAGE_COSTS[modelName as keyof typeof IMAGE_COSTS];
             if (costs && costs.length > 0) {
                 const latestCost = costs[costs.length - 1];
                 tokenPrice = latestCost.completionImageTokens ?? 0;
-                cost = tokenCount * tokenPrice;
-                log(`Cost calculated: ${tokenCount} tokens × $${tokenPrice}/token = $${cost.toFixed(6)}`);
+                log(`Token price: $${tokenPrice}/token for ${tokenCount} token(s)`);
             }
         } catch (error) {
-            log(`Warning: Could not calculate cost for model ${modelName}:`, error);
+            log(`Warning: Could not get pricing for model ${modelName}:`, error);
         }
 
         // Construct the event object to match the exact structure from working text endpoint
@@ -128,8 +126,8 @@ export async function sendTinybirdEvent(eventData: EventData): Promise<void> {
             llm_api_duration_ms: eventData.duration,
             standard_logging_object_response_time: eventData.duration,
 
-            // Cost information
-            cost,
+            // Cost information - calculated in Grafana (token_count × token_price)
+            cost: 0,  // Not pre-calculated, Grafana computes from token fields
             token_price_completion_image: tokenPrice,
             token_count_completion_image: tokenCount,
 

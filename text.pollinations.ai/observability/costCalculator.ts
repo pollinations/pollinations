@@ -66,11 +66,13 @@ export function resolveCost(responseModel: string): CostRates {
  * @returns Total cost in dollars
  */
 export function calculateTotalCost(tokenData: TokenData): number {
-    const completionTextCost = (tokenData.token_count_completion_text * tokenData.token_price_completion_text) / TOKENS_PER_MILLION;
-    const completionAudioCost = (tokenData.token_count_completion_audio * tokenData.token_price_completion_audio) / TOKENS_PER_MILLION;
-    const promptTextCost = (tokenData.token_count_prompt_text * tokenData.token_price_prompt_text) / TOKENS_PER_MILLION;
-    const promptAudioCost = (tokenData.token_count_prompt_audio * tokenData.token_price_prompt_audio) / TOKENS_PER_MILLION;
-    const promptCachedCost = (tokenData.token_count_prompt_cached * tokenData.token_price_prompt_cached) / TOKENS_PER_MILLION;
+    // Note: token_price_* values are already in dollars per token (from fromDPMT)
+    // So we just multiply tokens × price, no division needed
+    const completionTextCost = tokenData.token_count_completion_text * tokenData.token_price_completion_text;
+    const completionAudioCost = tokenData.token_count_completion_audio * tokenData.token_price_completion_audio;
+    const promptTextCost = tokenData.token_count_prompt_text * tokenData.token_price_prompt_text;
+    const promptAudioCost = tokenData.token_count_prompt_audio * tokenData.token_price_prompt_audio;
+    const promptCachedCost = tokenData.token_count_prompt_cached * tokenData.token_price_prompt_cached;
     
     const totalCost = completionTextCost + completionAudioCost + promptTextCost + promptAudioCost + promptCachedCost;
     

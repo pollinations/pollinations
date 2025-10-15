@@ -1,6 +1,6 @@
 import type { Context } from "hono";
 import type { ImageCacheEvent } from "./analytics.ts";
-import { getProviderNameFromModel } from "../../../observability/modelProvider.ts";
+import { getProviderByModelId } from "../../../../shared/registry/registry.ts";
 
 /**
  * Send cache hit events to Tinybird
@@ -47,7 +47,7 @@ export async function sendToTinybird(
 
                 // Model and provider
                 model: imageParams?.model,
-                provider: getProviderNameFromModel(imageParams?.model),
+                provider: getProviderByModelId(imageParams?.model) || "unknown",
 
                 // Performance metrics
                 duration: responseTime,

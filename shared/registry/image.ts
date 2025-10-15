@@ -29,20 +29,21 @@ export const IMAGE_COSTS = {
         },
     ],
     "nanobanana": [
+        // Estimated - Gemini via Vertex AI (currently disabled)
         {
             date: PRICING_START_DATE,
             completionImageTokens: fromDPMT(30000),
         },
     ],
-    // "seedream": [
-    //     // Estimated
-    //     {
-    //         date: PRICING_START_DATE,
-    //         completionImageTokens: fromDPMT(30000),
-    //     },
-    // ],
+    "seedream": [
+        // Estimated - ByteDance ARK (currently disabled)
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: fromDPMT(30000),
+        },
+    ],
     "gptimage": [
-        // Azure GPT Image model
+        // Estimated
         {
             date: PRICING_START_DATE,
             completionImageTokens: fromDPMT(10000),
@@ -55,34 +56,34 @@ export const IMAGE_SERVICES = {
         aliases: [],
         modelId: "flux",
         price: [ZERO_PRICE],
-        provider: "pollinations",
+        provider: "io.net",
         tier: "seed",
     },
     "kontext": {
         aliases: [],
         modelId: "kontext",
         price: IMAGE_COSTS["kontext"],
-        provider: "bpaigen",
+        provider: "io.net",
         tier: "seed",
     },
     "turbo": {
         aliases: [],
         modelId: "turbo",
         price: IMAGE_COSTS["turbo"],
-        provider: "pollinations",
+        provider: "io.net",
         tier: "seed",
     },
-    "nanobanana": {
-        aliases: [],
-        modelId: "nanobanana",
-        price: IMAGE_COSTS["nanobanana"],
-        provider: "vertex-ai",
-        tier: "nectar",
-    },
-    // "seedream": {
+    // nanobanana: {
+    //     aliases: [],
+    //     modelId: "nanobanana",
+    //     price: IMAGE_COSTS["nanobanana"],
+    //     provider: "vertex-ai",
+    //     tier: "nectar",
+    // },
+    // seedream: {
     //     aliases: [],
     //     modelId: "seedream",
-    //     // price: IMAGE_COSTS["seedream"],
+    //     price: IMAGE_COSTS["seedream"],
     //     provider: "bytedance-ark",
     //     tier: "flower",
     // },

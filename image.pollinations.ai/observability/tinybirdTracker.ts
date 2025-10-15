@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import debug from "debug";
 import { getProviderByModelId } from "../../shared/registry/registry.ts";
+import { IMAGE_COSTS } from "../../shared/registry/image.ts";
 
 // Load environment variables
 dotenv.config();
@@ -45,6 +46,8 @@ interface TinybirdEvent {
     llm_api_duration_ms?: number;
     standard_logging_object_response_time?: number;
     cost: number;
+    token_price_completion_image?: number;
+    token_count_completion_image?: number;
     user: string;
     username?: string;
     standard_logging_object_status: string;
@@ -91,6 +94,23 @@ export async function sendTinybirdEvent(eventData: EventData): Promise<void> {
         const provider = getProviderByModelId(modelName) || "unknown";
         log(`Provider for model ${modelName}: ${provider}`);
 
+        // Calculate cost from registry pricing
+        let tokenPrice = 0;
+        let tokenCount = 1; // Default 1 image per request
+        let cost = 0;
+
+        try {
+            const costs = IMAGE_COSTS[modelName as keyof typeof IMAGE_COSTS];
+            if (costs && costs.length > 0) {
+                const latestCost = costs[costs.length - 1];
+                tokenPrice = latestCost.completionImageTokens ?? 0;
+                cost = tokenCount * tokenPrice;
+                log(`Cost calculated: ${tokenCount} tokens × $${tokenPrice}/token = $${cost.toFixed(6)}`);
+            }
+        } catch (error) {
+            log(`Warning: Could not calculate cost for model ${modelName}:`, error);
+        }
+
         // Construct the event object to match the exact structure from working text endpoint
         const event: TinybirdEvent = {
             // Standard timestamps and identifiers
@@ -108,8 +128,10 @@ export async function sendTinybirdEvent(eventData: EventData): Promise<void> {
             llm_api_duration_ms: eventData.duration,
             standard_logging_object_response_time: eventData.duration,
 
-            // Cost information (0 for images for now)
-            cost: 0,
+            // Cost information
+            cost,
+            token_price_completion_image: tokenPrice,
+            token_count_completion_image: tokenCount,
 
             // User info
             user: eventData.username || eventData.user || "anonymous",

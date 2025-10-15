@@ -1,11 +1,20 @@
 import crypto from "node:crypto";
 import debug from "debug";
 
-const MAX_CACHE_SIZE = process.env.NODE_ENV === "test" ? 2 : 500000;
+// ~20GB limit: assuming 1MB avg per image = 20000 images
+const MAX_CACHE_SIZE = process.env.NODE_ENV === "test" ? 2 : 20000;
 const memCache = new Map(); // Using Map to maintain insertion order for LRU
 
 const logError = debug("pollinations:error");
 const logCache = debug("pollinations:cache");
+
+// Evict oldest entries when cache is full
+const evictOldest = () => {
+    if (memCache.size >= MAX_CACHE_SIZE) {
+        const oldestKey = memCache.keys().next().value;
+        memCache.delete(oldestKey);
+    }
+};
 
 // Function to generate a cache path
 const generateCachePath = (prompt: string, extraParams: object): string => {
@@ -50,6 +59,7 @@ export const isImageCached = (prompt: string, extraParams: object): boolean => {
         const value = memCache.get(cachePath);
         memCache.delete(cachePath);
         memCache.set(cachePath, value);
+        evictOldest();
         return true;
     }
     return false;
@@ -63,6 +73,7 @@ export const getCachedImage = (prompt: string = "", extraParams: object) => {
         const value = memCache.get(cachePath);
         memCache.delete(cachePath);
         memCache.set(cachePath, value);
+        evictOldest();
         return value;
     }
     return null;
@@ -81,6 +92,7 @@ export const cacheImagePromise = async (
         const cached = memCache.get(cachePath);
         memCache.delete(cachePath);
         memCache.set(cachePath, cached); // Move to end for LRU
+        evictOldest();
 
         // If it's a promise, wait for it; otherwise return the buffer
         if (cached instanceof Promise) {
@@ -98,6 +110,7 @@ export const cacheImagePromise = async (
 
     // Cache the promise immediately
     memCache.set(cachePath, promise);
+    evictOldest();
 
     try {
         // Wait for the promise to resolve
@@ -105,6 +118,7 @@ export const cacheImagePromise = async (
 
         // Replace the promise with the actual result
         memCache.set(cachePath, buffer);
+        evictOldest();
         logCache(`Completed generation and cached result for: ${cachePath}`);
 
         return buffer;

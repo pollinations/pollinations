@@ -5,8 +5,8 @@ import { StoryHistory } from "./components/StoryHistory.tsx";
 
 // API Configuration
 const API_URL = {
-  story: '/api/text/v1/chat/completions',
-  image: '/api/image/prompt/',
+  story: 'https://text.pollinations.ai/openai',
+  image: 'https://image.pollinations.ai/prompt/',
 };
 
 // Enhanced interfaces
@@ -747,22 +747,6 @@ export default function App() {
     setGameState(prev => ({
       ...prev,
       inventory: [...prev.inventory, item],
-    }));
-  };
-
-  // Story history management
-  const addStoryEntry = (description: string, image: string, characterChoice?: string) => {
-    const storyEntry: StoryEntry = {
-      id: `story_${Date.now()}`,
-      description,
-      image,
-      timestamp: Date.now(),
-      characterChoice,
-    };
-
-    setGameState(prev => ({
-      ...prev,
-      storyHistory: [...prev.storyHistory, storyEntry],
     }));
   };
 

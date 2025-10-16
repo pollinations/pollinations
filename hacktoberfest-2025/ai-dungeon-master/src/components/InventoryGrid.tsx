@@ -5,8 +5,12 @@ import { motion } from "motion/react";
 export interface InventoryItem {
     id: string;
     name: string;
+    quantity: number;
+    type: 'weapon' | 'armor' | 'misc' | 'consumable';
     description: string;
-    imageUrl?: string;
+    rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+    image: string;
+    value?: number;
 }
 
 interface InventoryGridProps {
@@ -35,9 +39,9 @@ export function InventoryGrid({ items, onItemClick, compact = false }: Inventory
                         }`}
                 >
                     <div className={`bg-[#2c1e12] rounded flex items-center justify-center ${compact ? 'h-12' : 'aspect-square'}`}>
-                        {item.imageUrl ? (
+                        {item.image ? (
                             <ImageWithFallback
-                                src={item.imageUrl}
+                                src={item.image}
                                 alt={item.name}
                                 className="w-full h-full object-cover"
                             />

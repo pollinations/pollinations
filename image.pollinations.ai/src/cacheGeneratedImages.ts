@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import debug from "debug";
 
-const MAX_CACHE_SIZE = process.env.NODE_ENV === "test" ? 2 : 5000; 
+const MAX_CACHE_SIZE = process.env.NODE_ENV === "test" ? 2 : 1000; 
 const memCache = new Map(); // Using Map to maintain insertion order for LRU
 
 const logError = debug("pollinations:error");

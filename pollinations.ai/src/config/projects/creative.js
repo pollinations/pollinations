@@ -11,6 +11,7 @@ export const creativeProjects = [
     stars: 1,
     stars: 1,
     stars: 1,
+    stars: 1,
     url: "https://prisimai.github.io/PrisimIG",
     description: "Seamless AI-generated imagery with Pollinations.AI. An intuitive web application for generating high-quality images from text prompts in various styles (realistic, anime, cartoon, fantasy). Features multiple image sizes (256x256, 512x512, 1024x1024), batch generation of up to 5 images, and a clean user-friendly interface without requiring sign-ups or API keys.",
     author: "@CloudCompile",
@@ -74,6 +75,7 @@ export const creativeProjects = [
     stars: 10,
     stars: 10,
     stars: 10,
+    stars: 10,
     stars: 9,
     stars: 9,
     stars: 9,
@@ -112,6 +114,7 @@ export const creativeProjects = [
   },
   {
     name: "DirPixel 🎨",
+    stars: 1,
     stars: 1,
     stars: 1,
     stars: 1,
@@ -204,6 +207,7 @@ export const creativeProjects = [
     stars: 4,
     stars: 4,
     stars: 4,
+    stars: 4,
     url: "https://evolve-ai-gamma.vercel.app/",
     description: "Evolve AI is an intelligent assistant platform that brings together a variety of cutting-edge AI tools to simplify and automate user tasks. It integrates multiple APIs from Pollinations to enable features such as advanced text-to-speech, code generation, code editing, AI-based image generation, and more. The platform is designed to evolve with user needs, combining creativity and productivity into one cohesive experience.",
     author: "@chandankumarm55",
@@ -213,6 +217,7 @@ export const creativeProjects = [
   },
   {
     name: "What is this? ❔",
+    stars: 2,
     stars: 2,
     stars: 2,
     stars: 2,
@@ -311,6 +316,7 @@ export const creativeProjects = [
   },
   {
     name: "CatGPT Meme Generator 🐱",
+    stars: 4,
     stars: 3,
     stars: 3,
     stars: 3,
@@ -387,6 +393,7 @@ export const creativeProjects = [
     stars: 8,
     stars: 8,
     stars: 8,
+    stars: 8,
     stars: 7,
     stars: 7,
     stars: 7,
@@ -435,6 +442,7 @@ export const creativeProjects = [
   },
   {
     name: "Dreamscape AI",
+    stars: 5,
     stars: 5,
     stars: 5,
     stars: 5,
@@ -510,6 +518,7 @@ export const creativeProjects = [
   },
   {
     name: "Elixpo Art Chrome Extension",
+    stars: 72,
     stars: 71,
     stars: 68,
     stars: 67,
@@ -527,6 +536,8 @@ export const creativeProjects = [
   },
   {
     name: "Imagen",
+    stars: 10,
+    stars: 10,
     stars: 10,
     stars: 10,
     stars: 10,
@@ -566,6 +577,7 @@ export const creativeProjects = [
   },
   {
     name: "MoneyPrinterTurbo",
+    stars: 46495,
     stars: 46410,
     stars: 46327,
     stars: 46236,
@@ -582,6 +594,7 @@ export const creativeProjects = [
   },
   {
     name: "Match-cut video ai",
+    stars: 17,
     stars: 17,
     stars: 17,
     stars: 17,
@@ -644,6 +657,7 @@ export const creativeProjects = [
     stars: 268,
     stars: 268,
     stars: 268,
+    stars: 268,
     stars: 178,
     url: "https://fs.wen.bar",
     description: "Use Natural Language to \"Converse\" with Your Codebase, Folda-Scan Smart Project Q&A, powered by advanced vectorization technology, allows you to easily understand complex code, pinpoint information, and offers unprecedented convenience for AI collaboration.",
@@ -663,6 +677,7 @@ export const creativeProjects = [
   },
   {
     name: "MASala",
+    stars: 4,
     stars: 4,
     stars: 4,
     stars: 4,
@@ -728,6 +743,8 @@ export const creativeProjects = [
     stars: 10,
     stars: 10,
     stars: 10,
+    stars: 10,
+    stars: 10,
     stars: 9,
     stars: 9,
     stars: 9,
@@ -770,6 +787,7 @@ export const creativeProjects = [
     stars: 14,
     stars: 14,
     stars: 14,
+    stars: 14,
     url: "https://github.com/tangg555/story-generation-demo",
     description: "An AI tool that generates illustrations for stories and articles using Pollinations, helping writers visualize their narratives.",
     author: "@story_viz",
@@ -804,6 +822,7 @@ export const creativeProjects = [
   },
   {
     name: "☬SHΞNΞRATOR 🎨",
+    stars: 3,
     stars: 3,
     stars: 3,
     stars: 3,

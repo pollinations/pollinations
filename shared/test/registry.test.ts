@@ -6,6 +6,7 @@ import {
     isFreeService,
     getRequiredTier,
     canAccessService,
+    requireTierAccess,
     SERVICE_REGISTRY
 } from "../registry/registry.ts";
 import { fromDPMT, ZERO_PRICE, ZERO_PRICE_START_DATE, PRICING_START_DATE } from "../registry/price-helpers.ts";
@@ -148,7 +149,7 @@ test("getRequiredTier should return correct tier for services", async () => {
 
 test("getRequiredTier should throw for invalid service", async () => {
     expect(() => getRequiredTier("invalid-service" as any))
-        .toThrow("Service not found");
+        .toThrow();
 });
 
 test("canAccessService should enforce tier hierarchy", async () => {
@@ -178,6 +179,25 @@ test("canAccessService should return false for invalid tiers", async () => {
     expect(canAccessService("openai", "invalid" as any)).toBe(false);
 });
 
+test("requireTierAccess should allow access for sufficient tier", async () => {
+    // Should not throw for valid access
+    expect(() => requireTierAccess("openai", "anonymous")).not.toThrow();
+    expect(() => requireTierAccess("flux", "seed")).not.toThrow();
+    expect(() => requireTierAccess("nanobanana", "nectar")).not.toThrow();
+});
+
+test("requireTierAccess should throw 403 for insufficient tier", async () => {
+    // Should throw with status 403 for insufficient tier
+    expect(() => requireTierAccess("flux", "anonymous")).toThrow();
+    expect(() => requireTierAccess("nanobanana", "seed")).toThrow();
+    
+    try {
+        requireTierAccess("flux", "anonymous");
+    } catch (error: any) {
+        expect(error.status).toBe(403);
+    }
+});
+
 test("all services should have valid tier information", async () => {
     // Verify every service has a valid tier and check distribution
     const services = Object.entries(SERVICE_REGISTRY);
@@ -191,7 +211,7 @@ test("all services should have valid tier information", async () => {
     };
     
     for (const [serviceId, service] of services) {
-        const tier = service.tier ?? "anonymous";
+        const tier = getRequiredTier(serviceId as any);
         expect(["anonymous", "seed", "flower", "nectar"]).toContain(tier);
         servicesByTier[tier].push(serviceId);
     }

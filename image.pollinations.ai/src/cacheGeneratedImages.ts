@@ -1,11 +1,20 @@
 import crypto from "node:crypto";
 import debug from "debug";
 
-const MAX_CACHE_SIZE = process.env.NODE_ENV === "test" ? 2 : 500000;
+const MAX_CACHE_SIZE = process.env.NODE_ENV === "test" ? 2 : 1000; 
 const memCache = new Map(); // Using Map to maintain insertion order for LRU
 
 const logError = debug("pollinations:error");
 const logCache = debug("pollinations:cache");
+
+// Evict oldest entries when cache is full
+const evictOldest = () => {
+    if (memCache.size >= MAX_CACHE_SIZE) {
+        const oldestKey = memCache.keys().next().value;
+        memCache.delete(oldestKey);
+        logCache(`Evicted oldest entry: ${oldestKey}`);
+    }
+};
 
 // Function to generate a cache path
 const generateCachePath = (prompt: string, extraParams: object): string => {
@@ -98,6 +107,7 @@ export const cacheImagePromise = async (
 
     // Cache the promise immediately
     memCache.set(cachePath, promise);
+    evictOldest(); // Evict when adding new entry
 
     try {
         // Wait for the promise to resolve
@@ -105,6 +115,7 @@ export const cacheImagePromise = async (
 
         // Replace the promise with the actual result
         memCache.set(cachePath, buffer);
+        evictOldest(); // Evict when storing result
         logCache(`Completed generation and cached result for: ${cachePath}`);
 
         return buffer;

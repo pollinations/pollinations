@@ -16,7 +16,8 @@ const progressColors = [
 ];
 
 // Simple hash function to get consistent color for each ID
-function getColorForId(id: string): StyleFunction {
+function getColorForId(id: string | undefined): StyleFunction {
+    if (!id) return progressColors[0]; // Default color if id is undefined
     const hash = id.split("").reduce((acc, char) => {
         return char.charCodeAt(0) + ((acc << 5) - acc);
     }, 0);

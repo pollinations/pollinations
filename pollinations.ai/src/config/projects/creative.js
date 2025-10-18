@@ -4,6 +4,14 @@
  */
 
 export const creativeProjects = [
+    {
+    name: "Green Hope AI 🎨",
+    url: "https://aithumbnails.vercel.app/",
+    description: "Generate stunning thumbnails with AI, then take full control. Easily edit the text, position, styles, and effects without ever having to start over.",
+    author: "@mustafiz82",
+    submissionDate: "2025-17-25",
+    order: 1
+  },
   {
     name: "AISTONE 🎨",
     url: "https://aistone.org/",

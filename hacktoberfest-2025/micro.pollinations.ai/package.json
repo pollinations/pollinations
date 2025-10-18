@@ -1,0 +1,40 @@
+{
+    "name": "micro.pollinations.ai",
+    "version": "1.0.0",
+    "description": "Microservice for mailer utilities and other microservices",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "dev": "next dev",
+        "build": "next build",
+        "start": "next start",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:coverage": "vitest run --coverage",
+        "example:brevo": "tsx examples/brevo-example.js",
+        "example:resend": "tsx examples/resend-example.js",
+        "example:compare": "tsx examples/provider-comparison.js",
+        "example:nextjs": "tsx examples/nextjs-example.js",
+        "clean": "rm -rf .next"
+    },
+    "keywords": ["mailer", "microservice", "email", "utilities", "nextjs"],
+    "author": "Pollinations AI",
+    "license": "MIT",
+    "dependencies": {
+        "next": "^14.0.0",
+        "react": "^18.0.0",
+        "react-dom": "^18.0.0",
+        "resend": "^3.2.0",
+        "zod": "^4.0.5",
+        "dotenv": "^16.3.1"
+    },
+    "devDependencies": {
+        "@types/node": "^24.0.14",
+        "@types/react": "^18.0.0",
+        "@types/react-dom": "^18.0.0",
+        "typescript": "^5.8.3",
+        "tsx": "^4.20.3",
+        "vitest": "^3.2.4",
+        "@vitest/coverage-v8": "^3.2.4"
+    }
+}

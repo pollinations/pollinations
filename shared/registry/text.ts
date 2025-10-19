@@ -256,9 +256,9 @@ export const TEXT_SERVICES = {
     },
     "claudyclaude": {
         aliases: [],
-        modelId: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        price: TEXT_COSTS["us.anthropic.claude-sonnet-4-5-20250929-v1:0"],
+        modelId: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+        price: TEXT_COSTS["us.anthropic.claude-haiku-4-5-20251001-v1:0"],
         provider: "aws-bedrock",
-        tier: "nectar",
+        tier: "flower",
     },
 } as const satisfies ServiceRegistry<typeof TEXT_COSTS>;

@@ -143,7 +143,6 @@ export function createMistralModelConfig(additionalConfig = {}) {
 		"custom-host": process.env.SCALEWAY_MISTRAL_BASE_URL,
 		authKey: process.env.SCALEWAY_MISTRAL_API_KEY,
 		"max-tokens": 8192,
-		temperature: 0.3,
 		...additionalConfig,
 	};
 }
@@ -218,7 +217,6 @@ export function createIntelligenceModelConfig(additionalConfig = {}) {
 		"custom-host": "https://api.intelligence.io.solutions/api/v1",
 		authKey: process.env.IOINTELLIGENCE_API_KEY,
 		"max-tokens": 8192,
-		temperature: 0.7,
 		...additionalConfig,
 	};
 }

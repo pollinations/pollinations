@@ -79,7 +79,7 @@ const models: ModelDefinition[] = [
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true,
-		maxInputChars: 10000,
+		maxInputChars: 30000,
 	},
 	{
 		name: "qwen-coder",
@@ -175,18 +175,17 @@ const models: ModelDefinition[] = [
 		output_modalities: ["text"],
 		tools: true
 	},
-	// {
-	// 	name: "claudyclaude",
-	// 	description: "Claude 3.5 Haiku",
-	// 	config: portkeyConfig["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
-	// 	transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-	// 	tier: "nectar",
-	// 	hidden: true,
-	// 	// community: false,
-	// 	input_modalities: ["text"],
-	// 	output_modalities: ["text"],
-	// 	tools: true
-	// },
+	{
+		name: "claudyclaude",
+		description: "Claude Sonnet 4.5",
+		config: portkeyConfig["us.anthropic.claude-sonnet-4-5-20250929-v1:0"],
+		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+		tier: "nectar",
+		hidden: true,
+		input_modalities: ["text", "image"],
+		output_modalities: ["text"],
+		tools: true,
+	},
 	{
 		name: "openai-reasoning",
 		description: "OpenAI o4 Mini",

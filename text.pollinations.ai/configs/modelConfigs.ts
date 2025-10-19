@@ -113,6 +113,12 @@ export const portkeyConfig: PortkeyConfigMap = {
 	"us.anthropic.claude-3-5-haiku-20241022-v1:0": () => createBedrockLambdaModelConfig({
 		model: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
 	}),
+	"global.anthropic.claude-haiku-4-5-20251001-v1:0": () => createBedrockLambdaModelConfig({
+		model: "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+	}),
+	"us.anthropic.claude-sonnet-4-5-20250929-v1:0": () => createBedrockLambdaModelConfig({
+		model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+	}),
 	
 	// Google Vertex AI configurations
 	"gemini-2.5-flash-lite": () => ({
@@ -267,7 +273,6 @@ export const portkeyConfig: PortkeyConfigMap = {
 	"@cf/mistralai/mistral-small-3.1-24b-instruct": () =>
 		createCloudflareModelConfig({
 			"max-tokens": 8192,
-			temperature: 0.3,
 			model: "@cf/mistralai/mistral-small-3.1-24b-instruct",
 		}),
 	"@hf/thebloke/llamaguard-7b-awq": () => ({

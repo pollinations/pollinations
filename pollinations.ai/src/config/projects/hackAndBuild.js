@@ -5,6 +5,24 @@
 
 export const hackAndBuildProjects = [
   {
+    name: "BeeCoder 🌈",
+    url: "https://github.com/cemalgnlts/beecoder",
+    description: "Enables VSCode Copilot to connect to Pollinations, bringing AI-powered code generation directly into Visual Studio Code.",
+    author: "@cemalgnlts",
+    repo: "https://github.com/cemalgnlts/beecoder",
+    submissionDate: "2025-10-19",
+    order: 1
+  },
+  {
+    name: "MCP-B 🌐",
+    url: "https://mcp-b.ai",
+    description: "Browser-based Model Context Protocol that enables AI agents to interact with web applications using existing authentication instead of screen scraping. Provides structured JSON-RPC interfaces for precise tool access.",
+    author: "@MiguelsPizza",
+    repo: "https://github.com/MiguelsPizza/WebMCP",
+    submissionDate: "2025-07-10",
+    order: 1
+  },
+  {
     name: "MultiAgent 🤖",
     url: "https://github.com/LKosoj/multiagent",
     description: "Advanced multi-agent system for solving complex tasks using specialized AI agents. Implements modern architectural patterns with agent factory, manager coordination, and flexible pipelines for Text-to-SQL, research, and content creation. Features next-gen RAG memory with SQLite + ChromaDB, database plugin pattern for multiple DBMS, multi-layer security with LLM-Guard, and extensible tool system with MCP integration. Emphasizes modularity, security, and extensibility.",

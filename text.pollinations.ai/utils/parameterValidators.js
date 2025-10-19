@@ -4,27 +4,31 @@
  */
 
 /**
- * Validates a float value without clamping - lets downstream API handle range validation
+ * Validates and clamps a float value within range
  * @param {*} value - Value to validate
+ * @param {number} min - Minimum allowed value
+ * @param {number} max - Maximum allowed value
  * @returns {number|undefined} Validated float or undefined
  */
-export const validateFloat = (value) => {
+export const validateFloat = (value, min = -Infinity, max = Infinity) => {
     if (value === undefined || value === null) return undefined;
     const parsed = parseFloat(value);
     if (isNaN(parsed)) return undefined;
-    return parsed;
+    return Math.max(min, Math.min(max, parsed));
 };
 
 /**
- * Validates an integer value without clamping - lets downstream API handle range validation
+ * Validates and clamps an integer value within range
  * @param {*} value - Value to validate
+ * @param {number} min - Minimum allowed value
+ * @param {number} max - Maximum allowed value
  * @returns {number|undefined} Validated integer or undefined
  */
-export const validateInt = (value) => {
+export const validateInt = (value, min = -Infinity, max = Infinity) => {
     if (value === undefined || value === null) return undefined;
     const parsed = parseInt(value, 10);
     if (isNaN(parsed)) return undefined;
-    return parsed;
+    return Math.max(min, Math.min(max, parsed));
 };
 
 /**
@@ -80,17 +84,16 @@ export const validateJsonMode = (data) => {
 
 /**
  * Validates all common text generation parameters from data object
- * No range clamping - downstream APIs will validate and return proper errors
  * @param {Object} data - Input data object
  * @returns {Object} Validated parameters
  */
 export const validateTextGenerationParams = (data) => {
     return {
-        temperature: validateFloat(data.temperature),
-        top_p: validateFloat(data.top_p),
-        presence_penalty: validateFloat(data.presence_penalty),
-        frequency_penalty: validateFloat(data.frequency_penalty),
-        seed: validateInt(data.seed),
+        temperature: validateFloat(data.temperature, 0, 3),
+        top_p: validateFloat(data.top_p, 0, 1),
+        presence_penalty: validateFloat(data.presence_penalty, -2, 2),
+        frequency_penalty: validateFloat(data.frequency_penalty, -2, 2),
+        seed: validateInt(data.seed, 0),
         stream: validateBoolean(data.stream),
         private: validateBoolean(data.private),
         model: validateString(data.model, "openai-fast"),

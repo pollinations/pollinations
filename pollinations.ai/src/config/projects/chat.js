@@ -5,6 +5,14 @@
 
 export const chatProjects = [
   {
+    name: "Nuvole AI 🍎",
+    url: "https://routinehub.co/shortcut/18431/",
+    description: "Apple Shortcut for iOS/iPadOS with 9 AI models from Pollinations. Features history system, text generation with real-time information, image generation, YouTube video summarization, and powerful HTML UI design. 3rd place in RoutineHub AI category with 5000+ downloads.",
+    author: "@_.mikl._",
+    submissionDate: "2025-07-12",
+    order: 1
+  },
+  {
     name: "WorksparkAI [BETA] 💼",
     url: "https://worksparkai-983563815856.europe-west1.run.app",
     description: "Modern ChatGPT alternative with document processing, PDF reading, image understanding, and web searching. Chat with any LLM using custom API keys. Uses Pollinations AI as default free model. Built with Vite + React, can summarize documents and draw plots.",

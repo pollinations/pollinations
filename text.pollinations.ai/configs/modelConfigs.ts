@@ -12,6 +12,7 @@ import {
 	createElixpoSearchModelConfig,
 	createIntelligenceModelConfig,
 	createBedrockLambdaModelConfig,
+	createBedrockFargateModelConfig,
 	createDeepSeekModelConfig,
 	createDeepSeekReasoningConfig,
 	createMyceliDeepSeekV31Config,
@@ -112,6 +113,18 @@ export const portkeyConfig: PortkeyConfigMap = {
 	}),
 	"us.anthropic.claude-3-5-haiku-20241022-v1:0": () => createBedrockLambdaModelConfig({
 		model: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+	}),
+	"us.anthropic.claude-sonnet-4-5-20250929-v1:0": () => createBedrockLambdaModelConfig({
+		model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+	}),
+	"us.anthropic.claude-sonnet-4-20250514-v1:0": () => createBedrockFargateModelConfig({
+		model: "us.anthropic.claude-sonnet-4-20250514-v1:0",
+	}),
+	"us.anthropic.claude-opus-4-20250514-v1:0": () => createBedrockFargateModelConfig({
+		model: "us.anthropic.claude-opus-4-20250514-v1:0",
+	}),
+	"us.anthropic.claude-haiku-4-5-20251001-v1:0": () => createBedrockFargateModelConfig({
+		model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
 	}),
 	
 	// Google Vertex AI configurations
@@ -387,6 +400,9 @@ export const portkeyConfig: PortkeyConfigMap = {
 	// Custom endpoints
 	"elixposearch-endpoint": () => createElixpoSearchModelConfig(),
 	// AWS Bedrock Lambda endpoint
+	"eu.anthropic.claude-sonnet-4-20250514-v1:0": () => createBedrockLambdaModelConfig({
+		model: "eu.anthropic.claude-sonnet-4-20250514-v1:0",
+	}),
 	"meta.llama3-1-8b-instruct-v1:0": () => createBedrockLambdaModelConfig({
 		model: "meta.llama3-1-8b-instruct-v1:0",
 	}),

@@ -177,8 +177,8 @@ const models: ModelDefinition[] = [
 	},
 	{
 		name: "claudyclaude",
-		description: "Claude Sonnet 4.5",
-		config: portkeyConfig["us.anthropic.claude-sonnet-4-5-20250929-v1:0"],
+		description: "Claude Sonnet 4",
+		config: portkeyConfig["us.anthropic.claude-sonnet-4-20250514-v1:0"],
 		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
 		tier: "nectar",
 		hidden: true,

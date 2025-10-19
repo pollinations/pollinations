@@ -234,3 +234,18 @@ export function createBedrockLambdaModelConfig(additionalConfig = {}) {
 		...additionalConfig,
 	};
 }
+
+/**
+ * Creates AWS Bedrock Fargate model configuration
+ * Uses the new Fargate deployment endpoint with ALB
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - AWS Bedrock Fargate model configuration
+ */
+export function createBedrockFargateModelConfig(additionalConfig = {}) {
+	return {
+		provider: "openai",
+		"custom-host": "http://bedroc-Proxy-He0yOirTrdQe-378478291.us-east-1.elb.amazonaws.com/api/v1",
+		authKey: process.env.AWS_BEARER_TOKEN_BEDROCK_FARGATE,
+		...additionalConfig,
+	};
+}

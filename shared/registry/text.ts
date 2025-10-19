@@ -112,6 +112,20 @@ export const TEXT_COSTS = {
             completionTextTokens: fromDPMT(5.0),
         },
     ],
+    "us.anthropic.claude-haiku-4-5-20251001-v1:0": [
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: fromDPMT(1.0),
+            completionTextTokens: fromDPMT(5.0),
+        },
+    ],
+    "us.anthropic.claude-sonnet-4-5-20250929-v1:0": [
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: fromDPMT(3.0),
+            completionTextTokens: fromDPMT(15.0),
+        },
+    ],
 } as const satisfies ModelRegistry;
 export const TEXT_SERVICES = {
     "openai": {
@@ -232,5 +246,12 @@ export const TEXT_SERVICES = {
         modelId: "gpt-4.1-nano-2025-04-14",
         price: TEXT_COSTS["gpt-4.1-nano-2025-04-14"],
         provider: "azure-openai",
+    },
+    "claudyclaude": {
+        aliases: [],
+        modelId: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+        price: TEXT_COSTS["us.anthropic.claude-haiku-4-5-20251001-v1:0"],
+        provider: "aws-bedrock",
+        tier: "flower",
     },
 } as const satisfies ServiceRegistry<typeof TEXT_COSTS>;

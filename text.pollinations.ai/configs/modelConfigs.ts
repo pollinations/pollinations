@@ -123,6 +123,12 @@ export const portkeyConfig: PortkeyConfigMap = {
 	"us.anthropic.claude-sonnet-4-20250514-v1:0": () => createBedrockFargateModelConfig({
 		model: "us.anthropic.claude-sonnet-4-20250514-v1:0",
 	}),
+	"us.anthropic.claude-opus-4-20250514-v1:0": () => createBedrockFargateModelConfig({
+		model: "us.anthropic.claude-opus-4-20250514-v1:0",
+	}),
+	"us.anthropic.claude-haiku-4-5-20251001-v1:0": () => createBedrockFargateModelConfig({
+		model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+	}),
 	
 	// Google Vertex AI configurations
 	"gemini-2.5-flash-lite": () => ({

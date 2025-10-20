@@ -1,5 +1,5 @@
 // Import from the consolidated affiliates.js file
-import { affiliatesData } from "../../affiliate/affiliates.js";
+import { affiliatesData } from "../../shared/affiliates.js";
 
 // Function to generate markdown from the JSON data
 function generateMarkdownFromJSON(affiliatesData) {

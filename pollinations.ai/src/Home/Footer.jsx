@@ -4,13 +4,6 @@ import { Fonts, SectionBG } from "../config/global";
 import StyledLink from "../components/StyledLink";
 import { SectionContainer } from "../components/SectionContainer";
 import Grid from "@mui/material/Grid2";
-import {
-    FOOTER_INFO_1,
-    FOOTER_INFO_2,
-    FOOTER_TERMS_CONDITIONS_LINK,
-} from "../config/copywrite";
-import { noLink } from "../config/llmTransforms";
-import { LLMTextManipulator } from "../components/LLMTextManipulator";
 import { trackEvent } from "../config/analytics";
 import { useTheme } from "@mui/material/styles";
 import { useMediaQuery } from "@mui/material";
@@ -108,10 +101,7 @@ const Footer = () => {
                         sx={{ fontSize: "1.5em", fontFamily: Fonts.title }}
                     >
                         <StyledLink to="/terms" onClick={handleTermsLinkClick}>
-                            <LLMTextManipulator
-                                text={FOOTER_TERMS_CONDITIONS_LINK}
-                                transforms={[noLink]}
-                            />
+                            Terms & Conditions
                         </StyledLink>
                     </Box>
                     <Box
@@ -123,14 +113,8 @@ const Footer = () => {
                             marginTop: "0.5em",
                         }}
                     >
-                        <LLMTextManipulator
-                            text={FOOTER_INFO_1}
-                            transforms={[noLink]}
-                        />
-                        <LLMTextManipulator
-                            text={FOOTER_INFO_2}
-                            transforms={[noLink]}
-                        />
+                        <p>© 2025 pollinations.ai</p>
+                        <p>Open source AI innovation from Berlin</p>
                     </Box>
                 </Grid>
             </Box>

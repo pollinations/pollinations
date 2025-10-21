@@ -242,6 +242,91 @@
             color: #666666;
             font-style: italic;
         }
+
+        .ai-description-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: all 0.3s;
+            font-family: 'Space Grotesk', sans-serif;
+            width: 100%;
+        }
+
+        .ai-description-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .ai-description-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .ai-description {
+            margin-top: 1rem;
+            padding: 12px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #444;
+            border-left: 3px solid #667eea;
+            text-align: left;
+        }
+
+        .ai-description-loading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #667eea;
+            font-style: italic;
+        }
+
+        .ai-description-loading::before {
+            content: "✨";
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .page-header {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .model-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .model-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: rotate(45deg);
+            transition: all 0.6s;
+        }
+
+        .model-card:hover::before {
+            left: 100%;
+        }
     </style>
 </head>
 <body>
@@ -447,6 +532,52 @@
             }
         }
 
+        async function generateAIDescription(modelName, modelType, cardId) {
+            const descContainer = document.getElementById(`${cardId}-ai-desc`);
+            const button = event.target;
+            
+            // Show loading state
+            button.disabled = true;
+            button.textContent = '⏳ Generating...';
+            descContainer.innerHTML = '<div class="ai-description ai-description-loading">Generating AI description...</div>';
+            
+            try {
+                const prompt = `Give me a brief, simple 1-2 sentence description of the ${modelName} ${modelType} model. Focus on what makes it unique and what it's best used for.`;
+                
+                const response = await fetch('https://text.pollinations.ai/gemini-search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        messages: [
+                            {
+                                role: 'user',
+                                content: prompt
+                            }
+                        ],
+                        model: 'gemini-search'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to generate description');
+                }
+                
+                const data = await response.json();
+                const aiDescription = data.choices?.[0]?.message?.content || data.message?.content || 'Unable to generate description';
+                
+                descContainer.innerHTML = `<div class="ai-description">🤖 <strong>AI Insight:</strong> ${aiDescription}</div>`;
+                button.textContent = '✅ Description Generated';
+                button.disabled = true;
+            } catch (error) {
+                console.error('Error generating AI description:', error);
+                descContainer.innerHTML = '<div class="ai-description" style="color: #ff3b5c;">❌ Failed to generate description. Please try again.</div>';
+                button.textContent = '✨ Get AI Description';
+                button.disabled = false;
+            }
+        }
+
         async function loadModels() {
             const loading = document.getElementById('loading');
             const modelGrid = document.getElementById('model-grid');
@@ -514,6 +645,7 @@
         function createModelCard(model, type) {
             const tierClass = `tier-${model.tier || 'seed'}`;
             const features = getFeatures(model, type);
+            const cardId = `model-${model.name.replace(/[^a-zA-Z0-9]/g, '-')}`;
 
             const featuresHtml = features.length > 0 ? `
                 <ul class="feature-list">
@@ -527,12 +659,16 @@
             ` : '';
 
             return `
-                <div class="model-card">
+                <div class="model-card" id="${cardId}">
                     <div class="model-name">${model.name}</div>
                     <div class="model-description">${model.description || "No description available"}</div>
                     <div class="tier-badge ${tierClass}">
                         ${getTierEmoji(model.tier)} ${getTierLabel(model.tier)}
                     </div>
+                    <button class="ai-description-btn" onclick="generateAIDescription('${model.name}', '${type}', '${cardId}')">
+                        ✨ Get AI Description
+                    </button>
+                    <div id="${cardId}-ai-desc"></div>
                     ${featuresHtml}
                 </div>
             `;

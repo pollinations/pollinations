@@ -45,7 +45,7 @@ This daily sponsored Pollen is always spent before your purchased Pollen balance
 
 ## How much Pollen do models use?
 
-Each premium model uses a different amount of Pollen.
+Each model uses different amounts of Pollen based on what it costs us to run. Here's what you can generate per Pollen (remember: **1 Pollen = $1**):
 
 **Image Models:**
 - **flux**: ∞ images per Pollen (always free!)

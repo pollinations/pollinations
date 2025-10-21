@@ -98,6 +98,7 @@ Once your idea is approved (or if you're feeling confident):
 - **[TEMPLATE-REACT](./TEMPLATE-REACT/)** - React + Vite app (for complex UIs)
 
 **Example Apps:**
+- **[Model Viewer](./model-viewer/)** - Pure HTML model browser 🤖
 - **[CatGPT](./example-catgpt/)** - Pure HTML meme generator 🐱
 - **[Elevator Challenge](./example-elevator-challenge/)** - React + Vite game 🚀
 

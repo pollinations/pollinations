@@ -2,20 +2,23 @@
 export const modelsStyles = {
     container: {
         fontFamily: "'Space Grotesk', sans-serif",
-        maxWidth: "1200px",
+        maxWidth: "900px",
         margin: "0 auto",
         padding: "40px 20px",
         backgroundColor: "#ffffff",
         minHeight: "100vh",
+        textAlign: "center",
     },
     
     pageHeader: {
         position: "relative",
         zIndex: 1,
-        fontSize: "clamp(2rem, 6vw, 3rem)",
-        marginBottom: "1.5rem",
+        fontSize: "clamp(2rem, 6vw, 2.5rem)",
+        marginBottom: "1rem",
         fontWeight: 700,
         display: "inline-block",
+        textAlign: "center",
+        wordBreak: "break-word",
         "&::after": {
             content: '""',
             position: "absolute",
@@ -30,10 +33,19 @@ export const modelsStyles = {
         },
     },
     
+    subtitle: {
+        fontSize: "1.1rem",
+        color: "#666",
+        marginBottom: "2rem",
+        fontFamily: "'Space Grotesk', sans-serif",
+        textAlign: "center",
+    },
+    
     tabContainer: {
         marginTop: "2rem",
         marginBottom: "2rem",
         display: "flex",
+        justifyContent: "center",
         gap: "1rem",
         flexWrap: "wrap",
     },
@@ -70,9 +82,11 @@ export const modelsStyles = {
     
     modelGrid: {
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-        gap: "2rem",
+        gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+        gap: "1.5rem",
         marginTop: "2rem",
+        justifyContent: "center",
+        maxWidth: "100%",
     },
     
     modelCard: {
@@ -82,24 +96,29 @@ export const modelsStyles = {
         border: "3px solid #ff61d8",
         animation: "border-shift 10s infinite linear",
         transition: "all 0.3s",
+        textAlign: "left",
+        position: "relative",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
         "&:hover": {
-            transform: "translateY(-5px)",
-            boxShadow: "0 8px 20px rgba(0, 0, 0, 0.1)",
+            transform: "translateY(-8px)",
+            boxShadow: "0 12px 24px rgba(255, 97, 216, 0.15)",
         },
     },
     
     modelName: {
-        fontSize: "1.5rem",
+        fontSize: "1.4rem",
         fontWeight: 700,
         marginBottom: "0.5rem",
         color: "#000000",
+        fontFamily: "'Space Grotesk', sans-serif",
     },
     
     modelDescription: {
-        fontSize: "1rem",
+        fontSize: "0.95rem",
         color: "#666666",
         marginBottom: "1rem",
-        lineHeight: "1.5",
+        lineHeight: "1.6",
+        minHeight: "2.4rem",
     },
     
     tierBadge: {
@@ -157,6 +176,12 @@ export const modelsStyles = {
         fontSize: "1.2rem",
         color: "#666666",
         fontStyle: "italic",
+        fontFamily: "'Space Grotesk', sans-serif",
+    },
+    
+    headerWrapper: {
+        textAlign: "center",
+        marginBottom: "2rem",
     },
     
     // Keyframes animations (to be added via CSS)

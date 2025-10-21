@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Box, Container, Typography, CircularProgress } from "@mui/material";
+import { Box, Typography, CircularProgress } from "@mui/material";
 import { getAllModels } from "../utils/getModels";
 import { modelsStyles } from "./ModelsStyles";
 
@@ -153,7 +153,7 @@ const Models = () => {
     
     return (
         <Box sx={modelsStyles.container}>
-            <Container maxWidth="lg">
+            <Box sx={modelsStyles.headerWrapper}>
                 <Typography
                     component="h1"
                     className="page-header"
@@ -165,70 +165,63 @@ const Models = () => {
                     🤖 Available Models 🌸
                 </Typography>
                 
-                <Typography
-                    sx={{
-                        fontSize: "1.2rem",
-                        color: "#666",
-                        marginBottom: "2rem",
-                        fontFamily: "'Space Grotesk', sans-serif",
-                    }}
-                >
+                <Typography sx={modelsStyles.subtitle}>
                     Explore our collection of AI models for text and image generation
                 </Typography>
-                
-                <Box sx={modelsStyles.tabContainer}>
-                    <button
-                        className={activeTab === "text" ? "tab-active" : ""}
-                        onClick={() => setActiveTab("text")}
-                        style={{
-                            ...modelsStyles.tab.base,
-                            ...(activeTab === "text" ? { color: "white" } : modelsStyles.tab.inactive),
-                        }}
-                    >
-                        💬 Text Models ({models.textModels.length})
-                    </button>
-                    <button
-                        className={activeTab === "image" ? "tab-active" : ""}
-                        onClick={() => setActiveTab("image")}
-                        style={{
-                            ...modelsStyles.tab.base,
-                            ...(activeTab === "image" ? { color: "white" } : modelsStyles.tab.inactive),
-                        }}
-                    >
-                        🎨 Image Models ({models.imageModels.length})
-                    </button>
+            </Box>
+            
+            <Box sx={modelsStyles.tabContainer}>
+                <button
+                    className={activeTab === "text" ? "tab-active" : ""}
+                    onClick={() => setActiveTab("text")}
+                    style={{
+                        ...modelsStyles.tab.base,
+                        ...(activeTab === "text" ? { color: "white" } : modelsStyles.tab.inactive),
+                    }}
+                >
+                    💬 Text Models ({models.textModels.length})
+                </button>
+                <button
+                    className={activeTab === "image" ? "tab-active" : ""}
+                    onClick={() => setActiveTab("image")}
+                    style={{
+                        ...modelsStyles.tab.base,
+                        ...(activeTab === "image" ? { color: "white" } : modelsStyles.tab.inactive),
+                    }}
+                >
+                    🎨 Image Models ({models.imageModels.length})
+                </button>
+            </Box>
+            
+            {loading ? (
+                <Box
+                    sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        minHeight: "300px",
+                    }}
+                >
+                    <CircularProgress
+                        sx={{ color: "#ff61d8" }}
+                        size={60}
+                    />
                 </Box>
-                
-                {loading ? (
-                    <Box
-                        sx={{
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            minHeight: "300px",
-                        }}
-                    >
-                        <CircularProgress
-                            sx={{ color: "#ff61d8" }}
-                            size={60}
+            ) : displayModels.length === 0 ? (
+                <Box sx={modelsStyles.noModels}>
+                    No models available in this category
+                </Box>
+            ) : (
+                <Box sx={modelsStyles.modelGrid}>
+                    {displayModels.map((model, index) => (
+                        <ModelCard
+                            key={index}
+                            model={model}
+                            type={activeTab}
                         />
-                    </Box>
-                ) : displayModels.length === 0 ? (
-                    <Box sx={modelsStyles.noModels}>
-                        No models available in this category
-                    </Box>
-                ) : (
-                    <Box sx={modelsStyles.modelGrid}>
-                        {displayModels.map((model, index) => (
-                            <ModelCard
-                                key={index}
-                                model={model}
-                                type={activeTab}
-                            />
-                        ))}
-                    </Box>
-                )}
-            </Container>
+                    ))}
+                </Box>
+            )}
         </Box>
     );
 };

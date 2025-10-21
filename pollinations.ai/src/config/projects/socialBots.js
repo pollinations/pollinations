@@ -80,6 +80,15 @@ export const socialBotsProjects = [
     "author": "@MarcosFRG",
     "submissionDate": "2025-10-21",
     "order": 2
+},
+    {
+    "name": "Swapna Shastra Dream Decoder 💤✨",
+    "url": "https://t.me/Swapnashastra_dream_bot",
+    "description": "AI-powered Telegram bot that interprets dreams using ancient Indian Swapna Shastra and mythology. Generates spiritual interpretations and visualizes them as mystical dream cards via Pollinations AI, perfect for sharing on WhatsApp and Instagram.",
+    "author": "@ShashankNagaraj",
+    "submissionDate": "2025-10-21",
+    "order": 4
 }
+
 
 ];

@@ -31,10 +31,8 @@ jobs:
 
             if (INTERNAL_USERS.includes(author)) {
               console.log(`Internal user ${author}, skipping label`);
-            } else if (assoc === "COLLABORATOR") {
-              label = "collab-issue";
             } else {
-              label = "ext-issue";
+              label = "COMMUNITY";
             }
 
             if (label && !current.includes(label)) {

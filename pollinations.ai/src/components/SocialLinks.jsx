@@ -22,12 +22,21 @@ const LinkItem = styled(Link, {
     justifyContent: "center",
     alignItems: "center",
     borderRadius: "50%",
-    border: `2px solid ${Colors.offblack}`,
-    backgroundColor: isHovered ? Colors.offblack : "transparent",
+    border: `3px solid ${isHovered ? "#05ffa1" : "#ff61d8"}`,
+    backgroundColor: isHovered ? "linear-gradient(135deg, #ff61d8, #05ffa1)" : "white",
     width: "40px",
     height: "40px",
-    transition: "all 0.6s ease",
+    transition: "all 0.3s ease",
     textDecoration: "none",
+    boxShadow: isHovered ? "0 4px 12px rgba(255, 97, 216, 0.3)" : "0 2px 6px rgba(0, 0, 0, 0.1)",
+    transform: isHovered ? "translateY(-2px)" : "translateY(0)",
+    animation: isHovered ? "link-border-shift 8s infinite linear" : "none",
+    "@keyframes link-border-shift": {
+        "0%": { borderColor: "#ff61d8" },
+        "33%": { borderColor: "#05ffa1" },
+        "66%": { borderColor: "#ffcc00" },
+        "100%": { borderColor: "#ff61d8" },
+    },
 }));
 
 // Replacing the <img> with a Styled ReactSVG to control the svg fill dynamically
@@ -35,8 +44,8 @@ const StyledReactSVG = styled(ReactSVG, {
     shouldForwardProp: (prop) => !["isHovered", "invert"].includes(prop),
 })(({ isHovered, invert }) => ({
     "& svg": {
-        fill: isHovered ? Colors.offwhite : Colors.offblack,
-        transition: "fill 0.6s ease",
+        fill: isHovered ? "#000000" : "#ff61d8",
+        transition: "fill 0.3s ease",
         width: "100%",
         height: "100%",
     },

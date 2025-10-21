@@ -26,7 +26,7 @@ const AboutUsIcon = styled(ReactSVG)(() => ({
     },
 }));
 
-// About Us button with hover styles
+// About Us button with hover styles - psychedelic design
 const AboutUsButton = styled(GeneralButton)(() => ({
     fontSize: "1em",
     fontFamily: Fonts.title,
@@ -38,18 +38,36 @@ const AboutUsButton = styled(GeneralButton)(() => ({
     display: "flex",
     alignItems: "center",
     minWidth: "150px",
-    border: `2px solid ${Colors.offblack}`,
-    color: Colors.offblack,
-    transition: "color 0.3s, background-color 0.3s",
+    border: "3px solid #ff61d8",
+    color: "#000000",
+    background: "white",
+    boxShadow: "0 2px 8px rgba(255, 97, 216, 0.2)",
+    transition: "all 0.3s ease",
+    animation: "button-border-shift 8s infinite linear",
+    "@keyframes button-border-shift": {
+        "0%": { borderColor: "#ff61d8" },
+        "33%": { borderColor: "#05ffa1" },
+        "66%": { borderColor: "#ffcc00" },
+        "100%": { borderColor: "#ff61d8" },
+    },
     "& svg path": {
         transition: "fill 0.3s",
     },
     "&:hover": {
         color: "white",
-        backgroundColor: Colors.offblack,
+        background: "linear-gradient(135deg, #ff61d8, #05ffa1, #ffcc00)",
+        backgroundSize: "300% 300%",
+        animation: "button-border-shift 8s infinite linear, gradient-shift 3s ease infinite",
+        transform: "translateY(-2px)",
+        boxShadow: "0 4px 12px rgba(255, 97, 216, 0.4)",
         "& svg path": {
             fill: "white",
         },
+    },
+    "@keyframes gradient-shift": {
+        "0%": { backgroundPosition: "0% 50%" },
+        "50%": { backgroundPosition: "100% 50%" },
+        "100%": { backgroundPosition: "0% 50%" },
     },
 }));
 
@@ -91,6 +109,15 @@ const Header = () => {
                     width: "100%",
                     position: "relative",
                     paddingBottom: "2em",
+                    paddingTop: "1em",
+                    borderBottom: "4px solid #ff61d8",
+                    animation: "header-border-shift 10s infinite linear",
+                    "@keyframes header-border-shift": {
+                        "0%": { borderBottomColor: "#ff61d8" },
+                        "33%": { borderBottomColor: "#05ffa1" },
+                        "66%": { borderBottomColor: "#ffcc00" },
+                        "100%": { borderBottomColor: "#ff61d8" },
+                    },
                 }}
             >
                 <NavLink

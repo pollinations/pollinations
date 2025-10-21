@@ -56,6 +56,17 @@ const Footer = () => {
                 padding="1em"
                 gap="2em"
                 marginBottom="4em"
+                sx={{
+                    paddingTop: "2em",
+                    borderTop: "4px solid #ff61d8",
+                    animation: "footer-border-shift 10s infinite linear",
+                    "@keyframes footer-border-shift": {
+                        "0%": { borderTopColor: "#ff61d8" },
+                        "33%": { borderTopColor: "#05ffa1" },
+                        "66%": { borderTopColor: "#ffcc00" },
+                        "100%": { borderTopColor: "#ff61d8" },
+                    },
+                }}
             >
                 <Grid
                     size={{ xs: 12, md: 6 }}

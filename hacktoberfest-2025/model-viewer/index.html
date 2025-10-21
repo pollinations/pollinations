@@ -258,93 +258,154 @@
             margin-right: auto;
         }
 
-        /* Statistics Dashboard */
-        .stats-dashboard {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 3rem;
-            animation: slideIn 0.8s ease;
+        /* Tier Filter Section */
+        .tier-filter-section {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
         }
 
-        .stat-card {
-            background: var(--light-card);
-            padding: 1.5rem;
-            border-radius: 20px;
-            box-shadow: var(--shadow-sm);
-            text-align: center;
+        .tier-filter-btn {
+            padding: 12px 32px;
+            border: 3px solid;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
             transition: all var(--transition-normal);
-            border: 2px solid transparent;
+            background: var(--light-card);
+            position: relative;
+            overflow: hidden;
         }
 
-        body.dark-mode .stat-card {
+        body.dark-mode .tier-filter-btn {
             background: var(--dark-card);
+            color: var(--text-light);
         }
 
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-md);
+        .tier-filter-btn.tier-seed {
+            border-color: #7ed56f;
+        }
+
+        .tier-filter-btn.tier-flower {
             border-color: var(--primary-pink);
         }
 
-        .stat-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--primary-pink), var(--primary-purple));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .tier-filter-btn.tier-nectar {
+            border-color: var(--primary-yellow);
         }
 
-        .stat-label {
-            font-size: 1rem;
-            color: var(--text-gray);
-            margin-top: 0.5rem;
+        .tier-filter-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: var(--shadow-md);
         }
 
-        /* Filter and Sort Controls */
+        .tier-filter-btn.active.tier-seed {
+            background: linear-gradient(135deg, #7ed56f, #28b485);
+            color: white;
+            border-color: transparent;
+        }
+
+        .tier-filter-btn.active.tier-flower {
+            background: linear-gradient(135deg, var(--primary-pink), #ff3b5c);
+            color: white;
+            border-color: transparent;
+        }
+
+        .tier-filter-btn.active.tier-nectar {
+            background: linear-gradient(135deg, var(--primary-yellow), #ff9500);
+            color: white;
+            border-color: transparent;
+        }
+
+        /* Filter and Search Controls */
         .controls-section {
             margin-bottom: 2rem;
             display: flex;
             gap: 1rem;
-            flex-wrap: wrap;
+            flex-direction: column;
             align-items: center;
-            justify-content: space-between;
         }
 
-        .filter-group {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
+        .search-bar-center {
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 1rem;
         }
 
-        .filter-btn, .sort-btn {
-            padding: 0.5rem 1rem;
+        .search-bar-center input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
             border: 2px solid var(--border-color);
-            border-radius: 20px;
-            background: var(--light-card);
-            cursor: pointer;
+            border-radius: 25px;
             font-family: 'Space Grotesk', sans-serif;
-            font-weight: 600;
+            font-size: 1rem;
             transition: all var(--transition-fast);
+            background: var(--light-card);
         }
 
-        body.dark-mode .filter-btn,
-        body.dark-mode .sort-btn {
+        body.dark-mode .search-bar-center input {
             background: var(--dark-card);
             border-color: #444;
             color: var(--text-light);
         }
 
-        .filter-btn:hover, .sort-btn:hover {
+        .search-bar-center input:focus {
+            outline: none;
             border-color: var(--primary-pink);
-            transform: translateY(-2px);
+            box-shadow: 0 0 0 3px rgba(255, 97, 216, 0.1);
         }
 
-        .filter-btn.active {
-            background: linear-gradient(135deg, var(--primary-pink), var(--primary-purple));
-            color: white;
-            border-color: transparent;
+        .search-bar-center {
+            position: relative;
+        }
+
+        .search-bar-center::before {
+            content: "🔍";
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+        }
+
+        .filter-dropdown {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .filter-select {
+            padding: 0.75rem 1.5rem;
+            border: 2px solid var(--border-color);
+            border-radius: 25px;
+            background: var(--light-card);
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all var(--transition-fast);
+            min-width: 200px;
+        }
+
+        body.dark-mode .filter-select {
+            background: var(--dark-card);
+            border-color: #444;
+            color: var(--text-light);
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary-pink);
+        }
+
+        .filter-select:hover {
+            border-color: var(--primary-pink);
         }
 
         /* Tab Container */
@@ -777,127 +838,6 @@
             background: var(--primary-green);
         }
 
-        /* Comparison Tool */
-        .comparison-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--light-card);
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
-            padding: 1rem 2rem;
-            transform: translateY(100%);
-            transition: transform var(--transition-normal);
-            z-index: 1500;
-        }
-
-        body.dark-mode .comparison-bar {
-            background: var(--dark-card);
-        }
-
-        .comparison-bar.show {
-            transform: translateY(0);
-        }
-
-        .comparison-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .comparison-items {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            flex: 1;
-        }
-
-        .comparison-item {
-            padding: 0.5rem 1rem;
-            background: var(--light-bg);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-weight: 600;
-        }
-
-        body.dark-mode .comparison-item {
-            background: var(--dark-bg);
-        }
-
-        .comparison-remove {
-            background: none;
-            border: none;
-            color: var(--primary-pink);
-            cursor: pointer;
-            font-size: 1.2rem;
-            padding: 0;
-            line-height: 1;
-        }
-
-        .compare-btn {
-            background: linear-gradient(135deg, var(--primary-pink), var(--primary-purple));
-            color: white;
-            border: none;
-            padding: 0.75rem 2rem;
-            border-radius: 25px;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--transition-fast);
-        }
-
-        .compare-btn:hover {
-            transform: scale(1.05);
-            box-shadow: var(--shadow-md);
-        }
-
-        .compare-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Comparison Table */
-        .comparison-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            margin-top: 2rem;
-        }
-
-        .comparison-table th,
-        .comparison-table td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        body.dark-mode .comparison-table th,
-        body.dark-mode .comparison-table td {
-            border-color: #444;
-        }
-
-        .comparison-table th {
-            background: var(--light-card);
-            font-weight: 700;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        body.dark-mode .comparison-table th {
-            background: var(--dark-card);
-        }
-
-        .comparison-table tr:hover {
-            background: rgba(255, 97, 216, 0.05);
-        }
-
         /* No Results */
         .no-results {
             text-align: center;
@@ -992,8 +932,8 @@
                 grid-template-columns: 1fr;
             }
 
-            .stats-dashboard {
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            .tier-filter-section {
+                flex-direction: column;
             }
 
             .controls-section {
@@ -1001,11 +941,7 @@
                 align-items: stretch;
             }
 
-            .filter-group {
-                justify-content: center;
-            }
-
-            .comparison-content {
+            .filter-dropdown {
                 flex-direction: column;
             }
 
@@ -1039,7 +975,7 @@
 
         /* Print Styles */
         @media print {
-            .header, .controls-section, .comparison-bar {
+            .header, .controls-section {
                 display: none;
             }
 
@@ -1076,37 +1012,32 @@
             </p>
         </div>
 
-        <!-- Statistics Dashboard -->
-        <div class="stats-dashboard">
-            <div class="stat-card">
-                <div class="stat-value" id="totalModels">0</div>
-                <div class="stat-label">Total Models</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="textModelsCount">0</div>
-                <div class="stat-label">Text Models</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="imageModelsCount">0</div>
-                <div class="stat-label">Image Models</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="freeModelsCount">0</div>
-                <div class="stat-label">Free Models</div>
-            </div>
+        <!-- Tier Filter Section -->
+        <div class="tier-filter-section">
+            <button class="tier-filter-btn tier-seed active" data-tier="seed">
+                🌱 SEED
+            </button>
+            <button class="tier-filter-btn tier-flower" data-tier="flower">
+                🌸 FLOWER
+            </button>
+            <button class="tier-filter-btn tier-nectar" data-tier="nectar">
+                🍯 NECTAR
+            </button>
         </div>
 
-        <!-- Controls Section -->
+        <!-- Controls Section with Search Bar -->
         <div class="controls-section">
-            <div class="filter-group">
-                <button class="filter-btn active" data-filter="all">All Models</button>
-                <button class="filter-btn" data-filter="free">Free Only</button>
-                <button class="filter-btn" data-filter="tools">With Tools</button>
-                <button class="filter-btn" data-filter="reasoning">Reasoning</button>
-                <button class="filter-btn" data-filter="multimodal">Multimodal</button>
+            <div class="search-bar-center">
+                <input type="text" id="searchInput" placeholder="Search models...">
             </div>
-            <div class="filter-group">
-                <select class="sort-btn" id="sortSelect">
+            <div class="filter-dropdown">
+                <select class="filter-select" id="filterSelect">
+                    <option value="all">All Models</option>
+                    <option value="tools">With Tools</option>
+                    <option value="reasoning">Reasoning</option>
+                    <option value="multimodal">Multimodal</option>
+                </select>
+                <select class="sort-btn filter-select" id="sortSelect">
                     <option value="name">Sort by Name</option>
                     <option value="tier">Sort by Tier</option>
                     <option value="newest">Newest First</option>
@@ -1148,16 +1079,6 @@
         </div>
     </div>
 
-    <!-- Comparison Bar -->
-    <div class="comparison-bar" id="comparisonBar">
-        <div class="comparison-content">
-            <div class="comparison-items" id="comparisonItems">
-                <!-- Comparison items will be added here -->
-            </div>
-            <button class="compare-btn" id="compareBtn" disabled>Compare Models</button>
-        </div>
-    </div>
-
     <!-- Code Modal -->
     <div class="modal" id="codeModal">
         <div class="modal-content">
@@ -1169,17 +1090,6 @@
         </div>
     </div>
 
-    <!-- Comparison Modal -->
-    <div class="modal" id="comparisonModal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeComparisonModal()">&times;</button>
-            <h2 style="margin-bottom: 1rem;">Model Comparison</h2>
-            <div id="comparisonContent">
-                <!-- Comparison table will be inserted here -->
-            </div>
-        </div>
-    </div>
-
     <script>
         // State Management
         let state = {
@@ -1187,10 +1097,10 @@
             models: { textModels: [], imageModels: [] },
             filteredModels: [],
             currentFilter: 'all',
+            currentTier: 'seed',
             currentSort: 'name',
             currentView: 'grid',
             favorites: JSON.parse(localStorage.getItem('favorites') || '[]'),
-            comparisonList: [],
             darkMode: localStorage.getItem('darkMode') === 'true',
             aiSummaries: {}
         };
@@ -1398,28 +1308,17 @@
                 ]);
 
                 state.models = { textModels, imageModels };
-                updateStats();
+                
+                // Update tab counts
+                document.getElementById('text-count').textContent = textModels.length;
+                document.getElementById('image-count').textContent = imageModels.length;
+                
                 filterAndRenderModels();
             } catch (error) {
                 console.error('Error loading models:', error);
             } finally {
                 loading.style.display = 'none';
             }
-        }
-
-        // Update statistics
-        function updateStats() {
-            const { textModels, imageModels } = state.models;
-            const allModels = [...textModels, ...imageModels];
-            
-            document.getElementById('totalModels').textContent = allModels.length;
-            document.getElementById('textModelsCount').textContent = textModels.length;
-            document.getElementById('imageModelsCount').textContent = imageModels.length;
-            document.getElementById('text-count').textContent = textModels.length;
-            document.getElementById('image-count').textContent = imageModels.length;
-            
-            const freeModels = allModels.filter(m => m.tier === 'anonymous' || m.tier === 'seed');
-            document.getElementById('freeModelsCount').textContent = freeModels.length;
         }
 
         // Filter models
@@ -1435,11 +1334,13 @@
                 );
             }
             
+            // Tier filter
+            if (state.currentTier) {
+                filtered = filtered.filter(m => m.tier === state.currentTier);
+            }
+            
             // Category filters
             switch (state.currentFilter) {
-                case 'free':
-                    filtered = filtered.filter(m => m.tier === 'anonymous' || m.tier === 'seed');
-                    break;
                 case 'tools':
                     filtered = filtered.filter(m => m.tools);
                     break;
@@ -1495,7 +1396,6 @@
             const features = getFeatures(model, type);
             const cardId = `model-${model.name.replace(/[^a-zA-Z0-9]/g, '-')}`;
             const isFavorite = state.favorites.includes(model.name);
-            const inComparison = state.comparisonList.includes(model.name);
             const aiSummary = AI_SUMMARIES[model.name] || '';
             
             const tags = [];
@@ -1547,10 +1447,6 @@
                         <button class="action-btn action-btn-primary" 
                                 onclick="showCodeExamples('${model.name}', '${type}')">
                             💻 Code
-                        </button>
-                        <button class="action-btn action-btn-secondary ${inComparison ? 'active' : ''}" 
-                                onclick="toggleComparison('${model.name}')">
-                            ${inComparison ? '✓ Added' : '⚖️ Compare'}
                         </button>
                         <button class="action-btn action-btn-secondary tooltip" 
                                 onclick="copyModelInfo('${model.name}')">
@@ -1626,13 +1522,18 @@
             filterAndRenderModels();
         }
 
-        function setFilter(filter) {
-            state.currentFilter = filter;
+        function setTier(tier) {
+            state.currentTier = tier;
             
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.filter === filter);
+            document.querySelectorAll('.tier-filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tier === tier);
             });
             
+            filterAndRenderModels();
+        }
+
+        function setFilter(filter) {
+            state.currentFilter = filter;
             filterAndRenderModels();
         }
 
@@ -1669,90 +1570,6 @@
             }
             localStorage.setItem('favorites', JSON.stringify(state.favorites));
             filterAndRenderModels();
-        }
-
-        function toggleComparison(modelName) {
-            const index = state.comparisonList.indexOf(modelName);
-            if (index > -1) {
-                state.comparisonList.splice(index, 1);
-            } else {
-                if (state.comparisonList.length < 3) {
-                    state.comparisonList.push(modelName);
-                } else {
-                    alert('You can compare up to 3 models at a time');
-                    return;
-                }
-            }
-            
-            updateComparisonBar();
-            filterAndRenderModels();
-        }
-
-        function updateComparisonBar() {
-            const bar = document.getElementById('comparisonBar');
-            const items = document.getElementById('comparisonItems');
-            const btn = document.getElementById('compareBtn');
-            
-            if (state.comparisonList.length > 0) {
-                bar.classList.add('show');
-                items.innerHTML = state.comparisonList.map(name => `
-                    <div class="comparison-item">
-                        <span>${name}</span>
-                        <button class="comparison-remove" onclick="toggleComparison('${name}')">×</button>
-                    </div>
-                `).join('');
-                btn.disabled = state.comparisonList.length < 2;
-            } else {
-                bar.classList.remove('show');
-            }
-        }
-
-        function showComparison() {
-            const allModels = [...state.models.textModels, ...state.models.imageModels];
-            const modelsToCompare = allModels.filter(m => state.comparisonList.includes(m.name));
-            
-            if (modelsToCompare.length < 2) return;
-            
-            const modal = document.getElementById('comparisonModal');
-            const content = document.getElementById('comparisonContent');
-            
-            const properties = [
-                { key: 'name', label: 'Name' },
-                { key: 'description', label: 'Description' },
-                { key: 'tier', label: 'Tier' },
-                { key: 'input_modalities', label: 'Input' },
-                { key: 'output_modalities', label: 'Output' },
-                { key: 'tools', label: 'Tools' },
-                { key: 'reasoning', label: 'Reasoning' },
-                { key: 'enhance', label: 'Enhancement' },
-                { key: 'maxSideLength', label: 'Max Size' },
-            ];
-            
-            content.innerHTML = `
-                <table class="comparison-table">
-                    <thead>
-                        <tr>
-                            <th>Property</th>
-                            ${modelsToCompare.map(m => `<th>${m.name}</th>`).join('')}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${properties.map(prop => `
-                            <tr>
-                                <td><strong>${prop.label}</strong></td>
-                                ${modelsToCompare.map(m => {
-                                    let value = m[prop.key];
-                                    if (Array.isArray(value)) value = value.join(', ');
-                                    if (typeof value === 'boolean') value = value ? '✓' : '✗';
-                                    return `<td>${value || '-'}</td>`;
-                                }).join('')}
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-            
-            modal.classList.add('show');
         }
 
         function showCodeExamples(modelName, type) {
@@ -1884,10 +1701,6 @@ ${AI_SUMMARIES[modelName] ? `AI Insight: ${AI_SUMMARIES[modelName]}` : ''}`;
             document.getElementById('codeModal').classList.remove('show');
         }
 
-        function closeComparisonModal() {
-            document.getElementById('comparisonModal').classList.remove('show');
-        }
-
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             // Apply saved theme
@@ -1900,14 +1713,14 @@ ${AI_SUMMARIES[modelName] ? `AI Insight: ${AI_SUMMARIES[modelName]}` : ''}`;
             document.getElementById('themeToggle').addEventListener('click', toggleTheme);
             document.getElementById('searchInput').addEventListener('input', filterAndRenderModels);
             document.getElementById('sortSelect').addEventListener('change', (e) => setSort(e.target.value));
-            document.getElementById('compareBtn').addEventListener('click', showComparison);
+            document.getElementById('filterSelect').addEventListener('change', (e) => setFilter(e.target.value));
             
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.addEventListener('click', () => switchTab(tab.dataset.tab));
             });
             
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.addEventListener('click', () => setFilter(btn.dataset.filter));
+            document.querySelectorAll('.tier-filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => setTier(btn.dataset.tier));
             });
             
             document.querySelectorAll('.view-btn').forEach(btn => {

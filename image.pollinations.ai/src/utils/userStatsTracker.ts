@@ -3,7 +3,7 @@
  * Tracks requests and violations per user with disk persistence
  */
 
-import fs from "node:fs";
+import { promises as fs } from "node:fs";
 import path from "node:path";
 import debug from "debug";
 
@@ -21,38 +21,35 @@ let stats: UserStatsData = {};
 let saveTimer: NodeJS.Timeout | null = null;
 
 // Ensure directory exists
-function ensureDir() {
+async function ensureDir() {
   const dir = path.dirname(STATS_FILE);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  try {
+    await fs.mkdir(dir, { recursive: true });
+  } catch (error) {
+    log("Error creating directory:", error);
   }
 }
 
 // Load stats from disk
-function loadStats() {
+async function loadStats() {
   try {
-    ensureDir();
-    if (fs.existsSync(STATS_FILE)) {
-      const data = fs.readFileSync(STATS_FILE, "utf8");
-      stats = JSON.parse(data);
-      log(`Loaded stats for ${Object.keys(stats).length} users`);
-    } else {
-      stats = {};
-      log("Starting with empty user stats");
-    }
+    await ensureDir();
+    const data = await fs.readFile(STATS_FILE, "utf8");
+    stats = JSON.parse(data);
+    log(`Loaded stats for ${Object.keys(stats).length} users`);
   } catch (error) {
     stats = {};
-    log("Error loading stats:", error);
+    log("Starting with empty user stats");
   }
 }
 
 // Save stats to disk (debounced)
 function saveStats() {
   if (saveTimer) clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
+  saveTimer = setTimeout(async () => {
     try {
-      ensureDir();
-      fs.writeFileSync(STATS_FILE, JSON.stringify(stats, null, 2));
+      await ensureDir();
+      await fs.writeFile(STATS_FILE, JSON.stringify(stats, null, 2));
       log(`Saved stats for ${Object.keys(stats).length} users`);
     } catch (error) {
       log("Error saving user stats:", error);
@@ -61,7 +58,7 @@ function saveStats() {
 }
 
 // Initialize on import
-loadStats();
+loadStats().catch(err => log("Failed to initialize stats:", err));
 
 export const userStatsTracker = {
   recordRequest(username: string | null | undefined) {
@@ -96,5 +93,21 @@ export const userStatsTracker = {
   getViolationRate(username: string): number {
     const s = userStatsTracker.getUserStats(username);
     return s.requests > 0 ? s.violations / s.requests : 0;
+  },
+
+  // Async methods for explicit async operations
+  async flushStats() {
+    if (saveTimer) clearTimeout(saveTimer);
+    try {
+      await ensureDir();
+      await fs.writeFile(STATS_FILE, JSON.stringify(stats, null, 2));
+      log(`Flushed stats for ${Object.keys(stats).length} users`);
+    } catch (error) {
+      log("Error flushing stats:", error);
+    }
+  },
+
+  async reloadStats() {
+    await loadStats();
   },
 };

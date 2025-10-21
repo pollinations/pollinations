@@ -420,6 +420,15 @@ export const creativeProjects = [
     submissionDate: "2025-05-02",
     order: 1
   },
+    {
+    "name": "FoilAI 🎨",
+    "url": "https://foilai.in/",
+    "description": "FoilAI is a web-based text-to-image AI generator in beta stage, allowing users to create art from text prompts. Powered by Pollinations AI, it offers a simplified, user-friendly interface for generating images. Free to use, privacy-focused, and continuously improving through user feedback.",
+    "author": "@aryanshrai3",
+    "submissionDate": "2025-10-21",
+    "order": 3
+},
+
   {
     name: "PollinateAI",
     url: "https://pollinateai.vercel.app",

@@ -1,7 +1,7 @@
 name: Project Submission
 description: Submit your project to be featured on Pollinations
 title: "[Project Submission]: "
-labels: ["project-submission"]
+labels: ["APPS"]
 body:
   - type: markdown
     attributes:

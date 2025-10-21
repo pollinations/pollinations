@@ -87,6 +87,7 @@ export const modelsStyles = {
         marginTop: "2rem",
         justifyContent: "center",
         maxWidth: "100%",
+        gridAutoRows: "1fr", // Make all rows equal height
     },
     
     modelCard: {
@@ -99,6 +100,9 @@ export const modelsStyles = {
         textAlign: "left",
         position: "relative",
         boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+        display: "flex",
+        flexDirection: "column",
+        height: "100%", // Ensure card takes full grid cell height
         "&:hover": {
             transform: "translateY(-8px)",
             boxShadow: "0 12px 24px rgba(255, 97, 216, 0.15)",
@@ -155,6 +159,7 @@ export const modelsStyles = {
         listStyle: "none",
         padding: 0,
         margin: 0,
+        marginTop: "auto", // Push features to bottom of card
     },
     
     featureItem: {

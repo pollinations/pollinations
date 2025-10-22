@@ -40,7 +40,7 @@ export const IMAGE_CONFIG: ImageModelsConfig = {
         maxSideLength: 768,
     },
 
-    // Azure GPT Image model - gpt-image-1-mini
+    // Azure GPT Image model - gpt-image-1-minica
     gptimage: {
         type: "azure",
         enhance: false,

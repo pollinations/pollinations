@@ -47,6 +47,40 @@ export const creativeProjects = [
     order: 1
   },
   {
+    name: "Green Hope AI 🎨",
+    url: "https://aithumbnails.vercel.app/",
+    description: "Generate stunning thumbnails with AI, then take full control. Easily edit the text, position, styles, and effects without ever having to start over.",
+    author: "@Mustafiz82",
+    submissionDate: "2025-10-16",
+    order: 1
+  },
+  {
+    name: "Pollinations AI Samples 🎨",
+    url: "https://pollinations.godsbee.com/",
+    description: "Comprehensive demonstration of Pollinations AI capabilities including creative generation, language & speech, and vision analysis. Showcases how developers can leverage APIs to build advanced AI features.",
+    author: "@nyr-github",
+    repo: "https://github.com/nyr-github/pollinations-demo",
+    submissionDate: "2025-10-16",
+    order: 1
+  },
+  {
+    name: "Inkly AI 🎨",
+    url: "https://inkly-ai.vercel.app/",
+    description: "Platform providing text-to-image and image-to-image generation with image gallery support and downloads. Simple interface for AI image generation with customizable settings.",
+    author: "@Auspicious14",
+    repo: "https://github.com/Auspicious14/image-generator-be",
+    submissionDate: "2025-10-04",
+    order: 1
+  },
+  {
+    name: "Craftura AI 🎨",
+    url: "https://www.craftura.art/",
+    description: "Freemium image generating SaaS where users can generate AI images via Pollinations API with customizable generator settings and various styling options.",
+    author: "@TusharSoni014",
+    submissionDate: "2025-10-03",
+    order: 1
+  },
+  {
     name: "AISTONE 🎨",
     url: "https://aistone.org/",
     description: "Based on advanced Pollinations.AI technology, supports FLUX, Turbo, Kontext for images, and OpenAI Audio TTS for voice. No registration required, permanently free, supports Chinese and English input, optimized for creators.",
@@ -420,6 +454,15 @@ export const creativeProjects = [
     submissionDate: "2025-05-02",
     order: 1
   },
+    {
+    "name": "FoilAI 🎨",
+    "url": "https://foilai.in/",
+    "description": "FoilAI is a web-based text-to-image AI generator in beta stage, allowing users to create art from text prompts. Powered by Pollinations AI, it offers a simplified, user-friendly interface for generating images. Free to use, privacy-focused, and continuously improving through user feedback.",
+    "author": "@aryanshrai3",
+    "submissionDate": "2025-10-21",
+    "order": 3
+},
+
   {
     name: "PollinateAI",
     url: "https://pollinateai.vercel.app",

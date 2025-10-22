@@ -22,7 +22,7 @@ jobs:
             const body = context.payload.pull_request?.body || context.payload.issue?.body || '';
             
             // Skip if already condensed or too short
-            if (body.includes('*Description condensed by [pollinations.ai](https://pollinations.ai) for readability*') || body.length < 200) {
+            if (body.includes('Description condensed by [pollinations.ai](https://pollinations.ai)') || body.length < 200) {
               console.log('Skipping: Already condensed or too short');
               return { shouldCondense: false };
             }
@@ -106,8 +106,11 @@ Return ONLY the condensed description, no explanations.`;
             const data = await response.json();
             const condensedText = data.choices[0].message.content.trim();
             
-            // Add disclaimer
-            const finalBody = `${condensedText}\n\n---\n*Description condensed by [pollinations.ai](https://pollinations.ai) for readability*`;
+            // Add disclaimer with link to original
+            const isPR = github.event_name === 'pull_request';
+            const issueNumber = isPR ? context.payload.pull_request.number : context.payload.issue.number;
+            const originalLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/${isPR ? 'pull' : 'issues'}/${issueNumber}`;
+            const finalBody = `${condensedText}\n\n---\n*Description condensed by [pollinations.ai](https://pollinations.ai) for readability. [View original](${originalLink})*`;
             
             console.log('Condensed successfully');
             return { condensedBody: finalBody };

@@ -48,7 +48,7 @@ export type ModelRegistry = Record<string, ModelDefinition>;
 export type ServiceDefinition<T extends ModelRegistry> = {
     aliases: string[];
     modelId: keyof T;
-    price: PriceDefinition[];
+    free?: boolean; // Optional flag for free models (defaults to false)
     provider?: string; // Optional provider identifier (e.g., "azure-openai", "aws-bedrock")
     tier?: UserTier; // Optional tier level (defaults to "anonymous")
 };
@@ -127,15 +127,46 @@ export const MODEL_REGISTRY = Object.fromEntries(
     ]),
 );
 
+// Internal type for SERVICE_REGISTRY entries (includes computed price field)
+type ServiceRegistryEntry<T extends ModelRegistry> = ServiceDefinition<T> & {
+    price: PriceDefinition[];
+};
+
+// Generate SERVICE_REGISTRY with computed prices from costs
 export const SERVICE_REGISTRY = Object.fromEntries(
-    Object.entries(SERVICES).map(([name, service]) => [
-        name,
-        {
-            ...service,
-            price: sortDefinitions(service.price as UsageConversionDefinition[]),
-        },
-    ]),
-);
+    Object.entries(SERVICES).map(([name, service]) => {
+        const modelCost = MODELS[service.modelId as keyof typeof MODELS];
+        if (!modelCost) {
+            throw new Error(`Model cost not found for service "${name}" with modelId "${String(service.modelId)}"`);
+        }
+        
+        // Generate price from cost based on free flag
+        const isFree = (service as any).free ?? false;
+        const price = modelCost.map(costDef => {
+            if (isFree) {
+                // Free model: all prices are 0
+                const zeroPriceDef: UsageConversionDefinition = { date: costDef.date };
+                Object.keys(costDef).forEach(key => {
+                    if (key !== 'date') {
+                        zeroPriceDef[key as UsageType] = 0;
+                    }
+                });
+                return zeroPriceDef;
+            } else {
+                // Paid model: price = cost (multiplier 1.0)
+                return { ...costDef };
+            }
+        });
+        
+        return [
+            name,
+            {
+                ...service,
+                price: sortDefinitions(price),
+            } as ServiceRegistryEntry<typeof MODELS>,
+        ];
+    }),
+) as Record<string, ServiceRegistryEntry<typeof MODELS>>;
 
 // Build alias lookup map: alias -> serviceId
 export const ALIAS_MAP = Object.fromEntries(
@@ -210,8 +241,16 @@ export function getServices(): ServiceId[] {
  */
 export function getServiceDefinition(
     serviceId: ServiceId,
-): ServiceDefinition<typeof MODELS> {
+): ServiceRegistryEntry<typeof MODELS> {
     return SERVICE_REGISTRY[serviceId];
+}
+
+/**
+ * Get aliases for a service
+ */
+export function getServiceAliases(serviceId: ServiceId): string[] {
+    const service = SERVICE_REGISTRY[serviceId];
+    return service?.aliases || [];
 }
 
 /**

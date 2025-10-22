@@ -8,7 +8,7 @@ Pollen is our prepaid credit system. **$1 ≈ 1 Pollen** (pricing may evolve). Y
 
 There are three ways to add Pollen to your balance:
 1.  **Buy It:** Purchase Pollen packs directly with a credit card. This Pollen goes into your wallet and never expires.
-2.  **Get a Daily Sponsorship:** If you are in a Sponsorship Tier (Seed, Flower, or Nectar), you receive a free Pollen allowance added to your account every day.
+2.  **Get a Daily Sponsorship:** During beta, registered developers receive daily Pollen grants to support experimentation.
 3.  **Earn It:** Complete one-time community rewards, like starring our GitHub repo or helping solve a technical issue.
 
 ## What payment methods do you accept?
@@ -27,21 +27,16 @@ Yep! You can use our API with **Anonymous access** — no signup, account, or pa
 
 Registering itself gives you an account. The real power is unlocked when you **create and use an API key**. Registering is the necessary first step to do that.
 
-- **Using a Front-End Key:** If you use this key in your client-side app, you get the **better rate limits**.
-- **Using a Server-to-Server Key:** This key gives you the best rate limits for free models. It also gives you **access to all models and to spend Pollen**.
+- **Using a Front-End Key:** Designed for client-side apps (bound to your domain). Medium rate limits. Access to all models — free models cost 0 Pollen, paid models spend Pollen.
+- **Using a Server-to-Server Key:** For backend apps. No platform rate limits. Access to all models — free models cost 0 Pollen, paid models spend Pollen.
 
 If you register but do not use a key, your rate limits will be the same as an anonymous user.
 
-**Note:** Currently, only Server-to-Server Keys can spend Pollen. We're working on secure front-end spending to enable this for Front-End Keys as well, and hope to have this ready for launch.
-
 ## How do daily Pollen grants work?
 
-Daily Pollen grants are a benefit for users in a **Sponsorship Tier**.
-- We have three tiers: **Seed**, **Flower**, and **Nectar**. The only difference is that higher tiers get more daily Pollen.
-- **Before our official launch (early December):** Registering automatically places you in the **Seed** tier.
-- **After our official launch:** New users are not automatically assigned to a sponsorship tier, but can request to join one from their dashboard.
+During beta, registered developers receive daily Pollen grants to support experimentation. Sponsorship tiers will be introduced during beta phases. 
 
-This daily sponsored Pollen is always spent before your purchased Pollen balance.
+Sponsored Pollen is always spent before your purchased Pollen balance, and it expires 15 days after being granted.
 
 ## How much Pollen do models use?
 

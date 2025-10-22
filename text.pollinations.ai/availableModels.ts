@@ -20,7 +20,7 @@ import { portkeyConfig, type ValidModelId } from "./configs/modelConfigs.js";
 
 // Import registry for validation and aliases
 import { TEXT_SERVICES } from "../shared/registry/text.js";
-import { resolveServiceId } from "../shared/registry/registry.js";
+import { resolveServiceId, getServiceAliases } from "../shared/registry/registry.js";
 
 // Type constraint: model names must exist in registry
 type ValidServiceName = keyof typeof TEXT_SERVICES;
@@ -308,8 +308,7 @@ export const availableModels = models.map((model) => {
 	const outputs = model.output_modalities || [];
 	
 	// Get aliases from registry (single source of truth)
-	const serviceDefinition = TEXT_SERVICES[model.name];
-	const aliases = serviceDefinition?.aliases || [];
+	const aliases = getServiceAliases(model.name);
 
 	return {
 		...model,

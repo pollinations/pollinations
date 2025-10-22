@@ -1,5 +1,5 @@
 /**
- * Simple user statistics tracker for nano-banana model
+ * Simple functional user statistics tracker
  * Tracks requests and violations per user with disk persistence
  */
 
@@ -8,120 +8,106 @@ import path from "node:path";
 import debug from "debug";
 
 const log = debug("pollinations:user-stats");
+const STATS_FILE = path.join(process.cwd(), "temp", "user_stats.json");
 
 interface UserStats {
   requests: number;
   violations: number;
 }
 
-interface UserStatsData {
-  [username: string]: UserStats;
+type UserStatsData = Record<string, UserStats>;
+
+let stats: UserStatsData = {};
+let saveTimer: NodeJS.Timeout | null = null;
+
+// Ensure directory exists
+async function ensureDir() {
+  const dir = path.dirname(STATS_FILE);
+  try {
+    await fs.mkdir(dir, { recursive: true });
+  } catch (error) {
+    log("Error creating directory:", error);
+  }
 }
 
-class UserStatsTracker {
-  private stats: UserStatsData = {};
-  private filePath: string;
-  private saveTimeout: NodeJS.Timeout | null = null;
-
-  constructor() {
-    this.filePath = path.join(process.cwd(), "temp", "user_stats.json");
-    this.loadStats();
+// Load stats from disk
+async function loadStats() {
+  try {
+    await ensureDir();
+    const data = await fs.readFile(STATS_FILE, "utf8");
+    stats = JSON.parse(data);
+    log(`Loaded stats for ${Object.keys(stats).length} users`);
+  } catch (error) {
+    stats = {};
+    log("Starting with empty user stats");
   }
+}
 
-  /**
-   * Load stats from disk on startup
-   */
-  private async loadStats(): Promise<void> {
+// Save stats to disk (debounced)
+function saveStats() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
     try {
-      await fs.mkdir(path.dirname(this.filePath), { recursive: true });
-      const data = await fs.readFile(this.filePath, "utf8");
-      this.stats = JSON.parse(data);
-      log(`Loaded stats for ${Object.keys(this.stats).length} users`);
+      await ensureDir();
+      await fs.writeFile(STATS_FILE, JSON.stringify(stats, null, 2));
+      log(`Saved stats for ${Object.keys(stats).length} users`);
     } catch (error) {
-      // File doesn't exist or is invalid, start with empty stats
-      this.stats = {};
-      log("Starting with empty user stats");
+      log("Error saving user stats:", error);
     }
-  }
+  }, 100);
+}
 
-  /**
-   * Save stats to disk (debounced to avoid excessive writes)
-   */
-  private async saveStats(): Promise<void> {
-    if (this.saveTimeout) {
-      clearTimeout(this.saveTimeout);
-    }
-    
-    this.saveTimeout = setTimeout(async () => {
-      try {
-        await fs.writeFile(this.filePath, JSON.stringify(this.stats, null, 2));
-        log(`Saved stats for ${Object.keys(this.stats).length} users`);
-      } catch (error) {
-        log("Error saving user stats:", error);
-      }
-    }, 1000); // Save after 1 second of inactivity
-  }
+// Initialize on import
+loadStats().catch(err => log("Failed to initialize stats:", err));
 
-  /**
-   * Record a request for a user
-   */
-  recordRequest(username: string): void {
+export const userStatsTracker = {
+  recordRequest(username: string | null | undefined) {
     if (!username || username === 'anonymous') return;
-    
-    if (!this.stats[username]) {
-      this.stats[username] = { requests: 0, violations: 0 };
-    }
-    
-    this.stats[username].requests++;
-    this.saveStats();
-  }
+    if (!stats[username]) stats[username] = { requests: 0, violations: 0 };
+    stats[username].requests++;
+    saveStats();
+  },
 
-  /**
-   * Record a violation for a user
-   */
-  recordViolation(username: string): void {
+  recordViolation(username: string | null | undefined) {
     if (!username || username === 'anonymous') return;
-    
-    if (!this.stats[username]) {
-      this.stats[username] = { requests: 0, violations: 0 };
-    }
-    
-    this.stats[username].violations++;
-    this.saveStats();
-  }
+    if (!stats[username]) stats[username] = { requests: 0, violations: 0 };
+    stats[username].violations++;
+    saveStats();
+  },
 
-  /**
-   * Get stats for a user
-   */
   getUserStats(username: string): UserStats {
-    return this.stats[username] || { requests: 0, violations: 0 };
-  }
+    return stats[username] || { requests: 0, violations: 0 };
+  },
 
-  /**
-   * Get all user stats
-   */
   getAllStats(): UserStatsData {
-    return { ...this.stats };
-  }
+    return { ...stats };
+  },
 
-  /**
-   * Get top users by violations (for monitoring)
-   */
-  getTopViolators(limit: number = 10): Array<{username: string, stats: UserStats}> {
-    return Object.entries(this.stats)
-      .map(([username, stats]) => ({ username, stats }))
+  getTopViolators(limit: number = 10) {
+    return Object.entries(stats)
+      .map(([username, s]) => ({ username, stats: s }))
       .sort((a, b) => b.stats.violations - a.stats.violations)
       .slice(0, limit);
-  }
+  },
 
-  /**
-   * Get violation rate for a user
-   */
   getViolationRate(username: string): number {
-    const stats = this.getUserStats(username);
-    return stats.requests > 0 ? stats.violations / stats.requests : 0;
-  }
-}
+    const s = userStatsTracker.getUserStats(username);
+    return s.requests > 0 ? s.violations / s.requests : 0;
+  },
 
-// Singleton instance
-export const userStatsTracker = new UserStatsTracker();
+  // Async methods for explicit async operations
+  async flushStats() {
+    if (saveTimer) clearTimeout(saveTimer);
+    try {
+      await ensureDir();
+      await fs.writeFile(STATS_FILE, JSON.stringify(stats, null, 2));
+      log(`Flushed stats for ${Object.keys(stats).length} users`);
+    } catch (error) {
+      log("Error flushing stats:", error);
+    }
+  },
+
+  async reloadStats() {
+    await loadStats();
+  },
+};

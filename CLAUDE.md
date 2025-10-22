@@ -304,6 +304,27 @@ Remember these principles when implementing changes or reviewing submissions.
 - If the user asks to send to git or something similar do all these steps:
 - Git status, diff, create branch, commit all, push and write a PR description
 
+## VERY IMPORTANT: Concise Communication Style
+
+**ALL PRs, comments, and issues must be concise and use bullet points.** This is critical for:
+- Readability and quick scanning
+- Respecting reviewer time
+- Maintaining consistency across the project
+- Following @eulervoid's established style
+
+### DO:
+- Use bullet points for lists
+- Keep comments under 200 words
+- One idea per bullet
+- Remove unnecessary words
+- Be direct and clear
+
+### DON'T:
+- Write long paragraphs
+- Use verbose explanations
+- Repeat the same point multiple ways
+- Add marketing language or fluff
+
 ## PR Description Style Guide
 
 When creating PR descriptions, follow the concise style used by @eulervoid:
@@ -331,6 +352,21 @@ When creating PR descriptions, follow the concise style used by @eulervoid:
 - Breaking changes
 - New features requiring explanation
 - But still keep it concise and structured
+
+## GitHub Labels Best Practices
+
+When creating or applying labels to issues:
+
+1. **Check label usage before applying**:
+   - Search existing issues to see if a label is actively used
+   - Use `mcp1_list_issues` with the label to verify it's not a new/unused label
+   - Only apply labels that are already established in the repository
+   - Avoid creating new labels unless they're part of a broader labeling strategy
+
+2. **Label consistency**:
+   - Use existing labels from the repository
+   - Keep label names consistent with established patterns
+   - If creating new labels, ensure they'll be reused across multiple issues
 
 ## Contributor Attribution in PRs
 

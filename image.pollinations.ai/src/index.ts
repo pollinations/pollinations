@@ -14,6 +14,7 @@ import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 
 // Import shared utilities
 import { enqueue } from "../../shared/ipQueue.js";
+import { canAccessService } from "../../shared/registry/registry.ts";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
 import { cacheImagePromise } from "./cacheGeneratedImages.js";
 import {
@@ -467,6 +468,14 @@ const checkCacheAndGenerate = async (
                     // 6 minute interval, 10 images per hour max
                     queueConfig = { interval: 360000 }; // 6 minute interval
                     logAuth(`${modelName} model - 6 minute interval, ${remaining}/${HOURLY_LIMIT} images remaining this hour`);
+                } else if (modelName === "kontext") {
+                    // Kontext model requires seed tier or higher (checked via registry)
+                    if (!canAccessService("kontext", authResult.tier)) {
+                        throw new Error("Kontext model requires authentication (seed tier or higher). Visit https://auth.pollinations.ai");
+                    }
+                    // 30 second interval with tier-based caps
+                    queueConfig = { interval: 30000 };
+                    logAuth(`${modelName} model - 30 second interval`);
                 } else if (modelName === "gptimage") {
                     // GPTImage model - 150 second interval with strict concurrency (cap=1, forceCap=true)
                     queueConfig = { interval: 150000, cap: 1, forceCap: true, model: modelName };
@@ -498,7 +507,7 @@ const checkCacheAndGenerate = async (
                         progress.setProcessing(requestId);
                         return generateImage();
                     },
-                    { ...queueConfig, forceQueue: true, maxQueueSize: 5, model: safeParams.model },
+                    { ...queueConfig, forceQueue: true, model: safeParams.model },
                 );
 
                 return result;

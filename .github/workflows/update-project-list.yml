@@ -16,9 +16,6 @@ jobs:
     permissions:
       contents: write
     
-    # Skip if the commit was made by the bot to avoid infinite loops
-    if: github.actor != 'github-actions[bot]'
-    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

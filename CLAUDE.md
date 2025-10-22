@@ -1,4 +1,4 @@
-# Mentat Bot Guidelines for Pollinations.AI
+# Claude Guidelines for Pollinations.AI
 
 ## Project Submission Handling
 

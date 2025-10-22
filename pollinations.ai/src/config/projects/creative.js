@@ -99,6 +99,31 @@ export const creativeProjects = [
     order: 1
   },
   {
+    name: "FoilAI 🌨",
+    url: "https://foilai.in/",
+    description: "AI image generator in beta stage. Web-based text-to-image generator powered by Pollinations AI. Free and accessible without signup or API key, privacy-focused with no data storage. Simplified user-friendly interface for creating AI art.",
+    author: "@aryanshrai3",
+    submissionDate: "2025-10-20",
+    order: 2
+  },
+  {
+    name: "Scribe 📄",
+    url: "https://github.com/nadinev6/scribe",
+    description: "Feature-rich Markdown editor for content creators, developers, and writers. Supports three viewing modes (Rich Text, Markdown Source, Plain Text), AI-powered header image generation via Pollinations, multilingual AI proofreading with Gemini 2.0 Flash, and multi-platform export. Built with React, TypeScript, and Supabase.",
+    author: "@nadinev6",
+    repo: "https://github.com/nadinev6/scribe",
+    submissionDate: "2025-10-09",
+    order: 2
+  },
+  {
+    name: "AI Answers Forms 📝",
+    url: "https://chromewebstore.google.com/detail/fbiccefbjbnnieofnomocjdebppanndo",
+    description: "Chrome extension that helps get answers to questions on Google Forms using AI. Solves quizzes and forms with ChatGPT integration. Over 9k active users. Available on Chrome Web Store.",
+    author: "@Maniii97",
+    submissionDate: "2025-10-14",
+    order: 2
+  },
+  {
     name: "Imagine Draw AI 🎨",
     url: "https://imaginedrawai.vercel.app/",
     description: "Free AI image generator for creating unlimited images with text prompts. No login, no limits, 100% free. Fast real-time generation, browser-based, mobile-friendly. Perfect for students, designers, content creators - landscapes, characters, logos, backgrounds, and more.",

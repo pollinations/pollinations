@@ -41,11 +41,11 @@ export const IMAGE_CONFIG: ImageModelsConfig = {
     },
 
     // Azure GPT Image model - gpt-image-1-minica
-    // gptimage: {
-    //     type: "azure",
-    //     enhance: false,
-    //     maxSideLength: 1024,
-    // },
+    gptimage: {
+        type: "azure",
+        enhance: false,
+        maxSideLength: 1024,
+    },
 };
 
 /**

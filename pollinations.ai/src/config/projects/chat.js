@@ -138,6 +138,14 @@ export const chatProjects = [
     order: 1
   },
   {
+    name: "Artificial Intelligence Orcho 📱",
+    url: "https://play.google.com/store/apps/details?id=orcho.artificialintelligence",
+    description: "Mobile AI app for Android with chat and image generation. Get smart chat responses in text and images in the palm of your hand. Chat and images with mobile app integration.",
+    author: "@ricardoxd",
+    submissionDate: "2025-10-12",
+    order: 2
+  },
+  {
     name: "J.A.R.V.I.S.",
     url: "https://huggingface.co/spaces/hadadrjt/ai",
     description: "Just a Rather Very Intelligent System - an advanced AI language model inspired by Iron Man's iconic assistant. Features an interactive interface for real-time engagement with context-aware, high-fidelity natural language processing, integrated with Pollinations AI for image and audio generation.",

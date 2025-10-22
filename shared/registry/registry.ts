@@ -135,13 +135,15 @@ type ServiceRegistryEntry<T extends ModelRegistry> = ServiceDefinition<T> & {
 // Generate SERVICE_REGISTRY with computed prices from costs
 export const SERVICE_REGISTRY = Object.fromEntries(
     Object.entries(SERVICES).map(([name, service]) => {
-        const modelCost = MODELS[service.modelId as keyof typeof MODELS];
+        // Type assertion to ServiceDefinition to access optional free property
+        const typedService = service as ServiceDefinition<typeof MODELS>;
+        const modelCost = MODELS[typedService.modelId as keyof typeof MODELS];
         if (!modelCost) {
-            throw new Error(`Model cost not found for service "${name}" with modelId "${String(service.modelId)}"`);
+            throw new Error(`Model cost not found for service "${name}" with modelId "${String(typedService.modelId)}"`);
         }
         
         // Generate price from cost based on free flag
-        const isFree = (service as any).free ?? false;
+        const isFree = typedService.free ?? false;
         const price = modelCost.map(costDef => {
             if (isFree) {
                 // Free model: all prices are 0

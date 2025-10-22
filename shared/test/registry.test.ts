@@ -15,8 +15,11 @@ import type { TokenUsage } from "../registry/registry.ts";
 // Test with real services from the registry
 test("isFreeService should return the correct values", async () => {
     // Test with actual free services
-    expect(isFreeService("openai")).toBe(true);
-    // openai-large is NOT free - it has pricing
+    expect(isFreeService("openai-fast")).toBe(true);
+    expect(isFreeService("chickytutor")).toBe(true);
+    expect(isFreeService("midijourney")).toBe(true);
+    // openai and openai-large are NOT free - they have pricing
+    expect(isFreeService("openai")).toBe(false);
     expect(isFreeService("openai-large")).toBe(false);
 });
 
@@ -45,8 +48,8 @@ test("calculatePrice should return the correct price", async () => {
         completionTextTokens: 1_000_000,
     } satisfies TokenUsage;
     
-    // Test with real free service
-    const freePrice = calculatePrice("openai", usage);
+    // Test with real free service (openai-fast is marked as free)
+    const freePrice = calculatePrice("openai-fast", usage);
     expect(freePrice.promptTextTokens).toBe(0.0);
     expect(freePrice.promptCachedTokens).toBe(0.0);
     expect(freePrice.completionTextTokens).toBe(0.0);
@@ -143,8 +146,8 @@ test("getRequiredTier should return correct tier for services", async () => {
     expect(getRequiredTier("gemini")).toBe("seed");
     expect(getRequiredTier("flux")).toBe("seed");
     
-    // Test nectar tier
-    expect(getRequiredTier("nanobanana")).toBe("nectar");
+    // Test flower tier
+    expect(getRequiredTier("claudyclaude")).toBe("flower");
 });
 
 test("getRequiredTier should throw for invalid service", async () => {
@@ -156,22 +159,22 @@ test("canAccessService should enforce tier hierarchy", async () => {
     // Anonymous tier can only access anonymous services
     expect(canAccessService("openai", "anonymous")).toBe(true);
     expect(canAccessService("flux", "anonymous")).toBe(false);
-    expect(canAccessService("nanobanana", "anonymous")).toBe(false);
+    expect(canAccessService("claudyclaude", "anonymous")).toBe(false);
     
     // Seed tier can access anonymous and seed
     expect(canAccessService("openai", "seed")).toBe(true);
     expect(canAccessService("flux", "seed")).toBe(true);
-    expect(canAccessService("nanobanana", "seed")).toBe(false);
+    expect(canAccessService("claudyclaude", "seed")).toBe(false);
     
-    // Flower tier can access anonymous, seed, and flower (no flower services currently active)
+    // Flower tier can access anonymous, seed, and flower
     expect(canAccessService("openai", "flower")).toBe(true);
     expect(canAccessService("flux", "flower")).toBe(true);
-    expect(canAccessService("nanobanana", "flower")).toBe(false);
+    expect(canAccessService("claudyclaude", "flower")).toBe(true);
     
     // Nectar tier can access all services
     expect(canAccessService("openai", "nectar")).toBe(true);
     expect(canAccessService("flux", "nectar")).toBe(true);
-    expect(canAccessService("nanobanana", "nectar")).toBe(true);
+    expect(canAccessService("claudyclaude", "nectar")).toBe(true);
 });
 
 test("canAccessService should return false for invalid tiers", async () => {

@@ -1,0 +1,32 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "lib": ["esnext"],
+        "types": ["@cloudflare/workers-types"],
+        
+        "forceConsistentCasingInFileNames": true,
+        "isolatedModules": true,
+        
+        "strict": false,
+        "noImplicitAny": false,
+        "noImplicitThis": true,
+        
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "allowImportingTsExtensions": true,
+        "allowJs": true,
+        "checkJs": false,
+        
+        "noEmit": true,
+        "resolveJsonModule": true,
+        "skipLibCheck": true,
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["src/*"]
+        }
+    },
+    "include": ["src/**/*.ts", "src/**/*.js"],
+    "exclude": ["node_modules", "dist"]
+}

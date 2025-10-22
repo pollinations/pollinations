@@ -6,6 +6,14 @@ import type {
 import type { UserTier } from "./types";
 import { ZERO_PRICE, PRICING_START_DATE, perMillion } from "./price-helpers";
 export const TEXT_COSTS = {
+    "gpt-5-mini-2025-08-07": [
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: perMillion(0.25),
+            promptCachedTokens: perMillion(0.025),
+            completionTextTokens: perMillion(2.0),
+        },
+    ],
     "gpt-5-nano-2025-08-07": [
         {
             date: PRICING_START_DATE,
@@ -130,13 +138,13 @@ export const TEXT_COSTS = {
 export const TEXT_SERVICES = {
     "openai": {
         aliases: ["gpt-5-mini"],
-        modelId: "gpt-5-nano-2025-08-07",
-        price: [ZERO_PRICE],
+        modelId: "gpt-5-mini-2025-08-07",
+        price: TEXT_COSTS["gpt-5-mini-2025-08-07"],
         provider: "azure-openai",
     },
     "openai-fast": {
         aliases: ["gpt-5-nano"],
-        modelId: "gpt-4.1-nano-2025-04-14",
+        modelId: "gpt-5-nano-2025-08-07",
         price: [ZERO_PRICE], // Free model
         provider: "azure-openai",
     },

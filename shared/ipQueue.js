@@ -206,7 +206,7 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 				log('Using kontext priority user cap: %d for user: %s', cap, authResult.userId);
 			} else {
 				cap = kontextTierCaps[authResult.tier] || 1;
-				log('Using kontext tier-based cap: %d for tier: %s (strict limits)', cap, authResult.tier);
+				log('Using kontext tier-based cap: %d for tier: %s (2x for flower tier)', cap, authResult.tier);
 			}
 		} else {
 			cap = tierCaps[authResult.tier] || 1;

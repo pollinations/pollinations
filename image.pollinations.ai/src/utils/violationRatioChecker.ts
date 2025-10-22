@@ -32,8 +32,8 @@ export function checkViolationRatio(username: string | null | undefined): Violat
     const stats = userStatsTracker.getUserStats(username);
     const violationRatio = stats.requests > 0 ? stats.violations / stats.requests : 0;
     
-    const MIN_REQUESTS = 10;
-    const MAX_VIOLATION_RATIO = 0.15; // 15% threshold
+    const MIN_REQUESTS = 25;
+    const MAX_VIOLATION_RATIO = 0.25; // 25% threshold
 
     // Block if violation ratio exceeds threshold AND user has enough requests
     if (stats.requests >= MIN_REQUESTS && violationRatio > MAX_VIOLATION_RATIO) {

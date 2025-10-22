@@ -1,0 +1,45 @@
+name: Update Project Documentation
+
+on:
+  pull_request:
+    paths:
+      - 'pollinations.ai/src/config/projectList.js'
+  push:
+    branches:
+      - main
+    paths:
+      - 'pollinations.ai/src/config/projectList.js'
+
+jobs:
+  regenerate-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    # Skip if the commit was made by the bot to avoid infinite loops
+    if: github.actor != 'github-actions[bot]'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Regenerate project documentation
+        run: |
+          cd pollinator-agent/project-list-scripts
+          node generate-project-table.js --update-readme
+      
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "🤖 Auto-regenerate PROJECTS.md and README.md"
+          file_pattern: "PROJECTS.md README.md"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"

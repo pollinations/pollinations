@@ -22,7 +22,7 @@ jobs:
             const body = context.payload.pull_request?.body || context.payload.issue?.body || '';
             
             // Skip if already condensed or too short
-            if (body.includes('*Description condensed by Claude for readability*') || body.length < 200) {
+            if (body.includes('*Description condensed by text.pollinations.ai for readability*') || body.length < 200) {
               console.log('Skipping: Already condensed or too short');
               return { shouldCondense: false };
             }
@@ -43,7 +43,7 @@ jobs:
             console.log(`Body length: ${body.length}, Is wordy: ${isWordy}`);
             return { shouldCondense: isWordy, originalBody: body };
       
-      - name: Condense description with Claude
+      - name: Condense description with text.pollinations.ai
         if: fromJSON(steps.check.outputs.result).shouldCondense
         id: condense
         uses: actions/github-script@v7
@@ -107,7 +107,7 @@ Return ONLY the condensed description, no explanations.`;
             const condensedText = data.choices[0].message.content.trim();
             
             // Add disclaimer
-            const finalBody = `${condensedText}\n\n---\n*Description condensed by Claude for readability*`;
+            const finalBody = `${condensedText}\n\n---\n*Description condensed by text.pollinations.ai for readability*`;
             
             console.log('Condensed successfully');
             return { condensedBody: finalBody };

@@ -3,50 +3,46 @@ import type {
     ServiceRegistry,
     UsageConversionDefinition,
 } from "./registry";
-import type { UserTier } from "./types";
-import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "./price-helpers";
+import { ZERO_PRICE, PRICING_START_DATE, perMillion } from "./price-helpers";
 
 export const IMAGE_COSTS = {
     "flux": [
-        // Estimated
         {
             date: PRICING_START_DATE,
-            completionImageTokens: fromDPMT(3000),
+            completionImageTokens: 0.000088, // $0.0088¢ per image (GPU cluster cost - September avg)
         },
     ],
     "kontext": [
-        // Estimated
         {
             date: PRICING_START_DATE,
-            completionImageTokens: fromDPMT(4000),
+            completionImageTokens: 0.04, // $0.04 per image (Azure pricing)
         },
     ],
     "turbo": [
-        // Estimated
         {
             date: PRICING_START_DATE,
-            completionImageTokens: fromDPMT(2000),
+            completionImageTokens: 0.0027, // $0.0027 per image (Scaleway - FLUX schnell pricing from Together.AI)
         },
     ],
     "nanobanana": [
-        // Estimated - Gemini via Vertex AI (currently disabled)
+        // Gemini 2.5 Flash Image via Vertex AI (currently disabled)
+        // $30 per 1M output tokens, 1290 tokens per image = $0.039 per image
         {
             date: PRICING_START_DATE,
-            completionImageTokens: fromDPMT(30000),
+            completionImageTokens: perMillion(30), // $30 per 1M tokens × 1290 tokens/image
         },
     ],
     "seedream": [
-        // Estimated - ByteDance ARK (currently disabled)
+        // ByteDance ARK Seedream 4.0 (currently disabled)
         {
             date: PRICING_START_DATE,
-            completionImageTokens: fromDPMT(30000),
+            completionImageTokens: perMillion(30), // Estimated token-based pricing
         },
     ],
     "gptimage": [
-        // Estimated
         {
             date: PRICING_START_DATE,
-            completionImageTokens: fromDPMT(10000),
+            completionImageTokens: perMillion(8), // $8 per 1M output tokens (Azure gpt-image-1-mini)
         },
     ],
 } as const satisfies ModelRegistry;

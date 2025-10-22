@@ -8,7 +8,7 @@ import {
     canAccessService,
     SERVICE_REGISTRY
 } from "../registry/registry.ts";
-import { fromDPMT, ZERO_PRICE, ZERO_PRICE_START_DATE, PRICING_START_DATE } from "../registry/price-helpers.ts";
+import { perMillion, ZERO_PRICE, ZERO_PRICE_START_DATE, PRICING_START_DATE } from "../registry/price-helpers.ts";
 import { expect, test } from "vitest";
 import type { TokenUsage } from "../registry/registry.ts";
 
@@ -64,30 +64,31 @@ test("Usage types with undefined cost or price should throw an error", async () 
     expect(() => calculatePrice("openai", usage)).toThrow();
 });
 
-test("fromDPMT should correctly convert dollars per million tokens", async () => {
+test("perMillion should correctly convert dollars per million tokens", async () => {
     // Test basic conversion
-    expect(fromDPMT(1_000_000)).toBe(1.0);
-    expect(fromDPMT(50)).toBe(0.00005);
-    expect(fromDPMT(200)).toBe(0.0002);
+    expect(perMillion(1_000_000)).toBe(1.0);
+    expect(perMillion(50)).toBe(0.00005);
+    expect(perMillion(200)).toBe(0.0002);
     
     // Test edge cases
-    expect(fromDPMT(0)).toBe(0);
-    expect(fromDPMT(1)).toBe(0.000001);
+    expect(perMillion(0)).toBe(0);
+    expect(perMillion(1)).toBe(0.000001);
     
     // Test that it matches expected pricing calculations
     const usage = {
         unit: "TOKENS",
         promptTextTokens: 1_000_000,
+        promptCachedTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     } satisfies TokenUsage;
     
-    // Using fromDPMT(50) means $50 per million tokens
+    // Using perMillion(50) means $50 per million tokens
     // So 1 million tokens * $0.00005 per token = $50
-    const priceWithHelper = fromDPMT(50) * usage.promptTextTokens;
+    const priceWithHelper = perMillion(50) * usage.promptTextTokens;
     expect(priceWithHelper).toBe(50);
     
     // Verify it works in registry context (registry multiplies by 1000 for cost)
-    const costPerToken = fromDPMT(50); // 0.00005
+    const costPerToken = perMillion(50); // 0.00005
     const totalCost = costPerToken * usage.promptTextTokens * 1000; // Cost in registry units
     expect(totalCost).toBe(50_000);
 });

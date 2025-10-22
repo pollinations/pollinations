@@ -36,7 +36,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: |
-            --model claude-4-0-sonnet-20250805
+            --model claude-sonnet-4-5-20250929
             --allowedTools mcp_sequa_search_web
             --mcp-config '{
               "mcpServers": {

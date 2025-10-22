@@ -22,7 +22,7 @@ jobs:
             const body = context.payload.pull_request?.body || context.payload.issue?.body || '';
             
             // Skip if already condensed or too short
-            if (body.includes('*Description condensed by text.pollinations.ai for readability*') || body.length < 200) {
+            if (body.includes('*Description condensed by [pollinations.ai](https://pollinations.ai) for readability*') || body.length < 200) {
               console.log('Skipping: Already condensed or too short');
               return { shouldCondense: false };
             }
@@ -107,7 +107,7 @@ Return ONLY the condensed description, no explanations.`;
             const condensedText = data.choices[0].message.content.trim();
             
             // Add disclaimer
-            const finalBody = `${condensedText}\n\n---\n*Description condensed by text.pollinations.ai for readability*`;
+            const finalBody = `${condensedText}\n\n---\n*Description condensed by [pollinations.ai](https://pollinations.ai) for readability*`;
             
             console.log('Condensed successfully');
             return { condensedBody: finalBody };

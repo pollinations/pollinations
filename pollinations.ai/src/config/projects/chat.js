@@ -146,6 +146,15 @@ export const chatProjects = [
     order: 2
   },
   {
+    name: "DebAI 🤖",
+    url: "https://t.me/DebAI_bot",
+    description: "Compact and free Telegram bot powered by Pollinations AI. Under development with focus on providing AI assistance through Telegram.",
+    author: "@FROLIAN-cell",
+    submissionDate: "2025-10-13",
+    order: 2,
+    language: "ru"
+  },
+  {
     name: "J.A.R.V.I.S.",
     url: "https://huggingface.co/spaces/hadadrjt/ai",
     description: "Just a Rather Very Intelligent System - an advanced AI language model inspired by Iron Man's iconic assistant. Features an interactive interface for real-time engagement with context-aware, high-fidelity natural language processing, integrated with Pollinations AI for image and audio generation.",

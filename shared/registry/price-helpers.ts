@@ -13,25 +13,25 @@ export const ZERO_PRICE_START_DATE = new Date("2020-01-01 00:00:00").getTime();
 export const PRICING_START_DATE = new Date("2025-08-01 00:00:00").getTime();
 
 /**
- * Converts Dollars Per Million Tokens (DPMT) to dollars per token.
+ * Converts dollars per million units to dollars per unit.
  * 
- * @param dpmt - The price in dollars per million tokens
- * @returns The price in dollars per token
+ * @param dollarsPerMillion - The price in dollars per million units (tokens/images)
+ * @returns The price in dollars per unit
  * 
  * @example
  * ```ts
  * // Convert $50 per million tokens to dollars per token
- * const pricePerToken = fromDPMT(50); // 0.00005
+ * const pricePerToken = perMillion(50); // 0.00005
  * 
  * // Use in price definitions
  * const price = {
- *   promptTextTokens: fromDPMT(50),    // $50 per 1M tokens
- *   completionTextTokens: fromDPMT(200) // $200 per 1M tokens
+ *   promptTextTokens: perMillion(50),    // $50 per 1M tokens
+ *   completionTextTokens: perMillion(200) // $200 per 1M tokens
  * };
  * ```
  */
-export function fromDPMT(dpmt: number): number {
-    return dpmt / 1_000_000;
+export function perMillion(dollarsPerMillion: number): number {
+    return dollarsPerMillion / 1_000_000;
 }
 
 /**

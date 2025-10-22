@@ -54,10 +54,10 @@ export function buildTrackingHeaders(
     // Token counting logic
     let completionTokens = 1; // Default for unit-based pricing models
     
-    if (model === 'nanobanana' && trackingData?.usage?.candidatesTokenCount) {
-        // For nanobanana, use total candidates tokens (image + text)
+    if ((model === 'nanobanana' || model === 'gptimage') && trackingData?.usage?.candidatesTokenCount) {
+        // For token-based models (nanobanana, gptimage), use actual token count from API
         completionTokens = trackingData.usage.candidatesTokenCount;
-        log(`Nanobanana token count: ${completionTokens} (from candidatesTokenCount)`);
+        log(`${model} token count: ${completionTokens} (from candidatesTokenCount)`);
     } else {
         log(`Using default token count: ${completionTokens} for model: ${model}`);
     }
@@ -75,7 +75,7 @@ export function buildTrackingHeaders(
  * @returns Token count for billing
  */
 export function extractTokenCount(model: ValidServiceName, usage?: TrackingUsageData): number {
-    if (model === 'nanobanana' && usage?.candidatesTokenCount) {
+    if ((model === 'nanobanana' || model === 'gptimage') && usage?.candidatesTokenCount) {
         return usage.candidatesTokenCount;
     }
     return 1; // Default for unit-based pricing

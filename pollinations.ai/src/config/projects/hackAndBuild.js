@@ -5,6 +5,15 @@
 
 export const hackAndBuildProjects = [
   {
+    name: "Herramientas IA 🛠️",
+    url: "https://proyectodescartes.org/descartescms/herramientas-ia",
+    description: "Comprehensive collection of 120+ AI tools and educational applications powered by Pollinations. Includes image generation, creative tools, chatbots, code generators, interactive learning tools, and more. Built with DescartesJS for interactive web-based learning experiences.",
+    author: "@Juanrivera126",
+    submissionDate: "2025-07-15",
+    order: 1,
+    language: "es"
+  },
+  {
     name: "BeeCoder 🌈",
     url: "https://github.com/cemalgnlts/beecoder",
     description: "Enables VSCode Copilot to connect to Pollinations, bringing AI-powered code generation directly into Visual Studio Code.",

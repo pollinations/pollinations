@@ -155,6 +155,16 @@ export const chatProjects = [
     language: "ru"
   },
   {
+    name: "VX Project 💬",
+    url: "https://vortexcm.github.io/VorteX-Res/",
+    description: "VorteX Resources - A free and powerful platform for game server development enthusiasts. Provides professional resources, scripts, and maps for servers. Available in Persian and English.",
+    author: "@lfni",
+    repo: "https://github.com/vxproject",
+    submissionDate: "2025-10-15",
+    order: 2,
+    language: "fa"
+  },
+  {
     name: "J.A.R.V.I.S.",
     url: "https://huggingface.co/spaces/hadadrjt/ai",
     description: "Just a Rather Very Intelligent System - an advanced AI language model inspired by Iron Man's iconic assistant. Features an interactive interface for real-time engagement with context-aware, high-fidelity natural language processing, integrated with Pollinations AI for image and audio generation.",

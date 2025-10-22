@@ -108,8 +108,7 @@ Return ONLY the condensed description, no explanations.`;
             
             // Add disclaimer with link to original
             const isPR = github.event_name === 'pull_request';
-            const issueNumber = isPR ? context.payload.pull_request.number : context.payload.issue.number;
-            const originalLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/${isPR ? 'pull' : 'issues'}/${issueNumber}`;
+            const originalLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/${isPR ? 'pull' : 'issues'}/${context.issue.number}`;
             const finalBody = `${condensedText}\n\n---\n*Description condensed by [pollinations.ai](https://pollinations.ai) for readability. [View original](${originalLink})*`;
             
             console.log('Condensed successfully');

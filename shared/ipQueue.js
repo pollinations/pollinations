@@ -62,7 +62,14 @@ const seedreamTierCaps = {
     nectar: 2,    // Enhanced limit for nectar tier (same as nanobanana)
 };
 
-// Parse priority users from environment variable for special models (nanobanana and seedream)
+// Kontext model - requires seed tier, flower tier gets double the concurrency
+const kontextTierCaps = {
+    seed: 1,      // Base limit (minimum tier required)
+    flower: 2,    // Double the seed tier
+    nectar: 2,    // Same as flower tier
+};
+
+// Parse priority users from environment variable for special models (nanobanana, seedream, and kontext)
 const parsePriorityUsers = () => {
     const envVar = process.env.PRIORITY_MODEL_USERS;
     if (!envVar) return new Map();
@@ -79,7 +86,7 @@ const specialModelPriorityUsers = parsePriorityUsers();
 
 // Log priority users on startup for debugging
 if (specialModelPriorityUsers.size > 0) {
-    log('Special model priority users loaded (nanobanana & seedream): %o', Array.from(specialModelPriorityUsers.entries()));
+    log('Special model priority users loaded (nanobanana, seedream & kontext): %o', Array.from(specialModelPriorityUsers.entries()));
 }
 
 /**
@@ -191,6 +198,15 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 			} else {
 				cap = seedreamTierCaps[authResult.tier] || 1;
 				log('Using seedream tier-based cap: %d for tier: %s (lowest limit for all tiers)', cap, authResult.tier);
+			}
+		} else if (model === 'kontext') {
+			// Check if user is in priority list first
+			if (authResult.userId && specialModelPriorityUsers.has(authResult.userId)) {
+				cap = specialModelPriorityUsers.get(authResult.userId);
+				log('Using kontext priority user cap: %d for user: %s', cap, authResult.userId);
+			} else {
+				cap = kontextTierCaps[authResult.tier] || 1;
+				log('Using kontext tier-based cap: %d for tier: %s (strict limits)', cap, authResult.tier);
 			}
 		} else {
 			cap = tierCaps[authResult.tier] || 1;

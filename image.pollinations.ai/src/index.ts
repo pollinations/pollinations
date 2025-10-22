@@ -467,6 +467,10 @@ const checkCacheAndGenerate = async (
                     // 6 minute interval, 10 images per hour max
                     queueConfig = { interval: 360000 }; // 6 minute interval
                     logAuth(`${modelName} model - 6 minute interval, ${remaining}/${HOURLY_LIMIT} images remaining this hour`);
+                } else if (modelName === "kontext") {
+                    // Kontext model - 30 second interval
+                    queueConfig = { interval: 30000 }; // 30 second interval
+                    logAuth(`${modelName} model - 30 second interval`);
                 } else if (modelName === "gptimage") {
                     // GPTImage model - 150 second interval with strict concurrency (cap=1, forceCap=true)
                     queueConfig = { interval: 150000, cap: 1, forceCap: true, model: modelName };

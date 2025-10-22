@@ -29,7 +29,7 @@ export const hacktoberfestProjects = [
     name: "AI Dungeon Master 🐉",
     url: "https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/ai-dungeon-master",
     description: "Interactive text-based RPG with AI-powered storytelling. Uses Pollinations text generation API to create dynamic narratives and character interactions. Perfect for tabletop gaming enthusiasts.",
-    author: "@pollinations",
+    author: "@codevector-2003",
     repo: "https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/ai-dungeon-master",
     submissionDate: "2025-10-03",
     order: 1,
@@ -39,7 +39,7 @@ export const hacktoberfestProjects = [
     name: "Virtual Makeup Try-On 💄",
     url: "https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/virtual-makeup",
     description: "AI-powered virtual makeup application tool. Uses Pollinations image generation to create makeup variations and beauty recommendations. React-based interface for trying different makeup styles.",
-    author: "@pollinations",
+    author: "@anmolsah",
     repo: "https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/virtual-makeup",
     submissionDate: "2025-10-04",
     order: 2
@@ -48,7 +48,7 @@ export const hacktoberfestProjects = [
     name: "Product Packaging Designer 📦",
     url: "https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/product-packaging-designer",
     description: "Design custom product packaging with AI assistance. Uses Pollinations image generation to create mockups and design variations. Perfect for entrepreneurs and designers.",
-    author: "@pollinations",
+    author: "@prateekverma145",
     repo: "https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/product-packaging-designer",
     submissionDate: "2025-10-05",
     order: 2
@@ -57,7 +57,7 @@ export const hacktoberfestProjects = [
     name: "Map to Isometric Converter 🗺️",
     url: "https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/map-to-isometric",
     description: "Convert 2D maps and images into beautiful isometric 3D representations using AI. Leverages Pollinations image generation for creative transformations.",
-    author: "@pollinations",
+    author: "@AdityaTel89",
     repo: "https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/map-to-isometric",
     submissionDate: "2025-10-06",
     order: 2
@@ -66,7 +66,7 @@ export const hacktoberfestProjects = [
     name: "Micro Pollinations AI 🔬",
     url: "https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/micro.pollinations.ai",
     description: "Lightweight, minimal Pollinations AI interface. A tiny but powerful frontend for accessing Pollinations APIs with minimal dependencies. Great for learning and quick prototyping.",
-    author: "@pollinations",
+    author: "@Jay-1409",
     repo: "https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/micro.pollinations.ai",
     submissionDate: "2025-10-07",
     order: 2

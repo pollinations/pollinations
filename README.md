@@ -236,6 +236,20 @@ graph LR
 
 Pollinations.AI is used in various projects, including:
 
+### Hacktoberfest 2025 🎃
+
+| Project | Description | Creator |
+|---------|-------------|--------|
+| CatGPT Meme Generator 🐱 ([⭐ 5](https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/example-catgpt)) | Transform your questions into sassy cat wisdom! AI-powered meme generator that... | @thomash |
+| Elevator Challenge 🚀 ([⭐ 4](https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/example-elevator-challenge)) | React + Vite game inspired by Hitchhiker's Guide to the Galaxy. An interactive... | @thomash |
+| AI Dungeon Master 🐉 ([⭐ 3](https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/ai-dungeon-master)) | Interactive text-based RPG with AI-powered storytelling. Uses Pollinations text... | @pollinations |
+| Virtual Makeup Try-On 💄 ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/virtual-makeup)) | AI-powered virtual makeup application tool. Uses Pollinations image generation... | @pollinations |
+| 🆕 Product Packaging Designer 📦 ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/product-packaging-designer)) | Design custom product packaging with AI assistance. Uses Pollinations image... | @pollinations |
+| 🆕 Map to Isometric Converter 🗺️ ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/map-to-isometric)) | Convert 2D maps and images into beautiful isometric 3D representations using... | @pollinations |
+| 🆕 Micro Pollinations AI 🔬 ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/micro.pollinations.ai)) | Lightweight, minimal Pollinations AI interface. A tiny but powerful frontend... | @pollinations |
+| 🆕 Food Calorie Annotator 🍕 ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/food-calorie-annotator)) | AI-powered food image analyzer that estimates calories and nutritional... | @pollinations |
+| 🆕 Roblox NPC Creator 🎮 ([⭐ 0](https://github.com/pollinations/pollinations/tree/main/hacktoberfest-2025/roblox-npc-creator)) | Create custom Roblox NPC characters with AI-generated descriptions and... | @pollinations |
+
 ### Vibe Coding ✨
 
 | Project | Description | Creator |
@@ -257,6 +271,7 @@ Pollinations.AI is used in various projects, including:
 | [Pollin-Coder](https://pollin-coder.megavault.in) | A free AI-powered website builder that lets anyone create a clean site just by... | @r3ap3redit |
 | [JustBuildThings](https://justbuildthings.com) | A natural language programming interface that lets users create web... | @buildmaster |
 | [Websim](https://websim.ai/c/bXsmNE96e3op5rtUS) | A web simulation tool that integrates Pollinations.ai. | @thomash |
+| 🆕 [BeeCoder](https://github.com/cemalgnlts/beecoder) | Enables VS Code Copilot to connect to Pollinations. | @cemalgnlts |
 
 ### Creative 🎨
 
@@ -274,6 +289,7 @@ Pollinations.AI is used in various projects, including:
 | [Imagen](https://altkriz.github.io/imagen/) ([⭐ 3](https://github.com/altkriz/imagen)) | A beautiful web interface for generating images using Pollinations.ai API with... | @altkriz |
 | [CatGPT Meme Generator 🐱](https://pollinations.github.io/catgpt/) ([⭐ 2](https://github.com/pollinations/catgpt)) | Transform your questions into sassy cat wisdom! An AI-powered meme generator... | @voodoohop |
 | [Dreamscape AI](https://dreamscape.pinkpixel.dev) ([⭐ 2](https://github.com/pinkpixel-dev/dreamscape-ai)) | Dreamscape AI is a creative studio for generating, enhancing, and transforming... | @sizzlebop |
+| [Green Hope AI 🎨](https://aithumbnails.vercel.app/) | Generate stunning thumbnails with AI, then take full control. Easily edit the... | @mustafiz82 |
 | 🆕 [Green Hope AI 🎨](https://aithumbnails.vercel.app/) | Generate stunning thumbnails with AI, then take full control. Easily edit the... | @Mustafiz82 |
 | 🆕 [Pollinations AI Samples 🎨](https://pollinations.godsbee.com/) ([⭐ 0](https://github.com/nyr-github/pollinations-demo)) | Comprehensive demonstration of Pollinations AI capabilities including creative... | @nyr-github |
 | [Inkly AI 🎨](https://inkly-ai.vercel.app/) ([⭐ 0](https://github.com/Auspicious14/image-generator-be)) | Platform providing text-to-image and image-to-image generation with image... | @Auspicious14 |

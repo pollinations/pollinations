@@ -130,8 +130,8 @@ export const TEXT_COSTS = {
     "global.anthropic.claude-haiku-4-5-20251001-v1:0": [
         {
             date: PRICING_START_DATE,
-            promptTextTokens: fromDPMT(1.0),
-            completionTextTokens: fromDPMT(5.0),
+            promptTextTokens: perMillion(1.0),
+            completionTextTokens: perMillion(5.0),
         },
     ],
     "us.anthropic.claude-sonnet-4-5-20250929-v1:0": [

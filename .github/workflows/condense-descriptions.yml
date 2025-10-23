@@ -64,7 +64,7 @@ jobs:
                 'Authorization': `Bearer ${process.env.POLLINATIONS_TOKEN}`
               },
               body: JSON.stringify({
-                model: 'openai-large',
+                model: 'openai',
                 messages: [
                   { role: 'user', content: prompt }
                 ],

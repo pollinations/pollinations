@@ -135,7 +135,7 @@ export function getLogoPath(
     ) {
         return null;
     }
-    return "logo.png";
+    return "assets/logo.png";
 }
 
 /**

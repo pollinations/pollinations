@@ -1,14 +1,16 @@
 {
-    "name": "generative_image_url",
+    "name": "image.pollinations.ai",
     "version": "1.0.0",
-    "description": "## Architecture",
+    "description": "Generative image service at image.pollinations.ai",
     "main": "index.js",
     "type": "module",
     "scripts": {
+        "start": "tsx src/index.js",
+        "gen:cf-types": "sops -d .encrypted.env > .dev.vars && npx wrangler types --env-interface CloudflareBindings",
         "test": "vitest run",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
-        "start": "tsx src/index.js"
+        "push-secrets": "sops exec-file --no-fifo .encrypted.env 'npx wrangler secret bulk {}'"
     },
     "keywords": [],
     "author": "",
@@ -17,9 +19,11 @@
         "@azure-rest/ai-content-safety": "^1.0.1",
         "@azure/core-auth": "^1.9.0",
         "@azure/identity": "^4.10.0",
+        "@cloudflare/containers": "^0.0.28",
         "@google-cloud/translate": "^7.2.1",
         "@gradio/client": "^0.19.4",
         "@types/debug": "^4.1.12",
+        "@types/urlencode": "^1.1.4",
         "@vitalets/google-translate-api": "^9.2.0",
         "ansi-colors": "^4.1.3",
         "async-lock": "^1.4.0",
@@ -51,10 +55,10 @@
         "sharp": "^0.33.5",
         "tempfile": "^5.0.0",
         "tinyld": "^1.3.4",
-        "urldecode": "^1.0.1",
-        "zod": "^4.0.5",
         "tsx": "^4.20.3",
-        "typescript": "^5.8.3"
+        "typescript": "^5.8.3",
+        "urldecode": "^1.0.1",
+        "zod": "^4.0.5"
     },
     "devDependencies": {
         "@fast-check/vitest": "^0.2.2",

@@ -1,1 +1,15 @@
+**/node_modules
+**/.git
+**/.next
+**/dist
+**/.cache
+**/coverage
+**/*.log
+**/temp
+**/tmp
+**/.DS_Store
+**/Thumbs.db
+**/.env*
+**/.encrypted*
+**/.dev.vars
 cloudflare-cache

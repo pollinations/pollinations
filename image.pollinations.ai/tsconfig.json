@@ -19,6 +19,12 @@
         "outDir": "./dist"
     },
 
-    "include": ["src/**/*.ts", "src/**/*.js", "../shared/**/*.ts"],
+    "include": [
+        "src/**/*.ts", 
+        "src/**/*.js", 
+        "../shared/**/*.ts", 
+        "worker-configuration.d.ts"
+    ],
+
     "exclude": ["node_modules", "dist"]
 }

@@ -40,6 +40,7 @@ COPY image.pollinations.ai/tsconfig.json ./app/
 COPY image.pollinations.ai/src           ./app/src
 COPY image.pollinations.ai/observability ./app/observability
 COPY image.pollinations.ai/auth          ./app/auth
+COPY image.pollinations.ai/assets        ./app/assets
 COPY --from=builder /workspace/app/node_modules ./app/node_modules
 
 EXPOSE 16384

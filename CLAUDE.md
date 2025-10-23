@@ -7,6 +7,10 @@ When handling project submission issues (labeled as **APPS** in GitHub):
 1. Add new projects to the appropriate category file in:
    - pollinations.ai/src/config/projects/[category].js (e.g., creative.js, vibeCoding.js, etc.)
    - DO NOT manually edit the README.md file directly
+   - After adding projects, regenerate the lists by running:
+     ```bash
+     node pollinator-agent/project-list-scripts/generate-project-table.js --update-readme
+     ```
 
 2. Project Entry Format:
    ```javascript

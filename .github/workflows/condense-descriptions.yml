@@ -1,10 +1,14 @@
-name: Auto-Condense PR/Issue Descriptions
+name: Auto-Condense PR/Issue Descriptions and Comments
 
 on:
   pull_request:
     types: [opened, edited]
   issues:
     types: [opened, edited]
+  issue_comment:
+    types: [created, edited]
+  pull_request_review_comment:
+    types: [created, edited]
 
 jobs:
   condense:
@@ -19,7 +23,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const body = context.payload.pull_request?.body || context.payload.issue?.body || '';
+            const body = context.payload.pull_request?.body || context.payload.issue?.body || context.payload.comment?.body || '';
             
             // Skip if already condensed or too short
             if (body.includes('Description condensed by [pollinations.ai](https://pollinations.ai)') || body.length < 200) {
@@ -64,7 +68,7 @@ jobs:
                 'Authorization': `Bearer ${process.env.POLLINATIONS_TOKEN}`
               },
               body: JSON.stringify({
-                model: 'openai-large',
+                model: 'openai',
                 messages: [
                   { role: 'user', content: prompt }
                 ],
@@ -80,10 +84,8 @@ jobs:
             const data = await response.json();
             const condensedText = data.choices[0].message.content.trim();
             
-            // Add disclaimer with link to original
-            const isPR = github.event_name === 'pull_request';
-            const originalLink = `https://github.com/${context.repo.owner}/${context.repo.repo}/${isPR ? 'pull' : 'issues'}/${context.issue.number}`;
-            const finalBody = `${condensedText}\n\n---\n*Description condensed by [pollinations.ai](https://pollinations.ai) for readability. [View original](${originalLink})*`;
+            // Add disclaimer (original link will be in edit history)
+            const finalBody = `${condensedText}\n\n---\n*Description condensed by [pollinations.ai](https://pollinations.ai) for readability.*`;
             
             console.log('Condensed successfully');
             return { condensedBody: finalBody };
@@ -121,5 +123,41 @@ jobs:
             });
             
             console.log('Issue description updated');
+        env:
+          CONDENSE_RESULT: ${{ steps.condense.outputs.result }}
+      
+      - name: Update issue comment
+        if: github.event_name == 'issue_comment' && fromJSON(steps.check.outputs.result).shouldCondense
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const condensedBody = JSON.parse(process.env.CONDENSE_RESULT).condensedBody;
+            
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              body: condensedBody
+            });
+            
+            console.log('Issue comment updated');
+        env:
+          CONDENSE_RESULT: ${{ steps.condense.outputs.result }}
+      
+      - name: Update PR review comment
+        if: github.event_name == 'pull_request_review_comment' && fromJSON(steps.check.outputs.result).shouldCondense
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const condensedBody = JSON.parse(process.env.CONDENSE_RESULT).condensedBody;
+            
+            await github.rest.pulls.updateReviewComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              body: condensedBody
+            });
+            
+            console.log('PR review comment updated');
         env:
           CONDENSE_RESULT: ${{ steps.condense.outputs.result }}

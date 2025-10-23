@@ -1,37 +1,26 @@
 # DNS Migration - pollinations.ai
 
-## Strategy
-Migrate DNS to Cloudflare while keeping all sites on current hosting (Netlify/AWS). Zero downtime.
+## Status: ✅ COMPLETE
 
-## Current Status
-- ⚠️ **NOT MIGRATED** - Still on Netlify DNS (NSOne nameservers)
-- Zone ID: `0942247b74a58e4fc5ea70341a3754a3`
+**Migrated:** October 23, 2025  
+**Zone ID:** `0942247b74a58e4fc5ea70341a3754a3`  
+**Nameservers:** `anton.ns.cloudflare.com`, `robin.ns.cloudflare.com`
 
-## TODO
+## What Changed
+- **DNS Provider:** Netlify (NSOne) → Cloudflare
+- **Hosting:** NO CHANGE (all sites remain on Netlify/AWS)
+- **Zero downtime migration**
 
-### 1. Fix Cloudflare DNS Records
-- [ ] Run `./add-netlify-cnames.sh` to add Netlify CNAMEs
-- [ ] Delete incorrect A records in Cloudflare dashboard:
-  - 103.169.142.0
-  - 54.215.62.21
-  - 13.52.115.166
+## Verification
+- ✅ All DNS records migrated and verified
+- ✅ API services (text, image, auth) working
+- ✅ AWS services (rest, worker-*) working
+- ✅ Email (MX records) working
+- ✅ Netlify subdomains working
 
-### 2. Activate Cloudflare Zone
-- [ ] Get Cloudflare nameservers assigned (currently null)
-
-### 3. Switch Nameservers
-- [ ] Update domain registrar: NSOne → Cloudflare nameservers
-- [ ] Wait for propagation (24-48 hours)
-
-### 4. Verify
-- [ ] Test pollinations.ai and all subdomains
-- [ ] Test API services (text, image, auth)
-- [ ] Test AWS services (rest, worker-*)
-- [ ] Test email
-
-## What Changes
-- **DNS Provider:** Netlify → Cloudflare
-- **Hosting:** NO CHANGE (all sites stay where they are)
-
-## Rollback
-If issues: Update nameservers back to NSOne at registrar
+## Rollback (if needed)
+Change nameservers back to NSOne at registrar:
+- dns1.p07.nsone.net
+- dns2.p07.nsone.net
+- dns3.p07.nsone.net
+- dns4.p07.nsone.net

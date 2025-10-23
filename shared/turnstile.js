@@ -32,17 +32,24 @@ export async function verifyTurnstile(token, ip, hostname, env) {
 		);
 
 		const result = await response.json();
-		console.log(`[turnstile] Verification result for ${hostname}:`, result);
+	console.log(`[turnstile] Verification result for ${hostname}:`, result);
 
-		// Verify hostname matches
-		if (result.success && result.hostname !== hostname) {
-			console.log(
-				`[turnstile] ❌ Hostname mismatch: expected ${hostname}, got ${result.hostname}`,
-			);
-			return { success: false, "error-codes": ["hostname-mismatch"] };
-		}
+	// Skip hostname validation for test keys (they always return 'example.com')
+	const isTestKey = result.metadata?.result_with_testing_key === true;
+	
+	// Verify hostname matches (skip for test keys)
+	if (result.success && !isTestKey && result.hostname !== hostname) {
+		console.log(
+			`[turnstile] ❌ Hostname mismatch: expected ${hostname}, got ${result.hostname}`,
+		);
+		return { success: false, "error-codes": ["hostname-mismatch"] };
+	}
+	
+	if (isTestKey) {
+		console.log("[turnstile] ℹ️ Using test key, skipping hostname validation");
+	}
 
-		return result;
+	return result;
 	} catch (error) {
 		console.log("[turnstile] ❌ Verification error:", error);
 		return { success: false, "error-codes": ["network-error"] };

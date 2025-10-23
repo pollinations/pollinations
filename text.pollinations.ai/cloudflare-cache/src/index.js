@@ -713,6 +713,17 @@ function prepareResponseHeaders(originalHeaders, cacheInfo = {}) {
         headers.delete(header);
     }
 
+    // Add CORS headers if not already present
+    if (!headers.has("Access-Control-Allow-Origin")) {
+        headers.set("Access-Control-Allow-Origin", "*");
+    }
+    if (!headers.has("Access-Control-Allow-Methods")) {
+        headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    }
+    if (!headers.has("Access-Control-Allow-Headers")) {
+        headers.set("Access-Control-Allow-Headers", "Content-Type, X-Turnstile-Token");
+    }
+
     // Add cache-related headers if provided
     if (cacheInfo.cacheStatus) {
         headers.set("X-Cache", cacheInfo.cacheStatus);

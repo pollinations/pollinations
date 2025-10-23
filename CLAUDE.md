@@ -2,7 +2,7 @@
 
 ## Project Submission Handling
 
-When handling project submission issues:
+When handling project submission issues (labeled as **APPS** in GitHub):
 
 1. Add new projects to the appropriate category file in:
    - pollinations.ai/src/config/projects/[category].js (e.g., creative.js, vibeCoding.js, etc.)

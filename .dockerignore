@@ -5,9 +5,10 @@
 **/.cache
 **/coverage
 **/*.log
-**/.env*
-**/.encrypted*
 **/temp
 **/tmp
 **/.DS_Store
 **/Thumbs.db
+**/.env*
+**/.encrypted*
+**/.dev.vars

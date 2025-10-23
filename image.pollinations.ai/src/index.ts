@@ -477,9 +477,15 @@ const checkCacheAndGenerate = async (
                     queueConfig = { interval: 30000 };
                     logAuth(`${modelName} model - 30 second interval`);
                 } else if (modelName === "gptimage") {
-                    // GPTImage model - 150 second interval with strict concurrency (cap=1, forceCap=true)
-                    queueConfig = { interval: 150000, cap: 1, forceCap: true, model: modelName };
-                    logAuth("GPTImage model - 150 second interval, cap=1 (forced)");
+                    // GPTImage model - tier-based limits
+                    // Nectar tier: 60s interval, cap=3 | Other tiers: 150s interval, cap=1
+                    if (authResult.tier === "nectar") {
+                        queueConfig = { interval: 60000, cap: 3, forceCap: true, model: modelName };
+                        logAuth("GPTImage model (nectar tier) - 60 second interval, cap=3 (forced)");
+                    } else {
+                        queueConfig = { interval: 150000, cap: 1, forceCap: true, model: modelName };
+                        logAuth("GPTImage model - 150 second interval, cap=1 (forced)");
+                    }
                 } else if (hasValidToken) {
                     // Token authentication for other models - 7s minimum interval with tier-based caps
                     queueConfig = { interval: 7000 }; // cap will be set by ipQueue based on tier

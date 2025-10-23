@@ -8,7 +8,7 @@ Pollen is our prepaid credit system. **$1 ≈ 1 Pollen** (pricing may evolve). Y
 
 There are three ways to add Pollen to your balance:
 1.  **Buy It:** Purchase Pollen packs directly with a credit card. This Pollen goes into your wallet and never expires.
-2.  **Get a Daily Sponsorship:** During beta, registered developers receive daily Pollen grants to support experimentation.
+2.  **Get Daily Pollen:** During and after beta, registered developers receive daily Pollen grants to support experimentation based on their tier *(seed, flower, or nectar)*.
 3.  **Earn It:** Complete one-time community rewards, like starring our GitHub repo or helping solve a technical issue.
 
 ## What payment methods do you accept?
@@ -34,9 +34,8 @@ If you register but do not use a key, your rate limits will be the same as an an
 
 ## How do daily Pollen grants work?
 
-During beta, registered developers receive daily Pollen grants to support experimentation. Sponsorship tiers will be introduced during beta phases. 
-
-Sponsored Pollen is always spent before your purchased Pollen balance, and it expires 15 days after being granted.
+Registered developers receive daily Pollen grants to support experimentation based on their tier. 
+Pollen grants are always spent before your purchased Pollen balance, and it expires each day.
 
 ## How much Pollen do models use?
 
@@ -63,10 +62,6 @@ With just 10 Pollen (≈$10), you can generate:
 - **100,000+ basic text responses** — chatbot conversations, content generation
 - **10,000 premium text responses** — advanced reasoning and analysis
 - **Unlimited flux images** — completely free, always!
-
-## Will free models always be free?
-
-Yes! Free models remain free forever for all users. We're committed to keeping AI accessible.
 
 ## How does my Pollen wallet work?
 

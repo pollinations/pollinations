@@ -545,14 +545,8 @@ const callAzureGPTImageWithEndpoint = async (
     // Map safeParams to Azure API parameters
     const size = `${safeParams.width}x${safeParams.height}`;
 
-    // Allow nectar users to use high quality, others get medium quality to reduce costs
-    const quality = userInfo?.tier === "nectar" && safeParams.quality === "high" 
-        ? "high" 
-        : "medium";
-    
-    if (quality === "high") {
-        logCloudflare(`Nectar tier user - using high quality for gptimage`);
-    }
+    // Force medium quality for gptimage to reduce costs
+    const quality = "medium";
 
     // Set output format to png if model is gptimage, otherwise jpeg
     const outputFormat = "png";

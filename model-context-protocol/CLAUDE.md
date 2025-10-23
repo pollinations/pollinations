@@ -45,7 +45,10 @@
    - Keep the code simple and avoid unnecessary operations
 
 5. **Debugging**:
-   - Check the logs at `/Users/thomash/Library/Logs/Claude/mcp-server-pollinations.log` for errors
+   - Check the Claude Desktop logs for MCP server errors:
+     - macOS: `~/Library/Logs/Claude/mcp-server-pollinations.log`
+     - Windows: `%APPDATA%\Claude\logs\mcp-server-pollinations.log`
+     - Linux: `~/.config/Claude/logs/mcp-server-pollinations.log`
    - Test MCP functions independently using the test-mcp-client.js script
    - Remember to restart Claude Desktop after making changes to the MCP server
 

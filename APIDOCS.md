@@ -9,7 +9,7 @@ Ready to dive in? Here are some live examples you can try right in your browser 
 
 - 🖼️ **Create an Image**: Generate a logo for Pollinations.AI [pollinations_logo](https://image.pollinations.ai/prompt/pollinations_logo)
 - 💬 **Generate Text**: Learn why donating to Pollinations.AI is a great idea [why_you_should_donate](https://text.pollinations.ai/why_you_should_donate)
-- 🔍 **Search the Web**: Find the latest news about Pollinations.AI [latest_news](https://text.pollinations.ai/latest_news)
+- 🔍 **Search the Web**: Find the latest news about Pollinations.AI [latest_news](https://text.pollinations.ai/latest_news?model=gemini-search)
 - 🎙️ **Create Audio**: Hear a fun, short hypnosis audio encouraging a donation (just for laughs!) [hypnosis_audio](https://text.pollinations.ai/hypnosis_audio?model=openai-audio&voice=nova)
 
 **How to Try These**: Just click the links above, and you’ll see the results instantly in your browser. No coding needed yet!

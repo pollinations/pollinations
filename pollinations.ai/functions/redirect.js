@@ -2,7 +2,7 @@
 import { incrementUserMetric } from "../../shared/userMetrics.js";
 
 // Import redirect mapping and affiliate data from the consolidated affiliates.js file
-import { redirectMapping, affiliatesData } from "../../affiliate/affiliates.js";
+import { redirectMapping, affiliatesData } from "../../shared/affiliates.js";
 
 // Use the redirectMapping directly as it's already in the correct format
 const REFERRAL_LINKS = redirectMapping;

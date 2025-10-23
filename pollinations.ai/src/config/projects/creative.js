@@ -4,6 +4,15 @@
  */
 
 export const creativeProjects = [
+  {
+    name: "SHICoPIC™ 🎨",
+    url: "https://shicopic.netlify.app",
+    description: "AI-powered creative image generation tool. Simple interface for creating images with Pollinations API.",
+    author: "@Shervinuri",
+    repo: "https://github.com/Shervinuri/SHICoPIC",
+    submissionDate: "2025-10-23",
+    order: 1
+  },
     {
     name: "Green Hope AI 🎨",
     url: "https://aithumbnails.vercel.app/",

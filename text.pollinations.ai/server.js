@@ -612,15 +612,10 @@ async function processRequest(req, res, requestData) {
 	const hasReferrer = authResult.referrerAuth;
 
 	// Determine queue configuration based on authentication
-	// Note: ipQueue.js now handles tier-based cap logic automatically for token auth
+	// Note: ipQueue.js handles tier-based caps and enter.pollinations.ai bypass automatically
 	let queueConfig;
-	const fromEnter = isEnterRequest(req);
 	
-	if (fromEnter) {
-		// Enter.pollinations.ai requests - no rate limiting
-		queueConfig = { interval: 0, cap: 100 }; // No interval, high concurrency
-		authLog("🌸 Enter.pollinations.ai request - bypassing rate limits");
-	} else if (isTokenAuthenticated) {
+	if (isTokenAuthenticated) {
 		// Token authentication - ipQueue will automatically apply tier-based caps
 		queueConfig = { interval: 3000 }; // cap will be set by ipQueue based on tier
 		authLog("Token authenticated - ipQueue will apply tier-based concurrency");

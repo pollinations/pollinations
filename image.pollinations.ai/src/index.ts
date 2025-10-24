@@ -437,15 +437,10 @@ const checkCacheAndGenerate = async (
                 // Determine queue configuration based on model first, then authentication
                 let queueConfig = null;
                 
-                // Check if request is from enter.pollinations.ai - bypass all rate limits
-                const fromEnter = isEnterRequest(req);
-                if (fromEnter) {
-                    queueConfig = { interval: 0, cap: 100 }; // No rate limiting
-                    logAuth("🌸 Enter.pollinations.ai request - bypassing rate limits");
-                } else {
-                    // Model-specific queue configs with hourly limits
-                    const modelName = safeParams.model as string;
-                    if (modelName === "nanobanana") {
+                // Model-specific queue configs with hourly limits
+                // Note: ipQueue.js handles enter.pollinations.ai bypass automatically
+                const modelName = safeParams.model as string;
+                if (modelName === "nanobanana") {
                     // Check hourly limit for nanobanana
                     const ip = getIp(req);
                     const { allowed, remaining, resetIn } = checkHourlyLimit(ip);
@@ -495,15 +490,14 @@ const checkCacheAndGenerate = async (
                         queueConfig = { interval: 150000, cap: 1, forceCap: true, model: modelName };
                         logAuth("GPTImage model - 150 second interval, cap=1 (forced)");
                     }
-                    } else if (hasValidToken) {
-                        // Token authentication for other models - 7s minimum interval with tier-based caps
-                        queueConfig = { interval: 7000 }; // cap will be set by ipQueue based on tier
-                        logAuth("Token authenticated - using 7s minimum interval with tier-based concurrency");
-                    } else {
-                        // Use default queue config for other models with no token
-                        queueConfig = QUEUE_CONFIG;
-                        logAuth("Standard queue with delay (no token)");
-                    }
+                } else if (hasValidToken) {
+                    // Token authentication for other models - 7s minimum interval with tier-based caps
+                    queueConfig = { interval: 7000 }; // cap will be set by ipQueue based on tier
+                    logAuth("Token authenticated - using 7s minimum interval with tier-based concurrency");
+                } else {
+                    // Use default queue config for other models with no token
+                    queueConfig = QUEUE_CONFIG;
+                    logAuth("Standard queue with delay (no token)");
                 }
                 
                 if (hasValidToken) {

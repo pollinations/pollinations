@@ -32,6 +32,20 @@ export function createAuth(env: Cloudflare.Env) {
             timeWindow: 1000, // 1 second
             maxRequests: 5, // 5 requests
         },
+        // Custom getter to support both x-api-key and Authorization: Bearer headers
+        customAPIKeyGetter: (ctx: GenericEndpointContext): string | null => {
+            // Try x-api-key header first (default)
+            const xApiKey = ctx.request?.headers.get("x-api-key");
+            if (xApiKey) return xApiKey;
+            
+            // Try Authorization: Bearer header (for OpenAPI/Scalar compatibility)
+            const authHeader = ctx.request?.headers.get("authorization");
+            if (authHeader?.startsWith("Bearer ")) {
+                return authHeader.substring(7); // Remove "Bearer " prefix
+            }
+            
+            return null;
+        },
     });
 
     const adminPlugin = admin({

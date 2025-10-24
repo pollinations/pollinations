@@ -11,6 +11,9 @@
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
         "push-secrets": "sops exec-file --no-fifo .encrypted.env 'npx wrangler secret bulk {}'"
+        "container:build": "wrangler build",
+        "container:dev": "wrangler dev",
+        "container:deploy": "wrangler deploy"
     },
     "keywords": [],
     "author": "",

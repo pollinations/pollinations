@@ -1,5 +1,5 @@
-name = "pollinations-image"
-main = "src/container.ts"
+name = "pollinations-text"
+main = "container.ts"
 compatibility_date = "2025-10-23"
 
 [observability]
@@ -7,15 +7,15 @@ enabled = true
 
 [[containers]]
 max_instances = 1
-class_name = "ImageServiceContainer"
+class_name = "TextServiceContainer"
 image = "./Dockerfile"
 image_build_context = ".."
-instance_type = "standard-4"
+instance_type = "standard-3"
 
 [[durable_objects.bindings]]
-class_name = "ImageServiceContainer"
+class_name = "TextServiceContainer"
 name = "CONTAINER"
 
 [[migrations]]
-new_sqlite_classes = [ "ImageServiceContainer" ]
+new_sqlite_classes = [ "TextServiceContainer" ]
 tag = "v1"

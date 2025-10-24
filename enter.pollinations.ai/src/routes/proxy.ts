@@ -49,12 +49,14 @@ function errorResponses(...codes: ErrorStatusCode[]) {
 }
 
 export const proxyRoutes = new Hono<Env>()
-    // Enable CORS for browser requests with Authorization headers
-    .use('*', cors({
-        origin: '*',
-        allowHeaders: ['authorization', 'content-type'],
-        allowMethods: ['GET', 'POST', 'OPTIONS'],
-    }))
+    .use(
+        "*",
+        cors({
+            origin: "*",
+            allowHeaders: ["authorization", "content-type"],
+            allowMethods: ["GET", "POST", "OPTIONS"],
+        }),
+    )
     .get(
         "/openai/models",
         describeRoute({
@@ -114,7 +116,9 @@ export const proxyRoutes = new Hono<Env>()
         }),
         validator("json", CreateChatCompletionRequestSchema),
         async (c) => {
-            await authorizeRequest(c.var);
+            await authorizeRequest(c.var, {
+                allowAnonymous: c.env.ALLOW_ANONYMOUS_USAGE,
+            });
             const targetUrl = proxyUrl(
                 c,
                 "https://text.pollinations.ai/openai",
@@ -206,7 +210,9 @@ export const proxyRoutes = new Hono<Env>()
         }),
         validator("query", GenerateImageRequestQueryParamsSchema),
         async (c) => {
-            await authorizeRequest(c.var);
+            await authorizeRequest(c.var, {
+                allowAnonymous: c.env.ALLOW_ANONYMOUS_USAGE,
+            });
             const targetUrl = proxyUrl(
                 c,
                 "https://image.pollinations.ai/prompt",
@@ -226,12 +232,14 @@ export const proxyRoutes = new Hono<Env>()
         },
     );
 
-async function authorizeRequest({
-    auth,
-    polar,
-    track,
-}: AuthVariables & PolarVariables & TrackVariables) {
-    if (!track.isFreeUsage) {
+async function authorizeRequest(
+    { auth, polar, track }: AuthVariables & PolarVariables & TrackVariables,
+    options: { allowAnonymous: boolean },
+) {
+    if (track.isFreeUsage) {
+        if (!options.allowAnonymous)
+            auth.requireActiveSession("Anonymous usage is currently disabled.");
+    } else {
         const { user } = auth.requireActiveSession(
             "You need to be signed-in to use this model.",
         );

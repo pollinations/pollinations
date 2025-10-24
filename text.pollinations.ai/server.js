@@ -23,7 +23,7 @@ import { checkAndLogMonitoredStrings, extractTextFromMessages } from "./utils/st
 
 // Import shared utilities
 import { enqueue } from "../shared/ipQueue.js";
-import { handleAuthentication } from "../shared/auth-utils.js";
+import { handleAuthentication, isEnterRequest } from "../shared/auth-utils.js";
 import { getIp } from "../shared/extractFromRequest.js";
 import { hasSufficientTier } from "../shared/tier-gating.js";
 
@@ -158,9 +158,11 @@ async function handleRequest(req, res, requestData) {
 		);
 
 		if (model) {
-			const hasAccess = hasSufficientTier(userTier, model.tier);
+			// Skip tier check for enter.pollinations.ai requests
+			const fromEnter = isEnterRequest(req);
+			const hasAccess = fromEnter || hasSufficientTier(userTier, model.tier);
 			log(
-				`Access check: hasSufficientTier(${userTier}, ${model.tier}) = ${hasAccess}`,
+				`Access check: fromEnter=${fromEnter}, hasSufficientTier(${userTier}, ${model.tier}) = ${hasAccess}`,
 			);
 
 			if (!hasAccess) {
@@ -612,7 +614,13 @@ async function processRequest(req, res, requestData) {
 	// Determine queue configuration based on authentication
 	// Note: ipQueue.js now handles tier-based cap logic automatically for token auth
 	let queueConfig;
-	if (isTokenAuthenticated) {
+	const fromEnter = isEnterRequest(req);
+	
+	if (fromEnter) {
+		// Enter.pollinations.ai requests - no rate limiting
+		queueConfig = { interval: 0, cap: 100 }; // No interval, high concurrency
+		authLog("🌸 Enter.pollinations.ai request - bypassing rate limits");
+	} else if (isTokenAuthenticated) {
 		// Token authentication - ipQueue will automatically apply tier-based caps
 		queueConfig = { interval: 3000 }; // cap will be set by ipQueue based on tier
 		authLog("Token authenticated - ipQueue will apply tier-based concurrency");

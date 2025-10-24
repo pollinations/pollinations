@@ -7,6 +7,7 @@ import {
     addAuthDebugHeaders,
     createAuthDebugResponse,
     handleAuthentication,
+    isEnterRequest,
 } from "../../shared/auth-utils.js";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
 import { sendImageTelemetry } from "./utils/telemetry.js";
@@ -436,9 +437,15 @@ const checkCacheAndGenerate = async (
                 // Determine queue configuration based on model first, then authentication
                 let queueConfig = null;
                 
-                // Model-specific queue configs with hourly limits
-                const modelName = safeParams.model as string;
-                if (modelName === "nanobanana") {
+                // Check if request is from enter.pollinations.ai - bypass all rate limits
+                const fromEnter = isEnterRequest(req);
+                if (fromEnter) {
+                    queueConfig = { interval: 0, cap: 100 }; // No rate limiting
+                    logAuth("🌸 Enter.pollinations.ai request - bypassing rate limits");
+                } else {
+                    // Model-specific queue configs with hourly limits
+                    const modelName = safeParams.model as string;
+                    if (modelName === "nanobanana") {
                     // Check hourly limit for nanobanana
                     const ip = getIp(req);
                     const { allowed, remaining, resetIn } = checkHourlyLimit(ip);
@@ -470,7 +477,9 @@ const checkCacheAndGenerate = async (
                     logAuth(`${modelName} model - 6 minute interval, ${remaining}/${HOURLY_LIMIT} images remaining this hour`);
                 } else if (modelName === "kontext") {
                     // Kontext model requires seed tier or higher (checked via registry)
-                    if (!canAccessService("kontext", authResult.tier)) {
+                    // Skip tier check for enter.pollinations.ai requests
+                    const fromEnter = isEnterRequest(req);
+                    if (!fromEnter && !canAccessService("kontext", authResult.tier)) {
                         throw new Error("Kontext model requires authentication (seed tier or higher). Visit https://auth.pollinations.ai");
                     }
                     // 30 second interval with tier-based caps
@@ -486,14 +495,15 @@ const checkCacheAndGenerate = async (
                         queueConfig = { interval: 150000, cap: 1, forceCap: true, model: modelName };
                         logAuth("GPTImage model - 150 second interval, cap=1 (forced)");
                     }
-                } else if (hasValidToken) {
-                    // Token authentication for other models - 7s minimum interval with tier-based caps
-                    queueConfig = { interval: 7000 }; // cap will be set by ipQueue based on tier
-                    logAuth("Token authenticated - using 7s minimum interval with tier-based concurrency");
-                } else {
-                    // Use default queue config for other models with no token
-                    queueConfig = QUEUE_CONFIG;
-                    logAuth("Standard queue with delay (no token)");
+                    } else if (hasValidToken) {
+                        // Token authentication for other models - 7s minimum interval with tier-based caps
+                        queueConfig = { interval: 7000 }; // cap will be set by ipQueue based on tier
+                        logAuth("Token authenticated - using 7s minimum interval with tier-based concurrency");
+                    } else {
+                        // Use default queue config for other models with no token
+                        queueConfig = QUEUE_CONFIG;
+                        logAuth("Standard queue with delay (no token)");
+                    }
                 }
                 
                 if (hasValidToken) {

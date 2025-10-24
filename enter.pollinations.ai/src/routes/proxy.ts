@@ -1,5 +1,6 @@
 import { Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
+import { cors } from "hono/cors";
 import { authenticate } from "@/middleware/authenticate";
 import { polar } from "@/middleware/polar.ts";
 import type { Env } from "../env.ts";
@@ -48,6 +49,12 @@ function errorResponses(...codes: ErrorStatusCode[]) {
 }
 
 export const proxyRoutes = new Hono<Env>()
+    // Enable CORS for browser requests with Authorization headers
+    .use('*', cors({
+        origin: '*',
+        allowHeaders: ['authorization', 'content-type'],
+        allowMethods: ['GET', 'POST', 'OPTIONS'],
+    }))
     .get(
         "/openai/models",
         describeRoute({

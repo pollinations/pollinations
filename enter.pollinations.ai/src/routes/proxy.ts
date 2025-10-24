@@ -1,7 +1,7 @@
 import { Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import { cors } from "hono/cors";
-import { authenticate } from "@/middleware/authenticate";
+import { authenticateAPI } from "@/middleware/authenticate";
 import { polar } from "@/middleware/polar.ts";
 import type { Env } from "../env.ts";
 import { track, type TrackVariables } from "@/middleware/track.ts";
@@ -80,7 +80,7 @@ export const proxyRoutes = new Hono<Env>()
             });
         },
     )
-    .use(authenticate)
+    .use(authenticateAPI)
     .use(polar)
     .use(alias({ "/openai/chat/completions": "/openai" }))
     .post(

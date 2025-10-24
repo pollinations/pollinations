@@ -23,26 +23,51 @@ export type AuthEnv = {
 };
 
 /**
- * Unified authentication middleware.
- * Tries session first (cookies), then API key (Bearer token).
- * Use for all routes - authentication is optional by default.
- * Call c.get("auth").requireActiveSession() to enforce authentication.
+ * Session-only authentication for dashboard routes.
+ * Only checks session cookies.
  */
-export const authenticate = createMiddleware<AuthEnv>(async (c, next) => {
+export const authenticateSession = createMiddleware<AuthEnv>(async (c, next) => {
     const client = createAuth(c.env);
-    let user: Session["user"] | undefined;
-    let session: Session["session"] | undefined;
+    const result = await client.api.getSession({
+        headers: c.req.raw.headers,
+    });
 
-    // Try session authentication (cookies)
+    const requireActiveSession = (message?: string) => {
+        if (!result?.user || !result?.session) {
+            throw new HTTPException(401, {
+                message: message || "You need to be signed-in to access this route.",
+            });
+        }
+        return { user: result.user, session: result.session };
+    };
+
+    c.set("auth", {
+        client,
+        session: result?.session,
+        user: result?.user,
+        requireActiveSession,
+    });
+
+    await next();
+});
+
+/**
+ * API authentication for API routes.
+ * Checks session first, then API key.
+ */
+export const authenticateAPI = createMiddleware<AuthEnv>(async (c, next) => {
+    const client = createAuth(c.env);
+    
+    // Try session first
     const sessionResult = await client.api.getSession({
         headers: c.req.raw.headers,
     });
 
-    if (sessionResult?.user) {
-        user = sessionResult.user;
-        session = sessionResult.session;
-    } else {
-        // Try API key authentication (Bearer token)
+    let user = sessionResult?.user;
+    let session = sessionResult?.session;
+
+    // Try API key if no session
+    if (!user) {
         const authHeader = c.req.header("authorization");
         const apiKey = extractApiKey(authHeader);
 
@@ -57,12 +82,10 @@ export const authenticate = createMiddleware<AuthEnv>(async (c, next) => {
     const requireActiveSession = (message?: string) => {
         if (!user) {
             throw new HTTPException(401, {
-                message:
-                    message ||
-                    "Authentication required. Sign in or provide a valid API key.",
+                message: message || "Authentication required. Sign in or provide a valid API key.",
             });
         }
-        return { user, session: session ?? undefined };
+        return { user, session };
     };
 
     c.set("auth", {
@@ -74,16 +97,4 @@ export const authenticate = createMiddleware<AuthEnv>(async (c, next) => {
 
     await next();
 });
-
-/**
- * Alias for dashboard routes that require session-based authentication.
- * Same as authenticate() but with clearer naming for session-required routes.
- */
-export const authenticateSession = authenticate;
-
-/**
- * Alias for API routes that support both session and API key authentication.
- * Same as authenticate() but with clearer naming for API routes.
- */
-export const authenticateAPI = authenticate;
 

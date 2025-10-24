@@ -42,7 +42,7 @@ export const polarRoutes = new Hono<Env>()
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         async (c) => {
-            const { user } = c.var.auth.requireActiveSession();
+            const { user } = c.var.auth.requireAuth();
             const polar = c.var.polar.client;
             const result = await polar.customers.getStateExternal({
                 externalId: user.id,
@@ -57,7 +57,7 @@ export const polarRoutes = new Hono<Env>()
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         async (c) => {
-            const { user } = c.var.auth.requireActiveSession();
+            const { user } = c.var.auth.requireAuth();
             const polar = c.var.polar.client;
             const result = await polar.events.list({
                 externalCustomerId: user.id,
@@ -76,7 +76,7 @@ export const polarRoutes = new Hono<Env>()
         }),
         validator("query", redirectQuerySchema),
         async (c) => {
-            const { user } = c.var.auth.requireActiveSession();
+            const { user } = c.var.auth.requireAuth();
             const { redirect } = c.req.valid("query");
             try {
                 const polar = c.var.polar.client;
@@ -103,7 +103,7 @@ export const polarRoutes = new Hono<Env>()
         validator("param", checkoutParamsSchema),
         validator("query", redirectQuerySchema),
         async (c) => {
-            const { user } = c.var.auth.requireActiveSession();
+            const { user } = c.var.auth.requireAuth();
             const { slug } = c.req.valid("param");
             const { redirect } = c.req.valid("query");
             try {

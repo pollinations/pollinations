@@ -238,9 +238,9 @@ async function authorizeRequest(
 ) {
     if (track.isFreeUsage) {
         if (!options.allowAnonymous)
-            auth.requireActiveSession("Anonymous usage is currently disabled.");
+            auth.requireAuth("Anonymous usage is currently disabled.");
     } else {
-        const { user } = auth.requireActiveSession(
+        const { user } = auth.requireAuth(
             "You need to be signed-in to use this model.",
         );
         await polar.requirePositiveBalance(user.id);

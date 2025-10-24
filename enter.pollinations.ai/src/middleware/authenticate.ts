@@ -10,7 +10,7 @@ export type AuthVariables = {
         client: ReturnType<typeof createAuth>;
         session?: Session["session"];
         user?: Session["user"];
-        requireActiveSession: (message?: string) => {
+        requireAuth: (message?: string) => {
             user: Session["user"];
             session?: Session["session"];
         };
@@ -32,7 +32,7 @@ export const authenticateSession = createMiddleware<AuthEnv>(async (c, next) => 
         headers: c.req.raw.headers,
     });
 
-    const requireActiveSession = (message?: string) => {
+    const requireAuth = (message?: string) => {
         if (!result?.user || !result?.session) {
             throw new HTTPException(401, {
                 message: message || "You need to be signed-in to access this route.",
@@ -45,7 +45,7 @@ export const authenticateSession = createMiddleware<AuthEnv>(async (c, next) => 
         client,
         session: result?.session,
         user: result?.user,
-        requireActiveSession,
+        requireAuth,
     });
 
     await next();
@@ -69,7 +69,7 @@ export const authenticateAPI = createMiddleware<AuthEnv>(async (c, next) => {
         }
     }
 
-    const requireActiveSession = (message?: string) => {
+    const requireAuth = (message?: string) => {
         if (!user) {
             throw new HTTPException(401, {
                 message: message || "API key required. Provide a valid Bearer token.",
@@ -82,7 +82,7 @@ export const authenticateAPI = createMiddleware<AuthEnv>(async (c, next) => {
         client,
         session: undefined,
         user,
-        requireActiveSession,
+        requireAuth,
     });
 
     await next();

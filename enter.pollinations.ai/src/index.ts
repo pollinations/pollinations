@@ -43,6 +43,14 @@ const app = new Hono<Env>()
                       ]
                     : []),
             ],
+            authentication: {
+                preferredSecurityScheme: 'bearerAuth',
+                securitySchemes: {
+                    bearerAuth: {
+                        token: '', // Users input their own API key
+                    },
+                },
+            },
         })(c, next),
     )
     .get(

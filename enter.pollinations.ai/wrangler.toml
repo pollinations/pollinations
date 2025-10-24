@@ -27,7 +27,7 @@ id = "aa0d0aceb6bd45de93032270c7adf4ab"
 
 [vars]
 ENVIRONMENT = "development"
-ALLOW_ANONYMOUS_USAGE = true
+ALLOW_ANONYMOUS_USAGE = false
 POLAR_SUCCESS_URL = "http://localhost:3000"
 POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"

@@ -40,6 +40,7 @@ jobs:
           claude_args: |
             --model claude-sonnet-4-5-20250929
             --allowedTools mcp_sequa_search_web
+            --system-prompt "When reviewing code, be extremely concise. Use bullet points only. No paragraphs or verbose explanations. Format: - **Issue**: brief description - **Fix**: one-line solution. Maximum 3-5 bullets per review."
             --mcp-config '{
               "mcpServers": {
                 "sequa": {

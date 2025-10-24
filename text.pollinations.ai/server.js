@@ -6,6 +6,7 @@ import debug from "debug";
 import { promises as fs } from "fs";
 import path from "path";
 import dotenv from "dotenv";
+import { Transform } from "stream";
 import { availableModels } from "./availableModels.js";
 import { getProviderByModelId } from "../shared/registry/registry.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
@@ -26,6 +27,7 @@ import { enqueue } from "../shared/ipQueue.js";
 import { handleAuthentication } from "../shared/auth-utils.js";
 import { getIp } from "../shared/extractFromRequest.js";
 import { hasSufficientTier } from "../shared/tier-gating.js";
+import { buildUsageHeaders, openaiUsageToTokenUsage } from "../shared/registry/usage-headers.js";
 
 // Load environment variables including .env.local overrides
 // Load .env.local first (higher priority), then .env as fallback
@@ -514,6 +516,16 @@ export function sendOpenAIResponse(res, completion) {
 	// Set appropriate headers
 	res.setHeader("Content-Type", "application/json; charset=utf-8");
 
+	// Add usage headers if available (GitHub issue #4638)
+	if (completion.usage && completion.model) {
+		const tokenUsage = openaiUsageToTokenUsage(completion.usage);
+		const usageHeaders = buildUsageHeaders(completion.model, tokenUsage);
+		
+		for (const [key, value] of Object.entries(usageHeaders)) {
+			res.setHeader(key, value);
+		}
+	}
+
 	// Follow thin proxy approach - pass through the response as-is
 	// Only add required fields if they're missing
 	const response = {
@@ -527,6 +539,16 @@ export function sendOpenAIResponse(res, completion) {
 }
 
 export function sendContentResponse(res, completion) {
+	// Add usage headers if available (GitHub issue #4638)
+	if (completion && typeof completion === 'object' && completion.usage && completion.model) {
+		const tokenUsage = openaiUsageToTokenUsage(completion.usage);
+		const usageHeaders = buildUsageHeaders(completion.model, tokenUsage);
+		
+		for (const [key, value] of Object.entries(usageHeaders)) {
+			res.setHeader(key, value);
+		}
+	}
+
 	// Handle the case where the completion is already a string or simple object
 	if (typeof completion === "string") {
 		res.setHeader("Content-Type", "text/plain; charset=utf-8");
@@ -749,6 +771,61 @@ app.post("/v1/chat/completions", async (req, res) => {
 	}
 });
 
+/**
+ * Create a transform stream that captures usage data from SSE chunks
+ * and adds HTTP trailers at the end (GitHub issue #4638)
+ */
+function createUsageCaptureTransform(res) {
+	let finalUsage = null;
+	let finalModel = null;
+	
+	return new Transform({
+		objectMode: true,
+		transform(chunk, _encoding, callback) {
+			const chunkStr = chunk.toString();
+			
+			// Try to extract usage from chunks
+			try {
+				const dataMatches = chunkStr.match(/data: (.*?)(?:\n\n|$)/g);
+				if (dataMatches) {
+					for (const match of dataMatches) {
+						const dataContent = match.replace(/^data: /, '').trim();
+						if (dataContent && dataContent !== '[DONE]') {
+							const data = JSON.parse(dataContent);
+							if (data.usage) {
+								finalUsage = data.usage;
+							}
+							if (data.model) {
+								finalModel = data.model;
+							}
+						}
+					}
+				}
+			} catch (err) {
+				// Ignore parse errors
+			}
+			
+			// Pass through unchanged
+			this.push(chunk);
+			callback();
+		},
+		flush(callback) {
+			// Add trailers when stream ends
+			if (finalUsage && finalModel) {
+				try {
+					const tokenUsage = openaiUsageToTokenUsage(finalUsage);
+					const usageHeaders = buildUsageHeaders(finalModel, tokenUsage);
+					res.addTrailers(usageHeaders);
+					log('Added usage trailers:', Object.keys(usageHeaders));
+				} catch (err) {
+					errorLog('Error adding trailers:', err);
+				}
+			}
+			callback();
+		}
+	});
+}
+
 async function sendAsOpenAIStream(res, completion, req = null) {
 	log("sendAsOpenAIStream called with completion type:", typeof completion);
 	if (completion) {
@@ -762,6 +839,10 @@ async function sendAsOpenAIStream(res, completion, req = null) {
 	// Set standard SSE headers
 	res.setHeader("Cache-Control", "no-cache");
 	res.setHeader("Connection", "keep-alive");
+	
+	// Declare trailers for usage headers (GitHub issue #4638)
+	res.setHeader("Trailer", "x-model-used, x-usage-prompt-text-tokens, x-usage-completion-text-tokens, x-usage-total-tokens");
+	
 	res.flushHeaders();
 
 	// Handle error responses in streaming mode
@@ -793,6 +874,9 @@ async function sendAsOpenAIStream(res, completion, req = null) {
 		// Get jsonMode from request data
 		const jsonMode = completion.requestData?.jsonMode || false;
 
+		// Create usage capture transform for trailers
+		const usageCapture = createUsageCaptureTransform(res);
+
 		// Check if we have messages and should process the stream for ads
 		if (req && messages.length > 0 && !jsonMode) {
 			log("Processing stream for ads with", messages.length, "messages");
@@ -804,8 +888,8 @@ async function sendAsOpenAIStream(res, completion, req = null) {
 				messages,
 			);
 
-			// Pipe the wrapped stream to the response
-			wrappedStream.pipe(res);
+			// Pipe through usage capture to add trailers
+			wrappedStream.pipe(usageCapture).pipe(res);
 
 			// Handle client disconnect
 			if (req)
@@ -823,7 +907,7 @@ async function sendAsOpenAIStream(res, completion, req = null) {
 			log(
 				"Skipping ad processing for stream" + (jsonMode ? " (JSON mode)" : ""),
 			);
-			responseStream.pipe(res);
+			responseStream.pipe(usageCapture).pipe(res);
 
 			// Handle client disconnect
 			if (req)

@@ -7,6 +7,7 @@ import {
     addAuthDebugHeaders,
     createAuthDebugResponse,
     handleAuthentication,
+    isEnterRequest,
 } from "../../shared/auth-utils.js";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
 import { sendImageTelemetry } from "./utils/telemetry.js";
@@ -17,6 +18,7 @@ import { enqueue } from "../../shared/ipQueue.js";
 import { canAccessService } from "../../shared/registry/registry.ts";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
 import { cacheImagePromise } from "./cacheGeneratedImages.js";
+import { IMAGE_CONFIG } from "./models.js";
 import {
     type AuthResult,
     createAndReturnImageCached,
@@ -437,6 +439,7 @@ const checkCacheAndGenerate = async (
                 let queueConfig = null;
                 
                 // Model-specific queue configs with hourly limits
+                // NOTE: ipQueue.js handles enter.pollinations.ai bypass automatically
                 const modelName = safeParams.model as string;
                 if (modelName === "nanobanana") {
                     // Check hourly limit for nanobanana
@@ -470,20 +473,28 @@ const checkCacheAndGenerate = async (
                     logAuth(`${modelName} model - 6 minute interval, ${remaining}/${HOURLY_LIMIT} images remaining this hour`);
                 } else if (modelName === "kontext") {
                     // Kontext model requires seed tier or higher (checked via registry)
-                    if (!canAccessService("kontext", authResult.tier)) {
+                    // NOTE: Skip tier check for enter.pollinations.ai requests
+                    // (rate limiting is handled separately by ipQueue)
+                    const fromEnter = isEnterRequest(req);
+                    if (!fromEnter && !canAccessService("kontext", authResult.tier)) {
                         throw new Error("Kontext model requires authentication (seed tier or higher). Visit https://auth.pollinations.ai");
                     }
-                    // 30 second interval with tier-based caps
-                    queueConfig = { interval: 30000 };
-                    logAuth(`${modelName} model - 30 second interval`);
+                    // 30 second interval with tier-based cap from model config
+                    const cap = IMAGE_CONFIG.kontext.tierCaps?.[authResult.tier] || 1;
+                    queueConfig = { 
+                        interval: 30000,
+                        cap,
+                        forceCap: true
+                    };
+                    logAuth(`${modelName} model - 30 second interval, cap=${cap} for tier ${authResult.tier}`);
                 } else if (modelName === "gptimage") {
                     // GPTImage model - tier-based limits
                     // Nectar tier: 60s interval, cap=3 | Other tiers: 150s interval, cap=1
                     if (authResult.tier === "nectar") {
-                        queueConfig = { interval: 60000, cap: 3, forceCap: true, model: modelName };
+                        queueConfig = { interval: 60000, cap: 3, forceCap: true };
                         logAuth("GPTImage model (nectar tier) - 60 second interval, cap=3 (forced)");
                     } else {
-                        queueConfig = { interval: 150000, cap: 1, forceCap: true, model: modelName };
+                        queueConfig = { interval: 150000, cap: 1, forceCap: true };
                         logAuth("GPTImage model - 150 second interval, cap=1 (forced)");
                     }
                 } else if (hasValidToken) {
@@ -513,7 +524,7 @@ const checkCacheAndGenerate = async (
                         progress.setProcessing(requestId);
                         return generateImage();
                     },
-                    { ...queueConfig, forceQueue: true, model: safeParams.model },
+                    { ...queueConfig, forceQueue: true },
                 );
 
                 return result;
@@ -725,6 +736,11 @@ const port = process.env.PORT || 16384;
 server.listen(port, () => {
     console.log(`🌸 Image server listening on port ${port}`);
     console.log(`🔗 Test URL: http://localhost:${port}/prompt/pollinations`);
+    
+    // Validate ENTER_TOKEN configuration
+    if (!process.env.ENTER_TOKEN) {
+        logAuth('⚠️  ENTER_TOKEN not set - enter.pollinations.ai bypass disabled');
+    }
     
     // Debug environment info
     const debugEnv = process.env.DEBUG;

@@ -10,7 +10,7 @@
 import PQueue from "p-queue";
 import { incrementUserMetric } from "./userMetrics.js";
 import debug from "debug";
-import { shouldBypassQueue } from "./auth-utils.js";
+import { shouldBypassQueue, isEnterRequest } from "./auth-utils.js";
 
 // Import rate limit logger for detailed 429 error logging
 let logRateLimitError = null;
@@ -115,6 +115,16 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 
     authLog("Processing request: %s %s from IP: %s", method, path, ip);
 
+    // Check if request is from enter.pollinations.ai - bypass all rate limits
+    const fromEnter = isEnterRequest(req);
+    if (fromEnter) {
+        authLog("🌸 Enter.pollinations.ai request detected - bypassing rate limits");
+        // Override queue config to disable rate limiting
+        interval = 0;
+        cap = 100;
+        forceCap = true;
+    }
+
     // Get authentication status
     authLog("Checking authentication for request: %s", path);
     const authResult = await shouldBypassQueue(req);
@@ -128,58 +138,58 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
         authResult.tier || "none",
     );
 
-	// Check if there's an error in the auth result (invalid token)
-	if (authResult.error) {
-		// Detailed logging of authentication errors
-		errorLog(
-			"Authentication error: %s (status: %d)",
-			authResult.error.message,
-			authResult.error.status,
-		);
+    // Check if there's an error in the auth result (invalid token)
+    if (authResult.error) {
+        // Detailed logging of authentication errors
+        errorLog(
+            "Authentication error: %s (status: %d)",
+            authResult.error.message,
+            authResult.error.status,
+        );
 
-		// Log detailed debug info
-		if (authResult.debugInfo) {
-			authLog(
-				"Auth debug info: token source=%s, referrer=%s, authResult=%s",
-				authResult.debugInfo.tokenSource || "none",
-				authResult.debugInfo.referrer || "none",
-				authResult.debugInfo.authResult,
-			);
-		}
+        // Log detailed debug info
+        if (authResult.debugInfo) {
+            authLog(
+                "Auth debug info: token source=%s, referrer=%s, authResult=%s",
+                authResult.debugInfo.tokenSource || "none",
+                authResult.debugInfo.referrer || "none",
+                authResult.debugInfo.authResult,
+            );
+        }
 
-		// Create a proper error object to throw
-		const error = new Error(authResult.error.message);
-		error.status = authResult.error.status;
-		error.details = authResult.error.details;
+        // Create a proper error object to throw
+        const error = new Error(authResult.error.message);
+        error.status = authResult.error.status;
+        error.details = authResult.error.details;
 
-		// Add extra context for debugging
-		error.queueContext = {
-			// authContextLength removed as authContext is no longer used
-			request: { method, path, ip },
-			issuedAt: new Date().toISOString(),
-		};
+        // Add extra context for debugging
+        error.queueContext = {
+            // authContextLength removed as authContext is no longer used
+            request: { method, path, ip },
+            issuedAt: new Date().toISOString(),
+        };
 
-		errorLog(
-			"Throwing authentication error with status %d for request: %s %s",
-			error.status,
-			method,
-			path,
-		);
-		throw error;
-	}
+        errorLog(
+            "Throwing authentication error with status %d for request: %s %s",
+            error.status,
+            method,
+            path,
+        );
+        throw error;
+    }
 
-	// // // Check if this is a nectar tier user - they skip the queue entirely
-	// // // Allow all nectar tier users to bypass the queue regardless of authentication method
-	// if (authResult.tier === 'nectar' && authResult.tokenAuth) {
-	//   log('Nectar tier user detected - skipping queue entirely');
-	//   return fn(); // Execute immediately, skipping the queue
-	// }
+    // // // Check if this is a nectar tier user - they skip the queue entirely
+    // // // Allow all nectar tier users to bypass the queue regardless of authentication method
+    // if (authResult.tier === 'nectar' && authResult.tokenAuth) {
+    //   log('Nectar tier user detected - skipping queue entirely');
+    //   return fn(); // Execute immediately, skipping the queue
+    // }
 
-	// For all other users, always use the queue but adjust the interval and cap based on authentication type
-	// This ensures all requests are subject to rate limiting and queue size constraints
+    // For all other users, always use the queue but adjust the interval and cap based on authentication type
+    // This ensures all requests are subject to rate limiting and queue size constraints
 
-	// Only apply tier-based cap if forceCap is not set
-	if (!forceCap) {
+    // Only apply tier-based cap if forceCap is not set
+    if (!forceCap) {
 		// Check if this is a special model that uses different tier multipliers
 		if (model === 'nanobanana') {
 			// Check if user is in priority list first

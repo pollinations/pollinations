@@ -55,9 +55,39 @@ const app = new Hono<Env>()
                     version: "0.3.0",
                     description: [
                         "Documentation for `enter.pollinations.ai`.",
-                        "More detailed docs for requests and responses coming soon.",
+                        "",
+                        "## Authentication",
+                        "",
+                        "This API uses Bearer token authentication for server-to-server requests.",
+                        "Create an API key from your dashboard at https://enter.pollinations.ai",
+                        "",
+                        "Include your API key in the `Authorization` header:",
+                        "```",
+                        "Authorization: Bearer YOUR_API_KEY",
+                        "```",
+                        "",
+                        "**Key Types:**",
+                        "- **Server-to-Server Keys:** Best rate limits, access to all models, ability to spend Pollen on premium models",
+                        "- **Front-End Keys:** Better rate limits for free models (Pollen spending coming soon)",
+                        "",
+                        "**Anonymous Access:** You can also use the API without authentication for free models with standard rate limits.",
                     ].join(" "),
                 },
+                components: {
+                    securitySchemes: {
+                        bearerAuth: {
+                            type: "http",
+                            scheme: "bearer",
+                            bearerFormat: "API Key",
+                            description: "API key from enter.pollinations.ai dashboard",
+                        },
+                    },
+                },
+                security: [
+                    {
+                        bearerAuth: [],
+                    },
+                ],
             },
         }),
     );

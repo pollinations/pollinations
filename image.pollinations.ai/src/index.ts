@@ -18,6 +18,7 @@ import { enqueue } from "../../shared/ipQueue.js";
 import { canAccessService } from "../../shared/registry/registry.ts";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
 import { cacheImagePromise } from "./cacheGeneratedImages.js";
+import { IMAGE_CONFIG } from "./models.js";
 import {
     type AuthResult,
     createAndReturnImageCached,
@@ -477,17 +478,22 @@ const checkCacheAndGenerate = async (
                     if (!fromEnter && !canAccessService("kontext", authResult.tier)) {
                         throw new Error("Kontext model requires authentication (seed tier or higher). Visit https://auth.pollinations.ai");
                     }
-                    // 30 second interval with tier-based caps
-                    queueConfig = { interval: 30000 };
-                    logAuth(`${modelName} model - 30 second interval`);
+                    // 30 second interval with tier-based cap from model config
+                    const cap = IMAGE_CONFIG.kontext.tierCaps?.[authResult.tier] || 1;
+                    queueConfig = { 
+                        interval: 30000,
+                        cap,
+                        forceCap: true
+                    };
+                    logAuth(`${modelName} model - 30 second interval, cap=${cap} for tier ${authResult.tier}`);
                 } else if (modelName === "gptimage") {
                     // GPTImage model - tier-based limits
                     // Nectar tier: 60s interval, cap=3 | Other tiers: 150s interval, cap=1
                     if (authResult.tier === "nectar") {
-                        queueConfig = { interval: 60000, cap: 3, forceCap: true, model: modelName };
+                        queueConfig = { interval: 60000, cap: 3, forceCap: true };
                         logAuth("GPTImage model (nectar tier) - 60 second interval, cap=3 (forced)");
                     } else {
-                        queueConfig = { interval: 150000, cap: 1, forceCap: true, model: modelName };
+                        queueConfig = { interval: 150000, cap: 1, forceCap: true };
                         logAuth("GPTImage model - 150 second interval, cap=1 (forced)");
                     }
                 } else if (hasValidToken) {
@@ -517,7 +523,7 @@ const checkCacheAndGenerate = async (
                         progress.setProcessing(requestId);
                         return generateImage();
                     },
-                    { ...queueConfig, forceQueue: true, model: safeParams.model },
+                    { ...queueConfig, forceQueue: true },
                 );
 
                 return result;

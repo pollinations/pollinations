@@ -52,45 +52,35 @@ export const authenticateSession = createMiddleware<AuthEnv>(async (c, next) => 
 });
 
 /**
- * API authentication for API routes.
- * Checks session first, then API key.
+ * API key authentication for API routes.
+ * Only checks Bearer token (no session cookies).
  */
 export const authenticateAPI = createMiddleware<AuthEnv>(async (c, next) => {
     const client = createAuth(c.env);
-    
-    // Try session first
-    const sessionResult = await client.api.getSession({
-        headers: c.req.raw.headers,
-    });
+    const authHeader = c.req.header("authorization");
+    const apiKey = extractApiKey(authHeader);
 
-    let user = sessionResult?.user;
-    let session = sessionResult?.session;
+    let user: Session["user"] | undefined;
 
-    // Try API key if no session
-    if (!user) {
-        const authHeader = c.req.header("authorization");
-        const apiKey = extractApiKey(authHeader);
-
-        if (apiKey) {
-            const result = await verifyApiKeyAndGetUser(client, c.env, apiKey);
-            if (result.valid) {
-                user = result.user;
-            }
+    if (apiKey) {
+        const result = await verifyApiKeyAndGetUser(client, c.env, apiKey);
+        if (result.valid) {
+            user = result.user;
         }
     }
 
     const requireActiveSession = (message?: string) => {
         if (!user) {
             throw new HTTPException(401, {
-                message: message || "Authentication required. Sign in or provide a valid API key.",
+                message: message || "API key required. Provide a valid Bearer token.",
             });
         }
-        return { user, session };
+        return { user, session: undefined };
     };
 
     c.set("auth", {
         client,
-        session,
+        session: undefined,
         user,
         requireActiveSession,
     });

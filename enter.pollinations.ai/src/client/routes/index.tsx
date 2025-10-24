@@ -11,6 +11,7 @@ import { Button } from "../components/button.tsx";
 import { config } from "../config.ts";
 import { User } from "../components/user.tsx";
 import { PollenBalance } from "../components/pollen-balance.tsx";
+import { TierCard } from "../components/tier-card.tsx";
 import { FAQ } from "../components/faq.tsx";
 import { Header } from "../components/header.tsx";
 
@@ -102,6 +103,12 @@ function RouteComponent() {
                 </div>
                 <PollenBalance balance={balance} />
             </div>
+            {(user.tier === "seed" || user.tier === "flower" || user.tier === "nectar") && (
+                <div className="flex flex-col gap-2">
+                    <h2 className="font-bold">Tier</h2>
+                    <TierCard tier={user.tier} />
+                </div>
+            )}
             <ApiKeyList
                 apiKeys={apiKeys}
                 onCreate={handleCreateApiKey}

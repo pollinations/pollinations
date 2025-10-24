@@ -112,11 +112,12 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 
     authLog("Processing %s %s from IP: %s", method, path, ip);
 
-    // Check if request is from enter.pollinations.ai - bypass all rate limits
+    // Check if request is from enter.pollinations.ai - apply priority rate limits
+    // Still rate-limited to prevent abuse if token is compromised
     if (isEnterRequest(req)) {
-        authLog("🌸 Enter request - bypassing rate limits");
-        interval = 0;
-        cap = 100;
+        authLog("🌸 Enter request - applying priority rate limits");
+        interval = 1000;  // 1 second minimum interval
+        cap = 20;         // Reasonable concurrency limit
         forceCap = true;
     }
 
@@ -147,16 +148,6 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 	}
 
     const maxQueueSize = cap * 5;
-    // Apply tier-based concurrency limits for token-authenticated requests
-	// 	// if (interval > 0) {0
-	// 	//   log('Token authenticated request - using zero interval in queue');
-	// 	// }
-	// 	authLog(
-	// 		"Authenticated via token. using userId instead of ip address for queueing: " +
-	// 			authResult.userId,
-	// 	);
-	// 	ip = authResult.userId;
-	// }
 
 	// Check if queue exists for this IP and get its current size
 	const currentQueueSize = queues.get(ip)?.size || 0;

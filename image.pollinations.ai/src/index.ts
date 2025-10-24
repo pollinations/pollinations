@@ -439,7 +439,7 @@ const checkCacheAndGenerate = async (
                 let queueConfig = null;
                 
                 // Model-specific queue configs with hourly limits
-                // Note: ipQueue.js handles enter.pollinations.ai bypass automatically
+                // NOTE: ipQueue.js handles enter.pollinations.ai bypass automatically
                 const modelName = safeParams.model as string;
                 if (modelName === "nanobanana") {
                     // Check hourly limit for nanobanana
@@ -473,7 +473,8 @@ const checkCacheAndGenerate = async (
                     logAuth(`${modelName} model - 6 minute interval, ${remaining}/${HOURLY_LIMIT} images remaining this hour`);
                 } else if (modelName === "kontext") {
                     // Kontext model requires seed tier or higher (checked via registry)
-                    // Skip tier check for enter.pollinations.ai requests
+                    // NOTE: Skip tier check for enter.pollinations.ai requests
+                    // (rate limiting is handled separately by ipQueue)
                     const fromEnter = isEnterRequest(req);
                     if (!fromEnter && !canAccessService("kontext", authResult.tier)) {
                         throw new Error("Kontext model requires authentication (seed tier or higher). Visit https://auth.pollinations.ai");
@@ -735,6 +736,11 @@ const port = process.env.PORT || 16384;
 server.listen(port, () => {
     console.log(`🌸 Image server listening on port ${port}`);
     console.log(`🔗 Test URL: http://localhost:${port}/prompt/pollinations`);
+    
+    // Validate ENTER_TOKEN configuration
+    if (!process.env.ENTER_TOKEN) {
+        logAuth('⚠️  ENTER_TOKEN not set - enter.pollinations.ai bypass disabled');
+    }
     
     // Debug environment info
     const debugEnv = process.env.DEBUG;

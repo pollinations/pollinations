@@ -35,8 +35,9 @@ export function createAuth(env: Cloudflare.Env) {
         // Use standard Authorization: Bearer header (RFC 6750)
         customAPIKeyGetter: (ctx: GenericEndpointContext): string | null => {
             const authHeader = ctx.request?.headers.get("authorization");
-            if (authHeader?.startsWith("Bearer ")) {
-                return authHeader.substring(7); // Remove "Bearer " prefix
+            // HTTP headers are case-insensitive per RFC 2616
+            if (authHeader && authHeader.length > 7 && authHeader.substring(0, 7).toLowerCase() === "bearer ") {
+                return authHeader.substring(7).trim(); // Remove "Bearer " prefix and trim whitespace
             }
             return null;
         },

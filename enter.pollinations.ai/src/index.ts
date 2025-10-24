@@ -71,7 +71,7 @@ const app = new Hono<Env>()
                         "- **Front-End Keys:** Better rate limits for free models (Pollen spending coming soon)",
                         "",
                         "**Anonymous Access:** You can also use the API without authentication for free models with standard rate limits.",
-                    ].join(" "),
+                    ].join("\n"),
                 },
                 components: {
                     securitySchemes: {

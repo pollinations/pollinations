@@ -94,6 +94,7 @@ const TierScreen: FC<{ tier: keyof typeof TIER_CONFIG; countdown: string }> = ({
     countdown,
 }) => {
     const config = TIER_CONFIG[tier];
+
     return (
         <div className="rounded-2xl p-6 border border-gray-200 bg-gray-50/30">
             <div className="flex flex-col gap-3">

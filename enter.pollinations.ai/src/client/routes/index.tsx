@@ -46,6 +46,7 @@ function RouteComponent() {
     const balance = meter?.balance || 0;
 
     const [isSigningOut, setIsSigningOut] = useState(false);
+    const [isActivating, setIsActivating] = useState(false);
 
     const handleSignOut = async () => {
         if (isSigningOut) return; // Prevent double-clicks
@@ -84,6 +85,33 @@ function RouteComponent() {
         router.invalidate();
     };
 
+    const handleActivateTier = async () => {
+        if (isActivating || !tierData) return;
+        setIsActivating(true);
+
+        try {
+            const response = await fetch("/api/tiers/activate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ target_tier: tierData.status }),
+            });
+
+            if (!response.ok) {
+                const error = await response.json() as { message?: string };
+                alert(`Activation failed: ${error.message || "Unknown error"}`);
+                setIsActivating(false);
+                return;
+            }
+
+            const data = await response.json() as { checkout_url: string };
+            window.location.href = data.checkout_url;
+        } catch (error) {
+            alert(`Activation failed: ${error}`);
+            setIsActivating(false);
+        }
+    };
+
     return (
         <div className="flex flex-col gap-20">
             <Header>
@@ -112,7 +140,18 @@ function RouteComponent() {
             </div>
             {tierData && (
                 <div className="flex flex-col gap-2">
-                    <h2 className="font-bold">Tier</h2>
+                    <div className="flex flex-col sm:flex-row justify-between gap-3">
+                        <h2 className="font-bold flex-1">Tier</h2>
+                        {tierData.status !== "none" && (
+                            <Button
+                                onClick={handleActivateTier}
+                                disabled={isActivating}
+                                weight="outline"
+                            >
+                                {isActivating ? "Activating..." : "Activate Tier"}
+                            </Button>
+                        )}
+                    </div>
                     <TierPanel
                         status={tierData.status}
                         next_refill_at_utc={tierData.next_refill_at_utc}

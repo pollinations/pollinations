@@ -1,7 +1,7 @@
 import { Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import { cors } from "hono/cors";
-import { authenticateSession, authenticateAPI } from "@/middleware/authenticate";
+import { authenticate } from "@/middleware/authenticate";
 import { polar } from "@/middleware/polar.ts";
 import type { Env } from "../env.ts";
 import { track, type TrackVariables } from "@/middleware/track.ts";
@@ -80,8 +80,7 @@ export const proxyRoutes = new Hono<Env>()
             });
         },
     )
-    .use(authenticateSession)
-    .use(authenticateAPI)
+    .use(authenticate)
     .use(polar)
     .use(alias({ "/openai/chat/completions": "/openai" }))
     .post(
@@ -239,9 +238,9 @@ async function authorizeRequest(
 ) {
     if (track.isFreeUsage) {
         if (!options.allowAnonymous)
-            auth.requireAuth("Anonymous usage is currently disabled.");
+            auth.requireActiveSession("Anonymous usage is currently disabled.");
     } else {
-        const { user } = auth.requireAuth(
+        const { user } = auth.requireActiveSession(
             "You need to be signed-in to use this model.",
         );
         await polar.requirePositiveBalance(user.id);

@@ -63,7 +63,7 @@ test("All services should be availabe with an API key", async ({ apiKey }) => {
             {
                 method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${apiKey}`,
+                    "x-api-key": apiKey,
                     "referer": env.TESTING_REFERRER,
                 },
                 body: JSON.stringify({

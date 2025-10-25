@@ -1,7 +1,7 @@
 import { Hono, Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import z from "zod";
-import { authenticateSession } from "../middleware/authenticate.ts";
+import { authenticate } from "../middleware/authenticate.ts";
 import { polar } from "../middleware/polar.ts";
 import { validator } from "../middleware/validator.ts";
 import type { Env } from "../env.ts";
@@ -33,7 +33,7 @@ const products: ProductMap = {
 };
 
 export const polarRoutes = new Hono<Env>()
-    .use("*", authenticateSession)
+    .use("*", authenticate)
     .use("*", polar)
     .get(
         "/customer/state",
@@ -42,7 +42,7 @@ export const polarRoutes = new Hono<Env>()
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         async (c) => {
-            const { user } = c.var.auth.requireAuth();
+            const { user } = c.var.auth.requireActiveSession();
             const polar = c.var.polar.client;
             const result = await polar.customers.getStateExternal({
                 externalId: user.id,
@@ -57,7 +57,7 @@ export const polarRoutes = new Hono<Env>()
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         async (c) => {
-            const { user } = c.var.auth.requireAuth();
+            const { user } = c.var.auth.requireActiveSession();
             const polar = c.var.polar.client;
             const result = await polar.events.list({
                 externalCustomerId: user.id,
@@ -76,7 +76,7 @@ export const polarRoutes = new Hono<Env>()
         }),
         validator("query", redirectQuerySchema),
         async (c) => {
-            const { user } = c.var.auth.requireAuth();
+            const { user } = c.var.auth.requireActiveSession();
             const { redirect } = c.req.valid("query");
             try {
                 const polar = c.var.polar.client;
@@ -103,7 +103,7 @@ export const polarRoutes = new Hono<Env>()
         validator("param", checkoutParamsSchema),
         validator("query", redirectQuerySchema),
         async (c) => {
-            const { user } = c.var.auth.requireAuth();
+            const { user } = c.var.auth.requireActiveSession();
             const { slug } = c.req.valid("param");
             const { redirect } = c.req.valid("query");
             try {

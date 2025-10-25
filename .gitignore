@@ -324,3 +324,7 @@ gateway/
 
 # Kiro AI agent files
 .kiro/
+
+# Secret files
+.secrets
+.github/act-secrets.env

@@ -324,3 +324,8 @@ gateway/
 
 # Kiro AI agent files
 .kiro/
+
+# Act (GitHub Actions local testing) secrets
+.github/act-secrets.env
+
+.secrets

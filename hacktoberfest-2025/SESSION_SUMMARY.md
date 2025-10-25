@@ -106,7 +106,7 @@ Implemented a complete Turnstile verification system to protect Pollinations API
 - Added Turnstile configuration section:
   ```bash
   # Turnstile Configuration
-  TURNSTILE_SECRET_KEY=0x4AAAAAAB4-j2AXIfO59sW54lOP5jAj1Yc
+  TURNSTILE_SECRET_KEY=<your-production-secret>
   ```
 
 ---
@@ -116,10 +116,10 @@ Implemented a complete Turnstile verification system to protect Pollinations API
 ### **Production Keys**
 ```bash
 # Sitekey (client-side)
-SITEKEY=0x4AAAAAAB4-j_x8-I4ixKhz
+SITEKEY=<your-production-sitekey>
 
 # Secret Key (server-side)
-TURNSTILE_SECRET_KEY=0x4AAAAAAB4-j2AXIfO59sW54lOP5jAj1Yc
+TURNSTILE_SECRET_KEY=<your-production-secret>
 ```
 
 **Configured Domains**:
@@ -226,11 +226,11 @@ CLOUDFLARE_ACCOUNT_ID=efdcb0933eaac64f27c0b295039b28f2
 CLOUDFLARE_AUTH_TOKEN=Pnizskqc72FqS2Dp-3jH9Ljil0NxIILsD3WzAdD4
 VECTORIZE_CACHE=true
 SEMANTIC_CACHE_TOKENS=thesilentdev,voodoohop,BpigHXfbVA0xQFQ1,FACmMtEjN-NHmSes,xCEgiTF_wo5wBG4L
-GA_MEASUREMENT_ID=G-LPZ9GEJVHR
-GA_API_SECRET=CnnW1VxTTtKv0tef3xx69g
+GA_MEASUREMENT_ID=<your-ga-measurement-id>
+GA_API_SECRET=<your-ga-api-secret>
 
 # Production Turnstile
-TURNSTILE_SECRET_KEY=0x4AAAAAAB4-j2AXIfO59sW54lOP5jAj1Yc
+TURNSTILE_SECRET_KEY=<your-production-secret>
 
 # Test Turnstile (for local dev)
 TURNSTILE_TEST_SECRET=1x0000000000000000000000000000000AA

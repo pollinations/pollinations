@@ -27,20 +27,10 @@ jobs:
           files: hacktoberfest-2025/**
           json: true
 
-      - name: Debug changed files output
+      - name: List changed apps
         run: |
-          echo "🔍 Debug: Changed files output"
-          echo "Raw output: $ALL_CHANGED"
-          echo "Length: ${#ALL_CHANGED}"
-          echo ""
-          echo "🔍 Parsing with jq (from env var):"
-          echo "$ALL_CHANGED" | jq '.' || echo "❌ jq parsing failed"
-          echo ""
-          echo "🔍 Extracting app names:"
-          echo "$ALL_CHANGED" | jq -r '.[]' | cut -d'/' -f2 | sort -u || echo "❌ Extraction failed"
-          echo ""
-          echo "🔍 Alternative: Using fromjson"
-          echo "$ALL_CHANGED" | jq -r 'fromjson | .[]' | cut -d'/' -f2 | sort -u || echo "❌ fromjson failed"
+          echo "📦 Changed apps detected:"
+          echo "$ALL_CHANGED" | jq -r '.[]' | cut -d'/' -f2 | sort -u
         env:
           ALL_CHANGED: ${{ steps.changed.outputs.all_changed_files }}
 
@@ -54,14 +44,11 @@ jobs:
         run: |
           npm install -g wrangler
           
-          echo "🔍 Starting deployment process..."
-          echo "Raw changed files: $CHANGED_FILES_JSON"
+          echo "🚀 Starting deployment process..."
           
           # The output has escaped quotes (\"), remove the backslashes
           echo "$CHANGED_FILES_JSON" | sed 's/\\"/"/g' | jq -r '.[]' | \
             cut -d'/' -f2 | sort -u | while read app; do
-            
-            echo "🔍 Processing app: '$app'"
             
             if [ -z "$app" ]; then
               echo "  ⏭️  Skipping: empty app name"

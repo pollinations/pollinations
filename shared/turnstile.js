@@ -7,8 +7,8 @@
  * Verify Turnstile token with Cloudflare API
  */
 export async function verifyTurnstile(token, ip, hostname, env) {
-	// Use test secret for development, production secret otherwise
-	const secret = env.TURNSTILE_TEST_SECRET || env.TURNSTILE_SECRET_KEY;
+	// Use production secret by default, fall back to test secret for development
+	const secret = env.TURNSTILE_SECRET_KEY || env.TURNSTILE_TEST_SECRET;
 
 	if (!secret) {
 		console.log("[turnstile] ⚠️ TURNSTILE_SECRET_KEY not configured");
@@ -32,7 +32,7 @@ export async function verifyTurnstile(token, ip, hostname, env) {
 		);
 
 		const result = await response.json();
-	console.log(`[turnstile] Verification result for ${hostname}:`, result);
+	console.log(`[turnstile] Verification result for ${hostname}: success=${result.success}, error-codes=${result["error-codes"]?.join(",") || "none"}`);
 
 	// Skip hostname validation for test keys (they always return 'example.com')
 	const isTestKey = result.metadata?.result_with_testing_key === true;

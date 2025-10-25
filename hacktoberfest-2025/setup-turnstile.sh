@@ -73,9 +73,9 @@ if [ -d "../image.pollinations.ai" ]; then
 fi
 
 # Update test file
-sed -i.bak "s/PASTE_YOUR_SITEKEY_HERE/$SITEKEY/" test-turnstile.html
+sed -i.bak "s/1x00000000000000000000AA/$SITEKEY/" test-turnstile.html
 rm test-turnstile.html.bak
-echo "✅ Updated test-turnstile.html"
+echo "✅ Updated test-turnstile.html with production sitekey"
 
 echo ""
 echo "🎉 Setup complete! Next steps:"

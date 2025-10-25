@@ -1,4 +1,4 @@
-import { REGISTRY, ServiceId } from "@/registry/registry.ts";
+import { isFreeService, ServiceId, getServices } from "@shared/registry/registry.ts";
 import { SELF } from "cloudflare:test";
 import { batches } from "@/util";
 import { test } from "./fixtures.ts";
@@ -7,7 +7,6 @@ import { setupFetchMock, teardownFetchMock } from "./mocks/fetch";
 import { createGithubMockHandlers } from "./mocks/github";
 import { createMockPolar } from "./mocks/polar";
 import { env } from "cloudflare:workers";
-import { TEXT_SERVICES } from "@/registry/text.ts";
 
 const mockPolar = createMockPolar();
 
@@ -20,7 +19,7 @@ beforeEach(() => setupFetchMock(mockHandlers, { logRequests: true }));
 afterEach(() => teardownFetchMock());
 
 test("Only free services should be available without an API key", async () => {
-    const requests = Object.keys(TEXT_SERVICES).map((service) => {
+    const requests = getServices().map((service) => {
         return {
             service,
             request: SELF.fetch(
@@ -48,7 +47,7 @@ test("Only free services should be available without an API key", async () => {
             })),
         );
         for (const { service, response } of responses) {
-            if (REGISTRY.isFreeService(service as ServiceId)) {
+            if (isFreeService(service as ServiceId)) {
                 expect(response.status).toBe(200);
             } else {
                 expect(response.status).toBe(401);
@@ -58,7 +57,7 @@ test("Only free services should be available without an API key", async () => {
 }, 30000);
 
 test("All services should be availabe with an API key", async ({ apiKey }) => {
-    const requests = Object.keys(TEXT_SERVICES).map((service) => {
+    const requests = getServices().map((service) => {
         return SELF.fetch(
             `http://localhost:3000/api/generate/openai/chat/completions`,
             {

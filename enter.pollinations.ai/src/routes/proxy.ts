@@ -1,5 +1,6 @@
 import { Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
+import { cors } from "hono/cors";
 import { authenticate } from "@/middleware/authenticate";
 import { polar } from "@/middleware/polar.ts";
 import type { Env } from "../env.ts";
@@ -48,6 +49,14 @@ function errorResponses(...codes: ErrorStatusCode[]) {
 }
 
 export const proxyRoutes = new Hono<Env>()
+    .use(
+        "*",
+        cors({
+            origin: "*",
+            allowHeaders: ["authorization", "content-type"],
+            allowMethods: ["GET", "POST", "OPTIONS"],
+        }),
+    )
     .get(
         "/openai/models",
         describeRoute({
@@ -65,8 +74,7 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         async (c) => {
-            const targetUrl = proxyUrl(c, "https://text.pollinations.ai");
-            return await proxy(targetUrl, {
+            return await proxy("https://text.pollinations.ai/openai/models", {
                 ...c.req,
                 headers: proxyHeaders(c),
             });
@@ -82,7 +90,16 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "OpenAI compatible endpoint for text generation.",
                 "Also available under `/openai/chat/completions`.",
-            ].join(" "),
+                "",
+                "**Authentication (Server-to-Server Only):**",
+                "",
+                "Include your API key in the `Authorization` header as a Bearer token:",
+                "",
+                "`Authorization: Bearer YOUR_API_KEY`",
+                "",
+                "API keys can be created from your dashboard at enter.pollinations.ai.",
+                "Server-to-Server keys provide the best rate limits and access to spend Pollen on premium models.",
+            ].join("\n"),
             responses: {
                 200: {
                     description: "Success",
@@ -99,7 +116,9 @@ export const proxyRoutes = new Hono<Env>()
         }),
         validator("json", CreateChatCompletionRequestSchema),
         async (c) => {
-            await authorizeRequest(c.var);
+            await authorizeRequest(c.var, {
+                allowAnonymous: c.env.ALLOW_ANONYMOUS_USAGE,
+            });
             const targetUrl = proxyUrl(
                 c,
                 "https://text.pollinations.ai/openai",
@@ -177,11 +196,23 @@ export const proxyRoutes = new Hono<Env>()
         "/image/:prompt",
         track("generate.image"),
         describeRoute({
-            description: "Generate and image from a text prompt.",
+            description: [
+                "Generate an image from a text prompt.",
+                "",
+                "**Authentication (Server-to-Server Only):**",
+                "",
+                "Include your API key in the `Authorization` header as a Bearer token:",
+                "",
+                "`Authorization: Bearer YOUR_API_KEY`",
+                "",
+                "API keys can be created from your dashboard at enter.pollinations.ai.",
+            ].join("\n"),
         }),
         validator("query", GenerateImageRequestQueryParamsSchema),
         async (c) => {
-            await authorizeRequest(c.var);
+            await authorizeRequest(c.var, {
+                allowAnonymous: c.env.ALLOW_ANONYMOUS_USAGE,
+            });
             const targetUrl = proxyUrl(
                 c,
                 "https://image.pollinations.ai/prompt",
@@ -201,12 +232,14 @@ export const proxyRoutes = new Hono<Env>()
         },
     );
 
-async function authorizeRequest({
-    auth,
-    polar,
-    track,
-}: AuthVariables & PolarVariables & TrackVariables) {
-    if (!track.isFreeUsage) {
+async function authorizeRequest(
+    { auth, polar, track }: AuthVariables & PolarVariables & TrackVariables,
+    options: { allowAnonymous: boolean },
+) {
+    if (track.isFreeUsage) {
+        if (!options.allowAnonymous)
+            auth.requireActiveSession("Anonymous usage is currently disabled.");
+    } else {
         const { user } = auth.requireActiveSession(
             "You need to be signed-in to use this model.",
         );
@@ -221,6 +254,7 @@ function generationHeaders(
     return removeUnset({
         "x-enter-token": enterToken,
         "x-github-id": `${user?.githubId}`,
+        "x-user-tier": user?.tier,
     });
 }
 

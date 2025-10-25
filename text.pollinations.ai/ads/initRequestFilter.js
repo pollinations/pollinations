@@ -2,7 +2,7 @@ import { sendToAnalytics } from "../sendToAnalytics.js";
 import debug from "debug";
 import { generateAffiliateAd } from "./adLlmMapper.js";
 import { logAdInteraction } from "./adLogger.js";
-import { affiliatesData } from "../../affiliate/affiliates.js";
+import { affiliatesData } from "../../shared/affiliates.js";
 import { shouldShowAds } from "./shouldShowAds.js";
 import { shouldProceedWithAd, sendAdSkippedAnalytics } from "./adUtils.js";
 // NEXAD DISABLED: Removed nexad imports
@@ -130,7 +130,6 @@ export async function generateAdForContent(
                         //     authenticatedUserId,
                         //     "ad_impressions",
                         // );
-
                         // DISABLED: Ad source specific metric
                         // incrementUserMetric(
                         //     authenticatedUserId,

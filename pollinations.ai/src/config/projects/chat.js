@@ -5,6 +5,14 @@
 
 export const chatProjects = [
   {
+    name: "Nuvole AI 🍎",
+    url: "https://routinehub.co/shortcut/18431/",
+    description: "Apple Shortcut for iOS/iPadOS with 9 AI models from Pollinations. Features history system, text generation with real-time information, image generation, YouTube video summarization, and powerful HTML UI design. 3rd place in RoutineHub AI category with 5000+ downloads.",
+    author: "@_.mikl._",
+    submissionDate: "2025-07-12",
+    order: 1
+  },
+  {
     name: "WorksparkAI [BETA] 💼",
     url: "https://worksparkai-983563815856.europe-west1.run.app",
     description: "Modern ChatGPT alternative with document processing, PDF reading, image understanding, and web searching. Chat with any LLM using custom API keys. Uses Pollinations AI as default free model. Built with Vite + React, can summarize documents and draw plots.",
@@ -128,6 +136,33 @@ export const chatProjects = [
     stars: 0,
     submissionDate: "2025-07-06",
     order: 1
+  },
+  {
+    name: "Artificial Intelligence Orcho 📱",
+    url: "https://play.google.com/store/apps/details?id=orcho.artificialintelligence",
+    description: "Mobile AI app for Android with chat and image generation. Get smart chat responses in text and images in the palm of your hand. Chat and images with mobile app integration.",
+    author: "@ricardoxd",
+    submissionDate: "2025-10-12",
+    order: 2
+  },
+  {
+    name: "DebAI 🤖",
+    url: "https://t.me/DebAI_bot",
+    description: "Compact and free Telegram bot powered by Pollinations AI. Under development with focus on providing AI assistance through Telegram.",
+    author: "@FROLIAN-cell",
+    submissionDate: "2025-10-13",
+    order: 2,
+    language: "ru"
+  },
+  {
+    name: "VX Project 💬",
+    url: "https://vortexcm.github.io/VorteX-Res/",
+    description: "VorteX Resources - A free and powerful platform for game server development enthusiasts. Provides professional resources, scripts, and maps for servers. Available in Persian and English.",
+    author: "@lfni",
+    repo: "https://github.com/vxproject",
+    submissionDate: "2025-10-15",
+    order: 2,
+    language: "fa"
   },
   {
     name: "J.A.R.V.I.S.",
@@ -425,6 +460,14 @@ export const chatProjects = [
     description: "AI Dream Girl Studio is a content creation pipeline built around hyper-realistic AI-generated female characters. We use Pollinations to generate high-fidelity visuals of emotional, seductive, and stylized women in cinematic settings. These characters are brought to life through AI video animation, voiceovers, and storytelling to create viral social content for entertainment and monetization. Pollinations is the core engine behind our character design and visual style.",
     author: "https://www.tiktok.com/@herinyourhead",
     submissionDate: "2025-07-17",
+    order: 1
+  },
+  {
+    name: "NeonSpark AI ✨",
+    url: "https://neonspark-ai.web.app/",
+    description: "NeonSpark AI is a web app that offers AI-powered chat and image generation features. It provides users with an interface to interact via conversational AI (chat) as well as create images based on prompts.",
+    author: "developer.asaad@gmail.com",
+    submissionDate: "2025-10-04",
     order: 1
   }
 ];

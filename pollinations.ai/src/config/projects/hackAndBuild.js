@@ -5,6 +5,51 @@
 
 export const hackAndBuildProjects = [
   {
+    name: "Pollinations PR Summarizer 🛠️",
+    url: "https://github.com/marketplace/actions/pollinations-pr-summary",
+    description: "GitHub Action that automatically analyzes pull requests using Pollinations Text API. Generates concise summaries, detects risk levels and breaking changes, posts analysis as PR comments, and responds to developer commands like !Pollinations for real-time AI assistance. No API key required.",
+    author: "@CloudCompile",
+    repo: "https://github.com/CloudCompile/pollinations-pr-review",
+    submissionDate: "2025-10-22",
+    order: 1
+  },
+  {
+    name: "Blossom-ai (Python SDK) 🐍",
+    url: "https://pypistats.org/packages/eclips-blossom-ai",
+    description: "Python SDK for Pollinations AI. Simple and easy-to-use wrapper for accessing Pollinations services in Python applications.",
+    author: "@PrimeevolutionZ",
+    repo: "https://github.com/PrimeevolutionZ/blossom-ai",
+    submissionDate: "2025-10-22",
+    order: 1
+  },
+  {
+    name: "Herramientas IA 🛠️",
+    url: "https://proyectodescartes.org/descartescms/herramientas-ia",
+    description: "Comprehensive collection of 120+ AI tools and educational applications powered by Pollinations. Includes image generation, creative tools, chatbots, code generators, interactive learning tools, and more. Built with DescartesJS for interactive web-based learning experiences.",
+    author: "@Juanrivera126",
+    submissionDate: "2025-07-15",
+    order: 1,
+    language: "es"
+  },
+  {
+    name: "BeeCoder 🌈",
+    url: "https://github.com/cemalgnlts/beecoder",
+    description: "Enables VSCode Copilot to connect to Pollinations, bringing AI-powered code generation directly into Visual Studio Code.",
+    author: "@cemalgnlts",
+    repo: "https://github.com/cemalgnlts/beecoder",
+    submissionDate: "2025-10-19",
+    order: 1
+  },
+  {
+    name: "MCP-B 🌐",
+    url: "https://mcp-b.ai",
+    description: "Browser-based Model Context Protocol that enables AI agents to interact with web applications using existing authentication instead of screen scraping. Provides structured JSON-RPC interfaces for precise tool access.",
+    author: "@MiguelsPizza",
+    repo: "https://github.com/MiguelsPizza/WebMCP",
+    submissionDate: "2025-07-10",
+    order: 1
+  },
+  {
     name: "MultiAgent 🤖",
     url: "https://github.com/LKosoj/multiagent",
     description: "Advanced multi-agent system for solving complex tasks using specialized AI agents. Implements modern architectural patterns with agent factory, manager coordination, and flexible pipelines for Text-to-SQL, research, and content creation. Features next-gen RAG memory with SQLite + ChromaDB, database plugin pattern for multiple DBMS, multi-layer security with LLM-Guard, and extensible tool system with MCP integration. Emphasizes modularity, security, and extensibility.",

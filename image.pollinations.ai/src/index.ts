@@ -7,6 +7,7 @@ import {
     addAuthDebugHeaders,
     createAuthDebugResponse,
     handleAuthentication,
+    isEnterRequest,
 } from "../../shared/auth-utils.js";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
 import { sendImageTelemetry } from "./utils/telemetry.js";
@@ -14,8 +15,10 @@ import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 
 // Import shared utilities
 import { enqueue } from "../../shared/ipQueue.js";
+import { canAccessService } from "../../shared/registry/registry.ts";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
 import { cacheImagePromise } from "./cacheGeneratedImages.js";
+import { IMAGE_CONFIG } from "./models.js";
 import {
     type AuthResult,
     createAndReturnImageCached,
@@ -47,6 +50,38 @@ export const currentJobs = [];
 // In-memory store for tracking IP violations
 const ipViolations = new Map<string, number>();
 const MAX_VIOLATIONS = 5;
+
+// In-memory hourly rate limiter for seedream and nanobanana
+interface HourlyUsage {
+    count: number;
+    hourStart: number;
+}
+const hourlyUsage = new Map<string, HourlyUsage>();
+const HOURLY_LIMIT = 10;
+const HOUR_MS = 60 * 60 * 1000;
+
+// Check and update hourly usage for an IP
+const checkHourlyLimit = (ip: string): { allowed: boolean; remaining: number; resetIn: number } => {
+    const now = Date.now();
+    const usage = hourlyUsage.get(ip);
+    
+    // No usage yet or hour has passed - reset
+    if (!usage || now - usage.hourStart >= HOUR_MS) {
+        hourlyUsage.set(ip, { count: 1, hourStart: now });
+        return { allowed: true, remaining: HOURLY_LIMIT - 1, resetIn: HOUR_MS };
+    }
+    
+    // Within the same hour
+    if (usage.count >= HOURLY_LIMIT) {
+        const resetIn = HOUR_MS - (now - usage.hourStart);
+        return { allowed: false, remaining: 0, resetIn };
+    }
+    
+    // Increment and allow
+    usage.count++;
+    const resetIn = HOUR_MS - (now - usage.hourStart);
+    return { allowed: true, remaining: HOURLY_LIMIT - usage.count, resetIn };
+};
 
 // Check if an IP is blocked
 const isIpBlocked = (ip: string) => {
@@ -403,16 +438,65 @@ const checkCacheAndGenerate = async (
                 // Determine queue configuration based on model first, then authentication
                 let queueConfig = null;
                 
-                // Model-specific queue configs with tier-based concurrency multipliers
-                if (safeParams.model === "nanobanana") {
-                    // Use tier-based concurrency with STRICTER limits for nanobanana
-                    // Seed: 1x (base), Flower: 1x (same as seed), Nectar: 2x (reduced from 6x)
-                    queueConfig = { interval: 120000 }; // 120s interval (2 minutes), cap set by ipQueue based on tier
-                    logAuth(`${safeParams.model} model - using STRICTER tier-based concurrency with 120s interval (seed:1x, flower:1x, nectar:2x)`)
-                } else if (safeParams.model === "seedream") {
-                    // Seedream uses 120s interval with tier-based concurrency
-                    queueConfig = { interval: 120000 }; // 120s interval (2 minutes), cap set by ipQueue based on tier
-                    logAuth(`${safeParams.model} model - using 120s interval with tier-based concurrency (seed:1x, flower:1x, nectar:2x)`)
+                // Model-specific queue configs with hourly limits
+                // NOTE: ipQueue.js handles enter.pollinations.ai bypass automatically
+                const modelName = safeParams.model as string;
+                if (modelName === "nanobanana") {
+                    // Check hourly limit for nanobanana
+                    const ip = getIp(req);
+                    const { allowed, remaining, resetIn } = checkHourlyLimit(ip);
+                    
+                    if (!allowed) {
+                        const minutesLeft = Math.ceil(resetIn / 60000);
+                        throw new Error(
+                            `Hourly limit reached for ${modelName}. You can generate ${remaining} more images. Limit resets in ${minutesLeft} minutes.`
+                        );
+                    }
+                    
+                    // 90 second interval, 10 images per hour max
+                    queueConfig = { interval: 90000 }; // 90 second interval
+                    logAuth(`${modelName} model - 90 second interval, ${remaining}/${HOURLY_LIMIT} images remaining this hour`);
+                } else if (modelName === "seedream") {
+                    // Check hourly limit for seedream
+                    const ip = getIp(req);
+                    const { allowed, remaining, resetIn } = checkHourlyLimit(ip);
+                    
+                    if (!allowed) {
+                        const minutesLeft = Math.ceil(resetIn / 60000);
+                        throw new Error(
+                            `Hourly limit reached for ${modelName}. You can generate ${remaining} more images. Limit resets in ${minutesLeft} minutes.`
+                        );
+                    }
+                    
+                    // 6 minute interval, 10 images per hour max
+                    queueConfig = { interval: 360000 }; // 6 minute interval
+                    logAuth(`${modelName} model - 6 minute interval, ${remaining}/${HOURLY_LIMIT} images remaining this hour`);
+                } else if (modelName === "kontext") {
+                    // Kontext model requires seed tier or higher (checked via registry)
+                    // NOTE: Skip tier check for enter.pollinations.ai requests
+                    // (rate limiting is handled separately by ipQueue)
+                    const fromEnter = isEnterRequest(req);
+                    if (!fromEnter && !canAccessService("kontext", authResult.tier)) {
+                        throw new Error("Kontext model requires authentication (seed tier or higher). Visit https://auth.pollinations.ai");
+                    }
+                    // 30 second interval with tier-based cap from model config
+                    const cap = IMAGE_CONFIG.kontext.tierCaps?.[authResult.tier] || 1;
+                    queueConfig = { 
+                        interval: 30000,
+                        cap,
+                        forceCap: true
+                    };
+                    logAuth(`${modelName} model - 30 second interval, cap=${cap} for tier ${authResult.tier}`);
+                } else if (modelName === "gptimage") {
+                    // GPTImage model - tier-based limits
+                    // Nectar tier: 60s interval, cap=3 | Other tiers: 150s interval, cap=1
+                    if (authResult.tier === "nectar") {
+                        queueConfig = { interval: 60000, cap: 3, forceCap: true };
+                        logAuth("GPTImage model (nectar tier) - 60 second interval, cap=3 (forced)");
+                    } else {
+                        queueConfig = { interval: 150000, cap: 1, forceCap: true };
+                        logAuth("GPTImage model - 150 second interval, cap=1 (forced)");
+                    }
                 } else if (hasValidToken) {
                     // Token authentication for other models - 7s minimum interval with tier-based caps
                     queueConfig = { interval: 7000 }; // cap will be set by ipQueue based on tier
@@ -440,7 +524,7 @@ const checkCacheAndGenerate = async (
                         progress.setProcessing(requestId);
                         return generateImage();
                     },
-                    { ...queueConfig, forceQueue: true, maxQueueSize: 5, model: safeParams.model },
+                    { ...queueConfig, forceQueue: true },
                 );
 
                 return result;
@@ -479,7 +563,6 @@ const checkCacheAndGenerate = async (
         // Add tracking headers for enter service (GitHub issue #4170)
         const trackingHeaders = buildTrackingHeaders(
             safeParams.model,
-            authResult.tier,
             bufferAndMaturity.trackingData
         );
         Object.assign(headers, trackingHeaders);
@@ -591,7 +674,13 @@ const server = http.createServer((req, res) => {
             Expires: "0",
         });
         
-        res.end(JSON.stringify(Object.keys(MODELS)));
+        // Filter out nectar-tier models from public /models list
+        // Users don't need to authenticate to see the list, so we only show accessible models
+        const publicModels = Object.entries(MODELS)
+            .filter(([_, config]) => config.tier !== "nectar")
+            .map(([name, _]) => name);
+        
+        res.end(JSON.stringify(publicModels));
         return;
     }
 
@@ -647,6 +736,11 @@ const port = process.env.PORT || 16384;
 server.listen(port, () => {
     console.log(`🌸 Image server listening on port ${port}`);
     console.log(`🔗 Test URL: http://localhost:${port}/prompt/pollinations`);
+    
+    // Validate ENTER_TOKEN configuration
+    if (!process.env.ENTER_TOKEN) {
+        logAuth('⚠️  ENTER_TOKEN not set - enter.pollinations.ai bypass disabled');
+    }
     
     // Debug environment info
     const debugEnv = process.env.DEBUG;

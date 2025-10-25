@@ -1,5 +1,7 @@
 import dotenv from "dotenv";
 import debug from "debug";
+import { getProviderByModelId, calculateCost } from "../../shared/registry/registry.ts";
+import type { ModelId, TokenUsage } from "../../shared/registry/registry.ts";
 
 // Load environment variables
 dotenv.config();
@@ -66,27 +68,6 @@ interface TinybirdEvent {
 }
 
 
-/**
- * Get the provider name for an image model
- * For image models, we can infer provider from model name patterns
- * @param modelName - The name of the model
- * @returns The provider name or 'Unknown' if not found
- */
-function getProviderNameFromModel(modelName: string): string {
-    if (!modelName) return "Unknown";
-    
-    const lowerModel = modelName.toLowerCase();
-    
-    // Common image model providers
-    if (lowerModel.includes("flux")) return "io.net";
-    if (lowerModel.includes("kontext")) return "io.net";
-    if (lowerModel.includes("nanobanana")) return "google";
-    if (lowerModel.includes("seedream")) return "byteplus";
-    if (lowerModel.includes("turbo")) return "io.net";
-    if (lowerModel.includes("gptimage")) return "azure";
-    
-    return "Unknown";
-}
 
 /**
  * Send image generation telemetry to Tinybird
@@ -106,10 +87,24 @@ export async function sendTinybirdEvent(eventData: EventData): Promise<void> {
     );
 
     try {
-        // Get the provider for the model
+        // Get the provider for the model from registry
         const modelName = eventData.model || "unknown";
-        const provider = getProviderNameFromModel(modelName);
+        const provider = getProviderByModelId(modelName) || "unknown";
         log(`Provider for model ${modelName}: ${provider}`);
+
+        // Calculate cost using registry
+        let cost = 0;
+        try {
+            const usage: TokenUsage = {
+                unit: "TOKENS",
+                completionImageTokens: 1, // 1 image per request
+            };
+            const costResult = calculateCost(modelName as ModelId, usage);
+            cost = costResult.totalCost;
+            log(`Cost calculated: $${cost.toFixed(6)} for model ${modelName}`);
+        } catch (error) {
+            log(`Warning: Could not calculate cost for model ${modelName}:`, error);
+        }
 
         // Construct the event object to match the exact structure from working text endpoint
         const event: TinybirdEvent = {
@@ -128,8 +123,8 @@ export async function sendTinybirdEvent(eventData: EventData): Promise<void> {
             llm_api_duration_ms: eventData.duration,
             standard_logging_object_response_time: eventData.duration,
 
-            // Cost information (0 for images for now)
-            cost: 0,
+            // Cost information
+            cost,
 
             // User info
             user: eventData.username || eventData.user || "anonymous",

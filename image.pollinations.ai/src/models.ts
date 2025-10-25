@@ -1,55 +1,74 @@
-export const MODELS = {
-    // "flux-realism": { type: "meoow", enhance: false, maxSideLength: 1384 },
-    // "flux-cablyai": { type: "meoow-2", enhance: false, maxSideLength: 1384 },
-    // "flux-anime": { type: "meoow", enhance: false, maxSideLength: 1384 },
-    // "flux-3d": { type: "meoow", enhance: false, maxSideLength: 1384 },
-    // "any-dark": { type: "meoow", enhance: false, maxSideLength: 1384 },
-    // "flux-pro": { type: "meoow-2", enhance:  false, maxSideLength: 1512 },
+// Import registry for model names and tier validation
+import { IMAGE_SERVICES } from "../../shared/registry/image.ts";
 
+// Type constraint: model names must exist in registry
+type ImageServiceName = keyof typeof IMAGE_SERVICES;
+
+/**
+ * Image-specific configuration for each model
+ * Model names are enforced to match IMAGE_SERVICES from the registry
+ * Tier information comes from the registry - this only contains implementation details
+ */
+interface ImageModelConfig {
+    type: string;
+    enhance: boolean;
+    maxSideLength: number;
+    tierCaps?: {
+        seed?: number;
+        flower?: number;
+        nectar?: number;
+    };
+}
+
+type ImageModelsConfig = {
+    [K in ImageServiceName]: ImageModelConfig;
+};
+
+export const IMAGE_CONFIG: ImageModelsConfig = {
     flux: {
         type: "pollinations",
         enhance: true,
         maxSideLength: 768,
-        tier : "seed",
     },
 
-    // // BPAIGen with Kontext fallback - general purpose model
-    // kontext: {
-    //     type: "bpaigen-kontext",
-    //     enhance: true,
-    //     maxSideLength: 1216, // BPAIGen's higher resolution capability
-    //     tier: "seed",
-    // },
+    // Azure Flux Kontext - general purpose model
+    kontext: {
+        type: "azure-flux-kontext",
+        enhance: true,
+        maxSideLength: 1024, // Azure Flux Kontext standard resolution
+        tierCaps: {
+            seed: 1,      // Base limit (minimum tier required)
+            flower: 2,    // Double the seed tier
+            nectar: 2,    // Same as flower tier
+        },
+    },
 
     // Assuming 'turbo' is of type 'sd'
     turbo: {
         type: "pollinations",
         enhance: true,
         maxSideLength: 768,
-        tier: "seed",
     },
 
-    // Nano Banana - Gemini 2.5 Flash Image Preview via Vertex AI
-    nanobanana: {
-        type: "vertex-ai",
+    // Azure GPT Image model - gpt-image-1-minica
+    gptimage: {
+        type: "azure",
         enhance: false,
         maxSideLength: 1024,
-        tier: "seed",
     },
+};
 
-    // Seedream - ByteDance ARK API for high-quality image generation
-    seedream: {
-        type: "seedream",
-        enhance: false,
-        maxSideLength: 2048, // Default 2048x2048, supports up to 4K resolution
-        tier: "flower",
-    },
-
-    // Azure GPT Image model (temporarily disabled - uncomment to reactivate)
-    // gptimage: {
-    //     type: "azure",
-    //     enhance: false,
-    //     maxSideLength: 1024,
-    //     tier: "nectar",
-    // },
-} as const;
+/**
+ * Legacy export for backward compatibility
+ * Combines registry data (tier, pricing) with local config (enhance, maxSideLength)
+ * @deprecated Use IMAGE_SERVICES from registry for tier info, IMAGE_CONFIG for implementation details
+ */
+export const MODELS = Object.fromEntries(
+    Object.entries(IMAGE_CONFIG).map(([name, config]) => [
+        name,
+        {
+            ...config,
+            tier: IMAGE_SERVICES[name as ImageServiceName].tier,
+        },
+    ])
+) as Record<ImageServiceName, ImageModelConfig & { tier: typeof IMAGE_SERVICES[ImageServiceName]["tier"] }>;

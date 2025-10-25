@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ProviderId, TokenUsage } from "./registry/registry";
+import { ModelId, TokenUsage } from "@shared/registry/registry.ts";
 
 const usageSchema = z.object({
     completion_tokens: z.number().int().nonnegative(),
@@ -58,7 +58,7 @@ const contentFilterResultSchema = z
 
 export type ContentFilterResult = z.infer<typeof contentFilterResultSchema>;
 
-const userTierSchema = z.literal(["anonymous", "seed", "flower", "nectar"]);
+const userTierSchema = z.enum(["anonymous", "seed", "flower", "nectar"]);
 export type UserTier = z.infer<typeof userTierSchema>;
 
 const choiceSchema = z.object({
@@ -116,6 +116,6 @@ export function transformOpenAIUsage(usage: OpenAIUsage): TokenUsage {
 }
 
 export type ModelUsage = {
-    model: ProviderId;
+    model: ModelId;
     usage: TokenUsage;
 };

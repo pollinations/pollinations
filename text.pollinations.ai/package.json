@@ -1,17 +1,12 @@
 {
     "name": "text.pollinations.ai",
     "version": "1.0.0",
-    "description": "",
-    "main": "server.js",
     "scripts": {
-        "test": "NODE_ENV=test ava --verbose test/**/*.test.js",
-        "test:unit": "NODE_ENV=test ava --verbose test/*.test.js",
-        "test:file": "NODE_ENV=test ava",
-        "test:file:verbose": "DEBUG=pollinations:* NODE_ENV=test ava --verbose",
-        "test:pattern": "DEBUG=pollinations:* NODE_ENV=test ava --verbose",
-        "coverage": "NODE_ENV=test c8 --reporter=text --reporter=html ava --verbose test/server.test.js test/generateText.test.js",
-        "start": "node startServer.js",
-        "debug": "clear &&DEBUG=* nodemon startServer.js"
+        "start": "tsx startServer.js",
+        "type-check": "tsc --noEmit",
+        "validate-configs": "tsx configs/validateConfigKeys.ts",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "debug": "clear && DEBUG=* tsx startServer.js"
     },
     "keywords": [],
     "author": "",
@@ -35,7 +30,9 @@
         "openai": "^4.58.2",
         "p-queue": "^8.0.1",
         "puppeteer": "^23.6.0",
-        "turndown": "^7.2.0"
+        "turndown": "^7.2.0",
+        "tsx": "^4.20.3",
+        "typescript": "^5.8.3"
     },
     "devDependencies": {
         "@istanbuljs/nyc-config-babel": "^3.0.0",

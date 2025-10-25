@@ -85,6 +85,24 @@ export function createDeepSeekReasoningConfig(additionalConfig = {}) {
 }
 
 /**
+ * Creates a Myceli DeepSeek V3.1 model configuration (hybrid reasoning/non-reasoning)
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - Myceli DeepSeek V3.1 model configuration
+ */
+export function createMyceliDeepSeekV31Config(additionalConfig = {}) {
+	return {
+		provider: "openai",
+		"custom-host": process.env.AZURE_MYCELI_DEEPSEEK_R1_ENDPOINT,
+		authKey: process.env.AZURE_MYCELI_DEEPSEEK_R1_API_KEY,
+		"auth-header-name": "Authorization",
+		"auth-header-value-prefix": "",
+		model: "myceli-deepseek-v3.1",
+		"max-tokens": 8192,
+		...additionalConfig,
+	};
+}
+
+/**
  * Creates a Cloudflare model configuration
  * @param {Object} additionalConfig - Additional configuration to merge with base config
  * @returns {Object} - Cloudflare model configuration
@@ -125,7 +143,6 @@ export function createMistralModelConfig(additionalConfig = {}) {
 		"custom-host": process.env.SCALEWAY_MISTRAL_BASE_URL,
 		authKey: process.env.SCALEWAY_MISTRAL_API_KEY,
 		"max-tokens": 8192,
-		temperature: 0.3,
 		...additionalConfig,
 	};
 }
@@ -200,7 +217,6 @@ export function createIntelligenceModelConfig(additionalConfig = {}) {
 		"custom-host": "https://api.intelligence.io.solutions/api/v1",
 		authKey: process.env.IOINTELLIGENCE_API_KEY,
 		"max-tokens": 8192,
-		temperature: 0.7,
 		...additionalConfig,
 	};
 }
@@ -215,6 +231,21 @@ export function createBedrockLambdaModelConfig(additionalConfig = {}) {
 		provider: "openai",
 		"custom-host": "https://s4gu3klsuhlqkol3x3qq6bv6em0cwqnu.lambda-url.us-east-1.on.aws/api/v1",
 		authKey: process.env.AWS_BEARER_TOKEN_BEDROCK,
+		...additionalConfig,
+	};
+}
+
+/**
+ * Creates AWS Bedrock Fargate model configuration
+ * Uses the new Fargate deployment endpoint with ALB
+ * @param {Object} additionalConfig - Additional configuration to merge with base config
+ * @returns {Object} - AWS Bedrock Fargate model configuration
+ */
+export function createBedrockFargateModelConfig(additionalConfig = {}) {
+	return {
+		provider: "openai",
+		"custom-host": "http://bedroc-Proxy-He0yOirTrdQe-378478291.us-east-1.elb.amazonaws.com/api/v1",
+		authKey: process.env.AWS_BEARER_TOKEN_BEDROCK_FARGATE,
 		...additionalConfig,
 	};
 }

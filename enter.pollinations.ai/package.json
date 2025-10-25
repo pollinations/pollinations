@@ -2,7 +2,7 @@
     "name": "pollinations-enter",
     "type": "module",
     "version": "1.0.0",
-    "description": "Next generation auth service for Pollinations",
+    "description": "Next generation auth service for pollinations.ai",
     "main": "src/index.ts",
     "scripts": {
         "typecheck": "tsc --noEmit",
@@ -59,6 +59,7 @@
         "pipelight": "^0.2.8",
         "typescript": "^5.9.2",
         "vite": "^7.1.7",
+        "vite-plugin-markdown": "^2.2.0",
         "vite-tsconfig-paths": "^5.1.4",
         "vitest": "^3.2.4",
         "wrangler": "^4.40.0"

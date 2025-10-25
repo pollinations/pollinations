@@ -18,11 +18,15 @@ import {
 } from "@/db/schema/event.ts";
 import { generateRandomId } from "@/util.ts";
 import {
-    ProviderId,
-    REGISTRY,
+    ModelId,
     ServiceId,
     TokenUsage,
-} from "@/registry/registry.ts";
+    resolveServiceId,
+    getServiceDefinition,
+    getActivePriceDefinition,
+    calculateCost,
+    calculatePrice,
+} from "@shared/registry/registry.ts";
 import { drizzle } from "drizzle-orm/d1";
 
 const mockPolar = createMockPolar();
@@ -46,10 +50,15 @@ function createTextGenerationEvent(
     modelRequested: ServiceId,
 ): InsertGenerationEvent {
     const userId = generateRandomId();
-    const modelUsed = REGISTRY.getService(modelRequested as ServiceId)
-        .modelProviders[0];
-    const priceDefinition = REGISTRY.getActivePriceDefinition(
-        modelRequested as ServiceId,
+    const resolvedModelRequested = resolveServiceId(
+        modelRequested,
+        "generate.text",
+    );
+
+    const modelUsed = getServiceDefinition(resolvedModelRequested)
+        .modelId;
+    const priceDefinition = getActivePriceDefinition(
+        resolvedModelRequested,
     );
     if (!priceDefinition) {
         throw new Error(
@@ -61,8 +70,8 @@ function createTextGenerationEvent(
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     };
-    const cost = REGISTRY.calculateCost(modelUsed as ProviderId, usage);
-    const price = REGISTRY.calculatePrice(modelRequested as ServiceId, usage);
+    const cost = calculateCost(modelUsed as ModelId, usage);
+    const price = calculatePrice(resolvedModelRequested, usage);
 
     return {
         id: generateRandomId(),

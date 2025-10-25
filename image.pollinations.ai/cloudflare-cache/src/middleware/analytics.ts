@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { createSimpleHash, extractPromptFromUrl } from "../util.ts";
 import type { ImageParams } from "./parse-image-params.ts";
+import { sendToTinybird } from "./tinybird.ts";
 
 const MAX_STRING_LENGTH = 150;
 
@@ -51,14 +52,22 @@ type Env = {
     Bindings: Cloudflare.Env;
     Variables: {
         imageParams: ImageParams;
+        responseTime: number;
     };
 };
 
 export const googleAnalytics = createMiddleware<Env>(async (c, next) => {
     const events: ImageCacheEvent[] = [{ name: "imageRequested" }];
+    
+    // Track start time for response time calculation
+    const startTime = Date.now();
 
     // run middeware stack and proxy first
     await next();
+    
+    // Calculate response time in milliseconds
+    const responseTime = Date.now() - startTime;
+    c.set("responseTime", responseTime);
 
     // add analytics based on response
     if (!c.res.ok) {
@@ -107,6 +116,13 @@ export const googleAnalytics = createMiddleware<Env>(async (c, next) => {
         }));
         c.executionCtx.waitUntil(
             sendAnalytics(config, userId, augmentedEvents),
+        );
+    }
+
+    // Send to Tinybird
+    if (c.env.TINYBIRD_API_KEY && events.length > 0) {
+        c.executionCtx.waitUntil(
+            sendToTinybird(events, c, c.env.TINYBIRD_API_KEY),
         );
     }
 });
@@ -184,19 +200,22 @@ function limitStringLength(
         }),
     );
 }
-
 async function buildUserId(c: Context): Promise<string> {
     const ip = c.req.header("cf-connecting-ip") || c.req.header("x-real-ip");
     const userAgent = c.req.header("user-agent");
     return await createSimpleHash(`${ip?.substring(0, 11) || ""}${userAgent}`);
 }
 
+
 function deriveCacheStatus(event: ImageCacheEvent): CacheStatus {
     const statusMap = {
         "imageRequested": "pending",
-        "imageServedFromCache": "hit",
+        "imageServedFromExactCache": "hit",
+        "imageServedFromSemanticCache": "hit",
         "imageGenerated": "miss",
         "imageGenerationFailed": "miss",
     } as const;
     return statusMap[event.name];
 }
+
+

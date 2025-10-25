@@ -54,12 +54,42 @@ hacktoberfest-2025/
 
 ## How to Submit
 
+### Step 1: Propose Your App Idea (Recommended)
+
+Before building, **create a GitHub issue** with your app idea:
+
+1. Go to [Issues](https://github.com/pollinations/pollinations/issues/new)
+2. Title: `[Hacktoberfest App] Your App Name`
+3. Describe:
+   - What your app does
+   - Which Pollinations APIs you'll use (text/image)
+   - Why it's useful/fun/interesting
+4. Tag it with `hacktoberfest` label
+5. Wait for feedback from maintainers
+
+**Why propose first?**
+- Get early feedback on your idea
+- Avoid building something that won't be accepted
+- Maintainers can suggest improvements
+- Shows you're serious about contributing
+
+### Step 2: Build Your App
+
+Once your idea is approved (or if you're feeling confident):
+
 1. Fork this repo
 2. Create your app folder in `hacktoberfest-2025/`
 3. Build something that actually works
 4. Test it from a fresh clone (seriously, do this)
 5. PR with title: `[Hacktoberfest] Add [App Name]`
-6. Tag it `hacktoberfest`
+6. Link to your original issue in the PR description
+7. Tag it `hacktoberfest`
+
+
+## Setup
+1. Get a free ImgBB API key from https://api.imgbb.com/
+2. Copy `.env.example` to `.env`
+3. Add your API key to `.env`
 
 ## Templates & Examples
 

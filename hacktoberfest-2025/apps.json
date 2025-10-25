@@ -11,5 +11,31 @@
     "outputDir": "dist",
     "description": "React-based AI dungeon master game",
     "notes": "Vite base path must be '/' for Cloudflare Pages (not '/pollinations/')"
+  },
+  "example-elevator-challenge": {
+    "subdomain": "elevator-challenge",
+    "buildCommand": "npm run build",
+    "outputDir": "dist",
+    "description": "Sirius Cybernetics elevator personality challenge (React + TypeScript + Vite)",
+    "notes": "Uses base: './' in vite.config.ts"
+  },
+  "map-to-isometric": {
+    "subdomain": "map-to-isometric",
+    "buildCommand": "npm run build",
+    "outputDir": "dist",
+    "description": "Map to isometric view converter (React + Vite)",
+    "notes": "Uses base: '' in vite.config.js"
+  },
+  "product-packaging-designer": {
+    "subdomain": "product-packaging-designer",
+    "buildCommand": "npm run build",
+    "outputDir": "dist",
+    "description": "AI-powered product packaging designer (React + TypeScript + Vite + Supabase)"
+  },
+  "virtual-makeup": {
+    "subdomain": "virtual-makeup",
+    "buildCommand": "npm run build",
+    "outputDir": "dist",
+    "description": "Virtual makeup studio with AI (React + Vite)"
   }
 }

@@ -18,6 +18,11 @@ jobs:
       issues: write
     
     steps:
+      - name: Debounce - Wait for edits to settle
+        uses: zachary95/github-actions-debounce@v1
+        with:
+          wait: 180  # Wait 3 minutes for edits to stop
+          
       - name: Check if description needs condensing
         id: check
         uses: actions/github-script@v7

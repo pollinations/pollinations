@@ -1,10 +1,12 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { cors } from "hono/cors";
 import { createAuth } from "./auth.ts";
 import { handleError } from "./error.ts";
 import { processEvents } from "./events.ts";
 import { polarRoutes } from "./routes/polar.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
+import { tiersRoutes } from "./routes/tiers.ts";
 import { requestId } from "hono/request-id";
 import { logger } from "./middleware/logger.ts";
 import { getLogger } from "@logtape/logtape";
@@ -20,9 +22,25 @@ const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", (c) => {
 const api = new Hono<Env>()
     .route("/auth", authRoutes)
     .route("/polar", polarRoutes)
+    .route("/tiers", tiersRoutes)
     .route("/generate", proxyRoutes);
 
 const app = new Hono<Env>()
+    .use("*", cors({
+        origin: (origin) => {
+            // Allow localhost on any port for development
+            if (origin.startsWith("http://localhost:")) return origin;
+            // Production origins
+            if (origin === "https://enter.pollinations.ai") return origin;
+            if (origin === "https://beta.pollinations.ai") return origin;
+            return null;
+        },
+        credentials: true,
+        allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowHeaders: ["Content-Type", "Authorization"],
+        exposeHeaders: ["Content-Length"],
+        maxAge: 600,
+    }))
     .use("*", requestId())
     .use("*", logger)
     .route("/api", api)

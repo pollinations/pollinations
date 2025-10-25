@@ -2,6 +2,7 @@ import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { hc } from "hono/client";
 import { useState } from "react";
 import type { PolarRoutes } from "../../routes/polar.ts";
+import type { TiersRoutes } from "../../routes/tiers.ts";
 import {
     ApiKeyList,
     type CreateApiKey,
@@ -11,6 +12,7 @@ import { Button } from "../components/button.tsx";
 import { config } from "../config.ts";
 import { User } from "../components/user.tsx";
 import { PollenBalance } from "../components/pollen-balance.tsx";
+import { TierPanel } from "../components/tier-panel.tsx";
 import { FAQ } from "../components/faq.tsx";
 import { Header } from "../components/header.tsx";
 
@@ -19,19 +21,25 @@ export const Route = createFileRoute("/")({
     loader: async ({ context }) => {
         if (!context.user) throw redirect({ to: "/sign-in" });
         const honoPolar = hc<PolarRoutes>("/api/polar");
+        const honoTiers = hc<TiersRoutes>("/api/tiers");
+        
         const stateResult = await honoPolar.customer.state.$get();
         const customer = stateResult.ok ? await stateResult.json() : null;
+        
+        const tiersResult = await honoTiers.view.$get();
+        const tierData = tiersResult.ok ? await tiersResult.json() : null;
+        
         const apiKeysResult = await context.auth.apiKey.list();
         const apiKeys = apiKeysResult.data ? apiKeysResult.data : [];
 
         console.log(context.user);
-        return { auth: context.auth, user: context.user, customer, apiKeys };
+        return { auth: context.auth, user: context.user, customer, apiKeys, tierData };
     },
 });
 
 function RouteComponent() {
     const router = useRouter();
-    const { auth, user, customer, apiKeys } = Route.useLoaderData();
+    const { auth, user, customer, apiKeys, tierData } = Route.useLoaderData();
     const meter = customer?.activeMeters.filter(
         (meter) => meter.meterId === config.pollenMeterId,
     )[0];
@@ -102,6 +110,15 @@ function RouteComponent() {
                 </div>
                 <PollenBalance balance={balance} />
             </div>
+            {tierData && (
+                <div className="flex flex-col gap-2">
+                    <h2 className="font-bold">Tier</h2>
+                    <TierPanel
+                        status={tierData.status}
+                        next_refill_at_utc={tierData.next_refill_at_utc}
+                    />
+                </div>
+            )}
             <ApiKeyList
                 apiKeys={apiKeys}
                 onCreate={handleCreateApiKey}

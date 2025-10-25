@@ -7,6 +7,12 @@ on:
       - 'hacktoberfest-2025/*/**'
       - '!hacktoberfest-2025/scripts/**'
       - '!hacktoberfest-2025/*.md'
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: 'App to deploy (e.g., virtual-makeup, ai-dungeon-master, catgpt)'
+        required: true
+        type: string
 
 jobs:
   deploy:
@@ -22,12 +28,20 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Detect changed apps
         id: detect
         run: |
-          # Get changed files in hacktoberfest-2025/
+          # Manual trigger - deploy specific app
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            APPS="${{ github.event.inputs.app_name }}"
+            echo "Manual deployment: $APPS"
+            echo "apps=$APPS" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Auto trigger - detect changed files
           CHANGED_FILES=$(git diff --name-only HEAD^ HEAD | grep '^hacktoberfest-2025/' || true)
           
           if [ -z "$CHANGED_FILES" ]; then

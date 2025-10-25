@@ -53,9 +53,15 @@ export const authenticateSession = createMiddleware<AuthEnv>(async (c, next) => 
 
 /**
  * API key authentication for API routes.
- * Only checks Bearer token (no session cookies).
+ * Checks Bearer token. Can be chained with authenticateSession for fallback.
  */
 export const authenticateAPI = createMiddleware<AuthEnv>(async (c, next) => {
+    // Skip if already authenticated (e.g., by session middleware)
+    const existingAuth = c.get("auth");
+    if (existingAuth?.user) {
+        return await next();
+    }
+
     const client = createAuth(c.env);
     const authHeader = c.req.header("authorization");
     const apiKey = extractApiKey(authHeader);
@@ -72,7 +78,7 @@ export const authenticateAPI = createMiddleware<AuthEnv>(async (c, next) => {
     const requireAuth = (message?: string) => {
         if (!user) {
             throw new HTTPException(401, {
-                message: message || "API key required. Provide a valid Bearer token.",
+                message: message || "Authentication required. Sign in or provide a valid API key.",
             });
         }
         return { user, session: undefined };

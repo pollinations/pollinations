@@ -27,20 +27,56 @@ jobs:
           files: hacktoberfest-2025/**
           json: true
 
+      - name: Debug changed files output
+        run: |
+          echo "🔍 Debug: Changed files output"
+          echo "Raw output: $ALL_CHANGED"
+          echo "Length: ${#ALL_CHANGED}"
+          echo ""
+          echo "🔍 Parsing with jq (from env var):"
+          echo "$ALL_CHANGED" | jq '.' || echo "❌ jq parsing failed"
+          echo ""
+          echo "🔍 Extracting app names:"
+          echo "$ALL_CHANGED" | jq -r '.[]' | cut -d'/' -f2 | sort -u || echo "❌ Extraction failed"
+          echo ""
+          echo "🔍 Alternative: Using fromjson"
+          echo "$ALL_CHANGED" | jq -r 'fromjson | .[]' | cut -d'/' -f2 | sort -u || echo "❌ fromjson failed"
+        env:
+          ALL_CHANGED: ${{ steps.changed.outputs.all_changed_files }}
+
       - name: Deploy
         if: steps.changed.outputs.all_changed_files != '[]'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           TURNSTILE_SITE_ID: ${{ secrets.TURNSTILE_SITE_ID }}
+          CHANGED_FILES_JSON: ${{ steps.changed.outputs.all_changed_files }}
         run: |
           npm install -g wrangler
           
-          echo '${{ steps.changed.outputs.all_changed_files }}' | jq -r '.[]' | \
+          echo "🔍 Starting deployment process..."
+          echo "Raw changed files: $CHANGED_FILES_JSON"
+          
+          # The output has escaped quotes (\"), remove the backslashes
+          echo "$CHANGED_FILES_JSON" | sed 's/\\"/"/g' | jq -r '.[]' | \
             cut -d'/' -f2 | sort -u | while read app; do
             
-            [ -z "$app" ] || [ "$app" = "scripts" ] && continue
-            [ ! -d "hacktoberfest-2025/$app" ] && continue
+            echo "🔍 Processing app: '$app'"
+            
+            if [ -z "$app" ]; then
+              echo "  ⏭️  Skipping: empty app name"
+              continue
+            fi
+            
+            if [ "$app" = "scripts" ]; then
+              echo "  ⏭️  Skipping: scripts directory"
+              continue
+            fi
+            
+            if [ ! -d "hacktoberfest-2025/$app" ]; then
+              echo "  ⏭️  Skipping: directory doesn't exist"
+              continue
+            fi
             
             echo "🚀 Deploying $app..."
             

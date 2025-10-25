@@ -1,5 +1,6 @@
 // No imports needed for Web Crypto API
 import { sendToAnalytics } from "./analytics.js";
+import { checkTurnstile } from "../../../shared/turnstile.js";
 
 // Worker version to track which deployment is running
 const WORKER_VERSION = "2.0.0-simplified";
@@ -235,6 +236,12 @@ export default {
 
             // Log request information
             log("request", `🚀 ${request.method} ${url.pathname}`);
+            
+            // Check Turnstile verification for Hacktoberfest apps
+            const turnstileResponse = await checkTurnstile(request, env);
+            if (turnstileResponse) {
+                return turnstileResponse; // Return 403 if verification failed
+            }
 
             // Let origin handle GET root requests (e.g. redirects) without caching
             // But allow POST requests to root to be cached
@@ -704,6 +711,17 @@ function prepareResponseHeaders(originalHeaders, cacheInfo = {}) {
 
     for (const header of headersToRemove) {
         headers.delete(header);
+    }
+
+    // Add CORS headers if not already present
+    if (!headers.has("Access-Control-Allow-Origin")) {
+        headers.set("Access-Control-Allow-Origin", "*");
+    }
+    if (!headers.has("Access-Control-Allow-Methods")) {
+        headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    }
+    if (!headers.has("Access-Control-Allow-Headers")) {
+        headers.set("Access-Control-Allow-Headers", "Content-Type, X-Turnstile-Token");
     }
 
     // Add cache-related headers if provided

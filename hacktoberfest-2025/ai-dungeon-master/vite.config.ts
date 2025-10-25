@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/pollinations/', // GitHub Pages repository base path
+  base: '/', // Cloudflare Pages deployment (root path)
   server: {
     proxy: {
       '/api/text': {

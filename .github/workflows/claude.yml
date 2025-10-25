@@ -25,6 +25,11 @@ jobs:
       id-token: write
       actions: read # Required for Claude to read CI results on PRs
     steps:
+      - name: Debounce - Wait for edits to settle
+        uses: zachary95/github-actions-debounce@v1
+        with:
+          wait: 180  # Wait 3 minutes for edits to stop
+          
       - name: Checkout repository
         uses: actions/checkout@v4
         with:

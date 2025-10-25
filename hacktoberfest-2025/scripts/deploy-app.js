@@ -9,9 +9,54 @@
 const fs = require('fs');
 const path = require('path');
 
-const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
-const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
-const TURNSTILE_SITE_ID = process.env.TURNSTILE_SITE_ID;
+/**
+ * Load credentials from .env file or environment
+ */
+function loadCredentials() {
+  let apiToken = process.env.CLOUDFLARE_API_TOKEN;
+  let accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  let turnstileId = process.env.TURNSTILE_SITE_ID;
+
+  // Try to load from hacktoberfest .env file if not in environment
+  if (!apiToken || !accountId || !turnstileId) {
+    const envPath = path.join(__dirname, '../.env');
+    
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, 'utf8');
+      
+      if (!apiToken) {
+        const tokenMatch = envContent.match(/CLOUDFLARE_API_TOKEN=(.+)/);
+        if (tokenMatch) {
+          apiToken = tokenMatch[1].trim();
+          console.log('✅ Loaded CLOUDFLARE_API_TOKEN from .env');
+        }
+      }
+      
+      if (!accountId) {
+        const accountMatch = envContent.match(/CLOUDFLARE_ACCOUNT_ID=(.+)/);
+        if (accountMatch) {
+          accountId = accountMatch[1].trim();
+          console.log('✅ Loaded CLOUDFLARE_ACCOUNT_ID from .env');
+        }
+      }
+
+      if (!turnstileId) {
+        const turnstileMatch = envContent.match(/TURNSTILE_SITE_ID=(.+)/);
+        if (turnstileMatch) {
+          turnstileId = turnstileMatch[1].trim();
+          console.log('✅ Loaded TURNSTILE_SITE_ID from .env');
+        }
+      }
+    }
+  }
+
+  return { apiToken, accountId, turnstileId };
+}
+
+const { apiToken: CLOUDFLARE_API_TOKEN, accountId: CLOUDFLARE_ACCOUNT_ID, turnstileId: TURNSTILE_SITE_ID } = loadCredentials();
+
+// Cloudflare Zone ID for pollinations.ai
+const CLOUDFLARE_ZONE_ID = '0942247b74a58e4fc5ea70341a3754a3';
 
 async function deployApp(appName) {
   console.log(`🚀 Deploying ${appName}...`);
@@ -55,8 +100,8 @@ async function deployApp(appName) {
 
   const createResult = await createResponse.json();
   
-  if (!createResponse.ok && !createResult.errors?.some(e => e.code === 8000003)) {
-    // 8000003 = project already exists
+  if (!createResponse.ok && !createResult.errors?.some(e => e.code === 8000002)) {
+    // 8000002 = project already exists
     throw new Error(`Failed to create project: ${JSON.stringify(createResult)}`);
   }
 
@@ -87,8 +132,37 @@ async function deployApp(appName) {
     console.log('✅ Custom domain added');
   }
 
-  // Step 3: Update Turnstile (placeholder - needs actual API)
-  console.log('\n3️⃣ Updating Turnstile allowlist...');
+  // Step 3: Create DNS CNAME record
+  console.log('\n3️⃣ Creating DNS CNAME record...');
+  const dnsResponse = await fetch(
+    `https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: 'CNAME',
+        name: subdomain,
+        content: `${projectName}.pages.dev`,
+        ttl: 1,
+        proxied: true,
+      }),
+    }
+  );
+
+  const dnsResult = await dnsResponse.json();
+  
+  if (!dnsResponse.ok && !dnsResult.errors?.some(e => e.code === 81057)) {
+    // 81057 = DNS record already exists
+    console.warn(`⚠️  DNS setup: ${JSON.stringify(dnsResult)}`);
+  } else {
+    console.log('✅ DNS CNAME record created');
+  }
+
+  // Step 4: Update Turnstile (placeholder - needs actual API)
+  console.log('\n4️⃣ Updating Turnstile allowlist...');
   console.log(`⚠️  Manual step: Add ${customDomain} to Turnstile widget ${TURNSTILE_SITE_ID}`);
   console.log('   https://dash.cloudflare.com/?to=/:account/turnstile');
 

@@ -7,6 +7,7 @@ import { exactCache } from "./middleware/exact-cache";
 import { parseImageParams } from "./middleware/parse-image-params.ts";
 import { semanticCache } from "./middleware/semantic-cache.ts";
 import { setConnectingIp } from "./middleware/set-connecting-ip.ts";
+import { turnstileVerification } from "./middleware/turnstile.ts";
 
 const app = new Hono<Env>();
 
@@ -23,6 +24,7 @@ app.all(
     "/prompt/:prompt",
     googleAnalytics,
     setConnectingIp,
+    turnstileVerification,
     parseImageParams,
     exactCache,
     semanticCache,

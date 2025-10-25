@@ -545,8 +545,14 @@ const callAzureGPTImageWithEndpoint = async (
     // Map safeParams to Azure API parameters
     const size = `${safeParams.width}x${safeParams.height}`;
 
-    // Force medium quality for gptimage to reduce costs
-    const quality = "medium";
+    // Allow nectar users to use high quality, others get medium quality to reduce costs
+    const quality = userInfo?.tier === "nectar" && safeParams.quality === "high" 
+        ? "high" 
+        : "medium";
+    
+    if (quality === "high") {
+        logCloudflare(`Nectar tier user - using high quality for gptimage`);
+    }
 
     // Set output format to png if model is gptimage, otherwise jpeg
     const outputFormat = "png";
@@ -742,6 +748,12 @@ const callAzureGPTImageWithEndpoint = async (
     // Convert base64 to buffer
     const imageBuffer = Buffer.from(data.data[0].b64_json, "base64");
 
+    // Extract token usage from Azure OpenAI response
+    // Azure returns usage in format: { prompt_tokens, completion_tokens, total_tokens }
+    const outputTokens = data.usage?.completion_tokens || data.usage?.total_tokens || 1;
+    
+    logCloudflare(`GPT Image token usage: ${outputTokens} output tokens`);
+
     // Azure doesn't provide content safety information directly, so we'll set defaults
     // In a production environment, you might want to use a separate content moderation service
     return {
@@ -751,8 +763,8 @@ const callAzureGPTImageWithEndpoint = async (
         trackingData: {
             actualModel: safeParams.model,
             usage: {
-                candidatesTokenCount: 1,
-                totalTokenCount: 1
+                candidatesTokenCount: outputTokens, // Use actual token count from API
+                totalTokenCount: outputTokens
             }
         }
     };

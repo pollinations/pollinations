@@ -41,6 +41,14 @@ export const portkeyConfig: PortkeyConfigMap = {
 	// ============================================================================
 	
 	// Azure OpenAI model configurations
+	"gpt-5-mini-2025-08-07": () => ({
+		...createAzureModelConfig(
+			process.env.AZURE_MYCELI_GPT5MINI_API_KEY,
+			process.env.AZURE_MYCELI_GPT5MINI_ENDPOINT,
+			"gpt-5-mini-2025-08-07",
+		),
+		"max-completion-tokens": 1024,
+	}),
 	"gpt-5-nano-2025-08-07": () => ({
 		...createAzureModelConfig(
 			process.env.AZURE_MYCELI_GPT5NANO_API_KEY,
@@ -160,15 +168,6 @@ export const portkeyConfig: PortkeyConfigMap = {
 			`grok-3-mini`,
 			"pollinations-safety",
 		),
-	"gpt-5-mini-2025-08-07": () => ({
-		...createAzureModelConfig(
-			process.env.AZURE_MYCELI_GPT5MINI_API_KEY,
-			process.env.AZURE_MYCELI_GPT5MINI_ENDPOINT,
-			"gpt-5-mini",
-		),
-		// "max-tokens": 1024,
-		"max-completion-tokens": 1024,
-	}),
 	"gpt-4.1-mini": () =>
 		createAzureModelConfig(
 			process.env.AZURE_MYCELI_GPT41MINI_API_KEY,

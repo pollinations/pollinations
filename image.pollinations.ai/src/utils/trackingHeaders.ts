@@ -1,10 +1,11 @@
 /**
  * Utility for building tracking headers for the enter service
- * Implements GitHub issue #4170 requirements
+ * Implements GitHub issue #4170 and #4638 requirements
  */
 
 import debug from "debug";
 import type { IMAGE_SERVICES } from "../../../shared/registry/image.ts";
+import { buildUsageHeaders, createImageTokenUsage } from "../../../shared/registry/usage-headers.js";
 
 const log = debug("pollinations:tracking-headers");
 
@@ -45,24 +46,21 @@ export function buildTrackingHeaders(
     model: ValidServiceName,
     trackingData?: TrackingData
 ): Record<string, string> {
-    const headers: Record<string, string> = {};
-
-    // Core tracking headers
-    headers['x-model-used'] = trackingData?.actualModel || model;
-    // Note: x-user-tier removed - enter service now gets tier from user table
-    
-    // Token counting logic
+    // Determine token count
     let completionTokens = 1; // Default for unit-based pricing models
     
-    if (model === 'nanobanana' && trackingData?.usage?.candidatesTokenCount) {
-        // For nanobanana, use total candidates tokens (image + text)
+    if ((model === 'gptimage') && trackingData?.usage?.candidatesTokenCount) {
+        // For token-based models, use actual token count from API
         completionTokens = trackingData.usage.candidatesTokenCount;
-        log(`Nanobanana token count: ${completionTokens} (from candidatesTokenCount)`);
+        log(`${model} token count: ${completionTokens} (from candidatesTokenCount)`);
     } else {
         log(`Using default token count: ${completionTokens} for model: ${model}`);
     }
     
-    headers['x-completion-image-tokens'] = String(completionTokens);
+    // Use shared utility to build headers
+    const modelUsed = trackingData?.actualModel || model;
+    const usage = createImageTokenUsage(completionTokens);
+    const headers = buildUsageHeaders(modelUsed, usage);
 
     log('Built tracking headers:', Object.keys(headers));
     return headers;
@@ -75,7 +73,7 @@ export function buildTrackingHeaders(
  * @returns Token count for billing
  */
 export function extractTokenCount(model: ValidServiceName, usage?: TrackingUsageData): number {
-    if (model === 'nanobanana' && usage?.candidatesTokenCount) {
+    if (model === 'gptimage' && usage?.candidatesTokenCount) {
         return usage.candidatesTokenCount;
     }
     return 1; // Default for unit-based pricing

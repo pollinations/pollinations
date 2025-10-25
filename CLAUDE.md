@@ -1,12 +1,16 @@
-# Mentat Bot Guidelines for Pollinations.AI
+# Claude Guidelines for Pollinations.AI
 
 ## Project Submission Handling
 
-When handling project submission issues:
+When handling project submission issues (labeled as **APPS** in GitHub):
 
 1. Add new projects to the appropriate category file in:
    - pollinations.ai/src/config/projects/[category].js (e.g., creative.js, vibeCoding.js, etc.)
    - DO NOT manually edit the README.md file directly
+   - After adding projects, regenerate the lists by running:
+     ```bash
+     node pollinator-agent/project-list-scripts/generate-project-table.js --update-readme
+     ```
 
 2. Project Entry Format:
    ```javascript
@@ -23,11 +27,6 @@ When handling project submission issues:
    }
    ```
 
-   **Requirements:**
-   - ✅ **Project URL is REQUIRED** - Must have a working live demo or website
-   - ✅ **GitHub repo is OPTIONAL** - Nice to have but not required
-   - ❌ **Invalid submissions** - No URL, broken URL, or just image generation requests
-
 3. Project Ordering Rules:
    - In the README.md file, projects should be ordered within their categories:
      - First by the `order` parameter (lower values first: 1, 2, 3, 4, 5)
@@ -36,29 +35,12 @@ When handling project submission issues:
    - In the website rendering, the projectList.js order will be dynamically sorted using the same criteria so the actual order in the projectList.js file should not be changed
 
 4. Hiding Broken Projects:
-   - Use the `hidden: true` parameter to mark projects that are broken or no longer maintained
-   - Projects with this flag will not be displayed in the README.md project listings
-   - They will still remain in the projectList.js as the source of truth
+   - Set `hidden: true` for broken/unmaintained projects
+   - Hidden projects excluded from README.md but remain in projectList.js
 
 5. GitHub Star Counts:
-   - For projects with GitHub repositories, add their star count as a `stars` property:
-     ```javascript
-     {
-       name: "Project Name",
-       // other properties...
-       repo: "https://github.com/owner/repo",
-       stars: 1234  // Add this property for GitHub repos
-     }
-     ```
-   - Use the update-project-stars.js script to get current counts:
-     ```bash
-     # For a specific repository:
-     node .github/scripts/update-project-stars.js owner/repo
-
-     # To update all repositories in projectList.js:
-     node .github/scripts/update-project-stars.js
-     ```
-   - The star count will be displayed on the project page next to the GitHub link
+   - Add `stars` property for GitHub repos
+   - Update counts: `node .github/scripts/update-project-stars.js [owner/repo]`
 
 6. Categories (as of June 2025):
    - Vibe Coding ✨ (`vibeCoding.js`): No-code / describe-to-code playgrounds and builders
@@ -70,54 +52,35 @@ When handling project submission issues:
    - Learn 📚 (`learn.js`): Tutorials, guides, style books & educational demos
    - (Tracking file: `tracking/toProcess.md` for workflow management)
 
-## Classification Guidelines (2025 Update)
-- Each project must be assigned to only **one** category file (no duplicates).
-- Category assignment is based on actual functionality and metadata, not just the source JSON category.
-- When a project fits multiple categories, prefer less-populated categories (games, hackAndBuild, learn, socialBots, vibeCoding) to maintain balance.
-- Educational/interactive learning tools go to `learn.js`.
-- SDKs, APIs, and toolkits go to `hackAndBuild.js`.
-- Creative tools (image, text, audio generation, etc.) go to `creative.js`.
-- Chatbots and conversational agents go to `chat.js`.
-- Games and interactive fiction go to `games.js`.
-- Social platform bots go to `socialBots.js`.
-- No placeholder entries remain in category files; all projects are tracked in `toProcess.md` until categorized.
-- After categorization, update `toProcess.md` to reflect the assignment (e.g., "added to creative.js").
-- Use project metadata from `accumulated-projects.json` as the source of truth.
+## Classification Guidelines
+- One category per project (no duplicates)
+- Based on actual functionality, not source JSON category
+- Prefer less-populated categories for balance
+- Track uncategorized in `tracking/toProcess.md`
+- Source of truth: `accumulated-projects.json`
 
-## Current Workflow Summary
-1. Review uncategorized projects listed in `tracking/toProcess.md`.
-2. For each, inspect metadata in `accumulated-projects.json`.
-3. Assign to the most appropriate category file, following the above rules.
-4. Update both the category file and `toProcess.md` incrementally.
-5. Avoid duplicates and maintain category balance.
-6. If a project lacks sufficient detail, remove or defer it from the tracking list.
-7. All decisions and reassignments should be consistent and documented.
-8. This workflow ensures a clean, organized, and up-to-date project classification for Pollinations.AI.
+**Category Mapping:**
+- `learn.js`: Educational/interactive learning
+- `hackAndBuild.js`: SDKs, APIs, toolkits
+- `creative.js`: Image/text/audio generation
+- `chat.js`: Chatbots, conversational agents
+- `games.js`: Games, interactive fiction
+- `socialBots.js`: Platform bots (Discord/Telegram/etc)
 
-7. Add appropriate UTF-8 icons to titles where relevant (🤖 for bots, 🎨 for creative apps, etc.)
+7. Add UTF-8 icons to titles (🤖 bots, 🎨 creative, etc.)
 
-8. For projects in non-English languages:
-   - Add a country flag emoji to the project name (e.g., 🇨🇳 for Chinese, 🇪🇸 for Spanish)
-   - Include the "language" field in the project entry with the appropriate language code
-   - Add an English translation of the description in parentheses when possible
-   - This helps users easily identify and filter projects by language
+8. Non-English projects:
+   - Add country flag emoji (🇨🇳, 🇪🇸, etc.)
+   - Include `language` field with language code
+   - Add English translation in parentheses
 
-9. When creating a commit for project submissions, always add attribution to the issue creator using a Co-authored-by line in the commit message:
-    ```
-    Add [Project Name] to project list
-
-    Added [Project Name] to the [Category] category in both:
-    - README.md
-    - pollinations.ai/src/config/projectList.js
-
-    [Brief description of the project]
-
-    Co-authored-by: [GitHub-Username] <[GitHub-Email]>
-    Closes #[Issue-Number]
-    ```
-    - The Co-authored-by line must follow GitHub's format exactly
-    - If you don't have the user's GitHub email, you can try to find it in their previous commits or ask them for it
-    - This ensures the issue creator gets proper credit for their contribution in GitHub's graph
+9. Commit attribution:
+   ```
+   Add [Project Name] to [category]
+   
+   Co-authored-by: [Username] <[user_id]+[username]@users.noreply.github.com>
+   Closes #[Issue]
+   ```
 
 ## Repository Structure
 
@@ -135,63 +98,11 @@ pollinations/
 
 ## Model Context Protocol (MCP)
 
-The `model-context-protocol/` directory contains a Model Context Protocol server that allows AI assistants like Claude to directly generate images using the Pollinations API. Key components:
+The `model-context-protocol/` directory contains a Model Context Protocol server that allows AI assistants like Claude to directly generate images, text, and audio using the Pollinations API.
 
-- `pollinations-api-client.js`: Core API client with functions for image/audio generation and model listing
-- `pollinations-mcp-server.js`: MCP server implementation that handles tool requests
-- `CLAUDE_INSTALLATION.md`: Instructions for setting up with Claude Desktop
-- `test-mcp-client.js`: Test script for verifying functionality
-
-The MCP server provides a standardized way for AI assistants to access Pollinations' services without requiring users to manually copy/paste URLs or handle image generation directly.
-
-### MCP Design Principles
-
-1. **Thin Proxy Design**: The MCP server functions as a thin proxy for Pollinations services:
-   - Minimal processing of data between client and API
-   - No transformation or normalization of responses
-   - Direct pass-through of streams when applicable
-   - No unnecessary logic to verify return types or add metadata
-
-2. **API Functions**:
-   - `generateImageUrl`: Returns a URL to the generated image
-   - `generateImage`: Returns the actual image data as base64-encoded string
-   - `generateAudio`: Returns audio data as base64-encoded string
-   - `listModels`: Returns available models for image or text generation
-
-3. **Dependencies**:
-   - `@modelcontextprotocol/sdk`: Core MCP SDK (version 1.7.0+)
-   - `play-sound`: For audio playback functionality
-   - `node-fetch`: For making HTTP requests
-
-## MCP Server Implementation Notes
-
-### Important Considerations
-
-1. **Stdio Communication**: The MCP server communicates with Claude Desktop via stdio. This means:
-   - Never use `console.log()` in any code that's imported by the MCP server, as it will interfere with the JSON communication protocol
-   - Always use `console.error()` for debugging, but be aware that excessive logging can still cause issues
-   - When testing outside of Claude, you can use `console.log()` freely
-
-2. **Response Format**:
-   - All tool responses to Claude must be properly formatted JSON
-   - For text responses, wrap them in a JSON structure and use `JSON.stringify()` before returning
-   - Follow the pattern used by existing functions like `generateImageUrl` and `listModels`
-
-3. **Audio Implementation**:
-   - Audio is generated via the text.pollinations.ai service
-   - The MCP server plays audio locally on the system rather than trying to return audio data to Claude
-   - The `play-sound` package is used for local audio playback
-
-4. **Thin Proxy Design**:
-   - The Pollinations API client should function as a thin proxy
-   - Avoid transforming or processing stream data
-   - Don't add unnecessary metadata or normalizations
-   - Keep the code simple and avoid unnecessary operations
-
-5. **Debugging**:
-   - Check the logs at `/Users/thomash/Library/Logs/Claude/mcp-server-pollinations.log` for errors
-   - Test MCP functions independently using the test-mcp-client.js script
-   - Remember to restart Claude Desktop after making changes to the MCP server
+For detailed implementation notes, design principles, and troubleshooting, see:
+- `model-context-protocol/README.md` - Installation and usage
+- `model-context-protocol/CLAUDE.md` - Implementation guidelines and debugging
 
 ## API Quick Reference
 
@@ -282,112 +193,36 @@ Body: messages*, model (set to "openai-audio"), voice (optional)
    - For new features, document both simplified endpoints and OpenAI-compatible endpoints
    - Include minimal, clear code examples that demonstrate basic usage
 
-## Important Context
-
-Pollinations.AI is:
-- 100% Open Source
-- Free to use
-- Privacy-focused (no logins, no keys, no data stored)
-- Used by 50,000+ active users
-- Processing 20M+ images monthly
-
-Core Values:
-- Open & Accessible
-- Transparent & Ethical
-- Community-Driven
-- Interconnected
-- Evolving
-
-Remember these principles when implementing changes or reviewing submissions.
-
 # Git Workflow
 - If the user asks to send to git or something similar do all these steps:
 - Git status, diff, create branch, commit all, push and write a PR description
 
-## VERY IMPORTANT: Concise Communication Style
+## Communication Style
 
-**ALL PRs, comments, and issues must be concise and use bullet points.** This is critical for:
-- Readability and quick scanning
-- Respecting reviewer time
-- Maintaining consistency across the project
-- Following @eulervoid's established style
+**All PRs, comments, issues: bullet points, <200 words, no fluff**
 
-### DO:
-- Use bullet points for lists
-- Keep comments under 200 words
-- One idea per bullet
-- Remove unnecessary words
-- Be direct and clear
+**PR Format:**
+- Use "- Adds X", "- Fix Y" format
+- 3-5 bullets for most PRs
+- Simple titles: "fix:", "feat:", "Add"
+- Reference: `repo:pollinations/pollinations author:eulervoid`
 
-### DON'T:
-- Write long paragraphs
-- Use verbose explanations
-- Repeat the same point multiple ways
-- Add marketing language or fluff
+## GitHub Labels
 
-## PR Description Style Guide
+- Only use established labels (check with `mcp1_list_issues`)
+- Avoid creating new labels unless part of broader strategy
+- Keep names consistent with existing patterns
 
-When creating PR descriptions, follow the concise style used by @eulervoid:
+## Contributor Attribution
 
-**Key Principles:**
-1. **Bullet points over paragraphs** - Use "- Adds X", "- Fix Y" format
-2. **Minimal but clear** - 3-5 bullet points for most PRs
-3. **No marketing fluff** - Just the facts
-4. **Simple titles** - Clear, with optional prefix like "fix:", "feat:", "Add"
+**Commit format:**
+```
+feat: add feature
 
-**Reference Examples:**
-- Search GitHub for `repo:pollinations/pollinations author:eulervoid` to see style
-- Example PR: https://github.com/pollinations/pollinations/pull/4039
-  ```
-  - **Add logging and cost/price calculation**
-  - **Add models/services to registry**
-  - **Add tests for model/service registry and cost/price calculations**
-  - **Add fixtures for signIn and creating an api key, add tests for calling all defined models**
-  - **Add test to ensure only free services are available without API key**
-  - **Add tinybird cli to flake.nix**
-  ```
+Co-authored-by: username <user_id+username@users.noreply.github.com>
+Fixes #issue
+```
 
-**When to be more detailed:**
-- Complex architectural changes
-- Breaking changes
-- New features requiring explanation
-- But still keep it concise and structured
-
-## GitHub Labels Best Practices
-
-When creating or applying labels to issues:
-
-1. **Check label usage before applying**:
-   - Search existing issues to see if a label is actively used
-   - Use `mcp1_list_issues` with the label to verify it's not a new/unused label
-   - Only apply labels that are already established in the repository
-   - Avoid creating new labels unless they're part of a broader labeling strategy
-
-2. **Label consistency**:
-   - Use existing labels from the repository
-   - Keep label names consistent with established patterns
-   - If creating new labels, ensure they'll be reused across multiple issues
-
-## Contributor Attribution in PRs
-
-When addressing issues opened by external contributors:
-
-1. **Add Co-authored-by in commit messages**:
-   ```
-   docs: add reasoning model warning
-   
-   Addresses feedback from issue #1842
-   
-   Co-authored-by: withthatway <69885286+withthatway@users.noreply.github.com>
-   ```
-
-2. **Reference issues in PR descriptions**:
-   - Use "Fixes #issue" or "Addresses #issue" to link PRs to issues
-   - Mention the issue reporter by username when relevant
-   - This ensures contributors get proper credit in GitHub's contribution graph
-   - Keep descriptions concise (see @eulervoid's PR style above)
-
-3. **Finding contributor emails**:
-   - Use format: `{username} <{user_id}+{username}@users.noreply.github.com>`
-   - User ID can be found in the issue API response
-   - Example: `withthatway <69885286+withthatway@users.noreply.github.com>`
+- Use "Fixes #issue" or "Addresses #issue" in PR descriptions
+- Email format: `{username} <{user_id}+{username}@users.noreply.github.com>`
+- Find user_id in issue API response

@@ -1,0 +1,12 @@
+{
+  "catgpt": {
+    "subdomain": "catgpt",
+    "buildCommand": null,
+    "outputDir": "."
+  },
+  "ai-dungeon-master": {
+    "subdomain": "ai-dungeon-master",
+    "buildCommand": "npm run build",
+    "outputDir": "dist"
+  }
+}

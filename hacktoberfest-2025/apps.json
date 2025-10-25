@@ -2,11 +2,14 @@
   "catgpt": {
     "subdomain": "catgpt",
     "buildCommand": null,
-    "outputDir": "."
+    "outputDir": ".",
+    "description": "Simple HTML/CSS/JS cat chatbot"
   },
   "ai-dungeon-master": {
     "subdomain": "ai-dungeon-master",
     "buildCommand": "npm run build",
-    "outputDir": "dist"
+    "outputDir": "dist",
+    "description": "React-based AI dungeon master game",
+    "notes": "Vite base path must be '/' for Cloudflare Pages (not '/pollinations/')"
   }
 }

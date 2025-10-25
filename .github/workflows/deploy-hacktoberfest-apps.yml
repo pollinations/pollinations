@@ -75,6 +75,11 @@ jobs:
               continue
             fi
             
+            if [ "$app" = "apps.json" ]; then
+              echo "  ⏭️  Skipping: apps.json config file"
+              continue
+            fi
+            
             if [ ! -d "hacktoberfest-2025/$app" ]; then
               echo "  ⏭️  Skipping: directory doesn't exist"
               continue

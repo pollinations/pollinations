@@ -560,11 +560,7 @@ function createModelCard(model) {
             ` : ''}
             
             <div class="card-actions">
-                <button class="action-btn action-btn-primary" 
-                        onclick="showCodeExamples('${model.name}', '${type}')">
-                    💻 Code
-                </button>
-                <button class="action-btn action-btn-secondary tooltip" 
+                <button class="action-btn action-btn-primary tooltip" 
                         onclick="copyModelInfo('${model.name}')">
                     📋 Copy
                     <span class="tooltip-text">Copy model info</span>

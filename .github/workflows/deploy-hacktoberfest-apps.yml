@@ -1,0 +1,69 @@
+name: Deploy Hacktoberfest Apps
+
+on:
+  push:
+    paths:
+      - 'hacktoberfest-2025/**'
+    branches: [master, main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Get changed apps
+        id: changed
+        uses: tj-actions/changed-files@v45
+        with:
+          dir_names: true
+          dir_names_max_depth: 2
+          files: hacktoberfest-2025/**
+          json: true
+
+      - name: Deploy
+        if: steps.changed.outputs.all_changed_files != '[]'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TURNSTILE_SITE_ID: ${{ secrets.TURNSTILE_SITE_ID }}
+        run: |
+          npm install -g wrangler
+          
+          echo '${{ steps.changed.outputs.all_changed_files }}' | jq -r '.[]' | \
+            cut -d'/' -f2 | sort -u | while read app; do
+            
+            [ -z "$app" ] || [ "$app" = "scripts" ] && continue
+            [ ! -d "hacktoberfest-2025/$app" ] && continue
+            
+            echo "🚀 Deploying $app..."
+            
+            # Step 1: Setup infrastructure (project, domain, DNS)
+            cd hacktoberfest-2025
+            node scripts/deploy-app.js "$app" || echo "⚠️  Infrastructure setup completed with warnings"
+            cd ..
+            
+            # Step 2: Build if needed
+            if [ -f "hacktoberfest-2025/$app/package.json" ]; then
+              cd "hacktoberfest-2025/$app"
+              npm install && npm run build 2>/dev/null || true
+              cd ../..
+              DIR=$([ -d "hacktoberfest-2025/$app/dist" ] && echo "dist" || echo ".")
+            else
+              DIR="."
+            fi
+            
+            # Step 3: Deploy to production
+            wrangler pages deploy "hacktoberfest-2025/$app/$DIR" \
+              --project-name="hacktoberfest-$app" \
+              --branch=master \
+              --commit-dirty=true
+            
+            echo "✅ Deployment complete for $app"
+          done

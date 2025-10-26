@@ -55,7 +55,7 @@ const KeyDisplay: FC<{ fullKey: string }> = ({ fullKey }) => {
                 onClick={handleCopy}
                 className="px-2 py-1 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 rounded"
             >
-                {copied ? "✓" : "Copy"}
+                {copied ? "✓" : "📋"}
             </button>
         </div>
     );
@@ -89,7 +89,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     </div>
                 </div>
                 {apiKeys.length ? (
-                    <div className="bg-emerald-100 rounded-2xl p-8 border border-pink-300 overflow-x-auto scrollbar-hide">
+                    <div className="bg-emerald-100 rounded-2xl p-8 border border-pink-300 overflow-x-auto">
                         <div className="grid grid-cols-[100px_200px_1fr_120px_150px_80px] gap-x-4 gap-y-4 min-w-[900px]">
                             <span className="font-bold text-pink-400 text-sm">Type</span>
                             <span className="font-bold text-pink-400 text-sm">Name</span>
@@ -132,14 +132,16 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                 {formatRelative(apiKey.createdAt, new Date())}
                                             </span>
                                         </Cell>
-                                        <button
-                                            type="button"
-                                            className="justify-self-center w-8 h-8 flex items-center justify-center rounded hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors text-xl font-light"
-                                            onClick={() => setDeleteId(apiKey.id)}
-                                            title="Delete key"
-                                        >
-                                            ×
-                                        </button>
+                                        <Cell>
+                                            <button
+                                                type="button"
+                                                className="w-8 h-8 flex items-center justify-center rounded hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors text-xl font-light"
+                                                onClick={() => setDeleteId(apiKey.id)}
+                                                title="Delete key"
+                                            >
+                                                ×
+                                            </button>
+                                        </Cell>
                                     </Fragment>
                                 );
                             })}
@@ -408,7 +410,7 @@ const ShowKeyResult: FC<{
                         shape="rounded"
                         onClick={handleCopy}
                     >
-                        {copied ? "Copied!" : "Copy"}
+                        {copied ? "✓" : "📋"}
                     </Button>
                 </div>
             </div>

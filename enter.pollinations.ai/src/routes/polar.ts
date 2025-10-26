@@ -1,7 +1,7 @@
 import { Hono, Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import z from "zod";
-import { authenticate } from "../middleware/authenticate.ts";
+import { authenticateSession } from "../middleware/authenticate.ts";
 import { polar } from "../middleware/polar.ts";
 import { validator } from "../middleware/validator.ts";
 import type { Env } from "../env.ts";
@@ -33,7 +33,7 @@ const products: ProductMap = {
 };
 
 export const polarRoutes = new Hono<Env>()
-    .use("*", authenticate)
+    .use("*", authenticateSession)
     .use("*", polar)
     .get(
         "/customer/state",

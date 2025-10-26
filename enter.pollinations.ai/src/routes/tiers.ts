@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { authenticate } from "../middleware/authenticate.ts";
+import { authenticateSession } from "../middleware/authenticate.ts";
 import { polar } from "../middleware/polar.ts";
 import { describeRoute } from "hono-openapi";
 import { validator } from "../middleware/validator.ts";
@@ -44,7 +44,7 @@ const activateRequestSchema = z.object({
 });
 
 export const tiersRoutes = new Hono<Env>()
-    .use("*", authenticate)
+    .use("*", authenticateSession)
     .use("*", polar)
     .get(
         "/view",

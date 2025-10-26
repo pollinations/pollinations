@@ -258,7 +258,7 @@ const CreateKeyForm: FC<{
                         <div className="flex-1">
                             <div className="font-medium">🔒 Server Key</div>
                             <div className="text-xs text-gray-600">
-                                For server-to-server apps. Never expose publicly. Best rate limits and can spend Pollen on premium models.
+                                For server-to-server apps. Never expose publicly. Best rate limits and can spend Pollen.
                             </div>
                         </div>
                     </label>
@@ -361,7 +361,7 @@ const ShowKeyResult: FC<{
                                 Never expose server keys in client-side code
                             </li>
                             <li>
-                                Can spend Pollen on premium models
+                                Can spend Pollen for paid models
                             </li>
                         </>
                     )}

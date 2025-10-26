@@ -13,7 +13,7 @@ The Pollinations.AI API supports multiple authentication methods:
 2. Navigate to your dashboard
 3. Click "Create API Key"
 4. Choose your key type:
-   - **🔒 Server Key**: For backend services (never expose publicly, can spend Pollen on premium models)
+   - **🔒 Server Key**: For backend services (never expose publicly, can spend Pollen)
    - **🌐 Frontend Key**: For browser/mobile apps (safe to expose, access to all models with IP-based rate limiting)
 5. Copy your API key immediately:
    - **Frontend keys**: Always visible in your dashboard (starts with `pk_`)
@@ -136,11 +136,11 @@ Rate limits vary by authentication method:
 
 ## Pollen Balance
 
-Server keys can spend Pollen (prepaid credits) on premium models:
+Server keys can spend Pollen (prepaid credits):
 - **$1 ≈ 1 Pollen**
-- Premium models deduct Pollen per request
+- Some models deduct Pollen per request
 - Free models never cost Pollen
-- Frontend keys **cannot** spend Pollen (all models are free for frontend keys)
+- Frontend keys **cannot** spend Pollen (all models work with frontend keys)
 - Check your balance at [enter.pollinations.ai](https://enter.pollinations.ai)
 
 ## Security Best Practices

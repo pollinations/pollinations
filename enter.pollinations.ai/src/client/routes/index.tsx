@@ -22,6 +22,7 @@ export const Route = createFileRoute("/")({
         if (!context.user) throw redirect({ to: "/sign-in" });
         const honoPolar = hc<PolarRoutes>("/api/polar");
         const honoTiers = hc<TiersRoutes>("/api/tiers");
+        const honoApiKeys = hc<any>("/api/api-keys");
         
         const stateResult = await honoPolar.customer.state.$get();
         const customer = stateResult.ok ? await stateResult.json() : null;
@@ -29,8 +30,9 @@ export const Route = createFileRoute("/")({
         const tiersResult = await honoTiers.view.$get();
         const tierData = tiersResult.ok ? await tiersResult.json() : null;
         
-        const apiKeysResult = await context.auth.apiKey.list();
-        const apiKeys = apiKeysResult.data ? apiKeysResult.data : [];
+        // Use custom endpoint to get API keys with metadata
+        const apiKeysResult = await honoApiKeys.list.$get();
+        const apiKeys = apiKeysResult.ok ? await apiKeysResult.json() : [];
 
         console.log(context.user);
         return { auth: context.auth, user: context.user, customer, apiKeys, tierData };

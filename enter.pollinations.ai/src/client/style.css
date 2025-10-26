@@ -58,9 +58,9 @@
 }
 
 @theme {
-    --font-heading: "Maven Pro", ui-sans-serif, sans-serif;
-    --font-subheading: "Mako", ui-sans-serif, sans-serif;
-    --font-body: "Duru Sans", ui-sans-serif, sans-serif;
+    --font-heading: "LCT Mogi", ui-sans-serif, sans-serif;
+    --font-subheading: "Fraunces", ui-serif, serif;
+    --font-body: "Uncut Sans", ui-sans-serif, sans-serif;
     --text-base: 16px;
 }
 

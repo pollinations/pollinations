@@ -7,6 +7,12 @@ const originalFetch = globalThis.fetch;
 export type MockHandler = (request: Request) => Response | Promise<Response>;
 export type MockHandlerMap = { [hostname: string]: MockHandler };
 
+export type MockAPI<TState> = {
+    state: TState;
+    handlerMap: MockHandlerMap;
+    reset: () => void;
+};
+
 export function createHonoMockHandler(handler: Hono): MockHandler {
     return (request: Request) => {
         const url = new URL(request.url);

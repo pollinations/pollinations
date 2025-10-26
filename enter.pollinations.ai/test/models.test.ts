@@ -1,73 +1,69 @@
-import { isFreeService, ServiceId, getServices } from "@shared/registry/registry.ts";
+import { isFreeService, getTextServices } from "@shared/registry/registry.ts";
 import { SELF } from "cloudflare:test";
-import { batches } from "@/util";
 import { test } from "./fixtures.ts";
-import { afterEach, beforeEach, expect } from "vitest";
-import { setupFetchMock, teardownFetchMock } from "./mocks/fetch";
-import { createGithubMockHandlers } from "./mocks/github";
-import { createMockPolar } from "./mocks/polar";
+import { describe, beforeEach, expect } from "vitest";
 import { env } from "cloudflare:workers";
 
-const mockPolar = createMockPolar();
-
-const mockHandlers = {
-    ...createGithubMockHandlers(),
-    ...mockPolar.handlerMap,
+const anonymousTestCases = (allowAnoymous: boolean) => {
+    return getTextServices().map((serviceId) => [
+        serviceId,
+        isFreeService(serviceId) && allowAnoymous ? 200 : 401,
+    ]);
 };
 
-beforeEach(() => setupFetchMock(mockHandlers, { logRequests: true }));
-afterEach(() => teardownFetchMock());
-
-test("Only free services should be available without an API key", async () => {
-    const requests = getServices().map((service) => {
-        return {
-            service,
-            request: SELF.fetch(
-                `http://localhost:3000/api/generate/openai/chat/completions`,
-                {
-                    method: "POST",
-                    body: JSON.stringify({
-                        model: service,
-                        messages: [
-                            {
-                                role: "user",
-                                content: "Hello, whats going on today?",
-                            },
-                        ],
-                    }),
-                },
-            ),
-        };
-    });
-    for (const batch of batches(requests, 4)) {
-        const responses = await Promise.all(
-            batch.map(async ({ service, request }) => ({
-                service,
-                response: await request,
-            })),
+// Send a request to each text model without authentication
+// and makes sure that the response status is in line with
+// the value of ALLOW_ANONYMOUS_USAGE
+describe.for([true, false])(
+    "When ALLOW_ANONYMOUS_USAGE is %s",
+    (allowAnoymous) => {
+        beforeEach(() => {
+            env.ALLOW_ANONYMOUS_USAGE = allowAnoymous;
+        });
+        test.for(anonymousTestCases(allowAnoymous))(
+            "%s should respond %s when unauthenticated",
+            { timeout: 30000 },
+            async ([serviceId, expectedStatus]) => {
+                const response = await SELF.fetch(
+                    `http://localhost:3000/api/generate/openai`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "content-type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            model: serviceId,
+                            messages: [
+                                {
+                                    role: "user",
+                                    content: "Hello, whats going on today?",
+                                },
+                            ],
+                        }),
+                    },
+                );
+                expect(response.status).toBe(expectedStatus);
+            },
         );
-        for (const { service, response } of responses) {
-            if (isFreeService(service as ServiceId)) {
-                expect(response.status).toBe(200);
-            } else {
-                expect(response.status).toBe(401);
-            }
-        }
-    }
-}, 30000);
+    },
+);
 
-test("All services should be availabe with an API key", async ({ apiKey }) => {
-    const requests = getServices().map((service) => {
-        return SELF.fetch(
-            `http://localhost:3000/api/generate/openai/chat/completions`,
+// Send a request to each text model, using the x-api-key header
+test.for(getTextServices())(
+    "%s should respond with 200 when x-api-key header",
+    { timeout: 30000 },
+    async (serviceId, { apiKey }) => {
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/openai`,
             {
                 method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${apiKey}`,
+                    "content-type": "application/json",
+                    "x-api-key": apiKey,
                     "referer": env.TESTING_REFERRER,
                 },
                 body: JSON.stringify({
-                    model: service,
+                    model: serviceId,
                     messages: [
                         {
                             role: "user",
@@ -77,11 +73,35 @@ test("All services should be availabe with an API key", async ({ apiKey }) => {
                 }),
             },
         );
-    });
-    for (const batch of batches(requests, 4)) {
-        const responses = await Promise.all(batch);
-        for (const response of responses) {
-            expect(response.status).toBe(200);
-        }
-    }
-}, 30000);
+        expect(response.status).toBe(200);
+    },
+);
+
+// Sends a request to each text model, using bearer auth
+test.for(getTextServices())(
+    "%s should respond with 200 when using authorization header",
+    { timeout: 30000 },
+    async (serviceId, { apiKey }) => {
+        const response = await SELF.fetch(
+            `http://localhost:3000/api/generate/openai`,
+            {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": `Bearer ${apiKey}`,
+                    "referer": env.TESTING_REFERRER,
+                },
+                body: JSON.stringify({
+                    model: serviceId,
+                    messages: [
+                        {
+                            role: "user",
+                            content: "Hello, whats going on today?",
+                        },
+                    ],
+                }),
+            },
+        );
+        expect(response.status).toBe(200);
+    },
+);

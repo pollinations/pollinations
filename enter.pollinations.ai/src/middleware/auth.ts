@@ -42,14 +42,11 @@ type AuthResult = {
     apiKey?: ApiKey;
 };
 
+/** Extracts Bearer token from Authorization header (RFC 6750) */
 function extractApiKey(headers: Headers): string | null {
-    if (headers.has("x-api-key")) {
-        return headers.get("x-api-key");
-    }
-    if (headers.has("authorization")) {
-        return headers.get("authorization")!.split(" ")[1] || null;
-    }
-    return null;
+    const auth = headers.get("authorization");
+    const match = auth?.match(/^Bearer (.+)$/);
+    return match?.[1] || null;
 }
 
 export const auth = (options: AuthOptions) =>

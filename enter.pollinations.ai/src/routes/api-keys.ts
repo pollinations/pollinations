@@ -2,13 +2,13 @@ import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
 import * as schema from "../db/schema/better-auth.ts";
-import { authenticateSession } from "@/middleware/authenticate.ts";
+import { auth } from "@/middleware/auth.ts";
 import type { Env } from "../env.ts";
 
 export const apiKeysRoutes = new Hono<Env>()
-    .use("*", authenticateSession)
+    .use("*", auth({ allowSessionCookie: true, allowApiKey: false }))
     .get("/list", async (c) => {
-        const { user } = c.var.auth.requireAuth();
+        const user = c.var.auth.requireUser();
         
         const db = drizzle(c.env.DB);
         const apiKeys = await db

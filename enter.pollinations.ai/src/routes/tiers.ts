@@ -5,18 +5,20 @@ import { polar } from "../middleware/polar.ts";
 import { describeRoute } from "hono-openapi";
 import { validator } from "../middleware/validator.ts";
 import type { Env } from "../env.ts";
-import { nanoid } from "nanoid";
 import { z } from "zod";
 
 type TierStatus = "none" | "seed" | "flower" | "nectar";
 type ActivatableTier = "seed" | "flower" | "nectar";
 
-// Polar product IDs for each tier
-const TIER_PRODUCT_IDS: Record<ActivatableTier, string> = {
-    seed: "0137d2e0-c770-4277-ad53-91e892bf3dc9",
-    flower: "dbe5a6a7-33f3-449e-9e43-e8c5f9887d7e",
-    nectar: "5a275643-18a4-4941-86a4-c16c2226740c",
-};
+// Get Polar product IDs from environment
+function getTierProductId(env: Cloudflare.Env, tier: ActivatableTier): string {
+    const key = `POLAR_PRODUCT_ID_${tier.toUpperCase()}`;
+    const productId = env[key as keyof Cloudflare.Env];
+    if (!productId) {
+        throw new Error(`Missing environment variable: ${key}`);
+    }
+    return productId as string;
+}
 
 interface TierViewModel {
     status: TierStatus;
@@ -83,12 +85,9 @@ export const tiersRoutes = new Hono<Env>()
                 });
             }
 
-            // Generate nonce for intent verification
-            const nonce = nanoid();
-            
             // Create Polar checkout session
             const polar = c.var.polar.client;
-            const productId = TIER_PRODUCT_IDS[target_tier];
+            const productId = getTierProductId(c.env, target_tier);
             
             try {
                 const checkout = await polar.checkouts.create({
@@ -97,21 +96,8 @@ export const tiersRoutes = new Hono<Env>()
                     products: [productId],
                     metadata: {
                         target_tier,
-                        nonce,
                     },
                 });
-
-                // Store intent in KV (TTL: 10 minutes)
-                const intent = {
-                    target_tier,
-                    nonce,
-                    created_at: Date.now(),
-                };
-                await c.env.KV.put(
-                    `tier_intent:${user.id}`,
-                    JSON.stringify(intent),
-                    { expirationTtl: 600 }, // 10 minutes
-                );
 
                 // Update rate limit counter
                 await c.env.KV.put(rateLimitKey, String(parseInt(currentCount || "0") + 1), {

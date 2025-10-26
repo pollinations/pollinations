@@ -239,6 +239,7 @@ const imageGen = async ({
             requestId,
             wasTransformedForBadDomain,
             userInfo,
+            req,
         );
 
         progress.updateBar(requestId, 50, "Generation", "Starting generation");

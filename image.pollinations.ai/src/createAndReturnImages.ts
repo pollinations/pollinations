@@ -813,6 +813,7 @@ const generateImage = async (
     progress: ProgressManager,
     requestId: string,
     userInfo: AuthResult,
+    req?: any,
 ): Promise<ImageGenerationResult> => {
     // Model selection strategy using a more functional approach
     
@@ -839,7 +840,9 @@ const generateImage = async (
         }
 
         // Restrict GPT Image model to users with seed tier or higher
-        if (!hasSufficientTier(userInfo.tier, "seed")) {
+        // NOTE: Skip tier check for enter.pollinations.ai requests
+        const fromEnter = req.headers?.['x-enter-token'] === process.env.ENTER_TOKEN;
+        if (!fromEnter && !hasSufficientTier(userInfo.tier, "seed")) {
             const errorText =
                 "Access to gptimage (gpt-image-1-mini) is currently limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai for tier upgrade information.";
             logError(errorText);
@@ -1266,6 +1269,7 @@ export async function createAndReturnImageCached(
     requestId: string,
     wasTransformedForBadDomain: boolean = false,
     userInfo: AuthResult,
+    req?: any,
 ): Promise<ImageGenerationResult> {
     try {
         // Update generation progress
@@ -1279,6 +1283,7 @@ export async function createAndReturnImageCached(
             progress,
             requestId,
             userInfo,
+            req,
         );
         progress.updateBar(requestId, 70, "Generation", "API call complete");
         progress.updateBar(requestId, 75, "Processing", "Checking safety...");

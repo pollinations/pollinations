@@ -188,8 +188,9 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponses(400, 401, 500),
             },
         }),
-        async () => {
-            return await proxy("https://image.pollinations.ai/models");
+        async (c) => {
+            const imageServiceUrl = c.env.IMAGE_SERVICE_URL || "https://image.pollinations.ai";
+            return await proxy(`${imageServiceUrl}/models`);
         },
     )
     .get(
@@ -213,15 +214,16 @@ export const proxyRoutes = new Hono<Env>()
             await authorizeRequest(c.var, {
                 allowAnonymous: c.env.ALLOW_ANONYMOUS_USAGE,
             });
+            const imageServiceUrl = c.env.IMAGE_SERVICE_URL || "https://image.pollinations.ai";
             const targetUrl = proxyUrl(
                 c,
-                "https://image.pollinations.ai/prompt",
+                `${imageServiceUrl}/prompt`,
             );
             targetUrl.pathname = joinPaths(
                 targetUrl.pathname,
                 c.req.param("prompt"),
             );
-            const response = await proxy(targetUrl, {
+            const response = await proxy(targetUrl.toString(), {
                 ...c.req,
                 headers: {
                     ...proxyHeaders(c),
@@ -277,7 +279,10 @@ function proxyUrl(
 ): URL {
     const incomingUrl = new URL(c.req.url);
     const targetUrl = new URL(targetBaseUrl);
-    targetUrl.port = targetPort;
+    // Only override port if explicitly provided
+    if (targetPort) {
+        targetUrl.port = targetPort;
+    }
     targetUrl.search = incomingUrl.search;
     return targetUrl;
 }

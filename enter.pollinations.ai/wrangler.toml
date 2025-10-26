@@ -31,6 +31,7 @@ ALLOW_ANONYMOUS_USAGE = false
 POLAR_SUCCESS_URL = "http://localhost:3000"
 POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
+IMAGE_SERVICE_URL = "http://localhost:16384"
 
 
 [[env.staging.routes]]

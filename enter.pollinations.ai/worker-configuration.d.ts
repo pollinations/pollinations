@@ -12,6 +12,7 @@ declare namespace Cloudflare {
 		POLAR_SUCCESS_URL: "http://localhost:3000" | "https://enter.pollinations.ai";
 		POLAR_SERVER: "sandbox" | "production";
 		TINYBIRD_INGEST_URL: "http://localhost:7181/v0/events?name=generation_event" | "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event";
+		IMAGE_SERVICE_URL?: string;
 		BETTER_AUTH_SECRET: string;
 		POLAR_ACCESS_TOKEN: string;
 		GITHUB_CLIENT_ID: string;

@@ -13,8 +13,8 @@ export const apiKeysRoutes = new Hono<Env>()
         const db = drizzle(c.env.DB);
         const apiKeys = await db
             .select()
-            .from(schema.apiKey)
-            .where(eq(schema.apiKey.userId, user.id));
+            .from(schema.apikey)
+            .where(eq(schema.apikey.userId, user.id));
         
         return c.json(apiKeys);
     });

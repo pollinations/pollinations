@@ -9,6 +9,7 @@ import {
     ServiceId,
     ModelId
 } from "@shared/registry/registry.ts";
+import { parseUsageHeaders } from "@shared/registry/usage-headers.ts";
 import {
     ModelUsage,
     OpenAIResponse,
@@ -91,6 +92,8 @@ export const track = (eventType: EventType) =>
                     openaiResponse,
                 );
                 
+                log.info("📊 [COST DEBUG] Model usage extracted: {modelUsage}", { modelUsage });
+                
                 // Validate model ID exists in registry before calculating cost
                 if (!getModelDefinition(modelUsage.model as ModelId)) {
                     throw new Error(
@@ -106,6 +109,8 @@ export const track = (eventType: EventType) =>
                     resolvedModelRequested as ServiceId,
                     modelUsage.usage,
                 );
+                
+                log.info("💰 [COST DEBUG] Cost calculated - cost: {cost}, price: {price}", { cost, price });
             } else {
                 log.info(
                     "Response was served from {cacheType} cache, skipping cost/price calculation",
@@ -187,22 +192,19 @@ function extractUsage(
     response?: OpenAIResponse,
 ): ModelUsage {
     if (eventType === "generate.image") {
-        // Read actual token count from x-completion-image-tokens header
-        const tokenCountHeader = c.res.headers.get("x-completion-image-tokens");
-        const completionImageTokens = tokenCountHeader 
-            ? parseInt(tokenCountHeader, 10) 
-            : 1;
+        // Use type-safe header parsing from shared utilities
+        const usage = parseUsageHeaders(c.res.headers);
         
         // Read actual model used from x-model-used header
         const modelUsedHeader = c.res.headers.get("x-model-used");
         const model = (modelUsedHeader || modelRequested || "flux") as ModelId;
         
+        c.get("log").info("🔍 [COST DEBUG] Image usage parsed - model: {model}, usage: {usage}", 
+            { model, usage });
+        
         return {
             model,
-            usage: {
-                unit: "TOKENS",
-                completionImageTokens,
-            },
+            usage,
         };
     }
     if (response) {

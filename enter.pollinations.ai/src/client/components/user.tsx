@@ -44,7 +44,7 @@ export const User: FC<UserProps> = ({
                         className="px-4 py-2 text-sm text-amber-900 hover:bg-amber-300 cursor-pointer flex items-center border-b-1 border-amber-300"
                         onClick={onUserPortal}
                     >
-                        Portal
+                        Billing
                     </Menu.Item>
                     <Menu.Item
                         value="sign-out"

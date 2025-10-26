@@ -115,9 +115,6 @@ function RouteComponent() {
     return (
         <div className="flex flex-col gap-20">
             <Header>
-                <Button as="a" href="/api/docs" weight="outline">
-                    API Docs →
-                </Button>
                 <User
                     githubUsername={user.githubUsername}
                     githubAvatarUrl={user.image || ""}
@@ -126,6 +123,9 @@ function RouteComponent() {
                         window.location.href = "/api/polar/customer/portal";
                     }}
                 />
+                <Button as="a" href="/api/docs" color="purple" weight="light">
+                    API Docs
+                </Button>
             </Header>
             <div className="flex flex-col gap-2">
                 <div className="flex flex-col sm:flex-row justify-between gap-3">
@@ -143,13 +143,16 @@ function RouteComponent() {
                     <div className="flex flex-col sm:flex-row justify-between gap-3">
                         <h2 className="font-bold flex-1">Tier</h2>
                         {tierData.status !== "none" && (
-                            <Button
-                                onClick={handleActivateTier}
-                                disabled={isActivating}
-                                weight="outline"
-                            >
-                                {isActivating ? "Activating..." : "Activate Tier"}
-                            </Button>
+                            <div className="flex gap-3">
+                                <Button
+                                    onClick={handleActivateTier}
+                                    disabled={isActivating}
+                                    color="green"
+                                    weight="light"
+                                >
+                                    {isActivating ? "Activating..." : "Activate Tier"}
+                                </Button>
+                            </div>
                         )}
                     </div>
                     <TierPanel

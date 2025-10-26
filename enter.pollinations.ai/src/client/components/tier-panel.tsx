@@ -104,7 +104,7 @@ const TierScreen: FC<{ tier: keyof typeof TIER_CONFIG; countdown: string }> = ({
                         {config.name}
                     </span>
                     <span className={`inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm ${config.badgeColors}`}>
-                        +{config.pollen} pollen
+                        {config.pollen} pollen/day
                     </span>
                 </div>
 

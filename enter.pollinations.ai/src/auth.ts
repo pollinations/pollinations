@@ -42,6 +42,7 @@ export function createAuth(env: Cloudflare.Env) {
             return null;
         },
         // Custom key generator to support pk_ (frontend) and sk_ (server) prefixes
+        // Note: prefix will be added in the database hook based on metadata
         customKeyGenerator: (options: { length: number; prefix: string | undefined }) => {
             const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
             const keyLength = options.length || 32;
@@ -51,10 +52,10 @@ export function createAuth(env: Cloudflare.Env) {
             for (let i = 0; i < keyLength; i++) {
                 key += chars[randomValues[i] % chars.length];
             }
-            // Use prefix from metadata if provided, otherwise default to sk_
-            const prefix = options.prefix || "sk_";
-            return `${prefix}${key}`;
+            // Return key without prefix - will be added in database hook
+            return key;
         },
+        defaultKeyLength: 32,
     });
 
     const adminPlugin = admin({
@@ -224,19 +225,31 @@ function apiKeyHooksPlugin(): BetterAuthPlugin {
                     apiKey: {
                         create: {
                             before: async (apiKey: any) => {
+                                const keyType = apiKey.metadata?.keyType || "server";
+                                const prefix = keyType === "frontend" ? "pk_" : "sk_";
+                                const keyWithPrefix = `${prefix}${apiKey.key}`;
+                                
                                 // Store plaintext key in metadata for frontend keys before hashing
-                                if (apiKey.metadata?.keyType === "frontend") {
+                                if (keyType === "frontend") {
                                     return {
                                         data: {
                                             ...apiKey,
+                                            key: keyWithPrefix, // Add prefix
                                             metadata: {
                                                 ...apiKey.metadata,
-                                                plaintextKey: apiKey.key, // Capture before hashing
+                                                plaintextKey: keyWithPrefix, // Capture before hashing
                                             },
                                         },
                                     };
                                 }
-                                return { data: apiKey };
+                                
+                                // Server keys: just add prefix
+                                return {
+                                    data: {
+                                        ...apiKey,
+                                        key: keyWithPrefix,
+                                    },
+                                };
                             },
                         },
                     },

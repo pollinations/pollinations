@@ -788,14 +788,5 @@ export const creativeProjects = [
     repo: "https://huggingface.co/spaces/umint/image/tree/main",
     submissionDate: "2025-09-23",
     order: 1
-  },
-  {
-    name: "🎭 Opposite Prompt Generator",
-    url: "https://opposite-prompt-generator.pollinations.ai",
-    description: "A fun and creative AI web app that transforms any image prompt into its semantic opposite — flipping key attributes like age, gender, style, mood, setting, and subject matter — and then generates the corresponding image using the Pollinations API. Built with React and Tailwind CSS.",
-    author: "@Ank17_Developer",
-    repo: "https://github.com/pollinations/pollinations/tree/master/hacktoberfest-2025/opposite-prompt-generator",
-    submissionDate: "2025-10-26",
-    order: 1
   }
 ];

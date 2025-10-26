@@ -229,6 +229,9 @@ const imageGen = async ({
         // Create user info object for passing to generation functions
         const userInfo = authResult;
 
+        // Check if request is from enter.pollinations.ai
+        const fromEnter = isEnterRequest(req);
+
         // Pass the complete user info object instead of individual properties
         const { buffer, ...maturity } = await createAndReturnImageCached(
             generationPrompt,
@@ -239,6 +242,7 @@ const imageGen = async ({
             requestId,
             wasTransformedForBadDomain,
             userInfo,
+            fromEnter,
         );
 
         progress.updateBar(requestId, 50, "Generation", "Starting generation");

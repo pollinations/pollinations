@@ -1,7 +1,7 @@
 import { Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import { cors } from "hono/cors";
-import { authenticate } from "@/middleware/authenticate";
+import { authenticateAPI } from "@/middleware/authenticate";
 import { polar } from "@/middleware/polar.ts";
 import type { Env } from "../env.ts";
 import { track, type TrackVariables } from "@/middleware/track.ts";
@@ -80,7 +80,7 @@ export const proxyRoutes = new Hono<Env>()
             });
         },
     )
-    .use(authenticate)
+    .use(authenticateAPI)
     .use(polar)
     .use(alias({ "/openai/chat/completions": "/openai" }))
     .post(
@@ -188,8 +188,9 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponses(400, 401, 500),
             },
         }),
-        async () => {
-            return await proxy("https://image.pollinations.ai/models");
+        async (c) => {
+            const imageServiceUrl = c.env.IMAGE_SERVICE_URL || "https://image.pollinations.ai";
+            return await proxy(`${imageServiceUrl}/models`);
         },
     )
     .get(
@@ -213,15 +214,16 @@ export const proxyRoutes = new Hono<Env>()
             await authorizeRequest(c.var, {
                 allowAnonymous: c.env.ALLOW_ANONYMOUS_USAGE,
             });
+            const imageServiceUrl = c.env.IMAGE_SERVICE_URL || "https://image.pollinations.ai";
             const targetUrl = proxyUrl(
                 c,
-                "https://image.pollinations.ai/prompt",
+                `${imageServiceUrl}/prompt`,
             );
             targetUrl.pathname = joinPaths(
                 targetUrl.pathname,
                 c.req.param("prompt"),
             );
-            const response = await proxy(targetUrl, {
+            const response = await proxy(targetUrl.toString(), {
                 ...c.req,
                 headers: {
                     ...proxyHeaders(c),
@@ -238,9 +240,9 @@ async function authorizeRequest(
 ) {
     if (track.isFreeUsage) {
         if (!options.allowAnonymous)
-            auth.requireActiveSession("Anonymous usage is currently disabled.");
+            auth.requireAuth("Anonymous usage is currently disabled.");
     } else {
-        const { user } = auth.requireActiveSession(
+        const { user } = auth.requireAuth(
             "You need to be signed-in to use this model.",
         );
         await polar.requirePositiveBalance(user.id);
@@ -277,7 +279,10 @@ function proxyUrl(
 ): URL {
     const incomingUrl = new URL(c.req.url);
     const targetUrl = new URL(targetBaseUrl);
-    targetUrl.port = targetPort;
+    // Only override port if explicitly provided
+    if (targetPort) {
+        targetUrl.port = targetPort;
+    }
     targetUrl.search = incomingUrl.search;
     return targetUrl;
 }

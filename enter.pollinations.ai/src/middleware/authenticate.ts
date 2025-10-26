@@ -10,6 +10,7 @@ export type AuthVariables = {
         client: ReturnType<typeof createAuth>;
         session?: Session["session"];
         user?: Session["user"];
+        keyType?: "frontend" | "server";
         requireAuth: (message?: string) => {
             user: Session["user"];
             session?: Session["session"];
@@ -72,11 +73,13 @@ export const authenticateAPI = createMiddleware<AuthEnv>(async (c, next) => {
     const apiKey = extractApiKey(authHeader);
 
     let user: Session["user"] | undefined;
+    let keyType: "frontend" | "server" | undefined;
 
     if (apiKey) {
         const result = await verifyApiKeyAndGetUser(client, c.env, apiKey);
         if (result.valid) {
             user = result.user;
+            keyType = result.keyType;
         }
     }
 
@@ -99,6 +102,7 @@ export const authenticateAPI = createMiddleware<AuthEnv>(async (c, next) => {
         client,
         session: undefined,
         user,
+        keyType,
         requireAuth,
         requireActiveSession,
     });

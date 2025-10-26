@@ -41,6 +41,20 @@ export function createAuth(env: Cloudflare.Env) {
             }
             return null;
         },
+        // Custom key generator to support pk_ (frontend) and sk_ (server) prefixes
+        customKeyGenerator: (options: { length: number; prefix: string | undefined }) => {
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            const keyLength = options.length || 32;
+            let key = "";
+            const randomValues = new Uint8Array(keyLength);
+            crypto.getRandomValues(randomValues);
+            for (let i = 0; i < keyLength; i++) {
+                key += chars[randomValues[i] % chars.length];
+            }
+            // Use prefix from metadata if provided, otherwise default to sk_
+            const prefix = options.prefix || "sk_";
+            return `${prefix}${key}`;
+        },
     });
 
     const adminPlugin = admin({
@@ -84,7 +98,7 @@ export function createAuth(env: Cloudflare.Env) {
                 }),
             },
         },
-        plugins: [adminPlugin, apiKeyPlugin, polarPlugin(polar), openAPIPlugin],
+        plugins: [adminPlugin, apiKeyPlugin, polarPlugin(polar), apiKeyHooksPlugin(), openAPIPlugin],
         telemetry: { enabled: false },
     });
 }
@@ -199,4 +213,35 @@ function onUserUpdate(polar: Polar) {
             );
         }
     };
+}
+
+function apiKeyHooksPlugin(): BetterAuthPlugin {
+    return {
+        id: "api-key-hooks",
+        init: () => ({
+            options: {
+                databaseHooks: {
+                    apiKey: {
+                        create: {
+                            before: async (apiKey: any) => {
+                                // Store plaintext key in metadata for frontend keys before hashing
+                                if (apiKey.metadata?.keyType === "frontend") {
+                                    return {
+                                        data: {
+                                            ...apiKey,
+                                            metadata: {
+                                                ...apiKey.metadata,
+                                                plaintextKey: apiKey.key, // Capture before hashing
+                                            },
+                                        },
+                                    };
+                                }
+                                return { data: apiKey };
+                            },
+                        },
+                    },
+                } as any, // Type assertion needed - Better Auth types don't include apiKey hooks yet
+            } as Partial<BetterAuthOptions>,
+        }),
+    } satisfies BetterAuthPlugin;
 }

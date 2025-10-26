@@ -3,8 +3,8 @@
 ## Overview
 
 The Pollinations.AI API supports multiple authentication methods:
-- **Bearer Token (Server-to-Server)** - Recommended for backend applications
-- **Front-End Keys** - For client-side applications (limited features)
+- **Server Keys (🔒)** - For backend applications with full access to all models
+- **Frontend Keys (🌐)** - For client-side applications with access to all models (IP-based rate limiting)
 - **Anonymous Access** - No authentication required for free models
 
 ## Creating an API Key
@@ -13,18 +13,18 @@ The Pollinations.AI API supports multiple authentication methods:
 2. Navigate to your dashboard
 3. Click "Create API Key"
 4. Choose your key type:
-   - **Server-to-Server**: For backend services (full access)
-   - **Front-End**: For browser/mobile apps (limited to free models currently)
-5. Copy your API key immediately - it won't be shown again!
+   - **🔒 Server Key**: For backend services (never expose publicly, can spend Pollen on premium models)
+   - **🌐 Frontend Key**: For browser/mobile apps (safe to expose, access to all models with IP-based rate limiting)
+5. Copy your API key immediately:
+   - **Frontend keys**: Always visible in your dashboard (starts with `pk_`)
+   - **Server keys**: Only shown once during creation (starts with `sk_`)
 
 ## Using Your API Key
 
-### Server-to-Server Authentication
-
-Include your API key in the `Authorization` header as a Bearer token:
+Both frontend and server keys use the same authentication method - include your API key in the `Authorization` header as a Bearer token:
 
 ```bash
-curl -X POST https://enter.pollinations.ai/api/generate/openai \
+curl -X POST https://enter.pollinations.ai/openai \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -33,6 +33,30 @@ curl -X POST https://enter.pollinations.ai/api/generate/openai \
       {"role": "user", "content": "Hello, world!"}
     ]
   }'
+```
+
+### Frontend Key Example (React)
+
+```javascript
+// ✅ Safe to use in client-side code
+const FRONTEND_API_KEY = "pk_your_frontend_key_here";
+
+const response = await fetch("https://enter.pollinations.ai/openai", {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${FRONTEND_API_KEY}`,
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    model: "openai",
+    messages: [
+      { role: "user", content: "Hello from React!" }
+    ]
+  })
+});
+
+const data = await response.json();
+console.log(data);
 ```
 
 ### Python Example
@@ -93,27 +117,30 @@ curl https://enter.pollinations.ai/api/generate/image/a-beautiful-sunset \
 
 ## Key Types Comparison
 
-| Feature | Anonymous | Front-End Key | Server-to-Server Key |
-|---------|-----------|---------------|---------------------|
-| Free Models | ✅ Standard limits | ✅ Better limits | ✅ Best limits |
-| Premium Models | ❌ | ❌ (coming soon) | ✅ |
-| Spend Pollen | ❌ | ❌ (coming soon) | ✅ |
-| Rate Limits | Standard | Better | Best |
+| Feature | Anonymous | Frontend Key (🌐) | Server Key (🔒) |
+|---------|-----------|-------------------|-----------------|
+| All Models | ✅ Free only | ✅ All models | ✅ All models |
+| Spend Pollen | ❌ | ❌ | ✅ |
+| Rate Limiting | IP-based | IP-based (100 req/min) | User-based (best) |
+| Safe to Expose | ✅ | ✅ | ❌ Never |
+| Key Visibility | N/A | Always visible | One-time only |
+| Key Prefix | N/A | `pk_` | `sk_` |
 | Use Case | Testing | Client apps | Production backends |
 
 ## Rate Limits
 
-Rate limits vary by authentication method and user tier:
-- **Anonymous**: Standard rate limits
-- **Front-End Keys**: Improved rate limits for free models
-- **Server-to-Server Keys**: Best rate limits, configurable based on your tier
+Rate limits vary by authentication method:
+- **Anonymous**: IP-based rate limiting
+- **Frontend Keys**: IP-based rate limiting (100 requests/minute per IP)
+- **Server Keys**: User-based rate limiting (best limits, configurable based on your tier)
 
 ## Pollen Balance
 
-Server-to-Server keys can spend Pollen (prepaid credits) on premium models:
+Server keys can spend Pollen (prepaid credits) on premium models:
 - **$1 ≈ 1 Pollen**
 - Premium models deduct Pollen per request
 - Free models never cost Pollen
+- Frontend keys **cannot** spend Pollen (all models are free for frontend keys)
 - Check your balance at [enter.pollinations.ai](https://enter.pollinations.ai)
 
 ## Security Best Practices

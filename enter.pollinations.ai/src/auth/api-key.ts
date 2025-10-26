@@ -6,6 +6,7 @@ import type { Auth, Session } from "../auth.ts";
 export interface ApiKeyAuthResult {
     valid: boolean;
     user?: Session["user"];
+    keyType?: "frontend" | "server";
     error?: string;
 }
 
@@ -48,9 +49,13 @@ export async function verifyApiKeyAndGetUser(
         };
     }
 
+    // Extract key type from metadata
+    const keyType = (result.key.metadata as any)?.keyType as "frontend" | "server" | undefined;
+
     return {
         valid: true,
         user: users[0] as Session["user"],
+        keyType: keyType || "server", // Default to server if not specified
     };
 }
 

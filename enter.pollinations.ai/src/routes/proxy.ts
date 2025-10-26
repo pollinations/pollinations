@@ -238,6 +238,14 @@ async function authorizeRequest(
     { auth, polar, track }: AuthVariables & PolarVariables & TrackVariables,
     options: { allowAnonymous: boolean },
 ) {
+    // Frontend keys: Allow all models without Pollen balance check
+    // IP-based rate limiting is handled by Better Auth's built-in rate limiter
+    if (auth.keyType === "frontend") {
+        auth.requireAuth("Frontend API key required.");
+        return; // Skip Pollen balance check for frontend keys
+    }
+
+    // Server keys and session auth: Original logic
     if (track.isFreeUsage) {
         if (!options.allowAnonymous)
             auth.requireAuth("Anonymous usage is currently disabled.");

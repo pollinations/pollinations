@@ -62,10 +62,15 @@ function RouteComponent() {
     };
 
     const handleCreateApiKey = async (formState: CreateApiKey) => {
+        const keyType = formState.keyType || "server";
+        const prefix = keyType === "frontend" ? "pk_" : "sk_";
+        
         const createKeyDate = {
             name: formState.name,
+            prefix, // Pass prefix for custom key generation
             metadata: {
                 description: formState.description,
+                keyType, // Store key type in metadata
             },
         };
         const result = await auth.apiKey.create(createKeyDate);

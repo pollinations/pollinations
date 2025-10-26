@@ -31,6 +31,35 @@ const Cell: FC<React.ComponentProps<"div">> = ({ children, ...props }) => {
     );
 };
 
+const KeyDisplay: FC<{ fullKey: string }> = ({ fullKey }) => {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(fullKey);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error("Failed to copy:", err);
+        }
+    };
+
+    return (
+        <div className="flex items-center gap-2">
+            <span className="font-mono text-xs truncate max-w-[200px]" title={fullKey}>
+                {fullKey}
+            </span>
+            <button
+                type="button"
+                onClick={handleCopy}
+                className="px-2 py-1 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 rounded"
+            >
+                {copied ? "✓" : "Copy"}
+            </button>
+        </div>
+    );
+};
+
 export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     apiKeys,
     onCreate,
@@ -60,33 +89,56 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 </div>
                 {apiKeys.length ? (
                     <div className="bg-emerald-100 rounded-2xl p-8 border border-pink-300 overflow-x-auto scrollbar-hide">
-                        <div className="grid grid-cols-[1fr_1fr_1fr_1fr_60px] gap-2 min-w-[600px]">
+                        <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr_60px] gap-2 min-w-[700px]">
+                            <span className="font-bold text-pink-400 mb-2">Type</span>
                             <span className="font-bold text-pink-400 mb-2">Name</span>
                             <span className="font-bold text-pink-400 mb-2">Description</span>
-                            <span className="font-bold text-pink-400 mb-2">Start</span>
+                            <span className="font-bold text-pink-400 mb-2">Key</span>
                             <span className="font-bold text-pink-400 mb-2">Created</span>
                             <span className="mb-2"></span>
-                            {apiKeys.map((apiKey) => (
-                                <Fragment key={apiKey.id}>
-                                    <Cell>{apiKey.name}</Cell>
-                                    <Cell>
-                                        {apiKey.metadata?.["description"] || "—"}
-                                    </Cell>
-                                    <Cell>{apiKey.start}</Cell>
-                                    <Cell>
-                                        {formatRelative(apiKey.createdAt, new Date())}
-                                    </Cell>
-                                    <Button
-                                        type="button"
-                                        size="small"
-                                        weight="light"
-                                        className="justify-self-center bg-red-50 text-red-700 hover:bg-red-100"
-                                        onClick={() => setDeleteId(apiKey.id)}
-                                    >
-                                        Delete
-                                    </Button>
-                                </Fragment>
-                            ))}
+                            {apiKeys.map((apiKey) => {
+                                const keyType = apiKey.metadata?.["keyType"] as string | undefined;
+                                const isFrontend = keyType === "frontend";
+                                const plaintextKey = apiKey.metadata?.["plaintextKey"] as string | undefined;
+                                
+                                return (
+                                    <Fragment key={apiKey.id}>
+                                        <Cell>
+                                            <span className={cn(
+                                                "px-2 py-1 rounded text-xs font-medium",
+                                                isFrontend 
+                                                    ? "bg-blue-100 text-blue-700" 
+                                                    : "bg-purple-100 text-purple-700"
+                                            )}>
+                                                {isFrontend ? "🌐 Frontend" : "🔒 Server"}
+                                            </span>
+                                        </Cell>
+                                        <Cell>{apiKey.name}</Cell>
+                                        <Cell>
+                                            {apiKey.metadata?.["description"] || "—"}
+                                        </Cell>
+                                        <Cell>
+                                            {isFrontend && plaintextKey ? (
+                                                <KeyDisplay fullKey={plaintextKey} />
+                                            ) : (
+                                                <span className="font-mono text-xs">{apiKey.start}</span>
+                                            )}
+                                        </Cell>
+                                        <Cell>
+                                            {formatRelative(apiKey.createdAt, new Date())}
+                                        </Cell>
+                                        <Button
+                                            type="button"
+                                            size="small"
+                                            weight="light"
+                                            className="justify-self-center bg-red-50 text-red-700 hover:bg-red-100"
+                                            onClick={() => setDeleteId(apiKey.id)}
+                                        >
+                                            Delete
+                                        </Button>
+                                    </Fragment>
+                                );
+                            })}
                         </div>
                     </div>
                 ) : null}
@@ -128,6 +180,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
 export type CreateApiKey = {
     name: string;
     description?: string;
+    keyType?: "frontend" | "server";
 };
 
 export type CreateApiKeyResponse = ApiKey & {
@@ -152,6 +205,47 @@ const CreateKeyForm: FC<{
 }> = ({ formData, onInputChange, onSubmit, onCancel, isSubmitting }) => {
     return (
         <form onSubmit={onSubmit} className="space-y-4">
+            <Field.Root>
+                <Field.Label className="block text-sm font-medium mb-2">
+                    Key Type (*)
+                </Field.Label>
+                <div className="space-y-2">
+                    <label className="flex items-start gap-2 cursor-pointer">
+                        <input
+                            type="radio"
+                            name="keyType"
+                            value="frontend"
+                            checked={formData.keyType === "frontend"}
+                            onChange={(e) => onInputChange("keyType", e.target.value)}
+                            className="mt-1"
+                            disabled={isSubmitting}
+                        />
+                        <div className="flex-1">
+                            <div className="font-medium">🌐 Frontend Key</div>
+                            <div className="text-xs text-gray-600">
+                                For client-side apps (React, Vue, etc.). Visible in browser. Access to all models with IP-based rate limiting (100 req/min).
+                            </div>
+                        </div>
+                    </label>
+                    <label className="flex items-start gap-2 cursor-pointer">
+                        <input
+                            type="radio"
+                            name="keyType"
+                            value="server"
+                            checked={formData.keyType === "server"}
+                            onChange={(e) => onInputChange("keyType", e.target.value)}
+                            className="mt-1"
+                            disabled={isSubmitting}
+                        />
+                        <div className="flex-1">
+                            <div className="font-medium">🔒 Server Key</div>
+                            <div className="text-xs text-gray-600">
+                                For server-to-server apps. Never expose publicly. Best rate limits and can spend Pollen on premium models.
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </Field.Root>
             <Field.Root>
                 <Field.Label className="block text-sm font-medium mb-1">
                     Name (*)
@@ -290,6 +384,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const [formData, setFormData] = useState<CreateApiKey>({
         name: "",
         description: "",
+        keyType: "server", // Default to server key
     });
     const [currentStep, setCurrentStep] = useState(0);
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
@@ -330,7 +425,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const resetForm = () => {
         setCurrentStep(0);
         setCreatedKey(null);
-        setFormData({ name: "", description: "" });
+        setFormData({ name: "", description: "", keyType: "server" });
     };
 
     useEffect(() => {

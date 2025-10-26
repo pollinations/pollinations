@@ -7,7 +7,6 @@ import { processEvents } from "./events.ts";
 import { polarRoutes } from "./routes/polar.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
-import { webhookRoutes } from "./routes/webhook.ts";
 import { requestId } from "hono/request-id";
 import { logger } from "./middleware/logger.ts";
 import { getLogger } from "@logtape/logtape";
@@ -24,7 +23,6 @@ const api = new Hono<Env>()
     .route("/auth", authRoutes)
     .route("/polar", polarRoutes)
     .route("/tiers", tiersRoutes)
-    .route("/webhook", webhookRoutes)
     .route("/generate", proxyRoutes);
 
 const app = new Hono<Env>()

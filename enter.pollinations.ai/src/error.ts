@@ -218,7 +218,7 @@ export type ErrorStatusCode = (typeof KNOWN_ERROR_STATUS_CODES)[number];
 export function getDefaultErrorMessage(status: number): string {
     const messages: Record<number, string> = {
         400: "Something was wrong with the input data.",
-        401: "You need to authenticate by providing a session cookie or x-api-key header.",
+        401: "You need to authenticate by providing a session cookie or Authorization header (Bearer token).",
         403: "Access denied! You don't have the required permissions.",
         404: "Oh no, there's nothing here.",
         405: "That HTTP method isn't supported here. Please check the API docs.",

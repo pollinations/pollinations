@@ -48,9 +48,9 @@ describe.for([true, false])(
     },
 );
 
-// Send a request to each text model, using the x-api-key header
+// Send a request to each text model, using the Authorization Bearer header
 test.for(getTextServices())(
-    "%s should respond with 200 when x-api-key header",
+    "%s should respond with 200 when using API key via Bearer token",
     { timeout: 30000 },
     async (serviceId, { apiKey }) => {
         const response = await SELF.fetch(
@@ -59,7 +59,7 @@ test.for(getTextServices())(
                 method: "POST",
                 headers: {
                     "content-type": "application/json",
-                    "x-api-key": apiKey,
+                    "authorization": `Bearer ${apiKey}`,
                     "referer": env.TESTING_REFERRER,
                 },
                 body: JSON.stringify({

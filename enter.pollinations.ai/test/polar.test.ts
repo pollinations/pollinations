@@ -19,13 +19,6 @@ test.for(routes)(
             method: "GET",
         });
         expect(anonymousResponse.status).toBe(401);
-        const apiKeyResponse = await SELF.fetch(`${base}${route}`, {
-            method: "GET",
-            headers: {
-                "x-api-key": sessionToken,
-            },
-        });
-        expect(apiKeyResponse.status).toBe(401);
         const sessionCookieResponse = await SELF.fetch(`${base}${route}`, {
             method: "GET",
             headers: {

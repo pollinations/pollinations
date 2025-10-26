@@ -5,6 +5,7 @@ import { fileTypeFromBuffer } from "file-type";
 // Import shared authentication utilities
 import sharp from "sharp";
 import { hasSufficientTier } from "../../shared/tier-gating.js";
+import { isEnterRequest } from "../../shared/auth-utils.js";
 import {
     fetchFromLeastBusyFluxServer,
     getNextTurboServerUrl,
@@ -813,7 +814,7 @@ const generateImage = async (
     progress: ProgressManager,
     requestId: string,
     userInfo: AuthResult,
-    req?: any,
+    fromEnter: boolean,
 ): Promise<ImageGenerationResult> => {
     // Model selection strategy using a more functional approach
     
@@ -841,7 +842,6 @@ const generateImage = async (
 
         // Restrict GPT Image model to users with seed tier or higher
         // NOTE: Skip tier check for enter.pollinations.ai requests
-        const fromEnter = req.headers?.['x-enter-token'] === process.env.ENTER_TOKEN;
         if (!fromEnter && !hasSufficientTier(userInfo.tier, "seed")) {
             const errorText =
                 "Access to gptimage (gpt-image-1-mini) is currently limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai for tier upgrade information.";
@@ -1258,6 +1258,7 @@ const processImageBuffer = async (
  * @param {string} requestId - Request ID for progress tracking.
  * @param {boolean} wasTransformedForBadDomain - Flag indicating if the prompt was transformed due to bad domain.
  * @param {Object} userInfo - Complete user authentication info object with authenticated, userId, tier, etc.
+ * @param {boolean} fromEnter - Whether the request is from enter.pollinations.ai (bypasses tier checks).
  * @returns {Promise<{buffer: Buffer, isChild: boolean, isMature: boolean}>}
  */
 export async function createAndReturnImageCached(
@@ -1269,7 +1270,7 @@ export async function createAndReturnImageCached(
     requestId: string,
     wasTransformedForBadDomain: boolean = false,
     userInfo: AuthResult,
-    req?: any,
+    fromEnter: boolean,
 ): Promise<ImageGenerationResult> {
     try {
         // Update generation progress
@@ -1283,7 +1284,7 @@ export async function createAndReturnImageCached(
             progress,
             requestId,
             userInfo,
-            req,
+            fromEnter,
         );
         progress.updateBar(requestId, 70, "Generation", "API call complete");
         progress.updateBar(requestId, 75, "Processing", "Checking safety...");

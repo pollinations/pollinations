@@ -16,7 +16,37 @@ export const apiKeysRoutes = new Hono<Env>()
             .from(schema.apikey)
             .where(eq(schema.apikey.userId, user.id));
         
-        return c.json(apiKeys);
+        console.log('[API KEYS LIST] Raw from DB:', JSON.stringify(apiKeys.map(k => ({
+            id: k.id,
+            name: k.name,
+            metadata: k.metadata,
+            metadataType: typeof k.metadata
+        })), null, 2));
+        
+        // Parse metadata - it's double-stringified, so parse twice
+        const keysWithParsedMetadata = apiKeys.map(key => {
+            if (!key.metadata) return { ...key, metadata: null };
+            
+            let parsed = key.metadata;
+            // Parse once
+            if (typeof parsed === 'string') {
+                parsed = JSON.parse(parsed);
+            }
+            // Parse again if still a string (double-stringified)
+            if (typeof parsed === 'string') {
+                parsed = JSON.parse(parsed);
+            }
+            
+            return { ...key, metadata: parsed };
+        });
+        
+        console.log('[API KEYS LIST] After parsing:', JSON.stringify(keysWithParsedMetadata.map(k => ({
+            id: k.id,
+            name: k.name,
+            metadata: k.metadata
+        })), null, 2));
+        
+        return c.json(keysWithParsedMetadata);
     });
 
 export type ApiKeysRoutes = typeof apiKeysRoutes;

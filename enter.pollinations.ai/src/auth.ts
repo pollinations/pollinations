@@ -99,7 +99,7 @@ export function createAuth(env: Cloudflare.Env) {
                 }),
             },
         },
-        plugins: [adminPlugin, apiKeyPlugin, polarPlugin(polar), apiKeyHooksPlugin(), openAPIPlugin],
+        plugins: [adminPlugin, apiKeyPlugin, polarPlugin(polar), openAPIPlugin],
         telemetry: { enabled: false },
     });
 }
@@ -216,45 +216,3 @@ function onUserUpdate(polar: Polar) {
     };
 }
 
-function apiKeyHooksPlugin(): BetterAuthPlugin {
-    return {
-        id: "api-key-hooks",
-        init: () => ({
-            options: {
-                databaseHooks: {
-                    apiKey: {
-                        create: {
-                            before: async (apiKey: any) => {
-                                const keyType = apiKey.metadata?.keyType || "server";
-                                const prefix = keyType === "frontend" ? "pk_" : "sk_";
-                                const keyWithPrefix = `${prefix}${apiKey.key}`;
-                                
-                                // Store plaintext key in metadata for frontend keys before hashing
-                                if (keyType === "frontend") {
-                                    return {
-                                        data: {
-                                            ...apiKey,
-                                            key: keyWithPrefix, // Add prefix
-                                            metadata: {
-                                                ...apiKey.metadata,
-                                                plaintextKey: keyWithPrefix, // Capture before hashing
-                                            },
-                                        },
-                                    };
-                                }
-                                
-                                // Server keys: just add prefix
-                                return {
-                                    data: {
-                                        ...apiKey,
-                                        key: keyWithPrefix,
-                                    },
-                                };
-                            },
-                        },
-                    },
-                } as any, // Type assertion needed - Better Auth types don't include apiKey hooks yet
-            } as Partial<BetterAuthOptions>,
-        }),
-    } satisfies BetterAuthPlugin;
-}

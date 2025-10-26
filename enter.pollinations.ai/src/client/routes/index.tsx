@@ -22,7 +22,6 @@ export const Route = createFileRoute("/")({
         if (!context.user) throw redirect({ to: "/sign-in" });
         const honoPolar = hc<PolarRoutes>("/api/polar");
         const honoTiers = hc<TiersRoutes>("/api/tiers");
-        const honoApiKeys = hc<any>("/api/api-keys");
         
         const stateResult = await honoPolar.customer.state.$get();
         const customer = stateResult.ok ? await stateResult.json() : null;
@@ -30,7 +29,8 @@ export const Route = createFileRoute("/")({
         const tiersResult = await honoTiers.view.$get();
         const tierData = tiersResult.ok ? await tiersResult.json() : null;
         
-        // Use custom endpoint to get API keys with metadata
+        // Use custom endpoint to get API keys with metadata (Better Auth's list() doesn't return metadata)
+        const honoApiKeys = hc<any>("/api/api-keys");
         const apiKeysResult = await honoApiKeys.list.$get();
         const apiKeys = apiKeysResult.ok ? await apiKeysResult.json() : [];
 
@@ -70,7 +70,7 @@ function RouteComponent() {
             name: formState.name,
             metadata: {
                 description: formState.description,
-                keyType, // Store key type in metadata - used by customKeyGenerator
+                keyType,
             },
         };
         const result = await auth.apiKey.create(createKeyData);
@@ -78,6 +78,19 @@ function RouteComponent() {
             // TODO: handle it
             console.error(result.error);
         }
+        
+        // For frontend keys, store the plaintext key in description for easy retrieval
+        if (keyType === "frontend" && result.data) {
+            const apiKey = result.data as CreateApiKeyResponse;
+            await auth.apiKey.update({
+                keyId: apiKey.id,
+                metadata: {
+                    description: apiKey.key, // Store plaintext key in description
+                    keyType,
+                },
+            });
+        }
+        
         router.invalidate();
         return result.data as CreateApiKeyResponse;
     };

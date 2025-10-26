@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/util.ts";
 import { Button } from "../components/button.tsx";
 import { Fragment } from "react";
+import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator';
 
 type ApiKey = {
     id: string;
@@ -89,17 +90,17 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 </div>
                 {apiKeys.length ? (
                     <div className="bg-emerald-100 rounded-2xl p-8 border border-pink-300 overflow-x-auto scrollbar-hide">
-                        <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr_60px] gap-2 min-w-[700px]">
-                            <span className="font-bold text-pink-400 mb-2">Type</span>
-                            <span className="font-bold text-pink-400 mb-2">Name</span>
-                            <span className="font-bold text-pink-400 mb-2">Description</span>
-                            <span className="font-bold text-pink-400 mb-2">Key</span>
-                            <span className="font-bold text-pink-400 mb-2">Created</span>
-                            <span className="mb-2"></span>
+                        <div className="grid grid-cols-[100px_200px_1fr_120px_150px_80px] gap-x-4 gap-y-4 min-w-[900px]">
+                            <span className="font-bold text-pink-400 text-sm">Type</span>
+                            <span className="font-bold text-pink-400 text-sm">Name</span>
+                            <span className="font-bold text-pink-400 text-sm">Description / Key</span>
+                            <span className="font-bold text-pink-400 text-sm">Preview</span>
+                            <span className="font-bold text-pink-400 text-sm">Created</span>
+                            <span></span>
                             {apiKeys.map((apiKey) => {
                                 const keyType = apiKey.metadata?.["keyType"] as string | undefined;
                                 const isFrontend = keyType === "frontend";
-                                const plaintextKey = apiKey.metadata?.["plaintextKey"] as string | undefined;
+                                const description = apiKey.metadata?.["description"] as string | undefined;
                                 
                                 return (
                                     <Fragment key={apiKey.id}>
@@ -113,19 +114,23 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                 {isFrontend ? "🌐 Frontend" : "🔒 Server"}
                                             </span>
                                         </Cell>
-                                        <Cell>{apiKey.name}</Cell>
                                         <Cell>
-                                            {apiKey.metadata?.["description"] || "—"}
+                                            <span className="font-medium truncate block" title={apiKey.name}>{apiKey.name}</span>
                                         </Cell>
                                         <Cell>
-                                            {isFrontend && plaintextKey ? (
-                                                <KeyDisplay fullKey={plaintextKey} />
+                                            {isFrontend && description ? (
+                                                <KeyDisplay fullKey={description} />
                                             ) : (
-                                                <span className="font-mono text-xs">{apiKey.start}</span>
+                                                <span className="text-sm text-gray-600">{description || "—"}</span>
                                             )}
                                         </Cell>
                                         <Cell>
-                                            {formatRelative(apiKey.createdAt, new Date())}
+                                            <span className="font-mono text-xs text-gray-500">{apiKey.start}</span>
+                                        </Cell>
+                                        <Cell>
+                                            <span className="text-sm text-gray-600 whitespace-nowrap">
+                                                {formatRelative(apiKey.createdAt, new Date())}
+                                            </span>
                                         </Cell>
                                         <Button
                                             type="button"
@@ -210,14 +215,19 @@ const CreateKeyForm: FC<{
                     Key Type (*)
                 </Field.Label>
                 <div className="space-y-2">
-                    <label className="flex items-start gap-2 cursor-pointer">
+                    <label className={cn(
+                        "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
+                        formData.keyType === "frontend" 
+                            ? "border-blue-500 bg-blue-50" 
+                            : "border-gray-200 hover:border-gray-300"
+                    )}>
                         <input
                             type="radio"
                             name="keyType"
                             value="frontend"
                             checked={formData.keyType === "frontend"}
                             onChange={(e) => onInputChange("keyType", e.target.value)}
-                            className="mt-1"
+                            className="mt-1 w-4 h-4 text-blue-600"
                             disabled={isSubmitting}
                         />
                         <div className="flex-1">
@@ -227,14 +237,19 @@ const CreateKeyForm: FC<{
                             </div>
                         </div>
                     </label>
-                    <label className="flex items-start gap-2 cursor-pointer">
+                    <label className={cn(
+                        "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
+                        formData.keyType === "server" 
+                            ? "border-purple-500 bg-purple-50" 
+                            : "border-gray-200 hover:border-gray-300"
+                    )}>
                         <input
                             type="radio"
                             name="keyType"
                             value="server"
                             checked={formData.keyType === "server"}
                             onChange={(e) => onInputChange("keyType", e.target.value)}
-                            className="mt-1"
+                            className="mt-1 w-4 h-4 text-purple-600"
                             disabled={isSubmitting}
                         />
                         <div className="flex-1">
@@ -265,7 +280,7 @@ const CreateKeyForm: FC<{
             </Field.Root>
             <Field.Root>
                 <Field.Label className="block text-sm font-medium mb-1">
-                    Description
+                    Description {formData.keyType === 'frontend' && <span className="text-xs text-gray-500">(disabled for frontend keys)</span>}
                 </Field.Label>
                 <Field.Textarea
                     value={formData.description || ""}
@@ -275,10 +290,11 @@ const CreateKeyForm: FC<{
                     className={cn(
                         "w-full px-3 py-2 border border-gray-300 rounded",
                         "focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none",
+                        formData.keyType === 'frontend' && "bg-gray-100 cursor-not-allowed"
                     )}
-                    placeholder="Enter description (optional)"
+                    placeholder={formData.keyType === 'frontend' ? "Reserved for key" : "Enter description (optional)"}
                     rows={2}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || formData.keyType === 'frontend'}
                 />
             </Field.Root>
             <div className="flex gap-2 justify-end pt-4">
@@ -412,9 +428,19 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     onSubmit,
     onComplete,
 }) => {
+    // Generate a fun default name
+    const generateFunName = () => {
+        return uniqueNamesGenerator({
+            dictionaries: [adjectives, colors, animals],
+            separator: '-',
+            length: 3,
+            style: 'lowerCase'
+        });
+    };
+
     const [formData, setFormData] = useState<CreateApiKey>({
-        name: "",
-        description: "",
+        name: "backend-" + generateFunName(),
+        description: `Created on ${new Date().toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: '2-digit' })}`,
         keyType: "server", // Default to server key
     });
     const [currentStep, setCurrentStep] = useState(0);
@@ -429,6 +455,21 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         value: string | string[],
     ) => {
         const updatedData = { ...formData, [field]: value };
+        
+        // When key type changes, regenerate name with appropriate prefix
+        if (field === 'keyType') {
+            const prefix = value === 'frontend' ? 'frontend-' : 'backend-';
+            const baseName = generateFunName();
+            updatedData.name = prefix + baseName;
+            
+            // Clear description for frontend keys, set default for backend
+            if (value === 'frontend') {
+                updatedData.description = '';
+            } else {
+                updatedData.description = `Created on ${new Date().toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: '2-digit' })}`;
+            }
+        }
+        
         setFormData(updatedData);
         onUpdate(updatedData);
     };
@@ -456,7 +497,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const resetForm = () => {
         setCurrentStep(0);
         setCreatedKey(null);
-        setFormData({ name: "", description: "", keyType: "server" });
+        setFormData({ name: "backend-" + generateFunName(), description: "", keyType: "server" });
     };
 
     useEffect(() => {

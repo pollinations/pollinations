@@ -1,7 +1,7 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
-import { getServices } from "../../../shared/registry/registry.ts";
+import { getTextServices } from "../../../shared/registry/registry.ts";
 
 const FunctionParametersSchema = z.record(z.string(), z.any());
 
@@ -177,8 +177,8 @@ const ThinkingSchema = z
     .optional();
 
 export const CreateChatCompletionRequestSchema = z.object({
-    messages: z.array(ChatCompletionRequestMessageSchema).min(1),
-    model: z.enum(getServices()),
+    messages: z.array(ChatCompletionRequestMessageSchema),
+    model: z.enum(getTextServices()).optional(),
     frequency_penalty: z
         .number()
         .min(-2)
@@ -276,25 +276,35 @@ const ChatCompletionChoiceLogprobsSchema = z
     })
     .nullable();
 
-const CompletionUsageSchema = z.object({
+export const CompletionUsageSchema = z.object({
     completion_tokens: z.number().int().nonnegative(),
     completion_tokens_details: z
         .object({
-            accepted_prediction_tokens: z.number().int().nonnegative(),
-            audio_tokens: z.number().int().nonnegative(),
-            reasoning_tokens: z.number().int().nonnegative(),
-            rejected_prediction_tokens: z.number().int().nonnegative(),
+            accepted_prediction_tokens: z
+                .number()
+                .int()
+                .nonnegative()
+                .optional(),
+            audio_tokens: z.number().int().nonnegative().optional(),
+            reasoning_tokens: z.number().int().nonnegative().optional(),
+            rejected_prediction_tokens: z
+                .number()
+                .int()
+                .nonnegative()
+                .optional(),
         })
         .optional(),
     prompt_tokens: z.number().int().nonnegative(),
     prompt_tokens_details: z
         .object({
-            audio_tokens: z.number().int().nonnegative(),
+            audio_tokens: z.number().int().nonnegative().optional(),
             cached_tokens: z.number().int().nonnegative(),
         })
         .optional(),
     total_tokens: z.number().int().nonnegative(),
 });
+
+export type CompletionUsage = z.infer<typeof CompletionUsageSchema>;
 
 const ContentFilterSeveritySchema = z.enum(["safe", "low", "medium", "high"]);
 

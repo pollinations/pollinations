@@ -96,7 +96,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             <span className="font-bold text-pink-400 text-sm">Description / Key</span>
                             <span className="font-bold text-pink-400 text-sm">Preview</span>
                             <span className="font-bold text-pink-400 text-sm">Created</span>
-                            <span></span>
+                            <span className="font-bold text-pink-400 text-sm text-center">Delete</span>
                             {apiKeys.map((apiKey) => {
                                 const keyType = apiKey.metadata?.["keyType"] as string | undefined;
                                 const isFrontend = keyType === "frontend";
@@ -132,15 +132,14 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                                 {formatRelative(apiKey.createdAt, new Date())}
                                             </span>
                                         </Cell>
-                                        <Button
+                                        <button
                                             type="button"
-                                            size="small"
-                                            weight="light"
-                                            className="justify-self-center bg-red-50 text-red-700 hover:bg-red-100"
+                                            className="justify-self-center w-8 h-8 flex items-center justify-center rounded hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors text-xl font-light"
                                             onClick={() => setDeleteId(apiKey.id)}
+                                            title="Delete key"
                                         >
-                                            Delete
-                                        </Button>
+                                            ×
+                                        </button>
                                     </Fragment>
                                 );
                             })}

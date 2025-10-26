@@ -144,7 +144,6 @@ Body: messages*, model (set to "openai-audio"), voice (optional)
    - Update API docs for new endpoints
    - Add JSDoc comments for new functions
    - Update README.md for user-facing changes
-   - Keep this .mentat/README.md up to date with new features, functionality, or important project maintenance information
    - **Avoid creating markdown documentation files while working** unless explicitly requested
    - If temporary files are needed for testing/debugging, create them in a `temp/` folder clearly labeled as temporary
 

@@ -328,3 +328,5 @@ gateway/
 # Secret files
 .secrets
 .github/act-secrets.env
+
+.secrets

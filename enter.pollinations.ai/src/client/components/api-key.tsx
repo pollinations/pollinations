@@ -48,13 +48,15 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     return (
         <>
             <div className="flex flex-col gap-2">
-                <div className="flex gap-2 justify-between">
-                    <h2>API Keys</h2>
-                    <ApiKeyDialog
-                        onSubmit={onCreate}
-                        onUpdate={(state) => console.log(state)}
-                        onComplete={() => console.log("Dialog completed")}
-                    />
+                <div className="flex flex-col sm:flex-row justify-between gap-3">
+                    <h2 className="font-bold flex-1">API Keys</h2>
+                    <div className="flex gap-3">
+                        <ApiKeyDialog
+                            onSubmit={onCreate}
+                            onUpdate={(state) => console.log(state)}
+                            onComplete={() => console.log("Dialog completed")}
+                        />
+                    </div>
                 </div>
                 {apiKeys.length ? (
                     <div className="bg-emerald-100 rounded-2xl p-8 border border-pink-300 overflow-x-auto scrollbar-hide">

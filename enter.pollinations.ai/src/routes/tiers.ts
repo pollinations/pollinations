@@ -85,15 +85,6 @@ export const tiersRoutes = new Hono<Env>()
                 });
             }
 
-            // Check rate limit (simple: 3 per hour per user)
-            const rateLimitKey = `tier_activate_rate:${user.id}`;
-            const currentCount = await c.env.KV.get(rateLimitKey);
-            if (currentCount && parseInt(currentCount) >= 3) {
-                throw new HTTPException(429, {
-                    message: "Rate limit exceeded. Try again later.",
-                });
-            }
-
             // Create Polar checkout session
             const polar = c.var.polar.client;
             const productId = getTierProductId(c.env, target_tier);
@@ -106,11 +97,6 @@ export const tiersRoutes = new Hono<Env>()
                     metadata: {
                         target_tier,
                     },
-                });
-
-                // Update rate limit counter
-                await c.env.KV.put(rateLimitKey, String(parseInt(currentCount || "0") + 1), {
-                    expirationTtl: 3600, // 1 hour
                 });
 
                 return c.json({ checkout_url: checkout.url });

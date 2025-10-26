@@ -308,6 +308,8 @@ const ShowKeyResult: FC<{
     onComplete: () => void;
 }> = ({ createdKey, onComplete }) => {
     const [copied, setCopied] = useState(false);
+    const keyType = createdKey.metadata?.["keyType"] as string | undefined;
+    const isFrontend = keyType === "frontend";
 
     const handleCopy = async () => {
         try {
@@ -321,19 +323,48 @@ const ShowKeyResult: FC<{
 
     return (
         <div className="space-y-4">
-            <div className="bg-amber-100 border-2 border-amber-300 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-amber-800">
-                    Security Guide
+            <div className={cn(
+                "border-2 rounded-lg p-4",
+                isFrontend 
+                    ? "bg-blue-100 border-blue-300" 
+                    : "bg-amber-100 border-amber-300"
+            )}>
+                <h3 className={cn(
+                    "text-sm font-medium",
+                    isFrontend ? "text-blue-800" : "text-amber-800"
+                )}>
+                    {isFrontend ? "🌐 Frontend Key Created" : "🔒 Server Key Created"}
                 </h3>
-                <ul className="mt-2 text-sm text-amber-800 list-disc pl-3">
-                    <li className="font-bold text-amber-900">
-                        This is the only time you'll see your API key. <br />{" "}
-                        Please copy it now and store it securely.
-                    </li>
-                    <li>
-                        Treat API keys like passwords, never share them
-                        publicly.
-                    </li>
+                <ul className={cn(
+                    "mt-2 text-sm list-disc pl-3",
+                    isFrontend ? "text-blue-800" : "text-amber-800"
+                )}>
+                    {isFrontend ? (
+                        <>
+                            <li className="font-bold">
+                                This key is always visible in your dashboard.
+                            </li>
+                            <li>
+                                Safe to use in client-side code (React, Vue, etc.)
+                            </li>
+                            <li>
+                                Access to all models with IP-based rate limiting
+                            </li>
+                        </>
+                    ) : (
+                        <>
+                            <li className="font-bold text-amber-900">
+                                This is the only time you'll see your API key. <br />
+                                Please copy it now and store it securely.
+                            </li>
+                            <li>
+                                Never expose server keys in client-side code
+                            </li>
+                            <li>
+                                Can spend Pollen on premium models
+                            </li>
+                        </>
+                    )}
                 </ul>
             </div>
 

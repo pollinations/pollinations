@@ -37,5 +37,11 @@
     "buildCommand": "npm run build",
     "outputDir": "dist",
     "description": "Virtual makeup studio with AI (React + Vite)"
+  },
+  "opposite-prompt-generator": {
+    "subdomain": "opposite-prompt-generator",
+    "buildCommand": "npm run build",
+    "outputDir": "dist",
+    "description": "Transform prompts into semantic opposites and generate images (React + Vite)"
   }
 }

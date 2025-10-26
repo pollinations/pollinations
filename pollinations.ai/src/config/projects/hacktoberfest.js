@@ -89,4 +89,13 @@ export const hacktoberfestProjects = [
     submissionDate: "2025-10-09",
     order: 2
   },
+  {
+    name: "🎭 Opposite Prompt Generator",
+    url: "https://opposite-prompt-generator.pollinations.ai",
+    description: "Transform any image prompt into its semantic opposite — flipping key attributes like age, gender, style, mood, setting, and subject matter — then generate the corresponding image. Built with React and Tailwind CSS.",
+    author: "@Ank17_Developer",
+    repo: "https://github.com/pollinations/pollinations/tree/master/hacktoberfest-2025/opposite-prompt-generator",
+    submissionDate: "2025-10-26",
+    order: 1
+  }
 ];

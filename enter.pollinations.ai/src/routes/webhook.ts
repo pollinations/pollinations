@@ -1,9 +1,6 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
-import { drizzle } from "drizzle-orm/d1";
-import { eq } from "drizzle-orm";
-import { user } from "../db/schema/better-auth.ts";
 
 export const webhookRoutes = new Hono<Env>().post("/polar", async (c) => {
     // Get webhook signature and timestamp
@@ -75,34 +72,25 @@ export const webhookRoutes = new Hono<Env>().post("/polar", async (c) => {
         throw new HTTPException(400, { message: "Invalid tier value" });
     }
 
-    // Update user tier in database
-    const db = drizzle(c.env.DB);
-    try {
-        await db
-            .update(user)
-            .set({ tier: targetTier })
-            .where(eq(user.id, externalCustomerId));
+    // Log subscription creation for monitoring
+    // Note: Tiers are managed manually by admins, not automatically via subscriptions
+    // Subscriptions grant pollen (via Polar meters), not tier access
+    console.log("Subscription created:", {
+        userId: externalCustomerId,
+        targetTier: targetTier,
+        subscriptionId: subscription.id,
+    });
 
-        return c.json({
-            received: true,
-            processed: true,
-            user_id: externalCustomerId,
-            tier: targetTier,
-        });
-    } catch (error) {
-        // Log error but don't cancel subscription - user paid for it!
-        // Manual intervention required to fix DB and sync with Polar
-        console.error("Failed to update user tier:", {
-            userId: externalCustomerId,
-            tier: targetTier,
-            subscriptionId: subscription.id,
-            error,
-        });
-        throw new HTTPException(500, {
-            message: "Failed to update user tier",
-            cause: error,
-        });
-    }
+    // Mark as processed to prevent duplicate handling
+    await c.env.KV.put(processedKey, "true", { expirationTtl: 86400 }); // 24 hours
+
+    return c.json({
+        received: true,
+        processed: true,
+        user_id: externalCustomerId,
+        subscription_id: subscription.id,
+        target_tier: targetTier,
+    });
 });
 
 async function verifyWebhookSignature(

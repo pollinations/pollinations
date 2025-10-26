@@ -76,6 +76,15 @@ export const tiersRoutes = new Hono<Env>()
             const { user } = c.var.auth.requireActiveSession();
             const { target_tier } = c.req.valid("json");
 
+            // Validate user has the required tier before allowing subscription
+            // Tiers are granted manually by admins, subscriptions only provide pollen
+            const userTier = getTierStatus(user.tier);
+            if (userTier !== target_tier) {
+                throw new HTTPException(403, {
+                    message: `You must have ${target_tier} tier to subscribe. Contact admin for tier upgrade.`,
+                });
+            }
+
             // Check rate limit (simple: 3 per hour per user)
             const rateLimitKey = `tier_activate_rate:${user.id}`;
             const currentCount = await c.env.KV.get(rateLimitKey);

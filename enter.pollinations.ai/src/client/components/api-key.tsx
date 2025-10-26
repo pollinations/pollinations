@@ -1,7 +1,7 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
 import { Steps } from "@ark-ui/react/steps";
-import { formatDistanceToNow, formatRelative } from "date-fns";
+import { formatDistanceToNowStrict, formatRelative } from "date-fns";
 import type { FC } from "react";
 import { useState, useEffect } from "react";
 import { cn } from "@/util.ts";
@@ -46,18 +46,19 @@ const KeyDisplay: FC<{ fullKey: string }> = ({ fullKey }) => {
     };
 
     return (
-        <div className="flex items-center gap-2">
-            <span className="font-mono text-xs truncate max-w-[200px]" title={fullKey}>
-                {fullKey}
-            </span>
-            <button
-                type="button"
-                onClick={handleCopy}
-                className="px-2 py-1 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 rounded"
-            >
-                {copied ? "✓" : "📋"}
-            </button>
-        </div>
+        <button
+            type="button"
+            onClick={handleCopy}
+            className={cn(
+                "font-mono text-xs truncate max-w-[150px] text-left cursor-pointer transition-all",
+                copied 
+                    ? "text-green-600 font-semibold" 
+                    : "text-blue-600 hover:text-blue-800 hover:underline"
+            )}
+            title={copied ? "Copied!" : "Click to copy"}
+        >
+            {copied ? "✓ Copied!" : fullKey}
+        </button>
     );
 };
 
@@ -67,6 +68,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     onDelete,
 }) => {
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    
+    // Sort by creation date, newest first
+    const sortedApiKeys = [...apiKeys].sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
 
     const handleDelete = async () => {
         if (deleteId) {
@@ -90,14 +96,13 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 </div>
                 {apiKeys.length ? (
                     <div className="bg-emerald-100 rounded-2xl p-8 border border-pink-300 overflow-x-auto">
-                        <div className="grid grid-cols-[100px_200px_1fr_120px_150px_80px] gap-x-4 gap-y-4 min-w-[900px]">
+                        <div className="grid grid-cols-[100px_200px_1fr_70px_40px] gap-x-4 gap-y-4 min-w-[630px]">
                             <span className="font-bold text-pink-400 text-sm">Type</span>
                             <span className="font-bold text-pink-400 text-sm">Name</span>
-                            <span className="font-bold text-pink-400 text-sm">Description / Key</span>
-                            <span className="font-bold text-pink-400 text-sm">Preview</span>
+                            <span className="font-bold text-pink-400 text-sm">Key</span>
                             <span className="font-bold text-pink-400 text-sm">Created</span>
-                            <span className="font-bold text-pink-400 text-sm text-center">Delete</span>
-                            {apiKeys.map((apiKey) => {
+                            <span></span>
+                            {sortedApiKeys.map((apiKey) => {
                                 const keyType = apiKey.metadata?.["keyType"] as string | undefined;
                                 const isFrontend = keyType === "frontend";
                                 const description = apiKey.metadata?.["description"] as string | undefined;
@@ -115,27 +120,24 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                             </span>
                                         </Cell>
                                         <Cell>
-                                            <span className="font-medium truncate block" title={apiKey.name}>{apiKey.name}</span>
+                                            <span className="text-xs truncate block" title={apiKey.name}>{apiKey.name}</span>
                                         </Cell>
                                         <Cell>
                                             {isFrontend && description ? (
                                                 <KeyDisplay fullKey={description} />
                                             ) : (
-                                                <span className="text-sm text-gray-600">{description || "—"}</span>
+                                                <span className="font-mono text-xs text-gray-500">{apiKey.start}...</span>
                                             )}
                                         </Cell>
                                         <Cell>
-                                            <span className="font-mono text-xs text-gray-500">{apiKey.start}</span>
-                                        </Cell>
-                                        <Cell>
-                                            <span className="text-sm text-gray-600 whitespace-nowrap">
-                                                {formatRelative(apiKey.createdAt, new Date())}
+                                            <span className="text-xs text-gray-600 whitespace-nowrap">
+                                                {formatDistanceToNowStrict(apiKey.createdAt, { addSuffix: false })}
                                             </span>
                                         </Cell>
                                         <Cell>
                                             <button
                                                 type="button"
-                                                className="w-8 h-8 flex items-center justify-center rounded hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors text-xl font-light"
+                                                className="w-6 h-6 flex items-center justify-center rounded hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors text-lg cursor-pointer"
                                                 onClick={() => setDeleteId(apiKey.id)}
                                                 title="Delete key"
                                             >
@@ -279,25 +281,6 @@ const CreateKeyForm: FC<{
                     disabled={isSubmitting}
                 />
             </Field.Root>
-            <Field.Root>
-                <Field.Label className="block text-sm font-medium mb-1">
-                    Description {formData.keyType === 'frontend' && <span className="text-xs text-gray-500">(disabled for frontend keys)</span>}
-                </Field.Label>
-                <Field.Textarea
-                    value={formData.description || ""}
-                    onChange={(e) =>
-                        onInputChange("description", e.target.value)
-                    }
-                    className={cn(
-                        "w-full px-3 py-2 border border-gray-300 rounded",
-                        "focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none",
-                        formData.keyType === 'frontend' && "bg-gray-100 cursor-not-allowed"
-                    )}
-                    placeholder={formData.keyType === 'frontend' ? "Reserved for key" : "Enter description (optional)"}
-                    rows={2}
-                    disabled={isSubmitting || formData.keyType === 'frontend'}
-                />
-            </Field.Root>
             <div className="flex gap-2 justify-end pt-4">
                 <Button
                     type="button"
@@ -417,7 +400,7 @@ const ShowKeyResult: FC<{
 
             <div className="flex justify-end pt-4">
                 <Button type="button" onClick={onComplete}>
-                    I've Saved My Key
+                    {isFrontend ? "Close" : "I've Saved My Key"}
                 </Button>
             </div>
         </div>

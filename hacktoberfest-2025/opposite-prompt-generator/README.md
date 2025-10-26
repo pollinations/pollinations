@@ -2,7 +2,7 @@
 
 A fun and creative AI web app that transforms any image prompt into its **semantic opposite** — flipping key attributes like **age, gender, style, mood, setting, and subject matter** — and then generates the corresponding image using the [Pollinations API](https://pollinations.ai/).
 
-**🌐 Live Demo:** [https://pollinations.github.io/pollinations/hacktoberfest-2025/opposite-prompt-generator/](https://pollinations.github.io/pollinations/hacktoberfest-2025/opposite-prompt-generator/)
+**🌐 Live Demo:** [https://opposite-prompt-generator.pollinations.ai](https://opposite-prompt-generator.pollinations.ai)
 
 ---
 

@@ -20,7 +20,7 @@ import { portkeyConfig, type ValidModelId } from "./configs/modelConfigs.js";
 
 // Import registry for validation and aliases
 import { TEXT_SERVICES } from "../shared/registry/text.js";
-import { resolveServiceId } from "../shared/registry/registry.js";
+import { resolveServiceId, getServiceAliases } from "../shared/registry/registry.js";
 
 // Type constraint: model names must exist in registry
 type ValidServiceName = keyof typeof TEXT_SERVICES;
@@ -79,7 +79,7 @@ const models: ModelDefinition[] = [
 		input_modalities: ["text", "image"],
 		output_modalities: ["text"],
 		tools: true,
-		maxInputChars: 10000,
+		maxInputChars: 30000,
 	},
 	{
 		name: "qwen-coder",
@@ -175,18 +175,16 @@ const models: ModelDefinition[] = [
 		output_modalities: ["text"],
 		tools: true
 	},
-	// {
-	// 	name: "claudyclaude",
-	// 	description: "Claude 3.5 Haiku",
-	// 	config: portkeyConfig["us.anthropic.claude-3-5-haiku-20241022-v1:0"],
-	// 	transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
-	// 	tier: "nectar",
-	// 	hidden: true,
-	// 	// community: false,
-	// 	input_modalities: ["text"],
-	// 	output_modalities: ["text"],
-	// 	tools: true
-	// },
+	{
+		name: "claudyclaude",
+		description: "Claude Haiku 4.5",
+		config: portkeyConfig["us.anthropic.claude-haiku-4-5-20251001-v1:0"],
+		transform: createSystemPromptTransform(BASE_PROMPTS.conversational),
+		tier: "flower",
+		input_modalities: ["text", "image"],
+		output_modalities: ["text"],
+		tools: true,
+	},
 	{
 		name: "openai-reasoning",
 		description: "OpenAI o4 Mini",
@@ -310,8 +308,7 @@ export const availableModels = models.map((model) => {
 	const outputs = model.output_modalities || [];
 	
 	// Get aliases from registry (single source of truth)
-	const serviceDefinition = TEXT_SERVICES[model.name];
-	const aliases = serviceDefinition?.aliases || [];
+	const aliases = getServiceAliases(model.name);
 
 	return {
 		...model,

@@ -5,6 +5,91 @@
 
 export const creativeProjects = [
   {
+    name: "SHICoPIC™ 🎨",
+    url: "https://shicopic.netlify.app",
+    description: "AI-powered creative image generation tool. Simple interface for creating images with Pollinations API.",
+    author: "@Shervinuri",
+    repo: "https://github.com/Shervinuri/SHICoPIC",
+    submissionDate: "2025-10-23",
+    order: 1
+  },
+    {
+    name: "Green Hope AI 🎨",
+    url: "https://aithumbnails.vercel.app/",
+    description: "Generate stunning thumbnails with AI, then take full control. Easily edit the text, position, styles, and effects without ever having to start over.",
+    author: "@mustafiz82",
+    submissionDate: "2025-17-25",
+    order: 1
+  },
+  {
+    name: "Green Hope AI 🎨",
+    url: "https://aithumbnails.vercel.app/",
+    description: "Generate stunning thumbnails with AI, then take full control. Easily edit the text, position, styles, and effects without ever having to start over.",
+    author: "@Mustafiz82",
+    submissionDate: "2025-10-16",
+    order: 1
+  },
+  {
+    name: "Pollinations AI Samples 🎨",
+    url: "https://pollinations.godsbee.com/",
+    description: "Comprehensive demonstration of Pollinations AI capabilities including creative generation, language & speech, and vision analysis. Showcases how developers can leverage APIs to build advanced AI features.",
+    author: "@nyr-github",
+    repo: "https://github.com/nyr-github/pollinations-demo",
+    submissionDate: "2025-10-16",
+    order: 1
+  },
+  {
+    name: "Inkly AI 🎨",
+    url: "https://inkly-ai.vercel.app/",
+    description: "Platform providing text-to-image and image-to-image generation with image gallery support and downloads. Simple interface for AI image generation with customizable settings.",
+    author: "@Auspicious14",
+    repo: "https://github.com/Auspicious14/image-generator-be",
+    submissionDate: "2025-10-04",
+    order: 1
+  },
+  {
+    name: "Craftura AI 🎨",
+    url: "https://www.craftura.art/",
+    description: "Freemium image generating SaaS where users can generate AI images via Pollinations API with customizable generator settings and various styling options.",
+    author: "@TusharSoni014",
+    submissionDate: "2025-10-03",
+    order: 1
+  },
+  {
+    name: "Green Hope AI 🎨",
+    url: "https://aithumbnails.vercel.app/",
+    description: "Generate stunning thumbnails with AI, then take full control. Easily edit the text, position, styles, and effects without ever having to start over.",
+    author: "@Mustafiz82",
+    submissionDate: "2025-10-16",
+    order: 1
+  },
+  {
+    name: "Pollinations AI Samples 🎨",
+    url: "https://pollinations.godsbee.com/",
+    description: "Comprehensive demonstration of Pollinations AI capabilities including creative generation, language & speech, and vision analysis. Showcases how developers can leverage APIs to build advanced AI features.",
+    author: "@nyr-github",
+    repo: "https://github.com/nyr-github/pollinations-demo",
+    submissionDate: "2025-10-16",
+    order: 1
+  },
+  {
+    name: "Inkly AI 🎨",
+    url: "https://inkly-ai.vercel.app/",
+    description: "Platform providing text-to-image and image-to-image generation with image gallery support and downloads. Simple interface for AI image generation with customizable settings.",
+    author: "@Auspicious14",
+    repo: "https://github.com/Auspicious14/image-generator-be",
+    submissionDate: "2025-10-04",
+    order: 1
+  },
+  {
+    name: "Craftura AI 🎨",
+    url: "https://www.craftura.art/",
+    description: "Freemium image generating SaaS where users can generate AI images via Pollinations API with customizable generator settings and various styling options.",
+    author: "@TusharSoni014",
+    submissionDate: "2025-10-03",
+    order: 1
+  },
+  {
     name: "AISTONE 🎨",
     url: "https://aistone.org/",
     description: "Based on advanced Pollinations.AI technology, supports FLUX, Turbo, Kontext for images, and OpenAI Audio TTS for voice. No registration required, permanently free, supports Chinese and English input, optimized for creators.",
@@ -21,6 +106,31 @@ export const creativeProjects = [
     repo: "https://github.com/PrisimAI/PrisimIG",
     submissionDate: "2025-10-07",
     order: 1
+  },
+  {
+    name: "FoilAI 🌨",
+    url: "https://foilai.in/",
+    description: "AI image generator in beta stage. Web-based text-to-image generator powered by Pollinations AI. Free and accessible without signup or API key, privacy-focused with no data storage. Simplified user-friendly interface for creating AI art.",
+    author: "@aryanshrai3",
+    submissionDate: "2025-10-20",
+    order: 2
+  },
+  {
+    name: "Scribe 📄",
+    url: "https://github.com/nadinev6/scribe",
+    description: "Feature-rich Markdown editor for content creators, developers, and writers. Supports three viewing modes (Rich Text, Markdown Source, Plain Text), AI-powered header image generation via Pollinations, multilingual AI proofreading with Gemini 2.0 Flash, and multi-platform export. Built with React, TypeScript, and Supabase.",
+    author: "@nadinev6",
+    repo: "https://github.com/nadinev6/scribe",
+    submissionDate: "2025-10-09",
+    order: 2
+  },
+  {
+    name: "AI Answers Forms 📝",
+    url: "https://chromewebstore.google.com/detail/fbiccefbjbnnieofnomocjdebppanndo",
+    description: "Chrome extension that helps get answers to questions on Google Forms using AI. Solves quizzes and forms with ChatGPT integration. Over 9k active users. Available on Chrome Web Store.",
+    author: "@Maniii97",
+    submissionDate: "2025-10-14",
+    order: 2
   },
   {
     name: "Imagine Draw AI 🎨",
@@ -378,6 +488,15 @@ export const creativeProjects = [
     submissionDate: "2025-05-02",
     order: 1
   },
+    {
+    "name": "FoilAI 🎨",
+    "url": "https://foilai.in/",
+    "description": "FoilAI is a web-based text-to-image AI generator in beta stage, allowing users to create art from text prompts. Powered by Pollinations AI, it offers a simplified, user-friendly interface for generating images. Free to use, privacy-focused, and continuously improving through user feedback.",
+    "author": "@aryanshrai3",
+    "submissionDate": "2025-10-21",
+    "order": 3
+},
+
   {
     name: "PollinateAI",
     url: "https://pollinateai.vercel.app",

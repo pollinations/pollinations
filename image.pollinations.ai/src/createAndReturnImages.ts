@@ -5,6 +5,7 @@ import { fileTypeFromBuffer } from "file-type";
 // Import shared authentication utilities
 import sharp from "sharp";
 import { hasSufficientTier } from "../../shared/tier-gating.js";
+import { isEnterRequest } from "../../shared/auth-utils.js";
 import {
     fetchFromLeastBusyFluxServer,
     getNextTurboServerUrl,
@@ -23,6 +24,10 @@ import type { TrackingData } from "./utils/trackingHeaders.ts";
 
 // Import GPT Image logging utilities
 import { logGptImageError, logGptImagePrompt } from "./utils/gptImageLogger.ts";
+// Import user stats tracker for violation logging
+import { userStatsTracker } from "./utils/userStatsTracker.ts";
+// Import violation ratio checker
+import { checkViolationRatio, recordGptImageRequest } from "./utils/violationRatioChecker.ts";
 // Import Vertex AI Gemini image generator
 import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
@@ -541,8 +546,14 @@ const callAzureGPTImageWithEndpoint = async (
     // Map safeParams to Azure API parameters
     const size = `${safeParams.width}x${safeParams.height}`;
 
-    // Force medium quality for gptimage to reduce costs
-    const quality = "medium";
+    // Allow nectar users to use high quality, others get medium quality to reduce costs
+    const quality = userInfo?.tier === "nectar" && safeParams.quality === "high" 
+        ? "high" 
+        : "medium";
+    
+    if (quality === "high") {
+        logCloudflare(`Nectar tier user - using high quality for gptimage`);
+    }
 
     // Set output format to png if model is gptimage, otherwise jpeg
     const outputFormat = "png";
@@ -738,6 +749,12 @@ const callAzureGPTImageWithEndpoint = async (
     // Convert base64 to buffer
     const imageBuffer = Buffer.from(data.data[0].b64_json, "base64");
 
+    // Extract token usage from Azure OpenAI response
+    // Azure returns usage in format: { prompt_tokens, completion_tokens, total_tokens }
+    const outputTokens = data.usage?.completion_tokens || data.usage?.total_tokens || 1;
+    
+    logCloudflare(`GPT Image token usage: ${outputTokens} output tokens`);
+
     // Azure doesn't provide content safety information directly, so we'll set defaults
     // In a production environment, you might want to use a separate content moderation service
     return {
@@ -747,8 +764,8 @@ const callAzureGPTImageWithEndpoint = async (
         trackingData: {
             actualModel: safeParams.model,
             usage: {
-                candidatesTokenCount: 1,
-                totalTokenCount: 1
+                candidatesTokenCount: outputTokens, // Use actual token count from API
+                totalTokenCount: outputTokens
             }
         }
     };
@@ -797,6 +814,7 @@ const generateImage = async (
     progress: ProgressManager,
     requestId: string,
     userInfo: AuthResult,
+    fromEnter: boolean,
 ): Promise<ImageGenerationResult> => {
     // Model selection strategy using a more functional approach
     
@@ -810,8 +828,21 @@ const generateImage = async (
                 : "No userInfo provided",
         );
 
+        // Record request and check violation ratio
+        const username = userInfo?.username;
+        recordGptImageRequest(username);
+        
+        const violationCheck = checkViolationRatio(username);
+        if (violationCheck.blocked) {
+            progress.updateBar(requestId, 35, "Auth", "User blocked");
+            const error: any = new Error(violationCheck.reason);
+            error.status = 403;
+            throw error;
+        }
+
         // Restrict GPT Image model to users with seed tier or higher
-        if (!hasSufficientTier(userInfo.tier, "seed")) {
+        // NOTE: Skip tier check for enter.pollinations.ai requests
+        if (!fromEnter && !hasSufficientTier(userInfo.tier, "seed")) {
             const errorText =
                 "Access to gptimage (gpt-image-1-mini) is currently limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai for tier upgrade information.";
             logError(errorText);
@@ -867,6 +898,10 @@ const generateImage = async (
                         error,
                         promptSafetyResult,
                     );
+                    
+                    // Track violation in user stats
+                    userStatsTracker.recordViolation(userInfo?.username);
+                    
                     throw error;
                 }
 
@@ -885,6 +920,9 @@ const generateImage = async (
                 );
 
                 await logGptImageError(prompt, safeParams, userInfo, error);
+                
+                // Track violation in user stats for generation failures
+                userStatsTracker.recordViolation(userInfo?.username);
 
                 progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
@@ -1220,6 +1258,7 @@ const processImageBuffer = async (
  * @param {string} requestId - Request ID for progress tracking.
  * @param {boolean} wasTransformedForBadDomain - Flag indicating if the prompt was transformed due to bad domain.
  * @param {Object} userInfo - Complete user authentication info object with authenticated, userId, tier, etc.
+ * @param {boolean} fromEnter - Whether the request is from enter.pollinations.ai (bypasses tier checks).
  * @returns {Promise<{buffer: Buffer, isChild: boolean, isMature: boolean}>}
  */
 export async function createAndReturnImageCached(
@@ -1231,6 +1270,7 @@ export async function createAndReturnImageCached(
     requestId: string,
     wasTransformedForBadDomain: boolean = false,
     userInfo: AuthResult,
+    fromEnter: boolean,
 ): Promise<ImageGenerationResult> {
     try {
         // Update generation progress
@@ -1244,6 +1284,7 @@ export async function createAndReturnImageCached(
             progress,
             requestId,
             userInfo,
+            fromEnter,
         );
         progress.updateBar(requestId, 70, "Generation", "API call complete");
         progress.updateBar(requestId, 75, "Processing", "Checking safety...");

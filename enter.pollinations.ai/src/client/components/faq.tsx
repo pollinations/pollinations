@@ -55,16 +55,18 @@ export const FAQ: FC = () => {
 
     return (
         <div className="flex flex-col gap-2">
-            <div className="flex gap-2 justify-between items-center">
-                <h2>FAQ</h2>
-                <a 
-                    href="https://github.com/pollinations/pollinations/blob/master/enter.pollinations.ai/POLLEN_FAQ.md"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-full px-[14px] pt-[4px] pb-[6px] border border-green-950 text-green-950 font-medium hover:bg-green-950 hover:text-green-100 transition-colors cursor-pointer"
-                >
-                    View on GitHub →
-                </a>
+            <div className="flex flex-col sm:flex-row justify-between gap-3">
+                <h2 className="font-bold flex-1">FAQ</h2>
+                <div className="flex gap-3">
+                    <a 
+                        href="https://github.com/pollinations/pollinations/blob/master/enter.pollinations.ai/POLLEN_FAQ.md"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-full px-[14px] pt-[4px] pb-[6px] bg-purple-200 text-purple-900 font-medium hover:bg-purple-300 transition-colors cursor-pointer"
+                    >
+                        View on GitHub
+                    </a>
+                </div>
             </div>
             <div className="bg-emerald-100 rounded-2xl p-8 border border-pink-300">
                 <div className="flex flex-col gap-4">

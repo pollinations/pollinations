@@ -1,6 +1,7 @@
 import { Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
-import { authenticate } from "@/middleware/authenticate";
+import { cors } from "hono/cors";
+import { authenticateAPI } from "@/middleware/authenticate";
 import { polar } from "@/middleware/polar.ts";
 import type { Env } from "../env.ts";
 import { track, type TrackVariables } from "@/middleware/track.ts";
@@ -48,6 +49,14 @@ function errorResponses(...codes: ErrorStatusCode[]) {
 }
 
 export const proxyRoutes = new Hono<Env>()
+    .use(
+        "*",
+        cors({
+            origin: "*",
+            allowHeaders: ["authorization", "content-type"],
+            allowMethods: ["GET", "POST", "OPTIONS"],
+        }),
+    )
     .get(
         "/openai/models",
         describeRoute({
@@ -71,7 +80,7 @@ export const proxyRoutes = new Hono<Env>()
             });
         },
     )
-    .use(authenticate)
+    .use(authenticateAPI)
     .use(polar)
     .use(alias({ "/openai/chat/completions": "/openai" }))
     .post(
@@ -81,7 +90,16 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "OpenAI compatible endpoint for text generation.",
                 "Also available under `/openai/chat/completions`.",
-            ].join(" "),
+                "",
+                "**Authentication (Server-to-Server Only):**",
+                "",
+                "Include your API key in the `Authorization` header as a Bearer token:",
+                "",
+                "`Authorization: Bearer YOUR_API_KEY`",
+                "",
+                "API keys can be created from your dashboard at enter.pollinations.ai.",
+                "Server-to-Server keys provide the best rate limits and access to spend Pollen on premium models.",
+            ].join("\n"),
             responses: {
                 200: {
                     description: "Success",
@@ -98,7 +116,9 @@ export const proxyRoutes = new Hono<Env>()
         }),
         validator("json", CreateChatCompletionRequestSchema),
         async (c) => {
-            await authorizeRequest(c.var);
+            await authorizeRequest(c.var, {
+                allowAnonymous: c.env.ALLOW_ANONYMOUS_USAGE,
+            });
             const targetUrl = proxyUrl(
                 c,
                 "https://text.pollinations.ai/openai",
@@ -168,28 +188,42 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponses(400, 401, 500),
             },
         }),
-        async () => {
-            return await proxy("https://image.pollinations.ai/models");
+        async (c) => {
+            const imageServiceUrl = c.env.IMAGE_SERVICE_URL || "https://image.pollinations.ai";
+            return await proxy(`${imageServiceUrl}/models`);
         },
     )
     .get(
         "/image/:prompt",
         track("generate.image"),
         describeRoute({
-            description: "Generate and image from a text prompt.",
+            description: [
+                "Generate an image from a text prompt.",
+                "",
+                "**Authentication (Server-to-Server Only):**",
+                "",
+                "Include your API key in the `Authorization` header as a Bearer token:",
+                "",
+                "`Authorization: Bearer YOUR_API_KEY`",
+                "",
+                "API keys can be created from your dashboard at enter.pollinations.ai.",
+            ].join("\n"),
         }),
         validator("query", GenerateImageRequestQueryParamsSchema),
         async (c) => {
-            await authorizeRequest(c.var);
+            await authorizeRequest(c.var, {
+                allowAnonymous: c.env.ALLOW_ANONYMOUS_USAGE,
+            });
+            const imageServiceUrl = c.env.IMAGE_SERVICE_URL || "https://image.pollinations.ai";
             const targetUrl = proxyUrl(
                 c,
-                "https://image.pollinations.ai/prompt",
+                `${imageServiceUrl}/prompt`,
             );
             targetUrl.pathname = joinPaths(
                 targetUrl.pathname,
                 c.req.param("prompt"),
             );
-            const response = await proxy(targetUrl, {
+            const response = await proxy(targetUrl.toString(), {
                 ...c.req,
                 headers: {
                     ...proxyHeaders(c),
@@ -200,13 +234,15 @@ export const proxyRoutes = new Hono<Env>()
         },
     );
 
-async function authorizeRequest({
-    auth,
-    polar,
-    track,
-}: AuthVariables & PolarVariables & TrackVariables) {
-    if (!track.isFreeUsage) {
-        const { user } = auth.requireActiveSession(
+async function authorizeRequest(
+    { auth, polar, track }: AuthVariables & PolarVariables & TrackVariables,
+    options: { allowAnonymous: boolean },
+) {
+    if (track.isFreeUsage) {
+        if (!options.allowAnonymous)
+            auth.requireAuth("Anonymous usage is currently disabled.");
+    } else {
+        const { user } = auth.requireAuth(
             "You need to be signed-in to use this model.",
         );
         await polar.requirePositiveBalance(user.id);
@@ -243,7 +279,10 @@ function proxyUrl(
 ): URL {
     const incomingUrl = new URL(c.req.url);
     const targetUrl = new URL(targetBaseUrl);
-    targetUrl.port = targetPort;
+    // Only override port if explicitly provided
+    if (targetPort) {
+        targetUrl.port = targetPort;
+    }
     targetUrl.search = incomingUrl.search;
     return targetUrl;
 }

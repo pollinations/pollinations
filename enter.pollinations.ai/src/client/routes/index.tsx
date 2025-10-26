@@ -2,6 +2,7 @@ import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { hc } from "hono/client";
 import { useState } from "react";
 import type { PolarRoutes } from "../../routes/polar.ts";
+import type { TiersRoutes } from "../../routes/tiers.ts";
 import {
     ApiKeyList,
     type CreateApiKey,
@@ -11,6 +12,7 @@ import { Button } from "../components/button.tsx";
 import { config } from "../config.ts";
 import { User } from "../components/user.tsx";
 import { PollenBalance } from "../components/pollen-balance.tsx";
+import { TierPanel } from "../components/tier-panel.tsx";
 import { FAQ } from "../components/faq.tsx";
 import { Header } from "../components/header.tsx";
 
@@ -19,25 +21,32 @@ export const Route = createFileRoute("/")({
     loader: async ({ context }) => {
         if (!context.user) throw redirect({ to: "/sign-in" });
         const honoPolar = hc<PolarRoutes>("/api/polar");
+        const honoTiers = hc<TiersRoutes>("/api/tiers");
+        
         const stateResult = await honoPolar.customer.state.$get();
         const customer = stateResult.ok ? await stateResult.json() : null;
+        
+        const tiersResult = await honoTiers.view.$get();
+        const tierData = tiersResult.ok ? await tiersResult.json() : null;
+        
         const apiKeysResult = await context.auth.apiKey.list();
         const apiKeys = apiKeysResult.data ? apiKeysResult.data : [];
 
         console.log(context.user);
-        return { auth: context.auth, user: context.user, customer, apiKeys };
+        return { auth: context.auth, user: context.user, customer, apiKeys, tierData };
     },
 });
 
 function RouteComponent() {
     const router = useRouter();
-    const { auth, user, customer, apiKeys } = Route.useLoaderData();
+    const { auth, user, customer, apiKeys, tierData } = Route.useLoaderData();
     const meter = customer?.activeMeters.filter(
         (meter) => meter.meterId === config.pollenMeterId,
     )[0];
     const balance = meter?.balance || 0;
 
     const [isSigningOut, setIsSigningOut] = useState(false);
+    const [isActivating, setIsActivating] = useState(false);
 
     const handleSignOut = async () => {
         if (isSigningOut) return; // Prevent double-clicks
@@ -76,12 +85,36 @@ function RouteComponent() {
         router.invalidate();
     };
 
+    const handleActivateTier = async () => {
+        if (isActivating || !tierData) return;
+        setIsActivating(true);
+
+        try {
+            const response = await fetch("/api/tiers/activate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ target_tier: tierData.status }),
+            });
+
+            if (!response.ok) {
+                const error = await response.json() as { message?: string };
+                alert(`Activation failed: ${error.message || "Unknown error"}`);
+                setIsActivating(false);
+                return;
+            }
+
+            const data = await response.json() as { checkout_url: string };
+            window.location.href = data.checkout_url;
+        } catch (error) {
+            alert(`Activation failed: ${error}`);
+            setIsActivating(false);
+        }
+    };
+
     return (
         <div className="flex flex-col gap-20">
             <Header>
-                <Button as="a" href="/api/docs" weight="outline">
-                    API Docs →
-                </Button>
                 <User
                     githubUsername={user.githubUsername}
                     githubAvatarUrl={user.image || ""}
@@ -90,6 +123,9 @@ function RouteComponent() {
                         window.location.href = "/api/polar/customer/portal";
                     }}
                 />
+                <Button as="a" href="/api/docs" color="purple" weight="light">
+                    API Docs
+                </Button>
             </Header>
             <div className="flex flex-col gap-2">
                 <div className="flex flex-col sm:flex-row justify-between gap-3">
@@ -102,6 +138,29 @@ function RouteComponent() {
                 </div>
                 <PollenBalance balance={balance} />
             </div>
+            {tierData && (
+                <div className="flex flex-col gap-2">
+                    <div className="flex flex-col sm:flex-row justify-between gap-3">
+                        <h2 className="font-bold flex-1">Tier</h2>
+                        {tierData.status !== "none" && (
+                            <div className="flex gap-3">
+                                <Button
+                                    onClick={handleActivateTier}
+                                    disabled={isActivating}
+                                    color="green"
+                                    weight="light"
+                                >
+                                    {isActivating ? "Activating..." : "Activate Tier"}
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                    <TierPanel
+                        status={tierData.status}
+                        next_refill_at_utc={tierData.next_refill_at_utc}
+                    />
+                </div>
+            )}
             <ApiKeyList
                 apiKeys={apiKeys}
                 onCreate={handleCreateApiKey}

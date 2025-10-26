@@ -27,9 +27,15 @@ id = "aa0d0aceb6bd45de93032270c7adf4ab"
 
 [vars]
 ENVIRONMENT = "development"
+ALLOW_ANONYMOUS_USAGE = false
 POLAR_SUCCESS_URL = "http://localhost:3000"
 POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
+IMAGE_SERVICE_URL = "http://localhost:16384"
+# Polar product IDs for tier subscriptions
+POLAR_PRODUCT_ID_SEED = "0137d2e0-c770-4277-ad53-91e892bf3dc9"
+POLAR_PRODUCT_ID_FLOWER = "dbe5a6a7-33f3-449e-9e43-e8c5f9887d7e"
+POLAR_PRODUCT_ID_NECTAR = "5a275643-18a4-4941-86a4-c16c2226740c"
 
 
 [[env.staging.routes]]
@@ -50,9 +56,14 @@ id = "eb4ea5149a5a413db53902bf2b8c1d95"
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
+ALLOW_ANONYMOUS_USAGE = false
 POLAR_SUCCESS_URL = "https://enter.pollinations.ai"
 POLAR_SERVER = "sandbox"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+# Polar product IDs for tier subscriptions
+POLAR_PRODUCT_ID_SEED = "0137d2e0-c770-4277-ad53-91e892bf3dc9"
+POLAR_PRODUCT_ID_FLOWER = "dbe5a6a7-33f3-449e-9e43-e8c5f9887d7e"
+POLAR_PRODUCT_ID_NECTAR = "5a275643-18a4-4941-86a4-c16c2226740c"
 
 
 [env.production]
@@ -71,9 +82,14 @@ id = "80bcce9c87914d9f814cc6522e935f41"
 
 [env.production.vars]
 ENVIRONMENT = "production"
+ALLOW_ANONYMOUS_USAGE = false
 POLAR_SUCCESS_URL = "https://enter.pollinations.ai"
 POLAR_SERVER = "production"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+# Polar product IDs for tier subscriptions (TODO: Update with production IDs)
+POLAR_PRODUCT_ID_SEED = "0137d2e0-c770-4277-ad53-91e892bf3dc9"
+POLAR_PRODUCT_ID_FLOWER = "dbe5a6a7-33f3-449e-9e43-e8c5f9887d7e"
+POLAR_PRODUCT_ID_NECTAR = "5a275643-18a4-4941-86a4-c16c2226740c"
 
 
 [env.test]
@@ -91,6 +107,7 @@ id = "aa0d0aceb6bd45de93032270c7adf4ab"
 
 [env.test.vars]
 ENVIRONMENT = "test"
+ALLOW_ANONYMOUS_USAGE = true
 GITHUB_CLIENT_ID = "test_github_client_id"
 GITHUB_CLIENT_SECRET = "test_github_client_secret"
 POLAR_ACCESS_TOKEN = "test_polar_token"

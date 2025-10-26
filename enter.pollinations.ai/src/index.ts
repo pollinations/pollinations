@@ -1,10 +1,12 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { cors } from "hono/cors";
 import { createAuth } from "./auth.ts";
 import { handleError } from "./error.ts";
 import { processEvents } from "./events.ts";
 import { polarRoutes } from "./routes/polar.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
+import { tiersRoutes } from "./routes/tiers.ts";
 import { requestId } from "hono/request-id";
 import { logger } from "./middleware/logger.ts";
 import { getLogger } from "@logtape/logtape";
@@ -20,9 +22,25 @@ const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", (c) => {
 const api = new Hono<Env>()
     .route("/auth", authRoutes)
     .route("/polar", polarRoutes)
+    .route("/tiers", tiersRoutes)
     .route("/generate", proxyRoutes);
 
 const app = new Hono<Env>()
+    .use("*", cors({
+        origin: (origin) => {
+            // Allow localhost on any port for development
+            if (origin.startsWith("http://localhost:")) return origin;
+            // Production origins
+            if (origin === "https://enter.pollinations.ai") return origin;
+            if (origin === "https://beta.pollinations.ai") return origin;
+            return null;
+        },
+        credentials: true,
+        allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowHeaders: ["Content-Type", "Authorization"],
+        exposeHeaders: ["Content-Length"],
+        maxAge: 600,
+    }))
     .use("*", requestId())
     .use("*", logger)
     .route("/api", api)
@@ -43,6 +61,14 @@ const app = new Hono<Env>()
                       ]
                     : []),
             ],
+            authentication: {
+                preferredSecurityScheme: 'bearerAuth',
+                securitySchemes: {
+                    bearerAuth: {
+                        token: '', // Users input their own API key
+                    },
+                },
+            },
         })(c, next),
     )
     .get(
@@ -55,9 +81,39 @@ const app = new Hono<Env>()
                     version: "0.3.0",
                     description: [
                         "Documentation for `enter.pollinations.ai`.",
-                        "More detailed docs for requests and responses coming soon.",
-                    ].join(" "),
+                        "",
+                        "## Authentication",
+                        "",
+                        "This API uses Bearer token authentication for server-to-server requests.",
+                        "Create an API key from your dashboard at https://enter.pollinations.ai",
+                        "",
+                        "Include your API key in the `Authorization` header:",
+                        "```",
+                        "Authorization: Bearer YOUR_API_KEY",
+                        "```",
+                        "",
+                        "**Key Types:**",
+                        "- **Server-to-Server Keys:** Best rate limits, access to all models, ability to spend Pollen on premium models",
+                        "- **Front-End Keys:** Better rate limits for free models (Pollen spending coming soon)",
+                        "",
+                        "**Anonymous Access:** You can also use the API without authentication for free models with standard rate limits.",
+                    ].join("\n"),
                 },
+                components: {
+                    securitySchemes: {
+                        bearerAuth: {
+                            type: "http",
+                            scheme: "bearer",
+                            bearerFormat: "API Key",
+                            description: "API key from enter.pollinations.ai dashboard",
+                        },
+                    },
+                },
+                security: [
+                    {
+                        bearerAuth: [],
+                    },
+                ],
             },
         }),
     );

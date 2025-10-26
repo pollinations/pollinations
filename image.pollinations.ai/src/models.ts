@@ -13,6 +13,11 @@ interface ImageModelConfig {
     type: string;
     enhance: boolean;
     maxSideLength: number;
+    tierCaps?: {
+        seed?: number;
+        flower?: number;
+        nectar?: number;
+    };
 }
 
 type ImageModelsConfig = {
@@ -31,6 +36,11 @@ export const IMAGE_CONFIG: ImageModelsConfig = {
         type: "azure-flux-kontext",
         enhance: true,
         maxSideLength: 1024, // Azure Flux Kontext standard resolution
+        tierCaps: {
+            seed: 1,      // Base limit (minimum tier required)
+            flower: 2,    // Double the seed tier
+            nectar: 2,    // Same as flower tier
+        },
     },
 
     // Assuming 'turbo' is of type 'sd'
@@ -40,7 +50,7 @@ export const IMAGE_CONFIG: ImageModelsConfig = {
         maxSideLength: 768,
     },
 
-    // Azure GPT Image model - gpt-image-1-mini
+    // Azure GPT Image model - gpt-image-1-minica
     gptimage: {
         type: "azure",
         enhance: false,

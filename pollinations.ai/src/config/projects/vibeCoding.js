@@ -5,6 +5,13 @@
 
 export const vibeCodingProjects = [
   {
+    name: "BeeCoder",
+    url: "https://github.com/cemalgnlts/beecoder",
+    description: "Enables VS Code Copilot to connect to Pollinations.",
+    author: "@cemalgnlts",
+    submissionDate: "2025-10-19"
+  },
+  {
     name: "EasyGen - AI Diagram Generator ✨",
     url: "https://easygenme.netlify.app/",
     description: "Modern open-source web application that transforms text descriptions into professional diagrams using AI. Built with React, TypeScript, and Mermaid.js. Features real-time preview, multiple export formats (SVG, PNG, PDF), shareable links, intuitive split-panel editor, and support for various diagram types including flowcharts, sequence diagrams, class diagrams, state diagrams, ER diagrams, timelines, and Gantt charts.",

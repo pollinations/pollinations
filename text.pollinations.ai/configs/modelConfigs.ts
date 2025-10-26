@@ -12,6 +12,7 @@ import {
 	createElixpoSearchModelConfig,
 	createIntelligenceModelConfig,
 	createBedrockLambdaModelConfig,
+	createBedrockFargateModelConfig,
 	createDeepSeekModelConfig,
 	createDeepSeekReasoningConfig,
 	createMyceliDeepSeekV31Config,
@@ -40,6 +41,14 @@ export const portkeyConfig: PortkeyConfigMap = {
 	// ============================================================================
 	
 	// Azure OpenAI model configurations
+	"gpt-5-mini-2025-08-07": () => ({
+		...createAzureModelConfig(
+			process.env.AZURE_MYCELI_GPT5MINI_API_KEY,
+			process.env.AZURE_MYCELI_GPT5MINI_ENDPOINT,
+			"gpt-5-mini-2025-08-07",
+		),
+		"max-completion-tokens": 1024,
+	}),
 	"gpt-5-nano-2025-08-07": () => ({
 		...createAzureModelConfig(
 			process.env.AZURE_MYCELI_GPT5NANO_API_KEY,
@@ -113,6 +122,21 @@ export const portkeyConfig: PortkeyConfigMap = {
 	"us.anthropic.claude-3-5-haiku-20241022-v1:0": () => createBedrockLambdaModelConfig({
 		model: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
 	}),
+	"global.anthropic.claude-haiku-4-5-20251001-v1:0": () => createBedrockLambdaModelConfig({
+		model: "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+	}),
+	"us.anthropic.claude-sonnet-4-5-20250929-v1:0": () => createBedrockLambdaModelConfig({
+		model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+	}),
+	"us.anthropic.claude-sonnet-4-20250514-v1:0": () => createBedrockFargateModelConfig({
+		model: "us.anthropic.claude-sonnet-4-20250514-v1:0",
+	}),
+	"us.anthropic.claude-opus-4-20250514-v1:0": () => createBedrockFargateModelConfig({
+		model: "us.anthropic.claude-opus-4-20250514-v1:0",
+	}),
+	"us.anthropic.claude-haiku-4-5-20251001-v1:0": () => createBedrockFargateModelConfig({
+		model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+	}),
 	
 	// Google Vertex AI configurations
 	"gemini-2.5-flash-lite": () => ({
@@ -144,15 +168,6 @@ export const portkeyConfig: PortkeyConfigMap = {
 			`grok-3-mini`,
 			"pollinations-safety",
 		),
-	"gpt-5-mini-2025-08-07": () => ({
-		...createAzureModelConfig(
-			process.env.AZURE_MYCELI_GPT5MINI_API_KEY,
-			process.env.AZURE_MYCELI_GPT5MINI_ENDPOINT,
-			"gpt-5-mini",
-		),
-		// "max-tokens": 1024,
-		"max-completion-tokens": 1024,
-	}),
 	"gpt-4.1-mini": () =>
 		createAzureModelConfig(
 			process.env.AZURE_MYCELI_GPT41MINI_API_KEY,
@@ -267,7 +282,6 @@ export const portkeyConfig: PortkeyConfigMap = {
 	"@cf/mistralai/mistral-small-3.1-24b-instruct": () =>
 		createCloudflareModelConfig({
 			"max-tokens": 8192,
-			temperature: 0.3,
 			model: "@cf/mistralai/mistral-small-3.1-24b-instruct",
 		}),
 	"@hf/thebloke/llamaguard-7b-awq": () => ({

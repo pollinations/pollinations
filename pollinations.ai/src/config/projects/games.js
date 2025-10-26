@@ -5,6 +5,15 @@
 
 export const gamesProjects = [
   {
+    name: "Quiz Application 🎯",
+    url: "https://jaykmarBCET.github.io/Quiz-Application/",
+    description: "Interactive quiz application with AI-powered question generation and image creation. Features multiple quiz categories and difficulty levels using Pollinations API.",
+    author: "@jaykmarBCET",
+    repo: "https://github.com/jaykmarBCET/Quiz-Application",
+    submissionDate: "2025-10-22",
+    order: 1
+  },
+  {
     name: "Chaos Canvas 🎲",
     url: "https://chaoscanvas.app/",
     description: "Crowdsourced creativity experiment where each player adds just one or two words to a shared prompt without knowing what others have entered. Once the game fills up, everyone's inputs are mashed together and transformed into a single, surreal AI-generated image. Unpredictable, weirdly collaborative, and endlessly entertaining — like Mad Libs for your eyes.",

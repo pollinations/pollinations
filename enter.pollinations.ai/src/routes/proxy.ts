@@ -1,17 +1,14 @@
 import { Context, Hono } from "hono";
 import { proxy } from "hono/proxy";
 import { cors } from "hono/cors";
-import { authenticateAPI } from "@/middleware/authenticate";
+import { auth } from "@/middleware/auth.ts";
+import type { User } from "@/auth.ts";
 import { polar } from "@/middleware/polar.ts";
 import type { Env } from "../env.ts";
-import { track, type TrackVariables } from "@/middleware/track.ts";
-import type { AuthVariables } from "@/middleware/authenticate.ts";
-import type { PolarVariables } from "@/middleware/polar.ts";
+import { track } from "@/middleware/track.ts";
 import { removeUnset } from "@/util.ts";
-import type { Session } from "@/auth.ts";
 import { describeRoute, resolver } from "hono-openapi";
 import { validator } from "@/middleware/validator.ts";
-import { alias } from "@/middleware/alias.ts";
 import {
     CreateChatCompletionResponseSchema,
     CreateChatCompletionRequestSchema,
@@ -74,15 +71,17 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         async (c) => {
-            return await proxy("https://text.pollinations.ai/openai/models", {
+            const textServiceUrl =
+                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
+            return await proxy(`${textServiceUrl}/openai/models`, {
                 ...c.req,
                 headers: proxyHeaders(c),
             });
         },
     )
-    .use(authenticateAPI)
+    .use(auth({ allowApiKey: true, allowSessionCookie: true }))
     .use(polar)
-    .use(alias({ "/openai/chat/completions": "/openai" }))
+    // .use(alias({ "/openai/chat/completions": "/openai" }))
     .post(
         "/openai",
         track("generate.text"),
@@ -116,13 +115,13 @@ export const proxyRoutes = new Hono<Env>()
         }),
         validator("json", CreateChatCompletionRequestSchema),
         async (c) => {
-            await authorizeRequest(c.var, {
-                allowAnonymous: c.env.ALLOW_ANONYMOUS_USAGE,
+            await c.var.auth.requireAuthorization({
+                allowAnonymous:
+                    c.var.track.isFreeUsage && c.env.ALLOW_ANONYMOUS_USAGE,
             });
-            const targetUrl = proxyUrl(
-                c,
-                "https://text.pollinations.ai/openai",
-            );
+            const textServiceUrl =
+                c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
+            const targetUrl = proxyUrl(c, `${textServiceUrl}/openai`);
             const response = await proxy(targetUrl, {
                 method: c.req.method,
                 headers: {
@@ -189,7 +188,8 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         async (c) => {
-            const imageServiceUrl = c.env.IMAGE_SERVICE_URL || "https://image.pollinations.ai";
+            const imageServiceUrl =
+                c.env.IMAGE_SERVICE_URL || "https://image.pollinations.ai";
             return await proxy(`${imageServiceUrl}/models`);
         },
     )
@@ -211,47 +211,30 @@ export const proxyRoutes = new Hono<Env>()
         }),
         validator("query", GenerateImageRequestQueryParamsSchema),
         async (c) => {
-            await authorizeRequest(c.var, {
-                allowAnonymous: c.env.ALLOW_ANONYMOUS_USAGE,
+            await c.var.auth.requireAuthorization({
+                allowAnonymous:
+                    c.var.track.isFreeUsage && c.env.ALLOW_ANONYMOUS_USAGE,
             });
-            const imageServiceUrl = c.env.IMAGE_SERVICE_URL || "https://image.pollinations.ai";
-            const targetUrl = proxyUrl(
-                c,
-                `${imageServiceUrl}/prompt`,
-            );
+            const imageServiceUrl =
+                c.env.IMAGE_SERVICE_URL || "https://image.pollinations.ai";
+            const targetUrl = proxyUrl(c, `${imageServiceUrl}/prompt`);
             targetUrl.pathname = joinPaths(
                 targetUrl.pathname,
                 c.req.param("prompt"),
             );
-            const response = await proxy(targetUrl.toString(), {
+            return await proxy(targetUrl.toString(), {
                 ...c.req,
                 headers: {
                     ...proxyHeaders(c),
                     ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
                 },
             });
-            return response;
         },
     );
 
-async function authorizeRequest(
-    { auth, polar, track }: AuthVariables & PolarVariables & TrackVariables,
-    options: { allowAnonymous: boolean },
-) {
-    if (track.isFreeUsage) {
-        if (!options.allowAnonymous)
-            auth.requireAuth("Anonymous usage is currently disabled.");
-    } else {
-        const { user } = auth.requireAuth(
-            "You need to be signed-in to use this model.",
-        );
-        await polar.requirePositiveBalance(user.id);
-    }
-}
-
 function generationHeaders(
     enterToken: string,
-    user?: Session["user"],
+    user?: User,
 ): Record<string, string> {
     return removeUnset({
         "x-enter-token": enterToken,

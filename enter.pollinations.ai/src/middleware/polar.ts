@@ -2,7 +2,7 @@ import { cached } from "@/cache";
 import { Polar } from "@polar-sh/sdk";
 import { createMiddleware } from "hono/factory";
 import { LoggerVariables } from "@/middleware/logger.ts";
-import type { AuthVariables } from "@/middleware/authenticate.ts";
+import type { AuthVariables } from "@/middleware/auth.ts";
 import { CustomerState } from "@polar-sh/sdk/models/components/customerstate.js";
 import { HTTPException } from "hono/http-exception";
 
@@ -64,5 +64,6 @@ export const polar = createMiddleware<PolarEnv>(async (c, next) => {
         getCustomerState,
         requirePositiveBalance,
     });
+
     await next();
 });

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { authenticateSession } from "../middleware/authenticate.ts";
+import { auth } from "../middleware/auth.ts";
 import { polar } from "../middleware/polar.ts";
 import { describeRoute } from "hono-openapi";
 import { validator } from "../middleware/validator.ts";
@@ -46,17 +46,18 @@ const activateRequestSchema = z.object({
 });
 
 export const tiersRoutes = new Hono<Env>()
-    .use("*", authenticateSession)
-    .use("*", polar)
+    .use(auth({ allowSessionCookie: true, allowApiKey: false }))
+    .use(polar)
     .get(
         "/view",
         describeRoute({
-            description: "Get the current user's tier status and daily pollen information.",
+            description:
+                "Get the current user's tier status and daily pollen information.",
             hide: false,
         }),
         async (c) => {
-            const { user } = c.var.auth.requireActiveSession();
-            
+            const user = c.var.auth.requireUser();
+
             const viewModel: TierViewModel = {
                 status: getTierStatus(user.tier),
                 next_refill_at_utc: getNextMidnightUTC(),
@@ -68,12 +69,13 @@ export const tiersRoutes = new Hono<Env>()
     .post(
         "/activate",
         describeRoute({
-            description: "Create a Polar checkout session to activate a tier subscription.",
+            description:
+                "Create a Polar checkout session to activate a tier subscription.",
             hide: false,
         }),
         validator("json", activateRequestSchema),
         async (c) => {
-            const { user } = c.var.auth.requireActiveSession();
+            const user = c.var.auth.requireUser();
             const { target_tier } = c.req.valid("json");
 
             // Validate user has the required tier before allowing subscription
@@ -97,7 +99,7 @@ export const tiersRoutes = new Hono<Env>()
             // Create Polar checkout session
             const polar = c.var.polar.client;
             const productId = getTierProductId(c.env, target_tier);
-            
+
             try {
                 const checkout = await polar.checkouts.create({
                     externalCustomerId: user.id,
@@ -109,9 +111,13 @@ export const tiersRoutes = new Hono<Env>()
                 });
 
                 // Update rate limit counter
-                await c.env.KV.put(rateLimitKey, String(parseInt(currentCount || "0") + 1), {
-                    expirationTtl: 3600, // 1 hour
-                });
+                await c.env.KV.put(
+                    rateLimitKey,
+                    String(parseInt(currentCount || "0") + 1),
+                    {
+                        expirationTtl: 3600, // 1 hour
+                    },
+                );
 
                 return c.json({ checkout_url: checkout.url });
             } catch (error) {

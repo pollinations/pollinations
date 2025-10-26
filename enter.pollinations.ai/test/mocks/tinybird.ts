@@ -1,8 +1,6 @@
 import { Hono } from "hono";
-import { trimTrailingSlash } from "hono/trailing-slash";
-import type { MockHandlerMap } from "./fetch";
-import { createHonoMockHandler } from "./fetch";
-import { SelectGenerationEvent } from "@/db/schema/event";
+import { createHonoMockHandler, type MockAPI } from "./fetch.ts";
+import { SelectGenerationEvent } from "@/db/schema/event.ts";
 
 type TinybirdGenerationEvent = Omit<
     SelectGenerationEvent,
@@ -19,12 +17,6 @@ type TinybirdGenerationEvent = Omit<
 
 export type MockTinybirdState = {
     events: TinybirdGenerationEvent[];
-};
-
-export type MockAPI<TState> = {
-    state: TState;
-    handlerMap: MockHandlerMap;
-    reset: () => void;
 };
 
 export function createMockTinybird(): MockAPI<MockTinybirdState> {

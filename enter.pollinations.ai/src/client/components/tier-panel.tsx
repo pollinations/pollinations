@@ -107,10 +107,6 @@ const TierScreen: FC<{ tier: keyof typeof TIER_CONFIG; countdown: string }> = ({
                         {config.pollen} pollen/day
                     </span>
                 </div>
-
-                <div className="text-sm text-gray-700">
-                    Next refill: {countdown} <span className="text-gray-500">(00:00 UTC)</span>
-                </div>
             </div>
         </div>
     );

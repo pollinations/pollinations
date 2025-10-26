@@ -8,117 +8,48 @@ import { polarRoutes } from "./routes/polar.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
 import { apiKeysRoutes } from "./routes/api-keys.ts";
+import { docsRoutes } from "./routes/docs.ts";
 import { requestId } from "hono/request-id";
 import { logger } from "./middleware/logger.ts";
 import { getLogger } from "@logtape/logtape";
 import type { Env } from "./env.ts";
 import { drizzle } from "drizzle-orm/d1";
-import { Scalar } from "@scalar/hono-api-reference";
-import { openAPIRouteHandler } from "hono-openapi";
 
 const authRoutes = new Hono<Env>().on(["GET", "POST"], "*", (c) => {
     return createAuth(c.env).handler(c.req.raw);
 });
 
-const api = new Hono<Env>()
+export const api = new Hono<Env>()
     .route("/auth", authRoutes)
     .route("/polar", polarRoutes)
     .route("/tiers", tiersRoutes)
     .route("/api-keys", apiKeysRoutes)
+    .route("/docs", docsRoutes)
     .route("/generate", proxyRoutes);
 
 const app = new Hono<Env>()
-    .use("*", cors({
-        origin: (origin) => {
-            // Allow localhost on any port for development
-            if (origin.startsWith("http://localhost:")) return origin;
-            // Production origins
-            if (origin === "https://enter.pollinations.ai") return origin;
-            if (origin === "https://beta.pollinations.ai") return origin;
-            return null;
-        },
-        credentials: true,
-        allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allowHeaders: ["Content-Type", "Authorization"],
-        exposeHeaders: ["Content-Length"],
-        maxAge: 600,
-    }))
+    .use(
+        "*",
+        cors({
+            origin: (origin) => {
+                // Allow localhost on any port for development
+                if (origin.startsWith("http://localhost:")) return origin;
+                // Production origins
+                if (origin === "https://enter.pollinations.ai") return origin;
+                if (origin === "https://beta.pollinations.ai") return origin;
+                return null;
+            },
+            credentials: true,
+            allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            allowHeaders: ["Content-Type", "Authorization"],
+            exposeHeaders: ["Content-Length"],
+            maxAge: 600,
+        }),
+    )
     .use("*", requestId())
     .use("*", logger)
     .route("/api", api)
-    .get("/api/docs", (c, next) =>
-        Scalar<Env>({
-            pageTitle: "Pollinations.AI API Docs",
-            title: "Pollinations.AI API Docs",
-            theme: "saturn",
-            sources: [
-                { url: "/api/open-api/generate-schema", title: "API" },
-                // Include better-auth docs only in development mode
-                ...(c.env.ENVIRONMENT === "development"
-                    ? [
-                          {
-                              url: "/api/auth/open-api/generate-schema",
-                              title: "Auth",
-                          },
-                      ]
-                    : []),
-            ],
-            authentication: {
-                preferredSecurityScheme: 'bearerAuth',
-                securitySchemes: {
-                    bearerAuth: {
-                        token: '', // Users input their own API key
-                    },
-                },
-            },
-        })(c, next),
-    )
-    .get(
-        "/api/open-api/generate-schema",
-        openAPIRouteHandler(api, {
-            documentation: {
-                servers: [{ url: "/api" }],
-                info: {
-                    title: "Pollinations.AI API",
-                    version: "0.3.0",
-                    description: [
-                        "Documentation for `enter.pollinations.ai`.",
-                        "",
-                        "## Authentication",
-                        "",
-                        "This API uses Bearer token authentication for server-to-server requests.",
-                        "Create an API key from your dashboard at https://enter.pollinations.ai",
-                        "",
-                        "Include your API key in the `Authorization` header:",
-                        "```",
-                        "Authorization: Bearer YOUR_API_KEY",
-                        "```",
-                        "",
-                        "**Key Types:**",
-                        "- **Server-to-Server Keys:** Best rate limits, access to all models, ability to spend Pollen on premium models",
-                        "- **Front-End Keys:** Better rate limits for free models (Pollen spending coming soon)",
-                        "",
-                        "**Anonymous Access:** You can also use the API without authentication for free models with standard rate limits.",
-                    ].join("\n"),
-                },
-                components: {
-                    securitySchemes: {
-                        bearerAuth: {
-                            type: "http",
-                            scheme: "bearer",
-                            bearerFormat: "API Key",
-                            description: "API key from enter.pollinations.ai dashboard",
-                        },
-                    },
-                },
-                security: [
-                    {
-                        bearerAuth: [],
-                    },
-                ],
-            },
-        }),
-    );
+    .route("/api/docs", docsRoutes);
 
 app.notFound((c) => {
     return handleError(new HTTPException(404), c);

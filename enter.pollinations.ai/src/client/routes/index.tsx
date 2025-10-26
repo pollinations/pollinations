@@ -149,9 +149,9 @@ function RouteComponent() {
                 <div className="flex flex-col sm:flex-row justify-between gap-3">
                     <h2 className="font-bold flex-1">Balance</h2>
                     <div className="flex gap-3">
-                        <Button as="a" color="pink" weight="light" href="/api/polar/checkout/pollen-bundle-small" target="_blank">+ $10</Button>
-                        <Button as="a" color="blue" weight="light" href="/api/polar/checkout/pollen-bundle-medium" target="_blank">+ $25</Button>
-                        <Button as="a" color="red" weight="light" href="/api/polar/checkout/pollen-bundle-large" target="_blank">+ $50</Button>
+                        <Button as="button" color="pink" weight="light" disabled>+ $10</Button>
+                        <Button as="button" color="blue" weight="light" disabled>+ $25</Button>
+                        <Button as="button" color="red" weight="light" disabled>+ $50</Button>
                     </div>
                 </div>
                 <PollenBalance balance={balance} />

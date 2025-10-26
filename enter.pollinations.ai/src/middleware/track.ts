@@ -1,21 +1,20 @@
 import { processEvents, storeEvents } from "@/events.ts";
-import { 
+import {
     resolveServiceId,
     isFreeService,
     getActivePriceDefinition,
-    getModelDefinition,
     calculateCost,
     calculatePrice,
     ServiceId,
-    ModelId
+    ModelId,
 } from "@shared/registry/registry.ts";
 import { parseUsageHeaders } from "@shared/registry/usage-headers.ts";
+import { ModelUsage, transformOpenAIUsage } from "@/usage.ts";
 import {
-    ModelUsage,
-    OpenAIResponse,
-    openaiResponseSchema,
-    transformOpenAIUsage,
-} from "@/usage.ts";
+    CompletionUsage,
+    CreateChatCompletionResponseSchema,
+    type CreateChatCompletionResponse,
+} from "@/schemas/openai.ts";
 import { generateRandomId } from "@/util.ts";
 import { createMiddleware } from "hono/factory";
 import type { LoggerVariables } from "./logger.ts";
@@ -30,7 +29,7 @@ import type {
     EventType,
     GenerationEventContentFilterParams,
 } from "@/db/schema/event.ts";
-import type { AuthVariables } from "@/middleware/authenticate.ts";
+import type { AuthVariables } from "@/middleware/auth.ts";
 import { PolarVariables } from "./polar.ts";
 import { z } from "zod";
 
@@ -70,9 +69,7 @@ export const track = (eventType: EventType) =>
 
         const referrerInfo = extractReferrerInfo(c);
         const cacheInfo = extractCacheInfo(c);
-        const tokenPrice = getActivePriceDefinition(
-            resolvedModelRequested,
-        );
+        const tokenPrice = getActivePriceDefinition(resolvedModelRequested);
         if (!tokenPrice) {
             throw new Error(
                 `Failed to get price definition for model: ${resolvedModelRequested}`,
@@ -81,8 +78,9 @@ export const track = (eventType: EventType) =>
         let openaiResponse, modelUsage, cost, price;
         if (c.res.ok) {
             if (eventType === "generate.text") {
-                const body = await c.res.clone().json();
-                openaiResponse = openaiResponseSchema.parse(body);
+                const responseBody = await c.res.clone().json();
+                openaiResponse =
+                    CreateChatCompletionResponseSchema.parse(responseBody);
             }
             if (!cacheInfo.cacheHit) {
                 modelUsage = extractUsage(
@@ -91,26 +89,25 @@ export const track = (eventType: EventType) =>
                     c,
                     openaiResponse,
                 );
-                
-                log.info("📊 [COST DEBUG] Model usage extracted: {modelUsage}", { modelUsage });
-                
-                // Validate model ID exists in registry before calculating cost
-                if (!getModelDefinition(modelUsage.model as ModelId)) {
-                    throw new Error(
-                        `Model '${modelUsage.model}' not found in registry. This indicates a bug - the model returned by the LLM is not configured for billing.`
-                    );
-                }
-                
+
+                log.debug("[COST] Model usage extracted: {modelUsage}", {
+                    modelUsage,
+                });
+
                 cost = calculateCost(
                     modelUsage.model as ModelId,
                     modelUsage.usage,
                 );
+
                 price = calculatePrice(
                     resolvedModelRequested as ServiceId,
                     modelUsage.usage,
                 );
-                
-                log.info("💰 [COST DEBUG] Cost calculated - cost: {cost}, price: {price}", { cost, price });
+
+                log.debug("[COST] Calculated cost: {cost}, price: {price}", {
+                    cost,
+                    price,
+                });
             } else {
                 log.info(
                     "Response was served from {cacheType} cache, skipping cost/price calculation",
@@ -189,19 +186,21 @@ function extractUsage(
     eventType: EventType,
     modelRequested: string | null,
     c: Context<TrackEnv>,
-    response?: OpenAIResponse,
+    response?: CreateChatCompletionResponse,
 ): ModelUsage {
     if (eventType === "generate.image") {
-        // Use type-safe header parsing from shared utilities
+        const log = c.get("log");
         const usage = parseUsageHeaders(c.res.headers);
-        
+
         // Read actual model used from x-model-used header
         const modelUsedHeader = c.res.headers.get("x-model-used");
         const model = (modelUsedHeader || modelRequested || "flux") as ModelId;
-        
-        c.get("log").info("🔍 [COST DEBUG] Image usage parsed - model: {model}, usage: {usage}", 
-            { model, usage });
-        
+
+        log.info("[COST] Extracted headers: model: {model}, usage: {usage}", {
+            model,
+            usage,
+        });
+
         return {
             model,
             usage,
@@ -224,7 +223,7 @@ function extractUserTier(c: Context<TrackEnv>): string | undefined {
 
 function extractContentFilterResults(
     eventType: EventType,
-    response?: OpenAIResponse,
+    response?: CreateChatCompletionResponse,
 ): GenerationEventContentFilterParams {
     if (eventType === "generate.text" && response) {
         return contentFilterResultsToEventParams(response);

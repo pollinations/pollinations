@@ -4,7 +4,7 @@ import {
     type BetterAuthPlugin,
     betterAuth,
     type GenericEndpointContext,
-    type User,
+    type User as GenericUser,
 } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
@@ -105,7 +105,8 @@ export function createAuth(env: Cloudflare.Env) {
 }
 
 export type Auth = ReturnType<typeof createAuth>;
-export type Session = Auth["$Infer"]["Session"];
+export type Session = Auth["$Infer"]["Session"]["session"];
+export type User = Auth["$Infer"]["Session"]["user"];
 
 function polarPlugin(polar: Polar): BetterAuthPlugin {
     return {
@@ -171,7 +172,7 @@ function onBeforeUserCreate(polar: Polar) {
 }
 
 function onAfterUserCreate(polar: Polar) {
-    return async (user: User, ctx?: GenericEndpointContext) => {
+    return async (user: GenericUser, ctx?: GenericEndpointContext) => {
         if (!ctx) return;
         try {
             const { result } = await polar.customers.list({
@@ -197,7 +198,7 @@ function onAfterUserCreate(polar: Polar) {
 }
 
 function onUserUpdate(polar: Polar) {
-    return async (user: User, ctx?: GenericEndpointContext) => {
+    return async (user: GenericUser, ctx?: GenericEndpointContext) => {
         if (!ctx) return;
         try {
             await polar.customers.updateExternal({

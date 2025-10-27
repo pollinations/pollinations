@@ -7,6 +7,7 @@ import { polar } from "@/middleware/polar.ts";
 import type { Env } from "../env.ts";
 import { track } from "@/middleware/track.ts";
 import { removeUnset } from "@/util.ts";
+import { frontendKeyRateLimit } from "@/middleware/frontendRateLimit.ts";
 import { describeRoute, resolver } from "hono-openapi";
 import { validator } from "@/middleware/validator.ts";
 import {
@@ -88,6 +89,7 @@ export const proxyRoutes = new Hono<Env>()
     )
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
     .use(polar)
+    .use(frontendKeyRateLimit)
     // .use(alias({ "/openai/chat/completions": "/openai" }))
     .post(
         "/openai",

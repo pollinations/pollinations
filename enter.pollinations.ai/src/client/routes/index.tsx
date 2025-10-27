@@ -63,10 +63,11 @@ function RouteComponent() {
     };
 
     const handleCreateApiKey = async (formState: CreateApiKey) => {
-        const keyType = formState.keyType || "server";
+        const keyType = formState.keyType || "private";
         
         const createKeyData = {
             name: formState.name,
+            prefix: keyType === "public" ? "pk" : "sk", // Set prefix based on key type
             metadata: {
                 description: formState.description,
                 keyType,

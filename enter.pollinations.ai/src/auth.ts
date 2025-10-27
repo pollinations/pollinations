@@ -22,6 +22,16 @@ export function createAuth(env: Cloudflare.Env) {
 
     const apiKeyPlugin = apiKey({
         enableMetadata: true,
+        defaultPrefix: 'pk', // Default prefix for public keys
+        customKeyGenerator: (options: { length: number; prefix: string | undefined; }) => {
+            // Public keys (pk_) are SHORT (22 chars), Private keys (sk_) are LONG (64 chars)
+            const keyLength = options.prefix === 'pk' ? 22 : 64;
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            const randomBytes = crypto.getRandomValues(new Uint8Array(keyLength));
+            const key = Array.from(randomBytes, byte => chars[byte % chars.length]).join('');
+            return options.prefix ? `${options.prefix}_${key}` : key;
+        },
+        defaultKeyLength: 64, // Fallback length if customKeyGenerator doesn't use it
         permissions: {
             defaultPermissions: {
                 "tier": ["flower"],

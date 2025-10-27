@@ -2,186 +2,43 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!-- Ensures proper rendering and touch zooming on mobile devices -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PrisimAI – Your AI Assistant for Everything</title>
-    <meta name="description" content="PrisimAI is your ultimate AI assistant, offering tools for creativity, productivity, and smart solutions. Experience next-level AI right in your browser.">
-    <meta name="keywords" content="AI, artificial intelligence, PrisimAI, AI tools, AI assistant, productivity, creative AI, smart AI">
-    <meta name="author" content="PrisimAI Team">
-
-    <meta property="og:title" content="PrisimAI – Your AI Assistant for Everything">
-    <meta property="og:description" content="PrismiAI is your ultimate AI assistant, offering tools for creativity, productivity, and smart solutions.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://PrisimAI.github.io/PrisimAI">
-    <meta property="og:image" content="https://PrisimAI.github.io/PrisimAI/preview-image.png">
-
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="PrisimAI – Your AI Assistant for Everything">
-    <meta name="twitter:description" content="PrisimAI is your ultimate AI assistant, offering tools for creativity, productivity, and smart solutions.">
-    <meta name="twitter:image" content="https://PrisimAI.github.io/PrisimAI/preview-image.png">
-
-    <link rel="canonical" href="https://PrisimAI.github.io/PrisimAI">
-
-    <link rel="icon" href="https://PrisimAI.github.io/PrisimAI/favicon.ico" type="image/x-icon">
-
+    <!-- Updated title for the new site -->
+    <title>PrisimAI DEMO</title>
+    <!-- Load Tailwind CSS (although it's not strictly needed for this simple embed) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="https://prisimai.github.io/PrisimAI/style.css">
+    <style>
+        /* Use a clean, modern font */
+        html, body {
+            font-family: "Inter", sans-serif;
+            /* Reset default browser styles */
+            margin: 0;
+            padding: 0;
+            /* Use 100% of the viewport height and width */
+            height: 100vh;
+            width: 100vw;
+            /* Hide any potential overflow scrollbars on the main page */
+            overflow: hidden;
+        }
 
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#3b82f6">
+        /* Make the iframe fill its container (the body) */
+        iframe {
+            width: 100%;
+            height: 100%;
+            /* Remove the default border from the iframe */
+            border: none;
+        }
+    </style>
 </head>
-<body class="text-gray-800 antialiased flex h-screen overflow-hidden dark:text-gray-100 transition-colors duration-300">
-
-    <aside id="sidebar" class="w-72 flex-shrink-0 flex flex-col justify-between p-8 sm:flex glass-elevated m-6 rounded-2xl">
-        <div class="space-y-8 relative flex flex-col flex-1 overflow-hidden">
-            <button id="dark-mode-toggle" class="absolute top-4 right-4 p-3 rounded-full bg-white/20 dark:bg-gray-700/20 text-gray-700 dark:text-gray-200 shadow hover:bg-white/30 dark:hover:bg-gray-600/30 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 z-10" aria-label="Toggle dark mode">
-                <svg id="dark-mode-icon" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path id="sun-icon" class="block dark:hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m8.66-13.66l-.71.71M4.05 19.07l-.71.71M21 12h-1M4 12H3m16.66 5.66l-.71-.71M4.05 4.93l-.71-.71M12 7a5 5 0 100 10 5 5 0 000-10z" />
-                    <path id="moon-icon" class="hidden dark:block" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" />
-                </svg>
-            </button>
-
-            <div class="flex items-center space-x-3 mb-8">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-blue-500">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9.206 13.91a4.992 4.992 0 0 0-1.745-1.924c-.394-.287-.803-.524-1.229-.715L5 10.985a2.25 2.25 0 0 1-.585-2.023c.31-.617.915-1.054 1.558-1.127l.799-.089a5.002 5.002 0 0 1 4.71-2.903c.369.043.737.087 1.106.131L15 8.169a2.25 2.25 0 0 1 2.023.585c.617.31 1.054.915 1.127 1.558l.089.799a5.002 5.002 0 0 1-2.903 4.71c-.043.369-.087.737-.131 1.106l-1.996 4.99a2.25 2.25 0 0 1-2.023.585c-.617-.31-1.054-.915-1.127-1.558l-.089-.799a5.002 5.002 0 0 1-4.71-2.903c-.043-.369-.087-.737-.131-1.106l-1.996-4.99a2.25 2.25 0 0 1-2.023-.585c-.617-.31-1.054-.915-1.127-1.558l-.089-.799a5.002 5.002 0 0 1-2.903-4.71z" />
-                </svg>
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">PrismAI</h1>
-            </div>
-
-            <button id="new-chat-btn" class="w-full p-3 rounded-xl sidebar-button text-white font-semibold hover:shadow-lg active:scale-95 transition-all duration-200" aria-label="Start new chat">
-                + New Chat
-            </button>
-
-            <button id="export-chat-btn" class="w-full p-3 rounded-xl sidebar-button text-white font-semibold hover:shadow-lg active:scale-95 transition-all duration-200" aria-label="Export current chat">
-                Export Chat
-            </button>
-
-            <div class="flex border-b border-white/10 pt-4" role="tablist" aria-label="Sidebar content">
-                <button id="chat-history-tab" class="sidebar-tab active-tab" aria-label="Show chat history">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.068.157 2.148.279 3.238.364.491.03 1.002.043 1.513.043h.001c.512 0 1.022-.013 1.513-.043.593-.041 1.19-.08 1.78-.128 1.138-.093 2.293-.209 3.423-.372.33-.049.66-.1.99-.153.33-.053.66-.11.99-.172.33-.06.66-.126 1.02-.2.434-.09 1.06-.213 1.73-.364 1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.994-2.707-3.227A48.214 48.214 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" /></svg>
-                    <span>Chats</span>
-                </button>
-                <button id="gallery-tab" class="sidebar-tab" aria-label="Show image gallery">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm1.5-6a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" /></svg>
-                    <span>Gallery</span>
-                </button>
-            </div>
-
-            <div id="chat-history-list-container" class="flex-1 overflow-y-auto pt-4">
-                <div id="chat-history-list" class="space-y-3">
-                    <button class="w-full p-3 rounded-xl text-left text-gray-700 dark:text-gray-300 font-medium hover:bg-white/20 transition-all duration-200 active:scale-95 flex items-center space-x-2 chat-history-item" data-chat-id="new-chat-placeholder" aria-label="Select new chat">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
-                        <span class="truncate">New Chat</span>
-                    </button>
-                </div>
-            </div>
-
-            <div id="image-gallery-panel" role="tabpanel" aria-labelledby="gallery-tab" class="hidden flex-1 overflow-y-auto pt-4">
-                <div id="image-gallery-grid" class="grid grid-cols-2 gap-2">
-                    </div>
-                <p id="image-gallery-placeholder" class="text-gray-500 text-center text-sm hidden">Generate images with `/image [prompt]` to see them here.</p>
-            </div>
-
-            <div class="space-y-3 pt-4 border-t border-white/10">
-                <label for="model-selector" class="text-sm font-medium text-gray-700 dark:text-gray-200">Select Model</label>
-                <select id="model-selector" class="w-full p-3 rounded-xl border border-gray-300/30 dark:border-gray-600/30 bg-white/20 dark:bg-gray-800/30 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200" aria-label="Select AI model">
-                    <option value="" disabled selected>Loading models...</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="mt-8 relative">
-            <div id="profile-menu" role="menu" aria-labelledby="profile-menu-btn" class="absolute bottom-full left-0 right-0 mb-2 w-full bg-white/50 dark:bg-gray-800/50 backdrop-blur-md rounded-xl shadow-lg border border-white/10 overflow-hidden hidden">
-                <button id="change-name-btn" role="menuitem" class="w-full text-left px-4 py-3 text-sm text-gray-800 dark:text-gray-200 hover:bg-white/20 dark:hover:bg-gray-700/30 transition-colors">Change Name</button>
-                <button role="menuitem" class="w-full text-left px-4 py-3 text-sm text-gray-800 dark:text-gray-200 hover:bg-white/20 dark:hover:bg-gray-700/30 transition-colors">Upgrade Tier</button>
-            </div>
-
-            <button id="profile-menu-btn" aria-haspopup="true" aria-expanded="false" aria-controls="profile-menu" class="flex w-full items-center space-x-3 p-4 hover:bg-blue-500/10 rounded-xl transition-all duration-200 cursor-pointer active:scale-95">
-                <img src="https://placehold.co/40x40" alt="Profile" class="w-12 h-12 rounded-full border-2 border-blue-400/30 shadow">
-                <div>
-                    <div id="user-name" class="font-semibold text-gray-900 dark:text-white">Stranger</div>
-                    <div id="user-tier" class="text-sm text-gray-500 dark:text-gray-400">Free</div>
-                </div>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 ml-auto text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
-            </button>
-        </div>
-    </aside>
-
-    <main class="flex-1 flex flex-col relative p-0">
-        <button id="mobile-menu-btn" class="lg:hidden absolute top-8 left-4 z-50 p-3 rounded-full bg-white/20 dark:bg-gray-700/20 text-gray-700 dark:text-gray-200 shadow hover:bg-white/30 dark:hover:bg-gray-600/30 transition-all duration-200" aria-label="Toggle sidebar">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-            </svg>
-        </button>
-
-        <div class="flex-1 flex flex-col">
-            <div id="chat-container" class="flex-1 relative w-full m-6 glass-primary overflow-hidden">
-                <div class="flex flex-col h-full">
-                    <div id="error-notification" class="hidden p-4 bg-red-500/20 text-red-600 dark:text-red-400 rounded-xl mx-4 mt-4 text-center relative flex items-center justify-between">
-                        <span id="error-message"></span>
-                        <button id="close-error" class="ml-2 text-red-600 dark:text-red-400 hover:bg-red-500/20 p-1 rounded-full transition-all" aria-label="Close error message">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-                    <div id="welcome-message" class="flex flex-col items-center justify-center text-center p-10 space-y-6 text-gray-500 dark:text-gray-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-24 h-24 text-blue-400">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5a6 6 0 1 0-12 0v1.5a6 6 0 0 0 6 6Z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 12a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" />
-                        </svg>
-                        <h2 id="welcome-user-name" class="text-3xl font-bold text-gray-800 dark:text-white">Hello there, Stranger!</h2>
-                        <p class="text-lg">What can I help you with today? Try typing something in the box below.</p>
-                    </div>
-
-                    <div id="chat-history" class="flex-1 overflow-y-auto p-8 space-y-6 hidden" role="log" aria-live="polite">
-                        </div>
-
-                    <div class="chat-input-wrapper p-6 bg-transparent border-t border-white/10 dark:border-black/10">
-                        <div id="offline-indicator" class="hidden text-center text-red-500 text-sm mb-2">
-                            Offline. Messages will not be sent.
-                        </div>
-                        <div id="prompt-templates-bar" class="flex flex-wrap gap-2 pb-4">
-                            </div>
-                        <form id="chat-form" class="flex items-end space-x-4" role="form" aria-label="Chat input form">
-                            <textarea id="chat-input" placeholder="Message PrismAI ✨..." rows="1" class="flex-1 p-4 rounded-3xl border border-gray-300/30 dark:border-gray-600/30 bg-white/15 dark:bg-gray-700/25 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:shadow-lg transition-all duration-200 resize-none" aria-label="Enter your message"></textarea>
-                            <button type="submit" class="p-4 rounded-3xl bg-gradient-to-r from-blue-500 to-blue-400 text-white shadow-lg hover:from-blue-600 hover:to-blue-500 send-button transition-all duration-200" aria-label="Send message">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.769 59.769 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
-                                </svg>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <div id="tutorial-overlay" class="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm z-50 items-center justify-center transition-opacity duration-500">
-        <div class="bg-white dark:bg-gray-800 p-10 rounded-2xl shadow-2xl max-w-lg w-full text-center relative glass-elevated">
-            <button id="tutorial-close-btn" class="absolute top-4 right-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors" aria-label="Close tutorial">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-            <h2 class="text-3xl font-bold mb-6 text-blue-600 dark:text-blue-400">Welcome to PrismAI!</h2>
-            <p class="text-lg mb-6 text-gray-700 dark:text-gray-300">Let's get you started with a quick tour:</p>
-
-            <div id="tutorial-steps" class="space-y-6 text-left">
-                </div>
-
-            <button id="tutorial-done-btn" class="mt-8 px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-400 text-white font-semibold rounded-xl shadow-lg hover:from-blue-600 hover:to-blue-500 transition-all duration-200 active:scale-95" aria-label="Complete tutorial">Got It!</button>
-        </div>
-    </div>
-    
-    <script src="https://prisimai.github.io/PrisimAI/script.js" defer></script>
+<body class="bg-gray-100 dark:bg-gray-900">
+    <!-- 
+      This iframe loads the specified URL.
+      
+      This will only work if the website 'mirexa.vercel.app'
+      allows itself to be embedded in an iframe.
+    -->
+    <iframe src="https://PrisimAI.github.io/PrisimAI/index.html" title="Full-page embed of PrisimAI"></iframe>
 </body>
 </html>
+

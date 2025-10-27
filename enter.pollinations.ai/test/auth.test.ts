@@ -60,3 +60,27 @@ test("Invalid key query parameter should return 401", async () => {
     );
     expect(response.status).toBe(401);
 });
+
+test("Secret key in query parameter should return 400", async () => {
+    const response = await SELF.fetch(
+        `http://localhost:3000/api/generate/text/hello?key=sk_secret_key_123`,
+        {
+            method: "GET",
+        },
+    );
+    expect(response.status).toBe(400);
+    const json = await response.json();
+    expect(json.message).toContain("Only publishable keys");
+});
+
+test("Non-prefixed key in query parameter should return 400", async () => {
+    const response = await SELF.fetch(
+        `http://localhost:3000/api/generate/text/hello?key=some_random_key`,
+        {
+            method: "GET",
+        },
+    );
+    expect(response.status).toBe(400);
+    const json = await response.json();
+    expect(json.message).toContain("Only publishable keys");
+});

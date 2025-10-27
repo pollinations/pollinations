@@ -49,13 +49,21 @@ function extractApiKey(headers: Headers, url?: URL): string | null {
     const auth = headers.get("authorization");
     const match = auth?.match(/^Bearer (.+)$/);
     if (match?.[1]) return match[1];
-    
+
     // Fallback to key query parameter
     if (url) {
         const keyParam = url.searchParams.get("key");
-        if (keyParam) return keyParam;
+        if (keyParam) {
+            // Only allow publishable keys (pk_*) in query parameters for security
+            if (!keyParam.startsWith("pk_")) {
+                throw new HTTPException(400, {
+                    message: "Only publishable keys (pk_*) allowed in query params. Use Authorization header for secret keys."
+                });
+            }
+            return keyParam;
+        }
     }
-    
+
     return null;
 }
 

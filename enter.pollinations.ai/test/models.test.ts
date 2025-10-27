@@ -4,12 +4,24 @@ import { test } from "./fixtures.ts";
 import { describe, beforeEach, expect } from "vitest";
 import { env } from "cloudflare:workers";
 
+const DISABLE_CACHE = false;
+
 const anonymousTestCases = (allowAnoymous: boolean) => {
     return getTextServices().map((serviceId) => [
         serviceId,
         isFreeService(serviceId) && allowAnoymous ? 200 : 401,
     ]);
 };
+
+const randomString = (length: number) => {
+    return crypto.getRandomValues(new Uint8Array(length)).join("");
+};
+
+function testMessageContent() {
+    return DISABLE_CACHE
+        ? `Do you like this random string: ${randomString(10)}? Only answer yes or no.`
+        : "Do you prefer 0, or 1? Just answer with 0 or 1.";
+}
 
 // Send a request to each text model without authentication
 // and makes sure that the response status is in line with
@@ -36,7 +48,7 @@ describe.for([true, false])(
                             messages: [
                                 {
                                     role: "user",
-                                    content: "Hello, whats going on today?",
+                                    content: testMessageContent(),
                                 },
                             ],
                         }),
@@ -67,7 +79,7 @@ test.for(getTextServices())(
                     messages: [
                         {
                             role: "user",
-                            content: "Hello, whats going on today?",
+                            content: testMessageContent(),
                         },
                     ],
                 }),

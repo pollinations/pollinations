@@ -29,8 +29,9 @@ export const Route = createFileRoute("/")({
         const tiersResult = await honoTiers.view.$get();
         const tierData = tiersResult.ok ? await tiersResult.json() : null;
         
+        // Use better-auth's built-in list() method which returns metadata
         const apiKeysResult = await context.auth.apiKey.list();
-        const apiKeys = apiKeysResult.data ? apiKeysResult.data : [];
+        const apiKeys = apiKeysResult.data || [];
 
         console.log(context.user);
         return { auth: context.auth, user: context.user, customer, apiKeys, tierData };
@@ -62,17 +63,34 @@ function RouteComponent() {
     };
 
     const handleCreateApiKey = async (formState: CreateApiKey) => {
-        const createKeyDate = {
+        const keyType = formState.keyType || "secret";
+        
+        const createKeyData = {
             name: formState.name,
+            prefix: keyType === "publishable" ? "pk" : "sk", // Set prefix based on key type
             metadata: {
                 description: formState.description,
+                keyType,
             },
         };
-        const result = await auth.apiKey.create(createKeyDate);
+        const result = await auth.apiKey.create(createKeyData);
         if (result.error) {
             // TODO: handle it
             console.error(result.error);
         }
+        
+        // For publishable keys, store the plaintext key in metadata for easy retrieval
+        if (keyType === "publishable" && result.data) {
+            const apiKey = result.data as CreateApiKeyResponse;
+            await auth.apiKey.update({
+                keyId: apiKey.id,
+                metadata: {
+                    plaintextKey: apiKey.key, // Store plaintext key in metadata
+                    keyType,
+                },
+            });
+        }
+        
         router.invalidate();
         return result.data as CreateApiKeyResponse;
     };

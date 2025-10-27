@@ -51,9 +51,8 @@ export const tiersRoutes = new Hono<Env>()
     .get(
         "/view",
         describeRoute({
-            description:
-                "Get the current user's tier status and daily pollen information.",
-            hide: false,
+            description: "Get the current user's tier status and daily pollen information.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
@@ -69,9 +68,8 @@ export const tiersRoutes = new Hono<Env>()
     .post(
         "/activate",
         describeRoute({
-            description:
-                "Create a Polar checkout session to activate a tier subscription.",
-            hide: false,
+            description: "Create a Polar checkout session to activate a tier subscription.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         validator("json", activateRequestSchema),
         async (c) => {
@@ -84,15 +82,6 @@ export const tiersRoutes = new Hono<Env>()
             if (userTier !== target_tier) {
                 throw new HTTPException(403, {
                     message: `You must have ${target_tier} tier to subscribe. Contact admin for tier upgrade.`,
-                });
-            }
-
-            // Check rate limit (simple: 3 per hour per user)
-            const rateLimitKey = `tier_activate_rate:${user.id}`;
-            const currentCount = await c.env.KV.get(rateLimitKey);
-            if (currentCount && parseInt(currentCount) >= 3) {
-                throw new HTTPException(429, {
-                    message: "Rate limit exceeded. Try again later.",
                 });
             }
 
@@ -109,15 +98,6 @@ export const tiersRoutes = new Hono<Env>()
                         target_tier,
                     },
                 });
-
-                // Update rate limit counter
-                await c.env.KV.put(
-                    rateLimitKey,
-                    String(parseInt(currentCount || "0") + 1),
-                    {
-                        expirationTtl: 3600, // 1 hour
-                    },
-                );
 
                 return c.json({ checkout_url: checkout.url });
             } catch (error) {

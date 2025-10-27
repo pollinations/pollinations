@@ -7,6 +7,7 @@ import { polar } from "@/middleware/polar.ts";
 import type { Env } from "../env.ts";
 import { track } from "@/middleware/track.ts";
 import { removeUnset } from "@/util.ts";
+import { frontendKeyRateLimit } from "@/middleware/frontendRateLimit.ts";
 import { describeRoute, resolver } from "hono-openapi";
 import { validator } from "@/middleware/validator.ts";
 import {
@@ -87,6 +88,7 @@ export const proxyRoutes = new Hono<Env>()
         },
     )
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
+    .use(frontendKeyRateLimit)
     .use(polar)
     // .use(alias({ "/openai/chat/completions": "/openai" }))
     .post(
@@ -97,14 +99,14 @@ export const proxyRoutes = new Hono<Env>()
                 "OpenAI compatible endpoint for text generation.",
                 "Also available under `/openai/chat/completions`.",
                 "",
-                "**Authentication (Server-to-Server Only):**",
+                "**Authentication (Secret Keys Only):**",
                 "",
                 "Include your API key in the `Authorization` header as a Bearer token:",
                 "",
                 "`Authorization: Bearer YOUR_API_KEY`",
                 "",
                 "API keys can be created from your dashboard at enter.pollinations.ai.",
-                "Server-to-Server keys provide the best rate limits and access to spend Pollen on premium models.",
+                "Secret keys provide the best rate limits and can spend Pollen.",
             ].join("\n"),
             responses: {
                 200: {
@@ -236,7 +238,7 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "Generate an image from a text prompt.",
                 "",
-                "**Authentication (Server-to-Server Only):**",
+                "**Authentication (Secret Keys Only):**",
                 "",
                 "Include your API key in the `Authorization` header as a Bearer token:",
                 "",

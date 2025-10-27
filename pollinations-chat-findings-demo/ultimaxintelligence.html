@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Ensures proper rendering and touch zooming on mobile devices -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Updated title for the new site -->
+    <title>Umint AI Embed</title>
+    <!-- Load Tailwind CSS (although it's not strictly needed for this simple embed) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Use a clean, modern font */
+        html, body {
+            font-family: "Inter", sans-serif;
+            /* Reset default browser styles */
+            margin: 0;
+            padding: 0;
+            /* Use 100% of the viewport height and width */
+            height: 100vh;
+            width: 100vw;
+            /* Hide any potential overflow scrollbars on the main page */
+            overflow: hidden;
+        }
+
+        /* Make the iframe fill its container (the body) */
+        iframe {
+            width: 100%;
+            height: 100%;
+            /* Remove the default border from the iframe */
+            border: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900">
+    <!-- 
+      This iframe loads the specified URL.
+      
+      This will only work if the website 'umint-ai.hf.space'
+      allows itself to be embedded in an iframe.
+    -->
+    <iframe src="https://umint-ai.hf.space/" title="Full-page embed of Umint AI"></iframe>
+</body>
+</html>
+

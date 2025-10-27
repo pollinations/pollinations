@@ -34,6 +34,7 @@ export type AuthOptions = {
 type ApiKey = {
     name?: string;
     permissions?: Record<string, string[]>;
+    metadata?: Record<string, unknown>;
 };
 
 type AuthResult = {
@@ -84,6 +85,7 @@ export const auth = (options: AuthOptions) =>
                 apiKey: {
                     name: keyResult.key.name || undefined,
                     permissions: keyResult.key.permissions || undefined,
+                    metadata: keyResult.key.metadata || undefined,
                 },
             };
         };

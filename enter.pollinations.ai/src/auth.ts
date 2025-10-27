@@ -32,15 +32,6 @@ export function createAuth(env: Cloudflare.Env) {
             timeWindow: 1000, // 1 second
             maxRequests: 5, // 5 requests
         },
-        // Use standard Authorization: Bearer header (RFC 6750)
-        customAPIKeyGetter: (ctx: GenericEndpointContext): string | null => {
-            const authHeader = ctx.request?.headers.get("authorization");
-            // HTTP headers are case-insensitive per RFC 2616
-            if (authHeader && authHeader.length > 7 && authHeader.substring(0, 7).toLowerCase() === "bearer ") {
-                return authHeader.substring(7).trim(); // Remove "Bearer " prefix and trim whitespace
-            }
-            return null;
-        },
         // Custom key generator to support pk_ (frontend) and sk_ (server) prefixes
         // Note: prefix will be added in the database hook based on metadata
         customKeyGenerator: (options: { length: number; prefix: string | undefined }) => {

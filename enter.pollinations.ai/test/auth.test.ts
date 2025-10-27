@@ -61,6 +61,10 @@ test("Invalid key query parameter should return 401", async () => {
     expect(response.status).toBe(401);
 });
 
+// Note: The restriction on key types in URLs has been removed.
+// All API key types (pk_*, sk_*, etc.) can now be passed via query parameter.
+// Invalid keys will be validated by the API key verification system and return 401.
+
 test("Secret key in query parameter should return 401 (invalid key)", async () => {
     const response = await SELF.fetch(
         `http://localhost:3000/api/generate/text/hello?key=sk_secret_key_123`,
@@ -68,7 +72,6 @@ test("Secret key in query parameter should return 401 (invalid key)", async () =
             method: "GET",
         },
     );
-    // Invalid key returns 401, not 400 - the restriction on key types in URLs has been removed
     expect(response.status).toBe(401);
 });
 
@@ -79,6 +82,5 @@ test("Non-prefixed key in query parameter should return 401 (invalid key)", asyn
             method: "GET",
         },
     );
-    // Invalid key returns 401, not 400 - the restriction on key types in URLs has been removed
     expect(response.status).toBe(401);
 });

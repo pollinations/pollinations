@@ -7,13 +7,13 @@ import type { AuthEnv } from "./auth.ts";
  * Rate limiting middleware for frontend requests.
  * 
  * - Server API keys (sk_): Skip rate limiting entirely
- * - Frontend keys (pk_) / anonymous: 12 requests per 2 minutes (1 request every 10 seconds)
+ * - Frontend keys (pk_) / anonymous: 24 requests per 2 minutes (1 request every 5 seconds)
  */
 export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) => {
     try {
         const limiter = rateLimiter<AuthEnv>({
             windowMs: 2 * 60 * 1000, // 2 minutes (120 seconds)
-            limit: 12, // 12 requests per 2 minutes = 1 request every 10 seconds
+            limit: 24, // 24 requests per 2 minutes = 1 request every 5 seconds
             standardHeaders: "draft-6",
             keyGenerator: (c) => c.req.header("cf-connecting-ip") || "unknown",
             skip: (c) => {

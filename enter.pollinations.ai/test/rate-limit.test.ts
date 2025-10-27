@@ -41,9 +41,9 @@ test("rate limit blocks requests exceeding the limit", { timeout: 30000 }, async
     const testIp = `192.0.2.${(timestamp % 254) + 1}`;
     console.log("[TEST] Testing rate limit enforcement with IP:", testIp, "(no API key)");
     
-    // Make 13 requests without API key (limit is 12 per 2 minutes)
+    // Make 25 requests without API key (limit is 24 per 2 minutes)
     const responses = [];
-    for (let i = 0; i < 13; i++) {
+    for (let i = 0; i < 25; i++) {
         const response = await SELF.fetch(endpoint, {
             method: "POST",
             headers: {

@@ -63,11 +63,11 @@ function RouteComponent() {
     };
 
     const handleCreateApiKey = async (formState: CreateApiKey) => {
-        const keyType = formState.keyType || "private";
+        const keyType = formState.keyType || "secret";
         
         const createKeyData = {
             name: formState.name,
-            prefix: keyType === "public" ? "pk" : "sk", // Set prefix based on key type
+            prefix: keyType === "publishable" ? "pk" : "sk", // Set prefix based on key type
             metadata: {
                 description: formState.description,
                 keyType,
@@ -79,8 +79,8 @@ function RouteComponent() {
             console.error(result.error);
         }
         
-        // For public keys, store the plaintext key in metadata for easy retrieval
-        if (keyType === "public" && result.data) {
+        // For publishable keys, store the plaintext key in metadata for easy retrieval
+        if (keyType === "publishable" && result.data) {
             const apiKey = result.data as CreateApiKeyResponse;
             await auth.apiKey.update({
                 keyId: apiKey.id,

@@ -4,10 +4,10 @@ import { createMiddleware } from "hono/factory";
 import type { AuthEnv } from "./auth.ts";
 
 /**
- * Rate limiting middleware for public key requests.
+ * Rate limiting middleware for publishable key requests.
  * 
- * - Private API keys (sk_): Skip rate limiting entirely
- * - Public keys (pk_) / anonymous: 24 requests per 2 minutes (1 request every 5 seconds)
+ * - Secret API keys (sk_): Skip rate limiting entirely
+ * - Publishable keys (pk_) / anonymous: 24 requests per 2 minutes (1 request every 5 seconds)
  */
 export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) => {
     const limiter = rateLimiter<AuthEnv>({
@@ -16,10 +16,10 @@ export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) =>
         standardHeaders: "draft-6",
         keyGenerator: (c) => c.req.header("cf-connecting-ip") || "unknown",
         skip: (c) => {
-            // Skip rate limiting for private API keys only (keyType: "private")
-            // Public keys (keyType: "public") and anonymous users are rate limited
+            // Skip rate limiting for secret API keys only (keyType: "secret")
+            // Publishable keys (keyType: "publishable") and anonymous users are rate limited
             const apiKey = c.var?.auth?.apiKey;
-            return apiKey?.metadata?.keyType === "private";
+            return apiKey?.metadata?.keyType === "secret";
         },
         store: new WorkersKVStore({ 
             namespace: c.env.KV,

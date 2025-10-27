@@ -99,14 +99,14 @@ export const proxyRoutes = new Hono<Env>()
                 "OpenAI compatible endpoint for text generation.",
                 "Also available under `/openai/chat/completions`.",
                 "",
-                "**Authentication (Private Keys Only):**",
+                "**Authentication (Secret Keys Only):**",
                 "",
                 "Include your API key in the `Authorization` header as a Bearer token:",
                 "",
                 "`Authorization: Bearer YOUR_API_KEY`",
                 "",
                 "API keys can be created from your dashboard at enter.pollinations.ai.",
-                "Private keys provide the best rate limits and can spend Pollen.",
+                "Secret keys provide the best rate limits and can spend Pollen.",
             ].join("\n"),
             responses: {
                 200: {
@@ -238,7 +238,7 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "Generate an image from a text prompt.",
                 "",
-                "**Authentication (Private Keys Only):**",
+                "**Authentication (Secret Keys Only):**",
                 "",
                 "Include your API key in the `Authorization` header as a Bearer token:",
                 "",

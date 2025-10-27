@@ -103,7 +103,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             <span></span>
                             {sortedApiKeys.map((apiKey) => {
                                 const keyType = apiKey.metadata?.["keyType"] as string | undefined;
-                                const isPublic = keyType === "public";
+                                const isPublishable = keyType === "publishable";
                                 const plaintextKey = apiKey.metadata?.["plaintextKey"] as string | undefined;
                                 
                                 return (
@@ -111,18 +111,18 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                         <Cell>
                                             <span className={cn(
                                                 "px-2 py-1 rounded text-xs font-medium",
-                                                isPublic 
+                                                isPublishable 
                                                     ? "bg-blue-100 text-blue-700" 
                                                     : "bg-purple-100 text-purple-700"
                                             )}>
-                                                {isPublic ? "🌐 Public" : "🔒 Private"}
+                                                {isPublishable ? "🌐 Publishable" : "🔒 Secret"}
                                             </span>
                                         </Cell>
                                         <Cell>
                                             <span className="text-xs truncate block" title={apiKey.name ?? undefined}>{apiKey.name}</span>
                                         </Cell>
                                         <Cell>
-                                            {isPublic && plaintextKey ? (
+                                            {isPublishable && plaintextKey ? (
                                                 <KeyDisplay fullKey={plaintextKey} />
                                             ) : (
                                                 <span className="font-mono text-xs text-gray-500">{apiKey.start}...</span>
@@ -187,7 +187,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
 export type CreateApiKey = {
     name: string;
     description?: string;
-    keyType?: "public" | "private";
+    keyType?: "publishable" | "secret";
 };
 
 export type CreateApiKeyResponse = ApiKey & {
@@ -245,22 +245,22 @@ const CreateKeyForm: FC<{
                 <div className="space-y-2">
                     <label className={cn(
                         "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
-                        formData.keyType === "public" 
+                        formData.keyType === "publishable" 
                             ? "border-blue-500 bg-blue-50" 
                             : "border-gray-200 hover:border-gray-300",
-                        createdKey && formData.keyType !== "public" && "opacity-40"
+                        createdKey && formData.keyType !== "publishable" && "opacity-40"
                     )}>
                         <input
                             type="radio"
                             name="keyType"
-                            value="public"
-                            checked={formData.keyType === "public"}
+                            value="publishable"
+                            checked={formData.keyType === "publishable"}
                             onChange={(e) => onInputChange("keyType", e.target.value)}
                             className="mt-1 w-4 h-4 text-blue-600"
                             disabled={isSubmitting || !!createdKey}
                         />
                         <div className="flex-1">
-                            <div className="font-medium text-blue-800">🌐 Public Key</div>
+                            <div className="font-medium text-blue-800">🌐 Publishable Key</div>
                             <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
                                 <li className="font-semibold">Always visible in your dashboard</li>
                                 <li>Safe to use in client-side code (React, Vue, etc.)</li>
@@ -270,22 +270,22 @@ const CreateKeyForm: FC<{
                     </label>
                     <label className={cn(
                         "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
-                        formData.keyType === "private" 
+                        formData.keyType === "secret" 
                             ? "border-purple-500 bg-purple-50" 
                             : "border-gray-200 hover:border-gray-300",
-                        createdKey && formData.keyType !== "private" && "opacity-40"
+                        createdKey && formData.keyType !== "secret" && "opacity-40"
                     )}>
                         <input
                             type="radio"
                             name="keyType"
-                            value="private"
-                            checked={formData.keyType === "private"}
+                            value="secret"
+                            checked={formData.keyType === "secret"}
                             onChange={(e) => onInputChange("keyType", e.target.value)}
                             className="mt-1 w-4 h-4 text-purple-600"
                             disabled={isSubmitting || !!createdKey}
                         />
                         <div className="flex-1">
-                            <div className="font-medium text-purple-800">🔒 Private Key</div>
+                            <div className="font-medium text-purple-800">🔒 Secret Key</div>
                             <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
                                 <li className="font-semibold text-amber-900">Only shown once - copy it now!</li>
                                 <li>For server-side apps - never expose publicly</li>
@@ -359,7 +359,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const [formData, setFormData] = useState<CreateApiKey>({
         name: generateFunName(),
         description: `Created on ${new Date().toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: '2-digit' })}`,
-        keyType: "private", // Default to private key
+        keyType: "secret", // Default to secret key
     });
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
         null,
@@ -377,8 +377,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         if (field === 'keyType') {
             updatedData.name = generateFunName();
             
-            // Clear description for public keys, set default for private
-            if (value === 'public') {
+            // Clear description for publishable keys, set default for secret
+            if (value === 'publishable') {
                 updatedData.description = '';
             } else {
                 updatedData.description = `Created on ${new Date().toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: '2-digit' })}`;
@@ -410,7 +410,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
     const resetForm = () => {
         setCreatedKey(null);
-        setFormData({ name: "backend-" + generateFunName(), description: "", keyType: "private" });
+        setFormData({ name: "backend-" + generateFunName(), description: "", keyType: "secret" });
     };
 
     useEffect(() => {

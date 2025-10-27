@@ -104,7 +104,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             {sortedApiKeys.map((apiKey) => {
                                 const keyType = apiKey.metadata?.["keyType"] as string | undefined;
                                 const isFrontend = keyType === "frontend";
-                                const description = apiKey.metadata?.["description"] as string | undefined;
+                                const plaintextKey = apiKey.metadata?.["plaintextKey"] as string | undefined;
                                 
                                 return (
                                     <Fragment key={apiKey.id}>
@@ -122,8 +122,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                             <span className="text-xs truncate block" title={apiKey.name ?? undefined}>{apiKey.name}</span>
                                         </Cell>
                                         <Cell>
-                                            {isFrontend && description ? (
-                                                <KeyDisplay fullKey={description} />
+                                            {isFrontend && plaintextKey ? (
+                                                <KeyDisplay fullKey={plaintextKey} />
                                             ) : (
                                                 <span className="font-mono text-xs text-gray-500">{apiKey.start}...</span>
                                             )}
@@ -357,7 +357,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     };
 
     const [formData, setFormData] = useState<CreateApiKey>({
-        name: "backend-" + generateFunName(),
+        name: generateFunName(),
         description: `Created on ${new Date().toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: '2-digit' })}`,
         keyType: "server", // Default to server key
     });
@@ -373,11 +373,9 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     ) => {
         const updatedData = { ...formData, [field]: value };
         
-        // When key type changes, regenerate name with appropriate prefix
+        // When key type changes, regenerate name
         if (field === 'keyType') {
-            const prefix = value === 'frontend' ? 'frontend-' : 'backend-';
-            const baseName = generateFunName();
-            updatedData.name = prefix + baseName;
+            updatedData.name = generateFunName();
             
             // Clear description for frontend keys, set default for backend
             if (value === 'frontend') {

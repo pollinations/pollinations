@@ -79,13 +79,13 @@ function RouteComponent() {
             console.error(result.error);
         }
         
-        // For frontend keys, store the plaintext key in description for easy retrieval
+        // For frontend keys, store the plaintext key in metadata for easy retrieval
         if (keyType === "frontend" && result.data) {
             const apiKey = result.data as CreateApiKeyResponse;
             await auth.apiKey.update({
                 keyId: apiKey.id,
                 metadata: {
-                    description: apiKey.key, // Store plaintext key in description
+                    plaintextKey: apiKey.key, // Store plaintext key in metadata
                     keyType,
                 },
             });

@@ -21,7 +21,11 @@ function getTierProductId(env: Cloudflare.Env, tier: ActivatableTier): string {
 }
 
 interface TierViewModel {
-    status: TierStatus;
+    assigned_tier: TierStatus;  // Tier assigned in Cloudflare DB
+    active_tier: TierStatus;    // Currently active subscription in Polar
+    action_available: "activate" | "upgrade" | null;
+    product_name?: string;
+    daily_pollen?: number;
     next_refill_at_utc: string;
 }
 
@@ -32,6 +36,35 @@ function getTierStatus(userTier: string | null | undefined): TierStatus {
     if (normalized === "flower") return "flower";
     if (normalized === "nectar") return "nectar";
     return "none";
+}
+
+function getProductIdFromTier(env: Cloudflare.Env, tier: ActivatableTier): string {
+    return getTierProductId(env, tier);
+}
+
+function getTierFromProductId(env: Cloudflare.Env, productId: string): TierStatus {
+    const seedId = (env as any).POLAR_PRODUCT_ID_SEED;
+    const flowerId = (env as any).POLAR_PRODUCT_ID_FLOWER;
+    const nectarId = (env as any).POLAR_PRODUCT_ID_NECTAR;
+    
+    if (productId === seedId) return "seed";
+    if (productId === flowerId) return "flower";
+    if (productId === nectarId) return "nectar";
+    return "none";
+}
+
+function determineAction(assigned: TierStatus, active: TierStatus): "activate" | "upgrade" | null {
+    // No assigned tier = no action
+    if (assigned === "none") return null;
+    
+    // Assigned tier but no active subscription = activate
+    if (active === "none") return "activate";
+    
+    // Same tier = no action needed
+    if (assigned === active) return null;
+    
+    // Different tiers = upgrade
+    return "upgrade";
 }
 
 function getNextMidnightUTC(): string {
@@ -56,10 +89,80 @@ export const tiersRoutes = new Hono<Env>()
         }),
         async (c) => {
             const user = c.var.auth.requireUser();
+            const polar = c.var.polar.client;
+            
+            // Get tier assigned in Cloudflare DB
+            const assigned_tier = getTierStatus(user.tier);
+            
+            // Initialize response
+            let active_tier: TierStatus = "none";
+            let product_name: string | undefined;
+            let daily_pollen: number | undefined;
+            let next_refill_at_utc = getNextMidnightUTC(); // Default fallback
+            
+            try {
+                // Get customer state from Polar
+                const customerState = await polar.customers.getStateExternal({
+                    externalId: user.id,
+                });
+                
+                const activeSubs = customerState.activeSubscriptions || [];
+                
+                // Find the active subscription (prioritize highest tier if multiple)
+                if (activeSubs.length > 0) {
+                    // Get the first active subscription
+                    const activeSub = activeSubs[0];
+                    const activeProductId = activeSub.productId;
+                    active_tier = getTierFromProductId(c.env, activeProductId);
+                    
+                    // Calculate next refill: 24 hours from subscription start (daily pollen refill)
+                    // Note: currentPeriodEnd is for billing cycle, not daily refills
+                    if (activeSub.currentPeriodStart) {
+                        const startDate = new Date(activeSub.currentPeriodStart);
+                        const now = new Date();
+                        
+                        // Calculate how many 24-hour periods have passed
+                        const msPerDay = 24 * 60 * 60 * 1000;
+                        const msSinceStart = now.getTime() - startDate.getTime();
+                        const daysPassed = Math.floor(msSinceStart / msPerDay);
+                        
+                        // Next refill is at the start of the next 24-hour period
+                        const nextRefillDate = new Date(startDate.getTime() + (daysPassed + 1) * msPerDay);
+                        next_refill_at_utc = nextRefillDate.toISOString();
+                    }
+                    
+                    // Fetch product details for the active subscription
+                    try {
+                        const product = await polar.products.get({ id: activeProductId });
+                        product_name = product.name;
+                        
+                        // Extract daily pollen from meter_credit benefit
+                        const meterBenefit = product.benefits?.find(
+                            (b: any) => b.type === "meter_credit"
+                        );
+                        if (meterBenefit?.properties && "amount" in meterBenefit.properties) {
+                            daily_pollen = (meterBenefit.properties as any).amount;
+                        }
+                    } catch (productError) {
+                        c.get("log").warn("Failed to fetch product details: {error}", { error: productError });
+                    }
+                }
+            } catch (error) {
+                // If Polar query fails, assume no active subscription
+                c.get("log").error("Failed to check subscription status: {error}", { error });
+                active_tier = "none";
+            }
+            
+            // Determine what action is available
+            const action_available = determineAction(assigned_tier, active_tier);
 
             const viewModel: TierViewModel = {
-                status: getTierStatus(user.tier),
-                next_refill_at_utc: getNextMidnightUTC(),
+                assigned_tier,
+                active_tier,
+                action_available,
+                product_name,
+                daily_pollen,
+                next_refill_at_utc,
             };
 
             return c.json(viewModel);

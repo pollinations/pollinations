@@ -6,6 +6,8 @@ type TierStatus = "none" | "seed" | "flower" | "nectar";
 interface TierPanelProps {
     status: TierStatus;
     next_refill_at_utc: string;
+    product_name?: string;
+    daily_pollen?: number;
 }
 
 const TIER_CONFIG = {
@@ -13,19 +15,19 @@ const TIER_CONFIG = {
         emoji: "🌱",
         name: "Seed",
         pollen: 10,
-        badgeColors: "bg-green-100 border-green-300 text-green-800",
+        badgeColors: "bg-green-100 border border-green-300 text-green-800",
     },
     flower: {
         emoji: "🌸",
         name: "Flower",
         pollen: 15,
-        badgeColors: "bg-purple-100 border-purple-300 text-purple-800",
+        badgeColors: "bg-purple-100 border border-purple-300 text-purple-800",
     },
     nectar: {
         emoji: "🍯",
         name: "Nectar",
         pollen: 20,
-        badgeColors: "bg-yellow-100 border-yellow-300 text-yellow-800",
+        badgeColors: "bg-yellow-100 border border-yellow-300 text-yellow-800",
     },
 } as const;
 
@@ -65,12 +67,12 @@ const NoTierScreen: FC = () => {
                 <div className="flex items-center gap-3">
                     <span className="text-3xl">🔒</span>
                     <span className="text-xl font-subheading text-gray-900">
-                        No sponsored tier
+                        No active tier subscription
                     </span>
                 </div>
 
                 <p className="text-gray-600">
-                    You can apply to join the daily sponsorship program.
+                    You don't have an active tier subscription yet. Contact us to get assigned a tier, then activate it to start receiving daily pollen.
                 </p>
 
                 <div className="flex items-center gap-2 text-gray-600">
@@ -89,34 +91,46 @@ const NoTierScreen: FC = () => {
     );
 };
 
-const TierScreen: FC<{ tier: keyof typeof TIER_CONFIG; countdown: string }> = ({
+const TierScreen: FC<{
+    tier: keyof typeof TIER_CONFIG;
+    countdown: string;
+    product_name?: string;
+    daily_pollen?: number;
+}> = ({
     tier,
     countdown,
+    product_name,
+    daily_pollen,
 }) => {
     const config = TIER_CONFIG[tier];
+    const displayName = product_name || config.name;
+    const pollenAmount = daily_pollen || config.pollen;
 
     return (
         <div className="rounded-2xl p-6 border border-gray-200 bg-gray-50/30">
             <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                     <span className="text-3xl">{config.emoji}</span>
                     <span className="text-xl font-subheading text-gray-900">
-                        {config.name}
+                        {displayName}
                     </span>
                     <span className={`inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm ${config.badgeColors}`}>
-                        {config.pollen} pollen/day
+                        {pollenAmount} pollen/day
+                    </span>
+                    <span className="inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm bg-blue-100 border border-blue-300 text-blue-800">
+                        ⏱️ {countdown}
                     </span>
                 </div>
-                
+
+                <div className="px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-xs text-green-900 leading-relaxed">
+                        ✓ <strong>Active Subscription:</strong> Your tier subscription is active and will renew daily.
+                    </p>
+                </div>
+
                 <div className="mt-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
                     <p className="text-xs text-amber-900 leading-relaxed">
                         ⚠️ <strong>Beta Notice:</strong> Daily pollen amounts are experimental values that may change at any time without notice. Tier subscription benefits are not yet finalized.
-                    </p>
-                </div>
-                
-                <div className="px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-xs text-green-900 leading-relaxed">
-                        🌿 Pollen refills every 24 hours from your subscription time. Unused pollen does not carry over.
                     </p>
                 </div>
             </div>
@@ -127,6 +141,8 @@ const TierScreen: FC<{ tier: keyof typeof TIER_CONFIG; countdown: string }> = ({
 export const TierPanel: FC<TierPanelProps> = ({
     status,
     next_refill_at_utc,
+    product_name,
+    daily_pollen,
 }) => {
     const countdown = useCountdownToMidnightUTC(next_refill_at_utc);
 
@@ -134,5 +150,12 @@ export const TierPanel: FC<TierPanelProps> = ({
         return <NoTierScreen />;
     }
 
-    return <TierScreen tier={status} countdown={countdown} />;
+    return (
+        <TierScreen 
+            tier={status} 
+            countdown={countdown}
+            product_name={product_name}
+            daily_pollen={daily_pollen}
+        />
+    );
 };

@@ -19,7 +19,7 @@ jobs:
     
     steps:
       - name: Debounce - Wait for edits to settle
-        uses: zachary95/github-actions-debounce@v1
+        uses: zachary95/github-actions-debounce@v0.1.0
         with:
           wait: 180  # Wait 3 minutes for edits to stop
           

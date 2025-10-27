@@ -101,8 +101,15 @@ export const tiersRoutes = new Hono<Env>()
 
                 return c.json({ checkout_url: checkout.url });
             } catch (error) {
+                console.error("Polar checkout creation failed:", {
+                    error,
+                    userId: user.id,
+                    email: user.email,
+                    productId,
+                    targetTier: target_tier,
+                });
                 throw new HTTPException(500, {
-                    message: "Failed to create checkout session",
+                    message: `Failed to create checkout session: ${error instanceof Error ? error.message : String(error)}`,
                     cause: error,
                 });
             }

@@ -16,7 +16,8 @@
     "isolatedModules": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@shared/*": ["../shared/*"]
+      "@shared/*": ["../shared/*"],
+      "@enter/*": ["../enter.pollinations.ai/src/*"]
     }
   },
   "include": ["src/**/*"],

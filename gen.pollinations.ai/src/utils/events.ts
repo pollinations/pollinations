@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/d1";
 import type { Env } from "../env";
-import * as schema from "@shared/db/schema";
+import * as schema from "@enter/db/schema/event";
 
 type EventData = {
     eventType: "generate.text" | "generate.image";

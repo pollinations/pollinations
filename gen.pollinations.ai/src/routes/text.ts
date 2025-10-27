@@ -3,7 +3,38 @@ import { proxy } from "hono/proxy";
 import type { Env } from "../env";
 import { auth, requireAuth } from "../middleware/auth";
 import { logEvent } from "../utils/events";
-import { generationHeaders, proxyHeaders } from "@shared/proxy-headers";
+
+type User = {
+    id: string;
+    githubId: number;
+    tier: string;
+};
+
+/** Creates generation headers to send to backend services */
+function generationHeaders(user?: User): Record<string, string> {
+    const headers: Record<string, string> = {};
+    if (user) {
+        headers["x-github-id"] = String(user.githubId);
+        headers["x-user-tier"] = user.tier;
+    }
+    return headers;
+}
+
+/** Creates proxy headers for forwarding client information */
+function proxyHeaders(
+    requestHeaders: Record<string, string>,
+    requestId: string,
+    cfConnectingIp?: string,
+    host?: string
+): Record<string, string> {
+    return {
+        ...requestHeaders,
+        "x-request-id": requestId,
+        "x-forwarded-host": host || "",
+        "x-forwarded-for": cfConnectingIp || "",
+        "x-real-ip": cfConnectingIp || "",
+    };
+}
 
 export const textRoutes = new Hono<Env>();
 

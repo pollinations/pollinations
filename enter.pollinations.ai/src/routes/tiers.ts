@@ -23,7 +23,7 @@ function getTierProductId(env: Cloudflare.Env, tier: ActivatableTier): string {
 interface TierViewModel {
     assigned_tier: TierStatus;  // Tier assigned in Cloudflare DB
     active_tier: TierStatus;    // Currently active subscription in Polar
-    action_available: "activate" | "upgrade" | null;
+    should_show_activate_button: boolean;  // Show button only if no active subscription
     product_name?: string;
     daily_pollen?: number;
     next_refill_at_utc: string;
@@ -53,18 +53,9 @@ function getTierFromProductId(env: Cloudflare.Env, productId: string): TierStatu
     return "none";
 }
 
-function determineAction(assigned: TierStatus, active: TierStatus): "activate" | "upgrade" | null {
-    // No assigned tier = no action
-    if (assigned === "none") return null;
-    
-    // Assigned tier but no active subscription = activate
-    if (active === "none") return "activate";
-    
-    // Same tier = no action needed
-    if (assigned === active) return null;
-    
-    // Different tiers = upgrade
-    return "upgrade";
+function shouldShowActivateButton(assigned: TierStatus, active: TierStatus): boolean {
+    // Show button only if user has assigned tier but no active subscription
+    return assigned !== "none" && active === "none";
 }
 
 function getNextMidnightUTC(): string {
@@ -153,13 +144,13 @@ export const tiersRoutes = new Hono<Env>()
                 active_tier = "none";
             }
             
-            // Determine what action is available
-            const action_available = determineAction(assigned_tier, active_tier);
+            // Determine if activate button should be shown
+            const should_show_activate_button = shouldShowActivateButton(assigned_tier, active_tier);
 
             const viewModel: TierViewModel = {
                 assigned_tier,
                 active_tier,
-                action_available,
+                should_show_activate_button,
                 product_name,
                 daily_pollen,
                 next_refill_at_utc,

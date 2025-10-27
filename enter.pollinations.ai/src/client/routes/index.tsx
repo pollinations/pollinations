@@ -160,19 +160,17 @@ function RouteComponent() {
                 <div className="flex flex-col gap-2">
                     <div className="flex flex-col sm:flex-row justify-between gap-3">
                         <h2 className="font-bold flex-1">Tier</h2>
-                        {tierData.action_available && (
+                        {tierData.should_show_activate_button && (
                             <div className="flex gap-3">
                                 <Button
                                     onClick={handleActivateTier}
                                     disabled={isActivating}
-                                    color={tierData.action_available === "upgrade" ? "blue" : "green"}
+                                    color="green"
                                     weight="light"
                                 >
                                     {isActivating 
                                         ? "Processing..." 
-                                        : tierData.action_available === "upgrade"
-                                            ? `Upgrade to ${tierData.assigned_tier.charAt(0).toUpperCase() + tierData.assigned_tier.slice(1)}`
-                                            : `Activate ${tierData.assigned_tier.charAt(0).toUpperCase() + tierData.assigned_tier.slice(1)} Tier`
+                                        : `Activate ${tierData.assigned_tier.charAt(0).toUpperCase() + tierData.assigned_tier.slice(1)} Tier`
                                     }
                                 </Button>
                             </div>
@@ -180,6 +178,7 @@ function RouteComponent() {
                     </div>
                     <TierPanel
                         status={tierData.active_tier}
+                        assigned_tier={tierData.assigned_tier}
                         next_refill_at_utc={tierData.next_refill_at_utc}
                         product_name={tierData.product_name}
                         daily_pollen={tierData.daily_pollen}

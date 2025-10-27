@@ -5,6 +5,7 @@ type TierStatus = "none" | "seed" | "flower" | "nectar";
 
 interface TierPanelProps {
     status: TierStatus;
+    assigned_tier: TierStatus;
     next_refill_at_utc: string;
     product_name?: string;
     daily_pollen?: number;
@@ -15,19 +16,19 @@ const TIER_CONFIG = {
         emoji: "🌱",
         name: "Seed",
         pollen: 10,
-        badgeColors: "bg-green-100 border border-green-300 text-green-800",
+        badgeColors: "bg-emerald-100 border border-emerald-400 text-emerald-800",
     },
     flower: {
         emoji: "🌸",
         name: "Flower",
         pollen: 15,
-        badgeColors: "bg-purple-100 border border-purple-300 text-purple-800",
+        badgeColors: "bg-fuchsia-100 border border-fuchsia-400 text-fuchsia-800",
     },
     nectar: {
         emoji: "🍯",
         name: "Nectar",
         pollen: 20,
-        badgeColors: "bg-yellow-100 border border-yellow-300 text-yellow-800",
+        badgeColors: "bg-amber-100 border border-amber-400 text-amber-800",
     },
 } as const;
 
@@ -62,7 +63,7 @@ function useCountdownToMidnightUTC(targetUTC: string): string {
 
 const NoTierScreen: FC = () => {
     return (
-        <div className="rounded-2xl p-8 border-2 border-gray-200">
+        <div className="rounded-2xl p-8 border-2 border-gray-300">
             <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-3">
                     <span className="text-3xl">🔒</span>
@@ -93,11 +94,13 @@ const NoTierScreen: FC = () => {
 
 const TierScreen: FC<{
     tier: keyof typeof TIER_CONFIG;
+    assigned_tier: TierStatus;
     countdown: string;
     product_name?: string;
     daily_pollen?: number;
 }> = ({
     tier,
+    assigned_tier,
     countdown,
     product_name,
     daily_pollen,
@@ -106,8 +109,13 @@ const TierScreen: FC<{
     const displayName = product_name || config.name;
     const pollenAmount = daily_pollen || config.pollen;
 
+    // Detect tier change
+    const tierWillChange = assigned_tier !== "none" && assigned_tier !== tier;
+    const isUpgrade = tierWillChange && ["seed", "flower", "nectar"].indexOf(assigned_tier) > ["seed", "flower", "nectar"].indexOf(tier);
+    const assignedTierName = assigned_tier !== "none" ? assigned_tier.charAt(0).toUpperCase() + assigned_tier.slice(1) : "";
+
     return (
-        <div className="rounded-2xl p-6 border border-gray-200 bg-gray-50/30">
+        <div className="rounded-2xl p-6 border-2 border-gray-300 bg-gray-50/30">
             <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-3 flex-wrap">
                     <span className="text-3xl">{config.emoji}</span>
@@ -123,13 +131,21 @@ const TierScreen: FC<{
                 </div>
 
                 <div className="px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-xs text-green-900 leading-relaxed">
-                        ✓ <strong>Active Subscription:</strong> Your tier subscription is active and will renew daily.
+                    <p className="text-sm text-green-900 leading-relaxed">
+                        {tierWillChange ? (
+                            <>
+                                ✓ <strong>Active Subscription:</strong> Your tier will be <strong>{isUpgrade ? "upgraded" : "downgraded"} to {assignedTierName} Tier</strong> on next renewal (in {countdown}).
+                            </>
+                        ) : (
+                            <>
+                                ✓ <strong>Active Subscription:</strong> Your tier subscription is active and will renew daily.
+                            </>
+                        )}
                     </p>
                 </div>
 
                 <div className="mt-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-xs text-amber-900 leading-relaxed">
+                    <p className="text-sm text-amber-900 leading-relaxed">
                         ⚠️ <strong>Beta Notice:</strong> Daily pollen amounts are experimental values that may change at any time without notice. Tier subscription benefits are not yet finalized.
                     </p>
                 </div>
@@ -140,6 +156,7 @@ const TierScreen: FC<{
 
 export const TierPanel: FC<TierPanelProps> = ({
     status,
+    assigned_tier,
     next_refill_at_utc,
     product_name,
     daily_pollen,
@@ -152,7 +169,8 @@ export const TierPanel: FC<TierPanelProps> = ({
 
     return (
         <TierScreen 
-            tier={status} 
+            tier={status}
+            assigned_tier={assigned_tier}
             countdown={countdown}
             product_name={product_name}
             daily_pollen={daily_pollen}

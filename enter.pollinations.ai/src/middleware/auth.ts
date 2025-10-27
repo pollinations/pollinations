@@ -54,12 +54,6 @@ function extractApiKey(headers: Headers, url?: URL): string | null {
     if (url) {
         const keyParam = url.searchParams.get("key");
         if (keyParam) {
-            // Only allow publishable keys (pk_*) in query parameters for security
-            if (!keyParam.startsWith("pk_")) {
-                throw new HTTPException(400, {
-                    message: "Only publishable keys (pk_*) allowed in query params. Use Authorization header for secret keys."
-                });
-            }
             return keyParam;
         }
     }

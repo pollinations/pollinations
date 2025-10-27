@@ -8,7 +8,7 @@
         "test": "vitest run",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
-        "start": "tsx src/index.js"
+        "start": "tsx src/index.ts"
     },
     "keywords": [],
     "author": "",

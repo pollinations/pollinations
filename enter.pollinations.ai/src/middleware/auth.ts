@@ -43,11 +43,20 @@ type AuthResult = {
     apiKey?: ApiKey;
 };
 
-/** Extracts Bearer token from Authorization header (RFC 6750) */
-function extractApiKey(headers: Headers): string | null {
+/** Extracts Bearer token from Authorization header (RFC 6750) or token query parameter */
+function extractApiKey(headers: Headers, url?: URL): string | null {
+    // First try Authorization header
     const auth = headers.get("authorization");
     const match = auth?.match(/^Bearer (.+)$/);
-    return match?.[1] || null;
+    if (match?.[1]) return match[1];
+    
+    // Fallback to token query parameter
+    if (url) {
+        const tokenParam = url.searchParams.get("token");
+        if (tokenParam) return tokenParam;
+    }
+    
+    return null;
 }
 
 export const auth = (options: AuthOptions) =>
@@ -68,7 +77,8 @@ export const auth = (options: AuthOptions) =>
 
         const authenticateApiKey = async (): Promise<AuthResult | null> => {
             if (!options.allowApiKey) return null;
-            const apiKey = extractApiKey(c.req.raw.headers);
+            const url = new URL(c.req.url);
+            const apiKey = extractApiKey(c.req.raw.headers, url);
             if (!apiKey) return null;
             const keyResult = await client.api.verifyApiKey({
                 body: {

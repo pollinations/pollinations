@@ -1,6 +1,8 @@
 import { expect } from "vitest";
 import { test } from "./fixtures";
 import { Session, User } from "@/auth.ts";
+import { SELF } from "cloudflare:test";
+import { env } from "cloudflare:workers";
 
 test("Authenticate via session cookie and validate user data", async ({
     auth,
@@ -31,4 +33,30 @@ test("Authenticate via session cookie and validate user data", async ({
     expect(user.githubUsername).toBe(mockUser.login);
 
     expect(session).toBeDefined();
+});
+
+// Test token query parameter support (Issue #4820)
+test("Authenticate via token query parameter", async ({ apiKey }) => {
+    const response = await SELF.fetch(
+        `http://localhost:3000/api/generate/text/hello?token=${apiKey}`,
+        {
+            method: "GET",
+            headers: {
+                "referer": env.TESTING_REFERRER,
+            },
+        },
+    );
+    expect(response.status).toBe(200);
+    const text = await response.text();
+    expect(text.length).toBeGreaterThan(0);
+});
+
+test("Invalid token query parameter should return 401", async () => {
+    const response = await SELF.fetch(
+        `http://localhost:3000/api/generate/text/hello?token=invalid-token`,
+        {
+            method: "GET",
+        },
+    );
+    expect(response.status).toBe(401);
 });

@@ -8,7 +8,7 @@ import { polarRoutes } from "./routes/polar.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { tiersRoutes } from "./routes/tiers.ts";
 import { apiKeysRoutes } from "./routes/api-keys.ts";
-import { docsRoutes } from "./routes/docs.ts";
+import { createDocsRoutes } from "./routes/docs.ts";
 import { requestId } from "hono/request-id";
 import { logger } from "./middleware/logger.ts";
 import { getLogger } from "@logtape/logtape";
@@ -24,8 +24,9 @@ export const api = new Hono<Env>()
     .route("/polar", polarRoutes)
     .route("/tiers", tiersRoutes)
     .route("/api-keys", apiKeysRoutes)
-    .route("/docs", docsRoutes)
     .route("/generate", proxyRoutes);
+
+const docsRoutes = createDocsRoutes(api);
 
 const app = new Hono<Env>()
     .use(

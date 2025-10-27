@@ -10,28 +10,22 @@ import type { AuthEnv } from "./auth.ts";
  * - Frontend keys (pk_) / anonymous: 24 requests per 2 minutes (1 request every 5 seconds)
  */
 export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) => {
-    try {
-        const limiter = rateLimiter<AuthEnv>({
-            windowMs: 2 * 60 * 1000, // 2 minutes (120 seconds)
-            limit: 24, // 24 requests per 2 minutes = 1 request every 5 seconds
-            standardHeaders: "draft-6",
-            keyGenerator: (c) => c.req.header("cf-connecting-ip") || "unknown",
-            skip: (c) => {
-                // Skip rate limiting for server API keys only (keyType: "server")
-                // Frontend keys (keyType: "frontend") and anonymous users are rate limited
-                const apiKey = c.var?.auth?.apiKey;
-                return apiKey?.metadata?.keyType === "server";
-            },
-            store: new WorkersKVStore({ 
-                namespace: c.env.KV,
-                prefix: "ratelimit:"
-            }),
-        });
-        
-        return limiter(c, next);
-    } catch (error) {
-        console.error("[RateLimit] Error:", error);
-        // If rate limiting fails, allow the request through
-        return next();
-    }
+    const limiter = rateLimiter<AuthEnv>({
+        windowMs: 2 * 60 * 1000, // 2 minutes (120 seconds)
+        limit: 24, // 24 requests per 2 minutes = 1 request every 5 seconds
+        standardHeaders: "draft-6",
+        keyGenerator: (c) => c.req.header("cf-connecting-ip") || "unknown",
+        skip: (c) => {
+            // Skip rate limiting for server API keys only (keyType: "server")
+            // Frontend keys (keyType: "frontend") and anonymous users are rate limited
+            const apiKey = c.var?.auth?.apiKey;
+            return apiKey?.metadata?.keyType === "server";
+        },
+        store: new WorkersKVStore({ 
+            namespace: c.env.KV,
+            prefix: "ratelimit:"
+        }),
+    });
+    
+    return limiter(c, next);
 });

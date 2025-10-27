@@ -7,13 +7,15 @@ Pollen is our prepaid credit system. **$1 ≈ 1 Pollen** (pricing may evolve). Y
 ## How do I get Pollen?
 
 There are three ways to add Pollen to your balance:
-1.  **Buy It:** Purchase Pollen packs directly with a credit card. This Pollen goes into your wallet and never expires.
+1.  **Buy It:** Purchase Pollen packs directly with a credit card. This Pollen goes into your wallet and never expires. (Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)
 2.  **Get Daily Pollen:** During and after beta, registered developers receive daily Pollen grants to support experimentation based on their tier *(seed, flower, or nectar)*.
 3.  **Earn It:** Complete one-time community rewards, like starring our GitHub repo or helping solve a technical issue.
 
 ## What payment methods do you accept?
 
-Currently, we accept credit cards. We are looking into other options for users in countries with payment restrictions.
+Currently, we accept credit cards. We're actively exploring other payment methods based on community feedback.
+
+**Want other payment options?** Vote on what you'd like to see next in our [payment methods voting issue](https://github.com/pollinations/pollinations/issues/4826) — crypto, PayPal, Alipay, and more!
 
 ## Is there a monthly subscription?
 

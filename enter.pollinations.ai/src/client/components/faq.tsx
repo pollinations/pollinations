@@ -81,7 +81,7 @@ export const FAQ: FC = () => {
                             </button>
                             {openIndices.has(index) && (
                                 <div 
-                                    className="mt-3 text-gray-600 leading-relaxed prose prose-sm max-w-none [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-2 [&_li]:list-item [&_li]:ml-4 [&_li]:text-gray-600 [&_p]:mb-3"
+                                    className="mt-3 text-gray-600 leading-relaxed prose prose-sm max-w-none [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-2 [&_li]:list-item [&_li]:ml-4 [&_li]:text-gray-600 [&_p]:mb-3 [&_a]:text-purple-600 [&_a]:underline [&_a]:font-medium hover:[&_a]:text-purple-800"
                                     dangerouslySetInnerHTML={{ __html: item.answer }}
                                 />
                             )}

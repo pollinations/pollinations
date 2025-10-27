@@ -43,17 +43,17 @@ type AuthResult = {
     apiKey?: ApiKey;
 };
 
-/** Extracts Bearer token from Authorization header (RFC 6750) or token query parameter */
+/** Extracts Bearer token from Authorization header (RFC 6750) or key query parameter */
 function extractApiKey(headers: Headers, url?: URL): string | null {
     // First try Authorization header
     const auth = headers.get("authorization");
     const match = auth?.match(/^Bearer (.+)$/);
     if (match?.[1]) return match[1];
     
-    // Fallback to token query parameter
+    // Fallback to key query parameter
     if (url) {
-        const tokenParam = url.searchParams.get("token");
-        if (tokenParam) return tokenParam;
+        const keyParam = url.searchParams.get("key");
+        if (keyParam) return keyParam;
     }
     
     return null;

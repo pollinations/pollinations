@@ -35,10 +35,10 @@ test("Authenticate via session cookie and validate user data", async ({
     expect(session).toBeDefined();
 });
 
-// Test token query parameter support (Issue #4820)
-test("Authenticate via token query parameter", async ({ apiKey }) => {
+// Test key query parameter support (Issue #4820)
+test("Authenticate via key query parameter", async ({ apiKey }) => {
     const response = await SELF.fetch(
-        `http://localhost:3000/api/generate/text/hello?token=${apiKey}`,
+        `http://localhost:3000/api/generate/text/hello?key=${apiKey}`,
         {
             method: "GET",
             headers: {
@@ -51,9 +51,9 @@ test("Authenticate via token query parameter", async ({ apiKey }) => {
     expect(text.length).toBeGreaterThan(0);
 });
 
-test("Invalid token query parameter should return 401", async () => {
+test("Invalid key query parameter should return 401", async () => {
     const response = await SELF.fetch(
-        `http://localhost:3000/api/generate/text/hello?token=invalid-token`,
+        `http://localhost:3000/api/generate/text/hello?key=invalid-key`,
         {
             method: "GET",
         },

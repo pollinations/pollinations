@@ -168,7 +168,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Include your API key either:",
                 "- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`",
-                "- As a query parameter: `?token=YOUR_API_KEY`",
+                "- As a query parameter: `?key=YOUR_API_KEY`",
                 "",
                 "API keys can be created from your dashboard at enter.pollinations.ai.",
             ].join("\n"),
@@ -252,7 +252,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Include your API key either:",
                 "- In the `Authorization` header as a Bearer token: `Authorization: Bearer YOUR_API_KEY`",
-                "- As a query parameter: `?token=YOUR_API_KEY`",
+                "- As a query parameter: `?key=YOUR_API_KEY`",
                 "",
                 "API keys can be created from your dashboard at enter.pollinations.ai.",
             ].join("\n"),
@@ -314,9 +314,9 @@ function proxyUrl(
     if (targetPort) {
         targetUrl.port = targetPort;
     }
-    // Copy query parameters, but filter out 'token' (used for auth)
+    // Copy query parameters, but filter out 'key' (used for auth)
     const searchParams = new URLSearchParams(incomingUrl.search);
-    searchParams.delete("token");
+    searchParams.delete("key");
     targetUrl.search = searchParams.toString();
     return targetUrl;
 }

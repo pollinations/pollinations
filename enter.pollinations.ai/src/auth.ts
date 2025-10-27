@@ -23,6 +23,7 @@ export function createAuth(env: Cloudflare.Env) {
     const apiKeyPlugin = apiKey({
         enableMetadata: true,
         defaultPrefix: 'pk', // Default prefix for publishable keys
+        defaultKeyLength: 22, // Minimum key length for validation (pk_ = 22 chars, sk_ = 64 chars)
         customKeyGenerator: (options: { length: number; prefix: string | undefined; }) => {
             // Publishable keys (pk_) are SHORT (22 chars), Secret keys (sk_) are LONG (64 chars)
             const keyLength = options.prefix === 'pk' ? 22 : 64;

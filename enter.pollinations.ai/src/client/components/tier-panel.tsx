@@ -107,6 +107,12 @@ const TierScreen: FC<{ tier: keyof typeof TIER_CONFIG; countdown: string }> = ({
                         {config.pollen} pollen/day
                     </span>
                 </div>
+                
+                <div className="mt-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-xs text-amber-900 leading-relaxed">
+                        ⚠️ <strong>Beta Notice:</strong> Daily pollen amounts are experimental values that may change at any time without notice. Tier subscription benefits are not yet finalized.
+                    </p>
+                </div>
             </div>
         </div>
     );

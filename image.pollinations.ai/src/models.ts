@@ -50,6 +50,13 @@ export const IMAGE_CONFIG: ImageModelsConfig = {
         maxSideLength: 768,
     },
 
+    // ByteDance ARK Seedream - high quality image generation
+    seedream: {
+        type: "seedream",
+        enhance: false,
+        maxSideLength: 2048, // Seedream supports up to 4K
+    },
+
     // Azure GPT Image model - gpt-image-1-minica
     gptimage: {
         type: "azure",

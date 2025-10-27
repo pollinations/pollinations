@@ -29,10 +29,9 @@ export const Route = createFileRoute("/")({
         const tiersResult = await honoTiers.view.$get();
         const tierData = tiersResult.ok ? await tiersResult.json() : null;
         
-        // Use custom endpoint to get API keys with metadata (Better Auth's list() doesn't return metadata)
-        const honoApiKeys = hc<any>("/api/api-keys");
-        const apiKeysResult = await honoApiKeys.list.$get();
-        const apiKeys = apiKeysResult.ok ? await apiKeysResult.json() : [];
+        // Use better-auth's built-in list() method which returns metadata
+        const apiKeysResult = await context.auth.apiKey.list();
+        const apiKeys = apiKeysResult.data || [];
 
         console.log(context.user);
         return { auth: context.auth, user: context.user, customer, apiKeys, tierData };
@@ -64,12 +63,11 @@ function RouteComponent() {
     };
 
     const handleCreateApiKey = async (formState: CreateApiKey) => {
-        const keyType = formState.keyType || "server";
-        const prefix = keyType === "frontend" ? "pk_" : "sk_";
+        const keyType = formState.keyType || "secret";
         
         const createKeyData = {
             name: formState.name,
-            prefix, // Pass prefix to generate pk_ or sk_ prefixed keys
+            prefix: keyType === "publishable" ? "pk" : "sk", // Set prefix based on key type
             metadata: {
                 description: formState.description,
                 keyType,
@@ -81,13 +79,13 @@ function RouteComponent() {
             console.error(result.error);
         }
         
-        // For frontend keys, store the plaintext key in description for easy retrieval
-        if (keyType === "frontend" && result.data) {
+        // For publishable keys, store the plaintext key in metadata for easy retrieval
+        if (keyType === "publishable" && result.data) {
             const apiKey = result.data as CreateApiKeyResponse;
             await auth.apiKey.update({
                 keyId: apiKey.id,
                 metadata: {
-                    description: apiKey.key, // Store plaintext key in description
+                    plaintextKey: apiKey.key, // Store plaintext key in metadata
                     keyType,
                 },
             });

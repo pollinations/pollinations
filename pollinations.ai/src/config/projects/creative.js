@@ -14,6 +14,43 @@ export const creativeProjects = [
     order: 1
   },
     {
+  name: "Better Call Us: Autonomous AI Instagram System 📸",
+  url: "https://www.instagram.com/bettercallus.io/?hl=en",
+  description: "A fully autonomous Instagram content automation system powered by Pollinations.AI. It converts live AI and tech news into visually stunning carousels and stories — all generated and posted automatically.",
+  author: "muzz404",
+  repo: "No response",
+  submissionDate: "2025-10-25",
+  order: 1
+},
+{
+  name: "Magerun AI 🎨",
+  url: "https://preview--prompt-to-vision-18.lovable.app/",
+  description: "A creative image generation site that improves your prompts using AI before sending them to Pollinations.AI, letting you choose how many images to create.",
+  author: "finicklagat",
+  repo: "No response",
+  submissionDate: "2025-10-25",
+  order: 2
+},
+{
+  name: "Versemind 🪶",
+  url: "https://versemind.com",
+  description: "An AI poetry tool that analyzes a user’s tone, mood, and writing style to craft verses reflecting or challenging their emotions. It performs sentiment analysis, adapts to user style, and can visualize mood changes.",
+  author: "dk-cleanedit",
+  repo: "No response",
+  submissionDate: "2025-10-27",
+  order: 3
+},
+{
+  name: "PollinVerse 🚀",
+  url: "https://pollinverse.netlify.app",
+  description: "A rapid AI development and prototyping platform powered by Pollinations.AI. Describe your idea in text and instantly get working Tailwind HTML. Supports multiple AI models (OpenAI, Gemini, Claude, DeepSeek) with live preview and surprise prompts.",
+  author: "VearyTry",
+  repo: "No response",
+  submissionDate: "2025-10-25",
+  order: 4
+}
+
+    {
     name: "Green Hope AI 🎨",
     url: "https://aithumbnails.vercel.app/",
     description: "Generate stunning thumbnails with AI, then take full control. Easily edit the text, position, styles, and effects without ever having to start over.",

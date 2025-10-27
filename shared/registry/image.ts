@@ -33,10 +33,10 @@ export const IMAGE_COSTS = {
         },
     ],
     "seedream": [
-        // ByteDance ARK Seedream 4.0 (currently disabled)
+        // ByteDance ARK Seedream 4.0
         {
             date: PRICING_START_DATE,
-            completionImageTokens: perMillion(30), // Estimated token-based pricing
+            completionImageTokens: 0.03, // $0.03 per image (3 cents)
         },
     ],
     "gptimage": [
@@ -73,12 +73,12 @@ export const IMAGE_SERVICES = {
     //     provider: "vertex-ai",
     //     tier: "nectar",
     // },
-    // seedream: {
-    //     aliases: [],
-    //     modelId: "seedream",
-    //     provider: "bytedance-ark",
-    //     tier: "flower",
-    // },
+    seedream: {
+        aliases: [],
+        modelId: "seedream",
+        provider: "bytedance-ark",
+        tier: "nectar",
+    },
     "gptimage": {
         aliases: ["gpt-image", "gpt-image-1-mini"],
         modelId: "gptimage",

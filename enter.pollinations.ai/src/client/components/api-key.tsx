@@ -1,7 +1,6 @@
 import { Dialog } from "@ark-ui/react/dialog";
 import { Field } from "@ark-ui/react/field";
-import { Steps } from "@ark-ui/react/steps";
-import { formatDistanceToNowStrict, formatRelative } from "date-fns";
+import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { useState, useEffect } from "react";
 import { cn } from "@/util.ts";
@@ -89,8 +88,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     <div className="flex gap-3">
                         <ApiKeyDialog
                             onSubmit={onCreate}
-                            onUpdate={(state) => console.log(state)}
-                            onComplete={() => console.log("Dialog completed")}
+                            onUpdate={() => {}}
+                            onComplete={() => {}}
                         />
                     </div>
                 </div>
@@ -104,27 +103,27 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             <span></span>
                             {sortedApiKeys.map((apiKey) => {
                                 const keyType = apiKey.metadata?.["keyType"] as string | undefined;
-                                const isFrontend = keyType === "frontend";
-                                const description = apiKey.metadata?.["description"] as string | undefined;
+                                const isPublishable = keyType === "publishable";
+                                const plaintextKey = apiKey.metadata?.["plaintextKey"] as string | undefined;
                                 
                                 return (
                                     <Fragment key={apiKey.id}>
                                         <Cell>
                                             <span className={cn(
                                                 "px-2 py-1 rounded text-xs font-medium",
-                                                isFrontend 
+                                                isPublishable 
                                                     ? "bg-blue-100 text-blue-700" 
                                                     : "bg-purple-100 text-purple-700"
                                             )}>
-                                                {isFrontend ? "🌐 Frontend" : "🔒 Server"}
+                                                {isPublishable ? "🌐 Publishable" : "🔒 Secret"}
                                             </span>
                                         </Cell>
                                         <Cell>
-                                            <span className="text-xs truncate block" title={apiKey.name}>{apiKey.name}</span>
+                                            <span className="text-xs truncate block" title={apiKey.name ?? undefined}>{apiKey.name}</span>
                                         </Cell>
                                         <Cell>
-                                            {isFrontend && description ? (
-                                                <KeyDisplay fullKey={description} />
+                                            {isPublishable && plaintextKey ? (
+                                                <KeyDisplay fullKey={plaintextKey} />
                                             ) : (
                                                 <span className="font-mono text-xs text-gray-500">{apiKey.start}...</span>
                                             )}
@@ -188,7 +187,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
 export type CreateApiKey = {
     name: string;
     description?: string;
-    keyType?: "frontend" | "server";
+    keyType?: "publishable" | "secret";
 };
 
 export type CreateApiKeyResponse = ApiKey & {
@@ -210,7 +209,33 @@ const CreateKeyForm: FC<{
     onSubmit: (e: React.FormEvent) => void;
     onCancel: () => void;
     isSubmitting: boolean;
-}> = ({ formData, onInputChange, onSubmit, onCancel, isSubmitting }) => {
+    createdKey?: CreateApiKeyResponse | null;
+    onComplete?: () => void;
+}> = ({ formData, onInputChange, onSubmit, onCancel, isSubmitting, createdKey, onComplete }) => {
+    const [copied, setCopied] = useState(false);
+
+    // Reset copied state when modal reopens (createdKey becomes null)
+    useEffect(() => {
+        if (!createdKey) {
+            setCopied(false);
+        }
+    }, [createdKey]);
+
+    const handleCopyAndClose = async () => {
+        if (createdKey) {
+            try {
+                await navigator.clipboard.writeText(createdKey.key);
+                setCopied(true);
+                setTimeout(() => {
+                    onComplete?.();
+                }, 500);
+            } catch (err) {
+                console.error("Failed to copy:", err);
+                onComplete?.();
+            }
+        }
+    };
+
     return (
         <form onSubmit={onSubmit} className="space-y-4">
             <Field.Root>
@@ -220,190 +245,99 @@ const CreateKeyForm: FC<{
                 <div className="space-y-2">
                     <label className={cn(
                         "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
-                        formData.keyType === "frontend" 
+                        formData.keyType === "publishable" 
                             ? "border-blue-500 bg-blue-50" 
-                            : "border-gray-200 hover:border-gray-300"
+                            : "border-gray-200 hover:border-gray-300",
+                        createdKey && formData.keyType !== "publishable" && "opacity-40"
                     )}>
                         <input
                             type="radio"
                             name="keyType"
-                            value="frontend"
-                            checked={formData.keyType === "frontend"}
+                            value="publishable"
+                            checked={formData.keyType === "publishable"}
                             onChange={(e) => onInputChange("keyType", e.target.value)}
                             className="mt-1 w-4 h-4 text-blue-600"
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || !!createdKey}
                         />
                         <div className="flex-1">
-                            <div className="font-medium">🌐 Frontend Key</div>
-                            <div className="text-xs text-gray-600">
-                                For client-side apps (React, Vue, etc.). Visible in browser. Access to all models with IP-based rate limiting (100 req/min).
-                            </div>
+                            <div className="font-medium text-blue-800">🌐 Publishable Key</div>
+                            <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
+                                <li className="font-semibold">Always visible in your dashboard</li>
+                                <li>Safe to use in client-side code (React, Vue, etc.)</li>
+                                <li>Access to all models with IP-based rate limiting (100 req/min)</li>
+                            </ul>
                         </div>
                     </label>
                     <label className={cn(
                         "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
-                        formData.keyType === "server" 
+                        formData.keyType === "secret" 
                             ? "border-purple-500 bg-purple-50" 
-                            : "border-gray-200 hover:border-gray-300"
+                            : "border-gray-200 hover:border-gray-300",
+                        createdKey && formData.keyType !== "secret" && "opacity-40"
                     )}>
                         <input
                             type="radio"
                             name="keyType"
-                            value="server"
-                            checked={formData.keyType === "server"}
+                            value="secret"
+                            checked={formData.keyType === "secret"}
                             onChange={(e) => onInputChange("keyType", e.target.value)}
                             className="mt-1 w-4 h-4 text-purple-600"
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || !!createdKey}
                         />
                         <div className="flex-1">
-                            <div className="font-medium">🔒 Server Key</div>
-                            <div className="text-xs text-gray-600">
-                                For server-to-server apps. Never expose publicly. Best rate limits and can spend Pollen.
-                            </div>
+                            <div className="font-medium text-purple-800">🔒 Secret Key</div>
+                            <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
+                                <li className="font-semibold text-amber-900">Only shown once - copy it now!</li>
+                                <li>For server-side apps - never expose publicly</li>
+                                <li>Best rate limits and can spend Pollen for paid models</li>
+                            </ul>
                         </div>
                     </label>
                 </div>
             </Field.Root>
+
             <Field.Root>
                 <Field.Label className="block text-sm font-medium mb-1">
-                    Name (*)
+                    {createdKey ? "Your API Key" : "Name (*)"}
                 </Field.Label>
                 <Field.Input
                     type="text"
-                    value={formData.name}
+                    value={createdKey ? createdKey.key : formData.name}
                     onChange={(e) => onInputChange("name", e.target.value)}
                     className={cn(
-                        "w-full px-3 py-2 border border-gray-300 rounded",
-                        "focus:outline-none focus:ring-2 focus:ring-blue-500",
+                        "w-full px-3 py-2 border rounded",
+                        createdKey 
+                            ? "border-green-300 bg-green-200 font-mono text-xs"
+                            : "border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500",
                     )}
-                    placeholder="Enter API key name"
-                    required
-                    disabled={isSubmitting}
+                    placeholder={createdKey ? "" : "Enter API key name"}
+                    required={!createdKey}
+                    disabled={isSubmitting || !!createdKey}
+                    readOnly={!!createdKey}
                 />
             </Field.Root>
             <div className="flex gap-2 justify-end pt-4">
+                {!createdKey && (
+                    <Button
+                        type="button"
+                        weight="outline"
+                        onClick={onCancel}
+                        className="disabled:opacity-50"
+                        disabled={isSubmitting}
+                    >
+                        Cancel
+                    </Button>
+                )}
                 <Button
-                    type="button"
-                    weight="outline"
-                    onClick={onCancel}
+                    type={createdKey ? "button" : "submit"}
+                    onClick={createdKey ? handleCopyAndClose : undefined}
                     className="disabled:opacity-50"
-                    disabled={isSubmitting}
+                    disabled={!createdKey && (!formData.name.trim() || isSubmitting)}
                 >
-                    Cancel
-                </Button>
-                <Button
-                    type="submit"
-                    className="disabled:opacity-50"
-                    disabled={!formData.name.trim() || isSubmitting}
-                >
-                    {isSubmitting ? "Creating..." : "Create"}
+                    {copied ? "✓ Copied! Closing..." : createdKey ? "Copy and Close" : isSubmitting ? "Creating..." : "Create"}
                 </Button>
             </div>
         </form>
-    );
-};
-
-const ShowKeyResult: FC<{
-    createdKey: CreateApiKeyResponse;
-    onComplete: () => void;
-}> = ({ createdKey, onComplete }) => {
-    const [copied, setCopied] = useState(false);
-    const keyType = createdKey.metadata?.["keyType"] as string | undefined;
-    const isFrontend = keyType === "frontend";
-
-    const handleCopy = async () => {
-        try {
-            await navigator.clipboard.writeText(createdKey.key);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
-            console.error("Failed to copy:", err);
-        }
-    };
-
-    return (
-        <div className="space-y-4">
-            <div className={cn(
-                "border-2 rounded-lg p-4",
-                isFrontend 
-                    ? "bg-blue-100 border-blue-300" 
-                    : "bg-amber-100 border-amber-300"
-            )}>
-                <h3 className={cn(
-                    "text-sm font-medium",
-                    isFrontend ? "text-blue-800" : "text-amber-800"
-                )}>
-                    {isFrontend ? "🌐 Frontend Key Created" : "🔒 Server Key Created"}
-                </h3>
-                <ul className={cn(
-                    "mt-2 text-sm list-disc pl-3",
-                    isFrontend ? "text-blue-800" : "text-amber-800"
-                )}>
-                    {isFrontend ? (
-                        <>
-                            <li className="font-bold">
-                                This key is always visible in your dashboard.
-                            </li>
-                            <li>
-                                Safe to use in client-side code (React, Vue, etc.)
-                            </li>
-                            <li>
-                                Access to all models with IP-based rate limiting
-                            </li>
-                        </>
-                    ) : (
-                        <>
-                            <li className="font-bold text-amber-900">
-                                This is the only time you'll see your API key. <br />
-                                Please copy it now and store it securely.
-                            </li>
-                            <li>
-                                Never expose server keys in client-side code
-                            </li>
-                            <li>
-                                Can spend Pollen for paid models
-                            </li>
-                        </>
-                    )}
-                </ul>
-            </div>
-
-            <div className="space-y-2">
-                <label
-                    htmlFor="api-key-display"
-                    className="block text-sm font-medium text-gray-700"
-                >
-                    Your API Key
-                </label>
-                <div className="flex gap-2">
-                    <input
-                        id="api-key-display"
-                        type="text"
-                        value={createdKey.key}
-                        className={cn(
-                            "flex-1 px-3 py-2 border border-green-300 rounded",
-                            "bg-green-200 font-mono text-xs",
-                        )}
-                        readOnly
-                    />
-                    <Button
-                        type="button"
-                        color="pink"
-                        weight="light"
-                        shape="rounded"
-                        onClick={handleCopy}
-                    >
-                        {copied ? "✓" : "📋"}
-                    </Button>
-                </div>
-            </div>
-
-            <div className="flex justify-end pt-4">
-                <Button type="button" onClick={onComplete}>
-                    {isFrontend ? "Close" : "I've Saved My Key"}
-                </Button>
-            </div>
-        </div>
     );
 };
 
@@ -423,11 +357,10 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     };
 
     const [formData, setFormData] = useState<CreateApiKey>({
-        name: "backend-" + generateFunName(),
+        name: generateFunName(),
         description: `Created on ${new Date().toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: '2-digit' })}`,
-        keyType: "server", // Default to server key
+        keyType: "secret", // Default to secret key
     });
-    const [currentStep, setCurrentStep] = useState(0);
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
         null,
     );
@@ -440,14 +373,12 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     ) => {
         const updatedData = { ...formData, [field]: value };
         
-        // When key type changes, regenerate name with appropriate prefix
+        // When key type changes, regenerate name
         if (field === 'keyType') {
-            const prefix = value === 'frontend' ? 'frontend-' : 'backend-';
-            const baseName = generateFunName();
-            updatedData.name = prefix + baseName;
+            updatedData.name = generateFunName();
             
-            // Clear description for frontend keys, set default for backend
-            if (value === 'frontend') {
+            // Clear description for publishable keys, set default for secret
+            if (value === 'publishable') {
                 updatedData.description = '';
             } else {
                 updatedData.description = `Created on ${new Date().toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: '2-digit' })}`;
@@ -464,7 +395,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         try {
             const newKey = await onSubmit(formData);
             setCreatedKey(newKey);
-            setCurrentStep(1);
         } catch (error) {
             console.error("Failed to create API key:", error);
         } finally {
@@ -479,19 +409,13 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     };
 
     const resetForm = () => {
-        setCurrentStep(0);
         setCreatedKey(null);
-        setFormData({ name: "backend-" + generateFunName(), description: "", keyType: "server" });
+        setFormData({ name: "backend-" + generateFunName(), description: "", keyType: "secret" });
     };
 
     useEffect(() => {
         if (!isOpen) resetForm();
     }, [isOpen]);
-
-    const steps = [
-        { title: "Create Key", description: "Enter key details" },
-        { title: "Save Key", description: "Copy and secure your key" },
-    ];
 
     return (
         <Dialog.Root open={isOpen} onOpenChange={({ open }) => setIsOpen(open)}>
@@ -505,62 +429,19 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                         "bg-green-100 border-green-950 border-4 rounded-lg shadow-lg max-w-lg w-full p-6"
                     }
                 >
-                    <Steps.Root
-                        count={2}
-                        step={currentStep}
-                        onStepChange={({ step }) => setCurrentStep(step)}
-                    >
-                        <div className="flex justify-between">
-                            <Dialog.Title className="text-lg font-semibold mb-6">
-                                {currentStep === 0
-                                    ? "Create New API Key"
-                                    : "Your API Key is Ready"}
-                            </Dialog.Title>
-                            <Steps.List className="flex justify-between gap-2">
-                                {steps.map((step, index) => (
-                                    <Steps.Item
-                                        key={step.title}
-                                        index={index}
-                                        className="flex-1"
-                                    >
-                                        <Steps.Indicator
-                                            className={cn(
-                                                "w-6 h-6 rounded-full flex items-center",
-                                                "justify-center text-sm font-medium",
-                                                index === currentStep
-                                                    ? "bg-green-950 text-green-50"
-                                                    : "bg-gray-200 text-gray-600",
-                                            )}
-                                        >
-                                            {index < currentStep
-                                                ? ""
-                                                : index + 1}
-                                        </Steps.Indicator>
-                                    </Steps.Item>
-                                ))}
-                            </Steps.List>
-                        </div>
+                    <Dialog.Title className="text-lg font-semibold mb-6">
+                        Create New API Key
+                    </Dialog.Title>
 
-                        <div>
-                            <Steps.Content index={0}>
-                                <CreateKeyForm
-                                    formData={formData}
-                                    onInputChange={handleInputChange}
-                                    onSubmit={handleSubmit}
-                                    onCancel={() => setIsOpen(false)}
-                                    isSubmitting={isSubmitting}
-                                />
-                            </Steps.Content>
-                            <Steps.Content index={1}>
-                                {createdKey && (
-                                    <ShowKeyResult
-                                        createdKey={createdKey}
-                                        onComplete={handleComplete}
-                                    />
-                                )}
-                            </Steps.Content>
-                        </div>
-                    </Steps.Root>
+                    <CreateKeyForm
+                        formData={formData}
+                        onInputChange={handleInputChange}
+                        onSubmit={handleSubmit}
+                        onCancel={() => setIsOpen(false)}
+                        isSubmitting={isSubmitting}
+                        createdKey={createdKey}
+                        onComplete={handleComplete}
+                    />
                 </Dialog.Content>
             </Dialog.Positioner>
         </Dialog.Root>

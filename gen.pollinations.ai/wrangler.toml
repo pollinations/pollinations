@@ -1,0 +1,44 @@
+name = "pollinations-gen"
+main = "src/index.ts"
+compatibility_date = "2025-09-01"
+compatibility_flags = [ "nodejs_compat" ]
+
+[dev]
+port = 3001
+
+# Share the same D1 database as enter.pollinations.ai
+[[d1_databases]]
+binding = "DB"
+database_name = "development-pollinations-enter-db"
+database_id = "6345cb3c-e57a-4aab-bdd4-bca0de7bd930"
+
+[vars]
+ENVIRONMENT = "development"
+TEXT_SERVICE_URL = "https://text.pollinations.ai"
+IMAGE_SERVICE_URL = "https://image.pollinations.ai"
+
+[env.staging]
+route = { pattern = "gen.pollinations.ai/*", zone_name = "pollinations.ai" }
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "staging-pollinations-enter-db"
+database_id = "073195b4-d99e-4b67-9575-eb5efe6d3234"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+TEXT_SERVICE_URL = "https://text.pollinations.ai"
+IMAGE_SERVICE_URL = "https://image.pollinations.ai"
+
+[env.production]
+route = { pattern = "gen.pollinations.ai/*", zone_name = "pollinations.ai" }
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "production-pollinations-enter-db"
+database_id = "8d72ead0-f47a-43b2-9a91-2318b89f1561"
+
+[env.production.vars]
+ENVIRONMENT = "production"
+TEXT_SERVICE_URL = "https://text.pollinations.ai"
+IMAGE_SERVICE_URL = "https://image.pollinations.ai"

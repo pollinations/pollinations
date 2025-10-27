@@ -29,10 +29,9 @@ export const Route = createFileRoute("/")({
         const tiersResult = await honoTiers.view.$get();
         const tierData = tiersResult.ok ? await tiersResult.json() : null;
         
-        // Use custom endpoint to get API keys with metadata (Better Auth's list() doesn't return metadata)
-        const honoApiKeys = hc<any>("/api/api-keys");
-        const apiKeysResult = await honoApiKeys.list.$get();
-        const apiKeys = apiKeysResult.ok ? await apiKeysResult.json() : [];
+        // Use better-auth's built-in list() method which returns metadata
+        const apiKeysResult = await context.auth.apiKey.list();
+        const apiKeys = apiKeysResult.data || [];
 
         console.log(context.user);
         return { auth: context.auth, user: context.user, customer, apiKeys, tierData };
@@ -79,8 +78,8 @@ function RouteComponent() {
             console.error(result.error);
         }
         
-        // For frontend keys, store the plaintext key in metadata for easy retrieval
-        if (keyType === "frontend" && result.data) {
+        // For public keys, store the plaintext key in metadata for easy retrieval
+        if (keyType === "public" && result.data) {
             const apiKey = result.data as CreateApiKeyResponse;
             await auth.apiKey.update({
                 keyId: apiKey.id,

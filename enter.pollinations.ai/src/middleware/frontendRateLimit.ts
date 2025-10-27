@@ -4,10 +4,10 @@ import { createMiddleware } from "hono/factory";
 import type { AuthEnv } from "./auth.ts";
 
 /**
- * Rate limiting middleware for frontend requests.
+ * Rate limiting middleware for public key requests.
  * 
- * - Server API keys (sk_): Skip rate limiting entirely
- * - Frontend keys (pk_) / anonymous: 24 requests per 2 minutes (1 request every 5 seconds)
+ * - Private API keys (sk_): Skip rate limiting entirely
+ * - Public keys (pk_) / anonymous: 24 requests per 2 minutes (1 request every 5 seconds)
  */
 export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) => {
     const limiter = rateLimiter<AuthEnv>({
@@ -16,10 +16,10 @@ export const frontendKeyRateLimit = createMiddleware<AuthEnv>(async (c, next) =>
         standardHeaders: "draft-6",
         keyGenerator: (c) => c.req.header("cf-connecting-ip") || "unknown",
         skip: (c) => {
-            // Skip rate limiting for server API keys only (keyType: "server")
-            // Frontend keys (keyType: "frontend") and anonymous users are rate limited
+            // Skip rate limiting for private API keys only (keyType: "private")
+            // Public keys (keyType: "public") and anonymous users are rate limited
             const apiKey = c.var?.auth?.apiKey;
-            return apiKey?.metadata?.keyType === "server";
+            return apiKey?.metadata?.keyType === "private";
         },
         store: new WorkersKVStore({ 
             namespace: c.env.KV,

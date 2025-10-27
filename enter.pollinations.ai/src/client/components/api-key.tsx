@@ -103,7 +103,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             <span></span>
                             {sortedApiKeys.map((apiKey) => {
                                 const keyType = apiKey.metadata?.["keyType"] as string | undefined;
-                                const isFrontend = keyType === "frontend";
+                                const isPublic = keyType === "public";
                                 const plaintextKey = apiKey.metadata?.["plaintextKey"] as string | undefined;
                                 
                                 return (
@@ -111,18 +111,18 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                         <Cell>
                                             <span className={cn(
                                                 "px-2 py-1 rounded text-xs font-medium",
-                                                isFrontend 
+                                                isPublic 
                                                     ? "bg-blue-100 text-blue-700" 
                                                     : "bg-purple-100 text-purple-700"
                                             )}>
-                                                {isFrontend ? "🌐 Frontend" : "🔒 Server"}
+                                                {isPublic ? "🌐 Public" : "🔒 Private"}
                                             </span>
                                         </Cell>
                                         <Cell>
                                             <span className="text-xs truncate block" title={apiKey.name ?? undefined}>{apiKey.name}</span>
                                         </Cell>
                                         <Cell>
-                                            {isFrontend && plaintextKey ? (
+                                            {isPublic && plaintextKey ? (
                                                 <KeyDisplay fullKey={plaintextKey} />
                                             ) : (
                                                 <span className="font-mono text-xs text-gray-500">{apiKey.start}...</span>
@@ -187,7 +187,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
 export type CreateApiKey = {
     name: string;
     description?: string;
-    keyType?: "frontend" | "server";
+    keyType?: "public" | "private";
 };
 
 export type CreateApiKeyResponse = ApiKey & {
@@ -245,22 +245,22 @@ const CreateKeyForm: FC<{
                 <div className="space-y-2">
                     <label className={cn(
                         "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
-                        formData.keyType === "frontend" 
+                        formData.keyType === "public" 
                             ? "border-blue-500 bg-blue-50" 
                             : "border-gray-200 hover:border-gray-300",
-                        createdKey && formData.keyType !== "frontend" && "opacity-40"
+                        createdKey && formData.keyType !== "public" && "opacity-40"
                     )}>
                         <input
                             type="radio"
                             name="keyType"
-                            value="frontend"
-                            checked={formData.keyType === "frontend"}
+                            value="public"
+                            checked={formData.keyType === "public"}
                             onChange={(e) => onInputChange("keyType", e.target.value)}
                             className="mt-1 w-4 h-4 text-blue-600"
                             disabled={isSubmitting || !!createdKey}
                         />
                         <div className="flex-1">
-                            <div className="font-medium text-blue-800">🌐 Frontend Key</div>
+                            <div className="font-medium text-blue-800">🌐 Public Key</div>
                             <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
                                 <li className="font-semibold">Always visible in your dashboard</li>
                                 <li>Safe to use in client-side code (React, Vue, etc.)</li>
@@ -270,25 +270,25 @@ const CreateKeyForm: FC<{
                     </label>
                     <label className={cn(
                         "flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
-                        formData.keyType === "server" 
+                        formData.keyType === "private" 
                             ? "border-purple-500 bg-purple-50" 
                             : "border-gray-200 hover:border-gray-300",
-                        createdKey && formData.keyType !== "server" && "opacity-40"
+                        createdKey && formData.keyType !== "private" && "opacity-40"
                     )}>
                         <input
                             type="radio"
                             name="keyType"
-                            value="server"
-                            checked={formData.keyType === "server"}
+                            value="private"
+                            checked={formData.keyType === "private"}
                             onChange={(e) => onInputChange("keyType", e.target.value)}
                             className="mt-1 w-4 h-4 text-purple-600"
                             disabled={isSubmitting || !!createdKey}
                         />
                         <div className="flex-1">
-                            <div className="font-medium text-purple-800">🔒 Server Key</div>
+                            <div className="font-medium text-purple-800">🔒 Private Key</div>
                             <ul className="text-xs text-gray-700 mt-1 space-y-0.5 list-disc pl-4">
                                 <li className="font-semibold text-amber-900">Only shown once - copy it now!</li>
-                                <li>For server-to-server apps - never expose publicly</li>
+                                <li>For server-side apps - never expose publicly</li>
                                 <li>Best rate limits and can spend Pollen for paid models</li>
                             </ul>
                         </div>
@@ -359,7 +359,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const [formData, setFormData] = useState<CreateApiKey>({
         name: generateFunName(),
         description: `Created on ${new Date().toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: '2-digit' })}`,
-        keyType: "server", // Default to server key
+        keyType: "private", // Default to private key
     });
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
         null,
@@ -377,8 +377,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         if (field === 'keyType') {
             updatedData.name = generateFunName();
             
-            // Clear description for frontend keys, set default for backend
-            if (value === 'frontend') {
+            // Clear description for public keys, set default for private
+            if (value === 'public') {
                 updatedData.description = '';
             } else {
                 updatedData.description = `Created on ${new Date().toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: '2-digit' })}`;
@@ -410,7 +410,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
     const resetForm = () => {
         setCreatedKey(null);
-        setFormData({ name: "backend-" + generateFunName(), description: "", keyType: "server" });
+        setFormData({ name: "backend-" + generateFunName(), description: "", keyType: "private" });
     };
 
     useEffect(() => {

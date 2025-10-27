@@ -32,21 +32,6 @@ export function createAuth(env: Cloudflare.Env) {
             timeWindow: 1000, // 1 second
             maxRequests: 5, // 5 requests
         },
-        // Custom key generator to support pk_ (frontend) and sk_ (server) prefixes
-        // Note: prefix will be added in the database hook based on metadata
-        customKeyGenerator: (options: { length: number; prefix: string | undefined }) => {
-            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            const keyLength = options.length || 32;
-            let key = "";
-            const randomValues = new Uint8Array(keyLength);
-            crypto.getRandomValues(randomValues);
-            for (let i = 0; i < keyLength; i++) {
-                key += chars[randomValues[i] % chars.length];
-            }
-            // Return key without prefix - will be added in database hook
-            return key;
-        },
-        defaultKeyLength: 32,
     });
 
     const adminPlugin = admin({

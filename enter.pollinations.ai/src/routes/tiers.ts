@@ -10,6 +10,9 @@ import { z } from "zod";
 type TierStatus = "none" | "seed" | "flower" | "nectar";
 type ActivatableTier = "seed" | "flower" | "nectar";
 
+// Central tier definition
+const TIERS: readonly ActivatableTier[] = ["seed", "flower", "nectar"] as const;
+
 // Get Polar product IDs from environment
 function getTierProductId(env: Cloudflare.Env, tier: ActivatableTier): string {
     const key = `POLAR_PRODUCT_ID_${tier.toUpperCase()}`;
@@ -30,27 +33,12 @@ interface TierViewModel {
 }
 
 function getTierStatus(userTier: string | null | undefined): TierStatus {
-    if (!userTier || userTier === "") return "none";
-    const normalized = userTier.toLowerCase();
-    if (normalized === "seed") return "seed";
-    if (normalized === "flower") return "flower";
-    if (normalized === "nectar") return "nectar";
-    return "none";
-}
-
-function getProductIdFromTier(env: Cloudflare.Env, tier: ActivatableTier): string {
-    return getTierProductId(env, tier);
+    const normalized = userTier?.toLowerCase();
+    return TIERS.includes(normalized as ActivatableTier) ? normalized as TierStatus : "none";
 }
 
 function getTierFromProductId(env: Cloudflare.Env, productId: string): TierStatus {
-    const seedId = (env as any).POLAR_PRODUCT_ID_SEED;
-    const flowerId = (env as any).POLAR_PRODUCT_ID_FLOWER;
-    const nectarId = (env as any).POLAR_PRODUCT_ID_NECTAR;
-    
-    if (productId === seedId) return "seed";
-    if (productId === flowerId) return "flower";
-    if (productId === nectarId) return "nectar";
-    return "none";
+    return TIERS.find(tier => getTierProductId(env, tier) === productId) || "none";
 }
 
 function shouldShowActivateButton(assigned: TierStatus, active: TierStatus): boolean {

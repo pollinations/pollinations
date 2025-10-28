@@ -39,17 +39,18 @@ function capitalize(str: string): string {
 
 function formatCountdown(targetUTC: string): string {
     const diff = new Date(targetUTC).getTime() - Date.now();
-    if (diff <= 0) return "0h";
+    if (diff <= 0) return "0h 0m";
     
-    const hours = Math.ceil(diff / 3600000);
-    return `${hours}h`;
+    const hours = Math.floor(diff / 3600000);
+    const minutes = Math.floor((diff % 3600000) / 60000);
+    return `${hours}h ${minutes}m`;
 }
 
 const NoTierScreen: FC = () => {
     return (
         <div className="rounded-2xl p-8 border-2 border-gray-300">
             <div className="flex items-center gap-3">
-                <span className="text-3xl">🔒</span>
+                <span className="text-3xl">🥺</span>
                 <span className="text-xl font-subheading text-gray-900">
                     No active tier subscription
                 </span>

@@ -54,7 +54,7 @@ export const IMAGE_CONFIG: ImageModelsConfig = {
     seedream: {
         type: "seedream",
         enhance: false,
-        maxSideLength: 2048, // Seedream supports up to 4K
+        maxSideLength: 4096, // Seedream supports up to 4K
     },
 
     // Azure GPT Image model - gpt-image-1-minica

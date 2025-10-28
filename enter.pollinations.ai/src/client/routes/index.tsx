@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
+import { createFileRoute, redirect, useRouter, Link } from "@tanstack/react-router";
 import { hc } from "hono/client";
 import { useState } from "react";
 import type { PolarRoutes } from "../../routes/polar.ts";
@@ -192,6 +192,14 @@ function RouteComponent() {
                 onDelete={handleDeleteApiKey}
             />
             <FAQ />
+            <div className="text-center py-8">
+                <Link 
+                    to="/terms" 
+                    className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                    Terms & Conditions
+                </Link>
+            </div>
         </div>
     );
 }

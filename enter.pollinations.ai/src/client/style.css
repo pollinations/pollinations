@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/suspicious/noUnknownAtRules: tailwind handles it */
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @font-face {
     font-family: "LCT Mogi";
@@ -75,7 +76,7 @@
 
     html,
     body {
-        @apply text-green-950 bg-emerald-100 font-body text-base;
+        @apply text-green-950 bg-gray-50 font-body text-base;
         @apply pb-8 min-h-screen font-medium;
     }
 

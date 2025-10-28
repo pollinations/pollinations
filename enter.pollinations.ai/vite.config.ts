@@ -4,7 +4,6 @@ import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
-import { Mode, plugin as markdown } from "vite-plugin-markdown";
 
 export default defineConfig({
     server: { port: 3000 },
@@ -19,7 +18,6 @@ export default defineConfig({
         tailwindcss(),
         tsconfigPaths(),
         cloudflare(),
-        markdown({ mode: [Mode.HTML] }),
     ],
     envPrefix: ["PUBLIC_"],
     optimizeDeps: {

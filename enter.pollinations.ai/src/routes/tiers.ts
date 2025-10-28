@@ -30,6 +30,7 @@ interface TierViewModel {
     product_name?: string;
     daily_pollen?: number;
     next_refill_at_utc: string;
+    has_polar_error: boolean;
 }
 
 function getTierStatus(userTier: string | null | undefined): TierStatus {
@@ -51,6 +52,20 @@ function getNextMidnightUTC(): string {
     const tomorrow = new Date(now);
     tomorrow.setUTCHours(24, 0, 0, 0);
     return tomorrow.toISOString();
+}
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+// Minimal Polar product/benefit typing to avoid unsafe any casts
+type MeterCreditProperties = { amount?: number };
+type MeterCreditBenefit = { type: "meter_credit"; properties?: MeterCreditProperties };
+type PolarProductMinimal = {
+    name: string;
+    benefits?: Array<MeterCreditBenefit | { type: string; properties?: unknown }>;
+};
+
+function isMeterCreditBenefit(b: unknown): b is MeterCreditBenefit {
+    return !!b && typeof b === "object" && (b as { type?: string }).type === "meter_credit";
 }
 
 const activateRequestSchema = z.object({
@@ -79,6 +94,7 @@ export const tiersRoutes = new Hono<Env>()
             let product_name: string | undefined;
             let daily_pollen: number | undefined;
             let next_refill_at_utc = getNextMidnightUTC(); // Default fallback
+            let has_polar_error = false;
             
             try {
                 // Get customer state from Polar
@@ -97,23 +113,20 @@ export const tiersRoutes = new Hono<Env>()
                     
                     // Calculate next refill: 24 hours from subscription start
                     if (activeSub.currentPeriodStart) {
-                        const msPerDay = 86400000; // 24 * 60 * 60 * 1000
                         const startTime = new Date(activeSub.currentPeriodStart).getTime();
-                        const daysPassed = Math.floor((Date.now() - startTime) / msPerDay);
-                        next_refill_at_utc = new Date(startTime + (daysPassed + 1) * msPerDay).toISOString();
+                        const daysPassed = Math.floor((Date.now() - startTime) / MS_PER_DAY);
+                        next_refill_at_utc = new Date(startTime + (daysPassed + 1) * MS_PER_DAY).toISOString();
                     }
                     
                     // Fetch product details for the active subscription
                     try {
-                        const product = await polar.products.get({ id: activeProductId });
+                        const product = (await polar.products.get({ id: activeProductId })) as PolarProductMinimal;
                         product_name = product.name;
-                        
+
                         // Extract daily pollen from meter_credit benefit
-                        const meterBenefit = product.benefits?.find(
-                            (b: any) => b.type === "meter_credit"
-                        );
-                        if (meterBenefit?.properties && "amount" in meterBenefit.properties) {
-                            daily_pollen = (meterBenefit.properties as any).amount;
+                        const meterBenefit = product.benefits?.find(isMeterCreditBenefit);
+                        if (meterBenefit?.properties?.amount !== undefined) {
+                            daily_pollen = meterBenefit.properties.amount;
                         }
                     } catch (productError) {
                         log.warn("Failed to fetch product details: {error}", { error: productError });
@@ -123,6 +136,7 @@ export const tiersRoutes = new Hono<Env>()
                 // If Polar query fails, assume no active subscription
                 log.error("Failed to check subscription status: {error}", { error });
                 active_tier = "none";
+                has_polar_error = true;
             }
             
             // Determine if activate button should be shown
@@ -135,6 +149,7 @@ export const tiersRoutes = new Hono<Env>()
                 product_name,
                 daily_pollen,
                 next_refill_at_utc,
+                has_polar_error,
             };
 
             return c.json(viewModel);

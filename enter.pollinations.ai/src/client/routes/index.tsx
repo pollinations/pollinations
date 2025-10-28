@@ -30,7 +30,6 @@ export const Route = createFileRoute("/")({
         const apiKeysResult = await context.auth.apiKey.list();
         const apiKeys = apiKeysResult.data || [];
 
-        console.log(context.user);
         return { auth: context.auth, user: context.user, customer, apiKeys, tierData };
     },
 });
@@ -173,6 +172,11 @@ function RouteComponent() {
                             </div>
                         )}
                     </div>
+                    {tierData.has_polar_error && (
+                        <div className="px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-900">
+                            Unable to fetch current subscription status. Showing fallback data.
+                        </div>
+                    )}
                     <TierPanel
                         status={tierData.active_tier}
                         assigned_tier={tierData.assigned_tier}

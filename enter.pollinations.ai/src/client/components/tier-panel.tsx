@@ -1,4 +1,4 @@
-import type { FC } from "react";
+import { useEffect, useState, type FC } from "react";
 
 type TierStatus = "none" | "seed" | "flower" | "nectar";
 
@@ -141,11 +141,20 @@ export const TierPanel: FC<TierPanelProps> = ({
         return <NoTierScreen />;
     }
 
+    const [countdown, setCountdown] = useState<string>(formatCountdown(next_refill_at_utc));
+
+    useEffect(() => {
+        const id = setInterval(() => {
+            setCountdown(formatCountdown(next_refill_at_utc));
+        }, 60000);
+        return () => clearInterval(id);
+    }, [next_refill_at_utc]);
+
     return (
         <TierScreen 
             tier={status}
             assigned_tier={assigned_tier}
-            countdown={formatCountdown(next_refill_at_utc)}
+            countdown={countdown}
             product_name={product_name}
             daily_pollen={daily_pollen}
         />

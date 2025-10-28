@@ -137,10 +137,18 @@ function RouteComponent() {
             <div className="flex flex-col gap-2">
                 <div className="flex flex-col sm:flex-row justify-between gap-3">
                     <h2 className="font-bold flex-1">Balance</h2>
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 items-center">
                         <Button as="button" color="pink" weight="light" disabled>+ $10</Button>
                         <Button as="button" color="blue" weight="light" disabled>+ $25</Button>
                         <Button as="button" color="red" weight="light" disabled>+ $50</Button>
+                        <a 
+                            href="https://github.com/pollinations/pollinations/issues/4826"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-purple-700 hover:text-purple-900 font-medium whitespace-nowrap transition-colors"
+                        >
+                            💳 Vote on payment methods →
+                        </a>
                     </div>
                 </div>
                 <PollenBalance balance={balance} />

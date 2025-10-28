@@ -8,7 +8,8 @@
         "test": "vitest run",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
-        "start": "tsx src/index.ts"
+        "start": "tsx src/index.ts",
+        "dev": "DEBUG=pollinations:* npm start"
     },
     "keywords": [],
     "author": "",

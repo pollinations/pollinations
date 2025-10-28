@@ -67,11 +67,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     onDelete,
 }) => {
     const [deleteId, setDeleteId] = useState<string | null>(null);
-    
-    // Sort by creation date, newest first
-    const sortedApiKeys = [...apiKeys].sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
 
     const handleDelete = async () => {
         if (deleteId) {
@@ -101,7 +96,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             <span className="font-bold text-pink-400 text-sm">Key</span>
                             <span className="font-bold text-pink-400 text-sm">Created</span>
                             <span></span>
-                            {sortedApiKeys.map((apiKey) => {
+                            {[...apiKeys].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((apiKey) => {
                                 const keyType = apiKey.metadata?.["keyType"] as string | undefined;
                                 const isPublishable = keyType === "publishable";
                                 const plaintextKey = apiKey.metadata?.["plaintextKey"] as string | undefined;
@@ -373,16 +368,10 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     ) => {
         const updatedData = { ...formData, [field]: value };
         
-        // When key type changes, regenerate name
+        // When key type changes, regenerate name and clear/set description
         if (field === 'keyType') {
             updatedData.name = generateFunName();
-            
-            // Clear description for publishable keys, set default for secret
-            if (value === 'publishable') {
-                updatedData.description = '';
-            } else {
-                updatedData.description = `Created on ${new Date().toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: '2-digit' })}`;
-            }
+            updatedData.description = value === 'publishable' ? '' : `Created on ${new Date().toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: '2-digit' })}`;
         }
         
         setFormData(updatedData);

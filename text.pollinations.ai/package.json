@@ -6,7 +6,7 @@
         "type-check": "tsc --noEmit",
         "validate-configs": "tsx configs/validateConfigKeys.ts",
         "test": "echo \"Error: no test specified\" && exit 1",
-        "debug": "clear && DEBUG=* tsx startServer.js"
+        "dev": "clear && DEBUG=pollinations:* tsx startServer.js"
     },
     "keywords": [],
     "author": "",

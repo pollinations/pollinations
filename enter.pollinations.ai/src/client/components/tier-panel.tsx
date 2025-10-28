@@ -101,19 +101,13 @@ const TierScreen: FC<{
                     <p className="text-sm text-green-900 leading-relaxed">
                         {tierWillChange ? (
                             <>
-                                ✓ <strong>Active Subscription:</strong> Your tier will be <strong>{isUpgrade ? "upgraded" : "downgraded"} to {assignedTierName} Tier</strong> on next renewal (in {countdown}).
+                                ✓ <strong>Active Subscription:</strong> Your tier will be <strong>{isUpgrade ? "upgraded" : "downgraded"} to {assignedTierName} Tier</strong> on next renewal (in {countdown}). Unused pollen does not carry over.
                             </>
                         ) : (
                             <>
-                                ✓ <strong>Active Subscription:</strong> Your tier subscription is active and will renew daily.
+                                ✓ <strong>Active Subscription:</strong> Your tier subscription is active and will earn you {pollenAmount} pollen daily. Unused pollen does not carry over.
                             </>
                         )}
-                    </p>
-                </div>
-                
-                <div className="mt-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-xs text-green-900 leading-relaxed">
-                        🌿 Pollen refills every 24 hours from your subscription time. Unused pollen does not carry over.
                     </p>
                 </div>
                 

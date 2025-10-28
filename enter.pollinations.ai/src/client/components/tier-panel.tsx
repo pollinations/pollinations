@@ -97,6 +97,9 @@ const TierScreen: FC<{
                     <span className={`inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm ${config.badgeColors}`}>
                         {pollenAmount} pollen/day
                     </span>
+                    <span className="inline-flex items-center px-3 py-1 rounded-full font-semibold text-sm bg-blue-100 border border-blue-300 text-blue-800">
+                        ⏱️ {countdown}
+                    </span>
                 </div>
 
                 <div className="px-3 py-2 bg-green-50 border border-green-200 rounded-lg">

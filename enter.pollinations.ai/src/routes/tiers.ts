@@ -67,6 +67,7 @@ export const tiersRoutes = new Hono<Env>()
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         async (c) => {
+            const log = c.get("log");
             const user = c.var.auth.requireUser();
             const polar = c.var.polar.client;
             
@@ -115,12 +116,12 @@ export const tiersRoutes = new Hono<Env>()
                             daily_pollen = (meterBenefit.properties as any).amount;
                         }
                     } catch (productError) {
-                        c.get("log").warn("Failed to fetch product details: {error}", { error: productError });
+                        log.warn("Failed to fetch product details: {error}", { error: productError });
                     }
                 }
             } catch (error) {
                 // If Polar query fails, assume no active subscription
-                c.get("log").error("Failed to check subscription status: {error}", { error });
+                log.error("Failed to check subscription status: {error}", { error });
                 active_tier = "none";
             }
             
@@ -147,6 +148,7 @@ export const tiersRoutes = new Hono<Env>()
         }),
         validator("json", activateRequestSchema),
         async (c) => {
+            const log = c.get("log");
             const user = c.var.auth.requireUser();
             const { target_tier } = c.req.valid("json");
 
@@ -175,7 +177,7 @@ export const tiersRoutes = new Hono<Env>()
 
                 return c.json({ checkout_url: checkout.url });
             } catch (error) {
-                console.error("Polar checkout creation failed:", {
+                log.error("Polar checkout failed: {error}", {
                     error,
                     userId: user.id,
                     email: user.email,

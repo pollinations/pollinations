@@ -226,9 +226,7 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         async (c) => {
-            const imageServiceUrl =
-                c.env.IMAGE_SERVICE_URL || "https://image.pollinations.ai";
-            return await proxy(`${imageServiceUrl}/models`);
+            return await proxy(`${c.env.IMAGE_SERVICE_URL}/models`);
         },
     )
     .get(
@@ -253,9 +251,7 @@ export const proxyRoutes = new Hono<Env>()
                 allowAnonymous:
                     c.var.track.isFreeUsage && c.env.ALLOW_ANONYMOUS_USAGE,
             });
-            const imageServiceUrl =
-                c.env.IMAGE_SERVICE_URL || "https://image.pollinations.ai";
-            const targetUrl = proxyUrl(c, `${imageServiceUrl}/prompt`);
+            const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);
             targetUrl.pathname = joinPaths(
                 targetUrl.pathname,
                 c.req.param("prompt"),

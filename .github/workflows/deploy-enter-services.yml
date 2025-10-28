@@ -1,0 +1,61 @@
+name: Deploy to enter-services
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.ENTER_SERVICES_HOST }}
+          username: ${{ secrets.ENTER_SERVICES_USER }}
+          key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
+          fingerprint: ${{ secrets.ENTER_SERVICES_FINGERPRINT }}
+          script: |
+            set -e
+            
+            echo "🚀 Starting deployment to enter-services..."
+            
+            # Navigate to repo
+            cd /home/ubuntu/pollinations
+            
+            # Pull latest changes
+            echo "📥 Pulling latest changes..."
+            git pull origin main || git pull origin master
+            
+            # Update text service
+            echo "📝 Updating text.pollinations.ai..."
+            cd text.pollinations.ai
+            pnpm install --frozen-lockfile || pnpm install
+            echo "✅ Text service dependencies installed"
+            
+            # Update image service
+            echo "🖼️  Updating image.pollinations.ai..."
+            cd ../image.pollinations.ai
+            pnpm install --frozen-lockfile || pnpm install
+            echo "✅ Image service dependencies installed"
+            
+            # Restart systemd services
+            echo "🔄 Restarting systemd services..."
+            sudo systemctl restart text-pollinations.service image-pollinations.service
+            
+            # Wait for services to be ready
+            echo "⏳ Waiting for services to start..."
+            sleep 3
+            
+            # Verify services are running
+            echo "✅ Verifying service status..."
+            sudo systemctl is-active text-pollinations.service || exit 1
+            sudo systemctl is-active image-pollinations.service || exit 1
+            
+            echo "🎉 Deployment complete!"
+            echo "📊 Service Status:"
+            sudo systemctl status text-pollinations.service image-pollinations.service --no-pager | grep -E "Active:|running"

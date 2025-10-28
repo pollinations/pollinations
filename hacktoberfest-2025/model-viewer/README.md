@@ -1,42 +1,86 @@
-# 🤖 Model Viewer - AI Models Explorer
+# Model Viewer with Uptime Monitoring
 
-A feature-rich viewer for exploring Pollinations AI models with real-time uptime monitoring and AI-powered insights.
+Feature-rich viewer for Pollinations AI models with **backend-based** real-time uptime monitoring.
 
 ## Features
 
-- **17 AI Models** - 13 text + 4 image generation models
-- **Real-time Uptime Monitoring** - 24-hour history with visual bars and percentage tracking
-- **Pre-generated AI Insights** - Curated descriptions for every model
-- **Advanced Search & Filters** - Search, filter by tier/capabilities
-- **Multiple View Modes** - Grid, List, and Compact views
-- **Code Examples** - Instant JavaScript, Python, and cURL snippets
-- **Dark Mode** - Persistent theme with localStorage
-- **Favorites System** - Mark and save favorite models
+- **17+ AI Models** - Dynamically fetched from API
+- **Backend Uptime Monitoring** - Cloudflare Workers service tracks model availability 24/7
+- **Real-time Status** - Visual history bars and percentage tracking
+- **AI Insights** - Curated descriptions for each model
+- **Advanced Filters** - Search, filter by tier/capabilities, multiple view modes
 
-## Quick Start
+## Architecture
 
-1. Open `index.html` in any modern browser
-2. Browse models using the Text/Image tabs
-3. Search, filter, and sort as needed
-4. Click 💻 Code for implementation examples
-5. Monitor uptime with visual history bars
+### Frontend (`index.html`, `script.js`, `styles.css`)
+Pure HTML/CSS/JS viewer - fetches models dynamically, displays uptime from backend
 
-## Tech Stack
+### Backend (Cloudflare Workers)
+- **Primary**: `worker.js` - Cloudflare Workers implementation (recommended)
+- **Alternative**: `uptime-backend.js` - Node.js Express server (for local dev)
 
-- **Pure HTML/CSS/JS** - No dependencies, no build step
-- **Pollinations APIs** - Text and image model endpoints
-- **localStorage** - Persists preferences and uptime history
-- **Modern JavaScript** - Async/await, ES6+, Fetch API
+Cloudflare Worker runs on a cron schedule (every 5 minutes), checks all models, stores data in KV.
 
-## Project Structure
+## Deployment
 
+### Cloudflare Workers (Recommended)
+
+```bash
+# Install Wrangler CLI
+npm install -g wrangler
+
+# Login to Cloudflare
+wrangler login
+
+# Create KV namespace
+wrangler kv:namespace create "UPTIME_DATA"
+
+# Update wrangler.toml with your KV namespace ID
+
+# Deploy worker
+wrangler deploy
 ```
-├── index.html    # Main HTML structure
-├── styles.css    # All styling and animations
-├── script.js     # Logic and uptime checker
-└── README.md     # Documentation
+
+The worker will:
+1. Run every 5 minutes via cron trigger
+2. Fetch models from Pollinations APIs dynamically
+3. Check each model's availability
+4. Store results in Cloudflare KV
+5. Serve API endpoints for frontend
+
+### Local Development
+
+```bash
+# Use Node.js backend for local testing
+npm install
+npm start
+
+# Or use Wrangler dev mode
+wrangler dev
 ```
 
-## Browser Support
+## Frontend Deploy
 
-Works on all modern browsers: Chrome/Edge 90+, Firefox 88+, Safari 14+, Opera 76+
+Deploy to any static host (GitHub Pages, Netlify, Cloudflare Pages, etc.)
+
+Update `UPTIME_BACKEND` in `script.js` to point to your deployed worker URL.
+
+## API Endpoints
+
+- `GET /api/uptime` - All models
+- `GET /api/uptime/:modelName` - Specific model with %
+- `POST /api/uptime/:modelName` - Manual check recording
+
+## Configuration
+
+In `script.js`, set your worker URL:
+```javascript
+const UPTIME_BACKEND = 'https://pollinations-uptime-monitor.your-subdomain.workers.dev';
+```
+
+## Data Storage
+
+Cloudflare Workers KV stores uptime data:
+- 24 hours of history (288 data points @ 5min intervals)
+- Automatic cleanup of old data
+- Global edge distribution

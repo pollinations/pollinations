@@ -10,8 +10,15 @@ let state = {
     favorites: JSON.parse(localStorage.getItem('favorites') || '[]'),
     darkMode: localStorage.getItem('darkMode') === 'true',
     aiSummaries: {},
-    uptimeData: JSON.parse(localStorage.getItem('uptimeData') || '{}')
+    uptimeData: {} // Now loaded from backend
 };
+
+// Backend URL - configure for your deployment
+// For Cloudflare Workers deployment, use your worker URL
+// For local development with Node.js backend, use localhost
+const UPTIME_BACKEND = window.location.hostname === 'localhost' 
+    ? 'http://localhost:3001'
+    : 'https://pollinations-uptime-monitor.your-subdomain.workers.dev'; // Replace with your worker URL
 
 // Pre-generated AI summaries for models
 const AI_SUMMARIES = {
@@ -178,98 +185,21 @@ const fallbackImageModels = [
     },
 ];
 
-// Uptime Checker
+// Uptime Checker - Uses backend API
 class UptimeChecker {
     constructor() {
-        this.checkInterval = 5 * 60 * 1000; // Check every 5 minutes
-        this.historyLength = 48; // Keep 48 data points (4 hours of history with 5-min intervals)
         this.checking = new Set();
     }
 
-    initializeModelUptime(modelName) {
-        if (!state.uptimeData[modelName]) {
-            state.uptimeData[modelName] = {
-                history: [],
-                lastCheck: null,
-                currentStatus: 'unknown'
-            };
-        }
-    }
-
-    async checkModelUptime(model, type) {
-        const modelName = model.name;
-        
-        if (this.checking.has(modelName)) {
-            return;
-        }
-
-        this.checking.add(modelName);
-        this.initializeModelUptime(modelName);
-
-        const timestamp = Date.now();
-        let isUp = false;
-
+    async loadUptimeData() {
         try {
-            if (type === 'text') {
-                // Check text model with a simple request
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-
-                const response = await fetch('https://text.pollinations.ai/models', {
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
-                
-                if (response.ok) {
-                    const models = await response.json();
-                    isUp = models.some(m => m.name === modelName);
-                }
-            } else if (type === 'image') {
-                // Check image model with HEAD request to avoid downloading
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-                const response = await fetch(`https://image.pollinations.ai/prompt/test?model=${modelName}&width=64&height=64&nologo=true`, {
-                    method: 'HEAD',
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
-                
-                isUp = response.ok;
+            const response = await fetch(`${UPTIME_BACKEND}/api/uptime`);
+            if (response.ok) {
+                state.uptimeData = await response.json();
+                console.log('Loaded uptime data from backend');
             }
         } catch (error) {
-            console.error(`Uptime check failed for ${modelName}:`, error);
-            isUp = false;
-        }
-
-        // Update uptime data
-        const uptimeEntry = {
-            timestamp,
-            status: isUp ? 'up' : 'down'
-        };
-
-        state.uptimeData[modelName].history.push(uptimeEntry);
-        state.uptimeData[modelName].lastCheck = timestamp;
-        state.uptimeData[modelName].currentStatus = isUp ? 'online' : 'offline';
-
-        // Keep only the last N entries
-        if (state.uptimeData[modelName].history.length > this.historyLength) {
-            state.uptimeData[modelName].history = state.uptimeData[modelName].history.slice(-this.historyLength);
-        }
-
-        // Save to localStorage
-        this.saveUptimeData();
-        
-        this.checking.delete(modelName);
-
-        return isUp;
-    }
-
-    saveUptimeData() {
-        try {
-            localStorage.setItem('uptimeData', JSON.stringify(state.uptimeData));
-        } catch (error) {
-            console.error('Failed to save uptime data:', error);
+            console.error('Failed to load uptime data:', error);
         }
     }
 
@@ -299,32 +229,19 @@ class UptimeChecker {
         return data.currentStatus;
     }
 
-    async checkAllModels() {
-        const textModels = state.models.textModels || [];
-        const imageModels = state.models.imageModels || [];
-
-        // Check text models
-        for (const model of textModels) {
-            await this.checkModelUptime(model, 'text');
-        }
-
-        // Check image models
-        for (const model of imageModels) {
-            await this.checkModelUptime(model, 'image');
-        }
-
-        // Re-render to update UI
+    async refreshUptimeData() {
+        await this.loadUptimeData();
         filterAndRenderModels();
     }
 
-    startPeriodicChecks() {
-        // Initial check
-        setTimeout(() => this.checkAllModels(), 1000);
+    startPeriodicRefresh() {
+        // Load initial data
+        this.loadUptimeData();
 
-        // Set up periodic checks
+        // Refresh every 5 minutes
         setInterval(() => {
-            this.checkAllModels();
-        }, this.checkInterval);
+            this.refreshUptimeData();
+        }, 5 * 60 * 1000);
     }
 }
 
@@ -375,8 +292,8 @@ async function loadModels() {
         
         filterAndRenderModels();
 
-        // Start uptime checking
-        uptimeChecker.startPeriodicChecks();
+        // Start uptime data refresh
+        uptimeChecker.startPeriodicRefresh();
     } catch (error) {
         console.error('Error loading models:', error);
     } finally {

@@ -260,13 +260,36 @@ export const proxyRoutes = new Hono<Env>()
                 targetUrl.pathname,
                 c.req.param("prompt"),
             );
-            return await proxy(targetUrl.toString(), {
-                ...c.req,
-                headers: {
-                    ...proxyHeaders(c),
-                    ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
-                },
+            
+            const proxyRequestHeaders = {
+                ...proxyHeaders(c),
+                ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
+            };
+            
+            c.get("log")?.debug("[PROXY] Proxying to: {url}", {
+                url: targetUrl.toString(),
             });
+            
+            const response = await proxy(targetUrl.toString(), {
+                ...c.req,
+                headers: proxyRequestHeaders,
+            });
+            
+            if (!response.ok) {
+                const responseText = await response.text();
+                c.get("log")?.warn("[PROXY] Error {status}: {body}", {
+                    status: response.status,
+                    body: responseText,
+                });
+                // Return the response with the body we just read
+                return new Response(responseText, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: response.headers,
+                });
+            }
+            
+            return response;
         },
     );
 
@@ -304,7 +327,10 @@ function proxyUrl(
     if (targetPort) {
         targetUrl.port = targetPort;
     }
-    targetUrl.search = incomingUrl.search;
+    // Copy query parameters but exclude the 'key' parameter (used for enter.pollinations.ai auth only)
+    const searchParams = new URLSearchParams(incomingUrl.search);
+    searchParams.delete("key");
+    targetUrl.search = searchParams.toString();
     return targetUrl;
 }
 

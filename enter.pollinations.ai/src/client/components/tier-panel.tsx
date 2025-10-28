@@ -1,5 +1,4 @@
 import type { FC } from "react";
-import { useState, useEffect } from "react";
 
 type TierStatus = "none" | "seed" | "flower" | "nectar";
 
@@ -32,61 +31,28 @@ const TIER_CONFIG = {
     },
 } as const;
 
-function useCountdownToMidnightUTC(targetUTC: string): string {
-    const [countdown, setCountdown] = useState("");
+const TIER_ORDER = ["seed", "flower", "nectar"] as const;
 
-    useEffect(() => {
-        const updateCountdown = () => {
-            const now = new Date();
-            const target = new Date(targetUTC);
-            const diff = target.getTime() - now.getTime();
+function capitalize(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
-            if (diff <= 0) {
-                setCountdown("0h 0m");
-                return;
-            }
-
-            const hours = Math.floor(diff / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-            setCountdown(`${hours}h ${minutes}m`);
-        };
-
-        updateCountdown();
-        const interval = setInterval(updateCountdown, 60000); // Update every minute
-
-        return () => clearInterval(interval);
-    }, [targetUTC]);
-
-    return countdown;
+function formatCountdown(targetUTC: string): string {
+    const diff = new Date(targetUTC).getTime() - Date.now();
+    if (diff <= 0) return "0h";
+    
+    const hours = Math.ceil(diff / 3600000);
+    return `${hours}h`;
 }
 
 const NoTierScreen: FC = () => {
     return (
         <div className="rounded-2xl p-8 border-2 border-gray-300">
-            <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-3">
-                    <span className="text-3xl">🔒</span>
-                    <span className="text-xl font-subheading text-gray-900">
-                        No active tier subscription
-                    </span>
-                </div>
-
-                <p className="text-gray-600">
-                    You don't have an active tier subscription yet. Contact us to get assigned a tier, then activate it to start receiving daily pollen.
-                </p>
-
-                <div className="flex items-center gap-2 text-gray-600">
-                    <span>📬</span>
-                    <span>Contact: hello@pollinations.ai</span>
-                </div>
-
-                <a
-                    href="mailto:hello@pollinations.ai"
-                    className="inline-flex items-center justify-center rounded-full px-6 py-2 border-2 border-gray-200 text-gray-900 hover:bg-gray-50 transition-colors font-medium"
-                >
-                    Email hello@pollinations.ai
-                </a>
+            <div className="flex items-center gap-3">
+                <span className="text-3xl">🔒</span>
+                <span className="text-xl font-subheading text-gray-900">
+                    No active tier subscription
+                </span>
             </div>
         </div>
     );
@@ -111,8 +77,8 @@ const TierScreen: FC<{
 
     // Detect tier change
     const tierWillChange = assigned_tier !== "none" && assigned_tier !== tier;
-    const isUpgrade = tierWillChange && ["seed", "flower", "nectar"].indexOf(assigned_tier) > ["seed", "flower", "nectar"].indexOf(tier);
-    const assignedTierName = assigned_tier !== "none" ? assigned_tier.charAt(0).toUpperCase() + assigned_tier.slice(1) : "";
+    const isUpgrade = tierWillChange && TIER_ORDER.indexOf(assigned_tier) > TIER_ORDER.indexOf(tier);
+    const assignedTierName = assigned_tier !== "none" ? capitalize(assigned_tier) : "";
 
     return (
         <div className="rounded-2xl p-6 border-2 border-gray-300 bg-gray-50/30">
@@ -161,8 +127,6 @@ export const TierPanel: FC<TierPanelProps> = ({
     product_name,
     daily_pollen,
 }) => {
-    const countdown = useCountdownToMidnightUTC(next_refill_at_utc);
-
     if (status === "none") {
         return <NoTierScreen />;
     }
@@ -171,7 +135,7 @@ export const TierPanel: FC<TierPanelProps> = ({
         <TierScreen 
             tier={status}
             assigned_tier={assigned_tier}
-            countdown={countdown}
+            countdown={formatCountdown(next_refill_at_utc)}
             product_name={product_name}
             daily_pollen={daily_pollen}
         />

@@ -23,11 +23,8 @@ export const Route = createFileRoute("/")({
         const honoPolar = hc<PolarRoutes>("/api/polar");
         const honoTiers = hc<TiersRoutes>("/api/tiers");
         
-        const stateResult = await honoPolar.customer.state.$get();
-        const customer = stateResult.ok ? await stateResult.json() : null;
-        
-        const tiersResult = await honoTiers.view.$get();
-        const tierData = tiersResult.ok ? await tiersResult.json() : null;
+        const customer = await honoPolar.customer.state.$get().then(r => r.ok ? r.json() : null);
+        const tierData = await honoTiers.view.$get().then(r => r.ok ? r.json() : null);
         
         // Use better-auth's built-in list() method which returns metadata
         const apiKeysResult = await context.auth.apiKey.list();
@@ -41,10 +38,7 @@ export const Route = createFileRoute("/")({
 function RouteComponent() {
     const router = useRouter();
     const { auth, user, customer, apiKeys, tierData } = Route.useLoaderData();
-    const meter = customer?.activeMeters.filter(
-        (meter) => meter.meterId === config.pollenMeterId,
-    )[0];
-    const balance = meter?.balance || 0;
+    const balance = customer?.activeMeters.find(m => m.meterId === config.pollenMeterId)?.balance || 0;
 
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [isActivating, setIsActivating] = useState(false);
@@ -64,16 +58,11 @@ function RouteComponent() {
 
     const handleCreateApiKey = async (formState: CreateApiKey) => {
         const keyType = formState.keyType || "secret";
-        
-        const createKeyData = {
+        const result = await auth.apiKey.create({
             name: formState.name,
-            prefix: keyType === "publishable" ? "pk" : "sk", // Set prefix based on key type
-            metadata: {
-                description: formState.description,
-                keyType,
-            },
-        };
-        const result = await auth.apiKey.create(createKeyData);
+            prefix: keyType === "publishable" ? "pk" : "sk",
+            metadata: { description: formState.description, keyType },
+        });
         if (result.error) {
             // TODO: handle it
             console.error(result.error);
@@ -170,7 +159,7 @@ function RouteComponent() {
                                 >
                                     {isActivating 
                                         ? "Processing..." 
-                                        : `Activate ${tierData.assigned_tier.charAt(0).toUpperCase() + tierData.assigned_tier.slice(1)} Tier`
+                                        : `Activate ${tierData.assigned_tier[0].toUpperCase() + tierData.assigned_tier.slice(1)} Tier`
                                     }
                                 </Button>
                             </div>

@@ -106,20 +106,12 @@ export const tiersRoutes = new Hono<Env>()
                     const activeProductId = activeSub.productId;
                     active_tier = getTierFromProductId(c.env, activeProductId);
                     
-                    // Calculate next refill: 24 hours from subscription start (daily pollen refill)
-                    // Note: currentPeriodEnd is for billing cycle, not daily refills
+                    // Calculate next refill: 24 hours from subscription start
                     if (activeSub.currentPeriodStart) {
-                        const startDate = new Date(activeSub.currentPeriodStart);
-                        const now = new Date();
-                        
-                        // Calculate how many 24-hour periods have passed
-                        const msPerDay = 24 * 60 * 60 * 1000;
-                        const msSinceStart = now.getTime() - startDate.getTime();
-                        const daysPassed = Math.floor(msSinceStart / msPerDay);
-                        
-                        // Next refill is at the start of the next 24-hour period
-                        const nextRefillDate = new Date(startDate.getTime() + (daysPassed + 1) * msPerDay);
-                        next_refill_at_utc = nextRefillDate.toISOString();
+                        const msPerDay = 86400000; // 24 * 60 * 60 * 1000
+                        const startTime = new Date(activeSub.currentPeriodStart).getTime();
+                        const daysPassed = Math.floor((Date.now() - startTime) / msPerDay);
+                        next_refill_at_utc = new Date(startTime + (daysPassed + 1) * msPerDay).toISOString();
                     }
                     
                     // Fetch product details for the active subscription

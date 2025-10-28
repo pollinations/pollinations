@@ -96,7 +96,11 @@ const Footer = () => {
                         height="100%"
                         sx={{ fontSize: "1.5em", fontFamily: Fonts.title }}
                     >
-                        <StyledLink to="/terms" onClick={handleTermsLinkClick}>
+                        <StyledLink 
+                            href="https://enter.pollinations.ai/terms" 
+                            isExternal
+                            onClick={handleTermsLinkClick}
+                        >
                             <LLMTextManipulator
                                 text={FOOTER_TERMS_CONDITIONS_LINK}
                                 transforms={[noLink]}

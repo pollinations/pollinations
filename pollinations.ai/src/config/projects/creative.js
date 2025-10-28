@@ -48,9 +48,8 @@ export const creativeProjects = [
   repo: "No response",
   submissionDate: "2025-10-25",
   order: 4
-}
-
-    {
+},
+  {
     name: "Green Hope AI 🎨",
     url: "https://aithumbnails.vercel.app/",
     description: "Generate stunning thumbnails with AI, then take full control. Easily edit the text, position, styles, and effects without ever having to start over.",

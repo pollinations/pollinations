@@ -49,11 +49,16 @@ function formatCountdown(targetUTC: string): string {
 const NoTierScreen: FC = () => {
     return (
         <div className="rounded-2xl p-8 border-2 border-gray-300">
-            <div className="flex items-center gap-3">
-                <span className="text-3xl">🥺</span>
-                <span className="text-xl font-subheading text-gray-900">
-                    No active tier subscription
-                </span>
+            <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                    <span className="text-3xl">🥺</span>
+                    <span className="text-xl text-gray-900">
+                        No active tier subscription
+                    </span>
+                </div>
+                <p className="text-sm text-gray-700 ml-11">
+                    Activate your tier by clicking the <span className="text-blue-600">Activate Tier</span> button above.
+                </p>
             </div>
         </div>
     );
@@ -101,11 +106,15 @@ const TierScreen: FC<{
                     <p className="text-sm text-green-900 leading-relaxed">
                         {tierWillChange ? (
                             <>
-                                ✓ <strong>Active Subscription:</strong> Your tier will be <strong>{isUpgrade ? "upgraded" : "downgraded"} to {assignedTierName} Tier</strong> on next renewal (in {countdown}). Unused pollen does not carry over.
+                                ✓ <strong>Active Subscription:</strong> Your tier will be <strong>{isUpgrade ? "upgraded" : "downgraded"} to {assignedTierName} Tier</strong> on next renewal (in {countdown}).
+                                <br />
+                                Unused pollen does not carry over.
                             </>
                         ) : (
                             <>
-                                ✓ <strong>Active Subscription:</strong> Your tier subscription is active and will earn you {pollenAmount} pollen daily. Unused pollen does not carry over.
+                                ✓ <strong>Active Subscription:</strong> Your tier subscription is active and will earn you {pollenAmount} pollen daily.
+                                <br />
+                                Unused pollen does not carry over.
                             </>
                         )}
                     </p>

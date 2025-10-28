@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { authenticateSession } from "../middleware/authenticate.ts";
+import { auth } from "../middleware/auth.ts";
 import { polar } from "../middleware/polar.ts";
 import { describeRoute } from "hono-openapi";
 import { validator } from "../middleware/validator.ts";
@@ -46,17 +46,17 @@ const activateRequestSchema = z.object({
 });
 
 export const tiersRoutes = new Hono<Env>()
-    .use("*", authenticateSession)
-    .use("*", polar)
+    .use(auth({ allowSessionCookie: true, allowApiKey: false }))
+    .use(polar)
     .get(
         "/view",
         describeRoute({
             description: "Get the current user's tier status and daily pollen information.",
-            hide: false,
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         async (c) => {
-            const { user } = c.var.auth.requireActiveSession();
-            
+            const user = c.var.auth.requireUser();
+
             const viewModel: TierViewModel = {
                 status: getTierStatus(user.tier),
                 next_refill_at_utc: getNextMidnightUTC(),
@@ -69,11 +69,11 @@ export const tiersRoutes = new Hono<Env>()
         "/activate",
         describeRoute({
             description: "Create a Polar checkout session to activate a tier subscription.",
-            hide: false,
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         validator("json", activateRequestSchema),
         async (c) => {
-            const { user } = c.var.auth.requireActiveSession();
+            const user = c.var.auth.requireUser();
             const { target_tier } = c.req.valid("json");
 
             // Validate user has the required tier before allowing subscription
@@ -85,19 +85,10 @@ export const tiersRoutes = new Hono<Env>()
                 });
             }
 
-            // Check rate limit (simple: 3 per hour per user)
-            const rateLimitKey = `tier_activate_rate:${user.id}`;
-            const currentCount = await c.env.KV.get(rateLimitKey);
-            if (currentCount && parseInt(currentCount) >= 3) {
-                throw new HTTPException(429, {
-                    message: "Rate limit exceeded. Try again later.",
-                });
-            }
-
             // Create Polar checkout session
             const polar = c.var.polar.client;
             const productId = getTierProductId(c.env, target_tier);
-            
+
             try {
                 const checkout = await polar.checkouts.create({
                     externalCustomerId: user.id,
@@ -108,15 +99,17 @@ export const tiersRoutes = new Hono<Env>()
                     },
                 });
 
-                // Update rate limit counter
-                await c.env.KV.put(rateLimitKey, String(parseInt(currentCount || "0") + 1), {
-                    expirationTtl: 3600, // 1 hour
-                });
-
                 return c.json({ checkout_url: checkout.url });
             } catch (error) {
+                console.error("Polar checkout creation failed:", {
+                    error,
+                    userId: user.id,
+                    email: user.email,
+                    productId,
+                    targetTier: target_tier,
+                });
                 throw new HTTPException(500, {
-                    message: "Failed to create checkout session",
+                    message: `Failed to create checkout session: ${error instanceof Error ? error.message : String(error)}`,
                     cause: error,
                 });
             }

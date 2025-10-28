@@ -29,8 +29,9 @@ export const Route = createFileRoute("/")({
         const tiersResult = await honoTiers.view.$get();
         const tierData = tiersResult.ok ? await tiersResult.json() : null;
         
+        // Use better-auth's built-in list() method which returns metadata
         const apiKeysResult = await context.auth.apiKey.list();
-        const apiKeys = apiKeysResult.data ? apiKeysResult.data : [];
+        const apiKeys = apiKeysResult.data || [];
 
         console.log(context.user);
         return { auth: context.auth, user: context.user, customer, apiKeys, tierData };
@@ -62,17 +63,34 @@ function RouteComponent() {
     };
 
     const handleCreateApiKey = async (formState: CreateApiKey) => {
-        const createKeyDate = {
+        const keyType = formState.keyType || "secret";
+        
+        const createKeyData = {
             name: formState.name,
+            prefix: keyType === "publishable" ? "pk" : "sk", // Set prefix based on key type
             metadata: {
                 description: formState.description,
+                keyType,
             },
         };
-        const result = await auth.apiKey.create(createKeyDate);
+        const result = await auth.apiKey.create(createKeyData);
         if (result.error) {
             // TODO: handle it
             console.error(result.error);
         }
+        
+        // For publishable keys, store the plaintext key in metadata for easy retrieval
+        if (keyType === "publishable" && result.data) {
+            const apiKey = result.data as CreateApiKeyResponse;
+            await auth.apiKey.update({
+                keyId: apiKey.id,
+                metadata: {
+                    plaintextKey: apiKey.key, // Store plaintext key in metadata
+                    keyType,
+                },
+            });
+        }
+        
         router.invalidate();
         return result.data as CreateApiKeyResponse;
     };
@@ -130,10 +148,18 @@ function RouteComponent() {
             <div className="flex flex-col gap-2">
                 <div className="flex flex-col sm:flex-row justify-between gap-3">
                     <h2 className="font-bold flex-1">Balance</h2>
-                    <div className="flex gap-3">
-                        <Button as="a" color="pink" weight="light" href="/api/polar/checkout/pollen-bundle-small" target="_blank">+ $10</Button>
-                        <Button as="a" color="blue" weight="light" href="/api/polar/checkout/pollen-bundle-medium" target="_blank">+ $25</Button>
-                        <Button as="a" color="red" weight="light" href="/api/polar/checkout/pollen-bundle-large" target="_blank">+ $50</Button>
+                    <div className="flex gap-3 items-center">
+                        <Button as="button" color="pink" weight="light" disabled>+ $10</Button>
+                        <Button as="button" color="blue" weight="light" disabled>+ $25</Button>
+                        <Button as="button" color="red" weight="light" disabled>+ $50</Button>
+                        <a 
+                            href="https://github.com/pollinations/pollinations/issues/4826"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-purple-700 hover:text-purple-900 font-medium whitespace-nowrap transition-colors"
+                        >
+                            💳 Vote on payment methods →
+                        </a>
                     </div>
                 </div>
                 <PollenBalance balance={balance} />

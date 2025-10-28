@@ -9,7 +9,7 @@ export const IMAGE_COSTS = {
     "flux": [
         {
             date: PRICING_START_DATE,
-            completionImageTokens: 0.000088, // $0.0088¢ per image (GPU cluster cost - September avg)
+            completionImageTokens: 0.00012, // $0.0088¢ per image (GPU cluster cost - September avg)
         },
     ],
     "kontext": [
@@ -21,28 +21,33 @@ export const IMAGE_COSTS = {
     "turbo": [
         {
             date: PRICING_START_DATE,
-            completionImageTokens: 0.0027, // $0.0027 per image (Scaleway - FLUX schnell pricing from Together.AI)
+            completionImageTokens: 0.0003, 
         },
     ],
     "nanobanana": [
         // Gemini 2.5 Flash Image via Vertex AI (currently disabled)
-        // $30 per 1M output tokens, 1290 tokens per image = $0.039 per image
         {
             date: PRICING_START_DATE,
-            completionImageTokens: perMillion(30), // $30 per 1M tokens × 1290 tokens/image
+            promptTextTokens: perMillion(0.30), // $0.30 per 1M input tokens
+            promptImageTokens: perMillion(0.30), // $0.30 per 1M input tokens
+            completionImageTokens: perMillion(30), // $30 per 1M tokens × 1290 tokens/image = $0.039 per image
         },
     ],
     "seedream": [
-        // ByteDance ARK Seedream 4.0 (currently disabled)
+        // ByteDance ARK Seedream 4.0
         {
             date: PRICING_START_DATE,
-            completionImageTokens: perMillion(30), // Estimated token-based pricing
+            completionImageTokens: 0.03, // $0.03 per image (3 cents)
         },
     ],
     "gptimage": [
+        // Azure gpt-image-1-mini
         {
             date: PRICING_START_DATE,
-            completionImageTokens: perMillion(8), // $8 per 1M output tokens (Azure gpt-image-1-mini)
+            promptTextTokens: perMillion(2.0), // $2.00 per 1M text input tokens
+            promptCachedTokens: perMillion(0.20), // $0.20 per 1M cached text input tokens
+            promptImageTokens: perMillion(2.50), // $2.50 per 1M image input tokens
+            completionImageTokens: perMillion(8), // $8.00 per 1M output tokens
         },
     ],
 } as const satisfies ModelRegistry;
@@ -58,13 +63,13 @@ export const IMAGE_SERVICES = {
     "kontext": {
         aliases: [],
         modelId: "kontext",
-        provider: "io.net",
+        provider: "azure",
         tier: "seed",
     },
     "turbo": {
         aliases: [],
         modelId: "turbo",
-        provider: "io.net",
+        provider: "scaleway",
         tier: "seed",
     },
     // nanobanana: {
@@ -73,12 +78,12 @@ export const IMAGE_SERVICES = {
     //     provider: "vertex-ai",
     //     tier: "nectar",
     // },
-    // seedream: {
-    //     aliases: [],
-    //     modelId: "seedream",
-    //     provider: "bytedance-ark",
-    //     tier: "flower",
-    // },
+    seedream: {
+        aliases: [],
+        modelId: "seedream",
+        provider: "bytedance-ark",
+        tier: "nectar",
+    },
     "gptimage": {
         aliases: ["gpt-image", "gpt-image-1-mini"],
         modelId: "gptimage",

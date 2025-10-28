@@ -12,19 +12,19 @@ const TIER_CONFIG = {
     seed: {
         emoji: "🌱",
         name: "Seed",
-        pollen: 3,
+        pollen: 10,
         badgeColors: "bg-green-100 border-green-300 text-green-800",
     },
     flower: {
         emoji: "🌸",
         name: "Flower",
-        pollen: 6,
+        pollen: 15,
         badgeColors: "bg-purple-100 border-purple-300 text-purple-800",
     },
     nectar: {
         emoji: "🍯",
         name: "Nectar",
-        pollen: 10,
+        pollen: 20,
         badgeColors: "bg-yellow-100 border-yellow-300 text-yellow-800",
     },
 } as const;
@@ -107,9 +107,18 @@ const TierScreen: FC<{ tier: keyof typeof TIER_CONFIG; countdown: string }> = ({
                         {config.pollen} pollen/day
                     </span>
                 </div>
-
-                <div className="text-sm text-gray-700">
-                    Next refill: {countdown} <span className="text-gray-500">(00:00 UTC)</span>
+                
+                <div className="mt-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-xs text-green-900 leading-relaxed">
+                        🌿 Pollen refills every 24 hours from your subscription time. Unused pollen does not carry over.
+                    </p>
+                </div>
+                
+                <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-xs text-amber-900 leading-relaxed space-y-1">
+                        <span className="block">⚠️ <strong>Beta Notice:</strong> Daily pollen amounts are experimental values that may change at any time without notice. Tier subscription benefits are not yet finalized.</span>
+                        <span className="block">🔄 <strong>Migration:</strong> If your tier on auth.pollinations.ai doesn't match what's displayed here, please contact hello@pollinations.ai before activating. We're migrating users and your tier may take up to 24 hours to sync.</span>
+                    </p>
                 </div>
             </div>
         </div>

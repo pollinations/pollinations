@@ -78,11 +78,17 @@ async function preparePendingEvents(
 ): Promise<[string, SelectGenerationEvent[]]> {
     const eventProcessingId = generateRandomId();
 
-    const pending = await db
+    // Update events to processing status
+    await db
         .update(event)
-        .set({ eventStatus: "processing", eventProcessingId })
-        .where(eq(event.eventStatus, "pending"))
-        .returning();
+        .set({ eventStatus: "processing", eventProcessingId, updatedAt: new Date() })
+        .where(eq(event.eventStatus, "pending"));
+
+    // Fetch the updated events (D1 has column limits on .returning())
+    const pending = await db
+        .select()
+        .from(event)
+        .where(eq(event.eventProcessingId, eventProcessingId));
 
     if (pending.length === 0) return [eventProcessingId, []];
     return [eventProcessingId, pending];

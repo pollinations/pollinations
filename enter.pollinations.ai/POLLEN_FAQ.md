@@ -2,18 +2,20 @@
 
 ## What is Pollen?
 
-Pollen is our prepaid credit system. **$1 ≈ 1 Pollen** (pricing may evolve). You spend it to make API calls to premium models. Free models always cost 0 Pollen.
+Pollen is our prepaid credit system. **$1 ≈ 1 Pollen** (pricing may evolve). You spend it to make API calls to paid models. Free models always cost 0 Pollen.
 
 ## How do I get Pollen?
 
 There are three ways to add Pollen to your balance:
-1.  **Buy It:** Purchase Pollen packs directly with a credit card. This Pollen goes into your wallet and never expires.
+1.  **Buy It:** Purchase Pollen packs directly with a credit card. This Pollen goes into your wallet and never expires. (Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)
 2.  **Get Daily Pollen:** During and after beta, registered developers receive daily Pollen grants to support experimentation based on their tier *(seed, flower, or nectar)*.
 3.  **Earn It:** Complete one-time community rewards, like starring our GitHub repo or helping solve a technical issue.
 
 ## What payment methods do you accept?
 
-Currently, we accept credit cards. We are looking into other options for users in countries with payment restrictions.
+Currently, we accept credit cards. We're actively exploring other payment methods based on community feedback.
+
+**Want other payment options?** Vote on what you'd like to see next in our [payment methods voting issue](https://github.com/pollinations/pollinations/issues/4826) — crypto, PayPal, Alipay, and more!
 
 ## Is there a monthly subscription?
 
@@ -49,18 +51,18 @@ Each model uses different amounts of Pollen based on what it costs us to run. He
 - **nanobanana**: ~50 images per Pollen
 
 **Text Models:**
-- **Basic responses**: 100,000+ per Pollen
-- **Premium responses**: ~1,000 per Pollen
+- **Fast models**: 100,000+ responses per Pollen
+- **Advanced models**: ~1,000 responses per Pollen
 
 ## What can I create with 10 Pollen?
 
 With just 10 Pollen (≈$10), you can generate:
-- **500 nanobanana images** — premium quality AI art that's perfect for professional projects
+- **500 nanobanana images** — high-quality AI art perfect for professional projects
 - **3,300 turbo images** — rapid prototyping and quick iterations
 - **2,000 kontext images** — balanced quality for most use cases
 - **770 gptimage images** — GPT-powered visual generation
-- **100,000+ basic text responses** — chatbot conversations, content generation
-- **10,000 premium text responses** — advanced reasoning and analysis
+- **100,000+ fast text responses** — chatbot conversations, content generation
+- **10,000 advanced text responses** — complex reasoning and analysis
 - **Unlimited flux images** — completely free, always!
 
 ## How does my Pollen wallet work?

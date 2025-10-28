@@ -118,9 +118,8 @@ const TierScreen: FC<{
                 </div>
                 
                 <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-xs text-amber-900 leading-relaxed space-y-1">
-                        <span className="block">⚠️ <strong>Beta Notice:</strong> Daily pollen amounts are experimental values that may change at any time without notice. Tier subscription benefits are not yet finalized.</span>
-                        <span className="block">🔄 <strong>Migration:</strong> If your tier on auth.pollinations.ai doesn't match what's displayed here, please contact hello@pollinations.ai before activating. We're migrating users and your tier may take up to 24 hours to sync.</span>
+                    <p className="text-xs text-amber-900 leading-relaxed">
+                        ⚠️ <strong>Beta Notice:</strong> Daily pollen amounts are experimental values that may change at any time without notice. Tier subscription benefits are not yet finalized.
                     </p>
                 </div>
             </div>

@@ -76,7 +76,7 @@
 
     html,
     body {
-        @apply text-green-950 bg-gray-50 font-body text-base;
+        @apply text-green-950 bg-emerald-100 font-body text-base;
         @apply pb-8 min-h-screen font-medium;
     }
 

@@ -12,7 +12,7 @@ function TermsComponent() {
     const proseClasses = "prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-h1:text-4xl prose-h1:text-center prose-h1:mb-6 prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:border-b prose-h2:border-gray-200 prose-h2:pb-2 prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3 prose-p:text-gray-700 prose-p:mb-3 prose-p:leading-normal prose-ul:my-3 prose-ul:list-disc prose-ul:pl-8 prose-li:text-gray-700 prose-li:mb-1 prose-li:leading-normal prose-strong:text-gray-900 prose-strong:font-semibold prose-em:text-gray-600 prose-em:text-center prose-em:block prose-em:mb-6 prose-em:text-lg prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-blue-50 prose-blockquote:py-3 prose-blockquote:px-4 prose-blockquote:my-4 prose-blockquote:not-italic prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800 prose-hr:my-8 prose-hr:border-gray-300";
     
     return (
-        <div className="min-h-screen bg-gray-50 py-12 px-4">
+        <div className="min-h-screen py-12 px-4">
             {/* Centered Logo */}
             <div className="flex justify-center mb-12">
                 <img

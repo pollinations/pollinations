@@ -13,6 +13,7 @@ interface ImageModelConfig {
     type: string;
     enhance: boolean;
     maxSideLength: number;
+    defaultSideLength?: number; // Optional - defaults to maxSideLength if not specified
     tierCaps?: {
         seed?: number;
         flower?: number;
@@ -55,6 +56,7 @@ export const IMAGE_CONFIG: ImageModelsConfig = {
         type: "seedream",
         enhance: false,
         maxSideLength: 4096, // Seedream supports up to 4K
+        defaultSideLength: 1024, // Default to 1K when not specified
     },
 
     // Azure GPT Image model - gpt-image-1-minica

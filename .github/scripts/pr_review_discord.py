@@ -11,11 +11,14 @@ import random
 import requests
 from typing import Dict, List, Optional
 from jinja2 import Environment, Template
+from datetime import datetime
 
 # Configuration
 GITHUB_API_BASE = "https://api.github.com"
 POLLINATIONS_API_BASE = "https://text.pollinations.ai/openai"
 MODEL = "gemini"
+DISCORD_CHAR_LIMIT = 2000
+CHUNK_SIZE = 1900  # Leave room for safety
 
 def get_env(key: str, required: bool = True) -> Optional[str]:
     """Get environment variable with optional requirement check"""
@@ -170,7 +173,8 @@ def format_diff_for_review(diff_text: str) -> str:
 def get_system_prompt() -> str:
     """Return the announcement generation prompt"""
     return """You are a PR Review Analyst for Pollinations AI platform Discord community.
-Your task is to analyze merged pull requests and create comprehensive user-facing announcements about what changed.
+Your task is to analyze merged pull requests and create concise, comprehensive user-facing announcements about what changed.
+Balance detail with brevity - cover all important changes clearly without over-explaining.
 
 IMPORTANT: Pollinations is an open-source AI platform where the community contributes in multiple ways:
 1. **Core Platform Changes** - API improvements, new models, infrastructure updates
@@ -272,7 +276,7 @@ EXAMPLE OUTPUT (for reference):
 
 Hey <@&1424461167883194418>! Here's what's new:
 
-### � Wildtcard Domain Support
+### 🌐 Wildcard Domain Support
 If you're building apps with Pollinations, you can now use wildcard patterns like `*.example.com` to cover all your subdomains at once! No more adding each subdomain separately. Plus, we've added extra security to prevent any sneaky domain spoofing attempts.
 
 ### ⚡ Temporary Queue Adjustments
@@ -408,59 +412,134 @@ def parse_discord_message(response: str) -> str:
             lines = lines[:-1]
         message = '\n'.join(lines)
     
-    # Ensure message isn't too long for Discord (2000 char limit)
-    if len(message) > 1900:
-        message = message[:1897] + "..."
-    
     print(f"DEBUG: Cleaned message length: {len(message)}")
-    print(f"DEBUG: Final message:\n{message}")
     
     return message
 
-def format_review_for_discord(message_content: str, pr_info: Dict) -> Dict:
-    """Format announcement message for Discord webhook"""
+def format_timestamp(merged_at: str) -> str:
+    """Format ISO timestamp as Discord timestamp (Unix epoch)"""
+    if not merged_at:
+        return "unknown time"
     
-    # Format timestamp for Discord-like display
-    from datetime import datetime
-    dt = None
     try:
-        if pr_info.get('merged_at'):
-            # Parse ISO timestamp and format for display
-            dt = datetime.fromisoformat(pr_info['merged_at'].replace('Z', '+00:00'))
-            time_str = dt.strftime("%I:%M %p")
+        # Handle both formats: with and without 'Z'
+        if merged_at.endswith('Z'):
+            dt = datetime.fromisoformat(merged_at.replace('Z', '+00:00'))
         else:
-            time_str = "unknown time"
-    except:
-        time_str = "unknown time"
-    
-    # Add PR info footer to the message
-    if dt:
-        footer = f"\n\n[PR #{pr_info['number']}]({pr_info['url']}) • Merged by [{pr_info['author']}]({pr_info['author_url']}) • <t:{int(dt.timestamp())}:F>"
-    else:
-        footer = f"\n\n[PR #{pr_info['number']}]({pr_info['url']}) • Merged by [{pr_info['author']}]({pr_info['author_url']})"
-    
-    # Combine message with footer, ensuring we don't exceed Discord limits
-    full_message = message_content + footer
-    if len(full_message) > 1900:
-        # Truncate the main message to fit the footer
-        available_space = 1900 - len(footer) - 3  # -3 for "..."
-        message_content = message_content[:available_space] + "..."
-        full_message = message_content + footer
-    
-    return {
-        "content": full_message
-    }
+            dt = datetime.fromisoformat(merged_at)
+        
+        # Convert to Unix timestamp for Discord formatting
+        unix_timestamp = int(dt.timestamp())
+        
+        # Return Discord timestamp format with :F (full date and time)
+        return f"<t:{unix_timestamp}:F>"
+    except Exception as e:
+        print(f"⚠️ Warning: Could not parse timestamp '{merged_at}': {e}")
+        return "unknown time"
 
-def post_to_discord(webhook_url: str, payload: Dict):
-    """Post message to Discord webhook"""
-    response = requests.post(webhook_url, json=payload)
+def chunk_message(message: str, max_length: int = CHUNK_SIZE) -> List[str]:
+    """
+    Split message into chunks at appropriate breakpoints.
+    Tries to split at paragraph breaks, then line breaks, then hard cuts.
+    """
+    if len(message) <= max_length:
+        return [message]
     
-    if response.status_code not in [200, 204]:
-        print(f"❌ Discord webhook error: {response.status_code}")
-        print(response.text)
-        sys.exit(1)
+    chunks = []
+    remaining = message
     
-    print("✅ Successfully posted to Discord!")
+    while remaining:
+        if len(remaining) <= max_length:
+            chunks.append(remaining)
+            break
+        
+        # Find the best split point
+        chunk = remaining[:max_length]
+        split_point = max_length
+        
+        # Try to split at paragraph break (double newline)
+        last_para = chunk.rfind('\n\n')
+        if last_para > max_length * 0.5:  # Only if it's past halfway
+            split_point = last_para + 2
+        else:
+            # Try to split at line break
+            last_line = chunk.rfind('\n')
+            if last_line > max_length * 0.5:
+                split_point = last_line + 1
+            else:
+                # Try to split at space
+                last_space = chunk.rfind(' ')
+                if last_space > max_length * 0.5:
+                    split_point = last_space + 1
+        
+        # Add the chunk
+        chunks.append(remaining[:split_point].rstrip())
+        remaining = remaining[split_point:].lstrip()
+    
+    return chunks
+
+def format_review_for_discord(message_content: str, pr_info: Dict) -> List[Dict]:
+    """
+    Format announcement message for Discord webhook.
+    Returns a list of payloads if message needs to be chunked.
+    """
+    time_str = format_timestamp(pr_info.get('merged_at'))
+    
+    # Create Discord markdown links for PR and author
+    pr_link = f"[PR #{pr_info['number']}]({pr_info['url']})"
+    author_link = f"[{pr_info['author']}](https://github.com/{pr_info['author']})"
+    
+    footer = f"\n\n{pr_link} • Merged by {author_link} • {time_str}"
+    
+    # Calculate available space for content
+    footer_length = len(footer)
+    available_space = CHUNK_SIZE - footer_length
+    
+    # Check if we need to chunk
+    if len(message_content) <= available_space:
+        # Single message - add footer
+        full_message = message_content + footer
+        return [{"content": full_message}]
+    
+    # Need to chunk - split the message content
+    print(f"📦 Message is {len(message_content)} chars, chunking into ~{CHUNK_SIZE} char pieces...")
+    chunks = chunk_message(message_content, available_space)
+    
+    payloads = []
+    total_chunks = len(chunks)
+    
+    for i, chunk in enumerate(chunks):
+        is_last = (i == total_chunks - 1)
+        
+        if is_last:
+            # Last chunk gets the footer
+            full_message = chunk + footer
+        else:
+            # Middle chunks get a continuation indicator
+            full_message = chunk + f"\n\n*(continued... {i+1}/{total_chunks})*"
+        
+        payloads.append({"content": full_message})
+        print(f"  📄 Chunk {i+1}/{total_chunks}: {len(full_message)} chars")
+    
+    return payloads
+
+def post_to_discord(webhook_url: str, payloads: List[Dict]):
+    """Post message(s) to Discord webhook"""
+    import time
+    
+    for i, payload in enumerate(payloads):
+        if i > 0:
+            # Add small delay between messages to ensure correct ordering
+            time.sleep(0.5)
+        
+        response = requests.post(webhook_url, json=payload)
+        
+        if response.status_code not in [200, 204]:
+            print(f"❌ Discord webhook error on message {i+1}: {response.status_code}")
+            print(response.text)
+            sys.exit(1)
+        
+        print(f"✅ Successfully posted message {i+1}/{len(payloads)} to Discord!")
 
 def main():
     print("🚀 Starting Update Announcement Generator...")
@@ -520,24 +599,22 @@ def main():
         'number': pr_number,
         'url': pr_url,
         'author': pr_author,
-        'author_url': f"https://github.com/{pr_author}",
         'merged_at': merged_at
     }
     
     try:
-        discord_payload = format_review_for_discord(message_content, pr_info)
+        discord_payloads = format_review_for_discord(message_content, pr_info)
     except Exception as e:
         print(f"❌ Error formatting for Discord: {e}")
         print(f"Message content: {message_content}")
         raise
     
     # Post to Discord
-    print("📤 Posting to Discord...")
-    post_to_discord(discord_webhook, discord_payload)
+    print(f"📤 Posting {len(discord_payloads)} message(s) to Discord...")
+    post_to_discord(discord_webhook, discord_payloads)
     
     print("✨ Done!")
 
 if __name__ == "__main__":
     main()
-
 

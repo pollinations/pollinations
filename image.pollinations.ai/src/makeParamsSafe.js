@@ -42,17 +42,16 @@ export const makeParamsSafe = ({
         model = "flux";
     }
 
-    const maxSideLength = MODELS[model].maxSideLength;
-    const defaultSideLength = MODELS[model].defaultSideLength ?? maxSideLength;
-    const maxPixels = maxSideLength * maxSideLength;
+    const sideLength = MODELS[model].maxSideLength;
+    const maxPixels = sideLength * sideLength;
 
-    // Ensure width and height are integers or default to defaultSideLength
+    // Ensure width and height are integers or default to sideLength
     width = Number.isInteger(parseInt(width))
         ? parseInt(width)
-        : defaultSideLength;
+        : sideLength;
     height = Number.isInteger(parseInt(height))
         ? parseInt(height)
-        : defaultSideLength;
+        : sideLength;
 
     // Ensure seed is a valid integer within the allowed range
     const maxSeedValue = 1844674407370955;

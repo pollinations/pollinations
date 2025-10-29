@@ -1064,16 +1064,17 @@ const generateImage = async (
     }
 
     if (safeParams.model === "seedream") {
-        // Seedream model is only available from enter.pollinations.ai
-        if (!fromEnter) {
+        // Seedream model requires nectar tier or higher (temporarily due to limited credits)
+        // NOTE: Skip tier check for enter.pollinations.ai requests (handled in index.ts)
+        if (!fromEnter && !hasSufficientTier(userInfo.tier, "nectar")) {
             const errorText =
-                "Seedream model is only available from enter.pollinations.ai";
+                "Access to seedream model is currently limited to users in the nectar tier or higher due to limited credits. Seedream will be available again to seed tier users in the next few days. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.";
             logError(errorText);
             progress.updateBar(
                 requestId,
                 35,
                 "Auth",
-                "Seedream only available from enter",
+                "Seedream temporarily requires nectar tier",
             );
             const error: any = new Error(errorText);
             error.status = 403;

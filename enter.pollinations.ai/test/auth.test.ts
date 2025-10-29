@@ -84,3 +84,21 @@ test("Non-prefixed key in query parameter should return 401 (invalid key)", asyn
     );
     expect(response.status).toBe(401);
 });
+
+test("Image proxy should forward headers with valid API key", async ({
+    apiKey,
+}) => {
+    const response = await SELF.fetch(
+        "http://localhost:3000/image/test-prompt?model=flux",
+        {
+            method: "GET",
+            headers: {
+                "authorization": `Bearer ${apiKey}`,
+            },
+        },
+    );
+
+    // The fix ensures headers are properly passed through
+    // If headers weren't passed, image service would reject with 403
+    expect(response.status).toBe(200);
+});

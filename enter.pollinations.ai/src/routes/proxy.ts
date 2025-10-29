@@ -88,7 +88,8 @@ export const proxyRoutes = new Hono<Env>()
         },
     )
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
-    .use(frontendKeyRateLimit)
+    // TODO: Temporarily disabled due to timestamp issues with client tokens
+    // .use(frontendKeyRateLimit)
     .use(polar)
     // .use(alias({ "/openai/chat/completions": "/openai" }))
     .post(

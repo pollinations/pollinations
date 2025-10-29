@@ -29,7 +29,7 @@ jobs:
             
             # Pull latest changes
             echo "📥 Pulling latest changes..."
-            git pull origin main || git pull origin master
+            git pull origin staging
             
             # Update text service
             echo "📝 Updating text.pollinations.ai..."

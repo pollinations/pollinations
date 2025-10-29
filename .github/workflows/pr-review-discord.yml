@@ -173,8 +173,8 @@ def format_diff_for_review(diff_text: str) -> str:
 def get_system_prompt() -> str:
     """Return the announcement generation prompt"""
     return """You are a PR Review Analyst for Pollinations AI platform Discord community.
-Your task is to analyze merged pull requests and create comprehensive user-facing announcements about what changed.
-Keep it Short, Concise yet comprehensive and detailed! Do not over-explain but also do not under-explain. 
+Your task is to analyze merged pull requests and create concise, comprehensive user-facing announcements about what changed.
+Balance detail with brevity - cover all important changes clearly without over-explaining.
 
 IMPORTANT: Pollinations is an open-source AI platform where the community contributes in multiple ways:
 1. **Core Platform Changes** - API improvements, new models, infrastructure updates
@@ -617,3 +617,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

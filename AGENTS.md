@@ -1,4 +1,4 @@
-# Claude Guidelines for Pollinations.AI
+# Agent Guidelines for Pollinations.AI
 
 ## Project Submission Handling
 
@@ -98,7 +98,7 @@ pollinations/
 
 ## Model Context Protocol (MCP)
 
-The `model-context-protocol/` directory contains a Model Context Protocol server that allows AI assistants like Claude to directly generate images, text, and audio using the Pollinations API.
+The `model-context-protocol/` directory contains a Model Context Protocol server that allows AI agents to directly generate images, text, and audio using the Pollinations API.
 
 For detailed implementation notes, design principles, and troubleshooting, see:
 - `model-context-protocol/README.md` - Installation and usage

@@ -93,8 +93,39 @@ pollinations/
 ├── pollinations.ai/           # Main React frontend application
 ├── pollinations-react/        # React component library
 ├── model-context-protocol/    # MCP server for AI assistant integration
+├── enter.pollinations.ai/     # New centralized auth gateway (BETA)
+├── auth.pollinations.ai/      # Legacy auth service (being phased out)
 └── operations/                # Documentation and operations
 ```
+
+## API Gateway Transition (Important)
+
+**We are currently running two API systems simultaneously:**
+
+### 🆕 **enter.pollinations.ai** (NEW - Beta)
+Our new centralized authentication and model gateway:
+- **Status**: Beta - actively being rolled out
+- **Features**: Unified authentication, pollen-based billing, all models in one place
+- **Authentication**: Publishable keys (`pk_`) and Secret keys (`sk_`)
+- **Endpoints**: 
+  - `/api/generate/image/*` - Image generation with all models
+  - `/api/generate/openai` - OpenAI-compatible text/audio endpoints
+  - `/api/generate/text/*` - Simple text generation
+- **Documentation**: See `enter.pollinations.ai/MODEL-TESTING-CHEATSHEET.md`
+- **Best for**: New integrations, testing, production-ready features
+
+### 🔄 **Legacy APIs** (OLD - Being Phased Out)
+- **image.pollinations.ai** - Direct image generation (no auth)
+- **text.pollinations.ai** - Direct text generation (no auth)
+- **auth.pollinations.ai** - Original authentication service
+- **Status**: Still operational but will be deprecated in favor of enter.pollinations.ai
+- **Migration**: All new features are being built on enter.pollinations.ai
+
+**For Agents**: When working on API-related tasks, clarify whether you're working with:
+1. **New system** (enter.pollinations.ai) - preferred for new work
+2. **Legacy system** (image/text.pollinations.ai) - maintenance only
+
+Both systems are currently functional, but new development should target enter.pollinations.ai.
 
 ## Model Context Protocol (MCP)
 

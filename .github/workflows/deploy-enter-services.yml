@@ -56,6 +56,26 @@ jobs:
             sudo systemctl is-active text-pollinations.service || exit 1
             sudo systemctl is-active image-pollinations.service || exit 1
             
+            # Health check endpoints
+            echo "🏥 Running health checks..."
+            sleep 2  # Give services a moment to fully initialize
+            
+            # Check text service health
+            TEXT_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:16385/models || echo "000")
+            if [ "$TEXT_HEALTH" != "200" ]; then
+              echo "❌ Text service health check failed (HTTP $TEXT_HEALTH)"
+              exit 1
+            fi
+            echo "✅ Text service responding (HTTP 200)"
+            
+            # Check image service health
+            IMAGE_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:16384/models || echo "000")
+            if [ "$IMAGE_HEALTH" != "200" ]; then
+              echo "❌ Image service health check failed (HTTP $IMAGE_HEALTH)"
+              exit 1
+            fi
+            echo "✅ Image service responding (HTTP 200)"
+            
             echo "🎉 Deployment complete!"
             echo "📊 Service Status:"
             sudo systemctl status text-pollinations.service image-pollinations.service --no-pager | grep -E "Active:|running"

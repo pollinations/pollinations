@@ -18,6 +18,7 @@ jobs:
           host: ${{ secrets.ENTER_SERVICES_HOST }}
           username: ${{ secrets.ENTER_SERVICES_USER }}
           key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
+          fingerprint: ${{ secrets.ENTER_SERVICES_FINGERPRINT }}
           script: |
             set -e
             

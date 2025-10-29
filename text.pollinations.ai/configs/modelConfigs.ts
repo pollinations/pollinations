@@ -51,8 +51,8 @@ export const portkeyConfig: PortkeyConfigMap = {
 	}),
 	"gpt-5-nano-2025-08-07": () => ({
 		...createAzureModelConfig(
-			process.env.AZURE_MYCELI_GPT5NANO_API_KEY,
-			process.env.AZURE_MYCELI_GPT5NANO_ENDPOINT,
+			process.env.AZURE_OPENAI_NANO_5_API_KEY,
+			process.env.AZURE_OPENAI_NANO_5_ENDPOINT,
 			"gpt-5-nano-2025-08-07",
 		),
 		"max-completion-tokens": 512,
@@ -67,9 +67,9 @@ export const portkeyConfig: PortkeyConfigMap = {
 		...createAzureModelConfig(
 			process.env.AZURE_MYCELI_GPT5CHAT_API_KEY,
 			process.env.AZURE_MYCELI_GPT5CHAT_ENDPOINT,
-			"gpt-5-chat-latest"
+			"gpt-5-chat-latest",
 		),
-		"max-completion-tokens": 1024,
+		"max-completion-tokens": 768,
 	}),
 	"gpt-4.1-2025-04-14": () => ({
 		...createAzureModelConfig(
@@ -86,7 +86,7 @@ export const portkeyConfig: PortkeyConfigMap = {
 			process.env.AZURE_OPENAI_AUDIO_ENDPOINT,
 			"gpt-4o-mini-audio-preview-2024-12-17",
 		),
-		"max-completion-tokens": 6384,
+		"max-completion-tokens": 2048,
 	}),
 	"openai/o4-mini": () =>
 		createAzureModelConfig(

@@ -33,18 +33,19 @@ function adjustImageSizeForModel(
     width?: number,
     height?: number,
 ): { width: number; height: number } {
-    const sideLength = MODELS[model].maxSideLength;
-    const maxPixels = sideLength * sideLength;
+    const maxSideLength = MODELS[model].maxSideLength;
+    const defaultSideLength = MODELS[model].defaultSideLength ?? maxSideLength;
+    const maxPixels = maxSideLength * maxSideLength;
 
-    // Ensure width and height are integers or default to sideLength
+    // Ensure width and height are integers or default to defaultSideLength
     var sanitizedWidth =
         width !== undefined && Number.isInteger(width)
             ? width
-            : sideLength;
+            : defaultSideLength;
     var sanitizedHeight =
         height !== undefined && Number.isInteger(height)
             ? height
-            : sideLength;
+            : defaultSideLength;
 
     // Adjust dimensions to maintain aspect ratio if exceeding maxPixels
     if (sanitizedWidth * sanitizedHeight > maxPixels) {

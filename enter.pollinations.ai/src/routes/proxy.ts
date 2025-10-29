@@ -88,7 +88,8 @@ export const proxyRoutes = new Hono<Env>()
         },
     )
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
-    .use(frontendKeyRateLimit)
+    // TODO: Temporarily disabled due to timestamp issues with client tokens
+    // .use(frontendKeyRateLimit)
     .use(polar)
     // .use(alias({ "/openai/chat/completions": "/openai" }))
     .post(
@@ -267,18 +268,23 @@ export const proxyRoutes = new Hono<Env>()
                 c.req.param("prompt"),
             );
             
+            const genHeaders = generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user);
             const proxyRequestHeaders = {
                 ...proxyHeaders(c),
-                ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
+                ...genHeaders,
             };
             
+            c.get("log")?.debug("[PROXY] Image generation headers: {headers}", {
+                headers: genHeaders,
+            });
             c.get("log")?.debug("[PROXY] Proxying to: {url}", {
                 url: targetUrl.toString(),
             });
             
             const response = await proxy(targetUrl.toString(), {
-                ...c.req,
+                method: c.req.method,
                 headers: proxyRequestHeaders,
+                body: c.req.raw.body,
             });
             
             if (!response.ok) {

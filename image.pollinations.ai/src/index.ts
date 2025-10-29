@@ -460,21 +460,6 @@ const checkCacheAndGenerate = async (
                     // 90 second interval, 10 images per hour max
                     queueConfig = { interval: 90000 }; // 90 second interval
                     logAuth(`${modelName} model - 90 second interval, ${remaining}/${HOURLY_LIMIT} images remaining this hour`);
-                } else if (modelName === "seedream") {
-                    // Check hourly limit for seedream
-                    const ip = getIp(req);
-                    const { allowed, remaining, resetIn } = checkHourlyLimit(ip);
-                    
-                    if (!allowed) {
-                        const minutesLeft = Math.ceil(resetIn / 60000);
-                        throw new Error(
-                            `Hourly limit reached for ${modelName}. You can generate ${remaining} more images. Limit resets in ${minutesLeft} minutes.`
-                        );
-                    }
-                    
-                    // 6 minute interval, 10 images per hour max
-                    queueConfig = { interval: 360000 }; // 6 minute interval
-                    logAuth(`${modelName} model - 6 minute interval, ${remaining}/${HOURLY_LIMIT} images remaining this hour`);
                 } else if (modelName === "kontext") {
                     // Kontext model requires seed tier or higher (checked via registry)
                     // NOTE: Skip tier check for enter.pollinations.ai requests

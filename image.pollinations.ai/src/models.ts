@@ -34,7 +34,7 @@ export const IMAGE_CONFIG: ImageModelsConfig = {
 
     // Azure Flux Kontext - general purpose model
     kontext: {
-        type: "azure-flux-kontext",
+        type: "kontext",
         enhance: true,
         maxSideLength: 1024, // Azure Flux Kontext standard resolution
         tierCaps: {

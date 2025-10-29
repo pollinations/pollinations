@@ -36,8 +36,8 @@ TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
 POLAR_PRODUCT_ID_SEED = "19c3291a-e1fa-4a03-a08a-3de9ab84af5d"
 POLAR_PRODUCT_ID_FLOWER = "c675a78a-d954-4739-bfad-c0c8aa3e5576"
 POLAR_PRODUCT_ID_NECTAR = "dfe978ca-8e07-41fa-992a-ae19ab96e66c"
-IMAGE_SERVICE_URL = "https://image-origin.pollinations.ai"
-TEXT_SERVICE_URL = "https://text-origin.pollinations.ai"
+IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
+TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
 
 
 [[env.staging.routes]]
@@ -67,8 +67,8 @@ TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=g
 POLAR_PRODUCT_ID_SEED = "19c3291a-e1fa-4a03-a08a-3de9ab84af5d"
 POLAR_PRODUCT_ID_FLOWER = "c675a78a-d954-4739-bfad-c0c8aa3e5576"
 POLAR_PRODUCT_ID_NECTAR = "dfe978ca-8e07-41fa-992a-ae19ab96e66c"
-IMAGE_SERVICE_URL = "https://image-origin.pollinations.ai"
-TEXT_SERVICE_URL = "https://text-origin.pollinations.ai"
+IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
+TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
 
 
 [env.production]
@@ -125,5 +125,8 @@ TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
 POLAR_PRODUCT_ID_SEED = "polar_product_id_seed"
 POLAR_PRODUCT_ID_FLOWER = "polar_product_id_flower"
 POLAR_PRODUCT_ID_NECTAR = "polar_product_id_nectar"
-IMAGE_SERVICE_URL = "http://127.0.0.1:16384"
-TEXT_SERVICE_URL = "http://127.0.0.1:16385"
+IMAGE_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16384"
+TEXT_SERVICE_URL = "http://ec2-3-80-56-235.compute-1.amazonaws.com:16385"
+# IMAGE_SERVICE_URL = "http://127.0.0.1:16384"
+# TEXT_SERVICE_URL = "http://127.0.0.1:16385"
+

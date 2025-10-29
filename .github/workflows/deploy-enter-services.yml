@@ -18,8 +18,6 @@ jobs:
           host: ${{ secrets.ENTER_SERVICES_HOST }}
           username: ${{ secrets.ENTER_SERVICES_USER }}
           key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
-          fingerprint: ${{ secrets.ENTER_SERVICES_FINGERPRINT }}
-          known_hosts: ${{ secrets.ENTER_SERVICES_KNOWN_HOSTS }}
           script: |
             set -e
             
@@ -50,7 +48,7 @@ jobs:
             
             # Wait for services to be ready
             echo "⏳ Waiting for services to start..."
-            sleep 3
+            sleep 10
             
             # Verify services are running
             echo "✅ Verifying service status..."

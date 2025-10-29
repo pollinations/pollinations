@@ -23,6 +23,10 @@ import type { TrackingData } from "./utils/trackingHeaders.ts";
 
 // Import GPT Image logging utilities
 import { logGptImageError, logGptImagePrompt } from "./utils/gptImageLogger.ts";
+// Import user stats tracker for violation logging
+import { userStatsTracker } from "./utils/userStatsTracker.ts";
+// Import violation ratio checker
+import { checkViolationRatio, recordGptImageRequest } from "./utils/violationRatioChecker.ts";
 // Import Vertex AI Gemini image generator
 import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
 import { writeExifMetadata } from "./writeExifMetadata.ts";
@@ -33,6 +37,7 @@ import type { ProgressManager } from "./progressBar.ts";
 // Import model handlers
 import { callBPAIGenWithKontextFallback } from "./models/bpaigenModel.ts";
 import { callSeedreamAPI } from "./models/seedreamModel.ts";
+import { callAzureFluxKontext } from "./models/azureFluxKontextModel.ts";
 
 dotenv.config();
 
@@ -505,41 +510,49 @@ export async function convertToJpeg(buffer: Buffer): Promise<Buffer> {
  * @param {string} prompt - The prompt for image generation or editing
  * @param {Object} safeParams - The parameters for image generation or editing
  * @param {Object} userInfo - User authentication info object
- * @param {number} endpointIndex - The endpoint index to use (1 or 2)
  * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
  */
 const callAzureGPTImageWithEndpoint = async (
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
-    endpointIndex: number,
 ): Promise<ImageGenerationResult> => {
-    const apiKey = process.env[`GPT_IMAGE_${endpointIndex}_AZURE_API_KEY`];
-    let endpoint = process.env[`GPT_IMAGE_${endpointIndex}_ENDPOINT`];
+    const apiKey = process.env[`GPT_IMAGE_1_AZURE_API_KEY`];
+    let endpoint = process.env[`GPT_IMAGE_1_ENDPOINT`];
 
     if (!apiKey || !endpoint) {
         throw new Error(
-            `Azure API key or endpoint ${endpointIndex} not found in environment variables`,
+            `Azure API key or endpoint 1 not found in environment variables`,
         );
     }
 
     // Check if we need to use the edits endpoint instead of generations
     const isEditMode = safeParams.image && safeParams.image.length > 0;
+    
+    // Use gpt-image-1 (full version) if input images are provided, otherwise use gpt-image-1-mini
     if (isEditMode) {
+        // Replace model name with full version for edit mode
+        endpoint = endpoint.replace("gpt-image-1-mini", "gpt-image-1");
         // Replace 'generations' with 'edits' in the endpoint URL
         endpoint = endpoint.replace("/images/generations", "/images/edits");
-        logCloudflare(`Using Azure endpoint ${endpointIndex} in edit mode`);
+        logCloudflare(`Using Azure gpt-image-1 (full) in edit mode`);
     } else {
         logCloudflare(
-            `Using Azure endpoint ${endpointIndex} in generation mode`,
+            `Using Azure gpt-image-1-mini in generation mode`,
         );
     }
 
     // Map safeParams to Azure API parameters
     const size = `${safeParams.width}x${safeParams.height}`;
 
-    // Determine quality based on safeParams or use medium as default
-    const quality = safeParams.quality || "medium";
+    // Allow nectar users to use high quality, others get medium quality to reduce costs
+    const quality = userInfo?.tier === "nectar" && safeParams.quality === "high" 
+        ? "high" 
+        : "medium";
+    
+    if (quality === "high") {
+        logCloudflare(`Nectar tier user - using high quality for gptimage`);
+    }
 
     // Set output format to png if model is gptimage, otherwise jpeg
     const outputFormat = "png";
@@ -638,10 +651,11 @@ const callAzureGPTImageWithEndpoint = async (
                         throw error;
                     }
 
-                    // Determine file extension from Content-Type header
-                    const contentType =
+                    // Determine file extension and MIME type from Content-Type header
+                    let contentType =
                         imageResponse.headers.get("content-type") || "";
                     let extension = ".png"; // Default extension
+                    let mimeType = "image/png"; // Default MIME type
 
                     // Extract extension from content type (e.g., "image/jpeg" -> "jpeg")
                     if (contentType.startsWith("image/")) {
@@ -649,15 +663,21 @@ const callAzureGPTImageWithEndpoint = async (
                             .split("/")[1]
                             .split(";")[0]; // Handle cases like "image/jpeg; charset=utf-8"
                         extension = `.${mimeExtension}`;
+                        mimeType = `image/${mimeExtension}`;
+                    } else {
+                        // If content-type is not image/*, try to detect from URL or default to PNG
+                        logCloudflare(
+                            `Content-Type not detected as image (${contentType}), defaulting to image/png`,
+                        );
                     }
 
                     // Use the image[] array notation as required by Azure OpenAI API
-                    // Create a Blob from the already-read arrayBuffer instead of calling blob() again
-                    const imageBlob = new Blob([imageArrayBuffer], { type: contentType });
+                    // Create a Blob with explicit MIME type to avoid application/octet-stream
+                    const imageBlob = new Blob([imageArrayBuffer], { type: mimeType });
                     formData.append(
                         "image[]",
                         imageBlob,
-                        extension,
+                        `image${extension}`,
                     );
                 } catch (error) {
                     // More specific error handling for image processing
@@ -728,6 +748,12 @@ const callAzureGPTImageWithEndpoint = async (
     // Convert base64 to buffer
     const imageBuffer = Buffer.from(data.data[0].b64_json, "base64");
 
+    // Extract token usage from Azure OpenAI response
+    // Azure returns usage in format: { prompt_tokens, completion_tokens, total_tokens }
+    const outputTokens = data.usage?.completion_tokens || data.usage?.total_tokens || 1;
+    
+    logCloudflare(`GPT Image token usage: ${outputTokens} output tokens`);
+
     // Azure doesn't provide content safety information directly, so we'll set defaults
     // In a production environment, you might want to use a separate content moderation service
     return {
@@ -737,8 +763,8 @@ const callAzureGPTImageWithEndpoint = async (
         trackingData: {
             actualModel: safeParams.model,
             usage: {
-                candidatesTokenCount: 1,
-                totalTokenCount: 1
+                candidatesTokenCount: outputTokens, // Use actual token count from API
+                totalTokenCount: outputTokens
             }
         }
     };
@@ -757,25 +783,10 @@ export const callAzureGPTImage = async (
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> => {
     try {
-        // Extract user tier with fallback to 'seed'
-        const userTier = userInfo.tier || "seed";
-
-        // Stage-based endpoint selection instead of random
-        // seed stage → GPT_IMAGE_1_ENDPOINT (standard endpoint)
-        // flower/nectar stage → GPT_IMAGE_2_ENDPOINT (advanced endpoint)
-        // const endpointIndex = (userTier === 'seed') ? 1 : 2;
-
-        const endpointIndex = Math.random() < 0.5 ? 1 : 2;
-        logCloudflare(
-            `Using Azure GPT Image endpoint ${endpointIndex} for user tier: ${userTier}`,
-            userInfo.userId ? `(userId: ${userInfo.userId})` : "(anonymous)",
-        );
-
         return await callAzureGPTImageWithEndpoint(
             prompt,
             safeParams,
-            userInfo,
-            endpointIndex,
+            userInfo
         );
     } catch (error) {
         logError("Error calling Azure GPT Image API:", error);
@@ -802,98 +813,121 @@ const generateImage = async (
     progress: ProgressManager,
     requestId: string,
     userInfo: AuthResult,
+    fromEnter: boolean,
 ): Promise<ImageGenerationResult> => {
     // Model selection strategy using a more functional approach
     
-    // GPT Image model (temporarily disabled - uncomment to reactivate)
-    // if (safeParams.model === "gptimage") {
-    //     // Detailed logging of authentication info for GPT image access
-    //     logError(
-    //         "GPT Image authentication check:",
-    //         userInfo
-    //             ? `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || "none"}, tier=${userInfo.tier || "none"}`
-    //             : "No userInfo provided",
-    //     );
+    // GPT Image model - gpt-image-1-mini
+    if (safeParams.model === "gptimage") {
+        // Detailed logging of authentication info for GPT image access
+        logError(
+            "GPT Image authentication check:",
+            userInfo
+                ? `authenticated=${userInfo.authenticated}, tokenAuth=${userInfo.tokenAuth}, referrerAuth=${userInfo.referrerAuth}, reason=${userInfo.reason}, userId=${userInfo.userId || "none"}, tier=${userInfo.tier || "none"}`
+                : "No userInfo provided",
+        );
 
-    //     // Restrict GPT Image model to users with valid authentication
-    //     if (!hasSufficientTier(userInfo.tier, "seed")) {
-    //         const errorText =
-    //             "Access to gpt-image-1 is currently limited to users in the seed tier. We will be opening up access gradually. Please authenticate at https://auth.pollinations.ai for tier upgrade information.";
-    //         logError(errorText);
-    //         progress.updateBar(
-    //             requestId,
-    //             35,
-    //             "Auth",
-    //             "GPT Image requires authorization",
-    //         );
-    //         throw new Error(errorText);
-    //     } else {
-    //         // For gptimage model, always throw errors instead of falling back
-    //         progress.updateBar(
-    //             requestId,
-    //             30,
-    //             "Processing",
-    //             "Checking prompt safety...",
-    //         );
+        // Record request and check violation ratio
+        const username = userInfo?.username;
+        recordGptImageRequest(username);
+        
+        const violationCheck = checkViolationRatio(username);
+        if (violationCheck.blocked) {
+            progress.updateBar(requestId, 35, "Auth", "User blocked");
+            const error: any = new Error(violationCheck.reason);
+            error.status = 403;
+            throw error;
+        }
 
-    //         try {
-    //             // Check prompt safety with Azure Content Safety
-    //             const promptSafetyResult = await analyzeTextSafety(prompt);
+        // Restrict GPT Image model to users with seed tier or higher
+        // NOTE: Skip tier check for enter.pollinations.ai requests
+        if (!fromEnter && !hasSufficientTier(userInfo.tier, "seed")) {
+            const errorText =
+                "Access to gptimage (gpt-image-1-mini) is currently limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai for tier upgrade information.";
+            logError(errorText);
+            progress.updateBar(
+                requestId,
+                35,
+                "Auth",
+                "GPT Image requires seed tier",
+            );
+            const error: any = new Error(errorText);
+            error.status = 403;
+            throw error;
+        } else {
+            // For gptimage model, always throw errors instead of falling back
+            progress.updateBar(
+                requestId,
+                30,
+                "Processing",
+                "Checking prompt safety...",
+            );
 
-    //             // Log the prompt with safety analysis results
-    //             await logGptImagePrompt(
-    //                 prompt,
-    //                 safeParams,
-    //                 userInfo,
-    //                 promptSafetyResult,
-    //             );
+            try {
+                // Check prompt safety with Azure Content Safety
+                const promptSafetyResult = await analyzeTextSafety(prompt);
 
-    //             if (!promptSafetyResult.safe) {
-    //                 const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
-    //                 logError(
-    //                     "Azure Content Safety rejected prompt:",
-    //                     errorMessage,
-    //                 );
-    //                 progress.updateBar(
-    //                     requestId,
-    //                     100,
-    //                     "Error",
-    //                     "Prompt contains unsafe content",
-    //                 );
+                // Log the prompt with safety analysis results
+                await logGptImagePrompt(
+                    prompt,
+                    safeParams,
+                    userInfo,
+                    promptSafetyResult,
+                );
 
-    //                 // Log the error with safety analysis results
-    //                 const error = new Error(errorMessage);
-    //                 await logGptImageError(
-    //                     prompt,
-    //                     safeParams,
-    //                     userInfo,
-    //                     error,
-    //                     promptSafetyResult,
-    //                 );
-    //                 throw error;
-    //             }
+                if (!promptSafetyResult.safe) {
+                    const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
+                    logError(
+                        "Azure Content Safety rejected prompt:",
+                        errorMessage,
+                    );
+                    progress.updateBar(
+                        requestId,
+                        100,
+                        "Error",
+                        "Prompt contains unsafe content",
+                    );
 
-    //             progress.updateBar(
-    //                 requestId,
-    //                 35,
-    //                 "Processing",
-    //                 "Trying Azure GPT Image...",
-    //             );
-    //             return await callAzureGPTImage(prompt, safeParams, userInfo);
-    //         } catch (error) {
-    //             // Log the error but don't fall back - propagate it to the caller
-    //             logError(
-    //                 "Azure GPT Image generation or safety check failed:",
-    //                 error.message,
-    //             );
+                    // Log the error with safety analysis results
+                    const error = new Error(errorMessage);
+                    await logGptImageError(
+                        prompt,
+                        safeParams,
+                        userInfo,
+                        error,
+                        promptSafetyResult,
+                    );
+                    
+                    // Track violation in user stats
+                    userStatsTracker.recordViolation(userInfo?.username);
+                    
+                    throw error;
+                }
 
-    //             await logGptImageError(prompt, safeParams, userInfo, error);
+                progress.updateBar(
+                    requestId,
+                    35,
+                    "Processing",
+                    "Trying Azure GPT Image (gpt-image-1-mini)...",
+                );
+                return await callAzureGPTImage(prompt, safeParams, userInfo);
+            } catch (error) {
+                // Log the error but don't fall back - propagate it to the caller
+                logError(
+                    "Azure GPT Image generation or safety check failed:",
+                    error.message,
+                );
 
-    //             progress.updateBar(requestId, 100, "Error", error.message);
-    //             throw error;
-    //         }
-    //     }
-    // }
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                
+                // Track violation in user stats for generation failures
+                userStatsTracker.recordViolation(userInfo?.username);
+
+                progress.updateBar(requestId, 100, "Error", error.message);
+                throw error;
+            }
+        }
+    }
 
     // Nano Banana - Gemini Image generation using Vertex AI
     if (safeParams.model === "nanobanana") {
@@ -905,10 +939,10 @@ const generateImage = async (
                 : "No userInfo provided",
         );
 
-        // Restrict Nano Banana model to users with valid authentication (seed tier)
-        if (!hasSufficientTier(userInfo.tier, "seed")) {
+        // Restrict Nano Banana model to users with valid authentication (nectar tier)
+        if (!hasSufficientTier(userInfo.tier, "nectar")) {
             const errorText =
-                "Access to nanobanana is currently limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai for tier upgrade information.";
+                "Access to nanobanana is currently limited to users in the nectar tier or higher. Please authenticate at https://auth.pollinations.ai for tier upgrade information.";
             logError(errorText);
             progress.updateBar(
                 requestId,
@@ -916,7 +950,9 @@ const generateImage = async (
                 "Auth",
                 "Nano Banana requires authorization",
             );
-            throw new Error(errorText);
+            const error: any = new Error(errorText);
+            error.status = 403;
+            throw error;
         } else {
             // For nanobanana model, always throw errors instead of falling back
             progress.updateBar(
@@ -986,8 +1022,9 @@ const generateImage = async (
     }
 
     if (safeParams.model === "kontext") {
-        // BPAIGen+Kontext hybrid model requires seed tier or higher
-        if (!hasSufficientTier(userInfo.tier, "seed")) {
+        // Azure Flux Kontext model requires seed tier or higher
+        // NOTE: Allow bypass for enter.pollinations.ai requests
+        if (!fromEnter && !hasSufficientTier(userInfo.tier, "seed")) {
             const errorText =
                 "Access to kontext model is limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.";
             logError(errorText);
@@ -997,32 +1034,51 @@ const generateImage = async (
                 "Auth",
                 "Kontext model requires seed tier",
             );
-            throw new Error(errorText);
+            const error: any = new Error(errorText);
+            error.status = 403;
+            throw error;
         }
 
         try {
-            // Use BPAIGen with Kontext fallback for enhanced reliability and quality
-            return await callBPAIGenWithKontextFallback(prompt, safeParams, progress, requestId);
+            // Check prompt safety
+            progress.updateBar(
+                requestId,
+                30,
+                "Processing",
+                "Checking prompt safety...",
+            );
+
+            // Use Azure Flux Kontext for image generation/editing
+            progress.updateBar(
+                requestId,
+                35,
+                "Processing",
+                "Generating with Azure Flux Kontext...",
+            );
+            return await callAzureFluxKontext(prompt, safeParams, userInfo);
         } catch (error) {
-            logError("Both BPAIGen and Kontext failed:", error.message);
+            logError("Azure Flux Kontext generation failed:", error.message);
+            await logGptImageError(prompt, safeParams, userInfo, error);
             progress.updateBar(requestId, 100, "Error", error.message);
             throw error;
         }
     }
 
     if (safeParams.model === "seedream") {
-        // Seedream model requires nectar tier or higher (temporarily due to limited credits)
-        if (!hasSufficientTier(userInfo.tier, "nectar")) {
+        // Seedream model is only available from enter.pollinations.ai
+        if (!fromEnter) {
             const errorText =
-                "Access to seedream model is currently limited to users in the nectar tier or higher due to limited credits. Seedream will be available again to seed tier users in the next few days. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.";
+                "Seedream model is only available from enter.pollinations.ai";
             logError(errorText);
             progress.updateBar(
                 requestId,
                 35,
                 "Auth",
-                "Seedream temporarily requires nectar tier",
+                "Seedream only available from enter",
             );
-            throw new Error(errorText);
+            const error: any = new Error(errorText);
+            error.status = 403;
+            throw error;
         }
 
         try {
@@ -1202,6 +1258,7 @@ const processImageBuffer = async (
  * @param {string} requestId - Request ID for progress tracking.
  * @param {boolean} wasTransformedForBadDomain - Flag indicating if the prompt was transformed due to bad domain.
  * @param {Object} userInfo - Complete user authentication info object with authenticated, userId, tier, etc.
+ * @param {boolean} fromEnter - Whether the request is from enter.pollinations.ai (bypasses tier checks).
  * @returns {Promise<{buffer: Buffer, isChild: boolean, isMature: boolean}>}
  */
 export async function createAndReturnImageCached(
@@ -1213,6 +1270,7 @@ export async function createAndReturnImageCached(
     requestId: string,
     wasTransformedForBadDomain: boolean = false,
     userInfo: AuthResult,
+    fromEnter: boolean,
 ): Promise<ImageGenerationResult> {
     try {
         // Update generation progress
@@ -1226,6 +1284,7 @@ export async function createAndReturnImageCached(
             progress,
             requestId,
             userInfo,
+            fromEnter,
         );
         progress.updateBar(requestId, 70, "Generation", "API call complete");
         progress.updateBar(requestId, 75, "Processing", "Checking safety...");

@@ -18,10 +18,14 @@ import {
 } from "@/db/schema/event.ts";
 import { generateRandomId } from "@/util.ts";
 import {
-    ProviderId,
-    REGISTRY,
+    ModelId,
     ServiceId,
     TokenUsage,
+    resolveServiceId,
+    getServiceDefinition,
+    getActivePriceDefinition,
+    calculateCost,
+    calculatePrice,
 } from "@shared/registry/registry.ts";
 import { drizzle } from "drizzle-orm/d1";
 
@@ -46,14 +50,14 @@ function createTextGenerationEvent(
     modelRequested: ServiceId,
 ): InsertGenerationEvent {
     const userId = generateRandomId();
-    const resolvedModelRequested = REGISTRY.withFallbackService(
+    const resolvedModelRequested = resolveServiceId(
         modelRequested,
         "generate.text",
     );
 
-    const modelUsed = REGISTRY.getServiceDefinition(resolvedModelRequested)
-        .modelProviders[0];
-    const priceDefinition = REGISTRY.getActivePriceDefinition(
+    const modelUsed = getServiceDefinition(resolvedModelRequested)
+        .modelId;
+    const priceDefinition = getActivePriceDefinition(
         resolvedModelRequested,
     );
     if (!priceDefinition) {
@@ -66,8 +70,8 @@ function createTextGenerationEvent(
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     };
-    const cost = REGISTRY.calculateCost(modelUsed as ProviderId, usage);
-    const price = REGISTRY.calculatePrice(resolvedModelRequested, usage);
+    const cost = calculateCost(modelUsed as ModelId, usage);
+    const price = calculatePrice(resolvedModelRequested, usage);
 
     return {
         id: generateRandomId(),

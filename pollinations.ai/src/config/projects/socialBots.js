@@ -72,5 +72,33 @@ export const socialBotsProjects = [
     author: "@lordon4x",
     submissionDate: "2024-12-18",
     order: 1
-  }
+  },
+  {
+    name: "ioswbot 🤖",
+    url: "https://t.me/ioswbot",
+    description: "Free, unlimited Telegram bot with ChatGPT 5, Gemini 2.5 Flash Lite Search, GPT Audio, and image editor/generator. Bot supports text, photo, and audio files. Localization in Russian and English.",
+    author: "@swtomas",
+    submissionDate: "2025-10-21",
+    order: 2,
+    language: "ru"
+  },
+  {
+    name: "Telegram AI Chars 🤖",
+    url: "https://t.me/MFRG_Shapes",
+    description: "Plataforma en PHP para la creación de personajes (bots) con personalidad, memoria e historial para Telegram, al estilo de Char.AI o Shapes, Inc. Permite que los usuarios interactúen con bots inteligentes y gestionar su historial y conocimientos a través de una futura API. Actualmente incluye bots como MetraxAI.",
+    author: "@MarcosFRG",
+    submissionDate: "2025-10-21",
+    order: 2,
+    language: "es"
+  },
+    {
+    "name": "Swapna Shastra Dream Decoder 💤✨",
+    "url": "https://t.me/Swapnashastra_dream_bot",
+    "description": "AI-powered Telegram bot that interprets dreams using ancient Indian Swapna Shastra and mythology. Generates spiritual interpretations and visualizes them as mystical dream cards via Pollinations AI, perfect for sharing on WhatsApp and Instagram.",
+    "author": "@ShashankNagaraj",
+    "submissionDate": "2025-10-21",
+    "order": 4
+}
+
+
 ];

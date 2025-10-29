@@ -1,11 +1,19 @@
 import { processEvents, storeEvents } from "@/events.ts";
-import { ProviderId, REGISTRY, ServiceId } from "@shared/registry/registry.ts";
 import {
-    ModelUsage,
-    OpenAIResponse,
-    openaiResponseSchema,
-    transformOpenAIUsage,
-} from "@/usage.ts";
+    resolveServiceId,
+    isFreeService,
+    getActivePriceDefinition,
+    calculateCost,
+    calculatePrice,
+    ServiceId,
+    ModelId,
+} from "@shared/registry/registry.ts";
+import { parseUsageHeaders } from "@shared/registry/usage-headers.ts";
+import {
+    ContentFilterSeveritySchema,
+    CreateChatCompletionResponseSchema,
+    type CreateChatCompletionResponse,
+} from "@/schemas/openai.ts";
 import { generateRandomId } from "@/util.ts";
 import { createMiddleware } from "hono/factory";
 import type { LoggerVariables } from "./logger.ts";
@@ -20,9 +28,16 @@ import type {
     EventType,
     GenerationEventContentFilterParams,
 } from "@/db/schema/event.ts";
-import type { AuthVariables } from "@/middleware/authenticate.ts";
+import type { AuthVariables } from "@/middleware/auth.ts";
 import { PolarVariables } from "./polar.ts";
 import { z } from "zod";
+import { TokenUsage } from "../../../shared/registry/registry.js";
+import { removeUnset } from "@/util.ts";
+
+export type ModelUsage = {
+    model: ModelId;
+    usage: TokenUsage;
+};
 
 export type TrackVariables = {
     track: {
@@ -45,11 +60,11 @@ export const track = (eventType: EventType) =>
         const startTime = new Date();
 
         const modelRequested = await extractModelRequested(c);
-        const resolvedModelRequested = REGISTRY.resolveServiceId(
+        const resolvedModelRequested = resolveServiceId(
             modelRequested,
             eventType,
         );
-        const isFreeUsage = REGISTRY.isFreeService(resolvedModelRequested);
+        const isFreeUsage = isFreeService(resolvedModelRequested);
 
         c.set("track", {
             modelRequested,
@@ -59,37 +74,37 @@ export const track = (eventType: EventType) =>
         await next();
 
         const referrerInfo = extractReferrerInfo(c);
-        const cacheInfo = extractCacheInfo(c);
-        const tokenPrice = REGISTRY.getActivePriceDefinition(
-            resolvedModelRequested,
-        );
+        const cacheInfo = extractCacheHeaders(c);
+        const tokenPrice = getActivePriceDefinition(resolvedModelRequested);
         if (!tokenPrice) {
             throw new Error(
                 `Failed to get price definition for model: ${resolvedModelRequested}`,
             );
         }
-        let openaiResponse, modelUsage, costType, cost, price;
+        let modelUsage, cost, price;
         if (c.res.ok) {
-            if (eventType === "generate.text") {
-                const body = await c.res.clone().json();
-                openaiResponse = openaiResponseSchema.parse(body);
-            }
             if (!cacheInfo.cacheHit) {
-                modelUsage = extractUsage(
-                    c,
-                    eventType,
-                    modelRequested,
-                    openaiResponse,
-                );
-                costType = REGISTRY.getCostType(modelUsage.model as ProviderId);
-                cost = REGISTRY.calculateCost(
-                    modelUsage.model as ProviderId,
+                modelUsage = extractUsage(c);
+                validateUsage(modelUsage, isFreeUsage);
+
+                log.debug("[COST] Model usage extracted: {modelUsage}", {
+                    modelUsage,
+                });
+
+                cost = calculateCost(
+                    modelUsage.model as ModelId,
                     modelUsage.usage,
                 );
-                price = REGISTRY.calculatePrice(
+
+                price = calculatePrice(
                     resolvedModelRequested as ServiceId,
                     modelUsage.usage,
                 );
+
+                log.debug("[COST] Calculated cost: {cost}, price: {price}", {
+                    cost,
+                    price,
+                });
             } else {
                 log.info(
                     "Response was served from {cacheType} cache, skipping cost/price calculation",
@@ -116,7 +131,7 @@ export const track = (eventType: EventType) =>
             eventType,
 
             userId: c.var.auth.user?.id,
-            userTier: extractUserTier(c, openaiResponse),
+            userTier: extractUserTier(c),
             ...referrerInfo,
 
             modelRequested,
@@ -125,9 +140,8 @@ export const track = (eventType: EventType) =>
 
             ...priceToEventParams(tokenPrice),
             ...usageToEventParams(modelUsage?.usage),
-            ...extractContentFilterResults(eventType, openaiResponse),
+            ...extractContentFilterResults(c.res.headers),
 
-            costType,
             totalCost: cost?.totalCost || 0,
             totalPrice: price?.totalPrice || 0,
 
@@ -165,64 +179,48 @@ async function extractModelRequested(
     return null;
 }
 
-function extractUsage(
-    c: Context<TrackEnv>,
-    eventType: EventType,
-    modelRequested: string | null,
-    response?: OpenAIResponse,
-): ModelUsage {
-    if (eventType === "generate.image") {
-        // Read actual token count from x-completion-image-tokens header
-        const tokenCountHeader = c.res.headers.get("x-completion-image-tokens");
-        const completionImageTokens = tokenCountHeader 
-            ? parseInt(tokenCountHeader, 10) 
-            : 1;
-        
-        // Read actual model used from x-model-used header
-        const modelUsedHeader = c.res.headers.get("x-model-used");
-        const model = (modelUsedHeader || modelRequested || "flux") as ProviderId;
-        
-        return {
-            model,
-            usage: {
-                unit: "TOKENS",
-                completionImageTokens,
-            },
-        };
+function extractUsage(c: Context<TrackEnv>): ModelUsage {
+    const log = c.get("log");
+    const usage = parseUsageHeaders(c.res.headers);
+    const modelUsed = c.res.headers.get("x-model-used");
+    if (!modelUsed) {
+        throw new Error(
+            "Failed to determine model: x-model-used header was missing",
+        );
     }
-    if (response) {
-        return {
-            model: response?.model as ProviderId,
-            usage: transformOpenAIUsage(response.usage),
-        };
-    }
-    throw new Error(
-        "Failed to extract usage: generate.text event without valid response object",
-    );
+    log.debug("[COST] Extracted headers: model: {model}, usage: {usage}", {
+        model: modelUsed,
+        usage,
+    });
+    return {
+        model: modelUsed as ModelId,
+        usage,
+    };
 }
 
-function extractUserTier(
-    c: Context<TrackEnv>,
-    response?: OpenAIResponse,
-): string | undefined {
-    // Try header first (works for both image and text generations)
-    const headerTier = c.res.headers.get("x-user-tier");
-    if (headerTier) {
-        return headerTier;
+function validateUsage(usage: ModelUsage, isFreeUsage: boolean) {
+    const includedUsageTypes = Object.keys(usage.usage);
+    if (!isFreeUsage && includedUsageTypes.length === 0) {
+        throw new Error("No usage headers where present for a non-free model");
     }
-    
-    // Fall back to response object for text generations
-    return response?.user_tier;
+}
+
+function extractUserTier(c: Context<TrackEnv>): string | undefined {
+    return c.var.auth.user?.tier;
 }
 
 function extractContentFilterResults(
-    eventType: EventType,
-    response?: OpenAIResponse,
+    headers: Headers | Record<string, string>,
 ): GenerationEventContentFilterParams {
-    if (eventType === "generate.text" && response) {
-        return contentFilterResultsToEventParams(response);
+    const plainHeaders =
+        headers instanceof Headers
+            ? Object.fromEntries(headers.entries())
+            : headers;
+    const parseResult =
+        ContentFilterResultHeadersSchema.safeParse(plainHeaders);
+    if (parseResult.success) {
+        return parseResult.data;
     }
-    // TODO: use x-moderation headers for image generations once implemented
     return {};
 }
 
@@ -234,7 +232,7 @@ type CacheInfo = {
     cacheSemanticThreshold?: number;
 };
 
-function extractCacheInfo(c: Context<TrackEnv>): CacheInfo {
+function extractCacheHeaders(c: Context<TrackEnv>): CacheInfo {
     return {
         cacheHit: c.res.headers.get("x-cache") === "HIT",
         cacheKey: c.res.headers.get("x-cache-key") || undefined,
@@ -268,3 +266,54 @@ function safeUrl(url: string): URL | null {
         return null;
     }
 }
+
+// biome-ignore format: custom formatting
+const ContentFilterResultHeadersSchema = z
+    .object({
+        "x-moderation-prompt-hate-severity": 
+            ContentFilterSeveritySchema.optional().catch(undefined),
+        "x-moderation-prompt-self-harm-severity": 
+            ContentFilterSeveritySchema.optional().catch(undefined),
+        "x-moderation-prompt-sexual-severity": 
+            ContentFilterSeveritySchema.optional().catch(undefined),
+        "x-moderation-prompt-violence-severity": 
+            ContentFilterSeveritySchema.optional().catch(undefined),
+        "x-moderation-prompt-jailbreak-detected": 
+            z.boolean().optional().catch(undefined),
+        "x-moderation-completion-hate-severity": 
+            ContentFilterSeveritySchema.optional().catch(undefined),
+        "x-moderation-completion-self-harm-severity":
+            ContentFilterSeveritySchema.optional().catch(undefined),
+        "x-moderation-completion-sexual-severity": 
+            ContentFilterSeveritySchema.optional().catch(undefined),
+        "x-moderation-completion-violence-severity":
+            ContentFilterSeveritySchema.optional().catch(undefined),
+        "x-moderation-completion-protected-material-text-detected": 
+            z.boolean().optional().catch(undefined),
+        "x-moderation-completion-protected-material-code-detected": 
+            z.boolean().optional().catch(undefined),
+    })
+    .transform((headers) => removeUnset({
+        moderationPromptHateSeverity:
+            headers["x-moderation-prompt-hate-severity"],
+        moderationPromptSelfHarmSeverity:
+            headers["x-moderation-prompt-self-harm-severity"],
+        moderationPromptSexualSeverity:
+            headers["x-moderation-prompt-sexual-severity"],
+        moderationPromptViolenceSeverity:
+            headers["x-moderation-prompt-violence-severity"],
+        moderationPromptJailbreakDetected:
+            headers["x-moderation-prompt-jailbreak-detected"],
+        moderationCompletionHateSeverity:
+            headers["x-moderation-completion-hate-severity"],
+        moderationCompletionSelfHarmSeverity:
+            headers["x-moderation-completion-self-harm-severity"],
+        moderationCompletionSexualSeverity:
+            headers["x-moderation-completion-sexual-severity"],
+        moderationCompletionViolenceSeverity:
+            headers["x-moderation-completion-violence-severity"],
+        moderationCompletionProtectedMaterialTextDetected:
+            headers["x-moderation-completion-protected-material-text-detected"],
+        moderationCompletionProtectedMaterialCodeDetected:
+            headers["x-moderation-completion-protected-material-code-detected"],
+    }));

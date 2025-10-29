@@ -18,6 +18,7 @@ Turn any user request into GitHub issues following team conventions.
 
 1. **🔍 Research First** - Before creating any issues:
    - Search existing issues/PRs by key team members for patterns
+   - **Check @eulervoid's PRs** for style inspiration (concise, bullet-point format)
    - Check related context and dependencies
    - Identify appropriate labels and assignees based on similar issues
 
@@ -27,8 +28,10 @@ Turn any user request into GitHub issues following team conventions.
    - Note related PRs or issues
 
 3. **📝 Create** - Issue structure:
-   - **Title:** Short, clear, with smart emoji
+   - **Title:** Short, clear, with smart emoji (see @eulervoid's PRs for examples)
    - **Body:** Max 3 bullet points for regular issues (more for TRACKING issues)
+     - Follow @eulervoid's concise style: bullet points, no fluff
+     - Example: "- Adds X to Y" or "- Fix Z by doing W"
    - **Labels:** Use appropriate labels based on research (e.g., TRACKING for meta issues)
    - **Assignees:** Based on domain expertise
 
@@ -60,3 +63,7 @@ Turn any user request into GitHub issues following team conventions.
 ### 🌟 Style
 
 Short, sharp, no fluff, sprinkled with smart emojis.
+
+**Reference Examples:**
+- Search for PRs/issues by @eulervoid: `repo:pollinations/pollinations author:eulervoid`
+- Example Issue: https://github.com/pollinations/pollinations/issues/4090

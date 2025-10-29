@@ -5,6 +5,15 @@
 
 export const gamesProjects = [
   {
+    name: "Quiz Application 🎯",
+    url: "https://jaykmarBCET.github.io/Quiz-Application/",
+    description: "Interactive quiz application with AI-powered question generation and image creation. Features multiple quiz categories and difficulty levels using Pollinations API.",
+    author: "@jaykmarBCET",
+    repo: "https://github.com/jaykmarBCET/Quiz-Application",
+    submissionDate: "2025-10-22",
+    order: 1
+  },
+  {
     name: "Chaos Canvas 🎲",
     url: "https://chaoscanvas.app/",
     description: "Crowdsourced creativity experiment where each player adds just one or two words to a shared prompt without knowing what others have entered. Once the game fills up, everyone's inputs are mashed together and transformed into a single, surreal AI-generated image. Unpredictable, weirdly collaborative, and endlessly entertaining — like Mad Libs for your eyes.",
@@ -193,6 +202,14 @@ export const gamesProjects = [
     stars: 7,
     language: "zh-CN",
     submissionDate: "2025-07-12",
+    order: 1
+  },
+  {
+    name: "Devil Summoner WIP",
+    url: "https://gamedemo-a65.pages.dev/",
+    description: "Procedural driven text prompts develop characters as you explore the city. Down demons in combat to try and negotiate recruitment. Theory in practice is trying to have a solid base of mechanics for combat and item generation while using the LLM to generate the story and dialogue.",
+    author: "@lenankamp",
+    submissionDate: "2025-10-11",
     order: 1
   }
 ];

@@ -2,7 +2,6 @@ import path from "node:path";
 import {
     defineWorkersConfig,
     readD1Migrations,
-    // @ts-ignore
 } from "@cloudflare/vitest-pool-workers/config";
 import viteConfig from "./vite.config";
 
@@ -16,6 +15,7 @@ export default defineWorkersConfig(async () => {
             setupFiles: ["./test/apply-migrations.ts"],
             poolOptions: {
                 workers: {
+                    singleWorker: true,
                     wrangler: {
                         configPath: "./wrangler.toml",
                         environment: "test",
@@ -36,6 +36,7 @@ export default defineWorkersConfig(async () => {
                             "better-auth",
                             "kysely",
                             "drizzle-orm",
+                            "hono-openapi",
                         ],
                     },
                 },

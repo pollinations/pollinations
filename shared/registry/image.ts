@@ -1,89 +1,95 @@
 import type {
-    ModelProviderRegistry,
+    ModelRegistry,
     ServiceRegistry,
     UsageConversionDefinition,
-} from "./registry.ts";
-import { ZERO_PRICE, PRICING_START_DATE, fromDPMT } from "./price-helpers.ts";
+} from "./registry";
+import { ZERO_PRICE, PRICING_START_DATE, perMillion } from "./price-helpers";
 
-export const IMAGE_MODELS = {
-    "flux": {
-        displayName: "Flux",
-        costType: "fixed_operational_cost",
-        cost: [ZERO_PRICE],
-    },
-    "kontext": {
-        displayName: "Flux Kontext",
-        costType: "fixed_operational_cost",
-        cost: [ZERO_PRICE],
-    },
-    "turbo": {
-        displayName: "Turbo",
-        costType: "fixed_operational_cost",
-        cost: [ZERO_PRICE],
-    },
-    "nanobanana": {
-        displayName: "Nanobanana",
-        costType: "per_generation_cost",
-        cost: [
-            {
-                date: PRICING_START_DATE,
-                completionImageTokens: fromDPMT(30),
-            },
-        ],
-    },
-    "seedream": {
-        displayName: "Seedream",
-        costType: "fixed_operational_cost",
-        cost: [ZERO_PRICE],
-    },
-} as const satisfies ModelProviderRegistry;
+export const IMAGE_COSTS = {
+    "flux": [
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: 0.00012, // $0.0088¢ per image (GPU cluster cost - September avg)
+        },
+    ],
+    "kontext": [
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: 0.04, // $0.04 per image (Azure pricing)
+        },
+    ],
+    "turbo": [
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: 0.0003, 
+        },
+    ],
+    "nanobanana": [
+        // Gemini 2.5 Flash Image via Vertex AI (currently disabled)
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: perMillion(0.30), // $0.30 per 1M input tokens
+            promptImageTokens: perMillion(0.30), // $0.30 per 1M input tokens
+            completionImageTokens: perMillion(30), // $30 per 1M tokens × 1290 tokens/image = $0.039 per image
+        },
+    ],
+    "seedream": [
+        // ByteDance ARK Seedream 4.0
+        {
+            date: PRICING_START_DATE,
+            completionImageTokens: 0.03, // $0.03 per image (3 cents)
+        },
+    ],
+    "gptimage": [
+        // Azure gpt-image-1-mini
+        {
+            date: PRICING_START_DATE,
+            promptTextTokens: perMillion(2.0), // $2.00 per 1M text input tokens
+            promptCachedTokens: perMillion(0.20), // $0.20 per 1M cached text input tokens
+            promptImageTokens: perMillion(2.50), // $2.50 per 1M image input tokens
+            completionImageTokens: perMillion(8), // $8.00 per 1M output tokens
+        },
+    ],
+} as const satisfies ModelRegistry;
 
 export const IMAGE_SERVICES = {
     "flux": {
-        displayName: "Flux",
         aliases: [],
-        modelProviders: ["flux"],
-        price: [ZERO_PRICE],
+        modelId: "flux",
+        free: true,
+        provider: "io.net",
+        tier: "seed",
     },
     "kontext": {
-        displayName: "Flux Kontext",
         aliases: [],
-        modelProviders: ["kontext"],
-        price: [
-            {
-                date: PRICING_START_DATE,
-                completionImageTokens: 0.015,
-            },
-        ],
+        modelId: "kontext",
+        provider: "azure",
+        tier: "seed",
     },
     "turbo": {
-        displayName: "Turbo",
         aliases: [],
-        modelProviders: ["turbo"],
-        price: [
-            {
-                date: PRICING_START_DATE,
-                completionImageTokens: 0.015,
-            },
-        ],
+        modelId: "turbo",
+        provider: "scaleway",
+        tier: "seed",
     },
-    "nanobanana": {
-        displayName: "Nanobanana",
+    // nanobanana: {
+    //     aliases: [],
+    //     modelId: "nanobanana",
+    //     provider: "vertex-ai",
+    //     tier: "nectar",
+    // },
+    seedream: {
         aliases: [],
-        modelProviders: ["nanobanana"],
-        price: IMAGE_MODELS["nanobanana"].cost,
+        modelId: "seedream",
+        provider: "bytedance-ark",
+        tier: "nectar",
     },
-    "seedream": {
-        displayName: "Seedream",
-        aliases: [],
-        modelProviders: ["seedream"],
-        price: [
-            {
-                date: PRICING_START_DATE,
-                completionImageTokens: 0.015,
-            },
-        ],
+    "gptimage": {
+        aliases: ["gpt-image", "gpt-image-1-mini"],
+        modelId: "gptimage",
+        provider: "azure-openai",
+        tier: "seed",
     },
-} as const satisfies ServiceRegistry<typeof IMAGE_MODELS>;
+} as const satisfies ServiceRegistry<typeof IMAGE_COSTS>;
 
 

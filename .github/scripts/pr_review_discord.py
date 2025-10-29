@@ -433,7 +433,7 @@ def format_review_for_discord(message_content: str, pr_info: Dict) -> Dict:
         time_str = "unknown time"
     
     # Add PR info footer to the message
-    footer = f"\n\nPR #{pr_info['number']} • Merged by {pr_info['author']} • Today at {time_str}"
+    footer = f"\n\n[PR #{pr_info['number']}]({pr_info['url']}) • Merged by [{pr_info['author']}]({pr_info['author_url']}) • Today at {time_str}"
     
     # Combine message with footer, ensuring we don't exceed Discord limits
     full_message = message_content + footer
@@ -534,3 +534,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

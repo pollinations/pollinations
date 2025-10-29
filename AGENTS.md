@@ -1,4 +1,4 @@
-# Claude Guidelines for Pollinations.AI
+# Agent Guidelines for Pollinations.AI
 
 ## Project Submission Handling
 
@@ -93,16 +93,48 @@ pollinations/
 ├── pollinations.ai/           # Main React frontend application
 ├── pollinations-react/        # React component library
 ├── model-context-protocol/    # MCP server for AI assistant integration
+├── enter.pollinations.ai/     # New centralized auth gateway (BETA)
+├── auth.pollinations.ai/      # Legacy auth service (being phased out)
 └── operations/                # Documentation and operations
 ```
 
+## API Gateway Transition (Important)
+
+**We are currently running two API systems simultaneously:**
+
+### 🆕 **enter.pollinations.ai** (NEW - Beta)
+Our new centralized authentication and model gateway:
+- **Status**: Beta - actively being rolled out
+- **Features**: Unified authentication, pollen-based billing, all models in one place
+- **Authentication**: Publishable keys (`pk_`) and Secret keys (`sk_`)
+- **Endpoints** (transitional - will be simplified): 
+  - `/api/generate/image/*` - Image generation with all models
+  - `/api/generate/openai` - OpenAI-compatible text/audio endpoints
+  - `/api/generate/text/*` - Simple text generation
+- **Documentation**: See `enter.pollinations.ai/MODEL-TESTING-CHEATSHEET.md`
+- **Best for**: New integrations, testing, production-ready features
+- **Note**: Current endpoint structure is transitional and will be simplified in future releases
+
+### 🔄 **Legacy APIs** (OLD - Being Phased Out)
+- **image.pollinations.ai** - Direct image generation (no auth)
+- **text.pollinations.ai** - Direct text generation (no auth)
+- **auth.pollinations.ai** - Original authentication service
+- **Status**: Still operational but will be deprecated in favor of enter.pollinations.ai
+- **Migration**: All new features are being built on enter.pollinations.ai
+
+**For Agents**: When working on API-related tasks, clarify whether you're working with:
+1. **New system** (enter.pollinations.ai) - preferred for new work
+2. **Legacy system** (image/text.pollinations.ai) - maintenance only
+
+Both systems are currently functional, but new development should target enter.pollinations.ai.
+
 ## Model Context Protocol (MCP)
 
-The `model-context-protocol/` directory contains a Model Context Protocol server that allows AI assistants like Claude to directly generate images, text, and audio using the Pollinations API.
+The `model-context-protocol/` directory contains a Model Context Protocol server that allows AI agents to directly generate images, text, and audio using the Pollinations API.
 
 For detailed implementation notes, design principles, and troubleshooting, see:
 - `model-context-protocol/README.md` - Installation and usage
-- `model-context-protocol/CLAUDE.md` - Implementation guidelines and debugging
+- `model-context-protocol/AGENTS.md` - Implementation guidelines and debugging
 
 ## API Quick Reference
 
@@ -125,6 +157,11 @@ GET https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}
 POST https://text.pollinations.ai/
 Body: messages*, model (set to "openai-audio"), voice (optional)
 ```
+
+### Testing & Operations Documentation
+
+- **[Model Testing Cheatsheet](enter.pollinations.ai/AGENTS.md)** - Comprehensive guide for testing all image and text models via enter.pollinations.ai API
+- **[Enter Services SSH Guide](pollinator-agent/enter-services-ssh.md)** - Quick reference for managing text and image services on AWS EC2
 
 ## Development Guidelines
 

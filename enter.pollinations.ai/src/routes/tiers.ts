@@ -10,6 +10,9 @@ import { z } from "zod";
 type TierStatus = "none" | "seed" | "flower" | "nectar";
 type ActivatableTier = "seed" | "flower" | "nectar";
 
+// Central tier definition
+const TIERS: readonly ActivatableTier[] = ["seed", "flower", "nectar"] as const;
+
 // Get Polar product IDs from environment
 function getTierProductId(env: Cloudflare.Env, tier: ActivatableTier): string {
     const key = `POLAR_PRODUCT_ID_${tier.toUpperCase()}`;
@@ -21,17 +24,27 @@ function getTierProductId(env: Cloudflare.Env, tier: ActivatableTier): string {
 }
 
 interface TierViewModel {
-    status: TierStatus;
+    assigned_tier: TierStatus;  // Tier assigned in Cloudflare DB
+    active_tier: TierStatus;    // Currently active subscription in Polar
+    should_show_activate_button: boolean;  // Show button only if no active subscription
+    product_name?: string;
+    daily_pollen?: number;
     next_refill_at_utc: string;
+    has_polar_error: boolean;
 }
 
 function getTierStatus(userTier: string | null | undefined): TierStatus {
-    if (!userTier || userTier === "") return "none";
-    const normalized = userTier.toLowerCase();
-    if (normalized === "seed") return "seed";
-    if (normalized === "flower") return "flower";
-    if (normalized === "nectar") return "nectar";
-    return "none";
+    const normalized = userTier?.toLowerCase();
+    return TIERS.includes(normalized as ActivatableTier) ? normalized as TierStatus : "none";
+}
+
+function getTierFromProductId(env: Cloudflare.Env, productId: string): TierStatus {
+    return TIERS.find(tier => getTierProductId(env, tier) === productId) || "none";
+}
+
+function shouldShowActivateButton(assigned: TierStatus, active: TierStatus): boolean {
+    // Show button only if user has assigned tier but no active subscription
+    return assigned !== "none" && active === "none";
 }
 
 function getNextMidnightUTC(): string {
@@ -39,6 +52,20 @@ function getNextMidnightUTC(): string {
     const tomorrow = new Date(now);
     tomorrow.setUTCHours(24, 0, 0, 0);
     return tomorrow.toISOString();
+}
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+// Minimal Polar product/benefit typing to avoid unsafe any casts
+type MeterCreditProperties = { amount?: number };
+type MeterCreditBenefit = { type: "meter_credit"; properties?: MeterCreditProperties };
+type PolarProductMinimal = {
+    name: string;
+    benefits?: Array<MeterCreditBenefit | { type: string; properties?: unknown }>;
+};
+
+function isMeterCreditBenefit(b: unknown): b is MeterCreditBenefit {
+    return !!b && typeof b === "object" && (b as { type?: string }).type === "meter_credit";
 }
 
 const activateRequestSchema = z.object({
@@ -55,11 +82,74 @@ export const tiersRoutes = new Hono<Env>()
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         async (c) => {
+            const log = c.get("log");
             const user = c.var.auth.requireUser();
+            const polar = c.var.polar.client;
+            
+            // Get tier assigned in Cloudflare DB
+            const assigned_tier = getTierStatus(user.tier);
+            
+            // Initialize response
+            let active_tier: TierStatus = "none";
+            let product_name: string | undefined;
+            let daily_pollen: number | undefined;
+            let next_refill_at_utc = getNextMidnightUTC(); // Default fallback
+            let has_polar_error = false;
+            
+            try {
+                // Get customer state from Polar
+                const customerState = await polar.customers.getStateExternal({
+                    externalId: user.id,
+                });
+                
+                const activeSubs = customerState.activeSubscriptions || [];
+                
+                // Find the active subscription (prioritize highest tier if multiple)
+                if (activeSubs.length > 0) {
+                    // Get the first active subscription
+                    const activeSub = activeSubs[0];
+                    const activeProductId = activeSub.productId;
+                    active_tier = getTierFromProductId(c.env, activeProductId);
+                    
+                    // Calculate next refill: 24 hours from subscription start
+                    if (activeSub.currentPeriodStart) {
+                        const startTime = new Date(activeSub.currentPeriodStart).getTime();
+                        const daysPassed = Math.floor((Date.now() - startTime) / MS_PER_DAY);
+                        next_refill_at_utc = new Date(startTime + (daysPassed + 1) * MS_PER_DAY).toISOString();
+                    }
+                    
+                    // Fetch product details for the active subscription
+                    try {
+                        const product = (await polar.products.get({ id: activeProductId })) as PolarProductMinimal;
+                        product_name = product.name;
+
+                        // Extract daily pollen from meter_credit benefit
+                        const meterBenefit = product.benefits?.find(isMeterCreditBenefit);
+                        if (meterBenefit?.properties?.amount !== undefined) {
+                            daily_pollen = meterBenefit.properties.amount;
+                        }
+                    } catch (productError) {
+                        log.warn("Failed to fetch product details: {error}", { error: productError });
+                    }
+                }
+            } catch (error) {
+                // If Polar query fails, assume no active subscription
+                log.error("Failed to check subscription status: {error}", { error });
+                active_tier = "none";
+                has_polar_error = true;
+            }
+            
+            // Determine if activate button should be shown
+            const should_show_activate_button = shouldShowActivateButton(assigned_tier, active_tier);
 
             const viewModel: TierViewModel = {
-                status: getTierStatus(user.tier),
-                next_refill_at_utc: getNextMidnightUTC(),
+                assigned_tier,
+                active_tier,
+                should_show_activate_button,
+                product_name,
+                daily_pollen,
+                next_refill_at_utc,
+                has_polar_error,
             };
 
             return c.json(viewModel);
@@ -73,6 +163,7 @@ export const tiersRoutes = new Hono<Env>()
         }),
         validator("json", activateRequestSchema),
         async (c) => {
+            const log = c.get("log");
             const user = c.var.auth.requireUser();
             const { target_tier } = c.req.valid("json");
 
@@ -101,8 +192,15 @@ export const tiersRoutes = new Hono<Env>()
 
                 return c.json({ checkout_url: checkout.url });
             } catch (error) {
+                log.error("Polar checkout failed: {error}", {
+                    error,
+                    userId: user.id,
+                    email: user.email,
+                    productId,
+                    targetTier: target_tier,
+                });
                 throw new HTTPException(500, {
-                    message: "Failed to create checkout session",
+                    message: `Failed to create checkout session: ${error instanceof Error ? error.message : String(error)}`,
                     cause: error,
                 });
             }

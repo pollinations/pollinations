@@ -1023,7 +1023,8 @@ const generateImage = async (
 
     if (safeParams.model === "kontext") {
         // Azure Flux Kontext model requires seed tier or higher
-        if (!hasSufficientTier(userInfo.tier, "seed")) {
+        // NOTE: Allow bypass for enter.pollinations.ai requests
+        if (!fromEnter && !hasSufficientTier(userInfo.tier, "seed")) {
             const errorText =
                 "Access to kontext model is limited to users in the seed tier or higher. Please authenticate at https://auth.pollinations.ai to get a token or add a referrer.";
             logError(errorText);

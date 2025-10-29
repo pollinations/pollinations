@@ -20,6 +20,7 @@ jobs:
           key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
           fingerprint: ${{ secrets.ENTER_SERVICES_FINGERPRINT }}
           ssh_keyscan_types: ed25519
+          known_hosts: ${{ secrets.ENTER_SERVICES_KNOWN_HOSTS }}
           script: |
             set -e
             

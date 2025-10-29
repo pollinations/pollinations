@@ -1,0 +1,23 @@
+[Unit]
+Description=Pollinations Image API Service
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/pollinations/image.pollinations.ai
+Environment="NODE_ENV=production"
+Environment="PORT=16384"
+ExecStart=/usr/bin/pnpm start
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=image-pollinations
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

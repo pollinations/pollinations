@@ -422,6 +422,7 @@ def format_review_for_discord(message_content: str, pr_info: Dict) -> Dict:
     
     # Format timestamp for Discord-like display
     from datetime import datetime
+    dt = None
     try:
         if pr_info.get('merged_at'):
             # Parse ISO timestamp and format for display
@@ -433,7 +434,10 @@ def format_review_for_discord(message_content: str, pr_info: Dict) -> Dict:
         time_str = "unknown time"
     
     # Add PR info footer to the message
-    footer = f"\n\n[PR #{pr_info['number']}]({pr_info['url']}) • Merged by [{pr_info['author']}]({pr_info['author_url']}) • <t:{int(dt.timestamp())}:F>"
+    if dt:
+        footer = f"\n\n[PR #{pr_info['number']}]({pr_info['url']}) • Merged by [{pr_info['author']}]({pr_info['author_url']}) • <t:{int(dt.timestamp())}:F>"
+    else:
+        footer = f"\n\n[PR #{pr_info['number']}]({pr_info['url']}) • Merged by [{pr_info['author']}]({pr_info['author_url']})"
     
     # Combine message with footer, ensuring we don't exceed Discord limits
     full_message = message_content + footer
@@ -516,6 +520,7 @@ def main():
         'number': pr_number,
         'url': pr_url,
         'author': pr_author,
+        'author_url': f"https://github.com/{pr_author}",
         'merged_at': merged_at
     }
     

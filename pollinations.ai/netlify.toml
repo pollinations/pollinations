@@ -15,6 +15,12 @@
   force = true
 
 [[redirects]]
+  from = "/t/*"
+  to = "/.netlify/functions/track/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/redirect-nexad/*"
   to = "/.netlify/functions/redirect-nexad/:splat"
   status = 200

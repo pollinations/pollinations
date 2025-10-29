@@ -2,6 +2,8 @@
 
 > Quick reference for testing image and text models via **enter.pollinations.ai**
 
+> ⚠️ **Note**: The current endpoint structure (`/api/generate/image/*`, `/api/generate/openai`, `/api/generate/text/*`) is transitional and will be simplified in future releases.
+
 ---
 
 ## 🔑 Setup

@@ -107,12 +107,13 @@ Our new centralized authentication and model gateway:
 - **Status**: Beta - actively being rolled out
 - **Features**: Unified authentication, pollen-based billing, all models in one place
 - **Authentication**: Publishable keys (`pk_`) and Secret keys (`sk_`)
-- **Endpoints**: 
+- **Endpoints** (transitional - will be simplified): 
   - `/api/generate/image/*` - Image generation with all models
   - `/api/generate/openai` - OpenAI-compatible text/audio endpoints
   - `/api/generate/text/*` - Simple text generation
 - **Documentation**: See `enter.pollinations.ai/MODEL-TESTING-CHEATSHEET.md`
 - **Best for**: New integrations, testing, production-ready features
+- **Note**: Current endpoint structure is transitional and will be simplified in future releases
 
 ### 🔄 **Legacy APIs** (OLD - Being Phased Out)
 - **image.pollinations.ai** - Direct image generation (no auth)

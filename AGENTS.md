@@ -102,7 +102,7 @@ The `model-context-protocol/` directory contains a Model Context Protocol server
 
 For detailed implementation notes, design principles, and troubleshooting, see:
 - `model-context-protocol/README.md` - Installation and usage
-- `model-context-protocol/CLAUDE.md` - Implementation guidelines and debugging
+- `model-context-protocol/AGENTS.md` - Implementation guidelines and debugging
 
 ## API Quick Reference
 

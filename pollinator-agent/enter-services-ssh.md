@@ -31,8 +31,8 @@ ssh enter-services "sudo journalctl -u text-pollinations.service -f"
 ssh enter-services "sudo journalctl -u image-pollinations.service -f"
 
 # Last 50 lines
-ssh enter-services "sudo journalctl -u text-pollinations.service -n 50 --no-pager"
-ssh enter-services "sudo journalctl -u image-pollinations.service -n 50 --no-pager"
+ssh enter-services "sudo journalctl -u text-pollinations.service -f"
+ssh enter-services "sudo journalctl -u image-pollinations.service -f"
 
 # Logs since specific time
 ssh enter-services "sudo journalctl -u text-pollinations.service --since '1 hour ago'"

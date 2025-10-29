@@ -160,7 +160,7 @@ Body: messages*, model (set to "openai-audio"), voice (optional)
 
 ### Testing & Operations Documentation
 
-- **[Model Testing Cheatsheet](enter.pollinations.ai/MODEL-TESTING-CHEATSHEET.md)** - Comprehensive guide for testing all image and text models via enter.pollinations.ai API
+- **[Model Testing Cheatsheet](enter.pollinations.ai/AGENTS.md)** - Comprehensive guide for testing all image and text models via enter.pollinations.ai API
 - **[Enter Services SSH Guide](pollinator-agent/enter-services-ssh.md)** - Quick reference for managing text and image services on AWS EC2
 
 ## Development Guidelines

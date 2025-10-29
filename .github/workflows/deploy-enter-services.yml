@@ -18,8 +18,8 @@ jobs:
           host: ${{ secrets.ENTER_SERVICES_HOST }}
           username: ${{ secrets.ENTER_SERVICES_USER }}
           key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
-          fingerprint: fnzNhNp7VbpWDr/35SAA1YvZ2BV5wVCPOIGf0NufT08
-          known_hosts: 3.80.56.235 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILF9UvX4rbsOXsCsPFVWEJ3DY0mkXJq7rLoIeU6ZmoLT
+          fingerprint: ${{ secrets.ENTER_SERVICES_FINGERPRINT }}
+          known_hosts: ${{ secrets.ENTER_SERVICES_KNOWN_HOSTS }}
           script: |
             set -e
             

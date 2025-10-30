@@ -25,10 +25,8 @@ function getTierProductId(env: Cloudflare.Env, tier: ActivatableTier): string {
     const key = `POLAR_PRODUCT_ID_${tier.toUpperCase()}`;
     const productId = env[key as keyof Cloudflare.Env];
     if (!productId) {
-        console.error(`[getTierProductId] Missing environment variable: ${key}`);
         throw new Error(`Missing environment variable: ${key}`);
     }
-    console.log(`[getTierProductId] ${key}=${productId}`);
     return productId as string;
 }
 
@@ -51,15 +49,10 @@ function getTierStatus(userTier: string | null | undefined): TierStatus {
 function getTierFromProductId(env: Cloudflare.Env, productId: string): TierStatus {
     // Check current product IDs first
     const currentTier = TIERS.find(tier => getTierProductId(env, tier) === productId);
-    if (currentTier) {
-        console.log(`[getTierFromProductId] Found current tier: ${currentTier} for productId: ${productId}`);
-        return currentTier;
-    }
+    if (currentTier) return currentTier;
     
     // Check legacy product IDs
-    const legacyTier = LEGACY_PRODUCT_IDS[productId] || "none";
-    console.log(`[getTierFromProductId] Legacy check for productId ${productId}: ${legacyTier}`);
-    return legacyTier;
+    return LEGACY_PRODUCT_IDS[productId] || "none";
 }
 
 function isLegacyProductId(productId: string): boolean {
@@ -110,16 +103,8 @@ export const tiersRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const polar = c.var.polar.client;
             
-            log.info("🔍 [TIER_VIEW] Starting tier view for user: {userId} {email}", {
-                userId: user.id,
-                email: user.email,
-            });
-            
             // Get tier assigned in Cloudflare DB
             const assigned_tier = getTierStatus(user.tier);
-            log.info("🗄️ [TIER_VIEW] DB tier: {tier}", { tier: assigned_tier });
-            
-            // Initialize response
             let active_tier: TierStatus = "none";
             let product_name: string | undefined;
             let daily_pollen: number | undefined;
@@ -128,7 +113,6 @@ export const tiersRoutes = new Hono<Env>()
             let needs_upgrade = false;
             
             try {
-                log.info("🌐 [TIER_VIEW] Fetching customer state from Polar...");
                 // Get customer state from Polar
                 const customerState = await polar.customers.getStateExternal({
                     externalId: user.id,
@@ -140,16 +124,11 @@ export const tiersRoutes = new Hono<Env>()
                 if (activeSubs.length > 0) {
                     const activeSub = activeSubs[0];
                     const activeProductId = activeSub.productId;
-                    log.info("📦 [TIER_VIEW] Polar subscription: {productId}", { productId: activeProductId });
                     
                     active_tier = getTierFromProductId(c.env, activeProductId);
-                    log.info("🏷️ [TIER_VIEW] Polar tier: {tier}", { tier: active_tier });
                     
                     // Check if this is a legacy subscription that needs upgrade
                     needs_upgrade = isLegacyProductId(activeProductId);
-                    if (needs_upgrade) {
-                        log.info("🔄 [TIER_VIEW] Legacy product detected");
-                    }
                     
                     // Calculate next refill: 24 hours from subscription start
                     if (activeSub.currentPeriodStart) {
@@ -162,8 +141,7 @@ export const tiersRoutes = new Hono<Env>()
                     try {
                         const product = (await polar.products.get({ id: activeProductId })) as PolarProductMinimal;
                         product_name = product.name;
-                        log.info("📦 [TIER_VIEW] Product: {name}", { name: product.name });
-
+                        
                         // Extract daily pollen from meter_credit benefit
                         const meterBenefit = product.benefits?.find(isMeterCreditBenefit);
                         // Polar uses "units" property, but check "amount" as fallback
@@ -171,13 +149,9 @@ export const tiersRoutes = new Hono<Env>()
                         
                         if (pollenValue !== undefined) {
                             daily_pollen = pollenValue;
-                            log.info("💎 [TIER_VIEW] Daily pollen: {pollen}/day", { pollen: daily_pollen });
                         }
                     } catch (productError) {
-                        log.error("❌ [TIER_VIEW] Failed to fetch product details: {error} {productId}", { 
-                            error: productError,
-                            productId: activeProductId,
-                        });
+                        log.warn("Failed to fetch product details: {error}", { error: productError });
                         
                         // For legacy subscriptions, provide fallback values
                         if (needs_upgrade && active_tier !== "none") {
@@ -189,19 +163,12 @@ export const tiersRoutes = new Hono<Env>()
                                 nectar: 20,
                             };
                             daily_pollen = legacyPollenAmounts[active_tier] || 0;
-                            
-                            log.info("🔄 [TIER_VIEW] Using legacy fallback: {product_name} {daily_pollen}", {
-                                product_name,
-                                daily_pollen,
-                            });
                         }
                     }
-                } else {
-                    log.info("🚫 [TIER_VIEW] No active subscriptions found in Polar");
                 }
             } catch (error) {
                 // If Polar query fails, assume no active subscription
-                log.error("💥 [TIER_VIEW] Failed to check subscription status: {error}", { error });
+                log.error("Failed to check subscription status: {error}", { error });
                 active_tier = "none";
                 has_polar_error = true;
             }
@@ -209,15 +176,6 @@ export const tiersRoutes = new Hono<Env>()
             // Determine if activate button should be shown
             const should_show_activate_button = shouldShowActivateButton(assigned_tier, active_tier, needs_upgrade);
             
-            // Check for tier mismatch
-            const hasTierMismatch = assigned_tier !== active_tier && assigned_tier !== "none" && active_tier !== "none";
-            
-            if (hasTierMismatch) {
-                log.warn("⚠️ [TIER_VIEW] MISMATCH: DB={db} vs Polar={polar}", {
-                    db: assigned_tier,
-                    polar: active_tier,
-                });
-            }
 
             const viewModel: TierViewModel = {
                 assigned_tier,
@@ -229,10 +187,6 @@ export const tiersRoutes = new Hono<Env>()
                 next_refill_at_utc,
                 has_polar_error,
             };
-
-            log.info("📤 [TIER_VIEW] Final response: {viewModel}", {
-                viewModel: JSON.stringify(viewModel),
-            });
 
             return c.json(viewModel);
         },

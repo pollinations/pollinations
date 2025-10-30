@@ -1,10 +1,10 @@
 {
-    "name": "Pollinations.AI",
-    "short_name": "Pollinations",
-    "description": "Free 🐝 Open Source 🌸 Gen AI 🤖 API",
+    "name": "Pollinations Enter",
+    "short_name": "Enter",
+    "description": "Authentication and API gateway for Pollinations.AI",
     "icons": [
         {
-            "src": "/android-chrome-192x192.png",
+            "src": "/icon-192.png",
             "sizes": "192x192",
             "type": "image/png",
             "purpose": "any"
@@ -16,7 +16,7 @@
             "purpose": "maskable"
         },
         {
-            "src": "/android-chrome-512x512.png",
+            "src": "/icon-512.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any"

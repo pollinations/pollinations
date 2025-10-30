@@ -13,20 +13,30 @@ type ActivatableTier = "seed" | "flower" | "nectar";
 // Central tier definition
 const TIERS: readonly ActivatableTier[] = ["seed", "flower", "nectar"] as const;
 
+// Legacy product IDs (old subscriptions before migration)
+const LEGACY_PRODUCT_IDS: Record<string, ActivatableTier> = {
+    "19c3291a-e1fa-4a03-a08a-3de9ab84af5d": "seed",
+    "c675a78a-d954-4739-bfad-c0c8aa3e5576": "flower",
+    "dfe978ca-8e07-41fa-992a-ae19ab96e66c": "nectar",
+};
+
 // Get Polar product IDs from environment
 function getTierProductId(env: Cloudflare.Env, tier: ActivatableTier): string {
     const key = `POLAR_PRODUCT_ID_${tier.toUpperCase()}`;
     const productId = env[key as keyof Cloudflare.Env];
     if (!productId) {
+        console.error(`[getTierProductId] Missing environment variable: ${key}`);
         throw new Error(`Missing environment variable: ${key}`);
     }
+    console.log(`[getTierProductId] ${key}=${productId}`);
     return productId as string;
 }
 
 interface TierViewModel {
     assigned_tier: TierStatus;  // Tier assigned in Cloudflare DB
     active_tier: TierStatus;    // Currently active subscription in Polar
-    should_show_activate_button: boolean;  // Show button only if no active subscription
+    should_show_activate_button: boolean;  // Show button if no active subscription or needs upgrade
+    needs_upgrade: boolean;     // True if user has legacy subscription that needs migration
     product_name?: string;
     daily_pollen?: number;
     next_refill_at_utc: string;
@@ -39,12 +49,26 @@ function getTierStatus(userTier: string | null | undefined): TierStatus {
 }
 
 function getTierFromProductId(env: Cloudflare.Env, productId: string): TierStatus {
-    return TIERS.find(tier => getTierProductId(env, tier) === productId) || "none";
+    // Check current product IDs first
+    const currentTier = TIERS.find(tier => getTierProductId(env, tier) === productId);
+    if (currentTier) {
+        console.log(`[getTierFromProductId] Found current tier: ${currentTier} for productId: ${productId}`);
+        return currentTier;
+    }
+    
+    // Check legacy product IDs
+    const legacyTier = LEGACY_PRODUCT_IDS[productId] || "none";
+    console.log(`[getTierFromProductId] Legacy check for productId ${productId}: ${legacyTier}`);
+    return legacyTier;
 }
 
-function shouldShowActivateButton(assigned: TierStatus, active: TierStatus): boolean {
-    // Show button only if user has assigned tier but no active subscription
-    return assigned !== "none" && active === "none";
+function isLegacyProductId(productId: string): boolean {
+    return productId in LEGACY_PRODUCT_IDS;
+}
+
+function shouldShowActivateButton(assigned: TierStatus, active: TierStatus, needsUpgrade: boolean): boolean {
+    // Show button if user has assigned tier but no active subscription, or if they need to upgrade
+    return (assigned !== "none" && active === "none") || needsUpgrade;
 }
 
 function getNextMidnightUTC(): string {
@@ -57,7 +81,7 @@ function getNextMidnightUTC(): string {
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 // Minimal Polar product/benefit typing to avoid unsafe any casts
-type MeterCreditProperties = { amount?: number };
+type MeterCreditProperties = { units?: number; amount?: number }; // Polar uses "units", keeping "amount" for backward compat
 type MeterCreditBenefit = { type: "meter_credit"; properties?: MeterCreditProperties };
 type PolarProductMinimal = {
     name: string;
@@ -86,8 +110,14 @@ export const tiersRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const polar = c.var.polar.client;
             
+            log.info("🔍 [TIER_VIEW] Starting tier view for user: {userId} {email}", {
+                userId: user.id,
+                email: user.email,
+            });
+            
             // Get tier assigned in Cloudflare DB
             const assigned_tier = getTierStatus(user.tier);
+            log.info("🗄️ [TIER_VIEW] DB tier: {tier}", { tier: assigned_tier });
             
             // Initialize response
             let active_tier: TierStatus = "none";
@@ -95,8 +125,10 @@ export const tiersRoutes = new Hono<Env>()
             let daily_pollen: number | undefined;
             let next_refill_at_utc = getNextMidnightUTC(); // Default fallback
             let has_polar_error = false;
+            let needs_upgrade = false;
             
             try {
+                log.info("🌐 [TIER_VIEW] Fetching customer state from Polar...");
                 // Get customer state from Polar
                 const customerState = await polar.customers.getStateExternal({
                     externalId: user.id,
@@ -106,10 +138,18 @@ export const tiersRoutes = new Hono<Env>()
                 
                 // Find the active subscription (prioritize highest tier if multiple)
                 if (activeSubs.length > 0) {
-                    // Get the first active subscription
                     const activeSub = activeSubs[0];
                     const activeProductId = activeSub.productId;
+                    log.info("📦 [TIER_VIEW] Polar subscription: {productId}", { productId: activeProductId });
+                    
                     active_tier = getTierFromProductId(c.env, activeProductId);
+                    log.info("🏷️ [TIER_VIEW] Polar tier: {tier}", { tier: active_tier });
+                    
+                    // Check if this is a legacy subscription that needs upgrade
+                    needs_upgrade = isLegacyProductId(activeProductId);
+                    if (needs_upgrade) {
+                        log.info("🔄 [TIER_VIEW] Legacy product detected");
+                    }
                     
                     // Calculate next refill: 24 hours from subscription start
                     if (activeSub.currentPeriodStart) {
@@ -122,35 +162,77 @@ export const tiersRoutes = new Hono<Env>()
                     try {
                         const product = (await polar.products.get({ id: activeProductId })) as PolarProductMinimal;
                         product_name = product.name;
+                        log.info("📦 [TIER_VIEW] Product: {name}", { name: product.name });
 
                         // Extract daily pollen from meter_credit benefit
                         const meterBenefit = product.benefits?.find(isMeterCreditBenefit);
-                        if (meterBenefit?.properties?.amount !== undefined) {
-                            daily_pollen = meterBenefit.properties.amount;
+                        // Polar uses "units" property, but check "amount" as fallback
+                        const pollenValue = meterBenefit?.properties?.units ?? meterBenefit?.properties?.amount;
+                        
+                        if (pollenValue !== undefined) {
+                            daily_pollen = pollenValue;
+                            log.info("💎 [TIER_VIEW] Daily pollen: {pollen}/day", { pollen: daily_pollen });
                         }
                     } catch (productError) {
-                        log.warn("Failed to fetch product details: {error}", { error: productError });
+                        log.error("❌ [TIER_VIEW] Failed to fetch product details: {error} {productId}", { 
+                            error: productError,
+                            productId: activeProductId,
+                        });
+                        
+                        // For legacy subscriptions, provide fallback values
+                        if (needs_upgrade && active_tier !== "none") {
+                            product_name = `${active_tier.charAt(0).toUpperCase() + active_tier.slice(1)} Tier (Legacy)`;
+                            // Default pollen values for legacy tiers
+                            const legacyPollenAmounts: Record<string, number> = {
+                                seed: 10,
+                                flower: 15,
+                                nectar: 20,
+                            };
+                            daily_pollen = legacyPollenAmounts[active_tier] || 0;
+                            
+                            log.info("🔄 [TIER_VIEW] Using legacy fallback: {product_name} {daily_pollen}", {
+                                product_name,
+                                daily_pollen,
+                            });
+                        }
                     }
+                } else {
+                    log.info("🚫 [TIER_VIEW] No active subscriptions found in Polar");
                 }
             } catch (error) {
                 // If Polar query fails, assume no active subscription
-                log.error("Failed to check subscription status: {error}", { error });
+                log.error("💥 [TIER_VIEW] Failed to check subscription status: {error}", { error });
                 active_tier = "none";
                 has_polar_error = true;
             }
             
             // Determine if activate button should be shown
-            const should_show_activate_button = shouldShowActivateButton(assigned_tier, active_tier);
+            const should_show_activate_button = shouldShowActivateButton(assigned_tier, active_tier, needs_upgrade);
+            
+            // Check for tier mismatch
+            const hasTierMismatch = assigned_tier !== active_tier && assigned_tier !== "none" && active_tier !== "none";
+            
+            if (hasTierMismatch) {
+                log.warn("⚠️ [TIER_VIEW] MISMATCH: DB={db} vs Polar={polar}", {
+                    db: assigned_tier,
+                    polar: active_tier,
+                });
+            }
 
             const viewModel: TierViewModel = {
                 assigned_tier,
                 active_tier,
                 should_show_activate_button,
+                needs_upgrade,
                 product_name,
                 daily_pollen,
                 next_refill_at_utc,
                 has_polar_error,
             };
+
+            log.info("📤 [TIER_VIEW] Final response: {viewModel}", {
+                viewModel: JSON.stringify(viewModel),
+            });
 
             return c.json(viewModel);
         },
@@ -194,14 +276,104 @@ export const tiersRoutes = new Hono<Env>()
             } catch (error) {
                 log.error("Polar checkout failed: {error}", {
                     error,
-                    userId: user.id,
-                    email: user.email,
-                    productId,
-                    targetTier: target_tier,
                 });
                 throw new HTTPException(500, {
-                    message: `Failed to create checkout session: ${error instanceof Error ? error.message : String(error)}`,
-                    cause: error,
+                    message: "Failed to create checkout session",
+                });
+            }
+        },
+    )
+    .post(
+        "/upgrade",
+        describeRoute({
+            description: "One-click upgrade from legacy subscription to V2 product.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        async (c) => {
+            const log = c.get("log");
+            const user = c.var.auth.requireUser();
+            const polar = c.var.polar.client;
+
+            try {
+                // Get customer state to find current subscription
+                const customerState = await polar.customers.getStateExternal({
+                    externalId: user.id,
+                });
+
+                const activeSubs = customerState.activeSubscriptions || [];
+                if (activeSubs.length === 0) {
+                    throw new HTTPException(400, {
+                        message: "No active subscription found to upgrade",
+                    });
+                }
+
+                // Get the first active subscription
+                const currentSub = activeSubs[0];
+                const currentProductId = currentSub.productId;
+                
+                // Determine current tier from product ID
+                const currentTier = getTierFromProductId(c.env, currentProductId);
+                if (currentTier === "none") {
+                    throw new HTTPException(400, {
+                        message: "Could not determine tier from current subscription",
+                    });
+                }
+
+                // Check if already on V2 (not legacy)
+                const isLegacy = isLegacyProductId(currentProductId);
+                if (!isLegacy) {
+                    log.info("User already on V2 subscription");
+                    return c.json({ 
+                        success: true, 
+                        message: "Already on latest subscription",
+                        already_upgraded: true,
+                    });
+                }
+
+                // Get the new V2 product ID for this tier
+                const newProductId = getTierProductId(c.env, currentTier);
+
+                log.info("Upgrading subscription: {currentProductId} -> {newProductId}", {
+                    currentProductId,
+                    newProductId,
+                    tier: currentTier,
+                    legacySubscriptionId: currentSub.id,
+                });
+
+                // Create checkout for new V2 subscription
+                // Note: User will need to manually cancel old subscription after activating new one
+                // Or it can be bulk-cancelled by admin after migration is complete
+                const checkout = await polar.checkouts.create({
+                    externalCustomerId: user.id,
+                    customerEmail: user.email,
+                    products: [newProductId],
+                    metadata: {
+                        upgrade_from_product: currentProductId,
+                        upgrade_from_subscription: currentSub.id,
+                        tier: currentTier,
+                        is_migration: "true",
+                    },
+                });
+                
+                log.info("Created V2 checkout for upgrade: {checkoutId}", {
+                    checkoutId: checkout.id,
+                });
+
+                return c.json({
+                    success: true,
+                    checkout_url: checkout.url,
+                    tier: currentTier,
+                    message: `Upgrade to ${currentTier.charAt(0).toUpperCase() + currentTier.slice(1)} V2 - complete the checkout to activate`,
+                });
+            } catch (error) {
+                log.error("Subscription upgrade failed: {error}", { error });
+                
+                if (error instanceof HTTPException) {
+                    throw error;
+                }
+                
+                throw new HTTPException(500, {
+                    message: "Failed to upgrade subscription. Please contact support.",
                 });
             }
         },

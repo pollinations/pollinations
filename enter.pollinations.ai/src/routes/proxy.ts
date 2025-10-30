@@ -88,7 +88,8 @@ export const proxyRoutes = new Hono<Env>()
         },
     )
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
-    .use(frontendKeyRateLimit)
+    // TODO: Temporarily disabled due to timestamp issues with client tokens
+    // .use(frontendKeyRateLimit)
     .use(polar)
     // .use(alias({ "/openai/chat/completions": "/openai" }))
     .post(
@@ -236,9 +237,7 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         async (c) => {
-            const imageServiceUrl =
-                c.env.IMAGE_SERVICE_URL || "https://image.pollinations.ai";
-            return await proxy(`${imageServiceUrl}/models`);
+            return await proxy(`${c.env.IMAGE_SERVICE_URL}/models`);
         },
     )
     .get(
@@ -263,20 +262,46 @@ export const proxyRoutes = new Hono<Env>()
                 allowAnonymous:
                     c.var.track.isFreeUsage && c.env.ALLOW_ANONYMOUS_USAGE,
             });
-            const imageServiceUrl =
-                c.env.IMAGE_SERVICE_URL || "https://image.pollinations.ai";
-            const targetUrl = proxyUrl(c, `${imageServiceUrl}/prompt`);
+            const targetUrl = proxyUrl(c, `${c.env.IMAGE_SERVICE_URL}/prompt`);
             targetUrl.pathname = joinPaths(
                 targetUrl.pathname,
                 c.req.param("prompt"),
             );
-            return await proxy(targetUrl.toString(), {
-                ...c.req,
-                headers: {
-                    ...proxyHeaders(c),
-                    ...generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user),
-                },
+            
+            const genHeaders = generationHeaders(c.env.ENTER_TOKEN, c.var.auth.user);
+            const proxyRequestHeaders = {
+                ...proxyHeaders(c),
+                ...genHeaders,
+            };
+            
+            c.get("log")?.debug("[PROXY] Image generation headers: {headers}", {
+                headers: genHeaders,
             });
+            c.get("log")?.debug("[PROXY] Proxying to: {url}", {
+                url: targetUrl.toString(),
+            });
+            
+            const response = await proxy(targetUrl.toString(), {
+                method: c.req.method,
+                headers: proxyRequestHeaders,
+                body: c.req.raw.body,
+            });
+            
+            if (!response.ok) {
+                const responseText = await response.text();
+                c.get("log")?.warn("[PROXY] Error {status}: {body}", {
+                    status: response.status,
+                    body: responseText,
+                });
+                // Return the response with the body we just read
+                return new Response(responseText, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: response.headers,
+                });
+            }
+            
+            return response;
         },
     );
 
@@ -314,7 +339,7 @@ function proxyUrl(
     if (targetPort) {
         targetUrl.port = targetPort;
     }
-    // Copy query parameters, but filter out 'key' (used for auth)
+    // Copy query parameters but exclude the 'key' parameter (used for enter.pollinations.ai auth only)
     const searchParams = new URLSearchParams(incomingUrl.search);
     searchParams.delete("key");
     targetUrl.search = searchParams.toString();

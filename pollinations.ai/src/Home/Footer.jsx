@@ -102,6 +102,15 @@ const Footer = () => {
                     >
                         <StyledLink to="/terms" onClick={handleTermsLinkClick}>
                             Terms & Conditions
+                        <StyledLink 
+                            href="https://enter.pollinations.ai/terms" 
+                            isExternal
+                            onClick={handleTermsLinkClick}
+                        >
+                            <LLMTextManipulator
+                                text={FOOTER_TERMS_CONDITIONS_LINK}
+                                transforms={[noLink]}
+                            />
                         </StyledLink>
                     </Box>
                     <Box

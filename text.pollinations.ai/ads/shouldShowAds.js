@@ -21,8 +21,8 @@ const BAD_DOMAINS = process.env.BAD_DOMAINS
     : [];
 
 // Always include vk.com in blocked domains
-if (!BAD_DOMAINS.includes('vk.com')) {
-    BAD_DOMAINS.push('vk.com');
+if (!BAD_DOMAINS.includes("vk.com")) {
+    BAD_DOMAINS.push("vk.com");
 }
 
 import debug from "debug";
@@ -166,7 +166,11 @@ export async function shouldShowAds(
             log(
                 `Bad domain detected in referrer: ${requestData.referrer}, blocking ads`,
             );
-            return { shouldShowAd: false, markerFound: false, isBadDomain: true };
+            return {
+                shouldShowAd: false,
+                markerFound: false,
+                isBadDomain: true,
+            };
         }
     }
 

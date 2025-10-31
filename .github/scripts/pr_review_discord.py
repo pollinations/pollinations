@@ -243,87 +243,57 @@ ANALYSIS REQUIREMENTS:
 - Developer tooling updates
 
 OUTPUT FORMAT:
-Create a Discord message (NOT an embed) that follows this structure:
+Create a concise Discord message with just bullet points - NO headings, NO sections:
 
 ```
-## 🐝 [Title with appropriate emoji]
+Hey <@&1424461167883194418>! [One-line summary]
 
-Hey <@&1424461167883194418>! [Opening line about what's new]
+- [Change 1 with emoji]
+- [Change 2 with emoji]
+- [Change 3 with emoji]
 
-### 🔐 [Section Title with emoji]
-[Explanation of what changed FOR USERS, including:]
-- Specific user-visible changes
-- **Before/after values** for limits/quotas
-- Impact on user experience
-- Any action needed from users
-
-### ⚡ [Another Section if needed]
-[More changes grouped logically]
-
-[Closing line - friendly wrap-up]
+[Optional closing line if needed]
 ```
 
 FORMAT REQUIREMENTS:
 - ALWAYS start with "Hey <@&1424461167883194418>!" to mention the update role
-- Start with ## and an emoji-based title
-- Use ### for section headers with appropriate emojis
+- One-line summary of what changed
+- Bullet points only - each with relevant emoji
 - Use **bold** for emphasis, `code` for technical terms
-- Keep friendly, conversational tone
-- Be specific - no generic fluff
-- **Default: 150-600 chars** (expand only for major updates)
-- Max around 1000 characters total
+- Keep it tight - 150-400 chars total
+- Only expand if genuinely major update
 
-EXAMPLE OUTPUTS (for reference):
+EXAMPLE OUTPUTS:
 
-**Example 1 - Short & Punchy (PREFERRED for small updates):**
+**Example 1 - Bug Fix:**
 ```
-## Tier System Fixed ✨
+Hey <@&1424461167883194418>! Fixed tier subscription bugs:
 
-Hey <@&1424461167883194418>! Quick fix for tier subscriptions:
-
-- Daily pollen refills now actually work (no cap)
-- Better tier display in the UI
-- Subscription system upgraded for reliability
-
-If you had issues with your tier perks, they should be good now 🌸
+- ✅ Daily pollen refills working now
+- 🎨 Better tier display in UI
+- 🔧 More reliable subscription system
 ```
 
-**Example 2 - Medium Length (for moderate updates):**
+**Example 2 - New Feature:**
 ```
-## 🎯 Tier System Update
+Hey <@&1424461167883194418>! Added wildcard domain support:
 
-Hey <@&1424461167883194418>! Pushed upgrades to make the subscription flow smoother.
-
-**What's Better:**
-- ✅ **Daily tier refills actually work now** – the bug where your pollen wasn't refilling daily is fixed
-- ✅ **Cleaner tier display** – your tier name is bigger and easier to see in the UI
-- ✅ **Updated subscription system** – everything's running on our latest backend for better reliability
-
-**What This Means for You:**
-Your subscription perks (Seed/Flower/Nectar) should work exactly as they're supposed to now. If you were having issues with daily pollen refills, they should be resolved.
+- 🌐 Use `*.example.com` for all subdomains
+- 🔒 Extra security against domain spoofing
+- ⚡ No more adding each subdomain separately
 ```
 
-**Example 3 - Expanded (for major updates with multiple changes):**
+**Example 3 - Multiple Changes:**
 ```
-## 🐝 General Update
+Hey <@&1424461167883194418>! Quick updates:
 
-Hey <@&1424461167883194418>! Here's what's new:
-
-### 🌐 Wildcard Domain Support
-If you're building apps with Pollinations, you can now use wildcard patterns like `*.example.com` to cover all your subdomains at once! No more adding each subdomain separately. Plus, we've added extra security to prevent any sneaky domain spoofing attempts.
-
-### ⚡ Temporary Queue Adjustments
-We've had to tighten limits on our premium models (Nanobanana & Seedream) for now:
-- **Longer wait times between requests** (2 minutes instead of 30 seconds)
-- **Reduced concurrent requests** to manage our API credits
-
-These restrictions are **temporary until the Pollen update drops** 🍯. Thanks for your patience while we work on a more sustainable solution! 🙏
-
-### 🎃 Hacktoberfest is Here!
-Pollinations is participating in **Hacktoberfest 2025**! Whether you're a developer or want to learn - contributions are welcome. Come build with us! 🙌
+- 🐛 Fixed login issues
+- ⚡ Faster image generation
+- 📝 Better error messages
+- 🎨 Cleaner dashboard UI
 ```
 
-The output should be the raw Discord message text, not YAML or JSON.
+The output should be raw Discord message text, not YAML or JSON.
 """
 
 def get_user_prompt(title: str, branch: str, description: str, diff: str) -> str:
@@ -372,11 +342,14 @@ SKIP:
 - Developer tooling
 
 LENGTH GUIDANCE:
-- **Small updates** (bug fixes, minor tweaks): 400-800 chars
-- **Medium updates** (new feature, multiple fixes): 800-1200 chars
+- **Default**: 150-400 chars (tight bullet points)
+- **Only expand** if genuinely major update with multiple significant changes
 
-Create a Discord message (raw text, not YAML/JSON) following the format and style from the system prompt.
-Be concise by default, expand only if the changes are genuinely major and user-impacting.
+Create a concise Discord message (raw text, not YAML/JSON) with:
+- One-line summary after the role mention
+- Bullet points with emojis
+- NO headings or sections
+- Keep it tight and scannable
 """
     
     env = Environment()

@@ -31,6 +31,44 @@ const app = new Hono<Env>()
             hasJwtSecret,
             githubIdPrefix: c.env.GITHUB_CLIENT_ID?.substring(0, 4)
         });
+    })
+    .get("*", async (c) => {
+        // Catch-all router: extract path + query params (excluding 'key')
+        const path = c.req.path;
+        const url = new URL(c.req.url);
+        const params = new URLSearchParams(url.search);
+        params.delete("key"); // Remove auth param from prompt
+        
+        const queryString = params.toString();
+        const fullPrompt = queryString ? `${path}?${queryString}` : path;
+        
+        // Ask openai-fast to route the request
+        const routerPrompt = `You are a router. Given this request: "${fullPrompt}", respond with ONLY "image" or "text" (no explanation).
+If it mentions generating/creating images, photos, pictures, or visual content, respond "image".
+Otherwise respond "text".`;
+
+        // Get auth token from context
+        const authHeader = c.req.header("authorization");
+        const token = authHeader?.replace("Bearer ", "") || params.get("key");
+        
+        if (!token) {
+            return c.json({ error: "Authentication required" }, 401);
+        }
+
+        // Call our own /text endpoint to route
+        const routerResponse = await fetch(`${url.origin}/text/${encodeURIComponent(routerPrompt)}`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        
+        const decision = (await routerResponse.text()).trim().toLowerCase();
+        
+        // Route to appropriate endpoint
+        const targetPath = decision.includes("image") ? "/image" : "/text";
+        const targetUrl = `${url.origin}${targetPath}${path}?${params.toString()}`;
+        
+        return fetch(targetUrl, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
     });
 
 export default app;

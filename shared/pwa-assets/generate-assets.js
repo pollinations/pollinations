@@ -169,23 +169,45 @@ async function generateFavicon(svgBuffer, outputPath, backgroundConfig = 'transp
 /**
  * Generate OG image (social media preview)
  */
-async function generateOGImage(svgBuffer, outputPath, width = 1200, height = 630, backgroundConfig = '#000000') {
+async function generateOGImage(svgBuffer, outputPath, width = 1200, height = 630, backgroundConfig = '#000000', textLogoBuffer = null) {
   console.log(`  Generating OG image ${width}x${height} → ${outputPath}`);
-  
-  // Scale logo to fit within OG image dimensions (with padding)
-  const logoHeight = Math.floor(height * 0.5); // Logo takes 50% of height
   
   const background = resolveBackground(backgroundConfig);
   
-  await sharp(svgBuffer)
-    .resize(null, logoHeight, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .extend({
-      top: Math.floor((height - logoHeight) / 2),
-      bottom: Math.floor((height - logoHeight) / 2),
-      left: Math.floor((width - (logoHeight * 2)) / 2),
-      right: Math.floor((width - (logoHeight * 2)) / 2),
+  // Use text logo if provided, otherwise use regular logo
+  const logoSource = textLogoBuffer || svgBuffer;
+  
+  // For OG images, use 70% of width for better visibility
+  const logoWidth = Math.floor(width * 0.7);
+  
+  // First, create the colored background
+  const backgroundImage = await sharp({
+    create: {
+      width,
+      height,
+      channels: 4,
       background
-    })
+    }
+  })
+  .png()
+  .toBuffer();
+  
+  // Then resize logo with transparent background
+  const logo = await sharp(logoSource)
+    .resize(logoWidth, null, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .toBuffer();
+  
+  // Get logo dimensions to center it
+  const logoMetadata = await sharp(logo).metadata();
+  const logoHeight = logoMetadata.height;
+  
+  // Composite logo on top of colored background
+  await sharp(backgroundImage)
+    .composite([{
+      input: logo,
+      top: Math.floor((height - logoHeight) / 2),
+      left: Math.floor((width - logoMetadata.width) / 2)
+    }])
     .png()
     .toFile(outputPath);
 }
@@ -207,11 +229,10 @@ async function generateAssetsForApp(appKey, appConfig) {
   // Generate favicons
   console.log('\n🎨 Favicons:');
   const faviconBg = iconConfig.favicons?.background || 'transparent';
-  const faviconTint = iconConfig.favicons?.tint || null;
   for (const size of ICON_SIZES.favicons) {
-    await generateIcon(svgBuffer, size, join(outputDir, `favicon-${size}x${size}.png`), faviconBg, faviconTint);
+    await generateIcon(svgBuffer, size, join(outputDir, `favicon-${size}x${size}.png`), faviconBg);
   }
-  await generateFavicon(svgBuffer, join(outputDir, 'favicon.ico'), faviconBg, faviconTint);
+  await generateFavicon(svgBuffer, join(outputDir, 'favicon.ico'), faviconBg);
   
   // Generate PWA icons (standard + maskable)
   console.log('\n📱 PWA Icons:');
@@ -243,8 +264,11 @@ async function generateAssetsForApp(appKey, appConfig) {
   if (appKey === 'enter' || appKey === 'pollinations') {
     console.log('\n🖼️  Social Media:');
     const ogBg = iconConfig.og?.background || '#000000';
+    // Use logo-text-white.svg from SOURCES for banners
+    const ogSource = appConfig.ogSourceSvg ? join(__dirname, appConfig.ogSourceSvg) : null;
+    const ogBuffer = ogSource ? readFileSync(ogSource) : null;
     await generateOGImage(svgBuffer, join(outputDir, 'og-image.png'), 
-      ICON_SIZES.og.width, ICON_SIZES.og.height, ogBg);
+      ICON_SIZES.og.width, ICON_SIZES.og.height, ogBg, ogBuffer);
   }
   
   console.log(`\n✅ Done generating assets for ${appConfig.name}`);

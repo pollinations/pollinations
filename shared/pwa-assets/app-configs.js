@@ -8,16 +8,16 @@ export const APP_CONFIGS = {
     name: 'enter.pollinations.ai',
     outputDir: 'enter.pollinations.ai/public',
     
-    // Default source and colors
-    sourceSvg: 'source.svg',
+    // SOURCE ASSETS (in sources/ folder)
+    sourceSvg: 'sources/logo.svg',      // White bee logo
+    ogSourceSvg: 'sources/logo-text.svg', // White logo + text for banners
     themeColor: '#5b2dd8',  // Darker purple theme
     backgroundColor: '#5b2dd8',
     
     // Per-icon-type customization
     icons: {
       favicons: {
-        background: '#5b2dd8',  // Darker purple for better contrast
-        tint: '#ffffff'  // White logo
+        background: '#5b2dd8'  // Purple background (logo already white)
       },
       pwa: {
         background: '#7a3cff'
@@ -38,14 +38,15 @@ export const APP_CONFIGS = {
     name: 'pollinations.ai',
     outputDir: 'pollinations.ai/public',
     
-    sourceSvg: 'source.svg',
+    // SOURCE ASSETS (in sources/ folder)
+    sourceSvg: 'sources/logo.svg',      // White bee logo
+    ogSourceSvg: 'sources/logo-text.svg', // White logo + text for banners
     themeColor: '#d6379e',  // Darker pink/magenta theme
     backgroundColor: '#d6379e',
     
     icons: {
       favicons: {
-        background: '#d6379e',  // Darker pink for better contrast
-        tint: '#ffffff'  // White logo
+        background: '#d6379e'  // Magenta background (logo already white)
       },
       pwa: {
         background: '#ff61d8'
@@ -66,14 +67,14 @@ export const APP_CONFIGS = {
     name: 'auth.pollinations.ai',
     outputDir: 'auth.pollinations.ai/media',
     
-    sourceSvg: 'source.svg',
+    // SOURCE ASSETS (in sources/ folder)
+    sourceSvg: 'sources/logo.svg',      // White bee logo
     themeColor: '#e67e00',  // Darker orange theme
     backgroundColor: '#e67e00',
     
     icons: {
       favicons: {
-        background: '#e67e00',  // Darker orange for better contrast
-        tint: '#ffffff'  // White logo
+        background: '#e67e00'  // Orange background (logo already white)
       },
       pwa: {
         background: '#ffb300'

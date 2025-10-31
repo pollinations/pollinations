@@ -1093,30 +1093,7 @@ const generateImage = async (
 
     if (safeParams.model === "flux") {
         progress.updateBar(requestId, 25, "Processing", "Using registered servers");
-        try {
-            return await callComfyUI(prompt, safeParams, concurrentRequests);
-        } catch (error) {
-            progress.updateBar(
-                requestId,
-                30,
-                "Processing",
-                `Registered servers failed: ${error}. Falling back to Cloudflare Flux...`,
-            );
-            // Fallback to Cloudflare Flux
-            progress.updateBar(requestId, 35, "Processing", "Generating image with Cloudflare Flux...");
-            try {
-                return await callCloudflareFlux(prompt, safeParams);
-            } catch (error) {
-                progress.updateBar(
-                    requestId,
-                    40,
-                    "Processing",
-                    `Cloudflare Flux failed: ${error}. Falling back to Dreamshaper...`,
-                );
-                // Final fallback to Dreamshaper
-                return await callCloudflareDreamshaper(prompt, safeParams);
-            }
-        }
+        return await callComfyUI(prompt, safeParams, concurrentRequests);
     }
 
     try {

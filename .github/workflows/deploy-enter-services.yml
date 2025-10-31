@@ -32,6 +32,17 @@ jobs:
             echo "✅ Decrypted image.pollinations.ai/.env"
           fi
 
+      - name: Copy decrypted .env files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.ENTER_SERVICES_HOST }}
+          username: ${{ secrets.ENTER_SERVICES_USER }}
+          key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
+          fingerprint: ${{ secrets.ENTER_SERVICES_FINGERPRINT }}
+          source: "text.pollinations.ai/.env,image.pollinations.ai/.env"
+          target: "/home/ubuntu/pollinations/"
+          strip_components: 0
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0
         with:

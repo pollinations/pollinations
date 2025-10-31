@@ -37,6 +37,11 @@ const app = new Hono<Env>()
         const path = c.req.path;
         const url = new URL(c.req.url);
         const params = new URLSearchParams(url.search);
+        
+        // Get auth token BEFORE deleting key param
+        const authHeader = c.req.header("authorization");
+        const token = authHeader?.replace("Bearer ", "") || params.get("key");
+        
         params.delete("key"); // Remove auth param from prompt
         
         const queryString = params.toString();
@@ -46,10 +51,6 @@ const app = new Hono<Env>()
         const routerPrompt = `You are a router. Given this request: "${fullPrompt}", respond with ONLY "image" or "text" (no explanation).
 If it mentions generating/creating images, photos, pictures, or visual content, respond "image".
 Otherwise respond "text".`;
-
-        // Get auth token from context
-        const authHeader = c.req.header("authorization");
-        const token = authHeader?.replace("Bearer ", "") || params.get("key");
         
         if (!token) {
             return c.json({ error: "Authentication required" }, 401);

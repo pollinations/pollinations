@@ -1,5 +1,5 @@
 const seoDefaults = {
-    title: "Pollinations.AI",
+    title: "pollinations.ai",
     description: "Free 🐝 Open Source 🌸 Gen AI 🤖 API",
     image: "https://pollinations.ai/banner.webp",
     url: "https://pollinations.ai",

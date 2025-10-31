@@ -147,7 +147,7 @@ You're receiving a LARGE number of PRs, so keep descriptions VERY brief.
 
 OUTPUT FORMAT:
 ```
-## 🌸 Daily Update - [Date]
+## 🌸 Bi-Daily Update - [Date]
 
 ### 🚀 Highlights
 - Brief description of most important change
@@ -184,7 +184,7 @@ YOUR TASK: Create a clean, engaging daily update that focuses on WHAT changed, n
 
 NEW CLEAN FORMAT:
 ```
-## 🌸 Daily Update - [Date]
+## 🌸 Bi-Daily Update - [Date]
 
 ### 🚀 New Features
 - Brief description of new capability or feature
@@ -459,9 +459,10 @@ def main():
     
     print(f"📊 Processing {len(summaries)} PRs...")
     
-    # Get date string
-    yesterday = datetime.utcnow() - timedelta(days=1)
-    date_str = yesterday.strftime("%B %d, %Y")
+    # Get date string (covering last 2 days)
+    today = datetime.utcnow()
+    two_days_ago = today - timedelta(days=2)
+    date_str = f"{two_days_ago.strftime('%B %d')} - {today.strftime('%B %d, %Y')}"
     
     # Strategy 1: Try with all summaries if reasonable size
     estimated_size = estimate_prompt_size(summaries)

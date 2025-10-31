@@ -223,23 +223,17 @@ __old hunk__
  unchanged code line3
 ======
 
-USER-FOCUSED ANALYSIS REQUIREMENTS:
-1. **What changed FOR USERS** - focus on user-visible impact, not implementation
-2. **Skip technical jargon** - no "refactored architecture", "migrated endpoints", "updated schemas"
-3. **Use simple language** - "fixed", "works better", "faster", "new feature", NOT "optimized codebase"
-4. **Default to concise** - aim for 600-1000 characters for most updates
-5. **Expand for major changes** - if it's a huge update with multiple user-facing changes, you can go longer
-6. **Celebrate community** - if it's a community project, highlight the contributor and what they built
+ANALYSIS REQUIREMENTS:
 
-WHAT TO FOCUS ON:
-- **Bug fixes users noticed** - "Daily pollen refills work now", "Login issues fixed"
-- **New features users can use** - "New model available", "New API endpoint for X"
-- **Performance improvements users feel** - "Faster image generation", "Reduced wait times"
-- **UI/UX changes** - "Better tier display", "Cleaner dashboard"
-- **Rate limit/quota changes** - Very important! Users need to know about these
-- **Community projects** - Celebrate what the community built
+**What to Focus On:**
+- Bug fixes users noticed - "Daily pollen refills work now", "Login issues fixed"
+- New features users can use - "New model available", "New API endpoint for X"
+- Performance improvements users feel - "Faster image generation", "Reduced wait times"
+- UI/UX changes - "Better tier display", "Cleaner dashboard"
+- Rate limit/quota changes - Very important! Users need to know about these
+- Community projects - Celebrate what the community built
 
-WHAT TO SKIP:
+**What to Skip:**
 - Backend refactoring that doesn't affect users
 - Database schema changes (unless they fix a user-facing bug)
 - Internal API changes (unless they break existing user integrations)
@@ -269,17 +263,15 @@ Hey <@&1424461167883194418>! [Opening line about what's new]
 [Closing line - friendly wrap-up]
 ```
 
-CRITICAL REQUIREMENTS:
-- ALWAYS start your announcement with "Hey <@&1424461167883194418>!" to mention the update role
+FORMAT REQUIREMENTS:
+- ALWAYS start with "Hey <@&1424461167883194418>!" to mention the update role
 - Start with ## and an emoji-based title
 - Use ### for section headers with appropriate emojis
-- Use **bold** for emphasis on important values/changes
-- Use `code` for technical terms, file names, endpoints
-- Use - for bullet points
-- Keep friendly, conversational tone like talking to friends
-- Be specific about what changed - no generic fluff
-- **Default to short & punchy** (600-1000 chars) but expand if changes are major
-- Max 2000 characters total (Discord limit)
+- Use **bold** for emphasis, `code` for technical terms
+- Keep friendly, conversational tone
+- Be specific - no generic fluff
+- **Default: 150-600 chars** (expand only for major updates)
+- Max around 1000 characters total
 
 EXAMPLE OUTPUTS (for reference):
 
@@ -300,7 +292,7 @@ If you had issues with your tier perks, they should be good now 🌸
 ```
 ## 🎯 Tier System Update
 
-Hey <@&1424461167883194418>! Just pushed some upgrades to make your subscription experience way smoother.
+Hey <@&1424461167883194418>! Pushed upgrades to make the subscription flow smoother.
 
 **What's Better:**
 - ✅ **Daily tier refills actually work now** – the bug where your pollen wasn't refilling daily is fixed
@@ -309,8 +301,6 @@ Hey <@&1424461167883194418>! Just pushed some upgrades to make your subscription
 
 **What This Means for You:**
 Your subscription perks (Seed/Flower/Nectar) should work exactly as they're supposed to now. If you were having issues with daily pollen refills, they should be resolved.
-
-That's it! Everything should just work better now 🌸
 ```
 
 **Example 3 - Expanded (for major updates with multiple changes):**
@@ -332,14 +322,6 @@ These restrictions are **temporary until the Pollen update drops** 🍯. Thanks 
 ### 🎃 Hacktoberfest is Here!
 Pollinations is participating in **Hacktoberfest 2025**! Whether you're a developer or want to learn - contributions are welcome. Come build with us! 🙌
 ```
-
-IMPORTANT RULES:
-- Talk to USERS, not developers
-- Focus on USER IMPACT, not implementation details
-- Skip backend/technical details unless they directly affect users
-- Default to SHORT (600-1000 chars), expand only for major updates
-- Keep the style/formatting/emojis as shown in examples
-- Be casual and friendly like talking to the community
 
 The output should be the raw Discord message text, not YAML or JSON.
 """
@@ -392,7 +374,6 @@ SKIP:
 LENGTH GUIDANCE:
 - **Small updates** (bug fixes, minor tweaks): 400-800 chars
 - **Medium updates** (new feature, multiple fixes): 800-1200 chars
-- **Major updates** (multiple new features, big changes): 1200-1800 chars
 
 Create a Discord message (raw text, not YAML/JSON) following the format and style from the system prompt.
 Be concise by default, expand only if the changes are genuinely major and user-impacting.

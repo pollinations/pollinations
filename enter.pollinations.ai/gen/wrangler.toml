@@ -11,9 +11,11 @@ port = 3001
 binding = "DB"
 database_name = "development-pollinations-enter-db"
 database_id = "6345cb3c-e57a-4aab-bdd4-bca0de7bd930"
+migrations_dir = "../drizzle"
 
 [vars]
 ENVIRONMENT = "development"
+ALLOW_ANONYMOUS_USAGE = false
 TEXT_SERVICE_URL = "https://text.pollinations.ai"
 IMAGE_SERVICE_URL = "https://image.pollinations.ai"
 

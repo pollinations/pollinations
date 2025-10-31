@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 Pollinations AI Models Viewer - Complete Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <div class="hero-header">
+                <h1 class="page-header">🤖 Available Models 🌸</h1>
+                <button class="theme-toggle" id="themeToggle">🌙 Dark Mode</button>
+            </div>
+            <p class="subtitle">
+                Explore our comprehensive collection of AI models for text and image generation with AI-powered insights and real-time uptime monitoring
+            </p>
+        </div>
+
+        <!-- Tier Filter Section -->
+        <div class="tier-filter-section">
+            <button class="tier-filter-btn tier-seed active" data-tier="seed">
+                🌱 SEED
+            </button>
+            <button class="tier-filter-btn tier-flower" data-tier="flower">
+                🌸 FLOWER
+            </button>
+            <button class="tier-filter-btn tier-nectar" data-tier="nectar">
+                🍯 NECTAR
+            </button>
+        </div>
+
+        <!-- Controls Section with Search Bar -->
+        <div class="controls-section">
+            <div class="search-bar-center">
+                <input type="text" id="searchInput" placeholder="Search models...">
+            </div>
+            <div class="filter-dropdown">
+                <select class="filter-select" id="filterSelect">
+                    <option value="all">All Models</option>
+                    <option value="tools">With Tools</option>
+                    <option value="reasoning">Reasoning</option>
+                    <option value="multimodal">Multimodal</option>
+                </select>
+                <select class="sort-btn filter-select" id="sortSelect">
+                    <option value="name">Sort by Name</option>
+                    <option value="tier">Sort by Tier</option>
+                    <option value="newest">Newest First</option>
+                </select>
+                <div class="view-toggle">
+                    <button class="view-btn active" data-view="grid">📱 Grid</button>
+                    <button class="view-btn" data-view="list">📄 List</button>
+                    <button class="view-btn" data-view="compact">⚡ Compact</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Container -->
+        <div class="tab-container">
+            <button class="tab tab-active" id="text-tab" data-tab="text">
+                💬 Text Models (<span id="text-count">0</span>)
+            </button>
+            <button class="tab" id="image-tab" data-tab="image">
+                🎨 Image Models (<span id="image-count">0</span>)
+            </button>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <div class="loading-text">Loading amazing AI models...</div>
+        </div>
+
+        <!-- Model Grid -->
+        <div id="model-grid" class="model-grid" style="display: none;">
+            <!-- Models will be inserted here -->
+        </div>
+
+        <!-- No Results -->
+        <div id="no-results" class="no-results" style="display: none;">
+            <div class="no-results-icon">😔</div>
+            <div class="no-results-text">No models found</div>
+            <div class="no-results-subtext">Try adjusting your filters or search terms</div>
+        </div>
+    </div>
+
+    <!-- Code Modal -->
+    <div class="modal" id="codeModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <h2 style="margin-bottom: 1rem;">Code Examples</h2>
+            <div id="codeContent">
+                <!-- Code examples will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

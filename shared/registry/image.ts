@@ -72,12 +72,12 @@ export const IMAGE_SERVICES = {
         provider: "scaleway",
         tier: "seed",
     },
-    // nanobanana: {
-    //     aliases: [],
-    //     modelId: "nanobanana",
-    //     provider: "vertex-ai",
-    //     tier: "nectar",
-    // },
+    nanobanana: {
+        aliases: [],
+        modelId: "nanobanana",
+        provider: "vertex-ai",
+        tier: "nectar",
+    },
     seedream: {
         aliases: [],
         modelId: "seedream",

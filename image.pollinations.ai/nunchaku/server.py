@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import torch
 from diffusers import FluxPipeline
-from nunchaku.models.transformer_flux import NunchakuFluxTransformer2dModel
+from nunchaku.models import NunchakuFluxTransformer2dModel
 from safety_checker.censor import check_safety
 import requests
 import logging
@@ -45,10 +45,18 @@ def get_public_ip():
 
 # Heartbeat function
 async def send_heartbeat():
-    public_ip = await asyncio.get_event_loop().run_in_executor(None, get_public_ip)
+    # Check for PUBLIC_IP environment variable first, otherwise auto-detect
+    public_ip = os.getenv("PUBLIC_IP")
+    if not public_ip:
+        public_ip = await asyncio.get_event_loop().run_in_executor(None, get_public_ip)
     if public_ip:
         try:
-            port = int(os.getenv("PORT", "8765"))
+            # Use PUBLIC_PORT if set, otherwise use PORT
+            public_port = os.getenv("PUBLIC_PORT")
+            if public_port:
+                port = int(public_port)
+            else:
+                port = int(os.getenv("PORT", "10001"))
             url = f"http://{public_ip}:{port}"
             service_type = os.getenv("SERVICE_TYPE", "flux")  # Get service type from environment variable
             async with aiohttp.ClientSession() as session:
@@ -206,5 +214,5 @@ async def generate(request: ImageRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", "8765"))
+    port = int(os.getenv("PORT", "10001"))
     uvicorn.run(app, host="0.0.0.0", port=port)

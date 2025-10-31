@@ -228,7 +228,7 @@ export const callComfyUI = async (
                 buffer: resizedBuffer, 
                 ...rest,
                 trackingData: {
-                    actualModel: 'comfyui',
+                    actualModel: 'flux',
                     usage: {
                         candidatesTokenCount: 1,
                         totalTokenCount: 1
@@ -249,7 +249,7 @@ export const callComfyUI = async (
             buffer: jpegBuffer, 
             ...rest,
             trackingData: {
-                actualModel: safeParams.model,
+                actualModel: 'flux',
                 usage: {
                     candidatesTokenCount: 1,
                     totalTokenCount: 1

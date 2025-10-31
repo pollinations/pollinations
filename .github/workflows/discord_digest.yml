@@ -1,12 +1,12 @@
-name: PR Review - Daily Digest
+name: PR Review - Discord Digest
 on:
   pull_request:
     types: [closed]
     branches:
       - master
   schedule:
-    # Run at 12:00 UTC daily
-    - cron: '0 12 * * *'
+    # Run at 12:00 UTC every 2 days (odd days of month)
+    - cron: '0 12 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31 * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
@@ -60,11 +60,11 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add .pr-summaries/
-          git commit -m "Add PR #${{ github.event.pull_request.number }} summary for daily digest" || echo "No changes to commit"
+          git commit -m "Add PR #${{ github.event.pull_request.number }} summary for discord digest" || echo "No changes to commit"
           git push || echo "No changes to push"
 
-  # Job 2: Collect all summaries and post daily digest
-  post-daily-digest:
+  # Job 2: Collect all summaries and post discord digest
+  post-discord-digest:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
@@ -86,14 +86,14 @@ jobs:
         run: |
           pip install requests PyYAML Jinja2
       
-      - name: Generate and Post Daily Digest
+      - name: Generate and Post Discord Digest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN_DCPRS }}
           DISCORD_WEBHOOK_DAILY: ${{ secrets.DISCORD_WEBHOOK_DAILY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           REPO_FULL_NAME: ${{ github.repository }}
-        run: python .github/scripts/post_daily_digest.py
+        run: python .github/scripts/discord_digest.py
       
       - name: Clean up processed summaries
         run: |

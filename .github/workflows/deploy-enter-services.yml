@@ -2,7 +2,9 @@ name: Deploy to enter-services
 
 on:
   push:
-    branches: [staging]
+    branches:
+      - staging
+      - feature/encrypt-gptimage-env
   workflow_dispatch:
 
 jobs:
@@ -11,6 +13,35 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Setup SOPS
+        uses: nhedger/setup-sops@v2
+
+      - name: Decrypt .env files with SOPS
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: |
+          # Decrypt .encrypted.env files to .env
+          if [ -f "text.pollinations.ai/.encrypted.env" ]; then
+            sops -d text.pollinations.ai/.encrypted.env > text.pollinations.ai/.env
+            echo "✅ Decrypted text.pollinations.ai/.env"
+          fi
+          
+          if [ -f "image.pollinations.ai/.encrypted.env" ]; then
+            sops -d image.pollinations.ai/.encrypted.env > image.pollinations.ai/.env
+            echo "✅ Decrypted image.pollinations.ai/.env"
+          fi
+
+      - name: Copy decrypted .env files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.ENTER_SERVICES_HOST }}
+          username: ${{ secrets.ENTER_SERVICES_USER }}
+          key: ${{ secrets.ENTER_SERVICES_SSH_KEY }}
+          fingerprint: ${{ secrets.ENTER_SERVICES_FINGERPRINT }}
+          source: "text.pollinations.ai/.env,image.pollinations.ai/.env"
+          target: "/home/ubuntu/pollinations/"
+          strip_components: 0
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0

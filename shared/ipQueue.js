@@ -63,8 +63,8 @@ const queues = new Map();
 const tierCaps = {
     anonymous: 1,
     seed: 3,
-    flower: 7,
-    nectar: 50,
+    flower: 6,
+    nectar: 20,
 };
 
 // Parse priority users from environment variable
@@ -112,13 +112,11 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 
     authLog("Processing %s %s from IP: %s", method, path, ip);
 
-    // Check if request is from enter.pollinations.ai - apply priority rate limits
-    // Still rate-limited to prevent abuse if token is compromised
+    // Check if request is from enter.pollinations.ai - BYPASS IP QUEUEING ENTIRELY
+    // Enter requests go directly to the handler without IP-based queue delays
     if (isEnterRequest(req)) {
-        authLog("🌸 Enter request - applying priority rate limits");
-        interval = 1000;  // 1 second minimum interval
-        cap = 20;         // Reasonable concurrency limit
-        forceCap = true;
+        authLog("🌸 Enter request - BYPASSING IP QUEUE (direct execution)");
+        return fn();
     }
 
     // Get authentication status

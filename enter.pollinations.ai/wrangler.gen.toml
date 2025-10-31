@@ -29,6 +29,7 @@ database_id = "073195b4-d99e-4b67-9575-eb5efe6d3234"
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
+ALLOW_ANONYMOUS_USAGE = false
 TEXT_SERVICE_URL = "https://text.pollinations.ai"
 IMAGE_SERVICE_URL = "https://image.pollinations.ai"
 
@@ -42,5 +43,6 @@ database_id = "8d72ead0-f47a-43b2-9a91-2318b89f1561"
 
 [env.production.vars]
 ENVIRONMENT = "production"
+ALLOW_ANONYMOUS_USAGE = false
 TEXT_SERVICE_URL = "https://text.pollinations.ai"
 IMAGE_SERVICE_URL = "https://image.pollinations.ai"

@@ -2,7 +2,7 @@ name: Deploy to enter-services
 
 on:
   push:
-    branches: [staging]
+    branches: [staging, feature/encrypt-gptimage-env]
   workflow_dispatch:
 
 jobs:

@@ -939,85 +939,85 @@ const generateImage = async (
                 : "No userInfo provided",
         );
 
-        // Restrict Nano Banana model to users with valid authentication (nectar tier)
-        if (!hasSufficientTier(userInfo.tier, "nectar")) {
+        // Restrict Nano Banana model to enter.pollinations.ai requests ONLY
+        if (!fromEnter) {
             const errorText =
-                "Access to nanobanana is currently limited to users in the nectar tier or higher. Please authenticate at https://auth.pollinations.ai for tier upgrade information.";
+                "Access to nanobanana is currently limited to enter.pollinations.ai. Direct access is not available.";
             logError(errorText);
             progress.updateBar(
                 requestId,
                 35,
                 "Auth",
-                "Nano Banana requires authorization",
+                "Nano Banana requires enter.pollinations.ai access",
             );
             const error: any = new Error(errorText);
             error.status = 403;
             throw error;
-        } else {
-            // For nanobanana model, always throw errors instead of falling back
-            progress.updateBar(
-                requestId,
-                30,
-                "Processing",
-                "Checking prompt safety...",
+        }
+
+        // For nanobanana model, always throw errors instead of falling back
+        progress.updateBar(
+            requestId,
+            30,
+            "Processing",
+            "Checking prompt safety...",
+        );
+
+        try {
+            // Check prompt safety with Azure Content Safety
+            const promptSafetyResult = await analyzeTextSafety(prompt);
+
+            // Log the prompt with safety analysis results
+            await logGptImagePrompt(
+                prompt,
+                safeParams,
+                userInfo,
+                promptSafetyResult,
             );
 
-            try {
-                // Check prompt safety with Azure Content Safety
-                const promptSafetyResult = await analyzeTextSafety(prompt);
+            if (!promptSafetyResult.safe) {
+                const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
+                logError(
+                    "Azure Content Safety rejected prompt:",
+                    errorMessage,
+                );
+                progress.updateBar(
+                    requestId,
+                    100,
+                    "Error",
+                    "Prompt contains unsafe content",
+                );
 
-                // Log the prompt with safety analysis results
-                await logGptImagePrompt(
+                // Log the error with safety analysis results
+                const error = new Error(errorMessage);
+                await logGptImageError(
                     prompt,
                     safeParams,
                     userInfo,
+                    error,
                     promptSafetyResult,
                 );
-
-                if (!promptSafetyResult.safe) {
-                    const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
-                    logError(
-                        "Azure Content Safety rejected prompt:",
-                        errorMessage,
-                    );
-                    progress.updateBar(
-                        requestId,
-                        100,
-                        "Error",
-                        "Prompt contains unsafe content",
-                    );
-
-                    // Log the error with safety analysis results
-                    const error = new Error(errorMessage);
-                    await logGptImageError(
-                        prompt,
-                        safeParams,
-                        userInfo,
-                        error,
-                        promptSafetyResult,
-                    );
-                    throw error;
-                }
-
-                progress.updateBar(
-                    requestId,
-                    35,
-                    "Processing",
-                    "Generating with Nano Banana...",
-                );
-                return await callVertexAIGemini(prompt, safeParams, userInfo);
-            } catch (error) {
-                // Log the error but don't fall back - propagate it to the caller
-                logError(
-                    "Vertex AI Gemini image generation or safety check failed:",
-                    error.message,
-                );
-
-                await logGptImageError(prompt, safeParams, userInfo, error);
-
-                progress.updateBar(requestId, 100, "Error", error.message);
                 throw error;
             }
+
+            progress.updateBar(
+                requestId,
+                35,
+                "Processing",
+                "Generating with Nano Banana...",
+            );
+            return await callVertexAIGemini(prompt, safeParams, userInfo);
+        } catch (error) {
+            // Log the error but don't fall back - propagate it to the caller
+            logError(
+                "Vertex AI Gemini image generation or safety check failed:",
+                error.message,
+            );
+
+            await logGptImageError(prompt, safeParams, userInfo, error);
+
+            progress.updateBar(requestId, 100, "Error", error.message);
+            throw error;
         }
     }
 

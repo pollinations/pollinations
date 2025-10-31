@@ -65,6 +65,9 @@ Otherwise respond "text".`;
         // Proxy directly to backend services
         const imageServiceUrl = c.env.IMAGE_SERVICE_URL || "https://image.pollinations.ai";
         
+        // Add auth token back to params for backend
+        params.set("key", token);
+        
         if (decision.includes("image")) {
             // Route to image service (prepend /prompt)
             return fetch(`${imageServiceUrl}/prompt${path}?${params.toString()}`);

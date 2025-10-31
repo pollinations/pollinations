@@ -246,7 +246,7 @@ OUTPUT FORMAT:
 Create a concise Discord message with just bullet points - NO headings, NO sections:
 
 ```
-Hey <@&1424461167883194418>! [One-line summary]
+[One-line summary]
 
 - [Change 1 with emoji]
 - [Change 2 with emoji]
@@ -256,18 +256,18 @@ Hey <@&1424461167883194418>! [One-line summary]
 ```
 
 FORMAT REQUIREMENTS:
-- ALWAYS start with "Hey <@&1424461167883194418>!" to mention the update role
-- One-line summary of what changed
+- Start with one-line summary of what changed
 - Bullet points only - each with relevant emoji
 - Use **bold** for emphasis, `code` for technical terms
 - Keep it tight - 150-400 chars total
 - Only expand if genuinely major update
+- DO NOT include role mentions unless PR description explicitly requests it
 
 EXAMPLE OUTPUTS:
 
 **Example 1 - Bug Fix:**
 ```
-Hey <@&1424461167883194418>! Fixed tier subscription bugs:
+Fixed tier subscription bugs:
 
 - ✅ Daily pollen refills working now
 - 🎨 Better tier display in UI
@@ -276,7 +276,7 @@ Hey <@&1424461167883194418>! Fixed tier subscription bugs:
 
 **Example 2 - New Feature:**
 ```
-Hey <@&1424461167883194418>! Added wildcard domain support:
+Added wildcard domain support:
 
 - 🌐 Use `*.example.com` for all subdomains
 - 🔒 Extra security against domain spoofing
@@ -285,7 +285,7 @@ Hey <@&1424461167883194418>! Added wildcard domain support:
 
 **Example 3 - Multiple Changes:**
 ```
-Hey <@&1424461167883194418>! Quick updates:
+Quick updates:
 
 - 🐛 Fixed login issues
 - ⚡ Faster image generation
@@ -345,8 +345,13 @@ LENGTH GUIDANCE:
 - **Default**: 150-400 chars (tight bullet points)
 - **Only expand** if genuinely major update with multiple significant changes
 
+MENTION HANDLING:
+- Check if PR description contains "@mention" or "mention updates" or similar
+- If YES: Start message with "Hey <@&1424461167883194418>! "
+- If NO: Start directly with the summary (no mention)
+
 Create a concise Discord message (raw text, not YAML/JSON) with:
-- One-line summary after the role mention
+- One-line summary
 - Bullet points with emojis
 - NO headings or sections
 - Keep it tight and scannable

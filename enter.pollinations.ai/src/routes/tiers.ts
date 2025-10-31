@@ -26,7 +26,7 @@ function getTierProductId(env: Cloudflare.Env, tier: ActivatableTier): string {
 interface TierViewModel {
     assigned_tier: TierStatus;  // Tier assigned in Cloudflare DB
     active_tier: TierStatus;    // Currently active subscription in Polar
-    should_show_activate_button: boolean;  // Show button only if no active subscription
+    should_show_activate_button: boolean;  // Show button if no active subscription
     product_name?: string;
     daily_pollen?: number;
     next_refill_at_utc: string;
@@ -39,11 +39,12 @@ function getTierStatus(userTier: string | null | undefined): TierStatus {
 }
 
 function getTierFromProductId(env: Cloudflare.Env, productId: string): TierStatus {
-    return TIERS.find(tier => getTierProductId(env, tier) === productId) || "none";
+    const tier = TIERS.find(tier => getTierProductId(env, tier) === productId);
+    return tier || "none";
 }
 
 function shouldShowActivateButton(assigned: TierStatus, active: TierStatus): boolean {
-    // Show button only if user has assigned tier but no active subscription
+    // Show button if user has assigned tier but no active subscription
     return assigned !== "none" && active === "none";
 }
 
@@ -57,7 +58,7 @@ function getNextMidnightUTC(): string {
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 // Minimal Polar product/benefit typing to avoid unsafe any casts
-type MeterCreditProperties = { amount?: number };
+type MeterCreditProperties = { units?: number; amount?: number }; // Polar uses "units", keeping "amount" for backward compat
 type MeterCreditBenefit = { type: "meter_credit"; properties?: MeterCreditProperties };
 type PolarProductMinimal = {
     name: string;
@@ -88,8 +89,6 @@ export const tiersRoutes = new Hono<Env>()
             
             // Get tier assigned in Cloudflare DB
             const assigned_tier = getTierStatus(user.tier);
-            
-            // Initialize response
             let active_tier: TierStatus = "none";
             let product_name: string | undefined;
             let daily_pollen: number | undefined;
@@ -106,9 +105,9 @@ export const tiersRoutes = new Hono<Env>()
                 
                 // Find the active subscription (prioritize highest tier if multiple)
                 if (activeSubs.length > 0) {
-                    // Get the first active subscription
                     const activeSub = activeSubs[0];
                     const activeProductId = activeSub.productId;
+                    
                     active_tier = getTierFromProductId(c.env, activeProductId);
                     
                     // Calculate next refill: 24 hours from subscription start
@@ -122,11 +121,14 @@ export const tiersRoutes = new Hono<Env>()
                     try {
                         const product = (await polar.products.get({ id: activeProductId })) as PolarProductMinimal;
                         product_name = product.name;
-
+                        
                         // Extract daily pollen from meter_credit benefit
                         const meterBenefit = product.benefits?.find(isMeterCreditBenefit);
-                        if (meterBenefit?.properties?.amount !== undefined) {
-                            daily_pollen = meterBenefit.properties.amount;
+                        // Polar uses "units" property, but check "amount" as fallback
+                        const pollenValue = meterBenefit?.properties?.units ?? meterBenefit?.properties?.amount;
+                        
+                        if (pollenValue !== undefined) {
+                            daily_pollen = pollenValue;
                         }
                     } catch (productError) {
                         log.warn("Failed to fetch product details: {error}", { error: productError });
@@ -141,6 +143,7 @@ export const tiersRoutes = new Hono<Env>()
             
             // Determine if activate button should be shown
             const should_show_activate_button = shouldShowActivateButton(assigned_tier, active_tier);
+            
 
             const viewModel: TierViewModel = {
                 assigned_tier,
@@ -194,14 +197,9 @@ export const tiersRoutes = new Hono<Env>()
             } catch (error) {
                 log.error("Polar checkout failed: {error}", {
                     error,
-                    userId: user.id,
-                    email: user.email,
-                    productId,
-                    targetTier: target_tier,
                 });
                 throw new HTTPException(500, {
-                    message: `Failed to create checkout session: ${error instanceof Error ? error.message : String(error)}`,
-                    cause: error,
+                    message: "Failed to create checkout session",
                 });
             }
         },

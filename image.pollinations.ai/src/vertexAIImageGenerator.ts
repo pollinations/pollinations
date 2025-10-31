@@ -333,6 +333,12 @@ export async function callVertexAIGemini(
         // Log error for analysis (especially content policy violations) - use original prompt
         await logNanoBananaError(prompt, safeParams, userInfo, error, errorResponseData, refusalDetails);
         
+        // Preserve Gemini's text response if it's already formatted (starts with "Gemini:")
+        const errorMessage = error.message;
+        if (errorMessage.startsWith("Gemini:")) {
+            throw error; // Re-throw as-is to preserve the original response
+        }
+        
         throw new Error(`Vertex AI Gemini image generation failed: ${error.message}`);
     }
 }

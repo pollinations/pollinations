@@ -4,13 +4,13 @@
  * @returns {Function} Composed transform function
  */
 export function pipe(...transforms) {
-    return (messages, options) => 
+    return (messages, options) =>
         transforms.reduce(
             (acc, transform) => {
                 const result = transform(acc.messages, acc.options);
                 return { messages: result.messages, options: result.options };
-            }, 
-            { messages, options }
+            },
+            { messages, options },
         );
 }
 
@@ -22,7 +22,7 @@ export function pipe(...transforms) {
 export function addTools(tools) {
     return (messages, options) => ({
         messages,
-        options: { ...options, tools: [...(options.tools || []), ...tools] }
+        options: { ...options, tools: [...(options.tools || []), ...tools] },
     });
 }
 
@@ -34,6 +34,9 @@ export function addTools(tools) {
 export function overrideModel(modelName) {
     return (messages, options) => ({
         messages,
-        options: { ...options, model: typeof modelName === 'function' ? modelName() : modelName }
+        options: {
+            ...options,
+            model: typeof modelName === "function" ? modelName() : modelName,
+        },
     });
 }

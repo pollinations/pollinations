@@ -55,14 +55,15 @@ Otherwise respond "text".`;
             return c.json({ error: "Authentication required" }, 401);
         }
 
-        // Call our own /text endpoint to route
-        const routerResponse = await fetch(`${url.origin}/text/${encodeURIComponent(routerPrompt)}`, {
+        // Call text service directly to avoid self-referential loop
+        const textServiceUrl = c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
+        const routerResponse = await fetch(`${textServiceUrl}/${encodeURIComponent(routerPrompt)}?model=openai-fast`, {
             headers: { "Authorization": `Bearer ${token}` }
         });
         
         const decision = (await routerResponse.text()).trim().toLowerCase();
         
-        // Route to appropriate endpoint
+        // Route to appropriate endpoint (back through our proxy routes)
         const targetPath = decision.includes("image") ? "/image" : "/text";
         const targetUrl = `${url.origin}${targetPath}${path}?${params.toString()}`;
         

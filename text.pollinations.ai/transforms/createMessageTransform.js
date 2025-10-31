@@ -8,16 +8,16 @@
  * // Returns: { messages: [{role: "system", content: "You are a helpful assistant."}, {role: "user", content: "Hello"}], options: {} }
  */
 export function createMessageTransform(systemMessage) {
-    if (!systemMessage || typeof systemMessage !== 'string') {
-        throw new Error('systemMessage must be a non-empty string');
+    if (!systemMessage || typeof systemMessage !== "string") {
+        throw new Error("systemMessage must be a non-empty string");
     }
 
     return function transform(messages, options) {
         if (!Array.isArray(messages)) {
-            throw new Error('messages must be an array');
+            throw new Error("messages must be an array");
         }
-        if (!options || typeof options !== 'object') {
-            throw new Error('options must be an object');
+        if (!options || typeof options !== "object") {
+            throw new Error("options must be an object");
         }
 
         // Extract any existing system messages
@@ -34,8 +34,8 @@ export function createMessageTransform(systemMessage) {
         // If there are existing system messages, combine all of them with the preset system message
         if (systemMessages.length > 0) {
             const existingSystemContent = systemMessages
-                .map(msg => msg.content)
-                .join('\n\n');
+                .map((msg) => msg.content)
+                .join("\n\n");
             finalSystemContent = `${systemMessage}\n\n${existingSystemContent}`;
         }
 
@@ -45,7 +45,7 @@ export function createMessageTransform(systemMessage) {
                 { role: "system", content: finalSystemContent },
                 ...filteredMessages,
             ],
-            options
+            options,
         };
     };
 }

@@ -355,7 +355,7 @@ const printStats = async () => {
 // Main function to start the feed listener
 const startFeedListener = async (options = {}) => {
     // Determine which feed URL to use based on options
-    let baseUrl = options.baseUrl || "https://text.pollinations.ai";
+    const baseUrl = options.baseUrl || "https://text.pollinations.ai";
     let feedUrl = `${baseUrl}/feed`;
 
     // Check for password first (from options or environment)

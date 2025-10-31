@@ -1,6 +1,9 @@
 import debug from "debug";
 // Import the new cleaning utilities
-import { cleanUndefined as newCleanUndefined, cleanNullAndUndefined as newCleanNullAndUndefined } from "./utils/objectCleaners.js";
+import {
+    cleanUndefined as newCleanUndefined,
+    cleanNullAndUndefined as newCleanNullAndUndefined,
+} from "./utils/objectCleaners.js";
 
 const log = debug("pollinations:utils");
 const errorLog = debug("pollinations:utils:error");
@@ -240,7 +243,7 @@ export function formatToOpenAIResponse(response, modelName) {
     }
 
     // Create a message object based on the response
-    let message = {
+    const message = {
         role: "assistant",
     };
 

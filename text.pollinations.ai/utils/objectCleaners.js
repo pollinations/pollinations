@@ -18,7 +18,7 @@ export const cleanUndefined = (obj) => {
     }
 
     const cleaned = { ...obj };
-    Object.keys(cleaned).forEach(key => {
+    Object.keys(cleaned).forEach((key) => {
         if (cleaned[key] === undefined) {
             delete cleaned[key];
         }
@@ -32,8 +32,10 @@ export const cleanUndefined = (obj) => {
  * @returns {Object} Object without null or undefined values
  */
 export const cleanNullAndUndefined = (obj) => {
-    log(`Cleaning null and undefined values from object keys: ${obj && typeof obj === 'object' ? Object.keys(obj).join(", ") : 'N/A'}`);
-    
+    log(
+        `Cleaning null and undefined values from object keys: ${obj && typeof obj === "object" ? Object.keys(obj).join(", ") : "N/A"}`,
+    );
+
     if (!obj || typeof obj !== "object" || Array.isArray(obj)) {
         return obj;
     }
@@ -41,21 +43,30 @@ export const cleanNullAndUndefined = (obj) => {
     const cleaned = { ...obj };
     const removedProps = [];
 
-    Object.keys(cleaned).forEach(key => {
+    Object.keys(cleaned).forEach((key) => {
         // Never clean modalities or audio properties
         if (key === "modalities" || key === "audio") {
             return;
         }
 
         if (cleaned[key] === undefined || cleaned[key] === null) {
-            removedProps.push(`${key}: ${cleaned[key] === null ? "null" : "undefined"}`);
+            removedProps.push(
+                `${key}: ${cleaned[key] === null ? "null" : "undefined"}`,
+            );
             delete cleaned[key];
-        } else if (typeof cleaned[key] === 'object' && cleaned[key] !== null && !Array.isArray(cleaned[key])) {
+        } else if (
+            typeof cleaned[key] === "object" &&
+            cleaned[key] !== null &&
+            !Array.isArray(cleaned[key])
+        ) {
             // Recursively clean nested objects
             const cleanedNestedObj = cleanNullAndUndefined(cleaned[key]);
-            
+
             // If the cleaned nested object has no properties, remove it entirely
-            if (cleanedNestedObj && Object.keys(cleanedNestedObj).length === 0) {
+            if (
+                cleanedNestedObj &&
+                Object.keys(cleanedNestedObj).length === 0
+            ) {
                 removedProps.push(`${key}: (empty object after cleaning)`);
                 delete cleaned[key];
             } else {
@@ -67,7 +78,7 @@ export const cleanNullAndUndefined = (obj) => {
     if (removedProps.length > 0) {
         log(`Removed properties: ${removedProps.join(", ")}`);
     }
-    
+
     log(`Cleaned object now has keys: ${Object.keys(cleaned).join(", ")}`);
     return cleaned;
 };

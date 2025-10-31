@@ -331,5 +331,5 @@ export default {
         if (instance.cleanup) {
             instance.cleanup();
         }
-    }
+    },
 };

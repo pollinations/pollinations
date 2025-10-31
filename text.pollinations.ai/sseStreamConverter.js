@@ -13,7 +13,7 @@ export function createSseStreamConverter(mapper) {
         writableObjectMode: false,
         transform(chunk, encoding, callback) {
             buffer += chunk.toString();
-            let eventRegex = /(^|\n)data:(.*?)(?=\n\n|$)/gs;
+            const eventRegex = /(^|\n)data:(.*?)(?=\n\n|$)/gs;
             let match;
             let lastIndex = 0;
             while ((match = eventRegex.exec(buffer)) !== null) {
@@ -49,7 +49,7 @@ export function createSseStreamConverter(mapper) {
         flush(callback) {
             // Handle any remaining buffered data
             if (buffer.trim()) {
-                let dataLine = buffer.replace(/^data:/, "").trim();
+                const dataLine = buffer.replace(/^data:/, "").trim();
                 if (dataLine === "[DONE]") {
                     this.push("data: [DONE]\n\n");
                 } else if (dataLine) {

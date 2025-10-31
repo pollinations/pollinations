@@ -34,7 +34,7 @@ export async function sendTinybirdEvent(eventData) {
         // Extract model and cost information
         const modelUsed = eventData.modelUsed ?? null;
         const isErrorEvent = eventData.status === "error";
-        
+
         // Skip cost resolution for error events - no token usage data available
         let cost = null;
         if (!isErrorEvent) {
@@ -43,7 +43,9 @@ export async function sendTinybirdEvent(eventData) {
                     cost = resolveCost(modelUsed);
                 }
             } catch (e) {
-                errorLog(`Cost resolution failed for modelUsed='${modelUsed || ''}': ${e.message}`);
+                errorLog(
+                    `Cost resolution failed for modelUsed='${modelUsed || ""}': ${e.message}`,
+                );
                 // proceed without cost; token prices will default to 0
             }
         }
@@ -51,7 +53,7 @@ export async function sendTinybirdEvent(eventData) {
         // Extract token counts from usage data
         const extractTokenCounts = (usage) => {
             if (!usage) return {};
-            
+
             const {
                 prompt_tokens = 0,
                 completion_tokens = 0,
@@ -60,18 +62,27 @@ export async function sendTinybirdEvent(eventData) {
             } = usage;
 
             // Extract audio and cached tokens
-            const prompt_audio = prompt_tokens_details?.audio_tokens ?? usage.audio_prompt_tokens ?? 0;
-            const completion_audio = completion_tokens_details?.audio_tokens ?? usage.audio_completion_tokens ?? 0;
+            const prompt_audio =
+                prompt_tokens_details?.audio_tokens ??
+                usage.audio_prompt_tokens ??
+                0;
+            const completion_audio =
+                completion_tokens_details?.audio_tokens ??
+                usage.audio_completion_tokens ??
+                0;
             const prompt_cached = prompt_tokens_details?.cached_tokens ?? 0;
 
             // Calculate text tokens with fallback to total when only text
-            const prompt_text = (!prompt_audio && !prompt_cached) 
-                ? prompt_tokens
-                : (prompt_tokens_details?.text_tokens ?? prompt_tokens - prompt_audio - prompt_cached);
-            
+            const prompt_text =
+                !prompt_audio && !prompt_cached
+                    ? prompt_tokens
+                    : (prompt_tokens_details?.text_tokens ??
+                      prompt_tokens - prompt_audio - prompt_cached);
+
             const completion_text = !completion_audio
                 ? completion_tokens
-                : (completion_tokens_details?.text_tokens ?? completion_tokens - completion_audio);
+                : (completion_tokens_details?.text_tokens ??
+                  completion_tokens - completion_audio);
 
             return {
                 token_count_completion_text: completion_text,
@@ -104,12 +115,16 @@ export async function sendTinybirdEvent(eventData) {
         const modelRequested = eventData.model || null;
         const modelUsedName = eventData.modelUsed || null;
         // Resolve provider based on the actual used model when available, otherwise fall back to requested
-        const provider = getProviderByModelId(modelUsedName || modelRequested) ?? 'unknown';
-        log(`Provider for model (used=${modelUsedName || 'n/a'}, requested=${modelRequested || 'n/a'}): ${provider}`);
+        const provider =
+            getProviderByModelId(modelUsedName || modelRequested) ?? "unknown";
+        log(
+            `Provider for model (used=${modelUsedName || "n/a"}, requested=${modelRequested || "n/a"}): ${provider}`,
+        );
 
         // Extract moderation data from choices if present (Azure OpenAI)
-        const cfr = eventData.choices?.[0]?.content_filter_results || 
-                   eventData.choices?.[0]?.message?.content_filter_results;
+        const cfr =
+            eventData.choices?.[0]?.content_filter_results ||
+            eventData.choices?.[0]?.message?.content_filter_results;
 
         // Construct the event payload with token counts and pricing
         const tinybirdEvent = {
@@ -137,22 +152,29 @@ export async function sendTinybirdEvent(eventData) {
             // Status and caching flags
             standard_logging_object_status: eventData.status,
             cache_hit: Boolean(eventData.cache_hit),
-            cache_semantic_threshold: eventData.cache_semantic_threshold ?? null,
-            cache_semantic_similarity: eventData.cache_semantic_similarity ?? null,
+            cache_semantic_threshold:
+                eventData.cache_semantic_threshold ?? null,
+            cache_semantic_similarity:
+                eventData.cache_semantic_similarity ?? null,
             cache_key: eventData.cache_key ?? "",
             id: getOrGenerateId(eventData.cf_ray),
 
             // Moderation data (flat fields to match datasource)
-            moderation_hate_severity: cfr?.hate?.severity ?? 'safe',
-            moderation_self_harm_severity: cfr?.self_harm?.severity ?? 'safe',
-            moderation_sexual_severity: cfr?.sexual?.severity ?? 'safe',
-            moderation_violence_severity: cfr?.violence?.severity ?? 'safe',
-            moderation_protected_material_code_detected: cfr?.protected_material_code?.detected ?? false,
-            moderation_protected_material_text_detected: cfr?.protected_material_text?.detected ?? false,
+            moderation_hate_severity: cfr?.hate?.severity ?? "safe",
+            moderation_self_harm_severity: cfr?.self_harm?.severity ?? "safe",
+            moderation_sexual_severity: cfr?.sexual?.severity ?? "safe",
+            moderation_violence_severity: cfr?.violence?.severity ?? "safe",
+            moderation_protected_material_code_detected:
+                cfr?.protected_material_code?.detected ?? false,
+            moderation_protected_material_text_detected:
+                cfr?.protected_material_text?.detected ?? false,
 
             // Minimal proxy metadata (only environment is ingested)
             proxy_metadata: {
-                environment: eventData.environment ?? process.env.NODE_ENV ?? "development",
+                environment:
+                    eventData.environment ??
+                    process.env.NODE_ENV ??
+                    "development",
             },
 
             // Include raw choices data for moderation detection (excluded later at line 197)
@@ -169,10 +191,10 @@ export async function sendTinybirdEvent(eventData) {
         log(
             `📤 Sending telemetry: requested=${
                 tinybirdEvent.model_requested
-            } used=${tinybirdEvent.model_used || 'unknown'} | $$${totalCost.toFixed(6)} | ${
+            } used=${tinybirdEvent.model_used || "unknown"} | $$${totalCost.toFixed(6)} | ${
                 tinybirdEvent.token_count_completion_text +
                 tinybirdEvent.token_count_prompt_text
-            } tokens`
+            } tokens`,
         );
 
         // Helper function to send data to Tinybird endpoint
@@ -180,7 +202,7 @@ export async function sendTinybirdEvent(eventData) {
             endpoint,
             data,
             controller,
-            description = "telemetry"
+            description = "telemetry",
         ) => {
             const response = await fetch(
                 `${TINYBIRD_API_URL}/v0/events?name=${endpoint}`,
@@ -192,7 +214,7 @@ export async function sendTinybirdEvent(eventData) {
                     },
                     body: JSON.stringify(data),
                     signal: controller.signal,
-                }
+                },
             );
 
             const responseText = await response
@@ -201,7 +223,7 @@ export async function sendTinybirdEvent(eventData) {
 
             if (!response.ok) {
                 errorLog(
-                    `Failed to send ${description} to Tinybird: ${response.status} ${responseText}`
+                    `Failed to send ${description} to Tinybird: ${response.status} ${responseText}`,
                 );
                 return false;
             }
@@ -214,13 +236,14 @@ export async function sendTinybirdEvent(eventData) {
             const success = await sendToTinybird(
                 "text_events",
                 textEventsEvent,
-                controller
+                controller,
             );
 
             if (success) {
-                log(`✅ Telemetry sent: requested=${modelRequested} used=${modelUsedName || 'unknown'}`);
+                log(
+                    `✅ Telemetry sent: requested=${modelRequested} used=${modelUsedName || "unknown"}`,
+                );
             }
-
         } catch (fetchError) {
             const errorMessage =
                 fetchError.name === "AbortError"

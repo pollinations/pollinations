@@ -3,13 +3,16 @@ import dotenv from "dotenv";
 // Import shared utilities for authentication and environment handling
 import { extractReferrer } from "../shared/extractFromRequest.js";
 // Import parameter validators
-import { validateTextGenerationParams, validateJsonMode } from "./utils/parameterValidators.js";
+import {
+    validateTextGenerationParams,
+    validateJsonMode,
+} from "./utils/parameterValidators.js";
 
 // Load environment variables including .env.local overrides
 // Load .env.local first (higher priority), then .env as fallback
 dotenv.config();
 
-dotenv.config({ path: '.env.local' });
+dotenv.config({ path: ".env.local" });
 
 const log = debug("pollinations:requestUtils");
 
@@ -25,7 +28,7 @@ export function getRequestData(req) {
 
     // Use validators to eliminate duplication
     const validated = validateTextGenerationParams(data);
-    
+
     const systemPrompt = data.system ? data.system : null;
     const isPrivate = req.path?.startsWith("/openai")
         ? true

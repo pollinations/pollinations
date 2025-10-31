@@ -5,7 +5,7 @@ const log = debug("pollinations:adfilter");
 
 // Regular expression to detect markdown formatting in content
 export const markdownRegex =
-    /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`.*\`)|(?:\>.*)|(?:\-\s.*)|(?:\d\.\s.*)/;
+    /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:#.*)|(?:\*.*\*)|(?:`.*`)|(?:>.*)|(?:-\s.*)|(?:\d\.\s.*)/;
 
 // Whether to require markdown for ad processing
 export const REQUIRE_MARKDOWN = true;

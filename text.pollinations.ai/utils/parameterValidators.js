@@ -34,11 +34,11 @@ export const validateInt = (value) => {
  */
 export const validateBoolean = (value) => {
     if (value === undefined || value === null) return undefined;
-    if (typeof value === 'boolean') return value;
-    if (typeof value === 'string') {
+    if (typeof value === "boolean") return value;
+    if (typeof value === "string") {
         const lower = value.toLowerCase();
-        if (['true', '1', 'yes'].includes(lower)) return true;
-        if (['false', '0', 'no'].includes(lower)) return false;
+        if (["true", "1", "yes"].includes(lower)) return true;
+        if (["false", "0", "no"].includes(lower)) return false;
     }
     return Boolean(value);
 };
@@ -65,17 +65,18 @@ export const validateString = (value, defaultValue = undefined) => {
     return String(value);
 };
 
-
 /**
  * Validates JSON mode from various input formats
  * @param {*} data - Input data object
  * @returns {boolean} Whether JSON mode is enabled
  */
 export const validateJsonMode = (data) => {
-    return data.jsonMode ||
+    return (
+        data.jsonMode ||
         (typeof data.json === "string" && data.json.toLowerCase() === "true") ||
         (typeof data.json === "boolean" && data.json === true) ||
-        data.response_format?.type === "json_object";
+        data.response_format?.type === "json_object"
+    );
 };
 
 /**
@@ -96,6 +97,6 @@ export const validateTextGenerationParams = (data) => {
         model: validateString(data.model, "openai-fast"),
         voice: validateString(data.voice, "alloy"),
         reasoning_effort: validateString(data.reasoning_effort),
-        jsonMode: validateJsonMode(data)
+        jsonMode: validateJsonMode(data),
     };
 };

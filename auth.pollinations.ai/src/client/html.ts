@@ -9,9 +9,9 @@ export const generateHTML = () => `<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pollinations.AI Auth</title>
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
-    <link rel="icon" href="../../media/favicon-32x32.png" sizes="32x32" type="image/png">
-    <link rel="icon" href="../../media/favicon-16x16.png" sizes="16x16" type="image/png">
-    <link rel="apple-touch-icon" href="../../media/apple-touch-icon.png" sizes="180x180">
+    <link rel="icon" href="/media/favicon-32x32.png" sizes="32x32" type="image/png">
+    <link rel="icon" href="/media/favicon-16x16.png" sizes="16x16" type="image/png">
+    <link rel="apple-touch-icon" href="/media/apple-touch-icon.png" sizes="180x180">
     <style>
         ${CSS}
     </style>

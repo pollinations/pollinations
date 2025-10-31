@@ -55,21 +55,22 @@ Otherwise respond "text".`;
             return c.json({ error: "Authentication required" }, 401);
         }
 
-        // Call text service directly to avoid self-referential loop
+        // Call text service directly to route
         const textServiceUrl = c.env.TEXT_SERVICE_URL || "https://text.pollinations.ai";
-        const routerResponse = await fetch(`${textServiceUrl}/${encodeURIComponent(routerPrompt)}?model=openai-fast`, {
-            headers: { "Authorization": `Bearer ${token}` }
-        });
+        const routerResponse = await fetch(`${textServiceUrl}/${encodeURIComponent(routerPrompt)}?model=openai-fast`);
         
         const decision = (await routerResponse.text()).trim().toLowerCase();
         
-        // Route to appropriate endpoint (back through our proxy routes)
-        const targetPath = decision.includes("image") ? "/image" : "/text";
-        const targetUrl = `${url.origin}${targetPath}${path}?${params.toString()}`;
+        // Proxy directly to backend services
+        const imageServiceUrl = c.env.IMAGE_SERVICE_URL || "https://image.pollinations.ai";
         
-        return fetch(targetUrl, {
-            headers: { "Authorization": `Bearer ${token}` }
-        });
+        if (decision.includes("image")) {
+            // Route to image service
+            return fetch(`${imageServiceUrl}${path}?${params.toString()}`);
+        } else {
+            // Route to text service
+            return fetch(`${textServiceUrl}${path}?${params.toString()}`);
+        }
     });
 
 export default app;

@@ -7,6 +7,7 @@
     "scripts": {
         "typecheck": "tsc --noEmit",
         "dev": "sops -d .encrypted.dev.env > .dev.vars && vite dev",
+        "dev:gen": "wrangler dev --config wrangler.gen.toml",
         "test": "npx vitest run",
         "gen:migrations": "npx drizzle-kit generate",
         "gen:auth-schema": "npx @better-auth/cli@latest generate --config betterAuth.config.ts --output src/db/schema/better-auth.ts",
@@ -17,6 +18,8 @@
         "build:production": "CLOUDFLARE_ENV=production vite build",
         "deploy:staging": "npm run build:staging && wrangler deploy",
         "deploy:production": "npm run build:production && wrangler deploy",
+        "deploy:gen:staging": "wrangler deploy --config wrangler.gen.toml --env staging",
+        "deploy:gen:production": "wrangler deploy --config wrangler.gen.toml --env production",
         "push-secrets:staging": "sops exec-file --no-fifo .encrypted.staging.env 'npx wrangler secret bulk {} --env staging'",
         "push-secrets:production": "sops exec-file --no-fifo .encrypted.production.env 'npx wrangler secret bulk {} --env production'"
     },

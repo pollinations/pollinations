@@ -17,8 +17,20 @@ const app = new Hono<Env>()
             allowMethods: ["GET", "POST", "OPTIONS"],
         })
     )
-    .use("*", auth({ allowApiKey: true, allowSessionCookie: true }))
+    .use("*", auth({ allowApiKey: true, allowSessionCookie: false }))
     .route("/", proxyRoutes)
-    .get("/health", (c) => c.json({ status: "ok" }));
+    .get("/health", (c) => c.json({ status: "ok" }))
+    .get("/debug-secrets", (c) => {
+        const hasGithubId = !!c.env.GITHUB_CLIENT_ID;
+        const hasGithubSecret = !!c.env.GITHUB_CLIENT_SECRET;
+        const hasJwtSecret = !!c.env.JWT_SECRET;
+        console.log("DEBUG: Secrets check", { hasGithubId, hasGithubSecret, hasJwtSecret });
+        return c.json({ 
+            hasGithubId, 
+            hasGithubSecret, 
+            hasJwtSecret,
+            githubIdPrefix: c.env.GITHUB_CLIENT_ID?.substring(0, 4)
+        });
+    });
 
 export default app;

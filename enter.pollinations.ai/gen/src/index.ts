@@ -65,8 +65,8 @@ Otherwise respond "text".`;
         const imageServiceUrl = c.env.IMAGE_SERVICE_URL || "https://image.pollinations.ai";
         
         if (decision.includes("image")) {
-            // Route to image service
-            return fetch(`${imageServiceUrl}${path}?${params.toString()}`);
+            // Route to image service (prepend /prompt)
+            return fetch(`${imageServiceUrl}/prompt${path}?${params.toString()}`);
         } else {
             // Route to text service
             return fetch(`${textServiceUrl}${path}?${params.toString()}`);

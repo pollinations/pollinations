@@ -1,6 +1,6 @@
 {
-    "name": "Pollinations.AI",
-    "short_name": "Pollinations",
+    "name": "pollinations.ai",
+    "short_name": "pollinations",
     "description": "Free 🐝 Open Source 🌸 Gen AI 🤖 API",
     "icons": [
         {
@@ -28,8 +28,8 @@
             "purpose": "maskable"
         }
     ],
-    "theme_color": "#000000",
-    "background_color": "#000000",
+    "theme_color": "#d6379e",
+    "background_color": "#d6379e",
     "display": "standalone",
     "start_url": "/"
 }

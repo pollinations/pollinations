@@ -1,7 +1,7 @@
 {
-    "name": "Pollinations Enter",
-    "short_name": "Enter",
-    "description": "Authentication and API gateway for Pollinations.AI",
+    "name": "pollinations.ai - beta",
+    "short_name": "pollinations",
+    "description": "authentication and API gateway for pollinations.ai",
     "icons": [
         {
             "src": "/icon-192.png",
@@ -28,8 +28,8 @@
             "purpose": "maskable"
         }
     ],
-    "theme_color": "#000000",
-    "background_color": "#000000",
+    "theme_color": "#5b2dd8",
+    "background_color": "#5b2dd8",
     "display": "standalone",
     "start_url": "/"
 }

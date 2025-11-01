@@ -9,7 +9,7 @@ import useRandomSeed from "../../hooks/useRandomSeed";
 import { usePollinationsImage } from "@pollinations/react";
 import { PROJECT_LOGO_STYLE } from "../../config/copywrite";
 import { shortTechnical } from "../../config/llmTransforms";
-import { ICONS } from "../../assets/icons/icons";
+import { ICONS } from "../../icons/icons";
 import { trackEvent } from "../../config/analytics";
 import { SectionSubContainer } from "../SectionContainer";
 

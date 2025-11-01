@@ -1,4 +1,4 @@
-import { ICONS } from "../assets/icons/icons.js";
+import { ICONS } from "../icons/icons.js";
 
 export const SOCIAL_LINKS = {
     discord: {
